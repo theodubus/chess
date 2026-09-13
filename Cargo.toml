@@ -1,0 +1,32 @@
+[workspace]
+resolver = "3"
+members = ["engine"]
+
+[workspace.package]
+version    = "0.1.0"
+edition    = "2024"
+license    = "AGPL-3.0-or-later"
+repository = "https://github.com/theodubus/chess"
+authors    = ["theodubus"]
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+# Le moteur ne doit jamais paniquer en production sur une entrée externe.
+unwrap_used = "warn"
+expect_used = "warn"
+
+# Un moteur passe sa vie dans la recherche : on compile pour la vitesse,
+# quitte à payer un temps de compilation plus long.
+[profile.release]
+opt-level     = 3
+lto           = "fat"
+codegen-units = 1
+debug         = false
+
+# `cargo test --release` sert à faire tourner perft en temps raisonnable.
+[profile.bench]
+inherits = "release"

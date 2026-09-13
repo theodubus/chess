@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  engine:
+    name: Moteur
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup default stable
+          rustc --version && cargo --version
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Tests (debug)
+        run: cargo test --workspace
+
+      - name: Tests (release)
+        run: cargo test --workspace --release
+
+      # Perft complet sur les six positions de référence, jusqu'aux
+      # profondeurs 5 et 6 : environ deux secondes, 593 millions de nœuds.
+      # C'est le critère d'acceptation de la génération de coups.
+      - name: Perft complet
+        run: cargo test --workspace --release -- --ignored
+
+      # Détecteur de régression de performance. La sortie se termine par
+      # `Nodes/second`, comparable d'un commit à l'autre.
+      - name: Bench
+        run: cargo run --release --bin chess-engine -- bench 4

@@ -1,0 +1,22 @@
+[package]
+name        = "chess-engine"
+description = "Moteur d'échecs UCI"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+repository.workspace = true
+authors.workspace    = true
+
+[lints]
+workspace = true
+
+[lib]
+name = "chess_engine"
+path = "src/lib.rs"
+
+[[bin]]
+name = "chess-engine"
+path = "src/main.rs"
+
+[dependencies]
+cozy-chess = "0.3.4"

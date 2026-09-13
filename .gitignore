@@ -1,0 +1,15 @@
+# Rust
+/target
+**/*.rs.bk
+
+# Node / UI
+node_modules/
+dist/
+.vite/
+
+# Divers
+.DS_Store
+*.log
+
+# Artefacts de mesure locaux
+/tools/out/
