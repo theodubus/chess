@@ -40,6 +40,19 @@ pub const MAX_DEPTH: u32 = 64;
 /// ply et empêche une quiescence pathologique de déborder la pile.
 pub const MAX_PLY: usize = 128;
 
+/// Profondeur minimale pour tenter un coup nul.
+///
+/// En dessous, la recherche réduite serait si courte que l'élagage ne
+/// rapporterait rien tout en pouvant tromper.
+const NULL_MOVE_MIN_DEPTH: i32 = 3;
+
+/// Réduction appliquée à la recherche qui suit un coup nul.
+///
+/// C'est ce qui rend l'élagage bon marché : on vérifie l'hypothèse « ma
+/// position est bonne » à profondeur réduite, et on ne paye le prix fort que
+/// si elle échoue.
+const NULL_MOVE_REDUCTION: i32 = 2;
+
 /// Nombre de nœuds entre deux consultations de l'horloge et du drapeau d'arrêt.
 ///
 /// Interroger `Instant::now()` à chaque nœud coûte plus cher que la recherche
@@ -507,6 +520,50 @@ impl Search {
         // collision de clés Zobrist, astronomiquement rare mais pas impossible.
         let tt_move = hit.and_then(|hit| hit.mv).filter(|&mv| board.is_legal(mv));
 
+        // Élagage par coup nul.
+        //
+        // Dans presque toute position, avoir le trait est un avantage. Si l'on
+        // passe son tour et que la position reste assez bonne pour couper,
+        // alors elle l'est a fortiori en jouant : le sous-arbre est inutile.
+        //
+        // Les gardes ne sont pas décoratives :
+        // - en échec, passer est illégal, et `null_move` rend `None` ;
+        // - sans pièce autre que pions et roi, le zugzwang devient fréquent et
+        //   l'hypothèse de base s'inverse — passer serait un cadeau, donc la
+        //   coupure serait fausse (voir `has_non_pawn_material`) ;
+        // - contre une borne de mat, la coupure produirait un mat imaginaire ;
+        // - jamais à la racine, où il faut rendre un coup.
+        if ply > 0
+            && depth >= NULL_MOVE_MIN_DEPTH
+            && board.checkers().is_empty()
+            && beta.abs() < MATE_THRESHOLD
+            && has_non_pawn_material(board)
+            && let Some(passed) = board.null_move()
+        {
+            self.path.push(passed.hash());
+            let score = -self.negamax(
+                &passed,
+                depth - 1 - NULL_MOVE_REDUCTION,
+                ply + 1,
+                -beta,
+                -beta + 1,
+            );
+            self.path.pop();
+
+            if self.aborted {
+                return 0;
+            }
+            if score >= beta {
+                // Un score de mat obtenu grâce à un coup qu'on n'a pas le droit
+                // de jouer est faux : on rend la borne, pas le mat.
+                return if score.abs() > MATE_THRESHOLD {
+                    beta
+                } else {
+                    score
+                };
+            }
+        }
+
         let moves = self.ordered_moves(board, false, tt_move, ply);
         if moves.is_empty() {
             return if board.checkers().is_empty() {
@@ -655,6 +712,20 @@ pub fn captured_piece(board: &Board, mv: Move) -> Option<Piece> {
         return Some(Piece::Pawn); // prise en passant
     }
     None
+}
+
+/// Vrai si le camp au trait possède autre chose que des pions et son roi.
+///
+/// C'est la garde du coup nul. Le zugzwang — être perdu *parce qu'on doit
+/// jouer* — est rare tant qu'il reste des pièces, parce qu'il existe presque
+/// toujours un coup d'attente inoffensif. Dans une finale de pions, chaque
+/// coup de pion est irréversible et chaque coup de roi concède du terrain :
+/// le zugzwang devient courant, et l'hypothèse du coup nul s'inverse.
+#[must_use]
+pub fn has_non_pawn_material(board: &Board) -> bool {
+    let side = board.side_to_move();
+    let pieces = board.colors(side) & !board.pieces(Piece::Pawn) & !board.pieces(Piece::King);
+    !pieces.is_empty()
 }
 
 /// La case d'arrivée d'une prise en passant, si elle est disponible.
@@ -1008,6 +1079,75 @@ mod tests {
         assert!(s.table_permille() > 0, "la table doit s'être remplie");
         s.clear_table();
         assert_eq!(s.table_permille(), 0);
+    }
+
+    #[test]
+    fn la_garde_du_coup_nul_distingue_les_finales_de_pions() {
+        // Avec des pièces : le coup d'attente existe, le zugzwang est rare.
+        assert!(has_non_pawn_material(&Board::default()));
+        assert!(has_non_pawn_material(&board(
+            "4k3/8/8/8/8/8/4P3/3RK3 w - - 0 1"
+        )));
+        // Rois et pions seuls : le zugzwang devient courant, coup nul interdit.
+        assert!(!has_non_pawn_material(&board(
+            "4k3/4p3/8/8/8/8/4P3/4K3 w - - 0 1"
+        )));
+        // La garde regarde le camp AU TRAIT, pas le matériel total : ici les
+        // Blancs n'ont que des pions, les Noirs ont une tour.
+        assert!(!has_non_pawn_material(&board(
+            "3rk3/4p3/8/8/8/8/4P3/4K3 w - - 0 1"
+        )));
+        assert!(has_non_pawn_material(&board(
+            "3rk3/4p3/8/8/8/8/4P3/4K3 b - - 0 1"
+        )));
+    }
+
+    #[test]
+    fn le_coup_nul_ne_casse_pas_la_detection_de_mat() {
+        // Profondeur 5 : le coup nul est actif. Le mat doit rester trouvé, et
+        // annoncé comme mat — un coup nul qui produirait un mat imaginaire se
+        // verrait ici.
+        let position = Position::from_fen(
+            "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
+        )
+        .unwrap();
+        let mut dernier = None;
+        let mv = search().go(
+            &position,
+            &Limits {
+                depth: Some(5),
+                ..Limits::default()
+            },
+            |info| dernier = Some(info.score),
+        );
+        assert_eq!(
+            cozy_chess::util::display_uci_move(position.board(), mv.unwrap()).to_string(),
+            "f3f7"
+        );
+        assert_eq!(dernier, Some(Score::Mate(1)));
+    }
+
+    #[test]
+    fn le_coup_nul_ne_sapplique_pas_en_echec() {
+        // Roi blanc en e1, tour noire en e8 : échec sur la colonne, quatre
+        // fuites seulement (e2 est interdite). `null_move` rend None en échec —
+        // passer serait illégal — et la recherche doit tout de même jouer.
+        let position = Position::from_fen("4r2k/8/8/8/8/8/8/4K3 w - - 0 1").unwrap();
+        assert!(
+            !position.board().checkers().is_empty(),
+            "la position doit bien être un échec, sinon le test ne teste rien"
+        );
+        let mv = search()
+            .go(
+                &position,
+                &Limits {
+                    depth: Some(4),
+                    ..Limits::default()
+                },
+                |_| {},
+            )
+            .unwrap();
+        assert!(position.board().is_legal(mv));
     }
 
     #[test]

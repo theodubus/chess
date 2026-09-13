@@ -62,6 +62,13 @@ une mesure, pas une préférence.
   en passant la laisse vide.
 - **Un coup illégal produit par le moteur est un `panic!` en debug**, jamais un
   avertissement ignoré. Si le code ment, plus rien n'est déboguable.
+- **Le coup nul est interdit sans pièce autre que pions et roi.** Son hypothèse
+  est « avoir le trait est un avantage » ; le zugzwang est exactement le cas
+  contraire, et il devient courant en finale de pions. Sans cette garde, le
+  moteur surévalue les positions perdues et y entre en croyant gagner. Voir
+  `has_non_pawn_material`.
+- **Un score de mat obtenu après un coup nul n'est pas rendu tel quel.** Il
+  viendrait d'un coup qu'on n'a pas le droit de jouer.
 
 ## Contraintes d'architecture
 
@@ -124,7 +131,7 @@ cargo test --workspace --release -- --ignored  # perft complet, ~2 s
 cargo clippy --all-targets -- -D warnings
 cargo fmt --all
 cargo run --release --bin shallowred      # boucle UCI
-cargo run --release --bin shallowred -- bench 7   # référence : 8 432 521 nœuds
+cargo run --release --bin shallowred -- bench 7   # référence : 3 343 272 nœuds
 
 tools/setup-arbiters.sh                    # construit fastchess
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement

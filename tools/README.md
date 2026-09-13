@@ -83,3 +83,8 @@ avec les mesures antérieures.
 | date | changement | verdict |
 |---|---|---|
 | 2026-09-13 | C9 (table de transposition, killers, historique) contre pré-C9 | **H1 accepté** — +164,3 Elo ± 31,3 sur 488 parties, cadence 1+0,01 |
+| 2026-09-13 | Élagage par coup nul contre C10 | **H1 accepté** — +75,1 Elo ± 19,7 sur 864 parties, cadence 1+0,01 |
+
+Toutes les mesures ci-dessus emploient les bornes `[0, 5]` avec
+`alpha = beta = 0.05`, le livre `book.epd` et la concurrence 3. Le nombre de
+parties n'est pas choisi : le SPRT s'arrête quand il a tranché.
