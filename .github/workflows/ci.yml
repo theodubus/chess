@@ -33,10 +33,12 @@ jobs:
       - name: Tests (release)
         run: cargo test --workspace --release
 
-      # Perft complet sur les six positions de référence, jusqu'aux
-      # profondeurs 5 et 6 : environ deux secondes, 593 millions de nœuds.
-      # C'est le critère d'acceptation de la génération de coups.
-      - name: Perft complet
+      # Deux critères d'acceptation, tous deux binaires.
+      # Perft : six positions jusqu'aux profondeurs 5 et 6, 593 millions de
+      # nœuds en environ deux secondes — la génération de coups passe ou non.
+      # Tournoi : vingt-quatre parties entières contre un adversaire jouant au
+      # hasard — une seule nulle est un échec de conversion.
+      - name: Critères d'acceptation (perft et tournoi)
         run: cargo test --workspace --release -- --ignored
 
       # Détecteur de régression de performance. La sortie se termine par

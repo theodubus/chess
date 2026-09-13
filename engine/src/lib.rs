@@ -22,6 +22,7 @@
 //!   [`cozy_chess::util::display_uci_move`]. Ne jamais afficher un `Move` brut.
 
 pub mod bench;
+pub mod eval;
 pub mod perft;
 pub mod position;
 pub mod search;

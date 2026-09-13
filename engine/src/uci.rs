@@ -25,7 +25,7 @@ use cozy_chess::util::display_uci_move;
 use crate::bench;
 use crate::perft;
 use crate::position::Position;
-use crate::search::{Limits, Search};
+use crate::search::{Limits, Score, Search};
 
 /// Nom annoncé à l'interface.
 pub const NAME: &str = "ShallowRed";
@@ -48,6 +48,25 @@ fn send(line: &str) {
 /// silence.
 fn next_value<'a, T: std::str::FromStr>(tokens: &mut impl Iterator<Item = &'a str>) -> Option<T> {
     tokens.next().and_then(|value| value.parse().ok())
+}
+
+/// Convertit une variante principale en notation UCI.
+///
+/// Chaque coup doit être converti sur le plateau où il est joué : sans cela un
+/// roque plus loin dans la variante serait rendu en notation interne. Le
+/// contrôle de légalité coupe la variante plutôt que de produire du charabia
+/// si une table de transposition y glisse un jour un coup incohérent.
+fn pv_to_uci(root: &cozy_chess::Board, pv: &[cozy_chess::Move]) -> String {
+    let mut board = root.clone();
+    let mut parts = Vec::with_capacity(pv.len());
+    for &mv in pv {
+        if !board.is_legal(mv) {
+            break;
+        }
+        parts.push(display_uci_move(&board, mv).to_string());
+        board.play_unchecked(mv);
+    }
+    parts.join(" ")
 }
 
 /// L'état du moteur entre deux commandes.
@@ -209,15 +228,21 @@ impl Engine {
         self.worker = Some(thread::spawn(move || {
             let mut search = Search::new(stop);
             let best = search.go(&position, &limits, |info| {
-                let pv = info
-                    .pv
-                    .iter()
-                    .map(|mv| display_uci_move(position.board(), *mv).to_string())
-                    .collect::<Vec<_>>()
-                    .join(" ");
+                let score = match info.score {
+                    Score::Cp(cp) => format!("cp {cp}"),
+                    Score::Mate(moves) => format!("mate {moves}"),
+                };
+                let nps = if info.time_ms > 0 {
+                    format!(" nps {}", info.nodes * 1_000 / info.time_ms)
+                } else {
+                    String::new()
+                };
                 send(&format!(
-                    "info depth {} score cp {} nodes {} time {} pv {pv}",
-                    info.depth, info.score_cp, info.nodes, info.time_ms
+                    "info depth {} score {score} nodes {} time {}{nps} pv {}",
+                    info.depth,
+                    info.nodes,
+                    info.time_ms,
+                    pv_to_uci(position.board(), &info.pv)
                 ));
             });
 

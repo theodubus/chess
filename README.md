@@ -5,15 +5,16 @@ Un moteur d'échecs UCI écrit en Rust, et l'interface qui va avec.
 Le nom est un contrepied de Deep Blue, doublé de la couleur de la rouille et
 d'un aveu sur la profondeur de recherche.
 
-> Statut : **phase 0**. Le protocole UCI fonctionne de bout en bout, mais la
-> recherche est un coup légal tiré au sort. Le moteur est jouable et
-> mesurable ; il n'est pas encore fort.
+> Statut : **phase 1**. Le moteur cherche pour de bon — negamax avec élagage
+> alpha-bêta, approfondissement itératif et recherche de quiescence. Il gagne
+> toutes ses parties contre un adversaire jouant au hasard. Il n'a encore ni
+> table de transposition, ni élagages avancés, ni évaluation réglée.
 
 ## Structure
 
 | Dossier | Contenu | Statut |
 |---|---|---|
-| `engine/` | Moteur UCI en Rust | Protocole complet, recherche à écrire |
+| `engine/` | Moteur UCI en Rust | Protocole et recherche de base |
 | `ui/` | Interface TypeScript | Pas démarré |
 | `tools/` | Matchs moteur contre moteur, SPRT | Pas démarré |
 
@@ -48,8 +49,12 @@ n'importe où, et le total est faux.
 
 ```sh
 cargo test --workspace                          # tests rapides
-cargo test --workspace --release -- --ignored   # perft complet, ~2 s, 593 M nœuds
+cargo test --workspace --release -- --ignored   # perft complet + tournoi contre le hasard
 ```
+
+Le second critère est plus grossier et tout aussi contraignant : le moteur joue
+vingt-quatre parties entières contre un adversaire qui tire ses coups au sort,
+depuis douze ouvertures et des deux côtés. Une seule nulle est un échec.
 
 Les six positions de référence et leurs totaux sont dans
 [`engine/tests/perft.rs`](engine/tests/perft.rs).

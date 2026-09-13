@@ -7,6 +7,29 @@
 use cozy_chess::util::parse_uci_move;
 use cozy_chess::{Board, Move};
 
+/// Compte les occurrences antérieures de `hash` dans un historique de clés
+/// Zobrist dont le dernier élément est la position courante.
+///
+/// Ne remonte que jusqu'au dernier coup irréversible — au-delà, aucune
+/// répétition n'est possible, puisqu'une capture ou un coup de pion ne se
+/// défait pas. Le pas de deux vient de ce que seules les positions au même
+/// trait peuvent coïncider ; `skip(2)` écarte la position courante et celle du
+/// trait adverse.
+///
+/// Cette fonction est partagée entre [`Position`] et la recherche, pour que les
+/// deux ne puissent pas diverger sur ce qu'est une répétition.
+#[must_use]
+pub fn repetitions(history: &[u64], hash: u64, halfmove_clock: u8) -> usize {
+    history
+        .iter()
+        .rev()
+        .take(halfmove_clock as usize + 1)
+        .skip(2)
+        .step_by(2)
+        .filter(|&&seen| seen == hash)
+        .count()
+}
+
 /// La position courante d'une partie, avec les clés Zobrist traversées.
 #[derive(Debug, Clone)]
 pub struct Position {
@@ -90,24 +113,24 @@ impl Position {
         Ok(mv)
     }
 
-    /// Le nombre de fois que la position courante est déjà apparue auparavant.
+    /// Les clés Zobrist traversées, la dernière étant celle de `board`.
     ///
-    /// Ne remonte que jusqu'au dernier coup irréversible : au-delà, aucune
-    /// répétition n'est possible.
+    /// La recherche en a besoin pour poursuivre la détection de répétition
+    /// dans son propre arbre : une position répétée en cours de recherche est
+    /// nulle, même si la répétition commence avant la racine.
+    #[must_use]
+    pub fn history(&self) -> &[u64] {
+        &self.history
+    }
+
+    /// Le nombre de fois que la position courante est déjà apparue auparavant.
     #[must_use]
     pub fn repetition_count(&self) -> usize {
-        let hash = self.board.hash();
-        let reversible = self.board.halfmove_clock() as usize;
-        self.history
-            .iter()
-            .rev()
-            .take(reversible + 1)
-            // Seules les positions au même trait peuvent coïncider, d'où le pas de 2 ;
-            // `skip(2)` écarte la position courante et celle du trait adverse.
-            .skip(2)
-            .step_by(2)
-            .filter(|&&h| h == hash)
-            .count()
+        repetitions(
+            &self.history,
+            self.board.hash(),
+            self.board.halfmove_clock(),
+        )
     }
 
     /// Vrai si la position courante est déjà apparue au moins une fois.

@@ -42,8 +42,13 @@ une mesure, pas une préférence.
   négation rend l'alternance structurelle au lieu de dépendre d'un `if`.
 - **Scores de mat = `±(MATE - ply)`.** Bornes d'initialisation = `i32::MIN + 1`,
   jamais un nombre rond choisi avant les scores de mat.
-- **Recherche déterministe.** Aucun hasard non seedé, jamais. Le tirage actuel
-  est seedé par le hash Zobrist de la position.
+- **Recherche déterministe.** Aucun hasard non seedé, jamais. Le tirage au sort
+  conservé comme adversaire de référence est seedé par le hash Zobrist.
+- **Une itération d'approfondissement interrompue est jetée**, jamais acceptée :
+  ses coups ont été explorés dans le désordre, son résultat est partiel.
+- **`captured_piece` est la seule façon de savoir si un coup capture.** Lire la
+  case d'arrivée ne suffit pas : le roque y porte notre propre tour, et la prise
+  en passant la laisse vide.
 - **Un coup illégal produit par le moteur est un `panic!` en debug**, jamais un
   avertissement ignoré. Si le code ment, plus rien n'est déboguable.
 
@@ -57,9 +62,8 @@ une mesure, pas une préférence.
   `Position`.
 - **Pile d'accumulateurs NNUE par ply**, le jour où NNUE arrive. L'accumulateur
   pèse 1 à 4 Ko : il ne peut pas être copié par nœud.
-- **Génération par étapes** : captures d'abord, coups calmes ensuite, arrêt
-  anticipé sur coupure bêta. En quiescence, ne générer que les captures —
-  `generate_moves_for` plus un `AND` sur `PieceMoves.to`.
+- **Génération par étapes** — en place via `ordered_moves(board, tactical_only)`.
+  Reste à faire : ne pas matérialiser tous les coups avant d'en trier.
 - **Coup compacté sur 16 bits pour le stockage** en table de transposition.
 
 ## Ce qui compte comme preuve
@@ -67,7 +71,8 @@ une mesure, pas une préférence.
 | Affirmation | Preuve exigée |
 |---|---|
 | « la génération de coups est correcte » | `cargo test --release -- --ignored` passe les six positions de `engine/tests/perft.rs`. Rien d'autre. |
-| « ce changement de recherche est bon » | Il passe un SPRT contre la version précédente. Une impression n'est pas une mesure. |
+| « ce changement de recherche est bon » | Il passe un SPRT contre la version précédente. Une impression n'est pas une mesure. En attendant le dispositif SPRT, `cargo test --release -- --ignored` exige au minimum vingt-quatre victoires sur vingt-quatre contre le hasard. |
+| « cette valeur d'évaluation est meilleure » | Idem. **Les valeurs de `eval.rs` ne sont pas réglées** : ce sont des valeurs conventionnelles, à améliorer par la mesure et non par l'intuition. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. |
 
 ## Style
