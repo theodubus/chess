@@ -84,6 +84,12 @@ avec les mesures antérieures.
 |---|---|---|
 | 2026-09-13 | C9 (table de transposition, killers, historique) contre pré-C9 | **H1 accepté** — +164,3 Elo ± 31,3 sur 488 parties, cadence 1+0,01 |
 | 2026-09-13 | Élagage par coup nul contre C10 | **H1 accepté** — +75,1 Elo ± 19,7 sur 864 parties, cadence 1+0,01 |
+| 2026-09-13 | Réduction des coups tardifs (LMR) contre le coup nul | **H1 accepté** — +69,1 Elo ± 18,3 sur 892 parties, cadence 1+0,01 |
+
+**Le nombre de nœuds n'est pas une mesure de force.** LMR divise les nœuds par
+5,7 et rapporte +69 Elo ; le coup nul les divise par 2,5 et en rapporte +75.
+Un élagage échange de la précision contre de la profondeur, et seul le SPRT dit
+si l'échange est bon.
 
 Toutes les mesures ci-dessus emploient les bornes `[0, 5]` avec
 `alpha = beta = 0.05`, le livre `book.epd` et la concurrence 3. Le nombre de

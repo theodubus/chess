@@ -53,6 +53,16 @@ const NULL_MOVE_MIN_DEPTH: i32 = 3;
 /// si elle échoue.
 const NULL_MOVE_REDUCTION: i32 = 2;
 
+/// Profondeur minimale pour réduire un coup tardif.
+const LMR_MIN_DEPTH: i32 = 3;
+
+/// Rang à partir duquel un coup est considéré comme tardif.
+///
+/// Les premiers coups sont ceux que l'ordonnancement juge les plus
+/// prometteurs — coup de la table, captures. Les réduire reviendrait à saboter
+/// le travail de l'ordonnancement.
+const LMR_FIRST_REDUCED: usize = 3;
+
 /// Nombre de nœuds entre deux consultations de l'horloge et du drapeau d'arrêt.
 ///
 /// Interroger `Instant::now()` à chaque nœud coûte plus cher que la recherche
@@ -189,6 +199,8 @@ pub struct Search {
     killers: Vec<[u16; 2]>,
     /// Table butterfly indexée par case de départ puis d'arrivée.
     history: Vec<i32>,
+    /// Réductions précalculées, indexées par profondeur puis par rang du coup.
+    lmr: Vec<i32>,
 }
 
 impl Search {
@@ -208,6 +220,7 @@ impl Search {
             tt: TranspositionTable::default(),
             killers: vec![[0; 2]; MAX_PLY],
             history: vec![0; 64 * 64],
+            lmr: build_lmr_table(),
         }
     }
 
@@ -365,6 +378,16 @@ impl Search {
                 || self.hard_deadline.is_some_and(|at| Instant::now() >= at);
         }
         self.aborted
+    }
+
+    /// La réduction à appliquer à un coup tardif.
+    fn reduction(&self, depth: i32, index: usize) -> i32 {
+        let depth = (depth.max(0) as usize).min(LMR_TABLE_SIDE - 1);
+        let index = index.min(LMR_TABLE_SIDE - 1);
+        self.lmr
+            .get(depth * LMR_TABLE_SIDE + index)
+            .copied()
+            .unwrap_or(1)
     }
 
     fn is_repetition(&self, board: &Board) -> bool {
@@ -578,13 +601,46 @@ impl Search {
         let original_alpha = alpha;
         let mut best = -INFINITY;
         let mut best_move = None;
+        let in_check = !board.checkers().is_empty();
 
-        for (mv, _) in moves {
+        for (index, (mv, _)) in moves.into_iter().enumerate() {
+            let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
+
             let mut child = board.clone();
             child.play_unchecked(mv);
 
+            // Réduction des coups tardifs.
+            //
+            // L'ordonnancement place en tête les coups les plus prometteurs :
+            // passé les premiers, la probabilité qu'un coup soit le meilleur
+            // s'effondre. On les cherche donc moins profondément, quitte à
+            // recommencer à profondeur pleine si la réduction s'est trompée.
+            //
+            // Ce qu'on ne réduit jamais, et pourquoi :
+            // - les captures et promotions, qui changent le matériel et dont
+            //   l'évaluation superficielle est trompeuse ;
+            // - les coups qui donnent échec, forcés par nature ;
+            // - les positions où l'on est soi-même en échec, où tout coup est
+            //   une parade obligée ;
+            // - les premiers coups, qui sont ceux que l'ordonnancement a jugés
+            //   bons — les réduire saboterait son travail.
+            let reduction = if quiet
+                && !in_check
+                && child.checkers().is_empty()
+                && depth >= LMR_MIN_DEPTH
+                && index >= LMR_FIRST_REDUCED
+            {
+                self.reduction(depth, index).min(depth - 2).max(0)
+            } else {
+                0
+            };
+
             self.path.push(child.hash());
-            let score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha);
+            let mut score = -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha);
+            // La réduction a menti : ce coup mérite la profondeur pleine.
+            if reduction > 0 && score > alpha {
+                score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha);
+            }
             self.path.pop();
 
             if self.aborted {
@@ -603,7 +659,7 @@ impl Search {
                     if alpha >= beta {
                         // Un coup tranquille qui réfute une variante en réfute
                         // souvent d'autres : on s'en souvient.
-                        if captured_piece(board, mv).is_none() && mv.promotion.is_none() {
+                        if quiet {
                             self.remember_quiet(mv, ply, depth);
                         }
                         break;
@@ -712,6 +768,29 @@ pub fn captured_piece(board: &Board, mv: Move) -> Option<Piece> {
         return Some(Piece::Pawn); // prise en passant
     }
     None
+}
+
+/// Côté de la table de réductions, en profondeur comme en rang de coup.
+const LMR_TABLE_SIDE: usize = 64;
+
+/// Précalcule les réductions.
+///
+/// La croissance est logarithmique dans les deux dimensions : réduire d'autant
+/// plus que la profondeur restante est grande — il y aura de quoi rattraper —
+/// et que le coup est tardif — il est d'autant moins probable qu'il soit bon.
+/// Une croissance linéaire réduirait trop vite en profondeur moyenne.
+///
+/// Les constantes sont conventionnelles, pas réglées pour ce moteur : elles
+/// sont à améliorer par SPRT, comme les valeurs de l'évaluation.
+fn build_lmr_table() -> Vec<i32> {
+    let mut table = vec![0; LMR_TABLE_SIDE * LMR_TABLE_SIDE];
+    for depth in 1..LMR_TABLE_SIDE {
+        for index in 1..LMR_TABLE_SIDE {
+            let value = 0.75 + (depth as f64).ln() * (index as f64).ln() / 2.25;
+            table[depth * LMR_TABLE_SIDE + index] = (value as i32).max(1);
+        }
+    }
+    table
 }
 
 /// Vrai si le camp au trait possède autre chose que des pions et son roi.
@@ -1148,6 +1227,46 @@ mod tests {
             )
             .unwrap();
         assert!(position.board().is_legal(mv));
+    }
+
+    #[test]
+    fn la_table_de_reduction_croit_avec_la_profondeur_et_le_rang() {
+        let s = search();
+        // Toujours au moins un demi-coup de réduction là où elle s'applique.
+        assert!(s.reduction(3, 3) >= 1);
+        // Croissante dans les deux dimensions.
+        assert!(s.reduction(20, 3) >= s.reduction(4, 3));
+        assert!(s.reduction(8, 30) >= s.reduction(8, 4));
+        // Bornée : jamais au point de rendre la recherche vide.
+        for depth in 3..40 {
+            for index in 3..40 {
+                let r = s.reduction(depth, index);
+                assert!(
+                    r >= 1 && r < depth,
+                    "profondeur {depth}, rang {index} : r={r}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn la_reduction_ne_casse_pas_la_detection_de_mat() {
+        // Profondeur 6 : LMR et coup nul sont tous deux actifs. Un mat forcé
+        // doit rester trouvé — une réduction non rattrapée le manquerait.
+        assert_eq!(
+            best(
+                "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
+                6
+            ),
+            "f3f7"
+        );
+        assert_eq!(
+            best(
+                "rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2",
+                6
+            ),
+            "d8h4"
+        );
     }
 
     #[test]

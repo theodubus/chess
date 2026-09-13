@@ -69,6 +69,11 @@ une mesure, pas une préférence.
   `has_non_pawn_material`.
 - **Un score de mat obtenu après un coup nul n'est pas rendu tel quel.** Il
   viendrait d'un coup qu'on n'a pas le droit de jouer.
+- **Une réduction de coup tardif se rattrape toujours.** Si la recherche
+  réduite dépasse `alpha`, on recommence à profondeur pleine — sans quoi un bon
+  coup mal classé serait perdu. On ne réduit jamais les captures, les
+  promotions, les coups qui donnent échec, ni les positions où l'on est en
+  échec : tous sont forcés ou trompeurs à faible profondeur.
 
 ## Contraintes d'architecture
 
@@ -94,6 +99,7 @@ une mesure, pas une préférence.
 | « cette valeur d'évaluation est meilleure » | Idem, par SPRT. **Les valeurs de `eval.rs` ne sont pas réglées** : ce sont des valeurs conventionnelles, à améliorer par la mesure et non par l'intuition. |
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
+| « c'est plus fort » | **Jamais** déduit d'une réduction de nœuds. LMR divise les nœuds par 5,7 pour +69 Elo, le coup nul par 2,5 pour +75 : un élagage échange de la précision contre de la profondeur. Seul le SPRT tranche. |
 
 ## Pièges de mesure, appris à nos dépens
 
@@ -131,7 +137,7 @@ cargo test --workspace --release -- --ignored  # perft complet, ~2 s
 cargo clippy --all-targets -- -D warnings
 cargo fmt --all
 cargo run --release --bin shallowred      # boucle UCI
-cargo run --release --bin shallowred -- bench 7   # référence : 3 343 272 nœuds
+cargo run --release --bin shallowred -- bench 7   # référence : 583 979 nœuds
 
 tools/setup-arbiters.sh                    # construit fastchess
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement
