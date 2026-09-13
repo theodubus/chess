@@ -15,10 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # La version vient de rust-toolchain.toml, qui la fige. `rustup show`
+      # suffit à la matérialiser : rustup lit le fichier et installe ce qu'il
+      # demande.
       - name: Toolchain
         run: |
-          rustup toolchain install stable --profile minimal --component rustfmt,clippy
-          rustup default stable
+          rustup show active-toolchain
           rustc --version && cargo --version
 
       - name: Format
@@ -45,3 +47,21 @@ jobs:
       # `Nodes/second`, comparable d'un commit à l'autre.
       - name: Bench
         run: cargo run --release --bin shallowred -- bench 4
+
+  # Signale les lints d'une toolchain plus récente sans jamais bloquer. Sans
+  # ce job, une montée de version transformerait une pile de lints en un
+  # build rouge le jour où l'on touche à rust-toolchain.toml.
+  drift:
+    name: Toolchain à jour (indicatif)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dernière stable
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy
+          rustup run stable rustc --version
+
+      - name: Clippy sur la dernière stable
+        run: rustup run stable cargo clippy --all-targets --all-features -- -D warnings

@@ -232,11 +232,14 @@ impl Engine {
                     Score::Cp(cp) => format!("cp {cp}"),
                     Score::Mate(moves) => format!("mate {moves}"),
                 };
-                let nps = if info.time_ms > 0 {
-                    format!(" nps {}", info.nodes * 1_000 / info.time_ms)
-                } else {
-                    String::new()
-                };
+                // `checked_div` porte lui-même la garde contre la division par
+                // zéro : une recherche trop rapide pour l'horloge n'annonce
+                // simplement pas de débit.
+                let nps = info
+                    .nodes
+                    .saturating_mul(1_000)
+                    .checked_div(info.time_ms)
+                    .map_or(String::new(), |nps| format!(" nps {nps}"));
                 send(&format!(
                     "info depth {} score {score} nodes {} time {}{nps} pv {}",
                     info.depth,

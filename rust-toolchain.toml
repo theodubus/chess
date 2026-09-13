@@ -1,3 +1,14 @@
+# Version EXACTE, pas `stable`.
+#
+# Avec un canal flottant, la CI casse sans qu'aucune ligne de code n'ait
+# changé : une nouvelle version de Rust ajoute un lint, `clippy -D warnings`
+# le transforme en erreur, et le build rouge n'a plus aucun rapport avec le
+# dernier commit. C'est arrivé le 13 septembre 2026 — le runner était en
+# 1.98.1 quand le développement se faisait en 1.94.1.
+#
+# Pour monter de version : changer ce numéro dans un commit dédié, pour que
+# la remontée de lints soit isolée du reste. Le job `Toolchain à jour` de la
+# CI signale les nouveaux lints sans bloquer.
 [toolchain]
-channel = "stable"
+channel = "1.98.1"
 components = ["rustfmt", "clippy"]
