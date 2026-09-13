@@ -31,6 +31,7 @@ use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
 
 use crate::eval::{self, DRAW, INFINITY, MATE, MATE_THRESHOLD};
 use crate::position::{Position, repetitions};
+use crate::tt::{Bound, TranspositionTable, pack_move};
 
 /// Profondeur maximale de la recherche principale.
 pub const MAX_DEPTH: u32 = 64;
@@ -106,6 +107,8 @@ pub struct Info {
     pub time_ms: u64,
     /// Variante principale, en notation interne — à convertir pour UCI.
     pub pv: Vec<Move>,
+    /// Remplissage de la table de transposition, en pour mille.
+    pub hashfull: u32,
 }
 
 /// Table triangulaire de variante principale.
@@ -161,9 +164,18 @@ pub struct Search {
     soft_deadline: Option<Instant>,
     aborted: bool,
     /// Clés Zobrist de la partie puis du chemin courant dans l'arbre.
-    history: Vec<u64>,
+    path: Vec<u64>,
     pv: PvTable,
     root_best: Option<Move>,
+    /// Mémoire des positions déjà évaluées, conservée entre les coups.
+    tt: TranspositionTable,
+    /// Deux coups tranquilles par ply ayant provoqué une coupure bêta.
+    ///
+    /// Un coup qui réfute une variante à un ply donné en réfute souvent
+    /// d'autres au même ply : l'essayer tôt coûte un test et rapporte beaucoup.
+    killers: Vec<[u16; 2]>,
+    /// Table butterfly indexée par case de départ puis d'arrivée.
+    history: Vec<i32>,
 }
 
 impl Search {
@@ -177,10 +189,31 @@ impl Search {
             hard_deadline: None,
             soft_deadline: None,
             aborted: false,
-            history: Vec::new(),
+            path: Vec::new(),
             pv: PvTable::new(),
             root_best: None,
+            tt: TranspositionTable::default(),
+            killers: vec![[0; 2]; MAX_PLY],
+            history: vec![0; 64 * 64],
         }
+    }
+
+    /// Redimensionne la table de transposition et la vide.
+    pub fn resize_table(&mut self, megabytes: usize) {
+        self.tt = TranspositionTable::new(megabytes);
+    }
+
+    /// Vide la table de transposition. À appeler sur `ucinewgame`.
+    pub fn clear_table(&mut self) {
+        self.tt.clear();
+        self.killers.fill([0; 2]);
+        self.history.fill(0);
+    }
+
+    /// Taux de remplissage de la table, en pour mille.
+    #[must_use]
+    pub fn table_permille(&self) -> u32 {
+        self.tt.permille_used()
     }
 
     /// Nombre de nœuds visités par la dernière recherche.
@@ -203,7 +236,12 @@ impl Search {
         self.nodes = 0;
         self.aborted = false;
         self.root_best = None;
-        self.history = position.history().to_vec();
+        self.path = position.history().to_vec();
+        self.tt.new_search();
+        // Les killers valent pour un ply donné d'une recherche donnée : les
+        // garder d'un coup à l'autre proposerait des coups sans rapport.
+        self.killers.fill([0; 2]);
+        self.history.fill(0);
         self.set_deadlines(limits, position.board().side_to_move());
 
         let board = position.board().clone();
@@ -234,6 +272,7 @@ impl Search {
                 nodes: self.nodes,
                 time_ms: self.elapsed_ms(),
                 pv: self.pv.line(),
+                hashfull: self.tt.permille_used(),
             });
 
             // Un mat trouvé ne s'améliore pas en cherchant plus loin.
@@ -316,7 +355,110 @@ impl Search {
     }
 
     fn is_repetition(&self, board: &Board) -> bool {
-        repetitions(&self.history, board.hash(), board.halfmove_clock()) > 0
+        repetitions(&self.path, board.hash(), board.halfmove_clock()) > 0
+    }
+
+    /// Retient un coup tranquille qui vient de provoquer une coupure bêta.
+    ///
+    /// Les captures en sont exclues : elles sont déjà ordonnées par MVV-LVA, et
+    /// les mêler à l'historique noierait le signal des coups tranquilles.
+    fn remember_quiet(&mut self, mv: Move, ply: usize, depth: i32) {
+        let packed = pack_move(mv);
+        if let Some(slot) = self.killers.get_mut(ply)
+            && slot[0] != packed
+        {
+            slot[1] = slot[0];
+            slot[0] = packed;
+        }
+        let index = mv.from as usize * 64 + mv.to as usize;
+        if let Some(value) = self.history.get_mut(index) {
+            *value += depth * depth;
+            if *value > HISTORY_MAX {
+                // Diviser toute la table préserve l'ordre relatif tout en
+                // laissant de la place aux coupures à venir.
+                for entry in &mut self.history {
+                    *entry /= 2;
+                }
+            }
+        }
+    }
+
+    /// Note un coup pour l'ordonnancement.
+    ///
+    /// Un bon ordre ne change pas le résultat de la recherche, seulement le
+    /// nombre de nœuds visités — mais il le change d'un ordre de grandeur.
+    fn score_move(&self, board: &Board, mv: Move, tt_move: Option<Move>, ply: usize) -> i32 {
+        if tt_move == Some(mv) {
+            return SCORE_TT;
+        }
+        let mut score = 0;
+        if let Some(victim) = captured_piece(board, mv) {
+            let attacker = board
+                .piece_on(mv.from)
+                .map_or(0, |piece| ORDER_VALUE[piece as usize]);
+            score += SCORE_CAPTURE + 1_000 * ORDER_VALUE[victim as usize] - attacker;
+        }
+        if let Some(promotion) = mv.promotion {
+            score += SCORE_PROMOTION + 1_000 * ORDER_VALUE[promotion as usize];
+        }
+        if score > 0 {
+            return score;
+        }
+
+        let packed = pack_move(mv);
+        if let Some(slot) = self.killers.get(ply) {
+            if slot[0] == packed {
+                return SCORE_KILLER_1;
+            }
+            if slot[1] == packed {
+                return SCORE_KILLER_2;
+            }
+        }
+        self.history
+            .get(mv.from as usize * 64 + mv.to as usize)
+            .copied()
+            .unwrap_or(0)
+    }
+
+    /// Les coups légaux de la position, du plus prometteur au moins prometteur.
+    ///
+    /// Avec `tactical_only`, seuls les coups qui changent le matériel sont
+    /// produits — captures, prises en passant et promotions. C'est ce dont la
+    /// quiescence a besoin, et `cozy-chess` le rend bon marché :
+    /// `PieceMoves.to` est un `BitBoard` public, donc filtrer les destinations
+    /// coûte un `AND` par pièce.
+    fn ordered_moves(
+        &self,
+        board: &Board,
+        tactical_only: bool,
+        tt_move: Option<Move>,
+        ply: usize,
+    ) -> Vec<(Move, i32)> {
+        let side = board.side_to_move();
+        let mut targets = board.colors(!side);
+        if let Some(square) = en_passant_square(board) {
+            targets |= square.bitboard();
+        }
+        let promotion_rank = Rank::Seventh.relative_to(side);
+
+        let mut moves = Vec::with_capacity(48);
+        board.generate_moves(|mut piece_moves| {
+            if tactical_only {
+                // Un pion sur la 7e rangée promeut quel que soit son coup :
+                // toutes ses destinations sont tactiques.
+                let promoting =
+                    piece_moves.piece == Piece::Pawn && piece_moves.from.rank() == promotion_rank;
+                if !promoting {
+                    piece_moves.to &= targets;
+                }
+            }
+            for mv in piece_moves {
+                moves.push((mv, self.score_move(board, mv, tt_move, ply)));
+            }
+            false
+        });
+        moves.sort_unstable_by_key(|&(_, score)| Reverse(score));
+        moves
     }
 
     /// Negamax avec élagage alpha-bêta.
@@ -340,25 +482,53 @@ impl Search {
             return DRAW;
         }
 
-        let moves = ordered_moves(board, false);
+        let key = board.hash();
+        let ply_i32 = i32::try_from(ply).unwrap_or(0);
+        let hit = self.tt.probe(key, ply_i32);
+
+        // Coupure par la table, jamais à la racine : il y faut un coup à jouer,
+        // pas seulement un score.
+        if ply > 0
+            && let Some(hit) = hit
+            && i32::from(hit.depth) >= depth
+        {
+            let usable = match hit.bound {
+                Bound::Exact => true,
+                Bound::Lower => hit.score >= beta,
+                Bound::Upper => hit.score <= alpha,
+            };
+            if usable {
+                return hit.score;
+            }
+        }
+
+        // Même quand son score est inutilisable, le coup stocké reste le
+        // meilleur candidat connu. Le contrôle de légalité couvre le cas d'une
+        // collision de clés Zobrist, astronomiquement rare mais pas impossible.
+        let tt_move = hit.and_then(|hit| hit.mv).filter(|&mv| board.is_legal(mv));
+
+        let moves = self.ordered_moves(board, false, tt_move, ply);
         if moves.is_empty() {
             return if board.checkers().is_empty() {
                 DRAW // pat
             } else {
                 // Un mat proche vaut mieux qu'un mat lointain : soustraire le
                 // ply fait préférer la ligne la plus courte.
-                -MATE + i32::try_from(ply).unwrap_or(0)
+                -MATE + ply_i32
             };
         }
 
+        let original_alpha = alpha;
         let mut best = -INFINITY;
+        let mut best_move = None;
+
         for (mv, _) in moves {
             let mut child = board.clone();
             child.play_unchecked(mv);
 
-            self.history.push(child.hash());
+            self.path.push(child.hash());
             let score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha);
-            self.history.pop();
+            self.path.pop();
 
             if self.aborted {
                 return 0;
@@ -366,6 +536,7 @@ impl Search {
 
             if score > best {
                 best = score;
+                best_move = Some(mv);
                 if ply == 0 {
                     self.root_best = Some(mv);
                 }
@@ -373,11 +544,29 @@ impl Search {
                     alpha = score;
                     self.pv.push(ply, mv);
                     if alpha >= beta {
-                        break; // coupure bêta : l'adversaire n'entrera pas ici
+                        // Un coup tranquille qui réfute une variante en réfute
+                        // souvent d'autres : on s'en souvient.
+                        if captured_piece(board, mv).is_none() && mv.promotion.is_none() {
+                            self.remember_quiet(mv, ply, depth);
+                        }
+                        break;
                     }
                 }
             }
         }
+
+        // Le type de borne dit ce que le score garantit : exact si tous les
+        // coups ont été examinés sans coupure, minorant après une coupure bêta,
+        // majorant si aucun coup n'a amélioré alpha.
+        let bound = if best >= beta {
+            Bound::Lower
+        } else if best > original_alpha {
+            Bound::Exact
+        } else {
+            Bound::Upper
+        };
+        self.tt.store(key, best_move, best, depth, bound, ply_i32);
+
         best
     }
 
@@ -411,7 +600,7 @@ impl Search {
             }
         }
 
-        let moves = ordered_moves(board, !in_check);
+        let moves = self.ordered_moves(board, !in_check, None, ply);
         if moves.is_empty() {
             return if in_check {
                 -MATE + i32::try_from(ply).unwrap_or(0)
@@ -478,58 +667,17 @@ fn en_passant_square(board: &Board) -> Option<Square> {
 /// Ordre de valeur des pièces pour l'ordonnancement, du pion au roi.
 const ORDER_VALUE: [i32; Piece::NUM] = [1, 2, 3, 4, 5, 6];
 
-/// Note un coup pour l'ordonnancement.
-///
-/// MVV-LVA : capturer la pièce la plus forte avec la plus faible d'abord. Un
-/// bon ordre ne change pas le résultat de la recherche, seulement le nombre de
-/// nœuds visités — mais il le change d'un ordre de grandeur.
-fn score_move(board: &Board, mv: Move) -> i32 {
-    let mut score = 0;
-    if let Some(victim) = captured_piece(board, mv) {
-        let attacker = board
-            .piece_on(mv.from)
-            .map_or(0, |piece| ORDER_VALUE[piece as usize]);
-        score += 1_000_000 + 1_000 * ORDER_VALUE[victim as usize] - attacker;
-    }
-    if let Some(promotion) = mv.promotion {
-        score += 900_000 + 1_000 * ORDER_VALUE[promotion as usize];
-    }
-    score
-}
-
-/// Les coups légaux de la position, du plus prometteur au moins prometteur.
-///
-/// Avec `tactical_only`, seuls les coups qui changent le matériel sont produits
-/// — captures, prises en passant et promotions. C'est ce dont la quiescence a
-/// besoin, et `cozy-chess` le rend bon marché : `PieceMoves.to` est un
-/// `BitBoard` public, donc filtrer les destinations coûte un `AND` par pièce.
-fn ordered_moves(board: &Board, tactical_only: bool) -> Vec<(Move, i32)> {
-    let side = board.side_to_move();
-    let mut targets = board.colors(!side);
-    if let Some(square) = en_passant_square(board) {
-        targets |= square.bitboard();
-    }
-    let promotion_rank = Rank::Seventh.relative_to(side);
-
-    let mut moves = Vec::with_capacity(48);
-    board.generate_moves(|mut piece_moves| {
-        if tactical_only {
-            // Un pion sur la 7e rangée promeut quel que soit son coup : toutes
-            // ses destinations sont tactiques.
-            let promoting =
-                piece_moves.piece == Piece::Pawn && piece_moves.from.rank() == promotion_rank;
-            if !promoting {
-                piece_moves.to &= targets;
-            }
-        }
-        for mv in piece_moves {
-            moves.push((mv, score_move(board, mv)));
-        }
-        false
-    });
-    moves.sort_unstable_by_key(|&(_, score)| Reverse(score));
-    moves
-}
+// Paliers d'ordonnancement. Les écarts sont larges pour qu'aucune catégorie ne
+// puisse en dépasser une autre, quelle que soit la valeur accumulée par
+// l'heuristique d'historique.
+const SCORE_TT: i32 = 8_000_000;
+const SCORE_CAPTURE: i32 = 4_000_000;
+const SCORE_PROMOTION: i32 = 2_000_000;
+const SCORE_KILLER_1: i32 = 1_000_000;
+const SCORE_KILLER_2: i32 = 900_000;
+/// Plafond de l'historique, au-delà duquel toutes les valeurs sont divisées par
+/// deux. Sans cela elles finiraient par déborder et par écraser les paliers.
+const HISTORY_MAX: i32 = 800_000;
 
 /// Le premier coup légal de la position, dans l'ordre de génération.
 fn first_legal_move(board: &Board) -> Option<Move> {
@@ -605,7 +753,7 @@ mod tests {
         let b = board("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
         let roque = cozy_chess::util::parse_uci_move(&b, "e1g1").unwrap();
         assert_eq!(captured_piece(&b, roque), None);
-        assert_eq!(score_move(&b, roque), 0);
+        assert_eq!(search().score_move(&b, roque, None, 0), 0);
     }
 
     #[test]
@@ -614,7 +762,7 @@ mod tests {
         let b = board("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
         let prise = cozy_chess::util::parse_uci_move(&b, "e5f6").unwrap();
         assert_eq!(captured_piece(&b, prise), Some(Piece::Pawn));
-        assert!(score_move(&b, prise) > 0);
+        assert!(search().score_move(&b, prise, None, 0) > 0);
     }
 
     #[test]
@@ -623,15 +771,17 @@ mod tests {
         let prise = cozy_chess::util::parse_uci_move(&b, "e4d5").unwrap();
         assert_eq!(captured_piece(&b, prise), Some(Piece::Pawn));
         let tranquille = cozy_chess::util::parse_uci_move(&b, "d2d3").unwrap();
-        assert!(score_move(&b, prise) > score_move(&b, tranquille));
+        let s = search();
+        assert!(s.score_move(&b, prise, None, 0) > s.score_move(&b, tranquille, None, 0));
     }
 
     #[test]
     fn les_coups_tactiques_seuls_excluent_les_coups_tranquilles() {
         let b = board("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
-        let tactiques = ordered_moves(&b, true);
+        let s = search();
+        let tactiques = s.ordered_moves(&b, true, None, 0);
         assert_eq!(tactiques.len(), 1, "seule exd5 change le matériel");
-        assert!(ordered_moves(&b, false).len() > 1);
+        assert!(s.ordered_moves(&b, false, None, 0).len() > 1);
     }
 
     #[test]
@@ -793,6 +943,71 @@ mod tests {
         assert_eq!(Score::from_internal(MATE - 2), Score::Mate(1));
         assert_eq!(Score::from_internal(MATE - 3), Score::Mate(2));
         assert_eq!(Score::from_internal(-(MATE - 3)), Score::Mate(-2));
+    }
+
+    #[test]
+    fn le_coup_de_la_table_passe_devant_tous_les_autres() {
+        let b = Board::default();
+        let tranquille = cozy_chess::util::parse_uci_move(&b, "a2a3").unwrap();
+        let s = search();
+        let sans = s.score_move(&b, tranquille, None, 0);
+        let avec = s.score_move(&b, tranquille, Some(tranquille), 0);
+        assert!(avec > sans);
+        // Doit aussi dépasser n'importe quelle capture.
+        let capture_board: Board = "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
+            .parse()
+            .unwrap();
+        let prise = cozy_chess::util::parse_uci_move(&capture_board, "e4d5").unwrap();
+        assert!(avec > s.score_move(&capture_board, prise, None, 0));
+    }
+
+    #[test]
+    fn un_killer_passe_devant_un_coup_tranquille_ordinaire() {
+        let b = Board::default();
+        let killer = cozy_chess::util::parse_uci_move(&b, "a2a3").unwrap();
+        let autre = cozy_chess::util::parse_uci_move(&b, "h2h3").unwrap();
+        let mut s = search();
+        s.remember_quiet(killer, 3, 4);
+        assert!(s.score_move(&b, killer, None, 3) > s.score_move(&b, autre, None, 3));
+        // Mais pas à un autre ply : les killers sont propres à leur profondeur.
+        assert_eq!(
+            s.score_move(&b, killer, None, 5),
+            s.score_move(&b, killer, None, 5)
+        );
+    }
+
+    #[test]
+    fn la_table_ne_change_pas_le_coup_trouve_sur_un_mat() {
+        // Une table de transposition doit accélérer la recherche, jamais
+        // changer son résultat sur une position à solution unique.
+        assert_eq!(
+            best(
+                "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
+                6
+            ),
+            "f3f7"
+        );
+    }
+
+    #[test]
+    fn vider_la_table_restaure_letat_initial() {
+        let mut s = search();
+        // Une petite table, sans quoi le remplissage serait indétectable :
+        // `table_permille` n'échantillonne que les mille premières entrées, et
+        // une recherche courte n'en touche presque aucune sur un million.
+        s.resize_table(1);
+        let position = Position::startpos();
+        s.go(
+            &position,
+            &Limits {
+                depth: Some(6),
+                ..Limits::default()
+            },
+            |_| {},
+        );
+        assert!(s.table_permille() > 0, "la table doit s'être remplie");
+        s.clear_table();
+        assert_eq!(s.table_permille(), 0);
     }
 
     #[test]

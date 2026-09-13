@@ -26,6 +26,7 @@ use crate::bench;
 use crate::perft;
 use crate::position::Position;
 use crate::search::{Limits, Score, Search};
+use crate::tt::DEFAULT_SIZE_MB;
 
 /// Nom annoncé à l'interface.
 pub const NAME: &str = "ShallowRed";
@@ -73,7 +74,12 @@ fn pv_to_uci(root: &cozy_chess::Board, pv: &[cozy_chess::Move]) -> String {
 pub struct Engine {
     position: Position,
     stop: Arc<AtomicBool>,
-    worker: Option<JoinHandle<()>>,
+    /// Le fil de recherche rend l'objet `Search` en se terminant, ce qui
+    /// conserve la table de transposition d'un coup à l'autre sans partage
+    /// entre fils ni verrou. C'est tout l'intérêt d'une table : la recherche
+    /// du coup suivant part de ce que la précédente a déjà établi.
+    worker: Option<JoinHandle<Search>>,
+    search: Option<Search>,
 }
 
 impl Default for Engine {
@@ -86,9 +92,11 @@ impl Engine {
     /// Crée un moteur sur la position initiale.
     #[must_use]
     pub fn new() -> Self {
+        let stop = Arc::new(AtomicBool::new(false));
         Self {
             position: Position::startpos(),
-            stop: Arc::new(AtomicBool::new(false)),
+            search: Some(Search::new(Arc::clone(&stop))),
+            stop,
             worker: None,
         }
     }
@@ -119,13 +127,22 @@ impl Engine {
             "uci" => {
                 send(&format!("id name {NAME} {VERSION}"));
                 send(&format!("id author {AUTHOR}"));
+                send(&format!(
+                    "option name Hash type spin default {DEFAULT_SIZE_MB} min 1 max 4096"
+                ));
                 send("uciok");
             }
             "isready" => send("readyok"),
             "ucinewgame" => {
                 self.abort_search();
                 self.position = Position::startpos();
+                // Les positions d'une partie précédente n'ont rien à dire sur
+                // la suivante, et leurs entrées occuperaient la table.
+                if let Some(search) = self.search.as_mut() {
+                    search.clear_table();
+                }
             }
+            "setoption" => self.set_option(tokens),
             "position" => self.set_position(tokens),
             "go" => self.go(tokens),
             "stop" => self.stop.store(true, Ordering::Relaxed),
@@ -143,6 +160,28 @@ impl Engine {
             _ => {}
         }
         true
+    }
+
+    /// `setoption name <nom> value <valeur>`.
+    ///
+    /// Seul `Hash` est reconnu. Une option inconnue est ignorée en silence,
+    /// comme le protocole l'exige.
+    fn set_option<'a>(&mut self, tokens: impl Iterator<Item = &'a str>) {
+        let words: Vec<&str> = tokens.collect();
+        let Some(name_at) = words.iter().position(|&w| w == "name") else {
+            return;
+        };
+        let value_at = words.iter().position(|&w| w == "value");
+        let name = words[name_at + 1..value_at.unwrap_or(words.len())].join(" ");
+        let value = value_at.and_then(|at| words.get(at + 1)).copied();
+
+        if name.eq_ignore_ascii_case("hash")
+            && let Some(megabytes) = value.and_then(|v| v.parse().ok())
+        {
+            // Redimensionner pendant une recherche invaliderait ses index :
+            // on l'arrête d'abord, ce que `abort_search_keeping` garantit.
+            self.abort_search_keeping(|search| search.resize_table(megabytes));
+        }
     }
 
     /// `position startpos [moves ...]` ou `position fen <6 champs> [moves ...]`.
@@ -223,10 +262,12 @@ impl Engine {
 
         self.stop.store(false, Ordering::Relaxed);
         let position = self.position.clone();
-        let stop = Arc::clone(&self.stop);
+        let mut search = self
+            .search
+            .take()
+            .unwrap_or_else(|| Search::new(Arc::clone(&self.stop)));
 
         self.worker = Some(thread::spawn(move || {
-            let mut search = Search::new(stop);
             let best = search.go(&position, &limits, |info| {
                 let score = match info.score {
                     Score::Cp(cp) => format!("cp {cp}"),
@@ -241,10 +282,11 @@ impl Engine {
                     .checked_div(info.time_ms)
                     .map_or(String::new(), |nps| format!(" nps {nps}"));
                 send(&format!(
-                    "info depth {} score {score} nodes {} time {}{nps} pv {}",
+                    "info depth {} score {score} nodes {} time {}{nps} hashfull {} pv {}",
                     info.depth,
                     info.nodes,
                     info.time_ms,
+                    info.hashfull,
                     pv_to_uci(position.board(), &info.pv)
                 ));
             });
@@ -258,6 +300,7 @@ impl Engine {
                 // une réponse, et `0000` est le coup nul conventionnel.
                 None => send("bestmove 0000"),
             }
+            search
         }));
     }
 
@@ -274,11 +317,25 @@ impl Engine {
     }
 
     /// Demande l'arrêt de la recherche en cours et attend sa terminaison.
+    ///
+    /// Récupère au passage l'objet `Search` que le fil rend en se terminant.
+    /// Si le fil a paniqué, la recherche est recréée au prochain `go` : on perd
+    /// la table, jamais la session.
     fn abort_search(&mut self) {
+        self.abort_search_keeping(|_| {});
+    }
+
+    /// Comme [`Engine::abort_search`], en appliquant `f` à la recherche
+    /// récupérée. Sert aux réglages qui ne peuvent s'appliquer qu'entre deux
+    /// recherches.
+    fn abort_search_keeping(&mut self, f: impl FnOnce(&mut Search)) {
         self.stop.store(true, Ordering::Relaxed);
         if let Some(worker) = self.worker.take() {
-            let _ = worker.join();
+            self.search = worker.join().ok();
         }
         self.stop.store(false, Ordering::Relaxed);
+        if let Some(search) = self.search.as_mut() {
+            f(search);
+        }
     }
 }

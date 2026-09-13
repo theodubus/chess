@@ -44,6 +44,17 @@ une mesure, pas une préférence.
   jamais un nombre rond choisi avant les scores de mat.
 - **Recherche déterministe.** Aucun hasard non seedé, jamais. Le tirage au sort
   conservé comme adversaire de référence est seedé par le hash Zobrist.
+  **Nuance depuis la table de transposition** : le résultat dépend désormais de
+  l'état de la table, donc de l'historique de la recherche. Même position *et*
+  même table donnent le même coup ; même position seule ne suffit plus. C'est
+  le comportement normal d'un moteur, pas une entorse à l'invariant.
+- **Un score de mat stocké dans la table doit être normalisé du ply.** Un mat
+  vaut `±(MATE - ply)`, donc il dépend de l'endroit d'où on le regarde. Stocker
+  tel quel et relire ailleurs annonce un mat faux. `score_to_tt` et
+  `score_from_tt` s'en chargent — c'est la source de bug la plus classique
+  d'une table de transposition.
+- **Pas de coupure par la table à la racine.** Il y faut un coup à jouer, pas
+  seulement un score.
 - **Une itération d'approfondissement interrompue est jetée**, jamais acceptée :
   ses coups ont été explorés dans le désordre, son résultat est partiel.
 - **`captured_piece` est la seule façon de savoir si un coup capture.** Lire la
@@ -64,7 +75,8 @@ une mesure, pas une préférence.
   pèse 1 à 4 Ko : il ne peut pas être copié par nœud.
 - **Génération par étapes** — en place via `ordered_moves(board, tactical_only)`.
   Reste à faire : ne pas matérialiser tous les coups avant d'en trier.
-- **Coup compacté sur 16 bits pour le stockage** en table de transposition.
+- **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
+  La valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
 
 ## Ce qui compte comme preuve
 
@@ -73,7 +85,7 @@ une mesure, pas une préférence.
 | « la génération de coups est correcte » | `cargo test --release -- --ignored` passe les six positions de `engine/tests/perft.rs`. Rien d'autre. |
 | « ce changement de recherche est bon » | Il passe un SPRT contre la version précédente. Une impression n'est pas une mesure. En attendant le dispositif SPRT, `cargo test --release -- --ignored` exige au minimum vingt-quatre victoires sur vingt-quatre contre le hasard. |
 | « cette valeur d'évaluation est meilleure » | Idem. **Les valeurs de `eval.rs` ne sont pas réglées** : ce sont des valeurs conventionnelles, à améliorer par la mesure et non par l'intuition. |
-| « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. |
+| « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
 
 ## Style
 
@@ -93,5 +105,5 @@ cargo test --workspace --release -- --ignored  # perft complet, ~2 s
 cargo clippy --all-targets -- -D warnings
 cargo fmt --all
 cargo run --release --bin shallowred      # boucle UCI
-cargo run --release --bin shallowred -- bench 5
+cargo run --release --bin shallowred -- bench 7   # référence : 8 432 521 nœuds
 ```

@@ -185,6 +185,37 @@ fn ucinewgame_remet_la_position_initiale() {
 }
 
 #[test]
+fn loption_hash_est_annoncee_et_acceptee() {
+    let out = drive(&[
+        "uci",
+        "setoption name Hash value 4",
+        "position startpos",
+        "go depth 4",
+    ]);
+    assert!(out.contains("option name Hash type spin"), "{out}");
+    assert_eq!(count(&out, "bestmove"), 1, "{out}");
+    assert!(!out.contains("info string"), "{out}");
+}
+
+#[test]
+fn une_option_inconnue_ne_casse_pas_la_session() {
+    let out = drive(&["setoption name Inexistante value 3", "isready"]);
+    assert!(out.contains("readyok"), "{out}");
+}
+
+#[test]
+fn ucinewgame_vide_la_table_sans_casser_la_recherche() {
+    let out = drive(&[
+        "position startpos",
+        "go depth 5",
+        "ucinewgame",
+        "position startpos moves d2d4",
+        "go depth 5",
+    ]);
+    assert_eq!(count(&out, "bestmove"), 2, "{out}");
+}
+
+#[test]
 fn go_perft_reproduit_les_valeurs_de_reference() {
     let out = drive(&["position startpos", "go perft 4"]);
     assert!(out.contains("Nodes searched: 197281"), "{out}");

@@ -5,10 +5,10 @@ Un moteur d'échecs UCI écrit en Rust, et l'interface qui va avec.
 Le nom est un contrepied de Deep Blue, doublé de la couleur de la rouille et
 d'un aveu sur la profondeur de recherche.
 
-> Statut : **phase 1**. Le moteur cherche pour de bon — negamax avec élagage
-> alpha-bêta, approfondissement itératif et recherche de quiescence. Il gagne
-> toutes ses parties contre un adversaire jouant au hasard. Il n'a encore ni
-> table de transposition, ni élagages avancés, ni évaluation réglée.
+> Statut : **phase 2**. Negamax avec élagage alpha-bêta, approfondissement
+> itératif, quiescence, table de transposition et ordonnancement des coups. Il
+> gagne toutes ses parties contre un adversaire jouant au hasard. Il n'a encore
+> ni élagages avancés, ni évaluation réglée, ni dispositif de mesure de force.
 
 ## Structure
 
@@ -62,11 +62,15 @@ Les six positions de référence et leurs totaux sont dans
 ## Mesurer
 
 ```sh
-cargo run --release --bin shallowred -- bench 5
+cargo run --release --bin shallowred -- bench 7
 ```
 
-Charge de travail fixe, sortie stable terminée par `Nodes/second` : deux commits
-se comparent par un `diff`.
+Charge de travail fixe : six positions, recherche à profondeur imposée. La
+sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
+
+Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
+dépend ni de la machine ni de sa charge. Référence actuelle à la profondeur 7 :
+8 432 521 nœuds.
 
 ## Dépendances
 
