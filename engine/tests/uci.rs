@@ -16,7 +16,7 @@ use std::process::{Command, Stdio};
 /// commandes dans l'ordre, et `quit` garantit la terminaison même si une
 /// recherche est en cours.
 fn drive(script: &[&str]) -> String {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_chess-engine"))
+    let mut child = Command::new(env!("CARGO_BIN_EXE_shallowred"))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())

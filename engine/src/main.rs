@@ -5,7 +5,7 @@
 
 use std::process::ExitCode;
 
-use chess_engine::{bench, uci};
+use shallowred::{bench, uci};
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();

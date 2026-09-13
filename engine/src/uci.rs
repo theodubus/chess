@@ -27,8 +27,8 @@ use crate::perft;
 use crate::position::Position;
 use crate::search::{Limits, Search};
 
-/// Nom annoncé à l'interface. Provisoire : à remplacer par le nom du projet.
-pub const NAME: &str = "chess-engine";
+/// Nom annoncé à l'interface.
+pub const NAME: &str = "ShallowRed";
 /// Version annoncée, tirée du manifeste.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Auteur annoncé.

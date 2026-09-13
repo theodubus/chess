@@ -13,8 +13,8 @@
 
 #![expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
 
-use chess_engine::perft::perft;
 use cozy_chess::Board;
+use shallowred::perft::perft;
 
 /// Nom, FEN, puis les totaux perft pour les profondeurs 1, 2, 3, ...
 struct Reference {

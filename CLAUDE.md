@@ -1,4 +1,4 @@
-# Moteur d'échecs + UI
+# ShallowRed — moteur d'échecs + UI
 
 Monorepo. Le moteur est un binaire UCI en Rust ; l'interface est un projet
 TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
@@ -68,7 +68,7 @@ une mesure, pas une préférence.
 |---|---|
 | « la génération de coups est correcte » | `cargo test --release -- --ignored` passe les six positions de `engine/tests/perft.rs`. Rien d'autre. |
 | « ce changement de recherche est bon » | Il passe un SPRT contre la version précédente. Une impression n'est pas une mesure. |
-| « c'est plus rapide » | `cargo run --release --bin chess-engine -- bench`, même machine, avant et après. |
+| « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. |
 
 ## Style
 
@@ -87,6 +87,6 @@ cargo test --workspace                      # tests rapides
 cargo test --workspace --release -- --ignored  # perft complet, ~2 s
 cargo clippy --all-targets -- -D warnings
 cargo fmt --all
-cargo run --release --bin chess-engine      # boucle UCI
-cargo run --release --bin chess-engine -- bench 5
+cargo run --release --bin shallowred      # boucle UCI
+cargo run --release --bin shallowred -- bench 5
 ```

@@ -1,6 +1,6 @@
 [package]
-name        = "chess-engine"
-description = "Moteur d'échecs UCI"
+name        = "shallowred"
+description = "ShallowRed — moteur d'échecs UCI"
 version.workspace    = true
 edition.workspace    = true
 license.workspace    = true
@@ -11,11 +11,11 @@ authors.workspace    = true
 workspace = true
 
 [lib]
-name = "chess_engine"
+name = "shallowred"
 path = "src/lib.rs"
 
 [[bin]]
-name = "chess-engine"
+name = "shallowred"
 path = "src/main.rs"
 
 [dependencies]

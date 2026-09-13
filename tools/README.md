@@ -15,5 +15,5 @@ le moteur en croyant l'inverse.
 - **SPRT** : le test séquentiel décide « accepté » ou « rejeté » dès que les
   données suffisent, au lieu d'un nombre fixe de parties.
 
-En attendant, `cargo run --release --bin chess-engine -- bench` mesure la
+En attendant, `cargo run --release --bin shallowred -- bench` mesure la
 vitesse — pas la force. Les deux sont nécessaires et ne se remplacent pas.

@@ -3,13 +3,6 @@
 version = 4
 
 [[package]]
-name = "chess-engine"
-version = "0.1.0"
-dependencies = [
- "cozy-chess",
-]
-
-[[package]]
 name = "cozy-chess"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -23,3 +16,10 @@ name = "cozy-chess-types"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "276b4804775347af35852c80665ad23d62a9ee742a14656e7da6a7b1cee74ee9"
+
+[[package]]
+name = "shallowred"
+version = "0.1.0"
+dependencies = [
+ "cozy-chess",
+]

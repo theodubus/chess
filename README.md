@@ -1,6 +1,9 @@
-# chess
+# ShallowRed
 
 Un moteur d'échecs UCI écrit en Rust, et l'interface qui va avec.
+
+Le nom est un contrepied de Deep Blue, doublé de la couleur de la rouille et
+d'un aveu sur la profondeur de recherche.
 
 > Statut : **phase 0**. Le protocole UCI fonctionne de bout en bout, mais la
 > recherche est un coup légal tiré au sort. Le moteur est jouable et
@@ -22,7 +25,7 @@ coup.
 ## Démarrer
 
 ```sh
-cargo run --release --bin chess-engine
+cargo run --release --bin shallowred
 ```
 
 Puis, au clavier :
@@ -54,7 +57,7 @@ Les six positions de référence et leurs totaux sont dans
 ## Mesurer
 
 ```sh
-cargo run --release --bin chess-engine -- bench 5
+cargo run --release --bin shallowred -- bench 5
 ```
 
 Charge de travail fixe, sortie stable terminée par `Nodes/second` : deux commits
