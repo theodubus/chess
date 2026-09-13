@@ -13,3 +13,10 @@ dist/
 
 # Artefacts de mesure locaux
 /tools/out/
+
+# Arbitres construits localement (voir tools/setup-arbiters.sh)
+/tools/arbiters/
+
+# Résidus laissés par les arbitres de match
+/config.json
+/*.pgn

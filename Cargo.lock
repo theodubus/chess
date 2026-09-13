@@ -23,3 +23,11 @@ version = "0.1.0"
 dependencies = [
  "cozy-chess",
 ]
+
+[[package]]
+name = "shallowred-tools"
+version = "0.1.0"
+dependencies = [
+ "cozy-chess",
+ "shallowred",
+]

@@ -7,8 +7,9 @@ d'un aveu sur la profondeur de recherche.
 
 > Statut : **phase 2**. Negamax avec élagage alpha-bêta, approfondissement
 > itératif, quiescence, table de transposition et ordonnancement des coups. Il
-> gagne toutes ses parties contre un adversaire jouant au hasard. Il n'a encore
-> ni élagages avancés, ni évaluation réglée, ni dispositif de mesure de force.
+> gagne toutes ses parties contre un adversaire jouant au hasard, et dispose
+> d'un dispositif de mesure de force par SPRT. Il n'a encore ni élagages
+> avancés, ni évaluation réglée.
 
 ## Structure
 
@@ -16,7 +17,7 @@ d'un aveu sur la profondeur de recherche.
 |---|---|---|
 | `engine/` | Moteur UCI en Rust | Protocole et recherche de base |
 | `ui/` | Interface TypeScript | Pas démarré |
-| `tools/` | Matchs moteur contre moteur, SPRT | Pas démarré |
+| `tools/` | Arbitres, livre d'ouvertures, SPRT | Opérationnel |
 
 Le moteur et l'interface ne communiquent que par le protocole UCI sur
 stdin/stdout. Le moteur ignore tout de l'interface, de la notion de partie et
@@ -71,6 +72,19 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
 dépend ni de la machine ni de sa charge. Référence actuelle à la profondeur 7 :
 8 432 521 nœuds.
+
+## Mesurer la force
+
+```sh
+tools/setup-arbiters.sh
+tools/sprt.sh /tmp/candidat /tmp/reference
+```
+
+Le test séquentiel s'arrête dès que les données suffisent à trancher. Détail
+dans [`tools/README.md`](tools/README.md).
+
+Première mesure de référence : la table de transposition vaut **+164,3 Elo
+± 31,3** sur 488 parties en 1+0,01.
 
 ## Dépendances
 

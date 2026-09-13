@@ -7,7 +7,7 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 
 - `engine/` — Rust, binaire UCI. Ne connaît ni l'interface, ni la notion de partie.
 - `ui/` — TypeScript. Pas encore démarré.
-- `tools/` — perft, matchs moteur contre moteur, SPRT. Pas encore démarré.
+- `tools/` — arbitres de match, livre d'ouvertures, SPRT. Voir `tools/README.md`.
 
 ## Décisions structurantes
 
@@ -83,9 +83,28 @@ une mesure, pas une préférence.
 | Affirmation | Preuve exigée |
 |---|---|
 | « la génération de coups est correcte » | `cargo test --release -- --ignored` passe les six positions de `engine/tests/perft.rs`. Rien d'autre. |
-| « ce changement de recherche est bon » | Il passe un SPRT contre la version précédente. Une impression n'est pas une mesure. En attendant le dispositif SPRT, `cargo test --release -- --ignored` exige au minimum vingt-quatre victoires sur vingt-quatre contre le hasard. |
-| « cette valeur d'évaluation est meilleure » | Idem. **Les valeurs de `eval.rs` ne sont pas réglées** : ce sont des valeurs conventionnelles, à améliorer par la mesure et non par l'intuition. |
+| « ce changement de recherche est bon » | `tools/sprt.sh <candidat> <référence>` rend `H1 was accepted`. Une impression n'est pas une mesure. La CI, elle, exige en permanence vingt-quatre victoires sur vingt-quatre contre le hasard — c'est un garde-fou, pas une mesure de force. |
+| « cette valeur d'évaluation est meilleure » | Idem, par SPRT. **Les valeurs de `eval.rs` ne sont pas réglées** : ce sont des valeurs conventionnelles, à améliorer par la mesure et non par l'intuition. |
+| « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
+
+## Pièges de mesure, appris à nos dépens
+
+- **Ne jamais construire une référence avec `git stash`.** Il emporte tout le
+  travail non committé, outils de mesure compris — on finit par mesurer autre
+  chose que ce qu'on croit. Utiliser `git worktree add --detach /tmp/ref <commit>`.
+- **Vérifier que le binaire a bien été reconstruit.** `mv` et `cp -p`
+  préservent les dates de modification, donc cargo peut juger les sources
+  périmées et ne rien recompiler : on mesure alors l'ancien binaire. Un
+  rapport avant/après d'exactement 1,00 en est le symptôme.
+- **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
+  parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
+  protocole cassé, pas un résultat.
+- **Les arbitres impriment un score courant après chaque partie.** Lire la
+  dernière ligne, jamais la première.
+- **Un livre d'ouvertures est une condition de validité**, pas un agrément :
+  le moteur étant déterministe, sans livre toutes les parties d'un match sont
+  la même partie.
 
 ## Style
 
@@ -106,4 +125,8 @@ cargo clippy --all-targets -- -D warnings
 cargo fmt --all
 cargo run --release --bin shallowred      # boucle UCI
 cargo run --release --bin shallowred -- bench 7   # référence : 8 432 521 nœuds
+
+tools/setup-arbiters.sh                    # construit fastchess
+tools/sprt.sh <candidat> <référence>       # verdict sur un changement
+tools/crosscheck.sh                        # les deux arbitres s'accordent-ils
 ```

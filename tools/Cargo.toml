@@ -1,0 +1,19 @@
+[package]
+name        = "shallowred-tools"
+description = "Outillage de mesure de ShallowRed"
+version.workspace    = true
+edition.workspace    = true
+license.workspace    = true
+repository.workspace = true
+authors.workspace    = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "bookgen"
+path = "src/bin/bookgen.rs"
+
+[dependencies]
+shallowred = { path = "../engine" }
+cozy-chess = "0.3.4"
