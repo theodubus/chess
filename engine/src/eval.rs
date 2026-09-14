@@ -21,7 +21,9 @@
 //! unique ne peut pas exprimer les deux. On calcule donc deux scores et on les
 //! mélange selon la phase de jeu.
 
-use cozy_chess::{Board, Color, Piece, Square, get_bishop_moves, get_knight_moves, get_rook_moves};
+use cozy_chess::{
+    Board, Color, Piece, Square, get_bishop_moves, get_king_moves, get_knight_moves, get_rook_moves,
+};
 
 /// Score attribué à un mat. Suffisamment grand pour dominer tout matériel,
 /// suffisamment petit pour qu'aucune addition ne déborde un `i32`.
@@ -65,6 +67,33 @@ const BISHOP_PAIR: (i32, i32) = (30, 45);
 /// portée décide ; la dame l'est peu partout, sa mobilité brute étant déjà
 /// énorme et peu informative. **Valeurs conventionnelles, non réglées** — à
 /// améliorer par la mesure, comme le reste de ce fichier.
+/// Poids d'attaque d'une pièce visant la zone du roi adverse.
+///
+/// Une pièce compte une fois si l'une de ses attaques tombe dans la zone,
+/// quel que soit le nombre de cases visées : ce qui décide d'une attaque de
+/// roi est le nombre d'assaillants, pas la surface couverte. La dame pèse
+/// autant qu'une tour et un cavalier réunis parce qu'elle attaque seule sur
+/// les deux axes et qu'aucune parade unique ne la neutralise.
+///
+/// Valeurs conventionnelles, non réglées.
+const KING_ATTACK_WEIGHT: [i32; Piece::NUM] = [
+    0, // pion : son attaque du roi est structurelle, pas une pièce d'assaut
+    2, // cavalier
+    2, // fou
+    3, // tour
+    5, // dame
+    0, // roi : il n'attaque pas l'autre roi, la règle l'interdit
+];
+
+/// Diviseur de la mise à l'échelle non linéaire du danger.
+///
+/// Le danger vaut `poids² / KING_DANGER_SCALE`. **La non-linéarité est le
+/// cœur du terme, pas un détail de réglage** : un attaquant isolé ne menace
+/// rien et doit valoir presque zéro, tandis que quatre pièces convergentes
+/// décident souvent la partie. Une somme linéaire donnerait au premier
+/// attaquant le quart de ce que valent les quatre, ce qui est faux.
+const KING_DANGER_SCALE: i32 = 4;
+
 const MOBILITY: [(i32, i32); Piece::NUM] = [
     (0, 0), // pion : sa mobilité est structurelle, les tables la portent déjà
     (4, 4), // cavalier
@@ -227,14 +256,35 @@ pub fn evaluate(board: &Board) -> i32 {
             endgame += sign * BISHOP_PAIR.1;
         }
 
-        let (mob_mg, mob_eg) = mobility(board, color);
-        midgame += sign * mob_mg;
-        endgame += sign * mob_eg;
+        let activity = activity(board, color);
+        midgame += sign * activity.mobility_mg;
+        endgame += sign * activity.mobility_eg;
+
+        // Le danger pèse sur le roi ADVERSE, donc contre le camp adverse : on
+        // l'ajoute au crédit de `color`. En finale il ne s'applique pas — le
+        // roi doit alors sortir, et l'y dissuader serait une faute.
+        midgame += sign * king_danger(activity.king_attack);
     }
 
     // Les promotions peuvent faire dépasser le total initial ; on borne.
     let phase = phase.clamp(0, PHASE_TOTAL);
     (midgame * phase + endgame * (PHASE_TOTAL - phase)) / PHASE_TOTAL
+}
+
+/// Ce qu'un camp fait de ses pièces : mobilité, et pression sur le roi adverse.
+///
+/// **Les deux dérivent du même ensemble d'attaques.** Les calculer dans deux
+/// fonctions séparées doublerait le nombre de générations d'attaques par
+/// évaluation — or l'évaluation est appelée à chaque feuille. Ce couplage est
+/// une décision de performance assumée, pas un mélange de responsabilités.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Activity {
+    /// Mobilité pondérée, en milieu de partie.
+    mobility_mg: i32,
+    /// Mobilité pondérée, en finale.
+    mobility_eg: i32,
+    /// Poids cumulé des pièces de ce camp attaquant la zone du roi adverse.
+    king_attack: i32,
 }
 
 /// Somme des cases accessibles à un camp, pondérée par type de pièce.
@@ -248,11 +298,20 @@ pub fn evaluate(board: &Board) -> i32 {
 ///
 /// Le roi et les pions sont exclus : leurs poids sont nuls dans `MOBILITY`, et
 /// la boucle les saute pour ne pas payer une génération d'attaques inutile.
-fn mobility(board: &Board, color: Color) -> (i32, i32) {
+fn activity(board: &Board, color: Color) -> Activity {
     let occupied = board.occupied();
     let ours = board.colors(color);
-    let mut midgame = 0;
-    let mut endgame = 0;
+
+    // Zone du roi adverse : sa case et les huit voisines. C'est là qu'une
+    // attaque se joue — au-delà, la pression n'est pas encore une menace.
+    let their_king = board.king(!color);
+    let zone = get_king_moves(their_king) | their_king.bitboard();
+
+    let mut out = Activity {
+        mobility_mg: 0,
+        mobility_eg: 0,
+        king_attack: 0,
+    };
 
     for piece in [Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen] {
         let (weight_mg, weight_eg) = MOBILITY[piece as usize];
@@ -264,13 +323,25 @@ fn mobility(board: &Board, color: Color) -> (i32, i32) {
                 // La dame voit ce que verraient une tour et un fou réunis.
                 _ => get_bishop_moves(square, occupied) | get_rook_moves(square, occupied),
             };
+
             let count = i32::try_from((attacks & !ours).len()).unwrap_or(0);
-            midgame += weight_mg * count;
-            endgame += weight_eg * count;
+            out.mobility_mg += weight_mg * count;
+            out.mobility_eg += weight_eg * count;
+
+            if !(attacks & zone).is_empty() {
+                out.king_attack += KING_ATTACK_WEIGHT[piece as usize];
+            }
         }
     }
 
-    (midgame, endgame)
+    out
+}
+
+/// Pénalité de milieu de partie pour le camp dont le roi est assailli.
+///
+/// Carrée et non linéaire : voir `KING_DANGER_SCALE`.
+fn king_danger(attack_weight: i32) -> i32 {
+    attack_weight * attack_weight / KING_DANGER_SCALE
 }
 
 #[cfg(test)]
@@ -282,6 +353,13 @@ mod tests {
         fen.parse().unwrap()
     }
 
+    /// Les tests de mobilité n'ont que faire du terme de sécurité du roi, qui
+    /// partage la même passe pour n'en payer qu'une.
+    fn mobilite(board: &Board, color: Color) -> (i32, i32) {
+        let a = activity(board, color);
+        (a.mobility_mg, a.mobility_eg)
+    }
+
     /// Toutes les positions de ces tests sont validées par exécution avant
     /// d'être inscrites — une position dérivée de tête s'est révélée illégale
     /// trois fois sur ce projet. Voir le piège correspondant dans CLAUDE.md.
@@ -290,21 +368,21 @@ mod tests {
         // Même matériel, même camp, seule la case change. Sans terme de
         // mobilité les deux positions seraient jugées identiques, puisque les
         // tables piece-square notent la case et jamais ce que la pièce y voit.
-        let centre = mobility(&board("7k/8/8/8/3N4/8/8/K7 w - - 0 1"), Color::White);
-        let coin = mobility(&board("7k/8/8/8/8/8/8/KN6 w - - 0 1"), Color::White);
+        let centre = mobilite(&board("7k/8/8/8/3N4/8/8/K7 w - - 0 1"), Color::White);
+        let coin = mobilite(&board("7k/8/8/8/8/8/8/KN6 w - - 0 1"), Color::White);
         assert!(
             centre.0 > coin.0 && centre.1 > coin.1,
             "cavalier au centre {centre:?} contre cavalier au coin {coin:?}"
         );
 
-        let ouverte = mobility(&board("7k/8/8/8/8/8/8/K3R3 w - - 0 1"), Color::White);
-        let enfermee = mobility(&board("7k/8/8/8/8/8/PPP5/KR6 w - - 0 1"), Color::White);
+        let ouverte = mobilite(&board("7k/8/8/8/8/8/8/K3R3 w - - 0 1"), Color::White);
+        let enfermee = mobilite(&board("7k/8/8/8/8/8/PPP5/KR6 w - - 0 1"), Color::White);
         assert!(
             ouverte.0 > enfermee.0,
             "tour libre {ouverte:?} contre tour enfermée {enfermee:?}"
         );
 
-        let fou = mobility(&board("7k/8/8/8/8/3B4/8/K7 w - - 0 1"), Color::White);
+        let fou = mobilite(&board("7k/8/8/8/8/3B4/8/K7 w - - 0 1"), Color::White);
         assert!(
             fou.0 > 0,
             "un fou en pleine diagonale doit compter : {fou:?}"
@@ -317,11 +395,11 @@ mod tests {
         // que des rois ne peut produire aucune mobilité. Si ce test tombe,
         // c'est qu'un terme s'est glissé là où il ne devrait pas.
         assert_eq!(
-            mobility(&board("8/8/8/8/8/8/8/K6k w - - 0 1"), Color::White),
+            mobilite(&board("8/8/8/8/8/8/8/K6k w - - 0 1"), Color::White),
             (0, 0)
         );
         assert_eq!(
-            mobility(
+            mobilite(
                 &board("7k/pppppppp/8/8/8/8/PPPPPPPP/K7 w - - 0 1"),
                 Color::White
             ),
@@ -335,10 +413,55 @@ mod tests {
         // doivent obtenir exactement la même mobilité — et elle doit être non
         // nulle, sans quoi le terme ne ferait rien du tout.
         let b = Board::default();
-        let blancs = mobility(&b, Color::White);
-        let noirs = mobility(&b, Color::Black);
+        let blancs = mobilite(&b, Color::White);
+        let noirs = mobilite(&b, Color::Black);
         assert_eq!(blancs, noirs);
         assert!(blancs.0 > 0, "les cavaliers initiaux voient des cases");
+    }
+
+    #[test]
+    fn le_danger_croit_plus_vite_que_le_nombre_dassaillants() {
+        // C'est le cœur du terme : un attaquant isolé ne menace rien, quatre
+        // pièces convergentes décident souvent la partie. Une somme linéaire
+        // donnerait au premier le quart de ce que valent les quatre, ce qui
+        // est faux. On vérifie donc la convexité, pas une valeur.
+        let un = king_danger(2);
+        let deux = king_danger(4);
+        let quatre = king_danger(8);
+        assert!(
+            deux - un < quatre - deux,
+            "{un} {deux} {quatre} : pas convexe"
+        );
+        assert_eq!(king_danger(0), 0, "aucun assaillant, aucun danger");
+    }
+
+    #[test]
+    fn une_piece_qui_vise_le_roi_adverse_compte_comme_assaillante() {
+        // Les poids attendus ne sont pas devinés : ils sont calculés par une
+        // implémentation indépendante (python-chess) sur les mêmes positions,
+        // puis inscrits ici. Une première version de ce test comparait deux
+        // positions choisies de tête, et elle était fausse — la dame reléguée
+        // en a1 visait toujours la zone par la longue diagonale.
+        let poids = |fen: &str| activity(&board(fen), Color::White).king_attack;
+
+        // Dame en g5 : elle attaque g7, qui est dans la zone du roi noir.
+        assert_eq!(poids("6k1/5ppp/8/6Q1/8/8/8/6K1 w - - 0 1"), 5);
+
+        // Même dame en a1, mais un pion en d4 coupe la longue diagonale :
+        // plus rien ne vise la zone.
+        assert_eq!(poids("6k1/5ppp/8/8/3P4/8/8/Q5K1 w - - 0 1"), 0);
+
+        // Cavalier en e5 et dame en g5 : deux assaillants, 2 + 5.
+        assert_eq!(poids("6k1/5ppp/8/4N1Q1/8/8/8/6K1 w - - 0 1"), 7);
+    }
+
+    #[test]
+    fn la_position_initiale_ne_met_aucun_roi_en_danger() {
+        // Aucune pièce ne peut atteindre la zone adverse au premier coup :
+        // si ce test tombait, la zone ou les attaques seraient mal calculées.
+        let b = Board::default();
+        assert_eq!(activity(&b, Color::White).king_attack, 0);
+        assert_eq!(activity(&b, Color::Black).king_attack, 0);
     }
 
     #[test]
