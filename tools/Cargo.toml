@@ -15,6 +15,14 @@ name = "bookgen"
 path = "src/bin/bookgen.rs"
 
 [[bin]]
+name = "datagen"
+path = "src/bin/datagen.rs"
+
+[[bin]]
+name = "tune"
+path = "src/bin/tune.rs"
+
+[[bin]]
 name = "nnue-probe"
 path = "src/bin/nnue_probe.rs"
 

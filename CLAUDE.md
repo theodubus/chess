@@ -124,8 +124,8 @@ une mesure, pas une préférence.
 |---|---|
 | « la génération de coups est correcte » | `cargo test --release -- --ignored` passe les six positions de `engine/tests/perft.rs`. Rien d'autre. |
 | « ce changement de recherche est bon » | `tools/sprt.sh <candidat> <référence>` rend `H1 was accepted`. Une impression n'est pas une mesure. La CI, elle, exige en permanence vingt-quatre victoires sur vingt-quatre contre le hasard — c'est un garde-fou, pas une mesure de force. |
-| « cette valeur d'évaluation est meilleure » | Idem, par SPRT. **Les valeurs de `eval.rs` ne sont pas réglées** : ce sont des valeurs conventionnelles, à améliorer par la mesure et non par l'intuition. Les régler une par une est hors d'atteinte — il y en a environ 520 — donc par **ajustement Texel**, qui coûte des minutes de CPU et un seul SPRT de validation. |
-| « il manque un terme à l'évaluation » | Un SPRT par terme, comme pour les élagages. **Mesuré : la mobilité vaut +62,6 Elo ± 17,2** — l'évaluation ne savait dire que *où* une pièce se trouve, jamais *ce qu'elle voit* depuis là. Restent à mesurer : sécurité du roi, structure de pions, tour sur colonne ouverte. **Ne jamais grouper deux termes dans un même SPRT.** |
+| « cette valeur d'évaluation est meilleure » | **Le SPRT, et rien d'autre — surtout pas une erreur de prédiction.** Mesuré le 14 sept. 2026 : un ajustement Texel des valeurs prédisait le résultat des parties **7,8 % mieux** sur 66 376 positions tenues à l'écart, et jouait **25 Elo plus mal** (−9,96 contre +14,92, deux SPRT). Le jeu de validation partage les corrélations du corpus, donc il ne peut pas distinguer une corrélation d'une cause — et le moteur, lui, *agit* sur son évaluation. **Une erreur de prédiction tenue à l'écart n'est pas un substitut à la force de jeu.** Les valeurs de `eval.rs` restent conventionnelles ; ne pas rouvrir le réglage sans corpus nettement plus grand ni contrainte de structure. |
+| « il manque un terme à l'évaluation » | Un SPRT. **Mesuré : la mobilité vaut +62,6 Elo ± 17,2** ; sécurité du roi, structure de pions et tour sur colonne ouverte valent ensemble **+14,9 Elo ± 8,2**. Pour la recherche, un SPRT par changement reste absolu. Pour l'évaluation, les termes se groupent — individuellement ils valent quelques Elo et ne tranchent pas — mais la règle complète est **« grouper, puis bissecter à l'échec »** : c'est un match de bissection qui a séparé les termes du réglage et montré lequel des deux coûtait. |
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. Empiriquement, sur les quatre SPRT du projet, `parties × Elo ≈ 62 000` : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 12 400 ≈ 2 h 30 ; +2 ≈ 31 000 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
@@ -145,6 +145,37 @@ une mesure, pas une préférence.
   de fois un phénomène se produit coûte des minutes d'instrumentation ; en
   mesurer l'effet coûte des heures de match. Et si le phénomène ne se produit
   pas, la question est close pour de bon au lieu d'être reportée.
+- **Un bench à profondeur 7 est trop court pour comparer des temps.** Le
+  nombre de nœuds y est déterministe et comparable, le temps ne l'est pas :
+  le 14 sept. 2026, une même version a mesuré 184 ms puis 200 ms en
+  best-of-7, et un balayage de tailles de cache a rendu des chiffres non
+  monotones purement dus au bruit. **Pour comparer des temps, mesurer à
+  profondeur 10** (~1,6 s par run), où le bruit devient marginal — et
+  seulement à nombre de nœuds identique, sans quoi on compare deux arbres.
+- **Un cache de structure de pions ne paie pas sur ce moteur.** Essayé et
+  retiré le 14 sept. 2026. `pawn_structure` pèse pourtant 24 % du temps de
+  recherche, mais le taux de succès mesuré n'est que de **62 à 84 %**, parce
+  que la quiescence est pilotée par les captures et qu'une bonne part des
+  captures sont des captures de pions : la structure change bien plus souvent
+  qu'on ne le suppose. Chaque échec coûte alors le calcul *plus* la
+  consultation, et chaque succès un accès mémoire aléatoire comparable au
+  recalcul. Mesuré à profondeur 10 : 1624 ms sans cache, 1644 à 1842 avec.
+  Ne pas réessayer sans changer le mécanisme — un cache indexé par une clé
+  incrémentale, ou un terme de pions moins coûteux à recalculer.
+- **Un tuner est aussi un fuzzer.** L'ajustement Texel a poussé
+  `KING_DANGER_SCALE` à zéro et fait paniquer l'évaluation sur une division
+  entière par zéro — le moteur aurait planté en pleine partie. **Les valeurs
+  d'évaluation sont des données, pas du code** : une donnée fausse se borne,
+  elle n'arrête pas la partie. Un test vérifie qu'aucun jeu de paramètres ne
+  fait paniquer l'évaluation, jeu entièrement nul compris.
+- **Quand un réglage fait tomber un test, deux réponses seulement sont
+  honnêtes.** *Reformuler* le test s'il mesurait la mauvaise chose — la prime
+  de pion passé se jugeait sur `PASSED_MG` seul alors que la table du pion
+  varie déjà avec la rangée, et la valeur de la dame se bornait en centièmes
+  absolus alors qu'un ajustement fixe librement l'échelle. *Contraindre la
+  valeur* si le test avait raison. **Assouplir un test jusqu'à ce qu'il passe
+  n'en est pas une**, et une seconde reformulation du même test est de
+  l'accommodement.
 - **Ne jamais faire tourner deux matchs en même temps.** À cadence horloge,
   deux matchs concurrents se volent du CPU et faussent les deux. La
   concurrence interne de l'arbitre est le seul parallélisme admis.
@@ -185,7 +216,7 @@ cargo test --workspace --release -- --ignored  # perft complet, ~2 s
 cargo clippy --all-targets -- -D warnings
 cargo fmt --all
 cargo run --release --bin shallowred      # boucle UCI
-cargo run --release --bin shallowred -- bench 7   # référence : 702 612 nœuds
+cargo run --release --bin shallowred -- bench 7   # référence : 541 528 nœuds
 
 tools/setup-arbiters.sh                    # construit fastchess
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement

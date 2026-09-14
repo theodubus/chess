@@ -215,6 +215,9 @@ pub struct Search {
     history: Vec<i32>,
     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
     lmr: Vec<i32>,
+    /// Les valeurs que consulte l'évaluation. Le moteur emploie toujours les
+    /// valeurs par défaut ; seul le tuner en substitue d'autres.
+    params: eval::Params,
 }
 
 impl Search {
@@ -235,6 +238,7 @@ impl Search {
             killers: vec![[0; 2]; MAX_PLY],
             history: vec![0; 64 * 64],
             lmr: build_lmr_table(),
+            params: eval::Params::DEFAULT,
         }
     }
 
@@ -753,7 +757,7 @@ impl Search {
             return 0;
         }
         if ply + 1 >= MAX_PLY {
-            return eval::evaluate(board);
+            return eval::evaluate(board, &self.params);
         }
 
         let in_check = !board.checkers().is_empty();
@@ -762,7 +766,7 @@ impl Search {
             // « Stand pat » : ne rien jouer est une option, et la plupart des
             // positions sont déjà au moins aussi bonnes que ce qu'une capture
             // forcée donnerait.
-            let stand_pat = eval::evaluate(board);
+            let stand_pat = eval::evaluate(board, &self.params);
             if stand_pat >= beta {
                 return stand_pat;
             }
