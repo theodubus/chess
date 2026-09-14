@@ -85,11 +85,24 @@ avec les mesures antérieures.
 | 2026-09-13 | C9 (table de transposition, killers, historique) contre pré-C9 | **H1 accepté** — +164,3 Elo ± 31,3 sur 488 parties, cadence 1+0,01 |
 | 2026-09-13 | Élagage par coup nul contre C10 | **H1 accepté** — +75,1 Elo ± 19,7 sur 864 parties, cadence 1+0,01 |
 | 2026-09-13 | Réduction des coups tardifs (LMR) contre le coup nul | **H1 accepté** — +69,1 Elo ± 18,3 sur 892 parties, cadence 1+0,01 |
+| 2026-09-14 | Fenêtres d'aspiration contre LMR | **H1 accepté** — +29,7 Elo ± 11,9 sur 2042 parties, cadence 1+0,01 |
 
-**Le nombre de nœuds n'est pas une mesure de force.** LMR divise les nœuds par
-5,7 et rapporte +69 Elo ; le coup nul les divise par 2,5 et en rapporte +75.
-Un élagage échange de la précision contre de la profondeur, et seul le SPRT dit
-si l'échange est bon.
+**Le nombre de nœuds n'est pas une mesure de force.** Quatre mesures le disent
+maintenant, et elles ne s'ordonnent pas de la même façon :
+
+| changement | nœuds à profondeur 7 | Elo |
+|---|---|---|
+| table de transposition, killers, historique | ÷ 5,83 | +164 |
+| coup nul | ÷ 2,52 | +75 |
+| réduction des coups tardifs | ÷ 5,73 | +69 |
+| fenêtres d'aspiration | ÷ 1,07 | +30 |
+
+Le classement par nœuds et le classement par Elo ne coïncident nulle part. La
+fenêtre d'aspiration, qui ne retire que 6 % des nœuds à profondeur 7, rapporte
+près de la moitié de ce que rapporte LMR, qui en retire 83 % — parce que son
+effet croît avec la profondeur et que 7 est peu, tandis que le nombre de nœuds
+se mesure là et nulle part ailleurs. **Un rapport de nœuds est une mesure de
+travail à une profondeur donnée, jamais une mesure de force.**
 
 Toutes les mesures ci-dessus emploient les bornes `[0, 5]` avec
 `alpha = beta = 0.05`, le livre `book.epd` et la concurrence 3. Le nombre de
