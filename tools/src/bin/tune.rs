@@ -28,7 +28,7 @@
 //! se surveille donc séparément, au bench. C'est le risque résiduel accepté en
 //! adoptant ce protocole.
 
-use cozy_chess::{Board, Color};
+use cozy_chess::{Board, Color, Piece};
 use shallowred::eval::{self, Params};
 
 /// Recherche locale : pas initial, et pas en deçà duquel on s'arrête.
@@ -122,6 +122,9 @@ fn main() {
         .next()
         .and_then(|a| a.parse().ok())
         .unwrap_or(usize::MAX);
+    // Fichier de sauvegarde réécrit à chaque progrès de la validation : un
+    // ajustement interrompu ne doit pas repartir de zéro.
+    let checkpoint = args.next();
 
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| {
         eprintln!("lecture de {path} : {e}");
@@ -197,42 +200,57 @@ fn main() {
     // à 0,1429 — un désastre silencieux que seul ce témoin révèle.
     let mut best_validation = start_validation;
     let mut best_values = values.clone();
-    let mut stale = 0u32;
+    let mut stale;
 
-    while step >= MIN_STEP && stale < PATIENCE {
-        let mut improved = false;
-        pass += 1;
-        for index in 0..values.len() {
-            for delta in [step, -step] {
-                let original = values[index];
-                values[index] = original + delta;
-                params.set_from(&values);
-                let candidate = error(&train, &params, k);
-                if candidate < best {
-                    best = candidate;
-                    improved = true;
-                    break; // la valeur modifiée est conservée
+    // Le pas descend quand la VALIDATION cesse de progresser, jamais quand
+    // l'entraînement cesse. Avec 825 paramètres, l'entraînement trouve
+    // toujours une amélioration : une condition qui s'y fie laisse le pas à sa
+    // valeur initiale pour toujours. C'était le cas du premier ajustement du
+    // 14 sept. 2026 — cinquante passes toutes au pas de 16 centièmes de pion,
+    // et des valeurs grossières et invraisemblables en sortie.
+    while step >= MIN_STEP {
+        stale = 0;
+        while stale < PATIENCE {
+            pass += 1;
+            for index in 0..values.len() {
+                for delta in [step, -step] {
+                    let original = values[index];
+                    values[index] = original + delta;
+                    params.set_from(&values);
+                    let candidate = error(&train, &params, k);
+                    if candidate < best {
+                        best = candidate;
+                        break; // la valeur modifiée est conservée
+                    }
+                    values[index] = original;
                 }
-                values[index] = original;
             }
+            params.set_from(&values);
+            let on_validation = error(&validation, &params, k);
+            let marker = if on_validation < best_validation {
+                best_validation = on_validation;
+                best_values.clone_from(&values);
+                stale = 0;
+                if let Some(path) = &checkpoint {
+                    let mut snapshot = Params::DEFAULT;
+                    snapshot.set_from(&values);
+                    let _ = std::fs::write(path, render(&snapshot));
+                }
+                " <- retenu"
+            } else {
+                stale += 1;
+                ""
+            };
+            eprintln!(
+                "passe {pass} (pas {step}) : entraînement {best:.6}, validation {on_validation:.6}{marker}"
+            );
         }
+        // On repart du meilleur point connu pour affiner, et non du dernier
+        // point atteint, qui a déjà commencé à surapprendre.
+        values.clone_from(&best_values);
         params.set_from(&values);
-        let on_validation = error(&validation, &params, k);
-        let marker = if on_validation < best_validation {
-            best_validation = on_validation;
-            best_values.clone_from(&values);
-            stale = 0;
-            " <- retenu"
-        } else {
-            stale += 1;
-            ""
-        };
-        eprintln!(
-            "passe {pass} (pas {step}) : entraînement {best:.6}, validation {on_validation:.6}{marker}"
-        );
-        if !improved {
-            step /= 2;
-        }
+        best = error(&train, &params, k);
+        step /= 2;
     }
 
     // On rend le meilleur point de validation, pas le dernier point atteint.
@@ -255,32 +273,89 @@ fn main() {
         );
     }
 
-    emit(&params);
+    print!("{}", render(&params));
 }
 
-/// Écrit les valeurs ajustées sous la forme exacte qu'attend `eval.rs`.
-fn emit(params: &Params) {
-    let table = |name: &str, values: &[i32; 64]| {
-        println!("const {name}: [i32; 64] = [");
-        for rank in 0..8 {
-            print!("   ");
-            for file in 0..8 {
-                print!(" {:4},", values[rank * 8 + file]);
+/// Ramène chaque table piece-square à une moyenne nulle, en reportant le
+/// décalage sur la valeur matérielle de la pièce.
+///
+/// **L'évaluation est rigoureusement inchangée.** La contribution d'une pièce
+/// vaut `matériel[p] + table[p][case]` : retrancher `m` à toute la table et
+/// l'ajouter au matériel laisse chaque terme identique. C'est précisément
+/// parce que cette direction ne change rien que la recherche locale y dérive
+/// librement — le cavalier est passé de 320 à 400 sans que cela signifie quoi
+/// que ce soit. La normalisation ne corrige pas le réglage, elle le rend
+/// **lisible**, donc vérifiable : une valeur matérielle absurde après
+/// normalisation est un vrai signal, avant elle n'en était pas un.
+fn normalise(params: &mut Params) {
+    for piece in 0..Piece::NUM {
+        for (table, material) in [
+            (&mut params.pst_mg[piece], &mut params.mg_value[piece]),
+            (&mut params.pst_eg[piece], &mut params.eg_value[piece]),
+        ] {
+            let mean = table.iter().sum::<i32>() / 64;
+            for value in table.iter_mut() {
+                *value -= mean;
             }
-            println!();
+            *material += mean;
         }
-        println!("];");
-    };
+    }
+}
 
-    println!("// Valeurs ajustées par tools/src/bin/tune.rs.");
-    println!("const MG_VALUE: [i32; Piece::NUM] = {:?};", params.mg_value);
-    println!("const EG_VALUE: [i32; Piece::NUM] = {:?};", params.eg_value);
-    println!("const BISHOP_PAIR: (i32, i32) = {:?};", params.bishop_pair);
-    println!("const PASSED_MG: [i32; 8] = {:?};", params.passed_mg);
-    println!("const PASSED_EG: [i32; 8] = {:?};", params.passed_eg);
-    println!("const DOUBLED_PAWN: (i32, i32) = {:?};", params.doubled);
-    println!("const ISOLATED_PAWN: (i32, i32) = {:?};", params.isolated);
-    println!("const ROOK_OPEN_FILE: (i32, i32) = {:?};", params.rook_open);
+/// Écrit une table piece-square dans la disposition visuelle du plateau.
+fn table(out: &mut String, name: &str, values: &[i32; 64]) {
+    use std::fmt::Write as _;
+    let _ = writeln!(out, "const {name}: [i32; 64] = [");
+    for rank in 0..8 {
+        let _ = write!(out, "   ");
+        for file in 0..8 {
+            let _ = write!(out, " {:4},", values[rank * 8 + file]);
+        }
+        let _ = writeln!(out);
+    }
+    let _ = writeln!(out, "];");
+}
+
+/// Rend les valeurs ajustées sous la forme exacte qu'attend `eval.rs`.
+fn render(params: &Params) -> String {
+    use std::fmt::Write as _;
+    let mut params = params.clone();
+    normalise(&mut params);
+    let params = &params;
+    let mut out = String::new();
+    let _ = writeln!(out, "// Valeurs ajustées par tools/src/bin/tune.rs.");
+    let _ = writeln!(
+        out,
+        "const MG_VALUE: [i32; Piece::NUM] = {:?};",
+        params.mg_value
+    );
+    let _ = writeln!(
+        out,
+        "const EG_VALUE: [i32; Piece::NUM] = {:?};",
+        params.eg_value
+    );
+    let _ = writeln!(
+        out,
+        "const BISHOP_PAIR: (i32, i32) = {:?};",
+        params.bishop_pair
+    );
+    let _ = writeln!(out, "const PASSED_MG: [i32; 8] = {:?};", params.passed_mg);
+    let _ = writeln!(out, "const PASSED_EG: [i32; 8] = {:?};", params.passed_eg);
+    let _ = writeln!(
+        out,
+        "const DOUBLED_PAWN: (i32, i32) = {:?};",
+        params.doubled
+    );
+    let _ = writeln!(
+        out,
+        "const ISOLATED_PAWN: (i32, i32) = {:?};",
+        params.isolated
+    );
+    let _ = writeln!(
+        out,
+        "const ROOK_OPEN_FILE: (i32, i32) = {:?};",
+        params.rook_open
+    );
     println!(
         "const ROOK_SEMI_OPEN_FILE: (i32, i32) = {:?};",
         params.rook_semi_open
@@ -311,8 +386,10 @@ fn emit(params: &Params) {
         ("QUEEN_EG", &params.pst_eg[4]),
         ("KING_EG", &params.pst_eg[5]),
     ] {
-        table(name, values);
+        table(&mut out, name, values);
     }
+
+    out
 }
 
 #[cfg(test)]
@@ -347,6 +424,31 @@ mod tests {
         let mislabelled = sample("4k3/8/8/8/8/8/8/3QK3 b - - 0 1", 0.0);
         let e = error(&[mislabelled], &Params::DEFAULT, 1.0);
         assert!(e > 0.9, "erreur {e} : le test ne discrimine rien");
+    }
+
+    #[test]
+    fn la_normalisation_ne_change_pas_une_seule_evaluation() {
+        // Propriété qui justifie la normalisation : elle déplace des nombres
+        // sans toucher à la fonction. Si elle échouait, le fichier produit ne
+        // décrirait pas l'évaluation qui a été ajustée — et le SPRT mesurerait
+        // autre chose que ce qu'on croit.
+        let mut shifted = Params::DEFAULT;
+        normalise(&mut shifted);
+        assert_ne!(shifted, Params::DEFAULT, "la normalisation doit déplacer");
+
+        for fen in [
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+            "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+            "4k3/8/8/8/8/8/8/3QK3 b - - 0 1",
+        ] {
+            let board: Board = fen.parse().expect("fen de test valide");
+            assert_eq!(
+                eval::evaluate(&board, &Params::DEFAULT),
+                eval::evaluate(&board, &shifted),
+                "{fen}"
+            );
+        }
     }
 
     #[test]
