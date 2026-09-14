@@ -216,7 +216,7 @@ cargo test --workspace --release -- --ignored  # perft complet, ~2 s
 cargo clippy --all-targets -- -D warnings
 cargo fmt --all
 cargo run --release --bin shallowred      # boucle UCI
-cargo run --release --bin shallowred -- bench 7   # référence : 702 612 nœuds
+cargo run --release --bin shallowred -- bench 7   # référence : 541 528 nœuds
 
 tools/setup-arbiters.sh                    # construit fastchess
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement
