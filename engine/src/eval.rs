@@ -22,7 +22,8 @@
 //! mélange selon la phase de jeu.
 
 use cozy_chess::{
-    Board, Color, Piece, Square, get_bishop_moves, get_king_moves, get_knight_moves, get_rook_moves,
+    BitBoard, Board, Color, Piece, Square, get_bishop_moves, get_king_moves, get_knight_moves,
+    get_rook_moves,
 };
 
 /// Score attribué à un mat. Suffisamment grand pour dominer tout matériel,
@@ -67,6 +68,40 @@ const BISHOP_PAIR: (i32, i32) = (30, 45);
 /// portée décide ; la dame l'est peu partout, sa mobilité brute étant déjà
 /// énorme et peu informative. **Valeurs conventionnelles, non réglées** — à
 /// améliorer par la mesure, comme le reste de ce fichier.
+/// Prime d'un pion passé, indexée par sa rangée vue de son propre camp.
+///
+/// Un pion passé n'a plus aucun pion adverse devant lui, ni sur sa colonne ni
+/// sur les adjacentes : rien ne peut l'arrêter sans le secours d'une pièce.
+/// La prime croît fortement avec l'avancement, parce que le coût de l'arrêter
+/// croît de même — et **elle est bien plus forte en finale**, où il reste peu
+/// de pièces pour s'en charger et où la promotion décide.
+///
+/// L'indice 0 est la rangée de départ, où un pion ne peut pas être passé au
+/// sens utile ; l'indice 6 est l'avant-dernière rangée, à un coup de la dame.
+const PASSED_MG: [i32; 8] = [0, 5, 10, 20, 35, 60, 100, 0];
+const PASSED_EG: [i32; 8] = [0, 10, 20, 40, 70, 120, 180, 0];
+
+/// Pénalité d'un pion doublé, comptée une fois par pion excédentaire.
+///
+/// Deux pions sur la même colonne se gênent : celui de derrière ne peut ni
+/// avancer ni défendre, et la colonne perd un défenseur latéral. Plus lourd
+/// en finale, où un pion immobilisé ne vaut presque rien.
+const DOUBLED_PAWN: (i32, i32) = (-10, -20);
+
+/// Pénalité d'un pion isolé : aucun pion ami sur les colonnes adjacentes.
+///
+/// Il ne pourra jamais être défendu par un pion, donc sa défense mobilise une
+/// pièce, et la case devant lui devient un avant-poste pour l'adversaire.
+const ISOLATED_PAWN: (i32, i32) = (-12, -15);
+
+/// Prime d'une tour sur une colonne sans aucun pion, puis sans pion ami.
+///
+/// Une tour vaut par sa portée, et une colonne ouverte est ce qui la lui
+/// donne. La colonne semi-ouverte — plus de pion à nous, mais un pion adverse
+/// — vaut moins : la tour y voit loin mais bute sur une cible défendable.
+const ROOK_OPEN_FILE: (i32, i32) = (20, 10);
+const ROOK_SEMI_OPEN_FILE: (i32, i32) = (10, 5);
+
 /// Poids d'attaque d'une pièce visant la zone du roi adverse.
 ///
 /// Une pièce compte une fois si l'une de ses attaques tombe dans la zone,
@@ -264,6 +299,14 @@ pub fn evaluate(board: &Board) -> i32 {
         // l'ajoute au crédit de `color`. En finale il ne s'applique pas — le
         // roi doit alors sortir, et l'y dissuader serait une faute.
         midgame += sign * king_danger(activity.king_attack);
+
+        let (pawns_mg, pawns_eg) = pawn_structure(board, color);
+        midgame += sign * pawns_mg;
+        endgame += sign * pawns_eg;
+
+        let (rooks_mg, rooks_eg) = rook_files(board, color);
+        midgame += sign * rooks_mg;
+        endgame += sign * rooks_eg;
     }
 
     // Les promotions peuvent faire dépasser le total initial ; on borne.
@@ -335,6 +378,91 @@ fn activity(board: &Board, color: Color) -> Activity {
     }
 
     out
+}
+
+/// Cases strictement devant `rank`, du point de vue de `color`.
+///
+/// Décalage gardé : à la dernière rangée le décalage vaudrait 64, ce que Rust
+/// refuse. `checked_shl` rend alors `None` et l'ensemble est vide, ce qui est
+/// exactement la réponse juste.
+fn ahead_of(rank: u32, color: Color) -> BitBoard {
+    if color == Color::White {
+        BitBoard(u64::MAX.checked_shl(8 * (rank + 1)).unwrap_or(0))
+    } else {
+        BitBoard((1u64 << (8 * rank)) - 1)
+    }
+}
+
+/// Ce que la structure de pions d'un camp lui rapporte ou lui coûte.
+///
+/// Trois notions qu'aucune table piece-square ne peut exprimer, parce
+/// qu'elles dépendent toutes des **autres** pions, amis comme adverses, et
+/// non de la seule case occupée.
+fn pawn_structure(board: &Board, color: Color) -> (i32, i32) {
+    let ours = board.colored_pieces(color, Piece::Pawn);
+    let theirs = board.colored_pieces(!color, Piece::Pawn);
+    let mut midgame = 0;
+    let mut endgame = 0;
+
+    for square in ours {
+        let file = square.file();
+        let rank = square.rank() as u32;
+
+        // Passé : aucun pion adverse devant, ni sur sa colonne ni à côté.
+        let corridor = (file.bitboard() | file.adjacent()) & ahead_of(rank, color);
+        if (theirs & corridor).is_empty() {
+            // Rangée vue du camp du pion : la septième vaut pour les deux.
+            let relative = if color == Color::White {
+                rank
+            } else {
+                7 - rank
+            } as usize;
+            midgame += PASSED_MG[relative];
+            endgame += PASSED_EG[relative];
+        }
+
+        // Isolé : aucun pion ami sur les colonnes adjacentes, à aucune rangée.
+        if (ours & file.adjacent()).is_empty() {
+            midgame += ISOLATED_PAWN.0;
+            endgame += ISOLATED_PAWN.1;
+        }
+    }
+
+    // Doublés : comptés par colonne et non par pion, sans quoi une paire
+    // serait pénalisée deux fois au lieu d'une.
+    for file in cozy_chess::File::ALL {
+        let count = i32::try_from((ours & file.bitboard()).len()).unwrap_or(0);
+        if count > 1 {
+            midgame += DOUBLED_PAWN.0 * (count - 1);
+            endgame += DOUBLED_PAWN.1 * (count - 1);
+        }
+    }
+
+    (midgame, endgame)
+}
+
+/// Prime des tours postées sur une colonne ouverte ou semi-ouverte.
+fn rook_files(board: &Board, color: Color) -> (i32, i32) {
+    let ours = board.colored_pieces(color, Piece::Pawn);
+    let theirs = board.colored_pieces(!color, Piece::Pawn);
+    let mut midgame = 0;
+    let mut endgame = 0;
+
+    for square in board.colored_pieces(color, Piece::Rook) {
+        let file = square.file().bitboard();
+        if !(ours & file).is_empty() {
+            continue; // un pion à nous bouche la colonne
+        }
+        let (mg, eg) = if (theirs & file).is_empty() {
+            ROOK_OPEN_FILE
+        } else {
+            ROOK_SEMI_OPEN_FILE
+        };
+        midgame += mg;
+        endgame += eg;
+    }
+
+    (midgame, endgame)
 }
 
 /// Pénalité de milieu de partie pour le camp dont le roi est assailli.
@@ -462,6 +590,71 @@ mod tests {
         let b = Board::default();
         assert_eq!(activity(&b, Color::White).king_attack, 0);
         assert_eq!(activity(&b, Color::Black).king_attack, 0);
+    }
+
+    /// Les valeurs attendues de ces tests sont calculées par une
+    /// implémentation indépendante (python-chess) sur les mêmes positions,
+    /// puis inscrites ici. Deux implémentations qui s'accordent écartent
+    /// l'hypothèse d'une erreur de raisonnement partagée — et sur ce projet,
+    /// quatre positions dérivées de tête se sont révélées fausses.
+    #[test]
+    fn la_structure_de_pions_est_comptee_correctement() {
+        let p = |fen: &str| pawn_structure(&board(fen), Color::White);
+
+        // Position initiale : aucun pion passé, doublé ni isolé. Si l'un des
+        // trois se déclenchait ici, la définition serait fausse.
+        assert_eq!(
+            p("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"),
+            (0, 0)
+        );
+
+        // Un pion seul est À LA FOIS passé et isolé, par définition des deux :
+        // 35 - 12 en milieu, 70 - 15 en finale. Ce n'est pas un artefact.
+        assert_eq!(p("7k/8/8/3P4/8/8/8/7K w - - 0 1"), (23, 55));
+
+        // Deux pions doublés en d2 et d3, tous deux isolés, tous deux passés.
+        assert_eq!(p("7k/8/8/8/8/3P4/3P4/7K w - - 0 1"), (-19, -20));
+
+        // Un pion adverse en d6 barre la colonne : le pion d2 n'est plus
+        // passé, il ne reste que la pénalité d'isolement.
+        assert_eq!(p("7k/8/3p4/8/8/8/3P4/7K w - - 0 1"), (-12, -15));
+
+        // Deux pions voisins : aucun n'est isolé, les deux sont passés.
+        assert_eq!(p("7k/8/8/8/8/8/2PP4/7K w - - 0 1"), (10, 20));
+    }
+
+    #[test]
+    fn une_tour_est_payee_selon_sa_colonne() {
+        let r = |fen: &str| rook_files(&board(fen), Color::White);
+
+        // Colonne d vide des deux côtés : ouverte.
+        assert_eq!(r("7k/8/8/8/8/8/8/3R3K w - - 0 1"), (20, 10));
+        // Un pion adverse en d7 : semi-ouverte, la tour voit loin mais bute.
+        assert_eq!(r("7k/3p4/8/8/8/8/8/3R3K w - - 0 1"), (10, 5));
+        // Notre propre pion en d2 bouche la colonne : rien.
+        assert_eq!(r("7k/8/8/8/8/8/3P4/3R3K w - - 0 1"), (0, 0));
+        // Position initiale : les huit pions bouchent tout.
+        assert_eq!(
+            r("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"),
+            (0, 0)
+        );
+    }
+
+    #[test]
+    fn un_pion_passe_vaut_plus_en_avancant_et_plus_encore_en_finale() {
+        // La prime doit croître strictement avec l'avancement, sinon le
+        // moteur n'aurait aucune raison de pousser un pion passé. Et elle
+        // doit être plus forte en finale, où la promotion décide.
+        for rank in 1..6 {
+            assert!(
+                PASSED_MG[rank] < PASSED_MG[rank + 1],
+                "rangée {rank} : la prime de milieu ne croît pas"
+            );
+            assert!(
+                PASSED_EG[rank] > PASSED_MG[rank],
+                "rangée {rank} : la finale doit payer plus que le milieu"
+            );
+        }
     }
 
     #[test]
