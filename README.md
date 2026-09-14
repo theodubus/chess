@@ -5,17 +5,21 @@ Un moteur d'échecs UCI écrit en Rust, et l'interface qui va avec.
 Le nom est un contrepied de Deep Blue, doublé de la couleur de la rouille et
 d'un aveu sur la profondeur de recherche.
 
-> Statut : **phase 2**. Negamax avec élagage alpha-bêta, approfondissement
-> itératif, quiescence, table de transposition et ordonnancement des coups. Il
-> gagne toutes ses parties contre un adversaire jouant au hasard, et dispose
-> d'un dispositif de mesure de force par SPRT. Il n'a encore ni élagages
-> avancés, ni évaluation réglée.
+> Statut : **recherche et évaluation en place, monothread**. Negamax avec
+> élagage alpha-bêta, approfondissement itératif, quiescence, table de
+> transposition et ordonnancement des coups, plus trois élagages avancés
+> mesurés un par un — coup nul, réduction des coups tardifs, fenêtres
+> d'aspiration. L'évaluation couvre matériel, tables piece-square, paire de
+> fous, mobilité, sécurité du roi, structure de pions et colonnes de tours.
+> **Huit verdicts SPRT, dont deux négatifs** qui ont fait retirer le changement
+> mesuré. Il gagne toutes ses parties contre un adversaire jouant au hasard.
+> Il n'a encore ni recherche parallèle, ni NNUE, ni interface.
 
 ## Structure
 
 | Dossier | Contenu | Statut |
 |---|---|---|
-| `engine/` | Moteur UCI en Rust | Protocole et recherche de base |
+| `engine/` | Moteur UCI en Rust | Recherche et évaluation, monothread |
 | `ui/` | Interface TypeScript | Pas démarré |
 | `tools/` | Arbitres, livre d'ouvertures, SPRT | Opérationnel |
 
@@ -70,8 +74,14 @@ Charge de travail fixe : six positions, recherche à profondeur imposée. La
 sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
-dépend ni de la machine ni de sa charge. Référence actuelle à la profondeur 7 :
-8 432 521 nœuds.
+dépend ni de la machine ni de sa charge.
+
+Référence à la profondeur 7 : **541 528** nœuds.
+
+Ce chiffre est vérifié par la CI — voir
+[`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
+longtemps annoncé `8 432 521`, la valeur d'avant l'élagage par coup nul, sans
+que rien ne le signale.
 
 ## Mesurer la force
 

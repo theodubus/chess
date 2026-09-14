@@ -1,19 +1,26 @@
-//! Le chiffre de référence du bench, inscrit dans `CLAUDE.md`, doit être vrai.
+//! Les chiffres de référence du bench, inscrits dans la documentation, doivent
+//! être vrais — dans **tous** les fichiers qui les portent.
 //!
 //! **Pourquoi ce test existe.** La section *Commandes* de `CLAUDE.md` a annoncé
 //! 702 612 nœuds pendant deux journées de travail alors que la valeur réelle
 //! était 541 528 : la mobilité et trois termes d'évaluation avaient changé
 //! l'arbre de recherche sans que personne ne mette le chiffre à jour. Rien ne
-//! l'a signalé — aucun test, aucune étape de CI ne confrontait le chiffre écrit
-//! à celui que le binaire produit.
+//! l'a signalé — aucun test, aucune étape de CI.
+//!
+//! **Pourquoi il balaie plusieurs fichiers.** La première version ne contrôlait
+//! que `CLAUDE.md`. Elle a été écrite alors que `README.md` portait déjà
+//! `8 432 521` — le chiffre d'avant le coup nul, faux d'un facteur 15,6 — et
+//! ne l'a pas vu. Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué
+//! ne garde rien : il donne seulement l'impression de garder.
 //!
 //! Un chiffre de référence faux est **pire qu'absent** : il sert de point de
-//! comparaison à la session suivante, qui croit alors mesurer une régression
-//! là où elle ne fait que découvrir une dérive de la documentation.
+//! comparaison à la session suivante, qui croit mesurer une régression là où
+//! elle ne fait que découvrir une dérive de la documentation.
 //!
 //! **Le prix est assumé, pas subi.** Tout changement de l'arbre de recherche
-//! rend ce test rouge tant que `CLAUDE.md` n'est pas mis à jour. C'est l'effet
-//! recherché : le message d'échec donne le chiffre à recopier.
+//! rend ce test rouge tant que la documentation n'est pas mise à jour. C'est
+//! l'effet recherché : le message d'échec nomme le fichier et donne le chiffre
+//! à recopier.
 //!
 //! `#[ignore]` comme perft — le test appartient aux critères d'acceptation en
 //! release (`cargo test --workspace --release -- --ignored`), parce qu'une
@@ -22,46 +29,76 @@
 
 #![expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
 
+use std::collections::BTreeMap;
+
 use shallowred::bench;
 
-/// Le fragment qui identifie la ligne de référence dans `CLAUDE.md`.
-const MARKER: &str = "# référence :";
-
-/// Extrait `(profondeur, nœuds)` de la ligne de référence de `CLAUDE.md`.
+/// Les fichiers de documentation susceptibles de porter une référence.
 ///
-/// Ligne attendue, dans la section *Commandes* :
+/// Ajouter un fichier ici est le seul geste nécessaire pour l'inclure au
+/// contrôle. En retirer un est un choix à justifier, pas un nettoyage.
+const DOCS: [&str; 2] = ["CLAUDE.md", "README.md"];
+
+/// Le fragment qui identifie une ligne de référence.
 ///
-/// ```text
-/// cargo run --release --bin shallowred -- bench 7   # référence : 541 528 nœuds
-/// ```
+/// Délibérément long et spécifique. Un marqueur court comme « référence : »
+/// entrerait en collision avec de la prose ordinaire — `README.md` contient
+/// déjà « Première mesure de référence : … », qui n'a rien à voir — et le
+/// contrôle échouerait sur une phrase innocente. Un garde-fou qui crie pour
+/// de mauvaises raisons finit par être désarmé.
 ///
-/// Les espaces à l'intérieur du nombre sont des séparateurs de milliers et
-/// sont retirés. Rendre `None` fait échouer le test au lieu de le laisser
-/// passer à vide : une ligne reformatée ou supprimée doit se voir, pas se
-/// taire — un contrôle qui ne trouve plus ce qu'il contrôle est un contrôle
-/// mort.
-fn reference(doc: &str) -> Option<(u32, u64)> {
-    let mut lines = doc.lines().filter(|l| l.contains(MARKER));
-    let line = lines.next()?;
-    if lines.next().is_some() {
-        return None; // plusieurs références : laquelle fait foi ? Échouer.
-    }
+/// L'initiale est omise pour accepter « référence » comme « Référence ».
+const MARKER: &str = "éférence à la profondeur";
 
-    let (before, after) = line.split_once(MARKER)?;
-    let depth = before.rsplit_once("bench ")?.1.trim().parse().ok()?;
-
-    let digits: String = after
-        .trim_start()
-        .chars()
-        .take_while(|c| c.is_ascii_digit() || *c == ' ')
-        .filter(char::is_ascii_digit)
-        .collect();
-
-    Some((depth, digits.parse().ok()?))
+/// Une référence trouvée dans la documentation.
+#[derive(Debug, PartialEq, Eq)]
+struct Reference {
+    file: &'static str,
+    depth: u32,
+    nodes: u64,
 }
 
-/// Regroupe les chiffres par trois, comme `CLAUDE.md` les écrit, pour que le
-/// message d'échec se recopie tel quel.
+/// Lit toutes les lignes de référence d'un document.
+///
+/// Forme attendue : `référence à la profondeur <n> : <nombre> nœuds`. Les
+/// espaces à l'intérieur du nombre sont des séparateurs de milliers ; les
+/// astérisques et accents graves de l'emphase Markdown sont tolérés autour.
+///
+/// Renvoie `Err` sur une ligne qui porte le marqueur sans être analysable :
+/// **un contrôle qui ne comprend plus ce qu'il contrôle doit mourir
+/// bruyamment**, jamais se taire en rendant une liste vide.
+fn references(file: &'static str, doc: &str) -> Result<Vec<Reference>, String> {
+    let mut found = Vec::new();
+    for line in doc.lines().filter(|l| l.contains(MARKER)) {
+        let illisible = || format!("{file} : référence illisible dans « {} »", line.trim());
+
+        let (_, after) = line.split_once(MARKER).ok_or_else(illisible)?;
+        let after = after.trim_start();
+
+        let depth: u32 = after
+            .chars()
+            .take_while(char::is_ascii_digit)
+            .collect::<String>()
+            .parse()
+            .map_err(|_| illisible())?;
+
+        let (_, tail) = after.split_once(':').ok_or_else(illisible)?;
+        let nodes: u64 = tail
+            .trim_start()
+            .chars()
+            .take_while(|c| c.is_ascii_digit() || matches!(c, ' ' | '*' | '`'))
+            .filter(char::is_ascii_digit)
+            .collect::<String>()
+            .parse()
+            .map_err(|_| illisible())?;
+
+        found.push(Reference { file, depth, nodes });
+    }
+    Ok(found)
+}
+
+/// Regroupe les chiffres par trois, comme la documentation les écrit, pour que
+/// le message d'échec se recopie tel quel.
 fn grouped(n: u64) -> String {
     let digits = n.to_string();
     let mut out = String::with_capacity(digits.len() + digits.len() / 3);
@@ -76,54 +113,105 @@ fn grouped(n: u64) -> String {
 
 #[test]
 #[ignore = "profondeur 7 : critère d'acceptation, à exécuter en release"]
-fn la_reference_du_bench_dans_claude_md_est_a_jour() {
-    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../CLAUDE.md");
-    let doc = std::fs::read_to_string(path)
-        .unwrap_or_else(|e| panic!("CLAUDE.md illisible à {path} : {e}"));
+fn les_references_du_bench_dans_la_doc_sont_a_jour() {
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/..");
 
-    let (depth, expected) = reference(&doc).unwrap_or_else(|| {
-        panic!(
-            "aucune ligne de référence unique trouvée dans CLAUDE.md.\n\
-             Format attendu dans la section Commandes :\n    \
-             cargo run --release --bin shallowred -- bench 7   {MARKER} 541 528 nœuds"
-        )
-    });
+    let mut all = Vec::new();
+    for file in DOCS {
+        let path = format!("{root}/{file}");
+        let doc = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("{file} illisible à {path} : {e}"));
+        all.extend(references(file, &doc).unwrap_or_else(|e| panic!("{e}")));
+    }
 
-    let measured = bench::run(depth).unwrap();
+    assert!(
+        !all.is_empty(),
+        "aucune référence trouvée dans {DOCS:?}.\n\
+         Format attendu : « référence à la profondeur <n> : <nombre> nœuds ».\n\
+         Si la formulation a changé, c'est le contrôle qu'il faut adapter — \
+         pas le supprimer."
+    );
 
+    // Un seul bench par profondeur distincte : le contrôle coûte alors le même
+    // prix, que le chiffre soit dupliqué dans deux fichiers ou dans dix.
+    let mut by_depth: BTreeMap<u32, Vec<&Reference>> = BTreeMap::new();
+    for reference in &all {
+        by_depth.entry(reference.depth).or_default().push(reference);
+    }
+
+    for (depth, expected) in by_depth {
+        let measured = bench::run(depth).unwrap();
+        for reference in expected {
+            assert_eq!(
+                measured,
+                reference.nodes,
+                "\n\nLe chiffre de référence de {} a vieilli.\n\
+                 Profondeur {depth} : le binaire visite {} nœuds, {} en annonce {}.\n\
+                 Si le changement d'arbre de recherche est voulu, c'est la \
+                 documentation qu'il faut corriger — y remplacer le chiffre par {}.\n",
+                reference.file,
+                grouped(measured),
+                reference.file,
+                grouped(reference.nodes),
+                grouped(measured)
+            );
+        }
+    }
+}
+
+#[test]
+fn une_reference_en_prose_se_lit() {
+    let doc = "Référence à la profondeur 7 : 541 528 nœuds.\n";
     assert_eq!(
-        measured,
-        expected,
-        "\n\nLe chiffre de référence de CLAUDE.md a vieilli.\n\
-         Profondeur {depth} : le binaire visite {} nœuds, CLAUDE.md en annonce {}.\n\
-         Si le changement d'arbre de recherche est voulu, c'est la documentation \
-         qu'il faut corriger — remplacer le chiffre de la section Commandes par {}.\n",
-        grouped(measured),
-        grouped(expected),
-        grouped(measured)
+        references("CLAUDE.md", doc).unwrap(),
+        vec![Reference {
+            file: "CLAUDE.md",
+            depth: 7,
+            nodes: 541_528
+        }]
     );
 }
 
 #[test]
-fn la_ligne_de_reference_se_lit() {
-    let doc = "cargo run --release --bin shallowred -- bench 7   # référence : 541 528 nœuds\n";
-    assert_eq!(reference(doc), Some((7, 541_528)));
+fn lemphase_markdown_autour_du_nombre_est_toleree() {
+    let doc = "La référence à la profondeur 7 : **541 528** nœuds.\n";
+    assert_eq!(references("README.md", doc).unwrap()[0].nodes, 541_528);
 }
 
 #[test]
-fn une_reference_absente_ou_reformatee_ne_passe_pas_en_silence() {
-    // C'est le cas qui compte : le contrôle doit mourir bruyamment, jamais
-    // devenir une assertion vide qui passe toujours.
-    assert_eq!(reference("cargo run -- bench 7\n"), None);
-    assert_eq!(reference(""), None);
-    assert_eq!(reference("bench 7   # référence : nœuds"), None);
-    assert_eq!(reference("# référence : 1 000 nœuds"), None); // profondeur absente
+fn deux_fichiers_donnent_deux_references() {
+    let a = references("CLAUDE.md", "référence à la profondeur 7 : 1 nœuds").unwrap();
+    let b = references("README.md", "Référence à la profondeur 4 : 2 nœuds").unwrap();
+    assert_eq!(a.len() + b.len(), 2);
+    assert_eq!(a[0].nodes, 1);
+    assert_eq!(b[0].depth, 4);
 }
 
 #[test]
-fn deux_references_font_echouer_plutot_que_choisir() {
-    let doc = "-- bench 7   # référence : 1 nœuds\n-- bench 4   # référence : 2 nœuds\n";
-    assert_eq!(reference(doc), None);
+fn une_ligne_marquee_mais_illisible_fait_echouer() {
+    // Le cas qui compte : le contrôle doit mourir bruyamment, jamais devenir
+    // une liste vide qui passe toujours.
+    assert!(references("C", "référence à la profondeur 7 : nœuds").is_err());
+    assert!(references("C", "référence à la profondeur : 541 528").is_err());
+    assert!(references("C", "référence à la profondeur 7 sans deux-points").is_err());
+}
+
+#[test]
+fn la_prose_ordinaire_ne_declenche_rien() {
+    // La collision que le marqueur court aurait provoquée : cette phrase
+    // existe dans README.md et n'a rien à voir avec le bench.
+    let doc = "Première mesure de référence : la table vaut +164,3 Elo ± 31,3.\n";
+    assert_eq!(references("README.md", doc).unwrap(), []);
+}
+
+#[test]
+fn un_document_sans_marqueur_ne_rend_rien_sans_erreur() {
+    // Tous les fichiers de DOCS n'ont pas à porter une référence ; c'est
+    // l'absence *totale* de référence que le test principal refuse.
+    assert_eq!(
+        references("README.md", "un texte quelconque\n").unwrap(),
+        []
+    );
 }
 
 #[test]
