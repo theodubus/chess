@@ -189,6 +189,17 @@ une mesure, pas une préférence.
   préservent les dates de modification, donc cargo peut juger les sources
   périmées et ne rien recompiler : on mesure alors l'ancien binaire. Un
   rapport avant/après d'exactement 1,00 en est le symptôme.
+- **Un chiffre de référence écrit en prose vieillit en silence.** La section
+  *Commandes* a annoncé `702 612 nœuds` pendant deux journées de travail alors
+  que la valeur réelle était `541 528` : la mobilité et trois termes
+  d'évaluation avaient changé l'arbre de recherche sans que personne ne mette
+  le chiffre à jour, et **rien ne l'a signalé**. Un chiffre de référence faux
+  est pire qu'absent — il sert de point de comparaison à la session suivante,
+  qui croit mesurer une régression là où elle découvre une dérive de la
+  documentation. `engine/tests/bench_reference.rs` confronte désormais les
+  deux, en critère d'acceptation. **Conséquence assumée** : tout changement de
+  l'arbre de recherche rend la CI rouge tant que la ligne n'est pas corrigée.
+  C'est l'effet recherché ; le message d'échec donne le chiffre à recopier.
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.
@@ -217,6 +228,8 @@ cargo clippy --all-targets -- -D warnings
 cargo fmt --all
 cargo run --release --bin shallowred      # boucle UCI
 cargo run --release --bin shallowred -- bench 7   # référence : 541 528 nœuds
+# Ce chiffre est vérifié par la CI — voir engine/tests/bench_reference.rs.
+# Le changer à la légère casse le build ; le laisser périmé aussi.
 
 tools/setup-arbiters.sh                    # construit fastchess
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement
