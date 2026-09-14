@@ -35,12 +35,18 @@ jobs:
       - name: Tests (release)
         run: cargo test --workspace --release
 
-      # Deux critères d'acceptation, tous deux binaires.
+      # Trois critères d'acceptation, tous binaires.
       # Perft : six positions jusqu'aux profondeurs 5 et 6, 593 millions de
       # nœuds en environ deux secondes — la génération de coups passe ou non.
       # Tournoi : vingt-quatre parties entières contre un adversaire jouant au
       # hasard — une seule nulle est un échec de conversion.
-      - name: Critères d'acceptation (perft et tournoi)
+      # Référence du bench : le chiffre inscrit dans CLAUDE.md est confronté à
+      # celui que le binaire produit. Il a menti pendant deux jours sans que
+      # rien ne s'allume ; c'est ce trou-là qui est bouché. Un changement voulu
+      # de l'arbre de recherche rend donc cette étape rouge tant que CLAUDE.md
+      # n'est pas mis à jour — c'est l'effet recherché, et le message d'échec
+      # donne le chiffre à recopier.
+      - name: Critères d'acceptation (perft, tournoi, référence du bench)
         run: cargo test --workspace --release -- --ignored
 
       # Détecteur de régression de performance. La sortie se termine par

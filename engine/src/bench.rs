@@ -34,12 +34,19 @@ pub const BENCH_FENS: [&str; 6] = [
 /// Profondeur par défaut : quelques secondes en build `--release`.
 pub const DEFAULT_DEPTH: u32 = 7;
 
-/// Exécute la charge de travail et écrit le rapport sur la sortie standard.
+/// Exécute la charge de travail, écrit le rapport sur la sortie standard et
+/// rend le nombre total de nœuds visités.
+///
+/// Le total est rendu et pas seulement imprimé parce qu'il est le seul chiffre
+/// déterministe du rapport : `engine/tests/bench_reference.rs` s'en sert pour
+/// vérifier que la référence inscrite dans `CLAUDE.md` n'a pas vieilli. Sans
+/// cela il faudrait relire la sortie standard, ce qui lierait un test au
+/// format d'affichage.
 ///
 /// # Errors
 /// Renvoie un message lisible si une FEN intégrée est invalide, ce qui ne peut
 /// arriver qu'en cas d'édition fautive de [`BENCH_FENS`].
-pub fn run(depth: u32) -> Result<(), String> {
+pub fn run(depth: u32) -> Result<u64, String> {
     let stop = Arc::new(AtomicBool::new(false));
     let limits = Limits {
         depth: Some(depth),
@@ -70,7 +77,7 @@ pub fn run(depth: u32) -> Result<(), String> {
     println!("Total nodes  : {total_nodes}");
     println!("Time (ms)    : {}", elapsed.as_millis());
     println!("Nodes/second : {nps}");
-    Ok(())
+    Ok(total_nodes)
 }
 
 #[cfg(test)]
@@ -90,6 +97,29 @@ mod tests {
     #[test]
     fn le_bench_sexecute_a_faible_profondeur() {
         assert!(run(2).is_ok());
+    }
+
+    #[test]
+    fn le_total_rendu_est_celui_qui_est_imprime() {
+        // Le test de référence compare le chiffre de `CLAUDE.md` à la valeur
+        // rendue par `run`. Si celle-ci divergeait du total imprimé, le test
+        // garderait honnête un chiffre que personne ne lit.
+        let total = run(3).unwrap();
+        let recompute: u64 = BENCH_FENS
+            .iter()
+            .map(|fen| {
+                let stop = Arc::new(AtomicBool::new(false));
+                let limits = Limits {
+                    depth: Some(3),
+                    ..Limits::default()
+                };
+                let position = Position::from_fen(fen).unwrap();
+                let mut search = Search::new(stop);
+                search.go(&position, &limits, |_| {});
+                search.nodes()
+            })
+            .sum();
+        assert_eq!(total, recompute);
     }
 
     #[test]

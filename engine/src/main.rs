@@ -17,7 +17,7 @@ fn main() -> ExitCode {
                 .and_then(|a| a.parse().ok())
                 .unwrap_or(bench::DEFAULT_DEPTH);
             match bench::run(depth) {
-                Ok(()) => ExitCode::SUCCESS,
+                Ok(_) => ExitCode::SUCCESS,
                 Err(e) => {
                     eprintln!("{e}");
                     ExitCode::FAILURE
