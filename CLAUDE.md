@@ -96,6 +96,15 @@ une mesure, pas une préférence.
   Reste à faire : ne pas matérialiser tous les coups avant d'en trier.
 - **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
   La valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
+- **Table de transposition partagée, le jour où la recherche devient
+  parallèle.** Pas en place, et c'est le seul endroit du dépôt où le design
+  actuel bloque une fonctionnalité déjà prévue : `store` prend `&mut self`,
+  ce qui est inexprimable quand plusieurs threads écrivent dans la même table.
+  Le passage à des entrées atomiques (XOR clé/données, qui rend détectable une
+  entrée déchirée sans verrou) est une réécriture contenue de `tt.rs` plus un
+  changement de signature qui traverse `search.rs`. Le coût ne croît pas avec
+  le temps — ce n'est pas une dette cumulative — mais il ne faut pas le
+  découvrir le jour où l'on écrit Lazy SMP.
 
 ## Ce qui compte comme preuve
 
@@ -105,10 +114,28 @@ une mesure, pas une préférence.
 | « ce changement de recherche est bon » | `tools/sprt.sh <candidat> <référence>` rend `H1 was accepted`. Une impression n'est pas une mesure. La CI, elle, exige en permanence vingt-quatre victoires sur vingt-quatre contre le hasard — c'est un garde-fou, pas une mesure de force. |
 | « cette valeur d'évaluation est meilleure » | Idem, par SPRT. **Les valeurs de `eval.rs` ne sont pas réglées** : ce sont des valeurs conventionnelles, à améliorer par la mesure et non par l'intuition. |
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
+| « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. Empiriquement, sur les quatre SPRT du projet, `parties × Elo ≈ 62 000` : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 12 400 ≈ 2 h 30 ; +2 ≈ 31 000 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
 | « c'est plus fort » | **Jamais** déduit d'une réduction de nœuds. Quatre mesures, aucun ordre commun : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration **÷1,07 → +30**. La dernière ne retire que 6 % des nœuds à profondeur 7 et rapporte la moitié de LMR, qui en retire 83 % — son effet croît avec la profondeur, et le bench la mesure là où elle sert le moins. Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. |
 
 ## Pièges de mesure, appris à nos dépens
+
+- **Les six positions de `bench` ne sont pas un échantillon de jeu.** Elles
+  sont choisies pour être comparables d'une version à l'autre, pas pour
+  représenter ce qu'une partie traverse. Mesurée sur le banc, la fréquence de
+  la garde anti-zugzwang donnait 0,4 à 0,6 % des nœuds ; mesurée sur des
+  positions tirées de vraies parties, 1,9 % — un facteur 3 à 5. Toute question
+  portant sur une phase de jeu se mesure sur des positions extraites d'un
+  match (`-pgnout`, puis échantillonnage).
+- **Mesurer le mécanisme avant d'en mesurer l'effet en Elo.** Compter combien
+  de fois un phénomène se produit coûte des minutes d'instrumentation ; en
+  mesurer l'effet coûte des heures de match. Et si le phénomène ne se produit
+  pas, la question est close pour de bon au lieu d'être reportée.
+- **Ne jamais faire tourner deux matchs en même temps.** À cadence horloge,
+  deux matchs concurrents se volent du CPU et faussent les deux. La
+  concurrence interne de l'arbitre est le seul parallélisme admis.
+- **Le SPRT tire ses ouvertures au hasard : sans `-srand`, rien n'est
+  rejouable.** `tools/sprt.sh` fixe désormais la graine et l'affiche.
 
 - **Ne jamais construire une référence avec `git stash`.** Il emporte tout le
   travail non committé, outils de mesure compris — on finit par mesurer autre
