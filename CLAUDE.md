@@ -247,7 +247,7 @@ tools/sprt.sh <candidat> <référence>       # verdict sur un changement
 tools/crosscheck.sh                        # les deux arbitres s'accordent-ils
 ```
 
-Référence à la profondeur 7 : 541 528 nœuds.
+Référence à la profondeur 7 : 323 267 nœuds.
 
 Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
 `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
