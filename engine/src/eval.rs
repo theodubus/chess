@@ -21,7 +21,7 @@
 //! unique ne peut pas exprimer les deux. On calcule donc deux scores et on les
 //! mélange selon la phase de jeu.
 
-use cozy_chess::{Board, Color, Piece, Square};
+use cozy_chess::{Board, Color, Piece, Square, get_bishop_moves, get_knight_moves, get_rook_moves};
 
 /// Score attribué à un mat. Suffisamment grand pour dominer tout matériel,
 /// suffisamment petit pour qu'aucune addition ne déborde un `i32`.
@@ -53,6 +53,26 @@ const PHASE_TOTAL: i32 = 24;
 
 /// Bonus de la paire de fous, en milieu de partie puis en finale.
 const BISHOP_PAIR: (i32, i32) = (30, 45);
+
+/// Valeur d'une case accessible, par type de pièce, en milieu puis en finale.
+///
+/// Une pièce enfermée ne vaut pas une pièce active, et les tables piece-square
+/// ne peuvent pas le dire : elles jugent la case, jamais ce que la pièce voit
+/// depuis cette case. Deux cavaliers sur la même case dans deux positions
+/// différentes reçoivent le même score alors que l'un peut être immobilisé.
+///
+/// La tour est mieux payée en finale, où les colonnes s'ouvrent et où sa
+/// portée décide ; la dame l'est peu partout, sa mobilité brute étant déjà
+/// énorme et peu informative. **Valeurs conventionnelles, non réglées** — à
+/// améliorer par la mesure, comme le reste de ce fichier.
+const MOBILITY: [(i32, i32); Piece::NUM] = [
+    (0, 0), // pion : sa mobilité est structurelle, les tables la portent déjà
+    (4, 4), // cavalier
+    (3, 3), // fou
+    (2, 4), // tour
+    (1, 2), // dame
+    (0, 0), // roi : actif en finale, vulnérable en milieu — terme à part
+];
 
 // Les tables ci-dessous sont écrites du point de vue des Blancs, dans l'ordre
 // visuel d'un échiquier : la première ligne est la 8e rangée, la dernière est
@@ -206,6 +226,10 @@ pub fn evaluate(board: &Board) -> i32 {
             midgame += sign * BISHOP_PAIR.0;
             endgame += sign * BISHOP_PAIR.1;
         }
+
+        let (mob_mg, mob_eg) = mobility(board, color);
+        midgame += sign * mob_mg;
+        endgame += sign * mob_eg;
     }
 
     // Les promotions peuvent faire dépasser le total initial ; on borne.
@@ -213,10 +237,109 @@ pub fn evaluate(board: &Board) -> i32 {
     (midgame * phase + endgame * (PHASE_TOTAL - phase)) / PHASE_TOTAL
 }
 
+/// Somme des cases accessibles à un camp, pondérée par type de pièce.
+///
+/// « Accessible » veut dire : atteint par le motif d'attaque de la pièce et non
+/// occupé par une de nos propres pièces. Les cases défendues par l'adversaire
+/// comptent donc, y compris celles où la pièce se ferait prendre. **C'est un
+/// choix, pas un oubli** : ne compter que les cases sûres — en retirant celles
+/// qu'un pion adverse attaque — est un raffinement classique et une seconde
+/// question, à mesurer séparément pour que ce SPRT-ci ne mesure qu'une chose.
+///
+/// Le roi et les pions sont exclus : leurs poids sont nuls dans `MOBILITY`, et
+/// la boucle les saute pour ne pas payer une génération d'attaques inutile.
+fn mobility(board: &Board, color: Color) -> (i32, i32) {
+    let occupied = board.occupied();
+    let ours = board.colors(color);
+    let mut midgame = 0;
+    let mut endgame = 0;
+
+    for piece in [Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen] {
+        let (weight_mg, weight_eg) = MOBILITY[piece as usize];
+        for square in board.colored_pieces(color, piece) {
+            let attacks = match piece {
+                Piece::Knight => get_knight_moves(square),
+                Piece::Bishop => get_bishop_moves(square, occupied),
+                Piece::Rook => get_rook_moves(square, occupied),
+                // La dame voit ce que verraient une tour et un fou réunis.
+                _ => get_bishop_moves(square, occupied) | get_rook_moves(square, occupied),
+            };
+            let count = i32::try_from((attacks & !ours).len()).unwrap_or(0);
+            midgame += weight_mg * count;
+            endgame += weight_eg * count;
+        }
+    }
+
+    (midgame, endgame)
+}
+
 #[cfg(test)]
 #[expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
 mod tests {
     use super::*;
+
+    fn board(fen: &str) -> Board {
+        fen.parse().unwrap()
+    }
+
+    /// Toutes les positions de ces tests sont validées par exécution avant
+    /// d'être inscrites — une position dérivée de tête s'est révélée illégale
+    /// trois fois sur ce projet. Voir le piège correspondant dans CLAUDE.md.
+    #[test]
+    fn une_piece_qui_voit_plus_de_cases_vaut_plus() {
+        // Même matériel, même camp, seule la case change. Sans terme de
+        // mobilité les deux positions seraient jugées identiques, puisque les
+        // tables piece-square notent la case et jamais ce que la pièce y voit.
+        let centre = mobility(&board("7k/8/8/8/3N4/8/8/K7 w - - 0 1"), Color::White);
+        let coin = mobility(&board("7k/8/8/8/8/8/8/KN6 w - - 0 1"), Color::White);
+        assert!(
+            centre.0 > coin.0 && centre.1 > coin.1,
+            "cavalier au centre {centre:?} contre cavalier au coin {coin:?}"
+        );
+
+        let ouverte = mobility(&board("7k/8/8/8/8/8/8/K3R3 w - - 0 1"), Color::White);
+        let enfermee = mobility(&board("7k/8/8/8/8/8/PPP5/KR6 w - - 0 1"), Color::White);
+        assert!(
+            ouverte.0 > enfermee.0,
+            "tour libre {ouverte:?} contre tour enfermée {enfermee:?}"
+        );
+
+        let fou = mobility(&board("7k/8/8/8/8/3B4/8/K7 w - - 0 1"), Color::White);
+        assert!(
+            fou.0 > 0,
+            "un fou en pleine diagonale doit compter : {fou:?}"
+        );
+    }
+
+    #[test]
+    fn les_pions_et_le_roi_ne_comptent_pas_dans_la_mobilite() {
+        // Leurs poids sont nuls et la boucle les saute : une position qui n'a
+        // que des rois ne peut produire aucune mobilité. Si ce test tombe,
+        // c'est qu'un terme s'est glissé là où il ne devrait pas.
+        assert_eq!(
+            mobility(&board("8/8/8/8/8/8/8/K6k w - - 0 1"), Color::White),
+            (0, 0)
+        );
+        assert_eq!(
+            mobility(
+                &board("7k/pppppppp/8/8/8/8/PPPPPPPP/K7 w - - 0 1"),
+                Color::White
+            ),
+            (0, 0)
+        );
+    }
+
+    #[test]
+    fn la_mobilite_se_compte_pour_les_deux_camps() {
+        // Position initiale : parfaitement symétrique, donc les deux camps
+        // doivent obtenir exactement la même mobilité — et elle doit être non
+        // nulle, sans quoi le terme ne ferait rien du tout.
+        let b = Board::default();
+        let blancs = mobility(&b, Color::White);
+        let noirs = mobility(&b, Color::Black);
+        assert_eq!(blancs, noirs);
+        assert!(blancs.0 > 0, "les cavaliers initiaux voient des cases");
+    }
 
     #[test]
     fn la_position_initiale_est_equilibree() {
