@@ -134,7 +134,7 @@ une mesure, pas une préférence.
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. Empiriquement, sur les quatre SPRT du projet, `parties × Elo ≈ 62 000` : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 12 400 ≈ 2 h 30 ; +2 ≈ 31 000 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
-| « c'est plus fort » | **Jamais** déduit d'un nombre de nœuds, dans aucun sens. Six mesures, et les trois combinaisons de signes sont représentées : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration ÷1,07 → +30 (moins de nœuds, plus fort) ; **PVS ÷1,03 → −11, H0 accepté** (moins de nœuds, plus faible) ; **mobilité ×1,29 → +63** (*plus* de nœuds, plus fort). Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. |
+| « c'est plus fort » | **Jamais** déduit d'un nombre de nœuds, dans aucun sens. Sept mesures, et les trois combinaisons de signes sont représentées : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration ÷1,07 → +30 ; élagage delta ÷1,68 → +33 (moins de nœuds, plus fort) ; **PVS ÷1,03 → −11, H0 accepté** (moins de nœuds, plus faible) ; **mobilité ×1,29 → +63** (*plus* de nœuds, plus fort). Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. **Deux rapports voisins, ÷1,68 et ÷2,52, rapportent +33 et +75 : même le classement ne se déduit pas.** |
 | « cette technique est standard, donc elle aide » | **Rien.** Ce n'est pas une preuve. PVS est dans tous les manuels et la mesure l'a rejeté sur ce moteur (−11 Elo, 4214 parties) : empilé sur LMR, coup nul et fenêtres d'aspiration, il n'apporte plus rien à couper et ne laisse que son coût de re-recherche. Une technique standard entre par le SPRT comme toutes les autres. |
 
 ## Pièges de mesure, appris à nos dépens
@@ -150,6 +150,10 @@ une mesure, pas une préférence.
   de fois un phénomène se produit coûte des minutes d'instrumentation ; en
   mesurer l'effet coûte des heures de match. Et si le phénomène ne se produit
   pas, la question est close pour de bon au lieu d'être reportée.
+  **Confirmé le 14 sept. 2026** : dix minutes d'instrumentation ont montré que
+  90 % des nœuds sont en quiescence et qu'un test delta atteindrait 39 % des
+  captures qu'elle examine. Les cinq lignes écrites ensuite valent
+  **+32,5 Elo ± 12,3**. Choisir où creuser se mesure, comme le reste.
 - **Un bench à profondeur 7 est trop court pour comparer des temps.** Le
   nombre de nœuds y est déterministe et comparable, le temps ne l'est pas :
   le 14 sept. 2026, une même version a mesuré 184 ms puis 200 ms en
@@ -247,7 +251,7 @@ tools/sprt.sh <candidat> <référence>       # verdict sur un changement
 tools/crosscheck.sh                        # les deux arbitres s'accordent-ils
 ```
 
-Référence à la profondeur 7 : 541 528 nœuds.
+Référence à la profondeur 7 : 323 267 nœuds.
 
 Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
 `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que

@@ -127,8 +127,9 @@ coûter 25,8 ns au lieu de 9,0, soit 2,8 fois son prix réel.
 | 2026-09-14 | Mobilité dans l'évaluation | **H1 accepté** — +62,6 Elo ± 17,2 sur 942 parties, cadence 1+0,01 |
 | 2026-09-14 | Sécurité du roi, structure de pions et tours sur colonne ouverte, valeurs conventionnelles | **H1 accepté** — +14,9 Elo ± 8,2 sur 4474 parties, cadence 1+0,01 |
 | 2026-09-14 | Les mêmes termes, valeurs réglées par ajustement Texel | **H0 accepté** — **−10,0 Elo ± 8,3** sur 5128 parties. Réglage retiré. |
+| 2026-09-14 | Élagage delta en quiescence | **H1 accepté** — +32,5 Elo ± 12,3 sur 1822 parties, cadence 1+0,01 |
 
-**Le nombre de nœuds n'est pas une mesure de force.** Six mesures le disent
+**Le nombre de nœuds n'est pas une mesure de force.** Sept mesures le disent
 maintenant, et elles ne s'ordonnent pas de la même façon :
 
 | changement | nœuds | Elo |
@@ -139,6 +140,7 @@ maintenant, et elles ne s'ordonnent pas de la même façon :
 | fenêtres d'aspiration | ÷ 1,07 | +30 |
 | **recherche à variante principale (PVS)** | **÷ 1,03** | **−11** |
 | **mobilité dans l'évaluation** | **× 1,29** | **+63** |
+| élagage delta en quiescence | ÷ 1,68 | +33 |
 
 Les deux dernières lignes sont les plus instructives. PVS explore **moins** de
 nœuds et joue **plus mal**. La mobilité en explore **29 % de plus** et joue

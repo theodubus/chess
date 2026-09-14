@@ -77,6 +77,20 @@ const ASPIRATION_MIN_DEPTH: u32 = 4;
 /// conventionnelle, à régler par SPRT comme le reste.
 const ASPIRATION_DELTA: i32 = 25;
 
+/// Marge de l'élagage delta en quiescence, en centièmes de pion.
+///
+/// Une capture ne rapporte, au mieux, que la pièce prise. Si le score statique
+/// plus cette pièce plus une marge reste sous `alpha`, la capture ne peut pas
+/// sauver la position et son sous-arbre est inutile.
+///
+/// La marge couvre ce que la valeur de la pièce ne dit pas : un gain positionnel
+/// consécutif à la capture, ou une erreur de l'évaluation statique. Trop
+/// étroite, elle élague des captures qui sauvaient la position ; trop large,
+/// elle n'élague plus rien. **Valeur conventionnelle, à régler par SPRT comme
+/// le reste** — c'est celle qui a servi à mesurer la portée de l'élagage avant
+/// de l'écrire.
+const DELTA_MARGIN: i32 = 200;
+
 /// Nombre de nœuds entre deux consultations de l'horloge et du drapeau d'arrêt.
 ///
 /// Interroger `Instant::now()` à chaque nœud coûte plus cher que la recherche
@@ -220,6 +234,14 @@ pub struct Search {
     /// Les valeurs que consulte l'évaluation. Le moteur emploie toujours les
     /// valeurs par défaut ; seul le tuner en substitue d'autres.
     params: eval::Params,
+    /// Permet à un test de désactiver le seul élagage delta, pour comparer deux
+    /// recherches qui ne diffèrent que par lui.
+    ///
+    /// Sans ce commutateur, un test « le changement fait quelque chose » ne peut
+    /// que comparer deux appels identiques — faute déjà commise sur ce projet le
+    /// 14 sept. 2026, et qui rend le test creux.
+    #[cfg(test)]
+    delta_pruning: bool,
 }
 
 impl Search {
@@ -242,6 +264,8 @@ impl Search {
             history: vec![0; 64 * 64],
             lmr: build_lmr_table(),
             params: eval::Params::DEFAULT,
+            #[cfg(test)]
+            delta_pruning: true,
         }
     }
 
@@ -714,7 +738,13 @@ impl Search {
             self.path.push(child.hash());
             let mut score = -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha);
             // La réduction a menti : ce coup mérite la profondeur pleine.
-            if reduction > 0 && score > alpha {
+            //
+            // `!self.aborted` n'est pas décoratif : une recherche interrompue
+            // rend 0, et zéro dépasse `alpha` dans toute position perdante. La
+            // re-recherche partait alors sur un score qui ne veut rien dire,
+            // pour un résultat de toute façon jeté. Trouvé par le test du
+            // budget de nœuds, qui dépassait d'exactement un nœud.
+            if reduction > 0 && !self.aborted && score > alpha {
                 score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha);
             }
             self.path.pop();
@@ -775,12 +805,13 @@ impl Search {
         }
 
         let in_check = !board.checkers().is_empty();
+        let mut stand_pat = -INFINITY;
 
         if !in_check {
             // « Stand pat » : ne rien jouer est une option, et la plupart des
             // positions sont déjà au moins aussi bonnes que ce qu'une capture
             // forcée donnerait.
-            let stand_pat = eval::evaluate(board, &self.params);
+            stand_pat = eval::evaluate(board, &self.params);
             if stand_pat >= beta {
                 return stand_pat;
             }
@@ -800,6 +831,13 @@ impl Search {
 
         let mut best = if in_check { -INFINITY } else { alpha };
         for (mv, _) in moves {
+            if self.delta_prunable(board, mv, in_check, stand_pat, alpha) {
+                // Sauter et non rompre : l'ordre MVV-LVA mêle la valeur de la
+                // victime, celle de l'agresseur et la promotion, donc une
+                // capture élagable peut en précéder une qui ne l'est pas.
+                continue;
+            }
+
             let mut child = board.clone();
             child.play_unchecked(mv);
 
@@ -820,6 +858,49 @@ impl Search {
             }
         }
         best
+    }
+
+    /// Vrai si cette capture ne peut pas ramener la position jusqu'à `alpha`.
+    ///
+    /// Mesuré avant d'être écrit, le 14 sept. 2026 : **90 % des nœuds du moteur
+    /// sont des nœuds de quiescence**, et ce test atteint **39 % des captures
+    /// qu'elle examine** sur des positions tirées de vraies parties (60 % sur le
+    /// banc — l'écart est le piège déjà consigné).
+    ///
+    /// Trois gardes, et aucune n'est décorative :
+    /// - **en échec**, toute parade est obligatoire : élaguer ferait évaluer une
+    ///   position perdue comme tranquille, ce que la quiescence existe pour
+    ///   empêcher ;
+    /// - **une promotion** gagne bien plus que la pièce prise — jusqu'à une dame
+    ///   — et la valeur de la victime ne le dit pas ;
+    /// - **autour d'un score de mat**, l'arithmétique de la marge n'a plus de
+    ///   sens : `alpha` n'y mesure plus du matériel.
+    ///
+    /// La valeur retenue pour la victime est le **maximum** de ses valeurs de
+    /// milieu de partie et de finale. L'élagage n'est licite que si l'on est sûr
+    /// que la capture ne suffit pas : il faut donc majorer son gain, jamais le
+    /// minorer.
+    fn delta_prunable(
+        &self,
+        board: &Board,
+        mv: Move,
+        in_check: bool,
+        stand_pat: i32,
+        alpha: i32,
+    ) -> bool {
+        #[cfg(test)]
+        if !self.delta_pruning {
+            return false;
+        }
+
+        if in_check || mv.promotion.is_some() || alpha.abs() >= MATE_THRESHOLD {
+            return false;
+        }
+        let Some(victim) = captured_piece(board, mv) else {
+            return false;
+        };
+        let gain = self.params.mg_value[victim as usize].max(self.params.eg_value[victim as usize]);
+        stand_pat.saturating_add(gain).saturating_add(DELTA_MARGIN) <= alpha
     }
 }
 
@@ -1077,6 +1158,98 @@ mod tests {
     fn une_piece_en_prise_gratuite_est_capturee() {
         // Tour d2, dame noire d5 sans défense sur la même colonne.
         assert_eq!(best("4k3/8/8/3q4/8/8/3R4/4K3 w - - 0 1", 3), "d2d5");
+    }
+
+    /// Construit une recherche dont le seul élagage delta est désactivé.
+    fn search_sans_delta() -> Search {
+        let mut s = search();
+        s.delta_pruning = false;
+        s
+    }
+
+    /// Le score statique de la position, du point de vue du camp au trait.
+    fn stand_pat(fen: &str) -> i32 {
+        eval::evaluate(&board(fen), &eval::Params::DEFAULT)
+    }
+
+    #[test]
+    fn lelagage_delta_retire_des_noeuds() {
+        // Le commutateur isole le seul élagage delta : les deux recherches sont
+        // identiques à cela près. Comparer deux appels identiques ne prouverait
+        // rien — faute déjà commise sur ce projet.
+        let position = Position::from_fen(crate::bench::BENCH_FENS[1]).unwrap();
+        let limits = Limits {
+            depth: Some(6),
+            ..Limits::default()
+        };
+
+        let mut avec = search();
+        avec.go(&position, &limits, |_| {});
+        let mut sans = search_sans_delta();
+        sans.go(&position, &limits, |_| {});
+
+        assert!(
+            avec.nodes() < sans.nodes(),
+            "l'élagage delta ne retire rien : {} nœuds avec, {} sans",
+            avec.nodes(),
+            sans.nodes()
+        );
+    }
+
+    #[test]
+    fn en_echec_aucune_capture_nest_elaguee() {
+        // Toute parade est obligatoire : élaguer ferait évaluer une position
+        // perdue comme tranquille, ce que la quiescence existe pour empêcher.
+        // Position vérifiée par exécution : roi blanc d1 en échec par la dame
+        // d5, unique capture Ta5xd5.
+        let fen = "3k4/8/8/R2q4/8/8/8/3K4 w - - 0 1";
+        let b = board(fen);
+        assert!(!b.checkers().is_empty(), "la position doit être un échec");
+        let mv = "a5d5".parse().unwrap();
+
+        // Même avec un alpha écrasant, la garde d'échec l'emporte.
+        assert!(!search().delta_prunable(&b, mv, true, stand_pat(fen), INFINITY / 2));
+    }
+
+    #[test]
+    fn une_promotion_nest_jamais_elaguee() {
+        // Une promotion gagne jusqu'à une dame, ce que la valeur de la pièce
+        // prise ne dit pas. Position vérifiée : pion b7 prend en a8 ou c8.
+        let fen = "r1r1k3/1P6/8/8/8/8/8/4K3 w - - 0 1";
+        let b = board(fen);
+        let sp = stand_pat(fen);
+        for uci in ["b7a8q", "b7c8q"] {
+            let mv = cozy_chess::util::parse_uci_move(&b, uci).unwrap();
+            assert!(mv.promotion.is_some(), "{uci} doit être une promotion");
+            assert!(
+                !search().delta_prunable(&b, mv, false, sp, INFINITY / 2),
+                "{uci} a été élaguée"
+            );
+        }
+    }
+
+    #[test]
+    fn autour_dun_score_de_mat_rien_nest_elague() {
+        // L'arithmétique de la marge suppose qu'alpha mesure du matériel.
+        // Un score de mat ne mesure plus cela.
+        let fen = "4k3/p7/8/8/8/8/6Q1/R3K3 w - - 0 1";
+        let b = board(fen);
+        let mv = "a1a7".parse().unwrap();
+        assert!(!search().delta_prunable(&b, mv, false, stand_pat(fen), MATE - 5));
+    }
+
+    #[test]
+    fn une_capture_trop_petite_pour_rattraper_est_elaguee() {
+        // Le cas nominal : prendre un pion ne comble pas un retard écrasant.
+        // Position vérifiée par exécution, unique capture Ta1xa7.
+        let fen = "4k3/p7/8/8/8/8/6Q1/R3K3 w - - 0 1";
+        let b = board(fen);
+        let mv = "a1a7".parse().unwrap();
+        let sp = stand_pat(fen);
+        // Un alpha hors de portée d'un pion plus la marge.
+        assert!(search().delta_prunable(&b, mv, false, sp, sp + 2_000));
+        // Un alpha atteignable ne déclenche rien.
+        assert!(!search().delta_prunable(&b, mv, false, sp, sp - 100));
     }
 
     #[test]
