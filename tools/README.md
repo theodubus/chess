@@ -124,6 +124,7 @@ coûter 25,8 ns au lieu de 9,0, soit 2,8 fois son prix réel.
 | 2026-09-13 | Réduction des coups tardifs (LMR) contre le coup nul | **H1 accepté** — +69,1 Elo ± 18,3 sur 892 parties, cadence 1+0,01 |
 | 2026-09-14 | Fenêtres d'aspiration contre LMR | **H1 accepté** — +29,7 Elo ± 11,9 sur 2042 parties, cadence 1+0,01 |
 | 2026-09-14 | Recherche à variante principale (PVS) contre les fenêtres d'aspiration | **H0 accepté** — **−10,9 Elo ± 7,9** sur 4214 parties, cadence 1+0,01. Changement retiré. |
+| 2026-09-14 | Mobilité dans l'évaluation | **H1 accepté** — +62,6 Elo ± 17,2 sur 942 parties, cadence 1+0,01 |
 
 **Le nombre de nœuds n'est pas une mesure de force.** Quatre mesures le disent
 maintenant, et elles ne s'ordonnent pas de la même façon :
@@ -135,10 +136,12 @@ maintenant, et elles ne s'ordonnent pas de la même façon :
 | réduction des coups tardifs | ÷ 5,73 | +69 |
 | fenêtres d'aspiration | ÷ 1,07 | +30 |
 | **recherche à variante principale (PVS)** | **÷ 1,03** | **−11** |
+| **mobilité dans l'évaluation** | **× 1,29** | **+63** |
 
-La dernière ligne est la plus instructive : PVS explore **moins** de nœuds et
-joue **plus mal**. Les deux grandeurs ne se contentent pas de mal se classer,
-elles peuvent aller en sens contraire.
+Les deux dernières lignes sont les plus instructives. PVS explore **moins** de
+nœuds et joue **plus mal**. La mobilité en explore **29 % de plus** et joue
+bien mieux. Les trois combinaisons de signes sont désormais représentées : le
+nombre de nœuds ne contraint la force dans aucune direction.
 
 Le classement par nœuds et le classement par Elo ne coïncident nulle part. La
 fenêtre d'aspiration, qui ne retire que 6 % des nœuds à profondeur 7, rapporte
