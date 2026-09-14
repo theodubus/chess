@@ -14,6 +14,10 @@ workspace = true
 name = "bookgen"
 path = "src/bin/bookgen.rs"
 
+[[bin]]
+name = "nnue-probe"
+path = "src/bin/nnue_probe.rs"
+
 [dependencies]
 shallowred = { path = "../engine" }
 cozy-chess = "0.3.4"

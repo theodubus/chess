@@ -78,6 +78,43 @@ l'échantillon serait de taille un. Le tirage est seedé — même graine, même
 livre — parce qu'un livre régénéré différemment invaliderait toute comparaison
 avec les mesures antérieures.
 
+## `nnue-probe` — le pari architectural de NNUE
+
+```sh
+cargo run --release --bin nnue-probe
+```
+
+Répond au benchmark obligatoire de B4 : que coûtent le copy-make et le calcul
+du delta d'accumulateur NNUE **à l'extérieur** du `play_unchecked` opaque de
+`cozy-chess` ?
+
+L'outil fait deux choses. Il **dérive** les modifications de l'accumulateur du
+seul plateau parent et du coup, puis les confronte à la différence réelle entre
+les deux plateaux, case par case — la correction est donc établie par
+exécution, pas par relecture. Puis il **chiffre** le coût par mesure
+différentielle : le même parcours d'arbre est refait avec un copy-make
+supplémentaire, puis avec la dérivation, chacun protégé par `black_box`, et
+l'on lit le ralentissement. C'est plus honnête qu'une boucle serrée, dont la
+localité de cache n'a rien à voir avec celle d'une recherche.
+
+Résultat du 14 septembre 2026, rapporté au coût d'un vrai nœud de recherche
+(316,8 ns, mesuré par `bench 7` sur la même machine) :
+
+| | coût marginal | part d'un nœud |
+|---|---|---|
+| copy-make | 22,8 ns | **7,2 %** |
+| dérivation du delta NNUE | 9,0 ns | **2,8 %** |
+
+283 677 coups vérifiés, dont 3 255 roques, 48 prises en passant et 13 628
+promotions. Aucun écart. **Conclusion : ni le copy-make ni `cozy-chess` ne
+plafonnent le projet du côté de NNUE.**
+
+Deux pièges rencontrés en écrivant cet outil, et qui valent d'être retenus.
+Rapporter le coût au parcours d'arbre nu plutôt qu'à un vrai nœud de recherche
+donnait +71 % et +28 % — des chiffres vrais répondant à une autre question.
+Et la première version allouait un `Vec` par nœud : la dérivation semblait
+coûter 25,8 ns au lieu de 9,0, soit 2,8 fois son prix réel.
+
 ## Mesures de référence
 
 | date | changement | verdict |

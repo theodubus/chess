@@ -19,7 +19,9 @@ une mesure, pas une préférence.
   n'achèterait pas de performance mesurable.
 - **Copy-make, pas make/unmake.** `cozy-chess` n'expose pas d'`unmake` et les
   champs de son `Board` sont privés. Un `Board` fait 104 octets : la copie est
-  bon marché.
+  bon marché. **Mesuré le 14 sept. 2026 : le copy-make pèse 7,2 % du temps
+  d'un nœud de recherche.** Et il ne ferme pas la porte à NNUE — voir la
+  contrainte d'architecture correspondante.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Licence AGPL-3.0-or-later** sur tout le dépôt.
 
@@ -91,7 +93,17 @@ une mesure, pas une préférence.
 - **Pile de clés Zobrist** pour la détection de répétition — déjà en place dans
   `Position`.
 - **Pile d'accumulateurs NNUE par ply**, le jour où NNUE arrive. L'accumulateur
-  pèse 1 à 4 Ko : il ne peut pas être copié par nœud.
+  pèse 1 à 4 Ko : il ne peut pas être copié par nœud — mais il n'a pas à
+  l'être. Il vit dans une pile indexée par ply appartenant à `Search`, jamais
+  dans le `Board`, et le copy-make ne l'y oblige pas.
+  **Vérifié le 14 sept. 2026, pas supposé** : `tools/src/bin/nnue_probe.rs`
+  dérive les modifications de l'accumulateur du seul plateau parent et du coup,
+  sans rien demander au `play_unchecked` opaque de `cozy-chess`. La dérivation
+  est confrontée à la vérité terrain sur 283 677 coups — 3 255 roques, 48
+  prises en passant, 13 628 promotions — sans un seul écart, et coûte **2,8 %
+  du temps d'un nœud**. Ne pas réécrire cette dérivation de tête le jour venu :
+  le roque en notation roi-prend-tour et la prise en passant sont exactement
+  les cas qu'on rate.
 - **Génération par étapes** — en place via `ordered_moves(board, tactical_only)`.
   Reste à faire : ne pas matérialiser tous les coups avant d'en trier.
 - **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
