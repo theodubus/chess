@@ -125,6 +125,18 @@ fn main() {
     // Fichier de sauvegarde réécrit à chaque progrès de la validation : un
     // ajustement interrompu ne doit pas repartir de zéro.
     let checkpoint = args.next();
+    // Nombre de paramètres à régler, dans l'ordre de `Params::visit`.
+    //
+    // Les 57 premiers sont les termes nommés — matériel, primes, pénalités,
+    // mobilité — et chacun s'appuie sur une grande partie du corpus. Les 768
+    // suivants sont les cases des tables piece-square, dont chacune n'est
+    // décisive que dans une fraction des positions : c'est là que le bruit
+    // s'installe quand le corpus est trop maigre. Pouvoir les exclure permet
+    // de distinguer les deux régimes au lieu de le supposer.
+    let tunable: usize = args
+        .next()
+        .and_then(|a| a.parse().ok())
+        .unwrap_or(usize::MAX);
 
     let text = std::fs::read_to_string(&path).unwrap_or_else(|e| {
         eprintln!("lecture de {path} : {e}");
@@ -212,7 +224,7 @@ fn main() {
         stale = 0;
         while stale < PATIENCE {
             pass += 1;
-            for index in 0..values.len() {
+            for index in 0..values.len().min(tunable) {
                 for delta in [step, -step] {
                     let original = values[index];
                     values[index] = original + delta;
@@ -356,19 +368,23 @@ fn render(params: &Params) -> String {
         "const ROOK_OPEN_FILE: (i32, i32) = {:?};",
         params.rook_open
     );
-    println!(
+    let _ = writeln!(
+        out,
         "const ROOK_SEMI_OPEN_FILE: (i32, i32) = {:?};",
         params.rook_semi_open
     );
-    println!(
+    let _ = writeln!(
+        out,
         "const KING_ATTACK_WEIGHT: [i32; Piece::NUM] = {:?};",
         params.king_attack_weight
     );
-    println!(
+    let _ = writeln!(
+        out,
         "const KING_DANGER_SCALE: i32 = {};",
         params.king_danger_scale
     );
-    println!(
+    let _ = writeln!(
+        out,
         "const MOBILITY: [(i32, i32); Piece::NUM] = {:?};",
         params.mobility
     );
