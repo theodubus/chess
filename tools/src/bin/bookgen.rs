@@ -109,7 +109,7 @@ fn main() -> ExitCode {
         };
         // L'évaluation est du point de vue du trait ; sa valeur absolue mesure
         // donc le déséquilibre, quel que soit le camp favorisé.
-        if eval::evaluate(&board).abs() > max_cp {
+        if eval::evaluate(&board, &eval::Params::DEFAULT).abs() > max_cp {
             continue;
         }
         if !seen.insert(board.hash()) {

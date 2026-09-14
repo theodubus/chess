@@ -241,8 +241,86 @@ const KING_EG: [i32; 64] = [
    -50, -30, -30, -30, -30, -30, -30, -50,
 ];
 
-const PST_MG: [&[i32; 64]; Piece::NUM] = [&PAWN_MG, &KNIGHT, &BISHOP, &ROOK, &QUEEN, &KING_MG];
-const PST_EG: [&[i32; 64]; Piece::NUM] = [&PAWN_EG, &KNIGHT, &BISHOP, &ROOK, &QUEEN, &KING_EG];
+/// Tous les nombres que l'évaluation consulte, réunis en un seul endroit.
+///
+/// **Pourquoi une structure et non des constantes.** Il y en a environ 830, et
+/// les régler un par un au SPRT est hors d'atteinte : c'est le travail d'un
+/// ajustement Texel, qui doit pouvoir les modifier à l'exécution. Les
+/// constantes ci-dessus restent la source des valeurs par défaut — elles
+/// portent les commentaires qui expliquent chaque choix, et le tuner part de
+/// là.
+///
+/// **Une seule implémentation de l'évaluation.** Garder des constantes pour le
+/// moteur et un chemin paramétré pour le tuner ferait deux évaluations qui
+/// divergeraient au premier oubli, et le tuner réglerait alors une fonction
+/// que le moteur n'utilise pas.
+///
+/// `PHASE_WEIGHT` n'y figure pas volontairement : il ne pondère pas une
+/// appréciation mais définit ce qu'on appelle « milieu de partie » et
+/// « finale ». Le régler déplacerait le sens des deux jeux de valeurs sous
+/// les pieds du tuner pendant qu'il les ajuste.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Params {
+    /// Valeur matérielle par pièce, en milieu de partie.
+    pub mg_value: [i32; Piece::NUM],
+    /// Valeur matérielle par pièce, en finale.
+    pub eg_value: [i32; Piece::NUM],
+    /// Prime de la paire de fous, milieu puis finale.
+    pub bishop_pair: (i32, i32),
+    /// Prime d'un pion passé par rangée relative, en milieu de partie.
+    pub passed_mg: [i32; 8],
+    /// Prime d'un pion passé par rangée relative, en finale.
+    pub passed_eg: [i32; 8],
+    /// Pénalité par pion doublé excédentaire.
+    pub doubled: (i32, i32),
+    /// Pénalité d'un pion isolé.
+    pub isolated: (i32, i32),
+    /// Prime d'une tour sur colonne ouverte.
+    pub rook_open: (i32, i32),
+    /// Prime d'une tour sur colonne semi-ouverte.
+    pub rook_semi_open: (i32, i32),
+    /// Poids d'attaque par pièce visant la zone du roi adverse.
+    pub king_attack_weight: [i32; Piece::NUM],
+    /// Diviseur de la mise à l'échelle quadratique du danger.
+    pub king_danger_scale: i32,
+    /// Valeur d'une case accessible, par pièce, milieu puis finale.
+    pub mobility: [(i32, i32); Piece::NUM],
+    /// Tables piece-square de milieu de partie.
+    pub pst_mg: [[i32; 64]; Piece::NUM],
+    /// Tables piece-square de finale.
+    pub pst_eg: [[i32; 64]; Piece::NUM],
+}
+
+impl Params {
+    /// Les valeurs conventionnelles du moteur, celles que documentent les
+    /// constantes ci-dessus. Aucune n'est réglée.
+    pub const DEFAULT: Self = Self {
+        mg_value: MG_VALUE,
+        eg_value: EG_VALUE,
+        bishop_pair: BISHOP_PAIR,
+        passed_mg: PASSED_MG,
+        passed_eg: PASSED_EG,
+        doubled: DOUBLED_PAWN,
+        isolated: ISOLATED_PAWN,
+        rook_open: ROOK_OPEN_FILE,
+        rook_semi_open: ROOK_SEMI_OPEN_FILE,
+        king_attack_weight: KING_ATTACK_WEIGHT,
+        king_danger_scale: KING_DANGER_SCALE,
+        mobility: MOBILITY,
+        pst_mg: [PAWN_MG, KNIGHT, BISHOP, ROOK, QUEEN, KING_MG],
+        // Cavalier, fou, tour et dame partagent aujourd'hui une seule table
+        // entre milieu et finale. Les séparer ici ne change rien tant que les
+        // deux valent la même chose, et donne au tuner la liberté de les
+        // distinguer — ce que les tables actuelles lui interdisent.
+        pst_eg: [PAWN_EG, KNIGHT, BISHOP, ROOK, QUEEN, KING_EG],
+    };
+}
+
+impl Default for Params {
+    fn default() -> Self {
+        Self::DEFAULT
+    }
+}
 
 /// Indice d'une case dans une table écrite en ordre visuel.
 ///
@@ -265,7 +343,7 @@ fn pst_index(square: Square, color: Color) -> usize {
 /// convention qu'impose le negamax : inverser le signe à chaque niveau suffit
 /// alors à alterner les points de vue.
 #[must_use]
-pub fn evaluate(board: &Board) -> i32 {
+pub fn evaluate(board: &Board, params: &Params) -> i32 {
     let mut midgame = 0;
     let mut endgame = 0;
     let mut phase = 0;
@@ -279,32 +357,34 @@ pub fn evaluate(board: &Board) -> i32 {
 
             for square in pieces {
                 let index = pst_index(square, color);
-                midgame += sign * (MG_VALUE[piece as usize] + PST_MG[piece as usize][index]);
-                endgame += sign * (EG_VALUE[piece as usize] + PST_EG[piece as usize][index]);
+                midgame +=
+                    sign * (params.mg_value[piece as usize] + params.pst_mg[piece as usize][index]);
+                endgame +=
+                    sign * (params.eg_value[piece as usize] + params.pst_eg[piece as usize][index]);
             }
         }
 
         // Deux fous couvrent les deux couleurs de cases : l'avantage est réel
         // et conventionnellement reconnu, surtout en position ouverte.
         if board.colored_pieces(color, Piece::Bishop).len() >= 2 {
-            midgame += sign * BISHOP_PAIR.0;
-            endgame += sign * BISHOP_PAIR.1;
+            midgame += sign * params.bishop_pair.0;
+            endgame += sign * params.bishop_pair.1;
         }
 
-        let activity = activity(board, color);
+        let activity = activity(board, color, params);
         midgame += sign * activity.mobility_mg;
         endgame += sign * activity.mobility_eg;
 
         // Le danger pèse sur le roi ADVERSE, donc contre le camp adverse : on
         // l'ajoute au crédit de `color`. En finale il ne s'applique pas — le
         // roi doit alors sortir, et l'y dissuader serait une faute.
-        midgame += sign * king_danger(activity.king_attack);
+        midgame += sign * king_danger(activity.king_attack, params);
 
-        let (pawns_mg, pawns_eg) = pawn_structure(board, color);
+        let (pawns_mg, pawns_eg) = pawn_structure(board, color, params);
         midgame += sign * pawns_mg;
         endgame += sign * pawns_eg;
 
-        let (rooks_mg, rooks_eg) = rook_files(board, color);
+        let (rooks_mg, rooks_eg) = rook_files(board, color, params);
         midgame += sign * rooks_mg;
         endgame += sign * rooks_eg;
     }
@@ -341,7 +421,7 @@ struct Activity {
 ///
 /// Le roi et les pions sont exclus : leurs poids sont nuls dans `MOBILITY`, et
 /// la boucle les saute pour ne pas payer une génération d'attaques inutile.
-fn activity(board: &Board, color: Color) -> Activity {
+fn activity(board: &Board, color: Color, params: &Params) -> Activity {
     let occupied = board.occupied();
     let ours = board.colors(color);
 
@@ -357,7 +437,7 @@ fn activity(board: &Board, color: Color) -> Activity {
     };
 
     for piece in [Piece::Knight, Piece::Bishop, Piece::Rook, Piece::Queen] {
-        let (weight_mg, weight_eg) = MOBILITY[piece as usize];
+        let (weight_mg, weight_eg) = params.mobility[piece as usize];
         for square in board.colored_pieces(color, piece) {
             let attacks = match piece {
                 Piece::Knight => get_knight_moves(square),
@@ -372,7 +452,7 @@ fn activity(board: &Board, color: Color) -> Activity {
             out.mobility_eg += weight_eg * count;
 
             if !(attacks & zone).is_empty() {
-                out.king_attack += KING_ATTACK_WEIGHT[piece as usize];
+                out.king_attack += params.king_attack_weight[piece as usize];
             }
         }
     }
@@ -398,7 +478,7 @@ fn ahead_of(rank: u32, color: Color) -> BitBoard {
 /// Trois notions qu'aucune table piece-square ne peut exprimer, parce
 /// qu'elles dépendent toutes des **autres** pions, amis comme adverses, et
 /// non de la seule case occupée.
-fn pawn_structure(board: &Board, color: Color) -> (i32, i32) {
+fn pawn_structure(board: &Board, color: Color, params: &Params) -> (i32, i32) {
     let ours = board.colored_pieces(color, Piece::Pawn);
     let theirs = board.colored_pieces(!color, Piece::Pawn);
     let mut midgame = 0;
@@ -417,14 +497,14 @@ fn pawn_structure(board: &Board, color: Color) -> (i32, i32) {
             } else {
                 7 - rank
             } as usize;
-            midgame += PASSED_MG[relative];
-            endgame += PASSED_EG[relative];
+            midgame += params.passed_mg[relative];
+            endgame += params.passed_eg[relative];
         }
 
         // Isolé : aucun pion ami sur les colonnes adjacentes, à aucune rangée.
         if (ours & file.adjacent()).is_empty() {
-            midgame += ISOLATED_PAWN.0;
-            endgame += ISOLATED_PAWN.1;
+            midgame += params.isolated.0;
+            endgame += params.isolated.1;
         }
     }
 
@@ -433,8 +513,8 @@ fn pawn_structure(board: &Board, color: Color) -> (i32, i32) {
     for file in cozy_chess::File::ALL {
         let count = i32::try_from((ours & file.bitboard()).len()).unwrap_or(0);
         if count > 1 {
-            midgame += DOUBLED_PAWN.0 * (count - 1);
-            endgame += DOUBLED_PAWN.1 * (count - 1);
+            midgame += params.doubled.0 * (count - 1);
+            endgame += params.doubled.1 * (count - 1);
         }
     }
 
@@ -442,7 +522,7 @@ fn pawn_structure(board: &Board, color: Color) -> (i32, i32) {
 }
 
 /// Prime des tours postées sur une colonne ouverte ou semi-ouverte.
-fn rook_files(board: &Board, color: Color) -> (i32, i32) {
+fn rook_files(board: &Board, color: Color, params: &Params) -> (i32, i32) {
     let ours = board.colored_pieces(color, Piece::Pawn);
     let theirs = board.colored_pieces(!color, Piece::Pawn);
     let mut midgame = 0;
@@ -454,9 +534,9 @@ fn rook_files(board: &Board, color: Color) -> (i32, i32) {
             continue; // un pion à nous bouche la colonne
         }
         let (mg, eg) = if (theirs & file).is_empty() {
-            ROOK_OPEN_FILE
+            params.rook_open
         } else {
-            ROOK_SEMI_OPEN_FILE
+            params.rook_semi_open
         };
         midgame += mg;
         endgame += eg;
@@ -468,8 +548,8 @@ fn rook_files(board: &Board, color: Color) -> (i32, i32) {
 /// Pénalité de milieu de partie pour le camp dont le roi est assailli.
 ///
 /// Carrée et non linéaire : voir `KING_DANGER_SCALE`.
-fn king_danger(attack_weight: i32) -> i32 {
-    attack_weight * attack_weight / KING_DANGER_SCALE
+fn king_danger(attack_weight: i32, params: &Params) -> i32 {
+    attack_weight * attack_weight / params.king_danger_scale
 }
 
 #[cfg(test)]
@@ -481,10 +561,16 @@ mod tests {
         fen.parse().unwrap()
     }
 
+    /// Les tests d'évaluation portent sur la fonction, pas sur le réglage :
+    /// ils emploient toujours les valeurs par défaut.
+    fn eval(board: &Board) -> i32 {
+        evaluate(board, &Params::DEFAULT)
+    }
+
     /// Les tests de mobilité n'ont que faire du terme de sécurité du roi, qui
     /// partage la même passe pour n'en payer qu'une.
     fn mobilite(board: &Board, color: Color) -> (i32, i32) {
-        let a = activity(board, color);
+        let a = activity(board, color, &Params::DEFAULT);
         (a.mobility_mg, a.mobility_eg)
     }
 
@@ -553,14 +639,18 @@ mod tests {
         // pièces convergentes décident souvent la partie. Une somme linéaire
         // donnerait au premier le quart de ce que valent les quatre, ce qui
         // est faux. On vérifie donc la convexité, pas une valeur.
-        let un = king_danger(2);
-        let deux = king_danger(4);
-        let quatre = king_danger(8);
+        let un = king_danger(2, &Params::DEFAULT);
+        let deux = king_danger(4, &Params::DEFAULT);
+        let quatre = king_danger(8, &Params::DEFAULT);
         assert!(
             deux - un < quatre - deux,
             "{un} {deux} {quatre} : pas convexe"
         );
-        assert_eq!(king_danger(0), 0, "aucun assaillant, aucun danger");
+        assert_eq!(
+            king_danger(0, &Params::DEFAULT),
+            0,
+            "aucun assaillant, aucun danger"
+        );
     }
 
     #[test]
@@ -570,7 +660,7 @@ mod tests {
         // puis inscrits ici. Une première version de ce test comparait deux
         // positions choisies de tête, et elle était fausse — la dame reléguée
         // en a1 visait toujours la zone par la longue diagonale.
-        let poids = |fen: &str| activity(&board(fen), Color::White).king_attack;
+        let poids = |fen: &str| activity(&board(fen), Color::White, &Params::DEFAULT).king_attack;
 
         // Dame en g5 : elle attaque g7, qui est dans la zone du roi noir.
         assert_eq!(poids("6k1/5ppp/8/6Q1/8/8/8/6K1 w - - 0 1"), 5);
@@ -588,8 +678,8 @@ mod tests {
         // Aucune pièce ne peut atteindre la zone adverse au premier coup :
         // si ce test tombait, la zone ou les attaques seraient mal calculées.
         let b = Board::default();
-        assert_eq!(activity(&b, Color::White).king_attack, 0);
-        assert_eq!(activity(&b, Color::Black).king_attack, 0);
+        assert_eq!(activity(&b, Color::White, &Params::DEFAULT).king_attack, 0);
+        assert_eq!(activity(&b, Color::Black, &Params::DEFAULT).king_attack, 0);
     }
 
     /// Les valeurs attendues de ces tests sont calculées par une
@@ -599,7 +689,7 @@ mod tests {
     /// quatre positions dérivées de tête se sont révélées fausses.
     #[test]
     fn la_structure_de_pions_est_comptee_correctement() {
-        let p = |fen: &str| pawn_structure(&board(fen), Color::White);
+        let p = |fen: &str| pawn_structure(&board(fen), Color::White, &Params::DEFAULT);
 
         // Position initiale : aucun pion passé, doublé ni isolé. Si l'un des
         // trois se déclenchait ici, la définition serait fausse.
@@ -625,7 +715,7 @@ mod tests {
 
     #[test]
     fn une_tour_est_payee_selon_sa_colonne() {
-        let r = |fen: &str| rook_files(&board(fen), Color::White);
+        let r = |fen: &str| rook_files(&board(fen), Color::White, &Params::DEFAULT);
 
         // Colonne d vide des deux côtés : ouverte.
         assert_eq!(r("7k/8/8/8/8/8/8/3R3K w - - 0 1"), (20, 10));
@@ -647,11 +737,11 @@ mod tests {
         // doit être plus forte en finale, où la promotion décide.
         for rank in 1..6 {
             assert!(
-                PASSED_MG[rank] < PASSED_MG[rank + 1],
+                Params::DEFAULT.passed_mg[rank] < Params::DEFAULT.passed_mg[rank + 1],
                 "rangée {rank} : la prime de milieu ne croît pas"
             );
             assert!(
-                PASSED_EG[rank] > PASSED_MG[rank],
+                Params::DEFAULT.passed_eg[rank] > Params::DEFAULT.passed_mg[rank],
                 "rangée {rank} : la finale doit payer plus que le milieu"
             );
         }
@@ -659,7 +749,7 @@ mod tests {
 
     #[test]
     fn la_position_initiale_est_equilibree() {
-        assert_eq!(evaluate(&Board::default()), 0);
+        assert_eq!(eval(&Board::default()), 0);
     }
 
     #[test]
@@ -671,7 +761,7 @@ mod tests {
         let noirs: Board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1"
             .parse()
             .unwrap();
-        assert_eq!(evaluate(&blancs), -evaluate(&noirs));
+        assert_eq!(eval(&blancs), -eval(&noirs));
     }
 
     #[test]
@@ -680,7 +770,7 @@ mod tests {
         let board: Board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNB1KBNR b KQkq - 0 1"
             .parse()
             .unwrap();
-        let score = evaluate(&board);
+        let score = eval(&board);
         assert!(
             (900..=1100).contains(&score),
             "une dame devrait valoir environ 1000, obtenu {score}"
@@ -693,7 +783,7 @@ mod tests {
         let centre: Board = "8/8/8/3K4/8/8/4P3/7k w - - 0 1".parse().unwrap();
         let coin: Board = "8/8/8/8/8/8/4P3/K6k w - - 0 1".parse().unwrap();
         assert!(
-            evaluate(&centre) > evaluate(&coin),
+            eval(&centre) > eval(&coin),
             "le roi centralisé doit être mieux noté en finale"
         );
     }
@@ -702,7 +792,7 @@ mod tests {
     fn la_paire_de_fous_est_un_avantage() {
         let paire: Board = "4k3/8/8/8/8/8/8/2B1KB2 w - - 0 1".parse().unwrap();
         let fou_et_cavalier: Board = "4k3/8/8/8/8/8/8/2B1KN2 w - - 0 1".parse().unwrap();
-        assert!(evaluate(&paire) > evaluate(&fou_et_cavalier));
+        assert!(eval(&paire) > eval(&fou_et_cavalier));
     }
 
     #[test]
@@ -724,7 +814,11 @@ mod tests {
 
     #[test]
     fn toutes_les_tables_sont_completes() {
-        for table in PST_MG.iter().chain(PST_EG.iter()) {
+        for table in Params::DEFAULT
+            .pst_mg
+            .iter()
+            .chain(Params::DEFAULT.pst_eg.iter())
+        {
             assert_eq!(table.len(), 64);
         }
     }
