@@ -45,16 +45,16 @@ pub const DRAW: i32 = 0;
 pub const INFINITY: i32 = i32::MAX - 1;
 
 /// Valeur du matériel en milieu de partie, indexée par [`Piece`].
-const MG_VALUE: [i32; Piece::NUM] = [102, 404, 461, 588, 1346, -22];
+const MG_VALUE: [i32; Piece::NUM] = [100, 320, 335, 500, 980, 0];
 /// Valeur du matériel en finale : les pions montent, les cavaliers baissent.
-const EG_VALUE: [i32; Piece::NUM] = [148, 210, 282, 436, 902, -10];
+const EG_VALUE: [i32; Piece::NUM] = [130, 310, 340, 540, 1000, 0];
 /// Poids de chaque pièce dans le calcul de la phase de jeu.
 const PHASE_WEIGHT: [i32; Piece::NUM] = [0, 1, 1, 2, 4, 0];
 /// Somme des poids en position initiale : 4 cavaliers, 4 fous, 4 tours, 2 dames.
 const PHASE_TOTAL: i32 = 24;
 
 /// Bonus de la paire de fous, en milieu de partie puis en finale.
-const BISHOP_PAIR: (i32, i32) = (-42, 133);
+const BISHOP_PAIR: (i32, i32) = (30, 45);
 /// Valeur d'une case accessible, par type de pièce, en milieu puis en finale.
 ///
 /// Une pièce enfermée ne vaut pas une pièce active, et les tables piece-square
@@ -77,36 +77,31 @@ const BISHOP_PAIR: (i32, i32) = (-42, 133);
 /// L'indice 0 est la rangée de départ, où un pion ne peut pas être passé au
 /// sens utile ; l'indice 6 est l'avant-dernière rangée, à un coup de la dame.
 ///
-/// **`PASSED_EG` est contraint croissant.** L'ajustement Texel du 14 sept.
-/// 2026 l'a rendu très légèrement non monotone — neuf centièmes de pion entre
-/// deux rangées basses. Qu'un pion passé vaille d'autant plus qu'il approche
-/// de la promotion est une structure d'échecs certaine, et 265 000 positions
-/// ne suffisent pas à la retrouver de façon fiable sur les rangées où le
-/// passé est rare. On l'impose donc par un maximum courant : c'est de la
-/// régularisation, et c'est ce qui la distingue d'un test qu'on assouplirait
-/// jusqu'à ce qu'il passe. Le milieu de partie n'est PAS contraint — un passé
-/// avancé et non soutenu y est loin de ses pièces et facile à bloquer, et la
-/// mesure le juge négatif sur les rangées médianes.
-const PASSED_MG: [i32; 8] = [0, 13, 10, -28, -5, 44, 172, 0];
-const PASSED_EG: [i32; 8] = [0, 42, 42, 56, 56, 96, 132, 0];
+/// **Valeurs conventionnelles, et elles le restent.** L'ajustement Texel du
+/// 14 sept. 2026 a produit d'autres valeurs, qui prédisaient le résultat des
+/// parties 7,8 % mieux sur des données tenues à l'écart — et qui jouaient
+/// 25 Elo plus mal, mesuré par SPRT. Ne pas les rouvrir sans un corpus
+/// nettement plus grand ni contrainte de structure. Voir `tools/README.md`.
+const PASSED_MG: [i32; 8] = [0, 5, 10, 20, 35, 60, 100, 0];
+const PASSED_EG: [i32; 8] = [0, 10, 20, 40, 70, 120, 180, 0];
 /// Pénalité d'un pion doublé, comptée une fois par pion excédentaire.
 ///
 /// Deux pions sur la même colonne se gênent : celui de derrière ne peut ni
 /// avancer ni défendre, et la colonne perd un défenseur latéral. Plus lourd
 /// en finale, où un pion immobilisé ne vaut presque rien.
-const DOUBLED_PAWN: (i32, i32) = (6, -12);
+const DOUBLED_PAWN: (i32, i32) = (-10, -20);
 /// Pénalité d'un pion isolé : aucun pion ami sur les colonnes adjacentes.
 ///
 /// Il ne pourra jamais être défendu par un pion, donc sa défense mobilise une
 /// pièce, et la case devant lui devient un avant-poste pour l'adversaire.
-const ISOLATED_PAWN: (i32, i32) = (-28, -7);
+const ISOLATED_PAWN: (i32, i32) = (-12, -15);
 /// Prime d'une tour sur une colonne sans aucun pion, puis sans pion ami.
 ///
 /// Une tour vaut par sa portée, et une colonne ouverte est ce qui la lui
 /// donne. La colonne semi-ouverte — plus de pion à nous, mais un pion adverse
 /// — vaut moins : la tour y voit loin mais bute sur une cible défendable.
-const ROOK_OPEN_FILE: (i32, i32) = (116, -30);
-const ROOK_SEMI_OPEN_FILE: (i32, i32) = (42, 53);
+const ROOK_OPEN_FILE: (i32, i32) = (20, 10);
+const ROOK_SEMI_OPEN_FILE: (i32, i32) = (10, 5);
 /// Poids d'attaque d'une pièce visant la zone du roi adverse.
 ///
 /// Une pièce compte une fois si l'une de ses attaques tombe dans la zone,
@@ -116,7 +111,14 @@ const ROOK_SEMI_OPEN_FILE: (i32, i32) = (42, 53);
 /// les deux axes et qu'aucune parade unique ne la neutralise.
 ///
 /// Valeurs conventionnelles, non réglées.
-const KING_ATTACK_WEIGHT: [i32; Piece::NUM] = [0, 10, 2, 11, 13, 0];
+const KING_ATTACK_WEIGHT: [i32; Piece::NUM] = [
+    0, // pion : son attaque du roi est structurelle, pas une pièce d'assaut
+    2, // cavalier
+    2, // fou
+    3, // tour
+    5, // dame
+    0, // roi : il n'attaque pas l'autre roi, la règle l'interdit
+];
 /// Diviseur de la mise à l'échelle non linéaire du danger.
 ///
 /// Le danger vaut `poids² / KING_DANGER_SCALE`. **La non-linéarité est le
@@ -125,7 +127,14 @@ const KING_ATTACK_WEIGHT: [i32; Piece::NUM] = [0, 10, 2, 11, 13, 0];
 /// décident souvent la partie. Une somme linéaire donnerait au premier
 /// attaquant le quart de ce que valent les quatre, ce qui est faux.
 const KING_DANGER_SCALE: i32 = 4;
-const MOBILITY: [(i32, i32); Piece::NUM] = [(0, 0), (4, 4), (11, -5), (2, 4), (1, 10), (0, 0)];
+const MOBILITY: [(i32, i32); Piece::NUM] = [
+    (0, 0), // pion : sa mobilité est structurelle, les tables la portent déjà
+    (4, 4), // cavalier
+    (3, 3), // fou
+    (2, 4), // tour
+    (1, 2), // dame
+    (0, 0), // roi : actif en finale, vulnérable en milieu — terme à part
+];
 // Les tables ci-dessous sont écrites du point de vue des Blancs, dans l'ordre
 // visuel d'un échiquier : la première ligne est la 8e rangée, la dernière est
 // la 1re. C'est délibéré — une table écrite dans l'ordre des indices de case
@@ -741,14 +750,14 @@ mod tests {
         let poids = |fen: &str| activity(&board(fen), Color::White, &Params::DEFAULT).king_attack;
 
         // Dame en g5 : elle attaque g7, qui est dans la zone du roi noir.
-        assert_eq!(poids("6k1/5ppp/8/6Q1/8/8/8/6K1 w - - 0 1"), 13);
+        assert_eq!(poids("6k1/5ppp/8/6Q1/8/8/8/6K1 w - - 0 1"), 5);
 
         // Même dame en a1, mais un pion en d4 coupe la longue diagonale :
         // plus rien ne vise la zone.
         assert_eq!(poids("6k1/5ppp/8/8/3P4/8/8/Q5K1 w - - 0 1"), 0);
 
         // Cavalier en e5 et dame en g5 : deux assaillants, 2 + 5.
-        assert_eq!(poids("6k1/5ppp/8/4N1Q1/8/8/8/6K1 w - - 0 1"), 23);
+        assert_eq!(poids("6k1/5ppp/8/4N1Q1/8/8/8/6K1 w - - 0 1"), 7);
     }
 
     #[test]
@@ -778,17 +787,17 @@ mod tests {
 
         // Un pion seul est À LA FOIS passé et isolé, par définition des deux :
         // 35 - 12 en milieu, 70 - 15 en finale. Ce n'est pas un artefact.
-        assert_eq!(p("7k/8/8/3P4/8/8/8/7K w - - 0 1"), (-33, 49));
+        assert_eq!(p("7k/8/8/3P4/8/8/8/7K w - - 0 1"), (23, 55));
 
         // Deux pions doublés en d2 et d3, tous deux isolés, tous deux passés.
-        assert_eq!(p("7k/8/8/8/8/3P4/3P4/7K w - - 0 1"), (-27, 58));
+        assert_eq!(p("7k/8/8/8/8/3P4/3P4/7K w - - 0 1"), (-19, -20));
 
         // Un pion adverse en d6 barre la colonne : le pion d2 n'est plus
         // passé, il ne reste que la pénalité d'isolement.
-        assert_eq!(p("7k/8/3p4/8/8/8/3P4/7K w - - 0 1"), (-28, -7));
+        assert_eq!(p("7k/8/3p4/8/8/8/3P4/7K w - - 0 1"), (-12, -15));
 
         // Deux pions voisins : aucun n'est isolé, les deux sont passés.
-        assert_eq!(p("7k/8/8/8/8/8/2PP4/7K w - - 0 1"), (26, 84));
+        assert_eq!(p("7k/8/8/8/8/8/2PP4/7K w - - 0 1"), (10, 20));
     }
 
     #[test]
@@ -796,9 +805,9 @@ mod tests {
         let r = |fen: &str| rook_files(&board(fen), Color::White, &Params::DEFAULT);
 
         // Colonne d vide des deux côtés : ouverte.
-        assert_eq!(r("7k/8/8/8/8/8/8/3R3K w - - 0 1"), (116, -30));
+        assert_eq!(r("7k/8/8/8/8/8/8/3R3K w - - 0 1"), (20, 10));
         // Un pion adverse en d7 : semi-ouverte, la tour voit loin mais bute.
-        assert_eq!(r("7k/3p4/8/8/8/8/8/3R3K w - - 0 1"), (42, 53));
+        assert_eq!(r("7k/3p4/8/8/8/8/8/3R3K w - - 0 1"), (10, 5));
         // Notre propre pion en d2 bouche la colonne : rien.
         assert_eq!(r("7k/8/8/8/8/8/3P4/3R3K w - - 0 1"), (0, 0));
         // Position initiale : les huit pions bouchent tout.
