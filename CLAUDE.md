@@ -145,6 +145,23 @@ une mesure, pas une préférence.
   de fois un phénomène se produit coûte des minutes d'instrumentation ; en
   mesurer l'effet coûte des heures de match. Et si le phénomène ne se produit
   pas, la question est close pour de bon au lieu d'être reportée.
+- **Un bench à profondeur 7 est trop court pour comparer des temps.** Le
+  nombre de nœuds y est déterministe et comparable, le temps ne l'est pas :
+  le 14 sept. 2026, une même version a mesuré 184 ms puis 200 ms en
+  best-of-7, et un balayage de tailles de cache a rendu des chiffres non
+  monotones purement dus au bruit. **Pour comparer des temps, mesurer à
+  profondeur 10** (~1,6 s par run), où le bruit devient marginal — et
+  seulement à nombre de nœuds identique, sans quoi on compare deux arbres.
+- **Un cache de structure de pions ne paie pas sur ce moteur.** Essayé et
+  retiré le 14 sept. 2026. `pawn_structure` pèse pourtant 24 % du temps de
+  recherche, mais le taux de succès mesuré n'est que de **62 à 84 %**, parce
+  que la quiescence est pilotée par les captures et qu'une bonne part des
+  captures sont des captures de pions : la structure change bien plus souvent
+  qu'on ne le suppose. Chaque échec coûte alors le calcul *plus* la
+  consultation, et chaque succès un accès mémoire aléatoire comparable au
+  recalcul. Mesuré à profondeur 10 : 1624 ms sans cache, 1644 à 1842 avec.
+  Ne pas réessayer sans changer le mécanisme — un cache indexé par une clé
+  incrémentale, ou un terme de pions moins coûteux à recalculer.
 - **Ne jamais faire tourner deux matchs en même temps.** À cadence horloge,
   deux matchs concurrents se volent du CPU et faussent les deux. La
   concurrence interne de l'arbitre est le seul parallélisme admis.
