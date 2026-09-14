@@ -322,6 +322,90 @@ impl Default for Params {
     }
 }
 
+impl Params {
+    /// Visite chaque valeur réglable, dans un ordre fixé une fois pour toutes.
+    ///
+    /// **Une seule traversée, pas deux.** Aplatir et reconstruire par deux
+    /// fonctions parallèles marcherait jusqu'au jour où l'on ajoute un champ à
+    /// l'une et pas à l'autre — et le tuner écrirait alors ses résultats dans
+    /// les mauvaises cases, sans que rien ne le signale. Tout passe ici.
+    fn visit(&mut self, f: &mut impl FnMut(&mut i32)) {
+        for v in &mut self.mg_value {
+            f(v);
+        }
+        for v in &mut self.eg_value {
+            f(v);
+        }
+        f(&mut self.bishop_pair.0);
+        f(&mut self.bishop_pair.1);
+        for v in &mut self.passed_mg {
+            f(v);
+        }
+        for v in &mut self.passed_eg {
+            f(v);
+        }
+        for pair in [
+            &mut self.doubled,
+            &mut self.isolated,
+            &mut self.rook_open,
+            &mut self.rook_semi_open,
+        ] {
+            f(&mut pair.0);
+            f(&mut pair.1);
+        }
+        for v in &mut self.king_attack_weight {
+            f(v);
+        }
+        f(&mut self.king_danger_scale);
+        for pair in &mut self.mobility {
+            f(&mut pair.0);
+            f(&mut pair.1);
+        }
+        for table in &mut self.pst_mg {
+            for v in table {
+                f(v);
+            }
+        }
+        for table in &mut self.pst_eg {
+            for v in table {
+                f(v);
+            }
+        }
+    }
+
+    /// Nombre de valeurs réglables.
+    #[must_use]
+    pub fn len() -> usize {
+        let mut n = 0;
+        Self::DEFAULT.clone().visit(&mut |_| n += 1);
+        n
+    }
+
+    /// Aplatit les valeurs dans l'ordre de `visit`.
+    #[must_use]
+    pub fn to_vec(&self) -> Vec<i32> {
+        let mut out = Vec::with_capacity(Self::len());
+        self.clone().visit(&mut |v| out.push(*v));
+        out
+    }
+
+    /// Reconstruit depuis un vecteur produit par `to_vec`.
+    ///
+    /// Les valeurs surnuméraires sont ignorées et les manquantes laissées
+    /// telles quelles : un tuner qui se tromperait de longueur produirait un
+    /// jeu partiel plutôt qu'une panique, et le test de va-et-vient garantit
+    /// que le cas normal est exact.
+    pub fn set_from(&mut self, values: &[i32]) {
+        let mut index = 0;
+        self.visit(&mut |v| {
+            if let Some(new) = values.get(index) {
+                *v = *new;
+            }
+            index += 1;
+        });
+    }
+}
+
 /// Indice d'une case dans une table écrite en ordre visuel.
 ///
 /// Pour les Blancs, la 1re rangée est la dernière ligne de la table ; pour les
@@ -745,6 +829,39 @@ mod tests {
                 "rangée {rank} : la finale doit payer plus que le milieu"
             );
         }
+    }
+
+    #[test]
+    fn les_parametres_font_un_aller_retour_exact() {
+        // Si l'aplatissement et la reconstruction divergeaient, le tuner
+        // écrirait ses résultats dans les mauvaises cases sans que rien ne le
+        // signale. C'est le test qui rend cette faute impossible.
+        let flat = Params::DEFAULT.to_vec();
+        assert_eq!(flat.len(), Params::len());
+        let mut rebuilt = Params::DEFAULT;
+        rebuilt.set_from(&flat);
+        assert_eq!(rebuilt, Params::DEFAULT);
+
+        // Et toute valeur modifiée doit se retrouver à sa place.
+        let mut changed = flat.clone();
+        for (i, v) in changed.iter_mut().enumerate() {
+            *v = i32::try_from(i).unwrap_or(0) - 400;
+        }
+        let mut params = Params::DEFAULT;
+        params.set_from(&changed);
+        assert_eq!(params.to_vec(), changed);
+        assert_ne!(params, Params::DEFAULT);
+    }
+
+    #[test]
+    fn le_nombre_de_parametres_est_celui_quon_croit() {
+        // Un garde-fou contre l'ajout d'un champ oublié dans `visit` : si le
+        // compte change sans qu'on l'ait voulu, ce test le dit.
+        assert_eq!(
+            Params::len(),
+            825,
+            "825 = 12 matériel + 2 fous + 16 passés + 8 pions/tours + 6 attaque + 1 échelle + 12 mobilité + 768 tables"
+        );
     }
 
     #[test]
