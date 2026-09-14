@@ -199,6 +199,8 @@ pub struct Search {
     hard_deadline: Option<Instant>,
     /// Instant au-delà duquel on n'entame pas d'itération supplémentaire.
     soft_deadline: Option<Instant>,
+    /// Budget de nœuds, quand `go nodes` en impose un.
+    node_limit: Option<u64>,
     aborted: bool,
     /// Clés Zobrist de la partie puis du chemin courant dans l'arbre.
     path: Vec<u64>,
@@ -230,6 +232,7 @@ impl Search {
             started: Instant::now(),
             hard_deadline: None,
             soft_deadline: None,
+            node_limit: None,
             aborted: false,
             path: Vec::new(),
             pv: PvTable::new(),
@@ -286,6 +289,7 @@ impl Search {
         // garder d'un coup à l'autre proposerait des coups sans rapport.
         self.killers.fill([0; 2]);
         self.history.fill(0);
+        self.node_limit = limits.nodes;
         self.set_deadlines(limits, position.board().side_to_move());
 
         let board = position.board().clone();
@@ -430,9 +434,19 @@ impl Search {
         self.soft_deadline = Some(now + Duration::from_millis(budget_ms / 2));
     }
 
-    /// Vrai si la recherche doit cesser. Consulte l'horloge par intervalles.
+    /// Vrai si la recherche doit cesser.
+    ///
+    /// L'horloge ne se consulte que par intervalles — `Instant::now()` coûte
+    /// plus cher qu'un nœud. Le **budget de nœuds**, lui, se vérifie à chaque
+    /// nœud : c'est une comparaison d'entiers, pas un appel système, et
+    /// dépasser de deux mille nœuds fausserait un match à nœuds fixes, qui est
+    /// précisément le protocole choisi pour mesurer sans bruit d'horloge.
     fn should_abort(&mut self) -> bool {
         if self.aborted {
+            return true;
+        }
+        if self.node_limit.is_some_and(|limit| self.nodes >= limit) {
+            self.aborted = true;
             return true;
         }
         if self.nodes.is_multiple_of(CHECK_INTERVAL) {
@@ -1127,6 +1141,65 @@ mod tests {
             elapsed < Duration::from_millis(900),
             "dépassement du budget : {elapsed:?}"
         );
+    }
+
+    #[test]
+    fn le_budget_de_noeuds_est_respecte() {
+        // `go nodes` était analysé par la couche UCI et ignoré par la
+        // recherche jusqu'au 14 sept. 2026 : le moteur cherchait jusqu'à sa
+        // limite de temps ou de profondeur. Sans ce budget, pas de match à
+        // nœuds fixes — donc pas de mesure sans bruit d'horloge.
+        for budget in [1, 1_000, 50_000] {
+            let limits = Limits {
+                nodes: Some(budget),
+                ..Limits::default()
+            };
+            let mut s = search();
+            let best = s.go(&Position::startpos(), &limits, |_| {});
+            assert!(best.is_some(), "un coup légal est dû même à {budget} nœuds");
+            assert!(
+                s.nodes() <= budget,
+                "budget {budget} dépassé : {} nœuds",
+                s.nodes()
+            );
+        }
+    }
+
+    #[test]
+    fn un_budget_de_noeuds_rend_un_coup_legal() {
+        // À un seul nœud, aucune itération ne s'achève : le coup vient du
+        // filet de sécurité, et il doit rester légal.
+        let limits = Limits {
+            nodes: Some(1),
+            ..Limits::default()
+        };
+        let position = Position::startpos();
+        let best = search().go(&position, &limits, |_| {}).unwrap();
+        assert!(position.board().is_legal(best));
+    }
+
+    #[test]
+    fn un_budget_large_ne_bride_pas_la_profondeur_demandee() {
+        // La garde ne doit pas se déclencher quand le budget est hors de
+        // portée : sinon elle raccourcirait toutes les recherches.
+        let limits = Limits {
+            depth: Some(6),
+            nodes: Some(u64::MAX),
+            ..Limits::default()
+        };
+        let mut avec = search();
+        avec.go(&Position::startpos(), &limits, |_| {});
+
+        let mut sans = search();
+        sans.go(
+            &Position::startpos(),
+            &Limits {
+                depth: Some(6),
+                ..Limits::default()
+            },
+            |_| {},
+        );
+        assert_eq!(avec.nodes(), sans.nodes());
     }
 
     #[test]

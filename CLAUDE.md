@@ -104,8 +104,13 @@ une mesure, pas une préférence.
   du temps d'un nœud**. Ne pas réécrire cette dérivation de tête le jour venu :
   le roque en notation roi-prend-tour et la prise en passant sont exactement
   les cas qu'on rate.
-- **Génération par étapes** — en place via `ordered_moves(board, tactical_only)`.
-  Reste à faire : ne pas matérialiser tous les coups avant d'en trier.
+- **Génération par étapes** — **pas en place**, contrairement à ce qui était
+  écrit ici jusqu'au 14 sept. 2026. `ordered_moves` matérialise *tous* les
+  coups dans un `Vec` puis les trie d'un bloc ; seul le **filtre tactique** de
+  la quiescence existe (`tactical_only`, qui restreint les destinations par un
+  `AND` de bitboards). La génération par étapes proprement dite — produire les
+  captures, s'arrêter sur coupure bêta, ne générer les coups tranquilles que si
+  nécessaire — reste entièrement à faire.
 - **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
   La valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
 - **Table de transposition partagée, le jour où la recherche devient
@@ -200,6 +205,14 @@ une mesure, pas une préférence.
   deux, en critère d'acceptation. **Conséquence assumée** : tout changement de
   l'arbre de recherche rend la CI rouge tant que la ligne n'est pas corrigée.
   C'est l'effet recherché ; le message d'échec donne le chiffre à recopier.
+- **Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué ne garde
+  rien.** La première version du contrôle ci-dessus ne lisait que `CLAUDE.md`.
+  Elle a été écrite alors que `README.md` portait déjà `8 432 521` — le chiffre
+  d'avant le coup nul, **faux d'un facteur 15,6** — et ne l'a pas vu, parce que
+  personne n'avait cherché si le chiffre existait ailleurs. Le contrôle balaie
+  maintenant une liste de fichiers. **Avant d'écrire un garde-fou, chercher
+  toutes les copies de ce qu'il garde** : `grep` sur la valeur, pas sur le
+  fichier qu'on a en tête.
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.
@@ -223,15 +236,21 @@ une mesure, pas une préférence.
 
 ```sh
 cargo test --workspace                      # tests rapides
-cargo test --workspace --release -- --ignored  # perft complet, ~2 s
+cargo test --workspace --release -- --ignored  # perft, tournoi, référence du bench
 cargo clippy --all-targets -- -D warnings
 cargo fmt --all
 cargo run --release --bin shallowred      # boucle UCI
-cargo run --release --bin shallowred -- bench 7   # référence : 541 528 nœuds
-# Ce chiffre est vérifié par la CI — voir engine/tests/bench_reference.rs.
-# Le changer à la légère casse le build ; le laisser périmé aussi.
+cargo run --release --bin shallowred -- bench 7
 
 tools/setup-arbiters.sh                    # construit fastchess
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement
 tools/crosscheck.sh                        # les deux arbitres s'accordent-ils
 ```
+
+Référence à la profondeur 7 : 541 528 nœuds.
+
+Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
+`engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
+le changer à tort : c'est voulu. Quand il vire au rouge sur un changement de
+recherche délibéré, **corriger la documentation, jamais supprimer le test** ;
+le message d'échec nomme le fichier et donne le chiffre à recopier.
