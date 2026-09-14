@@ -21,7 +21,9 @@
 //! unique ne peut pas exprimer les deux. On calcule donc deux scores et on les
 //! mélange selon la phase de jeu.
 
-use cozy_chess::{Board, Color, Piece, Square, get_bishop_moves, get_knight_moves, get_rook_moves};
+use cozy_chess::{
+    BitBoard, Board, Color, Piece, Square, get_bishop_moves, get_knight_moves, get_rook_moves,
+};
 
 /// Score attribué à un mat. Suffisamment grand pour dominer tout matériel,
 /// suffisamment petit pour qu'aucune addition ne déborde un `i32`.
@@ -65,6 +67,16 @@ const BISHOP_PAIR: (i32, i32) = (30, 45);
 /// portée décide ; la dame l'est peu partout, sa mobilité brute étant déjà
 /// énorme et peu informative. **Valeurs conventionnelles, non réglées** — à
 /// améliorer par la mesure, comme le reste de ce fichier.
+/// Valeur d'un pion d'abri devant le roi, en milieu puis en finale.
+///
+/// En milieu de partie, un roi derrière ses pions est difficile à attaquer :
+/// il faut ouvrir une colonne avant de menacer quoi que ce soit, et cela coûte
+/// du temps. **En finale la valeur est nulle, délibérément** : le roi doit
+/// alors sortir et marcher, et le payer pour rester caché l'en dissuaderait.
+///
+/// Valeur conventionnelle, non réglée, comme le reste de ce fichier.
+const KING_SHIELD: (i32, i32) = (10, 0);
+
 const MOBILITY: [(i32, i32); Piece::NUM] = [
     (0, 0), // pion : sa mobilité est structurelle, les tables la portent déjà
     (4, 4), // cavalier
@@ -230,6 +242,10 @@ pub fn evaluate(board: &Board) -> i32 {
         let (mob_mg, mob_eg) = mobility(board, color);
         midgame += sign * mob_mg;
         endgame += sign * mob_eg;
+
+        let shield = king_shield(board, color);
+        midgame += sign * KING_SHIELD.0 * shield;
+        endgame += sign * KING_SHIELD.1 * shield;
     }
 
     // Les promotions peuvent faire dépasser le total initial ; on borne.
@@ -271,6 +287,34 @@ fn mobility(board: &Board, color: Color) -> (i32, i32) {
     }
 
     (midgame, endgame)
+}
+
+/// Nombre de pions du camp présents dans les deux rangées devant son roi, sur
+/// la colonne du roi et les deux adjacentes.
+///
+/// Six cases au plus, moins si le roi est sur une colonne de bord ou près de
+/// la dernière rangée — `try_offset` rend alors `None` et la case n'est
+/// simplement pas comptée. Aucun cas particulier à écrire : la géométrie s'en
+/// charge.
+///
+/// Deux rangées et non une : un pion avancé d'un cran abrite encore. Les
+/// distinguer — pion sur sa case d'origine contre pion avancé — est un
+/// raffinement classique et une seconde question, à mesurer séparément.
+fn king_shield(board: &Board, color: Color) -> i32 {
+    let king = board.king(color);
+    // « Devant » dépend du camp : les Blancs montent, les Noirs descendent.
+    let forward: i8 = if color == Color::White { 1 } else { -1 };
+
+    let mut zone = BitBoard::EMPTY;
+    for file_offset in -1..=1 {
+        for rank_offset in 1..=2 {
+            if let Some(square) = king.try_offset(file_offset, rank_offset * forward) {
+                zone |= square.bitboard();
+            }
+        }
+    }
+
+    i32::try_from((zone & board.colored_pieces(color, Piece::Pawn)).len()).unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -339,6 +383,50 @@ mod tests {
         let noirs = mobility(&b, Color::Black);
         assert_eq!(blancs, noirs);
         assert!(blancs.0 > 0, "les cavaliers initiaux voient des cases");
+    }
+
+    #[test]
+    fn un_roi_derriere_ses_pions_est_mieux_abrite() {
+        // Mêmes pions, même roi : seule leur distance change. Les tables
+        // piece-square notent chaque pion isolément et ne peuvent pas dire
+        // qu'il protège le roi.
+        let intact = king_shield(&board("6k1/5ppp/8/8/8/8/5PPP/6K1 w - - 0 1"), Color::White);
+        let avance = king_shield(&board("6k1/5ppp/8/8/5PPP/8/8/6K1 w - - 0 1"), Color::White);
+        assert_eq!(intact, 3, "f2, g2 et h2 abritent le roi g1");
+        assert_eq!(avance, 0, "en f4, g4 et h4 ils ne l'abritent plus");
+
+        // Le même abri ne compte pas si le roi n'est pas derrière.
+        let centre = king_shield(&board("6k1/5ppp/8/8/8/8/5PPP/4K3 w - - 0 1"), Color::White);
+        assert!(centre < intact, "roi en e1 : {centre} contre {intact}");
+    }
+
+    #[test]
+    fn labri_du_roi_ne_panique_sur_aucune_geometrie() {
+        // Roi sur une colonne de bord, roi sur la dernière rangée de son
+        // propre camp, position sans aucun pion : `try_offset` rend None et
+        // la case n'est pas comptée. Aucun cas particulier n'est écrit, donc
+        // ce test garantit qu'il n'en manque aucun.
+        assert_eq!(
+            king_shield(&board("6k1/8/8/8/8/8/8/6K1 w - - 0 1"), Color::White),
+            0
+        );
+        // Roi noir sur la rangée 1 : il n'y a rien « devant » lui.
+        assert_eq!(
+            king_shield(&board("6K1/8/8/8/8/8/8/6k1 w - - 0 1"), Color::Black),
+            0
+        );
+        // Position initiale : symétrique, et non nulle.
+        let b = Board::default();
+        assert_eq!(king_shield(&b, Color::White), king_shield(&b, Color::Black));
+        assert!(king_shield(&b, Color::White) > 0);
+    }
+
+    #[test]
+    fn labri_du_roi_disparait_en_finale() {
+        // Poids nul en finale : le roi doit alors sortir, et le payer pour
+        // rester caché l'en dissuaderait. Si cette valeur cessait d'être
+        // nulle, ce test tomberait et il faudrait le vouloir.
+        assert_eq!(KING_SHIELD.1, 0);
     }
 
     #[test]
