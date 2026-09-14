@@ -63,6 +63,20 @@ const LMR_MIN_DEPTH: i32 = 3;
 /// le travail de l'ordonnancement.
 const LMR_FIRST_REDUCED: usize = 3;
 
+/// Profondeur à partir de laquelle on ose une fenêtre étroite.
+///
+/// En dessous, le score d'une itération à l'autre bouge trop pour qu'une
+/// prédiction serve à quoi que ce soit : on chercherait étroit pour rien et
+/// l'on paierait des recherches répétées.
+const ASPIRATION_MIN_DEPTH: u32 = 4;
+
+/// Demi-largeur initiale de la fenêtre, en centièmes de pion.
+///
+/// Trop étroite, la fenêtre échoue sans cesse et chaque échec coûte une
+/// recherche complète ; trop large, elle ne coupe plus rien. Valeur
+/// conventionnelle, à régler par SPRT comme le reste.
+const ASPIRATION_DELTA: i32 = 25;
+
 /// Nombre de nœuds entre deux consultations de l'horloge et du drapeau d'arrêt.
 ///
 /// Interroger `Instant::now()` à chaque nœud coûte plus cher que la recherche
@@ -275,14 +289,10 @@ impl Search {
 
         let mut best = None;
 
+        let mut previous = DRAW;
         for depth in 1..=max_depth {
-            let score = self.negamax(
-                &board,
-                i32::try_from(depth).unwrap_or(1),
-                0,
-                -INFINITY,
-                INFINITY,
-            );
+            let score =
+                self.search_root(&board, i32::try_from(depth).unwrap_or(1), depth, previous);
 
             // Une itération interrompue a exploré ses coups dans le désordre :
             // son résultat est partiel et ne remplace pas le précédent.
@@ -292,6 +302,7 @@ impl Search {
 
             let Some(mv) = self.root_best else { break };
             best = Some(mv);
+            previous = score;
             report(&Info {
                 depth,
                 score: Score::from_internal(score),
@@ -321,6 +332,53 @@ impl Search {
         }
 
         best
+    }
+
+    /// Recherche la racine à une profondeur donnée, en pariant sur la stabilité
+    /// du score.
+    ///
+    /// D'une itération à l'autre, le score bouge peu. On cherche donc dans une
+    /// fenêtre étroite centrée sur le score précédent : plus la fenêtre est
+    /// serrée, plus l'élagage alpha-bêta coupe tôt. Quand le pari échoue —
+    /// score hors fenêtre — on élargit et l'on recommence, ce qui coûte une
+    /// recherche mais reste rentable en moyenne.
+    ///
+    /// Pas de pari aux premières profondeurs, ni autour d'un score de mat :
+    /// dans les deux cas le score précédent ne prédit rien.
+    fn search_root(&mut self, board: &Board, depth: i32, iteration: u32, previous: i32) -> i32 {
+        if iteration <= ASPIRATION_MIN_DEPTH || previous.abs() > MATE_THRESHOLD {
+            return self.negamax(board, depth, 0, -INFINITY, INFINITY);
+        }
+
+        let mut delta = ASPIRATION_DELTA;
+        let mut alpha = previous.saturating_sub(delta).max(-INFINITY);
+        let mut beta = previous.saturating_add(delta).min(INFINITY);
+
+        loop {
+            let score = self.negamax(board, depth, 0, alpha, beta);
+            if self.aborted {
+                return score;
+            }
+
+            if score <= alpha {
+                // Échec par le bas : la position est pire que prévu. On abaisse
+                // le plancher et l'on ramène le plafond vers le centre, sans
+                // quoi la fenêtre grandirait des deux côtés pour rien.
+                beta = alpha.midpoint(beta);
+                alpha = score.saturating_sub(delta).max(-INFINITY);
+            } else if score >= beta {
+                beta = score.saturating_add(delta).min(INFINITY);
+            } else {
+                return score;
+            }
+
+            // Élargissement géométrique : garantit qu'on finit par retomber sur
+            // une fenêtre pleine, donc que la boucle se termine.
+            delta = delta.saturating_add(delta / 2);
+            if delta > MATE_THRESHOLD {
+                return self.negamax(board, depth, 0, -INFINITY, INFINITY);
+            }
+        }
     }
 
     fn elapsed_ms(&self) -> u64 {
@@ -1266,6 +1324,83 @@ mod tests {
                 6
             ),
             "d8h4"
+        );
+    }
+
+    #[test]
+    fn sous_la_profondeur_minimale_la_fenetre_reste_pleine() {
+        // Le pari ne doit pas s'appliquer aux premières itérations : même un
+        // score précédent absurde doit donner exactement le résultat d'une
+        // recherche à fenêtre pleine. Deux instances neuves pour que les deux
+        // mesures partent de la même table vide.
+        let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
+        let pari = search().search_root(&b, 4, ASPIRATION_MIN_DEPTH, 4_000);
+        let plein = search().negamax(&b, 4, 0, -INFINITY, INFINITY);
+        assert_eq!(pari, plein);
+    }
+
+    #[test]
+    fn autour_dun_score_de_mat_la_fenetre_reste_pleine() {
+        // Un mat annoncé ne prédit pas le score de l'itération suivante : la
+        // fenêtre étroite n'a rien à y gagner et tout à y perdre.
+        let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
+        let pari = search().search_root(&b, 5, 8, MATE - 5);
+        let plein = search().negamax(&b, 5, 0, -INFINITY, INFINITY);
+        assert_eq!(pari, plein);
+    }
+
+    #[test]
+    fn un_pari_faux_converge_tout_de_meme() {
+        // Pari maximalement mauvais sans franchir le seuil de mat : la boucle
+        // d'élargissement doit terminer et rendre un score exact, pas une
+        // borne. Sans le recentrage du plafond, elle tournerait longtemps ;
+        // sans l'élargissement géométrique, elle ne terminerait pas.
+        let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
+        let reference = search().negamax(&b, 5, 0, -INFINITY, INFINITY);
+
+        for previous in [MATE_THRESHOLD - 1, -(MATE_THRESHOLD - 1), 5_000, -5_000] {
+            let mut s = search();
+            let score = s.search_root(&b, 5, 8, previous);
+            assert!(
+                score.abs() < MATE_THRESHOLD,
+                "pari {previous} : score {score} hors de toute vraisemblance"
+            );
+            assert!(
+                s.root_best.is_some_and(|mv| b.is_legal(mv)),
+                "pari {previous} : aucun coup légal retenu"
+            );
+            // La fenêtre ne doit pas changer le verdict : elle accélère, elle
+            // ne décide pas.
+            assert_eq!(score, reference, "pari {previous}");
+        }
+    }
+
+    #[test]
+    fn la_fenetre_etroite_ne_casse_pas_la_detection_de_mat() {
+        // Profondeur 6 : aspiration, coup nul et LMR sont tous trois actifs.
+        // Un échec par le haut mal rattrapé ferait manquer le mat.
+        assert_eq!(
+            best(
+                "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
+                6
+            ),
+            "f3f7"
+        );
+        // Mat subi : le score plonge d'une itération à l'autre, donc la fenêtre
+        // échoue par le bas. Le coup doit rester le meilleur disponible.
+        let position = Position::from_fen("k7/2K5/8/8/8/8/8/1R6 b - - 0 1").unwrap();
+        let limits = Limits {
+            depth: Some(6),
+            ..Limits::default()
+        };
+        let mut annonces = Vec::new();
+        let mv = search()
+            .go(&position, &limits, |info| annonces.push(info.score))
+            .unwrap();
+        assert!(position.board().is_legal(mv));
+        assert!(
+            matches!(annonces.last(), Some(Score::Mate(n)) if *n < 0),
+            "le camp maté doit voir un mat négatif : {annonces:?}"
         );
     }
 
