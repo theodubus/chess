@@ -18,6 +18,7 @@
 #                seconde espèce
 #   TC           cadence, format Cute Chess  (défaut 8+0.08)
 #   ROUNDS       plafond de paires de parties (défaut 20000)
+#   SRAND        graine du tirage des ouvertures (défaut 20260913)
 #   BOOK         livre d'ouvertures          (défaut tools/book.epd)
 #   HASH_MB      taille de table imposée aux  (défaut : non imposée)
 #                deux moteurs
@@ -37,6 +38,11 @@ ELO0="${ELO0:-0}"; ELO1="${ELO1:-5}"
 ALPHA="${ALPHA:-0.05}"; BETA="${BETA:-0.05}"
 TC="${TC:-8+0.08}"
 ROUNDS="${ROUNDS:-20000}"
+# Sans graine, fastchess tire un ordre d'ouvertures différent à chaque
+# lancement : deux exécutions du même match ne sont alors pas comparables et
+# « relancer pour vérifier » ne vérifie rien. Vérifié le 14 sept. 2026 — à
+# graine fixée, le match est reproductible coup pour coup.
+SRAND="${SRAND:-20260913}"
 BOOK="${BOOK:-$ROOT/tools/book.epd}"
 CONCURRENCY="${CONCURRENCY:-$(( $(nproc) > 1 ? $(nproc) - 1 : 1 ))}"
 
@@ -51,6 +57,7 @@ HASH_OPT=()
 
 echo "SPRT  candidat=$(basename "$CANDIDATE")  référence=$(basename "$BASELINE")"
 echo "      bornes [$ELO0, $ELO1]  alpha=$ALPHA beta=$BETA  cadence=$TC  concurrence=$CONCURRENCY"
+echo "      graine des ouvertures=$SRAND"
 echo
 
 # -repeat joue chaque ouverture des deux côtés : c'est ce qui rend les
@@ -59,7 +66,7 @@ exec "$FASTCHESS" \
   -engine cmd="$CANDIDATE" name=candidat \
   -engine cmd="$BASELINE"  name=reference \
   -each tc="$TC" proto=uci "${HASH_OPT[@]}" \
-  -openings file="$BOOK" format=epd order=random \
+  -openings file="$BOOK" format=epd order=random -srand "$SRAND" \
   -rounds "$ROUNDS" -games 2 -repeat \
   -sprt elo0="$ELO0" elo1="$ELO1" alpha="$ALPHA" beta="$BETA" model=normalized \
   -concurrency "$CONCURRENCY" \
