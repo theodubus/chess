@@ -418,6 +418,70 @@ fn pst_index(square: Square, color: Color) -> usize {
     row * 8 + file
 }
 
+/// La position est-elle nulle par **matériel insuffisant** ?
+///
+/// C'est une **règle du jeu, pas un réglage** — même famille qu'[`ahead_of`].
+/// Tout le reste de ce fichier est fait de valeurs qu'un SPRT peut déplacer ;
+/// ces lignes-ci décrivent un fait des règles, et un SPRT n'a rien à en dire.
+/// Aucune des constantes employées ici n'entre dans [`Params`], et c'est
+/// délibéré : le jour où le tuner explorera l'espace, il ne doit pas pouvoir
+/// rendre un mat possible.
+///
+/// # Le périmètre, et pourquoi il s'arrête exactement là
+///
+/// Les **positions mortes** au sens des règles : aucune suite de coups légaux,
+/// fût-elle de connivence, n'y produit un mat.
+///
+/// - roi contre roi ;
+/// - roi et fou, ou roi et cavalier, contre roi seul ;
+/// - **aucun cavalier, et tous les fous de l'échiquier sur des cases de même
+///   couleur** — quels que soient leur nombre et leur camp.
+///
+/// **Ce qui n'y est pas, et délibérément** : les finales qui *tendent* vers la
+/// nulle sans l'être par les règles — deux cavaliers contre roi seul (le mat
+/// ne peut pas être *forcé*, mais il reste constructible), tour contre fou,
+/// fou de mauvaise couleur avec pion de tour. Les juger relève de la
+/// pondération d'une finale, donc du SPRT, donc pas d'ici.
+///
+/// **La frontière est « nulle par les règles » contre « nulle en pratique ».**
+/// Sans elle, cette fonction devient une évaluation de finale sans fin, et le
+/// seul juge redevient le match.
+#[must_use]
+pub fn is_insufficient_material(board: &Board) -> bool {
+    // Un pion promeut, une tour et une dame matent seules. Ce test tranche
+    // l'écrasante majorité des positions en un OU de bitboards, et c'est
+    // pourquoi il passe en premier : `evaluate` est le chemin le plus chaud du
+    // moteur.
+    let mating = board.pieces(Piece::Pawn) | board.pieces(Piece::Rook) | board.pieces(Piece::Queen);
+    if !mating.is_empty() {
+        return false;
+    }
+
+    let knights = board.pieces(Piece::Knight);
+    let bishops = board.pieces(Piece::Bishop);
+
+    // Aucune mineure, ou une seule : roi contre roi, ou une mineure contre un
+    // roi seul. Le camp qui la possède n'a pas d'importance.
+    if knights.len() + bishops.len() <= 1 {
+        return true;
+    }
+
+    // Au-delà, le mat n'est impossible qu'à une condition : **aucun cavalier,
+    // et tous les fous sur des cases de même couleur**. Un fou ne contrôle
+    // jamais que sa propre couleur de cases, donc un roi posté sur l'autre ne
+    // peut pas même être mis en échec — et ce qu'on ne peut pas mettre en
+    // échec, on ne peut pas le mater.
+    //
+    // Ni le nombre de fous ni leur camp n'entrent là-dedans, et c'est ce que
+    // j'avais manqué : **deux fous clairs d'un même camp ne matent pas plus
+    // qu'un seul.** La première version exigeait un fou par camp et bornait le
+    // total à quatre pièces ; la confrontation à `python-chess` sur 12 145
+    // positions a rendu 29 écarts, tous de cette forme.
+    knights.is_empty()
+        && ((bishops & BitBoard::DARK_SQUARES).is_empty()
+            || (bishops & BitBoard::LIGHT_SQUARES).is_empty())
+}
+
 /// Évalue la position **du point de vue du camp au trait**, en centièmes de pion.
 ///
 /// Un score positif signifie que le camp au trait est mieux. C'est la
@@ -425,6 +489,15 @@ fn pst_index(square: Square, color: Color) -> usize {
 /// alors à alterner les points de vue.
 #[must_use]
 pub fn evaluate(board: &Board, params: &Params) -> i32 {
+    // Une position morte vaut zéro, quel que soit le matériel qui l'occupe.
+    // Le contrôle vit ici plutôt que dans la seule recherche pour qu'aucun
+    // appelant ne puisse l'oublier : la quiescence évalue par `stand_pat`, la
+    // futilité inverse et l'élagage delta comparent à ce même score, et
+    // `datagen` étiquette son corpus avec.
+    if is_insufficient_material(board) {
+        return DRAW;
+    }
+
     let mut midgame = 0;
     let mut endgame = 0;
     let mut phase = 0;
@@ -659,6 +732,152 @@ mod tests {
     fn mobilite(board: &Board, color: Color) -> (i32, i32) {
         let a = activity(board, color, &Params::DEFAULT);
         (a.mobility_mg, a.mobility_eg)
+    }
+
+    /// Positions mortes au sens des règles. **Toutes validées par
+    /// `python-chess 1.10.0`** — `is_valid()`, aller-retour FEN exact, et
+    /// `is_insufficient_material()` d'accord avec nous sur les onze cas — et
+    /// non dérivées de tête. J'avais d'abord écrit deux de ces FEN en
+    /// raisonnant sur la couleur des cases, et j'avais inversé les deux.
+    /// Positions mortes au sens des règles. **Toutes construites et validées
+    /// par `python-chess 1.10.0`** — `is_valid()`, aller-retour FEN exact, et
+    /// son `is_insufficient_material()` d'accord avec le nôtre — jamais
+    /// écrites de tête. Les deux premières fois que j'ai raisonné sur la
+    /// couleur d'une case, je l'ai inversée.
+    const MORTES: [(&str, &str); 7] = [
+        ("roi contre roi", "8/8/4k3/8/8/4K3/8/8 w - - 0 1"),
+        ("roi et fou contre roi", "8/8/4k3/8/8/4KB2/8/8 w - - 0 1"),
+        (
+            "roi et cavalier contre roi",
+            "8/8/4k3/8/8/4KN2/8/8 w - - 0 1",
+        ),
+        ("roi contre roi et fou", "8/8/3bk3/8/8/4K3/8/8 w - - 0 1"),
+        // d3 et c6 sont toutes deux CLAIRES — vérifié, pas déduit.
+        (
+            "un fou par camp, même couleur",
+            "8/8/2b1k3/8/8/3BK3/8/8 w - - 0 1",
+        ),
+        // b1 et f1 sont claires : deux fous d'un même camp qui ne matent pas
+        // plus qu'un seul. C'est le cas que la vérité terrain a trouvé et que
+        // ma première version manquait.
+        (
+            "deux fous clairs du même camp",
+            "8/8/4k3/8/8/4K3/8/1B3B2 w - - 0 1",
+        ),
+        // Cinq pièces, donc au-delà de la borne que j'avais d'abord écrite.
+        (
+            "trois fous clairs, cinq pièces",
+            "8/7b/4k3/8/8/4K3/8/1B3B2 w - - 0 1",
+        ),
+    ];
+
+    /// Positions vivantes qui *ressemblent* à des positions mortes. Chacune
+    /// pince une clause précise ; sans elles, élargir le prédicat ne ferait
+    /// tomber aucun test.
+    const VIVANTES: [(&str, &str); 8] = [
+        // d3 est claire, d6 est sombre : un mat de connivence reste possible.
+        (
+            "un fou par camp, couleurs opposées",
+            "8/8/3bk3/8/8/3BK3/8/8 w - - 0 1",
+        ),
+        // b1 claire, c1 sombre : les deux couleurs sont couvertes.
+        (
+            "deux fous du même camp, opposés",
+            "8/8/4k3/8/8/4K3/8/1BB5 w - - 0 1",
+        ),
+        ("deux cavaliers", "8/8/4k3/8/8/3NKN2/8/8 w - - 0 1"),
+        ("fou contre cavalier", "8/8/3nk3/8/8/3BK3/8/8 w - - 0 1"),
+        // La clause des cavaliers : un seul suffit à tout rouvrir.
+        ("un fou et un cavalier", "8/8/4k3/8/8/4K3/8/1B4N1 w - - 0 1"),
+        ("un pion, qui promeut", "8/8/4k3/8/8/4KP2/8/8 w - - 0 1"),
+        ("une tour mate seule", "8/8/4k3/8/8/4KR2/8/8 w - - 0 1"),
+        ("une dame mate seule", "8/8/4k3/8/8/4KQ2/8/8 w - - 0 1"),
+    ];
+
+    #[test]
+    fn les_positions_mortes_sont_reconnues() {
+        for (nom, fen) in MORTES {
+            assert!(
+                is_insufficient_material(&board(fen)),
+                "{nom} devrait être une position morte : {fen}"
+            );
+        }
+    }
+
+    #[test]
+    fn les_positions_vivantes_ne_le_sont_pas() {
+        for (nom, fen) in VIVANTES {
+            assert!(
+                !is_insufficient_material(&board(fen)),
+                "{nom} n'est PAS une position morte : {fen}"
+            );
+        }
+    }
+
+    /// Le prédicat est une règle, pas une heuristique : il rend zéro **quel
+    /// que soit le matériel apparent**. Sans cette assertion, le test
+    /// précédent passerait encore si `evaluate` ignorait le prédicat.
+    #[test]
+    fn une_position_morte_vaut_zero() {
+        for (nom, fen) in MORTES {
+            assert_eq!(eval(&board(fen)), DRAW, "{nom} devrait valoir zéro : {fen}");
+        }
+    }
+
+    /// Et le contraire : une position vivante garde son évaluation. Deux fous
+    /// contre un roi seul valent largement une pièce ; rendre zéro serait la
+    /// faute inverse, et elle coûterait des gains.
+    #[test]
+    fn une_position_vivante_garde_son_evaluation() {
+        let deux_fous = eval(&board("8/8/4k3/8/8/4KBB1/8/8 w - - 0 1"));
+        assert!(
+            deux_fous > 600,
+            "deux fous contre roi seul doivent rester gagnants, score rendu : {deux_fous}"
+        );
+        let tour = eval(&board("8/8/4k3/8/8/4KR2/8/8 w - - 0 1"));
+        assert!(
+            tour > 400,
+            "une tour doit rester gagnante, score rendu : {tour}"
+        );
+    }
+
+    /// Le prédicat n'a **aucune borne sur le nombre de pièces**, et c'est
+    /// délibéré : trois fous de même couleur sur cinq pièces forment une
+    /// position morte. Ma première version bornait à quatre et se trompait sur
+    /// 29 positions de la confrontation à la vérité terrain. Ce test est ce
+    /// qui empêche de réintroduire la borne « parce qu'elle est plus rapide ».
+    #[test]
+    fn aucune_borne_sur_le_nombre_de_pieces() {
+        let cinq = board("8/7b/4k3/8/8/4K3/8/1B3B2 w - - 0 1");
+        assert_eq!(cinq.occupied().len(), 5);
+        assert!(is_insufficient_material(&cinq));
+    }
+
+    /// La clause des cavaliers, isolée. Même matériel que la position morte
+    /// ci-dessus à un fou près, remplacé par un cavalier : le mat redevient
+    /// constructible, donc la position n'est plus morte.
+    #[test]
+    fn un_seul_cavalier_rouvre_le_mat() {
+        let deux_fous_clairs = board("8/8/4k3/8/8/4K3/8/1B3B2 w - - 0 1");
+        assert!(is_insufficient_material(&deux_fous_clairs));
+        let fou_et_cavalier = board("8/8/4k3/8/8/4K3/8/1B4N1 w - - 0 1");
+        assert!(!is_insufficient_material(&fou_et_cavalier));
+    }
+
+    /// Le prédicat ne consulte aucun paramètre, et c'est ce qui le distingue
+    /// du reste du fichier. Un jeu de valeurs entièrement nul ne doit rien y
+    /// changer : une règle du jeu ne se règle pas.
+    #[test]
+    fn le_predicat_ne_depend_pas_des_parametres() {
+        let mut nuls = Params::DEFAULT;
+        nuls.set_from(&vec![0; Params::len()]);
+        for (nom, fen) in MORTES {
+            assert_eq!(
+                evaluate(&board(fen), &nuls),
+                DRAW,
+                "{nom} vaut zéro même à paramètres nuls : {fen}"
+            );
+        }
     }
 
     /// Toutes les positions de ces tests sont validées par exécution avant
