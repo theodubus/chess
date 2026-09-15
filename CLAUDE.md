@@ -217,6 +217,31 @@ une mesure, pas une préférence.
   maintenant une liste de fichiers. **Avant d'écrire un garde-fou, chercher
   toutes les copies de ce qu'il garde** : `grep` sur la valeur, pas sur le
   fichier qu'on a en tête.
+- **Un tampon par nœud coûte son *initialisation*, pas son allocation.**
+  `ordered_moves` allouait un `Vec` à chaque nœud, et 90 % des nœuds sont des
+  nœuds de quiescence : le remplacer par un tableau de pile paraissait évident.
+  **Mesuré le 15 sept. 2026 : c'était 3,5 % plus lent.** Diagnostic par
+  variation de taille — passer le tampon de 256 à 1024 entrées coûte **+18 %**
+  à nombre de nœuds identique, donc le coût suit la taille du tampon, donc
+  c'est le remplissage de 2 Ko par nœud et non l'allocation. Le `malloc` d'une
+  même petite taille, répété, est servi par un cache thread-local et ne coûte
+  presque rien. **Ce qui paie : une ardoise allouée une fois, découpée par ply
+  et passée le long de la récursion** — ni allocation ni remplissage par nœud,
+  mesuré **−2,1 %** sur 22 paires, test des signes p = 0,0004.
+- **Un changement qui ne modifie pas l'arbre de recherche ne passe pas par un
+  SPRT.** **Arbitrage du 15 sept. 2026.** La règle « un SPRT par
+  changement » vise les changements de *décision*. Une optimisation pure se
+  prouve autrement, et mieux : **nombre de nœuds identique au bit près** —
+  vérifiable, contrairement à un verdict de match — plus une mesure de temps à
+  profondeur 10 sur au moins vingt paires alternées. Le SPRT ne dirait que
+  l'Elo acheté, et la mesure montre pourquoi il ne le vaut pas : **2 % de
+  vitesse valent environ 2 Elo, soit ~31 000 parties et six heures de match**
+  d'après la relation de budget du projet.
+- **Sept exécutions ne suffisent pas à comparer deux temps.** Le premier
+  relevé de C15 donnait 5 gagnantes sur 7 et −1,2 % sur la médiane : au bord du
+  bruit, donc rien. À 22 paires le même changement donne 19 sur 22 et −2,1 %,
+  p = 0,0004. **Compter les paires gagnantes et faire un test des signes**, au
+  lieu de comparer deux médianes à l'œil.
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.

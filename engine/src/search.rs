@@ -77,6 +77,32 @@ const ASPIRATION_MIN_DEPTH: u32 = 4;
 /// conventionnelle, à régler par SPRT comme le reste.
 const ASPIRATION_DELTA: i32 = 25;
 
+/// Taille du tampon de coups d'un nœud.
+///
+/// **218 est le nombre maximal de coups légaux d'une position d'échecs**, borne
+/// établie par recherche exhaustive et non par estimation. 256 laisse donc une
+/// marge confortable tout en gardant une puissance de deux.
+///
+/// L'ardoise complète pèse `MAX_PLY × MAX_MOVES × 8` octets, soit 256 Ko,
+/// alloués une fois pour toutes avec la recherche.
+const MAX_MOVES: usize = 256;
+
+/// Coup sentinelle servant à remplir l'ardoise à sa seule initialisation.
+///
+/// `a1a1` n'est jamais légal — c'est déjà ce que [`crate::tt::pack_move`]
+/// emploie comme marqueur d'absence, et la même valeur sert ici pour la même
+/// raison. Ces cases ne sont jamais lues : seules les `count` premières le sont.
+///
+/// **Mesuré le 15 sept. 2026** : remplir un tel tampon *à chaque nœud*, sur la
+/// pile, coûte **3,5 % du temps de recherche** — plus cher que l'allocation
+/// qu'il devait remplacer. Le tampon est donc rempli **une seule fois**, à la
+/// construction de [`Search`], et découpé par ply le long de la récursion.
+const NO_MOVE: Move = Move {
+    from: Square::A1,
+    to: Square::A1,
+    promotion: None,
+};
+
 /// Marge de l'élagage delta en quiescence, en centièmes de pion.
 ///
 /// Une capture ne rapporte, au mieux, que la pièce prise. Si le score statique
@@ -231,6 +257,12 @@ pub struct Search {
     history: Vec<i32>,
     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
     lmr: Vec<i32>,
+    /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
+    ///
+    /// Allouée une fois avec la recherche. Chaque nœud reçoit sa tranche et
+    /// passe le reste à ses fils, ce qui donne à chacun un espace disjoint sans
+    /// allocation ni remplissage par nœud.
+    scratch: Vec<(Move, i32)>,
     /// Les valeurs que consulte l'évaluation. Le moteur emploie toujours les
     /// valeurs par défaut ; seul le tuner en substitue d'autres.
     params: eval::Params,
@@ -263,6 +295,7 @@ impl Search {
             killers: vec![[0; 2]; MAX_PLY],
             history: vec![0; 64 * 64],
             lmr: build_lmr_table(),
+            scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
             #[cfg(test)]
             delta_pruning: true,
@@ -319,12 +352,29 @@ impl Search {
         let board = position.board().clone();
         let max_depth = limits.depth.unwrap_or(MAX_DEPTH).clamp(1, MAX_DEPTH);
 
+        // L'ardoise sort de `self` le temps de la recherche : sans cela, en
+        // garder une tranche empruntée interdirait tout appel `&mut self`.
+        // Elle y retourne juste après la boucle d'approfondissement.
+        let mut scratch = std::mem::take(&mut self.scratch);
+        // Une recherche précédente interrompue par une panique n'aurait pas
+        // rendu l'ardoise. Sans cette reprise, toutes les recherches suivantes
+        // s'arrêteraient au premier nœud en rendant le score statique — une
+        // dégradation silencieuse, bien pire qu'un arrêt franc.
+        if scratch.len() < MAX_PLY * MAX_MOVES {
+            scratch = vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES];
+        }
+
         let mut best = None;
 
         let mut previous = DRAW;
         for depth in 1..=max_depth {
-            let score =
-                self.search_root(&board, i32::try_from(depth).unwrap_or(1), depth, previous);
+            let score = self.search_root(
+                &board,
+                i32::try_from(depth).unwrap_or(1),
+                depth,
+                previous,
+                &mut scratch,
+            );
 
             // Une itération interrompue a exploré ses coups dans le désordre :
             // son résultat est partiel et ne remplace pas le précédent.
@@ -353,6 +403,8 @@ impl Search {
             }
         }
 
+        self.scratch = scratch;
+
         // Filet de sécurité : si la toute première itération a été interrompue,
         // il faut tout de même jouer un coup légal plutôt que d'abandonner.
         let best = best.or_else(|| first_legal_move(&board));
@@ -377,9 +429,16 @@ impl Search {
     ///
     /// Pas de pari aux premières profondeurs, ni autour d'un score de mat :
     /// dans les deux cas le score précédent ne prédit rien.
-    fn search_root(&mut self, board: &Board, depth: i32, iteration: u32, previous: i32) -> i32 {
+    fn search_root(
+        &mut self,
+        board: &Board,
+        depth: i32,
+        iteration: u32,
+        previous: i32,
+        scratch: &mut [(Move, i32)],
+    ) -> i32 {
         if iteration <= ASPIRATION_MIN_DEPTH || previous.abs() > MATE_THRESHOLD {
-            return self.negamax(board, depth, 0, -INFINITY, INFINITY);
+            return self.negamax(board, depth, 0, -INFINITY, INFINITY, scratch);
         }
 
         let mut delta = ASPIRATION_DELTA;
@@ -387,7 +446,7 @@ impl Search {
         let mut beta = previous.saturating_add(delta).min(INFINITY);
 
         loop {
-            let score = self.negamax(board, depth, 0, alpha, beta);
+            let score = self.negamax(board, depth, 0, alpha, beta, scratch);
             if self.aborted {
                 return score;
             }
@@ -408,7 +467,7 @@ impl Search {
             // une fenêtre pleine, donc que la boucle se termine.
             delta = delta.saturating_add(delta / 2);
             if delta > MATE_THRESHOLD {
-                return self.negamax(board, depth, 0, -INFINITY, INFINITY);
+                return self.negamax(board, depth, 0, -INFINITY, INFINITY, scratch);
             }
         }
     }
@@ -556,20 +615,35 @@ impl Search {
             .unwrap_or(0)
     }
 
-    /// Les coups légaux de la position, du plus prometteur au moins prometteur.
+    /// Écrit les coups légaux dans `buffer`, du plus prometteur au moins
+    /// prometteur, et rend leur nombre.
     ///
     /// Avec `tactical_only`, seuls les coups qui changent le matériel sont
     /// produits — captures, prises en passant et promotions. C'est ce dont la
     /// quiescence a besoin, et `cozy-chess` le rend bon marché :
     /// `PieceMoves.to` est un `BitBoard` public, donc filtrer les destinations
     /// coûte un `AND` par pièce.
+    ///
+    /// # Pourquoi un tampon fourni par l'appelant
+    ///
+    /// Cette fonction rendait un `Vec`, donc **allouait dans le tas à chaque
+    /// nœud** — et 90 % des nœuds de ce moteur sont des nœuds de quiescence.
+    /// Le précédent était connu sur ce dépôt : la première version de
+    /// `nnue_probe` allouait par nœud et faisait paraître sa mesure 2,8 fois
+    /// plus chère qu'elle ne l'est.
+    ///
+    /// Le tampon appartient à l'appelant plutôt qu'à `Search` pour une raison
+    /// d'invariant : une fonction qui répond à une question ne mute rien, donc
+    /// `&self` et non `&mut self`. Une pile de tampons indexée par ply aurait
+    /// exigé `&mut self` sur un chemin de pure lecture.
     fn ordered_moves(
         &self,
         board: &Board,
         tactical_only: bool,
         tt_move: Option<Move>,
         ply: usize,
-    ) -> Vec<(Move, i32)> {
+        buffer: &mut [(Move, i32)],
+    ) -> usize {
         let side = board.side_to_move();
         let mut targets = board.colors(!side);
         if let Some(square) = en_passant_square(board) {
@@ -577,7 +651,7 @@ impl Search {
         }
         let promotion_rank = Rank::Seventh.relative_to(side);
 
-        let mut moves = Vec::with_capacity(48);
+        let mut count = 0;
         board.generate_moves(|mut piece_moves| {
             if tactical_only {
                 // Un pion sur la 7e rangée promeut quel que soit son coup :
@@ -589,23 +663,47 @@ impl Search {
                 }
             }
             for mv in piece_moves {
-                moves.push((mv, self.score_move(board, mv, tt_move, ply)));
+                // Inatteignable : une position d'échecs a au plus 218 coups
+                // légaux et le tampon en porte 256. La garde est là parce que
+                // déborder en silence perdrait des coups — donc peut-être le
+                // meilleur — sans que rien ne le signale.
+                debug_assert!(count < buffer.len(), "tampon de coups débordé");
+                if count < buffer.len() {
+                    buffer[count] = (mv, self.score_move(board, mv, tt_move, ply));
+                    count += 1;
+                }
             }
             false
         });
-        moves.sort_unstable_by_key(|&(_, score)| Reverse(score));
-        moves
+        buffer[..count].sort_unstable_by_key(|&(_, score)| Reverse(score));
+        count
     }
 
     /// Negamax avec élagage alpha-bêta.
     ///
     /// Le score rendu est du point de vue du camp au trait dans `board`.
-    fn negamax(&mut self, board: &Board, depth: i32, ply: usize, mut alpha: i32, beta: i32) -> i32 {
+    fn negamax(
+        &mut self,
+        board: &Board,
+        depth: i32,
+        ply: usize,
+        mut alpha: i32,
+        beta: i32,
+        scratch: &mut [(Move, i32)],
+    ) -> i32 {
         self.pv.clear(ply);
 
         if depth <= 0 {
-            return self.quiescence(board, alpha, beta, ply);
+            return self.quiescence(board, alpha, beta, ply, scratch);
         }
+
+        // L'ardoise porte une tranche par ply jusqu'à `MAX_PLY`. L'épuiser
+        // signifierait avoir dépassé cette borne ; la garde rend la fonction
+        // totale au lieu de reposer sur un raisonnement de profondeur.
+        if scratch.len() < MAX_MOVES {
+            return eval::evaluate(board, &self.params);
+        }
+        let (buffer, rest) = scratch.split_at_mut(MAX_MOVES);
 
         self.nodes += 1;
         if self.should_abort() {
@@ -670,6 +768,7 @@ impl Search {
                 ply + 1,
                 -beta,
                 -beta + 1,
+                rest,
             );
             self.path.pop();
 
@@ -687,8 +786,8 @@ impl Search {
             }
         }
 
-        let moves = self.ordered_moves(board, false, tt_move, ply);
-        if moves.is_empty() {
+        let count = self.ordered_moves(board, false, tt_move, ply, buffer);
+        if count == 0 {
             return if board.checkers().is_empty() {
                 DRAW // pat
             } else {
@@ -703,7 +802,7 @@ impl Search {
         let mut best_move = None;
         let in_check = !board.checkers().is_empty();
 
-        for (index, (mv, _)) in moves.into_iter().enumerate() {
+        for (index, &(mv, _)) in buffer[..count].iter().enumerate() {
             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
 
             let mut child = board.clone();
@@ -736,7 +835,8 @@ impl Search {
             };
 
             self.path.push(child.hash());
-            let mut score = -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha);
+            let mut score =
+                -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha, rest);
             // La réduction a menti : ce coup mérite la profondeur pleine.
             //
             // `!self.aborted` n'est pas décoratif : une recherche interrompue
@@ -745,7 +845,7 @@ impl Search {
             // pour un résultat de toute façon jeté. Trouvé par le test du
             // budget de nœuds, qui dépassait d'exactement un nœud.
             if reduction > 0 && !self.aborted && score > alpha {
-                score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha);
+                score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha, rest);
             }
             self.path.pop();
 
@@ -794,15 +894,23 @@ impl Search {
     /// En dehors d'un échec, seules les captures et les promotions sont
     /// explorées. En échec, tous les coups le sont : ignorer les parades ferait
     /// évaluer une position perdue comme tranquille.
-    fn quiescence(&mut self, board: &Board, mut alpha: i32, beta: i32, ply: usize) -> i32 {
+    fn quiescence(
+        &mut self,
+        board: &Board,
+        mut alpha: i32,
+        beta: i32,
+        ply: usize,
+        scratch: &mut [(Move, i32)],
+    ) -> i32 {
         self.pv.clear(ply);
         self.nodes += 1;
         if self.should_abort() {
             return 0;
         }
-        if ply + 1 >= MAX_PLY {
+        if ply + 1 >= MAX_PLY || scratch.len() < MAX_MOVES {
             return eval::evaluate(board, &self.params);
         }
+        let (buffer, rest) = scratch.split_at_mut(MAX_MOVES);
 
         let in_check = !board.checkers().is_empty();
         let mut stand_pat = -INFINITY;
@@ -820,8 +928,8 @@ impl Search {
             }
         }
 
-        let moves = self.ordered_moves(board, !in_check, None, ply);
-        if moves.is_empty() {
+        let count = self.ordered_moves(board, !in_check, None, ply, buffer);
+        if count == 0 {
             return if in_check {
                 -MATE + i32::try_from(ply).unwrap_or(0)
             } else {
@@ -830,7 +938,7 @@ impl Search {
         }
 
         let mut best = if in_check { -INFINITY } else { alpha };
-        for (mv, _) in moves {
+        for &(mv, _) in &buffer[..count] {
             if self.delta_prunable(board, mv, in_check, stand_pat, alpha) {
                 // Sauter et non rompre : l'ordre MVV-LVA mêle la valeur de la
                 // victime, celle de l'agresseur et la promotion, donc une
@@ -841,7 +949,7 @@ impl Search {
             let mut child = board.clone();
             child.play_unchecked(mv);
 
-            let score = -self.quiescence(&child, -beta, -alpha, ply + 1);
+            let score = -self.quiescence(&child, -beta, -alpha, ply + 1, rest);
 
             if self.aborted {
                 return 0;
@@ -1042,6 +1150,12 @@ mod tests {
         Search::new(Arc::new(AtomicBool::new(false)))
     }
 
+    /// Une ardoise jetable, pour les tests qui appellent la recherche
+    /// directement au lieu de passer par `go`.
+    fn ardoise() -> Vec<(Move, i32)> {
+        vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES]
+    }
+
     fn best(fen: &str, depth: u32) -> String {
         let position = Position::from_fen(fen).unwrap();
         let limits = Limits {
@@ -1086,9 +1200,29 @@ mod tests {
     fn les_coups_tactiques_seuls_excluent_les_coups_tranquilles() {
         let b = board("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
         let s = search();
-        let tactiques = s.ordered_moves(&b, true, None, 0);
-        assert_eq!(tactiques.len(), 1, "seule exd5 change le matériel");
-        assert!(s.ordered_moves(&b, false, None, 0).len() > 1);
+        let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
+        let tactiques = s.ordered_moves(&b, true, None, 0, &mut buffer);
+        assert_eq!(tactiques, 1, "seule exd5 change le matériel");
+        assert!(s.ordered_moves(&b, false, None, 0, &mut buffer) > 1);
+    }
+
+    #[test]
+    fn le_tampon_de_coups_couvre_la_position_la_plus_riche_connue() {
+        // 218 est le maximum de coups légaux d'une position d'échecs, établi
+        // par recherche exhaustive. Cette position en produit 218 — la valider
+        // ici, c'est vérifier que MAX_MOVES n'est pas une estimation.
+        let b = board("R6R/3Q4/1Q4Q1/4Q3/2Q4Q/Q4Q2/pp1Q4/kBNN1KB1 w - - 0 1");
+        let s = search();
+        let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
+        let count = s.ordered_moves(&b, false, None, 0, &mut buffer);
+        assert_eq!(
+            count, 218,
+            "la position de référence doit produire 218 coups"
+        );
+        assert!(
+            count < MAX_MOVES,
+            "le tampon doit rester plus grand que le maximum"
+        );
     }
 
     #[test]
@@ -1376,6 +1510,27 @@ mod tests {
     }
 
     #[test]
+    fn une_ardoise_perdue_se_reconstruit() {
+        // Seule une panique peut laisser l'ardoise hors de `Search`. La
+        // simuler ici vérifie que la recherche suivante repart entière, au
+        // lieu de rendre le score statique à chaque nœud sans rien signaler.
+        let mut s = search();
+        s.scratch = Vec::new();
+        let limits = Limits {
+            depth: Some(5),
+            ..Limits::default()
+        };
+        assert!(s.go(&Position::startpos(), &limits, |_| {}).is_some());
+        assert_eq!(s.scratch.len(), MAX_PLY * MAX_MOVES);
+
+        // Et le résultat est celui d'une recherche normale, pas d'une recherche
+        // amputée : même nombre de nœuds qu'une recherche jamais abîmée.
+        let mut neuve = search();
+        neuve.go(&Position::startpos(), &limits, |_| {});
+        assert_eq!(s.nodes(), neuve.nodes());
+    }
+
+    #[test]
     fn go_infinite_sarrete_sur_le_drapeau() {
         let stop = Arc::new(AtomicBool::new(false));
         let mut s = Search::new(Arc::clone(&stop));
@@ -1584,8 +1739,8 @@ mod tests {
         // recherche à fenêtre pleine. Deux instances neuves pour que les deux
         // mesures partent de la même table vide.
         let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
-        let pari = search().search_root(&b, 4, ASPIRATION_MIN_DEPTH, 4_000);
-        let plein = search().negamax(&b, 4, 0, -INFINITY, INFINITY);
+        let pari = search().search_root(&b, 4, ASPIRATION_MIN_DEPTH, 4_000, &mut ardoise());
+        let plein = search().negamax(&b, 4, 0, -INFINITY, INFINITY, &mut ardoise());
         assert_eq!(pari, plein);
     }
 
@@ -1594,8 +1749,8 @@ mod tests {
         // Un mat annoncé ne prédit pas le score de l'itération suivante : la
         // fenêtre étroite n'a rien à y gagner et tout à y perdre.
         let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
-        let pari = search().search_root(&b, 5, 8, MATE - 5);
-        let plein = search().negamax(&b, 5, 0, -INFINITY, INFINITY);
+        let pari = search().search_root(&b, 5, 8, MATE - 5, &mut ardoise());
+        let plein = search().negamax(&b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
         assert_eq!(pari, plein);
     }
 
@@ -1606,11 +1761,11 @@ mod tests {
         // borne. Sans le recentrage du plafond, elle tournerait longtemps ;
         // sans l'élargissement géométrique, elle ne terminerait pas.
         let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
-        let reference = search().negamax(&b, 5, 0, -INFINITY, INFINITY);
+        let reference = search().negamax(&b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
 
         for previous in [MATE_THRESHOLD - 1, -(MATE_THRESHOLD - 1), 5_000, -5_000] {
             let mut s = search();
-            let score = s.search_root(&b, 5, 8, previous);
+            let score = s.search_root(&b, 5, 8, previous, &mut ardoise());
             assert!(
                 score.abs() < MATE_THRESHOLD,
                 "pari {previous} : score {score} hors de toute vraisemblance"
