@@ -506,32 +506,10 @@ impl Search {
     /// entière. Ce budget suffit à ne pas perdre au temps, ce qui est le seul
     /// objectif ici.
     fn set_deadlines(&mut self, limits: &Limits, side: Color) {
-        if limits.infinite {
+        let Some(budget_ms) = time_budget_ms(limits, side) else {
             self.hard_deadline = None;
             self.soft_deadline = None;
             return;
-        }
-
-        let budget_ms = if let Some(movetime) = limits.movetime {
-            movetime.saturating_sub(20).max(1)
-        } else {
-            let (remaining, increment) = match side {
-                Color::White => (limits.wtime, limits.winc),
-                Color::Black => (limits.btime, limits.binc),
-            };
-            let Some(remaining) = remaining else {
-                // Ni pendule ni `movetime` : c'est une recherche à profondeur
-                // ou à nœuds imposés, sans contrainte d'horloge.
-                self.hard_deadline = None;
-                self.soft_deadline = None;
-                return;
-            };
-            let increment = increment.unwrap_or(0);
-            let moves_to_go = u64::from(limits.movestogo.unwrap_or(30)).max(1);
-            let budget = remaining / moves_to_go + increment / 2;
-            // Toujours garder une marge : une pendule à zéro perd la partie,
-            // quelle que soit la position.
-            budget.clamp(1, remaining.saturating_sub(50).max(1))
         };
 
         let now = Instant::now();
@@ -1199,6 +1177,43 @@ pub fn random_legal_move(board: &Board) -> Option<Move> {
     let mut state = random_seed(board.hash());
     let index = (next_random(&mut state) % legal.len() as u64) as usize;
     legal.get(index).copied()
+}
+
+/// Le budget de temps du coup à jouer, en millisecondes.
+///
+/// `None` quand aucune horloge ne contraint la recherche : `go infinite`, ou
+/// une recherche à profondeur ou à nœuds imposés.
+///
+/// Fonction pure, séparée de `set_deadlines` pour la même raison que
+/// `random_seed` : tant que cette arithmétique vivait au milieu d'une fonction
+/// qui pose des `Instant`, aucun test ne pouvait en asserter le résultat, et
+/// sept mutants y survivaient. Se tromper ici ne coûte pas de l'Elo — **ça perd
+/// des parties au temps**, ce qu'aucun SPRT ne distingue d'une faiblesse de
+/// jeu.
+///
+/// Volontairement grossier : la gestion fine du temps est un travail à part
+/// entière, qui viendra avec son propre verdict.
+#[must_use]
+fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
+    if limits.infinite {
+        return None;
+    }
+    if let Some(movetime) = limits.movetime {
+        // La marge couvre le trajet de la réponse jusqu'à l'interface.
+        return Some(movetime.saturating_sub(20).max(1));
+    }
+
+    let (remaining, increment) = match side {
+        Color::White => (limits.wtime, limits.winc),
+        Color::Black => (limits.btime, limits.binc),
+    };
+    let remaining = remaining?;
+    let increment = increment.unwrap_or(0);
+    let moves_to_go = u64::from(limits.movestogo.unwrap_or(30)).max(1);
+    let budget = remaining / moves_to_go + increment / 2;
+    // Toujours garder une marge : une pendule à zéro perd la partie, quelle
+    // que soit la position.
+    Some(budget.clamp(1, remaining.saturating_sub(50).max(1)))
 }
 
 /// La graine du tirage : le hash Zobrist, forcé impair.
@@ -2167,6 +2182,129 @@ mod tests {
             buffer[..count].iter().any(|(mv, _)| *mv == prise),
             "la prise en passant doit figurer parmi les coups tactiques"
         );
+    }
+
+    #[test]
+    fn le_budget_dhorloge_est_exact() {
+        // Sept mutants survivaient dans cette arithmétique, et aucun n'aurait
+        // coûté de l'Elo : ils font perdre au TEMPS, ce qu'un SPRT ne
+        // distingue pas d'une faiblesse de jeu.
+        let pendule = |remaining, increment, movestogo| Limits {
+            wtime: Some(remaining),
+            winc: Some(increment),
+            movestogo,
+            ..Limits::default()
+        };
+
+        // Une minute, trente coups à jouer, cent millisecondes d'incrément :
+        // 60000/30 + 100/2.
+        assert_eq!(
+            time_budget_ms(&pendule(60_000, 100, Some(30)), Color::White),
+            Some(2_050)
+        );
+        // Sans `movestogo`, la convention du moteur est trente coups.
+        assert_eq!(
+            time_budget_ms(&pendule(60_000, 100, None), Color::White),
+            Some(2_050)
+        );
+        // L'incrément compte pour moitié, et rien d'autre ne bouge.
+        assert_eq!(
+            time_budget_ms(&pendule(60_000, 0, Some(30)), Color::White),
+            Some(2_000)
+        );
+        // Un seul coup à jouer : toute la pendule, moins la marge.
+        assert_eq!(
+            time_budget_ms(&pendule(60_000, 0, Some(1)), Color::White),
+            Some(59_950)
+        );
+
+        // Une pendule presque vide avec un gros incrément : le budget est
+        // ramené sous la pendule, jamais au-dessus. Sans le `+`, la
+        // soustraction déborderait ; sans la borne, le moteur jouerait
+        // dix secondes avec trente millisecondes au compteur.
+        assert_eq!(
+            time_budget_ms(&pendule(30, 10_000, None), Color::White),
+            Some(1)
+        );
+
+        // `movetime` court-circuite la pendule, marge de transmission déduite.
+        assert_eq!(
+            time_budget_ms(
+                &Limits {
+                    movetime: Some(1_000),
+                    wtime: Some(60_000),
+                    ..Limits::default()
+                },
+                Color::White
+            ),
+            Some(980)
+        );
+        // Et ne descend jamais à zéro, qui voudrait dire « pas de limite ».
+        assert_eq!(
+            time_budget_ms(
+                &Limits {
+                    movetime: Some(5),
+                    ..Limits::default()
+                },
+                Color::White
+            ),
+            Some(1)
+        );
+
+        // La pendule lue est celle du camp au trait.
+        let noirs = Limits {
+            btime: Some(60_000),
+            movestogo: Some(30),
+            ..Limits::default()
+        };
+        assert_eq!(time_budget_ms(&noirs, Color::Black), Some(2_000));
+        assert_eq!(
+            time_budget_ms(&noirs, Color::White),
+            None,
+            "sans pendule blanche, rien ne contraint les blancs"
+        );
+
+        // Aucune contrainte d'horloge.
+        assert_eq!(
+            time_budget_ms(
+                &Limits {
+                    infinite: true,
+                    wtime: Some(60_000),
+                    ..Limits::default()
+                },
+                Color::White
+            ),
+            None,
+            "`go infinite` ignore la pendule"
+        );
+        assert_eq!(
+            time_budget_ms(
+                &Limits {
+                    depth: Some(8),
+                    ..Limits::default()
+                },
+                Color::White
+            ),
+            None,
+            "une recherche à profondeur imposée n'a pas d'échéance"
+        );
+    }
+
+    #[test]
+    fn lecheance_douce_precede_toujours_la_dure() {
+        // Si la douce passait après la dure, elle ne se déclencherait jamais :
+        // chaque itération irait au bout du budget et serait jetée, et le
+        // moteur jouerait le coup de l'itération PRÉCÉDENTE.
+        let mut s = search();
+        s.set_deadlines(
+            &Limits {
+                wtime: Some(60_000),
+                ..Limits::default()
+            },
+            Color::White,
+        );
+        let (douce, dure) = (s.soft_deadline.unwrap(), s.hard_deadline.unwrap());
+        assert!(douce < dure, "l'échéance douce doit précéder la dure");
     }
 
     #[test]
