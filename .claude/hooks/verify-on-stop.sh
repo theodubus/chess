@@ -27,6 +27,13 @@ if [[ -z "$MODIFIES" ]]; then
   exit 0
 fi
 
+# Auto-test : dire ce qu'on ferait sans lancer la vérification, pour que
+# `tools/verify-hooks.sh` puisse s'exécuter sans récursion ni compilation.
+if [[ -n "${SHALLOWRED_HOOK_SELFTEST:-}" ]]; then
+  echo "AUTOTEST: des .rs ont changé, la vérification serait lancée"
+  exit 0
+fi
+
 if SORTIE="$(tools/verify.sh --rapide 2>&1)"; then
   rm -f "$COMPTEUR"
   exit 0

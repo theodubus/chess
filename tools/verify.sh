@@ -21,6 +21,11 @@
 
 set -uo pipefail
 
+# Sans locale UTF-8, `${#mot}` compte les OCTETS : « critères » y vaut 9 au lieu
+# de 8, et chaque accent décale une colonne. Le conteneur ne définit ni LANG ni
+# LC_ALL, d'où ce réglage explicite.
+export LC_ALL=C.UTF-8
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
@@ -33,8 +38,6 @@ trap 'rm -f "$LOG"' EXIT
 
 etape() {
   local nom="$1"; shift
-  # `printf %-46s` remplit en OCTETS : chaque accent décale la colonne d'un
-  # cran. `${#nom}` compte des caractères, lui.
   printf '  %s%*s' "$nom" $(( 46 - ${#nom} )) ''
   if "$@" > "$LOG" 2>&1; then
     printf 'ok\n'
@@ -58,6 +61,9 @@ if [[ $RAPIDE -eq 0 ]]; then
   etape "tests (release)"         cargo test --workspace --release
   etape "critères d'acceptation"  cargo test --workspace --release -- --ignored
   etape "bench"                   cargo run --release --bin shallowred -- bench 7
+  # Pas en mode rapide : c'est celui que le hook Stop lance, et l'auto-test
+  # invoque ce même hook. La récursion s'arrête là.
+  etape "hooks"                   tools/verify-hooks.sh
 fi
 
 echo
