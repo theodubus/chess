@@ -51,6 +51,52 @@ fn next_value<'a, T: std::str::FromStr>(tokens: &mut impl Iterator<Item = &'a st
     tokens.next().and_then(|value| value.parse().ok())
 }
 
+/// Analyse les paramètres de `go` et rend `(contraintes, profondeur de perft)`.
+///
+/// Fonction **pure** : elle ne touche à rien, ce qui la rend testable jeton par
+/// jeton. Elle était inline dans [`Engine::go`], dont le corps lance un thread —
+/// et un test de mutation a montré le prix de cette absence de prise : **chacun
+/// des neuf paramètres pouvait être supprimé sans qu'un seul test s'en
+/// aperçoive**, `wtime` et `btime` compris. Un moteur dont l'analyse de la
+/// pendule n'est pas testée perd au temps dans une vraie interface.
+///
+/// Un jeton inconnu est ignoré, comme le protocole l'exige : une interface peut
+/// envoyer des extensions que le moteur ne connaît pas.
+fn parse_go<'a>(tokens: &mut impl Iterator<Item = &'a str>) -> (Limits, Option<u32>) {
+    let mut limits = Limits::default();
+    let mut perft_depth = None;
+
+    while let Some(token) = tokens.next() {
+        match token {
+            "perft" => perft_depth = next_value(tokens),
+            "wtime" => limits.wtime = next_value(tokens),
+            "btime" => limits.btime = next_value(tokens),
+            "winc" => limits.winc = next_value(tokens),
+            "binc" => limits.binc = next_value(tokens),
+            "movestogo" => limits.movestogo = next_value(tokens),
+            "movetime" => limits.movetime = next_value(tokens),
+            "depth" => limits.depth = next_value(tokens),
+            "nodes" => limits.nodes = next_value(tokens),
+            "infinite" => limits.infinite = true,
+            _ => {}
+        }
+    }
+    (limits, perft_depth)
+}
+
+/// Extrait le nom et la valeur d'un `setoption name <nom> value <valeur>`.
+///
+/// Séparée de [`Engine::set_option`] pour la même raison que [`parse_go`] :
+/// l'action qu'elle déclenche — redimensionner la table — est difficile à
+/// observer, l'analyse ne l'est pas.
+fn parse_option<'a>(words: &[&'a str]) -> Option<(String, Option<&'a str>)> {
+    let name_at = words.iter().position(|&w| w == "name")?;
+    let value_at = words.iter().position(|&w| w == "value");
+    let name = words[name_at + 1..value_at.unwrap_or(words.len())].join(" ");
+    let value = value_at.and_then(|at| words.get(at + 1)).copied();
+    Some((name, value))
+}
+
 /// Convertit une variante principale en notation UCI.
 ///
 /// Chaque coup doit être converti sur le plateau où il est joué : sans cela un
@@ -168,12 +214,9 @@ impl Engine {
     /// comme le protocole l'exige.
     fn set_option<'a>(&mut self, tokens: impl Iterator<Item = &'a str>) {
         let words: Vec<&str> = tokens.collect();
-        let Some(name_at) = words.iter().position(|&w| w == "name") else {
+        let Some((name, value)) = parse_option(&words) else {
             return;
         };
-        let value_at = words.iter().position(|&w| w == "value");
-        let name = words[name_at + 1..value_at.unwrap_or(words.len())].join(" ");
-        let value = value_at.and_then(|at| words.get(at + 1)).copied();
 
         if name.eq_ignore_ascii_case("hash")
             && let Some(megabytes) = value.and_then(|v| v.parse().ok())
@@ -236,24 +279,7 @@ impl Engine {
     fn go<'a>(&mut self, mut tokens: impl Iterator<Item = &'a str>) {
         self.abort_search();
 
-        let mut limits = Limits::default();
-        let mut perft_depth = None;
-
-        while let Some(token) = tokens.next() {
-            match token {
-                "perft" => perft_depth = next_value(&mut tokens),
-                "wtime" => limits.wtime = next_value(&mut tokens),
-                "btime" => limits.btime = next_value(&mut tokens),
-                "winc" => limits.winc = next_value(&mut tokens),
-                "binc" => limits.binc = next_value(&mut tokens),
-                "movestogo" => limits.movestogo = next_value(&mut tokens),
-                "movetime" => limits.movetime = next_value(&mut tokens),
-                "depth" => limits.depth = next_value(&mut tokens),
-                "nodes" => limits.nodes = next_value(&mut tokens),
-                "infinite" => limits.infinite = true,
-                _ => {}
-            }
-        }
+        let (limits, perft_depth) = parse_go(&mut tokens);
 
         if let Some(depth) = perft_depth {
             self.run_perft(depth);
@@ -337,5 +363,206 @@ impl Engine {
         if let Some(search) = self.search.as_mut() {
             f(search);
         }
+    }
+}
+
+#[cfg(test)]
+#[expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
+mod tests {
+    use super::*;
+
+    fn go(ligne: &str) -> (Limits, Option<u32>) {
+        parse_go(&mut ligne.split_whitespace())
+    }
+
+    #[test]
+    fn seul_quit_termine_la_boucle() {
+        // `handle` rend `false` pour arrêter la boucle. Supprimer le bras
+        // `quit` passait inaperçu : le pilote de test ferme stdin juste après,
+        // donc la boucle s'arrêtait de toute façon.
+        let mut moteur = Engine::new();
+        assert!(moteur.handle("uci"), "uci poursuit la session");
+        assert!(moteur.handle("isready"), "isready poursuit");
+        assert!(moteur.handle("commande inconnue"), "une inconnue poursuit");
+        assert!(moteur.handle(""), "une ligne vide poursuit");
+        assert!(!moteur.handle("quit"), "quit et lui seul termine");
+    }
+
+    #[test]
+    fn stop_leve_le_drapeau_darret() {
+        // Même angle mort : le pilote envoie `quit` après chaque script, ce qui
+        // arrête aussi la recherche. Le drapeau se regarde donc directement.
+        let mut moteur = Engine::new();
+        assert!(moteur.handle("position startpos"));
+        assert!(moteur.handle("go infinite"));
+        assert!(
+            !moteur.stop.load(Ordering::Relaxed),
+            "`go` remet le drapeau à zéro"
+        );
+        assert!(moteur.handle("stop"));
+        assert!(
+            moteur.stop.load(Ordering::Relaxed),
+            "`stop` doit lever le drapeau, sans quoi `go infinite` ne finit jamais"
+        );
+    }
+
+    #[test]
+    fn setoption_rejoint_le_fil_de_recherche_et_agit() {
+        // `setoption` passe par `abort_search_keeping`, qui rejoint le fil
+        // ouvrier et range l'objet `Search`. C'est observable, là où le
+        // redimensionnement de la table ne l'est pas.
+        //
+        // Deux mutants survivaient ici : la suppression du bras `setoption`,
+        // et le remplacement du corps de `set_option` par `()`. Les deux
+        // laissent le fil ouvrier en place, donc cette seule assertion les
+        // attrape tous les deux.
+        let mut moteur = Engine::new();
+        assert!(moteur.handle("position startpos"));
+        assert!(moteur.handle("go depth 4"));
+        assert!(moteur.worker.is_some(), "une recherche est en cours");
+
+        assert!(moteur.handle("setoption name Hash value 1"));
+        assert!(
+            moteur.worker.is_none(),
+            "setoption doit rejoindre le fil ouvrier"
+        );
+        assert!(
+            moteur.search.is_some(),
+            "et conserver l'objet Search pour lui appliquer l'option"
+        );
+    }
+
+    #[test]
+    fn chaque_parametre_de_go_est_lu() {
+        // Un test de mutation a montré le 15 sept. 2026 que les NEUF bras de
+        // ce match pouvaient être supprimés un par un sans qu'un seul test
+        // bronche. Chaque assertion ci-dessous en garde un.
+        let (l, perft) =
+            go("wtime 1 btime 2 winc 3 binc 4 movestogo 5 movetime 6 depth 7 nodes 8 infinite");
+        assert_eq!(l.wtime, Some(1), "wtime");
+        assert_eq!(l.btime, Some(2), "btime");
+        assert_eq!(l.winc, Some(3), "winc");
+        assert_eq!(l.binc, Some(4), "binc");
+        assert_eq!(l.movestogo, Some(5), "movestogo");
+        assert_eq!(l.movetime, Some(6), "movetime");
+        assert_eq!(l.depth, Some(7), "depth");
+        assert_eq!(l.nodes, Some(8), "nodes");
+        assert!(l.infinite, "infinite");
+        assert_eq!(perft, None);
+    }
+
+    #[test]
+    fn un_go_nu_ne_contraint_rien() {
+        // Le pendant du test précédent : sans lui, une analyse qui remplirait
+        // tous les champs quoi qu'il arrive passerait.
+        assert_eq!(go(""), (Limits::default(), None));
+        assert_eq!(go("ponder"), (Limits::default(), None));
+    }
+
+    #[test]
+    fn go_perft_se_distingue_dune_recherche() {
+        let (l, perft) = go("perft 4");
+        assert_eq!(perft, Some(4));
+        assert_eq!(l, Limits::default(), "perft n'impose aucune contrainte");
+    }
+
+    #[test]
+    fn un_parametre_mal_forme_est_ignore_sans_casser_les_autres() {
+        // « depth abc » doit donner une recherche, pas un silence.
+        let (l, _) = go("depth abc movetime 50");
+        assert_eq!(l.depth, None);
+        assert_eq!(l.movetime, Some(50), "le paramètre suivant reste lu");
+    }
+
+    #[test]
+    fn un_jeton_inconnu_nest_pas_pris_pour_une_valeur() {
+        // `searchmoves e2e4` n'est pas géré : le moteur doit ignorer le jeton
+        // sans avaler la suite.
+        let (l, _) = go("searchmoves e2e4 depth 3");
+        assert_eq!(l.depth, Some(3));
+    }
+
+    #[test]
+    fn le_nom_et_la_valeur_dune_option_sont_extraits() {
+        let mots: Vec<&str> = "name Hash value 64".split_whitespace().collect();
+        assert_eq!(parse_option(&mots), Some(("Hash".to_owned(), Some("64"))));
+    }
+
+    #[test]
+    fn un_nom_doption_en_plusieurs_mots_est_recolle() {
+        // Le protocole autorise les noms à espaces ; les recoller est
+        // exactement ce que l'arithmétique d'indices de `parse_option` fait,
+        // et trois de ses mutations survivaient sans ce test.
+        let mots: Vec<&str> = "name Move Overhead value 30".split_whitespace().collect();
+        assert_eq!(
+            parse_option(&mots),
+            Some(("Move Overhead".to_owned(), Some("30")))
+        );
+    }
+
+    #[test]
+    fn une_option_sans_valeur_rend_un_nom_sans_valeur() {
+        let mots: Vec<&str> = "name Ponder".split_whitespace().collect();
+        assert_eq!(parse_option(&mots), Some(("Ponder".to_owned(), None)));
+    }
+
+    #[test]
+    fn une_option_sans_mot_cle_name_est_refusee() {
+        // C'est ce qui distingue `==` de `!=` dans la recherche du mot-clé.
+        let mots: Vec<&str> = "Hash value 64".split_whitespace().collect();
+        assert_eq!(parse_option(&mots), None);
+    }
+
+    #[test]
+    fn la_variante_est_convertie_coup_par_coup() {
+        // `pv_to_uci` pouvait rendre la chaîne vide, ou « xyzzy », sans qu'un
+        // test bronche : l'interface aurait affiché une variante muette.
+        let plateau = cozy_chess::Board::default();
+        let coups: Vec<cozy_chess::Move> = ["e2e4", "e7e5", "g1f3"]
+            .iter()
+            .scan(plateau.clone(), |b, uci| {
+                let mv = cozy_chess::util::parse_uci_move(b, uci).unwrap();
+                b.play_unchecked(mv);
+                Some(mv)
+            })
+            .collect();
+        assert_eq!(pv_to_uci(&plateau, &coups), "e2e4 e7e5 g1f3");
+        assert_eq!(pv_to_uci(&plateau, &[]), "", "une variante vide reste vide");
+    }
+
+    #[test]
+    fn la_variante_se_coupe_au_premier_coup_illegal() {
+        // La garde de légalité : sans elle, un coup incohérent glissé par la
+        // table produirait du charabia au lieu d'une variante tronquée.
+        let plateau = cozy_chess::Board::default();
+        let legal = cozy_chess::util::parse_uci_move(&plateau, "e2e4").unwrap();
+
+        // Après e2e4 le trait est aux NOIRS, donc tout coup blanc y est
+        // illégal — e4e5 par exemple. Vérifié par exécution : ma première
+        // version prenait d7d5, qui est au contraire parfaitement légal là.
+        let mut apres = plateau.clone();
+        apres.play_unchecked(legal);
+        let illegal = cozy_chess::Move {
+            from: cozy_chess::Square::E4,
+            to: cozy_chess::Square::E5,
+            promotion: None,
+        };
+        assert!(
+            !apres.is_legal(illegal),
+            "le coup doit être illégal APRÈS e2e4, pas avant"
+        );
+        assert_eq!(pv_to_uci(&plateau, &[legal, illegal]), "e2e4");
+    }
+
+    #[test]
+    fn le_roque_est_rendu_en_notation_uci_et_non_roi_prend_tour() {
+        // L'invariant le plus coûteux du projet : cozy-chess encode le roque
+        // e1h1, UCI attend e1g1.
+        let plateau: cozy_chess::Board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK2R w KQkq - 0 1"
+            .parse()
+            .unwrap();
+        let roque = cozy_chess::util::parse_uci_move(&plateau, "e1g1").unwrap();
+        assert_eq!(roque.to, cozy_chess::Square::H1, "encodage interne");
+        assert_eq!(pv_to_uci(&plateau, &[roque]), "e1g1", "sortie UCI");
     }
 }

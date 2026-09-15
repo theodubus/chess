@@ -27,6 +27,16 @@ lto           = "fat"
 codegen-units = 1
 debug         = false
 
+# Profil des tests de mutation : la vitesse d'exécution de `release` sans son
+# temps de compilation. Il faut les deux — chaque mutant est recompilé, et
+# chaque mutant doit faire tourner perft et le tournoi, qui sont inexploitables
+# en `debug`. Sans ce profil, un balayage incluant les critères d'acceptation
+# est soit trop lent à compiler (LTO), soit trop lent à tester (debug).
+[profile.mutants]
+inherits = "release"
+lto = false
+codegen-units = 16
+
 # `cargo test --release` sert à faire tourner perft en temps raisonnable.
 [profile.bench]
 inherits = "release"

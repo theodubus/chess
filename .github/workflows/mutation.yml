@@ -1,0 +1,143 @@
+name: Mutation
+
+# Balayage hebdomadaire par mutation. Il ne remplace aucun critère
+# d'acceptation : il mesure ce que la suite de tests *ne* voit pas. Un mutant
+# « survivant » est une modification du code que tous les tests acceptent —
+# donc une ligne dont rien ne vérifie le comportement.
+#
+# Pourquoi hebdomadaire et pas à chaque commit : 986 mutants sur `engine/`,
+# une trentaine de minutes par fichier sur un runner partagé. Le coût par
+# commit serait absurde ; la dérive, elle, est lente.
+#
+# `schedule` s'exécute sur la branche par défaut, au HEAD du moment : le
+# balayage mesure donc l'état accumulé de la semaine, pas un commit précis.
+on:
+  schedule:
+    # 00:00 UTC le mardi. GitHub n'évalue le cron qu'en UTC et n'applique
+    # aucun changement d'heure : 02:00 en heure d'été, 01:00 en heure d'hiver.
+    # Pour un entretien hebdomadaire, l'heure exacte n'a pas d'importance.
+    - cron: "0 0 * * 2"
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  MUTANTS_VERSION: "27.1.0"
+
+jobs:
+  balayage:
+    name: Mutation — ${{ matrix.fichier }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      # Un fichier qui échoue ne doit pas emporter les autres : le but est le
+      # tableau complet, pas le premier échec.
+      fail-fast: false
+      matrix:
+        # `tools/` est délibérément absent : ce sont des utilitaires hors
+        # ligne (génération de données, réglage, sondes), dont la fiabilité se
+        # juge par `tools/crosscheck.sh` et non par des tests unitaires.
+        # `lib.rs` est absent aussi — il ne produit aucun mutant.
+        fichier:
+          - eval.rs
+          - search.rs
+          - tt.rs
+          - uci.rs
+          - position.rs
+          - perft.rs
+          - bench.rs
+          - main.rs
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          rustup show active-toolchain
+          rustc --version && cargo --version
+
+      # cargo-mutants se compile en plusieurs minutes. Le binaire ne dépend
+      # que de sa version et de l'OS, donc il se met en cache tel quel.
+      - name: Cache de cargo-mutants
+        id: cache-mutants
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-mutants
+          key: cargo-mutants-${{ env.MUTANTS_VERSION }}-${{ runner.os }}
+
+      - name: Installer cargo-mutants
+        if: steps.cache-mutants.outputs.cache-hit != 'true'
+        run: cargo install cargo-mutants --version "$MUTANTS_VERSION" --locked
+
+      # `--profile mutants` hérite de release sans LTO : le LTO recompile tout
+      # le graphe à chaque mutant et multiplie le coût par un facteur trois.
+      # Le code exécuté reste optimisé, donc les tests gardent leur vitesse.
+      - name: Balayage
+        run: cargo mutants --file "engine/src/${{ matrix.fichier }}" --profile mutants -j 2
+        # Des survivants ne sont pas une panne : ils sont le résultat. Le
+        # verdict est rendu par le job `verdict`, qui les compare au plafond.
+        continue-on-error: true
+
+      # Un balayage qui n'a pas tourné laisse `missed.txt` vide, ce qui se lit
+      # comme une couverture parfaite. Le garde-fou est un décompte : la somme
+      # des issues doit égaler le nombre de mutants annoncés par `--list`. Sans
+      # cette ligne, une panne d'infrastructure passerait pour un progrès.
+      - name: Résumé du fichier
+        if: always()
+        run: |
+          set -u
+          fichier='${{ matrix.fichier }}'
+          compte() { wc -l < "mutants.out/$1" 2>/dev/null || echo 0; }
+          manques=$(compte missed.txt)
+          attrapes=$(compte caught.txt)
+          expires=$(compte timeout.txt)
+          inviables=$(compte unviable.txt)
+          vus=$((manques + attrapes + expires + inviables))
+          annonces=$(cargo mutants --list --file "engine/src/$fichier" 2>/dev/null | wc -l)
+          {
+            echo "fichier=$fichier"
+            if [ "$annonces" -gt 0 ] && [ "$vus" -eq "$annonces" ]; then
+              echo "manques=$manques"
+            else
+              # Volontairement pas de `manques=` : le verdict le lira comme un
+              # résumé illisible et cassera, au lieu de conclure au vert.
+              echo "INCOMPLET vus=$vus annonces=$annonces"
+            fi
+            echo "attrapes=$attrapes"
+            echo "expires=$expires"
+            echo "inviables=$inviables"
+            echo "--- survivants ---"
+            cat mutants.out/missed.txt 2>/dev/null || true
+            echo "--- fin ---"
+          } > "resume-$fichier.txt"
+          cat "resume-$fichier.txt"
+
+      - name: Déposer le résumé
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-${{ matrix.fichier }}
+          path: resume-${{ matrix.fichier }}.txt
+          retention-days: 30
+
+  verdict:
+    name: Verdict
+    runs-on: ubuntu-latest
+    needs: balayage
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Récupérer les résumés
+        uses: actions/download-artifact@v4
+        with:
+          pattern: mutation-*
+          merge-multiple: true
+          path: resumes
+
+      # Le plafond est un cliquet, et il ne serre que dans un sens.
+      # Asymétrie assumée : un mutant qui expire sur un runner chargé est
+      # compté « expiré » au lieu de « survivant », donc une baisse peut être
+      # un artefact de charge machine. Une hausse, elle, ne peut pas l'être —
+      # c'est du code nouvellement non couvert. On casse donc sur la hausse et
+      # on se contente de signaler la baisse.
+      - name: Comparer au plafond
+        run: bash .github/mutation-verdict.sh resumes .github/mutation-baseline.txt

@@ -13,6 +13,10 @@ dist/
 
 # Artefacts de mesure locaux
 /tools/out/
+# Rapports de `cargo mutants` — voir tools/README.md
+/mutants.out/
+/mutants.out.old/
+/mutants.out.lock
 
 # Arbitres construits localement (voir tools/setup-arbiters.sh)
 /tools/arbiters/
@@ -20,3 +24,6 @@ dist/
 # Résidus laissés par les arbitres de match
 /config.json
 /*.pgn
+
+# Trace de déclenchement des hooks (voir tools/verify-hooks.sh)
+/.claude/hooks-fired.log

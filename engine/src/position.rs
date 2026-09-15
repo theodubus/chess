@@ -75,12 +75,6 @@ impl Position {
         &self.board
     }
 
-    /// Le nombre de demi-coups joués depuis la racine de cette position.
-    #[must_use]
-    pub fn ply(&self) -> usize {
-        self.history.len() - 1
-    }
-
     /// Joue un coup supposé légal.
     ///
     /// # Panics
@@ -158,8 +152,75 @@ mod tests {
     #[test]
     fn startpos_a_un_historique_dun_element() {
         let pos = Position::startpos();
-        assert_eq!(pos.ply(), 0);
+        assert_eq!(pos.history().len(), 1);
         assert!(!pos.is_repetition());
+    }
+
+    #[test]
+    fn lhistorique_porte_une_cle_par_position_traversee() {
+        // `history` alimente la détection de répétition de la recherche. Un
+        // test de mutation a montré qu'elle pouvait rendre un tableau vide,
+        // ou `[0]`, ou `[1]`, sans qu'aucun test ne s'en aperçoive — et la
+        // détection de répétition serait alors silencieusement morte.
+        let mut pos = Position::startpos();
+        assert_eq!(pos.history(), &[pos.board().hash()]);
+
+        let mut attendu = vec![pos.board().hash()];
+        for token in ["e2e4", "e7e5", "g1f3"] {
+            pos.play_uci(token).unwrap();
+            attendu.push(pos.board().hash());
+        }
+        assert_eq!(pos.history(), attendu.as_slice());
+        assert_eq!(
+            pos.history().last(),
+            Some(&pos.board().hash()),
+            "la dernière clé est toujours celle de la position courante"
+        );
+    }
+
+    #[test]
+    fn une_fenetre_non_vide_sans_correspondance_ne_compte_rien() {
+        // LE test qui manquait. Les deux tests de répétition existants étaient
+        // satisfaits par `==` comme par `!=` : dans l'un la fenêtre contenait
+        // exactement une clé égale au hash (donc 1 des deux côtés), dans
+        // l'autre elle était vide (donc 0 des deux côtés).
+        //
+        // Ici la fenêtre contient deux clés et AUCUNE n'égale la position
+        // courante : `==` compte 0, `!=` compterait 2. Position vérifiée par
+        // exécution — cinq demi-coups, compteur non remis à zéro.
+        let mut pos = Position::startpos();
+        for token in ["g1f3", "g8f6", "f3g1", "f6g8", "b1c3"] {
+            pos.play_uci(token).unwrap();
+        }
+        assert_eq!(
+            pos.board().halfmove_clock(),
+            5,
+            "la fenêtre doit être ouverte"
+        );
+        assert_eq!(
+            pos.repetition_count(),
+            0,
+            "aucune position antérieure n'égale la position courante"
+        );
+        assert!(!pos.is_repetition());
+    }
+
+    #[test]
+    fn la_regle_des_cinquante_coups_se_declenche_a_cent_demi_coups() {
+        // Un test de mutation a montré que `is_fifty_move_draw` pouvait
+        // toujours rendre `false` sans qu'un test bronche, alors que le
+        // tournoi d'acceptation et `datagen` l'appellent tous deux.
+        // Les deux FEN sont vérifiées par exécution.
+        let atteinte = Position::from_fen("4k3/8/8/8/8/8/8/R3K3 w - - 100 60").unwrap();
+        assert!(atteinte.is_fifty_move_draw(), "cent demi-coups font nulle");
+
+        let juste_avant = Position::from_fen("4k3/8/8/8/8/8/8/R3K3 w - - 99 60").unwrap();
+        assert!(
+            !juste_avant.is_fifty_move_draw(),
+            "quatre-vingt-dix-neuf ne suffisent pas — la borne est ce qui compte"
+        );
+
+        assert!(!Position::startpos().is_fifty_move_draw());
     }
 
     #[test]
@@ -209,7 +270,11 @@ mod tests {
         let mut pos = Position::startpos();
         assert!(pos.play_uci("e1e8").is_err());
         assert!(pos.play_uci("zzzz").is_err());
-        assert_eq!(pos.ply(), 0);
+        assert_eq!(
+            pos.history().len(),
+            1,
+            "un coup rejeté n'allonge pas l'historique"
+        );
     }
 
     #[test]

@@ -185,8 +185,12 @@ impl TranspositionTable {
         let existing = self.entries[index];
         let depth = i8::try_from(depth.clamp(0, i32::from(i8::MAX))).unwrap_or(i8::MAX);
 
-        let replace = existing.depth < 0
-            || existing.key != key
+        // Pas de test d'entrée vierge ici, contrairement à `probe` : `depth` est
+        // borné à `[0, 127]` et une entrée vierge porte `-1`, donc
+        // `depth >= existing.depth` couvre déjà ce cas. Le tester en plus
+        // donnerait une branche que rien ne peut distinguer — et qu'aucun test
+        // ne pourrait donc protéger.
+        let replace = existing.key != key
             || existing.generation != self.generation
             || depth >= existing.depth;
         if !replace {
@@ -377,13 +381,181 @@ mod tests {
     }
 
     #[test]
+    fn le_taux_de_remplissage_suit_le_contenu() {
+        // `permille_used` alimente le champ `hashfull` d'UCI. Son arithmétique
+        // pouvait être altérée sans qu'un test bronche : seule la table vide
+        // était vérifiée.
+        let mut tt = TranspositionTable::new(1);
+        assert_eq!(tt.permille_used(), 0, "une table vide est vide");
+
+        // Remplir l'échantillon que la fonction observe — les mille premières
+        // entrées, ou toute la table si elle est plus petite.
+        let echantillon = tt.capacity().min(1_000);
+        for index in 0..echantillon as u64 {
+            tt.store(index, None, 0, 1, Bound::Exact, 0);
+        }
+        assert_eq!(
+            tt.permille_used(),
+            1_000,
+            "un échantillon plein vaut mille pour mille"
+        );
+        assert!(
+            tt.permille_used() <= 1_000,
+            "un pour-mille ne dépasse pas mille"
+        );
+    }
+
+    #[test]
+    fn une_entree_vide_ne_repond_jamais() {
+        // La clé zéro est celle d'une entrée jamais écrite. Si le test de
+        // vacuité portait sur `depth == 0` au lieu de `depth < 0`, une entrée
+        // vierge serait rendue comme un coup connu.
+        let tt = TranspositionTable::new(1);
+        assert!(tt.probe(0, 0).is_none(), "clé zéro sur table vierge");
+        assert!(tt.probe(1, 0).is_none());
+    }
+
+    #[test]
+    fn une_collision_dindex_ne_rend_pas_lentree_de_lautre_cle() {
+        // Deux clés distantes de la capacité tombent sur le même index. Si le
+        // `||` du filtre devenait `&&`, la table rendrait le score d'une AUTRE
+        // position — le pire défaut qu'une table de transposition puisse avoir.
+        let mut tt = TranspositionTable::new(1);
+        let capacite = tt.capacity() as u64;
+        let (une, autre) = (0xDEAD_BEEF, 0xDEAD_BEEF + capacite);
+        assert_eq!(
+            une as usize & tt.mask,
+            autre as usize & tt.mask,
+            "les deux clés doivent bien entrer en collision"
+        );
+
+        tt.store(une, Some(mv("e2e4")), 100, 5, Bound::Exact, 0);
+        assert!(tt.probe(une, 0).is_some(), "la clé stockée répond");
+        assert!(
+            tt.probe(autre, 0).is_none(),
+            "l'autre clé ne doit RIEN obtenir"
+        );
+    }
+
+    #[test]
+    fn une_entree_de_profondeur_zero_reste_lisible() {
+        // Profondeur zéro est une profondeur valide — c'est celle de la
+        // quiescence. Seule la profondeur négative marque une entrée vierge.
+        let mut tt = TranspositionTable::new(1);
+        tt.store(7, Some(mv("d2d4")), 12, 0, Bound::Exact, 0);
+        let hit = tt.probe(7, 0).unwrap();
+        assert_eq!(hit.depth, 0);
+        assert_eq!(hit.score, 12);
+    }
+
+    #[test]
+    fn une_entree_superficielle_est_ecrasee_par_une_profonde() {
+        // Le pendant du test existant, qui ne couvrait que le refus. Sans ce
+        // sens-ci, remplacer le `||` du critère de remplacement par `&&`
+        // passait inaperçu : la table n'aurait presque plus jamais rien écrit.
+        let mut tt = TranspositionTable::new(1);
+        tt.store(9, Some(mv("a2a3")), 10, 1, Bound::Exact, 0);
+        tt.store(9, Some(mv("h2h4")), 99, 5, Bound::Lower, 0);
+
+        let hit = tt.probe(9, 0).unwrap();
+        assert_eq!(hit.depth, 5, "la profonde l'emporte");
+        assert_eq!(hit.score, 99);
+        assert_eq!(hit.mv, Some(mv("h2h4")));
+    }
+
+    #[test]
+    fn une_autre_position_deloge_toujours_lentree_meme_moins_profonde() {
+        // Le critère de remplacement ne protège la profondeur QUE pour la même
+        // position. Une clé différente au même index prend la place quoi qu'il
+        // arrive, même avec une profondeur moindre : garder l'ancienne
+        // condamnerait la nouvelle position à ne jamais rien mémoriser tant que
+        // l'ancienne occupe le créneau.
+        //
+        // Sans ce test, faire de l'un des `||` du critère un `&&` survivait.
+        let mut tt = TranspositionTable::new(1);
+        let capacite = tt.capacity() as u64;
+        let (occupant, nouveau) = (0xFEED, 0xFEED + capacite);
+
+        tt.store(occupant, Some(mv("e2e4")), 100, 9, Bound::Exact, 0);
+        tt.store(nouveau, Some(mv("d2d4")), -30, 2, Bound::Upper, 0);
+
+        assert!(
+            tt.probe(occupant, 0).is_none(),
+            "l'ancienne position a cédé la place"
+        );
+        let hit = tt.probe(nouveau, 0).unwrap();
+        assert_eq!(hit.depth, 2);
+        assert_eq!(hit.score, -30);
+        assert_eq!(hit.mv, Some(mv("d2d4")));
+    }
+
+    #[test]
+    fn un_coup_nest_herite_que_de_la_meme_position() {
+        // `store` conserve le coup existant quand le nouveau n'en porte pas —
+        // mais SEULEMENT si c'est la même clé. Sans cette garde, une position
+        // hériterait du coup d'une autre.
+        let mut tt = TranspositionTable::new(1);
+        let capacite = tt.capacity() as u64;
+        let (une, autre) = (0x1234, 0x1234 + capacite);
+
+        tt.store(une, Some(mv("e2e4")), 50, 3, Bound::Exact, 0);
+        tt.store(autre, None, 20, 4, Bound::Exact, 0);
+
+        let hit = tt.probe(autre, 0).unwrap();
+        assert_eq!(
+            hit.mv, None,
+            "le coup de l'autre position ne doit pas être hérité"
+        );
+    }
+
+    #[test]
+    fn la_borne_des_scores_de_mat_est_exacte() {
+        // `score_to_tt` et `score_from_tt` ne corrigent que les scores de mat,
+        // reconnus par `> MATE_THRESHOLD`. Leurs quatre comparaisons
+        // survivaient à l'inversion de leur borne : aucun test ne testait la
+        // valeur frontière elle-même. `CLAUDE.md` désigne pourtant ces deux
+        // fonctions comme la source de bug la plus classique d'une table.
+        const PLY: i32 = 6;
+
+        // Exactement à la borne : ce n'est PAS un score de mat, rien ne bouge.
+        assert_eq!(score_to_tt(MATE_THRESHOLD, PLY), MATE_THRESHOLD);
+        assert_eq!(score_from_tt(MATE_THRESHOLD, PLY), MATE_THRESHOLD);
+        assert_eq!(score_to_tt(-MATE_THRESHOLD, PLY), -MATE_THRESHOLD);
+        assert_eq!(score_from_tt(-MATE_THRESHOLD, PLY), -MATE_THRESHOLD);
+
+        // Un cran au-delà : c'en est un, la distance se décale du ply.
+        assert_eq!(
+            score_to_tt(MATE_THRESHOLD + 1, PLY),
+            MATE_THRESHOLD + 1 + PLY
+        );
+        assert_eq!(
+            score_from_tt(MATE_THRESHOLD + 1, PLY),
+            MATE_THRESHOLD + 1 - PLY
+        );
+        assert_eq!(
+            score_to_tt(-MATE_THRESHOLD - 1, PLY),
+            -MATE_THRESHOLD - 1 - PLY
+        );
+        assert_eq!(
+            score_from_tt(-MATE_THRESHOLD - 1, PLY),
+            -MATE_THRESHOLD - 1 + PLY
+        );
+    }
+
+    #[test]
     fn la_taille_est_une_puissance_de_deux_sous_la_demande() {
         for mb in [1, 2, 7, 16, 64] {
             let tt = TranspositionTable::new(mb);
             assert!(tt.capacity().is_power_of_two(), "{mb} Mio");
+            let octets = tt.capacity() * size_of::<Entry>();
+            assert!(octets <= mb * 1024 * 1024, "{mb} Mio dépassé");
+            // La borne haute seule laissait passer une capacité de UN : une
+            // puissance de deux qui tient sous la limite. Un test de mutation
+            // l'a montré le 15 sept. 2026. Une table ronde à la puissance de
+            // deux inférieure garde toujours plus de la moitié du budget.
             assert!(
-                tt.capacity() * size_of::<Entry>() <= mb * 1024 * 1024,
-                "{mb} Mio dépassé"
+                octets > mb * 1024 * 1024 / 2,
+                "{mb} Mio : la table n'utilise que {octets} octets"
             );
         }
     }

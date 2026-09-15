@@ -1,0 +1,96 @@
+# Plafond de mutants survivants, fichier par fichier.
+#
+# Un « survivant » est une modification du code que toute la suite de tests
+# accepte : une ligne dont rien ne vérifie le comportement. Le workflow
+# `Mutation` (hebdomadaire) confronte ce plafond au balayage réel, par
+# `.github/mutation-verdict.sh`.
+#
+# Le cliquet ne serre que dans un sens : il CASSE à la hausse, SIGNALE la
+# baisse. Un mutant qui expire sur un runner chargé est compté « expiré »
+# plutôt que « survivant », donc une baisse peut n'être qu'un artefact de
+# charge. Une hausse, elle, ne peut pas l'être.
+#
+# Baisser une valeur ne demande rien. LA RELEVER DEMANDE UNE RAISON ÉCRITE
+# ci-dessous, sans quoi le plafond cesse d'être un cliquet.
+#
+# Mesuré le 15 sept. 2026 par `tools/mutants.sh`, à -j4 : 982 mutants sur le
+# moteur en 80 minutes, puis `search.rs` remesuré seul (394 mutants, 36 min)
+# après les corrections.
+#
+# CE SONT DES CHIFFRES MESURÉS, PAS ESTIMÉS. Le plafond est le garde-fou
+# permanent d'un fichier : l'écrire de mémoire ou par extrapolation en ferait
+# un point de comparaison faux pour la session suivante, ce qui est pire
+# qu'absent — le projet a déjà payé cette erreur deux fois.
+#
+# format : <fichier> <survivants admis>
+
+position.rs 0
+uci.rs 0
+tt.rs 2
+main.rs 0
+perft.rs 1
+bench.rs 2
+search.rs 94
+eval.rs 222
+
+# ---------------------------------------------------------------------------
+# Pourquoi ces plafonds ne sont pas zéro
+# ---------------------------------------------------------------------------
+#
+# Le critère de tri est celui arrêté le 15 sept. 2026 : on corrige ce qui
+# protège LES RÈGLES DU JEU et LES INVARIANTS DE RECHERCHE ; on laisse ce qui
+# porte sur LA FORCE DE JEU. Le SPRT juge la seconde catégorie, et aucun test
+# unitaire ne peut trancher à sa place — pire, un test qui fige une valeur
+# d'évaluation empêche le SPRT de la déplacer.
+#
+# eval.rs — 222.  Le fichier est presque entièrement des VALEURS : tables
+#   piece-square, primes de mobilité, échelle de danger du roi, pénalités de
+#   structure de pions. Un mutant qui change un `+` en `-` dans une prime
+#   change le GOÛT du moteur, pas sa correction. Ce qui compte y est déjà
+#   testé : la symétrie par couleur (`levaluation_est_symetrique_par_couleur`),
+#   la complétude des tables, et l'absence de panique pour TOUT jeu de
+#   paramètres — ce dernier écrit après qu'un ajustement Texel a mis
+#   `KING_DANGER_SCALE` à zéro et fait diviser par zéro.
+#   Précédent décisif : un ajustement de ces valeurs prédisait le résultat des
+#   parties 7,8 % mieux sur 66 376 positions tenues à l'écart, et jouait
+#   25 Elo PLUS MAL. Les figer par des tests coûterait donc de l'Elo.
+#
+# search.rs — 94, contre 141 avant correction.  Le sous-ensemble correctness a
+#   été traité le 15 sept. : score de mat rendu par negamax (et non par la
+#   seule quiescence), seuil de mat, détection de répétition, table de
+#   variante principale, échéance dure dépassée, échéance douce qui ne doit
+#   PAS se déclencher trop tôt, budget d'horloge, redimensionnement de la
+#   table, prise en passant dans le filtre tactique, non-dégénérescence du
+#   tirage au sort.
+#   Trois invariants sont passés d'expression enfouie à fonction nommée pour
+#   devenir assertables : `parse_go`, `random_seed`, `time_budget_ms`. Un
+#   invariant qu'on ne peut pas appeler est un invariant qu'aucun test ne
+#   protège.
+#   Ce qui reste porte sur la force : marges d'élagage (delta, futilité
+#   inverse), formule de réduction LMR, poids d'ordonnancement (MVV-LVA,
+#   killers, historique), élargissement des fenêtres d'aspiration. Plus deux
+#   mutants cosmétiques sur `elapsed_ms`, qui n'alimente que le champ `time`
+#   des lignes `info`, et un équivalent dans `Score::from_internal` : le test
+#   `score > 0` est pris dans une branche où `score` ne peut pas valoir zéro,
+#   donc `>` et `>=` y calculent la même chose.
+#   Cas particulier documenté : les gardes de LMR (ne jamais réduire une
+#   capture, une promotion, un échec) ne sont PAS testables par le résultat.
+#   La re-recherche à profondeur pleine rend LMR sain : réduire à tort coûte
+#   du temps, jamais un mauvais coup. Ces mutants changent donc la vitesse et
+#   non la réponse — le SPRT est le seul juge possible.
+#
+# perft.rs — 1.  Le bras `depth == 1` est un comptage en vrac : le supprimer
+#   fait retomber sur le cas général, qui rend EXACTEMENT le même nombre en
+#   descendant d'un ply de plus. Mutant équivalent par construction, pas un
+#   trou de test.
+#
+# bench.rs — 2.  L'arithmétique des nœuds par seconde, qui n'apparaît que dans
+#   une ligne imprimée. `bench::run` rend le nombre de nœuds, lui vérifié par
+#   `engine/tests/bench_reference.rs`. Les nœuds par seconde ne sont un critère
+#   de rien sur ce projet — ils varient d'un run à l'autre, c'est écrit dans
+#   CLAUDE.md.
+#
+# tt.rs — 2.  `|` contre `^` dans `pack_move`, sur trois champs de bits
+#   disjoints par construction (départ 0-5, arrivée 6-11, promotion 12-14).
+#   Les deux opérateurs y calculent la même chose. Aucun test ne peut les
+#   distinguer : mutants équivalents, et non un trou.

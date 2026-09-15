@@ -32,6 +32,13 @@ jobs:
       - name: Tests (debug)
         run: cargo test --workspace
 
+      # Le verdict du balayage hebdomadaire par mutation est du shell, donc
+      # invisible à `cargo test`. Il ne tourne qu'une fois par semaine dans le
+      # workflow `Mutation` : sans ce test ici, une faute y dormirait jusqu'à ce
+      # qu'elle fasse passer une régression de couverture pour un succès.
+      - name: Verdict de mutation (auto-test)
+        run: .github/mutation-verdict-test.sh
+
       - name: Tests (release)
         run: cargo test --workspace --release
 

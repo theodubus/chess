@@ -40,6 +40,22 @@ pub const MAX_DEPTH: u32 = 64;
 /// ply et empêche une quiescence pathologique de déborder la pile.
 pub const MAX_PLY: usize = 128;
 
+/// Profondeur maximale à laquelle on ose la futilité inverse.
+///
+/// Au-delà, le score statique cesse de prédire ce que la recherche trouverait :
+/// il reste trop de coups à jouer pour qu'une évaluation immobile fasse foi.
+const RFP_MAX_DEPTH: i32 = 8;
+
+/// Marge de la futilité inverse, par unité de profondeur restante.
+///
+/// Elle croît avec la profondeur parce que plus il reste de coups, plus le
+/// score peut encore bouger. **Mesuré le 15 sept. 2026 sur des positions tirées
+/// de vraies parties** : la condition se déclenche sur 44,7 % des nœuds
+/// candidats à 100 par profondeur, 47,4 % à 75, 40,0 % à 150 — la sensibilité à
+/// la marge est faible, donc la valeur conventionnelle suffit tant qu'un SPRT
+/// n'a pas dit le contraire.
+const RFP_MARGIN: i32 = 100;
+
 /// Profondeur minimale pour tenter un coup nul.
 ///
 /// En dessous, la recherche réduite serait si courte que l'élagage ne
@@ -266,6 +282,12 @@ pub struct Search {
     /// Les valeurs que consulte l'évaluation. Le moteur emploie toujours les
     /// valeurs par défaut ; seul le tuner en substitue d'autres.
     params: eval::Params,
+    /// Permet à un test de désactiver la seule futilité inverse.
+    ///
+    /// Hors test, la constante `true` est connue du compilateur : la condition
+    /// disparaît à l'optimisation et ne coûte rien.
+    #[cfg(test)]
+    reverse_futility: bool,
     /// Permet à un test de désactiver le seul élagage delta, pour comparer deux
     /// recherches qui ne diffèrent que par lui.
     ///
@@ -297,6 +319,8 @@ impl Search {
             lmr: build_lmr_table(),
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
+            #[cfg(test)]
+            reverse_futility: true,
             #[cfg(test)]
             delta_pruning: true,
         }
@@ -482,32 +506,10 @@ impl Search {
     /// entière. Ce budget suffit à ne pas perdre au temps, ce qui est le seul
     /// objectif ici.
     fn set_deadlines(&mut self, limits: &Limits, side: Color) {
-        if limits.infinite {
+        let Some(budget_ms) = time_budget_ms(limits, side) else {
             self.hard_deadline = None;
             self.soft_deadline = None;
             return;
-        }
-
-        let budget_ms = if let Some(movetime) = limits.movetime {
-            movetime.saturating_sub(20).max(1)
-        } else {
-            let (remaining, increment) = match side {
-                Color::White => (limits.wtime, limits.winc),
-                Color::Black => (limits.btime, limits.binc),
-            };
-            let Some(remaining) = remaining else {
-                // Ni pendule ni `movetime` : c'est une recherche à profondeur
-                // ou à nœuds imposés, sans contrainte d'horloge.
-                self.hard_deadline = None;
-                self.soft_deadline = None;
-                return;
-            };
-            let increment = increment.unwrap_or(0);
-            let moves_to_go = u64::from(limits.movestogo.unwrap_or(30)).max(1);
-            let budget = remaining / moves_to_go + increment / 2;
-            // Toujours garder une marge : une pendule à zéro perd la partie,
-            // quelle que soit la position.
-            budget.clamp(1, remaining.saturating_sub(50).max(1))
         };
 
         let now = Instant::now();
@@ -741,6 +743,28 @@ impl Search {
         // collision de clés Zobrist, astronomiquement rare mais pas impossible.
         let tt_move = hit.and_then(|hit| hit.mv).filter(|&mv| board.is_legal(mv));
 
+        // Futilité inverse.
+        //
+        // Le pendant du coup nul, appliqué au nœud lui-même plutôt qu'à son
+        // sous-arbre : si la position est déjà si bonne que même en concédant
+        // `RFP_MARGIN` par unité de profondeur restante elle dépasse `beta`,
+        // la recherche ne fera que confirmer la coupure.
+        //
+        // Les gardes, et ce qu'elles écartent :
+        // - **en échec**, le score statique ment : il ignore que le roi est
+        //   attaqué et qu'un coup est obligatoire ;
+        // - **contre une borne de mat**, la marge n'a plus de sens, `beta` n'y
+        //   mesurant plus du matériel ;
+        // - **jamais à la racine**, où il faut rendre un coup, pas un score ;
+        // - **au-delà de `RFP_MAX_DEPTH`**, le score statique ne prédit plus.
+        //
+        // Mesuré avant d'être écrit : la condition porte sur 9,8 % des nœuds et
+        // se déclenche sur 4,4 % d'entre eux — concentrée à la profondeur 1, où
+        // couper épargne tout un étage de quiescence.
+        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta) {
+            return score;
+        }
+
         // Élagage par coup nul.
         //
         // Dans presque toute position, avoir le trait est un avantage. Si l'on
@@ -968,6 +992,34 @@ impl Search {
         best
     }
 
+    /// Le score à rendre si la futilité inverse coupe ici, sinon `None`.
+    ///
+    /// Isolée en méthode pour que le commutateur de test tienne dans un seul
+    /// endroit, et que `negamax` reste lisible.
+    fn reverse_futility_cut(
+        &self,
+        board: &Board,
+        depth: i32,
+        ply: usize,
+        beta: i32,
+    ) -> Option<i32> {
+        #[cfg(test)]
+        if !self.reverse_futility {
+            return None;
+        }
+
+        if ply == 0
+            || depth > RFP_MAX_DEPTH
+            || !board.checkers().is_empty()
+            || beta.abs() >= MATE_THRESHOLD
+        {
+            return None;
+        }
+
+        let static_eval = eval::evaluate(board, &self.params);
+        (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
+    }
+
     /// Vrai si cette capture ne peut pas ramener la position jusqu'à `alpha`.
     ///
     /// Mesuré avant d'être écrit, le 14 sept. 2026 : **90 % des nœuds du moteur
@@ -1122,9 +1174,61 @@ pub fn random_legal_move(board: &Board) -> Option<Move> {
     if legal.is_empty() {
         return None;
     }
-    let mut state = board.hash() | 1;
+    let mut state = random_seed(board.hash());
     let index = (next_random(&mut state) % legal.len() as u64) as usize;
     legal.get(index).copied()
+}
+
+/// Le budget de temps du coup à jouer, en millisecondes.
+///
+/// `None` quand aucune horloge ne contraint la recherche : `go infinite`, ou
+/// une recherche à profondeur ou à nœuds imposés.
+///
+/// Fonction pure, séparée de `set_deadlines` pour la même raison que
+/// `random_seed` : tant que cette arithmétique vivait au milieu d'une fonction
+/// qui pose des `Instant`, aucun test ne pouvait en asserter le résultat, et
+/// sept mutants y survivaient. Se tromper ici ne coûte pas de l'Elo — **ça perd
+/// des parties au temps**, ce qu'aucun SPRT ne distingue d'une faiblesse de
+/// jeu.
+///
+/// Volontairement grossier : la gestion fine du temps est un travail à part
+/// entière, qui viendra avec son propre verdict.
+#[must_use]
+fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
+    if limits.infinite {
+        return None;
+    }
+    if let Some(movetime) = limits.movetime {
+        // La marge couvre le trajet de la réponse jusqu'à l'interface.
+        return Some(movetime.saturating_sub(20).max(1));
+    }
+
+    let (remaining, increment) = match side {
+        Color::White => (limits.wtime, limits.winc),
+        Color::Black => (limits.btime, limits.binc),
+    };
+    let remaining = remaining?;
+    let increment = increment.unwrap_or(0);
+    let moves_to_go = u64::from(limits.movestogo.unwrap_or(30)).max(1);
+    let budget = remaining / moves_to_go + increment / 2;
+    // Toujours garder une marge : une pendule à zéro perd la partie, quelle
+    // que soit la position.
+    Some(budget.clamp(1, remaining.saturating_sub(50).max(1)))
+}
+
+/// La graine du tirage : le hash Zobrist, forcé impair.
+///
+/// **Zéro est un point fixe de xorshift64** — un état nul y reste et rend
+/// toujours zéro, donc toujours le premier coup de la liste. Forcer le bit de
+/// poids faible est ce qui empêche l'adversaire de référence de dégénérer, et
+/// avec lui le tournoi de vingt-quatre parties qui sert de critère
+/// d'acceptation.
+///
+/// Fonction nommée plutôt qu'expression en ligne : un invariant qu'on ne peut
+/// pas appeler est un invariant qu'aucun test ne peut protéger.
+#[must_use]
+fn random_seed(hash: u64) -> u64 {
+    hash | 1
 }
 
 /// xorshift64*, suffisant pour un tirage de coup et entièrement déterministe.
@@ -1304,6 +1408,82 @@ mod tests {
     /// Le score statique de la position, du point de vue du camp au trait.
     fn stand_pat(fen: &str) -> i32 {
         eval::evaluate(&board(fen), &eval::Params::DEFAULT)
+    }
+
+    /// Construit une recherche dont la seule futilité inverse est désactivée.
+    fn search_sans_rfp() -> Search {
+        let mut s = search();
+        s.reverse_futility = false;
+        s
+    }
+
+    #[test]
+    fn la_futilite_inverse_retire_des_noeuds() {
+        let position = Position::from_fen(crate::bench::BENCH_FENS[1]).unwrap();
+        let limits = Limits {
+            depth: Some(7),
+            ..Limits::default()
+        };
+        let mut avec = search();
+        avec.go(&position, &limits, |_| {});
+        let mut sans = search_sans_rfp();
+        sans.go(&position, &limits, |_| {});
+        assert!(
+            avec.nodes() < sans.nodes(),
+            "la futilité inverse ne retire rien : {} avec, {} sans",
+            avec.nodes(),
+            sans.nodes()
+        );
+    }
+
+    #[test]
+    fn en_echec_la_futilite_inverse_ne_coupe_jamais() {
+        // Le score statique ment en échec : il ignore que le roi est attaqué
+        // et qu'un coup est obligatoire. Position vérifiée par exécution :
+        // blancs en échec par la tour h1, malgré une dame d'avance.
+        let b = board("4k3/8/8/8/8/8/6Q1/4K2r w - - 0 1");
+        assert!(!b.checkers().is_empty(), "la position doit être un échec");
+        assert_eq!(search().reverse_futility_cut(&b, 1, 1, -5_000), None);
+    }
+
+    #[test]
+    fn a_la_racine_la_futilite_inverse_ne_coupe_jamais() {
+        // Il y faut un coup à jouer, pas seulement un score.
+        let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
+        assert_eq!(search().reverse_futility_cut(&b, 1, 0, -5_000), None);
+        // Le même nœud hors racine coupe, lui : c'est ce qui prouve que le
+        // test ci-dessus mesure la garde et non l'absence de condition.
+        assert!(search().reverse_futility_cut(&b, 1, 1, -5_000).is_some());
+    }
+
+    #[test]
+    fn autour_dun_mat_la_futilite_inverse_ne_coupe_jamais() {
+        // La marge suppose que `beta` mesure du matériel ; un mat ne le fait pas.
+        let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
+        assert_eq!(
+            search().reverse_futility_cut(&b, 1, 1, MATE - 5),
+            None,
+            "borne de mat positive"
+        );
+        assert_eq!(
+            search().reverse_futility_cut(&b, 1, 1, -MATE + 5),
+            None,
+            "borne de mat négative"
+        );
+    }
+
+    #[test]
+    fn au_dela_de_sa_profondeur_la_futilite_inverse_ne_coupe_pas() {
+        let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
+        assert!(
+            search()
+                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000)
+                .is_some()
+        );
+        assert_eq!(
+            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000),
+            None
+        );
     }
 
     #[test]
@@ -1738,20 +1918,49 @@ mod tests {
         // score précédent absurde doit donner exactement le résultat d'une
         // recherche à fenêtre pleine. Deux instances neuves pour que les deux
         // mesures partent de la même table vide.
+        //
+        // Le test comparait seulement les scores, ce qui ne prouvait rien : la
+        // boucle d'élargissement converge de toute façon vers le score exact.
+        // C'est le NOMBRE DE NŒUDS qui distingue les deux chemins — une
+        // fenêtre pleine cherche une fois, un pari raté recommence.
         let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
-        let pari = search().search_root(&b, 4, ASPIRATION_MIN_DEPTH, 4_000, &mut ardoise());
-        let plein = search().negamax(&b, 4, 0, -INFINITY, INFINITY, &mut ardoise());
-        assert_eq!(pari, plein);
+
+        let mut avec = search();
+        let pari = avec.search_root(&b, 4, ASPIRATION_MIN_DEPTH, 4_000, &mut ardoise());
+        let mut sans = search();
+        let plein = sans.negamax(&b, 4, 0, -INFINITY, INFINITY, &mut ardoise());
+
+        assert_eq!(pari, plein, "le score doit être identique");
+        assert_eq!(
+            avec.nodes(),
+            sans.nodes(),
+            "sous la profondeur minimale, aucun pari ne doit être tenté"
+        );
     }
 
     #[test]
     fn autour_dun_score_de_mat_la_fenetre_reste_pleine() {
         // Un mat annoncé ne prédit pas le score de l'itération suivante : la
         // fenêtre étroite n'a rien à y gagner et tout à y perdre.
+        //
+        // Même correction que le test précédent : c'est le nombre de nœuds qui
+        // dit si la garde s'est déclenchée, pas le score.
         let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
-        let pari = search().search_root(&b, 5, 8, MATE - 5, &mut ardoise());
-        let plein = search().negamax(&b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
-        assert_eq!(pari, plein);
+        let mut sans = search();
+        let plein = sans.negamax(&b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
+
+        // `MATE_THRESHOLD + 1` pince la borne : à `MATE_THRESHOLD` exactement,
+        // le score n'est pas encore un mat et le pari reste permis.
+        for previous in [MATE - 5, MATE_THRESHOLD + 1, -(MATE_THRESHOLD + 1)] {
+            let mut avec = search();
+            let pari = avec.search_root(&b, 5, 8, previous, &mut ardoise());
+            assert_eq!(pari, plein, "pari {previous} : score");
+            assert_eq!(
+                avec.nodes(),
+                sans.nodes(),
+                "pari {previous} : la fenêtre devait rester pleine"
+            );
+        }
     }
 
     #[test]
@@ -1815,5 +2024,431 @@ mod tests {
         let a = random_legal_move(&b).unwrap();
         assert_eq!(Some(a), random_legal_move(&b), "doit rester déterministe");
         assert!(b.is_legal(a));
+    }
+
+    // ---------------------------------------------------------------------
+    // Ce qui suit ferme des trous trouvés par `tools/mutants.sh` : des lignes
+    // qu'on pouvait altérer sans qu'un seul test bronche. Toutes portent sur
+    // une règle du jeu ou un invariant de recherche, jamais sur un réglage de
+    // force — le SPRT juge les seconds, aucun test unitaire ne le peut.
+    // ---------------------------------------------------------------------
+
+    #[test]
+    fn le_tirage_au_sort_ne_degenere_pas() {
+        // `board.hash() | 1` force un état impair. Ce n'est pas cosmétique :
+        // zéro est un point fixe de xorshift64, donc un état nul rendrait
+        // toujours zéro, donc toujours le premier coup. Remplacer le `|` par
+        // un `&` bornerait l'état à {0, 1} et l'adversaire de référence
+        // deviendrait presque déterministe — le tournoi de la CI mesurerait
+        // alors la victoire contre un adversaire dégénéré, pas contre le
+        // hasard.
+        assert_eq!(next_random(&mut 0), 0, "zéro est bien un point fixe");
+
+        // La graine se teste directement. Un `&` à la place du `|` bornerait
+        // l'état à {0, 1} ; un `^` inverserait le bit au lieu de le poser.
+        assert_eq!(random_seed(0), 1, "un hash nul ne doit pas rester nul");
+        assert_eq!(random_seed(2), 3, "le bit de poids faible se pose");
+        assert_eq!(
+            random_seed(3),
+            3,
+            "et ne s'inverse pas quand il est déjà là"
+        );
+        assert_eq!(random_seed(u64::MAX), u64::MAX, "le reste est intact");
+
+        // Et le tirage lui-même doit visiter des RANGS différents de la liste.
+        // La première version de ce test comptait les cases de départ : elles
+        // varient d'une position à l'autre même quand le rang tiré ne varie
+        // pas, donc elle ne mesurait rien.
+        let mut position = Position::default();
+        let mut rangs = std::collections::HashSet::new();
+        for _ in 0..20 {
+            let board = position.board().clone();
+            let mut legaux = Vec::new();
+            board.generate_moves(|m| {
+                legaux.extend(m);
+                false
+            });
+            let mv = random_legal_move(&board).unwrap();
+            rangs.insert(legaux.iter().position(|c| *c == mv).unwrap());
+            position.play(mv);
+            if board.status() != cozy_chess::GameStatus::Ongoing {
+                break;
+            }
+        }
+        assert!(
+            rangs.len() >= 8,
+            "le tirage doit visiter des rangs variés : {} distinct(s)",
+            rangs.len()
+        );
+    }
+
+    #[test]
+    fn le_generateur_pseudo_aleatoire_rend_une_suite_connue() {
+        // Valeurs relevées par exécution, jamais dérivées de tête.
+        //
+        // **La graine doit être dense.** La première version de ce test
+        // partait de 1, et deux mutants y survivaient : avec des bits aussi
+        // épars, `x ^= x >> 12` et `x |= x >> 12` calculent la même chose,
+        // le décalage ne rendant que des zéros. Un XOR ne se distingue d'un
+        // OR que sur des bits qui se recouvrent.
+        let mut dense = 0xDEAD_BEEF_CAFE_1234_u64;
+        assert_eq!(next_random(&mut dense), 9_195_287_788_668_050_452);
+        assert_eq!(next_random(&mut dense), 8_999_892_485_905_921_430);
+
+        let mut etat = 1_u64;
+        assert_eq!(next_random(&mut etat), 5_180_492_295_206_395_165);
+        assert_eq!(next_random(&mut etat), 12_380_297_144_915_551_517);
+    }
+
+    #[test]
+    fn le_seuil_de_mat_est_une_borne_stricte() {
+        // À `MATE_THRESHOLD` exactement, le score est encore des centièmes de
+        // pion. Relâcher la comparaison ferait annoncer un mat en 500 coups
+        // sur une position ordinaire — un mensonge visible dans l'interface.
+        assert_eq!(
+            Score::from_internal(MATE_THRESHOLD),
+            Score::Cp(MATE_THRESHOLD)
+        );
+        assert_eq!(
+            Score::from_internal(-MATE_THRESHOLD),
+            Score::Cp(-MATE_THRESHOLD)
+        );
+        assert!(matches!(
+            Score::from_internal(MATE_THRESHOLD + 1),
+            Score::Mate(_)
+        ));
+    }
+
+    #[test]
+    fn la_recherche_voit_une_repetition_de_son_chemin() {
+        // `is_repetition` est le seul point où la recherche consulte
+        // l'historique. Le remplacer par `false` ne faisait tomber aucun test,
+        // alors que la nulle par répétition est une règle du jeu.
+        //
+        // La fenêtre examinée est bornée par la pendule des cinquante coups et
+        // saute le coup de l'adversaire : une position ne peut se répéter que
+        // deux demi-coups plus tôt au minimum. D'où la pendule à 4 et les deux
+        // entrées intercalaires.
+        let mut s = search();
+        let b = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 4 3");
+        assert!(!s.is_repetition(&b), "un chemin vide ne répète rien");
+        s.path = vec![b.hash(), 0xAAAA, 0xBBBB];
+        assert!(s.is_repetition(&b), "la position doit être reconnue");
+        s.path = vec![b.hash() ^ 1, 0xAAAA, 0xBBBB];
+        assert!(!s.is_repetition(&b), "une autre position ne compte pas");
+    }
+
+    #[test]
+    fn une_echeance_deja_passee_arrete_la_recherche() {
+        // Sans cette borne, `go movetime` et `go infinite` ne rendraient la
+        // main qu'à l'épuisement de la profondeur. Le test porte sur la
+        // comparaison elle-même : une échéance dans le passé doit couper au
+        // tout premier contrôle.
+        let mut s = search();
+        s.hard_deadline = Some(Instant::now() - Duration::from_secs(1));
+        s.nodes = 0;
+        assert!(s.should_abort(), "une échéance passée arrête tout de suite");
+        assert!(s.aborted);
+    }
+
+    #[test]
+    fn redimensionner_la_table_change_vraiment_sa_taille() {
+        // `resize_table` sert l'option UCI `Hash`. La remplacer par une
+        // fonction vide laissait l'interface croire qu'elle avait été obéie.
+        let mut s = search();
+        s.resize_table(1);
+        let petite = s.tt.capacity();
+        s.resize_table(64);
+        assert!(
+            s.tt.capacity() > petite,
+            "64 Mio doit porter plus d'entrées que 1 Mio ({} contre {})",
+            s.tt.capacity(),
+            petite
+        );
+    }
+
+    #[test]
+    fn la_prise_en_passant_est_un_coup_tactique() {
+        // Le filtre tactique de la quiescence restreint les destinations aux
+        // cases occupées par l'adversaire. La prise en passant arrive sur une
+        // case VIDE : sans l'ajout explicite de cette case aux cibles, la
+        // quiescence ne la verrait jamais. C'est exactement le cas qu'on rate.
+        let b = board("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
+        let prise = cozy_chess::util::parse_uci_move(&b, "e5f6").unwrap();
+        let s = search();
+        let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
+        let count = s.ordered_moves(&b, true, None, 0, &mut buffer);
+        assert!(
+            buffer[..count].iter().any(|(mv, _)| *mv == prise),
+            "la prise en passant doit figurer parmi les coups tactiques"
+        );
+    }
+
+    #[test]
+    fn le_budget_dhorloge_est_exact() {
+        // Sept mutants survivaient dans cette arithmétique, et aucun n'aurait
+        // coûté de l'Elo : ils font perdre au TEMPS, ce qu'un SPRT ne
+        // distingue pas d'une faiblesse de jeu.
+        let pendule = |remaining, increment, movestogo| Limits {
+            wtime: Some(remaining),
+            winc: Some(increment),
+            movestogo,
+            ..Limits::default()
+        };
+
+        // Une minute, trente coups à jouer, cent millisecondes d'incrément :
+        // 60000/30 + 100/2.
+        assert_eq!(
+            time_budget_ms(&pendule(60_000, 100, Some(30)), Color::White),
+            Some(2_050)
+        );
+        // Sans `movestogo`, la convention du moteur est trente coups.
+        assert_eq!(
+            time_budget_ms(&pendule(60_000, 100, None), Color::White),
+            Some(2_050)
+        );
+        // L'incrément compte pour moitié, et rien d'autre ne bouge.
+        assert_eq!(
+            time_budget_ms(&pendule(60_000, 0, Some(30)), Color::White),
+            Some(2_000)
+        );
+        // Un seul coup à jouer : toute la pendule, moins la marge.
+        assert_eq!(
+            time_budget_ms(&pendule(60_000, 0, Some(1)), Color::White),
+            Some(59_950)
+        );
+
+        // Une pendule presque vide avec un gros incrément : le budget est
+        // ramené sous la pendule, jamais au-dessus. Sans le `+`, la
+        // soustraction déborderait ; sans la borne, le moteur jouerait
+        // dix secondes avec trente millisecondes au compteur.
+        assert_eq!(
+            time_budget_ms(&pendule(30, 10_000, None), Color::White),
+            Some(1)
+        );
+
+        // `movetime` court-circuite la pendule, marge de transmission déduite.
+        assert_eq!(
+            time_budget_ms(
+                &Limits {
+                    movetime: Some(1_000),
+                    wtime: Some(60_000),
+                    ..Limits::default()
+                },
+                Color::White
+            ),
+            Some(980)
+        );
+        // Et ne descend jamais à zéro, qui voudrait dire « pas de limite ».
+        assert_eq!(
+            time_budget_ms(
+                &Limits {
+                    movetime: Some(5),
+                    ..Limits::default()
+                },
+                Color::White
+            ),
+            Some(1)
+        );
+
+        // La pendule lue est celle du camp au trait.
+        let noirs = Limits {
+            btime: Some(60_000),
+            movestogo: Some(30),
+            ..Limits::default()
+        };
+        assert_eq!(time_budget_ms(&noirs, Color::Black), Some(2_000));
+        assert_eq!(
+            time_budget_ms(&noirs, Color::White),
+            None,
+            "sans pendule blanche, rien ne contraint les blancs"
+        );
+
+        // Aucune contrainte d'horloge.
+        assert_eq!(
+            time_budget_ms(
+                &Limits {
+                    infinite: true,
+                    wtime: Some(60_000),
+                    ..Limits::default()
+                },
+                Color::White
+            ),
+            None,
+            "`go infinite` ignore la pendule"
+        );
+        assert_eq!(
+            time_budget_ms(
+                &Limits {
+                    depth: Some(8),
+                    ..Limits::default()
+                },
+                Color::White
+            ),
+            None,
+            "une recherche à profondeur imposée n'a pas d'échéance"
+        );
+    }
+
+    #[test]
+    fn lecheance_douce_precede_toujours_la_dure() {
+        // Si la douce passait après la dure, elle ne se déclencherait jamais :
+        // chaque itération irait au bout du budget et serait jetée, et le
+        // moteur jouerait le coup de l'itération PRÉCÉDENTE.
+        let mut s = search();
+        s.set_deadlines(
+            &Limits {
+                wtime: Some(60_000),
+                ..Limits::default()
+            },
+            Color::White,
+        );
+        let (douce, dure) = (s.soft_deadline.unwrap(), s.hard_deadline.unwrap());
+        assert!(douce < dure, "l'échéance douce doit précéder la dure");
+    }
+
+    #[test]
+    fn une_pendule_genereuse_ne_bride_pas_lapprofondissement() {
+        // L'échéance douce interrompt l'approfondissement quand plus de la
+        // moitié du budget est consommée. Inverser sa comparaison la ferait
+        // se déclencher tant que le budget N'EST PAS dépassé : le moteur
+        // s'arrêterait à la profondeur 1 dès qu'une pendule est présente, et
+        // jouerait toute une partie en un ply — sans rien signaler.
+        //
+        // Aucun test ne voyait ça : ceux du budget vérifient qu'on s'arrête à
+        // temps, jamais qu'on ne s'arrête pas trop tôt.
+        let limits = Limits {
+            depth: Some(6),
+            movetime: Some(10_000),
+            ..Limits::default()
+        };
+        let mut atteinte = 0;
+        search().go(&Position::startpos(), &limits, |info| {
+            atteinte = atteinte.max(info.depth);
+        });
+        assert_eq!(
+            atteinte, 6,
+            "dix secondes pour six plies depuis la position initiale : \
+             l'approfondissement doit aller au bout"
+        );
+    }
+
+    #[test]
+    fn un_mat_au_fond_de_larbre_rend_le_score_exact() {
+        // Le mat détecté PAR NEGAMAX, et non par la quiescence. Les tests de
+        // mat existants cherchent à faible profondeur : le mat y tombe à
+        // `depth <= 0`, donc dans la quiescence, et la branche de negamax
+        // n'était jamais exécutée. Deux mutants y survivaient — l'un
+        // supprimait le signe et faisait d'une position matée un gain écrasant.
+        //
+        // Positions vérifiées par exécution : la première rend `Won` avec zéro
+        // coup légal et un roi en échec, la seconde `Drawn` avec zéro coup et
+        // aucun échec.
+        let mut s = search();
+        let mut a = ardoise();
+
+        let mat = board("7k/5QQ1/8/8/8/8/8/7K b - - 0 1");
+        assert_eq!(
+            s.negamax(&mat, 3, 2, -INFINITY, INFINITY, &mut a),
+            -MATE + 2,
+            "un mat vaut -(MATE - ply), et le ply compte depuis la racine"
+        );
+        assert_eq!(
+            s.negamax(&mat, 3, 5, -INFINITY, INFINITY, &mut a),
+            -MATE + 5,
+            "un mat plus lointain vaut moins cher"
+        );
+
+        let pat = board("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1");
+        assert_eq!(
+            s.negamax(&pat, 3, 2, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "zéro coup sans échec est un pat, pas un mat"
+        );
+    }
+
+    // ---- Table de variante principale ----
+    //
+    // Dix mutants y survivaient : toute l'arithmétique d'indexation pouvait
+    // être altérée sans qu'un test bronche. Une variante fausse est un
+    // mensonge émis à chaque ligne `info`, et c'est ce que l'interface
+    // affichera.
+
+    #[test]
+    fn une_variante_dun_seul_coup_se_lit() {
+        let mut pv = PvTable::new();
+        let b = Board::default();
+        let mv = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        pv.clear(1);
+        pv.push(0, mv);
+        assert_eq!(pv.line(), vec![mv]);
+    }
+
+    #[test]
+    fn une_variante_enchaine_les_plies() {
+        // Trois niveaux, parce que deux suffisent à masquer une faute sur le
+        // facteur `ply * MAX_PLY` : à ply 0 il vaut zéro.
+        let b = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        let e2e4 = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let g1f3 = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+        let b1c3 = cozy_chess::util::parse_uci_move(&b, "b1c3").unwrap();
+
+        let mut pv = PvTable::new();
+        pv.clear(3);
+        pv.push(2, b1c3);
+        pv.push(1, g1f3);
+        pv.push(0, e2e4);
+        assert_eq!(
+            pv.line(),
+            vec![e2e4, g1f3, b1c3],
+            "la variante doit se lire de la racine vers les feuilles"
+        );
+    }
+
+    #[test]
+    fn vider_un_ply_coupe_la_variante_a_cet_endroit() {
+        let b = Board::default();
+        let e2e4 = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let g1f3 = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+
+        let mut pv = PvTable::new();
+        pv.clear(2);
+        pv.push(1, g1f3);
+        pv.clear(1);
+        pv.push(0, e2e4);
+        assert_eq!(pv.line(), vec![e2e4], "le fils vidé ne doit plus suivre");
+    }
+
+    #[test]
+    fn la_variante_ne_depasse_jamais_sa_rangee() {
+        // `.min(MAX_PLY - 1)` borne la longueur héritée du fils. Sans cette
+        // borne, la copie déborderait sur la rangée du ply suivant et la
+        // variante annoncée mélangerait deux profondeurs. Aucun test ne
+        // construisait de variante assez longue pour l'atteindre : il faut
+        // poser la longueur du fils à la main.
+        let b = Board::default();
+        let mv = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let mut pv = PvTable::new();
+        pv.lengths[1] = MAX_PLY;
+        pv.push(0, mv);
+        assert_eq!(
+            pv.lengths[0], MAX_PLY,
+            "la longueur reste dans la rangée, elle ne la dépasse pas"
+        );
+    }
+
+    #[test]
+    fn la_variante_supporte_les_bornes_du_tableau() {
+        // Les gardes de `clear` et `push` ne sont pas décoratives : sans
+        // elles, un ply à la limite indexerait hors du tableau. Le test les
+        // appelle exactement là où ça déborderait.
+        let b = Board::default();
+        let mv = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let mut pv = PvTable::new();
+        pv.clear(MAX_PLY);
+        pv.clear(MAX_PLY + 7);
+        pv.push(MAX_PLY - 1, mv);
+        pv.push(MAX_PLY, mv);
+        assert_eq!(pv.line(), Vec::new(), "rien n'a été écrit à la racine");
     }
 }

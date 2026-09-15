@@ -115,6 +115,105 @@ donnait +71 % et +28 % — des chiffres vrais répondant à une autre question.
 Et la première version allouait un `Vec` par nœud : la dérivation semblait
 coûter 25,8 ns au lieu de 9,0, soit 2,8 fois son prix réel.
 
+## Vérifier, et mesurer un temps
+
+Deux scripts existent parce que deux classes de fautes se sont répétées.
+
+`tools/verify.sh` rend **un seul code de sortie** pour fmt, clippy, les tests
+debug et release, les critères d'acceptation et le bench. `--rapide` s'arrête
+aux trois premiers. Il n'interrompt pas à la première faute : il les exécute
+toutes et les rapporte ensemble.
+
+> **Pourquoi** — le 14 sept. 2026, un test échouait en debug et personne ne
+> l'a vu : la sortie de `cargo test` avait été filtrée sur « test result » puis
+> sommée. La ligne disait `FAILED`, la somme disait 81. Lire une sortie de
+> test, c'est se donner une occasion de la lire de travers.
+
+`tools/timing.sh <candidat> <référence> [paires]` compare deux **vitesses**.
+Il impose les trois choses qu'on oublie :
+
+1. il **refuse de mesurer** si les deux binaires n'explorent pas exactement le
+   même nombre de nœuds — sinon on compare deux arbres, pas deux vitesses ;
+2. il mesure à la **profondeur 10**, jamais 7, où le bruit domine ;
+3. il **refuse de conclure sous vingt paires** et rend un **test des signes**,
+   au lieu d'une comparaison de médianes à l'œil.
+
+> **Pourquoi** — deux fautes, les deux évitables. Un balayage de tailles de
+> cache lu à la profondeur 7, dont les chiffres non monotones étaient du bruit
+> pur. Et une conclusion tirée de sept exécutions : 5 gagnantes sur 7 et
+> −1,2 %. Le même changement, sur 22 paires, donnait 19 sur 22 et −2,1 %.
+
+**Lequel employer.** `sprt.sh` juge un changement de **décision** — la
+recherche explore un autre arbre. `timing.sh` juge une **optimisation pure** —
+même arbre, même coup, seulement plus vite. Un nombre de nœuds identique est
+vérifiable ; un verdict de match est probabiliste. Employer le second quand il
+s'applique évite des heures de match pour un chiffre déjà connu.
+
+## Tests de mutation — mesuré le 15 sept. 2026
+
+`cargo mutants` altère le code une mutation à la fois et vérifie que la suite
+de tests s'en aperçoit. C'est la seule défense mécanique contre un test creux.
+
+**Le coût, mesuré et non estimé** — le dépôt entier, **1233 mutants en 55
+minutes** avec `-j4`. Le moteur seul en produit **986**. Le chiffre annoncé ici
+jusqu'au 15 sept. 2026 — « environ 70 minutes pour tout, 55 pour le moteur » —
+était une extrapolation depuis un seul petit fichier, et elle était fausse dans
+les deux termes : 55 minutes valaient pour *tout*, pas pour le moteur.
+
+**La conclusion** — trop lent pour un pas de CI bloquant. Un contrôle d'une
+heure qui bloque une pull request finit par être contourné, et c'est le motif
+de désarmement déjà rencontré deux fois sur ce projet. Il tourne donc en
+**tâche hebdomadaire** : workflow `Mutation`, mardi 00:00 UTC, un job par
+fichier en parallèle.
+
+```sh
+cargo install cargo-mutants --locked      # 1 min 11 s
+cargo mutants --list                      # décompte, instantané
+tools/mutants.sh --file engine/src/tt.rs -j4
+```
+
+**Toujours passer par `tools/mutants.sh`, jamais par `cargo mutants` nu.** Il
+prend un verrou exclusif et efface `mutants.out/` avant de partir. Le
+15 sept. 2026, deux balayages lancés l'un sur l'autre ont écrit dans le même
+`mutants.out/` : `missed.txt` mêlait les survivants de deux versions du code,
+avec des numéros de ligne d'un fichier qui n'existait plus. Le verrou rend la
+faute inexprimable au lieu de la confier à la vigilance.
+
+### Le cliquet
+
+`.github/mutation-baseline.txt` porte, fichier par fichier, le nombre de
+survivants admis. Le job `Verdict` du workflow le confronte au balayage et
+**casse à la hausse, signale la baisse**.
+
+L'asymétrie est assumée : un mutant qui expire sur un runner chargé est compté
+« expiré » plutôt que « survivant », donc une baisse peut n'être qu'un artefact
+de charge machine. Une hausse, elle, ne peut pas l'être — c'est du code
+nouvellement non couvert.
+
+Le verdict est un script, `.github/mutation-verdict.sh`, et non des lignes de
+YAML : un script ne s'exécutant qu'une fois par semaine sur un runner ne serait
+jamais vérifié. `.github/mutation-verdict-test.sh` l'éprouve sur huit cas
+fabriqués, et tourne dans `tools/verify.sh` comme dans la CI. Il a trouvé une
+faute dès sa première exécution — `attendu[nom]` dans un `$(( ))` évalue la clé
+en arithmétique et rend 0, donc l'écart affiché était toujours faux.
+
+**Ce que le balayage ne mesure pas** : la force de jeu. Un survivant portant
+sur une valeur d'évaluation, une marge d'élagage ou l'ordre des coups n'est pas
+un défaut — le SPRT en juge déjà, et aucun test unitaire ne peut trancher à sa
+place. `tools/` est hors du balayage pour la même raison : ce sont des
+utilitaires hors ligne, dont la fiabilité se juge par `crosscheck.sh`.
+
+**Ce qu'il a trouvé au premier essai**, sur le plus petit fichier, choisi au
+hasard : **6 mutants survivants sur 29**. Dont le plus instructif — inverser
+`==` en `!=` dans `repetitions` ne fait tomber aucun des sept tests de
+`position.rs`. Vérifié en inversant réellement l'opérateur. La raison est
+arithmétique : après quatre demi-coups la fenêtre examinée contient deux
+entrées dont exactement une égale au hash cherché, donc les deux opérateurs
+comptent 1. **Le test était satisfait par coïncidence.**
+
+C'est exactement la classe de faute que ni la relecture ni la CI n'attrapent,
+et elle portait sur la détection de nulle par répétition.
+
 ## Mesures de référence
 
 | date | changement | verdict |
@@ -128,8 +227,9 @@ coûter 25,8 ns au lieu de 9,0, soit 2,8 fois son prix réel.
 | 2026-09-14 | Sécurité du roi, structure de pions et tours sur colonne ouverte, valeurs conventionnelles | **H1 accepté** — +14,9 Elo ± 8,2 sur 4474 parties, cadence 1+0,01 |
 | 2026-09-14 | Les mêmes termes, valeurs réglées par ajustement Texel | **H0 accepté** — **−10,0 Elo ± 8,3** sur 5128 parties. Réglage retiré. |
 | 2026-09-14 | Élagage delta en quiescence | **H1 accepté** — +32,5 Elo ± 12,3 sur 1822 parties, cadence 1+0,01 |
+| 2026-09-15 | Futilité inverse | **H1 accepté** — +24,3 Elo ± 10,7 sur 2524 parties, cadence 1+0,01 |
 
-**Le nombre de nœuds n'est pas une mesure de force.** Sept mesures le disent
+**Le nombre de nœuds n'est pas une mesure de force.** Huit mesures le disent
 maintenant, et elles ne s'ordonnent pas de la même façon :
 
 | changement | nœuds | Elo |
@@ -141,6 +241,7 @@ maintenant, et elles ne s'ordonnent pas de la même façon :
 | **recherche à variante principale (PVS)** | **÷ 1,03** | **−11** |
 | **mobilité dans l'évaluation** | **× 1,29** | **+63** |
 | élagage delta en quiescence | ÷ 1,68 | +33 |
+| futilité inverse | ÷ 1,45 | +24 |
 
 Les deux dernières lignes sont les plus instructives. PVS explore **moins** de
 nœuds et joue **plus mal**. La mobilité en explore **29 % de plus** et joue
