@@ -321,6 +321,15 @@ une mesure, pas une préférence.
   `ATTENDUS=`, qui fait échouer le script s'il dérive. **La réponse n'est pas
   un garde-fou de plus, c'est de ne pas dupliquer** — écrire « ces dispositifs »
   et laisser le lecteur compter.
+- **Une mesure longue ne survit pas dans le conteneur ; la faire tourner en
+  CI.** Le 15 sept. 2026, un balayage de mutation lancé en tâche de fond est
+  mort à **158 mutants sur 397** — sans erreur, sans trace : le conteneur avait
+  été mis en veille entre deux tours et les processus détachés n'y survivent
+  pas. Deux balayages plus courts avaient fini, ce qui donnait l'illusion que
+  la méthode tenait. **Au-delà de quelques minutes, passer par
+  `workflow_dispatch`** : les runners GitHub ne dorment pas, et le journal
+  reste lisible après coup. C'est ainsi que le plafond d'`eval.rs` a fini par
+  être mesuré.
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.

@@ -31,7 +31,7 @@ main.rs 0
 perft.rs 1
 bench.rs 2
 search.rs 94
-eval.rs 222
+eval.rs 214
 
 # ---------------------------------------------------------------------------
 # Pourquoi ces plafonds ne sont pas zéro
@@ -43,7 +43,13 @@ eval.rs 222
 # unitaire ne peut trancher à sa place — pire, un test qui fige une valeur
 # d'évaluation empêche le SPRT de la déplacer.
 #
-# eval.rs — 222.  Le fichier est presque entièrement des VALEURS : tables
+# eval.rs — 214, contre 222 avant correction.  Le fichier est en très grande
+#   part des VALEURS — mesuré, pas supposé : ~189 des survivants sont des
+#   `delete -` sur les entrées des tables piece-square. Mais huit ne l'étaient
+#   pas du tout, et ils sont corrigés : la géométrie de `ahead_of`, le bras
+#   `Piece::Bishop` du filtre de mobilité, et deux lignes du corridor de pion
+#   passé. Ceux-là portaient sur des RÈGLES, pas sur du réglage.
+#   Ce qui reste : des VALEURS : tables
 #   piece-square, primes de mobilité, échelle de danger du roi, pénalités de
 #   structure de pions. Un mutant qui change un `+` en `-` dans une prime
 #   change le GOÛT du moteur, pas sa correction. Ce qui compte y est déjà
