@@ -37,14 +37,28 @@ Les binaires atterrissent dans `tools/arbiters/`, qui est ignoré par git.
 ```sh
 cargo build --release
 cp target/release/shallowred /tmp/candidat
-git stash && cargo build --release && cp target/release/shallowred /tmp/reference && git stash pop
 
+git worktree add --detach /tmp/ref <commit-de-référence>
+( cd /tmp/ref && cargo build --release )
+cp /tmp/ref/target/release/shallowred /tmp/reference
+git worktree remove /tmp/ref
+
+md5sum /tmp/candidat /tmp/reference   # les deux empreintes doivent différer
 tools/sprt.sh /tmp/candidat /tmp/reference
 ```
 
-> **Attention** — `git stash` emporte *tout* le travail non committé, outils de
-> mesure compris. Préférer `git worktree add --detach /tmp/ref <commit>` pour
-> construire une référence : c'est isolé et sans effet de bord.
+> **Jamais `git stash` pour construire une référence.** Il emporte *tout* le
+> travail non committé, outils de mesure compris, donc on finit par mesurer
+> autre chose que ce qu'on croit. C'est arrivé le 13 sept. 2026 : le stash avait
+> aussi remisé la conversion de `bench` de perft vers la recherche, et la mesure
+> « avant » comptait des nœuds de perft. Seule l'absurdité du chiffre l'a
+> révélé — elle aurait pu ne pas être absurde. Le worktree est isolé et sans
+> effet de bord.
+>
+> **Comparer les empreintes avant de lancer le match.** `cp -p` et `mv`
+> préservent les dates de modification, donc cargo peut juger les sources à jour
+> et ne rien recompiler : on mesure alors deux fois le même binaire, et le
+> rapport rend exactement 1,00.
 
 Le test séquentiel s'arrête dès que les données suffisent et rend
 `H1 was accepted` (le changement est bon) ou `H0 was accepted` (il ne l'est
