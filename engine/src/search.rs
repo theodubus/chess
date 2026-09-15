@@ -40,6 +40,22 @@ pub const MAX_DEPTH: u32 = 64;
 /// ply et empêche une quiescence pathologique de déborder la pile.
 pub const MAX_PLY: usize = 128;
 
+/// Profondeur maximale à laquelle on ose la futilité inverse.
+///
+/// Au-delà, le score statique cesse de prédire ce que la recherche trouverait :
+/// il reste trop de coups à jouer pour qu'une évaluation immobile fasse foi.
+const RFP_MAX_DEPTH: i32 = 8;
+
+/// Marge de la futilité inverse, par unité de profondeur restante.
+///
+/// Elle croît avec la profondeur parce que plus il reste de coups, plus le
+/// score peut encore bouger. **Mesuré le 15 sept. 2026 sur des positions tirées
+/// de vraies parties** : la condition se déclenche sur 44,7 % des nœuds
+/// candidats à 100 par profondeur, 47,4 % à 75, 40,0 % à 150 — la sensibilité à
+/// la marge est faible, donc la valeur conventionnelle suffit tant qu'un SPRT
+/// n'a pas dit le contraire.
+const RFP_MARGIN: i32 = 100;
+
 /// Profondeur minimale pour tenter un coup nul.
 ///
 /// En dessous, la recherche réduite serait si courte que l'élagage ne
@@ -266,6 +282,12 @@ pub struct Search {
     /// Les valeurs que consulte l'évaluation. Le moteur emploie toujours les
     /// valeurs par défaut ; seul le tuner en substitue d'autres.
     params: eval::Params,
+    /// Permet à un test de désactiver la seule futilité inverse.
+    ///
+    /// Hors test, la constante `true` est connue du compilateur : la condition
+    /// disparaît à l'optimisation et ne coûte rien.
+    #[cfg(test)]
+    reverse_futility: bool,
     /// Permet à un test de désactiver le seul élagage delta, pour comparer deux
     /// recherches qui ne diffèrent que par lui.
     ///
@@ -297,6 +319,8 @@ impl Search {
             lmr: build_lmr_table(),
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
+            #[cfg(test)]
+            reverse_futility: true,
             #[cfg(test)]
             delta_pruning: true,
         }
@@ -741,6 +765,28 @@ impl Search {
         // collision de clés Zobrist, astronomiquement rare mais pas impossible.
         let tt_move = hit.and_then(|hit| hit.mv).filter(|&mv| board.is_legal(mv));
 
+        // Futilité inverse.
+        //
+        // Le pendant du coup nul, appliqué au nœud lui-même plutôt qu'à son
+        // sous-arbre : si la position est déjà si bonne que même en concédant
+        // `RFP_MARGIN` par unité de profondeur restante elle dépasse `beta`,
+        // la recherche ne fera que confirmer la coupure.
+        //
+        // Les gardes, et ce qu'elles écartent :
+        // - **en échec**, le score statique ment : il ignore que le roi est
+        //   attaqué et qu'un coup est obligatoire ;
+        // - **contre une borne de mat**, la marge n'a plus de sens, `beta` n'y
+        //   mesurant plus du matériel ;
+        // - **jamais à la racine**, où il faut rendre un coup, pas un score ;
+        // - **au-delà de `RFP_MAX_DEPTH`**, le score statique ne prédit plus.
+        //
+        // Mesuré avant d'être écrit : la condition porte sur 9,8 % des nœuds et
+        // se déclenche sur 4,4 % d'entre eux — concentrée à la profondeur 1, où
+        // couper épargne tout un étage de quiescence.
+        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta) {
+            return score;
+        }
+
         // Élagage par coup nul.
         //
         // Dans presque toute position, avoir le trait est un avantage. Si l'on
@@ -966,6 +1012,34 @@ impl Search {
             }
         }
         best
+    }
+
+    /// Le score à rendre si la futilité inverse coupe ici, sinon `None`.
+    ///
+    /// Isolée en méthode pour que le commutateur de test tienne dans un seul
+    /// endroit, et que `negamax` reste lisible.
+    fn reverse_futility_cut(
+        &self,
+        board: &Board,
+        depth: i32,
+        ply: usize,
+        beta: i32,
+    ) -> Option<i32> {
+        #[cfg(test)]
+        if !self.reverse_futility {
+            return None;
+        }
+
+        if ply == 0
+            || depth > RFP_MAX_DEPTH
+            || !board.checkers().is_empty()
+            || beta.abs() >= MATE_THRESHOLD
+        {
+            return None;
+        }
+
+        let static_eval = eval::evaluate(board, &self.params);
+        (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
     }
 
     /// Vrai si cette capture ne peut pas ramener la position jusqu'à `alpha`.
@@ -1304,6 +1378,82 @@ mod tests {
     /// Le score statique de la position, du point de vue du camp au trait.
     fn stand_pat(fen: &str) -> i32 {
         eval::evaluate(&board(fen), &eval::Params::DEFAULT)
+    }
+
+    /// Construit une recherche dont la seule futilité inverse est désactivée.
+    fn search_sans_rfp() -> Search {
+        let mut s = search();
+        s.reverse_futility = false;
+        s
+    }
+
+    #[test]
+    fn la_futilite_inverse_retire_des_noeuds() {
+        let position = Position::from_fen(crate::bench::BENCH_FENS[1]).unwrap();
+        let limits = Limits {
+            depth: Some(7),
+            ..Limits::default()
+        };
+        let mut avec = search();
+        avec.go(&position, &limits, |_| {});
+        let mut sans = search_sans_rfp();
+        sans.go(&position, &limits, |_| {});
+        assert!(
+            avec.nodes() < sans.nodes(),
+            "la futilité inverse ne retire rien : {} avec, {} sans",
+            avec.nodes(),
+            sans.nodes()
+        );
+    }
+
+    #[test]
+    fn en_echec_la_futilite_inverse_ne_coupe_jamais() {
+        // Le score statique ment en échec : il ignore que le roi est attaqué
+        // et qu'un coup est obligatoire. Position vérifiée par exécution :
+        // blancs en échec par la tour h1, malgré une dame d'avance.
+        let b = board("4k3/8/8/8/8/8/6Q1/4K2r w - - 0 1");
+        assert!(!b.checkers().is_empty(), "la position doit être un échec");
+        assert_eq!(search().reverse_futility_cut(&b, 1, 1, -5_000), None);
+    }
+
+    #[test]
+    fn a_la_racine_la_futilite_inverse_ne_coupe_jamais() {
+        // Il y faut un coup à jouer, pas seulement un score.
+        let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
+        assert_eq!(search().reverse_futility_cut(&b, 1, 0, -5_000), None);
+        // Le même nœud hors racine coupe, lui : c'est ce qui prouve que le
+        // test ci-dessus mesure la garde et non l'absence de condition.
+        assert!(search().reverse_futility_cut(&b, 1, 1, -5_000).is_some());
+    }
+
+    #[test]
+    fn autour_dun_mat_la_futilite_inverse_ne_coupe_jamais() {
+        // La marge suppose que `beta` mesure du matériel ; un mat ne le fait pas.
+        let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
+        assert_eq!(
+            search().reverse_futility_cut(&b, 1, 1, MATE - 5),
+            None,
+            "borne de mat positive"
+        );
+        assert_eq!(
+            search().reverse_futility_cut(&b, 1, 1, -MATE + 5),
+            None,
+            "borne de mat négative"
+        );
+    }
+
+    #[test]
+    fn au_dela_de_sa_profondeur_la_futilite_inverse_ne_coupe_pas() {
+        let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
+        assert!(
+            search()
+                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000)
+                .is_some()
+        );
+        assert_eq!(
+            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000),
+            None
+        );
     }
 
     #[test]

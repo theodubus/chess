@@ -76,7 +76,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
 dépend ni de la machine ni de sa charge.
 
-Référence à la profondeur 7 : **323 267** nœuds.
+Référence à la profondeur 7 : **223 577** nœuds.
 
 Ce chiffre est vérifié par la CI — voir
 [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
