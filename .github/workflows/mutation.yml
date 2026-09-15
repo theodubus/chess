@@ -24,9 +24,36 @@ env:
   MUTANTS_VERSION: "27.1.0"
 
 jobs:
+  # Un seul job compile `cargo-mutants` et remplit le cache ; les huit autres
+  # ne font que le restaurer. Sans cette étape, ils le compilent tous les huit
+  # en parallèle — le cache d'un job ne s'écrit qu'à sa fin, donc aucun ne
+  # profite du travail des autres. Sur un dépôt privé, où les minutes sont
+  # comptées par job et non en temps d'horloge, c'est huit fois la même
+  # facture pour le même binaire.
+  #
+  # Le coût de cette sérialisation est d'environ une minute quand le cache est
+  # chaud. Il compte, parce que GitHub évince un cache inutilisé au bout de
+  # sept jours et que le rythme hebdomadaire tombe pile sur cette borne : une
+  # semaine sur deux peut partir à froid.
+  outil:
+    name: cargo-mutants
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache de cargo-mutants
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/cargo-mutants
+          key: cargo-mutants-${{ env.MUTANTS_VERSION }}-${{ runner.os }}
+
+      - name: Compiler cargo-mutants
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: cargo install cargo-mutants --version "$MUTANTS_VERSION" --locked
+
   balayage:
     name: Mutation — ${{ matrix.fichier }}
     runs-on: ubuntu-latest
+    needs: outil
     timeout-minutes: 180
     strategy:
       # Un fichier qui échoue ne doit pas emporter les autres : le but est le
@@ -54,18 +81,18 @@ jobs:
           rustup show active-toolchain
           rustc --version && cargo --version
 
-      # cargo-mutants se compile en plusieurs minutes. Le binaire ne dépend
-      # que de sa version et de l'OS, donc il se met en cache tel quel.
-      - name: Cache de cargo-mutants
-        id: cache-mutants
-        uses: actions/cache@v4
+      # Restauration seule : le job `outil` a déjà rempli le cache, et huit
+      # tentatives d'écriture concurrentes du même contenu ne serviraient à
+      # rien. `fail-on-cache-miss` rend l'échec bruyant plutôt que silencieux —
+      # sans lui, un cache manquant ferait échouer le balayage trente secondes
+      # plus tard avec « cargo-mutants introuvable », ce qui ne nomme pas la
+      # cause.
+      - name: Restaurer cargo-mutants
+        uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/bin/cargo-mutants
           key: cargo-mutants-${{ env.MUTANTS_VERSION }}-${{ runner.os }}
-
-      - name: Installer cargo-mutants
-        if: steps.cache-mutants.outputs.cache-hit != 'true'
-        run: cargo install cargo-mutants --version "$MUTANTS_VERSION" --locked
+          fail-on-cache-miss: true
 
       # `--profile mutants` hérite de release sans LTO : le LTO recompile tout
       # le graphe à chaque mutant et multiplie le coût par un facteur trois.
@@ -121,7 +148,7 @@ jobs:
   verdict:
     name: Verdict
     runs-on: ubuntu-latest
-    needs: balayage
+    needs: [outil, balayage]
     if: always()
     steps:
       - uses: actions/checkout@v4
