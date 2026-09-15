@@ -448,12 +448,20 @@ fn pst_index(square: Square, color: Color) -> usize {
 /// seul juge redevient le match.
 #[must_use]
 pub fn is_insufficient_material(board: &Board) -> bool {
-    // Un pion promeut, une tour et une dame matent seules. Ce test tranche
-    // l'écrasante majorité des positions en un OU de bitboards, et c'est
-    // pourquoi il passe en premier : `evaluate` est le chemin le plus chaud du
-    // moteur.
-    let mating = board.pieces(Piece::Pawn) | board.pieces(Piece::Rook) | board.pieces(Piece::Queen);
-    if !mating.is_empty() {
+    // Un pion promeut, une tour et une dame matent seules. Ce test passe en
+    // premier parce qu'il tranche l'écrasante majorité des positions, et
+    // `evaluate` est le chemin le plus chaud du moteur.
+    //
+    // Trois tests court-circuités plutôt qu'un OU de bitboards : la première
+    // écriture en faisait un seul `|`, et le balayage par mutation y laissait
+    // deux survivants — `|` et `^` sont indistinguables sur des bitboards
+    // disjoints par construction, donc **aucun test n'aurait pu les tuer**.
+    // Cette forme-ci s'arrête au premier pion trouvé, ce qui est aussi moins
+    // de travail dans le cas courant.
+    if !board.pieces(Piece::Pawn).is_empty()
+        || !board.pieces(Piece::Rook).is_empty()
+        || !board.pieces(Piece::Queen).is_empty()
+    {
         return false;
     }
 
@@ -744,7 +752,7 @@ mod tests {
     /// son `is_insufficient_material()` d'accord avec le nôtre — jamais
     /// écrites de tête. Les deux premières fois que j'ai raisonné sur la
     /// couleur d'une case, je l'ai inversée.
-    const MORTES: [(&str, &str); 7] = [
+    const MORTES: [(&str, &str); 9] = [
         ("roi contre roi", "8/8/4k3/8/8/4K3/8/8 w - - 0 1"),
         ("roi et fou contre roi", "8/8/4k3/8/8/4KB2/8/8 w - - 0 1"),
         (
@@ -768,6 +776,17 @@ mod tests {
         (
             "trois fous clairs, cinq pièces",
             "8/7b/4k3/8/8/4K3/8/1B3B2 w - - 0 1",
+        ),
+        // Les cas ci-dessus sont TOUS sur cases claires : la branche « tous
+        // sombres » n'était jamais exécutée, et deux mutants y survivaient.
+        // Le balayage l'a vu, pas la relecture.
+        (
+            "un fou par camp, tous deux sombres",
+            "8/b7/4k3/8/8/4K3/8/2B5 w - - 0 1",
+        ),
+        (
+            "deux fous sombres du même camp",
+            "8/8/4k3/8/8/4K3/8/B1B5 w - - 0 1",
         ),
     ];
 
