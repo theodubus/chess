@@ -53,6 +53,9 @@ des nœuds de l'arbre à profondeur fixe. Un seul coup généré en trop ou en m
 n'importe où, et le total est faux.
 
 ```sh
+tools/verify.sh                                 # tout, un seul code de sortie
+tools/verify.sh --rapide                        # fmt, clippy, tests debug
+
 cargo test --workspace                          # tests rapides
 cargo test --workspace --release -- --ignored   # perft complet + tournoi contre le hasard
 ```
@@ -63,6 +66,27 @@ depuis douze ouvertures et des deux côtés. Une seule nulle est un échec.
 
 Les six positions de référence et leurs totaux sont dans
 [`engine/tests/perft.rs`](engine/tests/perft.rs).
+
+### Ce que les tests ne voient pas
+
+Une suite de tests verte ne dit pas quelles lignes elle surveille réellement.
+`cargo mutants` altère le code une mutation à la fois : un mutant **survivant**
+est une modification que toute la suite accepte, donc une ligne dont rien ne
+vérifie le comportement.
+
+```sh
+tools/mutants.sh --file engine/src/tt.rs
+```
+
+Trop lent pour bloquer une pull request — 982 mutants, environ une heure — donc
+hebdomadaire : le workflow `Mutation` tourne le mardi et confronte le résultat
+au plafond de [`.github/mutation-baseline.txt`](.github/mutation-baseline.txt),
+qui porte aussi la raison de chaque valeur non nulle. Le cliquet casse à la
+hausse et se contente de signaler la baisse.
+
+Ce que le balayage **ne** mesure **pas** : la force de jeu. Un survivant portant
+sur une valeur d'évaluation ou une marge d'élagage n'est pas un défaut — seul un
+SPRT peut en juger.
 
 ## Mesurer
 
