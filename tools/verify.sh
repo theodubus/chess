@@ -56,6 +56,10 @@ echo
 etape "format"                    cargo fmt --all -- --check
 etape "clippy"                    cargo clippy --all-targets --all-features -- -D warnings
 etape "tests (debug)"             cargo test --workspace
+# Le verdict du balayage hebdomadaire ne s'exécute qu'une fois par semaine sur
+# un runner GitHub. Sans ce test, une faute y dormirait jusqu'à ce qu'elle
+# fasse passer une régression de couverture pour un succès.
+etape "verdict de mutation"       .github/mutation-verdict-test.sh
 
 if [[ $RAPIDE -eq 0 ]]; then
   etape "tests (release)"         cargo test --workspace --release

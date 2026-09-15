@@ -1,0 +1,23 @@
+# Plafond de mutants survivants, fichier par fichier.
+#
+# Un « survivant » est une modification du code que toute la suite de tests
+# accepte : une ligne dont rien ne vérifie le comportement. Le workflow
+# `Mutation` (hebdomadaire) confronte ce plafond au balayage réel, par
+# `.github/mutation-verdict.sh`.
+#
+# Le cliquet ne serre que dans un sens : il CASSE à la hausse, SIGNALE la
+# baisse. Un mutant qui expire sur un runner chargé est compté « expiré »
+# plutôt que « survivant », donc une baisse peut n'être qu'un artefact de
+# charge. Une hausse, elle, ne peut pas l'être.
+#
+# Baisser une valeur ne demande rien. LA RELEVER DEMANDE UNE RAISON ÉCRITE
+# ci-dessous, sans quoi le plafond cesse d'être un cliquet.
+#
+# Ce que le balayage ne mesure pas : la force de jeu. Un survivant portant sur
+# une valeur d'évaluation, une marge d'élagage ou l'ordre des coups n'est pas
+# un défaut — le SPRT en juge, et aucun test unitaire ne peut trancher à sa
+# place. C'est ce qui explique les plafonds élevés d'`eval.rs` et `search.rs`.
+#
+# format : <fichier> <survivants admis>
+#
+# (valeurs à mesurer)

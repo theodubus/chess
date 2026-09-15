@@ -154,20 +154,54 @@ s'applique évite des heures de match pour un chiffre déjà connu.
 `cargo mutants` altère le code une mutation à la fois et vérifie que la suite
 de tests s'en aperçoit. C'est la seule défense mécanique contre un test creux.
 
-**Le coût, mesuré et non estimé** — 29 mutants de `position.rs` en **1 min 40 s**
-avec `-j4`, soit ~3,4 s par mutant. Le dépôt en produit **1233**, dont 978 pour
-le moteur seul : **environ 70 minutes** pour tout, 55 pour le moteur.
+**Le coût, mesuré et non estimé** — le dépôt entier, **1233 mutants en 55
+minutes** avec `-j4`. Le moteur seul en produit **986**. Le chiffre annoncé ici
+jusqu'au 15 sept. 2026 — « environ 70 minutes pour tout, 55 pour le moteur » —
+était une extrapolation depuis un seul petit fichier, et elle était fausse dans
+les deux termes : 55 minutes valaient pour *tout*, pas pour le moteur.
 
-**La conclusion** — trop lent pour un pas de CI bloquant. Un contrôle de
-soixante-dix minutes qui bloque une pull request finit par être contourné, et
-c'est le motif de désarmement déjà rencontré deux fois sur ce projet. À lancer
-à la main, ou en tâche périodique.
+**La conclusion** — trop lent pour un pas de CI bloquant. Un contrôle d'une
+heure qui bloque une pull request finit par être contourné, et c'est le motif
+de désarmement déjà rencontré deux fois sur ce projet. Il tourne donc en
+**tâche hebdomadaire** : workflow `Mutation`, mardi 00:00 UTC, un job par
+fichier en parallèle.
 
 ```sh
 cargo install cargo-mutants --locked      # 1 min 11 s
 cargo mutants --list                      # décompte, instantané
-cargo mutants --file engine/src/position.rs -j4
+tools/mutants.sh --file engine/src/tt.rs -j4
 ```
+
+**Toujours passer par `tools/mutants.sh`, jamais par `cargo mutants` nu.** Il
+prend un verrou exclusif et efface `mutants.out/` avant de partir. Le
+15 sept. 2026, deux balayages lancés l'un sur l'autre ont écrit dans le même
+`mutants.out/` : `missed.txt` mêlait les survivants de deux versions du code,
+avec des numéros de ligne d'un fichier qui n'existait plus. Le verrou rend la
+faute inexprimable au lieu de la confier à la vigilance.
+
+### Le cliquet
+
+`.github/mutation-baseline.txt` porte, fichier par fichier, le nombre de
+survivants admis. Le job `Verdict` du workflow le confronte au balayage et
+**casse à la hausse, signale la baisse**.
+
+L'asymétrie est assumée : un mutant qui expire sur un runner chargé est compté
+« expiré » plutôt que « survivant », donc une baisse peut n'être qu'un artefact
+de charge machine. Une hausse, elle, ne peut pas l'être — c'est du code
+nouvellement non couvert.
+
+Le verdict est un script, `.github/mutation-verdict.sh`, et non des lignes de
+YAML : un script ne s'exécutant qu'une fois par semaine sur un runner ne serait
+jamais vérifié. `.github/mutation-verdict-test.sh` l'éprouve sur huit cas
+fabriqués, et tourne dans `tools/verify.sh` comme dans la CI. Il a trouvé une
+faute dès sa première exécution — `attendu[nom]` dans un `$(( ))` évalue la clé
+en arithmétique et rend 0, donc l'écart affiché était toujours faux.
+
+**Ce que le balayage ne mesure pas** : la force de jeu. Un survivant portant
+sur une valeur d'évaluation, une marge d'élagage ou l'ordre des coups n'est pas
+un défaut — le SPRT en juge déjà, et aucun test unitaire ne peut trancher à sa
+place. `tools/` est hors du balayage pour la même raison : ce sont des
+utilitaires hors ligne, dont la fiabilité se juge par `crosscheck.sh`.
 
 **Ce qu'il a trouvé au premier essai**, sur le plus petit fichier, choisi au
 hasard : **6 mutants survivants sur 29**. Dont le plus instructif — inverser

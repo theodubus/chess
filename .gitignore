@@ -16,6 +16,7 @@ dist/
 # Rapports de `cargo mutants` — voir tools/README.md
 /mutants.out/
 /mutants.out.old/
+/mutants.out.lock
 
 # Arbitres construits localement (voir tools/setup-arbiters.sh)
 /tools/arbiters/

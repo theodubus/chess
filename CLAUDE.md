@@ -131,6 +131,7 @@ une mesure, pas une préférence.
 | « ce changement de recherche est bon » | `tools/sprt.sh <candidat> <référence>` rend `H1 was accepted`. Une impression n'est pas une mesure. La CI, elle, exige en permanence vingt-quatre victoires sur vingt-quatre contre le hasard — c'est un garde-fou, pas une mesure de force. |
 | « cette valeur d'évaluation est meilleure » | **Le SPRT, et rien d'autre — surtout pas une erreur de prédiction.** Mesuré le 14 sept. 2026 : un ajustement Texel des valeurs prédisait le résultat des parties **7,8 % mieux** sur 66 376 positions tenues à l'écart, et jouait **25 Elo plus mal** (−9,96 contre +14,92, deux SPRT). Le jeu de validation partage les corrélations du corpus, donc il ne peut pas distinguer une corrélation d'une cause — et le moteur, lui, *agit* sur son évaluation. **Une erreur de prédiction tenue à l'écart n'est pas un substitut à la force de jeu.** Les valeurs de `eval.rs` restent conventionnelles ; ne pas rouvrir le réglage sans corpus nettement plus grand ni contrainte de structure. |
 | « il manque un terme à l'évaluation » | Un SPRT. **Mesuré : la mobilité vaut +62,6 Elo ± 17,2** ; sécurité du roi, structure de pions et tour sur colonne ouverte valent ensemble **+14,9 Elo ± 8,2**. Pour la recherche, un SPRT par changement reste absolu. Pour l'évaluation, les termes se groupent — individuellement ils valent quelques Elo et ne tranchent pas — mais la règle complète est **« grouper, puis bissecter à l'échec »** : c'est un match de bissection qui a séparé les termes du réglage et montré lequel des deux coûtait. |
+| « ce code est testé » | `tools/mutants.sh`. Un mutant **survivant** est une modification du code que toute la suite accepte : une ligne dont rien ne vérifie le comportement. Le plafond par fichier vit dans `.github/mutation-baseline.txt`, et le balayage hebdomadaire (workflow `Mutation`, mardi) casse à la hausse, signale la baisse. **Ne dit rien de la force de jeu** : un survivant sur une valeur d'évaluation ou une marge d'élagage relève du SPRT, jamais d'un test unitaire. |
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. Empiriquement, sur les quatre SPRT du projet, `parties × Elo ≈ 62 000` : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 12 400 ≈ 2 h 30 ; +2 ≈ 31 000 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
@@ -242,6 +243,21 @@ une mesure, pas une préférence.
   bruit, donc rien. À 22 paires le même changement donne 19 sur 22 et −2,1 %,
   p = 0,0004. **Compter les paires gagnantes et faire un test des signes**, au
   lieu de comparer deux médianes à l'œil.
+- **Deux balayages de mutation concurrents se corrompent.** Le 15 sept. 2026,
+  j'ai relancé `cargo mutants` sans vérifier que le précédent avait fini. Les
+  deux écrivaient dans le même `mutants.out/` : `missed.txt` mêlait les
+  survivants de l'ancien code et du nouveau, avec des numéros de ligne d'une
+  version qui n'existait plus — et je l'ai lu comme un résultat. Même famille
+  que « ne jamais faire tourner deux matchs en même temps » : deux mesures
+  concurrentes ne sont pas seulement lentes, elles mentent. Passer par
+  `tools/mutants.sh`, qui prend un verrou et refuse de démarrer par-dessus.
+- **Un mutant équivalent est souvent du code mort.** Deux survivants de `tt.rs`
+  inversaient la borne d'un test d'entrée vierge dans `store` sans qu'aucun
+  test ne bouge. Ce n'était pas un trou de couverture : la clause ne pouvait
+  rien décider, `depth` étant borné à `[0, 127]` et une entrée vierge portant
+  `-1`. Aucun test n'aurait pu la couvrir ; la bonne réponse était de la
+  supprimer. **Avant de classer un survivant « équivalent », se demander si la
+  branche est atteignable** — la réponse change ce qu'il faut faire.
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.
@@ -274,6 +290,7 @@ tools/setup-arbiters.sh                    # construit fastchess
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement de décision
 tools/timing.sh <candidat> <référence>     # verdict sur une optimisation pure
 tools/crosscheck.sh                        # les deux arbitres s'accordent-ils
+tools/mutants.sh --file engine/src/tt.rs   # balayage par mutation, sous verrou
 ```
 
 **Vérifier par `tools/verify.sh`, jamais en lisant la sortie de `cargo test`.**
