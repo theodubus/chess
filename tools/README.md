@@ -172,6 +172,12 @@ cargo mutants --list                      # décompte, instantané
 tools/mutants.sh --file engine/src/tt.rs -j4
 ```
 
+Le workflow qui l'exécute est `.github/workflows/mutation.yml` ; son verdict
+est rendu par `.github/mutation-verdict.sh`, éprouvé par
+`.github/mutation-verdict-test.sh`. Le reste de l'outillage automatique — les
+deux hooks de `.claude/` et leur auto-test `tools/verify-hooks.sh` — est
+décrit dans `CLAUDE.md`, section « Ce qui tourne tout seul ».
+
 **Toujours passer par `tools/mutants.sh`, jamais par `cargo mutants` nu.** Il
 prend un verrou exclusif et efface `mutants.out/` avant de partir. Le
 15 sept. 2026, deux balayages lancés l'un sur l'autre ont écrit dans le même
