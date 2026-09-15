@@ -975,6 +975,125 @@ mod tests {
         assert_eq!(pst_index(Square::A8, Color::White), 0);
     }
 
+    // -----------------------------------------------------------------
+    // Géométrie de bitboards — trouvée par `tools/mutants.sh`.
+    //
+    // Ces trois fonctions ne portent pas des VALEURS mais des RÈGLES : quelles
+    // cases sont devant un pion, quelles cases un fou voit, quel pion est
+    // passé. Le SPRT ne peut pas en juger — il mesurerait un moteur qui joue
+    // mal sans jamais dire pourquoi. Le reste d'`eval.rs` est du réglage, et
+    // le figer par des tests coûterait de l'Elo ; ceci ne l'est pas.
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn les_cases_en_avant_dune_rangee_sont_exactes() {
+        // `ahead_of` est le seul support de la détection de pion passé. Cinq
+        // mutants y survivaient : le pas de huit cases par rangée, le décalage
+        // d'une rangée, et le sens du décalage. Aucun n'aurait fait tomber un
+        // test ; tous auraient rendu la prime de pion passé silencieusement
+        // fausse.
+        //
+        // Valeurs relevées par exécution, jamais dérivées de tête.
+
+        // Blanc : tout ce qui est STRICTEMENT au-dessus de la rangée.
+        assert_eq!(ahead_of(0, Color::White).0, 0xffff_ffff_ffff_ff00);
+        assert_eq!(ahead_of(6, Color::White).0, 0xff00_0000_0000_0000);
+        assert_eq!(
+            ahead_of(7, Color::White).0,
+            0,
+            "à la dernière rangée il n'y a plus rien devant — et le décalage \
+             vaudrait 64, que Rust refuse"
+        );
+
+        // Noir : « devant » descend.
+        assert_eq!(ahead_of(7, Color::Black).0, 0x00ff_ffff_ffff_ffff);
+        assert_eq!(ahead_of(1, Color::Black).0, 0x0000_0000_0000_00ff);
+        assert_eq!(ahead_of(0, Color::Black).0, 0);
+
+        // La propriété qui donne son sens au reste : les deux sens sont
+        // complémentaires, à la rangée elle-même près.
+        for rank in 0..8 {
+            let devant_blanc = ahead_of(rank, Color::White).0;
+            let devant_noir = ahead_of(rank, Color::Black).0;
+            let rangee = 0xffu64 << (8 * rank);
+            assert_eq!(
+                devant_blanc | devant_noir | rangee,
+                u64::MAX,
+                "rangée {rank} : les deux sens et la rangée couvrent l'échiquier"
+            );
+            assert_eq!(
+                devant_blanc & devant_noir,
+                0,
+                "rangée {rank} : sans recouvrement"
+            );
+        }
+    }
+
+    #[test]
+    fn un_fou_ne_voit_que_ses_diagonales() {
+        // Supprimer le bras `Piece::Bishop` du filtre de mobilité faisait
+        // tomber le fou dans le cas par défaut — celui de la DAME. Un fou
+        // aurait alors compté ses cases comme une dame, en mobilité comme en
+        // attaque du roi, sans qu'aucun test bronche.
+        //
+        // Les poids sont neutralisés sauf celui du fou : le test porte sur le
+        // NOMBRE de cases vues, pas sur ce qu'elles valent.
+        let b = board("4k3/8/8/8/3B4/8/8/4K3 w - - 0 1");
+        let mut params = Params::DEFAULT;
+        params.mobility = [(0, 0); Piece::NUM];
+        params.mobility[Piece::Bishop as usize] = (1, 1);
+
+        let a = activity(&b, Color::White, &params);
+        assert_eq!(
+            a.mobility_mg, 13,
+            "un fou en d4 sur un échiquier vide voit ses deux diagonales, \
+             sept cases plus six — pas les quatorze d'une tour en plus"
+        );
+    }
+
+    #[test]
+    fn un_pion_adverse_derriere_ne_bloque_pas_le_passage() {
+        // Le corridor d'un pion passé est l'INTERSECTION de sa colonne avec
+        // les adjacentes ET des cases devant lui. Remplacer ce `et` par un
+        // `ou` élargit le corridor à tout l'échiquier ou presque : plus aucun
+        // pion ne serait jamais passé, et la prime disparaîtrait en silence.
+        //
+        // La position le pince : le pion noir en d4 est sur une colonne
+        // adjacente au pion blanc e5, mais DERRIÈRE lui.
+        let b = board("4k3/8/8/4P3/3p4/8/8/4K3 w - - 0 1");
+        assert_eq!(
+            pawn_structure(&b, Color::White, &Params::DEFAULT),
+            (23, 55),
+            "e5 est passé malgré le pion noir en d4, qui est derrière"
+        );
+    }
+
+    #[test]
+    fn la_rangee_dun_pion_passe_se_compte_du_cote_du_pion() {
+        // La prime croît avec l'avancement, donc elle s'indexe par la rangée
+        // VUE DU CAMP DU PION. Pour les noirs c'est `7 - rank` ; remplacer la
+        // soustraction par une division rendait une prime quelconque, et pour
+        // un pion en rangée 0 une division par zéro.
+        //
+        // Deux pions noirs à deux rangées différentes, donc deux primes
+        // différentes — c'est l'écart qui prouve que l'index suit la rangée.
+        let avance = board("4k3/8/8/4p3/8/8/8/4K3 b - - 0 1");
+        assert_eq!(
+            pawn_structure(&avance, Color::Black, &Params::DEFAULT),
+            (8, 25),
+            "un pion noir en e5 est à trois rangées de la promotion"
+        );
+
+        let plus_avance = board("4k3/8/8/4P3/3p4/8/8/4K3 w - - 0 1");
+        let (mg_avance, _) = pawn_structure(&avance, Color::Black, &Params::DEFAULT);
+        let (mg_plus, _) = pawn_structure(&plus_avance, Color::Black, &Params::DEFAULT);
+        assert!(
+            mg_plus > mg_avance,
+            "d4 est plus près de la promotion que e5 pour les noirs : \
+             {mg_plus} doit dépasser {mg_avance}"
+        );
+    }
+
     #[test]
     fn toutes_les_tables_sont_completes() {
         for table in Params::DEFAULT
