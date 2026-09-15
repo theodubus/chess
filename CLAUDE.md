@@ -312,6 +312,15 @@ une mesure, pas une préférence.
   **Se demander : qu'est-ce que je casserais dans le code pour faire tomber ce
   test ?** Si la réponse n'est pas la ligne visée, le test mesure autre chose.
   Ici la bonne mesure était le nombre de nœuds, déterministe sur ce moteur.
+- **Ne pas recopier un compteur en prose.** Le 15 sept. 2026, j'ai écrit
+  « ces cinq dispositifs » au-dessus d'un tableau qui en listait six, et
+  « dix cas » pour un auto-test qui en comptait onze — **les deux étaient faux
+  le jour même où je les écrivais**, parce que j'avais ajouté une ligne après
+  avoir rédigé la phrase. C'est la même famille que le chiffre de référence
+  périmé, en plus bête : le compteur vit déjà dans le tableau ou dans
+  `ATTENDUS=`, qui fait échouer le script s'il dérive. **La réponse n'est pas
+  un garde-fou de plus, c'est de ne pas dupliquer** — écrire « ces dispositifs »
+  et laisser le lecteur compter.
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.
@@ -362,7 +371,7 @@ de l'omission d'un de ces points.
 
 ## Ce qui tourne tout seul
 
-Une règle écrite se contourne, un code de sortie non. Ces cinq dispositifs
+Une règle écrite se contourne, un code de sortie non. Ces dispositifs
 s'exécutent sans qu'on y pense — les connaître évite de les prendre pour des
 pannes, et de refaire ce qu'ils font déjà.
 
@@ -371,7 +380,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `.claude/settings.json` | déclare les deux hooks ci-dessous |
 | `.claude/hooks/verify-on-stop.sh` | refuse de finir un tour si `verify.sh --rapide` échoue et que des `.rs` ont changé. Passe après trois échecs d'affilée, avec un avertissement : un blocage qu'on ne sait pas lever vaut moins qu'un avertissement qu'on lit |
 | `.claude/hooks/no-fabricated-sha.sh` | refuse un SHA de 40 caractères qui n'est pas un objet du dépôt alors que son préfixe de 7 en est un — la signature d'un SHA complété de tête |
-| `tools/verify-hooks.sh` | onze cas ; vérifie aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
+| `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les trois critères d'acceptation, le bench |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
 
@@ -385,7 +394,7 @@ Baisser un plafond ne demande rien ; **le relever demande une raison écrite**.
 
 Le verdict est un script et non des lignes de YAML, parce qu'un script qui ne
 s'exécute qu'une fois par semaine sur un runner ne serait jamais vérifié :
-`.github/mutation-verdict-test.sh` l'éprouve sur dix cas et tourne dans
+`.github/mutation-verdict-test.sh` l'éprouve sur des cas fabriqués et tourne dans
 `tools/verify.sh` comme dans la CI. Il a trouvé une faute à sa première
 exécution.
 
