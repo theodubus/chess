@@ -13,6 +13,9 @@ dist/
 
 # Artefacts de mesure locaux
 /tools/out/
+# Rapports de `cargo mutants` — voir tools/README.md
+/mutants.out/
+/mutants.out.old/
 
 # Arbitres construits localement (voir tools/setup-arbiters.sh)
 /tools/arbiters/

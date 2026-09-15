@@ -149,6 +149,37 @@ même arbre, même coup, seulement plus vite. Un nombre de nœuds identique est
 vérifiable ; un verdict de match est probabiliste. Employer le second quand il
 s'applique évite des heures de match pour un chiffre déjà connu.
 
+## Tests de mutation — mesuré le 15 sept. 2026
+
+`cargo mutants` altère le code une mutation à la fois et vérifie que la suite
+de tests s'en aperçoit. C'est la seule défense mécanique contre un test creux.
+
+**Le coût, mesuré et non estimé** — 29 mutants de `position.rs` en **1 min 40 s**
+avec `-j4`, soit ~3,4 s par mutant. Le dépôt en produit **1233**, dont 978 pour
+le moteur seul : **environ 70 minutes** pour tout, 55 pour le moteur.
+
+**La conclusion** — trop lent pour un pas de CI bloquant. Un contrôle de
+soixante-dix minutes qui bloque une pull request finit par être contourné, et
+c'est le motif de désarmement déjà rencontré deux fois sur ce projet. À lancer
+à la main, ou en tâche périodique.
+
+```sh
+cargo install cargo-mutants --locked      # 1 min 11 s
+cargo mutants --list                      # décompte, instantané
+cargo mutants --file engine/src/position.rs -j4
+```
+
+**Ce qu'il a trouvé au premier essai**, sur le plus petit fichier, choisi au
+hasard : **6 mutants survivants sur 29**. Dont le plus instructif — inverser
+`==` en `!=` dans `repetitions` ne fait tomber aucun des sept tests de
+`position.rs`. Vérifié en inversant réellement l'opérateur. La raison est
+arithmétique : après quatre demi-coups la fenêtre examinée contient deux
+entrées dont exactement une égale au hash cherché, donc les deux opérateurs
+comptent 1. **Le test était satisfait par coïncidence.**
+
+C'est exactement la classe de faute que ni la relecture ni la CI n'attrapent,
+et elle portait sur la détection de nulle par répétition.
+
 ## Mesures de référence
 
 | date | changement | verdict |
