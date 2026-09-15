@@ -9,6 +9,19 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 - `ui/` — TypeScript. Pas encore démarré.
 - `tools/` — arbitres de match, livre d'ouvertures, SPRT. Voir `tools/README.md`.
 
+## Par où commencer, sans contexte
+
+Ce fichier dit **comment** travailler : invariants, ce qui compte comme preuve,
+pièges déjà payés. Il ne dit pas **où on en est**.
+
+- L'état du moteur : `README.md`, en tête.
+- Les dix verdicts SPRT, avec leurs effectifs et leurs bornes :
+  `tools/README.md`, section *Mesures de référence*.
+- Ce qui s'exécute sans qu'on l'appelle : section *Ce qui tourne tout seul*,
+  plus bas.
+- Ce sur quoi travailler : **demander**. Le dépôt ne porte pas de feuille de
+  route, et en deviner une reviendrait à rouvrir des questions déjà tranchées.
+
 ## Décisions structurantes
 
 Ces points sont tranchés. Les rouvrir demande un fait technique nouveau —

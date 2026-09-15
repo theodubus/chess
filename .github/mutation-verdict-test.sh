@@ -10,7 +10,7 @@ VERDICT="$ICI/mutation-verdict.sh"
 BAC=$(mktemp -d)
 trap 'rm -rf "$BAC"' EXIT
 
-ATTENDUS=10
+ATTENDUS=11
 vus=0
 echecs=0
 
@@ -103,6 +103,22 @@ cas "un balayage interrompu casse" 1 "RÉSUMÉ ILLISIBLE" "$BAC/incomplet" "$BAC
 resume "$BAC/liste" a.rs 5 "a.rs:42:9: replace foo -> bar"
 resume "$BAC/liste" b.rs 0
 cas "les survivants sont imprimés" 0 "a.rs:42:9: replace foo -> bar" "$BAC/liste" "$BAC/plafond.txt"
+
+# La synthèse doit venir APRÈS la liste des survivants : un journal GitHub se
+# lit par la fin, et la liste nominative peut faire des centaines de lignes.
+resume "$BAC/synthese" a.rs 2 "a.rs:1:1 premier" "a.rs:2:2 second"
+resume "$BAC/synthese" b.rs 0
+sortie=$("$VERDICT" "$BAC/synthese" "$BAC/plafond.txt" 2>&1)
+vus=$((vus + 1))
+rang_liste=$(printf '%s' "$sortie" | grep -n 'a.rs:2:2 second' | cut -d: -f1)
+rang_synthese=$(printf '%s' "$sortie" | grep -n '===== SYNTHÈSE =====' | cut -d: -f1)
+if [ -n "$rang_liste" ] && [ -n "$rang_synthese" ] && [ "$rang_synthese" -gt "$rang_liste" ]; then
+    printf 'ok     la synthèse suit la liste des survivants\n'
+else
+    printf 'ÉCHEC  la synthèse doit venir après la liste (liste %s, synthèse %s)\n%s\n' \
+        "${rang_liste:-absente}" "${rang_synthese:-absente}" "$sortie"
+    echecs=$((echecs + 1))
+fi
 
 # Un plafond vide n'a rien comparé : le rendre vert serait le pire des
 # silences, puisque le fichier est justement ce qui définit l'exigence.
