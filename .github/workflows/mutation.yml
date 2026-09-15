@@ -15,7 +15,12 @@ on:
   schedule:
     # 00:00 UTC le mardi. GitHub n'évalue le cron qu'en UTC et n'applique
     # aucun changement d'heure : 02:00 en heure d'été, 01:00 en heure d'hiver.
-    # Pour un entretien hebdomadaire, l'heure exacte n'a pas d'importance.
+    #
+    # La Routine qui lit le verdict part à 03:00 UTC, soit trois heures plus
+    # tard. **Mesuré sur la première exécution réelle** : 81 minutes du
+    # déclenchement au verdict, le job le plus long étant `search.rs` à 78
+    # minutes de balayage. Une marge de 39 minutes — ce qu'elle aurait été à
+    # 02:00 UTC — était trop courte pour un moteur qui grossit.
     - cron: "0 0 * * 2"
   workflow_dispatch:
 
