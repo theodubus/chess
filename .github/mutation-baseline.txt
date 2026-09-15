@@ -13,8 +13,14 @@
 # Baisser une valeur ne demande rien. LA RELEVER DEMANDE UNE RAISON ÉCRITE
 # ci-dessous, sans quoi le plafond cesse d'être un cliquet.
 #
-# Mesuré le 15 sept. 2026 par `tools/mutants.sh` : 982 mutants sur le moteur,
-# 80 minutes à -j4.
+# Mesuré le 15 sept. 2026 par `tools/mutants.sh`, à -j4 : 982 mutants sur le
+# moteur en 80 minutes, puis `search.rs` remesuré seul (394 mutants, 36 min)
+# après les corrections.
+#
+# CE SONT DES CHIFFRES MESURÉS, PAS ESTIMÉS. Le plafond est le garde-fou
+# permanent d'un fichier : l'écrire de mémoire ou par extrapolation en ferait
+# un point de comparaison faux pour la session suivante, ce qui est pire
+# qu'absent — le projet a déjà payé cette erreur deux fois.
 #
 # format : <fichier> <survivants admis>
 
@@ -24,7 +30,7 @@ tt.rs 2
 main.rs 0
 perft.rs 1
 bench.rs 2
-search.rs 141
+search.rs 94
 eval.rs 222
 
 # ---------------------------------------------------------------------------
@@ -49,14 +55,24 @@ eval.rs 222
 #   parties 7,8 % mieux sur 66 376 positions tenues à l'écart, et jouait
 #   25 Elo PLUS MAL. Les figer par des tests coûterait donc de l'Elo.
 #
-# search.rs — voir le chiffre ci-dessus.  Le sous-ensemble correctness a été
-#   corrigé le 15 sept. : score de mat rendu par negamax (et non par la seule
-#   quiescence), seuil de mat, détection de répétition, table de variante
-#   principale, échéance dépassée, redimensionnement de la table, prise en
-#   passant dans le filtre tactique, non-dégénérescence du tirage au sort.
+# search.rs — 94, contre 141 avant correction.  Le sous-ensemble correctness a
+#   été traité le 15 sept. : score de mat rendu par negamax (et non par la
+#   seule quiescence), seuil de mat, détection de répétition, table de
+#   variante principale, échéance dure dépassée, échéance douce qui ne doit
+#   PAS se déclencher trop tôt, budget d'horloge, redimensionnement de la
+#   table, prise en passant dans le filtre tactique, non-dégénérescence du
+#   tirage au sort.
+#   Trois invariants sont passés d'expression enfouie à fonction nommée pour
+#   devenir assertables : `parse_go`, `random_seed`, `time_budget_ms`. Un
+#   invariant qu'on ne peut pas appeler est un invariant qu'aucun test ne
+#   protège.
 #   Ce qui reste porte sur la force : marges d'élagage (delta, futilité
 #   inverse), formule de réduction LMR, poids d'ordonnancement (MVV-LVA,
-#   killers, historique), parts du budget de temps.
+#   killers, historique), élargissement des fenêtres d'aspiration. Plus deux
+#   mutants cosmétiques sur `elapsed_ms`, qui n'alimente que le champ `time`
+#   des lignes `info`, et un équivalent dans `Score::from_internal` : le test
+#   `score > 0` est pris dans une branche où `score` ne peut pas valoir zéro,
+#   donc `>` et `>=` y calculent la même chose.
 #   Cas particulier documenté : les gardes de LMR (ne jamais réduire une
 #   capture, une promotion, un échec) ne sont PAS testables par le résultat.
 #   La re-recherche à profondeur pleine rend LMR sain : réduire à tort coûte
