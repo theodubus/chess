@@ -90,6 +90,31 @@ for nom in "${noms[@]}"; do
     echo "$liste"
 done
 
+# La synthèse est répétée EN DERNIER, et c'est délibéré.
+#
+# Le tableau ci-dessus est imprimé avant la liste nominative des survivants,
+# qui fait plusieurs centaines de lignes. Or un journal GitHub se lit par la
+# fin : l'outil de lecture de la Routine prend les 500 dernières lignes par
+# défaut, et le journal de ce job en faisait 531 le 15 sept. 2026 — le tableau
+# tombait juste au-delà. Un rapport que son seul lecteur ne peut pas atteindre
+# ne rapporte rien.
+echo
+echo "===== SYNTHÈSE ====="
+for nom in "${noms[@]}"; do
+    resume="$DOSSIER/resume-$nom.txt"
+    manques=$(sed -n 's/^manques=//p' "$resume" 2>/dev/null)
+    : "${manques:=?}"
+    if [ "$manques" = "?" ]; then
+        printf '%-14s ILLISIBLE\n' "$nom"
+    elif [ "$manques" -eq "${attendu[$nom]}" ]; then
+        printf '%-14s %4s = plafond\n' "$nom" "$manques"
+    elif [ "$manques" -gt "${attendu[$nom]}" ]; then
+        printf '%-14s %4s > plafond %s  HAUSSE\n' "$nom" "$manques" "${attendu[$nom]}"
+    else
+        printf '%-14s %4s < plafond %s  resserrer\n' "$nom" "$manques" "${attendu[$nom]}"
+    fi
+done
+echo "total $total_survivants"
 echo "===== FIN VERDICT ====="
 
 if [ "$manquant" -gt 0 ]; then

@@ -7,11 +7,12 @@ d'un aveu sur la profondeur de recherche.
 
 > Statut : **recherche et évaluation en place, monothread**. Negamax avec
 > élagage alpha-bêta, approfondissement itératif, quiescence, table de
-> transposition et ordonnancement des coups, plus trois élagages avancés
-> mesurés un par un — coup nul, réduction des coups tardifs, fenêtres
-> d'aspiration. L'évaluation couvre matériel, tables piece-square, paire de
-> fous, mobilité, sécurité du roi, structure de pions et colonnes de tours.
-> **Huit verdicts SPRT, dont deux négatifs** qui ont fait retirer le changement
+> transposition et ordonnancement des coups, plus **cinq élagages avancés
+> mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
+> d'aspiration, élagage delta en quiescence, futilité inverse. L'évaluation
+> couvre matériel, tables piece-square, paire de fous, mobilité, sécurité du
+> roi, structure de pions et colonnes de tours.
+> **Dix verdicts SPRT, dont deux négatifs** qui ont fait retirer le changement
 > mesuré. Il gagne toutes ses parties contre un adversaire jouant au hasard.
 > Il n'a encore ni recherche parallèle, ni NNUE, ni interface.
 
@@ -117,8 +118,12 @@ tools/sprt.sh /tmp/candidat /tmp/reference
 Le test séquentiel s'arrête dès que les données suffisent à trancher. Détail
 dans [`tools/README.md`](tools/README.md).
 
-Première mesure de référence : la table de transposition vaut **+164,3 Elo
-± 31,3** sur 488 parties en 1+0,01.
+**Dix verdicts à ce jour**, table complète dans
+[`tools/README.md`](tools/README.md). Les deux extrêmes disent l'essentiel de
+la méthode : la table de transposition vaut **+164,3 Elo ± 31,3**, et la
+recherche à variante principale — qui est dans tous les manuels — a été
+**rejetée à −10,9 Elo** sur 4214 parties. Une technique standard entre par le
+SPRT comme toutes les autres.
 
 ## Dépendances
 

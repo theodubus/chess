@@ -9,6 +9,19 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 - `ui/` — TypeScript. Pas encore démarré.
 - `tools/` — arbitres de match, livre d'ouvertures, SPRT. Voir `tools/README.md`.
 
+## Par où commencer, sans contexte
+
+Ce fichier dit **comment** travailler : invariants, ce qui compte comme preuve,
+pièges déjà payés. Il ne dit pas **où on en est**.
+
+- L'état du moteur : `README.md`, en tête.
+- Les dix verdicts SPRT, avec leurs effectifs et leurs bornes :
+  `tools/README.md`, section *Mesures de référence*.
+- Ce qui s'exécute sans qu'on l'appelle : section *Ce qui tourne tout seul*,
+  plus bas.
+- Ce sur quoi travailler : **demander**. Le dépôt ne porte pas de feuille de
+  route, et en deviner une reviendrait à rouvrir des questions déjà tranchées.
+
 ## Décisions structurantes
 
 Ces points sont tranchés. Les rouvrir demande un fait technique nouveau —
@@ -76,6 +89,30 @@ une mesure, pas une préférence.
   coup mal classé serait perdu. On ne réduit jamais les captures, les
   promotions, les coups qui donnent échec, ni les positions où l'on est en
   échec : tous sont forcés ou trompeurs à faible profondeur.
+- **Un mat se détecte à DEUX endroits, et un test n'en couvre qu'un.**
+  `negamax` rend `-MATE + ply` quand aucun coup n'est légal ; la quiescence a
+  sa propre branche. À faible profondeur le mat tombe dans la quiescence, donc
+  **un test de mat en un ne passe jamais par negamax**. Les deux branches se
+  testent séparément, en appelant `negamax` directement avec une profondeur
+  restante. Sans cela, le signe du score de mat de negamax peut s'inverser
+  sans qu'un seul test bronche — une position matée valant alors un gain
+  écrasant.
+- **L'échéance douce se déclenche quand le budget est dépassé, jamais avant.**
+  Inverser sa comparaison ferait cesser l'approfondissement dès la première
+  itération : le moteur jouerait **toute une partie à la profondeur 1** dès
+  qu'une pendule est présente, sans rien signaler. Les tests de budget
+  vérifient qu'on s'arrête à temps ; il en faut un pour vérifier qu'on ne
+  s'arrête pas trop tôt.
+- **La graine du tirage au sort est forcée impaire.** `random_seed(hash)`
+  pose le bit de poids faible parce que **zéro est un point fixe de
+  xorshift64** : un état nul rendrait toujours zéro, donc toujours le premier
+  coup. Le tournoi de vingt-quatre parties du critère d'acceptation mesurerait
+  alors une victoire contre un adversaire quasi déterministe.
+- **`ahead_of` est de la géométrie, pas un réglage.** C'est le seul support de
+  la détection de pion passé, et le reste d'`eval.rs` étant des valeurs, on
+  oublie facilement que ces lignes-là sont des règles. Même chose pour le bras
+  `Piece::Bishop` du filtre de mobilité — le supprimer ferait compter un fou
+  comme une dame — et pour le `ET` du corridor de pion passé.
 - **Une fenêtre d'aspiration s'élargit jusqu'à la fenêtre pleine.** Le pari
   « le score ne bougera pas » échoue parfois ; chaque échec doit élargir
   strictement, sinon la boucle ne termine pas. Sur échec par le bas, on
@@ -104,13 +141,13 @@ une mesure, pas une préférence.
   du temps d'un nœud**. Ne pas réécrire cette dérivation de tête le jour venu :
   le roque en notation roi-prend-tour et la prise en passant sont exactement
   les cas qu'on rate.
-- **Génération par étapes** — **pas en place**, contrairement à ce qui était
-  écrit ici jusqu'au 14 sept. 2026. `ordered_moves` matérialise *tous* les
-  coups dans un `Vec` puis les trie d'un bloc ; seul le **filtre tactique** de
-  la quiescence existe (`tactical_only`, qui restreint les destinations par un
-  `AND` de bitboards). La génération par étapes proprement dite — produire les
-  captures, s'arrêter sur coupure bêta, ne générer les coups tranquilles que si
-  nécessaire — reste entièrement à faire.
+- **Génération par étapes** — **pas en place**. `ordered_moves` remplit d'un
+  bloc une tranche de l'ardoise (`buffer: &mut [(Move, i32)]`, une par ply,
+  allouée une seule fois avec la recherche) puis la trie entièrement ; seul le
+  **filtre tactique** de la quiescence existe (`tactical_only`, qui restreint
+  les destinations par un `AND` de bitboards). La génération par étapes
+  proprement dite — produire les captures, s'arrêter sur coupure bêta, ne
+  générer les coups tranquilles que si nécessaire — reste entièrement à faire.
 - **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
   La valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
 - **Table de transposition partagée, le jour où la recherche devient
@@ -258,6 +295,32 @@ une mesure, pas une préférence.
   `-1`. Aucun test n'aurait pu la couvrir ; la bonne réponse était de la
   supprimer. **Avant de classer un survivant « équivalent », se demander si la
   branche est atteignable** — la réponse change ce qu'il faut faire.
+- **Un invariant qu'on ne peut pas appeler est un invariant qu'aucun test ne
+  protège.** Trois fois le même geste sur ce projet : `parse_go` extrait de
+  `Engine::go`, dont le corps lance un thread ; `random_seed` extrait d'une
+  expression au milieu de `random_legal_move` ; `time_budget_ms` extrait de
+  `set_deadlines`, qui pose des `Instant`. Dans les trois cas la logique était
+  juste, mais noyée dans une fonction qui fait autre chose : aucun test ne
+  pouvait en asserter le résultat, seulement constater un effet de bord
+  approximatif. Sept mutants survivaient rien que dans l'arithmétique du
+  budget d'horloge. **L'extraction ne change pas le comportement** — nœuds
+  identiques au bench — **elle change ce qu'on peut prouver.**
+- **Un test peut être VRAI sans rien mesurer.** Deux gardes de la fenêtre
+  d'aspiration comparaient le score d'un pari et d'une fenêtre pleine :
+  égalité vraie que la garde se déclenche ou non, puisque la boucle
+  d'élargissement converge de toute façon. Cinq mutants y survivaient.
+  **Se demander : qu'est-ce que je casserais dans le code pour faire tomber ce
+  test ?** Si la réponse n'est pas la ligne visée, le test mesure autre chose.
+  Ici la bonne mesure était le nombre de nœuds, déterministe sur ce moteur.
+- **Ne pas recopier un compteur en prose.** Le 15 sept. 2026, j'ai écrit
+  « ces cinq dispositifs » au-dessus d'un tableau qui en listait six, et
+  « dix cas » pour un auto-test qui en comptait onze — **les deux étaient faux
+  le jour même où je les écrivais**, parce que j'avais ajouté une ligne après
+  avoir rédigé la phrase. C'est la même famille que le chiffre de référence
+  périmé, en plus bête : le compteur vit déjà dans le tableau ou dans
+  `ATTENDUS=`, qui fait échouer le script s'il dérive. **La réponse n'est pas
+  un garde-fou de plus, c'est de ne pas dupliquer** — écrire « ces dispositifs »
+  et laisser le lecteur compter.
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.
@@ -306,10 +369,62 @@ la profondeur 10 et non 7, refuse de conclure sous vingt paires, et rend un
 test des signes. Les trois fautes de mesure de temps du projet venaient chacune
 de l'omission d'un de ces points.
 
-Deux hooks de projet, dans `.claude/`, appliquent ce que les règles écrites
-n'ont pas suffi à faire respecter : l'un refuse de finir un tour sur un arbre
-cassé quand des `.rs` ont changé, l'autre refuse un SHA git complété de tête à
-partir d'un SHA court.
+## Ce qui tourne tout seul
+
+Une règle écrite se contourne, un code de sortie non. Ces dispositifs
+s'exécutent sans qu'on y pense — les connaître évite de les prendre pour des
+pannes, et de refaire ce qu'ils font déjà.
+
+| où | quoi |
+|---|---|
+| `.claude/settings.json` | déclare les deux hooks ci-dessous |
+| `.claude/hooks/verify-on-stop.sh` | refuse de finir un tour si `verify.sh --rapide` échoue et que des `.rs` ont changé. Passe après trois échecs d'affilée, avec un avertissement : un blocage qu'on ne sait pas lever vaut moins qu'un avertissement qu'on lit |
+| `.claude/hooks/no-fabricated-sha.sh` | refuse un SHA de 40 caractères qui n'est pas un objet du dépôt alors que son préfixe de 7 en est un — la signature d'un SHA complété de tête |
+| `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
+| `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les trois critères d'acceptation, le bench |
+| `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
+
+**Le cliquet de mutation.** `.github/mutation-baseline.txt` porte le nombre de
+survivants admis par fichier **et la raison écrite de chaque valeur non
+nulle**. `.github/mutation-verdict.sh` le confronte au balayage : il **casse à
+la hausse et signale la baisse**. L'asymétrie est assumée — un mutant qui
+expire sur un runner chargé est compté « expiré » plutôt que « survivant »,
+donc une baisse peut n'être qu'un artefact de charge, une hausse jamais.
+Baisser un plafond ne demande rien ; **le relever demande une raison écrite**.
+
+Le verdict est un script et non des lignes de YAML, parce qu'un script qui ne
+s'exécute qu'une fois par semaine sur un runner ne serait jamais vérifié :
+`.github/mutation-verdict-test.sh` l'éprouve sur des cas fabriqués et tourne dans
+`tools/verify.sh` comme dans la CI. Il a trouvé une faute à sa première
+exécution.
+
+**L'alerte ne dépend d'aucun lecteur extérieur** : le job `Verdict` ouvre
+lui-même une issue quand le cliquet casse, avec son propre droit `issues:
+write`. Tant qu'une issue `mutation` est ouverte, les suivantes y ajoutent un
+commentaire plutôt que d'en créer une par semaine.
+
+**Mesuré le 15 sept. 2026, et c'est pourquoi c'est ainsi.** L'alerte reposait
+d'abord sur une tâche planifiée vivant hors du dépôt. Déclenchée à la main pour
+l'éprouver, elle a travaillé deux minutes et demie, lu des dizaines de milliers
+de jetons de journal — et n'a rien ouvert, sans qu'on puisse savoir si elle
+manquait des droits GitHub ou si elle avait jugé inutile d'alerter. **Un
+dispositif d'alerte dont on ne peut pas observer le comportement n'est pas un
+dispositif d'alerte.**
+
+`workflow_dispatch` accepte l'entrée `simuler_une_alerte` : elle force l'échec
+du verdict pour vérifier que l'issue part, sans attendre un vrai rouge. Une
+issue ouverte par ce chemin le dit en tête.
+
+**Durée du balayage** : 35 puis 81 minutes sur deux exécutions réelles. Les
+runners partagés varient du simple au double — ne pas caler un rendez-vous
+serré dessus.
+
+**Que faire quand le verdict est rouge.** Le critère de tri est un arbitrage
+utilisateur du 15 sept. 2026 : **corriger au fil ce qui touche aux règles du
+jeu et aux invariants de recherche ; noter le reste.** « Noter » veut dire
+l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
+rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
+commit.
 
 Référence à la profondeur 7 : 223 577 nœuds.
 
