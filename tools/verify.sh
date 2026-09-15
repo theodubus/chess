@@ -33,7 +33,9 @@ trap 'rm -f "$LOG"' EXIT
 
 etape() {
   local nom="$1"; shift
-  printf '  %-46s' "$nom"
+  # `printf %-46s` remplit en OCTETS : chaque accent décale la colonne d'un
+  # cran. `${#nom}` compte des caractères, lui.
+  printf '  %s%*s' "$nom" $(( 46 - ${#nom} )) ''
   if "$@" > "$LOG" 2>&1; then
     printf 'ok\n'
   else
