@@ -389,12 +389,26 @@ s'exécute qu'une fois par semaine sur un runner ne serait jamais vérifié :
 `tools/verify.sh` comme dans la CI. Il a trouvé une faute à sa première
 exécution.
 
-**Hors dépôt** — une *Routine* Claude déclenchée le mardi à 03:00 UTC lit le
-journal du job `Verdict` et ouvre une issue si c'est rouge. Elle n'est pas
-versionnable : si le balayage vire au rouge et que personne ne dit rien, c'est
-la première chose à vérifier. Les trois heures de décalage sont mesurées, pas
-estimées — le balayage met 81 minutes sur les runners GitHub, deux fois plus
-que sur une machine de mesure.
+**L'alerte ne dépend d'aucun lecteur extérieur** : le job `Verdict` ouvre
+lui-même une issue quand le cliquet casse, avec son propre droit `issues:
+write`. Tant qu'une issue `mutation` est ouverte, les suivantes y ajoutent un
+commentaire plutôt que d'en créer une par semaine.
+
+**Mesuré le 15 sept. 2026, et c'est pourquoi c'est ainsi.** L'alerte reposait
+d'abord sur une tâche planifiée vivant hors du dépôt. Déclenchée à la main pour
+l'éprouver, elle a travaillé deux minutes et demie, lu des dizaines de milliers
+de jetons de journal — et n'a rien ouvert, sans qu'on puisse savoir si elle
+manquait des droits GitHub ou si elle avait jugé inutile d'alerter. **Un
+dispositif d'alerte dont on ne peut pas observer le comportement n'est pas un
+dispositif d'alerte.**
+
+`workflow_dispatch` accepte l'entrée `simuler_une_alerte` : elle force l'échec
+du verdict pour vérifier que l'issue part, sans attendre un vrai rouge. Une
+issue ouverte par ce chemin le dit en tête.
+
+**Durée du balayage** : 35 puis 81 minutes sur deux exécutions réelles. Les
+runners partagés varient du simple au double — ne pas caler un rendez-vous
+serré dessus.
 
 **Que faire quand le verdict est rouge.** Le critère de tri est un arbitrage
 utilisateur du 15 sept. 2026 : **corriger au fil ce qui touche aux règles du

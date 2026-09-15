@@ -23,6 +23,11 @@ on:
     # 02:00 UTC — était trop courte pour un moteur qui grossit.
     - cron: "0 0 * * 2"
   workflow_dispatch:
+    inputs:
+      simuler_une_alerte:
+        description: "Forcer l'échec du verdict, pour éprouver l'alerte sans attendre un vrai rouge"
+        type: boolean
+        default: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -128,6 +133,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: balayage
     if: always()
+    # Le job ouvre une issue quand le cliquet casse : il lui faut le droit
+    # d'écrire des issues, et rien d'autre.
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
 
@@ -145,4 +155,72 @@ jobs:
       # c'est du code nouvellement non couvert. On casse donc sur la hausse et
       # on se contente de signaler la baisse.
       - name: Comparer au plafond
-        run: bash .github/mutation-verdict.sh resumes .github/mutation-baseline.txt
+        run: |
+          # `bash -e` n'active pas pipefail : sans lui, le code de retour serait
+          # celui de `tee` et le verdict ne pourrait jamais faire échouer le job.
+          set -o pipefail
+          bash .github/mutation-verdict.sh resumes .github/mutation-baseline.txt \
+            | tee verdict.txt
+          if [ "${{ inputs.simuler_une_alerte }}" = "true" ]; then
+            echo "SIMULATION — échec forcé pour éprouver l'alerte." | tee -a verdict.txt
+            exit 1
+          fi
+
+      # L'alerte ne passe par aucun lecteur extérieur : le workflow ouvre
+      # l'issue lui-même.
+      #
+      # **Mesuré le 15 sept. 2026.** Une tâche planifiée hors dépôt, chargée de
+      # lire ce journal et d'alerter, a été déclenchée à la main : elle a
+      # travaillé deux minutes et demie, lu des dizaines de milliers de jetons
+      # de journal, et n'a rien ouvert — sans qu'on puisse savoir si elle
+      # manquait des droits GitHub ou si elle avait jugé inutile d'alerter.
+      #
+      # Un dispositif d'alerte dont on ne peut pas observer le comportement
+      # n'est pas un dispositif d'alerte. Celui-ci est versionné, il a ses
+      # droits en propre, et `simuler_une_alerte` permet de l'éprouver sans
+      # attendre un vrai rouge.
+      - name: Ouvrir une issue si le cliquet a cassé
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          {
+            if [ "${{ inputs.simuler_une_alerte }}" = "true" ]; then
+              echo "> **Ceci est une simulation**, déclenchée à la main pour"
+              echo "> vérifier que l'alerte part. Aucune régression réelle."
+              echo
+            fi
+            echo "Le cliquet de mutation a cassé sur \`${{ github.ref_name }}\`."
+            echo
+            echo "Exécution : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo
+            if [ -s verdict.txt ]; then
+              echo '```'
+              sed -n '/===== SYNTHÈSE =====/,$p' verdict.txt
+              echo '```'
+            else
+              echo "**Le verdict n'a produit aucune sortie** — le balayage a"
+              echo "échoué avant de conclure. Voir le journal de l'exécution."
+            fi
+            echo
+            echo "Critère de tri : corriger au fil ce qui touche aux **règles du"
+            echo "jeu** et aux **invariants de recherche** ; noter le reste dans"
+            echo "\`.github/mutation-baseline.txt\` avec sa raison. Un survivant"
+            echo "portant sur une valeur d'évaluation ou une marge d'élagage"
+            echo "relève du SPRT, jamais d'un test unitaire."
+          } > corps.md
+
+          gh label create mutation --color B60205 \
+            --description "Cliquet de mutation" 2>/dev/null || true
+
+          # Une issue par régression en cours, pas une par semaine : tant que
+          # la précédente est ouverte, on y ajoute un commentaire.
+          ouverte=$(gh issue list --label mutation --state open \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$ouverte" ]; then
+            gh issue comment "$ouverte" --body-file corps.md
+          else
+            gh issue create --body-file corps.md --label mutation \
+              --title "Mutation : régression de couverture — $(date -u +%Y-%m-%d)"
+          fi
