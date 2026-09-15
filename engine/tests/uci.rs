@@ -230,3 +230,37 @@ fn go_perft_reproduit_les_valeurs_de_reference() {
     let out = drive(&["position startpos", "go perft 4"]);
     assert!(out.contains("Nodes searched: 197281"), "{out}");
 }
+
+/// La sous-commande `bench` de la ligne de commande.
+///
+/// Trouvée par balayage de mutation : supprimer entièrement le bras
+/// `Some("bench")` de `main` ne faisait tomber aucun test. Le binaire serait
+/// alors parti en boucle UCI en lisant « bench » comme une commande inconnue,
+/// et `tools/verify.sh` comme la CI auraient mesuré autre chose que ce qu'ils
+/// croient — le bench est la mesure de référence du projet.
+///
+/// Distinct de `bench_est_accessible_depuis_la_boucle_uci`, qui vise la
+/// commande UCI et non l'argument de ligne de commande : ce sont deux chemins
+/// d'entrée différents vers la même charge de travail.
+#[test]
+fn bench_est_accessible_en_ligne_de_commande() {
+    let output = Command::new(env!("CARGO_BIN_EXE_shallowred"))
+        .arg("bench")
+        .arg("1")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .output()
+        .unwrap();
+
+    assert!(output.status.success(), "`bench` doit rendre un code nul");
+    let texte = String::from_utf8(output.stdout).unwrap();
+    assert!(
+        texte.contains("Nodes/second"),
+        "`bench` doit imprimer son récapitulatif, sortie obtenue :\n{texte}"
+    );
+    assert!(
+        !texte.contains("uciok"),
+        "`bench` ne doit pas basculer dans la boucle UCI"
+    );
+}

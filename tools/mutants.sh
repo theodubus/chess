@@ -29,8 +29,15 @@ if ! flock -n 9; then
     exit 2
 fi
 
-# `mutants.out/` d'un balayage précédent fausserait la lecture des survivants.
-rm -rf "$ROOT/mutants.out"
+# `mutants.out/` d'un balayage précédent fausserait la lecture des survivants —
+# mais l'effacer perd la liste nominative, qui est le seul endroit où figurent
+# les survivants d'un fichier qu'on n'est pas en train de remesurer. Faute
+# commise deux fois le 15 sept. 2026. Le rapport précédent est donc conservé
+# sous `mutants.out.old/`, que `.gitignore` prévoyait déjà.
+if [ -d "$ROOT/mutants.out" ]; then
+    rm -rf "$ROOT/mutants.out.old"
+    mv "$ROOT/mutants.out" "$ROOT/mutants.out.old"
+fi
 
 # `--profile mutants` hérite de release sans LTO : le LTO recompile tout le
 # graphe à chaque mutant. Le code testé reste optimisé.

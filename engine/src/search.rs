@@ -1966,4 +1966,236 @@ mod tests {
         assert_eq!(Some(a), random_legal_move(&b), "doit rester déterministe");
         assert!(b.is_legal(a));
     }
+
+    // ---------------------------------------------------------------------
+    // Ce qui suit ferme des trous trouvés par `tools/mutants.sh` : des lignes
+    // qu'on pouvait altérer sans qu'un seul test bronche. Toutes portent sur
+    // une règle du jeu ou un invariant de recherche, jamais sur un réglage de
+    // force — le SPRT juge les seconds, aucun test unitaire ne le peut.
+    // ---------------------------------------------------------------------
+
+    #[test]
+    fn le_tirage_au_sort_ne_degenere_pas() {
+        // `board.hash() | 1` force un état impair. Ce n'est pas cosmétique :
+        // zéro est un point fixe de xorshift64, donc un état nul rendrait
+        // toujours zéro, donc toujours le premier coup. Remplacer le `|` par
+        // un `&` bornerait l'état à {0, 1} et l'adversaire de référence
+        // deviendrait presque déterministe — le tournoi de la CI mesurerait
+        // alors la victoire contre un adversaire dégénéré, pas contre le
+        // hasard.
+        assert_eq!(next_random(&mut 0), 0, "zéro est bien un point fixe");
+
+        // Vingt positions distinctes : la même case de départ partout serait
+        // le symptôme.
+        let mut position = Position::from_fen(Board::default().to_string().as_str()).unwrap();
+        let mut departs = std::collections::HashSet::new();
+        for _ in 0..20 {
+            let mv = random_legal_move(position.board()).unwrap();
+            departs.insert(mv.from);
+            position.play(mv);
+            if position.board().status() != cozy_chess::GameStatus::Ongoing {
+                break;
+            }
+        }
+        assert!(
+            departs.len() >= 4,
+            "le tirage doit varier : {} case(s) de départ distincte(s)",
+            departs.len()
+        );
+    }
+
+    #[test]
+    fn le_generateur_pseudo_aleatoire_rend_une_suite_connue() {
+        // Valeurs relevées par exécution, jamais dérivées de tête. Elles
+        // figent la suite : sans elles, remplacer le générateur par une
+        // constante passait inaperçu.
+        let mut etat = 1_u64;
+        assert_eq!(next_random(&mut etat), 5_180_492_295_206_395_165);
+        assert_eq!(next_random(&mut etat), 12_380_297_144_915_551_517);
+    }
+
+    #[test]
+    fn le_seuil_de_mat_est_une_borne_stricte() {
+        // À `MATE_THRESHOLD` exactement, le score est encore des centièmes de
+        // pion. Relâcher la comparaison ferait annoncer un mat en 500 coups
+        // sur une position ordinaire — un mensonge visible dans l'interface.
+        assert_eq!(
+            Score::from_internal(MATE_THRESHOLD),
+            Score::Cp(MATE_THRESHOLD)
+        );
+        assert_eq!(
+            Score::from_internal(-MATE_THRESHOLD),
+            Score::Cp(-MATE_THRESHOLD)
+        );
+        assert!(matches!(
+            Score::from_internal(MATE_THRESHOLD + 1),
+            Score::Mate(_)
+        ));
+    }
+
+    #[test]
+    fn la_recherche_voit_une_repetition_de_son_chemin() {
+        // `is_repetition` est le seul point où la recherche consulte
+        // l'historique. Le remplacer par `false` ne faisait tomber aucun test,
+        // alors que la nulle par répétition est une règle du jeu.
+        //
+        // La fenêtre examinée est bornée par la pendule des cinquante coups et
+        // saute le coup de l'adversaire : une position ne peut se répéter que
+        // deux demi-coups plus tôt au minimum. D'où la pendule à 4 et les deux
+        // entrées intercalaires.
+        let mut s = search();
+        let b = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 4 3");
+        assert!(!s.is_repetition(&b), "un chemin vide ne répète rien");
+        s.path = vec![b.hash(), 0xAAAA, 0xBBBB];
+        assert!(s.is_repetition(&b), "la position doit être reconnue");
+        s.path = vec![b.hash() ^ 1, 0xAAAA, 0xBBBB];
+        assert!(!s.is_repetition(&b), "une autre position ne compte pas");
+    }
+
+    #[test]
+    fn une_echeance_deja_passee_arrete_la_recherche() {
+        // Sans cette borne, `go movetime` et `go infinite` ne rendraient la
+        // main qu'à l'épuisement de la profondeur. Le test porte sur la
+        // comparaison elle-même : une échéance dans le passé doit couper au
+        // tout premier contrôle.
+        let mut s = search();
+        s.hard_deadline = Some(Instant::now() - Duration::from_secs(1));
+        s.nodes = 0;
+        assert!(s.should_abort(), "une échéance passée arrête tout de suite");
+        assert!(s.aborted);
+    }
+
+    #[test]
+    fn redimensionner_la_table_change_vraiment_sa_taille() {
+        // `resize_table` sert l'option UCI `Hash`. La remplacer par une
+        // fonction vide laissait l'interface croire qu'elle avait été obéie.
+        let mut s = search();
+        s.resize_table(1);
+        let petite = s.tt.capacity();
+        s.resize_table(64);
+        assert!(
+            s.tt.capacity() > petite,
+            "64 Mio doit porter plus d'entrées que 1 Mio ({} contre {})",
+            s.tt.capacity(),
+            petite
+        );
+    }
+
+    #[test]
+    fn la_prise_en_passant_est_un_coup_tactique() {
+        // Le filtre tactique de la quiescence restreint les destinations aux
+        // cases occupées par l'adversaire. La prise en passant arrive sur une
+        // case VIDE : sans l'ajout explicite de cette case aux cibles, la
+        // quiescence ne la verrait jamais. C'est exactement le cas qu'on rate.
+        let b = board("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
+        let prise = cozy_chess::util::parse_uci_move(&b, "e5f6").unwrap();
+        let s = search();
+        let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
+        let count = s.ordered_moves(&b, true, None, 0, &mut buffer);
+        assert!(
+            buffer[..count].iter().any(|(mv, _)| *mv == prise),
+            "la prise en passant doit figurer parmi les coups tactiques"
+        );
+    }
+
+    #[test]
+    fn un_mat_au_fond_de_larbre_rend_le_score_exact() {
+        // Le mat détecté PAR NEGAMAX, et non par la quiescence. Les tests de
+        // mat existants cherchent à faible profondeur : le mat y tombe à
+        // `depth <= 0`, donc dans la quiescence, et la branche de negamax
+        // n'était jamais exécutée. Deux mutants y survivaient — l'un
+        // supprimait le signe et faisait d'une position matée un gain écrasant.
+        //
+        // Positions vérifiées par exécution : la première rend `Won` avec zéro
+        // coup légal et un roi en échec, la seconde `Drawn` avec zéro coup et
+        // aucun échec.
+        let mut s = search();
+        let mut a = ardoise();
+
+        let mat = board("7k/5QQ1/8/8/8/8/8/7K b - - 0 1");
+        assert_eq!(
+            s.negamax(&mat, 3, 2, -INFINITY, INFINITY, &mut a),
+            -MATE + 2,
+            "un mat vaut -(MATE - ply), et le ply compte depuis la racine"
+        );
+        assert_eq!(
+            s.negamax(&mat, 3, 5, -INFINITY, INFINITY, &mut a),
+            -MATE + 5,
+            "un mat plus lointain vaut moins cher"
+        );
+
+        let pat = board("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1");
+        assert_eq!(
+            s.negamax(&pat, 3, 2, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "zéro coup sans échec est un pat, pas un mat"
+        );
+    }
+
+    // ---- Table de variante principale ----
+    //
+    // Dix mutants y survivaient : toute l'arithmétique d'indexation pouvait
+    // être altérée sans qu'un test bronche. Une variante fausse est un
+    // mensonge émis à chaque ligne `info`, et c'est ce que l'interface
+    // affichera.
+
+    #[test]
+    fn une_variante_dun_seul_coup_se_lit() {
+        let mut pv = PvTable::new();
+        let b = Board::default();
+        let mv = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        pv.clear(1);
+        pv.push(0, mv);
+        assert_eq!(pv.line(), vec![mv]);
+    }
+
+    #[test]
+    fn une_variante_enchaine_les_plies() {
+        // Trois niveaux, parce que deux suffisent à masquer une faute sur le
+        // facteur `ply * MAX_PLY` : à ply 0 il vaut zéro.
+        let b = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        let e2e4 = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let g1f3 = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+        let b1c3 = cozy_chess::util::parse_uci_move(&b, "b1c3").unwrap();
+
+        let mut pv = PvTable::new();
+        pv.clear(3);
+        pv.push(2, b1c3);
+        pv.push(1, g1f3);
+        pv.push(0, e2e4);
+        assert_eq!(
+            pv.line(),
+            vec![e2e4, g1f3, b1c3],
+            "la variante doit se lire de la racine vers les feuilles"
+        );
+    }
+
+    #[test]
+    fn vider_un_ply_coupe_la_variante_a_cet_endroit() {
+        let b = Board::default();
+        let e2e4 = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let g1f3 = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+
+        let mut pv = PvTable::new();
+        pv.clear(2);
+        pv.push(1, g1f3);
+        pv.clear(1);
+        pv.push(0, e2e4);
+        assert_eq!(pv.line(), vec![e2e4], "le fils vidé ne doit plus suivre");
+    }
+
+    #[test]
+    fn la_variante_supporte_les_bornes_du_tableau() {
+        // Les gardes de `clear` et `push` ne sont pas décoratives : sans
+        // elles, un ply à la limite indexerait hors du tableau. Le test les
+        // appelle exactement là où ça déborderait.
+        let b = Board::default();
+        let mv = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let mut pv = PvTable::new();
+        pv.clear(MAX_PLY);
+        pv.clear(MAX_PLY + 7);
+        pv.push(MAX_PLY - 1, mv);
+        pv.push(MAX_PLY, mv);
+        assert_eq!(pv.line(), Vec::new(), "rien n'a été écrit à la racine");
+    }
 }

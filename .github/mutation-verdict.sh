@@ -19,11 +19,15 @@ if [ ! -f "$PLAFOND" ]; then
     exit 2
 fi
 
-# Le plafond attendu, fichier par fichier.
+# Le plafond attendu, fichier par fichier. L'ordre du fichier est conservé :
+# une table associative s'énumère dans un ordre arbitraire, et deux journaux
+# hebdomadaires qu'on ne peut pas comparer ligne à ligne ne servent à rien.
 declare -A attendu=()
+noms=()
 while read -r nom valeur _reste; do
     case "$nom" in ''|'#'*) continue ;; esac
     attendu["$nom"]=$valeur
+    noms+=("$nom")
 done < "$PLAFOND"
 
 # Un plafond sans aucune entrée rendrait un vert silencieux : la boucle
@@ -43,7 +47,7 @@ baisse=0
 manquant=0
 total_survivants=0
 
-for nom in "${!attendu[@]}"; do
+for nom in "${noms[@]}"; do
     resume="$DOSSIER/resume-$nom.txt"
     if [ ! -f "$resume" ]; then
         printf '%-14s %9s %9s %9s %9s  %s\n' "$nom" "?" "${attendu[$nom]}" "?" "?" "RÉSUMÉ ABSENT"
@@ -76,7 +80,7 @@ echo "total des survivants : $total_survivants"
 
 # Les survivants eux-mêmes, pour que la lecture du journal suffise à savoir
 # quoi corriger sans télécharger d'artefact.
-for nom in "${!attendu[@]}"; do
+for nom in "${noms[@]}"; do
     resume="$DOSSIER/resume-$nom.txt"
     [ -f "$resume" ] || continue
     liste=$(sed -n '/^--- survivants ---$/,/^--- fin ---$/p' "$resume" | sed '1d;$d')
