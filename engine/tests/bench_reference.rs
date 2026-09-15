@@ -7,11 +7,16 @@
 //! l'arbre de recherche sans que personne ne mette le chiffre à jour. Rien ne
 //! l'a signalé — aucun test, aucune étape de CI.
 //!
-//! **Pourquoi il balaie plusieurs fichiers.** La première version ne contrôlait
-//! que `CLAUDE.md`. Elle a été écrite alors que `README.md` portait déjà
+//! **Pourquoi il balaie tout le dépôt.** La première version ne contrôlait que
+//! `CLAUDE.md`. Elle a été écrite alors que `README.md` portait déjà
 //! `8 432 521` — le chiffre d'avant le coup nul, faux d'un facteur 15,6 — et
 //! ne l'a pas vu. Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué
 //! ne garde rien : il donne seulement l'impression de garder.
+//!
+//! La deuxième version balayait une **liste écrite à la main**. C'était encore
+//! mon jugement qui décidait de la couverture — la faute exacte qu'elle devait
+//! empêcher. **Le contrôle parcourt maintenant tout le dépôt** : un fichier
+//! Markdown créé demain est couvert sans que personne ait à y penser.
 //!
 //! Un chiffre de référence faux est **pire qu'absent** : il sert de point de
 //! comparaison à la session suivante, qui croit mesurer une régression là où
@@ -30,14 +35,46 @@
 #![expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
 
 use std::collections::BTreeMap;
+use std::path::{Path, PathBuf};
 
 use shallowred::bench;
 
-/// Les fichiers de documentation susceptibles de porter une référence.
+/// Tous les fichiers Markdown du dépôt, chemin relatif et chemin absolu.
 ///
-/// Ajouter un fichier ici est le seul geste nécessaire pour l'inclure au
-/// contrôle. En retirer un est un choix à justifier, pas un nettoyage.
-const DOCS: [&str; 2] = ["CLAUDE.md", "README.md"];
+/// Parcours explicite plutôt que liste : c'est ce qui retire la couverture du
+/// contrôle de mon jugement. `target/` et les répertoires cachés sont écartés —
+/// ils ne portent pas de documentation, seulement des artefacts de compilation
+/// et l'historique git.
+fn documents(root: &Path) -> Vec<(String, PathBuf)> {
+    let mut trouves = Vec::new();
+    let mut a_visiter = vec![root.to_path_buf()];
+
+    while let Some(dossier) = a_visiter.pop() {
+        let Ok(entrees) = std::fs::read_dir(&dossier) else {
+            continue;
+        };
+        for entree in entrees.flatten() {
+            let chemin = entree.path();
+            let nom = entree.file_name();
+            let nom = nom.to_string_lossy();
+            if nom.starts_with('.') || nom == "target" {
+                continue;
+            }
+            if chemin.is_dir() {
+                a_visiter.push(chemin);
+            } else if chemin.extension().is_some_and(|e| e == "md") {
+                let relatif = chemin
+                    .strip_prefix(root)
+                    .unwrap_or(chemin.as_path())
+                    .display()
+                    .to_string();
+                trouves.push((relatif, chemin));
+            }
+        }
+    }
+    trouves.sort();
+    trouves
+}
 
 /// Le fragment qui identifie une ligne de référence.
 ///
@@ -53,7 +90,7 @@ const MARKER: &str = "éférence à la profondeur";
 /// Une référence trouvée dans la documentation.
 #[derive(Debug, PartialEq, Eq)]
 struct Reference {
-    file: &'static str,
+    file: String,
     depth: u32,
     nodes: u64,
 }
@@ -67,7 +104,7 @@ struct Reference {
 /// Renvoie `Err` sur une ligne qui porte le marqueur sans être analysable :
 /// **un contrôle qui ne comprend plus ce qu'il contrôle doit mourir
 /// bruyamment**, jamais se taire en rendant une liste vide.
-fn references(file: &'static str, doc: &str) -> Result<Vec<Reference>, String> {
+fn references(file: &str, doc: &str) -> Result<Vec<Reference>, String> {
     let mut found = Vec::new();
     for line in doc.lines().filter(|l| l.contains(MARKER)) {
         let illisible = || format!("{file} : référence illisible dans « {} »", line.trim());
@@ -92,7 +129,11 @@ fn references(file: &'static str, doc: &str) -> Result<Vec<Reference>, String> {
             .parse()
             .map_err(|_| illisible())?;
 
-        found.push(Reference { file, depth, nodes });
+        found.push(Reference {
+            file: file.to_owned(),
+            depth,
+            nodes,
+        });
     }
     Ok(found)
 }
@@ -114,22 +155,35 @@ fn grouped(n: u64) -> String {
 #[test]
 #[ignore = "profondeur 7 : critère d'acceptation, à exécuter en release"]
 fn les_references_du_bench_dans_la_doc_sont_a_jour() {
-    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/..");
+    let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/.."));
+    let docs = documents(root);
+
+    // Un parcours cassé ne doit pas se traduire par « aucune référence, donc
+    // rien à vérifier » : ces deux fichiers existent, leur absence signale que
+    // c'est le contrôle qui est en panne, pas la documentation qui est propre.
+    for attendu in ["CLAUDE.md", "README.md"] {
+        assert!(
+            docs.iter().any(|(nom, _)| nom == attendu),
+            "le parcours n'a pas trouvé {attendu} : c'est le contrôle qui est cassé.\n\
+             Fichiers vus : {:?}",
+            docs.iter().map(|(nom, _)| nom).collect::<Vec<_>>()
+        );
+    }
 
     let mut all = Vec::new();
-    for file in DOCS {
-        let path = format!("{root}/{file}");
-        let doc = std::fs::read_to_string(&path)
-            .unwrap_or_else(|e| panic!("{file} illisible à {path} : {e}"));
-        all.extend(references(file, &doc).unwrap_or_else(|e| panic!("{e}")));
+    for (nom, path) in &docs {
+        let doc = std::fs::read_to_string(path)
+            .unwrap_or_else(|e| panic!("{nom} illisible à {} : {e}", path.display()));
+        all.extend(references(nom, &doc).unwrap_or_else(|e| panic!("{e}")));
     }
 
     assert!(
         !all.is_empty(),
-        "aucune référence trouvée dans {DOCS:?}.\n\
+        "aucune référence trouvée dans les {} fichiers Markdown du dépôt.\n\
          Format attendu : « référence à la profondeur <n> : <nombre> nœuds ».\n\
          Si la formulation a changé, c'est le contrôle qu'il faut adapter — \
-         pas le supprimer."
+         pas le supprimer.",
+        docs.len()
     );
 
     // Un seul bench par profondeur distincte : le contrôle coûte alors le même
@@ -165,7 +219,7 @@ fn une_reference_en_prose_se_lit() {
     assert_eq!(
         references("CLAUDE.md", doc).unwrap(),
         vec![Reference {
-            file: "CLAUDE.md",
+            file: "CLAUDE.md".to_owned(),
             depth: 7,
             nodes: 541_528
         }]
@@ -206,12 +260,43 @@ fn la_prose_ordinaire_ne_declenche_rien() {
 
 #[test]
 fn un_document_sans_marqueur_ne_rend_rien_sans_erreur() {
-    // Tous les fichiers de DOCS n'ont pas à porter une référence ; c'est
-    // l'absence *totale* de référence que le test principal refuse.
+    // Tous les fichiers Markdown du dépôt n'ont pas à porter une référence ;
+    // c'est l'absence *totale* de référence que le test principal refuse.
     assert_eq!(
         references("README.md", "un texte quelconque\n").unwrap(),
         []
     );
+}
+
+#[test]
+fn le_parcours_trouve_la_documentation_du_depot() {
+    let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/.."));
+    let docs = documents(root);
+    let noms: Vec<&str> = docs.iter().map(|(nom, _)| nom.as_str()).collect();
+
+    assert!(noms.contains(&"CLAUDE.md"), "vus : {noms:?}");
+    assert!(noms.contains(&"README.md"), "vus : {noms:?}");
+    // Un fichier en sous-répertoire, pour prouver que le parcours descend.
+    assert!(
+        noms.iter().any(|n| n.contains('/')),
+        "le parcours ne descend pas dans les sous-répertoires : {noms:?}"
+    );
+}
+
+#[test]
+fn le_parcours_ecarte_les_artefacts_de_compilation() {
+    // `target/` contient la documentation des dépendances : la balayer ferait
+    // échouer le contrôle sur des fichiers qui ne nous appartiennent pas.
+    // `.git/` de même. Ce test vaut surtout après une compilation, où
+    // `target/` existe — d'où l'absence d'assertion sur sa présence.
+    let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/.."));
+    for (nom, chemin) in documents(root) {
+        assert!(
+            !nom.starts_with("target/") && !nom.starts_with('.'),
+            "{nom} n'aurait pas dû être balayé ({})",
+            chemin.display()
+        );
+    }
 }
 
 #[test]

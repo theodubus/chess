@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+#
+# Toutes les vérifications du projet, une seule fois, un seul code de sortie.
+#
+#   tools/verify.sh            # tout : fmt, clippy, tests, acceptation, bench
+#   tools/verify.sh --rapide   # fmt, clippy, tests debug — quelques secondes
+#
+# Pourquoi ce script existe
+#
+# Le 14 sept. 2026, un test échouait en debug et je ne l'ai pas vu : j'avais
+# filtré la sortie de `cargo test` sur « test result » et sommé les totaux avec
+# `awk`. La ligne disait « FAILED », la somme disait 81, et j'ai lu la somme.
+#
+# Lire une sortie de test, c'est se donner une occasion de la lire de travers.
+# Un code de sortie ne se lit pas de travers. Ce script n'existe que pour ça :
+# rendre l'échec impossible à manquer.
+#
+# Il n'arrête PAS à la première faute — il les exécute toutes et les rapporte
+# ensemble. Découvrir trois problèmes d'un coup coûte moins cher que trois
+# allers-retours.
+
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+
+RAPIDE=0
+[[ "${1:-}" == "--rapide" ]] && RAPIDE=1
+
+ECHECS=()
+LOG="$(mktemp)"
+trap 'rm -f "$LOG"' EXIT
+
+etape() {
+  local nom="$1"; shift
+  printf '  %-46s' "$nom"
+  if "$@" > "$LOG" 2>&1; then
+    printf 'ok\n'
+  else
+    printf 'ECHEC\n'
+    ECHECS+=("$nom")
+    # La sortie complète d'un échec, pas un extrait : c'est le moment où on en
+    # a besoin, et la tronquer oblige à relancer.
+    sed 's/^/      | /' "$LOG"
+  fi
+}
+
+echo "vérification de ShallowRed — $(git rev-parse --short HEAD 2>/dev/null || echo 'hors dépôt')"
+echo
+
+etape "format"                    cargo fmt --all -- --check
+etape "clippy"                    cargo clippy --all-targets --all-features -- -D warnings
+etape "tests (debug)"             cargo test --workspace
+
+if [[ $RAPIDE -eq 0 ]]; then
+  etape "tests (release)"         cargo test --workspace --release
+  etape "critères d'acceptation"  cargo test --workspace --release -- --ignored
+  etape "bench"                   cargo run --release --bin shallowred -- bench 7
+fi
+
+echo
+if [[ ${#ECHECS[@]} -eq 0 ]]; then
+  [[ $RAPIDE -eq 1 ]] && echo "TOUT PASSE (mode rapide — acceptation et bench non exécutés)" \
+                      || echo "TOUT PASSE"
+  exit 0
+fi
+
+echo "ECHEC — ${#ECHECS[@]} étape(s) : ${ECHECS[*]}"
+exit 1

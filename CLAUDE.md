@@ -264,17 +264,35 @@ une mesure, pas une préférence.
 ## Commandes
 
 ```sh
-cargo test --workspace                      # tests rapides
-cargo test --workspace --release -- --ignored  # perft, tournoi, référence du bench
-cargo clippy --all-targets -- -D warnings
-cargo fmt --all
-cargo run --release --bin shallowred      # boucle UCI
+tools/verify.sh                 # TOUT : fmt, clippy, tests, acceptation, bench
+tools/verify.sh --rapide        # fmt, clippy, tests debug — quelques secondes
+
+cargo run --release --bin shallowred          # boucle UCI
 cargo run --release --bin shallowred -- bench 7
 
 tools/setup-arbiters.sh                    # construit fastchess
-tools/sprt.sh <candidat> <référence>       # verdict sur un changement
+tools/sprt.sh <candidat> <référence>       # verdict sur un changement de décision
+tools/timing.sh <candidat> <référence>     # verdict sur une optimisation pure
 tools/crosscheck.sh                        # les deux arbitres s'accordent-ils
 ```
+
+**Vérifier par `tools/verify.sh`, jamais en lisant la sortie de `cargo test`.**
+Le 14 sept. 2026, un test échouait et je ne l'ai pas vu : j'avais filtré la
+sortie sur « test result » et sommé les totaux. La ligne disait `FAILED`, la
+somme disait 81, et j'ai lu la somme. **Un code de sortie ne se lit pas de
+travers.** Le script exécute toutes les étapes même après un échec — découvrir
+trois problèmes d'un coup coûte moins cher que trois allers-retours.
+
+**Mesurer un temps par `tools/timing.sh`, jamais à la main.** Il refuse de
+mesurer si les deux binaires n'explorent pas le même nombre de nœuds, mesure à
+la profondeur 10 et non 7, refuse de conclure sous vingt paires, et rend un
+test des signes. Les trois fautes de mesure de temps du projet venaient chacune
+de l'omission d'un de ces points.
+
+Deux hooks de projet, dans `.claude/`, appliquent ce que les règles écrites
+n'ont pas suffi à faire respecter : l'un refuse de finir un tour sur un arbre
+cassé quand des `.rs` ont changé, l'autre refuse un SHA git complété de tête à
+partir d'un SHA court.
 
 Référence à la profondeur 7 : 223 577 nœuds.
 

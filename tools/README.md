@@ -115,6 +115,40 @@ donnait +71 % et +28 % — des chiffres vrais répondant à une autre question.
 Et la première version allouait un `Vec` par nœud : la dérivation semblait
 coûter 25,8 ns au lieu de 9,0, soit 2,8 fois son prix réel.
 
+## Vérifier, et mesurer un temps
+
+Deux scripts existent parce que deux classes de fautes se sont répétées.
+
+`tools/verify.sh` rend **un seul code de sortie** pour fmt, clippy, les tests
+debug et release, les critères d'acceptation et le bench. `--rapide` s'arrête
+aux trois premiers. Il n'interrompt pas à la première faute : il les exécute
+toutes et les rapporte ensemble.
+
+> **Pourquoi** — le 14 sept. 2026, un test échouait en debug et personne ne
+> l'a vu : la sortie de `cargo test` avait été filtrée sur « test result » puis
+> sommée. La ligne disait `FAILED`, la somme disait 81. Lire une sortie de
+> test, c'est se donner une occasion de la lire de travers.
+
+`tools/timing.sh <candidat> <référence> [paires]` compare deux **vitesses**.
+Il impose les trois choses qu'on oublie :
+
+1. il **refuse de mesurer** si les deux binaires n'explorent pas exactement le
+   même nombre de nœuds — sinon on compare deux arbres, pas deux vitesses ;
+2. il mesure à la **profondeur 10**, jamais 7, où le bruit domine ;
+3. il **refuse de conclure sous vingt paires** et rend un **test des signes**,
+   au lieu d'une comparaison de médianes à l'œil.
+
+> **Pourquoi** — deux fautes, les deux évitables. Un balayage de tailles de
+> cache lu à la profondeur 7, dont les chiffres non monotones étaient du bruit
+> pur. Et une conclusion tirée de sept exécutions : 5 gagnantes sur 7 et
+> −1,2 %. Le même changement, sur 22 paires, donnait 19 sur 22 et −2,1 %.
+
+**Lequel employer.** `sprt.sh` juge un changement de **décision** — la
+recherche explore un autre arbre. `timing.sh` juge une **optimisation pure** —
+même arbre, même coup, seulement plus vite. Un nombre de nœuds identique est
+vérifiable ; un verdict de match est probabiliste. Employer le second quand il
+s'applique évite des heures de match pour un chiffre déjà connu.
+
 ## Mesures de référence
 
 | date | changement | verdict |
