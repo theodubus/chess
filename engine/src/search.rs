@@ -1196,9 +1196,24 @@ pub fn random_legal_move(board: &Board) -> Option<Move> {
     if legal.is_empty() {
         return None;
     }
-    let mut state = board.hash() | 1;
+    let mut state = random_seed(board.hash());
     let index = (next_random(&mut state) % legal.len() as u64) as usize;
     legal.get(index).copied()
+}
+
+/// La graine du tirage : le hash Zobrist, forcé impair.
+///
+/// **Zéro est un point fixe de xorshift64** — un état nul y reste et rend
+/// toujours zéro, donc toujours le premier coup de la liste. Forcer le bit de
+/// poids faible est ce qui empêche l'adversaire de référence de dégénérer, et
+/// avec lui le tournoi de vingt-quatre parties qui sert de critère
+/// d'acceptation.
+///
+/// Fonction nommée plutôt qu'expression en ligne : un invariant qu'on ne peut
+/// pas appeler est un invariant qu'aucun test ne peut protéger.
+#[must_use]
+fn random_seed(hash: u64) -> u64 {
+    hash | 1
 }
 
 /// xorshift64*, suffisant pour un tirage de coup et entièrement déterministe.
@@ -1888,20 +1903,49 @@ mod tests {
         // score précédent absurde doit donner exactement le résultat d'une
         // recherche à fenêtre pleine. Deux instances neuves pour que les deux
         // mesures partent de la même table vide.
+        //
+        // Le test comparait seulement les scores, ce qui ne prouvait rien : la
+        // boucle d'élargissement converge de toute façon vers le score exact.
+        // C'est le NOMBRE DE NŒUDS qui distingue les deux chemins — une
+        // fenêtre pleine cherche une fois, un pari raté recommence.
         let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
-        let pari = search().search_root(&b, 4, ASPIRATION_MIN_DEPTH, 4_000, &mut ardoise());
-        let plein = search().negamax(&b, 4, 0, -INFINITY, INFINITY, &mut ardoise());
-        assert_eq!(pari, plein);
+
+        let mut avec = search();
+        let pari = avec.search_root(&b, 4, ASPIRATION_MIN_DEPTH, 4_000, &mut ardoise());
+        let mut sans = search();
+        let plein = sans.negamax(&b, 4, 0, -INFINITY, INFINITY, &mut ardoise());
+
+        assert_eq!(pari, plein, "le score doit être identique");
+        assert_eq!(
+            avec.nodes(),
+            sans.nodes(),
+            "sous la profondeur minimale, aucun pari ne doit être tenté"
+        );
     }
 
     #[test]
     fn autour_dun_score_de_mat_la_fenetre_reste_pleine() {
         // Un mat annoncé ne prédit pas le score de l'itération suivante : la
         // fenêtre étroite n'a rien à y gagner et tout à y perdre.
+        //
+        // Même correction que le test précédent : c'est le nombre de nœuds qui
+        // dit si la garde s'est déclenchée, pas le score.
         let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
-        let pari = search().search_root(&b, 5, 8, MATE - 5, &mut ardoise());
-        let plein = search().negamax(&b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
-        assert_eq!(pari, plein);
+        let mut sans = search();
+        let plein = sans.negamax(&b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
+
+        // `MATE_THRESHOLD + 1` pince la borne : à `MATE_THRESHOLD` exactement,
+        // le score n'est pas encore un mat et le pari reste permis.
+        for previous in [MATE - 5, MATE_THRESHOLD + 1, -(MATE_THRESHOLD + 1)] {
+            let mut avec = search();
+            let pari = avec.search_root(&b, 5, 8, previous, &mut ardoise());
+            assert_eq!(pari, plein, "pari {previous} : score");
+            assert_eq!(
+                avec.nodes(),
+                sans.nodes(),
+                "pari {previous} : la fenêtre devait rester pleine"
+            );
+        }
     }
 
     #[test]
@@ -1985,30 +2029,57 @@ mod tests {
         // hasard.
         assert_eq!(next_random(&mut 0), 0, "zéro est bien un point fixe");
 
-        // Vingt positions distinctes : la même case de départ partout serait
-        // le symptôme.
-        let mut position = Position::from_fen(Board::default().to_string().as_str()).unwrap();
-        let mut departs = std::collections::HashSet::new();
+        // La graine se teste directement. Un `&` à la place du `|` bornerait
+        // l'état à {0, 1} ; un `^` inverserait le bit au lieu de le poser.
+        assert_eq!(random_seed(0), 1, "un hash nul ne doit pas rester nul");
+        assert_eq!(random_seed(2), 3, "le bit de poids faible se pose");
+        assert_eq!(
+            random_seed(3),
+            3,
+            "et ne s'inverse pas quand il est déjà là"
+        );
+        assert_eq!(random_seed(u64::MAX), u64::MAX, "le reste est intact");
+
+        // Et le tirage lui-même doit visiter des RANGS différents de la liste.
+        // La première version de ce test comptait les cases de départ : elles
+        // varient d'une position à l'autre même quand le rang tiré ne varie
+        // pas, donc elle ne mesurait rien.
+        let mut position = Position::default();
+        let mut rangs = std::collections::HashSet::new();
         for _ in 0..20 {
-            let mv = random_legal_move(position.board()).unwrap();
-            departs.insert(mv.from);
+            let board = position.board().clone();
+            let mut legaux = Vec::new();
+            board.generate_moves(|m| {
+                legaux.extend(m);
+                false
+            });
+            let mv = random_legal_move(&board).unwrap();
+            rangs.insert(legaux.iter().position(|c| *c == mv).unwrap());
             position.play(mv);
-            if position.board().status() != cozy_chess::GameStatus::Ongoing {
+            if board.status() != cozy_chess::GameStatus::Ongoing {
                 break;
             }
         }
         assert!(
-            departs.len() >= 4,
-            "le tirage doit varier : {} case(s) de départ distincte(s)",
-            departs.len()
+            rangs.len() >= 8,
+            "le tirage doit visiter des rangs variés : {} distinct(s)",
+            rangs.len()
         );
     }
 
     #[test]
     fn le_generateur_pseudo_aleatoire_rend_une_suite_connue() {
-        // Valeurs relevées par exécution, jamais dérivées de tête. Elles
-        // figent la suite : sans elles, remplacer le générateur par une
-        // constante passait inaperçu.
+        // Valeurs relevées par exécution, jamais dérivées de tête.
+        //
+        // **La graine doit être dense.** La première version de ce test
+        // partait de 1, et deux mutants y survivaient : avec des bits aussi
+        // épars, `x ^= x >> 12` et `x |= x >> 12` calculent la même chose,
+        // le décalage ne rendant que des zéros. Un XOR ne se distingue d'un
+        // OR que sur des bits qui se recouvrent.
+        let mut dense = 0xDEAD_BEEF_CAFE_1234_u64;
+        assert_eq!(next_random(&mut dense), 9_195_287_788_668_050_452);
+        assert_eq!(next_random(&mut dense), 8_999_892_485_905_921_430);
+
         let mut etat = 1_u64;
         assert_eq!(next_random(&mut etat), 5_180_492_295_206_395_165);
         assert_eq!(next_random(&mut etat), 12_380_297_144_915_551_517);
@@ -2099,6 +2170,32 @@ mod tests {
     }
 
     #[test]
+    fn une_pendule_genereuse_ne_bride_pas_lapprofondissement() {
+        // L'échéance douce interrompt l'approfondissement quand plus de la
+        // moitié du budget est consommée. Inverser sa comparaison la ferait
+        // se déclencher tant que le budget N'EST PAS dépassé : le moteur
+        // s'arrêterait à la profondeur 1 dès qu'une pendule est présente, et
+        // jouerait toute une partie en un ply — sans rien signaler.
+        //
+        // Aucun test ne voyait ça : ceux du budget vérifient qu'on s'arrête à
+        // temps, jamais qu'on ne s'arrête pas trop tôt.
+        let limits = Limits {
+            depth: Some(6),
+            movetime: Some(10_000),
+            ..Limits::default()
+        };
+        let mut atteinte = 0;
+        search().go(&Position::startpos(), &limits, |info| {
+            atteinte = atteinte.max(info.depth);
+        });
+        assert_eq!(
+            atteinte, 6,
+            "dix secondes pour six plies depuis la position initiale : \
+             l'approfondissement doit aller au bout"
+        );
+    }
+
+    #[test]
     fn un_mat_au_fond_de_larbre_rend_le_score_exact() {
         // Le mat détecté PAR NEGAMAX, et non par la quiescence. Les tests de
         // mat existants cherchent à faible profondeur : le mat y tombe à
@@ -2182,6 +2279,24 @@ mod tests {
         pv.clear(1);
         pv.push(0, e2e4);
         assert_eq!(pv.line(), vec![e2e4], "le fils vidé ne doit plus suivre");
+    }
+
+    #[test]
+    fn la_variante_ne_depasse_jamais_sa_rangee() {
+        // `.min(MAX_PLY - 1)` borne la longueur héritée du fils. Sans cette
+        // borne, la copie déborderait sur la rangée du ply suivant et la
+        // variante annoncée mélangerait deux profondeurs. Aucun test ne
+        // construisait de variante assez longue pour l'atteindre : il faut
+        // poser la longueur du fils à la main.
+        let b = Board::default();
+        let mv = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let mut pv = PvTable::new();
+        pv.lengths[1] = MAX_PLY;
+        pv.push(0, mv);
+        assert_eq!(
+            pv.lengths[0], MAX_PLY,
+            "la longueur reste dans la rangée, elle ne la dépasse pas"
+        );
     }
 
     #[test]
