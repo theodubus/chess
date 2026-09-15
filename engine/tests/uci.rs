@@ -198,6 +198,16 @@ fn loption_hash_est_annoncee_et_acceptee() {
 }
 
 #[test]
+fn bench_est_accessible_depuis_la_boucle_uci() {
+    // Le bras `bench` de `handle` pouvait être supprimé sans qu'un test
+    // bronche : aucun ne le traversait. C'est pourtant la commande qui sert de
+    // détecteur de régression de performance.
+    let out = drive(&["bench 2"]);
+    assert!(out.contains("Total nodes"), "{out}");
+    assert!(out.contains("Nodes/second"), "{out}");
+}
+
+#[test]
 fn une_option_inconnue_ne_casse_pas_la_session() {
     let out = drive(&["setoption name Inexistante value 3", "isready"]);
     assert!(out.contains("readyok"), "{out}");
