@@ -18,6 +18,21 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT" || exit 0
 
+# Trace de déclenchement.
+#
+# Un script de hook ne peut pas dire s'il a été CHARGÉ par Claude Code — il ne
+# tourne que si on l'a chargé. Cette ligne renverse le problème : chaque
+# déclenchement laisse une trace datée, donc « les hooks tournent-ils ? »
+# devient un fichier à lire, vérifiable depuis n'importe où et sans interface.
+# L'auto-test met SHALLOWRED_HOOK_SELFTEST : sans cette garde il
+# écrirait sa propre trace et « les hooks tournent-ils ? » répondrait
+# oui à cause du test lui-même.
+if [[ -z "${SHALLOWRED_HOOK_SELFTEST:-}" ]]; then
+  {
+    printf '%s  %s\n' "$(date -Is)" "Stop" >> "$ROOT/.claude/hooks-fired.log"
+  } 2>/dev/null || true
+fi
+
 COMPTEUR="${TMPDIR:-/tmp}/shallowred-verify-stop.count"
 
 # Rien de Rust n'a changé : rien à vérifier.

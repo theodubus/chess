@@ -22,6 +22,21 @@ ENTREE="$(cat)"
 cd "$ROOT" 2>/dev/null || exit 0
 git rev-parse --git-dir > /dev/null 2>&1 || exit 0
 
+# Trace de déclenchement.
+#
+# Un script de hook ne peut pas dire s'il a été CHARGÉ par Claude Code — il ne
+# tourne que si on l'a chargé. Cette ligne renverse le problème : chaque
+# déclenchement laisse une trace datée, donc « les hooks tournent-ils ? »
+# devient un fichier à lire, vérifiable depuis n'importe où et sans interface.
+# L'auto-test met SHALLOWRED_HOOK_SELFTEST : sans cette garde il
+# écrirait sa propre trace et « les hooks tournent-ils ? » répondrait
+# oui à cause du test lui-même.
+if [[ -z "${SHALLOWRED_HOOK_SELFTEST:-}" ]]; then
+  {
+    printf '%s  %s\n' "$(date -Is)" "PreToolUse" >> "$ROOT/.claude/hooks-fired.log"
+  } 2>/dev/null || true
+fi
+
 # Les arguments de l'outil, aplatis, puis tous les mots de 40 hexadécimaux.
 ARGS="$(printf '%s' "$ENTREE" | jq -c '.tool_input // {}' 2>/dev/null)" || exit 0
 CANDIDATS="$(printf '%s' "$ARGS" | grep -oE '\b[0-9a-f]{40}\b' | sort -u)"

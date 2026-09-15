@@ -4,10 +4,24 @@
 #
 #   tools/verify-hooks.sh
 #
-# Vérifie que les SCRIPTS font ce qu'ils annoncent. Ne vérifie PAS que Claude
-# Code les a chargés — seul `/hooks` dans l'invite, ou un blocage observé, le
-# dit. La distinction compte : un script correct mais non chargé ne protège de
-# rien, et l'inverse non plus.
+# Deux questions distinctes, et le script répond aux deux.
+#
+#   1. Les SCRIPTS font-ils ce qu'ils annoncent ? — onze cas ci-dessous.
+#   2. Claude Code les a-t-il CHARGÉS ? — un script ne peut pas le dire de
+#      lui-même, puisqu'il ne tourne que s'il a été chargé. Chaque
+#      déclenchement réel laisse donc une trace datée dans
+#      `.claude/hooks-fired.log`, et ce script la rapporte.
+#
+# La question 2 ne se règle PAS par `/hooks` : cette commande n'existe pas dans
+# toutes les versions. Vérifié le 15 sept. 2026 — chez Théo, `/hooks` ne
+# propose que la skill `session-start-hook`, qui n'a rien à voir. La trace sur
+# disque est la seule réponse portable, et elle se lit depuis un téléphone.
+#
+# Ce que la trace a d'ailleurs immédiatement démenti : j'avais affirmé qu'un
+# `.claude/` créé après le démarrage d'une session n'était pas chargé par
+# cette session-là. **C'est faux** — le hook PreToolUse s'est déclenché sur
+# l'appel d'outil suivant, dans la session même qui venait de l'écrire. Une
+# affirmation de plus qui ne valait rien tant qu'elle n'était pas observée.
 
 set -uo pipefail
 
@@ -15,6 +29,10 @@ set -uo pipefail
 # de 8, et chaque accent décale une colonne. Le conteneur ne définit ni LANG ni
 # LC_ALL, d'où ce réglage explicite.
 export LC_ALL=C.UTF-8
+
+# Empêche les hooks d'écrire leur trace pendant leur propre test : sinon le
+# rapport ci-dessous répondrait « oui, ils tournent » à cause du test.
+export SHALLOWRED_HOOK_SELFTEST=1
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
@@ -81,6 +99,22 @@ else
 fi
 
 echo
+echo "  les hooks se sont-ils déclenchés pour de vrai ?"
+TRACE=".claude/hooks-fired.log"
+if [[ -s "$TRACE" ]]; then
+  echo "    OUI — Claude Code les a chargés et exécutés."
+  echo "    dernier déclenchement : $(tail -1 "$TRACE")"
+  echo "    déclenchements enregistrés : $(grep -c '' "$TRACE")"
+else
+  echo "    PAS ENCORE — aucune trace dans $TRACE."
+  echo "    Soit Claude Code ne les a pas chargés, soit aucune session ne s'est"
+  echo "    terminée depuis. Les hooks d'un .claude/ créé APRÈS le démarrage"
+  echo "    d'une session ne sont pas chargés par cette session-là ; une session"
+  echo "    démarrée ensuite les trouve en place. Relancer ce script dans une"
+  echo "    nouvelle session tranche."
+fi
+
+echo
 if (( LANCES != ATTENDUS )); then
   echo "ECHEC — $LANCES cas exécutés, $ATTENDUS attendus."
   echo "Un cas a disparu en silence : c'est plus grave qu'un cas qui échoue."
@@ -89,9 +123,6 @@ fi
 
 if [[ ${#ECHECS[@]} -eq 0 ]]; then
   echo "LES SCRIPTS FONT CE QU'ILS ANNONCENT"
-  echo
-  echo "Reste à vérifier que Claude Code les a CHARGÉS — les scripts ne peuvent"
-  echo "pas le dire d'eux-mêmes. Taper /hooks dans l'invite les liste."
   exit 0
 fi
 echo "ECHEC — ${#ECHECS[@]} cas : ${ECHECS[*]}"

@@ -23,3 +23,6 @@ dist/
 # Résidus laissés par les arbitres de match
 /config.json
 /*.pgn
+
+# Trace de déclenchement des hooks (voir tools/verify-hooks.sh)
+/.claude/hooks-fired.log
