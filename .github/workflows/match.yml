@@ -86,6 +86,45 @@ jobs:
           rustup show active-toolchain
           rustc --version && cargo --version
 
+      # Résoudre AVANT de construire : une référence fausse doit coûter cinq
+      # secondes et un message clair, pas vingt secondes et un `fatal:` de git
+      # au milieu d'un script.
+      #
+      # `actions/checkout` ne crée en local QUE la branche par défaut ; les
+      # autres n'existent que sous `origin/<nom>`, et `git worktree` ne résout
+      # pas le nom nu. Les deux premiers usages réels de ce workflow ont échoué
+      # là-dessus — d'abord sur un SHA rendu inatteignable par un squash, puis
+      # sur un nom de branche. L'entrée annonce « commit, branche ou tag » ;
+      # elle n'avait été éprouvée qu'avec des SHA.
+      - name: Résoudre les références
+        id: refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          resoudre() {
+            local ref="$1" quoi="$2" sha
+            sha=$(git rev-parse --verify --quiet "${ref}^{commit}" || true)
+            [ -n "$sha" ] || sha=$(git rev-parse --verify --quiet "origin/${ref}^{commit}" || true)
+            if [ -z "$sha" ]; then
+              echo "::error::$quoi introuvable : « $ref » — essayé tel quel et sous origin/." >&2
+              exit 1
+            fi
+            printf '%s' "$sha"
+          }
+          cand=$(resoudre "${{ inputs.candidat }}"  "candidat")
+          base=$(resoudre "${{ inputs.reference }}" "référence")
+          echo "candidat  ${{ inputs.candidat }}  -> $cand"
+          echo "reference ${{ inputs.reference }} -> $base"
+          # Deux références qui pointent le même commit : le match rendrait
+          # 0 Elo et personne ne saurait pourquoi. Détecté ici, où c'est
+          # gratuit, plutôt qu'après deux compilations.
+          if [ "$cand" = "$base" ]; then
+            echo "::error::les deux références pointent le même commit ($cand) : il n'y a rien à mesurer" >&2
+            exit 1
+          fi
+          echo "candidat=$cand"  >> "$GITHUB_OUTPUT"
+          echo "reference=$base" >> "$GITHUB_OUTPUT"
+
       # Les deux binaires se construisent en worktree détaché, jamais par
       # `git stash` : le stash emporte tout le travail non committé, outils de
       # mesure compris, et l'on finit par mesurer autre chose que ce qu'on
@@ -95,23 +134,24 @@ jobs:
         run: |
           set -euo pipefail
           construire() {
-            local ref="$1" sortie="$2"
-            git worktree add --detach "/tmp/wt-$sortie" "$ref"
+            local sha="$1" sortie="$2"
+            git worktree add --detach "/tmp/wt-$sortie" "$sha"
             ( cd "/tmp/wt-$sortie" && cargo build --release --bin shallowred )
             cp "/tmp/wt-$sortie/target/release/shallowred" "/tmp/$sortie"
           }
-          construire "${{ inputs.candidat }}"  candidat
-          construire "${{ inputs.reference }}" reference
+          construire "${{ steps.refs.outputs.candidat }}"  candidat
+          construire "${{ steps.refs.outputs.reference }}" reference
 
-          # Deux empreintes identiques veulent dire qu'on s'apprête à mesurer
-          # un binaire contre lui-même — le match rendrait 0 Elo et personne
-          # ne saurait pourquoi.
+          # Deux commits différents peuvent produire le même binaire — une
+          # PR qui ne touche que la documentation, par exemple. La garde de
+          # l'étape précédente compare les SHA et ne voit pas ce cas ; celle-ci
+          # compare ce qui joue réellement.
           a=$(md5sum /tmp/candidat  | cut -d' ' -f1)
           b=$(md5sum /tmp/reference | cut -d' ' -f1)
           echo "candidat  $a"
           echo "reference $b"
           if [ "$a" = "$b" ]; then
-            echo "::error::les deux binaires sont identiques : il n'y a rien à mesurer"
+            echo "::error::les deux binaires sont identiques bien que les commits diffèrent : il n'y a rien à mesurer"
             exit 1
           fi
 
@@ -191,8 +231,8 @@ jobs:
             echo
             echo "| | |"
             echo "|---|---|"
-            echo "| candidat | \`${{ inputs.candidat }}\` |"
-            echo "| référence | \`${{ inputs.reference }}\` |"
+            echo "| candidat | \`${{ inputs.candidat }}\` → \`${{ steps.refs.outputs.candidat }}\` |"
+            echo "| référence | \`${{ inputs.reference }}\` → \`${{ steps.refs.outputs.reference }}\` |"
             echo "| cadence | \`${{ inputs.cadence }}\` |"
             echo "| graine des ouvertures | \`${{ inputs.graine }}\` |"
             echo "| cœurs du runner | ${{ steps.etalon.outputs.coeurs }} |"
