@@ -324,6 +324,16 @@ une mesure, pas une préférence.
   bruit, donc rien. À 22 paires le même changement donne 19 sur 22 et −2,1 %,
   p = 0,0004. **Compter les paires gagnantes et faire un test des signes**, au
   lieu de comparer deux médianes à l'œil.
+  <br>**Et une exécution n'en suffit à rien du tout — pas même à dire qu'il
+  n'y a pas d'écart.** Le 16 sept. 2026, j'ai caractérisé la vitesse des
+  runners GitHub à partir d'**un seul runner** : 2 563 044 n/s, une valeur qui
+  tombait à l'intérieur de l'étendue locale, d'où « ±10 %, donc le point de
+  fonctionnement transfère » — inscrit dans trois fichiers et fusionné. Le
+  runner suivant a rendu **3 139 691** sur le même binaire. L'écart réel est de
+  22 % entre runners, et le runner est plus **rapide** que le conteneur, pas
+  plus lent : la réserve d'origine avait aussi le signe faux. **Un point unique
+  qui tombe dans l'intervalle attendu ressemble exactement à une confirmation**,
+  et n'en est pas une : il ne mesure pas la dispersion de ce qu'on caractérise.
 - **Deux balayages de mutation concurrents se corrompent.** Le 15 sept. 2026,
   j'ai relancé `cargo mutants` sans vérifier que le précédent avait fini. Les
   deux écrivaient dans le même `mutants.out/` : `missed.txt` mêlait les
@@ -436,7 +446,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les trois critères d'acceptation, le bench |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
-| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus lente atteint une profondeur plus faible, donc un autre point de fonctionnement. **Mesuré le 16 sept. 2026 : l'écart runner/conteneur est de ±10 %, donc les deux se comparent.** L'étalonnage reste là pour le revérifier, pas pour le supposer |
+| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Mesuré le 16 sept. 2026 : le runner est plus rapide que le conteneur de +11 à +35 % selon le runner, soit +0,2 à +0,6 ply.** Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
 
 **Le cliquet de mutation.** `.github/mutation-baseline.txt` porte le nombre de
 survivants admis par fichier **et la raison écrite de chaque valeur non
@@ -472,9 +482,10 @@ issue ouverte par ce chemin le dit en tête.
 **Durée du balayage** : 35 puis 81 minutes sur deux exécutions réelles. Les
 runners partagés varient du simple au double — ne pas caler un rendez-vous
 serré dessus. **Ce chiffre porte sur un débit de COMPILATION**, et ne dit rien
-de la vitesse de recherche : celle-ci ne varie que de ±10 % entre le runner et
-le conteneur, mesurée le 16 sept. 2026. Confondre les deux m'a fait écrire une
-réserve fausse dans `match.yml`.
+de la vitesse de RECHERCHE : celle-ci varie de 22 % d'un runner à l'autre, et
+le runner est plus rapide que le conteneur, pas plus lent. Confondre les deux
+m'a fait écrire une réserve fausse dans `match.yml` ; la corriger d'après un
+seul runner m'en a fait écrire une seconde. Chiffres dans `tools/README.md`.
 
 **Que faire quand le verdict est rouge.** Le critère de tri est un arbitrage
 utilisateur du 15 sept. 2026 : **corriger au fil ce qui touche aux règles du

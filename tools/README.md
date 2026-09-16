@@ -84,11 +84,39 @@ atteint une profondeur plus faible — donc un autre point de fonctionnement,
 exactement la variable qu'on cherche à contrôler. Le job mesure ses propres
 nœuds/seconde et les inscrit en tête.
 
-**Mesuré le 16 sept. 2026 : l'écart est de ±10 %** — 2 563 044 n/s sur le
-runner contre 2 317 224 à 2 750 500 dans le conteneur, dans les deux sens selon
-la charge. **Le point de fonctionnement transfère**, donc une mesure en CI se
-compare à une mesure locale. L'étalonnage reste là pour le revérifier à chaque
-fois plutôt que de le tenir pour acquis.
+**Mesuré le 16 sept. 2026**, au bench à la profondeur 10, même code moteur :
+
+| où | nœuds/s | écart au conteneur |
+|---|---|---|
+| conteneur de session, 8 relevés | 2 280 655 – 2 396 011 | — (étendue 5 %) |
+| runner `1000002292` | 2 563 044 | **+11 %** |
+| runner `1000002313` | 3 139 691 | **+35 %** |
+
+Le runner est plus **rapide** que le conteneur, et il varie de **22 % d'un
+runner à l'autre** là où le conteneur ne varie que de 5 %. Traduit dans la
+seule unité qui compte — le projet a mesuré **1,33 ply par doublement de
+temps** — cela vaut **+0,2 à +0,6 ply** : un verdict rendu en CI siège un
+demi-ply plus profond que la même cadence nominale mesurée ici. À comparer aux
+**4 plies** qui ont inversé le verdict de l'élagage par compte de coups.
+
+Le point de fonctionnement transfère donc en gros, mais la marge n'est pas
+négligeable : **ne pas comparer un verdict CI à un verdict local sans regarder
+les deux étalonnages.** En revanche **un verdict reste valide en interne quoi
+qu'il arrive** — les deux moteurs partagent la machine, donc sa vitesse ne
+biaise pas la comparaison ; elle ne déplace que le point de fonctionnement.
+
+**La profondeur de la sonde prime sur les nœuds/s.** Les nœuds/s sont un
+indice de vitesse, la profondeur est le point de fonctionnement lui-même.
+La sonde a longtemps rendu 4 au lieu de 11 — le piège du `stdin` refermé,
+consigné plus bas — ce qui est la raison pour laquelle les nœuds/s ont servi
+de substitut. Elle est réparée : s'en servir.
+
+> **Comment je me suis trompé.** J'ai d'abord annoncé « un runner est deux
+> fois plus lent », extrapolé d'un débit de *compilation*. Corrigé en
+> « ±10 %, donc ça transfère » — sur la foi d'**un seul runner**. C'est
+> caractériser une variance à partir d'un point, la même faute que
+> « sept exécutions ne suffisent pas à comparer deux temps », appliquée
+> cette fois à la machine au lieu du binaire.
 
 ### Le résultat qui a motivé tout ça
 

@@ -19,16 +19,36 @@
 # cherche à contrôler. D'où l'étape `Étalonner`, qui mesure la vitesse du job
 # et l'inscrit en tête du résumé.
 #
-# **Mesuré le 16 sept. 2026, et ça dément ce que j'avais écrit ici.** J'avais
-# annoncé « un runner partagé est deux fois plus lent », extrapolé du balayage
-# par mutation. Faux pour ce qui nous occupe : le balayage mesure un débit de
-# COMPILATION, pas une vitesse de RECHERCHE. Au bench à la profondeur 10, le
-# runner rend **2 563 044 n/s** contre 2 317 224 à 2 750 500 dans le conteneur
-# de session — soit ±10 %, dans les deux sens selon la charge.
+# **Deux corrections successives, le 16 sept. 2026, et la seconde corrige la
+# première.** J'avais d'abord annoncé « un runner partagé est deux fois plus
+# lent », extrapolé du balayage par mutation — lequel mesure un débit de
+# COMPILATION, pas une vitesse de RECHERCHE. J'ai corrigé en « ±10 %, donc ça
+# transfère », sur la foi d'UN SEUL runner. C'était caractériser une variance
+# à partir d'un point.
 #
-# **Le point de fonctionnement transfère donc**, et c'est ce qui rend ce
-# workflow utilisable pour comparer avec les mesures locales. L'étalonnage
-# reste là pour le vérifier à chaque fois plutôt que de le supposer acquis.
+# Au bench à la profondeur 10, même code moteur :
+#
+#   conteneur de session, 8 relevés   2 280 655 – 2 396 011 n/s  (étendue 5 %)
+#   runner 1000002292                 2 563 044 n/s   (+11 % / conteneur)
+#   runner 1000002313                 3 139 691 n/s   (+35 % / conteneur)
+#
+# Le runner est donc plus RAPIDE que le conteneur, pas plus lent — la réserve
+# d'origine avait même le signe faux — et il varie de 22 % d'un runner à
+# l'autre, contre 5 % localement.
+#
+# **Ce que ça coûte, en la seule unité qui compte.** Le projet a mesuré 1,33
+# ply par doublement de temps (8× le temps achète +4 plies). De +11 % à +35 %
+# de vitesse, cela fait **+0,2 à +0,6 ply** : un verdict rendu ici siège un
+# demi-ply plus profond que la même cadence nominale mesurée localement. À
+# comparer aux **4 plies** qui ont inversé le verdict de l'élagage par compte
+# de coups. Le point de fonctionnement transfère donc en gros, mais avec une
+# marge qu'on ne peut plus qualifier de négligeable.
+#
+# **Un verdict reste valide EN INTERNE quoi qu'il arrive** : les deux moteurs
+# partagent le runner, donc sa vitesse ne biaise pas la comparaison. Seule la
+# comparaison ENTRE deux runs est menacée — et c'est précisément ce que la
+# ligne d'étalonnage permet de vérifier. Elle vient de servir : c'est elle qui
+# a démenti le « ±10 % ».
 name: Match
 
 on:
@@ -239,13 +259,18 @@ jobs:
             echo "| **nœuds/s au bench** | **${{ steps.etalon.outputs.nps }}** |"
             echo "| profondeur en 250 ms | ${{ steps.etalon.outputs.profondeur }} |"
             echo
-            echo "> La vitesse du runner fixe le point de fonctionnement réel :"
-            echo "> à cadence horloge, une machine plus lente atteint une"
-            echo "> profondeur plus faible. Mesuré le 16 sept. 2026, l'écart"
-            echo "> entre ce runner et le conteneur de session est de ±10 %,"
-            echo "> donc les deux se comparent. **Vérifier ce chiffre avant de"
-            echo "> comparer ce verdict à un autre** — c'est la raison d'être"
-            echo "> de cette ligne, pas une formalité."
+            echo "> **La profondeur ci-dessus est le point de fonctionnement"
+            echo "> réel de ce run** — les nœuds/s n'en sont qu'un indice. Deux"
+            echo "> runners mesurés le 16 sept. 2026 rendaient 2 563 044 et"
+            echo "> 3 139 691 n/s sur le même binaire, soit 22 % d'écart, quand"
+            echo "> le conteneur de session ne varie que de 5 %. Traduit en"
+            echo "> profondeur (1,33 ply par doublement de temps), cela vaut"
+            echo "> environ un demi-ply."
+            echo ">"
+            echo "> Ce verdict est valide **en interne** quoi qu'il arrive : les"
+            echo "> deux moteurs ont partagé cette machine. **Comparer ces deux"
+            echo "> lignes avant de comparer ce verdict à un autre run** — c'est"
+            echo "> la raison d'être de cette ligne, pas une formalité."
             echo
             echo '### Verdict'
             echo
