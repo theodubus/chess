@@ -712,9 +712,19 @@ impl Search {
             return 0;
         }
 
-        // Une répétition ou la règle des cinquante coups font nulle. Jamais à la
-        // racine : la position de départ n'est pas un résultat, il faut jouer.
-        if ply > 0 && (self.is_repetition(board) || board.halfmove_clock() >= 100) {
+        // Une répétition, la règle des cinquante coups ou un matériel
+        // insuffisant font nulle. Jamais à la racine : la position de départ
+        // n'est pas un résultat, il faut jouer.
+        //
+        // Le matériel insuffisant est déjà rendu à zéro par `evaluate` ; le
+        // tester **aussi** ici n'est pas une redondance mais une coupure. Sans
+        // elle, on parcourrait tout le sous-arbre d'une position morte pour
+        // que chacune de ses feuilles rende le même zéro.
+        if ply > 0
+            && (self.is_repetition(board)
+                || board.halfmove_clock() >= 100
+                || eval::is_insufficient_material(board))
+        {
             return DRAW;
         }
 

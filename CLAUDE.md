@@ -15,8 +15,10 @@ Ce fichier dit **comment** travailler : invariants, ce qui compte comme preuve,
 pièges déjà payés. Il ne dit pas **où on en est**.
 
 - L'état du moteur : `README.md`, en tête.
-- Les dix verdicts SPRT, avec leurs effectifs et leurs bornes :
-  `tools/README.md`, section *Mesures de référence*.
+- Les verdicts SPRT, avec leurs effectifs, leurs bornes **et leur cadence** :
+  `tools/README.md`, section *Mesures de référence*. Le compteur n'est pas
+  recopié ici : il vit dans le tableau, et une prose qui le duplique naît
+  périmée.
 - Ce qui s'exécute sans qu'on l'appelle : section *Ce qui tourne tout seul*,
   plus bas.
 - Ce sur quoi travailler : **demander**. Le dépôt ne porte pas de feuille de
@@ -35,6 +37,15 @@ une mesure, pas une préférence.
   bon marché. **Mesuré le 14 sept. 2026 : le copy-make pèse 7,2 % du temps
   d'un nœud de recherche.** Et il ne ferme pas la porte à NNUE — voir la
   contrainte d'architecture correspondante.
+- **La cible est la force GÉNÉRALE, pas la force en blitz.** Théo,
+  16 sept. 2026 : « *à terme je veux que le moteur soit fort en général, pas
+  que en blitz.* » Ce n'est pas une nuance de confort : les douze premiers
+  verdicts du projet ont été rendus à `1+0,01`, où le moteur atteint la
+  profondeur 8,5 — et l'un d'eux **change de signe** à `8+0,08`. **Une mesure
+  de force appartient à sa cadence** ; mesurer court revient à optimiser pour
+  un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
+  la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
+  plus qu'à dégrossir, jamais à trancher.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Licence AGPL-3.0-or-later** sur tout le dépôt.
 
@@ -170,13 +181,28 @@ une mesure, pas une préférence.
 | « il manque un terme à l'évaluation » | Un SPRT. **Mesuré : la mobilité vaut +62,6 Elo ± 17,2** ; sécurité du roi, structure de pions et tour sur colonne ouverte valent ensemble **+14,9 Elo ± 8,2**. Pour la recherche, un SPRT par changement reste absolu. Pour l'évaluation, les termes se groupent — individuellement ils valent quelques Elo et ne tranchent pas — mais la règle complète est **« grouper, puis bissecter à l'échec »** : c'est un match de bissection qui a séparé les termes du réglage et montré lequel des deux coûtait. |
 | « ce code est testé » | `tools/mutants.sh`. Un mutant **survivant** est une modification du code que toute la suite accepte : une ligne dont rien ne vérifie le comportement. Le plafond par fichier vit dans `.github/mutation-baseline.txt`, et le balayage hebdomadaire (workflow `Mutation`, mardi) casse à la hausse, signale la baisse. **Ne dit rien de la force de jeu** : un survivant sur une valeur d'évaluation ou une marge d'élagage relève du SPRT, jamais d'un test unitaire. |
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
+| « ce verdict vaut pour le moteur qu'on livrera » | **La cadence de mesure peut INVERSER un verdict — mesuré, pas redouté.** 16 sept. 2026, mêmes binaires, même livre, **même graine d'ouvertures**, même adjudication, même estimateur (1000 parties à longueur fixe chacun) : l'élagage par compte de coups vaut **−21,57 ± 16,71** à `1+0,01` et **+15,30 ± 15,08** à `8+0,08`. Écart **+36,9 Elo**, z = 3,21, **p = 0,0013**, intervalles disjoints. Le biais d'arrêt du SPRT ne vaut que 3,6 Elo : ce n'était pas l'explication. Profondeur médiane atteinte : **8,5** contre **12,5** — et **17,0** à ~30+0,3, le régime où le moteur jouera. **Les douze premiers verdicts du projet sont tous à `1+0,01`**, alors que `tools/sprt.sh` a pour défaut `8+0.08` depuis sa création — défaut jamais utilisé. Ce n'était pas un arbitrage, c'était une habitude. **Nommer la cadence d'un verdict, et ne jamais comparer deux verdicts de cadences différentes.** Mesurer long passe par `.github/workflows/match.yml`. |
 | « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. Empiriquement, sur les quatre SPRT du projet, `parties × Elo ≈ 62 000` : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 12 400 ≈ 2 h 30 ; +2 ≈ 31 000 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
 | « c'est plus fort » | **Jamais** déduit d'un nombre de nœuds, dans aucun sens. Huit mesures, et les trois combinaisons de signes sont représentées : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration ÷1,07 → +30 ; élagage delta ÷1,68 → +33 ; futilité inverse ÷1,45 → +24 (moins de nœuds, plus fort) ; **PVS ÷1,03 → −11, H0 accepté** (moins de nœuds, plus faible) ; **mobilité ×1,29 → +63** (*plus* de nœuds, plus fort). Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. **Deux rapports voisins, ÷1,68 et ÷2,52, rapportent +33 et +75 : même le classement ne se déduit pas.** |
 | « cette technique est standard, donc elle aide » | **Rien.** Ce n'est pas une preuve. PVS est dans tous les manuels et la mesure l'a rejeté sur ce moteur (−11 Elo, 4214 parties) : empilé sur LMR, coup nul et fenêtres d'aspiration, il n'apporte plus rien à couper et ne laisse que son coût de re-recherche. Une technique standard entre par le SPRT comme toutes les autres. |
+| « ce réglage était mauvais, pas la technique » | **Une bissection par le paramètre, pas une intuition.** L'élagage par compte de coups a été mesuré deux fois : seuil `6 + d²` → **−25,2 Elo**, seuil `12 + d²` → **−12,6**. Le coût suit le **risque mesuré** — 3,8 % puis 2,0 % des montées d'`alpha` détruites, soit × 0,53 pour × 0,50 — et la droite passe par l'origine, où le risque nul vaut « pas d'élagage ». **Deux points ont clos la question que zéro point aurait laissée ouverte**, comme elle l'est restée pour PVS. |
+| « j'ai mesuré le mécanisme, donc je sais » | **Vérifier le dénominateur.** Avant d'écrire LMP j'ai mesuré la part des *coups tranquilles* élagués : 58 % au seuil 6, 40 % au seuil 12, compromis monotone sans genou — d'où « seul un SPRT peut choisir ». En **nœuds**, qui sont ce qui achète de la profondeur, le seuil 12 garde **96 %** de l'économie du seuil 6 : le genou est net. Un chiffre vrai qui répond à une autre question. |
 
 ## Pièges de mesure, appris à nos dépens
 
+- **Un verdict appartient à sa cadence, et le signe peut changer avec elle.**
+  C'est le piège le plus coûteux du projet, parce qu'il ne touche pas une
+  mesure mais **toutes**. L'élagage par compte de coups a été écrit, mesuré
+  deux fois à `1+0,01`, rejeté et retiré le 16 sept. 2026 — puis le même
+  binaire, contre la même référence, avec les mêmes ouvertures, a rendu
+  **+15,3 Elo à `8+0,08`** contre **−21,6 à `1+0,01`** (p = 0,0013). La cause
+  est la profondeur : 8,5 contre 12,5. **Une technique dont la valeur croît
+  avec la profondeur est invisible, voire négative, à une cadence trop
+  courte.** Conséquences opérationnelles : inscrire la cadence à côté de
+  chaque verdict ; ne jamais comparer deux verdicts de cadences différentes ;
+  et se demander, avant de conclure, si la cadence de mesure ressemble au
+  régime où le moteur jouera.
 - **Les six positions de `bench` ne sont pas un échantillon de jeu.** Elles
   sont choisies pour être comparables d'une version à l'autre, pas pour
   représenter ce qu'une partie traverse. Mesurée sur le banc, la fréquence de
@@ -392,6 +418,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les trois critères d'acceptation, le bench |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
+| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé : un runner deux fois plus lent joue une cadence deux fois plus courte, donc un autre point de fonctionnement |
 
 **Le cliquet de mutation.** `.github/mutation-baseline.txt` porte le nombre de
 survivants admis par fichier **et la raison écrite de chaque valeur non
