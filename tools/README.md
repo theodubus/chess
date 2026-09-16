@@ -79,10 +79,16 @@ contrainte d'outillage prise pour une préférence**.
 commits en entrée, la cadence en entrée, six heures de plafond, et un résumé
 lisible dans l'onglet Actions sans ouvrir le journal.
 
-**Lire d'abord l'étalonnage.** Un runner partagé varie du simple au double, et
-à cadence horloge une machine plus lente joue une cadence plus courte — donc
-un autre point de fonctionnement. Le job mesure ses propres nœuds/seconde et
-les inscrit en tête : le point n'est pas contrôlé, mais il est connu.
+**Lire d'abord l'étalonnage.** À cadence horloge, une machine plus lente
+atteint une profondeur plus faible — donc un autre point de fonctionnement,
+exactement la variable qu'on cherche à contrôler. Le job mesure ses propres
+nœuds/seconde et les inscrit en tête.
+
+**Mesuré le 16 sept. 2026 : l'écart est de ±10 %** — 2 563 044 n/s sur le
+runner contre 2 317 224 à 2 750 500 dans le conteneur, dans les deux sens selon
+la charge. **Le point de fonctionnement transfère**, donc une mesure en CI se
+compare à une mesure locale. L'étalonnage reste là pour le revérifier à chaque
+fois plutôt que de le tenir pour acquis.
 
 ### Le résultat qui a motivé tout ça
 

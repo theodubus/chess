@@ -12,18 +12,23 @@
 # Ce n'était pas un arbitrage, c'était une contrainte d'outillage prise pour
 # une préférence. Les runners GitHub ne dorment pas et tiennent six heures.
 #
-# # La réserve, et elle est sérieuse
+# # La réserve, et ce qu'elle vaut réellement
 #
-# Un runner partagé est **deux fois plus lent** que la machine de mesure, et
-# varie du simple au double d'une exécution à l'autre — mesuré sur le
-# balayage par mutation. À cadence horloge, une machine plus lente veut dire
-# une profondeur plus faible, donc **un autre point de fonctionnement** :
-# exactement la variable qu'on cherche à contrôler.
+# À cadence horloge, une machine plus lente atteint une profondeur plus faible,
+# donc **un autre point de fonctionnement** : exactement la variable qu'on
+# cherche à contrôler. D'où l'étape `Étalonner`, qui mesure la vitesse du job
+# et l'inscrit en tête du résumé.
 #
-# D'où l'étape `Étalonner` : le job mesure sa propre vitesse au bench et
-# l'inscrit en tête du résumé. Le point de fonctionnement n'est pas contrôlé,
-# mais il est **connu** — et un chiffre connu se compense, un chiffre ignoré
-# ne se compense pas.
+# **Mesuré le 16 sept. 2026, et ça dément ce que j'avais écrit ici.** J'avais
+# annoncé « un runner partagé est deux fois plus lent », extrapolé du balayage
+# par mutation. Faux pour ce qui nous occupe : le balayage mesure un débit de
+# COMPILATION, pas une vitesse de RECHERCHE. Au bench à la profondeur 10, le
+# runner rend **2 563 044 n/s** contre 2 317 224 à 2 750 500 dans le conteneur
+# de session — soit ±10 %, dans les deux sens selon la charge.
+#
+# **Le point de fonctionnement transfère donc**, et c'est ce qui rend ce
+# workflow utilisable pour comparer avec les mesures locales. L'étalonnage
+# reste là pour le vérifier à chaque fois plutôt que de le supposer acquis.
 name: Match
 
 on:
@@ -81,6 +86,45 @@ jobs:
           rustup show active-toolchain
           rustc --version && cargo --version
 
+      # Résoudre AVANT de construire : une référence fausse doit coûter cinq
+      # secondes et un message clair, pas vingt secondes et un `fatal:` de git
+      # au milieu d'un script.
+      #
+      # `actions/checkout` ne crée en local QUE la branche par défaut ; les
+      # autres n'existent que sous `origin/<nom>`, et `git worktree` ne résout
+      # pas le nom nu. Les deux premiers usages réels de ce workflow ont échoué
+      # là-dessus — d'abord sur un SHA rendu inatteignable par un squash, puis
+      # sur un nom de branche. L'entrée annonce « commit, branche ou tag » ;
+      # elle n'avait été éprouvée qu'avec des SHA.
+      - name: Résoudre les références
+        id: refs
+        shell: bash
+        run: |
+          set -euo pipefail
+          resoudre() {
+            local ref="$1" quoi="$2" sha
+            sha=$(git rev-parse --verify --quiet "${ref}^{commit}" || true)
+            [ -n "$sha" ] || sha=$(git rev-parse --verify --quiet "origin/${ref}^{commit}" || true)
+            if [ -z "$sha" ]; then
+              echo "::error::$quoi introuvable : « $ref » — essayé tel quel et sous origin/." >&2
+              exit 1
+            fi
+            printf '%s' "$sha"
+          }
+          cand=$(resoudre "${{ inputs.candidat }}"  "candidat")
+          base=$(resoudre "${{ inputs.reference }}" "référence")
+          echo "candidat  ${{ inputs.candidat }}  -> $cand"
+          echo "reference ${{ inputs.reference }} -> $base"
+          # Deux références qui pointent le même commit : le match rendrait
+          # 0 Elo et personne ne saurait pourquoi. Détecté ici, où c'est
+          # gratuit, plutôt qu'après deux compilations.
+          if [ "$cand" = "$base" ]; then
+            echo "::error::les deux références pointent le même commit ($cand) : il n'y a rien à mesurer" >&2
+            exit 1
+          fi
+          echo "candidat=$cand"  >> "$GITHUB_OUTPUT"
+          echo "reference=$base" >> "$GITHUB_OUTPUT"
+
       # Les deux binaires se construisent en worktree détaché, jamais par
       # `git stash` : le stash emporte tout le travail non committé, outils de
       # mesure compris, et l'on finit par mesurer autre chose que ce qu'on
@@ -90,31 +134,33 @@ jobs:
         run: |
           set -euo pipefail
           construire() {
-            local ref="$1" sortie="$2"
-            git worktree add --detach "/tmp/wt-$sortie" "$ref"
+            local sha="$1" sortie="$2"
+            git worktree add --detach "/tmp/wt-$sortie" "$sha"
             ( cd "/tmp/wt-$sortie" && cargo build --release --bin shallowred )
             cp "/tmp/wt-$sortie/target/release/shallowred" "/tmp/$sortie"
           }
-          construire "${{ inputs.candidat }}"  candidat
-          construire "${{ inputs.reference }}" reference
+          construire "${{ steps.refs.outputs.candidat }}"  candidat
+          construire "${{ steps.refs.outputs.reference }}" reference
 
-          # Deux empreintes identiques veulent dire qu'on s'apprête à mesurer
-          # un binaire contre lui-même — le match rendrait 0 Elo et personne
-          # ne saurait pourquoi.
+          # Deux commits différents peuvent produire le même binaire — une
+          # PR qui ne touche que la documentation, par exemple. La garde de
+          # l'étape précédente compare les SHA et ne voit pas ce cas ; celle-ci
+          # compare ce qui joue réellement.
           a=$(md5sum /tmp/candidat  | cut -d' ' -f1)
           b=$(md5sum /tmp/reference | cut -d' ' -f1)
           echo "candidat  $a"
           echo "reference $b"
           if [ "$a" = "$b" ]; then
-            echo "::error::les deux binaires sont identiques : il n'y a rien à mesurer"
+            echo "::error::les deux binaires sont identiques bien que les commits diffèrent : il n'y a rien à mesurer"
             exit 1
           fi
 
       - name: Arbitre
         run: tools/setup-arbiters.sh
 
-      # Le point de fonctionnement effectif dépend de la vitesse du runner, et
-      # elle varie du simple au double. On la mesure au lieu de la supposer.
+      # Le point de fonctionnement effectif dépend de la vitesse du runner. On
+      # la mesure à chaque exécution au lieu de la supposer stable — c'est
+      # précisément ce qui a permis de découvrir qu'elle l'était.
       - name: Étalonner le runner
         id: etalon
         shell: bash
@@ -123,9 +169,16 @@ jobs:
           sortie=$(/tmp/reference bench 10)
           echo "$sortie"
           nps=$(echo "$sortie" | awk '/Nodes\/second/ {print $NF}')
-          prof=$(printf 'uci\nisready\nposition startpos\ngo movetime 250\n' \
-                 | timeout 60 /tmp/reference 2>/dev/null \
-                 | awk '/^info depth/ {d=$3} END {print d+0}')
+          # Le `sleep` n'est pas décoratif : sans lui, stdin se ferme dès que
+          # `printf` a fini, le moteur lit EOF et INTERROMPT sa recherche. La
+          # sonde rendait alors 4 au lieu de 10 — un chiffre faux et plausible,
+          # le pire genre. C'est le piège consigné le 13 sept. 2026, que j'ai
+          # rediagnostiqué le matin du 16 puis réintroduit ici le même jour.
+          prof=$( { printf 'uci\nisready\nposition startpos\ngo movetime 250\n'
+                    sleep 3
+                    printf 'quit\n'; } \
+                  | timeout 60 /tmp/reference 2>/dev/null \
+                  | awk '/^info depth/ {d=$3} END {print d+0}')
           echo "nps=$nps"            >> "$GITHUB_OUTPUT"
           echo "profondeur=$prof"    >> "$GITHUB_OUTPUT"
           echo "coeurs=$(nproc)"     >> "$GITHUB_OUTPUT"
@@ -178,18 +231,21 @@ jobs:
             echo
             echo "| | |"
             echo "|---|---|"
-            echo "| candidat | \`${{ inputs.candidat }}\` |"
-            echo "| référence | \`${{ inputs.reference }}\` |"
+            echo "| candidat | \`${{ inputs.candidat }}\` → \`${{ steps.refs.outputs.candidat }}\` |"
+            echo "| référence | \`${{ inputs.reference }}\` → \`${{ steps.refs.outputs.reference }}\` |"
             echo "| cadence | \`${{ inputs.cadence }}\` |"
             echo "| graine des ouvertures | \`${{ inputs.graine }}\` |"
             echo "| cœurs du runner | ${{ steps.etalon.outputs.coeurs }} |"
             echo "| **nœuds/s au bench** | **${{ steps.etalon.outputs.nps }}** |"
             echo "| profondeur en 250 ms | ${{ steps.etalon.outputs.profondeur }} |"
             echo
-            echo "> La vitesse du runner fixe le point de fonctionnement réel."
-            echo "> Un runner deux fois plus lent joue une cadence deux fois"
-            echo "> plus courte. Comparer ces deux lignes avant de comparer"
-            echo "> deux verdicts."
+            echo "> La vitesse du runner fixe le point de fonctionnement réel :"
+            echo "> à cadence horloge, une machine plus lente atteint une"
+            echo "> profondeur plus faible. Mesuré le 16 sept. 2026, l'écart"
+            echo "> entre ce runner et le conteneur de session est de ±10 %,"
+            echo "> donc les deux se comparent. **Vérifier ce chiffre avant de"
+            echo "> comparer ce verdict à un autre** — c'est la raison d'être"
+            echo "> de cette ligne, pas une formalité."
             echo
             echo '### Verdict'
             echo

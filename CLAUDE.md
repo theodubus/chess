@@ -255,6 +255,24 @@ une mesure, pas une préférence.
 - **Le SPRT tire ses ouvertures au hasard : sans `-srand`, rien n'est
   rejouable.** `tools/sprt.sh` fixe désormais la graine et l'affiche.
 
+- **Le code retiré se garde dans `tools/attic/`, jamais par un SHA de commit.**
+  La pratique était de désigner le commit — « le code retiré reste lisible dans
+  `15028fa` ». **Elle a cassé le 16 sept. 2026** : la PR #11 fusionnée en
+  `squash` a remplacé les commits de la branche par un commit neuf, GitHub a
+  supprimé la branche, et la première exécution de `match.yml` a échoué sur
+  `fatal: invalid reference: 498a01a`. Une rustine versionnée ne peut pas subir
+  ça — elle survit aux squashs, aux suppressions de branche et aux politiques
+  de collecte. Voir `tools/attic/README.md` : quand y déposer une rustine, et
+  pourquoi celle de PVS ne s'applique plus.
+  <br>**Fusionner en `merge` et non en `squash`** reste préférable, pour garder
+  l'historique lisible — les PR #1 à #5 l'avaient fait. Mais ce n'est plus ce
+  qui protège le code retiré, et c'était une mauvaise fondation : *la
+  survie d'un artefact ne doit pas dépendre d'une politique de dépôt.*
+  <br><span>Deux constats vérifiés au passage, qui nuancent la panique
+  d'origine : GitHub conserve `refs/pull/N/head` de façon permanente, donc
+  `498a01a` restait atteignable par ce chemin ; et **le push d'étiquettes est
+  refusé sur ce dépôt** (403 avec le jeton de session), ce qui interdisait
+  la solution évidente.</span>
 - **Ne jamais construire une référence avec `git stash`.** Il emporte tout le
   travail non committé, outils de mesure compris — on finit par mesurer autre
   chose que ce qu'on croit. Utiliser `git worktree add --detach /tmp/ref <commit>`.
@@ -418,7 +436,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les trois critères d'acceptation, le bench |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
-| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé : un runner deux fois plus lent joue une cadence deux fois plus courte, donc un autre point de fonctionnement |
+| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus lente atteint une profondeur plus faible, donc un autre point de fonctionnement. **Mesuré le 16 sept. 2026 : l'écart runner/conteneur est de ±10 %, donc les deux se comparent.** L'étalonnage reste là pour le revérifier, pas pour le supposer |
 
 **Le cliquet de mutation.** `.github/mutation-baseline.txt` porte le nombre de
 survivants admis par fichier **et la raison écrite de chaque valeur non
@@ -453,7 +471,10 @@ issue ouverte par ce chemin le dit en tête.
 
 **Durée du balayage** : 35 puis 81 minutes sur deux exécutions réelles. Les
 runners partagés varient du simple au double — ne pas caler un rendez-vous
-serré dessus.
+serré dessus. **Ce chiffre porte sur un débit de COMPILATION**, et ne dit rien
+de la vitesse de recherche : celle-ci ne varie que de ±10 % entre le runner et
+le conteneur, mesurée le 16 sept. 2026. Confondre les deux m'a fait écrire une
+réserve fausse dans `match.yml`.
 
 **Que faire quand le verdict est rouge.** Le critère de tri est un arbitrage
 utilisateur du 15 sept. 2026 : **corriger au fil ce qui touche aux règles du
