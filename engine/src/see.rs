@@ -104,41 +104,29 @@ pub fn capture_value(board: &Board, mv: Move) -> Option<i32> {
     )
 }
 
-/// Vrai si `square` est attaqué par un homme de `by`, dans l'occupation donnée.
-///
-/// **Géométrie pure** : une pièce clouée attaque quand même, conformément à
-/// l'invariant du projet sur `is_attacked`. Prend l'occupation en paramètre
-/// plutôt que de la lire du plateau, parce qu'un échange la fait évoluer — et
-/// c'est ce qui donne les attaques en rayons X gratuitement : la tour cachée
-/// derrière le fou qui vient de prendre apparaît d'elle-même dès que le fou
-/// quitte `occupied`.
-///
-/// Confrontée à `python-chess` : **zéro écart sur 10 354 positions × camps**,
-/// soit 662 656 interrogations de case.
-#[must_use]
-pub fn attacked_by(board: &Board, square: Square, by: Color, occupied: BitBoard) -> bool {
-    let them = board.colors(by) & occupied;
-    let queens = board.pieces(Piece::Queen);
-    !(get_knight_moves(square) & board.pieces(Piece::Knight) & them).is_empty()
-        || !(get_king_moves(square) & board.pieces(Piece::King) & them).is_empty()
-        || !(get_bishop_moves(square, occupied) & (board.pieces(Piece::Bishop) | queens) & them)
-            .is_empty()
-        || !(get_rook_moves(square, occupied) & (board.pieces(Piece::Rook) | queens) & them)
-            .is_empty()
-        // Un pion de `by` attaque `square` s'il occupe une case d'où un pion de
-        // la couleur OPPOSÉE, posé sur `square`, capturerait. Ce retournement
-        // est la façon standard de poser la question — et exactement le genre de
-        // ligne qu'on écrit à l'envers sans que rien ne le signale, ce pourquoi
-        // elle est confrontée à un oracle plutôt que relue.
-        || !(get_pawn_attacks(square, !by) & board.pieces(Piece::Pawn) & them).is_empty()
-}
-
 /// Le moins cher des hommes de `side` qui attaquent `square`, s'il y en a un.
 ///
 /// Rend sa case et son type. L'ordre de parcours est celui de `Piece`, qui va
 /// du pion au roi — donc croissant en valeur, ce dont dépend la correction de
 /// l'échange : reprendre avec plus cher que nécessaire fausserait le compte.
-fn least_valuable_attacker(
+///
+/// **C'est la seule géométrie d'attaque du module**, et elle prend l'occupation
+/// en paramètre plutôt que de la lire du plateau, parce qu'un échange la fait
+/// évoluer. C'est ce qui donne les rayons X gratuitement : la tour cachée
+/// derrière le fou qui vient de prendre apparaît d'elle-même dès que le fou
+/// quitte `occupied`.
+///
+/// **Géométrie pure** : une pièce clouée attaque quand même, conformément à
+/// l'invariant du projet. Confrontée à `python-chess` sur la question « cette
+/// case est-elle attaquée par ce camp ? » — **zéro écart sur 10 354 positions ×
+/// camps**, soit 662 656 interrogations.
+///
+/// Une fonction `attacked_by` séparée a existé ici et a été **supprimée** : elle
+/// disait exactement `least_valuable_attacker(…).is_some()`, personne ne
+/// l'appelait, et le balayage par mutation l'a montrée d'un coup — trente-cinq
+/// survivants sur une seule fonction, ce qui est la signature du code mort.
+#[must_use]
+pub fn least_valuable_attacker(
     board: &Board,
     square: Square,
     side: Color,
@@ -367,6 +355,27 @@ mod tests {
         assert_eq!(
             see(&b, coup(&b, "a5d5")),
             VALUE[Piece::Pawn as usize] - VALUE[Piece::Rook as usize] + VALUE[Piece::Pawn as usize]
+        );
+    }
+
+    #[test]
+    fn une_piece_reprise_sur_la_huitieme_ne_vaut_pas_une_dame() {
+        // Seul un PION promeut en reprenant. Vérifié par exécution : après
+        // Rxa8, l'unique reprise est celle du roi b8. Distinguant — compter la
+        // tour blanche d'a8 comme une dame rendrait −480 au lieu de 0.
+        let b = board("rk6/8/8/8/8/8/8/R3K3 w - - 0 1");
+        assert_eq!(see(&b, coup(&b, "a1a8")), 0);
+    }
+
+    #[test]
+    fn lagresseur_quitte_bien_sa_case() {
+        // Vérifié : l'unique reprise est Nf7xe5, et plus rien ensuite.
+        // Distinguant — laisser la tour sur e2 lui ferait reprendre son propre
+        // échange, ce qu'aucune des autres positions ne révèle.
+        let b = board("4k3/5n2/8/4p3/8/8/4R3/4K3 w - - 0 1");
+        assert_eq!(
+            see(&b, coup(&b, "e2e5")),
+            VALUE[Piece::Pawn as usize] - VALUE[Piece::Rook as usize]
         );
     }
 
