@@ -7,7 +7,7 @@ d'un aveu sur la profondeur de recherche.
 
 > Statut : **recherche et évaluation en place, monothread**. Negamax avec
 > élagage alpha-bêta, approfondissement itératif, quiescence, table de
-> transposition et ordonnancement des coups, plus **cinq élagages avancés
+> transposition et ordonnancement des coups, plus **des élagages avancés
 > mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
 > d'aspiration, élagage delta en quiescence, futilité inverse. L'évaluation
 > couvre matériel, tables piece-square, paire de fous, mobilité, sécurité du
@@ -27,6 +27,13 @@ d'un aveu sur la profondeur de recherche.
 > (−18,9 → −51,6 au retrait, p ≈ 0,0004). Même sens dans les deux cas :
 > mesurer court sous-estime ce dont la valeur croît avec la profondeur. La
 > revalidation à cadence longue est en cours.
+>
+> **En cours de mesure (C19) :** l'élagage par **échange statique** en
+> quiescence — les captures qui perdent du matériel n'y sont plus examinées.
+> Mesuré déterministe : **−27,1 % de nœuds et −22,5 % de temps** à la
+> profondeur 10. Deux verdicts en vol, à `8+0,08` et à `30+0,3`, tous deux dans
+> `tools/README.md`. Tant qu'ils ne sont pas rendus, **ce n'est pas un gain,
+> c'est un candidat.**
 > Il n'a encore ni recherche parallèle, ni NNUE, ni interface.
 
 ## Structure
@@ -34,7 +41,7 @@ d'un aveu sur la profondeur de recherche.
 | Dossier | Contenu | Statut |
 |---|---|---|
 | `engine/` | Moteur UCI en Rust | Recherche et évaluation, monothread |
-| `ui/` | Interface TypeScript | Pas démarré |
+| `ui/` | Interface TypeScript | Pas démarré — consignes dans `ui/CLAUDE.md` |
 | `tools/` | Arbitres, livre d'ouvertures, SPRT | Opérationnel |
 
 Le moteur et l'interface ne communiquent que par le protocole UCI sur

@@ -393,6 +393,9 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-16 | **Le même seuil `6 + d²`, à `8+0,08` au lieu de `1+0,01`** | **+15,30 Elo ± 15,08** sur 1000 parties à longueur fixe. **Le signe s'inverse.** Contrôle à `1+0,01`, même protocole : **−21,57 ± 16,71**. Écart +36,9 Elo, z = 3,21, **p = 0,0013**. Voir ci-dessous. |
 | 2026-09-16 | **Retrait des fenêtres d'aspiration (D5), à `8+0,08`** | **H0 accepté** — **−51,56 Elo ± 15,67** sur 1154 parties, bornes `[-5, 0]`. Étalonnage du runner : 2 668 474 n/s, profondeur 10. **L'aspiration paie toujours, et bien plus qu'annoncé.** |
 | 2026-09-16 | Le même retrait, à `1+0,01` | **H0 accepté** — **−18,91 Elo ± 9,22** sur 3274 parties, bornes `[-5, 0]`. Étalonnage : 2 507 861 n/s, profondeur 10. |
+| 2026-09-16 | **Élagage par échange statique en quiescence (C19), à `8+0,08`** | **VERDICT EN COURS** — SPRT bornes `[0, 5]`, candidat `1f8bcc3` contre `4471868`. [run 35132265160](https://github.com/theodubus/chess/actions/runs/35132265160) |
+| 2026-09-16 | **Le même, à `30+0,3`** | **VERDICT EN COURS** — 1000 parties à longueur fixe, même graine d'ouvertures donc apparié au précédent. Contrôle de cadence : cet élagage jette des sacrifices, et c'est exactement le genre d'effet qui peut décroître avec la profondeur. |
+| 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : l'aspiration valait +29,7 mesuré avant que l'élagage
@@ -430,7 +433,37 @@ La dernière ligne est le point le plus extrême du tableau : **la plus petite
 le 16 sept. — 234 370 nœuds à la profondeur 7 sans aspiration contre 223 577
 avec. Et c'est la même technique que la quatrième ligne, mesurée à une autre
 cadence : ÷ 1,07 → +30 à `1+0,01`. **Le rapport de nœuds n'a pas bougé ; l'Elo
-a été multiplié par 1,7.**
+a été multiplié par 1,7.** *(Ces deux nombres datent d'avant C19 : la référence
+du bench vaut 148 786 nœuds depuis. Un rapport de nœuds se lit entre les deux
+binaires d'une même mesure, jamais contre le chiffre courant.)*
+
+**C19 a ajouté un troisième cas au tableau, avant même son verdict.** L'échange
+statique dans l'**ordonnancement** des coups a été bissecté par le palier où
+atterrissent les captures perdantes, en nœuds déterministes à la profondeur 10,
+référence 1 570 498 :
+
+| palier des captures perdantes | nœuds | vs réf |
+|---|---|---|
+| après TOUS les coups tranquilles | 2 067 278 | **+31,6 %** |
+| entre les killers et les coups tranquilles | 1 672 542 | +6,5 % |
+| dans le palier des captures, après les gagnantes | 1 504 134 | −4,2 % |
+
+Le premier palier est **le conseil du manuel** — c'est ce que font les moteurs
+modernes — et c'est le pire des trois ici, d'un facteur qui ne laisse aucune
+place au doute. Troisième fois que « standard donc bon » se fait démentir sur
+ce dépôt, après PVS et après la coupure du manuel dans `see` lui-même.
+
+Et le seul palier qui rétrécit l'arbre **coûte le temps qu'il gagne** : ~836 ms
+contre ~812 ms à la profondeur 10, quatre paires gagnantes sur cinq pour la
+référence. Les appels à `see` se paient sur **57,2 %** des captures notées.
+
+**Surtout, l'élagage rend l'ordonnancement inutile.** Une fois les captures
+perdantes sautées en quiescence, les réordonner n'apporte plus que −1 % de
+nœuds pour +1,6 % de temps : 1 145 406 contre 1 133 970. La raison est
+structurelle — la quiescence porte 90 % des nœuds, et les captures que
+l'ordonnancement déplaçait n'y sont plus recherchées du tout. **Deux
+dispositifs que tous les manuels présentent en paire, et le second absorbe le
+premier.** C'est pourquoi C19 n'a qu'un seul verdict et non deux.
 
 L'élagage par compte est le cas le plus net du tableau, et il a deux points.
 Retirer **19 %** des nœuds coûte 25 Elo ; en retirer **14 %** en coûte 13. Le
