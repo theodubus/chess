@@ -255,23 +255,24 @@ une mesure, pas une préférence.
 - **Le SPRT tire ses ouvertures au hasard : sans `-srand`, rien n'est
   rejouable.** `tools/sprt.sh` fixe désormais la graine et l'affiche.
 
-- **Ne jamais fusionner une PR en `squash` sur ce dépôt.** La documentation de
-  ce projet **désigne du code retiré par son SHA** — « le code retiré reste
-  lisible dans `15028fa` », « y repartir plutôt que le réécrire ». Un squash
-  remplace les commits de la branche par un seul commit neuf, et GitHub
-  supprime la branche dans la foulée : **les SHA que la doc désigne deviennent
-  inatteignables**, donc collectables. Payé le 16 sept. 2026 — la PR #11
-  fusionnée en squash a rendu `498a01a` introuvable, et la première exécution
-  de `match.yml` a échoué sur `fatal: invalid reference`. La branche a été
-  repoussée pour restaurer l'atteignabilité, puis archivée sous
-  `archive/code-retire-pvs-lmp` — **cette branche ne se supprime pas** : c'est
-  elle qui garde `498a01a` (LMP) et la lignée de `15028fa` (PVS) atteignables.
-  **Fusionner en `merge`**, qui conserve l'historique ; les PR #1 à #5
-  l'avaient fait, et leurs commits vivent encore.
-  <br>Une étiquette serait plus robuste qu'une branche — un tag ne bouge pas —
-  mais **le push d'étiquettes est refusé sur ce dépôt** (403 avec le jeton de
-  session, constaté le 16 sept. 2026). À faire à la main le jour où c'est
-  possible : `git tag -a code-retire/lmp 498a01a` et `code-retire/pvs 15028fa`.
+- **Le code retiré se garde dans `tools/attic/`, jamais par un SHA de commit.**
+  La pratique était de désigner le commit — « le code retiré reste lisible dans
+  `15028fa` ». **Elle a cassé le 16 sept. 2026** : la PR #11 fusionnée en
+  `squash` a remplacé les commits de la branche par un commit neuf, GitHub a
+  supprimé la branche, et la première exécution de `match.yml` a échoué sur
+  `fatal: invalid reference: 498a01a`. Une rustine versionnée ne peut pas subir
+  ça — elle survit aux squashs, aux suppressions de branche et aux politiques
+  de collecte. Voir `tools/attic/README.md` : quand y déposer une rustine, et
+  pourquoi celle de PVS ne s'applique plus.
+  <br>**Fusionner en `merge` et non en `squash`** reste préférable, pour garder
+  l'historique lisible — les PR #1 à #5 l'avaient fait. Mais ce n'est plus ce
+  qui protège le code retiré, et c'était une mauvaise fondation : *la
+  survie d'un artefact ne doit pas dépendre d'une politique de dépôt.*
+  <br><span>Deux constats vérifiés au passage, qui nuancent la panique
+  d'origine : GitHub conserve `refs/pull/N/head` de façon permanente, donc
+  `498a01a` restait atteignable par ce chemin ; et **le push d'étiquettes est
+  refusé sur ce dépôt** (403 avec le jeton de session), ce qui interdisait
+  la solution évidente.</span>
 - **Ne jamais construire une référence avec `git stash`.** Il emporte tout le
   travail non committé, outils de mesure compris — on finit par mesurer autre
   chose que ce qu'on croit. Utiliser `git worktree add --detach /tmp/ref <commit>`.

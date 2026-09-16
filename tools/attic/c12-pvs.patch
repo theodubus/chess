@@ -1,0 +1,171 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 670ed20..fd1bf82 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -215,6 +215,13 @@ pub struct Search {
+     history: Vec<i32>,
+     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
+     lmr: Vec<i32>,
++    /// Désactive PVS, pour qu'un test puisse comparer les deux régimes.
++    ///
++    /// Le champ n'existe pas hors des tests, et la condition qui le lit est
++    /// gardée par `cfg!(test)` : en release le compilateur replie la branche
++    /// à `false` et il n'en reste rien dans le binaire.
++    #[cfg(test)]
++    full_window_only: bool,
+ }
+ 
+ impl Search {
+@@ -235,6 +242,8 @@ impl Search {
+             killers: vec![[0; 2]; MAX_PLY],
+             history: vec![0; 64 * 64],
+             lmr: build_lmr_table(),
++            #[cfg(test)]
++            full_window_only: false,
+         }
+     }
+ 
+@@ -694,9 +703,57 @@ impl Search {
+             };
+ 
+             self.path.push(child.hash());
+-            let mut score = -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha);
+-            // La réduction a menti : ce coup mérite la profondeur pleine.
+-            if reduction > 0 && score > alpha {
++            // Recherche à variante principale.
++            //
++            // L'ordonnancement prétend que le premier coup est le meilleur. Si
++            // c'est vrai, les suivants n'ont pas besoin d'un score : il suffit
++            // de savoir qu'ils ne dépassent pas `alpha`. Une fenêtre nulle le
++            // dit bien plus vite qu'une fenêtre pleine, parce qu'elle coupe à
++            // chaque nœud de l'arbre en dessous et pas seulement ici.
++            //
++            // Le pari se paie quand il échoue : un coup qui dépasse `alpha`
++            // doit être re-cherché en fenêtre pleine, faute de quoi on n'aurait
++            // de lui qu'un minorant, sans savoir de combien il est meilleur.
++            // Voir `full_window_only` : en release, cette lecture n'existe pas.
++            #[cfg(test)]
++            let full_window_only = self.full_window_only;
++            #[cfg(not(test))]
++            let full_window_only = false;
++
++            let mut score = if index == 0 {
++                // C'est ce coup qui établit la variante principale : il lui
++                // faut une vraie fenêtre, et donc un vrai score.
++                -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha)
++            } else if full_window_only {
++                // Régime d'avant PVS, conservé pour qu'un test puisse isoler
++                // l'effet de la seule fenêtre nulle. La réduction reste en
++                // place : sans quoi l'on comparerait aussi LMR à son absence,
++                // c'est-à-dire deux choses au lieu d'une.
++                let reduced = -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha);
++                if reduction > 0 && reduced > alpha {
++                    -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha)
++                } else {
++                    reduced
++                }
++            } else {
++                let null_window =
++                    -self.negamax(&child, depth - 1 - reduction, ply + 1, -alpha - 1, -alpha);
++                // La réduction a menti : ce coup mérite la profondeur pleine.
++                // On reste en fenêtre nulle, la question étant toujours la
++                // même — dépasse-t-il `alpha` ?
++                if reduction > 0 && null_window > alpha {
++                    -self.negamax(&child, depth - 1, ply + 1, -alpha - 1, -alpha)
++                } else {
++                    null_window
++                }
++            };
++
++            // La fenêtre nulle a menti : le coup dépasse `alpha` sans atteindre
++            // `beta`, donc il devient la variante principale et il faut son
++            // score exact. Dans un nœud déjà en fenêtre nulle (`beta` valant
++            // `alpha + 1`), la condition est inatteignable et la re-recherche
++            // ne se produit jamais — c'est voulu.
++            if index > 0 && !full_window_only && score > alpha && score < beta {
+                 score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha);
+             }
+             self.path.pop();
+@@ -1404,6 +1461,82 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn la_fenetre_nulle_ne_change_pas_le_coup_trouve_sur_un_mat() {
++        // PVS ne doit jamais coûter un mat : un coup de mat dépasse forcément
++        // alpha, donc il est re-cherché en fenêtre pleine. Si la re-recherche
++        // manquait, le mat serait vu comme un simple minorant et pourrait être
++        // classé derrière un autre coup.
++        assert_eq!(
++            best(
++                "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
++                7
++            ),
++            "f3f7"
++        );
++        assert_eq!(
++            best(
++                "rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2",
++                7
++            ),
++            "d8h4"
++        );
++    }
++
++    #[test]
++    fn la_fenetre_nulle_rend_le_meme_score_que_la_fenetre_pleine() {
++        // Propriété centrale de PVS : il accélère, il ne décide pas. Le score
++        // exact d'un nœud ne doit pas dépendre du fait qu'on ait d'abord
++        // sondé ses coups en fenêtre nulle.
++        //
++        // Deux instances neuves, donc deux tables vides : les deux mesures
++        // sont déterministes et ne diffèrent que par le régime de fenêtre. Un
++        // écart signalerait une re-recherche manquante.
++        for fen in [
++            "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1",
++            "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
++            "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
++            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
++        ] {
++            let b = board(fen);
++            let avec = search().negamax(&b, 5, 0, -INFINITY, INFINITY);
++
++            let mut sans = search();
++            sans.full_window_only = true;
++            let sans = sans.negamax(&b, 5, 0, -INFINITY, INFINITY);
++
++            assert_eq!(avec, sans, "{fen}");
++            assert!(avec.abs() < MATE_THRESHOLD, "{fen} : score invraisemblable");
++        }
++    }
++
++    #[test]
++    fn le_premier_coup_est_cherche_en_fenetre_pleine() {
++        // Si le premier coup était lui aussi sondé en fenêtre nulle, aucun
++        // nœud ne rendrait jamais de score exact et la variante principale
++        // serait vide. Elle doit rester complète et légale.
++        let position =
++            Position::from_fen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1")
++                .unwrap();
++        let limits = Limits {
++            depth: Some(6),
++            ..Limits::default()
++        };
++        let mut lignes = Vec::new();
++        let mut s = search();
++        s.go(&position, &limits, |info| lignes.push(info.pv.clone()));
++        let derniere = lignes.last().unwrap();
++        assert!(
++            derniere.len() >= 2,
++            "la variante principale doit survivre à PVS : {derniere:?}"
++        );
++        let mut b = position.board().clone();
++        for mv in derniere {
++            assert!(b.is_legal(*mv), "coup illégal dans la PV : {mv}");
++            b.play_unchecked(*mv);
++        }
++    }
++
+     #[test]
+     fn le_tirage_au_sort_reste_disponible_et_legal() {
+         let b = Board::default();

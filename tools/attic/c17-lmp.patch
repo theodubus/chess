@@ -1,0 +1,416 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 90c7ff2..26818e8 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -79,6 +79,37 @@ const LMR_MIN_DEPTH: i32 = 3;
+ /// le travail de l'ordonnancement.
+ const LMR_FIRST_REDUCED: usize = 3;
+ 
++/// Profondeur restante maximale à laquelle l'élagage par compte de coups
++/// s'applique.
++///
++/// **Choisi par la mesure, pas par convention.** Instrumenté le 15 sept. 2026
++/// sur 150 positions tirées de vraies parties, recherche à profondeur 10 :
++/// **75,6 % des nœuds éligibles sont à la profondeur 1**, et passer de 3 à 8
++/// change l'élagage de 0,2 point et le risque de 0,005. Il y a un vrai
++/// plateau ; 3 est là où il commence.
++const LMP_MAX_DEPTH: i32 = 3;
++
++/// Nombre de coups tranquilles toujours examinés, avant le terme quadratique.
++///
++/// **La mesure a borné le risque, elle n'a pas choisi cette valeur** — et c'est
++/// la différence avec `RFP_MARGIN`, dont la sensibilité mesurée était faible.
++/// Ici le compromis est **monotone et sans genou** : au seuil `base + d²`, sur
++/// le même échantillon, la part des coups tranquilles élagués et celle des
++/// montées d'`alpha` détruites tombent ensemble, continûment.
++///
++/// | base | tranquilles élagués | montées d'`alpha` détruites |
++/// |---|---|---|
++/// | 3 (conventionnel) | 68,5 % | **6,1 %** |
++/// | **6** | **58,4 %** | **3,8 %** |
++/// | 8 | 52,0 % | 3,0 % |
++/// | 12 | 39,8 % | 2,0 % |
++///
++/// 6 est le premier candidat soumis au SPRT : il garde l'essentiel de
++/// l'élagage disponible en divisant par 1,6 le risque de la valeur
++/// conventionnelle. **Si le verdict est H0, bissecter par le seuil avant de
++/// conclure quoi que ce soit sur LMP lui-même.**
++const LMP_BASE: usize = 6;
++
+ /// Profondeur à partir de laquelle on ose une fenêtre étroite.
+ ///
+ /// En dessous, le score d'une itération à l'autre bouge trop pour qu'une
+@@ -296,6 +327,9 @@ pub struct Search {
+     /// 14 sept. 2026, et qui rend le test creux.
+     #[cfg(test)]
+     delta_pruning: bool,
++    /// Permet à un test de désactiver le seul élagage par compte de coups.
++    #[cfg(test)]
++    late_move_pruning: bool,
+ }
+ 
+ impl Search {
+@@ -323,6 +357,8 @@ impl Search {
+             reverse_futility: true,
+             #[cfg(test)]
+             delta_pruning: true,
++            #[cfg(test)]
++            late_move_pruning: true,
+         }
+     }
+ 
+@@ -836,9 +872,22 @@ impl Search {
+         let mut best_move = None;
+         let in_check = !board.checkers().is_empty();
+ 
++        let mut quiets_seen = 0usize;
++
+         for (index, &(mv, _)) in buffer[..count].iter().enumerate() {
+             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
+ 
++            // Élagage par compte de coups : on abandonne les coups tranquilles
++            // restants. `break` et non `continue`, parce que l'ordonnancement
++            // place toutes les captures avant tous les coups tranquilles — ce
++            // qui reste derrière est tranquille, et moins bien classé encore.
++            if self.late_move_prune(quiet, in_check, ply, depth, best, quiets_seen) {
++                break;
++            }
++            if quiet {
++                quiets_seen += 1;
++            }
++
+             let mut child = board.clone();
+             child.play_unchecked(mv);
+ 
+@@ -1030,6 +1079,77 @@ impl Search {
+         (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
+     }
+ 
++    /// Vrai si les coups tranquilles restants doivent être abandonnés.
++    ///
++    /// # Ce que ça fait, et en quoi c'est différent de LMR
++    ///
++    /// La réduction des coups tardifs cherche moins profondément **et se
++    /// rattrape** : si la recherche réduite dépasse `alpha`, on recommence à
++    /// profondeur pleine. L'élagage par compte de coups, lui, **ne regarde
++    /// pas**. Un bon coup mal classé est perdu sans trace.
++    ///
++    /// # Ce que ça coûte, mesuré avant d'être écrit
++    ///
++    /// C'est le **premier élagage du projet sans argument de borne**. L'élagage
++    /// delta *majore* le gain d'une capture, donc il ne coupe que ce qui ne
++    /// pouvait pas atteindre `alpha` ; la futilité inverse compare à une borne ;
++    /// le coup nul a son hypothèse et sa garde. Ici, le seul appui est
++    /// « l'ordonnancement a probablement raison ».
++    ///
++    /// Instrumenté le 15 sept. 2026 sur des positions tirées de vraies parties :
++    /// au seuil retenu, LMP élague **58,4 %** des coups tranquilles et détruit
++    /// **3,8 %** des montées d'`alpha`. Ce taux ne tombe jamais à zéro, à aucun
++    /// réglage. **Confiance sur le signe du gain : inconnue.**
++    ///
++    /// # Les gardes, et ce que chacune écarte
++    ///
++    /// - **les captures et promotions ne sont jamais élaguées** — et la garde
++    ///   est double : la condition exige un coup tranquille, et l'ordonnancement
++    ///   place *toutes* les captures avant *tous* les coups tranquilles, si bien
++    ///   qu'interrompre la boucle n'en saute aucune. Un test vérifie cet ordre,
++    ///   sans quoi la sûreté reposerait sur une lecture des barèmes ;
++    /// - **en échec**, toute parade est obligatoire : compter les coups n'a
++    ///   aucun sens quand ils sont tous forcés ;
++    /// - **jamais à la racine**, où il faut rendre un coup et pas un score ;
++    /// - **au-delà de `LMP_MAX_DEPTH`**, un coup tardif a encore la place de se
++    ///   révéler bon ;
++    /// - **tant qu'aucun coup n'a rendu mieux qu'une borne de mat** — ce qui
++    ///   couvre deux cas d'un coup : on ne coupe pas quand on se fait mater, où
++    ///   la seule défense peut être un coup tranquille très mal classé ; et
++    ///   `best` valant `-INFINITY` avant le premier coup, on n'élague jamais un
++    ///   nœud dont aucun coup n'a encore été cherché.
++    ///
++    /// # Ce que l'élagage fait au score rendu
++    ///
++    /// Le nœud n'a pas examiné tous ses coups : `best` est un **minorant** de sa
++    /// vraie valeur, et la borne stockée dans la table devient une estimation.
++    /// C'est déjà le cas après une coupure par coup nul ou par futilité inverse,
++    /// et pour la même raison — **un élagage vers l'avant a troqué la sûreté
++    /// contre de la profondeur bien avant d'arriver à la table**. Traiter LMP
++    /// autrement mesurerait autre chose que ce que mesurent les moteurs qui
++    /// l'emploient.
++    fn late_move_prune(
++        &self,
++        quiet: bool,
++        in_check: bool,
++        ply: usize,
++        depth: i32,
++        best: i32,
++        quiets_seen: usize,
++    ) -> bool {
++        #[cfg(test)]
++        if !self.late_move_pruning {
++            return false;
++        }
++
++        quiet
++            && !in_check
++            && ply > 0
++            && depth <= LMP_MAX_DEPTH
++            && best > -MATE_THRESHOLD
++            && quiets_seen >= lmp_limit(depth)
++    }
++
+     /// Vrai si cette capture ne peut pas ramener la position jusqu'à `alpha`.
+     ///
+     /// Mesuré avant d'être écrit, le 14 sept. 2026 : **90 % des nœuds du moteur
+@@ -1098,6 +1218,20 @@ pub fn captured_piece(board: &Board, mv: Move) -> Option<Piece> {
+ }
+ 
+ /// Côté de la table de réductions, en profondeur comme en rang de coup.
++/// Nombre de coups tranquilles examinés avant d'abandonner les suivants.
++///
++/// Fonction à part, et non une expression enfouie dans la boucle : c'est ce qui
++/// la rend **assertable**. Le motif a déjà servi trois fois sur ce projet —
++/// `parse_go`, `random_seed`, `time_budget_ms` — et chaque fois pour la même
++/// raison : un invariant qu'on ne peut pas appeler est un invariant qu'aucun
++/// test ne protège.
++///
++/// Le terme quadratique dit que plus il reste de profondeur, plus un coup tardif
++/// a de chances de se révéler bon, donc plus on en examine avant de renoncer.
++fn lmp_limit(depth: i32) -> usize {
++    LMP_BASE + (depth.max(0) as usize).pow(2)
++}
++
+ const LMR_TABLE_SIDE: usize = 64;
+ 
+ /// Précalcule les réductions.
+@@ -1427,6 +1561,147 @@ mod tests {
+         s
+     }
+ 
++    /// Construit une recherche dont le seul élagage par compte de coups est
++    /// désactivé.
++    fn search_sans_lmp() -> Search {
++        let mut s = search();
++        s.late_move_pruning = false;
++        s
++    }
++
++    #[test]
++    fn le_seuil_de_compte_croit_avec_la_profondeur() {
++        // Valeurs relevées sur la formule, pas recopiées d'une intention :
++        // plus il reste de profondeur, plus un coup tardif a la place de se
++        // révéler bon, donc plus on en examine avant de renoncer.
++        assert_eq!(lmp_limit(1), LMP_BASE + 1);
++        assert_eq!(lmp_limit(2), LMP_BASE + 4);
++        assert_eq!(lmp_limit(3), LMP_BASE + 9);
++        // Strictement croissante : sans quoi une profondeur plus grande
++        // élaguerait plus tôt, ce qui est l'inverse de l'intention.
++        for d in 1..LMP_MAX_DEPTH {
++            assert!(
++                lmp_limit(d) < lmp_limit(d + 1),
++                "le seuil doit croître : {} à d={d}, {} à d={}",
++                lmp_limit(d),
++                lmp_limit(d + 1),
++                d + 1
++            );
++        }
++    }
++
++    #[test]
++    fn lelagage_par_compte_retire_des_noeuds() {
++        let position = Position::from_fen(crate::bench::BENCH_FENS[1]).unwrap();
++        let limits = Limits {
++            depth: Some(7),
++            ..Limits::default()
++        };
++        let mut avec = search();
++        avec.go(&position, &limits, |_| {});
++        let mut sans = search_sans_lmp();
++        sans.go(&position, &limits, |_| {});
++        assert!(
++            avec.nodes() < sans.nodes(),
++            "l'élagage par compte ne retire rien : {} avec, {} sans",
++            avec.nodes(),
++            sans.nodes()
++        );
++    }
++
++    #[test]
++    fn seuls_les_coups_tranquilles_sont_elagues() {
++        // Une capture n'est jamais élaguée, quel que soit le compte atteint.
++        let s = search();
++        assert!(!s.late_move_prune(false, false, 1, 1, 0, 1_000));
++        // Le même appel sur un coup tranquille coupe, lui : c'est ce qui prouve
++        // que le test mesure la garde et non l'absence de condition.
++        assert!(s.late_move_prune(true, false, 1, 1, 0, 1_000));
++    }
++
++    #[test]
++    fn toutes_les_captures_precedent_tous_les_coups_tranquilles() {
++        // C'est l'invariant qui rend `break` licite plutôt que `continue` :
++        // interrompre la boucle ne saute jamais une capture. Il repose sur les
++        // barèmes d'ordonnancement, donc il se vérifie au lieu de se lire.
++        let b = board("r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4");
++        let s = search();
++        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
++        let count = s.ordered_moves(&b, false, None, 1, &mut buffer);
++        let mut tranquille_vu = false;
++        let mut captures = 0;
++        for &(mv, _) in &buffer[..count] {
++            let quiet = captured_piece(&b, mv).is_none() && mv.promotion.is_none();
++            if quiet {
++                tranquille_vu = true;
++            } else {
++                captures += 1;
++                assert!(
++                    !tranquille_vu,
++                    "une capture ({mv}) arrive après un coup tranquille : `break` sauterait une capture"
++                );
++            }
++        }
++        assert!(captures > 0, "la position doit offrir des captures");
++        assert!(
++            tranquille_vu,
++            "la position doit offrir des coups tranquilles"
++        );
++    }
++
++    #[test]
++    fn en_echec_lelagage_par_compte_ne_coupe_jamais() {
++        // Toute parade est obligatoire : compter les coups n'a aucun sens
++        // quand ils sont tous forcés.
++        let s = search();
++        assert!(!s.late_move_prune(true, true, 1, 1, 0, 1_000));
++        assert!(s.late_move_prune(true, false, 1, 1, 0, 1_000));
++    }
++
++    #[test]
++    fn a_la_racine_lelagage_par_compte_ne_coupe_jamais() {
++        // Il y faut un coup à jouer, pas seulement un score.
++        let s = search();
++        assert!(!s.late_move_prune(true, false, 0, 1, 0, 1_000));
++        assert!(s.late_move_prune(true, false, 1, 1, 0, 1_000));
++    }
++
++    #[test]
++    fn au_dela_de_la_profondeur_maximale_lelagage_par_compte_ne_coupe_jamais() {
++        // Un coup tardif a encore la place de se révéler bon.
++        let s = search();
++        assert!(!s.late_move_prune(true, false, 1, LMP_MAX_DEPTH + 1, 0, 1_000));
++        // Et il coupe pile à la borne : sans ce second appel, le test passerait
++        // aussi avec une borne posée n'importe où plus bas.
++        assert!(s.late_move_prune(true, false, 1, LMP_MAX_DEPTH, 0, 1_000));
++    }
++
++    #[test]
++    fn contre_un_mat_subi_lelagage_par_compte_ne_coupe_jamais() {
++        // La seule défense peut être un coup tranquille très mal classé.
++        let s = search();
++        assert!(!s.late_move_prune(true, false, 1, 1, -MATE + 5, 1_000));
++        assert!(s.late_move_prune(true, false, 1, 1, -MATE_THRESHOLD + 1, 1_000));
++    }
++
++    #[test]
++    fn aucun_elagage_avant_davoir_cherche_un_coup() {
++        // `best` vaut `-INFINITY` tant qu'aucun coup n'a été cherché : le nœud
++        // rendrait alors `-INFINITY` sans coup, ce qui empoisonnerait la table.
++        // La garde de mat couvre ce cas, et ce test est ce qui l'établit.
++        let s = search();
++        assert!(!s.late_move_prune(true, false, 1, 1, -INFINITY, 1_000));
++    }
++
++    #[test]
++    fn le_compte_doit_etre_atteint_pour_elaguer() {
++        // Un coup en deçà du seuil : rien n'est élagué.
++        let s = search();
++        let seuil = lmp_limit(1);
++        assert!(!s.late_move_prune(true, false, 1, 1, 0, seuil - 1));
++        assert!(s.late_move_prune(true, false, 1, 1, 0, seuil));
++    }
++
+     #[test]
+     fn la_futilite_inverse_retire_des_noeuds() {
+         let position = Position::from_fen(crate::bench::BENCH_FENS[1]).unwrap();
+@@ -1975,15 +2250,26 @@ mod tests {
+ 
+     #[test]
+     fn un_pari_faux_converge_tout_de_meme() {
+-        // Pari maximalement mauvais sans franchir le seuil de mat : la boucle
+-        // d'élargissement doit terminer et rendre un score exact, pas une
+-        // borne. Sans le recentrage du plafond, elle tournerait longtemps ;
+-        // sans l'élargissement géométrique, elle ne terminerait pas.
++        // Ce que ce test protège, et que son nom dit : **la boucle
++        // d'élargissement**. Sans le recentrage du plafond elle tournerait
++        // longtemps ; sans l'élargissement géométrique elle ne terminerait pas ;
++        // et elle ne doit rendre qu'un score tombé STRICTEMENT dans sa fenêtre,
++        // jamais une borne.
++        //
++        // **Mesuré avec l'élagage par compte désactivé, et c'est délibéré.**
++        // Le 16 sept. 2026, C17 a fait tomber ce test : l'assertion
++        // `score == reference` comparait une recherche à fenêtre étroite à une
++        // recherche à fenêtre pleine, et LMP rend les deux différentes — voir
++        // `lelagage_par_compte_rend_le_score_dependant_du_pari`. La propriété
++        // que ce test-ci vise n'a jamais été celle-là : c'est la convergence de
++        // la boucle, et LMP n'y est qu'un facteur confondant. Le désactiver
++        // rend le test PLUS net, pas plus indulgent — la propriété perdue est
++        // inscrite dans le test voisin plutôt qu'effacée d'ici.
+         let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
+-        let reference = search().negamax(&b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
++        let reference = search_sans_lmp().negamax(&b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
+ 
+         for previous in [MATE_THRESHOLD - 1, -(MATE_THRESHOLD - 1), 5_000, -5_000] {
+-            let mut s = search();
++            let mut s = search_sans_lmp();
+             let score = s.search_root(&b, 5, 8, previous, &mut ardoise());
+             assert!(
+                 score.abs() < MATE_THRESHOLD,
+@@ -1999,6 +2285,51 @@ mod tests {
+         }
+     }
+ 
++    #[test]
++    fn lelagage_par_compte_rend_le_score_dependant_du_pari() {
++        // **Ce que C17 coûte, inscrit plutôt que subi.** Un élagage vers
++        // l'avant qui dépend de l'endroit où les coupures tombent dépend donc
++        // de la fenêtre : deux paris d'aspiration différents explorent des
++        // arbres différents et rendent des scores différents. Sans LMP le score
++        // était le même pour tous les paris ; avec lui il ne l'est plus.
++        //
++        // Ce test existe pour qu'une session future ne « redécouvre » pas ce
++        // fait comme un bug. Il n'affirme pas que c'est bon — seul le SPRT en
++        // juge — il affirme que c'est CONNU.
++        let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
++
++        let scores: Vec<i32> = [5_000, -5_000, 0]
++            .into_iter()
++            .map(|previous| search().search_root(&b, 5, 8, previous, &mut ardoise()))
++            .collect();
++        assert!(
++            scores.iter().any(|s| *s != scores[0]),
++            "LMP devrait rendre le score dépendant du pari : {scores:?}"
++        );
++
++        // Sans lui, le score ne dépend pas du pari — c'est ce qui prouve que
++        // l'assertion ci-dessus mesure LMP et non le bruit de la recherche.
++        let sans: Vec<i32> = [5_000, -5_000, 0]
++            .into_iter()
++            .map(|previous| search_sans_lmp().search_root(&b, 5, 8, previous, &mut ardoise()))
++            .collect();
++        assert!(
++            sans.iter().all(|s| *s == sans[0]),
++            "sans LMP le score doit être indépendant du pari : {sans:?}"
++        );
++
++        // Ce qui tient dans les deux cas, et qui est ce qu'on livre : la boucle
++        // rend toujours un coup légal.
++        for previous in [5_000, -5_000, 0] {
++            let mut s = search();
++            s.search_root(&b, 5, 8, previous, &mut ardoise());
++            assert!(
++                s.root_best.is_some_and(|mv| b.is_legal(mv)),
++                "pari {previous} : aucun coup légal retenu"
++            );
++        }
++    }
++
+     #[test]
+     fn la_fenetre_etroite_ne_casse_pas_la_detection_de_mat() {
+         // Profondeur 6 : aspiration, coup nul et LMR sont tous trois actifs.

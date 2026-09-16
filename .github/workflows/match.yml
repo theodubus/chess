@@ -12,18 +12,23 @@
 # Ce n'était pas un arbitrage, c'était une contrainte d'outillage prise pour
 # une préférence. Les runners GitHub ne dorment pas et tiennent six heures.
 #
-# # La réserve, et elle est sérieuse
+# # La réserve, et ce qu'elle vaut réellement
 #
-# Un runner partagé est **deux fois plus lent** que la machine de mesure, et
-# varie du simple au double d'une exécution à l'autre — mesuré sur le
-# balayage par mutation. À cadence horloge, une machine plus lente veut dire
-# une profondeur plus faible, donc **un autre point de fonctionnement** :
-# exactement la variable qu'on cherche à contrôler.
+# À cadence horloge, une machine plus lente atteint une profondeur plus faible,
+# donc **un autre point de fonctionnement** : exactement la variable qu'on
+# cherche à contrôler. D'où l'étape `Étalonner`, qui mesure la vitesse du job
+# et l'inscrit en tête du résumé.
 #
-# D'où l'étape `Étalonner` : le job mesure sa propre vitesse au bench et
-# l'inscrit en tête du résumé. Le point de fonctionnement n'est pas contrôlé,
-# mais il est **connu** — et un chiffre connu se compense, un chiffre ignoré
-# ne se compense pas.
+# **Mesuré le 16 sept. 2026, et ça dément ce que j'avais écrit ici.** J'avais
+# annoncé « un runner partagé est deux fois plus lent », extrapolé du balayage
+# par mutation. Faux pour ce qui nous occupe : le balayage mesure un débit de
+# COMPILATION, pas une vitesse de RECHERCHE. Au bench à la profondeur 10, le
+# runner rend **2 563 044 n/s** contre 2 317 224 à 2 750 500 dans le conteneur
+# de session — soit ±10 %, dans les deux sens selon la charge.
+#
+# **Le point de fonctionnement transfère donc**, et c'est ce qui rend ce
+# workflow utilisable pour comparer avec les mesures locales. L'étalonnage
+# reste là pour le vérifier à chaque fois plutôt que de le supposer acquis.
 name: Match
 
 on:
@@ -123,9 +128,16 @@ jobs:
           sortie=$(/tmp/reference bench 10)
           echo "$sortie"
           nps=$(echo "$sortie" | awk '/Nodes\/second/ {print $NF}')
-          prof=$(printf 'uci\nisready\nposition startpos\ngo movetime 250\n' \
-                 | timeout 60 /tmp/reference 2>/dev/null \
-                 | awk '/^info depth/ {d=$3} END {print d+0}')
+          # Le `sleep` n'est pas décoratif : sans lui, stdin se ferme dès que
+          # `printf` a fini, le moteur lit EOF et INTERROMPT sa recherche. La
+          # sonde rendait alors 4 au lieu de 10 — un chiffre faux et plausible,
+          # le pire genre. C'est le piège consigné le 13 sept. 2026, que j'ai
+          # rediagnostiqué le matin du 16 puis réintroduit ici le même jour.
+          prof=$( { printf 'uci\nisready\nposition startpos\ngo movetime 250\n'
+                    sleep 3
+                    printf 'quit\n'; } \
+                  | timeout 60 /tmp/reference 2>/dev/null \
+                  | awk '/^info depth/ {d=$3} END {print d+0}')
           echo "nps=$nps"            >> "$GITHUB_OUTPUT"
           echo "profondeur=$prof"    >> "$GITHUB_OUTPUT"
           echo "coeurs=$(nproc)"     >> "$GITHUB_OUTPUT"
