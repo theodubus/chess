@@ -1,0 +1,210 @@
+# Fait jouer un match entre deux commits, sur un runner GitHub.
+#
+# # Pourquoi ce workflow existe
+#
+# Le conteneur de session est éphémère : un balayage lancé en tâche de fond y
+# est déjà mort à 158 mutants sur 397, sans erreur ni trace, parce que la
+# machine avait été mise en veille entre deux tours. **Tant que les matchs ne
+# tournent que là, le projet ne peut pas mesurer à cadence longue** — et il a
+# donc mesuré ses douze premiers verdicts à `1+0,01`, où le moteur atteint la
+# profondeur 8-9 alors qu'il jouera à 17.
+#
+# Ce n'était pas un arbitrage, c'était une contrainte d'outillage prise pour
+# une préférence. Les runners GitHub ne dorment pas et tiennent six heures.
+#
+# # La réserve, et elle est sérieuse
+#
+# Un runner partagé est **deux fois plus lent** que la machine de mesure, et
+# varie du simple au double d'une exécution à l'autre — mesuré sur le
+# balayage par mutation. À cadence horloge, une machine plus lente veut dire
+# une profondeur plus faible, donc **un autre point de fonctionnement** :
+# exactement la variable qu'on cherche à contrôler.
+#
+# D'où l'étape `Étalonner` : le job mesure sa propre vitesse au bench et
+# l'inscrit en tête du résumé. Le point de fonctionnement n'est pas contrôlé,
+# mais il est **connu** — et un chiffre connu se compense, un chiffre ignoré
+# ne se compense pas.
+name: Match
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidat:
+        description: "Commit, branche ou tag du candidat"
+        required: true
+        type: string
+      reference:
+        description: "Commit, branche ou tag de la référence"
+        required: true
+        type: string
+      cadence:
+        description: "Cadence fastchess, par exemple 8+0.08 ou 30+0.3"
+        required: true
+        default: "8+0.08"
+        type: string
+      parties:
+        description: "Nombre de parties. 0 = SPRT avec arrêt anticipé."
+        required: true
+        default: "0"
+        type: string
+      elo0:
+        description: "Borne basse du SPRT (ignorée si parties > 0)"
+        required: false
+        default: "0"
+        type: string
+      elo1:
+        description: "Borne haute du SPRT (ignorée si parties > 0)"
+        required: false
+        default: "5"
+        type: string
+      graine:
+        description: "Graine des ouvertures. La même qu'un match antérieur le rend apparié."
+        required: false
+        default: "20260913"
+        type: string
+
+jobs:
+  match:
+    name: Match
+    runs-on: ubuntu-latest
+    # Six heures est le plafond d'un job ; le laisser explicite évite qu'un
+    # match long meure sans qu'on sache si c'est lui ou la limite.
+    timeout-minutes: 350
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Toolchain
+        run: |
+          rustup show active-toolchain
+          rustc --version && cargo --version
+
+      # Les deux binaires se construisent en worktree détaché, jamais par
+      # `git stash` : le stash emporte tout le travail non committé, outils de
+      # mesure compris, et l'on finit par mesurer autre chose que ce qu'on
+      # croit. Piège payé le 13 sept. 2026.
+      - name: Construire les deux binaires
+        shell: bash
+        run: |
+          set -euo pipefail
+          construire() {
+            local ref="$1" sortie="$2"
+            git worktree add --detach "/tmp/wt-$sortie" "$ref"
+            ( cd "/tmp/wt-$sortie" && cargo build --release --bin shallowred )
+            cp "/tmp/wt-$sortie/target/release/shallowred" "/tmp/$sortie"
+          }
+          construire "${{ inputs.candidat }}"  candidat
+          construire "${{ inputs.reference }}" reference
+
+          # Deux empreintes identiques veulent dire qu'on s'apprête à mesurer
+          # un binaire contre lui-même — le match rendrait 0 Elo et personne
+          # ne saurait pourquoi.
+          a=$(md5sum /tmp/candidat  | cut -d' ' -f1)
+          b=$(md5sum /tmp/reference | cut -d' ' -f1)
+          echo "candidat  $a"
+          echo "reference $b"
+          if [ "$a" = "$b" ]; then
+            echo "::error::les deux binaires sont identiques : il n'y a rien à mesurer"
+            exit 1
+          fi
+
+      - name: Arbitre
+        run: tools/setup-arbiters.sh
+
+      # Le point de fonctionnement effectif dépend de la vitesse du runner, et
+      # elle varie du simple au double. On la mesure au lieu de la supposer.
+      - name: Étalonner le runner
+        id: etalon
+        shell: bash
+        run: |
+          set -euo pipefail
+          sortie=$(/tmp/reference bench 10)
+          echo "$sortie"
+          nps=$(echo "$sortie" | awk '/Nodes\/second/ {print $NF}')
+          prof=$(printf 'uci\nisready\nposition startpos\ngo movetime 250\n' \
+                 | timeout 60 /tmp/reference 2>/dev/null \
+                 | awk '/^info depth/ {d=$3} END {print d+0}')
+          echo "nps=$nps"            >> "$GITHUB_OUTPUT"
+          echo "profondeur=$prof"    >> "$GITHUB_OUTPUT"
+          echo "coeurs=$(nproc)"     >> "$GITHUB_OUTPUT"
+
+      - name: Jouer
+        id: jouer
+        shell: bash
+        run: |
+          # `bash -e` n'active PAS pipefail : sans lui, le code de retour serait
+          # celui de `tee` et un match échoué passerait pour un succès. Faute
+          # déjà commise sur le verdict de mutation le 15 sept. 2026.
+          set -euo pipefail
+          concurrence=$(( $(nproc) > 1 ? $(nproc) - 1 : 1 ))
+          commun=(
+            -engine cmd=/tmp/candidat  name=candidat
+            -engine cmd=/tmp/reference name=reference
+            -each tc="${{ inputs.cadence }}" proto=uci
+            -openings file=tools/book.epd format=epd order=random
+            -srand "${{ inputs.graine }}"
+            -games 2 -repeat
+            -concurrency "$concurrence"
+            -draw movenumber=40 movecount=8 score=10
+            -resign movecount=4 score=600 twosided=true
+          )
+          if [ "${{ inputs.parties }}" -gt 0 ]; then
+            # Longueur fixe : rend une estimation d'Elo utilisable. Un SPRT
+            # s'arrête dès qu'il a tranché et rend alors une estimation trop
+            # grossière pour comparer deux points de fonctionnement.
+            rondes=$(( (${{ inputs.parties }} + 1) / 2 ))
+            tools/arbiters/fastchess "${commun[@]}" -rounds "$rondes" \
+              | tee /tmp/match.log
+          else
+            tools/arbiters/fastchess "${commun[@]}" -rounds 20000 \
+              -sprt elo0="${{ inputs.elo0 }}" elo1="${{ inputs.elo1 }}" \
+                    alpha=0.05 beta=0.05 model=normalized \
+              | tee /tmp/match.log
+          fi
+
+      # Le résumé va dans l'onglet Actions et non dans le journal : le verdict
+      # du balayage par mutation avait été imprimé AVANT trois cents lignes de
+      # détail, et son seul lecteur ne pouvait pas l'atteindre. Un rapport
+      # qu'on ne peut pas lire ne rapporte rien.
+      - name: Résumé
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## Match — ${{ inputs.cadence }}"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| candidat | \`${{ inputs.candidat }}\` |"
+            echo "| référence | \`${{ inputs.reference }}\` |"
+            echo "| cadence | \`${{ inputs.cadence }}\` |"
+            echo "| graine des ouvertures | \`${{ inputs.graine }}\` |"
+            echo "| cœurs du runner | ${{ steps.etalon.outputs.coeurs }} |"
+            echo "| **nœuds/s au bench** | **${{ steps.etalon.outputs.nps }}** |"
+            echo "| profondeur en 250 ms | ${{ steps.etalon.outputs.profondeur }} |"
+            echo
+            echo "> La vitesse du runner fixe le point de fonctionnement réel."
+            echo "> Un runner deux fois plus lent joue une cadence deux fois"
+            echo "> plus courte. Comparer ces deux lignes avant de comparer"
+            echo "> deux verdicts."
+            echo
+            echo '### Verdict'
+            echo
+            echo '```'
+            # La dernière ligne de résultats, jamais la première : les arbitres
+            # impriment un score courant après CHAQUE partie.
+            grep -E "^(Elo|LOS|Games|Ptnml|LLR|SPRT|Results)" /tmp/match.log \
+              | tail -14 || echo "aucun résultat lisible — voir le journal"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Journal complet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match-log
+          path: /tmp/match.log
+          retention-days: 30

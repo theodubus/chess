@@ -68,6 +68,33 @@ Bornes usuelles : `[0, 5]` pour un changement censé gagner, `[-5, 0]` pour
 vérifier qu'une simplification ne coûte rien. Ce sont des conventions, pas des
 valeurs démontrées pour ce projet.
 
+## Mesurer à cadence longue
+
+Le conteneur de session est éphémère : un processus de fond n'y survit pas à
+une mise en veille, et un match de plusieurs heures meurt sans trace. C'est
+pourquoi les douze premiers verdicts du projet sont tous à `1+0,01` — **une
+contrainte d'outillage prise pour une préférence**.
+
+`.github/workflows/match.yml` lève la contrainte : `workflow_dispatch`, deux
+commits en entrée, la cadence en entrée, six heures de plafond, et un résumé
+lisible dans l'onglet Actions sans ouvrir le journal.
+
+**Lire d'abord l'étalonnage.** Un runner partagé varie du simple au double, et
+à cadence horloge une machine plus lente joue une cadence plus courte — donc
+un autre point de fonctionnement. Le job mesure ses propres nœuds/seconde et
+les inscrit en tête : le point n'est pas contrôlé, mais il est connu.
+
+Profondeur médiane atteinte selon le temps par coup, mesurée le 16 sept. 2026
+sur douze positions de vraies parties :
+
+| temps par coup | profondeur médiane |
+|---|---|
+| **1+0,01** — la cadence des douze verdicts | **8,5** |
+| ~4+0,04 | 11,5 |
+| 8+0,08 — le défaut de `sprt.sh`, jamais utilisé | 12,5 |
+| ~15+0,15 | 14,0 |
+| ~30+0,3 | **17,0** |
+
 ## Vérifier que l'arbitre est fiable
 
 ```sh
