@@ -12,8 +12,18 @@ d'un aveu sur la profondeur de recherche.
 > d'aspiration, élagage delta en quiescence, futilité inverse. L'évaluation
 > couvre matériel, tables piece-square, paire de fous, mobilité, sécurité du
 > roi, structure de pions et colonnes de tours.
-> **Dix verdicts SPRT, dont deux négatifs** qui ont fait retirer le changement
-> mesuré. Il gagne toutes ses parties contre un adversaire jouant au hasard.
+> Chaque changement de recherche passe par un **SPRT** ; les verdicts, leurs
+> effectifs et leur cadence sont dans `tools/README.md`. Plusieurs sont
+> **négatifs** et ont fait retirer le changement mesuré — y compris des
+> techniques que tous les manuels recommandent. Il gagne toutes ses parties
+> contre un adversaire jouant au hasard.
+>
+> **Réserve, mesurée le 16 sept. 2026 :** les premiers verdicts du projet ont
+> tous été rendus à la cadence `1+0,01`, où le moteur atteint la profondeur
+> médiane 8,5. Le même binaire, contre la même référence et avec les mêmes
+> ouvertures, **change de signe** à `8+0,08` — de −21,6 à +15,3 Elo,
+> p = 0,0013. Un verdict appartient à sa cadence, et la revalidation à cadence
+> longue est en cours.
 > Il n'a encore ni recherche parallèle, ni NNUE, ni interface.
 
 ## Structure

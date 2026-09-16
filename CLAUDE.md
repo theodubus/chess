@@ -15,8 +15,10 @@ Ce fichier dit **comment** travailler : invariants, ce qui compte comme preuve,
 pièges déjà payés. Il ne dit pas **où on en est**.
 
 - L'état du moteur : `README.md`, en tête.
-- Les dix verdicts SPRT, avec leurs effectifs et leurs bornes :
-  `tools/README.md`, section *Mesures de référence*.
+- Les verdicts SPRT, avec leurs effectifs, leurs bornes **et leur cadence** :
+  `tools/README.md`, section *Mesures de référence*. Le compteur n'est pas
+  recopié ici : il vit dans le tableau, et une prose qui le duplique naît
+  périmée.
 - Ce qui s'exécute sans qu'on l'appelle : section *Ce qui tourne tout seul*,
   plus bas.
 - Ce sur quoi travailler : **demander**. Le dépôt ne porte pas de feuille de
@@ -35,6 +37,15 @@ une mesure, pas une préférence.
   bon marché. **Mesuré le 14 sept. 2026 : le copy-make pèse 7,2 % du temps
   d'un nœud de recherche.** Et il ne ferme pas la porte à NNUE — voir la
   contrainte d'architecture correspondante.
+- **La cible est la force GÉNÉRALE, pas la force en blitz.** Théo,
+  16 sept. 2026 : « *à terme je veux que le moteur soit fort en général, pas
+  que en blitz.* » Ce n'est pas une nuance de confort : les douze premiers
+  verdicts du projet ont été rendus à `1+0,01`, où le moteur atteint la
+  profondeur 8,5 — et l'un d'eux **change de signe** à `8+0,08`. **Une mesure
+  de force appartient à sa cadence** ; mesurer court revient à optimiser pour
+  un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
+  la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
+  plus qu'à dégrossir, jamais à trancher.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Licence AGPL-3.0-or-later** sur tout le dépôt.
 
