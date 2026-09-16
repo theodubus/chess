@@ -84,6 +84,26 @@ lisible dans l'onglet Actions sans ouvrir le journal.
 un autre point de fonctionnement. Le job mesure ses propres nœuds/seconde et
 les inscrit en tête : le point n'est pas contrôlé, mais il est connu.
 
+### Le résultat qui a motivé tout ça
+
+**La cadence peut inverser un verdict.** Mêmes binaires, même livre, **même
+graine d'ouvertures**, même adjudication, même estimateur — 1000 parties à
+longueur fixe de chaque côté. Seule la cadence change :
+
+| protocole | Elo | IC 95 % |
+|---|---|---|
+| `1+0,01`, SPRT, 2030 parties | −25,20 | [−36,8 ; −13,6] |
+| `1+0,01`, longueur fixe, 1000 | **−21,57** | [−38,3 ; −4,9] |
+| `8+0,08`, longueur fixe, 1000 | **+15,30** | [+0,2 ; +30,4] |
+
+Écart dû à la cadence : **+36,87 Elo**, z = 3,21, **p = 0,0013**, intervalles
+disjoints. Le biais d'arrêt du SPRT — qui s'arrête quand les données sont
+extrêmes — ne vaut que **3,6 Elo** : ce n'était pas l'explication.
+
+**Ce que ça impose.** Inscrire la cadence à côté de chaque verdict. Ne jamais
+comparer deux verdicts de cadences différentes. Et se demander, avant de
+conclure, si la cadence de mesure ressemble au régime où le moteur jouera.
+
 Profondeur médiane atteinte selon le temps par coup, mesurée le 16 sept. 2026
 sur douze positions de vraies parties :
 
@@ -278,6 +298,7 @@ et elle portait sur la détection de nulle par répétition.
 | 2026-09-16 | Matériel insuffisant (C20) | **pas de SPRT** — correction d'une évaluation fausse d'un résultat certain, jugée par des tests. Prouvée contre `python-chess` : 0 écart / 37 806 positions. L'arbitre adjuge lui-même ces nulles, donc un match n'aurait rien vu. |
 | 2026-09-16 | Élagage par compte de coups (LMP), seuil `6 + d²` | **H0 accepté** — **−25,2 Elo ± 11,6** sur 2030 parties, cadence 1+0,01. Changement retiré. |
 | 2026-09-16 | Le même, seuil `12 + d²` (bissection) | **H0 accepté** — **−12,6 Elo ± 8,7** sur 3932 parties. Changement retiré. |
+| 2026-09-16 | **Le même seuil `6 + d²`, à `8+0,08` au lieu de `1+0,01`** | **+15,30 Elo ± 15,08** sur 1000 parties à longueur fixe. **Le signe s'inverse.** Contrôle à `1+0,01`, même protocole : **−21,57 ± 16,71**. Écart +36,9 Elo, z = 3,21, **p = 0,0013**. Voir ci-dessous. |
 
 **Le nombre de nœuds n'est pas une mesure de force.** Les mesures ci-dessous le
 disent, et elles ne s'ordonnent pas de la même façon :
