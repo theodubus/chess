@@ -26,5 +26,6 @@ pub mod eval;
 pub mod perft;
 pub mod position;
 pub mod search;
+pub mod see;
 pub mod tt;
 pub mod uci;
