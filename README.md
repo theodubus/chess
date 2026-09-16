@@ -128,7 +128,7 @@ tools/sprt.sh /tmp/candidat /tmp/reference
 Le test séquentiel s'arrête dès que les données suffisent à trancher. Détail
 dans [`tools/README.md`](tools/README.md).
 
-**Dix verdicts à ce jour**, table complète dans
+**Chaque verdict porte sa cadence**, table complète dans
 [`tools/README.md`](tools/README.md). Les deux extrêmes disent l'essentiel de
 la méthode : la table de transposition vaut **+164,3 Elo ± 31,3**, et la
 recherche à variante principale — qui est dans tous les manuels — a été

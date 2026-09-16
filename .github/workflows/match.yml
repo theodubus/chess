@@ -118,8 +118,9 @@ jobs:
       - name: Arbitre
         run: tools/setup-arbiters.sh
 
-      # Le point de fonctionnement effectif dépend de la vitesse du runner, et
-      # elle varie du simple au double. On la mesure au lieu de la supposer.
+      # Le point de fonctionnement effectif dépend de la vitesse du runner. On
+      # la mesure à chaque exécution au lieu de la supposer stable — c'est
+      # précisément ce qui a permis de découvrir qu'elle l'était.
       - name: Étalonner le runner
         id: etalon
         shell: bash
@@ -198,10 +199,13 @@ jobs:
             echo "| **nœuds/s au bench** | **${{ steps.etalon.outputs.nps }}** |"
             echo "| profondeur en 250 ms | ${{ steps.etalon.outputs.profondeur }} |"
             echo
-            echo "> La vitesse du runner fixe le point de fonctionnement réel."
-            echo "> Un runner deux fois plus lent joue une cadence deux fois"
-            echo "> plus courte. Comparer ces deux lignes avant de comparer"
-            echo "> deux verdicts."
+            echo "> La vitesse du runner fixe le point de fonctionnement réel :"
+            echo "> à cadence horloge, une machine plus lente atteint une"
+            echo "> profondeur plus faible. Mesuré le 16 sept. 2026, l'écart"
+            echo "> entre ce runner et le conteneur de session est de ±10 %,"
+            echo "> donc les deux se comparent. **Vérifier ce chiffre avant de"
+            echo "> comparer ce verdict à un autre** — c'est la raison d'être"
+            echo "> de cette ligne, pas une formalité."
             echo
             echo '### Verdict'
             echo

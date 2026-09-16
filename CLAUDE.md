@@ -436,7 +436,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les trois critères d'acceptation, le bench |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
-| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé : un runner deux fois plus lent joue une cadence deux fois plus courte, donc un autre point de fonctionnement |
+| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus lente atteint une profondeur plus faible, donc un autre point de fonctionnement. **Mesuré le 16 sept. 2026 : l'écart runner/conteneur est de ±10 %, donc les deux se comparent.** L'étalonnage reste là pour le revérifier, pas pour le supposer |
 
 **Le cliquet de mutation.** `.github/mutation-baseline.txt` porte le nombre de
 survivants admis par fichier **et la raison écrite de chaque valeur non
@@ -471,7 +471,10 @@ issue ouverte par ce chemin le dit en tête.
 
 **Durée du balayage** : 35 puis 81 minutes sur deux exécutions réelles. Les
 runners partagés varient du simple au double — ne pas caler un rendez-vous
-serré dessus.
+serré dessus. **Ce chiffre porte sur un débit de COMPILATION**, et ne dit rien
+de la vitesse de recherche : celle-ci ne varie que de ±10 % entre le runner et
+le conteneur, mesurée le 16 sept. 2026. Confondre les deux m'a fait écrire une
+réserve fausse dans `match.yml`.
 
 **Que faire quand le verdict est rouge.** Le critère de tri est un arbitrage
 utilisateur du 15 sept. 2026 : **corriger au fil ce qui touche aux règles du
