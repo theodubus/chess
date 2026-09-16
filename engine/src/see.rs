@@ -190,7 +190,11 @@ fn value_on(piece: Piece, square: Square, side: Color) -> i32 {
 /// marginal, ce qu'elle fausse ne l'est pas.
 #[must_use]
 pub fn see(board: &Board, mv: Move) -> i32 {
-    let Some(victim) = captured_piece(board, mv) else {
+    // `capture_value` plutôt qu'un calcul recopié : la même arithmétique de
+    // promotion existait ici en double, et deux copies divergent au premier
+    // changement. Le balayage par mutation l'a montré autrement — la fonction
+    // n'était appelée que par l'oracle, donc rien dans le moteur ne la testait.
+    let Some(gain_initial) = capture_value(board, mv) else {
         return 0;
     };
     let Some(attacker) = board.piece_on(mv.from) else {
@@ -214,10 +218,7 @@ pub fn see(board: &Board, mv: Move) -> i32 {
     // Ce que notre coup rapporte, promotion comprise : le pion quitte
     // l'échiquier et la pièce promue le rejoint.
     let mut gain = [0i32; MAX_SWAPS];
-    gain[0] = VALUE[victim as usize]
-        + mv.promotion.map_or(0, |promoted| {
-            VALUE[promoted as usize] - VALUE[Piece::Pawn as usize]
-        });
+    gain[0] = gain_initial;
 
     // Ce qui se tient sur la case et que l'adversaire peut prendre.
     let mut on_target = mv
@@ -387,6 +388,43 @@ mod tests {
         // −660. Valeur lue sur l'oracle.
         let b = board("r2q1rk1/p1p2ppp/bp3n2/2bp2B1/4P3/N1QP1N1P/PP3PP1/R3K2R w KQ - 2 13");
         assert_eq!(see(&b, coup(&b, "c3f6")), -660);
+    }
+
+    #[test]
+    fn la_valeur_des_pieces_est_croissante_et_le_roi_hors_de_portee() {
+        // `piece_value` n'est pas un simple accès de tableau : l'ordre qu'il
+        // rend est ce dont dépend la correction de l'échange, puisque
+        // `least_valuable_attacker` parcourt `Piece::ALL` en supposant les
+        // valeurs croissantes.
+        let valeurs: Vec<i32> = Piece::ALL.iter().map(|&p| piece_value(p)).collect();
+        assert!(
+            valeurs.windows(2).all(|w| w[0] < w[1]),
+            "les valeurs doivent croître du pion au roi : {valeurs:?}"
+        );
+        assert!(
+            piece_value(Piece::King) > 8 * piece_value(Piece::Queen),
+            "aucun échange ne doit rendre la prise du roi rentable"
+        );
+    }
+
+    #[test]
+    fn capture_value_compte_la_promotion_et_rien_dautre() {
+        let b = board("r3k3/1P6/8/8/8/8/8/4K3 w q - 0 1");
+        assert_eq!(capture_value(&b, coup(&b, "b7a8n")), Some(500 + 320 - 100));
+        assert_eq!(capture_value(&b, coup(&b, "b7a8q")), Some(500 + 980 - 100));
+        // Un coup tranquille ne capture pas, promotion ou non.
+        let calme = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        assert_eq!(capture_value(&calme, coup(&calme, "e2e4")), None);
+    }
+
+    #[test]
+    fn la_prise_en_passant_libere_la_case_du_pion_pris() {
+        // Vérifié par exécution : après exd6, le cavalier f7 reprend, ET la
+        // tour d1 voit d6 — ce qu'elle ne peut que si le pion pris a bien
+        // quitté d5. Distinguant : laisser le pion sur d5 rendrait 0 au lieu
+        // de 100, la tour étant alors bloquée.
+        let b = board("4k3/5n2/8/3pP3/8/8/8/3RK3 w - d6 0 1");
+        assert_eq!(see(&b, coup(&b, "e5d6")), VALUE[Piece::Pawn as usize]);
     }
 
     #[test]
