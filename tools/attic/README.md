@@ -27,6 +27,7 @@ réseau.
 |---|---|---|---|
 | `c12-pvs.patch` | recherche à variante principale | **H0**, −10,9 Elo ± 7,9, 4214 parties, `1+0,01` | **non** — écrite sur un `search.rs` de trois jours plus vieux |
 | `c17-lmp.patch` | élagage par compte de coups, seuil `6 + d²` | **H0** deux fois, −25,2 puis −12,6, `1+0,01` — **mais +15,3 à `8+0,08`** | **oui**, `git apply --check` passe |
+| `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | **oui**, `git apply --check` passe, SUR l'élagage en quiescence |
 
 ```sh
 git apply --check tools/attic/c17-lmp.patch   # toujours, avant d'appliquer
