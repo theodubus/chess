@@ -86,14 +86,21 @@ nœuds/seconde et les inscrit en tête.
 
 **Mesuré le 16 sept. 2026**, au bench à la profondeur 10, même code moteur :
 
-| où | nœuds/s | écart au conteneur |
-|---|---|---|
-| conteneur de session, 8 relevés | 2 280 655 – 2 396 011 | — (étendue 5 %) |
-| runner `1000002292` | 2 563 044 | **+11 %** |
-| runner `1000002313` | 3 139 691 | **+35 %** |
+| où | nœuds/s | profondeur en 250 ms | écart au conteneur |
+|---|---|---|---|
+| conteneur de session, 8 relevés | 2 280 655 – 2 396 011 | — | — (étendue 5 %) |
+| runner `1000002315` | 2 507 861 | 10 | **+8 %** |
+| runner `1000002292` | 2 563 044 | *(sonde cassée)* | **+11 %** |
+| runner `1000002314` | 2 668 474 | 10 | **+15 %** |
+| runner `1000002313` | 3 139 691 | **11** | **+35 %** |
 
-Le runner est plus **rapide** que le conteneur, et il varie de **22 % d'un
-runner à l'autre** là où le conteneur ne varie que de 5 %. Traduit dans la
+Le runner est plus **rapide** que le conteneur — de **+8 à +35 %, médiane
+~+13 %** — et il varie de **25 % d'un runner à l'autre** là où le conteneur ne
+varie que de 5 %. **Le 3,14 M est l'extrême, pas la norme**, et c'est pourquoi
+deux points ne suffisaient pas à le dire.
+
+**La sonde de profondeur suit bien la vitesse** : 10 à 2,51 et 2,67 M n/s,
+**11** à 3,14 M. Première validation qu'elle mesure ce qu'elle prétend. Traduit dans la
 seule unité qui compte — le projet a mesuré **1,33 ply par doublement de
 temps** — cela vaut **+0,2 à +0,6 ply** : un verdict rendu en CI siège un
 demi-ply plus profond que la même cadence nominale mesurée ici. À comparer aux
@@ -104,6 +111,29 @@ négligeable : **ne pas comparer un verdict CI à un verdict local sans regarder
 les deux étalonnages.** En revanche **un verdict reste valide en interne quoi
 qu'il arrive** — les deux moteurs partagent la machine, donc sa vitesse ne
 biaise pas la comparaison ; elle ne déplace que le point de fonctionnement.
+
+### Ce qu'un seul job peut trancher
+
+**Mesuré le 16 sept. 2026**, sur le SPRT d'aspiration à `8+0,08` : 1154 parties
+en 1 h 47 min 13 s de jeu, soit **5,57 s par partie** à concurrence 3. Le
+plafond du job est de 350 minutes, dont ~70 s de mise en place, donc
+**~3 750 parties au maximum**.
+
+Croisé avec la relation de budget du projet (`parties × Elo ≈ 62 000`) :
+
+> **Un job à `8+0,08` tranche les effets de ~17 Elo et plus. En dessous, il
+> expire sans verdict.**
+
+L'aspiration (−51,6) a tranché en 1154 parties. Les trois termes d'évaluation
+(+14,9) tombent **juste sous la ligne**, et c'est le prochain point de D5.
+
+**Ce qu'on fait quand l'effet est trop petit** : des matchs à **longueur fixe**
+sur plusieurs jobs, graines d'ouvertures distinctes, puis mise en commun. Les
+échantillons sont indépendants, donc c'est valide ; ça rend une **estimation
+d'Elo à intervalle resserré** et non un verdict SPRT — exactement le protocole
+qui a servi à établir l'effet de cadence. Ne pas tenter de « reprendre » un
+SPRT expiré : un test séquentiel interrompu puis prolongé n'a plus ses taux
+d'erreur.
 
 **La profondeur de la sonde prime sur les nœuds/s.** Les nœuds/s sont un
 indice de vitesse, la profondeur est le point de fonctionnement lui-même.
@@ -339,6 +369,22 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-16 | Élagage par compte de coups (LMP), seuil `6 + d²` | **H0 accepté** — **−25,2 Elo ± 11,6** sur 2030 parties, cadence 1+0,01. Changement retiré. |
 | 2026-09-16 | Le même, seuil `12 + d²` (bissection) | **H0 accepté** — **−12,6 Elo ± 8,7** sur 3932 parties, cadence 1+0,01. Changement retiré. |
 | 2026-09-16 | **Le même seuil `6 + d²`, à `8+0,08` au lieu de `1+0,01`** | **+15,30 Elo ± 15,08** sur 1000 parties à longueur fixe. **Le signe s'inverse.** Contrôle à `1+0,01`, même protocole : **−21,57 ± 16,71**. Écart +36,9 Elo, z = 3,21, **p = 0,0013**. Voir ci-dessous. |
+| 2026-09-16 | **Retrait des fenêtres d'aspiration (D5), à `8+0,08`** | **H0 accepté** — **−51,56 Elo ± 15,67** sur 1154 parties, bornes `[-5, 0]`. Étalonnage du runner : 2 668 474 n/s, profondeur 10. **L'aspiration paie toujours, et bien plus qu'annoncé.** |
+| 2026-09-16 | Le même retrait, à `1+0,01` | **H0 accepté** — **−18,91 Elo ± 9,22** sur 3274 parties, bornes `[-5, 0]`. Étalonnage : 2 507 861 n/s, profondeur 10. |
+
+**Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
+supposait une *érosion* : l'aspiration valait +29,7 mesuré avant que l'élagage
+delta et la futilité inverse n'existent, et les trois coupent dans le même
+arbre. Mesuré : **elle vaut 2,7 fois plus au régime qui compte** — −18,91 à
+`1+0,01` contre −51,56 à `8+0,08`, z = 3,52, **p ≈ 0,0004**, intervalles
+disjoints. Le verdict d'origine ne la sous-estimait pas d'un peu, il la
+sous-estimait presque de moitié.
+
+**C'est la seconde confirmation que la cadence change le verdict**, sur une
+autre technique que l'élagage par compte. Les deux formes sont maintenant
+mesurées : la cadence **inverse un signe** (LMP, −21,6 → +15,3) ou **multiplie
+une magnitude** (aspiration, × 2,7). Le sens est le même — *mesurer court
+sous-estime ce dont la valeur croît avec la profondeur*.
 
 **Le nombre de nœuds n'est pas une mesure de force.** Les mesures ci-dessous le
 disent, et elles ne s'ordonnent pas de la même façon :
@@ -355,6 +401,14 @@ disent, et elles ne s'ordonnent pas de la même façon :
 | futilité inverse | ÷ 1,45 | +24 |
 | **élagage par compte, seuil 6** | **÷ 1,19** | **−25** |
 | **élagage par compte, seuil 12** | **÷ 1,14** | **−13** |
+| **fenêtres d'aspiration, remesurées à `8+0,08`** | **÷ 1,048** | **+52** |
+
+La dernière ligne est le point le plus extrême du tableau : **la plus petite
+économie de nœuds, et presque le plus gros gain d'Elo**. Vérifié par exécution
+le 16 sept. — 234 370 nœuds à la profondeur 7 sans aspiration contre 223 577
+avec. Et c'est la même technique que la quatrième ligne, mesurée à une autre
+cadence : ÷ 1,07 → +30 à `1+0,01`. **Le rapport de nœuds n'a pas bougé ; l'Elo
+a été multiplié par 1,7.**
 
 L'élagage par compte est le cas le plus net du tableau, et il a deux points.
 Retirer **19 %** des nœuds coûte 25 Elo ; en retirer **14 %** en coûte 13. Le

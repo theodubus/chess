@@ -182,7 +182,7 @@ une mesure, pas une préférence.
 | « ce code est testé » | `tools/mutants.sh`. Un mutant **survivant** est une modification du code que toute la suite accepte : une ligne dont rien ne vérifie le comportement. Le plafond par fichier vit dans `.github/mutation-baseline.txt`, et le balayage hebdomadaire (workflow `Mutation`, mardi) casse à la hausse, signale la baisse. **Ne dit rien de la force de jeu** : un survivant sur une valeur d'évaluation ou une marge d'élagage relève du SPRT, jamais d'un test unitaire. |
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « ce verdict vaut pour le moteur qu'on livrera » | **La cadence de mesure peut INVERSER un verdict — mesuré, pas redouté.** 16 sept. 2026, mêmes binaires, même livre, **même graine d'ouvertures**, même adjudication, même estimateur (1000 parties à longueur fixe chacun) : l'élagage par compte de coups vaut **−21,57 ± 16,71** à `1+0,01` et **+15,30 ± 15,08** à `8+0,08`. Écart **+36,9 Elo**, z = 3,21, **p = 0,0013**, intervalles disjoints. Le biais d'arrêt du SPRT ne vaut que 3,6 Elo : ce n'était pas l'explication. Profondeur médiane atteinte : **8,5** contre **12,5** — et **17,0** à ~30+0,3, le régime où le moteur jouera. **Les douze premiers verdicts du projet sont tous à `1+0,01`**, alors que `tools/sprt.sh` a pour défaut `8+0.08` depuis sa création — défaut jamais utilisé. Ce n'était pas un arbitrage, c'était une habitude. **Nommer la cadence d'un verdict, et ne jamais comparer deux verdicts de cadences différentes.** Mesurer long passe par `.github/workflows/match.yml`. |
-| « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. Empiriquement, sur les quatre SPRT du projet, `parties × Elo ≈ 62 000` : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 12 400 ≈ 2 h 30 ; +2 ≈ 31 000 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. |
+| « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. Empiriquement, sur les quatre SPRT du projet, `parties × Elo ≈ 62 000` : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 12 400 ≈ 2 h 30 ; +2 ≈ 31 000 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. **À `8+0,08` par `match.yml`, un job tranche les effets de ~17 Elo et plus** : 5,57 s par partie mesurées, plafond de 350 min, soit ~3 750 parties. En dessous, passer à des matchs à longueur fixe sur plusieurs jobs et les mettre en commun — jamais « reprendre » un SPRT expiré, un test séquentiel interrompu puis prolongé n'a plus ses taux d'erreur. Voir `tools/README.md`. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
 | « c'est plus fort » | **Jamais** déduit d'un nombre de nœuds, dans aucun sens. Huit mesures, et les trois combinaisons de signes sont représentées : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration ÷1,07 → +30 ; élagage delta ÷1,68 → +33 ; futilité inverse ÷1,45 → +24 (moins de nœuds, plus fort) ; **PVS ÷1,03 → −11, H0 accepté** (moins de nœuds, plus faible) ; **mobilité ×1,29 → +63** (*plus* de nœuds, plus fort). Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. **Deux rapports voisins, ÷1,68 et ÷2,52, rapportent +33 et +75 : même le classement ne se déduit pas.** |
 | « cette technique est standard, donc elle aide » | **Rien.** Ce n'est pas une preuve. PVS est dans tous les manuels et la mesure l'a rejeté sur ce moteur (−11 Elo, 4214 parties) : empilé sur LMR, coup nul et fenêtres d'aspiration, il n'apporte plus rien à couper et ne laisse que son coût de re-recherche. Une technique standard entre par le SPRT comme toutes les autres. |
@@ -249,9 +249,17 @@ une mesure, pas une préférence.
   valeur* si le test avait raison. **Assouplir un test jusqu'à ce qu'il passe
   n'en est pas une**, et une seconde reformulation du même test est de
   l'accommodement.
-- **Ne jamais faire tourner deux matchs en même temps.** À cadence horloge,
-  deux matchs concurrents se volent du CPU et faussent les deux. La
-  concurrence interne de l'arbitre est le seul parallélisme admis.
+- **Ne jamais faire tourner deux matchs en même temps SUR UNE MÊME MACHINE.**
+  À cadence horloge, deux matchs concurrents s'y volent du CPU et faussent les
+  deux ; la concurrence interne de l'arbitre est le seul parallélisme admis
+  *localement*. **La portée manquait jusqu'au 16 sept. 2026**, et son absence
+  coûtait cher : sur des runners GitHub distincts il n'y a pas de vol de CPU,
+  et surtout **les deux moteurs d'un même match partagent toujours leur
+  machine**, donc un ralentissement d'hôte les frappe symétriquement et le
+  verdict reste valide en interne. Seule la comparaison *entre* runs demande de
+  lire les étalonnages. Telle qu'écrite sans portée, la règle aurait fait
+  sérialiser toute mesure appariée — le protocole que la cadence rend
+  obligatoire — pour rien.
 - **Le SPRT tire ses ouvertures au hasard : sans `-srand`, rien n'est
   rejouable.** `tools/sprt.sh` fixe désormais la graine et l'affiche.
 
