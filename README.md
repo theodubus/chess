@@ -20,10 +20,13 @@ d'un aveu sur la profondeur de recherche.
 >
 > **Réserve, mesurée le 16 sept. 2026 :** les premiers verdicts du projet ont
 > tous été rendus à la cadence `1+0,01`, où le moteur atteint la profondeur
-> médiane 8,5. Le même binaire, contre la même référence et avec les mêmes
-> ouvertures, **change de signe** à `8+0,08` — de −21,6 à +15,3 Elo,
-> p = 0,0013. Un verdict appartient à sa cadence, et la revalidation à cadence
-> longue est en cours.
+> médiane 8,5. **Un verdict appartient à sa cadence**, et deux mesures le
+> montrent, sous deux formes : l'élagage par compte de coups **change de
+> signe** entre `1+0,01` et `8+0,08` (−21,6 → +15,3, p = 0,0013), et les
+> fenêtres d'aspiration **valent 2,7 fois plus** au régime le plus profond
+> (−18,9 → −51,6 au retrait, p ≈ 0,0004). Même sens dans les deux cas :
+> mesurer court sous-estime ce dont la valeur croît avec la profondeur. La
+> revalidation à cadence longue est en cours.
 > Il n'a encore ni recherche parallèle, ni NNUE, ni interface.
 
 ## Structure
