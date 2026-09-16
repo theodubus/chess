@@ -6,7 +6,9 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 ## Structure
 
 - `engine/` — Rust, binaire UCI. Ne connaît ni l'interface, ni la notion de partie.
-- `ui/` — TypeScript. Pas encore démarré.
+- `ui/` — TypeScript. **Chantier parallèle, avec son propre `ui/CLAUDE.md`
+  qui fait autorité sous `ui/`.** Rien de ce fichier-ci ne s'y applique :
+  une interface n'a pas de force de jeu, donc ni SPRT, ni perft, ni bench.
 - `tools/` — arbitres de match, livre d'ouvertures, SPRT. Voir `tools/README.md`.
 
 ## Par où commencer, sans contexte

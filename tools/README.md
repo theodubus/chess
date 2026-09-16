@@ -345,6 +345,28 @@ comptent 1. **Le test était satisfait par coïncidence.**
 C'est exactement la classe de faute que ni la relecture ni la CI n'attrapent,
 et elle portait sur la détection de nulle par répétition.
 
+## Vérifier l'échange statique
+
+```sh
+cargo run --release --bin datagen 60 6 20260916 > /tmp/corpus.txt
+cargo run --release --bin see_check -- 2500 < /tmp/corpus.txt
+cargo run --release --bin see_check -- detail 99 < positions.txt   # valeurs d'oracle
+```
+
+`see_check` confronte `shallowred::see::see` à un **oracle par force brute** :
+une recherche exhaustive des captures sur la seule case visée, jouée par le vrai
+générateur de coups. Exacte par construction — elle hérite des clouages, des
+découvertes et de la légalité sans qu'on ait à les réécrire.
+
+**Le mode `detail` sert à FIXER la valeur attendue d'un test** au lieu de la
+dériver de tête. Quatre des huit premiers tests de `see.rs` étaient faux pour
+l'avoir été.
+
+**Écart mesuré le 16 sept. 2026 : 20 sur 4 623 captures, soit 0,43 %** — 18
+clouages absolus, 2 échecs à la découverte, **aucune autre cause**. C'est la
+limite par construction d'un échange statique, caractérisée et verrouillée par
+un test.
+
 ## Mesures de référence
 
 **La cadence fait partie du verdict.** Elle est inscrite sur chaque ligne, et

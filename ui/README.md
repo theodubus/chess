@@ -15,7 +15,16 @@ Choix déjà arrêtés :
   et refuser un déplacement illégal sans aller-retour vers le moteur. Cette
   duplication des règles est volontaire : l'une sert l'interactivité, l'autre la
   vitesse.
+- **React + Vite + TypeScript.** `chessground` est une bibliothèque DOM
+  ordinaire, sans dépendance à un framework : elle s'intègre dans un composant
+  qui lui donne un nœud et le laisse tranquille.
 
 Le mode de transport vers le moteur — processus fils en application de bureau,
-WebAssembly dans un Web Worker, ou serveur distant — n'est pas tranché. UCI rend
-les trois interchangeables sans toucher au moteur.
+WebAssembly dans un Web Worker, ou serveur distant — n'est **pas** tranché, et
+le choix est **reporté derrière un adaptateur** : l'interface ne connaît du
+moteur qu'une interface `Engine` de trois méthodes, et le transport tient dans
+un seul fichier. UCI rend les trois formes interchangeables sans toucher au
+moteur.
+
+Les consignes de travail complètes — périmètre, surface UCI réelle du moteur,
+contrainte de licence, ordre de démarrage — vivent dans `ui/CLAUDE.md`.
