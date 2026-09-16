@@ -255,6 +255,23 @@ une mesure, pas une préférence.
 - **Le SPRT tire ses ouvertures au hasard : sans `-srand`, rien n'est
   rejouable.** `tools/sprt.sh` fixe désormais la graine et l'affiche.
 
+- **Ne jamais fusionner une PR en `squash` sur ce dépôt.** La documentation de
+  ce projet **désigne du code retiré par son SHA** — « le code retiré reste
+  lisible dans `15028fa` », « y repartir plutôt que le réécrire ». Un squash
+  remplace les commits de la branche par un seul commit neuf, et GitHub
+  supprime la branche dans la foulée : **les SHA que la doc désigne deviennent
+  inatteignables**, donc collectables. Payé le 16 sept. 2026 — la PR #11
+  fusionnée en squash a rendu `498a01a` introuvable, et la première exécution
+  de `match.yml` a échoué sur `fatal: invalid reference`. La branche a été
+  repoussée pour restaurer l'atteignabilité, puis archivée sous
+  `archive/code-retire-pvs-lmp` — **cette branche ne se supprime pas** : c'est
+  elle qui garde `498a01a` (LMP) et la lignée de `15028fa` (PVS) atteignables.
+  **Fusionner en `merge`**, qui conserve l'historique ; les PR #1 à #5
+  l'avaient fait, et leurs commits vivent encore.
+  <br>Une étiquette serait plus robuste qu'une branche — un tag ne bouge pas —
+  mais **le push d'étiquettes est refusé sur ce dépôt** (403 avec le jeton de
+  session, constaté le 16 sept. 2026). À faire à la main le jour où c'est
+  possible : `git tag -a code-retire/lmp 498a01a` et `code-retire/pvs 15028fa`.
 - **Ne jamais construire une référence avec `git stash`.** Il emporte tout le
   travail non committé, outils de mesure compris — on finit par mesurer autre
   chose que ce qu'on croit. Utiliser `git worktree add --detach /tmp/ref <commit>`.
