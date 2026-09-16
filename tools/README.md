@@ -248,9 +248,12 @@ et elle portait sur la détection de nulle par répétition.
 | 2026-09-14 | Les mêmes termes, valeurs réglées par ajustement Texel | **H0 accepté** — **−10,0 Elo ± 8,3** sur 5128 parties. Réglage retiré. |
 | 2026-09-14 | Élagage delta en quiescence | **H1 accepté** — +32,5 Elo ± 12,3 sur 1822 parties, cadence 1+0,01 |
 | 2026-09-15 | Futilité inverse | **H1 accepté** — +24,3 Elo ± 10,7 sur 2524 parties, cadence 1+0,01 |
+| 2026-09-16 | Matériel insuffisant (C20) | **pas de SPRT** — correction d'une évaluation fausse d'un résultat certain, jugée par des tests. Prouvée contre `python-chess` : 0 écart / 37 806 positions. L'arbitre adjuge lui-même ces nulles, donc un match n'aurait rien vu. |
+| 2026-09-16 | Élagage par compte de coups (LMP), seuil `6 + d²` | **H0 accepté** — **−25,2 Elo ± 11,6** sur 2030 parties, cadence 1+0,01. Changement retiré. |
+| 2026-09-16 | Le même, seuil `12 + d²` (bissection) | **H0 accepté** — **−12,6 Elo ± 8,7** sur 3932 parties. Changement retiré. |
 
-**Le nombre de nœuds n'est pas une mesure de force.** Huit mesures le disent
-maintenant, et elles ne s'ordonnent pas de la même façon :
+**Le nombre de nœuds n'est pas une mesure de force.** Les mesures ci-dessous le
+disent, et elles ne s'ordonnent pas de la même façon :
 
 | changement | nœuds | Elo |
 |---|---|---|
@@ -262,8 +265,17 @@ maintenant, et elles ne s'ordonnent pas de la même façon :
 | **mobilité dans l'évaluation** | **× 1,29** | **+63** |
 | élagage delta en quiescence | ÷ 1,68 | +33 |
 | futilité inverse | ÷ 1,45 | +24 |
+| **élagage par compte, seuil 6** | **÷ 1,19** | **−25** |
+| **élagage par compte, seuil 12** | **÷ 1,14** | **−13** |
 
-Les deux dernières lignes sont les plus instructives. PVS explore **moins** de
+L'élagage par compte est le cas le plus net du tableau, et il a deux points.
+Retirer **19 %** des nœuds coûte 25 Elo ; en retirer **14 %** en coûte 13. Le
+coût suit non pas l'économie mais le **risque** : le seuil 6 détruit 3,8 % des
+montées d'`alpha`, le seuil 12 en détruit 2,0 % — risque × 0,53, coût × 0,50.
+La droite passe par l'origine, et le risque nul est exactement « pas d'élagage
+par compte ». **Il n'y a pas de seuil qui paie sur ce moteur.**
+
+Les deux dernières lignes du haut sont les plus instructives. PVS explore **moins** de
 nœuds et joue **plus mal**. La mobilité en explore **29 % de plus** et joue
 bien mieux. Les trois combinaisons de signes sont désormais représentées : le
 nombre de nœuds ne contraint la force dans aucune direction.
