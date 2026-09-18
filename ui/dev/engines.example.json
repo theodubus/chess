@@ -1,0 +1,7 @@
+[
+  {
+    "id": "stockfish",
+    "label": "Stockfish",
+    "command": "/usr/games/stockfish"
+  }
+]
