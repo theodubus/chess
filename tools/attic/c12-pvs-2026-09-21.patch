@@ -1,0 +1,285 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index cf1360c..3d2b642 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -331,6 +331,13 @@ pub struct Search {
+     /// Permet à un test de désactiver le seul élagage par compte de coups.
+     #[cfg(test)]
+     late_move_pruning: bool,
++    /// Désactive la fenêtre nulle, pour qu'un test compare les deux régimes.
++    ///
++    /// Le champ n'existe pas hors des tests, et la condition qui le lit est
++    /// repliée à `false` par le compilateur en release : il n'en reste rien
++    /// dans le binaire.
++    #[cfg(test)]
++    full_window_only: bool,
+ }
+ 
+ impl Search {
+@@ -360,6 +367,8 @@ impl Search {
+             delta_pruning: true,
+             #[cfg(test)]
+             late_move_pruning: true,
++            #[cfg(test)]
++            full_window_only: false,
+         }
+     }
+ 
+@@ -919,16 +928,70 @@ impl Search {
+             };
+ 
+             self.path.push(child.hash());
+-            let mut score =
+-                -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha, rest);
+-            // La réduction a menti : ce coup mérite la profondeur pleine.
++
++            // Recherche à variante principale.
++            //
++            // L'ordonnancement prétend que le premier coup est le meilleur. Si
++            // c'est vrai, les suivants n'ont pas besoin d'un score : il suffit
++            // de savoir qu'ils ne dépassent pas `alpha`. Une fenêtre nulle le
++            // dit bien plus vite qu'une fenêtre pleine, parce qu'elle coupe à
++            // chaque nœud de l'arbre en dessous et pas seulement ici.
++            //
++            // Le pari se paie quand il échoue : un coup qui dépasse `alpha`
++            // doit être re-cherché en fenêtre pleine, faute de quoi on n'aurait
++            // de lui qu'un minorant, sans savoir de combien il est meilleur.
+             //
+-            // `!self.aborted` n'est pas décoratif : une recherche interrompue
+-            // rend 0, et zéro dépasse `alpha` dans toute position perdante. La
+-            // re-recherche partait alors sur un score qui ne veut rien dire,
+-            // pour un résultat de toute façon jeté. Trouvé par le test du
+-            // budget de nœuds, qui dépassait d'exactement un nœud.
+-            if reduction > 0 && !self.aborted && score > alpha {
++            // `!self.aborted` n'est décoratif dans AUCUNE des re-recherches :
++            // une recherche interrompue rend 0, et zéro dépasse `alpha` dans
++            // toute position perdante. On repartirait alors sur un score qui ne
++            // veut rien dire, pour un résultat de toute façon jeté. Trouvé par
++            // le test du budget de nœuds, qui dépassait d'exactement un nœud.
++            #[cfg(test)]
++            let full_window_only = self.full_window_only;
++            #[cfg(not(test))]
++            let full_window_only = false;
++
++            let mut score = if index == 0 {
++                // C'est ce coup qui établit la variante principale : il lui
++                // faut une vraie fenêtre, et donc un vrai score.
++                -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha, rest)
++            } else if full_window_only {
++                // Régime d'avant PVS, conservé pour qu'un test isole l'effet de
++                // la seule fenêtre nulle. La réduction reste en place : sans
++                // quoi l'on comparerait aussi LMR à son absence, c'est-à-dire
++                // deux choses au lieu d'une.
++                let reduced =
++                    -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha, rest);
++                if reduction > 0 && !self.aborted && reduced > alpha {
++                    -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha, rest)
++                } else {
++                    reduced
++                }
++            } else {
++                let null_window = -self.negamax(
++                    &child,
++                    depth - 1 - reduction,
++                    ply + 1,
++                    -alpha - 1,
++                    -alpha,
++                    rest,
++                );
++                // La réduction a menti : ce coup mérite la profondeur pleine.
++                // On reste en fenêtre nulle, la question étant toujours la
++                // même — dépasse-t-il `alpha` ?
++                if reduction > 0 && !self.aborted && null_window > alpha {
++                    -self.negamax(&child, depth - 1, ply + 1, -alpha - 1, -alpha, rest)
++                } else {
++                    null_window
++                }
++            };
++
++            // La fenêtre nulle a menti : le coup dépasse `alpha` sans atteindre
++            // `beta`, donc il devient la variante principale et il faut son
++            // score exact. Dans un nœud déjà en fenêtre nulle (`beta` valant
++            // `alpha + 1`), la condition est inatteignable et la re-recherche
++            // ne se produit jamais — c'est voulu.
++            if index > 0 && !full_window_only && !self.aborted && score > alpha && score < beta {
+                 score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha, rest);
+             }
+             self.path.pop();
+@@ -1458,6 +1521,177 @@ mod tests {
+         cozy_chess::util::display_uci_move(position.board(), mv).to_string()
+     }
+ 
++    /// SONDE, pas un critère : de combien la fenêtre d'aspiration change-t-elle
++    /// le score quand PVS est en place ?
++    ///
++    /// `#[ignore]` parce qu'elle mesure au lieu de vérifier, et qu'elle prend
++    /// des minutes. Lancer par `cargo test --release -- --ignored sonde_`.
++    #[test]
++    #[ignore]
++    fn sonde_instabilite_de_laspiration_sous_pvs() {
++        // Marche pseudo-aléatoire seedée : un échantillon de positions jouées,
++        // pas le banc — celui-ci n'est pas un échantillon de jeu.
++        let mut positions = Vec::new();
++        for graine in 1..=40u64 {
++            let mut etat = (graine * 2_654_435_761) | 1;
++            let mut b = Board::default();
++            for pli in 0..60 {
++                let mut coups = Vec::new();
++                b.generate_moves(|set| {
++                    coups.extend(set);
++                    false
++                });
++                if coups.is_empty() {
++                    break;
++                }
++                if pli % 15 == 14 && b.checkers().is_empty() {
++                    positions.push(b.clone());
++                }
++                etat ^= etat << 13;
++                etat ^= etat >> 7;
++                etat ^= etat << 17;
++                let mv = coups[(etat as usize) % coups.len()];
++                b.play_unchecked(mv);
++            }
++        }
++
++        // LMP est désactivé dans LES DEUX bras : le test qui échoue le fait,
++        // et le laisser actif ferait varier deux choses à la fois. Première
++        // version de cette sonde : je l'avais laissé actif et j'ai lu 25 %
++        // contre 27 % comme « PVS n'y est pour rien », alors que je mesurais
++        // l'effet de LMP dans les deux bras. Mauvais dénominateur, cinquième
++        // fois sur ce projet.
++        for pvs in [true, false] {
++            let mut differents = 0u32;
++            let mut ecart_max = 0i32;
++            let mut somme = 0i64;
++            for b in &positions {
++                let mut plein = search_sans_lmp();
++                plein.full_window_only = !pvs;
++                let reference = plein.negamax(b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
++                for pari in [5_000, -5_000, 0] {
++                    let mut s = search_sans_lmp();
++                    s.full_window_only = !pvs;
++                    let score = s.search_root(b, 5, 8, pari, &mut ardoise());
++                    if score != reference {
++                        differents += 1;
++                        let d = (score - reference).abs();
++                        ecart_max = ecart_max.max(d);
++                        somme += i64::from(d);
++                    }
++                }
++            }
++            let total = positions.len() * 3;
++            println!(
++                "PVS={pvs} : {differents}/{total} scores changés par le pari \
++                 ({:.1} %), écart max {ecart_max} cp, écart moyen sur les \
++                 changés {:.1} cp",
++                100.0 * f64::from(differents) / total as f64,
++                if differents == 0 {
++                    0.0
++                } else {
++                    somme as f64 / f64::from(differents)
++                }
++            );
++        }
++    }
++
++    #[test]
++    fn la_fenetre_nulle_ne_change_pas_le_coup_trouve_sur_un_mat() {
++        // PVS ne doit jamais coûter un mat : un coup de mat dépasse forcément
++        // `alpha`, donc il est re-cherché en fenêtre pleine. Si la re-recherche
++        // manquait, le mat ne serait connu que comme un minorant et pourrait
++        // se retrouver classé derrière un autre coup.
++        assert_eq!(
++            best(
++                "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 1",
++                7
++            ),
++            "f3f7"
++        );
++        assert_eq!(
++            best(
++                "rnbqkbnr/pppp1ppp/8/4p3/6P1/5P2/PPPPP2P/RNBQKBNR b KQkq - 0 2",
++                7
++            ),
++            "d8h4"
++        );
++    }
++
++    #[test]
++    fn la_fenetre_nulle_rend_le_meme_score_que_la_fenetre_pleine() {
++        // Propriété centrale de PVS : il accélère, il ne décide pas. Le score
++        // exact d'un nœud ne doit pas dépendre du fait qu'on ait d'abord sondé
++        // ses coups en fenêtre nulle.
++        //
++        // Deux instances neuves, donc deux tables vides : les deux mesures sont
++        // déterministes et ne diffèrent que par le régime de fenêtre. Un écart
++        // signalerait une re-recherche manquante.
++        for fen in [
++            "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1",
++            "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
++            "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
++            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
++        ] {
++            let b = board(fen);
++            let mut a1 = ardoise();
++            let avec = search().negamax(&b, 5, 0, -INFINITY, INFINITY, &mut a1);
++
++            let mut sans = search();
++            sans.full_window_only = true;
++            let mut a2 = ardoise();
++            let sans = sans.negamax(&b, 5, 0, -INFINITY, INFINITY, &mut a2);
++
++            assert_eq!(avec, sans, "{fen}");
++            assert!(avec.abs() < MATE_THRESHOLD, "{fen} : score invraisemblable");
++        }
++    }
++
++    #[test]
++    fn la_fenetre_nulle_reduit_bien_larbre() {
++        // Sans le commutateur, ce test ne pourrait comparer que deux appels
++        // identiques. Le nombre de nœuds est déterministe : il tranche sans
++        // incertitude que le mécanisme agit — pas qu'il rapporte de l'Elo,
++        // ce que seul un SPRT peut dire.
++        let b = board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
++
++        let mut avec = search();
++        let mut a1 = ardoise();
++        avec.negamax(&b, 6, 0, -INFINITY, INFINITY, &mut a1);
++
++        let mut sans = search();
++        sans.full_window_only = true;
++        let mut a2 = ardoise();
++        sans.negamax(&b, 6, 0, -INFINITY, INFINITY, &mut a2);
++
++        assert_ne!(
++            avec.nodes, sans.nodes,
++            "la fenêtre nulle ne change rien à l'arbre — elle est donc inerte"
++        );
++    }
++
++    #[test]
++    fn le_premier_coup_est_cherche_en_fenetre_pleine() {
++        // Si le premier coup était lui aussi sondé en fenêtre nulle, aucun nœud
++        // ne rendrait jamais de score exact et la variante principale serait
++        // vide. Elle doit rester complète et légale.
++        let position =
++            Position::from_fen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1")
++                .unwrap();
++        let limits = Limits {
++            depth: Some(6),
++            ..Limits::default()
++        };
++        let mut lignes = Vec::new();
++        let mut s = search();
++        s.go(&position, &limits, |info| lignes.push(info.pv.clone()));
++        let derniere = lignes.last().unwrap();
++        assert!(
++            derniere.len() >= 2,
++            "variante principale tronquée : {derniere:?}"
++        );
++    }
++
+     #[test]
+     fn le_roque_nest_pas_compte_comme_une_capture() {
+         // cozy-chess encode le roque roi-prend-tour : la case d'arrivée porte

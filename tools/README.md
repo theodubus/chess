@@ -99,6 +99,35 @@ Le runner est plus **rapide** que le conteneur — de **+8 à +35 %, médiane
 varie que de 5 %. **Le 3,14 M est l'extrême, pas la norme**, et c'est pourquoi
 deux points ne suffisaient pas à le dire.
 
+### Remesuré le 21 sept. 2026 — la dispersion est plus large, et un piège apparaît
+
+**Deux runners, le MÊME binaire (`6bf13fa`), le même jour :**
+
+| où | nœuds/s | profondeur en 250 ms |
+|---|---|---|
+| conteneur de session, 3 relevés | 1 579 651 – 1 641 338 | — |
+| runner `1000002450` (match C12) | **2 067 101** | 11 |
+| runner `1000002435` (match C18) | **3 268 241** | **12** |
+
+**58 % d'écart entre les deux runners** (× 1,581), contre les 25 % inscrits
+ci-dessus. La dispersion est donc plus large que le projet ne le croyait, et
+c'est la **troisième** fois que ce chiffre est révisé — après « deux fois plus
+lent », puis « ±10 % », puis « 25 % ».
+
+**Et le piège, qui est neuf.** Le conteneur rendait 2 280 655 – 2 396 011 n/s
+le 16 sept. et 1 579 651 – 1 641 338 aujourd'hui : **−32 %**. La machine n'a
+pas ralenti — **C19 et C17 ont rendu chaque nœud plus cher.** Un nombre de
+nœuds par seconde appartient donc à SON BINAIRE autant qu'à sa machine.
+
+> **Une ligne d'étalonnage ne compare que des runs du même binaire.** Croiser
+> l'étalonnage d'un run de septembre avec celui d'un run d'aujourd'hui compare
+> deux moteurs et une machine à la fois, et le résultat ne veut rien dire. La
+> profondeur atteinte en 250 ms, elle, reste directement lisible : c'est le
+> point de fonctionnement réel, quelle que soit la version.
+
+C'est la même famille que « vérifier le dénominateur » : un chiffre vrai,
+mesuré correctement, qui ne répond pas à la question qu'on lui pose.
+
 **La sonde de profondeur suit bien la vitesse** : 10 à 2,51 et 2,67 M n/s,
 **11** à 3,14 M. Première validation qu'elle mesure ce qu'elle prétend. Traduit dans la
 seule unité qui compte — le projet a mesuré **1,33 ply par doublement de
@@ -410,8 +439,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-16 | Le même retrait, à `1+0,01` | **H0 accepté** — **−18,91 Elo ± 9,22** sur 3274 parties, bornes `[-5, 0]`. Étalonnage : 2 507 861 n/s, profondeur 10. |
 | 2026-09-16 | **Élagage par échange statique en quiescence (C19), à `8+0,08`** | **H1 accepté** — **+33,59 Elo ± 12,00** sur 1608 parties, LLR 2,95 contre 2,94, 54,82 % de score, LOS 100 %. Étalonnage : 3 110 423 n/s, profondeur 11 en 250 ms. 2 h 31 de match. |
 | 2026-09-16 | **Le même, à `30+0,3`** | **+18,84 Elo ± 15,41** sur **960 parties** à longueur fixe, LOS 99,19 %. Même graine d'ouvertures, donc apparié au précédent. Étalonnage : 2 557 547 n/s, profondeur 10 — **runner 18 % plus lent que celui du verdict ci-dessus**. |
-| 2026-09-21 | **C18 — extension d'échec, à `8+0,08`** | **VERDICT EN COURS** — [run 35613044990](https://github.com/theodubus/chess/actions/runs/35613044990), match à **longueur fixe** de 3400 parties, candidat `4f881aa` contre `6bf13fa`, graine 20260913. Longueur fixe et non SPRT parce que la sonde dimensionnait l'effet à 1,39 % de l'arbre, donc possiblement sous les ~17 Elo qu'un seul job de SPRT tranche — et un SPRT expiré n'est pas exploitable, un match à longueur fixe coupé au plafond l'est. Banc : 114 028 → 131 977 nœuds. |
-| 2026-09-21 | **C12 — PVS réécrit, à `8+0,08`** | **VERDICT EN COURS** — [run 35616375595](https://github.com/theodubus/chess/actions/runs/35616375595), match à **longueur fixe** de 3400 parties, candidat `35548f2` contre `6bf13fa`, graine 20260913 — **apparié avec C18**, mêmes ouvertures et même référence. Banc 114 028 → 106 820 (−6,3 %). Longueur fixe et non SPRT : la question est **bilatérale** ici (PVS valait −10,9 à `1+0,01`), et des bornes `[0, 5]` n'auraient rien rendu d'exploitable entre 0 et +17. Les deux tests d'aspiration qui tombaient sont corrigés sur `main` : leur prémisse était fausse **indépendamment de PVS** — sans LMP, le score de la boucle dépend déjà du pari **8,3 % du temps** (38/459, écart max 100 cp), et leur unique position tombait dans les 91,7 % stables. |
+| 2026-09-21 | **C18 — extension d'échec, à `8+0,08`** | **PAS UN GAIN — −5,01 Elo ± 8,11**, 3400 parties à longueur fixe, 49,28 % de score, LOS 11,3 %, Ptnml [130, 351, 761, 354, 104]. [run 35613044990](https://github.com/theodubus/chess/actions/runs/35613044990), candidat `4f881aa` contre `6bf13fa`, graine 20260913. Étalonnage : **3 268 241 n/s, profondeur 12** — le plus rapide des runners mesurés à ce jour. L'intervalle contient zéro et le point estimé est négatif. **Non fusionné**, code dans `tools/attic/c18-extension-echec.patch`. Banc du candidat : 131 977 nœuds (×1,16). |
+| 2026-09-21 | **C12 — PVS réécrit, à `8+0,08`** | **PAS UN GAIN NON PLUS, mais plus du tout un coût — −0,82 Elo ± 8,19**, 3400 parties à longueur fixe, 49,88 % de score, LOS 42,2 %, Ptnml [130, 319, 810, 311, 130]. [run 35616375595](https://github.com/theodubus/chess/actions/runs/35616375595), candidat `35548f2` contre `6bf13fa`, graine 20260913. Étalonnage : **2 067 101 n/s, profondeur 11**. **Non fusionné**, code dans `tools/attic/c12-pvs-2026-09-21.patch`. Banc du candidat : 106 820 nœuds (÷1,07). |
 | 2026-09-21 | **LMP seuil `6 + d²` (C17), à `8+0,08`, sur la base post-C19** | **H1 accepté** — **+22,85 Elo ± 9,88** sur 2436 parties, LLR 2,95, 53,28 % de score, LOS 100 %. Étalonnage : 2 508 824 n/s, profondeur 11. 3 h 47 de match. **Retenu.** |
 | 2026-09-21 | **Le même, seuil `12 + d²`** | **H1 accepté** — **+17,24 Elo ± 8,51** sur 3368 parties, LLR 2,96, 52,48 % de score. Étalonnage : 2 579 292 n/s, profondeur 11. 5 h 09 de match. |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
