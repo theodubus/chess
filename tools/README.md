@@ -410,6 +410,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-16 | Le même retrait, à `1+0,01` | **H0 accepté** — **−18,91 Elo ± 9,22** sur 3274 parties, bornes `[-5, 0]`. Étalonnage : 2 507 861 n/s, profondeur 10. |
 | 2026-09-16 | **Élagage par échange statique en quiescence (C19), à `8+0,08`** | **H1 accepté** — **+33,59 Elo ± 12,00** sur 1608 parties, LLR 2,95 contre 2,94, 54,82 % de score, LOS 100 %. Étalonnage : 3 110 423 n/s, profondeur 11 en 250 ms. 2 h 31 de match. |
 | 2026-09-16 | **Le même, à `30+0,3`** | **+18,84 Elo ± 15,41** sur **960 parties** à longueur fixe, LOS 99,19 %. Même graine d'ouvertures, donc apparié au précédent. Étalonnage : 2 557 547 n/s, profondeur 10 — **runner 18 % plus lent que celui du verdict ci-dessus**. |
+| 2026-09-21 | **LMP seuil `6 + d²` (C17), à `8+0,08`, sur la base post-C19** | **VERDICT EN COURS** — SPRT `[0, 5]`, candidat `a98a75d` contre `7877340`. [run 35571945707](https://github.com/theodubus/chess/actions/runs/35571945707) |
+| 2026-09-21 | **Le même, seuil `12 + d²`** | **VERDICT EN COURS** — [run 35571952457](https://github.com/theodubus/chess/actions/runs/35571952457). Les deux ensemble donnent la bissection **à la cadence qui tranche** ; elle n'existait qu'à `1+0,01`. |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
@@ -452,6 +454,24 @@ cadence : ÷ 1,07 → +30 à `1+0,01`. **Le rapport de nœuds n'a pas bougé ; l
 a été multiplié par 1,7.** *(Ces deux nombres datent d'avant C19 : la référence
 du bench vaut 148 786 nœuds depuis. Un rapport de nœuds se lit entre les deux
 binaires d'une même mesure, jamais contre le chiffre courant.)*
+
+### C17 rouvert : ce que LMP élague, et ce que C19 n'a pas changé
+
+**Un élagage par compte de coups ne coupe que des coups TRANQUILLES.** Sa garde
+est `quiet && !in_check && …`, et l'ordonnancement place toutes les captures
+avant tous les coups tranquilles. Nœuds déterministes sur la base post-C19 :
+
+| | prof. 7 | prof. 10 | économie gardée |
+|---|---|---|---|
+| base (C19 seul) | 148 786 | 1 145 406 | — |
+| LMP seuil `6 + d²` | 114 028 | 635 210 | 100 % |
+| LMP seuil `12 + d²` | 117 561 | 667 488 | **94 %** |
+
+Le genou mesuré le 15 sept. tient : le seuil 12 garde 94 % de l'économie pour
+**53 % du risque** (2,0 % des montées d'`alpha` détruites contre 3,8 %). Et
+l'économie de LMP est **plus grande qu'avant C19** — ÷ 1,30 à la profondeur 7
+contre ÷ 1,19 alors — parce que retirer des nœuds de quiescence rend les
+sous-arbres de coups tranquilles une part plus grande de l'arbre.
 
 ### C19 : la cadence n'a PAS inversé ce verdict, et c'est un résultat
 

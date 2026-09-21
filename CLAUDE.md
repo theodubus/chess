@@ -212,6 +212,19 @@ une mesure, pas une préférence.
   positions tirées de vraies parties, 1,9 % — un facteur 3 à 5. Toute question
   portant sur une phase de jeu se mesure sur des positions extraites d'un
   match (`-pgnout`, puis échantillonnage).
+- **Avant d'ordonner deux chantiers par une dépendance, vérifier qu'ils
+  touchent les mêmes objets.** Le projet a inscrit que l'échange statique était
+  « la précondition » de l'élagage par compte de coups, au motif que la prémisse
+  de LMP est « l'ordonnancement a raison » et que l'ordonnancement manquait SEE.
+  **Le raisonnement est juste et l'application est fausse** : LMP n'élague que
+  des **coups tranquilles**, et SEE n'ordonne que des **captures**. Les deux ne
+  se touchent pas. Vérifié dans le code plutôt que supposé : le diff de C19 ne
+  contient pas une ligne de `score_move` ni d'`ordered_moves`, donc l'ordre des
+  coups tranquilles que voit LMP est identique au bit près à celui contre lequel
+  il avait été rejeté. La séquence n'a rien coûté — remesurer sur une meilleure
+  base reste juste — mais **la raison écrite était fausse, et une raison fausse
+  bloque le bon chantier la prochaine fois.** Même famille que « vérifier le
+  dénominateur » : un raisonnement correct appliqué à la mauvaise grandeur.
 - **Avant de découper un changement en deux SPRT, vérifier que le second
   n'absorbe pas le premier.** C19 devait être deux verdicts : l'échange
   statique dans l'*ordonnancement*, puis dans l'*élagage* en quiescence. Tous
