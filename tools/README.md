@@ -410,8 +410,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-16 | Le même retrait, à `1+0,01` | **H0 accepté** — **−18,91 Elo ± 9,22** sur 3274 parties, bornes `[-5, 0]`. Étalonnage : 2 507 861 n/s, profondeur 10. |
 | 2026-09-16 | **Élagage par échange statique en quiescence (C19), à `8+0,08`** | **H1 accepté** — **+33,59 Elo ± 12,00** sur 1608 parties, LLR 2,95 contre 2,94, 54,82 % de score, LOS 100 %. Étalonnage : 3 110 423 n/s, profondeur 11 en 250 ms. 2 h 31 de match. |
 | 2026-09-16 | **Le même, à `30+0,3`** | **+18,84 Elo ± 15,41** sur **960 parties** à longueur fixe, LOS 99,19 %. Même graine d'ouvertures, donc apparié au précédent. Étalonnage : 2 557 547 n/s, profondeur 10 — **runner 18 % plus lent que celui du verdict ci-dessus**. |
-| 2026-09-21 | **LMP seuil `6 + d²` (C17), à `8+0,08`, sur la base post-C19** | **VERDICT EN COURS** — SPRT `[0, 5]`, candidat `a98a75d` contre `7877340`. [run 35571945707](https://github.com/theodubus/chess/actions/runs/35571945707) |
-| 2026-09-21 | **Le même, seuil `12 + d²`** | **VERDICT EN COURS** — [run 35571952457](https://github.com/theodubus/chess/actions/runs/35571952457). Les deux ensemble donnent la bissection **à la cadence qui tranche** ; elle n'existait qu'à `1+0,01`. |
+| 2026-09-21 | **LMP seuil `6 + d²` (C17), à `8+0,08`, sur la base post-C19** | **H1 accepté** — **+22,85 Elo ± 9,88** sur 2436 parties, LLR 2,95, 53,28 % de score, LOS 100 %. Étalonnage : 2 508 824 n/s, profondeur 11. 3 h 47 de match. **Retenu.** |
+| 2026-09-21 | **Le même, seuil `12 + d²`** | **H1 accepté** — **+17,24 Elo ± 8,51** sur 3368 parties, LLR 2,96, 52,48 % de score. Étalonnage : 2 579 292 n/s, profondeur 11. 5 h 09 de match. |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
@@ -445,6 +445,7 @@ disent, et elles ne s'ordonnent pas de la même façon :
 | **élagage par compte, seuil 12** | **÷ 1,14** | **−13** |
 | **fenêtres d'aspiration, remesurées à `8+0,08`** | **÷ 1,048** | **+52** |
 | élagage par échange statique en quiescence (C19) | ÷ 1,50 | +34 |
+| **élagage par compte de coups (LMP), seuil 6, à `8+0,08`** | **÷ 1,30** | **+23** |
 
 La dernière ligne est le point le plus extrême du tableau : **la plus petite
 économie de nœuds, et presque le plus gros gain d'Elo**. Vérifié par exécution
@@ -570,6 +571,35 @@ propres mérites (−10,9 Elo, 4214 parties, `1+0,01`). Ce qui tombe est la thè
 Sonde et instrumentation dans `tools/attic/d2-sonde-pv.patch`, à appliquer
 après `c17-lmp.patch`.
 
+### C17 : LMP paie à la cadence qui tranche, et il avait été rejeté deux fois
+
+Le même élagage, les mêmes deux seuils, deux cadences :
+
+| seuil | `1+0,01` | `8+0,08`, base post-C19 |
+|---|---|---|
+| `6 + d²` | −25,20 ± 11,60 — **H0** | **+22,85 ± 9,88 — H1**, 2436 parties |
+| `12 + d²` | −12,55 ± 8,70 — **H0** | **+17,24 ± 8,51 — H1**, 3368 parties |
+
+**Ce qui est établi : LMP passe de rejeté deux fois à accepté deux fois.** Aux
+deux seuils, les intervalles excluent zéro confortablement. Contrôle de
+vraisemblance : `parties × Elo` vaut 55 663 et 58 064, contre une médiane de
+projet à 59 500 — les deux tombent dessus.
+
+**Ce qui n'est PAS établi : que le classement des deux seuils s'inverse.** Les
+estimations ponctuelles le disent — 12 meilleur à `1+0,01`, 6 meilleur à
+`8+0,08` — mais **aucune des deux différences n'est résolue** : écart 12,60,
+z = 1,70, p = 0,089 à `1+0,01` ; écart 5,61, z = 0,84, **p = 0,399** à
+`8+0,08`. Quatre points qui dessinent un motif monotone ne sont pas quatre
+points significatifs.
+
+**Le seuil 6 est retenu sur son estimation ponctuelle**, faute de mieux, et le
+mécanisme va dans le même sens — <span>inférence, confiance moyenne</span> : le
+coût suit le risque détruit (3,8 % contre 2,0 %) et le bénéfice suit l'économie
+de nœuds (100 % contre 94 %). Quand la profondeur monte, l'économie pèse plus
+lourd que le risque, donc le seuil agressif gagne. **Ce qui trancherait
+vraiment** : la paire remesurée à `30+0,3`, ou des matchs à longueur fixe mis
+en commun — un écart de 5,6 Elo demande ~10 600 parties.
+
 ### C17 rouvert : ce que LMP élague, et ce que C19 n'a pas changé
 
 **Un élagage par compte de coups ne coupe que des coups TRANQUILLES.** Sa garde
@@ -646,7 +676,15 @@ Retirer **19 %** des nœuds coûte 25 Elo ; en retirer **14 %** en coûte 13. Le
 coût suit non pas l'économie mais le **risque** : le seuil 6 détruit 3,8 % des
 montées d'`alpha`, le seuil 12 en détruit 2,0 % — risque × 0,53, coût × 0,50.
 La droite passe par l'origine, et le risque nul est exactement « pas d'élagage
-par compte ». **Il n'y a pas de seuil qui paie sur ce moteur.**
+par compte ».
+
+> <s>**Il n'y a pas de seuil qui paie sur ce moteur.**</s> **RÉFUTÉ le
+> 21 sept. 2026.** À `8+0,08`, sur la base post-C19, les **deux** seuils sont
+> H1 : +22,85 et +17,24. Tout ce qui précède reste exact — à `1+0,01`, et
+> seulement là. La phrase barrée, elle, n'avait pas de cadence : elle
+> généralisait deux points d'un même régime à « ce moteur » tout entier, et
+> c'est exactement ce que D1 interdit. **Une conclusion sans cadence est une
+> conclusion fausse en attente de l'être.**
 
 Les deux dernières lignes du haut sont les plus instructives. PVS explore **moins** de
 nœuds et joue **plus mal**. La mobilité en explore **29 % de plus** et joue
