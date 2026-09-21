@@ -290,6 +290,28 @@ une mesure, pas une préférence.
   d'évaluation sont des données, pas du code** : une donnée fausse se borne,
   elle n'arrête pas la partie. Un test vérifie qu'aucun jeu de paramètres ne
   fait paniquer l'évaluation, jeu entièrement nul compris.
+- **Une propriété générale assertée sur UNE position passe par chance, et le
+  jour où elle tombe on accuse le mauvais coupable.** Deux tests d'aspiration
+  assertaient que, sans l'élagage par compte de coups, le score de la boucle ne
+  dépend pas du pari initial — chacun sur une position. PVS les a fait tomber,
+  et mon premier diagnostic a été « PVS déstabilise l'aspiration ». **Mesuré le
+  21 sept. 2026 sur `main`, sans une ligne de PVS** : sur 153 positions d'une
+  marche seedée et trois paris chacune, le score diffère déjà de la fenêtre
+  pleine **38 fois sur 459, soit 8,3 %** (25,1 % avec l'élagage par compte).
+  L'instabilité préexistait ; les deux tests tombaient dans les 91,7 % stables.
+  **Un contrôle qui suppose une propriété doit la COMPTER sur un échantillon**,
+  et borner qualitativement — « non nul », « plus grand que » — jamais par un
+  taux chiffré, qu'un changement de recherche ferait dériver.
+- **Une reformulation justifiée par une mesure INDÉPENDANTE du changement n'est
+  pas de l'accommodement.** La règle ci-dessous interdit d'assouplir un test
+  jusqu'à ce qu'il passe, et tient une seconde reformulation du même test pour
+  suspecte. Le garde-fou réel n'est pas le compteur de reformulations, c'est
+  l'indépendance : **la mesure qui condamne l'assertion a-t-elle été obtenue
+  sans le changement qu'on veut faire passer ?** Si oui, l'assertion est fausse
+  en elle-même et la retirer est la réponse honnête ; si non, c'est du
+  motivated reasoning quelle que soit la fois. <span>Arbitrage utilisateur du
+  21 sept. 2026 : « *tout ce qui peut se résoudre par la mesure et par
+  l'objectif de qualité long terme ne nécessite pas d'arbitrage* ».</span>
 - **Quand un réglage fait tomber un test, deux réponses seulement sont
   honnêtes.** *Reformuler* le test s'il mesurait la mauvaise chose — la prime
   de pion passé se jugeait sur `PASSED_MG` seul alors que la table du pion
