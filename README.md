@@ -9,8 +9,9 @@ d'un aveu sur la profondeur de recherche.
 > élagage alpha-bêta, approfondissement itératif, quiescence, table de
 > transposition et ordonnancement des coups, plus **des élagages avancés
 > mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
-> d'aspiration, élagage delta en quiescence, futilité inverse, et l'élagage
-> par **échange statique** en quiescence. L'évaluation
+> d'aspiration, élagage delta en quiescence, futilité inverse, l'élagage par
+> **échange statique** en quiescence et l'**élagage par compte de coups**.
+> L'évaluation
 > couvre matériel, tables piece-square, paire de fous, mobilité, sécurité du
 > roi, structure de pions et colonnes de tours.
 > Chaque changement de recherche passe par un **SPRT** ; les verdicts, leurs
@@ -29,11 +30,13 @@ d'un aveu sur la profondeur de recherche.
 > mesurer court sous-estime ce dont la valeur croît avec la profondeur. La
 > revalidation à cadence longue est en cours.
 >
-> **Dernier gain mesuré (C19) :** l'élagage par **échange statique** en
-> quiescence — les captures qui perdent du matériel n'y sont plus examinées.
-> **+33,59 Elo ± 12,00** sur 1608 parties à `8+0,08`, H1 accepté ; **+18,84
-> ± 15,41** sur 960 parties à `30+0,3`. Positif aux deux cadences, sans
-> inversion. Déterministe : **−33 % de nœuds** à la profondeur 7.
+> **Deux gains mesurés à `8+0,08` :** l'élagage par **échange statique** en
+> quiescence — les captures qui perdent du matériel n'y sont plus examinées —
+> vaut **+33,59 Elo ± 12,00** sur 1608 parties, et **+18,84 ± 15,41** sur 960
+> parties à `30+0,3` : positif aux deux cadences, sans inversion. Puis
+> l'**élagage par compte de coups**, **+22,85 ± 9,88** sur 2436 parties —
+> **la même technique avait été rejetée deux fois à `1+0,01`** (−25,2 et
+> −12,6). C'est la démonstration la plus nette de la réserve ci-dessus.
 > Il n'a encore ni recherche parallèle, ni NNUE.
 
 ## Structure
@@ -121,7 +124,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
 dépend ni de la machine ni de sa charge.
 
-Référence à la profondeur 7 : **148 786** nœuds.
+Référence à la profondeur 7 : **114 028** nœuds.
 
 Ce chiffre est vérifié par la CI — voir
 [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
