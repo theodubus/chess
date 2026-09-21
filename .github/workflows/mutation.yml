@@ -46,7 +46,15 @@ jobs:
         # `tools/` est délibérément absent : ce sont des utilitaires hors
         # ligne (génération de données, réglage, sondes), dont la fiabilité se
         # juge par `tools/crosscheck.sh` et non par des tests unitaires.
-        # `lib.rs` est absent aussi — il ne produit aucun mutant.
+        # `lib.rs` est absent aussi — il ne porte aucune `fn`, donc
+        # `cargo mutants --list` y annonce zéro mutant.
+        #
+        # CETTE LISTE EST ÉCRITE À LA MAIN, DONC ELLE DÉRIVE. `see.rs` est né
+        # le 16 sept. 2026 et n'y a pas été ajouté : il est resté cinq jours
+        # hors du cliquet sans que rien ne le signale, parce que le verdict
+        # n'énumère que les entrées du plafond et qu'un fichier absent des
+        # DEUX listes n'apparaît nulle part. `engine/tests/couverture_mutation.rs`
+        # confronte désormais les deux listes au contenu de `engine/src/`.
         fichier:
           - eval.rs
           - search.rs
@@ -56,6 +64,7 @@ jobs:
           - perft.rs
           - bench.rs
           - main.rs
+          - see.rs
     steps:
       - uses: actions/checkout@v4
 
