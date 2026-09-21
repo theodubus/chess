@@ -455,6 +455,46 @@ a été multiplié par 1,7.** *(Ces deux nombres datent d'avant C19 : la référ
 du bench vaut 148 786 nœuds depuis. Un rapport de nœuds se lit entre les deux
 binaires d'une même mesure, jamais contre le chiffre courant.)*
 
+### C18 : la réserve de la fiche est juste, et deux fois plutôt qu'une
+
+La fiche portait que « la quiescence explore déjà tous les coups en échec, donc
+une partie du bénéfice est peut-être déjà acquise ». Mesuré sur 400 positions de
+parties réelles à la profondeur 10 :
+
+| profondeur restante | nœuds | en échec | part | part de l'arbre |
+|---|---|---|---|---|
+| quiescence | 36 577 617 | 1 966 681 | 5,38 % | 86,07 % |
+| 1 | 4 317 783 | 333 828 | 7,73 % | 10,16 % |
+| 2 | 936 076 | 132 902 | 14,20 % | 2,20 % |
+| 3 | 353 774 | 68 191 | 19,28 % | 0,83 % |
+| ≥ 4 | 312 302 | 57 191 | 18,31 % | 0,74 % |
+| **tous** | **42 497 552** | **2 558 793** | **6,02 %** | |
+
+**Ce qui est déjà acquis, et par deux mécanismes distincts.** D'abord, **77 %**
+des nœuds en échec sont en quiescence, et celle-ci n'y calcule pas de
+`stand_pat` : elle produit *tous* les coups, pas seulement les tactiques. Une
+position en échec n'est jamais évaluée statiquement. Ensuite, la condition de
+LMR est `quiet && !in_check && child.checkers().is_empty() && …` — le moteur
+refuse de réduire **et** les positions en échec **et** les coups qui donnent
+échec. Un coup d'échec garde donc sa profondeur pendant que ses frères
+tranquilles la perdent : c'est déjà une extension relative.
+
+**Ce qu'il reste, et pourquoi ça ne clôt pas C18.** Les 592 112 nœuds en échec
+hors quiescence, soit **1,39 % de l'arbre** — le même ordre de grandeur que la
+portée de la futilité inverse (4,4 % des nœuds, +24,3 Elo). Trop grand pour
+conclure sans match. **La sonde dimensionne C18, elle ne le tranche pas**, et
+c'est la différence avec D2 : le même geste ferme une question et en ouvre une
+autre proprement.
+
+<span>Le taux d'échec croît avec la profondeur restante, de 5,4 % à 19,3 %.
+<strong>Inférence, non mesurée, confiance moyenne</strong> : LMR ne réduisant pas
+les échecs, un nœud en échec garde sa profondeur pendant que ses frères tombent
+dans les seaux bas — le gradient serait en partie un effet de la garde de LMR
+elle-même. Le vérifier demanderait de compter les nœuds en échec atteints
+<em>après</em> réduction, ce que cette sonde ne fait pas.</span>
+
+Sonde dans `tools/attic/c18-sonde-echec.patch`.
+
 ### D2 clos sans match : le gatage sur non-PV vaut environ 1 Elo
 
 D2 posait que PVS n'est pas un gain mais un **habilitant** — il crée la

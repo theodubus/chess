@@ -29,6 +29,7 @@ réseau.
 | `c17-lmp.patch` | élagage par compte de coups, seuil `6 + d²` | **H0** deux fois, −25,2 puis −12,6, `1+0,01` — **mais +15,3 à `8+0,08`** | **oui**, `git apply --check` passe |
 | `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | **oui**, `git apply --check` passe, SUR l'élagage en quiescence |
 | `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | **oui**, mais APRÈS `c17-lmp.patch` |
+| `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. **Sizé, pas tranché** | **oui**, sur `main` |
 
 ```sh
 git apply --check tools/attic/c17-lmp.patch   # toujours, avant d'appliquer
