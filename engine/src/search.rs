@@ -31,6 +31,7 @@ use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
 
 use crate::eval::{self, DRAW, INFINITY, MATE, MATE_THRESHOLD};
 use crate::position::{Position, repetitions};
+use crate::see;
 use crate::tt::{Bound, TranspositionTable, pack_move};
 
 /// Profondeur maximale de la recherche principale.
@@ -979,6 +980,9 @@ impl Search {
                 // capture élagable peut en précéder une qui ne l'est pas.
                 continue;
             }
+            if see_prunable(board, mv, in_check) {
+                continue;
+            }
 
             let mut child = board.clone();
             child.play_unchecked(mv);
@@ -1095,6 +1099,46 @@ pub fn captured_piece(board: &Board, mv: Move) -> Option<Piece> {
         return Some(Piece::Pawn); // prise en passant
     }
     None
+}
+
+fn see_prunable(board: &Board, mv: Move, in_check: bool) -> bool {
+    if in_check {
+        return false;
+    }
+    let Some(victim) = captured_piece(board, mv) else {
+        return false;
+    };
+    mv.promotion.is_none() && may_lose_material(board, mv, victim) && see::see(board, mv) < 0
+}
+
+/// Cette capture peut-elle perdre du matériel ?
+///
+/// **Une pure économie, jamais une garde de correction.** Se tromper ne peut
+/// pas faire sauter une capture à tort : rendre `true` à tort mène à `see`, qui
+/// rend alors un score positif et n'élague pas. Rendre `false` à tort ne fait
+/// que manquer un élagage. C'est ce qui autorise un filtre approximatif ici,
+/// alors qu'il serait inacceptable dans `see`.
+///
+/// Son rôle est d'éviter l'appel à `see` — une suite d'échanges — quand sa
+/// réponse est connue d'avance. Deux cas se décident sans calculer :
+///
+/// - **La victime vaut au moins l'agresseur.** Les deux camps peuvent s'arrêter
+///   à tout moment dans `see` : on peut toujours encaisser la victime, subir la
+///   reprise et cesser, donc `see(mv) >= valeur(victime) − valeur(agresseur)`.
+///   Le membre de droite étant positif ou nul, l'échange l'est aussi.
+/// - **Le roi capture.** Un coup de roi produit par le générateur est légal,
+///   donc la case n'est attaquée par personne après coup — une pièce clouée
+///   défend quand même contre le roi, la règle du jeu est de notre côté ici.
+///   `see` rendrait donc la valeur de la victime ; l'appeler ne servirait qu'à
+///   payer la géométrie.
+///
+/// Un test éprouve l'économie sur une marche déterministe de milliers de
+/// positions : `false` n'y est jamais rendu sur une capture perdante.
+fn may_lose_material(board: &Board, mv: Move, victim: Piece) -> bool {
+    let Some(attacker) = board.piece_on(mv.from) else {
+        return false;
+    };
+    attacker != Piece::King && see::piece_value(victim) < see::piece_value(attacker)
 }
 
 /// Côté de la table de réductions, en profondeur comme en rang de coup.
@@ -2460,5 +2504,133 @@ mod tests {
         pv.push(MAX_PLY - 1, mv);
         pv.push(MAX_PLY, mv);
         assert_eq!(pv.line(), Vec::new(), "rien n'a été écrit à la racine");
+    }
+}
+
+#[cfg(test)]
+#[expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
+mod see_pruning_tests {
+    use super::*;
+    use cozy_chess::util::parse_uci_move;
+
+    fn board(fen: &str) -> Board {
+        fen.parse().unwrap()
+    }
+
+    /// Une marche déterministe depuis la position initiale.
+    ///
+    /// Les positions de `bench` ne sont pas un échantillon de jeu — le projet
+    /// l'a mesuré, un facteur 3 à 5 sur la fréquence d'un phénomène. Une marche
+    /// couvre l'ouverture, le milieu et la finale, et le xorshift la rend
+    /// rejouable : un échec se reproduit à l'identique.
+    fn marche(parties: u32, plis: u32, mut visiter: impl FnMut(&Board)) {
+        for graine in 1..=parties {
+            let mut etat = (u64::from(graine) * 2_654_435_761) | 1;
+            let mut board = Board::default();
+            for _ in 0..plis {
+                let mut coups = Vec::new();
+                board.generate_moves(|set| {
+                    coups.extend(set);
+                    false
+                });
+                if coups.is_empty() {
+                    break;
+                }
+                visiter(&board);
+                etat ^= etat << 13;
+                etat ^= etat >> 7;
+                etat ^= etat << 17;
+                let mv = coups[(etat as usize) % coups.len()];
+                board.play_unchecked(mv);
+            }
+        }
+    }
+
+    /// L'économie de `may_lose_material` ne doit jamais coûter un élagage.
+    ///
+    /// Rendre `false` à tort ne casse rien — on n'élague pas — mais cela
+    /// voudrait dire que le raisonnement des deux cas est faux, et ce
+    /// raisonnement est le seul garant qu'on ne paie pas `see` pour rien.
+    /// Le vérifier sur des milliers de positions coûte une seconde.
+    #[test]
+    fn economie_jamais_a_tort() {
+        let mut vus = 0u64;
+        marche(60, 80, |board| {
+            let mut coups = Vec::new();
+            board.generate_moves(|set| {
+                coups.extend(set);
+                false
+            });
+            for mv in coups {
+                let Some(victim) = captured_piece(board, mv) else {
+                    continue;
+                };
+                if mv.promotion.is_some() {
+                    continue;
+                }
+                vus += 1;
+                if !may_lose_material(board, mv, victim) {
+                    let exchange = see::see(board, mv);
+                    assert!(
+                        exchange >= 0,
+                        "économie fausse : {mv} vaut {exchange} sur {board}"
+                    );
+                }
+            }
+        });
+        // Un test qui n'a rien regardé passe aussi. Le compte le dit.
+        assert!(vus > 10_000, "corpus trop maigre : {vus} captures");
+    }
+
+    /// Une capture franchement perdante est sautée.
+    ///
+    /// Position et coup vérifiés par exécution, valeur lue sur l'oracle : la
+    /// dame prend en f6 un cavalier défendu et perd 660.
+    #[test]
+    fn capture_perdante_sautee() {
+        let b = board("r2q1rk1/p1p2ppp/bp3n2/2bp2B1/4P3/N1QP1N1P/PP3PP1/R3K2R w KQ - 2 13");
+        let mv = parse_uci_move(&b, "c3f6").unwrap();
+        assert_eq!(see::see(&b, mv), -660);
+        assert!(see_prunable(&b, mv, false));
+    }
+
+    /// **En échec, rien n'est sauté.** La quiescence produit alors toutes les
+    /// évasions, et en élaguer une rendrait un mat qui n'existe pas — dans la
+    /// branche de mat que ne couvre aucun test de mat en un.
+    #[test]
+    fn jamais_en_echec() {
+        let b = board("r2q1rk1/p1p2ppp/bp3n2/2bp2B1/4P3/N1QP1N1P/PP3PP1/R3K2R w KQ - 2 13");
+        let mv = parse_uci_move(&b, "c3f6").unwrap();
+        assert!(see_prunable(&b, mv, false));
+        assert!(!see_prunable(&b, mv, true));
+    }
+
+    /// Un coup tranquille n'est pas une capture, et l'élagage ne le regarde pas.
+    #[test]
+    fn coup_tranquille_intact() {
+        let b = board("r2q1rk1/p1p2ppp/bp3n2/2bp2B1/4P3/N1QP1N1P/PP3PP1/R3K2R w KQ - 2 13");
+        let mv = parse_uci_move(&b, "h3h4").unwrap();
+        assert_eq!(captured_piece(&b, mv), None);
+        assert!(!see_prunable(&b, mv, false));
+    }
+
+    /// Une capture gagnante survit, et **une capture égale aussi**.
+    ///
+    /// Les deux valeurs sont lues sur l'oracle : `f3e5` gagne un pion, `e4d5`
+    /// vaut exactement zéro. Ce zéro est le vrai objet du test — il distingue
+    /// `< 0` de `<= 0`, et sans lui l'élagage pourrait jeter tous les échanges
+    /// égaux sans qu'un seul test bronche. Sans cette garde non plus, un
+    /// élagage qui rendrait `true` partout passerait les tests précédents.
+    #[test]
+    fn capture_gagnante_et_capture_egale_conservees() {
+        let b = board("rnbqkbnr/ppp2ppp/8/3pp3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3");
+
+        let gagnante = parse_uci_move(&b, "f3e5").unwrap();
+        assert_eq!(see::see(&b, gagnante), 100);
+        assert!(!see_prunable(&b, gagnante, false));
+
+        let egale = parse_uci_move(&b, "e4d5").unwrap();
+        assert_eq!(see::see(&b, egale), 0);
+        assert!(!see_prunable(&b, egale, false));
     }
 }

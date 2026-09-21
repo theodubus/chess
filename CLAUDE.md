@@ -187,7 +187,7 @@ une mesure, pas une préférence.
 | « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. Empiriquement, sur les quatre SPRT du projet, `parties × Elo ≈ 62 000` : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 12 400 ≈ 2 h 30 ; +2 ≈ 31 000 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. **À `8+0,08` par `match.yml`, un job tranche les effets de ~17 Elo et plus** : 5,57 s par partie mesurées, plafond de 350 min, soit ~3 750 parties. En dessous, passer à des matchs à longueur fixe sur plusieurs jobs et les mettre en commun — jamais « reprendre » un SPRT expiré, un test séquentiel interrompu puis prolongé n'a plus ses taux d'erreur. Voir `tools/README.md`. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
 | « c'est plus fort » | **Jamais** déduit d'un nombre de nœuds, dans aucun sens. Huit mesures, et les trois combinaisons de signes sont représentées : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration ÷1,07 → +30 ; élagage delta ÷1,68 → +33 ; futilité inverse ÷1,45 → +24 (moins de nœuds, plus fort) ; **PVS ÷1,03 → −11, H0 accepté** (moins de nœuds, plus faible) ; **mobilité ×1,29 → +63** (*plus* de nœuds, plus fort). Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. **Deux rapports voisins, ÷1,68 et ÷2,52, rapportent +33 et +75 : même le classement ne se déduit pas.** |
-| « cette technique est standard, donc elle aide » | **Rien.** Ce n'est pas une preuve. PVS est dans tous les manuels et la mesure l'a rejeté sur ce moteur (−11 Elo, 4214 parties) : empilé sur LMR, coup nul et fenêtres d'aspiration, il n'apporte plus rien à couper et ne laisse que son coût de re-recherche. Une technique standard entre par le SPRT comme toutes les autres. |
+| « cette technique est standard, donc elle aide » | **Rien.** Ce n'est pas une preuve, et le dépôt en porte maintenant **trois** démentis. PVS est dans tous les manuels et la mesure l'a rejeté (−11 Elo, 4214 parties) : empilé sur LMR, coup nul et fenêtres d'aspiration, il n'apporte plus rien à couper et ne laisse que son coût de re-recherche. La coupure du manuel dans l'échange statique rend une valeur fausse — 27 écarts sur 771, l'oracle l'a vue au premier passage. Et reléguer les captures perdantes **derrière les coups tranquilles**, comme le font les moteurs modernes, coûte **+31,6 % de nœuds** ici, contre −4,2 % pour le palier le plus doux. Une technique standard entre par le SPRT comme toutes les autres. |
 | « ce réglage était mauvais, pas la technique » | **Une bissection par le paramètre, pas une intuition.** L'élagage par compte de coups a été mesuré deux fois : seuil `6 + d²` → **−25,2 Elo**, seuil `12 + d²` → **−12,6**. Le coût suit le **risque mesuré** — 3,8 % puis 2,0 % des montées d'`alpha` détruites, soit × 0,53 pour × 0,50 — et la droite passe par l'origine, où le risque nul vaut « pas d'élagage ». **Deux points ont clos la question que zéro point aurait laissée ouverte**, comme elle l'est restée pour PVS. |
 | « j'ai mesuré le mécanisme, donc je sais » | **Vérifier le dénominateur.** Avant d'écrire LMP j'ai mesuré la part des *coups tranquilles* élagués : 58 % au seuil 6, 40 % au seuil 12, compromis monotone sans genou — d'où « seul un SPRT peut choisir ». En **nœuds**, qui sont ce qui achète de la profondeur, le seuil 12 garde **96 %** de l'économie du seuil 6 : le genou est net. Un chiffre vrai qui répond à une autre question. |
 
@@ -212,6 +212,28 @@ une mesure, pas une préférence.
   positions tirées de vraies parties, 1,9 % — un facteur 3 à 5. Toute question
   portant sur une phase de jeu se mesure sur des positions extraites d'un
   match (`-pgnout`, puis échantillonnage).
+- **Avant de découper un changement en deux SPRT, vérifier que le second
+  n'absorbe pas le premier.** C19 devait être deux verdicts : l'échange
+  statique dans l'*ordonnancement*, puis dans l'*élagage* en quiescence. Tous
+  les manuels les présentent en paire. **Mesuré le 16 sept. 2026 : le second
+  rend le premier inutile.** Une fois les captures perdantes sautées, les
+  réordonner ne vaut plus que −1 % de nœuds pour +1,6 % de temps — parce que
+  la quiescence porte 90 % des nœuds et que les captures déplacées n'y sont
+  plus recherchées du tout. Le découpage supposait deux gisements ; il n'y en
+  avait qu'un. Six heures de match économisées par vingt minutes de bench.
+  **Le geste est le même que « mesurer le mécanisme d'abord », appliqué au
+  PLAN plutôt qu'au code** : construire les deux moitiés, compter les nœuds des
+  quatre combinaisons, et seulement ensuite décider combien de verdicts acheter.
+- **Le nombre de nœuds ne dit pas la force — mais il dit le COÛT, et il le dit
+  exactement.** Ces deux phrases ne se contredisent pas, et confondre leurs
+  domaines a failli me faire acheter un verdict inutile. Un rapport de nœuds
+  ne classe pas deux techniques par leur Elo : c'est mesuré huit fois, dans les
+  trois combinaisons de signes. Mais il est **déterministe**, donc il tranche
+  ce qui est de son ressort — la taille de l'arbre à profondeur fixe — sans
+  aucune incertitude, là où un SPRT met des heures. La bissection du palier de
+  C19 (+31,6 % / +6,5 % / −4,2 %) a été rendue en trois minutes et n'aurait
+  demandé aucun match. **Ce qui reste au SPRT, c'est de savoir si le coût
+  s'achète** ; ce qui ne lui appartient pas, c'est de mesurer le coût.
 - **Mesurer le mécanisme avant d'en mesurer l'effet en Elo.** Compter combien
   de fois un phénomène se produit coûte des minutes d'instrumentation ; en
   mesurer l'effet coûte des heures de match. Et si le phénomène ne se produit
@@ -504,7 +526,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
 rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
 commit.
 
-Référence à la profondeur 7 : 223 577 nœuds.
+Référence à la profondeur 7 : 148 786 nœuds.
 
 Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
 `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que

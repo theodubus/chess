@@ -7,9 +7,10 @@ d'un aveu sur la profondeur de recherche.
 
 > Statut : **recherche et évaluation en place, monothread**. Negamax avec
 > élagage alpha-bêta, approfondissement itératif, quiescence, table de
-> transposition et ordonnancement des coups, plus **cinq élagages avancés
+> transposition et ordonnancement des coups, plus **des élagages avancés
 > mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
-> d'aspiration, élagage delta en quiescence, futilité inverse. L'évaluation
+> d'aspiration, élagage delta en quiescence, futilité inverse, et l'élagage
+> par **échange statique** en quiescence. L'évaluation
 > couvre matériel, tables piece-square, paire de fous, mobilité, sécurité du
 > roi, structure de pions et colonnes de tours.
 > Chaque changement de recherche passe par un **SPRT** ; les verdicts, leurs
@@ -27,14 +28,20 @@ d'un aveu sur la profondeur de recherche.
 > (−18,9 → −51,6 au retrait, p ≈ 0,0004). Même sens dans les deux cas :
 > mesurer court sous-estime ce dont la valeur croît avec la profondeur. La
 > revalidation à cadence longue est en cours.
-> Il n'a encore ni recherche parallèle, ni NNUE, ni interface.
+>
+> **Dernier gain mesuré (C19) :** l'élagage par **échange statique** en
+> quiescence — les captures qui perdent du matériel n'y sont plus examinées.
+> **+33,59 Elo ± 12,00** sur 1608 parties à `8+0,08`, H1 accepté ; **+18,84
+> ± 15,41** sur 960 parties à `30+0,3`. Positif aux deux cadences, sans
+> inversion. Déterministe : **−33 % de nœuds** à la profondeur 7.
+> Il n'a encore ni recherche parallèle, ni NNUE.
 
 ## Structure
 
 | Dossier | Contenu | Statut |
 |---|---|---|
 | `engine/` | Moteur UCI en Rust | Recherche et évaluation, monothread |
-| `ui/` | Interface TypeScript | Pas démarré |
+| `ui/` | Interface TypeScript | Pas démarré — consignes dans `ui/CLAUDE.md` |
 | `tools/` | Arbitres, livre d'ouvertures, SPRT | Opérationnel |
 
 Le moteur et l'interface ne communiquent que par le protocole UCI sur
@@ -114,7 +121,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
 dépend ni de la machine ni de sa charge.
 
-Référence à la profondeur 7 : **223 577** nœuds.
+Référence à la profondeur 7 : **148 786** nœuds.
 
 Ce chiffre est vérifié par la CI — voir
 [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a

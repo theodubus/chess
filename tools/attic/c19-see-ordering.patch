@@ -1,0 +1,70 @@
+# c19 — l'échange statique dans l'ORDONNANCEMENT
+#
+# Retiré SANS SPRT, ce qui demande une justification : l'effet mesuré est
+# nettement SOUS ce qu'un job de `match.yml` peut trancher (~17 Elo), et son
+# signe estimé est négatif. Le mesurer coûterait six heures pour n'apprendre
+# rien de décidable.
+#
+# LE PALIER, BISSECTÉ — nœuds à la profondeur 10, déterministes, réf 1 570 498 :
+#
+#   palier des captures perdantes           nœuds      vs réf
+#   après TOUS les coups tranquilles      2 067 278    +31,6 %
+#   entre les killers et les tranquilles  1 672 542     +6,5 %
+#   dans le palier des captures,          1 504 134     −4,2 %
+#     après les captures gagnantes
+#
+# Le conseil du manuel — reléguer les captures perdantes derrière les coups
+# tranquilles, comme le font les moteurs modernes — est le PIRE des trois sur
+# ce moteur, d'un facteur qui ne laisse aucun doute. Même famille que PVS :
+# une technique standard n'est pas une preuve.
+#
+# Seul le palier le plus doux rétrécit l'arbre, et il coûte le temps qu'il
+# gagne : ~836 ms contre ~812 ms à la profondeur 10, quatre paires gagnantes
+# sur cinq pour la RÉFÉRENCE. Les appels à `see` se paient sur 57,2 % des
+# captures notées.
+#
+# ET SURTOUT — une fois l'élagage SEE en quiescence en place, l'ordonnancement
+# n'ajoute plus rien : 1 145 406 nœuds sans lui, 1 133 970 avec (−1 %), pour
+# ~1,6 % de temps en plus. La raison est structurelle, pas conjoncturelle : la
+# quiescence porte 90 % des nœuds, et les captures que cet ordonnancement
+# déplaçait n'y sont plus recherchées du tout.
+#
+# CE QUI ROUVRIRAIT LA QUESTION : une cadence nettement plus longue — D1 a
+# montré qu'un verdict appartient à sa cadence — ou une génération par étapes,
+# qui rendrait `see` beaucoup moins cher à l'ordonnancement.
+#
+# S'applique SUR l'élagage en quiescence, pas avant.
+#
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -591,6 +591,15 @@
+         }
+         let mut score = 0;
+         if let Some(victim) = captured_piece(board, mv) {
++            // Une capture perdante passe derrière les captures gagnantes.
++            // MVV-LVA ne regarde que les deux pièces du coup, jamais la case :
++            // c'est exactement ce que l'échange statique sait dire et lui pas.
++            if mv.promotion.is_none() && may_lose_material(board, mv, victim) {
++                let exchange = see::see(board, mv);
++                if exchange < 0 {
++                    return SCORE_LOSING_CAPTURE + exchange;
++                }
++            }
+             let attacker = board
+                 .piece_on(mv.from)
+                 .map_or(0, |piece| ORDER_VALUE[piece as usize]);
+@@ -1196,6 +1205,14 @@
+ const SCORE_PROMOTION: i32 = 2_000_000;
+ const SCORE_KILLER_1: i32 = 1_000_000;
+ const SCORE_KILLER_2: i32 = 900_000;
++
++/// Palier des captures que l'échange statique déclare perdantes.
++///
++/// Dans le palier des captures, sous la moins bonne des gagnantes
++/// (`SCORE_CAPTURE + 1_000 - 6`), et ordonnées entre elles par le score
++/// d'échange. Les deux autres paliers essayés sont dans l'en-tête de cette
++/// rustine.
++const SCORE_LOSING_CAPTURE: i32 = 3_990_000;
+ /// Plafond de l'historique, au-delà duquel toutes les valeurs sont divisées par
+ /// deux. Sans cela elles finiraient par déborder et par écraser les paliers.
+ const HISTORY_MAX: i32 = 800_000;
