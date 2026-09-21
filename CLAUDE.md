@@ -212,6 +212,18 @@ une mesure, pas une préférence.
   positions tirées de vraies parties, 1,9 % — un facteur 3 à 5. Toute question
   portant sur une phase de jeu se mesure sur des positions extraites d'un
   match (`-pgnout`, puis échantillonnage).
+- **Quand un mécanisme est rare par construction, compter ses nœuds ne
+  tranche rien — compter ses DÉGÂTS, si.** D2 supposait que PVS vaut par le
+  gatage de LMP sur les nœuds hors variante principale. La question naturelle
+  — « quelle part des nœuds est sur l'épine PV ? » — ne pouvait rien décider :
+  l'épine porte au plus un nœud par ply, donc sa part est dérisoire quelle que
+  soit la réponse. **Mesuré le 21 sept. 2026 sur la bonne grandeur** : l'épine
+  est 0,50 % des nœuds, 0,81 % des coupes de LMP, et **3,79 % des montées
+  d'`alpha` détruites** — 4,8 fois plus dangereuse par coupe, donc le mécanisme
+  existe, mais un ordre de grandeur trop petit pour expliquer les 25 Elo qu'il
+  devait expliquer. **D2 est clos sans un seul match.** Troisième forme du même
+  piège, après le dénominateur de LMP et le balayage par `movetime` : un chiffre
+  vrai qui répond à une autre question.
 - **Avant d'ordonner deux chantiers par une dépendance, vérifier qu'ils
   touchent les mêmes objets.** Le projet a inscrit que l'échange statique était
   « la précondition » de l'élagage par compte de coups, au motif que la prémisse

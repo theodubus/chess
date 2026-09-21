@@ -455,6 +455,50 @@ a été multiplié par 1,7.** *(Ces deux nombres datent d'avant C19 : la référ
 du bench vaut 148 786 nœuds depuis. Un rapport de nœuds se lit entre les deux
 binaires d'une même mesure, jamais contre le chiffre courant.)*
 
+### D2 clos sans match : le gatage sur non-PV vaut environ 1 Elo
+
+D2 posait que PVS n'est pas un gain mais un **habilitant** — il crée la
+distinction PV / hors-PV, et les moteurs forts n'appliquent LMP qu'aux nœuds
+hors PV. On aurait donc rejeté l'habilitant sur sa valeur isolée, puis rejeté
+LMP qui en dépend.
+
+**La question qu'il ne fallait pas poser** : « quelle part des nœuds est sur
+l'épine PV ? ». L'épine est minuscule *par construction* — au plus un nœud par
+ply — donc ce compte ne tranche rien quelle que soit sa valeur. Ce qui compte
+est la part des **dégâts** qui s'y trouve.
+
+Mesuré sur 400 positions tirées de parties réelles, profondeur 10, la sonde
+n'élaguant pas mais cherchant les coups que LMP aurait coupés :
+
+| | hors PV | sur l'épine PV |
+|---|---|---|
+| nœuds | 5 890 552 | 29 383 — 0,50 % |
+| nœuds où LMP couperait | 998 256 | 8 188 — 0,81 % |
+| montées d'`alpha` détruites | 59 184 | **2 331 — 3,79 %** |
+| **dégât par coupe** | **5,93 %** | **28,47 %** |
+
+**Le mécanisme de D2 existe** : l'épine est 4,8 fois plus dangereuse par coupe.
+**Et il est un ordre de grandeur trop petit** : elle ne porte que 3,79 % des
+dégâts. Croisé avec la proportionnalité mesurée par la bissection de C17 —
+risque × 0,53 pour un coût × 0,50, droite passant par l'origine — le gatage
+vaut environ **1 Elo** sur les 25 que D2 devait expliquer, soit vingt fois sous
+ce qu'un job peut trancher.
+
+**La borne, assumée.** L'épine mesurée est « parent PV et premier coup » ; le
+vrai PVS ajoute un nœud PV à chaque re-recherche après échec haut, donc 3,79 %
+est un **plancher**. Pour renverser la conclusion il faudrait que l'ensemble PV
+réel porte ~80 % des dégâts, donc qu'il soit ~20 fois plus grand *en gardant*
+son taux de 28 % par coupe. Or c'est la concentration qui rend l'épine
+dangereuse et elle se dilue en s'élargissant — hors épine le taux tombe à
+5,93 %.
+
+**Ce qui n'est pas réfuté** : que PVS ait une valeur. Il a été rejeté sur ses
+propres mérites (−10,9 Elo, 4214 parties, `1+0,01`). Ce qui tombe est la thèse
+*spécifique* de D2 — que sa valeur soit d'habiliter LMP.
+
+Sonde et instrumentation dans `tools/attic/d2-sonde-pv.patch`, à appliquer
+après `c17-lmp.patch`.
+
 ### C17 rouvert : ce que LMP élague, et ce que C19 n'a pas changé
 
 **Un élagage par compte de coups ne coupe que des coups TRANQUILLES.** Sa garde

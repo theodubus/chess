@@ -1,0 +1,220 @@
+# d2 — la sonde qui a clos D2 sans match
+#
+# D2 posait que PVS n'est pas un gain mais un HABILITANT : il crée la
+# distinction PV / hors-PV, et les moteurs forts n'appliquent l'élagage par
+# compte de coups qu'aux nœuds hors PV. Conséquence supposée : on aurait
+# rejeté l'habilitant sur sa valeur isolée (−10,9 Elo), puis rejeté LMP qui
+# en dépend (−25,2).
+#
+# LA QUESTION QU'IL NE FALLAIT PAS POSER — « quelle part des nœuds est sur
+# l'épine PV ? ». L'épine est minuscule PAR CONSTRUCTION : au plus un nœud
+# par ply. Sa part des nœuds est dérisoire quelle que soit la réponse, donc
+# ce compte ne tranche rien. Ce qui compte est la part des DÉGÂTS qui s'y
+# trouve. Même famille que « vérifier le dénominateur », et c'est en
+# l'écrivant que je l'ai vu.
+#
+# CE QUI A ÉTÉ MESURÉ — 400 positions tirées de parties réelles (datagen,
+# 50 parties, graine 20260921), recherche à la profondeur 10. La sonde
+# N'ÉLAGUE PAS : elle cherche les coups que LMP aurait coupés et regarde
+# lesquels font monter `alpha`.
+#
+#                             hors PV      sur l'épine PV
+#   nœuds                     5 890 552    29 383      0,50 %
+#   nœuds où LMP couperait      998 256     8 188      0,81 %
+#   montées d'alpha détruites    59 184     2 331      3,79 %
+#   dégât par coupe                5,93 %    28,47 %
+#
+# LE RÉSULTAT. L'épine est bien 4,8 fois plus dangereuse par coupe — le
+# mécanisme de D2 EXISTE. Mais elle ne porte que 3,79 % des dégâts. Gater LMP
+# sur non-PV sauverait 3,8 % des montées détruites en abandonnant 0,8 % des
+# coupes.
+#
+# Croisé avec la proportionnalité MESURÉE par la bissection de C17 — risque
+# × 0,53 pour un coût × 0,50, droite passant par l'origine — cela vaut
+# environ **1 Elo** sur les 25 que D2 devait expliquer. Un ordre de grandeur
+# trop petit, et vingt fois sous ce qu'un job peut trancher.
+#
+# LA BORNE, ASSUMÉE. L'épine mesurée ici est « parent PV et premier coup ».
+# Le vrai PVS ajoute un nœud PV à chaque re-recherche après échec haut, donc
+# 3,79 % est un PLANCHER. Pour renverser la conclusion il faudrait que le
+# vrai ensemble PV porte ~80 % des dégâts, donc qu'il soit ~20 fois plus
+# grand EN GARDANT son taux de 28 % par coupe. Or c'est la concentration qui
+# rend l'épine dangereuse, et elle se dilue en s'élargissant : hors épine, le
+# taux est de 5,93 %. Un ensemble vingt fois plus grand serait dominé par des
+# nœuds ordinaires.
+#
+# CE QUI N'EST PAS RÉFUTÉ — que PVS ait une valeur. Il a été rejeté sur ses
+# propres mérites (−10,9 Elo, 4214 parties, à 1+0,01). Ce qui tombe est la
+# thèse SPÉCIFIQUE de D2 : que sa valeur soit d'habiliter LMP.
+#
+# S'applique APRÈS `c17-lmp.patch`, et le binaire de lecture est
+# `tools/src/bin/d2_probe.rs`, dont le diff suit.
+#
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -111,6 +111,14 @@
+ /// conclure quoi que ce soit sur LMP lui-même.**
+ const LMP_BASE: usize = 6;
+ 
++// SONDE D2 — jetable. Indexés par [nœud PV].
++pub static D2_EVENTS: [std::sync::atomic::AtomicU64; 2] =
++    [std::sync::atomic::AtomicU64::new(0), std::sync::atomic::AtomicU64::new(0)];
++pub static D2_DESTROYED: [std::sync::atomic::AtomicU64; 2] =
++    [std::sync::atomic::AtomicU64::new(0), std::sync::atomic::AtomicU64::new(0)];
++pub static D2_NODES: [std::sync::atomic::AtomicU64; 2] =
++    [std::sync::atomic::AtomicU64::new(0), std::sync::atomic::AtomicU64::new(0)];
++
+ /// Profondeur à partir de laquelle on ose une fenêtre étroite.
+ ///
+ /// En dessous, le score d'une itération à l'autre bouge trop pour qu'une
+@@ -331,6 +339,8 @@
+     /// Permet à un test de désactiver le seul élagage par compte de coups.
+     #[cfg(test)]
+     late_move_pruning: bool,
++    /// SONDE D2 — jetable.
++    pv_node: Vec<bool>,
+ }
+ 
+ impl Search {
+@@ -360,6 +370,7 @@
+             delta_pruning: true,
+             #[cfg(test)]
+             late_move_pruning: true,
++            pv_node: vec![false; MAX_PLY + 2],
+         }
+     }
+ 
+@@ -875,19 +886,30 @@
+ 
+         let mut quiets_seen = 0usize;
+ 
++        // SONDE D2 — jetable. LMP N'ÉLAGUE PAS ici : on cherche quand même les
++        // coups qu'il aurait coupés, pour voir lesquels auraient fait monter
++        // `alpha`, et si ces montées sont sur l'épine de la variante principale
++        // — la seule chose qu'un gatage sur non-PV protégerait.
++        if ply == 0 {
++            self.pv_node[0] = true;
++        }
++        let pv = usize::from(self.pv_node[ply]);
++        D2_NODES[pv].fetch_add(1, Ordering::Relaxed);
++        let mut suppressed = false;
++
+         for (index, &(mv, _)) in buffer[..count].iter().enumerate() {
+             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
+ 
+-            // Élagage par compte de coups : on abandonne les coups tranquilles
+-            // restants. `break` et non `continue`, parce que l'ordonnancement
+-            // place toutes les captures avant tous les coups tranquilles — ce
+-            // qui reste derrière est tranquille, et moins bien classé encore.
+-            if self.late_move_prune(quiet, in_check, ply, depth, best, quiets_seen) {
+-                break;
++            if !suppressed
++                && self.late_move_prune(quiet, in_check, ply, depth, best, quiets_seen)
++            {
++                suppressed = true;
++                D2_EVENTS[pv].fetch_add(1, Ordering::Relaxed);
+             }
+             if quiet {
+                 quiets_seen += 1;
+             }
++            self.pv_node[ply + 1] = self.pv_node[ply] && index == 0;
+ 
+             let mut child = board.clone();
+             child.play_unchecked(mv);
+@@ -944,6 +966,9 @@
+                     self.root_best = Some(mv);
+                 }
+                 if score > alpha {
++                    if suppressed {
++                        D2_DESTROYED[pv].fetch_add(1, Ordering::Relaxed);
++                    }
+                     alpha = score;
+                     self.pv.push(ply, mv);
+                     if alpha >= beta {
+diff --git a/tools/src/bin/d2_probe.rs b/tools/src/bin/d2_probe.rs
+new file mode 100644
+index 0000000..8338774
+--- /dev/null
++++ b/tools/src/bin/d2_probe.rs
+@@ -0,0 +1,81 @@
++//! Sonde D2 — jetable. Est-ce que l'élagage par compte de coups détruit ses
++//! montées d'`alpha` SUR l'épine de la variante principale ?
++//!
++//! D2 pose que PVS n'est pas un gain mais un habilitant : il crée la
++//! distinction PV / hors-PV, et les moteurs forts n'appliquent LMP qu'aux
++//! nœuds hors PV. Si les montées d'`alpha` que LMP détruit sont concentrées
++//! sur l'épine, le gatage les sauve presque toutes et D2 vaut un match. Si
++//! elles sont ailleurs, le gatage ne protège rien et D2 est clos sans match.
++//!
++//! **Compter les NŒUDS PV ne répondrait pas à la question.** L'épine est
++//! minuscule par construction — au plus un nœud par ply — donc sa part des
++//! nœuds est dérisoire quelle que soit la réponse. Ce qui compte est la part
++//! des DÉGÂTS qui s'y trouve, pas la part des nœuds.
++
++use std::io::BufRead;
++use std::sync::Arc;
++use std::sync::atomic::{AtomicBool, Ordering};
++
++use cozy_chess::Board;
++use shallowred::position::Position;
++use shallowred::search::{
++    D2_DESTROYED, D2_EVENTS, D2_NODES, Limits, Search,
++};
++
++fn main() {
++    let profondeur: u32 = std::env::args()
++        .nth(1)
++        .and_then(|a| a.parse().ok())
++        .unwrap_or(10);
++    let limite: usize = std::env::args()
++        .nth(2)
++        .and_then(|a| a.parse().ok())
++        .unwrap_or(400);
++
++    let stop = Arc::new(AtomicBool::new(false));
++    let mut search = Search::new(stop);
++    let limits = Limits {
++        depth: Some(profondeur),
++        ..Limits::default()
++    };
++
++    let mut positions = 0usize;
++    for line in std::io::stdin().lock().lines().map_while(Result::ok) {
++        if positions >= limite {
++            break;
++        }
++        let fen = line.split(';').next().unwrap_or("").trim();
++        let Ok(board) = fen.parse::<Board>() else {
++            continue;
++        };
++        positions += 1;
++        // Table vidée entre deux positions : sans cela la sonde mesurerait
++        // aussi l'histoire des positions précédentes.
++        search.clear_table();
++        let position = Position::from_board(board);
++        let _ = search.go(&position, &limits, |_| {});
++    }
++
++    let lire = |t: &[std::sync::atomic::AtomicU64; 2]| {
++        (t[0].load(Ordering::Relaxed), t[1].load(Ordering::Relaxed))
++    };
++    let (n_hors, n_pv) = lire(&D2_NODES);
++    let (e_hors, e_pv) = lire(&D2_EVENTS);
++    let (d_hors, d_pv) = lire(&D2_DESTROYED);
++
++    let pct = |a: u64, b: u64| {
++        if b == 0 { 0.0 } else { 100.0 * a as f64 / b as f64 }
++    };
++
++    println!("positions                {positions}");
++    println!("profondeur               {profondeur}");
++    println!();
++    println!("                              hors PV            sur l'épine PV");
++    println!("nœuds                   {n_hors:>14}  {n_pv:>14}   ({:.4} % sur l'épine)", pct(n_pv, n_hors + n_pv));
++    println!("nœuds où LMP couperait  {e_hors:>14}  {e_pv:>14}   ({:.4} % sur l'épine)", pct(e_pv, e_hors + e_pv));
++    println!("montées d'alpha détruites {d_hors:>12}  {d_pv:>14}   ({:.4} % sur l'épine)", pct(d_pv, d_hors + d_pv));
++    println!();
++    println!("part des coupes qui détruisent une montée :");
++    println!("  hors PV        {:.2} %", pct(d_hors, e_hors));
++    println!("  sur l'épine    {:.2} %", pct(d_pv, e_pv));
++}
