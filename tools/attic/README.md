@@ -29,7 +29,9 @@ réseau.
 | `c17-lmp.patch` | élagage par compte de coups, seuil `6 + d²` | **H0** deux fois, −25,2 puis −12,6, `1+0,01` — **mais +15,3 à `8+0,08`** | **oui**, `git apply --check` passe |
 | `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | **oui**, `git apply --check` passe, SUR l'élagage en quiescence |
 | `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | **oui**, mais APRÈS `c17-lmp.patch` |
-| `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. **Sizé, pas tranché** | **oui**, sur `main` |
+| `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. Le dimensionnement a été suivi d'un match, voir ci-dessous | **oui**, sur `main` |
+| `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | **oui**, `git apply --check` passe sur `main` |
+| `c12-pvs-2026-09-21.patch` | PVS réécrit à la main sur le moteur post-C19 et post-LMP | **−0,82 Elo ± 8,19**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | **oui**, `git apply --check` passe sur `main` |
 
 ```sh
 git apply --check tools/attic/c17-lmp.patch   # toujours, avant d'appliquer
@@ -50,6 +52,29 @@ moteur atteint la profondeur 8,5 ; la cible est la force générale. Il manque u
 SPRT à cadence longue, pas du travail d'écriture — le seuil est un `sed` d'un
 caractère sur `LMP_BASE`.
 
+### C12 est clos le 21 septembre 2026, et cette fois sans condition
+
+**Mesuré à la cadence cible, sur la base post-C19 et post-LMP, code réécrit à
+la main : −0,82 Elo ± 8,19** sur 3400 parties. L'intervalle `[−9,0 ; +7,4]`
+est centré sur zéro.
+
+Ce chiffre **corrige le premier plus qu'il ne le confirme**. PVS n'est pas un
+coût de 11 Elo : c'est un **néant**. Son économie de nœuds (÷1,07) et son coût
+de re-recherche s'annulent, et il ne reste rien.
+
+Et les deux motifs de réouverture sont épuisés :
+
+- **par son rôle** — réfuté le 21 sept. au matin : l'épine PV porte 3,79 % des
+  montées d'`alpha` que LMP détruit, soit ~1 Elo ;
+- **par la cadence** — mesuré le 21 sept. au soir : à `8+0,08`, zéro.
+
+**Il n'y a plus de condition nommée, donc plus rien à rouvrir.** La rustine
+reste ici parce qu'elle a coûté du travail et qu'un futur changement de la
+recherche pourrait un jour lui redonner de la matière à couper — mais ce serait
+une question neuve, pas la réouverture de celle-ci.
+
+<details><summary>Le raisonnement d'avant, conservé</summary>
+
 **C12 — <s>par son rôle</s> par la cadence.** <s>Dans les moteurs forts, LMP et
 la futilité ne s'appliquent qu'aux nœuds hors variante principale, et cette
 distinction, c'est PVS qui la crée.</s> **Ce motif est RÉFUTÉ depuis le
@@ -67,6 +92,8 @@ plus petit que celui qu'a comblé LMP.
 **Une raison fausse bloque le bon chantier la prochaine fois** : elle aurait
 fait acheter un SPRT sur la paire PVS + LMP, six heures pour répondre à une
 question déjà close.
+
+</details>
 
 ## La règle
 

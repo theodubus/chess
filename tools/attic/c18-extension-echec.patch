@@ -1,0 +1,240 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 4667be6..0ba9b85 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -111,6 +111,22 @@ const LMP_MAX_DEPTH: i32 = 3;
+ /// conclure quoi que ce soit sur LMP lui-même.**
+ const LMP_BASE: usize = 6;
+ 
++/// Borne de l'extension d'échec, en multiple de l'itération courante.
++///
++/// **Sans borne, l'extension ne termine pas.** Une suite d'échecs perpétuels
++/// rend un ply à chaque échec, et la ligne ne se referme jamais : l'arbre
++/// grossit jusqu'à la garde d'ardoise, qui n'est qu'un filet de sécurité.
++///
++/// La borne porte sur le **ply**, pas sur un compteur d'extensions, et c'est un
++/// choix : elle garantit directement ce qu'on veut — aucun chemin ne descend
++/// plus bas que deux fois l'itération nominale — là où un compteur borne le
++/// nombre d'extensions sans borner la profondeur atteinte.
++///
++/// Deux est la valeur conventionnelle. Elle n'est pas mesurée : la borne n'est
++/// pas un réglage de force mais une condition de terminaison, et `2 × 64`
++/// tombe exactement sur `MAX_PLY`, où la garde d'ardoise prend le relais.
++const CHECK_EXTENSION_MAX_PLY_FACTOR: usize = 2;
++
+ /// Profondeur à partir de laquelle on ose une fenêtre étroite.
+ ///
+ /// En dessous, le score d'une itération à l'autre bouge trop pour qu'une
+@@ -314,6 +330,14 @@ pub struct Search {
+     /// Les valeurs que consulte l'évaluation. Le moteur emploie toujours les
+     /// valeurs par défaut ; seul le tuner en substitue d'autres.
+     params: eval::Params,
++    /// Profondeur de l'itération en cours, posée au ply 0 de `negamax`.
++    ///
++    /// Seule l'extension d'échec la lit, pour borner la profondeur qu'un
++    /// chemin peut atteindre. Elle est posée **dans `negamax` au ply 0** et non
++    /// par l'appelant : un test qui appelle `negamax` directement — ce que la
++    /// détection de mat oblige à faire — la poserait alors à zéro sans le
++    /// vouloir, et l'extension serait silencieusement inerte dans ce test.
++    root_depth: usize,
+     /// Permet à un test de désactiver la seule futilité inverse.
+     ///
+     /// Hors test, la constante `true` est connue du compilateur : la condition
+@@ -331,6 +355,9 @@ pub struct Search {
+     /// Permet à un test de désactiver le seul élagage par compte de coups.
+     #[cfg(test)]
+     late_move_pruning: bool,
++    /// Permet à un test de désactiver la seule extension d'échec.
++    #[cfg(test)]
++    check_extension: bool,
+ }
+ 
+ impl Search {
+@@ -354,12 +381,15 @@ impl Search {
+             lmr: build_lmr_table(),
+             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
+             params: eval::Params::DEFAULT,
++            root_depth: 0,
+             #[cfg(test)]
+             reverse_futility: true,
+             #[cfg(test)]
+             delta_pruning: true,
+             #[cfg(test)]
+             late_move_pruning: true,
++            #[cfg(test)]
++            check_extension: true,
+         }
+     }
+ 
+@@ -765,6 +795,34 @@ impl Search {
+             return DRAW;
+         }
+ 
++        // L'itération en cours se lit ici, et non chez l'appelant : c'est le
++        // seul endroit que TOUTES les entrées traversent, tests compris.
++        if ply == 0 {
++            self.root_depth = usize::try_from(depth).unwrap_or(0);
++        }
++
++        // Extension d'échec.
++        //
++        // Un échec est forcé : toutes les suites sont contraintes, et s'arrêter
++        // dessus fait rendre un score à une position que la recherche n'a pas
++        // fini de comprendre. On lui rend donc un ply.
++        //
++        // **Avant la consultation de la table, et ce n'est pas indifférent** :
++        // le score sera stocké à la profondeur étendue en fin de fonction, donc
++        // la coupure doit être jugée contre la même. Étendre après la
++        // consultation ferait accepter une entrée trop superficielle.
++        //
++        // Rien à faire du côté des autres élagages : la futilité inverse et le
++        // coup nul refusent déjà de s'appliquer en échec, chacun pour sa propre
++        // raison. Et `depth <= 0` est traité plus haut, donc une position en
++        // échec à profondeur nulle tombe dans la quiescence, qui explore déjà
++        // toutes les parades.
++        let depth = if self.extend_for_check(board, ply) {
++            depth + 1
++        } else {
++            depth
++        };
++
+         let key = board.hash();
+         let ply_i32 = i32::try_from(ply).unwrap_or(0);
+         let hit = self.tt.probe(key, ply_i32);
+@@ -1154,6 +1212,24 @@ impl Search {
+             && quiets_seen >= lmp_limit(depth)
+     }
+ 
++    /// Faut-il rendre un ply à cette position parce qu'elle est en échec ?
++    ///
++    /// Fonction nommée plutôt que condition enfouie, pour la même raison que
++    /// `lmp_limit` et `time_budget_ms` : **un invariant qu'on ne peut pas
++    /// appeler est un invariant qu'aucun test ne protège.** Ce qui se teste
++    /// ici est la borne — qu'elle refuse d'étendre au-delà de
++    /// `CHECK_EXTENSION_MAX_PLY_FACTOR × root_depth` — et une borne de
++    /// terminaison vérifiée par un test vaut mieux qu'une borne vérifiée par
++    /// l'absence de plantage.
++    fn extend_for_check(&self, board: &Board, ply: usize) -> bool {
++        #[cfg(test)]
++        if !self.check_extension {
++            return false;
++        }
++
++        !board.checkers().is_empty() && ply < CHECK_EXTENSION_MAX_PLY_FACTOR * self.root_depth
++    }
++
+     /// Vrai si cette capture ne peut pas ramener la position jusqu'à `alpha`.
+     ///
+     /// Mesuré avant d'être écrit, le 14 sept. 2026 : **90 % des nœuds du moteur
+@@ -1613,6 +1689,111 @@ mod tests {
+         s
+     }
+ 
++    /// Construit une recherche dont la seule extension d'échec est désactivée.
++    fn search_sans_extension() -> Search {
++        let mut s = search();
++        s.check_extension = false;
++        s
++    }
++
++    /// La borne de l'extension, éprouvée sur la fonction plutôt que sur un
++    /// symptôme.
++    ///
++    /// C'est la seule chose qui fasse terminer l'extension : sans elle, une
++    /// suite d'échecs perpétuels rend un ply à chaque échec et la ligne ne se
++    /// referme jamais. Un test qui se contenterait de constater que la
++    /// recherche ne plante pas mesurerait la garde d'ardoise, qui est un filet
++    /// de sécurité, pas la borne.
++    #[test]
++    fn lextension_decheck_sarrete_a_la_borne() {
++        // Position en échec, relevée par exécution et non dérivée de tête :
++        // c'est `Board::default()` joué jusqu'à un échec.
++        let board = board("rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3");
++        assert!(
++            !board.checkers().is_empty(),
++            "la position doit être en échec"
++        );
++
++        let mut s = search();
++        s.root_depth = 4;
++        let borne = CHECK_EXTENSION_MAX_PLY_FACTOR * 4;
++
++        assert!(s.extend_for_check(&board, 0), "au ply 0, on étend");
++        assert!(
++            s.extend_for_check(&board, borne - 1),
++            "juste sous la borne, on étend encore"
++        );
++        assert!(
++            !s.extend_for_check(&board, borne),
++            "À LA BORNE, ON N'ÉTEND PLUS : c'est ce qui fait terminer"
++        );
++        assert!(!s.extend_for_check(&board, borne + 1), "au-delà non plus");
++
++        // Et jamais hors échec, quelle que soit la profondeur restante.
++        let calme = Board::default();
++        assert!(calme.checkers().is_empty());
++        assert!(!s.extend_for_check(&calme, 0));
++    }
++
++    /// L'extension change bien l'arbre.
++    ///
++    /// Sans le commutateur, ce test ne pourrait comparer que deux appels
++    /// identiques — faute déjà commise sur ce projet le 14 sept. 2026, et qui
++    /// rend un test creux. Le nombre de nœuds est déterministe sur ce moteur,
++    /// donc il tranche sans incertitude.
++    ///
++    /// **Le sens de l'écart n'est PAS asserté, et c'est une correction.**
++    /// J'avais d'abord écrit « l'extension doit agrandir l'arbre », ce qui est
++    /// une intuition et non une mesure. Relevé : au banc (six positions,
++    /// profondeur 7) elle fait passer de 114 028 à 131 977 nœuds, soit +16 % ;
++    /// sur la position ci-dessous à la profondeur 6, elle fait passer de
++    /// 16 339 à 15 645, soit −4 %. Chercher plus loin sur une ligne forcée
++    /// trouve parfois la coupure plus tôt. **Ce que le test peut affirmer est
++    /// que l'extension agit ; sa direction dépend de la position.**
++    #[test]
++    fn lextension_decheck_fait_quelque_chose() {
++        // Position tactique où les échecs abondent.
++        let board = board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
++
++        let mut avec = search();
++        let mut sans = search_sans_extension();
++        let profondeur = 6;
++
++        let mut a = avec.scratch.clone();
++        let mut b = sans.scratch.clone();
++        avec.negamax(&board, profondeur, 0, -INFINITY, INFINITY, &mut a);
++        sans.negamax(&board, profondeur, 0, -INFINITY, INFINITY, &mut b);
++
++        assert_ne!(
++            avec.nodes, sans.nodes,
++            "l'extension ne change rien à l'arbre — elle est donc inerte"
++        );
++    }
++
++    /// Une ligne d'échecs répétés termine, et en temps raisonnable.
++    ///
++    /// C'est la borne vue depuis l'autre bout : le test ci-dessus dit que la
++    /// fonction refuse d'étendre, celui-ci dit que le refus suffit. Les deux
++    /// sont nécessaires — une borne juste posée au mauvais endroit passerait
++    /// le premier et pas celui-ci.
++    #[test]
++    fn une_suite_dechecs_ne_fait_pas_exploser_larbre() {
++        // Finale de dames, où les échecs se donnent sans fin.
++        let board = board("8/8/8/3k4/8/3K4/8/Q6q w - - 0 1");
++
++        let mut s = search();
++        let mut scratch = s.scratch.clone();
++        s.negamax(&board, 6, 0, -INFINITY, INFINITY, &mut scratch);
++
++        // Le chiffre n'est pas un seuil de performance : il dit seulement que
++        // l'arbre est fini. Sans borne, cette position ne rendrait pas la main.
++        assert!(
++            s.nodes < 5_000_000,
++            "arbre hors de contrôle : {} nœuds",
++            s.nodes
++        );
++    }
++
+     #[test]
+     fn le_seuil_de_compte_croit_avec_la_profondeur() {
+         // Valeurs relevées sur la formule, pas recopiées d'une intention :
