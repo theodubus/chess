@@ -348,6 +348,15 @@ une mesure, pas une préférence.
   deux, en critère d'acceptation. **Conséquence assumée** : tout changement de
   l'arbre de recherche rend la CI rouge tant que la ligne n'est pas corrigée.
   C'est l'effet recherché ; le message d'échec donne le chiffre à recopier.
+- **Un garde-fou peut être correct et garder la mauvaise chose.** Le contrôle
+  du cliquet de mutation confrontait le plafond au balayage — ce qui est juste
+  — mais rien ne confrontait ces listes à `engine/src/`. `see.rs`, né le
+  16 sept. 2026, est resté hors du cliquet cinq jours : absent du plafond, le
+  verdict ne cherchait pas son résumé ; absent de la matrice, le balayage ne le
+  produisait pas ; absent des **deux**, il n'apparaissait dans aucun journal.
+  **Les deux omissions se couvraient l'une l'autre.** La question à se poser
+  n'est pas « ce garde-fou marche-t-il ? » mais « **quelle est sa source de
+  vérité, et est-ce la bonne ?** » — ici le répertoire, jamais la liste.
 - **Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué ne garde
   rien.** La première version du contrôle ci-dessus ne lisait que `CLAUDE.md`.
   Elle a été écrite alors que `README.md` portait déjà `8 432 521` — le chiffre
@@ -512,6 +521,18 @@ la hausse et signale la baisse**. L'asymétrie est assumée — un mutant qui
 expire sur un runner chargé est compté « expiré » plutôt que « survivant »,
 donc une baisse peut n'être qu'un artefact de charge, une hausse jamais.
 Baisser un plafond ne demande rien ; **le relever demande une raison écrite**.
+
+**Le plafond et la matrice sont DEUX listes écrites à la main**, dans deux
+fichiers différents, et un fichier absent des deux n'apparaît nulle part : le
+balayage ne le produit pas, le verdict ne le réclame pas, et le journal
+hebdomadaire est vert. C'est arrivé à `see.rs`, hors du cliquet pendant cinq
+jours. `engine/tests/couverture_mutation.rs` parcourt désormais `engine/src/`
+et exige chaque fichier dans les deux listes — un fichier sans une seule `fn`
+étant exempt, parce que `cargo mutants` n'y produit aucun mutant. **Le plafond
+d'un fichier neuf se mesure depuis un arbre vert** : `cargo mutants` refuse de
+balayer un arbre dont les tests échouent, et ce test-là est rouge tant que le
+plafond manque — donc `workflow_dispatch`, ou un `git worktree add --detach`
+sur le commit d'avant.
 
 Le verdict est un script et non des lignes de YAML, parce qu'un script qui ne
 s'exécute qu'une fois par semaine sur un runner ne serait jamais vérifié :

@@ -30,6 +30,7 @@ tt.rs 2
 main.rs 0
 perft.rs 1
 bench.rs 2
+see.rs 2
 search.rs 94
 eval.rs 214
 
@@ -100,3 +101,30 @@ eval.rs 214
 #   disjoints par construction (départ 0-5, arrivée 6-11, promotion 12-14).
 #   Les deux opérateurs y calculent la même chose. Aucun test ne peut les
 #   distinguer : mutants équivalents, et non un trou.
+#
+# see.rs — 2, mesuré le 21 sept. 2026 (run 35603991267 : 59 mutants, 55
+#   attrapés, 1 inviable, 1 expiré).  MÊME FAMILLE QUE `tt.rs`, et par le même
+#   raisonnement : `|` contre `^` sur des ensembles disjoints.
+#     · `least_valuable_attacker`, bras `Piece::Queen` — les coups de fou et
+#       ceux de tour depuis une même case ne partagent aucune case : une case
+#       diagonale a |Δcolonne| = |Δrangée| ≥ 1, une case orthogonale a l'un des
+#       deux nul. Disjonction géométrique, pas une coïncidence de position.
+#     · `see`, construction de l'occupation après notre coup — le bit de
+#       `target` est à zéro au moment du `|`, dans TOUS les cas atteignables :
+#       capture ordinaire (`victim_square == target`, qu'un XOR vient
+#       d'effacer), prise en passant et roque (`target` n'était pas occupée,
+#       ou vient d'être effacée). Poser un bit nul par `|` ou par `^` est la
+#       même opération.
+#   Les deux branches sont ATTEIGNABLES — ce ne sont pas des clauses mortes
+#   comme celles retirées de `tt::store`. Il n'y a donc rien à supprimer et
+#   rien à tester : le plafond est le bon endroit.
+#   Le mutant EXPIRÉ n'est pas un survivant : `depth -= 1` changé en `depth
+#   /= 1` rend la boucle de remontée infinie, donc il expirera à chaque
+#   balayage. C'est l'asymétrie du cliquet qui joue ici, et dans le bon sens.
+#
+#   POURQUOI CE FICHIER ARRIVE SI TARD. `see.rs` existe depuis le 16 sept. et
+#   n'était ni dans ce plafond, ni dans la matrice de `mutation.yml`. Absent
+#   des DEUX listes, il n'apparaissait nulle part : le balayage ne le
+#   produisait pas, le verdict ne le réclamait pas, et le journal hebdomadaire
+#   était vert. `engine/tests/couverture_mutation.rs` confronte désormais les
+#   deux listes au contenu de `engine/src/`.
