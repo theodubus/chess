@@ -410,6 +410,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-16 | Le même retrait, à `1+0,01` | **H0 accepté** — **−18,91 Elo ± 9,22** sur 3274 parties, bornes `[-5, 0]`. Étalonnage : 2 507 861 n/s, profondeur 10. |
 | 2026-09-16 | **Élagage par échange statique en quiescence (C19), à `8+0,08`** | **H1 accepté** — **+33,59 Elo ± 12,00** sur 1608 parties, LLR 2,95 contre 2,94, 54,82 % de score, LOS 100 %. Étalonnage : 3 110 423 n/s, profondeur 11 en 250 ms. 2 h 31 de match. |
 | 2026-09-16 | **Le même, à `30+0,3`** | **+18,84 Elo ± 15,41** sur **960 parties** à longueur fixe, LOS 99,19 %. Même graine d'ouvertures, donc apparié au précédent. Étalonnage : 2 557 547 n/s, profondeur 10 — **runner 18 % plus lent que celui du verdict ci-dessus**. |
+| 2026-09-21 | **LMP seuil `6 + d²` (C17), à `8+0,08`, sur la base post-C19** | **VERDICT EN COURS** — SPRT `[0, 5]`, candidat `a98a75d` contre `7877340`. [run 35571945707](https://github.com/theodubus/chess/actions/runs/35571945707) |
+| 2026-09-21 | **Le même, seuil `12 + d²`** | **VERDICT EN COURS** — [run 35571952457](https://github.com/theodubus/chess/actions/runs/35571952457). Les deux ensemble donnent la bissection **à la cadence qui tranche** ; elle n'existait qu'à `1+0,01`. |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
@@ -452,6 +454,68 @@ cadence : ÷ 1,07 → +30 à `1+0,01`. **Le rapport de nœuds n'a pas bougé ; l
 a été multiplié par 1,7.** *(Ces deux nombres datent d'avant C19 : la référence
 du bench vaut 148 786 nœuds depuis. Un rapport de nœuds se lit entre les deux
 binaires d'une même mesure, jamais contre le chiffre courant.)*
+
+### D2 clos sans match : le gatage sur non-PV vaut environ 1 Elo
+
+D2 posait que PVS n'est pas un gain mais un **habilitant** — il crée la
+distinction PV / hors-PV, et les moteurs forts n'appliquent LMP qu'aux nœuds
+hors PV. On aurait donc rejeté l'habilitant sur sa valeur isolée, puis rejeté
+LMP qui en dépend.
+
+**La question qu'il ne fallait pas poser** : « quelle part des nœuds est sur
+l'épine PV ? ». L'épine est minuscule *par construction* — au plus un nœud par
+ply — donc ce compte ne tranche rien quelle que soit sa valeur. Ce qui compte
+est la part des **dégâts** qui s'y trouve.
+
+Mesuré sur 400 positions tirées de parties réelles, profondeur 10, la sonde
+n'élaguant pas mais cherchant les coups que LMP aurait coupés :
+
+| | hors PV | sur l'épine PV |
+|---|---|---|
+| nœuds | 5 890 552 | 29 383 — 0,50 % |
+| nœuds où LMP couperait | 998 256 | 8 188 — 0,81 % |
+| montées d'`alpha` détruites | 59 184 | **2 331 — 3,79 %** |
+| **dégât par coupe** | **5,93 %** | **28,47 %** |
+
+**Le mécanisme de D2 existe** : l'épine est 4,8 fois plus dangereuse par coupe.
+**Et il est un ordre de grandeur trop petit** : elle ne porte que 3,79 % des
+dégâts. Croisé avec la proportionnalité mesurée par la bissection de C17 —
+risque × 0,53 pour un coût × 0,50, droite passant par l'origine — le gatage
+vaut environ **1 Elo** sur les 25 que D2 devait expliquer, soit vingt fois sous
+ce qu'un job peut trancher.
+
+**La borne, assumée.** L'épine mesurée est « parent PV et premier coup » ; le
+vrai PVS ajoute un nœud PV à chaque re-recherche après échec haut, donc 3,79 %
+est un **plancher**. Pour renverser la conclusion il faudrait que l'ensemble PV
+réel porte ~80 % des dégâts, donc qu'il soit ~20 fois plus grand *en gardant*
+son taux de 28 % par coupe. Or c'est la concentration qui rend l'épine
+dangereuse et elle se dilue en s'élargissant — hors épine le taux tombe à
+5,93 %.
+
+**Ce qui n'est pas réfuté** : que PVS ait une valeur. Il a été rejeté sur ses
+propres mérites (−10,9 Elo, 4214 parties, `1+0,01`). Ce qui tombe est la thèse
+*spécifique* de D2 — que sa valeur soit d'habiliter LMP.
+
+Sonde et instrumentation dans `tools/attic/d2-sonde-pv.patch`, à appliquer
+après `c17-lmp.patch`.
+
+### C17 rouvert : ce que LMP élague, et ce que C19 n'a pas changé
+
+**Un élagage par compte de coups ne coupe que des coups TRANQUILLES.** Sa garde
+est `quiet && !in_check && …`, et l'ordonnancement place toutes les captures
+avant tous les coups tranquilles. Nœuds déterministes sur la base post-C19 :
+
+| | prof. 7 | prof. 10 | économie gardée |
+|---|---|---|---|
+| base (C19 seul) | 148 786 | 1 145 406 | — |
+| LMP seuil `6 + d²` | 114 028 | 635 210 | 100 % |
+| LMP seuil `12 + d²` | 117 561 | 667 488 | **94 %** |
+
+Le genou mesuré le 15 sept. tient : le seuil 12 garde 94 % de l'économie pour
+**53 % du risque** (2,0 % des montées d'`alpha` détruites contre 3,8 %). Et
+l'économie de LMP est **plus grande qu'avant C19** — ÷ 1,30 à la profondeur 7
+contre ÷ 1,19 alors — parce que retirer des nœuds de quiescence rend les
+sous-arbres de coups tranquilles une part plus grande de l'arbre.
 
 ### C19 : la cadence n'a PAS inversé ce verdict, et c'est un résultat
 

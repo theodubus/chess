@@ -212,6 +212,31 @@ une mesure, pas une préférence.
   positions tirées de vraies parties, 1,9 % — un facteur 3 à 5. Toute question
   portant sur une phase de jeu se mesure sur des positions extraites d'un
   match (`-pgnout`, puis échantillonnage).
+- **Quand un mécanisme est rare par construction, compter ses nœuds ne
+  tranche rien — compter ses DÉGÂTS, si.** D2 supposait que PVS vaut par le
+  gatage de LMP sur les nœuds hors variante principale. La question naturelle
+  — « quelle part des nœuds est sur l'épine PV ? » — ne pouvait rien décider :
+  l'épine porte au plus un nœud par ply, donc sa part est dérisoire quelle que
+  soit la réponse. **Mesuré le 21 sept. 2026 sur la bonne grandeur** : l'épine
+  est 0,50 % des nœuds, 0,81 % des coupes de LMP, et **3,79 % des montées
+  d'`alpha` détruites** — 4,8 fois plus dangereuse par coupe, donc le mécanisme
+  existe, mais un ordre de grandeur trop petit pour expliquer les 25 Elo qu'il
+  devait expliquer. **D2 est clos sans un seul match.** Troisième forme du même
+  piège, après le dénominateur de LMP et le balayage par `movetime` : un chiffre
+  vrai qui répond à une autre question.
+- **Avant d'ordonner deux chantiers par une dépendance, vérifier qu'ils
+  touchent les mêmes objets.** Le projet a inscrit que l'échange statique était
+  « la précondition » de l'élagage par compte de coups, au motif que la prémisse
+  de LMP est « l'ordonnancement a raison » et que l'ordonnancement manquait SEE.
+  **Le raisonnement est juste et l'application est fausse** : LMP n'élague que
+  des **coups tranquilles**, et SEE n'ordonne que des **captures**. Les deux ne
+  se touchent pas. Vérifié dans le code plutôt que supposé : le diff de C19 ne
+  contient pas une ligne de `score_move` ni d'`ordered_moves`, donc l'ordre des
+  coups tranquilles que voit LMP est identique au bit près à celui contre lequel
+  il avait été rejeté. La séquence n'a rien coûté — remesurer sur une meilleure
+  base reste juste — mais **la raison écrite était fausse, et une raison fausse
+  bloque le bon chantier la prochaine fois.** Même famille que « vérifier le
+  dénominateur » : un raisonnement correct appliqué à la mauvaise grandeur.
 - **Avant de découper un changement en deux SPRT, vérifier que le second
   n'absorbe pas le premier.** C19 devait être deux verdicts : l'échange
   statique dans l'*ordonnancement*, puis dans l'*élagage* en quiescence. Tous
