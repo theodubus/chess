@@ -2411,16 +2411,23 @@ mod tests {
         // Ce test existe pour qu'une session future ne « redécouvre » pas ce
         // fait comme un bug. Il n'affirme pas que c'est bon — seul le SPRT en
         // juge — il affirme que c'est CONNU.
-        let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
-
-        let scores: Vec<i32> = [5_000, -5_000, 0]
-            .into_iter()
-            .map(|previous| search().search_root(&b, 5, 8, previous, &mut ardoise()))
-            .collect();
-        assert!(
-            scores.iter().any(|s| *s != scores[0]),
-            "LMP devrait rendre le score dépendant du pari : {scores:?}"
-        );
+        // **Corrigé DEUX FOIS le 21 sept. 2026, et la seconde fois sur moi.**
+        //
+        // Ce test portait son affirmation principale sur une seule position :
+        // « avec LMP, les trois paris ne rendent pas le même score ». J'ai
+        // remplacé son *contrôle* par un comptage sur échantillon après avoir
+        // montré que la prémisse du contrôle était fausse — et j'ai laissé
+        // l'affirmation principale telle quelle, avec exactement le même
+        // défaut. Elle est tombée dès la combinaison suivante, sur la branche
+        // qui empile C18 et PVS : `[52, 52, 52]`.
+        //
+        // C'est attendu, et c'est le point : la dépendance au pari touche
+        // **25,1 % des positions** avec LMP. Trois quarts des positions
+        // auraient fait échouer cette assertion ; celle-ci tombait dans le bon
+        // quart, jusqu'à ce qu'un changement d'arbre l'en fasse sortir.
+        //
+        // Les deux moitiés du test comptent donc maintenant sur le même
+        // échantillon.
 
         // **Le contrôle, et c'est lui qui a changé le 21 sept. 2026.**
         //
@@ -2442,6 +2449,10 @@ mod tests {
         // recherche, et c'est le SPRT qui juge les changements de recherche.
         let (sans_lmp, avec_lmp) = compte_les_scores_dependants_du_pari();
         assert!(
+            avec_lmp > 0,
+            "avec LMP la dépendance au pari devrait être non nulle ({avec_lmp})"
+        );
+        assert!(
             sans_lmp > 0,
             "sans LMP la dépendance au pari devrait rester non nulle ({sans_lmp}) — \
              si elle est devenue nulle, c'est un fait nouveau sur la recherche, \
@@ -2453,7 +2464,9 @@ mod tests {
         );
 
         // Ce qui tient dans les deux cas, et qui est ce qu'on livre : la boucle
-        // rend toujours un coup légal.
+        // rend toujours un coup légal. Une position suffit ici, parce que c'est
+        // une propriété du coup rendu et non une propriété de la position.
+        let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
         for previous in [5_000, -5_000, 0] {
             let mut s = search();
             s.search_root(&b, 5, 8, previous, &mut ardoise());
