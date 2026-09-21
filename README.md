@@ -9,7 +9,8 @@ d'un aveu sur la profondeur de recherche.
 > élagage alpha-bêta, approfondissement itératif, quiescence, table de
 > transposition et ordonnancement des coups, plus **des élagages avancés
 > mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
-> d'aspiration, élagage delta en quiescence, futilité inverse. L'évaluation
+> d'aspiration, élagage delta en quiescence, futilité inverse, et l'élagage
+> par **échange statique** en quiescence. L'évaluation
 > couvre matériel, tables piece-square, paire de fous, mobilité, sécurité du
 > roi, structure de pions et colonnes de tours.
 > Chaque changement de recherche passe par un **SPRT** ; les verdicts, leurs
@@ -28,13 +29,12 @@ d'un aveu sur la profondeur de recherche.
 > mesurer court sous-estime ce dont la valeur croît avec la profondeur. La
 > revalidation à cadence longue est en cours.
 >
-> **En cours de mesure (C19) :** l'élagage par **échange statique** en
+> **Dernier gain mesuré (C19) :** l'élagage par **échange statique** en
 > quiescence — les captures qui perdent du matériel n'y sont plus examinées.
-> Mesuré déterministe : **−27,1 % de nœuds et −22,5 % de temps** à la
-> profondeur 10. Deux verdicts en vol, à `8+0,08` et à `30+0,3`, tous deux dans
-> `tools/README.md`. Tant qu'ils ne sont pas rendus, **ce n'est pas un gain,
-> c'est un candidat.**
-> Il n'a encore ni recherche parallèle, ni NNUE, ni interface.
+> **+33,59 Elo ± 12,00** sur 1608 parties à `8+0,08`, H1 accepté ; **+18,84
+> ± 15,41** sur 960 parties à `30+0,3`. Positif aux deux cadences, sans
+> inversion. Déterministe : **−33 % de nœuds** à la profondeur 7.
+> Il n'a encore ni recherche parallèle, ni NNUE.
 
 ## Structure
 

@@ -124,8 +124,23 @@ Croisé avec la relation de budget du projet (`parties × Elo ≈ 62 000`) :
 > **Un job à `8+0,08` tranche les effets de ~17 Elo et plus. En dessous, il
 > expire sans verdict.**
 
-L'aspiration (−51,6) a tranché en 1154 parties. Les trois termes d'évaluation
-(+14,9) tombent **juste sous la ligne**, et c'est le prochain point de D5.
+L'aspiration (−51,6) a tranché en 1154 parties, C19 (+33,6) en 1608. Les trois
+termes d'évaluation (+14,9) tombent **juste sous la ligne**, et c'est le
+prochain point de D5.
+
+**Et à `30+0,3`, un job ne tient pas mille parties.** Mesuré le 16 sept. sur le
+contrôle de cadence de C19 : **960 parties sur 1000** avant le plafond de
+350 minutes, soit ~21,9 s par partie à concurrence 3. L'intervalle rendu est de
+**± 15,4 Elo**.
+
+> **Un job à `30+0,3` rend ~960 parties à longueur fixe, soit ± 15 Elo.**
+> Demander 1000 parties expire ; en demander 900 tient avec de la marge.
+
+Un match à longueur fixe coupé par le plafond du job **reste exploitable** :
+l'arrêt dépend de l'horloge, pas des résultats, donc l'estimateur n'est pas
+biaisé. C'est exactement ce qui distingue ce cas d'un **SPRT** expiré, dont la
+règle d'arrêt dépend des données et qu'on ne peut ni prolonger ni tronquer sans
+perdre ses taux d'erreur.
 
 **Ce qu'on fait quand l'effet est trop petit** : des matchs à **longueur fixe**
 sur plusieurs jobs, graines d'ouvertures distinctes, puis mise en commun. Les
@@ -393,8 +408,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-16 | **Le même seuil `6 + d²`, à `8+0,08` au lieu de `1+0,01`** | **+15,30 Elo ± 15,08** sur 1000 parties à longueur fixe. **Le signe s'inverse.** Contrôle à `1+0,01`, même protocole : **−21,57 ± 16,71**. Écart +36,9 Elo, z = 3,21, **p = 0,0013**. Voir ci-dessous. |
 | 2026-09-16 | **Retrait des fenêtres d'aspiration (D5), à `8+0,08`** | **H0 accepté** — **−51,56 Elo ± 15,67** sur 1154 parties, bornes `[-5, 0]`. Étalonnage du runner : 2 668 474 n/s, profondeur 10. **L'aspiration paie toujours, et bien plus qu'annoncé.** |
 | 2026-09-16 | Le même retrait, à `1+0,01` | **H0 accepté** — **−18,91 Elo ± 9,22** sur 3274 parties, bornes `[-5, 0]`. Étalonnage : 2 507 861 n/s, profondeur 10. |
-| 2026-09-16 | **Élagage par échange statique en quiescence (C19), à `8+0,08`** | **VERDICT EN COURS** — SPRT bornes `[0, 5]`, candidat `1f8bcc3` contre `4471868`. [run 35132265160](https://github.com/theodubus/chess/actions/runs/35132265160) |
-| 2026-09-16 | **Le même, à `30+0,3`** | **VERDICT EN COURS** — 1000 parties à longueur fixe, même graine d'ouvertures donc apparié au précédent. [run 35132926649](https://github.com/theodubus/chess/actions/runs/35132926649). Contrôle de cadence : cet élagage jette des sacrifices, et c'est exactement le genre d'effet qui peut décroître avec la profondeur. |
+| 2026-09-16 | **Élagage par échange statique en quiescence (C19), à `8+0,08`** | **H1 accepté** — **+33,59 Elo ± 12,00** sur 1608 parties, LLR 2,95 contre 2,94, 54,82 % de score, LOS 100 %. Étalonnage : 3 110 423 n/s, profondeur 11 en 250 ms. 2 h 31 de match. |
+| 2026-09-16 | **Le même, à `30+0,3`** | **+18,84 Elo ± 15,41** sur **960 parties** à longueur fixe, LOS 99,19 %. Même graine d'ouvertures, donc apparié au précédent. Étalonnage : 2 557 547 n/s, profondeur 10 — **runner 18 % plus lent que celui du verdict ci-dessus**. |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
@@ -427,6 +442,7 @@ disent, et elles ne s'ordonnent pas de la même façon :
 | **élagage par compte, seuil 6** | **÷ 1,19** | **−25** |
 | **élagage par compte, seuil 12** | **÷ 1,14** | **−13** |
 | **fenêtres d'aspiration, remesurées à `8+0,08`** | **÷ 1,048** | **+52** |
+| élagage par échange statique en quiescence (C19) | ÷ 1,50 | +34 |
 
 La dernière ligne est le point le plus extrême du tableau : **la plus petite
 économie de nœuds, et presque le plus gros gain d'Elo**. Vérifié par exécution
@@ -436,6 +452,31 @@ cadence : ÷ 1,07 → +30 à `1+0,01`. **Le rapport de nœuds n'a pas bougé ; l
 a été multiplié par 1,7.** *(Ces deux nombres datent d'avant C19 : la référence
 du bench vaut 148 786 nœuds depuis. Un rapport de nœuds se lit entre les deux
 binaires d'une même mesure, jamais contre le chiffre courant.)*
+
+### C19 : la cadence n'a PAS inversé ce verdict, et c'est un résultat
+
+Les deux cadences tombent du même côté, et il fallait le vérifier plutôt que le
+supposer : **cet élagage jette des sacrifices**, donc sa valeur pouvait
+décroître avec la profondeur — le seul des deux sens de D1 qu'on n'ait jamais
+observé.
+
+| cadence | Elo | IC 95 % | parties | estimateur |
+|---|---|---|---|---|
+| `8+0,08` | **+33,59** | [+21,6 ; +45,6] | 1608 | SPRT, H1 |
+| `30+0,3` | **+18,84** | [+3,4 ; +34,2] | 960 | longueur fixe |
+
+Écart **14,75 Elo, z = 1,48, p = 0,14** — et le SPRT sur-estime d'environ 3,6 Elo
+par son biais d'arrêt, ce qui ramène l'écart à 11,2 Elo, z = 1,12, **p = 0,26**.
+Les intervalles se recouvrent largement. **Rien ne permet de dire que la valeur
+de C19 dépend de la cadence** ; rien ne permet non plus d'exclure une érosion de
+l'ordre de 10 Elo, l'effectif à `30+0,3` étant ce qu'il est.
+
+**Ce qu'il ne faut PAS en conclure** : que le contrôle de cadence était inutile.
+Un contrôle qui confirme n'est pas un contrôle raté — c'est ce qui distingue
+« la cadence n'inverse pas *cette* technique » de « la cadence n'inverse jamais
+rien », et seule la première est établie ici. Les deux cas connus d'inversion
+(LMP, aspiration) portaient sur des techniques dont la valeur **croît** avec la
+profondeur ; C19 coupe du travail, ce qui aide à toute profondeur.
 
 **C19 a ajouté un troisième cas au tableau, avant même son verdict.** L'échange
 statique dans l'**ordonnancement** des coups a été bissecté par le palier où
