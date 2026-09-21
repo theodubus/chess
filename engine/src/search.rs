@@ -2913,6 +2913,51 @@ mod see_pruning_tests {
         assert!(vus > 10_000, "corpus trop maigre : {vus} captures");
     }
 
+    /// L'autre direction, que le test ci-dessus ne peut pas voir.
+    ///
+    /// `economie_jamais_a_tort` n'éprouve que le `false` : quand
+    /// `may_lose_material` renvoie `false`, l'échange doit être positif. Rien
+    /// n'y regarde le `true`, et c'est là que vit le garde du roi.
+    ///
+    /// **Pourquoi ce garde n'est pas décoratif.** `see` ignore la légalité —
+    /// limite assumée et documentée du module. Sur une prise de roi il compte
+    /// donc une reprise par une pièce clouée, et peut rendre un score négatif
+    /// pour une capture que les règles du jeu rendent sûre : un coup de roi
+    /// produit par le générateur est légal, donc la case d'arrivée n'est
+    /// attaquée par personne après coup. Sans le garde, la quiescence
+    /// élaguerait une prise de roi gagnante sur une valeur connue pour fausse.
+    ///
+    /// Deux mutants survivaient ici au balayage du 21 sept. 2026 : rendre
+    /// `true` sans condition, et remplacer le `ET` par un `OU`. Les deux
+    /// suppriment le garde, et aucun test ne bronchait.
+    #[test]
+    fn le_roi_ne_passe_jamais_par_lechange_statique() {
+        let mut vus = 0u64;
+        marche(60, 80, |board| {
+            let mut coups = Vec::new();
+            board.generate_moves(|set| {
+                coups.extend(set);
+                false
+            });
+            for mv in coups {
+                if board.piece_on(mv.from) != Some(Piece::King) {
+                    continue;
+                }
+                let Some(victim) = captured_piece(board, mv) else {
+                    continue;
+                };
+                vus += 1;
+                assert!(
+                    !may_lose_material(board, mv, victim),
+                    "prise de roi {mv} envoyée à `see`, qui ignore la légalité : {board}"
+                );
+            }
+        });
+        // Sans ce compte, un parcours qui ne rencontre aucune prise de roi
+        // rendrait un test vert qui ne mesure rien.
+        assert!(vus > 100, "corpus trop maigre : {vus} prises de roi");
+    }
+
     /// Une capture franchement perdante est sautée.
     ///
     /// Position et coup vérifiés par exécution, valeur lue sur l'oracle : la

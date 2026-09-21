@@ -30,8 +30,9 @@ tt.rs 2
 main.rs 0
 perft.rs 1
 bench.rs 2
-search.rs 94
-eval.rs 214
+see.rs 2
+search.rs 89
+eval.rs 212
 
 # ---------------------------------------------------------------------------
 # Pourquoi ces plafonds ne sont pas zéro
@@ -43,7 +44,16 @@ eval.rs 214
 # unitaire ne peut trancher à sa place — pire, un test qui fige une valeur
 # d'évaluation empêche le SPRT de la déplacer.
 #
-# eval.rs — 214, contre 222 avant correction.  Le fichier est en très grande
+# eval.rs — 212 au 21 sept. 2026, contre 214 le 15 sept. Le fichier n'a pas
+#   changé depuis — vérifié par `git log` : seuls `see.rs`, `search.rs` et
+#   `lib.rs` ont été touchés. L'écart de deux est donc un artefact de charge
+#   machine, pas un progrès : deux mutants comptés « expirés » plutôt que
+#   « survivants » sur un runner chargé. C'est exactement l'asymétrie que le
+#   cliquet assume, et resserrer reste sans risque — le cliquet ne casse
+#   qu'à la hausse.
+#
+# eval.rs — l'historique de la valeur 214, qui reste vrai. 214 contre 222
+#   avant correction.  Le fichier est en très grande
 #   part des VALEURS — mesuré, pas supposé : ~189 des survivants sont des
 #   `delete -` sur les entrées des tables piece-square. Mais huit ne l'étaient
 #   pas du tout, et ils sont corrigés : la géométrie de `ahead_of`, le bras
@@ -61,7 +71,33 @@ eval.rs 214
 #   parties 7,8 % mieux sur 66 376 positions tenues à l'écart, et jouait
 #   25 Elo PLUS MAL. Les figer par des tests coûterait donc de l'Elo.
 #
-# search.rs — 94, contre 141 avant correction.  Le sous-ensemble correctness a
+# search.rs — 89 au 21 sept. 2026, contre 94 le 15 sept. et 141 avant
+#   correction.  LE FICHIER A GROSSI ET LE COMPTE A BAISSÉ : 433 mutants
+#   contre 394, après l'élagage par échange statique (C19) et l'élagage par
+#   compte de coups (C17). Le code neuf porte quatre survivants, tous dans
+#   les marges, et les anciens ont été couverts au-delà.
+#     · `late_move_prune`, `>` en `>=` sur la garde de mat — ne diffère qu'à
+#       `best == -MATE_THRESHOLD` exactement. Marge, donc SPRT.
+#     · `see_prunable`, `<` en `<=` sur le seuil d'élagage. Marge.
+#     · `may_lose_material`, `<` en `<=` — équivalent par le résultat :
+#       à valeurs égales l'échange vaut au moins zéro, donc `see` n'élague
+#       pas. Le mutant ne change que le coût.
+#     · `may_lose_material` rendu `true` sans condition, et son `ET` changé
+#       en `OU` — CEUX-LÀ SONT CORRIGÉS, pas notés. Ils suppriment le garde
+#       du roi, et `see` ignore la légalité : sur une prise de roi il compte
+#       une reprise par une pièce clouée et peut rendre un score négatif pour
+#       une capture que les règles rendent sûre. La quiescence élaguerait
+#       alors une prise gagnante sur une valeur connue pour fausse.
+#       `le_roi_ne_passe_jamais_par_lechange_statique` éprouve la direction
+#       que `economie_jamais_a_tort` ne pouvait pas voir — celui-ci ne
+#       regarde que le `false`, le garde vit dans le `true`. Vérifié EN LE
+#       FAISANT ÉCHOUER sur les deux mutants.
+#   89 EST LE CHIFFRE MESURÉ, et il est mesuré AVANT ce test : le plafond
+#   descendra à 87 quand le prochain balayage l'aura constaté. Une
+#   soustraction faite de tête n'est pas une mesure — même règle que pour
+#   `eval.rs`, laissé à 222 le 15 sept. après huit corrections.
+#
+# search.rs — l'historique de la valeur 94, qui reste vrai.  Le sous-ensemble correctness a
 #   été traité le 15 sept. : score de mat rendu par negamax (et non par la
 #   seule quiescence), seuil de mat, détection de répétition, table de
 #   variante principale, échéance dure dépassée, échéance douce qui ne doit
@@ -100,3 +136,30 @@ eval.rs 214
 #   disjoints par construction (départ 0-5, arrivée 6-11, promotion 12-14).
 #   Les deux opérateurs y calculent la même chose. Aucun test ne peut les
 #   distinguer : mutants équivalents, et non un trou.
+#
+# see.rs — 2, mesuré le 21 sept. 2026 (run 35603991267 : 59 mutants, 55
+#   attrapés, 1 inviable, 1 expiré).  MÊME FAMILLE QUE `tt.rs`, et par le même
+#   raisonnement : `|` contre `^` sur des ensembles disjoints.
+#     · `least_valuable_attacker`, bras `Piece::Queen` — les coups de fou et
+#       ceux de tour depuis une même case ne partagent aucune case : une case
+#       diagonale a |Δcolonne| = |Δrangée| ≥ 1, une case orthogonale a l'un des
+#       deux nul. Disjonction géométrique, pas une coïncidence de position.
+#     · `see`, construction de l'occupation après notre coup — le bit de
+#       `target` est à zéro au moment du `|`, dans TOUS les cas atteignables :
+#       capture ordinaire (`victim_square == target`, qu'un XOR vient
+#       d'effacer), prise en passant et roque (`target` n'était pas occupée,
+#       ou vient d'être effacée). Poser un bit nul par `|` ou par `^` est la
+#       même opération.
+#   Les deux branches sont ATTEIGNABLES — ce ne sont pas des clauses mortes
+#   comme celles retirées de `tt::store`. Il n'y a donc rien à supprimer et
+#   rien à tester : le plafond est le bon endroit.
+#   Le mutant EXPIRÉ n'est pas un survivant : `depth -= 1` changé en `depth
+#   /= 1` rend la boucle de remontée infinie, donc il expirera à chaque
+#   balayage. C'est l'asymétrie du cliquet qui joue ici, et dans le bon sens.
+#
+#   POURQUOI CE FICHIER ARRIVE SI TARD. `see.rs` existe depuis le 16 sept. et
+#   n'était ni dans ce plafond, ni dans la matrice de `mutation.yml`. Absent
+#   des DEUX listes, il n'apparaissait nulle part : le balayage ne le
+#   produisait pas, le verdict ne le réclamait pas, et le journal hebdomadaire
+#   était vert. `engine/tests/couverture_mutation.rs` confronte désormais les
+#   deux listes au contenu de `engine/src/`.
