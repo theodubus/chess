@@ -25,7 +25,7 @@ réseau.
 
 | rustine | ce que c'est | verdict | s'applique sur `main` ? |
 |---|---|---|---|
-| `c12-pvs.patch` | recherche à variante principale | **H0**, −10,9 Elo ± 7,9, 4214 parties, `1+0,01` | **non** — écrite sur un `search.rs` de trois jours plus vieux |
+| `c12-pvs.patch` | recherche à variante principale | **H0**, −10,9 Elo ± 7,9, 4214 parties, `1+0,01` | **non** — écrite sur un `search.rs` de trois jours plus vieux. **Portée à la main le 21 sept. sur la branche `mesure/c12-pvs`** : la rustine reste le document de référence pour la structure, la branche est le code qui compile. |
 | `c17-lmp.patch` | élagage par compte de coups, seuil `6 + d²` | **H0** deux fois, −25,2 puis −12,6, `1+0,01` — **mais +15,3 à `8+0,08`** | **oui**, `git apply --check` passe |
 | `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | **oui**, `git apply --check` passe, SUR l'élagage en quiescence |
 | `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | **oui**, mais APRÈS `c17-lmp.patch` |
@@ -50,12 +50,23 @@ moteur atteint la profondeur 8,5 ; la cible est la force générale. Il manque u
 SPRT à cadence longue, pas du travail d'écriture — le seuil est un `sed` d'un
 caractère sur `LMP_BASE`.
 
-**C12 — par son rôle.** Dans les moteurs forts, LMP et la futilité ne
-s'appliquent **qu'aux nœuds hors variante principale**, et cette distinction,
-c'est PVS qui la crée. Ce moteur n'en a aucune. Mesuré seul, PVS ne montre que
-son coût de re-recherche ; c'est peut-être une infrastructure prise pour un
-gain. Les trois quarts du plan factoriel PVS × LMP sont déjà mesurés — il
-manque la case où les deux sont actifs.
+**C12 — <s>par son rôle</s> par la cadence.** <s>Dans les moteurs forts, LMP et
+la futilité ne s'appliquent qu'aux nœuds hors variante principale, et cette
+distinction, c'est PVS qui la crée.</s> **Ce motif est RÉFUTÉ depuis le
+21 sept. 2026** : la sonde `d2-sonde-pv.patch` a mesuré que l'épine PV porte
+**3,79 % des montées d'`alpha` que LMP détruit**, donc que ce gatage vaut ~1 Elo
+sur les 23 que LMP rapporte. Le mécanisme existe — une coupe sur l'épine est
+4,8 fois plus dangereuse qu'ailleurs — et il est un ordre de grandeur trop petit
+pour ce qu'il devait expliquer.
+
+Le motif qui reste, et il est plus fort, est **la cadence**. PVS a été rejeté à
+`1+0,01` (−10,89 ± 7,91), pré-D1. LMP, rejeté DEUX fois à la même cadence, est
+accepté deux fois à `8+0,08`. L'écart que PVS aurait à combler est trois fois
+plus petit que celui qu'a comblé LMP.
+
+**Une raison fausse bloque le bon chantier la prochaine fois** : elle aurait
+fait acheter un SPRT sur la paire PVS + LMP, six heures pour répondre à une
+question déjà close.
 
 ## La règle
 
