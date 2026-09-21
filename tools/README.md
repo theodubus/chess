@@ -119,7 +119,7 @@ en 1 h 47 min 13 s de jeu, soit **5,57 s par partie** à concurrence 3. Le
 plafond du job est de 350 minutes, dont ~70 s de mise en place, donc
 **~3 750 parties au maximum**.
 
-Croisé avec la relation de budget du projet (`parties × Elo ≈ 62 000`) :
+Croisé avec la relation de budget du projet (`parties × Elo`, médiane 59 500 sur quinze SPRT — voir plus bas) :
 
 > **Un job à `8+0,08` tranche les effets de ~17 Elo et plus. En dessous, il
 > expire sans verdict.**
@@ -454,6 +454,37 @@ cadence : ÷ 1,07 → +30 à `1+0,01`. **Le rapport de nœuds n'a pas bougé ; l
 a été multiplié par 1,7.** *(Ces deux nombres datent d'avant C19 : la référence
 du bench vaut 148 786 nœuds depuis. Un rapport de nœuds se lit entre les deux
 binaires d'une même mesure, jamais contre le chiffre courant.)*
+
+### La relation de budget, remesurée sur quinze points au lieu de quatre
+
+Elle sert à décider **si un changement vaut un match**, donc elle vaut d'être
+tenue à jour. `parties × Elo` sur tous les SPRT du projet, du plus petit au plus
+grand — le match à longueur fixe de la cadence LMP en est exclu, son effectif
+étant choisi et non atteint :
+
+| | `parties × Elo` | | `parties × Elo` |
+|---|---|---|---|
+| PVS | 45 933 | futilité inverse | 61 333 |
+| LMP seuil 12 | 49 543 | LMR | 61 637 |
+| LMP seuil 6 | 51 156 | retrait aspiration `1+0,01` | 61 911 |
+| réglage Texel | 51 280 | coup nul | 64 886 |
+| C19 | 54 013 | trois termes d'éval | 66 663 |
+| mobilité | 58 969 | **table + killers + historique** | **80 178** |
+| élagage delta | 59 215 | | |
+| retrait aspiration `8+0,08` | 59 500 | | |
+| aspiration | 60 647 | | |
+
+**Médiane 59 500, moyenne 59 124, étendue 45 933 – 80 178 — facteur 1,75.** La
+constante n'a presque pas bougé : 62 000 avait été posée sur quatre points, et
+quinze points la ramènent à 59 500. **Ce qui est nouveau, c'est la dispersion**,
+qui était inconnue — un budget estimé se lit à ± 50 %, pas comme un nombre.
+
+Un seul point dépasse 67 000, et c'est le **tout premier verdict du projet** :
++164,3 Elo sur 488 parties. Hors ce point, le facteur tombe à **1,45**.
+<span><strong>Inférence, confiance moyenne</strong> : le biais d'arrêt du SPRT
+gonfle l'estimation d'autant plus que l'effectif est petit, et c'est à la fois
+le plus gros effet et le plus petit effectif du tableau. Le projet a mesuré ce
+biais à 3,6 Elo sur un cas à 1000 parties ; il n'a pas été mesuré à 488.</span>
 
 ### C18 : la réserve de la fiche est juste, et deux fois plutôt qu'une
 
