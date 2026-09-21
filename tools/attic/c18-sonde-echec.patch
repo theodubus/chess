@@ -1,0 +1,195 @@
+# c18 — la sonde qui mesure ce qu'une extension d'échec pourrait changer
+#
+# La fiche C18 portait une réserve : « la quiescence explore déjà tous les
+# coups en échec, donc une partie du bénéfice est peut-être déjà acquise ».
+# **Elle est correcte, et deux fois plutôt qu'une.**
+#
+# MESURÉ le 21 sept. 2026 — 400 positions tirées de parties réelles
+# (datagen, 50 parties, graine 20260921), recherche à la profondeur 10.
+#
+#   profondeur restante      nœuds      en échec    part    part de l'arbre
+#   quiescence            36 577 617   1 966 681    5,38 %    86,07 %
+#   1                      4 317 783     333 828    7,73 %    10,16 %
+#   2                        936 076     132 902   14,20 %     2,20 %
+#   3                        353 774      68 191   19,28 %     0,83 %
+#   >= 4                     312 302      57 191   18,31 %     0,74 %
+#   tous                  42 497 552   2 558 793    6,02 %
+#
+# CE QUE L'EXTENSION NE GAGNERAIT PAS. 1 966 681 des 2 558 793 nœuds en
+# échec — **77 %** — sont en quiescence, et la quiescence n'y calcule PAS de
+# `stand_pat` : elle produit TOUS les coups, pas seulement les tactiques. Une
+# position en échec n'est donc jamais évaluée statiquement. Le bénéfice
+# « ne pas évaluer une position qui n'est pas calme » est déjà acquis.
+#
+# ET UNE SECONDE FOIS, DANS LMR. La condition de réduction est
+# `quiet && !in_check && child.checkers().is_empty() && …` : le moteur refuse
+# de réduire **et** les positions en échec **et** les coups qui donnent échec.
+# Un coup d'échec garde donc sa profondeur pleine pendant que ses frères
+# tranquilles la perdent — c'est déjà une extension relative.
+#
+# CE QU'IL RESTE, ET POURQUOI ÇA NE CLÔT PAS C18. Les 592 112 nœuds en échec
+# hors quiescence, soit **1,39 % de l'arbre**. C'est le même ordre de grandeur
+# que la portée de la futilité inverse (4,4 % des nœuds, +24,3 Elo) : trop
+# grand pour conclure sans match. **La sonde SIZE C18, elle ne le tranche
+# pas** — contrairement à D2, qu'elle a clos.
+#
+# LE GRADIENT, ET SON EXPLICATION PROBABLE. Le taux d'échec croît avec la
+# profondeur restante : 5,4 % en quiescence, 19,3 % à la profondeur 3.
+# Inférence, non mesurée : LMR ne réduisant pas les échecs, un nœud en échec
+# garde sa profondeur pendant que ses frères tombent dans les seaux bas. Le
+# gradient serait donc en partie un effet de la garde de LMR elle-même.
+# **Confiance : moyenne.** Le vérifier demanderait de compter les nœuds en
+# échec atteints APRÈS réduction, ce que cette sonde ne fait pas.
+#
+# S'applique sur `main`. Binaire de lecture : `tools/src/bin/c18_probe.rs`.
+#
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 2508a2a..1570369 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -837,6 +837,19 @@ impl Search {
+         let mut best_move = None;
+         let in_check = !board.checkers().is_empty();
+ 
++        // SONDE C18 — jetable. Une extension d'échec transforme la profondeur
++        // restante d en d + 1 : ce qui compte est donc la part des nœuds EN
++        // ÉCHEC à chaque profondeur restante, et surtout à la profondeur 1,
++        // où l'extension remplace une chute en quiescence par une vraie
++        // recherche.
++        {
++            let seau = usize::try_from(depth).unwrap_or(4).clamp(1, 4);
++            C18_NODES[seau].fetch_add(1, Ordering::Relaxed);
++            if in_check {
++                C18_IN_CHECK[seau].fetch_add(1, Ordering::Relaxed);
++            }
++        }
++
+         for (index, &(mv, _)) in buffer[..count].iter().enumerate() {
+             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
+ 
+@@ -948,6 +961,10 @@ impl Search {
+         let (buffer, rest) = scratch.split_at_mut(MAX_MOVES);
+ 
+         let in_check = !board.checkers().is_empty();
++        C18_NODES[0].fetch_add(1, Ordering::Relaxed);
++        if in_check {
++            C18_IN_CHECK[0].fetch_add(1, Ordering::Relaxed);
++        }
+         let mut stand_pat = -INFINITY;
+ 
+         if !in_check {
+@@ -1141,6 +1158,23 @@ fn may_lose_material(board: &Board, mv: Move, victim: Piece) -> bool {
+     attacker != Piece::King && see::piece_value(victim) < see::piece_value(attacker)
+ }
+ 
++// SONDE C18 — jetable. Indexés par profondeur restante bornée à 0..=4 ;
++// l'indice 0 est la quiescence.
++pub static C18_NODES: [std::sync::atomic::AtomicU64; 5] = [
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++];
++pub static C18_IN_CHECK: [std::sync::atomic::AtomicU64; 5] = [
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++    std::sync::atomic::AtomicU64::new(0),
++];
++
+ /// Côté de la table de réductions, en profondeur comme en rang de coup.
+ const LMR_TABLE_SIDE: usize = 64;
+ 
+diff --git a/tools/src/bin/c18_probe.rs b/tools/src/bin/c18_probe.rs
+new file mode 100644
+index 0000000..9d878be
+--- /dev/null
++++ b/tools/src/bin/c18_probe.rs
+@@ -0,0 +1,85 @@
++//! Sonde C18 — jetable. Une extension d'échec vaut-elle un match ?
++//!
++//! La fiche C18 porte une réserve : « la quiescence explore déjà tous les
++//! coups en échec, donc une partie du bénéfice est peut-être déjà acquise ».
++//! C'est vrai — vérifié dans `quiescence` : en échec, `stand_pat` n'est pas
++//! calculé et `ordered_moves` produit TOUS les coups, pas seulement les
++//! tactiques. Une position en échec n'est donc jamais évaluée statiquement.
++//!
++//! Ce qu'une extension ajoute est donc de la PROFONDEUR, pas une correction :
++//! à la profondeur restante 1, elle remplace une chute en quiescence par une
++//! vraie recherche. La grandeur qui décide est la **part des nœuds en échec à
++//! chaque profondeur restante**, et surtout à la profondeur 1.
++
++use std::io::BufRead;
++use std::sync::Arc;
++use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
++
++use cozy_chess::Board;
++use shallowred::position::Position;
++use shallowred::search::{C18_IN_CHECK, C18_NODES, Limits, Search};
++
++fn main() {
++    let profondeur: u32 = std::env::args()
++        .nth(1)
++        .and_then(|a| a.parse().ok())
++        .unwrap_or(10);
++    let limite: usize = std::env::args()
++        .nth(2)
++        .and_then(|a| a.parse().ok())
++        .unwrap_or(400);
++
++    let stop = Arc::new(AtomicBool::new(false));
++    let mut search = Search::new(stop);
++    let limits = Limits {
++        depth: Some(profondeur),
++        ..Limits::default()
++    };
++
++    let mut positions = 0usize;
++    for line in std::io::stdin().lock().lines().map_while(Result::ok) {
++        if positions >= limite {
++            break;
++        }
++        let fen = line.split(';').next().unwrap_or("").trim();
++        let Ok(board) = fen.parse::<Board>() else {
++            continue;
++        };
++        positions += 1;
++        search.clear_table();
++        let position = Position::from_board(board);
++        let _ = search.go(&position, &limits, |_| {});
++    }
++
++    let lire = |t: &[AtomicU64; 5], i: usize| t[i].load(Ordering::Relaxed);
++    let pct = |a: u64, b: u64| if b == 0 { 0.0 } else { 100.0 * a as f64 / b as f64 };
++
++    let total: u64 = (0..5).map(|i| lire(&C18_NODES, i)).sum();
++    let total_echec: u64 = (0..5).map(|i| lire(&C18_IN_CHECK, i)).sum();
++
++    println!("positions   {positions}");
++    println!("profondeur  {profondeur}");
++    println!();
++    println!("profondeur restante        nœuds      en échec    part      part de tous les nœuds");
++    for i in 0..5 {
++        let n = lire(&C18_NODES, i);
++        let c = lire(&C18_IN_CHECK, i);
++        let nom = match i {
++            0 => "quiescence".to_string(),
++            4 => ">= 4".to_string(),
++            d => format!("{d}"),
++        };
++        println!(
++            "{nom:<18} {n:>14} {c:>13}  {:>6.2} %   {:>6.3} %",
++            pct(c, n),
++            pct(n, total)
++        );
++    }
++    println!();
++    println!("tous nœuds  {total:>14} {total_echec:>13}  {:>6.2} %", pct(total_echec, total));
++    println!();
++    println!("Ce qu'une extension change : les nœuds EN ÉCHEC hors quiescence,");
++    println!("soit {} nœuds, {:.3} % de l'arbre.",
++        total_echec - lire(&C18_IN_CHECK, 0),
++        pct(total_echec - lire(&C18_IN_CHECK, 0), total));
++}
