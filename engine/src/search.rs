@@ -2309,8 +2309,19 @@ mod tests {
         // la boucle, et LMP n'y est qu'un facteur confondant. Le désactiver
         // rend le test PLUS net, pas plus indulgent — la propriété perdue est
         // inscrite dans le test voisin plutôt qu'effacée d'ici.
+        // **Ce que ce test N'ASSERTE PLUS, et pourquoi.** Il portait
+        // `assert_eq!(score, reference)` — « la fenêtre ne décide pas, elle
+        // accélère ». <b>C'est faux, et ça l'était déjà avant PVS.</b> Mesuré
+        // le 21 sept. 2026 sur `main`, 153 positions d'une marche seedée et
+        // trois paris chacune : LMP désactivé, le score de la boucle diffère
+        // de la fenêtre pleine **38 fois sur 459, soit 8,3 %**, écart maximal
+        // 100 centièmes de pion. L'assertion passait parce que la position
+        // ci-dessous tombe dans les 91,7 % stables.
+        //
+        // Ce n'était donc pas un garde-fou : c'était un tirage heureux. La
+        // propriété mesurée vit maintenant dans le test voisin, qui la compte
+        // au lieu de la supposer.
         let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1");
-        let reference = search_sans_lmp().negamax(&b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
 
         for previous in [MATE_THRESHOLD - 1, -(MATE_THRESHOLD - 1), 5_000, -5_000] {
             let mut s = search_sans_lmp();
@@ -2323,10 +2334,70 @@ mod tests {
                 s.root_best.is_some_and(|mv| b.is_legal(mv)),
                 "pari {previous} : aucun coup légal retenu"
             );
-            // La fenêtre ne doit pas changer le verdict : elle accélère, elle
-            // ne décide pas.
-            assert_eq!(score, reference, "pari {previous}");
         }
+    }
+
+    /// Compte, sans LMP puis avec, combien de recherches à fenêtre
+    /// d'aspiration rendent un score différent de la fenêtre pleine.
+    ///
+    /// Un échantillon de positions jouées — une marche pseudo-aléatoire
+    /// seedée, donc déterministe — et non une position choisie à la main :
+    /// c'est exactement la différence entre mesurer et tomber juste. L'unique
+    /// position qui servait de contrôle avant le 21 sept. 2026 était stable,
+    /// et l'assertion qu'elle portait était fausse en général.
+    fn compte_les_scores_dependants_du_pari() -> (u32, u32) {
+        let mut positions = Vec::new();
+        for graine in 1..=4u64 {
+            let mut etat = (graine * 2_654_435_761) | 1;
+            let mut b = Board::default();
+            for pli in 0..60 {
+                let mut coups = Vec::new();
+                b.generate_moves(|set| {
+                    coups.extend(set);
+                    false
+                });
+                if coups.is_empty() {
+                    break;
+                }
+                if pli % 15 == 14 && b.checkers().is_empty() {
+                    positions.push(b.clone());
+                }
+                etat ^= etat << 13;
+                etat ^= etat >> 7;
+                etat ^= etat << 17;
+                let mv = coups[(etat as usize) % coups.len()];
+                b.play_unchecked(mv);
+            }
+        }
+        // Quatre graines, seize positions, quarante-huit tirages : DIMENSIONNÉ
+        // et non deviné. Relevé le 21 sept. 2026 sur `main` — sans LMP 8
+        // tirages sur 48, avec LMP 15. Douze graines coûtaient 16 secondes en
+        // debug pour la même conclusion ; quatre en coûtent trois.
+        assert!(
+            positions.len() >= 12,
+            "échantillon trop maigre : {} positions",
+            positions.len()
+        );
+
+        let mut comptes = [0u32; 2];
+        for (i, avec_lmp) in [false, true].into_iter().enumerate() {
+            let neuve = || {
+                if avec_lmp {
+                    search()
+                } else {
+                    search_sans_lmp()
+                }
+            };
+            for b in &positions {
+                let reference = neuve().negamax(b, 5, 0, -INFINITY, INFINITY, &mut ardoise());
+                for pari in [5_000, -5_000, 0] {
+                    if neuve().search_root(b, 5, 8, pari, &mut ardoise()) != reference {
+                        comptes[i] += 1;
+                    }
+                }
+            }
+        }
+        (comptes[0], comptes[1])
     }
 
     #[test]
@@ -2351,15 +2422,34 @@ mod tests {
             "LMP devrait rendre le score dépendant du pari : {scores:?}"
         );
 
-        // Sans lui, le score ne dépend pas du pari — c'est ce qui prouve que
-        // l'assertion ci-dessus mesure LMP et non le bruit de la recherche.
-        let sans: Vec<i32> = [5_000, -5_000, 0]
-            .into_iter()
-            .map(|previous| search_sans_lmp().search_root(&b, 5, 8, previous, &mut ardoise()))
-            .collect();
+        // **Le contrôle, et c'est lui qui a changé le 21 sept. 2026.**
+        //
+        // Il assertait que SANS LMP le score ne dépend pas du pari, sur cette
+        // seule position — censé prouver que l'assertion ci-dessus mesure LMP
+        // et non le bruit de la recherche. **La prémisse est fausse** : sur
+        // 153 positions d'une marche seedée, LMP désactivé, le score diffère
+        // déjà de la fenêtre pleine 8,3 % du temps. Cette position-ci tombait
+        // dans les 91,7 % stables, et l'assertion passait par chance.
+        //
+        // Le contrôle COMPTE donc maintenant au lieu de supposer, sur un
+        // échantillon et non sur un point. Ce qu'il affirme est ce qui est
+        // vrai et ce que ce test doit protéger : la dépendance au pari **n'est
+        // pas nulle sans LMP**, et LMP **l'augmente**. Mesuré sur `main` à
+        // l'échantillon complet : 8,3 % contre 25,1 %, un facteur trois.
+        //
+        // Les deux bornes sont qualitatives et non chiffrées, délibérément :
+        // figer un taux ferait échouer ce test au premier changement de
+        // recherche, et c'est le SPRT qui juge les changements de recherche.
+        let (sans_lmp, avec_lmp) = compte_les_scores_dependants_du_pari();
         assert!(
-            sans.iter().all(|s| *s == sans[0]),
-            "sans LMP le score doit être indépendant du pari : {sans:?}"
+            sans_lmp > 0,
+            "sans LMP la dépendance au pari devrait rester non nulle ({sans_lmp}) — \
+             si elle est devenue nulle, c'est un fait nouveau sur la recherche, \
+             pas un test à réparer"
+        );
+        assert!(
+            avec_lmp > sans_lmp,
+            "LMP devrait augmenter la dépendance au pari : {avec_lmp} contre {sans_lmp}"
         );
 
         // Ce qui tient dans les deux cas, et qui est ce qu'on livre : la boucle
