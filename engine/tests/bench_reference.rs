@@ -307,3 +307,43 @@ fn les_milliers_se_regroupent_comme_dans_le_document() {
     assert_eq!(grouped(541_528), "541 528");
     assert_eq!(grouped(1_541_528), "1 541 528");
 }
+
+/// L'arbre de recherche ne bouge pas en silence — et ce test-ci **n'est pas
+/// `#[ignore]`**, contrairement à celui du haut.
+///
+/// **Pourquoi il existe, et ce qu'il répare.** Le contrôle de la profondeur 7
+/// est un critère d'acceptation, donc `#[ignore]`, donc `cargo test` ne
+/// l'exécute pas — et `cargo mutants` non plus. **Le garde-fou déterministe le
+/// plus fort du projet était invisible au cliquet de mutation.** Tout mutant
+/// qui change l'arbre de recherche sans faire tomber une assertion unitaire
+/// survivait, alors que le banc l'aurait vu.
+///
+/// Mesuré le 22 sept. 2026 : `search.rs` est passé de 89 à 110 survivants et
+/// `eval.rs` de 212 à 219 **sur du code de production identique au bit près**
+/// — seuls deux tests avaient été affaiblis la veille. Vingt-huit mutants de
+/// couverture perdus d'un coup, parce que la couverture reposait sur une
+/// assertion de score incidente plutôt que sur un invariant nommé.
+///
+/// **Profondeur 5 et non 7** : le nombre de nœuds y est tout aussi
+/// déterministe, et l'arbre est assez petit pour que le test reste négligeable
+/// en debug, où toute la suite tourne à chaque `verify.sh --rapide`.
+///
+/// **Conséquence assumée, la même que pour la profondeur 7** : tout changement
+/// délibéré de l'arbre rend ce test rouge tant que le chiffre n'est pas
+/// recopié. C'est l'effet recherché.
+#[test]
+fn larbre_de_recherche_ne_bouge_pas_en_silence() {
+    const PROFONDEUR: u32 = 5;
+    const NOEUDS: u64 = 31_637;
+
+    let noeuds = shallowred::bench::run(PROFONDEUR).unwrap();
+    assert_eq!(
+        noeuds, NOEUDS,
+        "l'arbre de recherche a changé : {noeuds} nœuds à la profondeur \
+         {PROFONDEUR} au lieu de {NOEUDS}.\n\n\
+         Si le changement est délibéré, recopier {noeuds} ici ET corriger la \
+         référence de la profondeur 7 dans CLAUDE.md et README.md, que le test \
+         `les_references_du_bench_dans_la_doc_sont_a_jour` vérifie. Sinon, \
+         c'est une régression."
+    );
+}

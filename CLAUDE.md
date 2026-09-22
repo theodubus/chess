@@ -381,6 +381,28 @@ une mesure, pas une préférence.
   deux, en critère d'acceptation. **Conséquence assumée** : tout changement de
   l'arbre de recherche rend la CI rouge tant que la ligne n'est pas corrigée.
   C'est l'effet recherché ; le message d'échec donne le chiffre à recopier.
+- **Un changement de TESTS déplace le plafond de mutation autant qu'un
+  changement de code — et la règle écrite ne visait que le code.** Le 22 sept.
+  2026, le balayage hebdomadaire a cassé sur `main` : `search.rs` 110 contre un
+  plafond de 89, `eval.rs` 219 contre 212. **Le code de production était
+  identique au bit près** — vérifié par le sha256 du fichier tronqué avant
+  `mod tests`. Seuls deux tests avaient changé la veille : un `assert_eq!` de
+  score exact sur une position, dont la prémisse était fausse et qu'il fallait
+  bien retirer, mais qui attrapait **par effet de bord** tout mutant déplaçant
+  le score — dans la recherche comme dans l'évaluation. Vingt-huit mutants
+  perdus d'un coup. **Après avoir touché à un test, remesurer le plafond**, ou
+  au minimum se demander ce que ce test attrapait qu'on ne lui demandait pas.
+- **Un critère d'acceptation `#[ignore]` est invisible au cliquet de
+  mutation.** `cargo mutants` exécute `cargo test`, donc jamais `--ignored` :
+  le contrôle du banc à la profondeur 7 — le garde-fou déterministe le plus
+  fort du dépôt — ne voyait aucun mutant. Tout changement silencieux de l'arbre
+  de recherche survivait alors qu'un simple compte de nœuds l'aurait vu.
+  `larbre_de_recherche_ne_bouge_pas_en_silence` fige donc le banc à la
+  **profondeur 5**, non ignoré, pour 0,32 s en debug. **Éprouvé en le faisant
+  échouer** : un signe retiré dans une table piece-square le fait passer de
+  31 637 à 31 942 nœuds. <span>Limite mesurée, pas supposée : il n'attrape pas
+  tout — un mutant sur l'ordonnancement des promotions ne change pas ces six
+  arbres. Le banc est un échantillon, comme le rappelle le piège voisin.</span>
 - **Un garde-fou peut être correct et garder la mauvaise chose.** Le contrôle
   du cliquet de mutation confrontait le plafond au balayage — ce qui est juste
   — mais rien ne confrontait ces listes à `engine/src/`. `see.rs`, né le
@@ -545,7 +567,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les trois critères d'acceptation, le bench |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
-| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Mesuré le 16 sept. 2026 : le runner est plus rapide que le conteneur de +11 à +35 % selon le runner, soit +0,2 à +0,6 ply.** Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
+| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Remesuré le 21 sept. 2026 : 58 % d'écart entre deux runners sur le même binaire** (2 067 101 contre 3 268 241 n/s, profondeurs 11 et 12), contre les 25 % relevés le 16. Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
 
 **Le cliquet de mutation.** `.github/mutation-baseline.txt` porte le nombre de
 survivants admis par fichier **et la raison écrite de chaque valeur non
