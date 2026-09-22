@@ -638,6 +638,17 @@ protocole cassé.
 n'a pas été accepté, et le point estimé du retrait est négatif. Un acquis se
 retire par un verdict, comme il est entré.
 
+> **Le candidat se reconstruit sans son SHA, et c'est voulu.** La branche
+> `mesure/d5-delta` est supprimée et `cbaa8d4` finira par être collecté — le
+> projet a déjà payé une fois pour avoir désigné du code par un commit
+> (`fatal: invalid reference: 498a01a`, 16 sept.). **La recette tient en une
+> phrase** : supprimer le bloc `if self.delta_prunable(…) { continue; }` de la
+> quiescence dans `engine/src/search.rs` — l'appel, pas la fonction, pour
+> retirer la décision *et* son coût. **Le contrôle est le banc** : le candidat
+> doit rendre exactement **138 458** nœuds à la profondeur 7 et **725 621** à
+> la profondeur 10. Un chiffre différent veut dire qu'on a reconstruit autre
+> chose, et c'est précisément ce que ce contrôle existe pour dire.
+
 ### Ce que l'écran en nœuds avait annoncé — un point, pas une règle
 
 L'empreinte en nœuds avait désigné delta comme la seule des trois lignes de D5
