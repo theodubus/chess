@@ -608,7 +608,7 @@ plus — il n'est donc pas acheté.*
 |---|---|---|
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **écrit, en mesure** |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
-| **B9 — table à entrées atomiques** | — | prérequis dur de B6. **Réserve non vérifiée** : sa fiche dit le coût « plat », mais personne n'a mesuré si des entrées atomiques ralentissent la recherche **monothread**. Se mesure par nœuds identiques au bit près + `timing.sh` |
+| **B9 — table à entrées atomiques** | — | prérequis dur de B6, **non entamé**. Réserve toujours non mesurée : sa fiche dit le coût « plat », ce qui parle du **rétrofit** et non de la vitesse. Voir l'encadré ci-dessous : <s>se mesure par nœuds identiques + `timing.sh`</s> — **faux, et mesuré le 22 sept. au soir** |
 | B6 — Lazy SMP | 1,0 à 1,8 | **seul chiffre encore hérité** du tableau. Le mesurer exige B9 |
 | B7 / C13 | — | inchangés, bloqués sur leurs déclencheurs |
 
@@ -618,6 +618,50 @@ plus — il n'est donc pas acheté.*
 > les extensions d'échec » — C12 clos le 21 sept., C18 mesuré et non fusionné.
 > **La lettre est satisfaite, l'esprit non** : C17, C19 et bientôt C21 sont
 > entrés depuis. *Le déclencheur était sous-spécifié.*
+
+#### B9 ne se valide PAS par « nœuds identiques » — mesuré le 22 sept. 2026
+
+J'avais annoncé à Théo que la réécriture atomique serait *« une réécriture
+pure, la table doit se comporter pareil, donc nœuds identiques au bit près puis
+`timing.sh` »*. **C'est faux, et deux minutes de sonde suffisent à le voir.**
+
+| grandeur | valeur | conséquence |
+|---|---|---|
+| `size_of::<Entry>()` aujourd'hui | **24 octets** (mesuré, pas calculé) | 16 Mio → 524 288 entrées |
+| entrée atomique : deux `AtomicU64` | **16 octets** | 16 Mio → **1 048 576 entrées** |
+
+À mébioctets égaux, **la table double de capacité**, donc les collisions
+changent, donc l'arbre change. Une réécriture qui change la taille d'une
+structure de données n'est jamais « pure », quelle que soit la pureté de sa
+logique. *Même famille que « vérifier le dénominateur » : un raisonnement
+correct appliqué à la mauvaise grandeur.*
+
+**Il y a donc deux effets, et ils se séparent par les quatre coins :**
+
+1. **le coût des accès atomiques et de l'empaquetage** — mesurable proprement,
+   mais seulement à **capacité forcée égale** (une rustine de mesure qui fige
+   le nombre d'entrées) : là, nœuds identiques au bit près et `timing.sh`
+   s'appliquent comme annoncé ;
+2. **l'effet d'une entrée deux fois plus petite** — un changement d'arbre, donc
+   un SPRT, et *plausiblement un gain* puisqu'il double la table à mémoire
+   constante. Cet effet-là n'a rien à voir avec le parallélisme et personne ne
+   l'avait jamais nommé.
+
+**L'encodage est fixé par la mesure, pas au juger.** `MATE = 30 000`, et une
+assertion posée dans `store` n'a **jamais** été déclenchée — ni par la suite de
+tests complète, ni par les critères d'acceptation, tournoi de vingt-quatre
+parties compris. Un score stocké tient donc dans un `i16`, d'où la répartition
+des 64 bits de données : score 16, coup 16, profondeur 8, borne 2,
+génération 8 — **50 bits sur 64**. La génération garde ses huit bits, donc
+**le schéma de remplacement ne change pas d'un iota** ; c'était le risque de
+l'encodage serré, et il est écarté.
+
+Le schéma sans verrou est celui de Hyatt : un mot porte `clé XOR données`,
+l'autre les données. Un lecteur reconstruit la clé par un XOR ; une entrée
+*déchirée* — deux mots venant d'écritures différentes — rend une clé qui ne
+correspond à rien et se rejette comme une collision ordinaire. Pas de verrou,
+et la seule conséquence d'un déchirement est un défaut de cache, jamais un
+score faux.
 
 ### Trois chantiers, une seule unité — mesuré le 22 sept. 2026
 

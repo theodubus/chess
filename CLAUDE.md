@@ -597,6 +597,21 @@ une mesure, pas une préférence.
   presque rien. **Ce qui paie : une ardoise allouée une fois, découpée par ply
   et passée le long de la récursion** — ni allocation ni remplissage par nœud,
   mesuré **−2,1 %** sur 22 paires, test des signes p = 0,0004.
+- **« Nœuds identiques au bit près » ne s'applique qu'à taille de structure
+  CONSTANTE.** J'ai annoncé que la réécriture de `tt.rs` en entrées atomiques
+  serait « une réécriture pure, donc nœuds identiques puis `timing.sh` ».
+  **Faux, et deux minutes de sonde le montrent** : `size_of::<Entry>()` vaut
+  **24 octets** aujourd'hui, une entrée atomique en fait **16**, donc à
+  mébioctets égaux la table **double de capacité**, les collisions changent et
+  l'arbre avec. *Une réécriture qui change la taille d'une structure n'est
+  jamais pure, quelle que soit la pureté de sa logique.* Les deux effets se
+  séparent par les quatre coins : le coût des accès atomiques se mesure à
+  **capacité forcée égale** (et là, nœuds identiques + `timing.sh`
+  s'appliquent), l'entrée deux fois plus petite est un changement d'arbre qui
+  demande un SPRT — et plausiblement un gain, puisqu'il double la table à
+  mémoire constante. Même famille que « vérifier le dénominateur » : un
+  raisonnement correct appliqué à la mauvaise grandeur. Chiffres et encodage
+  dans `tools/README.md`.
 - **Un changement qui ne modifie pas l'arbre de recherche ne passe pas par un
   SPRT.** **Arbitrage du 15 sept. 2026.** La règle « un SPRT par
   changement » vise les changements de *décision*. Une optimisation pure se
