@@ -95,6 +95,45 @@ question déjà close.
 
 </details>
 
+## Ce qui a été mesuré SUR une combinaison, et qui ne tient dans aucune rustine
+
+Le 21 sept. 2026, une branche `mesure/c18-c12-ensemble` a porté les deux
+rustines C18 et C12 en même temps, pour compter les nœuds des quatre coins.
+Elle ne contient aucun code propre et n'a donc pas de rustine à elle — mais
+elle a rendu deux faits que sa suppression effacerait, et qu'une session qui
+rouvrirait l'une des deux fiches redécouvrirait à ses frais.
+
+| arbre | nœuds au banc, profondeur 7 |
+|---|---|
+| `main` | 114 028 |
+| + C18 seul | 131 977 (× 1,157) |
+| + C12 seul | 106 820 (÷ 1,067) |
+| **+ les deux** | **127 108** |
+
+**Les deux mécanismes ne sont pas indépendants.** Le produit des deux rapports
+prédit 123 634 ; la mesure rend **127 108, soit +2,8 %**. Autrement dit
+**l'économie de nœuds de PVS tombe de 6,3 % à 3,7 % en présence de
+l'extension d'échec** : l'extension allonge les lignes forcées, où la fenêtre
+nulle a le moins à couper. *(Vérifié par exécution le 22 sept. 2026, avant de
+supprimer la branche — pas recopié d'un souvenir.)*
+
+**Et la combinaison casse un test que C12 apporte et fait passer.**
+`la_fenetre_nulle_rend_le_meme_score_que_la_fenetre_pleine` naît avec la
+rustine PVS et passe sur `mesure/c12-pvs` ; empilée sous C18, elle échoue avec
+**52 contre 51** sur
+`r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1`. *(Les deux
+exécutions faites le 22 sept. 2026, l'une après l'autre.)*
+
+Ce n'est pas une régression de C18 : c'est l'**instabilité de fenêtre déjà
+mesurée** — sur `main`, sans une ligne de PVS, le score d'un pari diffère de
+celui de la fenêtre pleine dans **8,3 %** des cas, mesuré sur 153 positions et
+trois paris chacune, élagage par compte désactivé comme dans le test — à
+laquelle un second changement d'arbre donne une occasion de plus de se
+manifester. **Une propriété qu'un test assertait sur UNE position redevient
+fausse dès qu'on empile**, et c'est le piège que le dépôt a déjà payé sur les
+gardes d'aspiration : un contrôle qui suppose une propriété doit la COMPTER
+sur un échantillon.
+
 ## La règle
 
 **Une rustine ici n'autorise rien.** Le protocole ne change pas : ce qui rentre
