@@ -287,6 +287,20 @@ une mesure, pas une préférence.
   90 % des nœuds sont en quiescence et qu'un test delta atteindrait 39 % des
   captures qu'elle examine. Les cinq lignes écrites ensuite valent
   **+32,5 Elo ± 12,3**. Choisir où creuser se mesure, comme le reste.
+- **Une érosion se cherche en NŒUDS avant de s'acheter en Elo.** Revalider un
+  acquis coûte un job ; mesurer ce qu'il façonne encore de l'arbre coûte trois
+  minutes et ne dépend pas du hasard. Le 22 sept. 2026, les trois lignes
+  restantes de D5 ont été passées ainsi, et elles se séparent : deux façonnent
+  autant ou plus qu'à leur verdict, une nettement moins. **La cause de la
+  troisième est mesurée par les quatre coins**, pas supposée — elle coupe au
+  même endroit qu'un mécanisme fusionné depuis, et le plan factoriel chiffre le
+  recouvrement. Chiffres dans `tools/README.md`, jamais recopiés ici.
+  <br>**Ce que cela ne donne pas** : l'Elo, ni son signe. Le rapport de nœuds
+  mesure le coût, exactement, et rien d'autre — c'est la règle voisine, et elle
+  tient. Ce que cela donne est l'**ordre d'achat** des matchs, là où la fiche
+  écrivait « il n'y a plus d'ordre imposé ». Corollaire à ne pas manquer : une
+  colonne « empilé depuis » vieillit à chaque fusion, et celle de D5 datait
+  d'avant les deux élagages qui ont précisément mangé la ligne érodée.
 - **Un bench à profondeur 7 est trop court pour comparer des temps.** Le
   nombre de nœuds y est déterministe et comparable, le temps ne l'est pas :
   le 14 sept. 2026, une même version a mesuré 184 ms puis 200 ms en

@@ -26,10 +26,10 @@ réseau.
 | rustine | ce que c'est | verdict | s'applique sur `main` ? |
 |---|---|---|---|
 | `c12-pvs.patch` | recherche à variante principale | **H0**, −10,9 Elo ± 7,9, 4214 parties, `1+0,01` | **non** — écrite sur un `search.rs` de trois jours plus vieux. **Portée à la main le 21 sept. sur la branche `mesure/c12-pvs`** : la rustine reste le document de référence pour la structure, la branche est le code qui compile. |
-| `c17-lmp.patch` | élagage par compte de coups, seuil `6 + d²` | **H0** deux fois, −25,2 puis −12,6, `1+0,01` — **mais +15,3 à `8+0,08`** | **oui**, `git apply --check` passe |
+| `c17-lmp.patch` | élagage par compte de coups, seuil `6 + d²` | **H0** deux fois à `1+0,01` (−25,2 puis −12,6), puis **H1 à `8+0,08`, +22,85 ± 9,88 — FUSIONNÉ** (PR&nbsp;#21) | **non**, et c'est le signe que le rejet est levé : la rustine échoue parce que son code EST dans `main`. Document d'histoire, plus un bouton |
 | `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | **oui**, `git apply --check` passe, SUR l'élagage en quiescence |
-| `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | **oui**, mais APRÈS `c17-lmp.patch` |
-| `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. Le dimensionnement a été suivi d'un match, voir ci-dessous | **oui**, sur `main` |
+| `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | **oui**, directement sur `main` — <s>APRÈS `c17-lmp.patch`</s>, cette condition est tombée avec la fusion de C17 |
+| `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. Le dimensionnement a été suivi d'un match, voir ci-dessous | **non** — échoue sur `engine/src/search.rs:837` depuis la fusion de C17. La sonde reste lisible ; la rejouer demande de la porter |
 | `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | **oui**, `git apply --check` passe sur `main` |
 | `c12-pvs-2026-09-21.patch` | PVS réécrit à la main sur le moteur post-C19 et post-LMP | **−0,82 Elo ± 8,19**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | **oui**, `git apply --check` passe sur `main` |
 
@@ -44,13 +44,44 @@ document**, pas un bouton — la lire pour retrouver la structure, la porter à 
 main. C'est vérifié, pas supposé : `git apply --check` échoue sur
 `engine/src/search.rs:215`.
 
-## Les deux sont rouvertes, et pas pour la même raison
+## Les deux étaient rouvertes ; aucune ne l'est plus
 
-**C17 — par la cadence.** Le même binaire rend −21,57 à `1+0,01` et **+15,30 à
-`8+0,08`** (p = 0,0013). Les deux verdicts H0 valent pour une cadence où le
-moteur atteint la profondeur 8,5 ; la cible est la force générale. Il manque un
-SPRT à cadence longue, pas du travail d'écriture — le seuil est un `sed` d'un
-caractère sur `LMP_BASE`.
+**C17 est CLOS par une acceptation — la seule du répertoire.** <s>Il manque un
+SPRT à cadence longue, pas du travail d'écriture.</s> Ce SPRT a été acheté le
+21 sept. 2026 : **+22,85 ± 9,88 sur 2436 parties à `8+0,08`, H1**, et le seuil 6
+est **fusionné dans `main`** par la PR&nbsp;#21. Le rejet conditionnel a été levé
+dans le seul sens qui ferme une question — par une mesure au régime visé.
+
+**Conséquence sur la rustine, et elle est exactement inversée.** Tant que C17
+était retiré, `c17-lmp.patch` s'appliquait ; maintenant que son code est dans
+`main`, **elle n'y applique plus**. Le projet garde ici « ce que le dépôt n'a
+plus » : une rustine qui cesse de s'appliquer parce que son code est entré n'a
+plus de raison d'être un bouton. Elle reste comme **document** — le seuil `12 +
+d²`, lui aussi H1 (+17,24 ± 8,51) et non retenu, est toujours un `sed` d'un
+caractère, mais sur le `LMP_BASE` de `main` désormais, pas sur cette rustine.
+
+### Trois lignes de la table étaient fausses, et rien ne les gardait
+
+**Vérifié le 22 sept. 2026 par `git apply --check` sur les sept rustines**, pas
+relu : `c17-lmp.patch` et `c18-sonde-echec.patch` étaient annoncées applicables
+et ne l'étaient plus, et la condition « APRÈS `c17-lmp.patch` » de
+`d2-sonde-pv.patch` était devenue fausse. Les trois ont la **même cause
+unique** : la fusion de C17 a déplacé `engine/src/search.rs` sous elles.
+
+C'est le piège du renvoi périmé, dans sa forme la plus coûteuse : ce répertoire
+existe pour qu'on ne réécrive pas de mémoire un code déjà écrit, et une colonne
+« s'applique sur `main` ? » fausse envoie précisément faire ce travail-là.
+**La source de vérité de cette colonne n'est pas la relecture, c'est
+`git apply --check`** — une commande, sept secondes :
+
+```sh
+for p in tools/attic/*.patch; do
+  git apply --check "$p" 2>/dev/null && echo "applique  $p" || echo "échoue    $p"
+done
+```
+
+**À relancer après toute fusion qui touche `engine/src/`**, et à inscrire dans
+la table. Aucun dispositif ne le fait aujourd'hui.
 
 ### C12 est clos le 21 septembre 2026, et cette fois sans condition
 
