@@ -663,6 +663,44 @@ correspond à rien et se rejette comme une collision ordinaire. Pas de verrou,
 et la seule conséquence d'un déchirement est un défaut de cache, jamais un
 score faux.
 
+### Ce qu'il faut surveiller — et que rien ne signalera tout seul
+
+Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
+**vieillissent**, et c'est pourquoi ils sont écrits plutôt que gardés.
+
+| quoi | quand ça devient actionnable | pourquoi aucun test ne le dira |
+|---|---|---|
+| **l'estimation de durée de `match.yml`** | **le jour où C21 fusionne** | le facteur 0,77 mesuré **EST** le gaspillage de pendule : un moteur qui laisse 48 % de son horloge finit ses parties plus vite que la cadence nominale. C21 corrige exactement ça, donc le facteur dérive vers 1 et la notice se met à mentir dans l'autre sens |
+| `mesure/d5-delta` sur le distant | quand Théo veut | le jeton de session **ne peut pas supprimer une référence distante** (vérifié : `the remote end hung up unexpectedly`). Cinq des six branches `mesure/*` ont disparu, celle-là reste |
+| **le déclencheur de B8** | maintenant | sa **lettre** est satisfaite (C12 clos, C18 décidé), son **esprit** non (C17, C19, C21 sont entrés depuis). Ça demande une re-spécification, pas une mesure — donc personne ne peut la calculer |
+| `attack_dump.rs` et `see_check.rs` | au prochain dépôt dans `tools/src/bin/` | **autodécouverts par cargo**, non déclarés dans `tools/Cargo.toml`. `outillage_documente.rs` exige qu'ils soient documentés, pas qu'ils soient déclarés |
+| le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
+
+### B9 — l'état exact, pour reprendre sans redécouvrir
+
+Le protocole est corrigé (encadré ci-dessus) et l'encodage fixé par la mesure.
+**Rien du code n'est écrit.** Ce qui reste, dans l'ordre :
+
+1. **Réécrire `tt.rs`** en deux `AtomicU64` par entrée, schéma XOR de Hyatt.
+   Surface vérifiée : `probe` et `store` n'ont **qu'un site d'appel chacun**
+   dans `search.rs` (lignes ~770 et ~971), plus `clear`, `new_search`,
+   `capacity`, `permille_used`. Les signatures passent de `&mut self` à
+   `&self` ; `generation` devient un `AtomicU8`.
+2. **Protéger l'encodage** par un `debug_assert!` sur les bornes du score plus
+   une borne en release — *une donnée fausse se borne, elle n'arrête pas la
+   partie*. L'absence de déclenchement mesurée n'est qu'un échantillon.
+3. **Mesurer le coût des atomiques à capacité FORCÉE égale** : une rustine de
+   mesure qui fige le nombre d'entrées à celui d'aujourd'hui, pour que les
+   nœuds soient identiques au bit près et que `timing.sh` s'applique.
+4. **Mesurer séparément l'entrée deux fois plus petite** — changement d'arbre,
+   donc SPRT, et plausiblement un gain puisqu'il double la table à mémoire
+   constante.
+
+**Ne pas confondre 3 et 4**, c'est tout l'objet de la correction du protocole.
+Et B9 ne débloque B6 qu'une fois 3 et 4 rendus : sa fiche dit que le coût de
+le différer est « plat », ce qui parle du **rétrofit** et ne dit rien de la
+vitesse.
+
 ### Trois chantiers, une seule unité — mesuré le 22 sept. 2026
 
 Le projet a longtemps comparé ses chantiers dans des unités qui ne se
