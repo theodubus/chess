@@ -391,7 +391,13 @@ une mesure, pas une préférence.
   d'origine : GitHub conserve `refs/pull/N/head` de façon permanente, donc
   `498a01a` restait atteignable par ce chemin ; et **le push d'étiquettes est
   refusé sur ce dépôt** (403 avec le jeton de session), ce qui interdisait
-  la solution évidente.</span>
+  la solution évidente. **Troisième limite du même jeton, vérifiée le
+  22 sept. 2026 : il ne peut pas non plus SUPPRIMER une référence distante** —
+  `git push origin --delete <branche>` échoue sur `the remote end hung up
+  unexpectedly`, sans message utile. Le ménage des branches `mesure/*` revient
+  donc à Théo, et *ne jamais écrire dans la documentation une suppression
+  qu'on n'a pas vérifiée* : je l'ai fait le jour même, et la phrase était
+  fausse quand elle a été committée.</span>
 - **Ne jamais construire une référence avec `git stash`.** Il emporte tout le
   travail non committé, outils de mesure compris — on finit par mesurer autre
   chose que ce qu'on croit. Utiliser `git worktree add --detach /tmp/ref <commit>`.
