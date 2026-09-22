@@ -25,13 +25,19 @@ réseau.
 
 | rustine | ce que c'est | verdict | s'applique sur `main` ? |
 |---|---|---|---|
-| `c12-pvs.patch` | recherche à variante principale | **H0**, −10,9 Elo ± 7,9, 4214 parties, `1+0,01` | **non** — écrite sur un `search.rs` de trois jours plus vieux. **Portée à la main le 21 sept. sur la branche `mesure/c12-pvs`** : la rustine reste le document de référence pour la structure, la branche est le code qui compile. |
-| `c17-lmp.patch` | élagage par compte de coups, seuil `6 + d²` | **H0** deux fois à `1+0,01` (−25,2 puis −12,6), puis **H1 à `8+0,08`, +22,85 ± 9,88 — FUSIONNÉ** (PR&nbsp;#21) | **non**, et c'est le signe que le rejet est levé : la rustine échoue parce que son code EST dans `main`. Document d'histoire, plus un bouton |
-| `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | **oui**, `git apply --check` passe, SUR l'élagage en quiescence |
-| `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | **oui**, directement sur `main` — <s>APRÈS `c17-lmp.patch`</s>, cette condition est tombée avec la fusion de C17 |
-| `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. Le dimensionnement a été suivi d'un match, voir ci-dessous | **non** — échoue sur `engine/src/search.rs:837` depuis la fusion de C17. La sonde reste lisible ; la rejouer demande de la porter |
-| `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | **oui**, `git apply --check` passe sur `main` |
-| `c12-pvs-2026-09-21.patch` | PVS réécrit à la main sur le moteur post-C19 et post-LMP | **−0,82 Elo ± 8,19**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | **oui**, `git apply --check` passe sur `main` |
+| `c12-pvs.patch` | recherche à variante principale | **H0**, −10,9 Elo ± 7,9, 4214 parties, `1+0,01` | `git apply --check` : **non** — écrite sur un `search.rs` de trois jours plus vieux. Portée à la main le 21 sept. sur le moteur post-C19 ; cette version-là est la rustine datée du 21 septembre. Celle-ci reste le document de référence pour la structure |
+| `c17-lmp.patch` | élagage par compte de coups, seuil `6 + d²` | **H0** deux fois à `1+0,01` (−25,2 puis −12,6), puis **H1 à `8+0,08`, +22,85 ± 9,88 — FUSIONNÉ** (PR&nbsp;#21) | `git apply --check` : **non**, et c'est le signe que le rejet est levé — elle échoue parce que son code EST dans `main`. Document d'histoire, plus un bouton |
+| `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | `git apply --check` : **oui**, SUR l'élagage en quiescence |
+| `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | `git apply --check` : **oui**, directement sur `main` — la condition « après la rustine de C17 » est tombée avec la fusion de C17 |
+| `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. Le dimensionnement a été suivi d'un match, voir ci-dessous | `git apply --check` : **non** — échoue sur `engine/src/search.rs:837` depuis la fusion de C17. La sonde reste lisible ; la rejouer demande de la porter |
+| `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | `git apply --check` : **oui**, sur `main` |
+| `c12-pvs-2026-09-21.patch` | PVS réécrit à la main sur le moteur post-C19 et post-LMP | **−0,82 Elo ± 8,19**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | `git apply --check` : **oui**, sur `main` |
+
+**La dernière colonne n'est pas de la prose : elle est vérifiée.**
+`engine/tests/rustines_attic.rs` confronte chaque `oui` / `non` au vrai
+`git apply --check`, dans les deux sens — une rustine non déclarée et une
+déclaration sans rustine font échouer autant qu'un verdict faux. C'est un
+critère d'acceptation, donc il tourne en CI et par `tools/verify.sh`.
 
 ```sh
 git apply --check tools/attic/c17-lmp.patch   # toujours, avant d'appliquer
