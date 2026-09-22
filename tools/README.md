@@ -148,14 +148,26 @@ en 1 h 47 min 13 s de jeu, soit **5,57 s par partie** à concurrence 3. Le
 plafond du job est de 350 minutes, dont ~70 s de mise en place, donc
 **~3 750 parties au maximum**.
 
-Croisé avec la relation de budget du projet (`parties × Elo`, médiane 59 500 sur quinze SPRT — voir plus bas) :
+Croisé avec la relation de budget du projet (`parties × Elo`, médiane 59 256
+sur dix-huit SPRT — voir plus bas) :
 
 > **Un job à `8+0,08` tranche les effets de ~17 Elo et plus. En dessous, il
 > expire sans verdict.**
 
-L'aspiration (−51,6) a tranché en 1154 parties, C19 (+33,6) en 1608. Les trois
-termes d'évaluation (+14,9) tombent **juste sous la ligne**, et c'est le
-prochain point de D5.
+L'aspiration (−51,6) a tranché en 1154 parties, C19 (+33,6) en 1608.
+
+**L'Elo qu'on met dans cette division appartient lui aussi à une cadence.** Ces
+lignes portaient que les trois termes d'évaluation, « +14,9 », tombaient *juste
+sous la ligne* : 59 500 ÷ 14,9 = 3 993 parties, au-dessus du plafond de 3 750,
+donc un job qui expire sans verdict. **Mesuré le 22 sept. : verdict rendu en
+1 580 parties** — parce que l'effet à cette cadence-là ne vaut pas +14,9 mais
+**+37,5**, et que 59 500 ÷ 37,5 = 1 585. La relation de budget n'était pas en
+cause ; son **entrée** l'était.
+
+> **Un budget de job estimé depuis un verdict à `1+0,01` est un MAJORANT, pas
+> une estimation.** Tout ce dont la valeur croît avec la profondeur tranchera
+> plus vite qu'annoncé. Ne jamais renoncer à un match à cadence longue sur la
+> seule foi d'un effet mesuré court.
 
 **Et à `30+0,3`, un job ne tient pas mille parties.** Mesuré le 16 sept. sur le
 contrôle de cadence de C19 : **960 parties sur 1000** avant le plafond de
@@ -443,21 +455,47 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-21 | **C12 — PVS réécrit, à `8+0,08`** | **PAS UN GAIN NON PLUS, mais plus du tout un coût — −0,82 Elo ± 8,19**, 3400 parties à longueur fixe, 49,88 % de score, LOS 42,2 %, Ptnml [130, 319, 810, 311, 130]. [run 35616375595](https://github.com/theodubus/chess/actions/runs/35616375595), candidat `35548f2` contre `6bf13fa`, graine 20260913. Étalonnage : **2 067 101 n/s, profondeur 11**. **Non fusionné**, code dans `tools/attic/c12-pvs-2026-09-21.patch`. Banc du candidat : 106 820 nœuds (÷1,07). |
 | 2026-09-21 | **LMP seuil `6 + d²` (C17), à `8+0,08`, sur la base post-C19** | **H1 accepté** — **+22,85 Elo ± 9,88** sur 2436 parties, LLR 2,95, 53,28 % de score, LOS 100 %. Étalonnage : 2 508 824 n/s, profondeur 11. 3 h 47 de match. **Retenu.** |
 | 2026-09-21 | **Le même, seuil `12 + d²`** | **H1 accepté** — **+17,24 Elo ± 8,51** sur 3368 parties, LLR 2,96, 52,48 % de score. Étalonnage : 2 579 292 n/s, profondeur 11. 5 h 09 de match. |
+| 2026-09-22 | **D5 — retrait des trois termes d'évaluation (sécurité du roi, structure de pions, tours sur colonne ouverte), à `8+0,08`** | **H0 accepté** — **−37,53 Elo ± 13,40** sur 1580 parties, bornes `[-5, 0]`, LLR −2,95, 44,62 % de score, LOS 0,00 %, Ptnml [121, 155, 344, 113, 57]. [run 35692850670](https://github.com/theodubus/chess/actions/runs/35692850670), candidat `adcbd14` contre `091e75e`, graine 20260913. Étalonnage : **2 177 503 n/s, profondeur 11**. 2 h 32 de match. **Les trois termes valent 2,5 fois le +14,9 mesuré à `1+0,01`.** Banc du candidat : 88 495 nœuds (÷ 1,29). |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
-supposait une *érosion* : l'aspiration valait +29,7 mesuré avant que l'élagage
-delta et la futilité inverse n'existent, et les trois coupent dans le même
-arbre. Mesuré : **elle vaut 2,7 fois plus au régime qui compte** — −18,91 à
-`1+0,01` contre −51,56 à `8+0,08`, z = 3,52, **p ≈ 0,0004**, intervalles
-disjoints. Le verdict d'origine ne la sous-estimait pas d'un peu, il la
-sous-estimait presque de moitié.
+supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
+base pauvre, devait valoir moins une fois empilé avec les mécanismes venus
+après. **Deux acquis ont été remesurés, et les deux valent PLUS, pas moins.**
 
-**C'est la seconde confirmation que la cadence change le verdict**, sur une
-autre technique que l'élagage par compte. Les deux formes sont maintenant
-mesurées : la cadence **inverse un signe** (LMP, −21,6 → +15,3) ou **multiplie
-une magnitude** (aspiration, × 2,7). Le sens est le même — *mesurer court
-sous-estime ce dont la valeur croît avec la profondeur*.
+| acquis | verdict d'origine | remesuré à `8+0,08` | rapport |
+|---|---|---|---|
+| fenêtres d'aspiration | +29,7 (`1+0,01`) | **−51,56 ± 15,67** au retrait | **× 2,7** |
+| sécurité du roi + structure de pions + tours sur colonne ouverte | +14,9 (`1+0,01`) | **−37,53 ± 13,40** au retrait | **× 2,5** |
+
+Pour l'aspiration le contrôle est apparié : le même retrait, mesuré aux deux
+cadences le même jour, rend −18,91 à `1+0,01` contre −51,56 à `8+0,08`,
+z = 3,52, **p ≈ 0,0004**, intervalles disjoints.
+
+> **Pour les trois termes, la cadence et la BASE ont changé ensemble.** Le
+> +14,9 date du 14 sept., avant l'élagage delta, la futilité inverse, l'échange
+> statique en quiescence et l'élagage par compte de coups ; le −37,53 est
+> mesuré au-dessus de tous. Les deux causes sont donc **confondues**, et ce
+> point ne peut pas être attribué à la cadence seule. Les séparer demanderait
+> un contrôle apparié à `1+0,01` sur la base actuelle — un job de plus, pour
+> une question d'imputation et non de décision. *La décision, elle, ne dépend
+> pas de l'imputation : les termes restent, et ils valent plus cher qu'écrit.*
+
+**La cadence change le verdict, et les deux formes sont mesurées** : elle
+**inverse un signe** (LMP au seuil 6, −21,6 → +15,3 ; le seuil 12 bascule
+aussi) ou
+**multiplie une magnitude** (aspiration × 2,7, trois termes × 2,5).
+Le sens ne s'est jamais inversé — *mesurer court sous-estime ce dont la valeur
+croît avec la profondeur*, et le facteur observé tourne autour de 2,5.
+
+**Ce que D5 n'a toujours pas trouvé : une érosion.** Zéro sur deux. La fiche
+cherchait des acquis devenus caducs ; elle a trouvé deux acquis sous-évalués.
+<span><strong>Inférence, confiance faible</strong> : deux points ne font pas
+une règle, et les deux portent sur des mécanismes qui ne se recouvrent pas
+beaucoup avec ce qui est venu après. Un acquis qui coupe dans le même arbre
+qu'un mécanisme plus récent — la futilité inverse contre l'élagage delta, par
+exemple — reste le cas où une érosion serait plausible, et il n'est pas
+mesuré.</span>
 
 **Le nombre de nœuds n'est pas une mesure de force.** Les mesures ci-dessous le
 disent, et elles ne s'ordonnent pas de la même façon :
@@ -477,39 +515,53 @@ disent, et elles ne s'ordonnent pas de la même façon :
 | **fenêtres d'aspiration, remesurées à `8+0,08`** | **÷ 1,048** | **+52** |
 | élagage par échange statique en quiescence (C19) | ÷ 1,50 | +34 |
 | **élagage par compte de coups (LMP), seuil 6, à `8+0,08`** | **÷ 1,30** | **+23** |
+| **les trois termes d'évaluation, remesurés à `8+0,08`** | **× 1,29** | **+38** |
 
-La dernière ligne est le point le plus extrême du tableau : **la plus petite
-économie de nœuds, et presque le plus gros gain d'Elo**. Vérifié par exécution
-le 16 sept. — 234 370 nœuds à la profondeur 7 sans aspiration contre 223 577
-avec. Et c'est la même technique que la quatrième ligne, mesurée à une autre
-cadence : ÷ 1,07 → +30 à `1+0,01`. **Le rapport de nœuds n'a pas bougé ; l'Elo
-a été multiplié par 1,7.** *(Ces deux nombres datent d'avant C19 : la référence
+**Les fenêtres d'aspiration remesurées** sont le point le plus extrême du
+tableau : **la plus petite économie de nœuds, et presque le plus gros gain
+d'Elo**. Vérifié par exécution le 16 sept. — 234 370 nœuds à la profondeur 7
+sans aspiration contre 223 577 avec. Et c'est la même technique que sa propre
+ligne à `1+0,01` : ÷ 1,07 → +30. **Le rapport de nœuds n'a pas bougé ; l'Elo a
+été multiplié par 1,7.** *(Ces deux nombres datent d'avant C19 : la référence
 du bench vaut 148 786 nœuds depuis. Un rapport de nœuds se lit entre les deux
 binaires d'une même mesure, jamais contre le chiffre courant.)*
 
-### La relation de budget, remesurée sur quinze points au lieu de quatre
+> *Ce paragraphe disait « la dernière ligne » et désignait déjà la mauvaise :
+> deux mesures avaient été ajoutées sous elle sans que personne ne relise. **Un
+> renvoi par position vieillit exactement comme un chiffre recopié en prose**,
+> et sans faire de bruit. Nommer la ligne, jamais la compter.*
+
+**Et la ligne ajoutée le 22 sept. enfonce le clou par une coïncidence.** Les
+trois termes d'évaluation multiplient l'arbre par **1,29** — exactement le
+rapport de la mobilité — et rapportent **+38** là où la mobilité rapporte
+**+63**. Même coût en nœuds, presque du simple au double en Elo. *(Les deux
+rapports sont lus chacun entre les deux binaires de sa propre mesure : 114 028
+contre 88 495 nœuds pour les trois termes. Ils ne se comparent pas en valeur
+absolue, seulement en rapport.)*
+
+### La relation de budget, sur dix-huit points
 
 Elle sert à décider **si un changement vaut un match**, donc elle vaut d'être
 tenue à jour. `parties × Elo` sur tous les SPRT du projet, du plus petit au plus
-grand — le match à longueur fixe de la cadence LMP en est exclu, son effectif
-étant choisi et non atteint :
+grand — les matchs à longueur fixe en sont exclus, leur effectif étant choisi et
+non atteint. La cadence est notée quand elle n'est pas `1+0,01` :
 
 | | `parties × Elo` | | `parties × Elo` |
 |---|---|---|---|
-| PVS | 45 933 | futilité inverse | 61 333 |
-| LMP seuil 12 | 49 543 | LMR | 61 637 |
-| LMP seuil 6 | 51 156 | retrait aspiration `1+0,01` | 61 911 |
-| réglage Texel | 51 280 | coup nul | 64 886 |
-| C19 | 54 013 | trois termes d'éval | 66 663 |
-| mobilité | 58 969 | **table + killers + historique** | **80 178** |
-| élagage delta | 59 215 | | |
-| retrait aspiration `8+0,08` | 59 500 | | |
-| aspiration | 60 647 | | |
+| PVS | 45 933 | trois termes, retrait `8+0,08` | 59 297 |
+| LMP seuil 12 | 49 543 | retrait aspiration `8+0,08` | 59 500 |
+| LMP seuil 6 | 51 156 | aspiration | 60 647 |
+| réglage Texel | 51 280 | futilité inverse | 61 333 |
+| C19 `8+0,08` | 54 013 | LMR | 61 637 |
+| C17 seuil 6 `8+0,08` | 55 663 | retrait aspiration `1+0,01` | 61 911 |
+| C17 seuil 12 `8+0,08` | 58 064 | coup nul | 64 886 |
+| mobilité | 58 969 | trois termes | 66 663 |
+| élagage delta | 59 215 | **table + killers + historique** | **80 178** |
 
-**Médiane 59 500, moyenne 59 124, étendue 45 933 – 80 178 — facteur 1,75.** La
-constante n'a presque pas bougé : 62 000 avait été posée sur quatre points, et
-quinze points la ramènent à 59 500. **Ce qui est nouveau, c'est la dispersion**,
-qui était inconnue — un budget estimé se lit à ± 50 %, pas comme un nombre.
+**Médiane 59 256, moyenne 58 883, étendue 45 933 – 80 178 — facteur 1,75.** La
+constante ne bouge pas : 62 000 sur quatre points, 59 500 sur quinze, 59 256 sur
+dix-huit. **La dispersion non plus** — un budget estimé se lit à ± 50 %, pas
+comme un nombre.
 
 Un seul point dépasse 67 000, et c'est le **tout premier verdict du projet** :
 +164,3 Elo sur 488 parties. Hors ce point, le facteur tombe à **1,45**.
@@ -517,6 +569,37 @@ Un seul point dépasse 67 000, et c'est le **tout premier verdict du projet** :
 gonfle l'estimation d'autant plus que l'effectif est petit, et c'est à la fois
 le plus gros effet et le plus petit effectif du tableau. Le projet a mesuré ce
 biais à 3,6 Elo sur un cas à 1000 parties ; il n'a pas été mesuré à 488.</span>
+
+**Les trois points ajoutés le 22 sept. n'étaient pas un ajout de routine.** Les
+deux verdicts C17 à `8+0,08` manquaient purement par ordre chronologique — le
+tableau a été écrit le 21 sept. au matin, ils sont tombés l'après-midi. Le
+troisième, D5, ferme une question que le tableau ne pouvait pas poser à quinze
+points : **la constante dépend-elle de la cadence ?**
+
+| technique | `parties × Elo` à `1+0,01` | à `8+0,08` | rapport |
+|---|---|---|---|
+| retrait des fenêtres d'aspiration | 61 911 | 59 500 | 1,04 |
+| élagage par compte, seuil 6 | 51 156 | 55 663 | 0,92 |
+| élagage par compte, seuil 12 | 49 543 | 58 064 | 0,85 |
+| retrait des trois termes d'éval | 66 663 | 59 297 | 1,12 |
+
+**Non.** Quatre techniques ont maintenant un point à chaque cadence, et les
+quatre rapports tiennent dans ± 15 % — bien à l'intérieur du facteur 1,75 de la
+dispersion générale — alors que **l'Elo, lui, a changé d'un facteur 2,5 et même
+de signe** entre les deux colonnes. Le nombre de parties s'ajuste à l'inverse,
+et le produit tient.
+
+> **La constante appartient au SPRT, pas à la cadence.** C'est ce qui rend la
+> division utilisable pour dimensionner un job à `8+0,08` — à condition d'y
+> mettre l'Elo de CETTE cadence-là, qui est justement ce qu'on ne connaît pas
+> encore. D'où la règle de la section *Ce qu'un seul job peut trancher* : un
+> budget estimé depuis un verdict court est un majorant.
+
+<span><strong>Réserve</strong> : les paires ne sont pas parfaitement appariées.
+Les deux verdicts C17 à `8+0,08` sont mesurés sur la base post-C19, et le
+retrait des trois termes sur une base beaucoup plus riche que son verdict
+d'origine. Seul le retrait d'aspiration est un vrai contrôle apparié — et c'est
+le rapport le plus proche de 1.</span>
 
 ### C18 : la réserve de la fiche est juste, et deux fois plutôt qu'une
 
@@ -614,7 +697,8 @@ Le même élagage, les mêmes deux seuils, deux cadences :
 **Ce qui est établi : LMP passe de rejeté deux fois à accepté deux fois.** Aux
 deux seuils, les intervalles excluent zéro confortablement. Contrôle de
 vraisemblance : `parties × Elo` vaut 55 663 et 58 064, contre une médiane de
-projet à 59 500 — les deux tombent dessus.
+projet à 59 256 — les deux tombent dessus, et ils y figurent depuis le
+22 sept. : le tableau de budget les avait manqués de deux heures.
 
 **Ce qui n'est PAS établi : que le classement des deux seuils s'inverse.** Les
 estimations ponctuelles le disent — 12 meilleur à `1+0,01`, 6 meilleur à

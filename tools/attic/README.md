@@ -106,3 +106,14 @@ rouverte.
 Y ajouter une rustine quand, et seulement quand, un rejet est **conditionnel**
 et que la documentation nomme la condition. Un rejet sans condition n'a rien à
 faire ici : il se referme.
+
+**Et jamais un candidat de RETRAIT rejeté.** Les campagnes de revalidation (D5)
+construisent des branches qui retirent un acquis pour le remesurer ; quand le
+verdict est `H0` — l'acquis paie toujours — il n'y a rien à conserver, puisque
+le code est resté dans `main`. C'est l'inverse exact de la raison d'être de ce
+répertoire : on garde ici ce que le dépôt n'a plus. Les candidats
+`mesure/sans-aspiration` (16 sept.) et `mesure/d5-trois-termes` (22 sept.) n'y
+figurent donc pas, et leur absence n'est pas un oubli. Ce qu'il faut pour les
+reconstruire tient dans la ligne de verdict : le commit de référence, le commit
+candidat, et le nombre de nœuds du banc — qui vérifie qu'on a bien reconstruit
+le même binaire.
