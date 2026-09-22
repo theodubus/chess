@@ -32,6 +32,9 @@ réseau.
 | `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. Le dimensionnement a été suivi d'un match, voir ci-dessous | `git apply --check` : **non** — échoue sur `engine/src/search.rs:837` depuis la fusion de C17. La sonde reste lisible ; la rejouer demande de la porter |
 | `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | `git apply --check` : **oui**, sur `main` |
 | `c12-pvs-2026-09-21.patch` | PVS réécrit à la main sur le moteur post-C19 et post-LMP | **−0,82 Elo ± 8,19**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | `git apply --check` : **oui**, sur `main` |
+| `d6-sonde-ordonnancement.patch` | sonde : que peut épargner un générateur par étapes ? | **pas un changement** — 85 % des coups générés par `negamax` ne sont jamais cherchés, mais l'ordonnancement ne pèse que 26,2 % du temps. Plafond **11,5 %**, soit **0,21 pli** | `git apply --check` : **oui**, sur `main` |
+| `d6-sonde-pendule.patch` | sonde : que reste-t-il sur la pendule, et que vaut chaque raffinement de B2 ? | **pas un changement** — **46,9 % de la pendule inutilisée** en fin de partie, soit ~1,36 pli. « S'arrêter tôt sur un coup stable » **réfuté** aux deux cadences | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
+| `d6-sonde-profondeur.patch` | sonde : combien de plis un doublement de vitesse achète-t-il ? | **pas un changement** — **1,36 pli par doublement**, stable sur quatre doublements. C'est l'unité qui rend les chantiers comparables | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
 
 **La dernière colonne n'est pas de la prose : elle est vérifiée.**
 `engine/tests/rustines_attic.rs` confronte chaque `oui` / `non` au vrai

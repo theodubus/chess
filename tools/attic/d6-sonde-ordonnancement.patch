@@ -1,0 +1,243 @@
+# d6 — ce qu'un générateur par étapes peut épargner, mesuré AVANT d'en écrire un
+#
+# LA QUESTION QU'IL NE FALLAIT PAS POSER — « quelle part des nœuds est en
+# quiescence ? ». Réponse : 90 %, et ça ne décide rien. La quiescence restreint
+# déjà sa génération par un AND de bitboards (`tactical_only`), donc elle
+# génère 2,86 coups par nœud contre 26,42 dans negamax. C'est negamax qui porte
+# 83,8 % du travail d'ordonnancement, et 94,1 % du tri. Quatrième forme du
+# piège du dénominateur sur ce projet.
+#
+# CE QUI A ÉTÉ MESURÉ — 400 positions tirées de parties réelles (datagen,
+# 50 parties, graine 20260921), recherche à la profondeur 10. L'instrumentation
+# ne change pas l'arbre : banc à 114 028 nœuds, identique à `main`.
+#
+#                                        negamax     quiescence
+#   nœuds avec coups                    4 971 278      8 892 739
+#   coups générés+scorés+triés        131 319 232     25 444 803
+#     dont tranquilles                     92,2 %         17,3 %
+#   coups réellement cherchés          19 755 658      8 835 627
+#   JAMAIS cherchés                        85,0 %         65,3 %
+#   nœuds coupés sur bêta                  72,2 %         43,8 %
+#   nœuds sans AUCUN tranquille cherché    49,0 %              —
+#     coups générés à ces nœuds-là     28,64 / nœud, contre 26,42 en moyenne
+#
+# LE DÉNOMINATEUR EN TEMPS, par DOUBLEMENT — refaire une fois le même travail
+# par nœud, nœuds identiques au bit près, `tools/timing.sh` à la profondeur 10,
+# 24 paires. Si doubler X coûte P % du total, alors X vaut P % du total.
+#
+#   générer + scorer + trier   +26,2 %   0/24 paires plus rapides, p = 0,0000
+#   générer + scorer seul      +21,4 %   0/24 paires plus rapides, p = 0,0000
+#   => trier seul              ~ 4,8 %   par différence
+#
+# Ces deux chiffres sont des MINORANTS : la seconde passe travaille sur un
+# cache chaud, donc elle coûte moins que la première.
+#
+# LE RÉSULTAT — plafond de ce qu'un générateur par étapes peut épargner :
+# 11,5 % du temps de recherche (8,78 en générer+scorer, 2,41 en tri aux nœuds
+# sans tranquille, 0,33 en sélection partielle ailleurs). Converti par les
+# 1,36 pli/doublement mesurés le même jour : **0,21 pli**. Pour mémoire,
+# dépenser la pendule entière en vaut ~1,36.
+#
+# CE QUI N'EST PAS MESURÉ, et qui décide le reste — la génération par étapes
+# n'est PAS une optimisation pure. Le tri est `sort_unstable_by_key`, donc les
+# ex æquo sont départagés arbitrairement par pdqsort. Mesuré : passer au tri
+# STABLE, sans rien changer d'autre, déplace l'arbre de 114 028 à 109 342 nœuds
+# — 4,1 %. Un générateur par étapes émettrait dans l'ordre de génération au
+# sein de chaque étage, donc un autre arbre encore. `timing.sh` refuserait de
+# conclure ; il faut un SPRT, et 0,21 pli est loin sous ce qu'un job tranche.
+#
+# LE BINAIRE DE LECTURE est `tools/src/bin/staged_probe.rs`, dont le diff suit.
+# Il vit DANS cette rustine et non dans `main` : une sonde qui importe des
+# statiques d'instrumentation casse l'arbre dès que le patch est retiré —
+# c'est arrivé le 22 sept. 2026, et le modèle de `d2-sonde-pv.patch` était le
+# bon depuis le début.
+#
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 8c5a32c..ec02d1e 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -109,6 +109,23 @@ const LMP_MAX_DEPTH: i32 = 3;
+ /// l'élagage disponible en divisant par 1,6 le risque de la valeur
+ /// conventionnelle. **Si le verdict est H0, bissecter par le seuil avant de
+ /// conclure quoi que ce soit sur LMP lui-même.**
++// SONDE « génération par étapes » — JETABLE. Indexés par [0] = negamax,
++// [1] = quiescence. Objet : majorer ce qu'un générateur par étapes peut
++// épargner, AVANT d'en écrire un.
++use std::sync::atomic::{AtomicU64, Ordering as SondeOrd};
++macro_rules! sonde {
++    ($name:ident) => {
++        pub static $name: [AtomicU64; 2] = [AtomicU64::new(0), AtomicU64::new(0)];
++    };
++}
++sonde!(P_NODES); // nœuds ayant appelé ordered_moves avec au moins un coup
++sonde!(P_GEN); // coups générés, scorés et triés
++sonde!(P_GEN_QUIET); // dont coups tranquilles
++sonde!(P_SEARCHED); // coups pour lesquels un fils a réellement été cherché
++sonde!(P_CUT); // nœuds terminés par une coupure bêta
++sonde!(P_QUIETFREE); // nœuds n'ayant cherché AUCUN coup tranquille
++sonde!(P_GEN_QF); // coups générés À CES nœuds-là
++
+ const LMP_BASE: usize = 6;
+ 
+ /// Profondeur à partir de laquelle on ose une fenêtre étroite.
+@@ -868,6 +885,17 @@ impl Search {
+             };
+         }
+ 
++        {
++            let quiets = buffer[..count]
++                .iter()
++                .filter(|&&(mv, _)| captured_piece(board, mv).is_none() && mv.promotion.is_none())
++                .count();
++            P_NODES[0].fetch_add(1, SondeOrd::Relaxed);
++            P_GEN[0].fetch_add(count as u64, SondeOrd::Relaxed);
++            P_GEN_QUIET[0].fetch_add(quiets as u64, SondeOrd::Relaxed);
++        }
++        let mut sonde_searched = 0u64;
++
+         let original_alpha = alpha;
+         let mut best = -INFINITY;
+         let mut best_move = None;
+@@ -918,6 +946,7 @@ impl Search {
+                 0
+             };
+ 
++            sonde_searched += 1;
+             self.path.push(child.hash());
+             let mut score =
+                 -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha, rest);
+@@ -958,6 +987,15 @@ impl Search {
+             }
+         }
+ 
++        P_SEARCHED[0].fetch_add(sonde_searched, SondeOrd::Relaxed);
++        if quiets_seen == 0 {
++            P_QUIETFREE[0].fetch_add(1, SondeOrd::Relaxed);
++            P_GEN_QF[0].fetch_add(count as u64, SondeOrd::Relaxed);
++        }
++        if best >= beta {
++            P_CUT[0].fetch_add(1, SondeOrd::Relaxed);
++        }
++
+         // Le type de borne dit ce que le score garantit : exact si tous les
+         // coups ont été examinés sans coupure, minorant après une coupure bêta,
+         // majorant si aucun coup n'a amélioré alpha.
+@@ -1021,6 +1059,17 @@ impl Search {
+             };
+         }
+ 
++        {
++            let quiets = buffer[..count]
++                .iter()
++                .filter(|&&(mv, _)| captured_piece(board, mv).is_none() && mv.promotion.is_none())
++                .count();
++            P_NODES[1].fetch_add(1, SondeOrd::Relaxed);
++            P_GEN[1].fetch_add(count as u64, SondeOrd::Relaxed);
++            P_GEN_QUIET[1].fetch_add(quiets as u64, SondeOrd::Relaxed);
++        }
++        let mut sonde_searched = 0u64;
++        let mut sonde_cut = false;
+         let mut best = if in_check { -INFINITY } else { alpha };
+         for &(mv, _) in &buffer[..count] {
+             if self.delta_prunable(board, mv, in_check, stand_pat, alpha) {
+@@ -1036,6 +1085,7 @@ impl Search {
+             let mut child = board.clone();
+             child.play_unchecked(mv);
+ 
++            sonde_searched += 1;
+             let score = -self.quiescence(&child, -beta, -alpha, ply + 1, rest);
+ 
+             if self.aborted {
+@@ -1047,11 +1097,16 @@ impl Search {
+                     alpha = score;
+                     self.pv.push(ply, mv);
+                     if alpha >= beta {
++                        sonde_cut = true;
+                         break;
+                     }
+                 }
+             }
+         }
++        P_SEARCHED[1].fetch_add(sonde_searched, SondeOrd::Relaxed);
++        if sonde_cut {
++            P_CUT[1].fetch_add(1, SondeOrd::Relaxed);
++        }
+         best
+     }
+ 
+diff --git a/tools/src/bin/staged_probe.rs b/tools/src/bin/staged_probe.rs
+new file mode 100644
+index 0000000..c9627fc
+--- /dev/null
++++ b/tools/src/bin/staged_probe.rs
+@@ -0,0 +1,70 @@
++//! SONDE JETABLE — majore ce qu'un générateur par étapes peut épargner.
++//!
++//! La question n'est PAS « quelle part des nœuds est en quiescence » (90 %,
++//! et c'est le mauvais dénominateur : `tactical_only` y restreint déjà la
++//! génération par un `AND` de bitboards). La question est **combien de coups
++//! sont générés, scorés et triés sans jamais être cherchés**, et **combien de
++//! nœuds n'ont besoin d'aucun coup tranquille** — ceux-là pourraient ne pas
++//! en générer du tout.
++use std::sync::Arc;
++use std::sync::atomic::{AtomicBool, Ordering};
++
++use cozy_chess::Board;
++use shallowred::position::Position;
++use shallowred::search::{
++    Limits, P_CUT, P_GEN, P_GEN_QF, P_GEN_QUIET, P_NODES, P_QUIETFREE, P_SEARCHED, Search,
++};
++
++fn main() {
++    let mut args = std::env::args().skip(1);
++    let path = args.next().unwrap_or_else(|| "positions.fen".into());
++    let depth: u32 = args.next().and_then(|a| a.parse().ok()).unwrap_or(10);
++
++    let fens = std::fs::read_to_string(&path).expect("corpus illisible");
++    let stop = Arc::new(AtomicBool::new(false));
++    let mut search = Search::new(stop);
++    let limits = Limits {
++        depth: Some(depth),
++        ..Limits::default()
++    };
++
++    let mut positions = 0u32;
++    for line in fens.lines() {
++        let line = line.trim();
++        if line.is_empty() {
++            continue;
++        }
++        let Ok(board) = line.parse::<Board>() else {
++            continue;
++        };
++        search.clear_table();
++        let _ = search.go(&Position::from_board(board), &limits, |_| {});
++        positions += 1;
++    }
++
++    let g = |c: &[std::sync::atomic::AtomicU64; 2], i: usize| c[i].load(Ordering::Relaxed);
++    println!("positions   : {positions}  (profondeur {depth})");
++    for (i, nom) in ["negamax", "quiescence"].iter().enumerate() {
++        let nodes = g(&P_NODES, i);
++        let genere = g(&P_GEN, i);
++        let quiet = g(&P_GEN_QUIET, i);
++        let searched = g(&P_SEARCHED, i);
++        let cut = g(&P_CUT, i);
++        let pct = |a: u64, b: u64| if b == 0 { 0.0 } else { 100.0 * a as f64 / b as f64 };
++        println!("\n--- {nom} ---");
++        println!("nœuds avec coups        : {nodes}");
++        println!("coups générés+scorés+triés : {genere}  ({:.2} / nœud)", genere as f64 / nodes as f64);
++        println!("  dont tranquilles      : {quiet}  ({:.1} %)", pct(quiet, genere));
++        println!("coups réellement cherchés : {searched}  ({:.2} / nœud)", searched as f64 / nodes as f64);
++        println!("** coups jamais cherchés : {}  ({:.1} % du généré) **", genere - searched, pct(genere - searched, genere));
++        println!("nœuds coupés sur bêta   : {cut}  ({:.1} %)", pct(cut, nodes));
++        if i == 0 {
++            let qf = g(&P_QUIETFREE, 0);
++            println!("** nœuds sans AUCUN tranquille cherché : {qf}  ({:.1} %) **", pct(qf, nodes));
++            let gqf = g(&P_GEN_QF, 0);
++            println!("   coups générés à ces nœuds : {gqf}  ({:.2} / nœud, contre {:.2} en moyenne)", gqf as f64 / qf as f64, genere as f64 / nodes as f64);
++            let gqf = g(&P_GEN_QF, 0);
++            println!("   coups générés à ces nœuds : {gqf}  ({:.2} / nœud, contre {:.2} en moyenne)", gqf as f64 / qf as f64, genere as f64 / nodes as f64);
++        }
++    }
++}

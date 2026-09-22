@@ -504,6 +504,145 @@ aussi) ou **multiplie une magnitude** (aspiration × 2,7, trois termes × 2,5).
 > base actuelle — et cette fois l'imputation changerait quelque chose, parce
 > qu'elle dirait si l'érosion vient de l'empilement ou du régime.</span>
 
+### Trois chantiers, une seule unité — mesuré le 22 sept. 2026
+
+Le projet a longtemps comparé ses chantiers dans des unités qui ne se
+comparent pas : un pourcentage de nœuds, une part de l'arbre, un « très
+sous-estimé » hérité d'un backlog. **Quatre sondes, toutes rendues en moins
+d'une heure de machine, les ramènent aux plis** — et le classement qui en sort
+n'est celui d'aucune des listes qui l'ont précédé.
+
+| chantier | gain de temps | **plis** | d'où vient le chiffre |
+|---|---|---|---|
+| génération par étapes | × 1,12 | **0,21** | mesuré, et c'est un majorant |
+| **dépenser la pendule (B2)** | × 1,9 | **~1,36** | mesuré : 46,9 % inutilisé |
+| Lazy SMP 4 cœurs (B6) | × 1,7 à 2,5 | 1,0 à 1,8 | **croyance héritée, non mesurée** |
+
+Les rustines et leurs binaires de lecture sont à l'attic —
+`d6-sonde-ordonnancement.patch`, `d6-sonde-pendule.patch`,
+`d6-sonde-profondeur.patch`.
+
+#### L'unité : 1,36 pli par doublement
+
+120 positions de vraies parties, budgets de 75 à 1200 ms, étalonnage
+2 535 361 n/s.
+
+| budget | profondeur moyenne | plis / × 2 |
+|---|---|---|
+| 75 ms | 10,82 | — |
+| 150 ms | 12,36 | 1,53 |
+| 300 ms | 13,63 | 1,28 |
+| 600 ms | 14,97 | 1,34 |
+| 1200 ms | 16,27 | 1,30 |
+
+Stable sur quatre doublements, donc utilisable : **1,36 pli**, facteur de
+branchement effectif 1,67.
+
+#### Le moteur laisse la moitié de sa pendule
+
+30 parties entières à `8+0,08`, pendule qui décroît, table conservée d'un coup
+à l'autre, 2 681 coups. **Zéro perte au temps.**
+
+| | |
+|---|---|
+| temps restant / temps initial en fin de partie | **médiane 46,9 %**, moyenne 50,2 % |
+| coups joués par partie | médiane **97** |
+
+`time_budget_ms` calcule `restant / movestogo + inc/2` avec **`movestogo` = 30
+par défaut** : la formule suppose qu'il reste trente coups, toujours, dans des
+parties qui en font quatre-vingt-dix-sept. Elle dépense un trentième du restant
+à chaque coup — une décroissance géométrique qui n'épuise jamais la pendule.
+
+> **L'arithmétique du mécanisme prédit 31 % de restant, la mesure en donne
+> 47 % : le modèle SOUS-PRÉDIT.** L'écart est l'échéance douce, qui interdit
+> d'entamer une itération à mi-budget — le moteur ne dépense même pas ce qu'il
+> s'est alloué. Les deux effets poussent dans le même sens. *Un mécanisme
+> vérifié à l'arithmétique et qui ne retombe pas sur la mesure n'est pas
+> réfuté ; il est incomplet, et le résidu se nomme.*
+
+#### Ce que les deux raffinements de B2 valent, séparément
+
+| | `8+0,08` (2 681 coups) | `30+0,3` (621 coups) |
+|---|---|---|
+| la dernière itération change le coup | 7,9 % | 6,3 % |
+| le score chute de plus de 100 cp | 3,0 % | 2,7 % |
+| coup déjà fixé avant la dernière itération | 93,8 % | 95,2 % |
+
+**Les intervalles se recouvrent tous** : rien ne distingue les deux cadences à
+ces effectifs. Les points estimés vont dans le même sens — plus stable au long
+— mais 621 coups ne le résolvent pas.
+
+**« S'arrêter tôt sur un coup stable » est réfuté**, et il empire au régime
+cible :
+
+| N itérations d'accord | temps épargné | **coup changé** |
+|---|---|---|
+| 3 | 98,7 % | 24,5 % |
+| 4 | 95,4 % | 17,6 % |
+| 5 | 91,5 % | **13,9 %** — et **18,4 %** à `30+0,3` |
+
+Le temps épargné n'est de surcroît pas dépensable : avec `restant/30`, une
+seconde économisée ne revient qu'au trentième sur le coup suivant. **« Prolonger
+sur un score qui s'effondre » survit**, sur 2,7 à 3,0 % des coups.
+
+#### La génération par étapes, et le bon dénominateur
+
+400 positions de vraies parties, profondeur 10. L'instrumentation ne déplace
+pas l'arbre : banc à 114 028, identique à `main`.
+
+| | negamax | quiescence |
+|---|---|---|
+| coups générés + scorés + triés / nœud | **26,42** | 2,86 |
+| dont tranquilles | 92,2 % | 17,3 % |
+| coups réellement cherchés / nœud | 3,97 | 0,99 |
+| **jamais cherchés** | **85,0 %** | 65,3 % |
+| nœuds coupés sur bêta | 72,2 % | 43,8 % |
+| **nœuds sans AUCUN tranquille cherché** | **49,0 %** | — |
+
+**`negamax` porte 83,8 % du travail d'ordonnancement et 94,1 % du tri**, pas la
+quiescence : `tactical_only` y restreint déjà la génération par un `AND` de
+bitboards. Le « 90 % des nœuds sont en quiescence » désignait la mauvaise
+grandeur — quatrième forme du piège du dénominateur sur ce projet.
+
+Le dénominateur en temps est obtenu **par doublement**, nœuds identiques au bit
+près, `tools/timing.sh` à la profondeur 10, 24 paires :
+
+| ce qu'on double | temps | paires |
+|---|---|---|
+| générer + scorer + trier | **+26,2 %** | 0/24 plus rapide, p = 0,0000 |
+| générer + scorer seul | **+21,4 %** | 0/24 plus rapide, p = 0,0000 |
+| ⇒ **trier seul** | **≈ 4,8 %** | par différence |
+
+Les deux sont des **minorants** : la seconde passe travaille sur un cache
+chaud. Plafond de ce qu'un générateur par étapes épargne : **11,5 %** du temps
+— dont 8,78 en générer+scorer aux nœuds sans tranquille, 2,41 en tri, 0,33 en
+sélection partielle ailleurs.
+
+> **Une hypothèse retirée par la mesure plutôt que gardée.** L'estimation
+> supposait que les nœuds sans coup tranquille génèrent autant de coups que la
+> moyenne. Comptés : **28,64 par nœud contre 26,42** — l'hypothèse était
+> *conservatrice*, et le plafond passe de 10,6 à 11,5 %. Elle ne changeait
+> aucune décision ; elle a été retirée parce qu'un chiffre publié ne doit pas
+> reposer sur une supposition qu'un compteur tranche en trente secondes.
+
+**Et ce n'est pas une optimisation pure.** Le tri est `sort_unstable_by_key`,
+donc les ex æquo sont départagés arbitrairement par pdqsort. Mesuré : passer au
+tri **stable**, sans rien changer d'autre, déplace l'arbre de **114 028 à
+109 342 nœuds — 4,1 %**. Un générateur par étapes émettrait dans l'ordre de
+génération au sein de chaque étage, donc un troisième arbre. `timing.sh`
+refuserait de conclure ; il faut un SPRT, et 0,21 pli est très loin sous ce
+qu'un job tranche.
+
+#### Ce que rien de tout cela ne donne
+
+**Combien d'Elo vaut un pli n'est mesuré nulle part sur ce projet.** Les
+conversions ci-dessus s'arrêtent aux plis, et l'étape suivante — multiplier par
+une constante Elo/pli — emprunterait à une croyance héritée, ce que ce dépôt a
+démenti trois fois. Le chiffre s'achèterait par un match à **profondeur fixe
+`N` contre `N+1`**, qui calibrerait du même coup l'arbitrage de grande
+allocation que C13 devait rendre décidable. À faible profondeur c'est bon
+marché mais ça surestime ; à la profondeur 13, c'est ~33 h de runner.
+
 ### D5 a trouvé son érosion, et elle était là où le mécanisme la plaçait
 
 <s>Ce que D5 n'a toujours pas trouvé : une érosion. Zéro sur deux en Elo.</s>

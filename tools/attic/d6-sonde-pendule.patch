@@ -1,0 +1,272 @@
+# d6 — ce que le moteur LAISSE sur la pendule, et ce que B2 peut vraiment acheter
+#
+# N'INSTRUMENTE RIEN. `Info` porte déjà profondeur, score, PV et temps à chaque
+# itération d'approfondissement : la sonde n'est qu'un lecteur. C'est le moins
+# cher des écrans du projet, et il a trouvé le plus gros.
+#
+# LE BIAIS QUE LA PREMIÈRE VERSION AVAIT, et il allait dans le sens de ma
+# conclusion — elle cherchait 400 positions ISOLÉES en vidant la table entre
+# chacune. Elle mesurait donc un moteur qui démarre FROID, alors qu'en partie
+# la table est chaude et le coup précédent connu. « La dernière itération
+# change le coup joué » valait 15,0 % froid, 7,9 % en partie réelle. La sonde
+# joue désormais des parties entières, pendule qui décroît, table conservée.
+#
+# CE QU'ELLE A TROUVÉ, ET QUI N'ÉTAIT SUR AUCUNE LISTE —
+#
+#   temps restant / temps initial en fin de partie : MÉDIANE 46,9 %
+#   coups joués par partie : médiane 97
+#   (30 parties, 2681 coups, 8+0,08 ; 0 perte au temps)
+#
+# `time_budget_ms` calcule `restant / movestogo + inc/2` avec movestogo = 30
+# PAR DÉFAUT. La formule suppose qu'il reste trente coups, toujours, dans des
+# parties qui en font quatre-vingt-dix-sept : elle dépense un trentième du
+# restant à chaque coup, décroissance géométrique qui n'épuise jamais la
+# pendule. L'arithmétique du mécanisme prédit 31 % de restant, la mesure en
+# donne 47 % — LE MODÈLE SOUS-PRÉDIT, et l'écart est l'échéance douce, qui
+# empêche d'entamer une itération à mi-budget : le moteur ne dépense même pas
+# ce qu'il s'est alloué. Les deux effets poussent dans le même sens.
+#
+# Converti par les 1,36 pli/doublement mesurés le même jour : dépenser la
+# pendule entière vaut **~1,36 pli**, soit autant que Lazy SMP sur 4 cœurs
+# (1,0 à 1,8 pli), pour quelques lignes au lieu d'une réécriture plus B9.
+#
+# ET ELLE A RÉFUTÉ UN DES DEUX RAFFINEMENTS QUE LE BACKLOG NOMMAIT —
+# « s'arrêter tôt quand le meilleur coup est stable » :
+#
+#   N itérations d'accord   temps épargné   COUP CHANGÉ
+#   3                             98,7 %        24,5 %
+#   4                             95,4 %        17,6 %
+#   5                             91,5 %        13,9 %   (18,4 % à 30+0,3)
+#
+# Même la règle la plus prudente joue un autre coup dans un cas sur sept, et
+# elle EMPIRE au régime cible. Le temps épargné n'est de surcroît pas
+# dépensable : avec `restant/30`, une seconde économisée ne revient qu'au
+# trentième sur le coup suivant — c'est le même mécanisme que le gaspillage
+# ci-dessus, et je l'avais en main sans en tirer la conclusion large.
+#
+# CE QUI SURVIT — « prolonger sur un score qui s'effondre » : 3,0 % des coups
+# à 8+0,08, 2,7 % à 30+0,3, intervalles recouvrants. Population réelle mais
+# petite.
+#
+# CONTRÔLE DE CADENCE — 10 parties à 30+0,3, 621 coups. Les trois grandeurs
+# (coup changé 6,3 %, effondrement 2,7 %, coup déjà fixé 95,2 %) ont des
+# intervalles qui RECOUVRENT ceux de 8+0,08 : rien ne distingue les deux
+# cadences à ces effectifs. Les points estimés vont tous dans le même sens
+# (plus stable au long), mais 621 coups ne le résolvent pas.
+#
+# LIMITE — une recherche à l'horloge n'est pas déterministe. Ces chiffres
+# appartiennent à leur machine, comme un étalonnage de runner.
+#
+diff --git a/tools/src/bin/b2_probe.rs b/tools/src/bin/b2_probe.rs
+new file mode 100644
+index 0000000..d30bcc5
+--- /dev/null
++++ b/tools/src/bin/b2_probe.rs
+@@ -0,0 +1,207 @@
++//! SONDE JETABLE — majore ce que les raffinements de B2 peuvent acheter.
++//!
++//! N'instrumente RIEN : `Info` porte déjà profondeur, score, PV et temps à
++//! chaque itération d'approfondissement.
++//!
++//! # Pourquoi de vraies parties et non un corpus de positions
++//!
++//! Une première version cherchait 400 positions isolées en vidant la table
++//! entre chacune. **Elle mesurait un moteur qui démarre froid**, alors qu'en
++//! partie la table est chaude et le coup précédent connu — donc un meilleur
++//! coup NETTEMENT plus stable que ce qu'elle voyait. Le biais allait dans le
++//! sens de la conclusion, ce qui est la pire direction. La sonde joue donc
++//! des parties entières, pendule qui décroît, table conservée d'un coup à
++//! l'autre : c'est le régime que B2 doit améliorer.
++//!
++//! Une recherche à l'horloge n'est pas déterministe : les chiffres
++//! appartiennent à leur machine, comme un étalonnage de runner.
++use std::sync::Arc;
++use std::sync::atomic::AtomicBool;
++
++use cozy_chess::{Board, Color, Move};
++use shallowred::position::Position;
++use shallowred::search::{Limits, Score, Search};
++
++fn next_random(state: &mut u64) -> u64 {
++    let mut x = *state;
++    x ^= x >> 12;
++    x ^= x << 25;
++    x ^= x >> 27;
++    *state = x;
++    x.wrapping_mul(0x2545_F491_4F6C_DD1D)
++}
++
++fn legal_moves(board: &Board) -> Vec<Move> {
++    let mut moves = Vec::new();
++    board.generate_moves(|set| {
++        moves.extend(set);
++        false
++    });
++    moves
++}
++
++fn random_opening(plies: u32, state: &mut u64) -> Option<Board> {
++    let mut board = Board::default();
++    for _ in 0..plies {
++        let moves = legal_moves(&board);
++        if moves.is_empty() {
++            return None;
++        }
++        let index = (next_random(state) % moves.len() as u64) as usize;
++        board.play_unchecked(*moves.get(index)?);
++    }
++    (!legal_moves(&board).is_empty()).then_some(board)
++}
++
++struct Iteration {
++    mv: Option<Move>,
++    cp: i32,
++    time_ms: u64,
++}
++
++fn main() {
++    let mut args = std::env::args().skip(1);
++    let games: u32 = args.next().and_then(|a| a.parse().ok()).unwrap_or(30);
++    let base: u64 = args.next().and_then(|a| a.parse().ok()).unwrap_or(8_000);
++    let inc: u64 = args.next().and_then(|a| a.parse().ok()).unwrap_or(80);
++    let mut seed: u64 = args.next().and_then(|a| a.parse().ok()).unwrap_or(20_260_922);
++
++    let stop = Arc::new(AtomicBool::new(false));
++    let mut search = Search::new(stop);
++    let mut traces: Vec<Vec<Iteration>> = Vec::new();
++    let mut flagged = 0u32;
++    // Ce que le moteur LAISSE sur la pendule : un budget trop prudent perd de
++    // l'Elo sans jamais perdre au temps, et rien ne le signale.
++    let mut restant: Vec<f64> = Vec::new();
++    let mut coups_partie: Vec<usize> = Vec::new();
++
++    for _ in 0..games {
++        let plies = 8 + (next_random(&mut seed) % 4) as u32;
++        let Some(opening) = random_opening(plies, &mut seed) else {
++            continue;
++        };
++        let mut position = Position::from_board(opening);
++        let mut joues = 0usize;
++        // Pendule réelle, qui décroît : c'est le régime que B2 vise.
++        let (mut wtime, mut btime) = (base as i64, base as i64);
++        search.clear_table();
++
++        for _ in 0..200 {
++            if position.is_repetition()
++                || position.is_fifty_move_draw()
++                || legal_moves(position.board()).is_empty()
++            {
++                break;
++            }
++            let white = position.board().side_to_move() == Color::White;
++            let limits = Limits {
++                wtime: Some(wtime.max(1) as u64),
++                btime: Some(btime.max(1) as u64),
++                winc: Some(inc),
++                binc: Some(inc),
++                ..Limits::default()
++            };
++            let trace = std::cell::RefCell::new(Vec::new());
++            let start = std::time::Instant::now();
++            let played = search.go(&Position::from_board(position.board().clone()), &limits, |info| {
++                trace.borrow_mut().push(Iteration {
++                    mv: info.pv.first().copied(),
++                    cp: match info.score {
++                        Score::Cp(cp) => cp,
++                        Score::Mate(m) => if m > 0 { 30_000 - m } else { -30_000 - m },
++                    },
++                    time_ms: info.time_ms,
++                });
++            });
++            let spent = start.elapsed().as_millis() as i64;
++            if white { wtime += inc as i64 - spent } else { btime += inc as i64 - spent }
++            if wtime <= 0 || btime <= 0 {
++                flagged += 1;
++                break;
++            }
++            let t = trace.into_inner();
++            if t.len() >= 2 {
++                traces.push(t);
++            }
++            let Some(mv) = played else { break };
++            position.play(mv);
++            joues += 1;
++        }
++        restant.push(wtime.max(0) as f64 / base as f64);
++        restant.push(btime.max(0) as f64 / base as f64);
++        coups_partie.push(joues);
++    }
++
++    let n = traces.len();
++    println!("parties {games}, coups analysés {n}   cadence {}+{}", base as f64 / 1000.0, inc as f64 / 1000.0);
++    println!("pertes au temps : {flagged}");
++    let mut d: Vec<usize> = traces.iter().map(Vec::len).collect();
++    d.sort_unstable();
++    println!("profondeur atteinte : médiane {}, min {}, max {}", d[n / 2], d[0], d[n - 1]);
++
++    {
++        let mut r = restant.clone();
++        r.sort_by(|a, b| a.partial_cmp(b).unwrap());
++        let mut c = coups_partie.clone();
++        c.sort_unstable();
++        println!("\n-- ce que la pendule garde en fin de partie --");
++        println!("temps restant / temps initial : médiane {:.1} %, moyenne {:.1} %",
++            100.0 * r[r.len() / 2], 100.0 * r.iter().sum::<f64>() / r.len() as f64);
++        println!("coups joués par partie : médiane {}, min {}, max {}", c[c.len() / 2], c[0], c[c.len() - 1]);
++        println!("(le budget suppose movestogo = 30)");
++    }
++
++    let changed = traces.iter().filter(|t| t[t.len() - 1].mv != t[t.len() - 2].mv).count();
++    println!("\n-- ce que la DERNIÈRE itération apporte --");
++    println!("elle change le coup joué : {changed}/{n}  ({:.1} %)", 100.0 * changed as f64 / n as f64);
++    for seuil in [50, 100, 200] {
++        let c = traces.iter().filter(|t| { let l = t.len(); t[l - 1].cp - t[l - 2].cp <= -seuil }).count();
++        println!("le score chute de plus de {seuil} cp : {c}/{n}  ({:.1} %)", 100.0 * c as f64 / n as f64);
++    }
++
++    // À quelle profondeur le coup finalement joué se fixe-t-il pour de bon ?
++    println!("\n-- profondeur du DERNIER changement de coup --");
++    let mut fixed = vec![0usize; 0];
++    for t in &traces {
++        let last = t.len() - 1;
++        let mut k = 0;
++        for i in (1..=last).rev() {
++            if t[i].mv != t[last].mv { k = i + 1; break; }
++        }
++        fixed.push(k);
++    }
++    for part in [0.0, 0.25, 0.5, 0.75, 1.0] {
++        let cut: Vec<usize> = traces.iter().zip(&fixed)
++            .filter(|(t, f)| **f as f64 >= part * (t.len() - 1) as f64).map(|_| 1).collect();
++        let _ = cut;
++    }
++    let gaspille = traces.iter().zip(&fixed).filter(|(t, f)| **f < t.len() - 1).count();
++    println!("le coup était déjà fixé AVANT la dernière itération : {gaspille}/{n}  ({:.1} %)",
++        100.0 * gaspille as f64 / n as f64);
++    let mut reste: Vec<f64> = traces.iter().zip(&fixed)
++        .map(|(t, f)| {
++            let last = t.len() - 1;
++            let tot = t[last].time_ms.max(1) as f64;
++            (tot - t[*f].time_ms as f64) / tot
++        }).collect();
++    reste.sort_by(|a, b| a.partial_cmp(b).unwrap());
++    println!("part du temps passée APRÈS que le coup soit fixé : médiane {:.1} %, moyenne {:.1} %",
++        100.0 * reste[n / 2], 100.0 * reste.iter().sum::<f64>() / n as f64);
++
++    println!("\n-- règle « arrêter après N itérations d'accord » --");
++    println!("{:>2}  {:>14}  {:>15}", "N", "temps épargné", "coup changé");
++    for stable in 1..=5usize {
++        let (mut saved, mut total, mut wrong) = (0f64, 0f64, 0usize);
++        for t in &traces {
++            let last = t.len() - 1;
++            let mut stop_at = last;
++            for i in stable..=last {
++                if (i - stable..i).all(|j| t[j].mv == t[i].mv && t[i].mv.is_some()) { stop_at = i; break; }
++            }
++            saved += (t[last].time_ms - t[stop_at].time_ms) as f64;
++            total += t[last].time_ms as f64;
++            if t[stop_at].mv != t[last].mv { wrong += 1; }
++        }
++        println!("{stable:>2}  {:>13.1} %  {:>13.1} %", 100.0 * saved / total, 100.0 * wrong as f64 / n as f64);
++    }
++}

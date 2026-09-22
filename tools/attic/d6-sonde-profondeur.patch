@@ -1,0 +1,131 @@
+# d6 — combien de profondeur un GAIN DE VITESSE achète-t-il ?
+#
+# N'INSTRUMENTE RIEN : lecteur pur, comme `d6-sonde-pendule.patch`.
+#
+# POURQUOI CETTE SONDE PLUTÔT QUE CELLE QUE J'AVAIS PROPOSÉE — l'écran de B6
+# que j'avais annoncé (« n/s et profondeur avec 2, 3, 4 fils en Lazy SMP
+# naïf ») était MAL DIMENSIONNÉ : Lazy SMP exige la table à entrées atomiques
+# (B9), donc c'est un chantier, pas une mesure de quelques minutes. Ce qui se
+# mesure sans écrire une ligne de parallélisme, c'est la CONVERSION.
+#
+# MESURÉ — 120 positions de vraies parties, budgets de 75 à 1200 ms.
+# Étalonnage 2 535 361 n/s.
+#
+#   budget    profondeur moyenne    plis par doublement
+#     75 ms         10,82                   —
+#    150 ms         12,36                 1,53
+#    300 ms         13,63                 1,28
+#    600 ms         14,97                 1,34
+#   1200 ms         16,27                 1,30
+#
+#   sur la plage entière (×16) : 5,45 plis, soit 1,36 PLI PAR DOUBLEMENT
+#
+# La stabilité sur quatre doublements est ce qui rend le chiffre utilisable :
+# le facteur de branchement effectif vaut 2^(1/1,36) = 1,67.
+#
+# CE QUE ÇA DONNE — une unité commune, enfin, pour classer des chantiers que
+# rien ne comparait :
+#
+#   génération par étapes    ×1,12 (mesuré, majorant)      0,21 pli
+#   pendule pleine (B2)      ×1,9  (mesuré : 47 % perdu)   ~1,36 pli
+#   Lazy SMP 4 cœurs (B6)    ×1,7 à 2,5 (CROYANCE HÉRITÉE) 1,0 à 1,8 pli
+#
+# CE QUE ÇA NE DONNE PAS, et c'est la limite de tout l'exercice — **combien
+# d'Elo vaut un pli n'est mesuré nulle part sur ce projet.** La conversion
+# s'arrête aux plis. Le chiffre manquant s'achèterait par un match à
+# profondeur fixe N contre N+1, et il calibrerait du même coup l'arbitrage de
+# grande allocation que C13 devait rendre décidable. À faible profondeur c'est
+# bon marché mais ça surestime ; à la profondeur 13, c'est ~33 h de runner.
+#
+diff --git a/tools/src/bin/depth_probe.rs b/tools/src/bin/depth_probe.rs
+new file mode 100644
+index 0000000..a51e5fd
+--- /dev/null
++++ b/tools/src/bin/depth_probe.rs
+@@ -0,0 +1,86 @@
++//! SONDE JETABLE — combien de profondeur un GAIN DE VITESSE achète-t-il ?
++//!
++//! Écran de B6 (recherche parallèle). Le screen que j'avais d'abord proposé —
++//! « n/s et profondeur avec 2, 3, 4 fils en Lazy SMP naïf » — était MAL
++//! DIMENSIONNÉ : Lazy SMP exige une table de transposition à entrées
++//! atomiques (B9), donc ce n'est pas une mesure de quelques minutes mais un
++//! chantier. Ce qu'on peut mesurer sans écrire une ligne de parallélisme,
++//! c'est la CONVERSION : combien de plis un doublement de vitesse rapporte.
++//!
++//! Un multithread qui vaut un facteur S de vitesse rapporte alors
++//! log2(S) × (plis par doublement) de profondeur. Ce que cette sonde ne dit
++//! PAS, et il faut le dire : **combien d'Elo vaut un pli**. Aucune mesure du
++//! projet ne le donne, et l'estimer de mémoire serait exactement la croyance
++//! héritée que ce dépôt a démentie trois fois.
++use std::sync::Arc;
++use std::sync::atomic::AtomicBool;
++
++use cozy_chess::Board;
++use shallowred::position::Position;
++use shallowred::search::{Limits, Search};
++
++fn main() {
++    let mut args = std::env::args().skip(1);
++    let path = args.next().unwrap_or_else(|| "positions.fen".into());
++    let max: usize = args.next().and_then(|a| a.parse().ok()).unwrap_or(100);
++
++    let budgets: [u64; 5] = [75, 150, 300, 600, 1200];
++    let fens = std::fs::read_to_string(&path).expect("corpus illisible");
++    let stop = Arc::new(AtomicBool::new(false));
++    let mut search = Search::new(stop);
++
++    let mut par_budget: Vec<Vec<u32>> = vec![Vec::new(); budgets.len()];
++    let mut nps: Vec<f64> = Vec::new();
++
++    for line in fens.lines().take(max) {
++        let line = line.trim();
++        if line.is_empty() {
++            continue;
++        }
++        let Ok(board) = line.parse::<Board>() else {
++            continue;
++        };
++        for (i, &ms) in budgets.iter().enumerate() {
++            search.clear_table();
++            let limits = Limits {
++                movetime: Some(ms),
++                ..Limits::default()
++            };
++            let mut depth = 0u32;
++            let mut nodes = 0u64;
++            let mut time = 0u64;
++            let _ = search.go(&Position::from_board(board.clone()), &limits, |info| {
++                depth = info.depth;
++                nodes = info.nodes;
++                time = info.time_ms;
++            });
++            par_budget[i].push(depth);
++            if i == budgets.len() - 1 && time > 0 {
++                nps.push(nodes as f64 * 1000.0 / time as f64);
++            }
++        }
++    }
++
++    let mediane = |v: &mut Vec<f64>| {
++        v.sort_by(|a, b| a.partial_cmp(b).unwrap());
++        v[v.len() / 2]
++    };
++    let mut n = nps.clone();
++    println!("positions {}   étalonnage : {:.0} n/s (médiane)", par_budget[0].len(), mediane(&mut n));
++    println!("\n{:>8}  {:>18}  {:>12}", "budget", "profondeur médiane", "plis / ×2");
++    let mut prev: Option<f64> = None;
++    for (i, &ms) in budgets.iter().enumerate() {
++        let mut v: Vec<f64> = par_budget[i].iter().map(|&d| f64::from(d)).collect();
++        let med = mediane(&mut v);
++        let moy = v.iter().sum::<f64>() / v.len() as f64;
++        match prev {
++            Some(p) => println!("{ms:>6} ms  {med:>13.1} (moy {moy:.2})  {:>10.2}", moy - p),
++            None => println!("{ms:>6} ms  {med:>13.1} (moy {moy:.2})  {:>10}", "—"),
++        }
++        prev = Some(moy);
++    }
++    let first: f64 = par_budget[0].iter().map(|&d| f64::from(d)).sum::<f64>() / par_budget[0].len() as f64;
++    let last: f64 = par_budget[budgets.len()-1].iter().map(|&d| f64::from(d)).sum::<f64>() / par_budget[0].len() as f64;
++    println!("\nsur toute la plage (×16, soit 4 doublements) : {:.2} plis, soit {:.2} plis par doublement",
++        last - first, (last - first) / 4.0);
++}
