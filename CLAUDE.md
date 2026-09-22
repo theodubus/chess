@@ -378,13 +378,6 @@ une mesure, pas une préférence.
   écrivait « il n'y a plus d'ordre imposé ». Corollaire à ne pas manquer : une
   colonne « empilé depuis » vieillit à chaque fusion, et celle de D5 datait
   d'avant les deux élagages qui ont précisément mangé la ligne érodée.
-- **Un bench à profondeur 7 est trop court pour comparer des temps.** Le
-  nombre de nœuds y est déterministe et comparable, le temps ne l'est pas :
-  le 14 sept. 2026, une même version a mesuré 184 ms puis 200 ms en
-  best-of-7, et un balayage de tailles de cache a rendu des chiffres non
-  monotones purement dus au bruit. **Pour comparer des temps, mesurer à
-  profondeur 10** (~1,6 s par run), où le bruit devient marginal — et
-  seulement à nombre de nœuds identique, sans quoi on compare deux arbres.
 - **Un cache de structure de pions ne paie pas sur ce moteur.** Essayé et
   retiré le 14 sept. 2026. `pawn_structure` pèse pourtant 24 % du temps de
   recherche, mais le taux de succès mesuré n'est que de **62 à 84 %**, parce
@@ -395,12 +388,6 @@ une mesure, pas une préférence.
   recalcul. Mesuré à profondeur 10 : 1624 ms sans cache, 1644 à 1842 avec.
   Ne pas réessayer sans changer le mécanisme — un cache indexé par une clé
   incrémentale, ou un terme de pions moins coûteux à recalculer.
-- **Un tuner est aussi un fuzzer.** L'ajustement Texel a poussé
-  `KING_DANGER_SCALE` à zéro et fait paniquer l'évaluation sur une division
-  entière par zéro — le moteur aurait planté en pleine partie. **Les valeurs
-  d'évaluation sont des données, pas du code** : une donnée fausse se borne,
-  elle n'arrête pas la partie. Un test vérifie qu'aucun jeu de paramètres ne
-  fait paniquer l'évaluation, jeu entièrement nul compris.
 - **Une propriété générale assertée sur UNE position passe par chance, et le
   jour où elle tombe on accuse le mauvais coupable.** Deux tests d'aspiration
   assertaient que, sans l'élagage par compte de coups, le score de la boucle ne
@@ -442,80 +429,6 @@ une mesure, pas une préférence.
   lire les étalonnages. Telle qu'écrite sans portée, la règle aurait fait
   sérialiser toute mesure appariée — le protocole que la cadence rend
   obligatoire — pour rien.
-- **Le SPRT tire ses ouvertures au hasard : sans `-srand`, rien n'est
-  rejouable.** `tools/sprt.sh` fixe désormais la graine et l'affiche.
-
-- **Le code retiré se garde dans `tools/attic/`, jamais par un SHA de commit.**
-  La pratique était de désigner le commit — « le code retiré reste lisible dans
-  `15028fa` ». **Elle a cassé le 16 sept. 2026** : la PR #11 fusionnée en
-  `squash` a remplacé les commits de la branche par un commit neuf, GitHub a
-  supprimé la branche, et la première exécution de `match.yml` a échoué sur
-  `fatal: invalid reference: 498a01a`. Une rustine versionnée ne peut pas subir
-  ça — elle survit aux squashs, aux suppressions de branche et aux politiques
-  de collecte. Voir `tools/attic/README.md` : quand y déposer une rustine, et
-  pourquoi celle de PVS ne s'applique plus.
-  <br>**Fusionner en `merge` et non en `squash`** reste préférable, pour garder
-  l'historique lisible — les PR #1 à #5 l'avaient fait. Mais ce n'est plus ce
-  qui protège le code retiré, et c'était une mauvaise fondation : *la
-  survie d'un artefact ne doit pas dépendre d'une politique de dépôt.*
-  <br><span>Deux constats vérifiés au passage, qui nuancent la panique
-  d'origine : GitHub conserve `refs/pull/N/head` de façon permanente, donc
-  `498a01a` restait atteignable par ce chemin ; et **le push d'étiquettes est
-  refusé sur ce dépôt** (403 avec le jeton de session), ce qui interdisait
-  la solution évidente. **Troisième limite du même jeton, vérifiée le
-  22 sept. 2026 : il ne peut pas non plus SUPPRIMER une référence distante** —
-  `git push origin --delete <branche>` échoue sur `the remote end hung up
-  unexpectedly`, sans message utile. Le ménage des branches `mesure/*` revient
-  donc à Théo, et *ne jamais écrire dans la documentation une suppression
-  qu'on n'a pas vérifiée* : je l'ai fait le jour même, et la phrase était
-  fausse quand elle a été committée.</span>
-- **Ne jamais construire une référence à la main.** Le geste tient en quatre
-  lignes et ce dépôt y a payé **quatre** pièges distincts : `git stash`, qui
-  emporte tout le travail non committé et fait mesurer autre chose que ce qu'on
-  croit ; `cp -p`, qui préserve les dates et fait mesurer deux fois le même
-  binaire ; une référence git périmée, qui rend un arbre trois fois trop gros ;
-  et `git fetch <remote> <branche>`, qui n'élague pas. `tools/ref.sh
-  <commit|branche|tag>` les ferme tous les quatre et **refuse** de construire
-  quand la résolution locale d'une branche diffère de `git ls-remote`. Même
-  geste que `timing.sh` : imposer par un code de sortie ce qu'une règle écrite
-  ne fait que rappeler.
-- **Vérifier que le binaire a bien été reconstruit.** `mv` et `cp -p`
-  préservent les dates de modification, donc cargo peut juger les sources
-  périmées et ne rien recompiler : on mesure alors l'ancien binaire. Un
-  rapport avant/après d'exactement 1,00 en est le symptôme.
-- **Ce n'est pas toujours le binaire qui est périmé : ce peut être la
-  RÉFÉRENCE GIT — et elle ment de DEUX façons.** Le 22 sept. 2026, les deux
-  se sont produites dans la même session, sous deux déguisements différents.
-  <br>**Forme 1, elle fausse une mesure.** Un candidat de retrait construit
-  sur `main` a rendu un arbre trois fois trop gros. Binaire neuf, code juste,
-  édition correcte — mais `origin/main` était figé **onze commits en arrière**
-  dans le clone local, alors que le distant portait bien la tête annoncée.
-  Symptôme identique au binaire périmé : un chiffre plausible qui répond à
-  une autre question. **Ce qui l'a attrapé n'est pas la vigilance, c'est
-  d'avoir écrit la valeur attendue AVANT de mesurer.**
-  <br>**Forme 2, elle déclenche une fausse alarme.** Après chaque fusion,
-  GitHub supprime la branche distante — mais **`git fetch <remote> <branche>`
-  n'élague pas**, donc `refs/remotes/origin/<ma-branche>` survit en pointant
-  le commit d'avant la fusion. Tout ce qui compare la branche locale à son
-  suivi croit alors voir un commit non poussé, alors que le commit en question
-  est le commit de fusion, déjà sur `main`. C'est arrivé deux fois de suite,
-  et j'ai d'abord accusé l'outil qui signalait plutôt que ma procédure.
-  <br>**Le geste, vérifié par exécution et non déduit** : `git fetch --prune`,
-  jamais `git fetch <remote> <branche>` seul, et confronter à
-  `git ls-remote`. Le contrôle qui tranche une alarme de ce type est
-  `git log origin/main..HEAD` — vide veut dire que `main` porte déjà tout, donc
-  que rien n'est en risque.
-- **Un chiffre de référence écrit en prose vieillit en silence.** La section
-  *Commandes* a annoncé `702 612 nœuds` pendant deux journées de travail alors
-  que la valeur réelle était `541 528` : la mobilité et trois termes
-  d'évaluation avaient changé l'arbre de recherche sans que personne ne mette
-  le chiffre à jour, et **rien ne l'a signalé**. Un chiffre de référence faux
-  est pire qu'absent — il sert de point de comparaison à la session suivante,
-  qui croit mesurer une régression là où elle découvre une dérive de la
-  documentation. `engine/tests/bench_reference.rs` confronte désormais les
-  deux, en critère d'acceptation. **Conséquence assumée** : tout changement de
-  l'arbre de recherche rend la CI rouge tant que la ligne n'est pas corrigée.
-  C'est l'effet recherché ; le message d'échec donne le chiffre à recopier.
 - **Un renvoi par POSITION vieillit comme un chiffre recopié, et sans bruit.**
   `tools/README.md` commentait « la dernière ligne » d'un tableau de nœuds ;
   écrite le 16 sept. 2026 elle visait juste, puis deux mesures ajoutées sous
@@ -536,21 +449,6 @@ une mesure, pas une préférence.
   le score — dans la recherche comme dans l'évaluation. Vingt-huit mutants
   perdus d'un coup. **Après avoir touché à un test, remesurer le plafond**, ou
   au minimum se demander ce que ce test attrapait qu'on ne lui demandait pas.
-- **Un critère d'acceptation `#[ignore]` est invisible au cliquet de
-  mutation.** `cargo mutants` exécute `cargo test`, donc jamais `--ignored` :
-  le contrôle du banc à la profondeur 7 — le garde-fou déterministe le plus
-  fort du dépôt — ne voyait aucun mutant. Tout changement silencieux de l'arbre
-  de recherche survivait alors qu'un simple compte de nœuds l'aurait vu.
-  `larbre_de_recherche_ne_bouge_pas_en_silence` fige donc le banc à la
-  **profondeur 5**, non ignoré, pour 0,32 s en debug. **Éprouvé en le faisant
-  échouer** : un signe retiré dans une table piece-square le fait passer de
-  31 637 à 31 942 nœuds. <span>Limite mesurée, pas supposée : il n'attrape pas
-  tout — un mutant sur l'ordonnancement des promotions ne change pas ces six
-  arbres. Le banc est un échantillon, comme le rappelle le piège voisin.</span>
-  <br>**Ce qu'il a rapporté, mesuré le 22 sept. : 163 mutants tués par un seul
-  test.** `search.rs` 110 → **45**, `eval.rs` 219 → **121**, total du dépôt
-  336 → **173**. Le trou ne datait pas de la veille : il existait depuis la
-  création du cliquet.
 - **Un mutant « de réglage » n'est hors de portée des tests que si rien de
   DÉTERMINISTE ne dépend du réglage.** Le plafond d'`eval.rs` était justifié
   depuis le 15 sept. 2026 par « le fichier est en très grande part des VALEURS,
@@ -640,14 +538,6 @@ une mesure, pas une préférence.
   plus lent : la réserve d'origine avait aussi le signe faux. **Un point unique
   qui tombe dans l'intervalle attendu ressemble exactement à une confirmation**,
   et n'en est pas une : il ne mesure pas la dispersion de ce qu'on caractérise.
-- **Deux balayages de mutation concurrents se corrompent.** Le 15 sept. 2026,
-  j'ai relancé `cargo mutants` sans vérifier que le précédent avait fini. Les
-  deux écrivaient dans le même `mutants.out/` : `missed.txt` mêlait les
-  survivants de l'ancien code et du nouveau, avec des numéros de ligne d'une
-  version qui n'existait plus — et je l'ai lu comme un résultat. Même famille
-  que « ne jamais faire tourner deux matchs en même temps » : deux mesures
-  concurrentes ne sont pas seulement lentes, elles mentent. Passer par
-  `tools/mutants.sh`, qui prend un verrou et refuse de démarrer par-dessus.
 - **Un mutant équivalent est souvent du code mort.** Deux survivants de `tt.rs`
   inversaient la borne d'un test d'entrée vierge dans `store` sans qu'aucun
   test ne bouge. Ce n'était pas un trou de couverture : la clause ne pouvait
@@ -690,23 +580,6 @@ une mesure, pas une préférence.
   `workflow_dispatch`** : les runners GitHub ne dorment pas, et le journal
   reste lisible après coup. C'est ainsi que le plafond d'`eval.rs` a fini par
   être mesuré.
-- **Un plafond technique affiché comme une cible fait passer un run sain pour
-  un run mort.** `match.yml` codait `-rounds 20000`, donc fastchess imprimait
-  « Started game 688 of 40000 » : impossible de distinguer à l'œil « il reste
-  du chemin » de « il n'ira jamais au bout ». **Cette ligne a induit la même
-  erreur de lecture deux fois le 22 sept. 2026** — dont une sur le run de
-  delta, qui venait précisément d'expirer. Le plafond n'a aucun effet
-  statistique, donc le corriger ne coûte rien ; mais **le caler sur
-  l'estimation exacte serait pire que le laisser faux**, parce qu'une
-  estimation conservatrice de 25 % tronquerait des parties que le job aurait
-  pu jouer. *Un dommage statistique réel pour réparer un affichage est un
-  mauvais échange* : le plafond est posé à 1,5 × l'estimation, et une notice
-  dit ce que le job atteint.
-  <br>**Et l'estimation reste délibérément non calibrée**, alors que deux
-  matchs donnent un facteur 0,77 stable. Ce facteur **est** le gaspillage de
-  pendule — un moteur qui laisse 48 % de son horloge finit ses parties plus
-  vite que la cadence nominale — donc C21 le fera dériver vers 1 en
-  fusionnant. *Une constante qu'un chantier en cours invalide ne s'écrit pas.*
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.
@@ -715,6 +588,15 @@ une mesure, pas une préférence.
 - **Un livre d'ouvertures est une condition de validité**, pas un agrément :
   le moteur étant déterministe, sans livre toutes les parties d'un match sont
   la même partie.
+- **Des pièges de ce fichier sont partis dans `tools/pieges-fermes.md`.**
+  Chacun est désormais tenu par un dispositif qui le rend inexprimable —
+  `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
+  `rustines_attic.rs`, le banc à la profondeur 5, le plafond calculé de
+  `match.yml`. **Une règle qu'un code de sortie impose n'a pas besoin d'être
+  relue à chaque session** ; elle a besoin d'être trouvable le jour où le
+  dispositif se déclenche. Ceux qui restent ci-dessus sont ceux que **seul le
+  jugement protège** — et ce sont les plus chers. *Si un de ces dispositifs
+  disparaît, son piège revient ici.*
 
 ## Style
 
@@ -772,6 +654,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les critères d'acceptation, le bench. <s>les trois critères</s> — leur nombre n'est plus écrit : il a changé, et un compteur en prose naît périmé |
 | `engine/tests/rustines_attic.rs` | critère d'acceptation : confronte la colonne « s'applique sur `main` ? » de `tools/attic/README.md` au vrai `git apply --check`, **dans les deux sens** — rustine non déclarée et déclaration sans rustine échouent autant qu'un verdict faux. Trois lignes sur sept étaient fausses le 22 sept. 2026, toutes par la même fusion. `#[ignore]` parce qu'il lance `git` : `cargo mutants` travaille sur une copie de l'arbre, et **aucun mutant d'`engine/src/` ne peut changer si une rustine s'applique**, donc il n'a rien à y tuer |
+| `engine/tests/pieges_fermes.rs` | confronte `tools/pieges-fermes.md` au dépôt : **chaque piège archivé doit nommer un dispositif qui existe**, et l'archive doit rester nommée dans `CLAUDE.md`. Sans lui, supprimer `ref.sh` laisserait son piège archivé comme « tenu » alors que plus rien ne le tient — il serait **moins** protégé qu'avant d'être archivé. Même faute que la table de l'attic. Éprouvé en le faisant échouer, et il a attrapé deux imprécisions de ma prose à sa première exécution |
 | `engine/tests/outillage_documente.rs` | exige que chaque dispositif soit **nommé avec son extension** dans une doc — scripts de `tools/`, workflows, hooks, et depuis le 22 sept. 2026 les **binaires de `tools/src/bin/`**, qui étaient son angle mort. Énumération par répertoire et par extension, jamais nom par nom |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
 | `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Remesuré le 21 sept. 2026 : 58 % d'écart entre deux runners sur le même binaire** (2 067 101 contre 3 268 241 n/s, profondeurs 11 et 12), contre les 25 % relevés le 16. Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |

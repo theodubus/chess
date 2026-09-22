@@ -663,6 +663,36 @@ correspond à rien et se rejette comme une collision ordinaire. Pas de verrou,
 et la seule conséquence d'un déchirement est un défaut de cache, jamais un
 score faux.
 
+### `tools/pieges-fermes.md` — les pièges qu'un code de sortie tient désormais
+
+`CLAUDE.md` est injecté en entier à chaque session **et après chaque
+compactage**. Sa section *Pièges de mesure* en faisait 510 lignes sur 844 —
+et la documentation de Claude Code est explicite : *« longer files consume more
+context and reduce adherence »*, avec une cible sous 200 lignes par fichier.
+
+Les pièges qui en sont sortis l'ont été sur un critère unique, et c'est celui
+du projet : **une règle écrite se contourne, un code de sortie non.** Un piège
+que `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
+`rustines_attic.rs`, le banc à la profondeur 5 ou le plafond calculé de
+`match.yml` rendent *inexprimable* n'a pas besoin d'être relu à chaque
+session ; il a besoin d'être trouvable le jour où le dispositif se déclenche.
+
+**Chacun est sorti ENTIER**, jamais coupé en deux : une règle d'un côté et sa
+preuve de l'autre, ce sont deux copies qui dérivent. Ceux qui restent dans
+`CLAUDE.md` sont ceux que **seul le jugement protège** — la cadence qui possède
+le verdict, le dénominateur, la ressource totale confondue avec l'allocation
+par unité — et ce sont les plus chers.
+
+`engine/tests/pieges_fermes.rs` vérifie que chaque piège archivé nomme un
+dispositif **qui existe**, et que `CLAUDE.md` nomme toujours l'archive. Sans
+lui, la condition de sortie que le fichier s'écrit à lui-même — *si un de ces
+dispositifs disparaît, son piège revient* — ne serait qu'une affirmation de
+plus sur le code, c'est-à-dire la faute exacte de la table de l'attic.
+
+<s>Gain annoncé : ~200 lignes.</s> **Gain réel : 113** — `CLAUDE.md` passe de
+844 à 731 lignes. J'avais surestimé, et le chiffre annoncé valait la peine
+d'être corrigé plutôt qu'oublié.
+
 ### `tools/etat.sh` — l'état calculé, injecté à chaque reprise
 
 `CLAUDE.md` est réinjecté après chaque compactage ; **le carnet de bord, non.**
