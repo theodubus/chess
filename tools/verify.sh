@@ -64,6 +64,10 @@ etape "verdict de mutation"       .github/mutation-verdict-test.sh
 # compte dans `ref.sh` est son REFUS, et un refus ne s'exécute qu'en cas de
 # catastrophe. Une seconde, aucune compilation, des dépôts fabriqués.
 etape "références de mesure"      tools/ref-test.sh
+# `etat.sh` s'exécute à chaque démarrage et après chaque compactage, sa
+# sortie entrant dans le contexte du modèle. Un script devenu MUET ne se
+# verrait pas — on croirait simplement qu'il n'y a rien à dire.
+etape "état calculé"              bash -c 'tools/etat.sh | grep -q "non fusionné dans main"'
 
 if [[ $RAPIDE -eq 0 ]]; then
   etape "tests (release)"         cargo test --workspace --release

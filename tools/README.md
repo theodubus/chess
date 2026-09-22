@@ -663,6 +663,36 @@ correspond à rien et se rejette comme une collision ordinaire. Pas de verrou,
 et la seule conséquence d'un déchirement est un défaut de cache, jamais un
 score faux.
 
+### `tools/etat.sh` — l'état calculé, injecté à chaque reprise
+
+`CLAUDE.md` est réinjecté après chaque compactage ; **le carnet de bord, non.**
+Le document qui porte « où on en est » est donc absent au moment précis où la
+mémoire vient d'être perdue. Le 22 sept. 2026, un engagement pris en prose —
+*« j'attaque B9, je te reviens avec son coût monothread »* — a disparu
+exactement comme ça : ni fiche, ni journal, ni ce fichier ne le portaient.
+
+Le hook `SessionStart` déclaré dans `.claude/settings.json` lance `etat.sh`, et
+sa sortie **entre dans le contexte du modèle**. `SessionStart` se déclenche au
+démarrage, à la reprise, après `/clear` **et après chaque compactage** — c'est
+le seul point d'accroche du système qui tombe au bon moment (`PreToolUse`
+contraint mais n'injecte rien ; `Stop` et `PostToolUse` non plus).
+
+**Tout ce qu'il imprime est dérivé de git**, donc rien ne peut y vieillir :
+branche, arbre propre ou non, `git log origin/main..HEAD`, et le nombre de
+fichiers `.rs` contre `.md` modifiés depuis `main`. Ce dernier est le **signal
+de documentation** : il ne prescrit rien, il constate — *« 6 fichiers de code
+et 0 de documentation » est un fait, « il faudrait documenter » est une
+consigne qu'on oublie.*
+
+L'adresse du carnet vit dans `.claude/carnet.local`, ignoré par git : le
+pointeur est mécanique sans que le dépôt porte le lien, le carnet restant privé
+et hors du dépôt.
+
+`tools/verify-hooks.sh` vérifie que le hook est déclaré, qu'il lance bien ce
+script, et que le script **rend un état non vide** — un script devenu muet ne
+se verrait pas, on croirait simplement qu'il n'y a rien à dire. C'est la même
+raison qui fait exister `verify-hooks.sh` lui-même.
+
 ### Ce qu'il faut surveiller — et que rien ne signalera tout seul
 
 Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils

@@ -27,3 +27,8 @@ dist/
 
 # Trace de déclenchement des hooks (voir tools/verify-hooks.sh)
 /.claude/hooks-fired.log
+
+# Adresse du carnet de bord — privé, hors dépôt par décision de Théo.
+# Lu par tools/etat.sh pour que le pointeur soit mécanique sans que le dépôt
+# porte le lien.
+/.claude/carnet.local

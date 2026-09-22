@@ -24,6 +24,18 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && tools/etat.sh",
+            "timeout": 15,
+            "statusMessage": "état du travail en cours"
+          }
+        ]
+      }
     ]
   }
 }

@@ -16,6 +16,10 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 Ce fichier dit **comment** travailler : invariants, ce qui compte comme preuve,
 pièges déjà payés. Il ne dit pas **où on en est**.
 
+- **L'état du travail en cours est imprimé automatiquement au démarrage et
+  après chaque compactage** par `tools/etat.sh` — branche, commits non
+  fusionnés, écart code/documentation, et où lire la suite. Il est calculé,
+  jamais recopié. S'il n'apparaît pas, le lancer à la main.
 - L'état du moteur : `README.md`, en tête.
 - Les verdicts SPRT, avec leurs effectifs, leurs bornes **et leur cadence** :
   `tools/README.md`, section *Mesures de référence*. Le compteur n'est pas
@@ -760,7 +764,8 @@ pannes, et de refaire ce qu'ils font déjà.
 
 | où | quoi |
 |---|---|
-| `.claude/settings.json` | déclare les deux hooks ci-dessous |
+| `.claude/settings.json` | déclare les hooks ci-dessous |
+| `tools/etat.sh` | lancé par le hook `SessionStart`, dont la sortie **entre dans le contexte**. `SessionStart` se déclenche au démarrage, à la reprise, après `/clear` **et après chaque compactage** — le seul point d'accroche qui tombe au moment où la mémoire vient d'être perdue. Tout ce qu'il imprime est **dérivé de git**, donc rien ne peut y vieillir. Il porte aussi le signal de documentation : « N fichiers `.rs` et zéro `.md` depuis `main` » est un fait, là où « il faudrait documenter » est une consigne qu'on oublie |
 | `.claude/hooks/verify-on-stop.sh` | refuse de finir un tour si `verify.sh --rapide` échoue et que des `.rs` ont changé. Passe après trois échecs d'affilée, avec un avertissement : un blocage qu'on ne sait pas lever vaut moins qu'un avertissement qu'on lit |
 | `.claude/hooks/no-fabricated-sha.sh` | refuse un SHA de 40 caractères qui n'est pas un objet du dépôt alors que son préfixe de 7 en est un — la signature d'un SHA complété de tête |
 | `tools/ref-test.sh` | éprouve `tools/ref.sh` sur des dépôts fabriqués, dans `verify.sh`, en une demi-seconde et sans compiler. La branche qui compte dans `ref.sh` est son **refus** de construire sur une référence git périmée — elle ne s'exécute qu'en cas de catastrophe, donc sans ce test elle ne serait jamais vérifiée. Même argument que le verdict de mutation |
