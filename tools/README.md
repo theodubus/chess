@@ -638,16 +638,26 @@ protocole cassé.
 n'a pas été accepté, et le point estimé du retrait est négatif. Un acquis se
 retire par un verdict, comme il est entré.
 
-> **Le candidat se reconstruit sans son SHA, et c'est voulu.** La branche
-> `mesure/d5-delta` est supprimée et `cbaa8d4` finira par être collecté — le
-> projet a déjà payé une fois pour avoir désigné du code par un commit
-> (`fatal: invalid reference: 498a01a`, 16 sept.). **La recette tient en une
-> phrase** : supprimer le bloc `if self.delta_prunable(…) { continue; }` de la
+> **Le candidat se reconstruit sans son SHA, et c'est voulu.** `cbaa8d4` vit
+> aujourd'hui sur la branche `mesure/d5-delta`, qui n'a plus de raison d'être
+> et finira supprimée ; le projet a déjà payé une fois pour avoir désigné du
+> code par un commit (`fatal: invalid reference: 498a01a`, 16 sept.). **La
+> recette tient en une phrase** : supprimer le bloc `if self.delta_prunable(…) { continue; }` de la
 > quiescence dans `engine/src/search.rs` — l'appel, pas la fonction, pour
 > retirer la décision *et* son coût. **Le contrôle est le banc** : le candidat
 > doit rendre exactement **138 458** nœuds à la profondeur 7 et **725 621** à
 > la profondeur 10. Un chiffre différent veut dire qu'on a reconstruit autre
 > chose, et c'est précisément ce que ce contrôle existe pour dire.
+>
+> **Et la branche n'a pas pu être supprimée depuis la session** — **vérifié le 22 sept.** : `git push origin --delete` et
+> `git push origin :mesure/d5-delta` échouent tous deux sur
+> `the remote end hung up unexpectedly`, sans message d'erreur utile. **Le
+> jeton de session ne peut pas supprimer une référence distante**, comme il ne
+> peut pas pousser d'étiquette (403, consigné le 16 sept.). C'est pourquoi les
+> six branches `mesure/*` du 22 sept. ont été supprimées côté GitHub et non
+> d'ici. *Le ménage des branches de mesure revient donc à Théo ; la
+> documentation ne doit jamais annoncer une suppression qu'elle n'a pas
+> vérifiée.*
 
 ### Ce que l'écran en nœuds avait annoncé — un point, pas une règle
 
