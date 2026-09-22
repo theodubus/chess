@@ -393,6 +393,18 @@ une mesure, pas une préférence.
   préservent les dates de modification, donc cargo peut juger les sources
   périmées et ne rien recompiler : on mesure alors l'ancien binaire. Un
   rapport avant/après d'exactement 1,00 en est le symptôme.
+- **Ce n'est pas toujours le binaire qui est périmé : ce peut être la
+  RÉFÉRENCE GIT.** Le 22 sept. 2026, un candidat de retrait construit sur
+  `main` a rendu un arbre trois fois trop gros. Le binaire était neuf, le
+  code juste, l'édition correcte — mais `origin/main` était figé onze commits
+  en arrière dans le clone local, alors que le distant portait bien la tête
+  annoncée. **Un `git log` local ne dit rien de l'état du distant**, et le
+  symptôme est exactement celui du binaire périmé : un chiffre plausible qui
+  répond à une autre question. `git fetch` avant de construire une référence
+  ou un candidat, et confronter à `git ls-remote`. **Ce qui l'a attrapé n'est
+  pas la vigilance, c'est d'avoir écrit la valeur attendue AVANT de mesurer** —
+  le contrôle de vraisemblance ne sert que si l'on sait d'avance ce qu'on
+  attend.
 - **Un chiffre de référence écrit en prose vieillit en silence.** La section
   *Commandes* a annoncé `702 612 nœuds` pendant deux journées de travail alors
   que la valeur réelle était `541 528` : la mobilité et trois termes

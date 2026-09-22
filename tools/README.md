@@ -551,6 +551,37 @@ réserve réelle : si delta est tombé *entre* −5 et 0, aucun job ne tranchera
 puisqu'il faudrait ~11 900 parties. Les deux lignes de D5 déjà mesurées ont
 tranché en 1 154 et 1 580.
 
+### En vol — SPRT de retrait de l'élagage delta
+
+**Lancé le 22 sept. 2026 à 10 h 15 UTC**,
+[run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914),
+vérifié `in_progress` dans Actions et non supposé lancé.
+
+| | |
+|---|---|
+| candidat | `cbaa8d4` (branche `mesure/d5-delta`) — appel à `delta_prunable` supprimé |
+| référence | `a57c835` |
+| bornes | `[-5, 0]` — la convention de vérification d'un retrait |
+| cadence | `8+0.08` · graine `20260913` |
+| banc du candidat | **138 458** nœuds (prof. 7), **725 621** (prof. 10) |
+
+**Le candidat supprime l'appel, il ne le neutralise pas.** Porter
+`DELTA_MARGIN` à 10⁹ aurait donné le même arbre — c'est d'ailleurs le contrôle
+qui a validé la suppression, au bit près — mais aurait laissé en place un
+`captured_piece` par capture de quiescence, donc sur 90 % des nœuds. La mesure
+d'origine avait ajouté la décision **et** son coût ; l'inverse exact retire les
+deux. Même raisonnement que le candidat des trois termes, qui commentait les
+lignes au lieu de mettre les poids à zéro.
+
+> **Piège payé en construisant ce candidat, et il est neuf.** Le premier essai
+> a rendu **323 977** nœuds au lieu des 138 458 attendus. Cause : `origin/main`
+> était figé onze commits en arrière dans le clone local — à `5baf014`, le
+> 15 sept. — alors que le distant portait bien `a57c835`. **Ce n'était pas le
+> binaire qui était périmé, c'était la référence git**, et le symptôme est
+> identique. Seule la valeur attendue l'a révélé. *Avant de construire une
+> référence ou un candidat, `git fetch` puis comparer à `git ls-remote` — un
+> `git log` local ne dit rien de l'état du distant.*
+
 **Une limite propre à la ligne « mobilité », à connaître avant de l'acheter.**
 Son retrait exact n'est plus disponible. Quand la mobilité a été mesurée le
 14 sept., elle apportait *avec elle* toute la boucle d'attaques de `activity` ;
