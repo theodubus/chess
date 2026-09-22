@@ -60,6 +60,10 @@ etape "tests (debug)"             cargo test --workspace
 # un runner GitHub. Sans ce test, une faute y dormirait jusqu'à ce qu'elle
 # fasse passer une régression de couverture pour un succès.
 etape "verdict de mutation"       .github/mutation-verdict-test.sh
+# Même argument, appliqué à la construction des références : la branche qui
+# compte dans `ref.sh` est son REFUS, et un refus ne s'exécute qu'en cas de
+# catastrophe. Une seconde, aucune compilation, des dépôts fabriqués.
+etape "références de mesure"      tools/ref-test.sh
 
 if [[ $RAPIDE -eq 0 ]]; then
   etape "tests (release)"         cargo test --workspace --release

@@ -465,9 +465,16 @@ une mesure, pas une préférence.
   donc à Théo, et *ne jamais écrire dans la documentation une suppression
   qu'on n'a pas vérifiée* : je l'ai fait le jour même, et la phrase était
   fausse quand elle a été committée.</span>
-- **Ne jamais construire une référence avec `git stash`.** Il emporte tout le
-  travail non committé, outils de mesure compris — on finit par mesurer autre
-  chose que ce qu'on croit. Utiliser `git worktree add --detach /tmp/ref <commit>`.
+- **Ne jamais construire une référence à la main.** Le geste tient en quatre
+  lignes et ce dépôt y a payé **quatre** pièges distincts : `git stash`, qui
+  emporte tout le travail non committé et fait mesurer autre chose que ce qu'on
+  croit ; `cp -p`, qui préserve les dates et fait mesurer deux fois le même
+  binaire ; une référence git périmée, qui rend un arbre trois fois trop gros ;
+  et `git fetch <remote> <branche>`, qui n'élague pas. `tools/ref.sh
+  <commit|branche|tag>` les ferme tous les quatre et **refuse** de construire
+  quand la résolution locale d'une branche diffère de `git ls-remote`. Même
+  geste que `timing.sh` : imposer par un code de sortie ce qu'une règle écrite
+  ne fait que rappeler.
 - **Vérifier que le binaire a bien été reconstruit.** `mv` et `cp -p`
   préservent les dates de modification, donc cargo peut juger les sources
   périmées et ne rien recompiler : on mesure alors l'ancien binaire. Un
@@ -561,13 +568,24 @@ une mesure, pas une préférence.
   n'est pas « ce garde-fou marche-t-il ? » mais « **quelle est sa source de
   vérité, et est-ce la bonne ?** » — ici le répertoire, jamais la liste.
 - **Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué ne garde
-  rien.** La première version du contrôle ci-dessus ne lisait que `CLAUDE.md`.
-  Elle a été écrite alors que `README.md` portait déjà `8 432 521` — le chiffre
-  d'avant le coup nul, **faux d'un facteur 15,6** — et ne l'a pas vu, parce que
-  personne n'avait cherché si le chiffre existait ailleurs. Le contrôle balaie
-  maintenant une liste de fichiers. **Avant d'écrire un garde-fou, chercher
-  toutes les copies de ce qu'il garde** : `grep` sur la valeur, pas sur le
-  fichier qu'on a en tête.
+  rien.** La première version de `engine/tests/bench_reference.rs` ne lisait
+  que `CLAUDE.md`. Elle a été écrite alors que `README.md` portait déjà
+  `8 432 521` — le chiffre d'avant le coup nul, **faux d'un facteur 15,6** — et
+  ne l'a pas vu, parce que personne n'avait cherché si le chiffre existait
+  ailleurs. La deuxième balayait une **liste écrite à la main**, ce qui laissait
+  encore mon jugement décider de la couverture ; celle d'aujourd'hui parcourt
+  **tout le dépôt**, donc un fichier Markdown créé demain est couvert sans que
+  personne y pense. **Avant d'écrire un garde-fou, chercher toutes les copies
+  de ce qu'il garde** : `grep` sur la valeur, pas sur le fichier qu'on a en
+  tête.
+  <br>**Ces deux phrases-ci étaient fausses jusqu'au 22 sept. 2026, et de deux
+  façons différentes** : « le contrôle balaie maintenant une liste de
+  fichiers » décrivait la deuxième version alors que la troisième était en
+  place depuis des jours, et « le contrôle **ci-dessus** » désignait le
+  garde-fou de couverture de mutation, pas celui du bench. *Le piège du renvoi
+  par position avait donc déjà dérivé dans ce fichier même, deux puces sous
+  l'endroit où il est nommé* — et rien ne pouvait le signaler, puisque la
+  phrase restait parfaitement lisible.
 - **Un tampon par nœud coûte son *initialisation*, pas son allocation.**
   `ordered_moves` allouait un `Vec` à chaque nœud, et 90 % des nœuds sont des
   nœuds de quiescence : le remplacer par un tableau de pile paraissait évident.
@@ -699,6 +717,7 @@ cargo run --release --bin shallowred          # boucle UCI
 cargo run --release --bin shallowred -- bench 7
 
 tools/setup-arbiters.sh                    # construit fastchess
+tools/ref.sh <commit|branche|tag> [sortie] # construit un binaire de référence
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement de décision
 tools/timing.sh <candidat> <référence>     # verdict sur une optimisation pure
 tools/crosscheck.sh                        # les deux arbitres s'accordent-ils
@@ -729,6 +748,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `.claude/settings.json` | déclare les deux hooks ci-dessous |
 | `.claude/hooks/verify-on-stop.sh` | refuse de finir un tour si `verify.sh --rapide` échoue et que des `.rs` ont changé. Passe après trois échecs d'affilée, avec un avertissement : un blocage qu'on ne sait pas lever vaut moins qu'un avertissement qu'on lit |
 | `.claude/hooks/no-fabricated-sha.sh` | refuse un SHA de 40 caractères qui n'est pas un objet du dépôt alors que son préfixe de 7 en est un — la signature d'un SHA complété de tête |
+| `tools/ref-test.sh` | éprouve `tools/ref.sh` sur des dépôts fabriqués, dans `verify.sh`, en une demi-seconde et sans compiler. La branche qui compte dans `ref.sh` est son **refus** de construire sur une référence git périmée — elle ne s'exécute qu'en cas de catastrophe, donc sans ce test elle ne serait jamais vérifiée. Même argument que le verdict de mutation |
 | `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les critères d'acceptation, le bench. <s>les trois critères</s> — leur nombre n'est plus écrit : il a changé, et un compteur en prose naît périmé |
 | `engine/tests/rustines_attic.rs` | critère d'acceptation : confronte la colonne « s'applique sur `main` ? » de `tools/attic/README.md` au vrai `git apply --check`, **dans les deux sens** — rustine non déclarée et déclaration sans rustine échouent autant qu'un verdict faux. Trois lignes sur sept étaient fausses le 22 sept. 2026, toutes par la même fusion. `#[ignore]` parce qu'il lance `git` : `cargo mutants` travaille sur une copie de l'arbre, et **aucun mutant d'`engine/src/` ne peut changer si une rustine s'applique**, donc il n'a rien à y tuer |

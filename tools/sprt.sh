@@ -52,6 +52,26 @@ CONCURRENCY="${CONCURRENCY:-$(( $(nproc) > 1 ? $(nproc) - 1 : 1 ))}"
 HASH_OPT=()
 [[ -n "${HASH_MB:-}" ]] && HASH_OPT=(option.Hash="$HASH_MB")
 
+# Les arguments se contrôlent AVANT l'environnement : sans cela le garde-fou
+# des empreintes est inatteignable sur une machine sans arbitre, donc
+# inéprouvable — et un garde-fou qu'on ne peut pas faire échouer ne vaut
+# pas grand-chose. Ces deux-là manquaient purement et simplement.
+[[ -x "$CANDIDATE" ]] || { echo "binaire candidat introuvable : $CANDIDATE" >&2; exit 1; }
+[[ -x "$BASELINE"  ]] || { echo "binaire de référence introuvable : $BASELINE" >&2; exit 1; }
+
+# Deux fois le MÊME binaire rendrait un rapport de exactement 1,00 — ou, pour
+# le SPRT, 0 Elo — et personne ne saurait pourquoi. `match.yml` compare déjà
+# les empreintes sur un runner ; le chemin local, lui, n'avait pas ce contrôle.
+# C'est la faute B10 appliquée à un garde-fou plutôt qu'à un chiffre : couvrir
+# une seule copie, ce n'est pas couvrir. La cause habituelle est `cp -p` ou
+# `mv`, qui préservent les dates et font juger les sources à jour par cargo.
+if [[ "$(md5sum "$CANDIDATE" | cut -d' ' -f1)" == "$(md5sum "$BASELINE" | cut -d' ' -f1)" ]]; then
+  echo "les deux binaires sont IDENTIQUES (même empreinte md5) : il n'y a rien à mesurer." >&2
+  echo "Cause habituelle : cp -p ou mv préservent les dates, cargo n'a rien recompilé." >&2
+  echo "Reconstruire la référence par tools/ref.sh, qui rend son empreinte." >&2
+  exit 1
+fi
+
 [[ -x "$FASTCHESS" ]] || { echo "arbitre absent : lancer tools/setup-arbiters.sh" >&2; exit 1; }
 [[ -f "$BOOK" ]] || { echo "livre absent : $BOOK" >&2; exit 1; }
 

@@ -38,27 +38,43 @@ Les binaires atterrissent dans `tools/arbiters/`, qui est ignoré par git.
 cargo build --release
 cp target/release/shallowred /tmp/candidat
 
-git worktree add --detach /tmp/ref <commit-de-référence>
-( cd /tmp/ref && cargo build --release )
-cp /tmp/ref/target/release/shallowred /tmp/reference
-git worktree remove /tmp/ref
-
-md5sum /tmp/candidat /tmp/reference   # les deux empreintes doivent différer
+tools/ref.sh origin/main /tmp/reference      # construit la référence
 tools/sprt.sh /tmp/candidat /tmp/reference
 ```
 
-> **Jamais `git stash` pour construire une référence.** Il emporte *tout* le
-> travail non committé, outils de mesure compris, donc on finit par mesurer
-> autre chose que ce qu'on croit. C'est arrivé le 13 sept. 2026 : le stash avait
-> aussi remisé la conversion de `bench` de perft vers la recherche, et la mesure
-> « avant » comptait des nœuds de perft. Seule l'absurdité du chiffre l'a
-> révélé — elle aurait pu ne pas être absurde. Le worktree est isolé et sans
-> effet de bord.
->
-> **Comparer les empreintes avant de lancer le match.** `cp -p` et `mv`
-> préservent les dates de modification, donc cargo peut juger les sources à jour
-> et ne rien recompiler : on mesure alors deux fois le même binaire, et le
-> rapport rend exactement 1,00.
+`tools/ref.sh <commit|branche|tag> [sortie]` remplace la recette manuelle qui
+occupait cette place, et pour la même raison que `timing.sh` remplace un
+chronomètre à la main : **construire une référence est un geste de quatre
+lignes dans lequel ce dépôt a payé quatre pièges distincts**, tous écrits dans
+`CLAUDE.md`, aucun encadré par du code. `match.yml` faisait déjà tout cela
+correctement sur un runner ; le chemin local n'avait rien — la faute B10, celle
+du garde-fou qui ne couvre qu'une copie.
+
+| ce que le script impose | le piège qu'il ferme |
+|---|---|
+| `git fetch --prune`, jamais `git fetch <remote> <branche>` | une référence de suivi survit à la suppression de sa branche après fusion et désigne le commit d'*avant* — deux fausses alarmes le 22 sept. 2026 |
+| confrontation de la résolution locale à `git ls-remote`, et **refus** de construire si elles diffèrent | `origin/main` figé onze commits en arrière dans le clone : binaire neuf, code juste, **arbre trois fois trop gros**. C'est le seul des quatre qui a faussé une mesure publiée |
+| `git worktree add --detach`, jamais `git stash` | le stash emporte *tout* le travail non committé, outils de mesure compris. Le 13 sept. 2026 il avait remisé la conversion de `bench` de perft vers la recherche, et la mesure « avant » comptait des nœuds de perft |
+| `cp` et non `cp -p`, et l'empreinte md5 imprimée | les dates préservées font juger les sources à jour par cargo, qui ne recompile rien : on mesure deux fois le même binaire et le rapport rend exactement 1,00 |
+
+Nommer une branche veut dire « ce qu'elle porte **maintenant** ». Pour
+construire un commit plus ancien de cette branche, passer le SHA : c'est
+explicite, et ça ne déclenche pas le contrôle de fraîcheur.
+
+`tools/ref-test.sh` éprouve `ref.sh` sur des dépôts fabriqués — un « distant »
+nu et un clone dont la branche locale reste en arrière — et tourne dans
+`tools/verify.sh` pour une demi-seconde, sans compiler quoi que ce soit. Sans
+lui, la branche qui compte ne s'exécuterait qu'en cas de catastrophe, donc
+jamais en conditions vérifiables : c'est l'argument de
+`.github/mutation-verdict-test.sh`, qui avait trouvé une faute à sa première
+exécution. Éprouvé en le faisant échouer : `if false` à la place du contrôle de
+fraîcheur fait tomber deux cas.
+
+`sprt.sh` et `timing.sh` refusent désormais deux binaires d'empreinte
+identique. Le contrôle existait sur le runner depuis la création de
+`match.yml` et manquait en local ; c'était la même faute, un cran plus haut —
+*un garde-fou qui ne couvre qu'une copie ne garde rien* vaut pour les
+garde-fous comme pour les chiffres.
 
 Le test séquentiel s'arrête dès que les données suffisent et rend
 `H1 was accepted` (le changement est bon) ou `H0 was accepted` (il ne l'est

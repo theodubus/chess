@@ -35,6 +35,19 @@ PAIRES_MIN="${PAIRES_MIN:-20}"
 [[ -x "$CANDIDAT"  ]] || { echo "binaire candidat introuvable : $CANDIDAT" >&2; exit 1; }
 [[ -x "$REFERENCE" ]] || { echo "binaire de référence introuvable : $REFERENCE" >&2; exit 1; }
 
+# Deux fois le MÊME binaire rendrait un rapport de exactement 1,00 — ou, pour
+# le SPRT, 0 Elo — et personne ne saurait pourquoi. `match.yml` compare déjà
+# les empreintes sur un runner ; le chemin local, lui, n'avait pas ce contrôle.
+# C'est la faute B10 appliquée à un garde-fou plutôt qu'à un chiffre : couvrir
+# une seule copie, ce n'est pas couvrir. La cause habituelle est `cp -p` ou
+# `mv`, qui préservent les dates et font juger les sources à jour par cargo.
+if [[ "$(md5sum "$CANDIDAT" | cut -d' ' -f1)" == "$(md5sum "$REFERENCE" | cut -d' ' -f1)" ]]; then
+  echo "les deux binaires sont IDENTIQUES (même empreinte md5) : il n'y a rien à mesurer." >&2
+  echo "Cause habituelle : cp -p ou mv préservent les dates, cargo n'a rien recompilé." >&2
+  echo "Reconstruire la référence par tools/ref.sh, qui rend son empreinte." >&2
+  exit 1
+fi
+
 if (( PAIRES < PAIRES_MIN )); then
   echo "refus : $PAIRES paires demandées, minimum $PAIRES_MIN." >&2
   echo "Sept exécutions ont déjà produit un faux négatif sur ce projet." >&2
