@@ -154,7 +154,16 @@ une mesure, pas une préférence.
   du temps d'un nœud**. Ne pas réécrire cette dérivation de tête le jour venu :
   le roque en notation roi-prend-tour et la prise en passant sont exactement
   les cas qu'on rate.
-- **Génération par étapes** — **pas en place**. `ordered_moves` remplit d'un
+- **Génération par étapes** — **pas en place, et mesurée le 22 sept. 2026 :
+  plafond 11,5 % du temps, soit 0,21 pli.** `negamax` génère 26,42 coups par
+  nœud et en cherche 3,97 — 85 % du travail est jeté, et 49 % des nœuds ne
+  cherchent aucun coup tranquille. Mais l'ordonnancement ne pèse que **26,2 %
+  du temps** (mesuré par doublement, 0/24 paires, p = 0,0000), et c'est
+  `negamax` qui en porte 83,8 %, pas la quiescence. **Ce n'est pas non plus
+  une optimisation pure** : le tri est `sort_unstable_by_key`, et passer au
+  tri stable déplace déjà l'arbre de 4,1 % — donc un SPRT, pas `timing.sh`,
+  pour un effet six fois plus petit que la pendule. Chiffres dans
+  `tools/README.md`, code à l'attic. `ordered_moves` remplit d'un
   bloc une tranche de l'ardoise (`buffer: &mut [(Move, i32)]`, une par ply,
   allouée une seule fois avec la recherche) puis la trie entièrement ; seul le
   **filtre tactique** de la quiescence existe (`tactical_only`, qui restreint
@@ -184,6 +193,7 @@ une mesure, pas une préférence.
 | « ce code est testé » | `tools/mutants.sh`. Un mutant **survivant** est une modification du code que toute la suite accepte : une ligne dont rien ne vérifie le comportement. Le plafond par fichier vit dans `.github/mutation-baseline.txt`, et le balayage hebdomadaire (workflow `Mutation`, mardi) casse à la hausse, signale la baisse. **Ne dit rien de la force de jeu** : un survivant sur une valeur d'évaluation ou une marge d'élagage relève du SPRT, jamais d'un test unitaire. |
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « ce verdict vaut pour le moteur qu'on livrera » | **La cadence de mesure peut INVERSER un verdict — mesuré, pas redouté.** 16 sept. 2026, mêmes binaires, même livre, **même graine d'ouvertures**, même adjudication, même estimateur (1000 parties à longueur fixe chacun) : l'élagage par compte de coups vaut **−21,57 ± 16,71** à `1+0,01` et **+15,30 ± 15,08** à `8+0,08`. Écart **+36,9 Elo**, z = 3,21, **p = 0,0013**, intervalles disjoints. Le biais d'arrêt du SPRT ne vaut que 3,6 Elo : ce n'était pas l'explication. Profondeur médiane atteinte : **8,5** contre **12,5** — et **17,0** à ~30+0,3, le régime où le moteur jouera. **Les douze premiers verdicts du projet sont tous à `1+0,01`**, alors que `tools/sprt.sh` a pour défaut `8+0.08` depuis sa création — défaut jamais utilisé. Ce n'était pas un arbitrage, c'était une habitude. **Nommer la cadence d'un verdict, et ne jamais comparer deux verdicts de cadences différentes.** Mesurer long passe par `.github/workflows/match.yml`. |
+| « ce chantier passe avant cet autre » | **Une unité commune, et les plis en sont une.** Le projet a comparé ses chantiers en pourcentage de nœuds, en part de l'arbre, et en « très sous-estimé » hérité d'un backlog — trois unités qui ne se comparent pas. **Mesuré le 22 sept. 2026 : 1,36 pli par doublement de temps**, stable sur quatre doublements, ce qui ramène tout gain de vitesse OU de temps à la même échelle. Génération par étapes 0,21 pli, pendule pleine ~1,36, Lazy SMP 1,0 à 1,8. **Ce que ça ne donne pas : l'Elo.** Combien vaut un pli n'est mesuré nulle part ici, et le multiplier par une constante héritée serait exactement ce que ce dépôt a démenti trois fois. |
 | « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. **Dix-huit SPRT du projet — la relation tient, sa DISPERSION est connue, et elle ne dépend PAS de la cadence** : `parties × Elo`, médiane **59 256**, étendue 45 900 à 80 200, **facteur 1,75**. Quatre techniques ont un point à chaque cadence ; l'Elo y change d'un facteur 2,5 et même de signe, le produit tient à ± 15 %. **Mais l'Elo qu'on MET dans la division appartient, lui, à une cadence** : le projet a écrit que les trois termes d'évaluation « tombaient juste sous la ligne » (59 500 ÷ 14,9 = 3 993 parties, au-delà du plafond de 3 750) ; le verdict est tombé en **1 580**, l'effet valant +37,5 et non +14,9. **Un budget estimé depuis un verdict à `1+0,01` est un majorant — ne jamais renoncer à un match sur cette base.** Un seul point dépasse 67 000 — le tout premier, +164 Elo sur 488 parties ; <span>inférence, confiance moyenne : le biais d'arrêt du SPRT gonfle d'autant plus l'estimation que l'effectif est petit</span>. Hors ce point, le facteur tombe à **1,45**. La constante n'a presque pas bougé (62 000 avait été établie sur quatre points), **mais un budget estimé se lit désormais à ± 50 %, pas comme un nombre** : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 11 900 ≈ 2 h 30 ; +2 ≈ 29 750 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. **À `8+0,08` par `match.yml`, un job tranche les effets de ~17 Elo et plus** : 5,57 s par partie mesurées, plafond de 350 min, soit ~3 750 parties. En dessous, passer à des matchs à longueur fixe sur plusieurs jobs et les mettre en commun — jamais « reprendre » un SPRT expiré, un test séquentiel interrompu puis prolongé n'a plus ses taux d'erreur. Voir `tools/README.md`. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
 | « c'est plus fort » | **Jamais** déduit d'un nombre de nœuds, dans aucun sens. Huit mesures, et les trois combinaisons de signes sont représentées : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration ÷1,07 → +30 ; élagage delta ÷1,68 → +33 ; futilité inverse ÷1,45 → +24 (moins de nœuds, plus fort) ; **PVS ÷1,03 → −11, H0 accepté** (moins de nœuds, plus faible) ; **mobilité ×1,29 → +63** (*plus* de nœuds, plus fort). Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. **Deux rapports voisins, ÷1,68 et ÷2,52, rapportent +33 et +75 : même le classement ne se déduit pas.** Deux points de plus le 21 sept. 2026, tous deux nuls : extension d'échec ×1,16 → **−5,0 ± 8,1**, PVS réécrit ÷1,07 → **−0,8 ± 8,2**, à `8+0,08`. Et un point du 22 sept. qui tombe pile sur un point existant : **les trois termes d'évaluation ×1,29 → +37,5**, exactement le rapport de nœuds de la mobilité, qui vaut **+62,6**. *Même coût en nœuds, presque du simple au double en Elo.* |
@@ -220,6 +230,32 @@ une mesure, pas une préférence.
   au budget, pas d'estimation — le projet a failli renoncer au verdict des
   trois termes parce que 59 500 ÷ 14,9 dépassait le plafond d'un job, et il
   est tombé en 1 580 parties.
+- **Un moteur qui DÉMARRE FROID n'est pas un moteur en partie.** L'écran de B2
+  cherchait d'abord 400 positions isolées en vidant la table entre chacune. Il
+  donnait « la dernière itération change le coup joué : 15,0 % » ; en parties
+  entières, table conservée d'un coup à l'autre, c'est **7,9 %**. Le biais
+  valait **un facteur deux, et il allait dans le sens de ma conclusion** — la
+  pire direction. C'est le piège voisin de « le banc n'est pas un échantillon
+  de jeu », d'un cran plus profond : *les positions peuvent venir de vraies
+  parties et le RÉGIME rester faux*. Toute question portant sur ce que la
+  recherche accumule — table, killers, historique, coup précédent — se mesure
+  en jouant, jamais en visitant.
+- **Une sonde jetable vit dans sa rustine, jamais dans l'arbre.** Le 22 sept.
+  2026, trois binaires de sonde ont été déposés dans `tools/src/bin/` : cargo
+  les découvre automatiquement, ils importaient des statiques d'instrumentation
+  — et **au moment où `search.rs` a été rendu à `main`, le dépôt ne compilait
+  plus**. Le modèle de `d2-sonde-pv.patch` était le bon depuis le début :
+  l'instrumentation ET son lecteur dans le même patch, à l'attic, ou ni l'un ni
+  l'autre. Pour itérer sans casser l'arbre, une crate jetable hors du dépôt qui
+  dépend du moteur par chemin.
+- **Un mécanisme vérifié à l'arithmétique qui ne retombe pas sur la mesure
+  n'est pas réfuté — il est incomplet, et le résidu se nomme.** Le gaspillage
+  de pendule était prédit à 31 % de restant par le modèle `restant/30 + inc/2`
+  et mesuré à **47 %**. Tentation : conclure que le mécanisme n'est pas celui
+  qu'on croit. **Faux** — l'écart est l'échéance douce, qui interdit d'entamer
+  une itération à mi-budget, donc le moteur ne dépense même pas ce qu'il s'est
+  alloué. Deux effets, même sens. *Nommer le résidu, ou l'écart finira par
+  servir d'argument contre une conclusion juste.*
 - **Dimensionner un mécanisme borne son gain possible ; ça ne le prédit pas.**
   Avant d'écrire l'extension d'échec j'ai mesuré ce qu'il restait à gagner :
   77 % des nœuds en échec sont déjà en quiescence, LMR exempte déjà les échecs,
