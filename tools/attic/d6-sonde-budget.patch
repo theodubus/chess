@@ -1,0 +1,265 @@
+# d6 — quelle formule de budget épuise la pendule, et ce qu'elle vaut vraiment
+#
+# ELLE NE TOUCHE PAS AU MOTEUR. `time_budget_ms` rend `movetime - 20` dès que
+# `movetime` est fourni : la sonde calcule donc son propre budget et le passe
+# par ce chemin. Pas de rustine sur `engine/src/`, donc aucun risque de mesurer
+# un binaire patché. **Mais ce chemin court-circuite aussi la garde de
+# sécurité** (`clamp(1, restant - 50)`), que la sonde réimplémente — sans quoi
+# les pertes au temps seraient un artefact de la sonde et non une propriété du
+# réglage.
+#
+# CE QU'ELLE A CORRIGÉ, ET C'ÉTAIT UN CHIFFRE DÉJÀ PUBLIÉ — le dépôt annonçait
+# que dépenser la pendule valait ~1,36 pli, sur le raisonnement « 47 % de
+# pendule inutilisée, donc x1,9 de temps ». **Faux d'un facteur 2,5**, et la
+# faute est conceptuelle : la RESSOURCE TOTALE consommée sur une partie n'est
+# pas l'ALLOCATION PAR COUP. Le budget vaut `restant / movestogo`, donc il est
+# proportionnel à ce qui reste ; dépenser plus tôt laisse moins ensuite.
+#
+#   diviseur  restant  pertes  budget moyen     x    prof. 10-60
+#         30    48,0 %       0       216 ms  1,00          13,25
+#         24    34,2 %       0       234 ms  1,08          13,75
+#         20    32,1 %       0       240 ms  1,11          13,59
+#         16    24,9 %       0       274 ms  1,27          13,68
+#         12    14,3 %       0       285 ms  1,32          13,95
+#         10    14,1 %       0       283 ms  1,31          13,65
+#
+#   15 parties entières par réglage, 8+0,08, graine 20260922.
+#
+# TROIS RÉSULTATS —
+#
+# 1. ZÉRO PERTE AU TEMPS partout, jusqu'à trois fois plus agressif que la
+#    formule actuelle. C'est structurel : `restant / d` est une décroissance
+#    géométrique, elle n'atteint jamais zéro. La documentation annonçait qu'un
+#    budget doublé « épuiserait l'horloge vers le coup 48, aucune marge » —
+#    c'était raisonner comme si le budget était un montant fixe.
+#
+# 2. ÇA SATURE à d ~ 12 : 285 puis 283 ms. Le plafond d'une allocation PLATE
+#    vaut (pendule + coups x inc) / coups = 280 ms pour 40 coups par camp. Le
+#    balayage atteint la limite physique du problème. **Un diviseur est une
+#    famille à un paramètre** : aucune valeur ne fera mieux, et dépasser ce
+#    plafond demande une allocation INÉGALE — plus sur les positions dures —
+#    qui est un autre chantier.
+#
+# 3. LA VALEUR, par deux routes concordantes : +0,54 pli en convertissant le
+#    x1,32 à travers la courbe appariée de `d6-sonde-profondeur.patch`, et
+#    +0,70 pli mesuré directement sur les demi-coups 10-60. Soit ~32 Elo par la
+#    règle du projet, donc au-dessus des ~17 qu'un job tranche.
+#
+# LE PIÈGE QU'ELLE A RÉVÉLÉ SUR ELLE-MÊME — une première passe donnait le gain
+# de profondeur NON MONOTONE (-0,22 à +0,66 pli pour un budget x3). Cause : un
+# budget différent fait jouer d'autres coups, donc d'autres parties, donc un
+# autre mélange de phases, et une finale se cherche bien plus profond qu'un
+# milieu de partie. **La comparaison n'était pas appariée.** D'où la colonne
+# bridée aux demi-coups 10-60, et surtout la conversion par le BUDGET, qui est
+# la seule grandeur appariée entre réglages.
+#
+# ET LA MÉDIANE ÉTAIT LA MAUVAISE STATISTIQUE — la toute première version
+# publiait une médiane de profondeur, donc des entiers : 13,0 -> 14,0 ne
+# distingue pas +0,5 de +1,5 pli, et c'est exactement l'écart qui fixe la
+# valeur du chantier.
+#
+diff --git a/tools/src/bin/budget_probe.rs b/tools/src/bin/budget_probe.rs
+new file mode 100644
+index 0000000..c60caa0
+--- /dev/null
++++ b/tools/src/bin/budget_probe.rs
+@@ -0,0 +1,199 @@
++//! SONDE JETABLE — quelle formule de budget épuise la pendule sans poser le drapeau ?
++//!
++//! # Pourquoi elle ne touche pas au moteur
++//!
++//! `time_budget_ms` rend `movetime - 20` dès que `movetime` est fourni, donc
++//! la sonde calcule son propre budget et le passe par ce chemin. L'arbre reste
++//! intact : aucune rustine, aucun risque de mesurer un binaire patché.
++//!
++//! **Mais le chemin `movetime` court-circuite AUSSI la garde de sécurité**
++//! (`clamp(1, remaining - 50)`), donc la sonde la réimplémente. Sans elle on
++//! mesurerait une formule que le moteur n'emploierait jamais, et les pertes au
++//! temps seraient un artefact de la sonde.
++//!
++//! # Ce qu'elle mesure, et pourquoi le second chiffre compte autant
++//!
++//! Le gaspillage de pendule a DEUX causes qui poussent dans le même sens : la
++//! formule alloue trop peu, ET l'échéance douce empêche de dépenser ce qui est
++//! alloué. Un modèle arithmétique de la première seule prédisait 31 % de
++//! restant contre 47 % mesurés. La sonde relève donc aussi le rapport
++//! **dépensé / alloué**, qui est ce résidu-là.
++use std::sync::Arc;
++use std::sync::atomic::AtomicBool;
++
++use cozy_chess::{Board, Color, Move};
++use shallowred::position::Position;
++use shallowred::search::{Limits, Search};
++
++fn next_random(state: &mut u64) -> u64 {
++    let mut x = *state;
++    x ^= x >> 12;
++    x ^= x << 25;
++    x ^= x >> 27;
++    *state = x;
++    x.wrapping_mul(0x2545_F491_4F6C_DD1D)
++}
++
++fn legal_moves(board: &Board) -> Vec<Move> {
++    let mut moves = Vec::new();
++    board.generate_moves(|set| {
++        moves.extend(set);
++        false
++    });
++    moves
++}
++
++fn random_opening(plies: u32, state: &mut u64) -> Option<Board> {
++    let mut board = Board::default();
++    for _ in 0..plies {
++        let moves = legal_moves(&board);
++        if moves.is_empty() {
++            return None;
++        }
++        let index = (next_random(state) % moves.len() as u64) as usize;
++        board.play_unchecked(*moves.get(index)?);
++    }
++    (!legal_moves(&board).is_empty()).then_some(board)
++}
++
++/// Le budget, en millisecondes, pour une formule `restant / diviseur + inc/2`.
++///
++/// La garde de sécurité est celle du moteur, reproduite : une pendule à zéro
++/// perd la partie quelle que soit la position.
++fn budget_ms(remaining: i64, inc: u64, divisor: u64) -> u64 {
++    let r = remaining.max(1) as u64;
++    let brut = r / divisor + inc / 2;
++    brut.clamp(1, r.saturating_sub(50).max(1))
++}
++
++struct Bilan {
++    restant: Vec<f64>,
++    coups: Vec<usize>,
++    flags: u32,
++    depense_sur_budget: Vec<f64>,
++    profondeurs: Vec<u32>,
++    /// Budget ALLOUÉ par coup. C'est la grandeur qui se convertit par la
++    /// courbe appariée de la sonde 3 ; la profondeur moyenne en partie, elle,
++    /// est confondue par le mélange de phases (les parties diffèrent d'un
++    /// réglage à l'autre, donc on comparerait des positions différentes).
++    budgets: Vec<f64>,
++    /// Profondeur restreinte aux demi-coups 10..60, pour brider ce mélange.
++    prof_milieu: Vec<u32>,
++}
++
++fn joue(games: u32, base: u64, inc: u64, divisor: u64, mut seed: u64, search: &mut Search) -> Bilan {
++    let mut b = Bilan {
++        restant: Vec::new(),
++        coups: Vec::new(),
++        flags: 0,
++        depense_sur_budget: Vec::new(),
++        profondeurs: Vec::new(),
++        budgets: Vec::new(),
++        prof_milieu: Vec::new(),
++    };
++    for _ in 0..games {
++        let plies = 8 + (next_random(&mut seed) % 4) as u32;
++        let Some(opening) = random_opening(plies, &mut seed) else {
++            continue;
++        };
++        let mut position = Position::from_board(opening);
++        let (mut wtime, mut btime) = (base as i64, base as i64);
++        let mut joues = 0usize;
++        search.clear_table();
++
++        for ply in 0..200 {
++            if position.is_repetition()
++                || position.is_fifty_move_draw()
++                || legal_moves(position.board()).is_empty()
++            {
++                break;
++            }
++            let white = position.board().side_to_move() == Color::White;
++            let restant = if white { wtime } else { btime };
++            let bud = budget_ms(restant, inc, divisor);
++            let limits = Limits {
++                // `+ 20` parce que le moteur retranche sa marge de transport.
++                movetime: Some(bud + 20),
++                ..Limits::default()
++            };
++            let start = std::time::Instant::now();
++            let mut depth = 0u32;
++            let played = search.go(
++                &Position::from_board(position.board().clone()),
++                &limits,
++                |info| depth = info.depth,
++            );
++            let spent = start.elapsed().as_millis() as i64;
++            b.depense_sur_budget.push(spent as f64 / bud as f64);
++            b.profondeurs.push(depth);
++            b.budgets.push(bud as f64);
++            if (10..60).contains(&ply) {
++                b.prof_milieu.push(depth);
++            }
++            if white {
++                wtime += inc as i64 - spent;
++            } else {
++                btime += inc as i64 - spent;
++            }
++            if wtime <= 0 || btime <= 0 {
++                b.flags += 1;
++                break;
++            }
++            let Some(mv) = played else { break };
++            position.play(mv);
++            joues += 1;
++        }
++        b.restant.push(wtime.max(0) as f64 / base as f64);
++        b.restant.push(btime.max(0) as f64 / base as f64);
++        b.coups.push(joues);
++    }
++    b
++}
++
++fn mediane(v: &mut Vec<f64>) -> f64 {
++    v.sort_by(|a, b| a.partial_cmp(b).unwrap());
++    v[v.len() / 2]
++}
++
++fn main() {
++    let mut args = std::env::args().skip(1);
++    let games: u32 = args.next().and_then(|a| a.parse().ok()).unwrap_or(15);
++    let base: u64 = args.next().and_then(|a| a.parse().ok()).unwrap_or(8_000);
++    let inc: u64 = args.next().and_then(|a| a.parse().ok()).unwrap_or(80);
++    let seed: u64 = args.next().and_then(|a| a.parse().ok()).unwrap_or(20_260_922);
++
++    let stop = Arc::new(AtomicBool::new(false));
++    let mut search = Search::new(stop);
++
++    println!("cadence {}+{}   {games} parties par réglage   graine {seed}", base as f64 / 1000.0, inc as f64 / 1000.0);
++    println!("(le diviseur 30 est la formule actuelle du moteur)\n");
++    // La MOYENNE de profondeur, pas la médiane : une médiane d'entiers ne
++    // distingue pas +0,5 de +1,5 pli, et c'est précisément l'écart qui fixe la
++    // valeur du chantier. Première version publiée avec la médiane — corrigé.
++    println!(
++        "{:>9}  {:>14}  {:>6}  {:>10}  {:>10}  {:>11}  {:>7}",
++        "diviseur", "restant médian", "pertes", "budget moy.", "× budget", "prof. 10-60", "coups"
++    );
++
++    let mut base_prof = -1.0f64;
++    for divisor in [30u64, 24, 20, 16, 12, 10] {
++        let mut b = joue(games, base, inc, divisor, seed, &mut search);
++        let restant = mediane(&mut b.restant);
++        let ratio = mediane(&mut b.depense_sur_budget);
++        let _ = ratio;
++        let budget_moy = b.budgets.iter().sum::<f64>() / b.budgets.len() as f64;
++        let pm: Vec<f64> = b.prof_milieu.iter().map(|&d| f64::from(d)).collect();
++        let prof_mil = pm.iter().sum::<f64>() / pm.len() as f64;
++        let mut c: Vec<f64> = b.coups.iter().map(|&x| x as f64).collect();
++        let coups = mediane(&mut c);
++        if base_prof < 0.0 {
++            base_prof = budget_moy;
++        }
++        println!(
++            "{divisor:>9}  {:>13.1} %  {:>6}  {budget_moy:>8.0} ms  {:>9.2}  {prof_mil:>11.2}  {coups:>7.0}",
++            100.0 * restant,
++            b.flags,
++            budget_moy / base_prof
++        );
++    }
++}
