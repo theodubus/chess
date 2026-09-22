@@ -515,7 +515,7 @@ n'est celui d'aucune des listes qui l'ont précédé.
 | chantier | gain de temps | **plis** | d'où vient le chiffre |
 |---|---|---|---|
 | génération par étapes | × 1,12 | **0,21** | mesuré, et c'est un majorant |
-| **dépenser la pendule (B2)** | × 1,9 | **~1,36** | mesuré : 46,9 % inutilisé |
+| **dépenser la pendule (C21)** | × 1,32 sur le **budget par coup** | **0,54 à 0,70** | mesuré — et c'est le plafond d'une allocation plate |
 | Lazy SMP 4 cœurs (B6) | × 1,7 à 2,5 | 1,0 à 1,8 | **croyance héritée, non mesurée** |
 
 Les rustines et leurs binaires de lecture sont à l'attic —
@@ -537,6 +537,56 @@ Les rustines et leurs binaires de lecture sont à l'attic —
 
 Stable sur quatre doublements, donc utilisable : **1,36 pli**, facteur de
 branchement effectif 1,67.
+
+#### Ce que dépenser la pendule vaut réellement — corrigé le 22 sept. au soir
+
+> **Ce tableau a d'abord annoncé ~1,36 pli. C'était faux d'un facteur 2,5**, et
+> la faute est conceptuelle plutôt qu'arithmétique : *j'ai confondu la
+> **ressource totale** consommée sur une partie avec l'**allocation par
+> coup***. « 47 % de pendule inutilisée, donc × 1,9 de temps » est vrai du
+> total et faux du budget — celui-ci vaut `restant / movestogo`, donc il est
+> proportionnel à ce qui reste, et dépenser plus tôt laisse moins ensuite.
+
+Balayage du diviseur sur des parties entières, `8+0,08`, 15 parties par
+réglage. La sonde ne touche pas au moteur : elle calcule son budget et le passe
+par `movetime`, que `time_budget_ms` honore directement — **en réimplémentant
+la garde de sécurité**, que ce chemin court-circuite.
+
+| diviseur | restant médian | pertes au temps | **budget moyen** | × | prof. 10-60 |
+|---|---|---|---|---|---|
+| **30** — la formule actuelle | 48,0 % | **0** | **216 ms** | 1,00 | 13,25 |
+| 24 | 34,2 % | 0 | 234 ms | 1,08 | 13,75 |
+| 20 | 32,1 % | 0 | 240 ms | 1,11 | 13,59 |
+| 16 | 24,9 % | 0 | 274 ms | 1,27 | 13,68 |
+| **12** | 14,3 % | 0 | **285 ms** | **1,32** | **13,95** |
+| 10 | 14,1 % | 0 | 283 ms | 1,31 | 13,65 |
+
+**Zéro perte au temps à tous les diviseurs**, y compris trois fois plus
+agressif que l'actuel — et c'est structurel : `restant / d` est une
+décroissance géométrique, elle ne peut pas atteindre zéro. *La documentation
+annonçait qu'un budget doublé « épuiserait l'horloge vers le coup 48, aucune
+marge » ; c'était raisonner comme si le budget était un montant fixe.*
+
+**Et ça SATURE à `d ≈ 12`** : 285 puis 283 ms. Ce n'est pas du bruit — le
+plafond d'une allocation **plate** vaut `(pendule + coups × inc) / coups`, soit
+**280 ms** pour 40 coups par camp. Le balayage a atteint la limite physique du
+problème. **Un diviseur est une famille à un paramètre** ; aucune valeur ne
+fera mieux, et dépasser ce plafond demande une allocation *inégale* — dépenser
+plus sur les positions dures — qui est un autre chantier.
+
+Deux routes concordent sur la valeur : **+0,54 pli** par conversion du × 1,32
+à travers la courbe appariée ci-dessus, et **+0,70 pli** mesuré directement sur
+les demi-coups 10 à 60. Soit une vitesse équivalente de **× 1,32**, donc
+**~32 Elo** par la règle du projet — au-dessus des ~17 qu'un job tranche.
+
+> **Pourquoi la profondeur moyenne sur la partie ENTIÈRE ne répond pas.** Une
+> première passe la donnait non monotone (−0,22 à +0,66 pli pour un budget
+> × 3). Cause : les parties **diffèrent d'un réglage à l'autre** — plus de
+> temps, d'autres coups, d'autres parties, un autre mélange de phases — et une
+> finale se cherche bien plus profond qu'un milieu de partie. On comparait donc
+> des ensembles de positions différents. C'est la raison de la colonne bridée
+> aux demi-coups 10-60, et de la conversion par le budget, qui est la seule
+> grandeur appariée.
 
 #### Le moteur laisse la moitié de sa pendule
 

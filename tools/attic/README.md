@@ -35,6 +35,7 @@ réseau.
 | `d6-sonde-ordonnancement.patch` | sonde : que peut épargner un générateur par étapes ? | **pas un changement** — 85 % des coups générés par `negamax` ne sont jamais cherchés, mais l'ordonnancement ne pèse que 26,2 % du temps. Plafond **11,5 %**, soit **0,21 pli** | `git apply --check` : **oui**, sur `main` |
 | `d6-sonde-pendule.patch` | sonde : que reste-t-il sur la pendule, et que vaut chaque raffinement de B2 ? | **pas un changement** — **46,9 % de la pendule inutilisée** en fin de partie, soit ~1,36 pli. « S'arrêter tôt sur un coup stable » **réfuté** aux deux cadences | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
 | `d6-sonde-profondeur.patch` | sonde : combien de plis un doublement de vitesse achète-t-il ? | **pas un changement** — **1,36 pli par doublement**, stable sur quatre doublements. C'est l'unité qui rend les chantiers comparables | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
+| `d6-sonde-budget.patch` | sonde : quelle formule de budget épuise la pendule, et ce qu'elle vaut | **pas un changement** — corrige un chiffre publié : dépenser la pendule vaut **0,54 à 0,70 pli**, pas ~1,36. Le budget par coup ne monte que de **× 1,32** et **sature** au plafond d'une allocation plate | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
 
 **La dernière colonne n'est pas de la prose : elle est vérifiée.**
 `engine/tests/rustines_attic.rs` confronte chaque `oui` / `non` au vrai
