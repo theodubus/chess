@@ -403,6 +403,21 @@ une mesure, pas une préférence.
   31 637 à 31 942 nœuds. <span>Limite mesurée, pas supposée : il n'attrape pas
   tout — un mutant sur l'ordonnancement des promotions ne change pas ces six
   arbres. Le banc est un échantillon, comme le rappelle le piège voisin.</span>
+  <br>**Ce qu'il a rapporté, mesuré le 22 sept. : 163 mutants tués par un seul
+  test.** `search.rs` 110 → **45**, `eval.rs` 219 → **121**, total du dépôt
+  336 → **173**. Le trou ne datait pas de la veille : il existait depuis la
+  création du cliquet.
+- **Un mutant « de réglage » n'est hors de portée des tests que si rien de
+  DÉTERMINISTE ne dépend du réglage.** Le plafond d'`eval.rs` était justifié
+  depuis le 15 sept. 2026 par « le fichier est en très grande part des VALEURS,
+  ~189 des survivants sont des `delete -` sur les tables piece-square, et seul
+  un SPRT peut en juger ». **La prémisse est vraie, la conclusion était
+  fausse** : une valeur d'évaluation change le *goût* du moteur — c'est
+  l'argument, et il tient — mais elle change aussi son **arbre**, et un arbre
+  se compte. Quatre-vingt-dix-huit de ces mutants étaient attrapables depuis
+  toujours par un simple nombre de nœuds. Avant de classer un survivant
+  « affaire de SPRT », chercher ce qui dépend de lui **de façon
+  déterministe**.
 - **Un garde-fou peut être correct et garder la mauvaise chose.** Le contrôle
   du cliquet de mutation confrontait le plafond au balayage — ce qui est juste
   — mais rien ne confrontait ces listes à `engine/src/`. `see.rs`, né le
