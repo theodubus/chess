@@ -235,6 +235,43 @@ sur douze positions de vraies parties :
 | ~15+0,15 | 14,0 |
 | ~30+0,3 | **17,0** |
 
+## Ce que `tools/src/bin/` contient
+
+Six binaires, tous hors ligne : aucun n'est appelé par le moteur, et aucun ne
+change sa force. Ils sont nommés ici **avec leur extension**, parce que c'est
+ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
+
+| binaire | ce qu'il fait |
+|---|---|
+| `bookgen.rs` | génère le livre d'ouvertures EPD, de façon reproductible. Sans livre, le moteur étant déterministe, toutes les parties d'un match sont la même partie |
+| `datagen.rs` | produit le corpus `FEN;résultat` de l'ajustement Texel, étiqueté par le **résultat de la partie** et jamais par le score de l'évaluation. Sert aussi à tirer des positions de vraies parties pour toute sonde |
+| `tune.rs` | l'ajustement Texel lui-même. Son verdict a été **rejeté** (−9,96 Elo) ; l'outil reste parce qu'il resservira avec un corpus plus grand |
+| `nnue_probe.rs` | le benchmark obligatoire de B4 : ce que coûtent le copy-make (7,2 %) et la dérivation du delta d'accumulateur NNUE (2,8 %) en part du temps d'un nœud |
+| `see_check.rs` | confronte l'échange statique à un oracle par force brute. Il a trouvé un **bug du manuel** au premier passage — 27 valeurs fausses sur 771 |
+| `attack_dump.rs` | confronte la géométrie d'attaque de `see::least_valuable_attacker` à `python-chess`, case par case |
+
+> **Ce répertoire était le trou d'un garde-fou, et il l'a laissé passer deux
+> fois.** `outillage_documente.rs` balayait `tools/` pour les `.sh`
+> **uniquement**, donc il n'a jamais regardé les binaires. Le 22 sept. 2026,
+> trois sondes jetables y ont été déposées : **cargo découvre `src/bin/*.rs`
+> tout seul**, donc elles ont été compilées sans être ni déclarées dans
+> `tools/Cargo.toml` ni documentées — et l'arbre a cessé de compiler dès que
+> l'instrumentation qu'elles importaient a été retirée. En bouchant le trou on
+> découvre que **cinq des six binaires n'étaient nommés nulle part**, dont
+> `attack_dump.rs` depuis sa création.
+>
+> Même famille que Q4, où `see.rs` est resté cinq jours hors du cliquet de
+> mutation : *le garde-fou était correct et gardait le mauvais ensemble*. La
+> question n'est pas « ce dispositif marche-t-il ? » mais **« quelle est sa
+> source de vérité, et est-ce la bonne ? »** — ici le répertoire que cargo
+> compile, jamais la liste qu'on a en tête.
+>
+> **Et `attack_dump.rs` comme `see_check.rs` ne sont pas déclarés dans
+> `tools/Cargo.toml`**, contrairement aux quatre autres. Ils fonctionnent par
+> autodécouverte. Ce n'est pas une faute — c'est ce qui rend le dépôt de
+> sondes si facile, et c'est exactement pourquoi la documentation doit être la
+> barrière.
+
 ## Vérifier que l'arbitre est fiable
 
 ```sh
@@ -503,6 +540,68 @@ aussi) ou **multiplie une magnitude** (aspiration × 2,7, trois termes × 2,5).
 > sous-estime ». Le séparer demanderait un contrôle apparié à `1+0,01` sur la
 > base actuelle — et cette fois l'imputation changerait quelque chose, parce
 > qu'elle dirait si l'érosion vient de l'empilement ou du régime.</span>
+
+### EN VOL au 22 sept. 2026, 22 h 30 UTC — le SPRT de C21
+
+**Ce qui tourne** : [run 35784289654](https://github.com/theodubus/chess/actions/runs/35784289654),
+candidat `ebe93ad` (défaut de `movestogo` 30 → 12) contre `6d5e7c6`, SPRT
+bornes `[0, 5]` à `8+0,08`, graine `20260913`. Lancé à 21 h 04 UTC, **plafond
+de 350 min donc mort au plus tard à 02 h 54 UTC**.
+
+| repère | valeur |
+|---|---|
+| cadence mesurée du job | **6,45 s par partie** |
+| ce qui tient dans le plafond | **~3 250 parties** |
+| budget estimé du verdict | ~1 850 parties, soit ~3 h 20 |
+
+> **Le risque, et il est réel.** Le budget vient de ~32 Elo attendus, lesquels
+> viennent de « 1 % de vitesse ≈ 1 Elo » — **une constante héritée, jamais
+> mesurée sur ce projet**. Si l'effet réel est sous ~18 Elo, le SPRT **expire**
+> et rend une estimation biaisée vers zéro, donc inexploitable comme verdict.
+> Un match à longueur fixe y aurait été robuste. *Le choix du SPRT était
+> défendable ; ne pas énoncer ce risque avant de lancer ne l'était pas.*
+
+**Ce qu'il faut faire au verdict**, dans cet ordre :
+
+1. Lire **l'étalonnage du runner** en tête du résumé — deux runs ne se
+   comparent pas sans lui.
+2. **Zéro perte au temps sur le match entier**, lu dans le journal de
+   l'arbitre et non supposé. *Ce contrôle compte plus que l'Elo* : une
+   formule de budget qui gagne 30 Elo et perd une partie au temps sur mille
+   est un mauvais échange.
+3. Inscrire le verdict ici avec sa cadence et son effectif, puis la fiche C21
+   et le §1 du carnet.
+4. **Si H1** : la branche `claude/project-documentation-review-denp0n` porte
+   `ebe93ad` (C21) *et* `3ea9173` (le correctif du plafond de `match.yml`,
+   indépendant). PR puis fusion en `merge`.
+5. **Si H0** : retirer le changement de `movestogo`, **garder** le correctif de
+   `match.yml`, déposer la rustine à l'attic avec son verdict.
+6. **S'il expire** : ne pas le reprendre ni le prolonger — un test séquentiel
+   interrompu puis prolongé n'a plus ses taux d'erreur. Relancer en **longueur
+   fixe**, dont l'estimation reste non biaisée quand elle est coupée.
+
+**Ce que ce verdict donne en plus de C21** : l'Elo par pli, à la profondeur où
+le moteur joue. C21 vaut +0,54 pli, donc `Elo / 0,54` est la constante
+manquante qui convertit les trois chantiers de D6. *Un match à profondeur fixe
+10 contre 11 aurait donné le même chiffre trois plis trop haut, pour un job de
+plus — il n'est donc pas acheté.*
+
+### Ce qui reste à faire, par ordre mesuré
+
+| chantier | plis | état |
+|---|---|---|
+| **C21 — dépenser la pendule** | 0,54 à 0,70 | **écrit, en mesure** |
+| génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
+| **B9 — table à entrées atomiques** | — | prérequis dur de B6. **Réserve non vérifiée** : sa fiche dit le coût « plat », mais personne n'a mesuré si des entrées atomiques ralentissent la recherche **monothread**. Se mesure par nœuds identiques au bit près + `timing.sh` |
+| B6 — Lazy SMP | 1,0 à 1,8 | **seul chiffre encore hérité** du tableau. Le mesurer exige B9 |
+| B7 / C13 | — | inchangés, bloqués sur leurs déclencheurs |
+
+> **B8 (réglage des constantes de recherche) : son déclencheur écrit est
+> ATTEINT et personne ne l'a relevé.** Sa fiche dit « quand le jeu de
+> fonctionnalités est figé, c'est-à-dire après C12 et après la décision sur
+> les extensions d'échec » — C12 clos le 21 sept., C18 mesuré et non fusionné.
+> **La lettre est satisfaite, l'esprit non** : C17, C19 et bientôt C21 sont
+> entrés depuis. *Le déclencheur était sous-spécifié.*
 
 ### Trois chantiers, une seule unité — mesuré le 22 sept. 2026
 

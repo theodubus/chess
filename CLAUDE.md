@@ -271,6 +271,14 @@ une mesure, pas une préférence.
   l'instrumentation ET son lecteur dans le même patch, à l'attic, ou ni l'un ni
   l'autre. Pour itérer sans casser l'arbre, une crate jetable hors du dépôt qui
   dépend du moteur par chemin.
+  <br>**Et le garde-fou qui aurait dû l'attraper avait un trou, plus large que
+  l'incident.** `engine/tests/outillage_documente.rs` balayait `tools/` pour
+  les `.sh` **uniquement** : il n'a jamais regardé `tools/src/bin/`. En l'y
+  étendant, **cinq des six binaires se révèlent non documentés**, dont
+  `attack_dump.rs` depuis sa création — et deux ne sont même pas déclarés dans
+  `tools/Cargo.toml`, ils vivent par autodécouverte. Troisième occurrence de
+  « un garde-fou correct qui garde le mauvais ensemble », après `see.rs` hors
+  du cliquet (Q4) et le chiffre de bench lu dans un seul fichier (B10).
 - **Un mécanisme vérifié à l'arithmétique qui ne retombe pas sur la mesure
   n'est pas réfuté — il est incomplet, et le résidu se nomme.** Le gaspillage
   de pendule était prédit à 31 % de restant par le modèle `restant/30 + inc/2`
@@ -645,6 +653,23 @@ une mesure, pas une préférence.
   `workflow_dispatch`** : les runners GitHub ne dorment pas, et le journal
   reste lisible après coup. C'est ainsi que le plafond d'`eval.rs` a fini par
   être mesuré.
+- **Un plafond technique affiché comme une cible fait passer un run sain pour
+  un run mort.** `match.yml` codait `-rounds 20000`, donc fastchess imprimait
+  « Started game 688 of 40000 » : impossible de distinguer à l'œil « il reste
+  du chemin » de « il n'ira jamais au bout ». **Cette ligne a induit la même
+  erreur de lecture deux fois le 22 sept. 2026** — dont une sur le run de
+  delta, qui venait précisément d'expirer. Le plafond n'a aucun effet
+  statistique, donc le corriger ne coûte rien ; mais **le caler sur
+  l'estimation exacte serait pire que le laisser faux**, parce qu'une
+  estimation conservatrice de 25 % tronquerait des parties que le job aurait
+  pu jouer. *Un dommage statistique réel pour réparer un affichage est un
+  mauvais échange* : le plafond est posé à 1,5 × l'estimation, et une notice
+  dit ce que le job atteint.
+  <br>**Et l'estimation reste délibérément non calibrée**, alors que deux
+  matchs donnent un facteur 0,77 stable. Ce facteur **est** le gaspillage de
+  pendule — un moteur qui laisse 48 % de son horloge finit ses parties plus
+  vite que la cadence nominale — donc C21 le fera dériver vers 1 en
+  fusionnant. *Une constante qu'un chantier en cours invalide ne s'écrit pas.*
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.
@@ -707,6 +732,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les critères d'acceptation, le bench. <s>les trois critères</s> — leur nombre n'est plus écrit : il a changé, et un compteur en prose naît périmé |
 | `engine/tests/rustines_attic.rs` | critère d'acceptation : confronte la colonne « s'applique sur `main` ? » de `tools/attic/README.md` au vrai `git apply --check`, **dans les deux sens** — rustine non déclarée et déclaration sans rustine échouent autant qu'un verdict faux. Trois lignes sur sept étaient fausses le 22 sept. 2026, toutes par la même fusion. `#[ignore]` parce qu'il lance `git` : `cargo mutants` travaille sur une copie de l'arbre, et **aucun mutant d'`engine/src/` ne peut changer si une rustine s'applique**, donc il n'a rien à y tuer |
+| `engine/tests/outillage_documente.rs` | exige que chaque dispositif soit **nommé avec son extension** dans une doc — scripts de `tools/`, workflows, hooks, et depuis le 22 sept. 2026 les **binaires de `tools/src/bin/`**, qui étaient son angle mort. Énumération par répertoire et par extension, jamais nom par nom |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
 | `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Remesuré le 21 sept. 2026 : 58 % d'écart entre deux runners sur le même binaire** (2 067 101 contre 3 268 241 n/s, profondeurs 11 et 12), contre les 25 % relevés le 16. Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
 
