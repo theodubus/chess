@@ -231,7 +231,48 @@ jobs:
             tools/arbiters/fastchess "${commun[@]}" -rounds "$rondes" \
               | tee /tmp/match.log
           else
-            tools/arbiters/fastchess "${commun[@]}" -rounds 20000 \
+            # LE PLAFOND DU SPRT NE DOIT PAS FAIRE CROIRE À UN RUN À 2 %.
+            #
+            # Il valait `-rounds 20000` en dur, et fastchess imprime alors
+            # « Started game 688 of 40000 » — ce qui fait ressembler un run
+            # SAIN à un run à 2 %. **Cette ligne a induit la même erreur de
+            # lecture deux fois le 22 sept. 2026**, dont une sur un run qui
+            # venait précisément d'expirer : impossible de distinguer à l'œil
+            # « il reste du chemin » de « il n'ira jamais au bout ».
+            #
+            # CE QUI EST RÉPARÉ, ET CE QUI NE L'EST PAS. Le plafond passe
+            # d'un 20 000 arbitraire à une valeur du bon ordre de grandeur, et
+            # une notice dit ce que le job peut réellement atteindre. Ce que je
+            # n'ai PAS fait : caler le plafond sur l'estimation exacte. Elle
+            # est conservatrice de 15 % (7,47 s/partie prédites contre 6,45
+            # mesurées à 8+0,08 — le moteur ne dépense pas toute sa pendule),
+            # donc un plafond serré TRONQUERAIT des parties que le job aurait
+            # pu jouer. **Un dommage statistique réel pour réparer un problème
+            # d'affichage est un mauvais échange** : le facteur 1,5 garantit
+            # que c'est l'horloge du job qui décide, jamais ce nombre.
+            #
+            # POURQUOI L'ESTIMATION N'EST PAS CALIBRÉE, alors qu'on a deux
+            # points pour le faire. Les matchs réels donnent 5,62 s/partie à
+            # 8+0,08 (3738 parties) et 21,9 s à 30+0,3 (960 parties), soit un
+            # facteur 0,77 contre la formule — stable sur les deux. Tentant de
+            # le baker. **Mais ce facteur EST le gaspillage de pendule** : si
+            # le moteur laisse 48 % de son horloge, ses parties finissent plus
+            # vite que la cadence nominale. C21 corrige exactement cela, donc
+            # la constante dériverait vers 1 le jour où il fusionne. *Une
+            # constante qu'un chantier en cours invalide ne s'écrit pas* —
+            # même famille que le chiffre de référence qui vieillit en prose,
+            # sauf qu'ici on connaît d'avance ce qui va le périmer.
+            base=$(echo "${{ inputs.cadence }}" | cut -d+ -f1)
+            inc=$(echo "${{ inputs.cadence }}"  | cut -d+ -f2)
+            par_partie=$(awk -v b="$base" -v i="$inc" -v c="$concurrence" \
+              'BEGIN { printf "%.3f", 2 * (b + 40 * i) / c }')
+            tient=$(awk -v s="$par_partie" 'BEGIN { printf "%d", 350 * 60 / s }')
+            plafond=$(( tient * 3 / 2 ))
+            echo "::notice::Ce job atteint au moins ~$tient parties à ${{ inputs.cadence }}" \
+                 "(estimation CONSERVATRICE de ~$par_partie s/partie, plafond de 350 min :" \
+                 "les deux matchs historiques ont fait 25 % de plus). Le SPRT s'arrêtera" \
+                 "avant s'il tranche ; ce nombre n'est PAS une cible."
+            tools/arbiters/fastchess "${commun[@]}" -rounds $(( (plafond + 1) / 2 )) \
               -sprt elo0="${{ inputs.elo0 }}" elo1="${{ inputs.elo1 }}" \
                     alpha=0.05 beta=0.05 model=normalized \
               | tee /tmp/match.log
