@@ -1379,8 +1379,36 @@ pub fn random_legal_move(board: &Board) -> Option<Move> {
 /// des parties au temps**, ce qu'aucun SPRT ne distingue d'une faiblesse de
 /// jeu.
 ///
-/// Volontairement grossier : la gestion fine du temps est un travail à part
-/// entière, qui viendra avec son propre verdict.
+/// # Pourquoi `MOVES_TO_GO_DEFAUT` vaut douze
+///
+/// Il valait **trente**, et le moteur finissait ses parties avec **48 % de sa
+/// pendule inutilisée** — mesuré sur des parties entières, pas supposé. La
+/// formule suppose qu'il reste trente coups *toujours*, dans des parties qui
+/// en font quatre-vingt-dix-sept.
+///
+/// Douze est le **point de saturation**, et ce n'est pas un réglage au juger :
+/// le plafond d'une allocation *plate* vaut `(pendule + coups × inc) / coups`,
+/// soit 280 ms pour quarante coups par camp à `8+0,08` — et le diviseur douze
+/// alloue 285 ms là où le trente n'en alloue que 216. En dessous de douze, le
+/// budget ne monte plus : dix en alloue 283. **Un diviseur est une famille à
+/// un paramètre qui bute sur la physique du problème.**
+///
+/// Ce que ça achète : × 1,32 sur le budget par coup, soit **+0,54 pli** par la
+/// courbe profondeur/temps du projet, et +0,70 pli mesuré directement.
+/// Attention au piège qui a coûté un chiffre publié : *× 1,9 sur la ressource
+/// TOTALE consommée ne fait pas × 1,9 sur l'allocation par coup*, le budget
+/// étant proportionnel à ce qui reste.
+///
+/// **Zéro perte au temps** aux deux cadences (`8+0,08` et `1+0,01`) et à tous
+/// les diviseurs jusqu'à dix — c'est structurel, `restant / d` est une
+/// décroissance géométrique qui n'atteint jamais zéro.
+///
+/// Quand l'interface FOURNIT `movestogo` — cadence de tournoi, « quarante
+/// coups en deux heures » — c'est le vrai nombre de coups avant le prochain
+/// contrôle, et on l'honore tel quel. Cette constante n'est que le défaut.
+///
+/// Reste grossier : dépenser *inégalement* — plus sur les positions dures —
+/// est un autre chantier, et le seul moyen de dépasser le plafond plat.
 #[must_use]
 fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
     if limits.infinite {
@@ -1397,12 +1425,18 @@ fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
     };
     let remaining = remaining?;
     let increment = increment.unwrap_or(0);
-    let moves_to_go = u64::from(limits.movestogo.unwrap_or(30)).max(1);
+    let moves_to_go = u64::from(limits.movestogo.unwrap_or(MOVES_TO_GO_DEFAUT)).max(1);
     let budget = remaining / moves_to_go + increment / 2;
     // Toujours garder une marge : une pendule à zéro perd la partie, quelle
     // que soit la position.
     Some(budget.clamp(1, remaining.saturating_sub(50).max(1)))
 }
+
+/// Coups supposés restants quand l'interface n'annonce pas `movestogo`.
+///
+/// Mesuré, pas choisi : voir `time_budget_ms`. Valait trente, ce qui laissait
+/// 48 % de la pendule inutilisée en fin de partie.
+const MOVES_TO_GO_DEFAUT: u32 = 12;
 
 /// La graine du tirage : le hash Zobrist, forcé impair.
 ///
@@ -2690,10 +2724,18 @@ mod tests {
             time_budget_ms(&pendule(60_000, 100, Some(30)), Color::White),
             Some(2_050)
         );
-        // Sans `movestogo`, la convention du moteur est trente coups.
+        // Sans `movestogo`, la convention du moteur est DOUZE coups —
+        // mesurée, pas choisie : à trente, 48 % de la pendule restait
+        // inutilisée en fin de partie. 60000/12 + 100/2.
         assert_eq!(
             time_budget_ms(&pendule(60_000, 100, None), Color::White),
-            Some(2_050)
+            Some(5_050)
+        );
+        // Et la valeur fournie par l'interface prime sur le défaut : une
+        // cadence de tournoi annonce le vrai nombre de coups restants.
+        assert_ne!(
+            time_budget_ms(&pendule(60_000, 100, Some(30)), Color::White),
+            time_budget_ms(&pendule(60_000, 100, None), Color::White)
         );
         // L'incrément compte pour moitié, et rien d'autre ne bouge.
         assert_eq!(
