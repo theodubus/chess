@@ -488,14 +488,106 @@ aussi) ou
 Le sens ne s'est jamais inversé — *mesurer court sous-estime ce dont la valeur
 croît avec la profondeur*, et le facteur observé tourne autour de 2,5.
 
-**Ce que D5 n'a toujours pas trouvé : une érosion.** Zéro sur deux. La fiche
-cherchait des acquis devenus caducs ; elle a trouvé deux acquis sous-évalués.
-<span><strong>Inférence, confiance faible</strong> : deux points ne font pas
-une règle, et les deux portent sur des mécanismes qui ne se recouvrent pas
-beaucoup avec ce qui est venu après. Un acquis qui coupe dans le même arbre
-qu'un mécanisme plus récent — la futilité inverse contre l'élagage delta, par
-exemple — reste le cas où une érosion serait plausible, et il n'est pas
-mesuré.</span>
+**Ce que D5 n'a toujours pas trouvé : une érosion.** Zéro sur deux en Elo. La
+fiche cherchait des acquis devenus caducs ; elle a trouvé deux acquis
+sous-évalués. <span><strong>Inférence, confiance faible</strong> : deux points
+ne font pas une règle, et les deux portent sur des mécanismes qui ne se
+recouvrent pas beaucoup avec ce qui est venu après.</span>
+
+### L'érosion se cherche d'abord en nœuds — mesuré le 22 sept. 2026
+
+<s>Un acquis qui coupe dans le même arbre qu'un mécanisme plus récent reste le
+cas où une érosion serait plausible, et il n'est pas mesuré.</s> **Il l'est
+maintenant, et la paire que cette phrase nommait n'était pas la bonne.**
+
+Un SPRT de retrait coûte un job ; l'**empreinte en nœuds** d'un acquis se
+mesure en trois minutes et elle est déterministe. Elle ne dit pas l'Elo — huit
+mesures l'interdisent — mais elle dit **exactement** quelle part de l'arbre
+l'acquis façonne encore, donc elle dit lequel remesurer d'abord. Nœuds au banc,
+base `a57c835` :
+
+| acquis retiré | prof. 7 | prof. 10 | rapport aujourd'hui | à son verdict |
+|---|---|---|---|---|
+| futilité inverse | 180 642 | 1 335 143 | ÷ **1,58** | ÷ 1,45 |
+| élagage delta | 138 458 | 725 621 | ÷ **1,21** | ÷ 1,68 |
+| mobilité (poids nuls) | 95 841 | 550 093 | × **1,19** | × 1,29 |
+
+*(Base : 114 028 et 635 210. Les deux premiers sont désactivés par une seule
+constante — `RFP_MAX_DEPTH = -1`, `DELTA_MARGIN` porté à 10⁹ — donc le nombre
+de nœuds mesure la seule décision, sans le coût.)*
+
+**Un seul des trois s'est érodé, et ce n'est pas celui que la phrase barrée
+désignait.** L'élagage delta façonne aujourd'hui **÷ 1,21** de l'arbre contre
+÷ 1,68 à son verdict ; la futilité inverse, elle, en façonne **plus** qu'alors
+(÷ 1,45 → ÷ 1,58, et ÷ 2,10 à la profondeur 10).
+
+### Et la cause de l'érosion de delta est mesurée, pas supposée
+
+Delta et C19 coupent au même endroit — des **captures**, en **quiescence**. Les
+quatre coins, nœuds déterministes :
+
+| | delta oui | delta NON | économie marginale de delta |
+|---|---|---|---|
+| **SEE oui** (`main`) | 114 028 | 138 458 | ÷ 1,21 |
+| **SEE non** | 187 526 | 283 352 | ÷ **1,51** |
+
+À la profondeur 10 : ÷ 1,14 avec SEE, ÷ **1,37** sans. **L'élagage par échange
+statique absorbe environ la moitié de ce qui restait à delta.** Le contrôle
+d'indépendance le dit autrement : si les deux mécanismes ne se touchaient pas,
+retirer les deux coûterait 114 028 × 1,645 × 1,214 = **227 700** nœuds ; la
+mesure rend **283 352**, soit **+24 %**. Chacun est moins utile quand l'autre
+est là — c'est la signature d'un recouvrement, et elle est chiffrée.
+
+> **Ce que ça ne dit PAS.** Ni que delta a perdu de l'Elo, ni de combien. Un
+> rapport de nœuds mesure le coût, jamais la force : le projet a huit mesures
+> où les deux ne se classent pas ensemble, dont deux de signes opposés. **Ce
+> que ça dit, c'est où acheter le prochain match** — et c'est la première fois
+> que D5 a une raison mesurée de préférer une de ses lignes à une autre, là où
+> la fiche disait « il n'y a plus d'ordre imposé ».
+
+**Budget.** 59 256 ÷ 32,5 ≈ 1 825 parties, donc un job — et c'est un
+**majorant**, l'Elo mis dans la division venant d'un verdict à `1+0,01`. Seule
+réserve réelle : si delta est tombé *entre* −5 et 0, aucun job ne tranchera,
+puisqu'il faudrait ~11 900 parties. Les deux lignes de D5 déjà mesurées ont
+tranché en 1 154 et 1 580.
+
+### En vol — SPRT de retrait de l'élagage delta
+
+**Lancé le 22 sept. 2026 à 10 h 15 UTC**,
+[run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914),
+vérifié `in_progress` dans Actions et non supposé lancé.
+
+| | |
+|---|---|
+| candidat | `cbaa8d4` (branche `mesure/d5-delta`) — appel à `delta_prunable` supprimé |
+| référence | `a57c835` |
+| bornes | `[-5, 0]` — la convention de vérification d'un retrait |
+| cadence | `8+0.08` · graine `20260913` |
+| banc du candidat | **138 458** nœuds (prof. 7), **725 621** (prof. 10) |
+
+**Le candidat supprime l'appel, il ne le neutralise pas.** Porter
+`DELTA_MARGIN` à 10⁹ aurait donné le même arbre — c'est d'ailleurs le contrôle
+qui a validé la suppression, au bit près — mais aurait laissé en place un
+`captured_piece` par capture de quiescence, donc sur 90 % des nœuds. La mesure
+d'origine avait ajouté la décision **et** son coût ; l'inverse exact retire les
+deux. Même raisonnement que le candidat des trois termes, qui commentait les
+lignes au lieu de mettre les poids à zéro.
+
+> **Piège payé en construisant ce candidat, et il est neuf.** Le premier essai
+> a rendu **323 977** nœuds au lieu des 138 458 attendus. Cause : `origin/main`
+> était figé onze commits en arrière dans le clone local — à `5baf014`, le
+> 15 sept. — alors que le distant portait bien `a57c835`. **Ce n'était pas le
+> binaire qui était périmé, c'était la référence git**, et le symptôme est
+> identique. Seule la valeur attendue l'a révélé. *Avant de construire une
+> référence ou un candidat, `git fetch` puis comparer à `git ls-remote` — un
+> `git log` local ne dit rien de l'état du distant.*
+
+**Une limite propre à la ligne « mobilité », à connaître avant de l'acheter.**
+Son retrait exact n'est plus disponible. Quand la mobilité a été mesurée le
+14 sept., elle apportait *avec elle* toute la boucle d'attaques de `activity` ;
+cette boucle sert désormais aussi au terme de danger du roi, donc la retirer
+laisserait son coût en place. Le candidat ne peut retirer que la décision, pas
+le coût — l'inverse exact de ce qu'exigeait le candidat des trois termes.
 
 **Le nombre de nœuds n'est pas une mesure de force.** Les mesures ci-dessous le
 disent, et elles ne s'ordonnent pas de la même façon :

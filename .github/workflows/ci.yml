@@ -42,7 +42,8 @@ jobs:
       - name: Tests (release)
         run: cargo test --workspace --release
 
-      # Trois critères d'acceptation, tous binaires.
+      # Les critères d'acceptation, tous binaires. Leur nombre n'est pas écrit
+      # ici : un compteur en prose naît périmé, et celui-ci a déjà changé.
       # Perft : six positions jusqu'aux profondeurs 5 et 6, 593 millions de
       # nœuds en environ deux secondes — la génération de coups passe ou non.
       # Tournoi : vingt-quatre parties entières contre un adversaire jouant au
@@ -53,7 +54,12 @@ jobs:
       # de l'arbre de recherche rend donc cette étape rouge tant que CLAUDE.md
       # n'est pas mis à jour — c'est l'effet recherché, et le message d'échec
       # donne le chiffre à recopier.
-      - name: Critères d'acceptation (perft, tournoi, référence du bench)
+      # Rustines de l'attic : la colonne « s'applique sur main ? » de
+      # tools/attic/README.md est confrontée au vrai `git apply --check`. Trois
+      # de ses sept lignes étaient fausses le 22 sept. 2026, toutes par la même
+      # fusion, et rien ne pouvait le signaler. Ce répertoire sert à ne PAS
+      # réécrire de mémoire un code déjà mesuré ; une colonne fausse y envoie.
+      - name: Critères d'acceptation (perft, tournoi, référence du bench, rustines)
         run: cargo test --workspace --release -- --ignored
 
       # Détecteur de régression de performance. La sortie se termine par

@@ -47,7 +47,7 @@ d'un aveu sur la profondeur de recherche.
 | Dossier | Contenu | Statut |
 |---|---|---|
 | `engine/` | Moteur UCI en Rust | Recherche et évaluation, monothread |
-| `ui/` | Interface TypeScript | Pas démarré — consignes dans `ui/CLAUDE.md` |
+| `ui/` | Interface TypeScript | **En chantier, mené séparément** — consignes dans `ui/CLAUDE.md` |
 | `tools/` | Arbitres, livre d'ouvertures, SPRT | Opérationnel |
 
 Le moteur et l'interface ne communiquent que par le protocole UCI sur
