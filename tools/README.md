@@ -608,23 +608,59 @@ d'arrêt dépend des données, donc l'échantillon survivant est conditionné à
 biaise l'estimation **vers zéro**. Ne pas le reprendre ni le prolonger — un
 test séquentiel interrompu puis repris n'a plus ses taux d'erreur.
 
-**Ce qui est établi, et c'est le point qui compte** — <span>confiance
-élevée</span> : **l'élagage delta ne vaut plus rien qui ressemble aux +32,5 Elo
-de son verdict d'origine.** Un effet de cette taille aurait fait tomber H0 vers
-**1 825 parties** d'après la relation de budget ; à **3 738**, soit deux fois
-plus, la LLR est à 2 % du chemin et le point estimé est à **−1,5**. Le
-protocole a eu tout le loisir de trancher ; il ne l'a pas fait parce qu'il n'y
-a rien de gros à trancher.
+> **Le journal s'arrête sur `Started game 3761 of 40000`, et ce nombre ne
+> veut pas dire ce qu'il a l'air de dire.** `40000` est le **plafond** du
+> SPRT — `match.yml` passe `-rounds 20000` à côté de `-sprt elo0 elo1
+> alpha=0.05 beta=0.05`. La règle d'arrêt est la LLR qui touche ±2,94 ; le
+> plafond n'existe que pour donner une borne finie à l'arbitre. Un SPRT qui
+> *atteindrait* 40 000 parties serait un échec de dimensionnement, pas son
+> fonctionnement normal. **« Le run n'a pas fini les 40 000 » ne porte donc
+> aucune information**, ni pour ni contre.
+
+**Ce qui est établi, et ça ne vient PAS de la relation de budget** —
+<span>confiance élevée</span> : **l'élagage delta ne vaut plus rien qui
+ressemble aux +32,5 Elo de son verdict d'origine.** La preuve est l'intervalle
+lui-même. 3 738 parties donnent σ = 7,83 ÷ 1,96 = **3,995 Elo**, et chaque
+hypothèse se place en écarts-types du point estimé :
+
+| hypothèse sur le retrait | écart à −1,49 | en σ |
+|---|---|---|
+| **−32,5** — le verdict d'origine | 31,01 | **7,8** |
+| −20 | 18,51 | 4,6 |
+| −15 | 13,51 | 3,4 |
+| −10 | 8,51 | 2,1 |
+| −5 — la borne basse | 3,51 | 0,9 |
+| 0 — la borne haute | 1,49 | 0,4 |
+
+Le **biais de troncature joue contre −32,5, pas pour lui** : l'échantillon est
+conditionné à « la LLR n'a jamais touché ±2,94 », ce qui écrête les
+trajectoires extrêmes et tire l'estimation **vers zéro**. La vraie valeur peut
+donc être plus négative que −1,5 ; elle ne peut pas être à −32,5.
+
+> **La convention du `±` a été vérifiée, pas supposée.** Ce projet divisait le
+> `± 7,83` par 1,96 en tenant pour acquis que fastchess publie un IC à 95 %,
+> sans jamais l'avoir contrôlé. Recalculé le 22 sept. par une route
+> indépendante — variance pentanomiale des comptes Ptnml, dérivée de la
+> logistique au score observé — σ vaut **3,9934**, contre **3,9949** par la
+> division. Elles s'accordent à **0,04 %**, et l'Elo reconstruit (−1,487)
+> tombe sur le publié. *La convention tient ; elle ne tenait pas parce qu'on
+> l'avait écrite.*
 
 **Ce qui n'est PAS établi** — <span>la valeur réelle, son signe compris</span>.
-L'intervalle `[−9,3 ; +6,3]` est plus large que la bande `[-5, 0]` elle-même.
+L'intervalle `[−9,3 ; +6,3]` est plus large que la bande `[-5, 0]` elle-même :
+un retrait qui coûterait −10 Elo est à 2,1 σ, donc peu probable mais pas exclu.
 
-> **Et c'est structurel, pas un manque de parties.** Des bornes `[-5, 0]`
-> testent « l'effet vaut −5 » contre « l'effet vaut 0 » : un effet situé
-> **entre les deux** rend le test maximalement indécis et son effectif attendu
-> explose. La LLR à 0,06 après 3 738 parties dit exactement cela — les données
-> tombent au milieu. **Acheter plus de parties à ces bornes-là est un mauvais
-> emploi du temps machine** ; il faudrait d'autres bornes, pas plus de jeu.
+> **Pourquoi ce test-là n'aurait sans doute pas tranché en un job** —
+> <span>inférence, confiance moyenne</span>. Des bornes `[-5, 0]` testent
+> « l'effet vaut −5 » contre « l'effet vaut 0 » : **si** l'effet est tombé
+> entre les deux, le test est maximalement indécis et son effectif attendu
+> explose. La LLR à 0,06 après 3 738 parties est cohérente avec ce cas — mais
+> elle l'est tout autant avec un effet un peu au-delà des bornes, que 3 738
+> parties ne séparent pas de zéro. <s>C'est structurel, pas un manque de
+> parties : l'effet est situé entre les deux.</s> **Cette phrase affirmait
+> plus que l'intervalle ne porte** et elle est retirée. Ce qui est sûr : à ces
+> bornes-là, le protocole n'a pas convergé en un job. Ce qui ne l'est pas :
+> que la cause soit un effet strictement intérieur à la bande.
 
 **Le contrôle de vraisemblance ne s'applique pas ici, et il faut le dire.**
 `parties × Elo` vaut 5 570, très loin des 59 256 du projet — mais cette
