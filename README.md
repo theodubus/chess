@@ -30,8 +30,14 @@ d'un aveu sur la profondeur de recherche.
 > au retrait, p ≈ 0,0004), et sécurité du roi + structure de pions + colonnes
 > de tours 2,5 fois plus (+14,9 annoncé, **−37,5 ± 13,4 au retrait** le
 > 22 sept.). Même sens à chaque fois : *mesurer court sous-estime ce dont la
-> valeur croît avec la profondeur*. La revalidation continue ; à ce jour aucun
-> acquis remesuré n'a perdu de valeur.
+> valeur croît avec la profondeur*.
+>
+> **Mais un acquis peut fondre par EMPILEMENT, et c'est mesuré depuis le
+> 22 sept. :** l'élagage delta en quiescence valait **+32,5 Elo** à `1+0,01` ;
+> remesuré à `8+0,08` sur une base qui a gagné l'échange statique entre-temps,
+> son retrait ne coûte plus que **−1,5 ± 7,8**, sans verdict. Les deux coupent
+> les mêmes captures au même endroit. Il reste dans le moteur — rien
+> n'autorise à le retirer — mais il ne vaut plus ce qui est écrit.
 >
 > **Deux gains mesurés à `8+0,08` :** l'élagage par **échange statique** en
 > quiescence — les captures qui perdent du matériel n'y sont plus examinées —

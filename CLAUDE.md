@@ -209,8 +209,13 @@ une mesure, pas une préférence.
   <br>**Confirmé depuis sur d'autres techniques, et le sens ne s'est jamais
   inversé.** La cadence longue change soit le signe — LMP au seuil 6, −21,6 →
   +15,3, et le seuil 12 bascule aussi —, soit la magnitude — fenêtres d'aspiration **× 2,7**, trois
-  termes d'évaluation **× 2,5**. *Mesurer court sous-estime, jamais l'inverse* ;
-  aucun acquis remesuré n'a perdu de valeur. **Corollaire dérivé, et il coûte
+  termes d'évaluation **× 2,5**. *Mesurer court sous-estime, jamais l'inverse*
+  — **pour ce qui relève de la cadence seule**. <s>Aucun acquis remesuré n'a
+  perdu de valeur.</s> **Faux depuis le 22 sept. 2026** : l'élagage delta passe
+  de +32,5 à un effet indistinguable de zéro. Ce n'est pas un contre-exemple à
+  la cadence — cadence et base ont changé ensemble, et l'échange statique coupe
+  les mêmes objets au même endroit, ce que l'écran en nœuds chiffre. **Un
+  acquis peut fondre par EMPILEMENT sans que la cadence y soit pour rien.** **Corollaire dérivé, et il coûte
   des matchs** : un effet estimé depuis un verdict à `1+0,01` sert de MAJORANT
   au budget, pas d'estimation — le projet a failli renoncer au verdict des
   trois termes parce que 59 500 ÷ 14,9 dépassait le plafond d'un job, et il

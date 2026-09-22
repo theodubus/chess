@@ -456,17 +456,20 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-21 | **LMP seuil `6 + d²` (C17), à `8+0,08`, sur la base post-C19** | **H1 accepté** — **+22,85 Elo ± 9,88** sur 2436 parties, LLR 2,95, 53,28 % de score, LOS 100 %. Étalonnage : 2 508 824 n/s, profondeur 11. 3 h 47 de match. **Retenu.** |
 | 2026-09-21 | **Le même, seuil `12 + d²`** | **H1 accepté** — **+17,24 Elo ± 8,51** sur 3368 parties, LLR 2,96, 52,48 % de score. Étalonnage : 2 579 292 n/s, profondeur 11. 5 h 09 de match. |
 | 2026-09-22 | **D5 — retrait des trois termes d'évaluation (sécurité du roi, structure de pions, tours sur colonne ouverte), à `8+0,08`** | **H0 accepté** — **−37,53 Elo ± 13,40** sur 1580 parties, bornes `[-5, 0]`, LLR −2,95, 44,62 % de score, LOS 0,00 %, Ptnml [121, 155, 344, 113, 57]. [run 35692850670](https://github.com/theodubus/chess/actions/runs/35692850670), candidat `adcbd14` contre `091e75e`, graine 20260913. Étalonnage : **2 177 503 n/s, profondeur 11**. 2 h 32 de match. **Les trois termes valent 2,5 fois le +14,9 mesuré à `1+0,01`.** Banc du candidat : 88 495 nœuds (÷ 1,29). |
+| 2026-09-22 | **D5 — retrait de l'élagage delta, à `8+0,08`** | **PAS DE VERDICT — SPRT tué par le plafond du job** à 3 738 parties. Retrait : **−1,49 Elo ± 7,83**, IC `[−9,3 ; +6,3]`, 49,79 % de score, **LLR 0,06 sur ±2,94**, Ptnml [141, 373, 851, 369, 135]. [run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914), candidat `cbaa8d4` contre `a57c835`, bornes `[-5, 0]`, graine 20260913. Étalonnage : **2 324 708 n/s, profondeur 12**. **Ne pas lire comme un verdict** : un SPRT arrêté par l'horloge est conditionné à n'avoir pas touché ses bornes, donc biaisé vers zéro. Ce qui est établi, c'est que l'effet n'a **rien à voir avec les +32,5 Elo** du verdict de `1+0,01` — celui-là aurait tranché vers 1 825 parties. L'élagage **reste dans `main`**. Banc du candidat : 138 458 nœuds (× 1,21). |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
 base pauvre, devait valoir moins une fois empilé avec les mécanismes venus
-après. **Deux acquis ont été remesurés, et les deux valent PLUS, pas moins.**
+après. **Trois acquis remesurés : deux valent PLUS, et le troisième a bel et
+bien fondu.**
 
 | acquis | verdict d'origine | remesuré à `8+0,08` | rapport |
 |---|---|---|---|
 | fenêtres d'aspiration | +29,7 (`1+0,01`) | **−51,56 ± 15,67** au retrait | **× 2,7** |
 | sécurité du roi + structure de pions + tours sur colonne ouverte | +14,9 (`1+0,01`) | **−37,53 ± 13,40** au retrait | **× 2,5** |
+| **élagage delta en quiescence** | +32,5 (`1+0,01`) | **−1,49 ± 7,83** au retrait, **sans verdict** | **~ × 0,05** |
 
 Pour l'aspiration le contrôle est apparié : le même retrait, mesuré aux deux
 cadences le même jour, rend −18,91 à `1+0,01` contre −51,56 à `8+0,08`,
@@ -483,16 +486,47 @@ z = 3,52, **p ≈ 0,0004**, intervalles disjoints.
 
 **La cadence change le verdict, et les deux formes sont mesurées** : elle
 **inverse un signe** (LMP au seuil 6, −21,6 → +15,3 ; le seuil 12 bascule
-aussi) ou
-**multiplie une magnitude** (aspiration × 2,7, trois termes × 2,5).
-Le sens ne s'est jamais inversé — *mesurer court sous-estime ce dont la valeur
-croît avec la profondeur*, et le facteur observé tourne autour de 2,5.
+aussi) ou **multiplie une magnitude** (aspiration × 2,7, trois termes × 2,5).
 
-**Ce que D5 n'a toujours pas trouvé : une érosion.** Zéro sur deux en Elo. La
-fiche cherchait des acquis devenus caducs ; elle a trouvé deux acquis
-sous-évalués. <span><strong>Inférence, confiance faible</strong> : deux points
-ne font pas une règle, et les deux portent sur des mécanismes qui ne se
-recouvrent pas beaucoup avec ce qui est venu après.</span>
+> <s>Le sens ne s'est jamais inversé — *mesurer court sous-estime ce dont la
+> valeur croît avec la profondeur*.</s> **Nuancé le 22 sept. 2026 : un acquis
+> a perdu de la valeur en étant remesuré.** L'élagage delta passe de +32,5 à
+> un effet indistinguable de zéro.
+>
+> **Mais ce point n'est PAS un contre-exemple à la règle de cadence, et il ne
+> faut pas le compter comme tel.** Les deux causes y sont confondues, comme
+> pour les trois termes : entre les deux mesures, la cadence a changé ET la
+> base a gagné l'échange statique, qui coupe les mêmes objets au même endroit.
+> L'écran en nœuds impute la moitié de l'écart à ce recouvrement.
+> <span><strong>Inférence, confiance moyenne</strong> : ce que ce point réfute
+> est « aucun acquis remesuré n'a perdu de valeur », pas « mesurer court
+> sous-estime ». Le séparer demanderait un contrôle apparié à `1+0,01` sur la
+> base actuelle — et cette fois l'imputation changerait quelque chose, parce
+> qu'elle dirait si l'érosion vient de l'empilement ou du régime.</span>
+
+### D5 a trouvé son érosion, et elle était là où le mécanisme la plaçait
+
+<s>Ce que D5 n'a toujours pas trouvé : une érosion. Zéro sur deux en Elo.</s>
+**Un sur trois, le 22 sept. 2026.** La fiche a été ouverte pour chercher des
+acquis devenus caducs ; elle en a d'abord trouvé deux *sous-évalués*, puis un
+troisième qui a effectivement fondu.
+
+**L'asymétrie entre les trois est instructive, et elle est mécanique.** Les
+deux acquis qui valent plus — aspiration, termes d'évaluation — ne partagent
+leur territoire avec rien de ce qui est venu après. Celui qui a fondu coupe
+**les mêmes objets au même endroit** qu'un mécanisme fusionné depuis :
+l'élagage delta et l'échange statique écartent tous deux des captures en
+quiescence. <span><strong>Inférence, confiance moyenne</strong> : le
+recouvrement de territoire est le prédicteur d'érosion, pas l'ancienneté du
+verdict. Trois points, dont un seul d'érosion — ce n'est pas une règle, c'est
+une hypothèse qui a maintenant un cas.</span>
+
+**Ce que ça change pour les lignes restantes de D5.** La futilité inverse et la
+mobilité n'ont pas de mécanisme postérieur qui coupe où elles coupent, et leur
+empreinte en nœuds ne s'est pas érodée. <span><strong>Recommandation</strong> :
+ne pas acheter de job pour elles sur la seule foi de leur ancienneté. D5 a
+rempli son office — elle a trouvé le seul acquis que l'empilement avait
+mangé.</span>
 
 ### L'érosion se cherche d'abord en nœuds — mesuré le 22 sept. 2026
 
@@ -551,36 +585,84 @@ réserve réelle : si delta est tombé *entre* −5 et 0, aucun job ne tranchera
 puisqu'il faudrait ~11 900 parties. Les deux lignes de D5 déjà mesurées ont
 tranché en 1 154 et 1 580.
 
-### En vol — SPRT de retrait de l'élagage delta
+### Le SPRT de retrait de l'élagage delta a EXPIRÉ — et c'est un résultat
 
-**Lancé le 22 sept. 2026 à 10 h 15 UTC**,
-[run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914),
-vérifié `in_progress` dans Actions et non supposé lancé.
+**Lancé le 22 sept. à 10 h 15 UTC, tué par le plafond de 350 min à 16 h 06**,
+[run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914).
+Candidat `cbaa8d4` (appel à `delta_prunable` supprimé) contre `a57c835`,
+bornes `[-5, 0]`, `8+0.08`, graine `20260913`. Étalonnage du runner :
+**2 324 708 n/s, profondeur 12** en 250 ms, 4 cœurs.
 
-| | |
+| | dernier relevé, à 3 738 parties |
 |---|---|
-| candidat | `cbaa8d4` (branche `mesure/d5-delta`) — appel à `delta_prunable` supprimé |
-| référence | `a57c835` |
-| bornes | `[-5, 0]` — la convention de vérification d'un retrait |
-| cadence | `8+0.08` · graine `20260913` |
-| banc du candidat | **138 458** nœuds (prof. 7), **725 621** (prof. 10) |
+| Elo du **retrait** | **−1,49 ± 7,83** (nElo −2,12 ± 11,14) |
+| IC 95 % | `[−9,3 ; +6,3]` |
+| score | 49,79 % — 1299 V, 1315 D, 1124 N |
+| Ptnml(0-2) | [141, 373, 851, 369, 135] |
+| **LLR** | **0,06** sur ±2,94 — **2 % du chemin** |
 
-**Le candidat supprime l'appel, il ne le neutralise pas.** Porter
-`DELTA_MARGIN` à 10⁹ aurait donné le même arbre — c'est d'ailleurs le contrôle
-qui a validé la suppression, au bit près — mais aurait laissé en place un
-`captured_piece` par capture de quiescence, donc sur 90 % des nœuds. La mesure
-d'origine avait ajouté la décision **et** son coût ; l'inverse exact retire les
-deux. Même raisonnement que le candidat des trois termes, qui commentait les
-lignes au lieu de mettre les poids à zéro.
+**Pas de verdict, et il ne faut pas en fabriquer un.** Un SPRT tué par
+l'horloge n'est pas un match à longueur fixe coupé au plafond : sa règle
+d'arrêt dépend des données, donc l'échantillon survivant est conditionné à
+« la LLR n'a jamais touché ±2,94 », ce qui écrête les trajectoires extrêmes et
+biaise l'estimation **vers zéro**. Ne pas le reprendre ni le prolonger — un
+test séquentiel interrompu puis repris n'a plus ses taux d'erreur.
 
-> **Piège payé en construisant ce candidat, et il est neuf.** Le premier essai
-> a rendu **323 977** nœuds au lieu des 138 458 attendus. Cause : `origin/main`
-> était figé onze commits en arrière dans le clone local — à `5baf014`, le
-> 15 sept. — alors que le distant portait bien `a57c835`. **Ce n'était pas le
-> binaire qui était périmé, c'était la référence git**, et le symptôme est
-> identique. Seule la valeur attendue l'a révélé. *Avant de construire une
-> référence ou un candidat, `git fetch` puis comparer à `git ls-remote` — un
-> `git log` local ne dit rien de l'état du distant.*
+**Ce qui est établi, et c'est le point qui compte** — <span>confiance
+élevée</span> : **l'élagage delta ne vaut plus rien qui ressemble aux +32,5 Elo
+de son verdict d'origine.** Un effet de cette taille aurait fait tomber H0 vers
+**1 825 parties** d'après la relation de budget ; à **3 738**, soit deux fois
+plus, la LLR est à 2 % du chemin et le point estimé est à **−1,5**. Le
+protocole a eu tout le loisir de trancher ; il ne l'a pas fait parce qu'il n'y
+a rien de gros à trancher.
+
+**Ce qui n'est PAS établi** — <span>la valeur réelle, son signe compris</span>.
+L'intervalle `[−9,3 ; +6,3]` est plus large que la bande `[-5, 0]` elle-même.
+
+> **Et c'est structurel, pas un manque de parties.** Des bornes `[-5, 0]`
+> testent « l'effet vaut −5 » contre « l'effet vaut 0 » : un effet situé
+> **entre les deux** rend le test maximalement indécis et son effectif attendu
+> explose. La LLR à 0,06 après 3 738 parties dit exactement cela — les données
+> tombent au milieu. **Acheter plus de parties à ces bornes-là est un mauvais
+> emploi du temps machine** ; il faudrait d'autres bornes, pas plus de jeu.
+
+**Le contrôle de vraisemblance ne s'applique pas ici, et il faut le dire.**
+`parties × Elo` vaut 5 570, très loin des 59 256 du projet — mais cette
+relation ne vaut que pour un SPRT dont l'effectif est **déterminé par
+l'effet**. Ici il a été déterminé par l'horloge. Lue à l'endroit, la relation
+dit plutôt qu'un effet de 1,5 Elo demanderait ~40 000 parties : **c'est la
+confirmation que l'effet est hors de portée de ce protocole**, pas un signe de
+protocole cassé.
+
+**L'élagage delta RESTE dans `main`.** Rien n'autorise à le retirer : H1
+n'a pas été accepté, et le point estimé du retrait est négatif. Un acquis se
+retire par un verdict, comme il est entré.
+
+> **Le candidat se reconstruit sans son SHA, et c'est voulu.** La branche
+> `mesure/d5-delta` est supprimée et `cbaa8d4` finira par être collecté — le
+> projet a déjà payé une fois pour avoir désigné du code par un commit
+> (`fatal: invalid reference: 498a01a`, 16 sept.). **La recette tient en une
+> phrase** : supprimer le bloc `if self.delta_prunable(…) { continue; }` de la
+> quiescence dans `engine/src/search.rs` — l'appel, pas la fonction, pour
+> retirer la décision *et* son coût. **Le contrôle est le banc** : le candidat
+> doit rendre exactement **138 458** nœuds à la profondeur 7 et **725 621** à
+> la profondeur 10. Un chiffre différent veut dire qu'on a reconstruit autre
+> chose, et c'est précisément ce que ce contrôle existe pour dire.
+
+### Ce que l'écran en nœuds avait annoncé — un point, pas une règle
+
+L'empreinte en nœuds avait désigné delta comme la seule des trois lignes de D5
+à s'être érodée (÷ 1,68 → ÷ 1,21), et les quatre coins imputaient la moitié de
+l'écart à l'échange statique. **Le match va dans le même sens** : +32,5 à
+`1+0,01` contre un effet indistinguable de zéro à `8+0,08`.
+
+<span><strong>Inférence, confiance faible — UN point.</strong> C'est la
+première fois que l'écran en nœuds fait une prédiction qu'un match corrobore
+ensuite, et une corroboration n'est pas une validation. Le projet a huit
+mesures qui disent que nœuds et Elo ne se classent pas ensemble ; rien ici ne
+les contredit — l'écran n'a pas prédit une VALEUR, il a désigné une CIBLE, et
+c'est tout ce qu'on peut lui demander. Deux points de plus diraient s'il faut
+s'en servir systématiquement avant d'acheter un job.</span>
 
 **Une limite propre à la ligne « mobilité », à connaître avant de l'acheter.**
 Son retrait exact n'est plus disponible. Quand la mobilité a été mesurée le
