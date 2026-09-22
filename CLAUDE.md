@@ -406,17 +406,27 @@ une mesure, pas une préférence.
   périmées et ne rien recompiler : on mesure alors l'ancien binaire. Un
   rapport avant/après d'exactement 1,00 en est le symptôme.
 - **Ce n'est pas toujours le binaire qui est périmé : ce peut être la
-  RÉFÉRENCE GIT.** Le 22 sept. 2026, un candidat de retrait construit sur
-  `main` a rendu un arbre trois fois trop gros. Le binaire était neuf, le
-  code juste, l'édition correcte — mais `origin/main` était figé onze commits
-  en arrière dans le clone local, alors que le distant portait bien la tête
-  annoncée. **Un `git log` local ne dit rien de l'état du distant**, et le
-  symptôme est exactement celui du binaire périmé : un chiffre plausible qui
-  répond à une autre question. `git fetch` avant de construire une référence
-  ou un candidat, et confronter à `git ls-remote`. **Ce qui l'a attrapé n'est
-  pas la vigilance, c'est d'avoir écrit la valeur attendue AVANT de mesurer** —
-  le contrôle de vraisemblance ne sert que si l'on sait d'avance ce qu'on
-  attend.
+  RÉFÉRENCE GIT — et elle ment de DEUX façons.** Le 22 sept. 2026, les deux
+  se sont produites dans la même session, sous deux déguisements différents.
+  <br>**Forme 1, elle fausse une mesure.** Un candidat de retrait construit
+  sur `main` a rendu un arbre trois fois trop gros. Binaire neuf, code juste,
+  édition correcte — mais `origin/main` était figé **onze commits en arrière**
+  dans le clone local, alors que le distant portait bien la tête annoncée.
+  Symptôme identique au binaire périmé : un chiffre plausible qui répond à
+  une autre question. **Ce qui l'a attrapé n'est pas la vigilance, c'est
+  d'avoir écrit la valeur attendue AVANT de mesurer.**
+  <br>**Forme 2, elle déclenche une fausse alarme.** Après chaque fusion,
+  GitHub supprime la branche distante — mais **`git fetch <remote> <branche>`
+  n'élague pas**, donc `refs/remotes/origin/<ma-branche>` survit en pointant
+  le commit d'avant la fusion. Tout ce qui compare la branche locale à son
+  suivi croit alors voir un commit non poussé, alors que le commit en question
+  est le commit de fusion, déjà sur `main`. C'est arrivé deux fois de suite,
+  et j'ai d'abord accusé l'outil qui signalait plutôt que ma procédure.
+  <br>**Le geste, vérifié par exécution et non déduit** : `git fetch --prune`,
+  jamais `git fetch <remote> <branche>` seul, et confronter à
+  `git ls-remote`. Le contrôle qui tranche une alarme de ce type est
+  `git log origin/main..HEAD` — vide veut dire que `main` porte déjà tout, donc
+  que rien n'est en risque.
 - **Un chiffre de référence écrit en prose vieillit en silence.** La section
   *Commandes* a annoncé `702 612 nœuds` pendant deux journées de travail alors
   que la valeur réelle était `541 528` : la mobilité et trois termes
