@@ -31,8 +31,8 @@ main.rs 0
 perft.rs 1
 bench.rs 2
 see.rs 2
-search.rs 89
-eval.rs 212
+search.rs 110
+eval.rs 219
 
 # ---------------------------------------------------------------------------
 # Pourquoi ces plafonds ne sont pas zéro
@@ -71,8 +71,37 @@ eval.rs 212
 #   parties 7,8 % mieux sur 66 376 positions tenues à l'écart, et jouait
 #   25 Elo PLUS MAL. Les figer par des tests coûterait donc de l'Elo.
 #
-# search.rs — 89 au 21 sept. 2026, contre 94 le 15 sept. et 141 avant
-#   correction.  LE FICHIER A GROSSI ET LE COMPTE A BAISSÉ : 433 mutants
+# search.rs — 110 au 22 sept. 2026, RELEVÉ depuis 89, et la raison est une
+#   faute à moi.
+# eval.rs  — 219 au 22 sept. 2026, RELEVÉ depuis 212, même cause.
+#
+#   LE CODE DE PRODUCTION N'A PAS CHANGÉ — vérifié, le sha256 de `search.rs`
+#   tronqué avant `mod tests` est identique entre les deux balayages. Seuls
+#   deux tests ont été modifiés le 21 sept. au soir.
+#
+#   Ces deux tests portaient `assert_eq!(score, reference)` et son jumeau :
+#   une assertion de score EXACTE sur une position, qui attrapait par effet de
+#   bord tout mutant déplaçant le score de cette position — dans `search.rs`
+#   comme dans `eval.rs`. Leur prémisse était fausse (mesurée fausse 8,3 % du
+#   temps), donc les retirer était juste ; les remplacer par des bornes
+#   qualitatives a coûté 28 mutants de couverture, et je ne l'ai pas vérifié.
+#
+#   LA LEÇON : un changement de TESTS déplace le plafond autant qu'un
+#   changement de code. La règle écrite ne visait que le code.
+#
+#   Le correctif ne restaure pas l'assertion fausse : il nomme l'invariant
+#   qu'elle gardait par accident. `engine/tests/bench_reference.rs` porte
+#   désormais `larbre_de_recherche_ne_bouge_pas_en_silence`, NON IGNORÉ, qui
+#   fige le nombre de nœuds du banc à la profondeur 5. Le contrôle de la
+#   profondeur 7, lui, est `#[ignore]` : c'est un critère d'acceptation, donc
+#   `cargo mutants` ne l'exécutait jamais. **Le garde-fou déterministe le plus
+#   fort du projet était invisible au cliquet.**
+#
+#   110 et 219 sont MESURÉS, mais mesurés SANS ce nouveau test. Ils
+#   redescendront au balayage suivant, qui seul dira de combien.
+#
+# search.rs — l'historique de la valeur 89, qui reste vrai. 89 au
+#   21 sept. 2026, contre 94 le 15 sept. et 141 avant correction.  LE FICHIER A GROSSI ET LE COMPTE A BAISSÉ : 433 mutants
 #   contre 394, après l'élagage par échange statique (C19) et l'élagage par
 #   compte de coups (C17). Le code neuf porte quatre survivants, tous dans
 #   les marges, et les anciens ont été couverts au-delà.
