@@ -785,6 +785,80 @@ script, et que le script **rend un état non vide** — un script devenu muet ne
 se verrait pas, on croirait simplement qu'il n'y a rien à dire. C'est la même
 raison qui fait exister `verify-hooks.sh` lui-même.
 
+### Paralléliser les matchs — ce qui marche et ce qui ne marche pas
+
+**On ne parallélise PAS un SPRT.** Un test séquentiel tire ses taux d'erreur
+d'une règle d'arrêt **unique** appliquée à un flux **unique**. Deux façons de
+le casser, et les deux sont tentantes :
+
+- lancer N SPRT et s'arrêter dès que **l'un** franchit sa borne multiplie le
+  risque de première espèce par environ N — c'est le problème des comparaisons
+  multiples, avec un habit de parallélisme ;
+- recoller leurs parties après coup ne rend pas un test séquentiel, mais un
+  échantillon **dont la taille a été choisie après avoir vu les données**. Ce
+  n'est pas neutre, c'est pire que l'un ou l'autre pris seul.
+
+La règle déjà écrite — *jamais reprendre un SPRT expiré* — est le cas
+particulier de ce principe.
+
+**On parallélise des matchs à LONGUEUR FIXE, et ceux-là se mettent en commun
+sans rien casser** : effectif connu d'avance, estimation non biaisée, aucune
+règle d'arrêt à préserver. C'est ce que fait `tools/mettre-en-commun.sh`.
+
+#### Ce que ça achète, chiffré sur ce projet
+
+Le SPRT expiré de C21 a rendu **± 8,31 Elo sur 3 240 parties**. L'intervalle
+décroît en `1/√n`, donc en empilant des jobs de ~3 300 parties :
+
+| jobs | parties | intervalle attendu | effet que ça sépare de zéro |
+|---|---|---|---|
+| 1 | ~3 300 | **± 8,2** | > 8,2 Elo |
+| 2 | ~6 600 | **± 5,8** | > 5,8 |
+| 4 | ~13 200 | **± 4,1** | > 4,1 |
+| 8 | ~26 400 | **± 2,9** | > 2,9 |
+
+<span>Ces chiffres viennent d'une mesure de ce dépôt, pas d'une constante
+empruntée. **Réserve** : « séparer de zéro » est plus faible que la barre
+habituelle du projet, qui est `H1` sur des bornes `[0, 5]` — pour écarter la
+borne haute il faut que l'effet dépasse l'intervalle **plus 5**.</span>
+
+#### Le piège propre à la mise en commun, et il est sérieux
+
+**Deux runners GitHub varient de 58 % en vitesse** — 2 067 101 contre
+3 268 241 n/s sur le même binaire — soit environ **un demi-pli** de profondeur
+atteinte. Et ce dépôt a mesuré qu'**un pli peut INVERSER un verdict**.
+
+Mettre en commun deux matchs joués sur des runners très différents **moyenne
+donc deux points de fonctionnement**. Ce n'est pas nécessairement mauvais —
+moyenner sur une plage de machines ressemble davantage à « la force générale »
+qu'un point unique, qui est la cible déclarée du projet — mais **ça doit être
+dit, pas subi**. `mettre-en-commun.sh` compare les matchs deux à deux par un
+test en `z` et **refuse de conclure en silence** au-delà de `z = 2`.
+
+**Et les graines doivent différer.** Mêmes binaires plus même graine donnent
+les mêmes parties coup pour coup : deux jobs de même graine, c'est un effectif
+qui double sur le papier sans que l'information bouge.
+
+#### L'outil
+
+```sh
+tools/mettre-en-commun.sh "97,284,766,332,141" "100,290,750,340,150"
+tools/mettre-en-commun.sh journal-a.log journal-b.log
+```
+
+Il **somme les comptes pentanomiaux** au lieu de moyenner des Elo : l'Elo est
+une fonction non linéaire du score, donc en moyenner deux est une
+approximation, alors que sommer les paires est exact. D'un journal d'arbitre il
+prend la **dernière** ligne `Ptnml`, jamais la première.
+
+`tools/mettre-en-commun-test.sh` l'éprouve, et son premier cas est une
+**vérité terrain** : sur `Ptnml [97, 284, 766, 332, 141]`, fastchess avait
+imprimé `Elo: 14.59 +/- 8.31` ; la formule retombe dessus à **0,003 près**. Les
+autres cas vérifient que doubler l'effectif divise l'intervalle par `√2`, que
+l'ordre des matchs ne change rien, que le refus se déclenche sur des matchs
+contradictoires, et que la dernière ligne d'un journal est bien celle qui est
+lue. Le test tourne dans `tools/verify.sh`.
+
 ### Ce qu'il faut surveiller — et que rien ne signalera tout seul
 
 Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils

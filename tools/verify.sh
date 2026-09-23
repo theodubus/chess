@@ -64,6 +64,11 @@ etape "verdict de mutation"       .github/mutation-verdict-test.sh
 # compte dans `ref.sh` est son REFUS, et un refus ne s'exécute qu'en cas de
 # catastrophe. Une seconde, aucune compilation, des dépôts fabriqués.
 etape "références de mesure"      tools/ref-test.sh
+# Même argument encore : la branche qui compte dans `mettre-en-commun.sh` est
+# son REFUS de réunir des matchs qui se contredisent, et elle ne sert qu'en
+# cas de problème. Le premier cas du test confronte la formule pentanomiale à
+# ce que fastchess a réellement imprimé.
+etape "mise en commun"            tools/mettre-en-commun-test.sh
 # `etat.sh` s'exécute à chaque démarrage et après chaque compactage, sa
 # sortie entrant dans le contexte du modèle. Un script devenu MUET ne se
 # verrait pas — on croirait simplement qu'il n'y a rien à dire.
