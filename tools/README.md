@@ -798,30 +798,82 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 | `attack_dump.rs` et `see_check.rs` | au prochain dépôt dans `tools/src/bin/` | **autodécouverts par cargo**, non déclarés dans `tools/Cargo.toml`. `outillage_documente.rs` exige qu'ils soient documentés, pas qu'ils soient déclarés |
 | le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
 
-### B9 — l'état exact, pour reprendre sans redécouvrir
+### B9 — écrit et mesuré le 23 sept. 2026, à l'attic
 
-Le protocole est corrigé (encadré ci-dessus) et l'encodage fixé par la mesure.
-**Rien du code n'est écrit.** Ce qui reste, dans l'ordre :
+Le code est dans `tools/attic/b9-table-atomique.patch`, avec ses chiffres. Il
+n'est **pas** sur une branche : l'effet de capacité attend un SPRT, et le
+déposer sur la branche rendrait la CI rouge pour un changement non accepté.
 
-1. **Réécrire `tt.rs`** en deux `AtomicU64` par entrée, schéma XOR de Hyatt.
-   Surface vérifiée : `probe` et `store` n'ont **qu'un site d'appel chacun**
-   dans `search.rs` (lignes ~770 et ~971), plus `clear`, `new_search`,
-   `capacity`, `permille_used`. Les signatures passent de `&mut self` à
-   `&self` ; `generation` devient un `AtomicU8`.
-2. **Protéger l'encodage** par un `debug_assert!` sur les bornes du score plus
-   une borne en release — *une donnée fausse se borne, elle n'arrête pas la
-   partie*. L'absence de déclenchement mesurée n'est qu'un échantillon.
-3. **Mesurer le coût des atomiques à capacité FORCÉE égale** : une rustine de
-   mesure qui fige le nombre d'entrées à celui d'aujourd'hui, pour que les
-   nœuds soient identiques au bit près et que `timing.sh` s'applique.
-4. **Mesurer séparément l'entrée deux fois plus petite** — changement d'arbre,
-   donc SPRT, et plausiblement un gain puisqu'il double la table à mémoire
-   constante.
+**Schéma de Hyatt** : chaque entrée tient en deux mots de 64 bits, le premier
+portant `clé XOR données`. Un lecteur reconstruit la clé par un XOR ; une
+entrée *déchirée* par un autre fil rend une clé qui ne correspond à rien et se
+rejette comme une collision ordinaire. Pas de verrou, et la seule conséquence
+d'un déchirement est un défaut de cache, jamais un score faux. Toutes les
+méthodes prennent `&self`, écriture comprise — c'est ce qui rend la table
+partageable.
 
-**Ne pas confondre 3 et 4**, c'est tout l'objet de la correction du protocole.
-Et B9 ne débloque B6 qu'une fois 3 et 4 rendus : sa fiche dit que le coût de
-le différer est « plat », ce qui parle du **rétrofit** et ne dit rien de la
-vitesse.
+#### 1. La réécriture est neutre — prouvé, pas supposé
+
+À **capacité forcée égale** (524 288 entrées, celle de l'entrée de 24 octets) :
+
+| | candidat | référence |
+|---|---|---|
+| banc, profondeur 7 | **114 028** | 114 028 |
+| banc, profondeur 10 | **635 210** | 635 210 |
+
+Empreintes md5 différentes, donc ce ne sont pas deux fois le même binaire —
+c'est le contrôle que `sprt.sh` et `timing.sh` imposent désormais.
+
+#### 2. Les accès atomiques ne coûtent rien — ils rapportent
+
+`tools/timing.sh`, capacité forcée égale, profondeur 10, 20 paires :
+
+| | candidat | référence |
+|---|---|---|
+| médiane | **276,5 ms** | 289,0 ms |
+| minimum | 213 ms | 225 ms |
+
+**−4,3 % sur la médiane, −5,3 % sur le min, 15 paires gagnantes sur 20, test
+des signes p = 0,0192.**
+
+**La réserve qui motivait cette mesure est réfutée, et avec le signe opposé.**
+La fiche B9 disait le coût « plat » — ce qui parlait du *rétrofit* — sans que
+personne ait jamais vérifié si des entrées atomiques ralentissent la recherche
+**monothread**. Elles l'accélèrent.
+
+**Confondant à nommer, et ce chiffre n'est PAS « le coût des atomiques »** : à
+capacité forcée égale, l'entrée fait quand même 16 octets au lieu de 24, donc
+la table occupe 8 Mio au lieu de 12. Les −4,3 % sont l'effet **net** de
+(empaquetage 24 → 16 octets) + (accès simple → atomique `Relaxed`). Les séparer
+demanderait un troisième coin — une version empaquetée non atomique — qui ne
+changerait **aucune décision** : on ne peut pas avoir des entrées atomiques de
+24 octets en deux mots. Non mesuré, délibérément.
+
+#### 3. L'effet de capacité est un autre changement, et le banc ne peut pas le juger
+
+À mébioctets égaux, 16 octets par entrée **doublent** la capacité — 524 288 →
+1 048 576 à 16 Mio. Le banc n'en voit presque rien :
+
+| | atomique naturel | référence | écart |
+|---|---|---|---|
+| profondeur 7 | 114 026 | 114 028 | **2 nœuds** |
+| profondeur 10 | 634 933 | 635 210 | **−0,04 %** |
+
+**Parce qu'il ne SATURE pas la table** : 635 210 nœuds explorés pour 524 288
+entrées, sur six positions cherchées à froid. Un effet qui ne se manifeste
+qu'en partie, table chaude d'un coup à l'autre, demande un SPRT — et le nombre
+de nœuds n'en donne même pas le signe.
+
+#### Ce qui reste à faire avant de fusionner
+
+- un **SPRT sur l'effet de capacité**, à `8+0,08`. Plausiblement un gain, la
+  table doublant à mémoire constante — mais ce dépôt a démenti **trois fois**
+  « c'est standard donc ça aide » ;
+- corriger la **référence du banc**, qui passe de 114 028 à 114 026 :
+  `bench_reference.rs` rend la CI rouge tant que `CLAUDE.md` et `README.md` ne
+  sont pas à jour. C'est voulu ;
+- **remesurer le plafond de mutation de `tt.rs`**, le fichier étant réécrit.
+
 
 ### Trois chantiers, une seule unité — mesuré le 22 sept. 2026
 

@@ -182,9 +182,21 @@ une mesure, pas une préférence.
   ce qui est inexprimable quand plusieurs threads écrivent dans la même table.
   Le passage à des entrées atomiques (XOR clé/données, qui rend détectable une
   entrée déchirée sans verrou) est une réécriture contenue de `tt.rs` plus un
-  changement de signature qui traverse `search.rs`. Le coût ne croît pas avec
-  le temps — ce n'est pas une dette cumulative — mais il ne faut pas le
-  découvrir le jour où l'on écrit Lazy SMP.
+  changement de signature qui traverse `search.rs`.
+  <br>**Écrit et mesuré le 23 sept. 2026 — le code est à
+  `tools/attic/b9-table-atomique.patch`, pas sur une branche.** Trois
+  résultats. **La réécriture est neutre, prouvée** : à capacité forcée égale,
+  le banc rend 114 028 et 635 210, exactement la référence, avec des empreintes
+  différentes. **Les accès atomiques ne coûtent rien, ils RAPPORTENT** :
+  −4,3 % de temps à la profondeur 10, 15 paires sur 20, p = 0,0192 — la fiche
+  disait le coût « plat », ce qui parlait du *rétrofit*, et personne n'avait
+  vérifié la vitesse monothread ; elle monte. <span>Confondant nommé : à
+  capacité forcée égale l'entrée fait quand même 16 octets au lieu de 24, donc
+  les −4,3 % sont l'effet net de l'empaquetage ET des atomiques, pas des
+  atomiques seuls — les séparer ne changerait aucune décision.</span> Enfin
+  **l'effet de CAPACITÉ est un autre changement** : l'entrée passant de 24 à
+  16 octets, la table double à mémoire constante, et cela demande un SPRT.
+  Chiffres dans `tools/README.md`.
 
 ## Ce qui compte comme preuve
 
@@ -318,6 +330,15 @@ une mesure, pas une préférence.
   positions tirées de vraies parties, 1,9 % — un facteur 3 à 5. Toute question
   portant sur une phase de jeu se mesure sur des positions extraites d'un
   match (`-pgnout`, puis échantillonnage).
+  <br>**Et il ne SATURE pas les ressources dont on change la taille** — c'est
+  la même limite, d'un cran plus profond que le mélange de phases. Doubler la
+  table de transposition (B9, 23 sept. 2026) déplace le banc de **2 nœuds à la
+  profondeur 7 et de 0,04 % à la profondeur 10**, parce qu'il explore 635 210
+  nœuds pour 524 288 entrées, sur six positions cherchées **à froid**. Un
+  lecteur pressé conclurait « doubler la table ne sert à rien » ; ce que le
+  banc dit vraiment, c'est qu'il ne la remplit pas. *Avant de conclure d'un
+  banc qu'un dimensionnement n'a pas d'effet, vérifier qu'il atteint seulement
+  la borne qu'on déplace.*
 - **Quand un mécanisme est rare par construction, compter ses nœuds ne
   tranche rien — compter ses DÉGÂTS, si.** D2 supposait que PVS vaut par le
   gatage de LMP sur les nœuds hors variante principale. La question naturelle
@@ -523,6 +544,11 @@ une mesure, pas une préférence.
   mémoire constante. Même famille que « vérifier le dénominateur » : un
   raisonnement correct appliqué à la mauvaise grandeur. Chiffres et encodage
   dans `tools/README.md`.
+  <br>**Écrit le 23 sept., et la prédiction tient** : à capacité forcée égale
+  le banc rend **exactement** les mêmes nombres, à capacité naturelle il rend
+  114 026 contre 114 028. *Le découpage en deux effets n'était pas une
+  précaution rhétorique — c'est ce qui a permis à `timing.sh` de s'appliquer
+  du tout.*
 - **Un changement qui ne modifie pas l'arbre de recherche ne passe pas par un
   SPRT.** **Arbitrage du 15 sept. 2026.** La règle « un SPRT par
   changement » vise les changements de *décision*. Une optimisation pure se
