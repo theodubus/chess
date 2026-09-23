@@ -491,10 +491,10 @@ une mesure, pas une préférence.
   pondère occupe deux cœurs** (concurrence 1), **Lazy SMP à `T` fils en
   occupe `T`** (`⌊3 / T⌋`). Et le biais change de sens selon le chantier : le
   ponder vole du CPU à l'adversaire du candidat, donc *vers* l'hypothèse ;
-  Lazy SMP en vole au candidat lui-même. `match.yml` fixe `nproc − 1` et ne
-  sait rien des fils : le jour où un match passe `option.Threads` ou
-  `ponder`, cette ligne doit dériver la concurrence de l'inégalité et
-  refuser de lancer si elle ne tient pas. Tableau dans `tools/README.md`.
+  Lazy SMP en vole au candidat lui-même. **`match.yml` dérive la concurrence
+  de l'inégalité depuis le 23 sept.** — deux cœurs par partie dès que
+  quelqu'un pondère — et refuse de lancer si elle ne tient pas ; il ne sait
+  encore rien des fils, étape de B6. Tableau dans `tools/README.md`.
 - **Un renvoi par POSITION vieillit comme un chiffre recopié, et sans bruit.**
   `tools/README.md` commentait « la dernière ligne » d'un tableau de nœuds ;
   écrite le 16 sept. 2026 elle visait juste, puis deux mesures ajoutées sous
