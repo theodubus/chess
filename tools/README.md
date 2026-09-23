@@ -794,6 +794,24 @@ changement de recherche au bas d'une pile retient tout ce qui s'empile dessus
 jusqu'à son verdict. **Au verdict : révoquer la révocation.** La rustine
 `c22-nulle-horizon.patch` en garde une copie qui survit à tout.
 
+#### Découvert pendant le vol : ce que C22 ajoute à l'horizon est à 92 % FAUX (C23)
+
+En mesurant une autre ligne du tableau — la fenêtre de répétition à travers le
+coup nul —, la sonde de C23 a compté les répétitions **à l'horizon**, là où
+C22 place son test : **92,1 % sont fausses**, presque toutes créées par deux
+coups nuls consécutifs, qui recréent la position de départ au même trait.
+Sur le banc, c'est net au nœud près : **C22 + C23 rend 114 028 à la
+profondeur 7, exactement `main`**. Tout le déplacement de C22 à cette
+profondeur — 114 028 → 113 214 — venait des fausses nulles. Voir la section
+C23.
+
+**Le critère de C22 ne bouge pas** : il était écrit avant, et un critère
+qu'on déplace après avoir appris quelque chose n'en est plus un. **Sa lecture,
+si** : le candidat mesure « nulles vraies à l'horizon + fausses nulles à
+l'horizon », pas la règle seule. S'il régresse, la cause la plus probable est
+la fausse nulle, et la suite est de mesurer C22 **sur** C23 — pas de rejeter
+l'idée de C22.
+
 #### Au verdict, dans l'ordre — y compris ce qui ne se voit qu'après
 
 1. **Étalonnage** de chaque job, avant toute mise en commun.
@@ -823,6 +841,119 @@ jusqu'à son verdict. **Au verdict : révoquer la révocation.** La rustine
    le plafond demande une raison écrite ; le baisser, rien.
 8. **Les chiffres de neutralité de B9** (114 028 / 635 210) sont relatifs au
    banc d'avant : les refaire avant son verdict de capacité.
+9. **Les deux rustines C23 cessent de s'appliquer** dès que C22 fusionne —
+   même voisinage qu'`is_repetition`. Passer leurs lignes à « non » dans la
+   table de l'attic ; le correctif, lui, se porte par `git apply -C1`, vérifié
+   avec les tests des deux.
+
+### C23 — EN VOL : la fenêtre de répétition traversait le coup nul
+
+#### Ce que disait la ligne du tableau, et ce que la mesure a trouvé
+
+*« `null_move` de cozy-chess incrémente la pendule des cinquante coups, donc
+la fenêtre de `repetitions` remonte au-delà du coup nul et peut y trouver une
+fausse répétition. Mesurer la fréquence avant d'écrire. »* Je supposais un cas
+rare — une triangulation de part et d'autre d'un coup nul. **La mesure dit
+autre chose, et pour une raison plus bête** : rien n'interdit ici deux coups
+nuls **consécutifs**, et deux coups nuls de suite recréent la position de
+départ, au même trait, donc avec la même clé. La recherche y voyait une
+répétition et rendait une nulle.
+
+#### Mesuré avant d'écrire — dans le régime réel
+
+`tools/attic/c23-sonde-fenetre-coup-nul.patch`, sonde et lecteur ensemble.
+30 parties à `8+0,08` jouées par fastchess avec `-log engine=true`, puis
+chaque flux rejoué dans le binaire sondé — mêmes positions, mêmes pendules,
+table conservée. 3 122 recherches.
+
+| | à l'intérieur — où `main` teste la nulle | à l'horizon — où C22 ajoute son test |
+|---|---|---|
+| répétitions détectées | 4 160 742 | 2 885 339 |
+| **fausses** : leur seule occurrence est avant le dernier coup nul | 3 651 841 — **87,8 %** | 2 656 101 — **92,1 %** |
+| dont deux coups nuls consécutifs | 86,8 % | 95,1 % |
+| vraies | 508 901 | 229 238 |
+
+Et : **10,1 %** des recherches de coup nul partent juste après un coup nul ;
+les fausses nulles intérieures touchent 0,65 % des nœuds intérieurs, mais
+**56,7 % des recherches de coup nul à profondeur ≥ 7**.
+
+#### Ce que la fausse nulle fait — et ce qu'elle ne fait pas
+
+`X` passe, fenêtre nulle sous `β`. `N1`, l'adversaire, passe à son tour :
+`N2` a la clé de `X`, donc « répétition », donc 0. **Si `β ≥ 1`, ce 0 fait
+couper `N1`, le coup nul de `X` échoue, et `X` cherche tout.** Aucun score
+faux ne remonte — un coup nul qui échoue est jeté — mais l'élagage par coup
+nul est **désactivé précisément quand le camp au trait cherche à prouver un
+avantage**, à toute profondeur où l'adversaire peut passer à son tour. Le test
+`un_second_coup_nul_ne_rend_pas_une_nulle` rejoue ce cas : l'ancien code
+rend 0 à un camp qui a une dame et une tour de moins.
+
+**Le banc ne tranche pas le coût**, et c'est attendu : profondeur 7
+inchangée (114 028), profondeur 10 **+1,2 %** (642 704), profondeur 12
+**−5,1 %** (2 036 820). Un changement de l'arbre dont le signe en nœuds
+change avec la profondeur se juge en parties.
+
+#### Le correctif
+
+La fenêtre de répétition s'arrête au **dernier coup nul**, position d'après
+comprise — la borne `pliesFromNull` de Stockfish. Une pile d'indices,
+`null_marks`, posée au coup nul et retirée au retour. Quatre tests ; **quatre
+défauts injectés, quatre attrapés**, chacun par un test différent : la
+fenêtre qui ignore la borne (l'ancien comportement), la recherche qui
+n'alimente plus la pile, la borne trop zélée qui oublie les répétitions
+**après** le coup nul, et la marque jamais retirée — celui-là passait toute la
+suite, jusqu'à ce qu'une assertion l'exige. Commit `3236f12`, **révoqué
+aussitôt** par `1ab033f`.
+
+*Ce que le correctif ne fait pas* : interdire deux coups nuls consécutifs,
+comme Stockfish le fait aussi. C'est un autre changement de l'arbre — avec
+C23, un double coup nul ne rend plus de nulle, il re-cherche `X` à profondeur
+réduite, du travail qu'aucune partie ne demande — et il se mesurera seul.
+
+#### Le protocole — écrit AVANT de lancer
+
+C'est un **correctif de règle** : une nulle que la recherche s'invente. Même
+critère que C22, pour la même raison — exiger un gain reviendrait à ne jamais
+corriger une règle :
+
+- **borne haute de l'intervalle mis en commun < 0** → régression
+  significative : ne pas fusionner, et chercher ;
+- **borne basse > 0** → gain démontré, fusionner ;
+- **entre les deux** → **fusionner au titre de la règle**, et l'écrire ainsi.
+
+**Puissance** : ± 6,3 Elo sur 6 000 parties — une régression de 1 ou 2 Elo
+passerait inaperçue, et c'est accepté parce que c'est écrit.
+
+| runs | graine | parties | cadence |
+|---|---|---|---|
+| [35870416179](https://github.com/theodubus/chess/actions/runs/35870416179) | tirée par le run | 3000 | `8+0,08` |
+| [35870420031](https://github.com/theodubus/chess/actions/runs/35870420031) | tirée par le run | 3000 | `8+0,08` |
+
+Candidat `3236f12`, référence `0c29d6b` — son parent, `main` au moment du
+lancement. Lancés à 13 h 55 UTC, fin attendue vers 19 h 30.
+
+#### Pourquoi `main` sans C22 — et ce que ça suppose
+
+C22 et C23 touchent **le même objet**, la détection de répétition : C22
+ajoute un test à l'horizon, où la sonde voit 92,1 % de fausses nulles ; C23
+retire les fausses nulles partout. Chacun se mesure donc dans le contexte qui
+lui est **le moins favorable** : C22 sur une base qui lui fait ajouter des
+fausses nulles, C23 sur une base qui en a moins à retirer. S'ils passent tous
+deux leur critère de non-régression, leur composition ne vaut pas moins que
+chacun. <span>Inférence, confiance moyenne : elle suppose que les fausses
+nulles nuisent, ce qui est le sens du défaut et non une mesure.</span> C'est
+l'inverse du raisonnement de B9, dont les objets étaient disjoints.
+
+#### Au verdict, dans l'ordre
+
+1. Étalonnages ; anomalies et avertissements, recopiés en fin de journal.
+2. Mise en commun, puis le critère ci-dessus, sans le déplacer.
+3. Si fusion : révoquer la révocation sur la base du moment. **Si C22 a
+   fusionné entre-temps**, un conflit est attendu autour d'`is_repetition`,
+   où C22 insère `is_rule_draw` : garder les deux. Mettre à jour la table de
+   l'attic.
+4. Balayage de mutation : `search.rs`.
+5. Ensuite, et séparément : interdire deux coups nuls consécutifs.
 
 ### B9 — EN VOL : l'effet de CAPACITÉ de la table atomique
 
@@ -936,7 +1067,7 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **C22 — la nulle vue à l'horizon** | — correctif de règle, pas un gain espéré | **EN MESURE** : deux jobs de 3000 parties à `8+0,08` sur le candidat `05a9dc4`. Critère **écrit avant de lancer** : fusion sauf régression significative. Voir sa section |
+| **C22 — la nulle vue à l'horizon** | — correctif de règle, pas un gain espéré | **EN MESURE** : deux jobs de 3000 parties à `8+0,08` sur le candidat `05a9dc4`. Critère **écrit avant de lancer** : fusion sauf régression significative. Voir sa section. **Découvert pendant le vol** : 92,1 % de ce qu'il ajoute à l'horizon sont de fausses nulles (C23) — le critère ne bouge pas, sa lecture si |
 | **ponder** | **0,90** — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36 ; un **majorant** contre un autre adversaire | **ÉCRIT et vérifié le 23 sept.** — tests éprouvés par mutation, banc identique, `crosscheck.sh` d'accord, match de correction ponder activé sans une faute. `tools/paires.sh` reconstruit le vecteur que cutechess n'imprime pas. Chemin de mesure en Elo **en place** : `match.yml`, entrée `ponder`, éprouvé en local sur ses refus. **EN MESURE** : trois jobs de 900 parties, critère écrit avant — voir « Ponder — EN VOL ». Après : dépenser davantage quand le ponder est permis, mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération |
@@ -945,7 +1076,7 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 | B6 — Lazy SMP | 1,0 à 1,8, **seul chiffre encore hérité** | exige B9. **Et sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
-| fenêtre de répétition à travers le coup nul | — | **observé le 23 sept., non mesuré** : `null_move` de cozy-chess incrémente la pendule des cinquante coups, donc la fenêtre de `repetitions` remonte au-delà du coup nul et peut y trouver une fausse répétition. Stockfish borne la fenêtre au dernier coup nul. Mesurer la fréquence avant d'écrire |
+| **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **EN MESURE** : mesuré avant d'écrire, 87,8 % des répétitions de l'arbre étaient fausses, et 92,1 % de celles que C22 ajoute à l'horizon. Candidat `3236f12`, révoqué aussitôt ; critère de non-régression écrit d'avance — voir sa section. Ensuite, et seul : interdire deux coups nuls consécutifs |
 | B7 / C13 | — | inchangés, bloqués sur leurs déclencheurs |
 
 > **B8 (réglage des constantes de recherche) : son déclencheur écrit est
