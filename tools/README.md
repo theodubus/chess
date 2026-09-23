@@ -705,6 +705,8 @@ dernière relève est faite.
 | ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | **RELEVÉ** — finis entiers entre 18 h 37 et 18 h 40 | **+67,63 ± 9,19 contre notre jumeau : l'activer rapporte** — 2,7 × l'attendu, l'écart localisé par sonde (sa section) |
 | C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 19 h 45, 2 × 2 880 parties | **+2,65 ± 6,40 : pas d'effet décelable, FUSIONNÉ** au titre de la règle (`25fd727`) |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
+| C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | plafond vers 01 h 50 le 24 — ~2 880 parties chacun | fusion sauf régression — correctif de règle, même critère que C22 |
+| balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | ~21 h | `search.rs` touché par C23 ; `tt.rs` devrait rendre 6, les décalages nuls étant retirés |
 | balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 19 h 44 | `tt.rs` **8** contre 2, tous équivalents : deux décalages nuls retirés comme code mort, plafond inscrit à 8, le chiffre mesuré (PR #56). `search.rs` **43** contre 45 : les trois survivants de `ponder_move` tués par la PR #50, 47 expirés comme au balayage précédent — plafond resserré à 43. Les autres au plafond. Issue #57 fermée |
 
 Les candidats de C22, B9 et C23 ont chacun été **committés puis révoqués
@@ -751,6 +753,7 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 | C22 — **relevé** | **non fusionné** : le critère de régression est atteint | rien ne bouge — banc, table de l'attic et rustines C23 restent tels quels. La suite est « C22 rejeté », ci-dessous |
 | B9 — **fusionné** | `git revert 7552320`, fait (`481f8af`) | référence du banc → **114 026** ; rustines B9 de l'attic → « non », leur code est entré ; chiffres de neutralité inchangés, la base n'ayant pas bougé ; **balayage de mutation de `tt.rs` lancé après la fusion** |
 | ponder — **relevé** | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la conversion plis → Elo de `CLAUDE.md`, qui a désormais deux points mesurés |
+| C22 sur C23 (~01 h 55 le 24) | `git revert 898e195` sur `main` à jour | banc des profondeurs 10 et 12 ; la ligne `c18-extension-echec.patch` de l'attic passe à « non » pour de bon, C22 déplaçant son contexte ; balayage de mutation |
 | C23 — **fusionné** | `git revert 1ab033f` sur `main` à jour, fait (`25fd727`) — **sans conflit de code**, seule la table de l'attic conflictait | banc inchangé aux profondeurs 5 et 7 ; l'invariant de la fenêtre revenu dans `CLAUDE.md` ; trois lignes de l'attic recalculées au vrai `git apply --check` ; balayage de mutation relancé. **C22 porté par-dessus et remesuré** — section « C22 sur C23 » |
 
 **Les branches qui ne fusionnent pas ont aussi leur suite, écrite d'avance :**
@@ -1130,6 +1133,63 @@ l'inverse du raisonnement de B9, dont les objets étaient disjoints.
 4. Balayage de mutation : `search.rs`.
 5. Ensuite, et séparément : interdire deux coups nuls consécutifs.
 
+### C22 sur C23 — EN VOL : la nulle à l'horizon, remesurée sans les fausses nulles
+
+C22 a été arrêté par son critère — **−10,44 ± 6,34** à `8+0,08` — sur une
+base où **92,1 %** de ce qu'il ajoutait à l'horizon étaient de fausses nulles,
+nées de deux coups nuls consécutifs. C23, qui les supprime, est fusionné. La
+suite était écrite avant son verdict : porter C22 sur `main` d'après C23 et
+le remesurer là, **sur le même critère**.
+
+#### Ce qui change, mesuré avant de lancer
+
+- **Le code de C22 est identique** ; seul son contexte a bougé, C23 ayant
+  réécrit le corps d'`is_repetition`. `git apply --3way` l'applique sans
+  conflit, et `is_rule_draw` appelle désormais la fenêtre bornée au dernier
+  coup nul. Ses trois tests passent avec les quatre de C23.
+- **Le banc ne bouge presque plus** : profondeur 7 inchangée (114 026),
+  profondeur 10 642 442 contre 642 441 pour C23 seul, profondeur 12
+  2 042 546 contre 2 043 590. Ce que la sonde de C23 prédisait : à l'horizon,
+  elle comptait **229 238 vraies répétitions pour 2 885 339 détectées**
+  avant C23 — C22 n'ajoute plus que les premières.
+- Rustine : `tools/attic/c22-nulle-horizon-sur-c23.patch`. L'originale reste
+  à l'attic avec son verdict ; elle ne s'applique plus sur `main` depuis C23.
+
+#### Le critère — écrit AVANT de lancer
+
+Correctif de règle, le même que C22 et C23 :
+
+- **borne haute < 0** → régression : ne pas fusionner, et chercher — la base
+  n'a plus de fausses nulles, donc ce serait la règle elle-même, ou son coût ;
+- **borne basse > 0** → gain démontré, fusionner ;
+- **entre les deux** → **fusionner au titre de la règle**, et l'écrire ainsi.
+
+**Prédiction, écrite avant** : entre les deux. <span>Inférence, confiance
+moyenne : un changement qui déplace le banc de 0,05 % à la profondeur 12
+tombe sous le seuil de ± 6,3.</span> Et **les avertissements de l'arbitre
+doivent se séparer** : C22 v1 en laissait 1 au candidat contre 100 à la
+référence sur la partie couverte ; s'ils ne se séparent plus, le correctif
+ne fait plus ce qu'il dit.
+
+**Puissance** : ± 6,3 Elo sur ~5 760 parties, deux jobs coupés au plafond.
+
+| runs | graine | parties | cadence |
+|---|---|---|---|
+| [35912945157](https://github.com/theodubus/chess/actions/runs/35912945157) | tirée par le run | 3000 | `8+0,08` |
+| [35912948746](https://github.com/theodubus/chess/actions/runs/35912948746) | tirée par le run | 3000 | `8+0,08` |
+
+Candidat `cd45ffa`, révoqué aussitôt par `898e195` ; référence `1eec468`,
+`main` d'après C23. Critère committé avant le lancement (`ded82d7`) ;
+lancés à 19 h 59 UTC, plafond de 350 minutes vers 01 h 50 le 24 sept.
+
+#### Au verdict, dans l'ordre
+
+1. Étalonnages ; anomalies et avertissements par moteur.
+2. Mise en commun, puis le critère, sans le déplacer.
+3. Si fusion : révoquer la révocation sur `main` à jour ; table de l'attic ;
+   balayage de mutation (`search.rs`).
+4. Ensuite, et séparément : interdire deux coups nuls consécutifs.
+
 ### B9 — VERDICT, 23 sept. 2026 : capacité −1,27 ± 6,34 Elo à `8+0,08` — pas d'effet décelable, FUSIONNÉ
 
 #### Le verdict — rendu à 18 h 40, sur le critère écrit avant
@@ -1380,7 +1440,7 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **C22 — la nulle vue à l'horizon** | — correctif de règle | **RÉGRESSION, non fusionné** : −10,44 ± 6,34 Elo à `8+0,08` sur 5 760 parties. Cause probable, écrite avant le verdict : 92 % des nulles qu'il ajoute à l'horizon sont fausses (C23). Prochaine action : **après C23, le porter sur `main` d'après C23 et le remesurer**, même critère |
+| **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Porté sur C23 et EN MESURE** (`cd45ffa`), même critère — voir « C22 sur C23 » |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,19**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule —, réglé à la sonde puis mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
