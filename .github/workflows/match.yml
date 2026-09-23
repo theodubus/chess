@@ -388,6 +388,11 @@ jobs:
             # dépend pas de l'autre alors que la LONGUEUR de la partie est
             # commune. *Une constante qu'un chantier en cours invalide ne
             # s'écrit toujours pas* : celle-ci n'a pas fini de bouger.
+            #
+            # **MESURÉ AVEC LES DEUX MOTEURS C21, 23 sept. 2026 : 0,97**
+            # (~7,25 s/partie, C22, deux jobs coupés au plafond). 3 000
+            # parties ne tiennent plus dans un job à 8+0,08 : ~2 880 au plus.
+            # L'estimation de ce bloc reste CONSERVATRICE, puisque 0,97 < 1.
             base=$(echo "${{ inputs.cadence }}" | cut -d+ -f1)
             inc=$(echo "${{ inputs.cadence }}"  | cut -d+ -f2)
             par_partie=$(awk -v b="$base" -v i="$inc" -v c="$concurrence" \

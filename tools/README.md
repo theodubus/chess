@@ -700,10 +700,10 @@ dernière relève est faite.
 
 | chantier | runs | candidat → référence | effectif, arbitre | fin attendue (UTC) | ce que la relève décide |
 |---|---|---|---|---|---|
-| C22 — la nulle à l'horizon | 35857125439, 35857128461 | `05a9dc4` → `e1971a8` | 2 × 3000, fastchess | ~17 h 15 | fusion sauf régression — correctif de règle |
-| B9 — capacité de la table atomique | 35861835486, 35861838168 | `bd896ba` → `1b5afa8` | 2 × 3000, fastchess | ~18 h | fusion sauf régression — infrastructure de B6 |
-| ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | ~18 h 30 | **aucune fusion** : ce que vaut l'activer |
-| C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | ~19 h 30 | fusion sauf régression — correctif de règle |
+| C22 — la nulle à l'horizon | 35857125439, 35857128461 | `05a9dc4` → `e1971a8` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 17 h 43, 2 × 2 880 parties | **−10,44 ± 6,34 : régression, non fusionné** — à remesurer sur C23 |
+| B9 — capacité de la table atomique | 35861835486, 35861838168 | `bd896ba` → `1b5afa8` | 2 × 3000, fastchess | plafond à ~18 h 29 — ~2 880 parties attendues | fusion sauf régression — infrastructure de B6 |
+| ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | plafond à ~19 h 13 | **aucune fusion** : ce que vaut l'activer |
+| C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | plafond à ~19 h 45 — ~2 880 parties attendues | fusion sauf régression — correctif de règle |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
 
 Les candidats de C22, B9 et C23 sont chacun **committés puis révoqués
@@ -746,10 +746,10 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 | relève | si le critère autorise la fusion | ce qui bouge avec |
 |---|---|---|
 | mutation — **faite** | — | plafonds inchangés ; le balayage suivant, après C22, dira si `search.rs` redescend à 43 |
-| C22 (~17 h 25) | `git revert 8e08920` sur `main` | banc à la profondeur 7 → **113 214** (`bench_reference.rs` exige de le recopier) ; attic : lignes `c18-extension-echec` et sonde C22 → « non », **les deux rustines C23 → « non »** (`rustines_attic.rs` le signalera) ; les invariants de C22 reviennent dans `CLAUDE.md` avec son commit ; balayage de mutation |
-| B9 (~18 h 15) | `git revert 7552320` sur `main` à jour | chiffres de neutralité à refaire **sur le banc du moment** ; référence du banc ; balayage de mutation de `tt.rs` |
-| ponder (~18 h 50) | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la suite dépend du critère (sa section) |
-| C23 (~19 h 40) | `git revert 1ab033f` sur `main` à jour — **si C22 a fusionné, conflit attendu autour d'`is_repetition` : garder les deux** | banc : C22 + C23 rend **114 028** à la profondeur 7, celui de `main` d'avant ; l'invariant de la fenêtre revient dans `CLAUDE.md` ; attic ; balayage de mutation |
+| C22 — **relevé** | **non fusionné** : le critère de régression est atteint | rien ne bouge — banc, table de l'attic et rustines C23 restent tels quels. La suite est « C22 rejeté », ci-dessous |
+| B9 (~18 h 33) | `git revert 7552320` sur `main` à jour | chiffres de neutralité à refaire **sur le banc du moment** ; référence du banc ; balayage de mutation de `tt.rs` |
+| ponder (~19 h 17) | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la suite dépend du critère (sa section) |
+| C23 (~19 h 50) | `git revert 1ab033f` sur `main` à jour — **sans conflit**, C22 n'ayant pas fusionné | banc inchangé à la profondeur 7 ; l'invariant de la fenêtre revient dans `CLAUDE.md` ; attic ; balayage de mutation. **Puis, s'il fusionne : C22 porté par-dessus et remesuré** |
 
 **Les branches qui ne fusionnent pas ont aussi leur suite, écrite d'avance :**
 
@@ -770,7 +770,63 @@ mesuré » et ne se recopie pas ici. Ce qui dépend directement de ces relèves 
 interdire deux coups nuls consécutifs (après C23, seul) ; dépenser davantage
 quand le ponder est permis (après le ponder, en `les-deux`) ; B6 (après B9).
 
-### C22 — EN VOL : la recherche ne voyait pas 40 % des nulles, celles de l’horizon
+### C22 — VERDICT, 23 sept. 2026 : −10,44 ± 6,34 Elo à `8+0,08` — régression, non fusionné, à remesurer sur C23
+
+#### Le verdict — rendu à 17 h 50, sur le critère écrit avant
+
+| | job 35857125439 | job 35857128461 | en commun |
+|---|---|---|---|
+| parties comptées | 2 880 | 2 880 | **5 760** |
+| Elo | −7,24 ± 8,90 | −13,64 ± 9,02 | **−10,44 ± 6,34** |
+| Ptnml(0-2) | [117, 292, 661, 274, 96] | [131, 300, 654, 261, 94] | homogènes, z = 0,99 |
+
+**Borne haute −4,1 < 0 : régression significative. Non fusionné**, comme le
+critère le disait avant que le chiffre existe.
+
+- **Les deux jobs ont été coupés par le plafond de 350 minutes**, à 2 880
+  parties comptées sur 3 000 — la fin annoncée « vers 17 h 15 » était
+  sous-évaluée (facteur de durée ci-dessous). La coupure vient de l'horloge,
+  pas des résultats : l'estimation reste non biaisée, et la puissance
+  annoncée (± 6,3 sur 6 000) devient ± 6,34 sur 5 760.
+- **Anomalies : zéro — sur la partie couverte seulement.** La fin de journal
+  que sert l'API couvre les parties ~910 à ~2 890 de chaque job, soit ~69 %
+  du match. Le début, et l'étalonnage des runners qui s'y trouve, ne sont pas
+  lisibles depuis une session : le journal complet se télécharge depuis un
+  domaine que le proxy refuse (403). Ces deux jobs étaient partis avant que
+  `match.yml` recopie son recensement en fin de journal ; tous ceux lancés
+  depuis l'ont.
+- **Le correctif fait ce qu'il dit, en partie réelle.** Sur la partie
+  couverte, la référence produit 100 avertissements « PV continues after »
+  (68 triples répétitions, 32 cinquante coups), le candidat **un seul** : un
+  cinquante coups franchi par des parades d'échec en quiescence — que le
+  raisonnement de C22, « la quiescence ne joue que des captures et des
+  promotions », avait oubliées.
+- **Le facteur de durée**, premiers matchs où les deux moteurs portent C21 :
+  ~7,25 s par partie à concurrence 3, soit **0,97** de la formule, pour
+  ~0,95 extrapolé. **3 000 parties ne tiennent plus dans un job** : ~2 880 au
+  plus à `8+0,08`, et un job ne tranche plus que les effets de ~20 Elo.
+
+#### Ce que le verdict dit, et ce qu'il ne dit pas — la lecture était écrite AVANT
+
+La section C23 l'avait inscrit avant ce chiffre : **92,1 % des nulles que C22
+ajoute à l'horizon sont fausses**, créées par deux coups nuls consécutifs, et
+chacune désactive l'élagage par coup nul là où le camp au trait cherche à
+prouver un avantage. Le verdict mesure donc « nulles vraies + fausses nulles
+à l'horizon », et la régression est ce qu'on attendait des secondes.
+<span>Inférence, confiance moyenne : aucune mesure ne sépare encore les
+deux.</span>
+
+**Ce n'est pas un verdict contre la règle.** La suite était écrite d'avance :
+attendre C23 ; s'il fusionne, porter C22 sur `main` d'après C23 et le
+**remesurer là**, sur le même critère.
+
+**Et la sonde qui avait motivé C22 était contaminée par le défaut de C23.**
+Ses « 40 % de nulles manquées » comptaient les répétitions avec
+`is_repetition` lui-même — le code dont 88 à 92 % des détections étaient
+fausses. Le symptôme était vrai : les avertissements de l'arbitre portent
+sur de vraies positions de partie, et le candidat les fait disparaître. La
+grandeur chiffrée, non.
+
 
 #### Comment c'est sorti : des avertissements que j'avais classés bénins
 
@@ -818,6 +874,9 @@ table conservée d'un coup à l'autre. Ni banc, ni positions visitées à froid.
 | nulles vues à l'intérieur | 4,22 M |
 
 **40 % de toutes les positions nulles rencontrées** passaient inaperçues.
+**Contaminé — relevé le 23 sept. au soir** : ces comptes passaient par
+`is_repetition`, dont 88 à 92 % des détections étaient fausses (C23). Voir le
+verdict, en tête de section.
 *Ce que ce chiffre ne donne pas : l'Elo* — la part de l'arbre touchée majore,
 elle ne prédit ni la taille ni le signe (l'extension d'échec touchait 1,39 %
 et valait −5,0).
@@ -1151,7 +1210,7 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **C22 — la nulle vue à l'horizon** | — correctif de règle, pas un gain espéré | **EN MESURE** : deux jobs de 3000 parties à `8+0,08` sur le candidat `05a9dc4`. Critère **écrit avant de lancer** : fusion sauf régression significative. Voir sa section. **Découvert pendant le vol** : 92,1 % de ce qu'il ajoute à l'horizon sont de fausses nulles (C23) — le critère ne bouge pas, sa lecture si |
+| **C22 — la nulle vue à l'horizon** | — correctif de règle | **RÉGRESSION, non fusionné** : −10,44 ± 6,34 Elo à `8+0,08` sur 5 760 parties. Cause probable, écrite avant le verdict : 92 % des nulles qu'il ajoute à l'horizon sont fausses (C23). Prochaine action : **après C23, le porter sur `main` d'après C23 et le remesurer**, même critère |
 | **ponder** | **0,90** — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36 ; un **majorant** contre un autre adversaire | **ÉCRIT et vérifié le 23 sept.** — tests éprouvés par mutation, banc identique, `crosscheck.sh` d'accord, match de correction ponder activé sans une faute. `tools/paires.sh` reconstruit le vecteur que cutechess n'imprime pas. Chemin de mesure en Elo **en place** : `match.yml`, entrée `ponder`, éprouvé en local sur ses refus. **EN MESURE** : trois jobs de 900 parties, critère écrit avant — voir « Ponder — EN VOL ». Après : dépenser davantage quand le ponder est permis, mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
