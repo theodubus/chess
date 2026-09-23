@@ -1391,8 +1391,6 @@ dialog p {
 }
 
 .add-engine-form { display:grid; gap:12px; padding-top:14px; }
-.review-mode { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-.review-mode [aria-pressed=true] { background:#d8bd8030; border-color:#d8bd80; color:#ffe0a3; }
 .study-details { padding:20px; display:flex; flex-direction:column; gap:16px; align-self:start; }
 .study-details h2,.study-details p { margin:0; }
 .study-details p { line-height:1.6; }
@@ -1412,5 +1410,18 @@ dialog p {
  .study-details { padding:16px; }
  .study-moments button { font-size:11px; }
  .learning-workspace .board-column { width:100%; }
- .review-mode button { flex:1; font-size:11px; }
+}
+
+/* Un seul parcours : la variante garde les mêmes repères que la partie. */
+.study-details .review-details { padding:0; display:grid; gap:16px; }
+.study-details .pane-tabs { margin:-20px -20px 0; }
+.study-details .position-details summary { cursor:pointer; color:#acbcb1; font-size:13px; }
+.study-details .position-details dl { margin-top:14px; }
+.study-line [aria-pressed=true] { border-color:#d8bd80; background:#d8bd8020; }
+@media(max-width:650px) {
+ .study-details .pane-tabs { margin:-16px -16px 0; }
+}
+
+@media(max-width:650px) {
+ .study-details .review-details { max-height:none; overflow:visible; }
 }

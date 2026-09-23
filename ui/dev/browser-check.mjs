@@ -324,8 +324,6 @@ try {
       90000,
     );
     await screenshot("00b-import-stockfish");
-    await button("Revue guidée & exploration");
-    await button("Explorer cette position");
     await move("e7", "e5", ".learning-workspace");
     await move("g1", "f3", ".learning-workspace");
     await waitFor(
@@ -361,18 +359,14 @@ try {
       ),
       "exploration ne modifie pas la partie",
     );
-    await button("Analyse détaillée");
-    await button("Revue guidée & exploration");
-    await button("Explorer cette position");
-    await click('[aria-label="Variante suivante"]');
+    await click(".study-branches button");
     assert(
       await evaluate(
         `document.querySelectorAll('.study-branches button').length===2`,
       ),
-      "branches conservées entre modes",
+      "branches conservées après retour à la partie",
     );
     await button("Revenir à la partie");
-    await button("Analyse détaillée");
     await button("Importer un PGN");
     const start = new Chess();
     for (const move of ["f3", "e5", "g4"]) start.move(move);
@@ -407,7 +401,6 @@ try {
       `document.querySelector('.review-position').textContent.includes('Dh4#')`,
       "coup final importé",
     );
-    await button("Revue guidée & exploration");
     await pressKey("<");
     await button("Prochain moment clé");
     await waitFor(
@@ -423,8 +416,14 @@ try {
     );
     await move("d8", "h4", ".learning-workspace");
     await waitFor(
-      `document.querySelector('.retry-feedback')?.textContent.includes('trouvé le choix du moteur')`,
+      `document.querySelector('.retry-feedback')?.textContent.includes('Bonne décision') && document.querySelector('.board-annotation .annotation')`,
       "bonne tentative reconnue",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.board-annotation .annotation').className === document.querySelector('.move-assessment .annotation').className`,
+      ),
+      "badge de tentative cohérent sur le plateau et dans le panneau",
     );
     await screenshot("00d-retry-success");
     await call("Emulation.setDeviceMetricsOverride", {
@@ -458,7 +457,6 @@ try {
       "solution consultable",
     );
     await button("Revenir à la partie");
-    await button("Analyse détaillée");
     await button("Importer un PGN");
     const promotionGame = new Chess("7k/P7/8/8/8/8/8/7K w - - 0 1");
     promotionGame.move({ from: "a7", to: "a8", promotion: "q" });
@@ -469,8 +467,6 @@ try {
       "analyse PGN de promotion",
       90000,
     );
-    await button("Revue guidée & exploration");
-    await button("Explorer cette position");
     await move("a7", "a8", ".learning-workspace");
     await waitFor(
       `document.querySelector('dialog')?.textContent.includes('Choisir la promotion')`,
@@ -614,7 +610,7 @@ try {
     );
     await screenshot("04-analysis-desktop");
     await evaluate(
-      `document.querySelector('.desktop-chart circle:last-of-type').focus()`,
+      `document.querySelector('.evaluation-chart circle:last-of-type').focus()`,
     );
     await call("Input.dispatchKeyEvent", {
       type: "keyDown",
@@ -700,16 +696,17 @@ try {
       "le score après g4 décrit le mat au prochain coup",
     );
     await screenshot("04b-move-classification");
-    await button("Revue guidée & exploration");
     assert(
       await evaluate(
         `!!document.querySelector('.retry-invitation') && !!document.querySelector('.board-annotation .annotation-blunder')`,
       ),
       "retry mis en avant après la gaffe",
     );
+    await button("Options d’analyse");
     await evaluate(
       `(() => {const s=document.querySelector('[aria-label="Mon camp pour les exercices"]');s.value='b';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
     );
+    await click('dialog [aria-label="Fermer"]');
     assert(
       await evaluate(
         `!document.querySelector('.retry-invitation') && [...document.querySelectorAll('.study-details button')].some(b=>b.textContent==='Réessayer ce coup')`,
@@ -717,14 +714,11 @@ try {
       "retry adverse disponible sans invitation prioritaire",
     );
     await button("Réessayer ce coup");
-    assert(
-      await evaluate(
-        `document.querySelector('.study-details').textContent.includes('Blancs') && document.querySelector('.study-details').textContent.includes('solution sont masquées')`,
-      ),
+    await waitFor(
+      `document.querySelector('.study-details').textContent.includes('Blancs') && document.querySelector('.study-details').textContent.includes('solution sont masquées')`,
       "exercice du camp adverse à la bonne position",
     );
     await button("Revenir à la partie");
-    await button("Analyse détaillée");
     await click('.review-navigation [aria-label="Position précédente"]');
     assert(
       await evaluate(
@@ -775,11 +769,11 @@ try {
     );
     assert(
       await evaluate(
-        `document.querySelector('.variation-moves button').textContent.startsWith('1.')`,
+        `document.querySelector('.study-line button:nth-child(2)').textContent.startsWith('1.')`,
       ),
       "la variante du premier coup commence avant ce coup",
     );
-    await button("Revenir à la position de la partie");
+    await button("Revenir à la partie");
     await button("Options d’analyse");
     await click("dialog .annotation-toggle input");
     await click("dialog .evaluation-toggle input");
@@ -951,21 +945,21 @@ try {
       "annotations réactivées sans déplacement des options au chargement",
     );
     await evaluate(
-      `(() => {const s=document.querySelector('dialog select');s.value='3000';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+      `(() => {const s=document.querySelector('dialog [aria-label="Temps par position"]');s.value='3000';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
     );
     await waitFor(
       `document.querySelector('dialog .restart-analysis')`,
       "relance proposée après changement du budget",
     );
     await evaluate(
-      `(() => {const s=document.querySelector('dialog select');s.value='500';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+      `(() => {const s=document.querySelector('dialog [aria-label="Temps par position"]');s.value='500';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
     );
     await waitFor(
       `!document.querySelector('.restart-analysis')`,
       "relance masquée quand le réglage initial est rétabli",
     );
     await evaluate(
-      `(() => {const s=document.querySelector('dialog select');s.value='3000';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+      `(() => {const s=document.querySelector('dialog [aria-label="Temps par position"]');s.value='3000';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
     );
     await button("Relancer l’analyse");
     await waitFor(
@@ -1070,11 +1064,11 @@ try {
     );
     assert(
       await evaluate(
-        `document.querySelector('.review-navigation').getBoundingClientRect().bottom <= 844`,
+        `document.querySelector('.study-navigation').getBoundingClientRect().bottom <= 844`,
       ),
       "Navigation visible pendant la variante",
     );
-    await button("Revenir à la position de la partie");
+    await button("Revenir à la partie");
     await click('.review-navigation [aria-label="Position finale"]');
     await waitFor(
       `document.querySelector('.review-position').textContent.includes('Dh4#')`,

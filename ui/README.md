@@ -12,11 +12,16 @@ npm install
 npm run dev -- --host 127.0.0.1
 ```
 
-Pour jouer contre le moteur ou analyser une partie, dans un second terminal :
+Pour jouer contre le moteur ou analyser une partie, dans un second terminal
+ouvert à la **racine du dépôt** :
 
 ```sh
-npm run engine:bridge -- ../target/release/shallowred
+npm --prefix ui run engine:bridge -- ../target/release/shallowred
 ```
+
+Si ce terminal est déjà dans `ui/`, utilisez `npm run engine:bridge -- ../target/release/shallowred`.
+Une erreur npm `ENOENT` sur `chess/package.json` indique que la commande sans
+`--prefix ui` a été lancée à la racine ; elle ne vient pas du binaire.
 
 Ouvrir `http://127.0.0.1:5173`. Le bouton « Jouer » connecte automatiquement
 le moteur choisi ; aucun panneau de connexion n’est à activer pendant la partie.
@@ -174,39 +179,35 @@ comme valeur initiale des deux vues. La profondeur pendant le jeu est optionnell
 masquée par défaut, avec une préférence indépendante mémorisée. Elle reste visible
 dans l’analyse. À deux joueurs, aucune fausse évaluation n’est affichée.
 
-## Revue guidée et exploration
+## Analyse interactive
 
-« Revue guidée & exploration » propose les mêmes flèches `←` / `→`, `<` / `>`
-pour parcourir chaque coup. « Prochain moment clé » déroule les coups jusqu’à
-une imprécision, erreur, gaffe, occasion manquée, coup décisif, brillant ou mat.
-Le défilement peut être arrêté et le moment précédent reste accessible. Les
-moments dépendent des annotations déjà calculées ; ils sont provisoires tant
-que l’analyse continue.
+Un seul écran réunit revue, exercices et variantes. Les flèches `←` / `→`,
+`<` / `>` parcourent chaque coup. « Prochain moment clé » déroule la partie
+jusqu’au prochain coup notable du camp humain contre le bot, des deux camps
+à deux joueurs. Pour un PGN importé, les deux camps sont retenus par défaut ;
+« Options d’analyse » permet de choisir son camp. Les coups adverses restent
+accessibles individuellement et peuvent toujours être retentés.
 
-« Réessayer ce coup » est disponible sur tous les coups, y compris adverses,
-et revient à la position avant le coup sélectionné (au départ, avant le premier
-coup). La solution et l’évaluation sont masquées jusqu’à la tentative. Le choix
-exact du moteur est reconnu ; une autre décision est aussi acceptée lorsque
-les évaluations comparables indiquent une perte d’indice inférieure à 0,02.
-Une contradiction ou un score absent ne fait pas passer une tentative pour
-fausse. On peut retenter, consulter la solution ou continuer en exploration.
-Le camp humain est prérempli après une partie contre le moteur ; l’import et
-les parties locales permettent de choisir Blancs, Noirs ou les deux camps.
-L’invitation à retenter est renforcée après un mauvais coup du camp choisi.
+Jouer directement sur le plateau ouvre une variante, sans changer de mode.
+Les deux camps sont jouables ; les flèches remontent la variante et permettent
+de créer d’autres branches. « Revenir à la partie » retrouve le coup sélectionné.
+Les variantes restent accessibles depuis leur point de départ, en mémoire,
+sans modifier le PGN original.
 
-« Explorer cette position » crée un arbre distinct de la partie : jouer les
-deux camps, revenir en arrière, choisir une sous-promotion et créer des
-branches alternatives. Les suites restent disponibles depuis leur point de
-bifurcation, même après un passage dans l’analyse détaillée. Elles restent
-locales à la revue en mémoire, sans modifier ni enrichir le PGN original.
+« Réessayer ce coup » revient avant le coup visible et masque solution et
+évaluation jusqu’à la tentative. Il est mis en avant après une erreur du camp
+choisi. Après la tentative, on peut continuer à jouer, retenter ou consulter
+la solution. Les badges sont affichés sur le plateau et dans le panneau,
+avec les mêmes règles que pour les coups de la partie.
 
-L’évaluation de la variante utilise une session UCI séparée du même moteur,
-avec l’historique complet (répétitions comprises), un délai de saisie de 180 ms
-et un budget de 1,5 seconde. Elle se met à jour pendant la recherche. Un
-changement de position annule l’ancienne recherche ; ses réponses tardives
-sont ignorées, et son score n’est jamais présenté comme celui de la nouvelle
-position. Mat et nulles sont reconnus sans recherche. La préférence d’affichage
-de l’évaluation continue de s’appliquer.
+L’évaluation utilise le moteur sélectionné et l’historique UCI complet,
+répétitions comprises. Chaque nouvelle position est calculée à 1,5 seconde,
+puis comparée à la position avant le coup. Les cas sensibles ou contradictoires
+sont vérifiés à 3 secondes par position, notamment avant d’attribuer « Brillant ».
+Les badges restent provisoires pendant ce calcul. Une incohérence persistante
+reste signalée plutôt que de recevoir une classification arbitraire.
+Les recherches abandonnées sont annulées ; leurs réponses tardives sont ignorées.
+Les résultats sont conservés par branche et invalidés à la relance de l’analyse.
 
 ## Annotations de la revue
 
