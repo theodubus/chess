@@ -114,15 +114,6 @@ une mesure, pas une préférence.
   restante. Sans cela, le signe du score de mat de negamax peut s'inverser
   sans qu'un seul test bronche — une position matée valant alors un gain
   écrasant.
-- **Une nulle se teste AVANT l'aiguillage vers la quiescence**, sans quoi
-  elle ne se voit qu'à l'intérieur de l'arbre. C'était le cas jusqu'à C22 :
-  une répétition ou la règle des cinquante coups atteinte à l'HORIZON était
-  évaluée comme si la partie continuait — 40 % des positions nulles que la
-  recherche rencontre, mesuré en rejouant un match. Même leçon que le mat,
-  qui se détecte lui aussi à deux endroits : chaque branche a son test, et
-  chaque test son témoin non nul. **Et la règle des cinquante coups cède
-  devant le mat** : un mat donné au centième demi-coup reste un mat —
-  `is_rule_draw`.
 - **L'échéance douce se déclenche quand le budget est dépassé, jamais avant.**
   Inverser sa comparaison ferait cesser l'approfondissement dès la première
   itération : le moteur jouerait **toute une partie à la profondeur 1** dès
@@ -805,7 +796,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
 rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
 commit.
 
-Référence à la profondeur 7 : 113 214 nœuds.
+Référence à la profondeur 7 : 114 028 nœuds.
 
 Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
 `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
