@@ -1,0 +1,79 @@
+name: UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ui/**"
+      - ".github/workflows/ui.yml"
+  pull_request:
+    paths:
+      - "ui/**"
+      - ".github/workflows/ui.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ui
+
+jobs:
+  checks:
+    name: Lint, types, tests et build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - name: Dépendances verrouillées
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Tests unitaires
+        run: npm run test:unit
+      - name: Build de production
+        run: npm run build
+
+  integration:
+    name: Pont UCI, ShallowRed et Stockfish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      CHESS_ENGINE_BINARY: ${{ github.workspace }}/target/release/shallowred
+      CHESS_STOCKFISH_BINARY: /usr/games/stockfish
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - name: Dépendances verrouillées
+        run: npm ci
+      # La toolchain est celle du dépôt ; aucun changement au moteur n'est requis.
+      - name: Compiler ShallowRed
+        working-directory: .
+        run: cargo build --locked --release --bin shallowred
+      - name: Installer Stockfish
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends stockfish
+      # Les variables activent les tests réels, ignorés sans binaire en local.
+      - name: Vérifier les binaires
+        run: |
+          test -x "$CHESS_ENGINE_BINARY"
+          test -x "$CHESS_STOCKFISH_BINARY"
+      - name: Tests du pont et des moteurs réels
+        run: npm run test:bridge
