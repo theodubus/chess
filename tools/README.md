@@ -702,9 +702,10 @@ dernière relève est faite.
 |---|---|---|---|---|---|
 | C22 — la nulle à l'horizon | 35857125439, 35857128461 | `05a9dc4` → `e1971a8` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 17 h 43, 2 × 2 880 parties | **−10,44 ± 6,34 : régression, non fusionné** — à remesurer sur C23 |
 | B9 — capacité de la table atomique | 35861835486, 35861838168 | `bd896ba` → `1b5afa8` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 18 h 29, 2 860 + 2 880 parties | **−1,27 ± 6,34 : pas d'effet décelable, FUSIONNÉ** (`481f8af`) |
-| ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | plafond à ~19 h 13 | **aucune fusion** : ce que vaut l'activer |
+| ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | **RELEVÉ** — finis entiers entre 18 h 37 et 18 h 40 | **+67,63 ± 9,19 contre notre jumeau : l'activer rapporte** — 2,7 × l'attendu, l'écart localisé par sonde (sa section) |
 | C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | plafond à ~19 h 45 — ~2 880 parties attendues | fusion sauf régression — correctif de règle |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
+| balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | ~19 h 45 — le précédent a pris une heure | `tt.rs` est réécrit entièrement : son plafond se remesure, à la baisse sans rien demander, à la hausse avec une raison écrite |
 
 Les candidats de C22, B9 et C23 sont chacun **committés puis révoqués
 aussitôt** (`8e08920`, `7552320`, `1ab033f`) : `main` ne contient aucun des
@@ -748,7 +749,7 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 | mutation — **faite** | — | plafonds inchangés ; le balayage suivant, après C22, dira si `search.rs` redescend à 43 |
 | C22 — **relevé** | **non fusionné** : le critère de régression est atteint | rien ne bouge — banc, table de l'attic et rustines C23 restent tels quels. La suite est « C22 rejeté », ci-dessous |
 | B9 — **fusionné** | `git revert 7552320`, fait (`481f8af`) | référence du banc → **114 026** ; rustines B9 de l'attic → « non », leur code est entré ; chiffres de neutralité inchangés, la base n'ayant pas bougé ; **balayage de mutation de `tt.rs` lancé après la fusion** |
-| ponder (~19 h 17) | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la suite dépend du critère (sa section) |
+| ponder — **relevé** | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la conversion plis → Elo de `CLAUDE.md`, qui a désormais deux points mesurés |
 | C23 (~19 h 50) | `git revert 1ab033f` sur `main` à jour — **sans conflit**, C22 n'ayant pas fusionné | banc inchangé à la profondeur 7 ; l'invariant de la fenêtre revient dans `CLAUDE.md` ; attic ; balayage de mutation. **Puis, s'il fusionne : C22 porté par-dessus et remesuré** |
 
 **Les branches qui ne fusionnent pas ont aussi leur suite, écrite d'avance :**
@@ -1182,7 +1183,111 @@ parce que l'échange statique coupait **les mêmes captures au même endroit**.
 4. **Balayage de mutation** après la fusion : `tt.rs` est réécrit entièrement.
 5. Inscrire le verdict, la table de l'attic, la fiche du carnet.
 
-### Ponder — EN VOL : ce que vaut le ponder activé, à `8+0,08`
+### Ponder — VERDICT, 23 sept. 2026 : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau — l'activer rapporte
+
+#### Le verdict — rendu à 18 h 45, sur le critère écrit avant
+
+| | job 35866707040 | job 35866710329 | job 35866713797 | en commun |
+|---|---|---|---|---|
+| étalonnage | 2 998 815 n/s, profondeur 12 | 2 263 800 n/s, profondeur 11 | 2 273 883 n/s, profondeur 12 | runners à 32 % d'écart |
+| graine | `1506968672` | `1506971961` | `1506975429` | distinctes |
+| parties | 900 | 900 | 900 | **2 700** |
+| Elo | +63,63 ± 16,78 | +64,82 ± 15,12 | +74,47 ± 15,79 | **+67,63 ± 9,19** |
+| Ptnml(0-2) | [18, 55, 192, 116, 69] | [8, 56, 202, 130, 54] | [7, 55, 197, 123, 68] | homogènes, z ≤ 0,92 |
+| durée | 5:11:49 — 20,79 s/partie | 5:13:14 — 20,88 | 5:09:55 — 20,66 | finis avant le plafond |
+
+Les ± par job sont ceux de la formule pentanomiale de
+`tools/mettre-en-commun.sh` ; cutechess imprime ± 19,1, 18,6 et 19,3, sa
+formule trinomiale ignorant l'appariement.
+
+**Zéro anomalie sur la totalité des trois journaux** — aucune perte au temps,
+aucun coup illégal, aucune déconnexion, aucun blocage, en 2 700 parties où un
+camp pondère. C'était la première condition du critère ; c'est aussi la
+validation du protocole en régime réel, que les tests ne donnaient qu'en
+unitaire.
+
+**Borne basse +58,4 > 0 → l'activer rapporte ce que dit le point estimé, et
+tout déploiement qui le permet l'active.** Comme le critère l'écrivait. Côté
+moteur il n'y a rien à fusionner : c'est l'interface qui envoie
+`setoption name Ponder value true`, et `ui/` a sa propre autorité.
+
+#### La vraisemblance — 2,7 fois l'attendu, et où était l'écart
+
+L'attendu écrit avant était **~+25**, confiance faible. Mesuré : **+67,6**.
+Pas d'ordre de grandeur, mais un facteur qui se contrôle avant de s'inscrire.
+Deux parties dans la prévision : le **mécanisme** (combien de plis) et la
+**conversion** (combien d'Elo par pli). Une sonde jetable les sépare —
+cutechess `-debug` en conteneur, mêmes options que `match.yml`, 20 parties à
+`8+0,08`, **écart de profondeur apparié par partie** : dans une même partie,
+les deux camps cherchent des positions voisines, donc le mélange de phases
+s'annule, ce qu'une moyenne entre deux matchs ne ferait pas.
+
+| sonde, 20 parties chacune | écart de profondeur apparié | temps de recherche | ce qu'elle dit |
+|---|---|---|---|
+| **ponder** — `136dda4`, candidat pondère | **+0,94 ± 0,19 pli** | × 1,54 | le mécanisme prévu, **0,90**, tombe dedans |
+| **témoin** — `136dda4`, personne ne pondère | −0,00 ± 0,12 | × 1,00 | la méthode rend zéro quand rien ne diffère |
+| **C21** — `ebe93ad` contre `6d5e7c6` | **+0,41 ± 0,19 pli** | × 1,32 | **moins que les 0,54 à 0,70** qui servaient à convertir |
+
+**Le mécanisme était juste, la conversion ne l'était pas.** L'attendu divisait
+les +19,13 de C21 par **0,54 à 0,70 pli estimés par son budget** ; mesurés en
+partie, ils valent 0,41. Recalculé sur la profondeur mesurée, l'attendu
+aurait été **~+42**, et surtout son intervalle : Elo et plis de C21 portent
+chacun leur incertitude, et leur rapport s'étend de **21 à 116 Elo par
+pli**. Celui du ponder s'étend de **52 à 102**. *Les deux points sont
+compatibles* ; le « ~+25 » écrit comme un nombre cachait un intervalle
+d'un facteur cinq. **Une conversion par un point unique porte l'incertitude
+des DEUX mesures qui la composent : écrire l'intervalle, pas le point.**
+
+Deux autres causes étaient candidates, et la sonde les teste :
+
+- **Le taux de succès contre notre jumeau** : 749 `ponderhit` sur 1 067
+  `go ponder`, **0,702** — un peu au-dessus des 0,659 estimés par la
+  variante principale. Il gonfle le chiffre par rapport à un autre
+  adversaire, mais il était déjà dans l'attendu.
+- **Le camp qui pondère vole-t-il du CPU à l'adversaire** — vers
+  l'hypothèse ? En conteneur, non : la référence cherche à **2 573 899 n/s**
+  pendant que le candidat pondère, **2 594 730** au témoin (−0,8 %), et sa
+  profondeur ne bouge pas (14,63 contre 14,64). <span>Non mesuré sur les
+  runners, dont la topologie diffère — le conteneur a quatre cœurs sans
+  SMT.</span>
+
+**Et la sonde montre ce que le ponder laisse sur la table** : le camp qui
+pondère dépense **175 ms de pendule par coup, la référence 202** — 13 % de
+moins. Un succès rembourse le coup ; <span>inférence, confiance moyenne : le
+budget, proportionnel à ce qui reste, ne dépense pas ce remboursement avant
+la fin de la partie</span>. *C'est le gisement du réglage suivant*,
+« dépenser davantage quand le ponder est permis ».
+
+#### Ce que ce chiffre ne dit pas
+
+- **Il appartient à son adversaire**, comme `p` : contre notre jumeau, la
+  prévision est la plus facile qui soit. Contre un autre moteur `p` baisse ;
+  contre un humain, `p` baisse aussi mais le temps adverse s'allonge — le
+  signe de l'écart n'est pas connu. **Ne jamais citer +67,6 sans
+  « contre notre jumeau, à `8+0,08` ».**
+- **Il ne dit rien d'un classement joué ponder désactivé** : la force du
+  moteur ponder désactivé est celle d'avant, au nœud près.
+- Il ne contient **aucun réglage de temps** : le candidat garde 13 % de sa
+  pendule.
+
+#### La suite
+
+1. **Dépenser le remboursement** — le réglage de temps quand `Ponder` est
+   activé. Le mécanisme se règle d'abord à la sonde, pas au match : chercher
+   le supplément qui ramène la pendule dépensée par coup du camp qui pondère
+   à celle de la référence (202 ms ici), puis **un** match en `les-deux`,
+   critère écrit avant. <span>Ordre de grandeur, confiance faible : 13 % de
+   pendule, soit ~0,27 pli à 1,36 par doublement, soit 6 à 31 Elo sur
+   l'étendue de 21 à 116 Elo par pli — donc plusieurs jobs.</span>
+2. **La sonde appariée par partie devient un outil** : huit minutes de
+   conteneur donnent les plis réellement gagnés par n'importe quel chantier de
+   temps ou de vitesse — ponder, allocation inégale, génération par étapes,
+   Lazy SMP. Elle vaut d'être écrite avec son test (un témoin fabriqué qui
+   doit rendre zéro), comme `paires.sh`.
+3. **Le vol de CPU sur runner** reste non mesuré : sans objet en `les-deux`,
+   où il est symétrique ; à mesurer avant tout autre match `candidat`.
+
+#### Ce qui avait été lancé
 
 Le **même binaire** des deux côtés — `Ponder` activé pour le candidat, pas
 pour la référence —, joué par cutechess à une partie à la fois, selon
@@ -1239,7 +1344,7 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | **RÉGRESSION, non fusionné** : −10,44 ± 6,34 Elo à `8+0,08` sur 5 760 parties. Cause probable, écrite avant le verdict : 92 % des nulles qu'il ajoute à l'horizon sont fausses (C23). Prochaine action : **après C23, le porter sur `main` d'après C23 et le remesurer**, même critère |
-| **ponder** | **0,90** — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36 ; un **majorant** contre un autre adversaire | **ÉCRIT et vérifié le 23 sept.** — tests éprouvés par mutation, banc identique, `crosscheck.sh` d'accord, match de correction ponder activé sans une faute. `tools/paires.sh` reconstruit le vecteur que cutechess n'imprime pas. Chemin de mesure en Elo **en place** : `match.yml`, entrée `ponder`, éprouvé en local sur ses refus. **EN MESURE** : trois jobs de 900 parties, critère écrit avant — voir « Ponder — EN VOL ». Après : dépenser davantage quand le ponder est permis, mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
+| **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,19**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule —, réglé à la sonde puis mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
