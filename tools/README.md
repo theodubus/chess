@@ -885,7 +885,8 @@ découpage de B2, la fiche C21 et la note de saturation. Le voici entier.
 | défaut de `movestogo` (devenu **C21**) | **écrit, en mesure** | +0,54 à 0,70 pli ; SPRT expiré à +14,59 ± 8,31, relancé en longueur fixe |
 | « s'arrêter tôt sur un coup stable » | **RÉFUTÉ, clos** | et il *empire* au régime cible : 13,9 % de coups changés à `8+0,08`, **18,4 % à `30+0,3`**. Le temps épargné n'est de surcroît pas dépensable — avec `restant/d`, une seconde économisée ne revient qu'au `d`-ième |
 | « prolonger sur un score qui s'effondre » | **OUVERT — écran passé, jamais écrit** | survit sur **2,7 à 3,0 % des coups** |
-| **allocation inégale** | **PAS COMMENCÉ** | le seul chantier restant qui puisse dépasser le plafond |
+| **allocation inégale** | **PAS COMMENCÉ** | le seul chantier restant qui puisse dépasser le plafond. **Une de ses entrées est déjà dans le moteur et jetée** : la pendule de l'adversaire — voir la section qui suit |
+| *(hors B2)* **ponder** | **jamais ouvert** | légal et prévu par UCI, ~0,8 pli à taux de succès 0,5 — mais **inmesurable avec l'arbitre actuel**, voir la section qui suit |
 
 #### Pourquoi l'allocation inégale est le vrai reste
 
@@ -911,6 +912,91 @@ pure perte.
 
 **Donc : petit levier, signe inconnu.** Il ne passe pas devant l'allocation
 inégale sur la seule foi de sa part.
+
+### Réfléchir sur le temps de l'adversaire, et lire sa pendule
+
+Deux questions de Théo, 23 sept. 2026. **Ni l'une ni l'autre n'est illégale**,
+et les deux touchent au chantier de gestion du temps resté ouvert.
+
+#### 1. Le ponder — légal, standard, et inmesurable avec l'outillage actuel
+
+**C'est prévu par le protocole** : UCI a `go ponder` et `ponderhit` pour
+exactement ça. Rien à inventer côté norme.
+
+**Ce que ça vaudrait, converti par la constante du projet.** Si l'adversaire
+consomme à peu près le même temps que nous, un taux de succès `p` donne un
+temps effectif de `1 + p`, soit `log₂(1 + p) × 1,36` pli :
+
+| taux de succès | temps effectif | plis |
+|---|---|---|
+| 0,4 | × 1,4 | 0,66 |
+| 0,5 | × 1,5 | **0,80** |
+| 0,6 | × 1,6 | 0,92 |
+
+**C'est plus que C21** (0,54 à 0,70) et environ quatre fois la génération par
+étapes. <span>**Mais `p` n'est mesuré nulle part ici**, et multiplier une
+constante héritée est exactement ce que ce dépôt a démenti trois fois. Le
+tableau dit l'ordre de grandeur, pas le gain.</span>
+
+**Et `p` se mesure avant d'écrire une ligne** — c'est « mesurer le mécanisme
+avant d'en mesurer l'effet » : compter, sur des parties déjà jouées, combien de
+fois l'adversaire joue le **deuxième coup de notre variante principale**. Des
+minutes d'instrumentation, pas des heures de match. Si `p` est bas, la question
+se ferme pour de bon.
+
+**Pourquoi on ne peut pas le mesurer aujourd'hui, et c'est le point bloquant :**
+
+- **le mot `ponder` n'apparaît pas dans le README de fastchess** <span>vérifié
+  le 23 sept. 2026 sur un seul fichier — absence de documentation, pas preuve
+  d'absence</span> ;
+- **et même s'il le supportait, le protocole de mesure s'effondre.**
+  `match.yml` joue à `-concurrency 3` sur quatre cœurs. Avec le ponder, pendant
+  que l'un cherche sur sa pendule, l'autre brûle du CPU : **six moteurs pour
+  quatre cœurs** au lieu de trois. C'est la physique exacte de la règle « ne
+  jamais faire tourner deux matchs sur une même machine », et elle fausserait
+  les deux camps de façon **asymétrique** — celui qui pense sur son temps est
+  celui qui souffre du vol.
+
+**Et le régime de déploiement décide de l'utilité.** Les listes de classement
+jouent habituellement sans ponder <span>inférence, confiance moyenne : non
+vérifié pour CCRL</span> ; un bot qui joue des humains sur un serveur l'a
+généralement autorisé. *Un gain qui n'existe que dans un régime doit être
+nommé avec son régime* — c'est la leçon de la cadence, appliquée au
+déploiement.
+
+#### 2. La pendule de l'adversaire — elle est DÉJÀ reçue, et jetée
+
+**Fait vérifié dans le code, pas supposé.** `parse_go` lit `wtime`, `btime`,
+`winc` et `binc` — les deux camps — et `Limits` les porte tous les quatre. Puis
+`time_budget_ms` fait :
+
+```rust
+let (remaining, increment) = match side {
+    Color::White => (limits.wtime, limits.winc),
+    Color::Black => (limits.btime, limits.binc),
+};
+```
+
+**L'information de l'adversaire est parsée, testée, et écartée du budget.**
+Rien à ajouter au protocole : tout est déjà là.
+
+**C'est un ENTRÉE du chantier « allocation inégale »**, le seul qui reste
+ouvert en gestion du temps — et la fiche ne la nommait pas. Dépenser plus quand
+l'adversaire est court, ou quand on est loin devant à la pendule, est
+précisément une allocation qui cesse d'être plate.
+
+**Mais l'écran à passer d'abord contredit peut-être l'idée, et il est
+gratuit.** Dans un match moteur contre moteur à la même cadence, **les deux
+pendules se suivent** : les deux camps gaspillent la même fraction, donc l'écart
+reste petit et l'information vaut peu. *Ce n'est pas un argument contre le
+mécanisme — c'est un avertissement sur le RÉGIME de mesure.* Contre un humain
+ou un moteur de gestion différente, les pendules divergent vraiment.
+
+**Donc : mesurer la distribution de l'écart entre les deux pendules sur des
+parties réelles avant d'écrire quoi que ce soit.** Si elle est concentrée près
+de zéro dans notre protocole, le mécanisme ne pourra pas s'y mesurer même s'il
+est bon ailleurs — et ce serait le troisième cas du même piège, après le moteur
+qui démarre froid et le banc qui ne sature pas la table.
 
 ### Ce qu'il faut surveiller — et que rien ne signalera tout seul
 
