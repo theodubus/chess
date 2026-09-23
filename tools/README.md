@@ -884,11 +884,14 @@ parce que l'échange statique coupait **les mêmes captures au même endroit**.
 
 Le **même binaire** des deux côtés — `Ponder` activé pour le candidat, pas
 pour la référence —, joué par cutechess à une partie à la fois, selon
-l'entrée `ponder = candidat` de `match.yml`.
+l'entrée `ponder = candidat` de `match.yml`. Commit `136dda4` des deux
+côtés ; lancés à 13 h 23 UTC, fin attendue vers 18 h 30.
 
 | runs | graine | parties | cadence |
 |---|---|---|---|
-| *lancés après ce commit — voir le suivant* | tirée par le run | 900 × 3 | `8+0,08` |
+| [35866707040](https://github.com/theodubus/chess/actions/runs/35866707040) | tirée par le run | 900 | `8+0,08` |
+| [35866710329](https://github.com/theodubus/chess/actions/runs/35866710329) | tirée par le run | 900 | `8+0,08` |
+| [35866713797](https://github.com/theodubus/chess/actions/runs/35866713797) | tirée par le run | 900 | `8+0,08` |
 
 **900 parties par job, pas 1 000** : à ~20 s par partie, 1 000 frôleraient
 le plafond de 350 minutes, et un job coupé ne garantit pas que son résumé —
