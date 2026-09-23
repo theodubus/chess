@@ -365,8 +365,12 @@ La galerie de contrôle `/dev/annotations.html` utilise les vrais composants
 avec des annotations simulées. Pour ne vérifier que les pictogrammes et leurs
 ancrages : `CHESS_ANNOTATIONS_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
 
-Les vérifications sont locales. Le workflow UI est prévu dans une PR dédiée,
-séparément de la CI du moteur, conformément aux consignes du dépôt.
+Le workflow dédié [UI](../.github/workflows/ui.yml) exécute lint, TypeScript,
+tests unitaires et build, puis les tests du pont avec ShallowRed compilé depuis
+le dépôt et Stockfish. Il utilise Node.js 22 et `npm ci`. Il se déclenche sur
+les PR et les push sur `main` qui modifient `ui/**` ou le workflow lui-même,
+et peut aussi être lancé manuellement. Le parcours Chromium reste une
+vérification locale. La CI du moteur reste indépendante.
 
 ## Dépendances et licence
 
