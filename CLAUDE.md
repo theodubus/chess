@@ -218,7 +218,7 @@ une mesure, pas une préférence.
 | « cette technique est standard, donc elle aide » | **Rien.** Ce n'est pas une preuve, et le dépôt en porte maintenant **trois** démentis. PVS est dans tous les manuels et la mesure l'a rejeté **deux fois, à deux cadences** : −10,9 ± 7,9 à `1+0,01` (4214 parties, septembre) puis **−0,8 ± 8,2 à `8+0,08`** (3400 parties, 21 sept., sur la base post-C19 et post-LMP). Le second chiffre corrige le premier plus qu'il ne le confirme : **PVS n'est pas un coût, c'est un néant.** Empilé sur LMR, coup nul et fenêtres d'aspiration, il n'apporte plus rien à couper, et son coût de re-recherche compense exactement son économie de nœuds. La coupure du manuel dans l'échange statique rend une valeur fausse — 27 écarts sur 771, l'oracle l'a vue au premier passage. Et reléguer les captures perdantes **derrière les coups tranquilles**, comme le font les moteurs modernes, coûte **+31,6 % de nœuds** ici, contre −4,2 % pour le palier le plus doux. Une technique standard entre par le SPRT comme toutes les autres. |
 | « cette rustine de l'attic s'applique encore » | **`git apply --check`, jamais la table.** Trois des sept lignes de `tools/attic/README.md` étaient fausses le 22 sept. 2026, toutes par la même fusion, et rien ne pouvait le signaler : personne n'avait rien fait de mal, la table avait vieilli pendant qu'une PR avançait. Le contrôle est `engine/tests/rustines_attic.rs`, et il garde **la copie que les humains lisent** — déplacer la déclaration dans un fichier annexe aurait laissé la table dériver, ce qui est la faute de B10. **Une rustine qui cesse de s'appliquer parce que son code est ENTRÉ dans `main` n'est pas une régression** : c'est un rejet levé, et ça se raconte dans la colonne. |
 | « ce réglage était mauvais, pas la technique » | **Une bissection par le paramètre, pas une intuition** — et la bissection appartient elle aussi à sa cadence. L'élagage par compte de coups a été bissecté à `1+0,01` : seuil `6 + d²` → **−25,2 Elo**, seuil `12 + d²` → **−12,6**, le coût suivant le **risque mesuré** (3,8 % puis 2,0 % des montées d'`alpha` détruites, × 0,53 pour × 0,50, droite par l'origine). J'en avais conclu « il n'y a pas de seuil qui paie sur ce moteur ». **Réfuté le 21 sept. 2026** : à `8+0,08`, sur la base post-C19, les deux seuils sont **H1** — +22,85 ± 9,88 et +17,24 ± 8,51. La bissection était juste, la généralisation ne l'était pas. **Deux points ferment une question que zéro point laisserait ouverte — mais ils ne la ferment qu'à leur cadence.** |
-| « j'ai mesuré le mécanisme, donc je sais » | **Vérifier le dénominateur.** Avant d'écrire LMP j'ai mesuré la part des *coups tranquilles* élagués : 58 % au seuil 6, 40 % au seuil 12, compromis monotone sans genou — d'où « seul un SPRT peut choisir ». En **nœuds**, qui sont ce qui achète de la profondeur, le seuil 12 garde **96 %** de l'économie du seuil 6 : le genou est net. Un chiffre vrai qui répond à une autre question. |
+| « j'ai mesuré le mécanisme, donc je sais » | **Vérifier le dénominateur.** Avant d'écrire LMP j'ai mesuré la part des *coups tranquilles* élagués : 58 % au seuil 6, 40 % au seuil 12, compromis monotone sans genou — d'où « seul un SPRT peut choisir ». En **nœuds**, qui sont ce qui achète de la profondeur, le seuil 12 garde **96 %** de l'économie du seuil 6 : le genou est net. Un chiffre vrai qui répond à une autre question. **Et le dénominateur peut être un ENSEMBLE, pas seulement une grandeur** — 23 sept. 2026 : l'écart entre les deux pendules rend « +60 ms en notre faveur » moyenné sur tous les coups, et **−6 ms** moyenné sur les seuls coups où les deux camps en ont joué autant. Le reste est un artefact de comptage de coups. |
 
 ## Pièges de mesure, appris à nos dépens
 
@@ -353,6 +353,20 @@ une mesure, pas une préférence.
   devait expliquer. **D2 est clos sans un seul match.** Troisième forme du même
   piège, après le dénominateur de LMP et le balayage par `movetime` : un chiffre
   vrai qui répond à une autre question.
+- **« L'outil ne sait pas le faire » se lit dans son SOURCE, à la version qu'on
+  épingle — et « l'outillage », c'est tout ce qu'on a déjà.** Le 23 sept. 2026
+  j'ai écrit que le ponder était « inmesurable avec l'outillage actuel », sur
+  la foi d'un mot absent du README de fastchess. Deux fautes en une. **La
+  bonne source** : le dépôt de fastchess au commit épinglé ne contient
+  effectivement pas une occurrence du mot — mais c'est un `grep` sur l'arbre,
+  avec un témoin qui répond, qui l'établit, pas une documentation. **Le bon
+  ensemble** : `setup-arbiters.sh` construit DEUX arbitres, et cutechess-cli
+  supporte `ponder` par moteur, documenté dans son `help.txt`. J'avais posé la
+  question au seul outil que j'avais en tête. *Une capacité déclarée absente
+  ferme un chantier ; avant de l'écrire, lire le source, et énumérer les
+  outils au lieu de penser à celui qu'on vient d'utiliser.* Même famille que
+  « un garde-fou peut garder la mauvaise chose », appliquée non plus à un
+  dispositif mais à une conclusion.
 - **Avant d'ordonner deux chantiers par une dépendance, vérifier qu'ils
   touchent les mêmes objets.** Le projet a inscrit que l'échange statique était
   « la précondition » de l'élagage par compte de coups, au motif que la prémisse
