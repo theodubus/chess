@@ -46,7 +46,21 @@ d'un aveu sur la profondeur de recherche.
 > l'**élagage par compte de coups**, **+22,85 ± 9,88** sur 2436 parties —
 > **la même technique avait été rejetée deux fois à `1+0,01`** (−25,2 et
 > −12,6). C'est la démonstration la plus nette de la réserve ci-dessus.
-> Il n'a encore ni recherche parallèle, ni NNUE.
+>
+> **La gestion du temps entre dans les acquis mesurés, le 23 sept. 2026.**
+> Le moteur s'alloue `restant / movestogo` par coup, avec une échéance douce
+> qui lui interdit d'entamer une itération qu'il ne finira pas. Le diviseur
+> par défaut passe de trente à douze : **+19,13 ± 6,31 Elo à `8+0,08` sur
+> 6 000 parties**, deux matchs à longueur fixe mis en commun, zéro perte au
+> temps. Le SPRT qui avait expiré en chemin rendait +14,59 — *un test
+> séquentiel interrompu minore, et c'est ici sa première confirmation*.
+> **Le diviseur a atteint sa limite** : le plafond d'une allocation plate vaut
+> `(pendule + coups × inc) / coups`, et le balayage y butte déjà. Aller plus
+> loin demande une allocation **inégale**, pas un autre réglage.
+>
+> Il n'a encore ni recherche parallèle, ni NNUE, ni **ponder** — ce dernier
+> vaut pourtant 0,90 pli au taux de succès mesuré, et n'attend qu'un arbitrage
+> de déploiement.
 
 ## Structure
 
