@@ -199,3 +199,38 @@ figurent donc pas, et leur absence n'est pas un oubli. Ce qu'il faut pour les
 reconstruire tient dans la ligne de verdict : le commit de référence, le commit
 candidat, et le nombre de nœuds du banc — qui vérifie qu'on a bien reconstruit
 le même binaire.
+
+**Vérifié le 23 sept. 2026, et le paragraphe ci-dessus était vrai d'un cas sur
+deux.** `d5-trois-termes` porte bien ses trois éléments (candidat `adcbd14`,
+référence `091e75e`, banc 88 495) ; **`sans-aspiration` n'en porte aucun** — sa
+ligne de verdict ne donne que l'Elo, l'effectif et l'étalonnage. Le
+reconstruire reste trivial (retirer l'aspiration de `main`), mais **rien ne
+permettrait de vérifier qu'on a rebâti le même binaire**. C'est une perte
+réelle et petite, inscrite plutôt que passée sous silence ; elle ne se répare
+pas, le commit étant collecté.
+
+**Un candidat de retrait NON TRANCHÉ, lui, se dépose** — et c'est pourquoi
+`d5-retrait-delta.patch` est dans la table ci-dessus sans contredire la règle.
+L'exclusion vise les candidats **rejetés** : quand `H0` est accepté, l'acquis
+paie et le code est resté dans `main`, donc il n'y a rien à garder. Le SPRT de
+delta a **expiré sans verdict** : la question reste ouverte, quelqu'un voudra
+la reprendre, et refaire le diff de tête coûterait plus que de le lire.
+
+### Ce que la suppression des branches `mesure/*` a réellement coûté
+
+**Aucun code de production.** Vérifié branche par branche le 23 sept. 2026 :
+
+| branche supprimée | ce qu'elle portait | récupérable ? |
+|---|---|---|
+| `mesure/c12-pvs` | changement | **oui** — `c12-pvs.patch` et `c12-pvs-2026-09-21.patch` |
+| `mesure/c18-extensions-echec` | changement | **oui** — `c18-extension-echec.patch` |
+| `mesure/c18-c12-ensemble` | combinaison des deux | **oui** — appliquer les deux rustines ; ses nœuds sont dans la table ci-dessus |
+| `mesure/sans-aspiration` | retrait, **H0** | le code est dans `main` ; **le handle de vérification manque** |
+| `mesure/d5-trois-termes` | retrait, **H0** | le code est dans `main` ; SHA et banc inscrits |
+| `mesure/see-instrumentation` | **sonde** pour C19 | **non — le code est perdu.** Ses RÉSULTATS survivent dans la fiche C19 (57,2 % des captures notées paient un appel à `see`, et les nœuds des trois paliers). Elle aurait dû être une rustine : c'est la règle « une sonde jetable vit dans sa rustine », écrite *après* |
+
+**Et la raison pour laquelle rien n'est récupérable est mesurée, pas
+supposée** : `git fetch origin adcbd14` rend `INATTEIGNABLE`. **Aucune branche
+`mesure/*` n'a jamais eu de pull request** — vérifié sur les trente-huit PR du
+dépôt — donc `refs/pull/N/head` ne les protégeait pas, et leurs commits ont été
+collectés.

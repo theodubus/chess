@@ -55,7 +55,15 @@ C'est la seule condition de sortie de ce fichier.
   survie d'un artefact ne doit pas dépendre d'une politique de dépôt.*
   <br><span>Deux constats vérifiés au passage, qui nuancent la panique
   d'origine : GitHub conserve `refs/pull/N/head` de façon permanente, donc
-  `498a01a` restait atteignable par ce chemin ; et **le push d'étiquettes est
+  `498a01a` restait atteignable par ce chemin — **mais uniquement parce que sa
+  branche avait eu une PR, et cette portée manquait.** Vérifié le 23 sept.
+  2026 : **aucune branche `mesure/*` n'en a jamais eu**, sur les trente-huit PR
+  du dépôt, donc ce filet ne les couvrait pas, et `git fetch origin adcbd14`
+  rend `INATTEIGNABLE` — leurs commits sont collectés pour de bon. *Un filet de
+  sécurité vérifié sur un cas ne se généralise pas sans sa condition
+  d'application.* Ce que la suppression a coûté, branche par branche, est
+  inventorié dans `tools/attic/README.md` : aucun code de production, une sonde
+  perdue, un handle de vérification manquant ; et **le push d'étiquettes est
   refusé sur ce dépôt** (403 avec le jeton de session), ce qui interdisait
   la solution évidente. **Troisième limite du même jeton, vérifiée le
   22 sept. 2026 : il ne peut pas non plus SUPPRIMER une référence distante** —
