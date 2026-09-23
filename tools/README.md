@@ -38,27 +38,43 @@ Les binaires atterrissent dans `tools/arbiters/`, qui est ignoré par git.
 cargo build --release
 cp target/release/shallowred /tmp/candidat
 
-git worktree add --detach /tmp/ref <commit-de-référence>
-( cd /tmp/ref && cargo build --release )
-cp /tmp/ref/target/release/shallowred /tmp/reference
-git worktree remove /tmp/ref
-
-md5sum /tmp/candidat /tmp/reference   # les deux empreintes doivent différer
+tools/ref.sh origin/main /tmp/reference      # construit la référence
 tools/sprt.sh /tmp/candidat /tmp/reference
 ```
 
-> **Jamais `git stash` pour construire une référence.** Il emporte *tout* le
-> travail non committé, outils de mesure compris, donc on finit par mesurer
-> autre chose que ce qu'on croit. C'est arrivé le 13 sept. 2026 : le stash avait
-> aussi remisé la conversion de `bench` de perft vers la recherche, et la mesure
-> « avant » comptait des nœuds de perft. Seule l'absurdité du chiffre l'a
-> révélé — elle aurait pu ne pas être absurde. Le worktree est isolé et sans
-> effet de bord.
->
-> **Comparer les empreintes avant de lancer le match.** `cp -p` et `mv`
-> préservent les dates de modification, donc cargo peut juger les sources à jour
-> et ne rien recompiler : on mesure alors deux fois le même binaire, et le
-> rapport rend exactement 1,00.
+`tools/ref.sh <commit|branche|tag> [sortie]` remplace la recette manuelle qui
+occupait cette place, et pour la même raison que `timing.sh` remplace un
+chronomètre à la main : **construire une référence est un geste de quatre
+lignes dans lequel ce dépôt a payé quatre pièges distincts**, tous écrits dans
+`CLAUDE.md`, aucun encadré par du code. `match.yml` faisait déjà tout cela
+correctement sur un runner ; le chemin local n'avait rien — la faute B10, celle
+du garde-fou qui ne couvre qu'une copie.
+
+| ce que le script impose | le piège qu'il ferme |
+|---|---|
+| `git fetch --prune`, jamais `git fetch <remote> <branche>` | une référence de suivi survit à la suppression de sa branche après fusion et désigne le commit d'*avant* — deux fausses alarmes le 22 sept. 2026 |
+| confrontation de la résolution locale à `git ls-remote`, et **refus** de construire si elles diffèrent | `origin/main` figé onze commits en arrière dans le clone : binaire neuf, code juste, **arbre trois fois trop gros**. C'est le seul des quatre qui a faussé une mesure publiée |
+| `git worktree add --detach`, jamais `git stash` | le stash emporte *tout* le travail non committé, outils de mesure compris. Le 13 sept. 2026 il avait remisé la conversion de `bench` de perft vers la recherche, et la mesure « avant » comptait des nœuds de perft |
+| `cp` et non `cp -p`, et l'empreinte md5 imprimée | les dates préservées font juger les sources à jour par cargo, qui ne recompile rien : on mesure deux fois le même binaire et le rapport rend exactement 1,00 |
+
+Nommer une branche veut dire « ce qu'elle porte **maintenant** ». Pour
+construire un commit plus ancien de cette branche, passer le SHA : c'est
+explicite, et ça ne déclenche pas le contrôle de fraîcheur.
+
+`tools/ref-test.sh` éprouve `ref.sh` sur des dépôts fabriqués — un « distant »
+nu et un clone dont la branche locale reste en arrière — et tourne dans
+`tools/verify.sh` pour une demi-seconde, sans compiler quoi que ce soit. Sans
+lui, la branche qui compte ne s'exécuterait qu'en cas de catastrophe, donc
+jamais en conditions vérifiables : c'est l'argument de
+`.github/mutation-verdict-test.sh`, qui avait trouvé une faute à sa première
+exécution. Éprouvé en le faisant échouer : `if false` à la place du contrôle de
+fraîcheur fait tomber deux cas.
+
+`sprt.sh` et `timing.sh` refusent désormais deux binaires d'empreinte
+identique. Le contrôle existait sur le runner depuis la création de
+`match.yml` et manquait en local ; c'était la même faute, un cran plus haut —
+*un garde-fou qui ne couvre qu'une copie ne garde rien* vaut pour les
+garde-fous comme pour les chiffres.
 
 Le test séquentiel s'arrête dès que les données suffisent et rend
 `H1 was accepted` (le changement est bon) ou `H0 was accepted` (il ne l'est
@@ -130,7 +146,7 @@ mesuré correctement, qui ne répond pas à la question qu'on lui pose.
 
 **La sonde de profondeur suit bien la vitesse** : 10 à 2,51 et 2,67 M n/s,
 **11** à 3,14 M. Première validation qu'elle mesure ce qu'elle prétend. Traduit dans la
-seule unité qui compte — le projet a mesuré **1,33 ply par doublement de
+seule unité qui compte — le projet a mesuré **1,36 pli par doublement de
 temps** — cela vaut **+0,2 à +0,6 ply** : un verdict rendu en CI siège un
 demi-ply plus profond que la même cadence nominale mesurée ici. À comparer aux
 **4 plies** qui ont inversé le verdict de l'élagage par compte de coups.
@@ -234,6 +250,54 @@ sur douze positions de vraies parties :
 | 8+0,08 — le défaut de `sprt.sh`, jamais utilisé | 12,5 |
 | ~15+0,15 | 14,0 |
 | ~30+0,3 | **17,0** |
+
+## Ce que `tools/src/bin/` contient
+
+Six binaires, tous hors ligne : aucun n'est appelé par le moteur, et aucun ne
+change sa force. Ils sont nommés ici **avec leur extension**, parce que c'est
+ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
+
+| binaire | ce qu'il fait |
+|---|---|
+| `bookgen.rs` | génère le livre d'ouvertures EPD, de façon reproductible. Sans livre, le moteur étant déterministe, toutes les parties d'un match sont la même partie |
+| `datagen.rs` | produit le corpus `FEN;résultat` de l'ajustement Texel, étiqueté par le **résultat de la partie** et jamais par le score de l'évaluation. Sert aussi à tirer des positions de vraies parties pour toute sonde |
+| `tune.rs` | l'ajustement Texel lui-même. Son verdict a été **rejeté** (−9,96 Elo) ; l'outil reste parce qu'il resservira avec un corpus plus grand |
+| `nnue_probe.rs` | le benchmark obligatoire de B4 : ce que coûtent le copy-make (7,2 %) et la dérivation du delta d'accumulateur NNUE (2,8 %) en part du temps d'un nœud |
+| `see_check.rs` | confronte l'échange statique à un oracle par force brute. Il a trouvé un **bug du manuel** au premier passage — 27 valeurs fausses sur 771 |
+| `attack_dump.rs` | confronte la géométrie d'attaque de `see::least_valuable_attacker` à `python-chess`, case par case |
+
+> **Ce répertoire était le trou d'un garde-fou, et il l'a laissé passer deux
+> fois.** `outillage_documente.rs` balayait `tools/` pour les `.sh`
+> **uniquement**, donc il n'a jamais regardé les binaires. Le 22 sept. 2026,
+> trois sondes jetables y ont été déposées : **cargo découvre `src/bin/*.rs`
+> tout seul**, donc elles ont été compilées sans être ni déclarées dans
+> `tools/Cargo.toml` ni documentées — et l'arbre a cessé de compiler dès que
+> l'instrumentation qu'elles importaient a été retirée. En bouchant le trou on
+> découvre que **cinq des six binaires n'étaient nommés nulle part**, dont
+> `attack_dump.rs` depuis sa création.
+>
+> Même famille que Q4, où `see.rs` est resté cinq jours hors du cliquet de
+> mutation : *le garde-fou était correct et gardait le mauvais ensemble*. La
+> question n'est pas « ce dispositif marche-t-il ? » mais **« quelle est sa
+> source de vérité, et est-ce la bonne ? »** — ici le répertoire que cargo
+> compile, jamais la liste qu'on a en tête.
+>
+> **`attack_dump.rs` et `see_check.rs` vivaient par autodécouverte** jusqu'au
+> 23 sept. 2026, contrairement aux quatre autres. Ils sont désormais déclarés,
+> et surtout `tools/Cargo.toml` porte **`autobins = false`** : un fichier
+> déposé dans `src/bin/` **n'est plus compilé tant qu'il n'a pas sa section
+> `[[bin]]`**. Déposer une sonde redevient un acte délibéré, et l'oublier ne
+> coûte plus un arbre cassé — ce qui est précisément arrivé le 22 sept.
+>
+> Éprouvé dans les deux sens : un fichier délibérément non compilable laisse
+> le build vert tant qu'il n'est pas déclaré, et rend deux erreurs dès qu'il
+> l'est. Le second sens compte autant que le premier — un mécanisme qui avale
+> tout passerait le premier test sans rien garder.
+>
+> **Les deux dispositifs sont complémentaires, aucun ne remplace l'autre** :
+> `autobins = false` empêche la compilation accidentelle,
+> `engine/tests/outillage_documente.rs` empêche le binaire qui dort sans que
+> personne sache ce qu'il fait.
 
 ## Vérifier que l'arbitre est fiable
 
@@ -503,6 +567,764 @@ aussi) ou **multiplie une magnitude** (aspiration × 2,7, trois termes × 2,5).
 > sous-estime ». Le séparer demanderait un contrôle apparié à `1+0,01` sur la
 > base actuelle — et cette fois l'imputation changerait quelque chose, parce
 > qu'elle dirait si l'érosion vient de l'empilement ou du régime.</span>
+
+### C21 — le SPRT a EXPIRÉ, et il a rendu un chiffre quand même
+
+**Le run est mort au plafond**, pas sur une frontière : [run
+35784289654](https://github.com/theodubus/chess/actions/runs/35784289654),
+annulé à 02 h 54 UTC le 23 sept. après exactement 350 minutes. Candidat
+`ebe93ad` (défaut de `movestogo` 30 → 12) contre `6d5e7c6`, bornes `[0, 5]` à
+`8+0,08`, graine `20260913`. **3262 parties lancées**, aucune frontière LLR
+atteinte.
+
+**C'est le risque qui avait été énoncé avant le lancement**, mot pour mot :
+*« si l'effet réel est sous ~18 Elo, le SPRT expire »*. Il l'était.
+
+#### Ce que le dernier bloc complet donne — 3240 parties
+
+| grandeur | valeur |
+|---|---|
+| **Elo** | **+14,59 ± 8,31** |
+| nElo | +21,04 ± 11,96 |
+| LOS | **99,97 %** |
+| score | 1168 V / 1032 D / 1040 N, **52,10 %** |
+| Ptnml(0-2) | [97, 284, 766, 332, 141] |
+| **LLR** | **2,48 sur 2,94, soit 84,2 %** du chemin vers H1 |
+| étalonnage du runner | **3 427 286 n/s, profondeur 12 en 250 ms** |
+
+**L'étalonnage est le plus rapide jamais relevé sur ce projet** — l'étendue
+connue allait de 2 067 101 à 3 268 241 n/s. Une ligne d'étalonnage ne compare
+que des runs du même binaire ; celle-ci est à lire avant toute comparaison
+entre ce run et un autre.
+
+**Contrôle de vraisemblance, et il passe** : `parties × Elo` = 3240 × 14,59 =
+**47 272**, contre une médiane de 59 256 et une étendue de 45 900 à 80 200 sur
+dix-huit SPRT. Le point tombe dans le bas de l'étendue, donc rien ne sent le
+protocole cassé.
+
+**Le contrôle qui comptait plus que l'Elo** : <span>zéro perte au temps, zéro
+incident — vérifié sur les parties **1356 à 3259**, soit 1904 parties et 58 %
+du match. <strong>Le début n'a pas pu être lu</strong> : l'API de journaux
+plafonne à 5000 lignes et ne sert que la fin. Les fins de partie sont toutes
+ordinaires (adjudication, répétition, matériel insuffisant, cinquante coups,
+mat, pat) — aucune anomalie.</span> Le balayage préalable avait déjà rendu zéro
+perte au temps **aux deux cadences et jusqu'au diviseur 10**, plus agressif que
+le 12 livré.
+
+#### Pourquoi on ne reprend pas ce SPRT
+
+**Un test séquentiel interrompu puis prolongé n'a plus ses taux d'erreur.**
+C'est écrit dans `CLAUDE.md` et ce n'est pas négociable : reprendre à 3262
+parties pour « aller chercher les 16 % manquants » fabriquerait un verdict dont
+α et β ne valent plus rien.
+
+**Et l'estimation d'un SPRT expiré est biaisée vers zéro** : l'échantillon est
+conditionné à n'avoir jamais franchi ±2,94, ce qui tronque les extrêmes. Le
+vrai effet est donc plausiblement **au-dessus** de 14,59. <span>Inférence,
+confiance moyenne.</span>
+
+**Un seul job ne peut pas conclure sur cet effet.** Le budget vaut
+59 256 ÷ 14,59 ≈ **4 060 parties**, et ce runner — le plus rapide mesuré — en a
+fait 3262 en 350 min, soit 6,44 s par partie. Il faudrait ~436 min. La règle du
+projet le prévoyait : *en dessous de ~17 Elo, passer à des matchs à longueur
+fixe sur plusieurs jobs et les mettre en commun.*
+
+### C21 — VERDICT, 23 sept. 2026 : +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties
+
+Le défaut de `movestogo` passe de trente à douze. **Deux matchs à longueur
+fixe, mis en commun par `tools/mettre-en-commun.sh`** — jamais un SPRT, la
+règle du dépôt.
+
+| run | graine | parties | Elo | Ptnml | étalonnage |
+|---|---|---|---|---|---|
+| [35822658045](https://github.com/theodubus/chess/actions/runs/35822658045) | `20260923` | 3000 | +14,72 ± 9,03 | [109, 261, 666, 322, 142] | 2 624 962 n/s, **profondeur 12** |
+| [35822663218](https://github.com/theodubus/chess/actions/runs/35822663218) | `20260924` | 3000 | +23,55 ± 8,81 | [79, 271, 669, 330, 151] | 2 256 969 n/s, **profondeur 11** |
+| **en commun** | — | **6000** | **+19,13 ± 6,31** | — | — |
+
+Candidat `ebe93ad`, référence `6d5e7c6`, cadence **`8+0,08`**, livre `book.epd`,
+adjudication et abandon inchangés. **L'intervalle exclut largement la borne
+haute de 5 Elo** : la borne basse est **+12,82**.
+
+**Homogénéité contrôlée, pas supposée.** Les deux matchs diffèrent de 8,83 Elo,
+**z = −1,37** — le script refuserait de conclure au-delà de 2. Et le sens
+rassure : c'est le runner le plus **rapide** (profondeur 12) qui rend le plus
+**petit** Elo, à l'inverse de ce que la règle de cadence prédirait si l'écart
+venait du point de fonctionnement. *Un écart qui va dans le sens contraire de
+l'explication disponible est plus facile à attribuer au hasard.*
+
+**Pertes au temps : zéro** — aucun `loses on time`, aucun coup illégal, aucun
+moteur perdu. <span>**Couverture : 64 % de chaque match** (parties 1081–3000 et
+1070–3000). L'API de journaux de GitHub plafonne à 5000 lignes et ne sert que
+la fin ; l'artefact complet passe par un domaine que le proxy de session
+refuse.</span> **C'est pourquoi `match.yml` recense désormais les fins de
+partie et les anomalies lui-même, sur le journal entier** : le contrôle qui
+décide d'une fusion ne se lit pas sur un échantillon dont on n'a pas choisi la
+taille. Pour un changement de gestion du temps, la perte au temps *est* le mode
+de défaillance propre — il ne se voit pas dans l'Elo.
+
+#### Trois prédictions écrites d'avance, et ce qu'elles ont rendu
+
+- **« Un SPRT expiré est une estimation biaisée VERS ZÉRO, donc un
+  minorant. »** Le SPRT du 23 sept. avait expiré à 3 262 parties en rendant
+  **+14,59 ± 8,31**. La mesure non biaisée donne **+19,13**. *Le minorant
+  minorait.*
+- **« ~6000 parties donnent environ ± 6,1 Elo. »** Rendu : **± 6,31**.
+- **`parties × Elo` ≈ 59 256.** Ici 6 000 × 19,13 = 114 780, hors de l'étendue
+  — et c'est normal : la relation décrit l'effectif qu'un **SPRT** consomme
+  pour trancher, pas un effectif qu'on a choisi. Elle prédit 59 256 ÷ 19,13
+  ≈ **3 100 parties**, et le SPRT était à 84 % du chemin à 3 262. *La relation
+  tient là où elle s'applique.*
+
+#### Et le facteur de durée a bougé, exactement comme annoncé
+
+`match.yml` disait : *« ce facteur 0,77 EST le gaspillage de pendule, donc la
+constante dériverait vers 1 le jour où C21 fusionne »*. Mesuré : **6,38 et
+6,34 s/partie** contre 7,47 prédites, soit **0,85** — contre 0,75 avec deux
+moteurs d'avant. Un seul des deux camps porte le changement, donc le facteur
+n'a fait qu'un demi-pas. <span>Inférence, confiance moyenne : (0,75 + f)/2 =
+0,85 donne **f ≈ 0,95** pour deux moteurs C21 — elle suppose que la dépense
+d'un camp ne dépend pas de l'autre, alors que la LONGUEUR de la partie est
+commune.</span>
+
+### Ce qui reste à faire, par ordre mesuré
+
+| chantier | plis | état |
+|---|---|---|
+| **ponder** | **0,90** — `p = 0,659` mesuré le 23 sept., × 1,36 | **jamais ouvert, protocole écrit**. Le plus gros levier chiffré hors Lazy SMP — **mais il ne vaut que si on déploie avec ponder, ce qui est un arbitrage de Théo, pas une mesure**, et son verdict coûte 3 × plus de jobs (`-concurrency 1`) |
+| **C21 — dépenser la pendule** | 0,54 à 0,70 | **MESURÉ, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties** — voir la section du verdict |
+| génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
+| **B9 — table à entrées atomiques** | — | prérequis dur de B6, **non entamé**. Réserve toujours non mesurée : sa fiche dit le coût « plat », ce qui parle du **rétrofit** et non de la vitesse. Voir l'encadré ci-dessous : <s>se mesure par nœuds identiques + `timing.sh`</s> — **faux, et mesuré le 22 sept. au soir** |
+| B6 — Lazy SMP | 1,0 à 1,8 | **seul chiffre encore hérité** du tableau. Le mesurer exige B9 |
+| B7 / C13 | — | inchangés, bloqués sur leurs déclencheurs |
+
+> **B8 (réglage des constantes de recherche) : son déclencheur écrit est
+> ATTEINT et personne ne l'a relevé.** Sa fiche dit « quand le jeu de
+> fonctionnalités est figé, c'est-à-dire après C12 et après la décision sur
+> les extensions d'échec » — C12 clos le 21 sept., C18 mesuré et non fusionné.
+> **La lettre est satisfaite, l'esprit non** : C17, C19 et bientôt C21 sont
+> entrés depuis. *Le déclencheur était sous-spécifié.*
+
+#### B9 ne se valide PAS par « nœuds identiques » — mesuré le 22 sept. 2026
+
+J'avais annoncé à Théo que la réécriture atomique serait *« une réécriture
+pure, la table doit se comporter pareil, donc nœuds identiques au bit près puis
+`timing.sh` »*. **C'est faux, et deux minutes de sonde suffisent à le voir.**
+
+| grandeur | valeur | conséquence |
+|---|---|---|
+| `size_of::<Entry>()` aujourd'hui | **24 octets** (mesuré, pas calculé) | 16 Mio → 524 288 entrées |
+| entrée atomique : deux `AtomicU64` | **16 octets** | 16 Mio → **1 048 576 entrées** |
+
+À mébioctets égaux, **la table double de capacité**, donc les collisions
+changent, donc l'arbre change. Une réécriture qui change la taille d'une
+structure de données n'est jamais « pure », quelle que soit la pureté de sa
+logique. *Même famille que « vérifier le dénominateur » : un raisonnement
+correct appliqué à la mauvaise grandeur.*
+
+**Il y a donc deux effets, et ils se séparent par les quatre coins :**
+
+1. **le coût des accès atomiques et de l'empaquetage** — mesurable proprement,
+   mais seulement à **capacité forcée égale** (une rustine de mesure qui fige
+   le nombre d'entrées) : là, nœuds identiques au bit près et `timing.sh`
+   s'appliquent comme annoncé ;
+2. **l'effet d'une entrée deux fois plus petite** — un changement d'arbre, donc
+   un SPRT, et *plausiblement un gain* puisqu'il double la table à mémoire
+   constante. Cet effet-là n'a rien à voir avec le parallélisme et personne ne
+   l'avait jamais nommé.
+
+**L'encodage est fixé par la mesure, pas au juger.** `MATE = 30 000`, et une
+assertion posée dans `store` n'a **jamais** été déclenchée — ni par la suite de
+tests complète, ni par les critères d'acceptation, tournoi de vingt-quatre
+parties compris. Un score stocké tient donc dans un `i16`, d'où la répartition
+des 64 bits de données : score 16, coup 16, profondeur 8, borne 2,
+génération 8 — **50 bits sur 64**. La génération garde ses huit bits, donc
+**le schéma de remplacement ne change pas d'un iota** ; c'était le risque de
+l'encodage serré, et il est écarté.
+
+Le schéma sans verrou est celui de Hyatt : un mot porte `clé XOR données`,
+l'autre les données. Un lecteur reconstruit la clé par un XOR ; une entrée
+*déchirée* — deux mots venant d'écritures différentes — rend une clé qui ne
+correspond à rien et se rejette comme une collision ordinaire. Pas de verrou,
+et la seule conséquence d'un déchirement est un défaut de cache, jamais un
+score faux.
+
+### `tools/pieges-fermes.md` — les pièges qu'un code de sortie tient désormais
+
+`CLAUDE.md` est injecté en entier à chaque session **et après chaque
+compactage**. Sa section *Pièges de mesure* en faisait 510 lignes sur 844 —
+et la documentation de Claude Code est explicite : *« longer files consume more
+context and reduce adherence »*, avec une cible sous 200 lignes par fichier.
+
+Les pièges qui en sont sortis l'ont été sur un critère unique, et c'est celui
+du projet : **une règle écrite se contourne, un code de sortie non.** Un piège
+que `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
+`rustines_attic.rs`, le banc à la profondeur 5 ou le plafond calculé de
+`match.yml` rendent *inexprimable* n'a pas besoin d'être relu à chaque
+session ; il a besoin d'être trouvable le jour où le dispositif se déclenche.
+
+**Chacun est sorti ENTIER**, jamais coupé en deux : une règle d'un côté et sa
+preuve de l'autre, ce sont deux copies qui dérivent. Ceux qui restent dans
+`CLAUDE.md` sont ceux que **seul le jugement protège** — la cadence qui possède
+le verdict, le dénominateur, la ressource totale confondue avec l'allocation
+par unité — et ce sont les plus chers.
+
+`engine/tests/pieges_fermes.rs` vérifie que chaque piège archivé nomme un
+dispositif **qui existe**, et que `CLAUDE.md` nomme toujours l'archive. Sans
+lui, la condition de sortie que le fichier s'écrit à lui-même — *si un de ces
+dispositifs disparaît, son piège revient* — ne serait qu'une affirmation de
+plus sur le code, c'est-à-dire la faute exacte de la table de l'attic.
+
+<s>Gain annoncé : ~200 lignes.</s> **Gain réel : 113** — `CLAUDE.md` passe de
+844 à 731 lignes. J'avais surestimé, et le chiffre annoncé valait la peine
+d'être corrigé plutôt qu'oublié.
+
+### `tools/etat.sh` — l'état calculé, injecté à chaque reprise
+
+`CLAUDE.md` est réinjecté après chaque compactage ; **le carnet de bord, non.**
+Le document qui porte « où on en est » est donc absent au moment précis où la
+mémoire vient d'être perdue. Le 22 sept. 2026, un engagement pris en prose —
+*« j'attaque B9, je te reviens avec son coût monothread »* — a disparu
+exactement comme ça : ni fiche, ni journal, ni ce fichier ne le portaient.
+
+Le hook `SessionStart` déclaré dans `.claude/settings.json` lance `etat.sh`, et
+sa sortie **entre dans le contexte du modèle**. `SessionStart` se déclenche au
+démarrage, à la reprise, après `/clear` **et après chaque compactage** — c'est
+le seul point d'accroche du système qui tombe au bon moment (`PreToolUse`
+contraint mais n'injecte rien ; `Stop` et `PostToolUse` non plus).
+
+**Tout ce qu'il imprime est dérivé de git**, donc rien ne peut y vieillir :
+branche, arbre propre ou non, `git log origin/main..HEAD`, et le nombre de
+fichiers `.rs` contre `.md` modifiés depuis `main`. Ce dernier est le **signal
+de documentation** : il ne prescrit rien, il constate — *« 6 fichiers de code
+et 0 de documentation » est un fait, « il faudrait documenter » est une
+consigne qu'on oublie.*
+
+L'adresse du carnet vit dans `.claude/carnet.local`, ignoré par git : le
+pointeur est mécanique sans que le dépôt porte le lien, le carnet restant privé
+et hors du dépôt.
+
+`tools/verify-hooks.sh` vérifie que le hook est déclaré, qu'il lance bien ce
+script, et que le script **rend un état non vide** — un script devenu muet ne
+se verrait pas, on croirait simplement qu'il n'y a rien à dire. C'est la même
+raison qui fait exister `verify-hooks.sh` lui-même.
+
+### Paralléliser les matchs — ce qui marche et ce qui ne marche pas
+
+**On ne parallélise PAS un SPRT.** Un test séquentiel tire ses taux d'erreur
+d'une règle d'arrêt **unique** appliquée à un flux **unique**. Deux façons de
+le casser, et les deux sont tentantes :
+
+- lancer N SPRT et s'arrêter dès que **l'un** franchit sa borne multiplie le
+  risque de première espèce par environ N — c'est le problème des comparaisons
+  multiples, avec un habit de parallélisme ;
+- recoller leurs parties après coup ne rend pas un test séquentiel, mais un
+  échantillon **dont la taille a été choisie après avoir vu les données**. Ce
+  n'est pas neutre, c'est pire que l'un ou l'autre pris seul.
+
+La règle déjà écrite — *jamais reprendre un SPRT expiré* — est le cas
+particulier de ce principe.
+
+**On parallélise des matchs à LONGUEUR FIXE, et ceux-là se mettent en commun
+sans rien casser** : effectif connu d'avance, estimation non biaisée, aucune
+règle d'arrêt à préserver. C'est ce que fait `tools/mettre-en-commun.sh`.
+
+#### Ce que ça achète, chiffré sur ce projet
+
+Le SPRT expiré de C21 a rendu **± 8,31 Elo sur 3 240 parties**. L'intervalle
+décroît en `1/√n`, donc en empilant des jobs de ~3 300 parties :
+
+| jobs | parties | intervalle attendu | effet que ça sépare de zéro |
+|---|---|---|---|
+| 1 | ~3 300 | **± 8,2** | > 8,2 Elo |
+| 2 | ~6 600 | **± 5,8** | > 5,8 |
+| 4 | ~13 200 | **± 4,1** | > 4,1 |
+| 8 | ~26 400 | **± 2,9** | > 2,9 |
+
+<span>Ces chiffres viennent d'une mesure de ce dépôt, pas d'une constante
+empruntée. **Réserve** : « séparer de zéro » est plus faible que la barre
+habituelle du projet, qui est `H1` sur des bornes `[0, 5]` — pour écarter la
+borne haute il faut que l'effet dépasse l'intervalle **plus 5**.</span>
+
+#### Le piège propre à la mise en commun, et il est sérieux
+
+**Deux runners GitHub varient de 58 % en vitesse** — 2 067 101 contre
+3 268 241 n/s sur le même binaire — soit environ **un demi-pli** de profondeur
+atteinte. Et ce dépôt a mesuré qu'**un pli peut INVERSER un verdict**.
+
+Mettre en commun deux matchs joués sur des runners très différents **moyenne
+donc deux points de fonctionnement**. Ce n'est pas nécessairement mauvais —
+moyenner sur une plage de machines ressemble davantage à « la force générale »
+qu'un point unique, qui est la cible déclarée du projet — mais **ça doit être
+dit, pas subi**. `mettre-en-commun.sh` compare les matchs deux à deux par un
+test en `z` et **refuse de conclure en silence** au-delà de `z = 2`.
+
+**Et les graines doivent différer — ce n'est plus une règle à retenir.**
+Mêmes binaires plus même graine donnent les mêmes parties coup pour coup :
+deux jobs de même graine, c'est un effectif qui double sur le papier sans que
+l'information bouge. Deux dispositifs, aux deux bouts :
+
+- **au lancement**, `match.yml` accepte `graine: auto`, qui en tire une propre
+  au run. Elle est imprimée dans le résumé, donc le match reste rejouable à
+  l'identique en la repassant telle quelle. Le défaut `20260913` ne bouge pas :
+  il rend les matchs **appariés**, ce qui est l'autre besoin — c'est lui qui a
+  permis de comparer une même technique à deux cadences ;
+- **à la mise en commun**, `mettre-en-commun.sh` **refuse** deux vecteurs
+  pentanomiaux identiques, avec un code 3. Le moteur étant déterministe, deux
+  matchs indépendants de plusieurs milliers de parties ne peuvent pas rendre
+  cinq comptes égaux : un vecteur répété *est* une graine répétée.
+
+*C'est le seul endroit où cette règle peut être imposée par un code de sortie
+plutôt que rappelée : au lancement on ne tient qu'une intention, à la mise en
+commun on tient les données.*
+
+#### L'outil
+
+```sh
+tools/mettre-en-commun.sh "97,284,766,332,141" "100,290,750,340,150"
+tools/mettre-en-commun.sh journal-a.log journal-b.log
+```
+
+Il **somme les comptes pentanomiaux** au lieu de moyenner des Elo : l'Elo est
+une fonction non linéaire du score, donc en moyenner deux est une
+approximation, alors que sommer les paires est exact. D'un journal d'arbitre il
+prend la **dernière** ligne `Ptnml`, jamais la première.
+
+`tools/mettre-en-commun-test.sh` l'éprouve, et son premier cas est une
+**vérité terrain** : sur `Ptnml [97, 284, 766, 332, 141]`, fastchess avait
+imprimé `Elo: 14.59 +/- 8.31` ; la formule retombe dessus à **0,003 près**. Les
+autres cas vérifient que doubler l'effectif divise l'intervalle par `√2`, que
+l'ordre des matchs ne change rien, que le refus se déclenche sur des matchs
+contradictoires, et que la dernière ligne d'un journal est bien celle qui est
+lue. Le test tourne dans `tools/verify.sh`.
+
+### La gestion du temps : NON, ce n'est pas clos — état au 23 sept. 2026
+
+Question de Théo. Elle a mérité d'être posée parce que **l'état de ce chantier
+n'était écrit nulle part d'un seul tenant** : il était éclaté entre le
+découpage de B2, la fiche C21 et la note de saturation. Le voici entier.
+
+| ce que B2 nommait | état | ce qui le tient |
+|---|---|---|
+| défaut de `movestogo` (devenu **C21**) | **écrit, en mesure** | +0,54 à 0,70 pli ; SPRT expiré à +14,59 ± 8,31, relancé en longueur fixe |
+| « s'arrêter tôt sur un coup stable » | **RÉFUTÉ, clos** | et il *empire* au régime cible : 13,9 % de coups changés à `8+0,08`, **18,4 % à `30+0,3`**. Le temps épargné n'est de surcroît pas dépensable — avec `restant/d`, une seconde économisée ne revient qu'au `d`-ième |
+| « prolonger sur un score qui s'effondre » | **OUVERT — écran passé, jamais écrit** | survit sur **2,7 à 3,0 % des coups** |
+| **allocation inégale** | **PAS COMMENCÉ** | le seul chantier restant qui puisse dépasser le plafond — dépenser plus sur les positions **dures** (score instable, coup unique, sortie de livre) |
+| *(examiné, écarté)* pendule de l'adversaire | **écran PASSÉ le 23 sept., petit levier de signe inconnu** | déjà reçue et jetée par le moteur. Écart signé entre les deux pendules : **médiane −12 ms** une fois l'artefact de comptage de coups retiré — donc un verdict symétrique rendrait zéro par construction. L'écart absolu dépasse 20 % sur **1,6 %** des coups : l'ordre de grandeur de l'extension d'échec, qui valait −5,0 |
+| *(hors B2)* **ponder** | **jamais ouvert — protocole écrit, étape 0 FAITE** | légal et prévu par UCI. `p = 0,659` mesuré contre notre jumeau à `8+0,08`, soit **0,90 pli** — plus que C21. Reste : le proxy à cadence asymétrique, puis cutechess à `-concurrency 1`. Voir la section qui suit |
+
+#### Pourquoi l'allocation inégale est le vrai reste
+
+Un diviseur est une **famille à un paramètre**, et le balayage a atteint sa
+limite : le plafond d'une allocation *plate* vaut `(pendule + coups × inc) /
+coups` = **280 ms**, et le diviseur 12 en alloue 285 quand le 10 en alloue 283.
+**Aucune valeur de diviseur ne fera mieux.** Dépenser davantage sur les
+positions dures — score qui bouge, coup unique, sortie de livre — est le seul
+chemin au-delà, et c'est une autre mécanique, pas un autre réglage.
+
+Le **résidu de l'échéance douce** appartient à la même famille : le moteur ne
+dépense même pas ce qu'il s'alloue, parce qu'il s'interdit d'entamer une
+itération à mi-budget. C'est ce résidu qui explique l'écart entre 31 % de
+pendule restante prédits et 47 % mesurés.
+
+#### Ce qu'on peut dire de « prolonger sur un effondrement », et ce qu'on ne peut pas
+
+**2,7 à 3,0 % des coups**, c'est un *majorant* de ce que le mécanisme peut
+rapporter — et ce dépôt a une mesure qui rappelle que ça ne dit rien du
+**signe** : l'extension d'échec touchait 1,39 % de l'arbre et a rendu
+**−5,01 ± 8,11**. Un mécanisme qui coûte sans améliorer la décision dépense en
+pure perte.
+
+**Donc : petit levier, signe inconnu.** Il ne passe pas devant l'allocation
+inégale sur la seule foi de sa part.
+
+### Réfléchir sur le temps de l'adversaire, et lire sa pendule
+
+Deux questions de Théo, 23 sept. 2026. **Ni l'une ni l'autre n'est illégale.**
+
+**Et ma première réponse — « inmesurable avec l'outillage actuel » — était
+fausse.** Elle avait été écrite sans ouvrir le source des arbitres, en
+s'appuyant sur l'absence d'un mot dans un seul fichier de documentation.
+Corrigée le jour même, en lisant les deux arbitres **aux commits qu'on épingle**.
+
+#### Ce que les arbitres épinglés savent faire, lu dans leur source
+
+|  | `ponder` | `tc=` par moteur | journal des échanges UCI |
+|---|---|---|---|
+| **fastchess** `60d7a7a` | **non** — zéro occurrence du mot dans tout le dépôt | oui, `-engine … tc=` | oui, `-log file=… engine=true` |
+| **cutechess-cli** `5e84232` | **oui** — `-engine … ponder`, documenté dans `res/doc/help.txt` | oui | oui, `-debug`, plus `stderr=FICHIER` par moteur |
+
+Le zéro de fastchess est un vrai zéro : `grep -ri ponder` sur l'arbre complet
+du commit épinglé ne rend rien, et le témoin `wtime` sur la même commande rend
+`uci_engine.cpp`. **L'arbitre de travail ne peut pas pondérer ; l'arbitre de
+contre-vérification le peut.** `setup-arbiters.sh --with-cutechess` le
+construit déjà.
+
+**Le piège d'invocation, vérifié dans le source, et il est sérieux.** `-each`
+est déclaré `Dispatch::Deferred` (`cli.cpp`), donc appliqué **après** tous les
+blocs `-engine`, et `parseEach` écrit chaque clé dans *tous* les configs sans
+condition. Conséquence : **`-each tc=` écrase un `tc=` par moteur, quel que
+soit l'ordre sur la ligne de commande.** Un match asymétrique lancé avec
+`-each tc=` redevient symétrique, rend zéro Elo, et **ce zéro se lirait comme
+un verdict**. `sprt.sh` et `match.yml` passent tous deux `-each tc=`
+aujourd'hui : rendre une cadence asymétrique demande de **déplacer** `tc=`
+dans chaque bloc `-engine`, pas d'ajouter une option à côté.
+
+#### 1. Le ponder — ce qu'il vaut, et les trois étapes pour le savoir
+
+**C'est prévu par le protocole** : UCI a `go ponder` et `ponderhit` pour
+exactement ça. Rien à inventer côté norme.
+
+##### L'arithmétique, corrigée
+
+Si l'adversaire consomme à peu près le même temps que nous, un succès donne
+**le double de temps sur ce coup-là**, soit `1,36` pli ; un échec ne donne
+rien. La moyenne est donc `p × 1,36`.
+
+<s>`log₂(1 + p) × 1,36`</s> **Faux, corrigé le 23 sept. 2026.** Cette
+formule-là est celle d'un temps `(1 + p)` étalé **uniformément sur tous les
+coups** — j'avais moyenné le temps au lieu de moyenner les plis. Même famille
+que « vérifier le dénominateur » : une conversion juste appliquée à la mauvaise
+grandeur. Et comme `log₂(1 + p) > p` sur `]0, 1[`, **l'ancien chiffre
+surestimait**.
+
+| taux de succès `p` | plis gagnés — **ponder réel**, `p × 1,36` | plis gagnés — **proxy uniforme**, `log₂(1+p) × 1,36` |
+|---|---|---|
+| 0,3 | 0,41 | 0,51 |
+| 0,4 | 0,54 | 0,66 |
+| 0,5 | 0,68 | 0,80 |
+| 0,6 | 0,82 | 0,92 |
+| **0,659 — mesuré, voir plus bas** | **0,90** | 0,99 |
+
+La correction change le classement, c'est pourquoi elle est écrite plutôt que
+faite en silence — mais elle ne le change pas dans le sens qu'on croirait :
+`p` mesuré vaut `0,659`, donc le ponder pèse **0,90 pli**, soit *plus* que
+C21 (`0,54 à 0,70`) et **plus de quatre fois** la génération par étapes
+(`0,21`). Hors Lazy SMP, c'est le plus gros levier chiffré du dépôt.
+
+##### Étape 0 — `p`, MESURÉ le 23 sept. 2026, sans une ligne de code dans le moteur
+
+Le moteur **imprime déjà sa variante principale entière** (`pv_to_uci`,
+alimentée par `PvTable`), donc le **deuxième coup de la PV est exactement notre
+prédiction de la réponse adverse**. Et `-log file=… engine=true` enregistre les
+deux sens du dialogue. Il n'y avait donc rien à instrumenter — `tools/lire-journal.sh`
+lit le journal et compare. **Quarante-huit parties à `8+0,08`, moteur contre
+lui-même, six minutes de conteneur :**
+
+| | |
+|---|---|
+| recherches suivies d'une réponse adverse | **5 081** |
+| succès | 3 346 |
+| échecs | 1 561 |
+| PV de moins de deux coups, donc aucune prédiction | 174 (3,42 %) |
+| `p` sur les coups où une prédiction existe | 0,6819 |
+| **`p` sur TOUS les coups** | **0,6585** |
+
+**Le dénominateur est celui de TOUS les coups**, pas celui des coups
+prédictibles : un coup sans prédiction est un coup où le ponder ne rapporte
+rien, exactement comme un échec. Prendre `0,682` gonflerait le gain de 3,5 %
+— petit ici, mais c'est la faute que ce dépôt a déjà payée deux fois.
+
+**Vraisemblance contrôlée, et elle retombe exactement** : 5 081 comparées
++ 90 dernières recherches de partie + 6 dernières recherches du match
+(3 fils × 2 moteurs) = **5 177**, le nombre de `bestmove` du journal.
+
+**Et `p` appartient à son adversaire, exactement comme un verdict appartient à
+sa cadence.** Ce `0,659` est mesuré **contre notre propre jumeau** : prédire
+une décision produite par une évaluation identique à la nôtre est le cas le
+plus facile qui soit. <span>Inférence, confiance moyenne : contre un moteur
+différent `p` sera plus bas, donc **ce chiffre est un majorant** du régime de
+déploiement.</span> Il appartient *plausiblement* aussi à sa cadence —
+chercher plus profond devrait mieux prédire — mais <span>ça n'est pas mesuré
+ici, et je ne l'inscris pas comme un fait</span>. **Étiqueter `p` avec son
+adversaire et sa cadence, jamais le citer nu.**
+
+##### Étape 1 — le proxy asymétrique : un majorant, pour le prix d'un job ordinaire
+
+Donner au candidat `(1 + p) ×` le temps de la référence, par un `tc=` dans
+chaque bloc `-engine`. **Zéro ligne de ponder, zéro changement de contention**,
+un job ordinaire à `-concurrency 3`. Avec `p = 0,659`, c'est
+`tc=13.27+0.1327` contre `tc=8+0.08` — les deux termes multipliés par le même
+facteur, donc la forme de l'allocation est identique des deux côtés.
+
+**Et sa vraie utilité n'est pas le majorant, c'est le CHIFFRE.** Le dépôt
+interdit de convertir des plis en Elo — « combien vaut un pli n'est mesuré
+nulle part ici ». Le proxy, lui, rend un **Elo mesuré**, donc c'est lui qui
+dimensionnera le match du vrai ponder par la relation de budget, au lieu de
+multiplier une constante héritée. *Un job ordinaire pour savoir combien de
+jobs extraordinaires acheter.*
+
+- **Ce que ça prouve** : un majorant **en plis**, puisque `log₂(1+p) > p`.
+- **Ce que ça ne prouve pas** : que son Elo majore celui du ponder. La
+  profondeur supplémentaire n'est pas *distribuée* pareil — le ponder la
+  concentre sur les coups dont la réponse était prévisible, le proxy l'étale.
+  <span>Inférence, confiance moyenne : un proxy nul ferme la question, un proxy
+  positif ne la tranche pas.</span> C'est une asymétrie utile et il faut la
+  nommer avant de lancer, pas après avoir vu le résultat.
+- **Le piège d'invocation ci-dessus s'applique en plein** : `tc=` dans `-each`
+  et le proxy mesure un jumeau contre lui-même.
+
+##### Étape 2 — seulement si le proxy tranche : écrire, puis mesurer à `-concurrency 1`
+
+Côté moteur, les deux moitiés viennent **ensemble** : annoncer
+`option name Ponder type check default false`, traiter `go ponder` comme une
+recherche **sans échéance**, et traiter `ponderhit` en posant les échéances à
+cet instant sans jeter l'arbre. Sur `stop`, rendre le coup.
+
+**Pourquoi `-concurrency 1` est obligatoire et pas prudent.** La mesure est
+*candidat qui pondère* contre *référence qui ne pondère pas* — les deux qui
+pondèrent ne mesurent rien. Or le camp qui pense sur le temps adverse brûle du
+CPU pendant que l'autre cherche : à `-concurrency 3` on passe à six moteurs
+actifs pour quatre cœurs, et **le vol tombe sur l'adversaire du candidat**,
+c'est-à-dire dans le sens de l'hypothèse. *Un biais orienté vers sa propre
+hypothèse est le pire des biais.* C'est la physique exacte de la règle « jamais
+deux matchs sur une même machine », appliquée à l'intérieur d'un match.
+
+Le coût est connu : à `-concurrency 1`, un job de 350 min rend **~1 250 parties
+au lieu de ~3 750**. Quel que soit l'Elo que le proxy rendra, il faudra donc
+**plusieurs jobs à longueur fixe mis en commun**, jamais un SPRT — la règle de
+`mettre-en-commun.sh` s'applique telle quelle, graines distinctes comprises.
+Pour fixer les idées sans convertir de plis : un effet de 20 Elo demanderait
+~2 960 parties, soit **trois jobs**.
+
+##### Ce que l'absence de ponder coûte aujourd'hui : rien — et c'est une cohérence, pas une chance
+
+`parse_go` ignore le mot `ponder` (il tombe dans `_ => {}`), donc un
+`go ponder` serait traité comme une recherche chronométrée ordinaire et
+rendrait `bestmove` **pendant le tour de l'adversaire** — hors protocole. Mais
+le moteur n'annonce que `option name Hash` : **pas de `Ponder`**. Cutechess
+rend la dépendance explicite dans son code (`m_canPonder` ne passe à vrai que
+si le moteur déclare `Ponder`, et l'envoi de `go ponder` est gardé par lui).
+
+**Ne pas annoncer `Ponder` est exactement ce qui rend son absence correcte.**
+Corollaire : **une implémentation partielle serait pire que rien** — annoncer
+l'option sans traiter `ponderhit` ferait chercher à l'infini et perdre au
+temps. Rien à corriger tant qu'on n'implémente pas ; tout à implémenter d'un
+coup le jour où on le fait.
+
+##### Et le régime de déploiement décide si la question se pose
+
+Les listes de classement jouent habituellement sans ponder <span>inférence,
+confiance moyenne : non vérifié pour CCRL</span> ; un bot qui affronte des
+humains sur un serveur l'a généralement autorisé. *Un gain qui n'existe que
+dans un régime doit être nommé avec son régime* — la leçon de la cadence,
+appliquée au déploiement. **C'est un arbitrage de Théo, pas une mesure** : si
+on ne déploie jamais avec ponder, les trois étapes ci-dessus ne valent pas
+d'être achetées.
+
+#### 2. La pendule de l'adversaire — elle est DÉJÀ reçue, et jetée
+
+**Fait vérifié dans le code, pas supposé.** `parse_go` lit `wtime`, `btime`,
+`winc` et `binc` — les deux camps — et `Limits` les porte tous les quatre. Puis
+`time_budget_ms` fait :
+
+```rust
+let (remaining, increment) = match side {
+    Color::White => (limits.wtime, limits.winc),
+    Color::Black => (limits.btime, limits.binc),
+};
+```
+
+**L'information de l'adversaire est parsée, testée, et écartée du budget.**
+Rien à ajouter au protocole : tout est déjà là.
+
+##### Deux mécanismes distincts se cachent sous la même question, et un seul est général
+
+- **(a) Le flag** — accélérer quand l'adversaire est court, pour gagner au
+  temps. Toute sa valeur est dans la queue de distribution, et elle se
+  concentre contre un humain ou contre une gestion du temps très différente.
+- **(b) L'ajustement de budget** — dépenser plus librement quand on a nettement
+  plus de temps que l'adversaire, économiser dans le cas contraire. Celui-là
+  est général, et il appartient à la famille de l'allocation inégale.
+
+**Seul (b) mérite d'être mesuré**, et son entrée est exactement l'écart entre
+les deux pendules.
+
+##### L'écran vient du MÊME journal que `p` — passé le 23 sept. 2026
+
+`wtime` et `btime` nous sont envoyés à chaque coup ; `-log … engine=true` les
+enregistre. **Un seul match instrumenté a rendu les deux écrans** — même 48
+parties, même journal, `tools/lire-journal.sh`.
+
+**Et il faut séparer un artefact avant de lire quoi que ce soit.** Quand les
+noirs ont le trait, les blancs ont joué un coup de **plus**, donc leur pendule
+est plus basse *par construction*. L'écart signé moyen en sort positif tout
+seul, sans qu'aucun moteur ne gère son temps différemment :
+
+| | écart signé médian | écart signé moyen | `|écart|` relatif médian | > 10 % | > 20 % |
+|---|---|---|---|---|---|
+| trait aux blancs — **autant de coups joués des deux côtés** | **−12 ms** | **−6 ms** | 5,34 % | 23,3 % | 1,58 % |
+| trait aux noirs — *l'adversaire a joué un coup de plus* | +87 ms | +127 ms | 6,82 % | 29,3 % | 2,44 % |
+
+**Sans cette séparation, le journal entier rend « +60 ms de moyenne en notre
+faveur », et ce chiffre est un artefact de comptage de coups.** Quatrième
+occurrence de « vérifier le dénominateur » : une grandeur juste, moyennée sur
+un ensemble qui n'est pas celui qu'on croit.
+
+##### Ce que l'écran dit vraiment, et il n'est pas celui que j'avais annoncé
+
+**J'avais écrit que les deux pendules « se suivent » et que l'écart « reste
+petit ».** Mesuré, c'est plus précis que ça et il faut les deux moitiés :
+
+- **l'écart SIGNÉ est nul** — médiane −12 ms, moyenne −6 ms, sur une pendule
+  de huit secondes. Dans un match symétrique, *aucun* camp n'a
+  systématiquement plus de temps. **L'entrée du mécanisme (b) — « j'ai
+  systématiquement plus de temps que lui, je peux dépenser » — vaut donc
+  exactement zéro dans notre protocole de mesure.** Ce n'est plus une
+  prédiction, c'est un relevé ;
+- **l'écart ABSOLU ne l'est pas** : 5,3 % à la médiane, plus de 10 % sur
+  **23 % des coups**, plus de 20 % sur 1,6 %. Il y a bien de l'information —
+  c'est du bruit centré, pas une constante nulle.
+
+**Les deux ensemble donnent la conclusion** : un mécanisme qui lirait la
+pendule adverse se déclencherait aussi souvent dans un sens que dans l'autre,
+et mesuré contre soi-même il rendrait zéro **quelle que soit sa vraie valeur**.
+*Ce n'est pas un argument contre le mécanisme, c'est le troisième cas du même
+piège*, après le moteur qui démarre froid et le banc qui ne sature pas la
+table qu'on double.
+
+<s>C'est une entrée du chantier « allocation inégale ».</s> **Trop généreux,
+corrigé le 23 sept. au matin même** : l'allocation inégale au sens habituel
+dépense plus sur les positions **dures**, ce qui est un autre levier, plus gros
+et mesurable chez nous.
+
+**Et la part de l'arbre touchée majore le gain sans rien dire du signe.**
+1,6 % des coups au-delà de 20 % d'écart, c'est l'ordre de grandeur de
+l'extension d'échec — 1,39 % de l'arbre, **−5,01 ± 8,11**. Petit levier, signe
+inconnu, exactement comme « prolonger sur un effondrement ».
+
+##### Donc : un verdict CONDITIONNEL, étiqueté par sa condition comme un verdict l'est par sa cadence
+
+La seule mesure honnête est contre un adversaire dont la gestion du temps
+**diffère délibérément**. Deux façons, et la référence existe déjà :
+
+- **un `movestogo` différent** — le parent de `ebe93ad` alloue par 30 quand
+  `main` alloue par 12 ; `ref.sh` le construit en une commande ;
+- **des pendules de départ asymétriques**, par un `tc=` dans chaque bloc
+  `-engine` — même invocation que le proxy du ponder, donc **même piège**.
+
+**Et ce n'est pas un pis-aller.** Si la cible est la force générale contre des
+moteurs variés, un adversaire dont la gestion du temps diffère **ressemble
+davantage au régime cible** qu'un jumeau parfait. Le pis-aller serait de
+mesurer contre soi-même et de lire le zéro que le protocole impose.
+
+**L'ordre d'achat, lui, a changé — et c'est la mesure qui l'a changé.** Avant
+l'écran, le ponder était écrit « ~0,8 pli, inmesurable » et rangé nulle part ;
+il vaut **0,90 pli**, plus que C21, et il est mesurable en trois étapes dont la
+première est déjà faite. L'allocation inégale sur les positions dures garde
+son rang devant *la pendule adverse*, qui reste petite et de signe inconnu.
+Mais elle ne passe plus devant le ponder sur la foi des plis — seul l'arbitrage
+de déploiement les sépare.
+
+### Ce qu'il faut surveiller — et que rien ne signalera tout seul
+
+Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
+**vieillissent**, et c'est pourquoi ils sont écrits plutôt que gardés.
+
+| quoi | quand ça devient actionnable | pourquoi aucun test ne le dira |
+|---|---|---|
+| **l'estimation de durée de `match.yml`** | **le jour où C21 fusionne** | le facteur 0,77 mesuré **EST** le gaspillage de pendule : un moteur qui laisse 48 % de son horloge finit ses parties plus vite que la cadence nominale. C21 corrige exactement ça, donc le facteur dérive vers 1 et la notice se met à mentir dans l'autre sens |
+| `mesure/d5-delta` sur le distant | quand Théo veut | le jeton de session **ne peut pas supprimer une référence distante** (vérifié : `the remote end hung up unexpectedly`). Cinq des six branches `mesure/*` ont disparu, celle-là reste |
+| **le déclencheur de B8** | maintenant | sa **lettre** est satisfaite (C12 clos, C18 décidé), son **esprit** non (C17, C19, C21 sont entrés depuis). Ça demande une re-spécification, pas une mesure — donc personne ne peut la calculer |
+| `attack_dump.rs` et `see_check.rs` | au prochain dépôt dans `tools/src/bin/` | **autodécouverts par cargo**, non déclarés dans `tools/Cargo.toml`. `outillage_documente.rs` exige qu'ils soient documentés, pas qu'ils soient déclarés |
+| le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
+
+### B9 — écrit et mesuré le 23 sept. 2026, à l'attic
+
+Le code est dans `tools/attic/b9-table-atomique.patch`, avec ses chiffres. Il
+n'est **pas** sur une branche : l'effet de capacité attend un SPRT, et le
+déposer sur la branche rendrait la CI rouge pour un changement non accepté.
+
+**Schéma de Hyatt** : chaque entrée tient en deux mots de 64 bits, le premier
+portant `clé XOR données`. Un lecteur reconstruit la clé par un XOR ; une
+entrée *déchirée* par un autre fil rend une clé qui ne correspond à rien et se
+rejette comme une collision ordinaire. Pas de verrou, et la seule conséquence
+d'un déchirement est un défaut de cache, jamais un score faux. Toutes les
+méthodes prennent `&self`, écriture comprise — c'est ce qui rend la table
+partageable.
+
+#### 1. La réécriture est neutre — prouvé, pas supposé
+
+À **capacité forcée égale** (524 288 entrées, celle de l'entrée de 24 octets) :
+
+| | candidat | référence |
+|---|---|---|
+| banc, profondeur 7 | **114 028** | 114 028 |
+| banc, profondeur 10 | **635 210** | 635 210 |
+
+Empreintes md5 différentes, donc ce ne sont pas deux fois le même binaire —
+c'est le contrôle que `sprt.sh` et `timing.sh` imposent désormais.
+
+#### 2. Les accès atomiques ne coûtent rien — ils rapportent
+
+`tools/timing.sh`, capacité forcée égale, profondeur 10, 20 paires :
+
+| | candidat | référence |
+|---|---|---|
+| médiane | **276,5 ms** | 289,0 ms |
+| minimum | 213 ms | 225 ms |
+
+**−4,3 % sur la médiane, −5,3 % sur le min, 15 paires gagnantes sur 20, test
+des signes p = 0,0192.**
+
+**La réserve qui motivait cette mesure est réfutée, et avec le signe opposé.**
+La fiche B9 disait le coût « plat » — ce qui parlait du *rétrofit* — sans que
+personne ait jamais vérifié si des entrées atomiques ralentissent la recherche
+**monothread**. Elles l'accélèrent.
+
+**Le confondant a été levé — troisième coin mesuré le 23 sept. 2026.** Les
+−4,3 % étaient l'effet *net* de deux choses : l'entrée passe de 24 à 16 octets
+**et** les accès deviennent atomiques. `tools/attic/b9-troisieme-coin.patch`
+construit la variante manquante — empaquetée, **non** atomique, capacité
+forcée — et les trois binaires explorent le même arbre au bit près :
+
+| ce qu'on isole | écart médian | paires | p |
+|---|---|---|---|
+| **empaquetage seul** (16 o non atomique contre 24 o) | **−4,0 %** | 33/44 | **0,0013** |
+| **atomiques seules** (atomique contre empaqueté) | **−0,2 %** | 8/20 | 0,65 |
+| les deux ensemble (atomique contre 24 o) | −4,3 % | 15/20 | 0,019 |
+
+**Le gain est entièrement l'empaquetage ; les accès atomiques ne coûtent
+rien** — huit paires gagnantes sur vingt est un pile ou face. *Contrôle de
+cohérence interne, et il passe* : −4,0 puis −0,2 composent −4,2, contre −4,3
+mesuré directement.
+
+**Ce que ça change.** J'avais écarté ce troisième coin en disant qu'il ne
+changerait aucune décision. C'était juste — on ne peut pas avoir d'entrées
+atomiques de 24 octets en deux mots — mais c'est maintenant **établi au lieu
+d'être affirmé**, et ça ajoute un fait utile : *les atomiques étant gratuites,
+il n'y a aucune raison de préférer la version non atomique.* Elles viennent
+ensemble sans surcoût.
+
+**Et `timing.sh` a refusé sur moi.** Le premier relevé de l'empaquetage donnait
+−4,8 % à 20 paires avec p = 0,1153, et le script a rendu *« aucun écart
+démontré, ne pas inscrire de chiffre »*. Il en fallait 44. C'est exactement la
+faute que ce script existe pour empêcher.
+
+#### 3. L'effet de capacité est un autre changement, et le banc ne peut pas le juger
+
+À mébioctets égaux, 16 octets par entrée **doublent** la capacité — 524 288 →
+1 048 576 à 16 Mio. Le banc n'en voit presque rien :
+
+| | atomique naturel | référence | écart |
+|---|---|---|---|
+| profondeur 7 | 114 026 | 114 028 | **2 nœuds** |
+| profondeur 10 | 634 933 | 635 210 | **−0,04 %** |
+
+**Parce qu'il ne SATURE pas la table** : 635 210 nœuds explorés pour 524 288
+entrées, sur six positions cherchées à froid. Un effet qui ne se manifeste
+qu'en partie, table chaude d'un coup à l'autre, demande un SPRT — et le nombre
+de nœuds n'en donne même pas le signe.
+
+#### Ce qui reste à faire avant de fusionner
+
+- un **SPRT sur l'effet de capacité**, à `8+0,08`. Plausiblement un gain, la
+  table doublant à mémoire constante — mais ce dépôt a démenti **trois fois**
+  « c'est standard donc ça aide » ;
+- corriger la **référence du banc**, qui passe de 114 028 à 114 026 :
+  `bench_reference.rs` rend la CI rouge tant que `CLAUDE.md` et `README.md` ne
+  sont pas à jour. C'est voulu ;
+- **remesurer le plafond de mutation de `tt.rs`**, le fichier étant réécrit.
+
 
 ### Trois chantiers, une seule unité — mesuré le 22 sept. 2026
 

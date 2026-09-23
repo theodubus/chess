@@ -36,7 +36,7 @@
 # d'origine avait même le signe faux — et il varie de 22 % d'un runner à
 # l'autre, contre 5 % localement.
 #
-# **Ce que ça coûte, en la seule unité qui compte.** Le projet a mesuré 1,33
+# **Ce que ça coûte, en la seule unité qui compte.** Le projet a mesuré 1,36
 # ply par doublement de temps (8× le temps achète +4 plies). De +11 % à +35 %
 # de vitesse, cela fait **+0,2 à +0,6 ply** : un verdict rendu ici siège un
 # demi-ply plus profond que la même cadence nominale mesurée localement. À
@@ -83,7 +83,7 @@ on:
         default: "5"
         type: string
       graine:
-        description: "Graine des ouvertures. La même qu'un match antérieur le rend apparié."
+        description: "Graine des ouvertures. La même qu'un match antérieur le rend apparié ; « auto » en tire une propre au run, à utiliser dès qu'on compte mettre plusieurs matchs en commun."
         required: false
         default: "20260913"
         type: string
@@ -144,6 +144,31 @@ jobs:
           fi
           echo "candidat=$cand"  >> "$GITHUB_OUTPUT"
           echo "reference=$base" >> "$GITHUB_OUTPUT"
+
+          # La graine est une CONDITION DE VALIDITÉ, dans les DEUX sens, et
+          # c'est pourquoi elle se résout ici plutôt que dans l'étape qui joue.
+          #
+          # Le moteur est déterministe : mêmes binaires plus même graine
+          # donnent les mêmes parties, coup pour coup. Garder la graine par
+          # défaut rend deux matchs APPARIÉS — c'est ce qui a permis de
+          # comparer une même technique à deux cadences, et il ne faut pas le
+          # perdre. Mais deux matchs à longueur fixe qu'on veut METTRE EN
+          # COMMUN doivent être INDÉPENDANTS : à graine égale, l'effectif
+          # double sur le papier sans que l'information bouge.
+          #
+          # « auto » tire une graine propre au run. Elle est imprimée dans le
+          # résumé comme les autres, donc le match reste rejouable à
+          # l'identique en la repassant telle quelle.
+          #
+          # Elle passe par GITHUB_OUTPUT et non par une variable de shell : le
+          # résumé est une AUTRE étape, et une variable de shell ne la
+          # traverse pas — elle y serait simplement vide.
+          graine="${{ inputs.graine }}"
+          if [ "$graine" = "auto" ]; then
+            graine="${{ github.run_id }}"
+            echo "::notice::graine tirée du run : $graine — la repasser telle quelle rejoue ce match à l'identique"
+          fi
+          echo "graine=$graine" >> "$GITHUB_OUTPUT"
 
       # Les deux binaires se construisent en worktree détaché, jamais par
       # `git stash` : le stash emporte tout le travail non committé, outils de
@@ -212,12 +237,13 @@ jobs:
           # déjà commise sur le verdict de mutation le 15 sept. 2026.
           set -euo pipefail
           concurrence=$(( $(nproc) > 1 ? $(nproc) - 1 : 1 ))
+
           commun=(
             -engine cmd=/tmp/candidat  name=candidat
             -engine cmd=/tmp/reference name=reference
             -each tc="${{ inputs.cadence }}" proto=uci
             -openings file=tools/book.epd format=epd order=random
-            -srand "${{ inputs.graine }}"
+            -srand "${{ steps.refs.outputs.graine }}"
             -games 2 -repeat
             -concurrency "$concurrence"
             -draw movenumber=40 movecount=8 score=10
@@ -231,7 +257,57 @@ jobs:
             tools/arbiters/fastchess "${commun[@]}" -rounds "$rondes" \
               | tee /tmp/match.log
           else
-            tools/arbiters/fastchess "${commun[@]}" -rounds 20000 \
+            # LE PLAFOND DU SPRT NE DOIT PAS FAIRE CROIRE À UN RUN À 2 %.
+            #
+            # Il valait `-rounds 20000` en dur, et fastchess imprime alors
+            # « Started game 688 of 40000 » — ce qui fait ressembler un run
+            # SAIN à un run à 2 %. **Cette ligne a induit la même erreur de
+            # lecture deux fois le 22 sept. 2026**, dont une sur un run qui
+            # venait précisément d'expirer : impossible de distinguer à l'œil
+            # « il reste du chemin » de « il n'ira jamais au bout ».
+            #
+            # CE QUI EST RÉPARÉ, ET CE QUI NE L'EST PAS. Le plafond passe
+            # d'un 20 000 arbitraire à une valeur du bon ordre de grandeur, et
+            # une notice dit ce que le job peut réellement atteindre. Ce que je
+            # n'ai PAS fait : caler le plafond sur l'estimation exacte. Elle
+            # est conservatrice de 15 % (7,47 s/partie prédites contre 6,45
+            # mesurées à 8+0,08 — le moteur ne dépense pas toute sa pendule),
+            # donc un plafond serré TRONQUERAIT des parties que le job aurait
+            # pu jouer. **Un dommage statistique réel pour réparer un problème
+            # d'affichage est un mauvais échange** : le facteur 1,5 garantit
+            # que c'est l'horloge du job qui décide, jamais ce nombre.
+            #
+            # POURQUOI L'ESTIMATION N'EST PAS CALIBRÉE, alors qu'on a des
+            # points pour le faire. Les matchs réels donnaient 5,62 s/partie à
+            # 8+0,08 (3738 parties) et 21,9 s à 30+0,3 (960 parties), soit un
+            # facteur 0,75 contre la formule — stable sur les deux. Tentant de
+            # le baker. **Mais ce facteur EST le gaspillage de pendule** : si
+            # le moteur laisse une part de son horloge, ses parties finissent
+            # plus vite que la cadence nominale. C21 corrige exactement cela,
+            # donc la constante devait dériver vers 1 le jour où il fusionne.
+            #
+            # **LA PRÉDICTION EST VÉRIFIÉE, 23 sept. 2026.** Les deux matchs à
+            # longueur fixe de C21 — un seul des deux moteurs porte le
+            # changement — rendent 6,38 et 6,34 s/partie contre 7,47 prédites,
+            # soit **0,85**, quand la même formule donnait 0,75 avec deux
+            # moteurs d'avant. Le facteur a bougé exactement comme annoncé, et
+            # d'un demi-pas puisqu'un seul camp a changé. Extrapolé à deux
+            # moteurs C21 : (0,75 + f) / 2 = 0,85 donne f ≈ 0,95 — inférence,
+            # confiance moyenne, elle suppose que la dépense d'un camp ne
+            # dépend pas de l'autre alors que la LONGUEUR de la partie est
+            # commune. *Une constante qu'un chantier en cours invalide ne
+            # s'écrit toujours pas* : celle-ci n'a pas fini de bouger.
+            base=$(echo "${{ inputs.cadence }}" | cut -d+ -f1)
+            inc=$(echo "${{ inputs.cadence }}"  | cut -d+ -f2)
+            par_partie=$(awk -v b="$base" -v i="$inc" -v c="$concurrence" \
+              'BEGIN { printf "%.3f", 2 * (b + 40 * i) / c }')
+            tient=$(awk -v s="$par_partie" 'BEGIN { printf "%d", 350 * 60 / s }')
+            plafond=$(( tient * 3 / 2 ))
+            echo "::notice::Ce job atteint au moins ~$tient parties à ${{ inputs.cadence }}" \
+                 "(estimation CONSERVATRICE de ~$par_partie s/partie, plafond de 350 min :" \
+                 "les deux matchs historiques ont fait 25 % de plus). Le SPRT s'arrêtera" \
+                 "avant s'il tranche ; ce nombre n'est PAS une cible."
+            tools/arbiters/fastchess "${commun[@]}" -rounds $(( (plafond + 1) / 2 )) \
               -sprt elo0="${{ inputs.elo0 }}" elo1="${{ inputs.elo1 }}" \
                     alpha=0.05 beta=0.05 model=normalized \
               | tee /tmp/match.log
@@ -254,7 +330,7 @@ jobs:
             echo "| candidat | \`${{ inputs.candidat }}\` → \`${{ steps.refs.outputs.candidat }}\` |"
             echo "| référence | \`${{ inputs.reference }}\` → \`${{ steps.refs.outputs.reference }}\` |"
             echo "| cadence | \`${{ inputs.cadence }}\` |"
-            echo "| graine des ouvertures | \`${{ inputs.graine }}\` |"
+            echo "| graine des ouvertures | \`${{ steps.refs.outputs.graine }}\` |"
             echo "| cœurs du runner | ${{ steps.etalon.outputs.coeurs }} |"
             echo "| **nœuds/s au bench** | **${{ steps.etalon.outputs.nps }}** |"
             echo "| profondeur en 250 ms | ${{ steps.etalon.outputs.profondeur }} |"
@@ -264,7 +340,7 @@ jobs:
             echo "> runners mesurés le 16 sept. 2026 rendaient 2 563 044 et"
             echo "> 3 139 691 n/s sur le même binaire, soit 22 % d'écart, quand"
             echo "> le conteneur de session ne varie que de 5 %. Traduit en"
-            echo "> profondeur (1,33 ply par doublement de temps), cela vaut"
+            echo "> profondeur (1,36 ply par doublement de temps), cela vaut"
             echo "> environ un demi-ply."
             echo ">"
             echo "> Ce verdict est valide **en interne** quoi qu'il arrive : les"
@@ -280,6 +356,64 @@ jobs:
             grep -E "^(Elo|LOS|Games|Ptnml|LLR|SPRT|Results)" /tmp/match.log \
               | tail -14 || echo "aucun résultat lisible — voir le journal"
             echo '```'
+            echo
+            # PERTES AU TEMPS ET ANOMALIES — SUR LE JOURNAL COMPLET.
+            #
+            # Ce bloc existe parce que l'API de journaux de GitHub plafonne à
+            # 5000 lignes et ne sert que la FIN : une relève faite depuis une
+            # session ne voyait que ~64 % d'un match de 3000 parties, et
+            # écrivait « aucune perte au temps » sur une fraction. Le runner,
+            # lui, a le fichier entier sous la main. **Un contrôle qui décide
+            # d'une fusion ne se lit pas sur un échantillon dont on n'a pas
+            # choisi la taille.**
+            #
+            # Le contrôle vise en premier les changements de GESTION DU TEMPS,
+            # dont la perte au temps est le mode de défaillance propre : un
+            # budget trop généreux ne se voit pas dans l'Elo, il se voit ici.
+            echo '### Fins de partie — journal complet'
+            echo
+            echo '```'
+            grep -oE '\{[^}]+\}' /tmp/match.log | sort | uniq -c | sort -rn \
+              || echo "aucune fin de partie lisible"
+            echo '```'
+            # Les motifs sont ceux du SOURCE de fastchess (`match.hpp`),
+            # pas des mots plausibles : TIMEOUT_MSG, ILLEGAL_MSG,
+            # DISCONNECT_MSG, STALL_MSG. Un simple `stall` attraperait
+            # « Installed », et `illegal` seul est trop large — éprouvé.
+            # INTERRUPTED_MSG est délibérément ABSENT : un job coupé au
+            # plafond de 350 min en produit, et un match à longueur fixe
+            # tronqué garde une estimation non biaisée. Il reste visible dans
+            # le recensement ci-dessus.
+            anomalies=$(grep -cE \
+              'loses on time|makes an illegal move|disconnects|connection stalls' \
+              /tmp/match.log || true)
+            if [ "$anomalies" -gt 0 ]; then
+              echo
+              echo "> **$anomalies ANOMALIE(S)** — perte au temps, coup illégal"
+              echo "> ou moteur perdu. **Le verdict ne vaut rien tant que ce"
+              echo "> nombre n'est pas zéro** : chercher \`loses on time\` dans"
+              echo "> l'artefact \`match-log\`."
+            else
+              echo
+              echo "> Aucune perte au temps, aucun coup illégal, aucun moteur"
+              echo "> perdu — **sur la totalité du journal**, pas sur sa fin."
+            fi
+            # Le temps réel par partie, qui est ce qui dimensionne les jobs
+            # suivants. Il dépend du GASPILLAGE de pendule, donc il bouge
+            # quand la gestion du temps change : voir la notice de l'étape
+            # « Jouer ».
+            duree=$(grep -oE 'Total Time: [0-9:]+' /tmp/match.log | tail -1 \
+              | grep -oE '[0-9:]+$' || true)
+            parties=$(grep -oE '^Games: [0-9]+' /tmp/match.log | tail -1 \
+              | grep -oE '[0-9]+$' || true)
+            if [ -n "$duree" ] && [ -n "$parties" ] && [ "$parties" -gt 0 ]; then
+              echo
+              echo "| durée totale | parties | s/partie |"
+              echo "|---|---|---|"
+              echo "| $duree | $parties |" \
+                   "$(awk -F: -v n="$parties" \
+                      '{printf "%.2f", ($1*3600+$2*60+$3)/n}' <<< "$duree") |"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Journal complet

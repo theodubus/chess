@@ -41,7 +41,7 @@ LANCES=0
 # Nombre de cas attendus. Un cas qui disparaît doit faire échouer le script :
 # c'est arrivé une fois, un `>/dev/null` mal placé ayant redirigé le `printf`
 # de cette fonction en même temps que la commande, et trois cas se sont tus.
-ATTENDUS=11
+ATTENDUS=14
 
 cas() {
   local nom="$1"; shift
@@ -75,6 +75,9 @@ echo "  configuration"
 cas "settings.json est du JSON valide"        jq -e . .claude/settings.json
 cas "un hook Stop est déclaré"                jq -e '.hooks.Stop[0].hooks[0].command' .claude/settings.json
 cas "un hook PreToolUse est déclaré"          jq -e '.hooks.PreToolUse[0].hooks[0].command' .claude/settings.json
+cas "un hook SessionStart est déclaré"        jq -e '.hooks.SessionStart[0].hooks[0].command' .claude/settings.json
+cas "il lance tools/etat.sh"                  bash -c 'jq -re ".hooks.SessionStart[0].hooks[0].command" .claude/settings.json | grep -q "tools/etat.sh"'
+cas "tools/etat.sh rend un état non vide"     bash -c 'tools/etat.sh | grep -q "non fusionné dans main"'
 cas "les deux scripts sont exécutables"       bash -c '[[ -x .claude/hooks/verify-on-stop.sh && -x .claude/hooks/no-fabricated-sha.sh ]]'
 cas "leur syntaxe est correcte"               bash -c 'bash -n .claude/hooks/verify-on-stop.sh && bash -n .claude/hooks/no-fabricated-sha.sh'
 

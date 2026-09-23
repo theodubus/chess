@@ -7,8 +7,35 @@ license.workspace    = true
 repository.workspace = true
 authors.workspace    = true
 
+# L'autodécouverte des binaires est COUPÉE, et c'est un garde-fou, pas une
+# préférence. Cargo compile par défaut tout `src/bin/*.rs` sans qu'on l'ait
+# déclaré : le 22 sept. 2026, trois sondes jetables déposées là ont été
+# compilées en silence, puis ont cassé l'arbre au moment où l'instrumentation
+# qu'elles importaient a été retirée de `engine/src/search.rs`.
+#
+# Avec `autobins = false`, un fichier déposé ici n'est plus compilé tant qu'il
+# n'a pas sa section `[[bin]]`. Déposer une sonde redevient donc un acte
+# délibéré, et l'oublier ne coûte plus un arbre cassé.
+#
+# C'est complémentaire de `engine/tests/outillage_documente.rs`, qui exige que
+# chaque fichier d'ici soit NOMMÉ dans une documentation : l'un empêche la
+# compilation accidentelle, l'autre le binaire qui dort sans que personne ne
+# sache ce qu'il fait. Aucun des deux ne remplace l'autre.
+autobins = false
+
 [lints]
 workspace = true
+
+# Oracles de vérification — re-jouables, pas jetables : ils confrontent le
+# moteur à une vérité terrain extérieure. Ils vivaient par autodécouverte
+# jusqu'au 23 sept. 2026.
+[[bin]]
+name = "see-check"
+path = "src/bin/see_check.rs"
+
+[[bin]]
+name = "attack-dump"
+path = "src/bin/attack_dump.rs"
 
 [[bin]]
 name = "bookgen"

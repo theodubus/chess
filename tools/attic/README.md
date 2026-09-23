@@ -35,6 +35,9 @@ réseau.
 | `d6-sonde-ordonnancement.patch` | sonde : que peut épargner un générateur par étapes ? | **pas un changement** — 85 % des coups générés par `negamax` ne sont jamais cherchés, mais l'ordonnancement ne pèse que 26,2 % du temps. Plafond **11,5 %**, soit **0,21 pli** | `git apply --check` : **oui**, sur `main` |
 | `d6-sonde-pendule.patch` | sonde : que reste-t-il sur la pendule, et que vaut chaque raffinement de B2 ? | **pas un changement** — **46,9 % de la pendule inutilisée** en fin de partie, soit ~1,36 pli. « S'arrêter tôt sur un coup stable » **réfuté** aux deux cadences | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
 | `d6-sonde-profondeur.patch` | sonde : combien de plis un doublement de vitesse achète-t-il ? | **pas un changement** — **1,36 pli par doublement**, stable sur quatre doublements. C'est l'unité qui rend les chantiers comparables | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
+| `b9-troisieme-coin.patch` | **variante de MESURE**, pas un candidat : table empaquetée **non atomique**, capacité forcée, pour séparer les deux effets de `b9-table-atomique.patch` | **empaquetage seul −4,0 %** (33/44, p = 0,0013), **atomiques seules −0,2 %** (8/20, p = 0,65), les deux ensemble −4,3 %. *Le gain est entièrement l'empaquetage ; les accès atomiques ne coûtent rien.* Cohérence interne : −4,0 puis −0,2 composent −4,2 contre −4,3 mesuré | `git apply --check` : **oui**, sur `main` |
+| `b9-table-atomique.patch` | table de transposition **sans verrou**, entrées de deux mots atomiques (schéma XOR de Hyatt) — prérequis dur de B6 | **neutre, prouvé** : à capacité forcée égale le banc rend 114 028 et 635 210, exactement la référence. **Les atomiques ne coûtent rien, ils RAPPORTENT : −4,3 % de temps**, 15 paires sur 20, p = 0,0192 — la réserve « le coût est plat » est réfutée avec le signe opposé. L'effet de **capacité** (l'entrée passe de 24 à 16 octets, donc la table double) est un AUTRE changement, que le banc ne peut pas juger et qui attend un SPRT | `git apply --check` : **oui**, sur `main` |
+| `d5-retrait-delta.patch` | candidat de **RETRAIT** de l'élagage delta en quiescence — à ne jamais fusionner | **PAS DE VERDICT** — SPRT tué par le plafond du job à 3 738 parties. Retrait **−1,49 ± 7,83**, IC `[−9,3 ; +6,3]`, LLR 0,06 sur ±2,94, bornes `[-5, 0]` à `8+0,08`. Un SPRT arrêté par l'horloge est biaisé **vers zéro** : la vraie valeur est plus négative que −1,49, jamais moins. L'élagage **reste dans `main`** | `git apply --check` : **oui**, sur `main` |
 | `d6-sonde-budget.patch` | sonde : quelle formule de budget épuise la pendule, et ce qu'elle vaut | **pas un changement** — corrige un chiffre publié : dépenser la pendule vaut **0,54 à 0,70 pli**, pas ~1,36. Le budget par coup ne monte que de **× 1,32** et **sature** au plafond d'une allocation plate | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
 
 **La dernière colonne n'est pas de la prose : elle est vérifiée.**
@@ -197,3 +200,38 @@ figurent donc pas, et leur absence n'est pas un oubli. Ce qu'il faut pour les
 reconstruire tient dans la ligne de verdict : le commit de référence, le commit
 candidat, et le nombre de nœuds du banc — qui vérifie qu'on a bien reconstruit
 le même binaire.
+
+**Vérifié le 23 sept. 2026, et le paragraphe ci-dessus était vrai d'un cas sur
+deux.** `d5-trois-termes` porte bien ses trois éléments (candidat `adcbd14`,
+référence `091e75e`, banc 88 495) ; **`sans-aspiration` n'en porte aucun** — sa
+ligne de verdict ne donne que l'Elo, l'effectif et l'étalonnage. Le
+reconstruire reste trivial (retirer l'aspiration de `main`), mais **rien ne
+permettrait de vérifier qu'on a rebâti le même binaire**. C'est une perte
+réelle et petite, inscrite plutôt que passée sous silence ; elle ne se répare
+pas, le commit étant collecté.
+
+**Un candidat de retrait NON TRANCHÉ, lui, se dépose** — et c'est pourquoi
+`d5-retrait-delta.patch` est dans la table ci-dessus sans contredire la règle.
+L'exclusion vise les candidats **rejetés** : quand `H0` est accepté, l'acquis
+paie et le code est resté dans `main`, donc il n'y a rien à garder. Le SPRT de
+delta a **expiré sans verdict** : la question reste ouverte, quelqu'un voudra
+la reprendre, et refaire le diff de tête coûterait plus que de le lire.
+
+### Ce que la suppression des branches `mesure/*` a réellement coûté
+
+**Aucun code de production.** Vérifié branche par branche le 23 sept. 2026 :
+
+| branche supprimée | ce qu'elle portait | récupérable ? |
+|---|---|---|
+| `mesure/c12-pvs` | changement | **oui** — `c12-pvs.patch` et `c12-pvs-2026-09-21.patch` |
+| `mesure/c18-extensions-echec` | changement | **oui** — `c18-extension-echec.patch` |
+| `mesure/c18-c12-ensemble` | combinaison des deux | **oui** — appliquer les deux rustines ; ses nœuds sont dans la table ci-dessus |
+| `mesure/sans-aspiration` | retrait, **H0** | le code est dans `main` ; **le handle de vérification manque** |
+| `mesure/d5-trois-termes` | retrait, **H0** | le code est dans `main` ; SHA et banc inscrits |
+| `mesure/see-instrumentation` | **sonde** pour C19 | **non — le code est perdu.** Ses RÉSULTATS survivent dans la fiche C19 (57,2 % des captures notées paient un appel à `see`, et les nœuds des trois paliers). Elle aurait dû être une rustine : c'est la règle « une sonde jetable vit dans sa rustine », écrite *après* |
+
+**Et la raison pour laquelle rien n'est récupérable est mesurée, pas
+supposée** : `git fetch origin adcbd14` rend `INATTEIGNABLE`. **Aucune branche
+`mesure/*` n'a jamais eu de pull request** — vérifié sur les trente-huit PR du
+dépôt — donc `refs/pull/N/head` ne les protégeait pas, et leurs commits ont été
+collectés.

@@ -63,6 +63,20 @@ fn dispositifs(root: &Path) -> Vec<PathBuf> {
     let mut trouves = Vec::new();
     for (dossier, extensions) in [
         ("tools", &[".sh"][..]),
+        // `tools/src/bin` était le TROU de ce garde-fou, et il l'a laissé
+        // passer deux fois. Le 22 sept. 2026, trois sondes jetables y ont été
+        // déposées : cargo découvre `src/bin/*.rs` tout seul, donc elles ont
+        // été compilées sans être déclarées ni documentées — et l'arbre a
+        // cessé de compiler dès que l'instrumentation qu'elles importaient a
+        // été retirée. En le bouchant on découvre que `attack_dump.rs` y
+        // dormait déjà, non documenté, depuis sa création.
+        //
+        // Même famille que Q4 (`see.rs` hors du cliquet de mutation) : le
+        // garde-fou était correct et gardait le mauvais ensemble. La question
+        // n'est pas « ce dispositif marche-t-il ? » mais « quelle est sa
+        // source de vérité, et est-ce la bonne ? » — ici le répertoire que
+        // cargo compile, jamais celui qu'on a en tête.
+        ("tools/src/bin", &[".rs"][..]),
         (".github", &[".sh", ".txt"][..]),
         (".github/workflows", &[".yml", ".yaml"][..]),
         (".claude", &[".json"][..]),

@@ -16,6 +16,10 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 Ce fichier dit **comment** travailler : invariants, ce qui compte comme preuve,
 pièges déjà payés. Il ne dit pas **où on en est**.
 
+- **L'état du travail en cours est imprimé automatiquement au démarrage et
+  après chaque compactage** par `tools/etat.sh` — branche, commits non
+  fusionnés, écart code/documentation, et où lire la suite. Il est calculé,
+  jamais recopié. S'il n'apparaît pas, le lancer à la main.
 - L'état du moteur : `README.md`, en tête.
 - Les verdicts SPRT, avec leurs effectifs, leurs bornes **et leur cadence** :
   `tools/README.md`, section *Mesures de référence*. Le compteur n'est pas
@@ -178,9 +182,23 @@ une mesure, pas une préférence.
   ce qui est inexprimable quand plusieurs threads écrivent dans la même table.
   Le passage à des entrées atomiques (XOR clé/données, qui rend détectable une
   entrée déchirée sans verrou) est une réécriture contenue de `tt.rs` plus un
-  changement de signature qui traverse `search.rs`. Le coût ne croît pas avec
-  le temps — ce n'est pas une dette cumulative — mais il ne faut pas le
-  découvrir le jour où l'on écrit Lazy SMP.
+  changement de signature qui traverse `search.rs`.
+  <br>**Écrit et mesuré le 23 sept. 2026 — le code est à
+  `tools/attic/b9-table-atomique.patch`, pas sur une branche.** Trois
+  résultats. **La réécriture est neutre, prouvée** : à capacité forcée égale,
+  le banc rend 114 028 et 635 210, exactement la référence, avec des empreintes
+  différentes. **Les accès atomiques ne coûtent rien, ils RAPPORTENT** :
+  −4,3 % de temps à la profondeur 10, 15 paires sur 20, p = 0,0192 — la fiche
+  disait le coût « plat », ce qui parlait du *rétrofit*, et personne n'avait
+  vérifié la vitesse monothread ; elle monte. **Le confondant est levé, troisième coin
+  mesuré** : l'empaquetage seul vaut **−4,0 %** (33/44, p = 0,0013), les
+  **atomiques seules −0,2 %** (8/20, p = 0,65). *Le gain est entièrement
+  l'empaquetage ; les accès atomiques ne coûtent rien*, et les deux viennent
+  donc ensemble sans surcoût. Cohérence interne : −4,0 puis −0,2 composent
+  −4,2 contre −4,3 mesuré. Enfin
+  **l'effet de CAPACITÉ est un autre changement** : l'entrée passant de 24 à
+  16 octets, la table double à mémoire constante, et cela demande un SPRT.
+  Chiffres dans `tools/README.md`.
 
 ## Ce qui compte comme preuve
 
@@ -194,13 +212,13 @@ une mesure, pas une préférence.
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « ce verdict vaut pour le moteur qu'on livrera » | **La cadence de mesure peut INVERSER un verdict — mesuré, pas redouté.** 16 sept. 2026, mêmes binaires, même livre, **même graine d'ouvertures**, même adjudication, même estimateur (1000 parties à longueur fixe chacun) : l'élagage par compte de coups vaut **−21,57 ± 16,71** à `1+0,01` et **+15,30 ± 15,08** à `8+0,08`. Écart **+36,9 Elo**, z = 3,21, **p = 0,0013**, intervalles disjoints. Le biais d'arrêt du SPRT ne vaut que 3,6 Elo : ce n'était pas l'explication. Profondeur médiane atteinte : **8,5** contre **12,5** — et **17,0** à ~30+0,3, le régime où le moteur jouera. **Les douze premiers verdicts du projet sont tous à `1+0,01`**, alors que `tools/sprt.sh` a pour défaut `8+0.08` depuis sa création — défaut jamais utilisé. Ce n'était pas un arbitrage, c'était une habitude. **Nommer la cadence d'un verdict, et ne jamais comparer deux verdicts de cadences différentes.** Mesurer long passe par `.github/workflows/match.yml`. |
 | « ce chantier passe avant cet autre » | **Une unité commune, et les plis en sont une.** Le projet a comparé ses chantiers en pourcentage de nœuds, en part de l'arbre, et en « très sous-estimé » hérité d'un backlog — trois unités qui ne se comparent pas. **Mesuré le 22 sept. 2026 : 1,36 pli par doublement de temps**, stable sur quatre doublements, ce qui ramène tout gain de vitesse OU de temps à la même échelle. Génération par étapes 0,21 pli, **dépenser la pendule 0,54 à 0,70**, Lazy SMP 1,0 à 1,8. <s>Pendule pleine ~1,36.</s> **Faux d'un facteur 2,5, corrigé le 22 sept. au soir** — et la faute mérite d'être nommée parce qu'elle est conceptuelle : *j'ai confondu la RESSOURCE TOTALE consommée sur une partie avec l'ALLOCATION PAR COUP*. Le budget vaut `restant / movestogo` — proportionnel à ce qui reste — donc dépenser plus tôt laisse moins ensuite : la consommation totale monte bien de × 1,9, mais le budget moyen par coup ne monte que de **× 1,32**, et il **sature** (le diviseur 12 alloue 285 ms, le 10 en alloue 283). La saturation n'est pas un hasard : le plafond d'une allocation *plate* vaut `(pendule + coups × inc) / coups` = **280 ms**. Un diviseur est une famille à un paramètre qui bute sur la physique du problème ; faire mieux demande une allocation **inégale**, ce qui est un autre chantier. **Ce que ça ne donne pas : l'Elo.** Combien vaut un pli n'est mesuré nulle part ici, et le multiplier par une constante héritée serait exactement ce que ce dépôt a démenti trois fois. |
-| « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. **Dix-huit SPRT du projet — la relation tient, sa DISPERSION est connue, et elle ne dépend PAS de la cadence** : `parties × Elo`, médiane **59 256**, étendue 45 900 à 80 200, **facteur 1,75**. Quatre techniques ont un point à chaque cadence ; l'Elo y change d'un facteur 2,5 et même de signe, le produit tient à ± 15 %. **Mais l'Elo qu'on MET dans la division appartient, lui, à une cadence** : le projet a écrit que les trois termes d'évaluation « tombaient juste sous la ligne » (59 500 ÷ 14,9 = 3 993 parties, au-delà du plafond de 3 750) ; le verdict est tombé en **1 580**, l'effet valant +37,5 et non +14,9. **Un budget estimé depuis un verdict à `1+0,01` est un majorant — ne jamais renoncer à un match sur cette base.** Un seul point dépasse 67 000 — le tout premier, +164 Elo sur 488 parties ; <span>inférence, confiance moyenne : le biais d'arrêt du SPRT gonfle d'autant plus l'estimation que l'effectif est petit</span>. Hors ce point, le facteur tombe à **1,45**. La constante n'a presque pas bougé (62 000 avait été établie sur quatre points), **mais un budget estimé se lit désormais à ± 50 %, pas comme un nombre** : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 11 900 ≈ 2 h 30 ; +2 ≈ 29 750 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. **À `8+0,08` par `match.yml`, un job tranche les effets de ~17 Elo et plus** : 5,57 s par partie mesurées, plafond de 350 min, soit ~3 750 parties. En dessous, passer à des matchs à longueur fixe sur plusieurs jobs et les mettre en commun — jamais « reprendre » un SPRT expiré, un test séquentiel interrompu puis prolongé n'a plus ses taux d'erreur. Voir `tools/README.md`. |
+| « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. **Dix-huit SPRT du projet — la relation tient, sa DISPERSION est connue, et elle ne dépend PAS de la cadence** : `parties × Elo`, médiane **59 256**, étendue 45 900 à 80 200, **facteur 1,75**. Quatre techniques ont un point à chaque cadence ; l'Elo y change d'un facteur 2,5 et même de signe, le produit tient à ± 15 %. **Mais l'Elo qu'on MET dans la division appartient, lui, à une cadence** : le projet a écrit que les trois termes d'évaluation « tombaient juste sous la ligne » (59 500 ÷ 14,9 = 3 993 parties, au-delà du plafond de 3 750) ; le verdict est tombé en **1 580**, l'effet valant +37,5 et non +14,9. **Un budget estimé depuis un verdict à `1+0,01` est un majorant — ne jamais renoncer à un match sur cette base.** Un seul point dépasse 67 000 — le tout premier, +164 Elo sur 488 parties ; <span>inférence, confiance moyenne : le biais d'arrêt du SPRT gonfle d'autant plus l'estimation que l'effectif est petit</span>. Hors ce point, le facteur tombe à **1,45**. La constante n'a presque pas bougé (62 000 avait été établie sur quatre points), **mais un budget estimé se lit désormais à ± 50 %, pas comme un nombre** : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 11 900 ≈ 2 h 30 ; +2 ≈ 29 750 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. **À `8+0,08` par `match.yml`, un job tranche les effets de ~17 Elo et plus** : 5,57 s par partie mesurées, plafond de 350 min, soit ~3 750 parties. En dessous, passer à des matchs à longueur fixe sur plusieurs jobs et les mettre en commun par `tools/mettre-en-commun.sh` — **jamais un SPRT, et la raison est plus large que « ne pas reprendre un SPRT expiré »** : un test séquentiel tire ses taux d'erreur d'une règle d'arrêt unique sur un flux unique. Lancer N SPRT et s'arrêter dès que l'un franchit sa borne multiplie le risque de première espèce par ~N ; recoller leurs parties après coup ne rend pas un test séquentiel mais un échantillon dont la taille a été choisie après avoir vu les données, ce qui est pire. **Un match à longueur fixe, lui, se parallélise sans rien casser** : effectif connu d'avance, estimation non biaisée, et la somme des comptes pentanomiaux est exacte là où moyenner des Elo ne l'est pas. Voir `tools/README.md`. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
 | « c'est plus fort » | **Jamais** déduit d'un nombre de nœuds, dans aucun sens. Huit mesures, et les trois combinaisons de signes sont représentées : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration ÷1,07 → +30 ; élagage delta ÷1,68 → +33 ; futilité inverse ÷1,45 → +24 (moins de nœuds, plus fort) ; **PVS ÷1,03 → −11, H0 accepté** (moins de nœuds, plus faible) ; **mobilité ×1,29 → +63** (*plus* de nœuds, plus fort). Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. **Deux rapports voisins, ÷1,68 et ÷2,52, rapportent +33 et +75 : même le classement ne se déduit pas.** Deux points de plus le 21 sept. 2026, tous deux nuls : extension d'échec ×1,16 → **−5,0 ± 8,1**, PVS réécrit ÷1,07 → **−0,8 ± 8,2**, à `8+0,08`. Et un point du 22 sept. qui tombe pile sur un point existant : **les trois termes d'évaluation ×1,29 → +37,5**, exactement le rapport de nœuds de la mobilité, qui vaut **+62,6**. *Même coût en nœuds, presque du simple au double en Elo.* |
 | « cette technique est standard, donc elle aide » | **Rien.** Ce n'est pas une preuve, et le dépôt en porte maintenant **trois** démentis. PVS est dans tous les manuels et la mesure l'a rejeté **deux fois, à deux cadences** : −10,9 ± 7,9 à `1+0,01` (4214 parties, septembre) puis **−0,8 ± 8,2 à `8+0,08`** (3400 parties, 21 sept., sur la base post-C19 et post-LMP). Le second chiffre corrige le premier plus qu'il ne le confirme : **PVS n'est pas un coût, c'est un néant.** Empilé sur LMR, coup nul et fenêtres d'aspiration, il n'apporte plus rien à couper, et son coût de re-recherche compense exactement son économie de nœuds. La coupure du manuel dans l'échange statique rend une valeur fausse — 27 écarts sur 771, l'oracle l'a vue au premier passage. Et reléguer les captures perdantes **derrière les coups tranquilles**, comme le font les moteurs modernes, coûte **+31,6 % de nœuds** ici, contre −4,2 % pour le palier le plus doux. Une technique standard entre par le SPRT comme toutes les autres. |
 | « cette rustine de l'attic s'applique encore » | **`git apply --check`, jamais la table.** Trois des sept lignes de `tools/attic/README.md` étaient fausses le 22 sept. 2026, toutes par la même fusion, et rien ne pouvait le signaler : personne n'avait rien fait de mal, la table avait vieilli pendant qu'une PR avançait. Le contrôle est `engine/tests/rustines_attic.rs`, et il garde **la copie que les humains lisent** — déplacer la déclaration dans un fichier annexe aurait laissé la table dériver, ce qui est la faute de B10. **Une rustine qui cesse de s'appliquer parce que son code est ENTRÉ dans `main` n'est pas une régression** : c'est un rejet levé, et ça se raconte dans la colonne. |
 | « ce réglage était mauvais, pas la technique » | **Une bissection par le paramètre, pas une intuition** — et la bissection appartient elle aussi à sa cadence. L'élagage par compte de coups a été bissecté à `1+0,01` : seuil `6 + d²` → **−25,2 Elo**, seuil `12 + d²` → **−12,6**, le coût suivant le **risque mesuré** (3,8 % puis 2,0 % des montées d'`alpha` détruites, × 0,53 pour × 0,50, droite par l'origine). J'en avais conclu « il n'y a pas de seuil qui paie sur ce moteur ». **Réfuté le 21 sept. 2026** : à `8+0,08`, sur la base post-C19, les deux seuils sont **H1** — +22,85 ± 9,88 et +17,24 ± 8,51. La bissection était juste, la généralisation ne l'était pas. **Deux points ferment une question que zéro point laisserait ouverte — mais ils ne la ferment qu'à leur cadence.** |
-| « j'ai mesuré le mécanisme, donc je sais » | **Vérifier le dénominateur.** Avant d'écrire LMP j'ai mesuré la part des *coups tranquilles* élagués : 58 % au seuil 6, 40 % au seuil 12, compromis monotone sans genou — d'où « seul un SPRT peut choisir ». En **nœuds**, qui sont ce qui achète de la profondeur, le seuil 12 garde **96 %** de l'économie du seuil 6 : le genou est net. Un chiffre vrai qui répond à une autre question. |
+| « j'ai mesuré le mécanisme, donc je sais » | **Vérifier le dénominateur.** Avant d'écrire LMP j'ai mesuré la part des *coups tranquilles* élagués : 58 % au seuil 6, 40 % au seuil 12, compromis monotone sans genou — d'où « seul un SPRT peut choisir ». En **nœuds**, qui sont ce qui achète de la profondeur, le seuil 12 garde **96 %** de l'économie du seuil 6 : le genou est net. Un chiffre vrai qui répond à une autre question. **Et le dénominateur peut être un ENSEMBLE, pas seulement une grandeur** — 23 sept. 2026 : l'écart entre les deux pendules rend « +60 ms en notre faveur » moyenné sur tous les coups, et **−6 ms** moyenné sur les seuls coups où les deux camps en ont joué autant. Le reste est un artefact de comptage de coups. |
 
 ## Pièges de mesure, appris à nos dépens
 
@@ -271,6 +289,23 @@ une mesure, pas une préférence.
   l'instrumentation ET son lecteur dans le même patch, à l'attic, ou ni l'un ni
   l'autre. Pour itérer sans casser l'arbre, une crate jetable hors du dépôt qui
   dépend du moteur par chemin.
+  <br>**Et le garde-fou qui aurait dû l'attraper avait un trou, plus large que
+  l'incident.** `engine/tests/outillage_documente.rs` balayait `tools/` pour
+  les `.sh` **uniquement** : il n'a jamais regardé `tools/src/bin/`. En l'y
+  étendant, **cinq des six binaires se révèlent non documentés**, dont
+  `attack_dump.rs` depuis sa création — et deux ne sont même pas déclarés dans
+  `tools/Cargo.toml`, ils vivent par autodécouverte. Troisième occurrence de
+  « un garde-fou correct qui garde le mauvais ensemble », après `see.rs` hors
+  du cliquet (Q4) et le chiffre de bench lu dans un seul fichier (B10).
+  <br>**La casse d'arbre, elle, est devenue inexprimable le 23 sept. 2026** :
+  `tools/Cargo.toml` porte `autobins = false`, donc un fichier déposé dans
+  `tools/src/bin/` **n'est plus compilé tant qu'il n'a pas sa section
+  `[[bin]]`**. Les deux oracles qui vivaient par autodécouverte —
+  `see_check.rs` et `attack_dump.rs` — y sont désormais déclarés. Éprouvé dans
+  les deux sens : un fichier délibérément non compilable laisse le build vert
+  tant qu'il n'est pas déclaré, et le casse dès qu'il l'est. *La discipline
+  — une sonde vit dans sa rustine — reste du jugement ; ce qui est fermé, c'est
+  le mode de défaillance qu'elle laissait passer.*
 - **Un mécanisme vérifié à l'arithmétique qui ne retombe pas sur la mesure
   n'est pas réfuté — il est incomplet, et le résidu se nomme.** Le gaspillage
   de pendule était prédit à 31 % de restant par le modèle `restant/30 + inc/2`
@@ -297,6 +332,15 @@ une mesure, pas une préférence.
   positions tirées de vraies parties, 1,9 % — un facteur 3 à 5. Toute question
   portant sur une phase de jeu se mesure sur des positions extraites d'un
   match (`-pgnout`, puis échantillonnage).
+  <br>**Et il ne SATURE pas les ressources dont on change la taille** — c'est
+  la même limite, d'un cran plus profond que le mélange de phases. Doubler la
+  table de transposition (B9, 23 sept. 2026) déplace le banc de **2 nœuds à la
+  profondeur 7 et de 0,04 % à la profondeur 10**, parce qu'il explore 635 210
+  nœuds pour 524 288 entrées, sur six positions cherchées **à froid**. Un
+  lecteur pressé conclurait « doubler la table ne sert à rien » ; ce que le
+  banc dit vraiment, c'est qu'il ne la remplit pas. *Avant de conclure d'un
+  banc qu'un dimensionnement n'a pas d'effet, vérifier qu'il atteint seulement
+  la borne qu'on déplace.*
 - **Quand un mécanisme est rare par construction, compter ses nœuds ne
   tranche rien — compter ses DÉGÂTS, si.** D2 supposait que PVS vaut par le
   gatage de LMP sur les nœuds hors variante principale. La question naturelle
@@ -309,6 +353,20 @@ une mesure, pas une préférence.
   devait expliquer. **D2 est clos sans un seul match.** Troisième forme du même
   piège, après le dénominateur de LMP et le balayage par `movetime` : un chiffre
   vrai qui répond à une autre question.
+- **« L'outil ne sait pas le faire » se lit dans son SOURCE, à la version qu'on
+  épingle — et « l'outillage », c'est tout ce qu'on a déjà.** Le 23 sept. 2026
+  j'ai écrit que le ponder était « inmesurable avec l'outillage actuel », sur
+  la foi d'un mot absent du README de fastchess. Deux fautes en une. **La
+  bonne source** : le dépôt de fastchess au commit épinglé ne contient
+  effectivement pas une occurrence du mot — mais c'est un `grep` sur l'arbre,
+  avec un témoin qui répond, qui l'établit, pas une documentation. **Le bon
+  ensemble** : `setup-arbiters.sh` construit DEUX arbitres, et cutechess-cli
+  supporte `ponder` par moteur, documenté dans son `help.txt`. J'avais posé la
+  question au seul outil que j'avais en tête. *Une capacité déclarée absente
+  ferme un chantier ; avant de l'écrire, lire le source, et énumérer les
+  outils au lieu de penser à celui qu'on vient d'utiliser.* Même famille que
+  « un garde-fou peut garder la mauvaise chose », appliquée non plus à un
+  dispositif mais à une conclusion.
 - **Avant d'ordonner deux chantiers par une dépendance, vérifier qu'ils
   touchent les mêmes objets.** Le projet a inscrit que l'échange statique était
   « la précondition » de l'élagage par compte de coups, au motif que la prémisse
@@ -366,13 +424,6 @@ une mesure, pas une préférence.
   écrivait « il n'y a plus d'ordre imposé ». Corollaire à ne pas manquer : une
   colonne « empilé depuis » vieillit à chaque fusion, et celle de D5 datait
   d'avant les deux élagages qui ont précisément mangé la ligne érodée.
-- **Un bench à profondeur 7 est trop court pour comparer des temps.** Le
-  nombre de nœuds y est déterministe et comparable, le temps ne l'est pas :
-  le 14 sept. 2026, une même version a mesuré 184 ms puis 200 ms en
-  best-of-7, et un balayage de tailles de cache a rendu des chiffres non
-  monotones purement dus au bruit. **Pour comparer des temps, mesurer à
-  profondeur 10** (~1,6 s par run), où le bruit devient marginal — et
-  seulement à nombre de nœuds identique, sans quoi on compare deux arbres.
 - **Un cache de structure de pions ne paie pas sur ce moteur.** Essayé et
   retiré le 14 sept. 2026. `pawn_structure` pèse pourtant 24 % du temps de
   recherche, mais le taux de succès mesuré n'est que de **62 à 84 %**, parce
@@ -383,12 +434,6 @@ une mesure, pas une préférence.
   recalcul. Mesuré à profondeur 10 : 1624 ms sans cache, 1644 à 1842 avec.
   Ne pas réessayer sans changer le mécanisme — un cache indexé par une clé
   incrémentale, ou un terme de pions moins coûteux à recalculer.
-- **Un tuner est aussi un fuzzer.** L'ajustement Texel a poussé
-  `KING_DANGER_SCALE` à zéro et fait paniquer l'évaluation sur une division
-  entière par zéro — le moteur aurait planté en pleine partie. **Les valeurs
-  d'évaluation sont des données, pas du code** : une donnée fausse se borne,
-  elle n'arrête pas la partie. Un test vérifie qu'aucun jeu de paramètres ne
-  fait paniquer l'évaluation, jeu entièrement nul compris.
 - **Une propriété générale assertée sur UNE position passe par chance, et le
   jour où elle tombe on accuse le mauvais coupable.** Deux tests d'aspiration
   assertaient que, sans l'élagage par compte de coups, le score de la boucle ne
@@ -430,73 +475,6 @@ une mesure, pas une préférence.
   lire les étalonnages. Telle qu'écrite sans portée, la règle aurait fait
   sérialiser toute mesure appariée — le protocole que la cadence rend
   obligatoire — pour rien.
-- **Le SPRT tire ses ouvertures au hasard : sans `-srand`, rien n'est
-  rejouable.** `tools/sprt.sh` fixe désormais la graine et l'affiche.
-
-- **Le code retiré se garde dans `tools/attic/`, jamais par un SHA de commit.**
-  La pratique était de désigner le commit — « le code retiré reste lisible dans
-  `15028fa` ». **Elle a cassé le 16 sept. 2026** : la PR #11 fusionnée en
-  `squash` a remplacé les commits de la branche par un commit neuf, GitHub a
-  supprimé la branche, et la première exécution de `match.yml` a échoué sur
-  `fatal: invalid reference: 498a01a`. Une rustine versionnée ne peut pas subir
-  ça — elle survit aux squashs, aux suppressions de branche et aux politiques
-  de collecte. Voir `tools/attic/README.md` : quand y déposer une rustine, et
-  pourquoi celle de PVS ne s'applique plus.
-  <br>**Fusionner en `merge` et non en `squash`** reste préférable, pour garder
-  l'historique lisible — les PR #1 à #5 l'avaient fait. Mais ce n'est plus ce
-  qui protège le code retiré, et c'était une mauvaise fondation : *la
-  survie d'un artefact ne doit pas dépendre d'une politique de dépôt.*
-  <br><span>Deux constats vérifiés au passage, qui nuancent la panique
-  d'origine : GitHub conserve `refs/pull/N/head` de façon permanente, donc
-  `498a01a` restait atteignable par ce chemin ; et **le push d'étiquettes est
-  refusé sur ce dépôt** (403 avec le jeton de session), ce qui interdisait
-  la solution évidente. **Troisième limite du même jeton, vérifiée le
-  22 sept. 2026 : il ne peut pas non plus SUPPRIMER une référence distante** —
-  `git push origin --delete <branche>` échoue sur `the remote end hung up
-  unexpectedly`, sans message utile. Le ménage des branches `mesure/*` revient
-  donc à Théo, et *ne jamais écrire dans la documentation une suppression
-  qu'on n'a pas vérifiée* : je l'ai fait le jour même, et la phrase était
-  fausse quand elle a été committée.</span>
-- **Ne jamais construire une référence avec `git stash`.** Il emporte tout le
-  travail non committé, outils de mesure compris — on finit par mesurer autre
-  chose que ce qu'on croit. Utiliser `git worktree add --detach /tmp/ref <commit>`.
-- **Vérifier que le binaire a bien été reconstruit.** `mv` et `cp -p`
-  préservent les dates de modification, donc cargo peut juger les sources
-  périmées et ne rien recompiler : on mesure alors l'ancien binaire. Un
-  rapport avant/après d'exactement 1,00 en est le symptôme.
-- **Ce n'est pas toujours le binaire qui est périmé : ce peut être la
-  RÉFÉRENCE GIT — et elle ment de DEUX façons.** Le 22 sept. 2026, les deux
-  se sont produites dans la même session, sous deux déguisements différents.
-  <br>**Forme 1, elle fausse une mesure.** Un candidat de retrait construit
-  sur `main` a rendu un arbre trois fois trop gros. Binaire neuf, code juste,
-  édition correcte — mais `origin/main` était figé **onze commits en arrière**
-  dans le clone local, alors que le distant portait bien la tête annoncée.
-  Symptôme identique au binaire périmé : un chiffre plausible qui répond à
-  une autre question. **Ce qui l'a attrapé n'est pas la vigilance, c'est
-  d'avoir écrit la valeur attendue AVANT de mesurer.**
-  <br>**Forme 2, elle déclenche une fausse alarme.** Après chaque fusion,
-  GitHub supprime la branche distante — mais **`git fetch <remote> <branche>`
-  n'élague pas**, donc `refs/remotes/origin/<ma-branche>` survit en pointant
-  le commit d'avant la fusion. Tout ce qui compare la branche locale à son
-  suivi croit alors voir un commit non poussé, alors que le commit en question
-  est le commit de fusion, déjà sur `main`. C'est arrivé deux fois de suite,
-  et j'ai d'abord accusé l'outil qui signalait plutôt que ma procédure.
-  <br>**Le geste, vérifié par exécution et non déduit** : `git fetch --prune`,
-  jamais `git fetch <remote> <branche>` seul, et confronter à
-  `git ls-remote`. Le contrôle qui tranche une alarme de ce type est
-  `git log origin/main..HEAD` — vide veut dire que `main` porte déjà tout, donc
-  que rien n'est en risque.
-- **Un chiffre de référence écrit en prose vieillit en silence.** La section
-  *Commandes* a annoncé `702 612 nœuds` pendant deux journées de travail alors
-  que la valeur réelle était `541 528` : la mobilité et trois termes
-  d'évaluation avaient changé l'arbre de recherche sans que personne ne mette
-  le chiffre à jour, et **rien ne l'a signalé**. Un chiffre de référence faux
-  est pire qu'absent — il sert de point de comparaison à la session suivante,
-  qui croit mesurer une régression là où elle découvre une dérive de la
-  documentation. `engine/tests/bench_reference.rs` confronte désormais les
-  deux, en critère d'acceptation. **Conséquence assumée** : tout changement de
-  l'arbre de recherche rend la CI rouge tant que la ligne n'est pas corrigée.
-  C'est l'effet recherché ; le message d'échec donne le chiffre à recopier.
 - **Un renvoi par POSITION vieillit comme un chiffre recopié, et sans bruit.**
   `tools/README.md` commentait « la dernière ligne » d'un tableau de nœuds ;
   écrite le 16 sept. 2026 elle visait juste, puis deux mesures ajoutées sous
@@ -517,21 +495,6 @@ une mesure, pas une préférence.
   le score — dans la recherche comme dans l'évaluation. Vingt-huit mutants
   perdus d'un coup. **Après avoir touché à un test, remesurer le plafond**, ou
   au minimum se demander ce que ce test attrapait qu'on ne lui demandait pas.
-- **Un critère d'acceptation `#[ignore]` est invisible au cliquet de
-  mutation.** `cargo mutants` exécute `cargo test`, donc jamais `--ignored` :
-  le contrôle du banc à la profondeur 7 — le garde-fou déterministe le plus
-  fort du dépôt — ne voyait aucun mutant. Tout changement silencieux de l'arbre
-  de recherche survivait alors qu'un simple compte de nœuds l'aurait vu.
-  `larbre_de_recherche_ne_bouge_pas_en_silence` fige donc le banc à la
-  **profondeur 5**, non ignoré, pour 0,32 s en debug. **Éprouvé en le faisant
-  échouer** : un signe retiré dans une table piece-square le fait passer de
-  31 637 à 31 942 nœuds. <span>Limite mesurée, pas supposée : il n'attrape pas
-  tout — un mutant sur l'ordonnancement des promotions ne change pas ces six
-  arbres. Le banc est un échantillon, comme le rappelle le piège voisin.</span>
-  <br>**Ce qu'il a rapporté, mesuré le 22 sept. : 163 mutants tués par un seul
-  test.** `search.rs` 110 → **45**, `eval.rs` 219 → **121**, total du dépôt
-  336 → **173**. Le trou ne datait pas de la veille : il existait depuis la
-  création du cliquet.
 - **Un mutant « de réglage » n'est hors de portée des tests que si rien de
   DÉTERMINISTE ne dépend du réglage.** Le plafond d'`eval.rs` était justifié
   depuis le 15 sept. 2026 par « le fichier est en très grande part des VALEURS,
@@ -553,13 +516,24 @@ une mesure, pas une préférence.
   n'est pas « ce garde-fou marche-t-il ? » mais « **quelle est sa source de
   vérité, et est-ce la bonne ?** » — ici le répertoire, jamais la liste.
 - **Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué ne garde
-  rien.** La première version du contrôle ci-dessus ne lisait que `CLAUDE.md`.
-  Elle a été écrite alors que `README.md` portait déjà `8 432 521` — le chiffre
-  d'avant le coup nul, **faux d'un facteur 15,6** — et ne l'a pas vu, parce que
-  personne n'avait cherché si le chiffre existait ailleurs. Le contrôle balaie
-  maintenant une liste de fichiers. **Avant d'écrire un garde-fou, chercher
-  toutes les copies de ce qu'il garde** : `grep` sur la valeur, pas sur le
-  fichier qu'on a en tête.
+  rien.** La première version de `engine/tests/bench_reference.rs` ne lisait
+  que `CLAUDE.md`. Elle a été écrite alors que `README.md` portait déjà
+  `8 432 521` — le chiffre d'avant le coup nul, **faux d'un facteur 15,6** — et
+  ne l'a pas vu, parce que personne n'avait cherché si le chiffre existait
+  ailleurs. La deuxième balayait une **liste écrite à la main**, ce qui laissait
+  encore mon jugement décider de la couverture ; celle d'aujourd'hui parcourt
+  **tout le dépôt**, donc un fichier Markdown créé demain est couvert sans que
+  personne y pense. **Avant d'écrire un garde-fou, chercher toutes les copies
+  de ce qu'il garde** : `grep` sur la valeur, pas sur le fichier qu'on a en
+  tête.
+  <br>**Ces deux phrases-ci étaient fausses jusqu'au 22 sept. 2026, et de deux
+  façons différentes** : « le contrôle balaie maintenant une liste de
+  fichiers » décrivait la deuxième version alors que la troisième était en
+  place depuis des jours, et « le contrôle **ci-dessus** » désignait le
+  garde-fou de couverture de mutation, pas celui du bench. *Le piège du renvoi
+  par position avait donc déjà dérivé dans ce fichier même, deux puces sous
+  l'endroit où il est nommé* — et rien ne pouvait le signaler, puisque la
+  phrase restait parfaitement lisible.
 - **Un tampon par nœud coûte son *initialisation*, pas son allocation.**
   `ordered_moves` allouait un `Vec` à chaque nœud, et 90 % des nœuds sont des
   nœuds de quiescence : le remplacer par un tableau de pile paraissait évident.
@@ -571,6 +545,26 @@ une mesure, pas une préférence.
   presque rien. **Ce qui paie : une ardoise allouée une fois, découpée par ply
   et passée le long de la récursion** — ni allocation ni remplissage par nœud,
   mesuré **−2,1 %** sur 22 paires, test des signes p = 0,0004.
+- **« Nœuds identiques au bit près » ne s'applique qu'à taille de structure
+  CONSTANTE.** J'ai annoncé que la réécriture de `tt.rs` en entrées atomiques
+  serait « une réécriture pure, donc nœuds identiques puis `timing.sh` ».
+  **Faux, et deux minutes de sonde le montrent** : `size_of::<Entry>()` vaut
+  **24 octets** aujourd'hui, une entrée atomique en fait **16**, donc à
+  mébioctets égaux la table **double de capacité**, les collisions changent et
+  l'arbre avec. *Une réécriture qui change la taille d'une structure n'est
+  jamais pure, quelle que soit la pureté de sa logique.* Les deux effets se
+  séparent par les quatre coins : le coût des accès atomiques se mesure à
+  **capacité forcée égale** (et là, nœuds identiques + `timing.sh`
+  s'appliquent), l'entrée deux fois plus petite est un changement d'arbre qui
+  demande un SPRT — et plausiblement un gain, puisqu'il double la table à
+  mémoire constante. Même famille que « vérifier le dénominateur » : un
+  raisonnement correct appliqué à la mauvaise grandeur. Chiffres et encodage
+  dans `tools/README.md`.
+  <br>**Écrit le 23 sept., et la prédiction tient** : à capacité forcée égale
+  le banc rend **exactement** les mêmes nombres, à capacité naturelle il rend
+  114 026 contre 114 028. *Le découpage en deux effets n'était pas une
+  précaution rhétorique — c'est ce qui a permis à `timing.sh` de s'appliquer
+  du tout.*
 - **Un changement qui ne modifie pas l'arbre de recherche ne passe pas par un
   SPRT.** **Arbitrage du 15 sept. 2026.** La règle « un SPRT par
   changement » vise les changements de *décision*. Une optimisation pure se
@@ -595,14 +589,6 @@ une mesure, pas une préférence.
   plus lent : la réserve d'origine avait aussi le signe faux. **Un point unique
   qui tombe dans l'intervalle attendu ressemble exactement à une confirmation**,
   et n'en est pas une : il ne mesure pas la dispersion de ce qu'on caractérise.
-- **Deux balayages de mutation concurrents se corrompent.** Le 15 sept. 2026,
-  j'ai relancé `cargo mutants` sans vérifier que le précédent avait fini. Les
-  deux écrivaient dans le même `mutants.out/` : `missed.txt` mêlait les
-  survivants de l'ancien code et du nouveau, avec des numéros de ligne d'une
-  version qui n'existait plus — et je l'ai lu comme un résultat. Même famille
-  que « ne jamais faire tourner deux matchs en même temps » : deux mesures
-  concurrentes ne sont pas seulement lentes, elles mentent. Passer par
-  `tools/mutants.sh`, qui prend un verrou et refuse de démarrer par-dessus.
 - **Un mutant équivalent est souvent du code mort.** Deux survivants de `tt.rs`
   inversaient la borne d'un test d'entrée vierge dans `store` sans qu'aucun
   test ne bouge. Ce n'était pas un trou de couverture : la clause ne pouvait
@@ -645,6 +631,20 @@ une mesure, pas une préférence.
   `workflow_dispatch`** : les runners GitHub ne dorment pas, et le journal
   reste lisible après coup. C'est ainsi que le plafond d'`eval.rs` a fini par
   être mesuré.
+- **Un SPRT expiré n'est pas « rien appris » — c'est une estimation biaisée
+  VERS ZÉRO, donc un minorant.** C21 a épuisé ses 350 minutes le 23 sept. 2026
+  à **3262 parties sans frontière**, et le dernier bloc complet donnait
+  **+14,59 ± 8,31 Elo, LOS 99,97 %, LLR 2,48 sur 2,94** — 84 % du chemin vers
+  H1. L'échantillon étant conditionné à n'avoir jamais franchi ±2,94, ses
+  extrêmes sont tronqués : le vrai effet est plausiblement **au-dessus** du
+  point estimé. <span>Inférence, confiance moyenne.</span> Ce qu'un tel run
+  interdit, c'est de servir de **verdict** — et de se faire *reprendre* :
+  prolonger un test séquentiel interrompu lui retire ses taux d'erreur. Ce
+  qu'il autorise, c'est de dimensionner le match suivant : ici 59 256 ÷ 14,59
+  ≈ 4 060 parties, quand le runner le plus rapide jamais mesuré n'en fait que
+  3 262 en 350 min. **La règle « en dessous de ~17 Elo, plusieurs jobs à
+  longueur fixe mis en commun » n'était pas une précaution, c'était une
+  prédiction.**
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.
@@ -653,6 +653,22 @@ une mesure, pas une préférence.
 - **Un livre d'ouvertures est une condition de validité**, pas un agrément :
   le moteur étant déterministe, sans livre toutes les parties d'un match sont
   la même partie.
+  <br>**Et la GRAINE l'est tout autant, entre deux matchs qu'on veut mettre en
+  commun.** Mêmes binaires plus même graine donnent **les mêmes parties, coup
+  pour coup** — c'est la même propriété, d'un cran plus haut. Rejouer un match
+  expiré avec sa graine d'origine n'apporte donc *rien*, et donner la même
+  graine à deux jobs qu'on additionne produit deux copies l'une de l'autre :
+  l'effectif double sur le papier et l'information ne bouge pas. *Vérifier que
+  les graines diffèrent avant de lancer, jamais après avoir additionné.*
+- **Des pièges de ce fichier sont partis dans `tools/pieges-fermes.md`.**
+  Chacun est désormais tenu par un dispositif qui le rend inexprimable —
+  `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
+  `rustines_attic.rs`, le banc à la profondeur 5, le plafond calculé de
+  `match.yml`. **Une règle qu'un code de sortie impose n'a pas besoin d'être
+  relue à chaque session** ; elle a besoin d'être trouvable le jour où le
+  dispositif se déclenche. Ceux qui restent ci-dessus sont ceux que **seul le
+  jugement protège** — et ce sont les plus chers. *Si un de ces dispositifs
+  disparaît, son piège revient ici.*
 
 ## Style
 
@@ -674,6 +690,7 @@ cargo run --release --bin shallowred          # boucle UCI
 cargo run --release --bin shallowred -- bench 7
 
 tools/setup-arbiters.sh                    # construit fastchess
+tools/ref.sh <commit|branche|tag> [sortie] # construit un binaire de référence
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement de décision
 tools/timing.sh <candidat> <référence>     # verdict sur une optimisation pure
 tools/crosscheck.sh                        # les deux arbitres s'accordent-ils
@@ -701,12 +718,17 @@ pannes, et de refaire ce qu'ils font déjà.
 
 | où | quoi |
 |---|---|
-| `.claude/settings.json` | déclare les deux hooks ci-dessous |
+| `.claude/settings.json` | déclare les hooks ci-dessous |
+| `tools/etat.sh` | lancé par le hook `SessionStart`, dont la sortie **entre dans le contexte**. `SessionStart` se déclenche au démarrage, à la reprise, après `/clear` **et après chaque compactage** — le seul point d'accroche qui tombe au moment où la mémoire vient d'être perdue. Tout ce qu'il imprime est **dérivé de git**, donc rien ne peut y vieillir. Il porte aussi le signal de documentation : « N fichiers `.rs` et zéro `.md` depuis `main` » est un fait, là où « il faudrait documenter » est une consigne qu'on oublie |
 | `.claude/hooks/verify-on-stop.sh` | refuse de finir un tour si `verify.sh --rapide` échoue et que des `.rs` ont changé. Passe après trois échecs d'affilée, avec un avertissement : un blocage qu'on ne sait pas lever vaut moins qu'un avertissement qu'on lit |
 | `.claude/hooks/no-fabricated-sha.sh` | refuse un SHA de 40 caractères qui n'est pas un objet du dépôt alors que son préfixe de 7 en est un — la signature d'un SHA complété de tête |
+| `tools/mettre-en-commun-test.sh` | éprouve `tools/mettre-en-commun.sh`, dans `verify.sh`. Son premier cas est une **vérité terrain** — la formule pentanomiale doit retomber sur ce que fastchess a imprimé, et elle y retombe à 0,003 Elo près. Sa branche précieuse est le **refus** de réunir des matchs qui se contredisent, qui ne sert qu'en cas de problème |
+| `tools/ref-test.sh` | éprouve `tools/ref.sh` sur des dépôts fabriqués, dans `verify.sh`, en une demi-seconde et sans compiler. La branche qui compte dans `ref.sh` est son **refus** de construire sur une référence git périmée — elle ne s'exécute qu'en cas de catastrophe, donc sans ce test elle ne serait jamais vérifiée. Même argument que le verdict de mutation |
 | `tools/verify-hooks.sh` | vérifie que les scripts de hook font ce qu'ils annoncent, et aussi, par `.claude/hooks-fired.log`, que les hooks sont **réellement chargés**. Un script correct mais non chargé ne protège de rien |
 | `.github/workflows/ci.yml` | à chaque push : fmt, clippy, tests debug et release, les critères d'acceptation, le bench. <s>les trois critères</s> — leur nombre n'est plus écrit : il a changé, et un compteur en prose naît périmé |
 | `engine/tests/rustines_attic.rs` | critère d'acceptation : confronte la colonne « s'applique sur `main` ? » de `tools/attic/README.md` au vrai `git apply --check`, **dans les deux sens** — rustine non déclarée et déclaration sans rustine échouent autant qu'un verdict faux. Trois lignes sur sept étaient fausses le 22 sept. 2026, toutes par la même fusion. `#[ignore]` parce qu'il lance `git` : `cargo mutants` travaille sur une copie de l'arbre, et **aucun mutant d'`engine/src/` ne peut changer si une rustine s'applique**, donc il n'a rien à y tuer |
+| `engine/tests/pieges_fermes.rs` | confronte `tools/pieges-fermes.md` au dépôt : **chaque piège archivé doit nommer un dispositif qui existe**, et l'archive doit rester nommée dans `CLAUDE.md`. Sans lui, supprimer `ref.sh` laisserait son piège archivé comme « tenu » alors que plus rien ne le tient — il serait **moins** protégé qu'avant d'être archivé. Même faute que la table de l'attic. Éprouvé en le faisant échouer, et il a attrapé deux imprécisions de ma prose à sa première exécution |
+| `engine/tests/outillage_documente.rs` | exige que chaque dispositif soit **nommé avec son extension** dans une doc — scripts de `tools/`, workflows, hooks, et depuis le 22 sept. 2026 les **binaires de `tools/src/bin/`**, qui étaient son angle mort. Énumération par répertoire et par extension, jamais nom par nom |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
 | `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Remesuré le 21 sept. 2026 : 58 % d'écart entre deux runners sur le même binaire** (2 067 101 contre 3 268 241 n/s, profondeurs 11 et 12), contre les 25 % relevés le 16. Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
 

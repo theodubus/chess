@@ -1,0 +1,351 @@
+# b9, TROISIÈME COIN — table empaquetée NON atomique, capacité forcée
+#
+# CE N'EST PAS UN CANDIDAT. C'est la variante de mesure qui sépare les deux
+# effets de `b9-table-atomique.patch` : l'entrée passe de 24 à 16 octets ET les
+# accès deviennent atomiques, et une seule mesure ne peut pas dire lequel paie.
+#
+# Elle se construit en appliquant `b9-table-atomique.patch` puis en remplaçant
+# `AtomicU64`/`AtomicU8` par `u64`/`u8`, les `load`/`store` par des accès
+# directs, et `&self` par `&mut self` sur `clear`, `new_search` et `store`.
+# `search.rs` n'a rien à changer : `negamax` prend déjà `&mut self`.
+#
+# La capacité est FORCÉE à celle de l'entrée de 24 octets (`bytes / 24`), sans
+# quoi les nœuds diffèrent et `timing.sh` refuse — à raison.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+# LA DÉCOMPOSITION, 23 sept. 2026
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Les trois binaires explorent le même arbre au bit près — 114 028 à la
+# profondeur 7, 635 210 à la profondeur 10 — avec trois empreintes distinctes.
+#
+#   empaquetage seul   16 o non atomique contre 24 o   -4,0 %   33/44   p = 0,0013
+#   atomiques seules   atomique contre empaqueté       -0,2 %    8/20   p = 0,65
+#   les deux ensemble  atomique contre 24 o            -4,3 %   15/20   p = 0,019
+#
+# CONCLUSION : le gain est ENTIÈREMENT l'empaquetage, et les accès atomiques
+# ne coûtent RIEN. Huit paires gagnantes sur vingt est un pile ou face.
+#
+# Contrôle de cohérence interne, et il passe : -4,0 % puis -0,2 % composent
+# -4,2 %, contre -4,3 % mesuré directement.
+#
+# CE QUE ÇA CHANGE, ET CE QUE ÇA NE CHANGE PAS. J'avais écarté ce troisième
+# coin en disant qu'il ne changerait aucune décision. C'était juste, mais
+# c'est désormais ÉTABLI au lieu d'être affirmé — et ça ajoute un fait utile :
+# puisque les atomiques sont gratuites, il n'y a aucune raison de préférer la
+# version non atomique. Les deux viennent ensemble sans surcoût.
+#
+# Le premier relevé à 20 paires donnait -4,8 % avec p = 0,1153, et
+# `timing.sh` a REFUSÉ de conclure — « aucun écart démontré, ne pas inscrire
+# de chiffre ». Il fallait 44 paires. C'est exactement la faute que ce script
+# existe pour empêcher, et il l'a empêchée sur moi.
+#
+# LIMITE CONNUE : un test de la suite échoue sur cette variante —
+# `la_taille_est_une_puissance_de_deux_sous_la_demande`. Ce n'est pas un bug,
+# c'est la capacité forcée : au compte de l'ancienne entrée et à 16 octets, la
+# table n'utilise que la moitié de la mémoire demandée, et le test le détecte
+# correctement.
+#
+diff --git a/engine/src/tt.rs b/engine/src/tt.rs
+index 9b9cc7f..eb3aca8 100644
+--- a/engine/src/tt.rs
++++ b/engine/src/tt.rs
+@@ -21,8 +21,18 @@
+ //!   répétition peut être relue comme gagnante. Tous les moteurs acceptent
+ //!   cette imprécision ; elle est rare et son coût est inférieur à celui de la
+ //!   table elle-même.
+-//! - L'implémentation n'est pas conçue pour un accès concurrent. Une recherche
+-//!   multithread demandera un stockage sans verrou.
++//! # Le stockage sans verrou
++//!
++//! Chaque entrée tient en **deux mots de 64 bits** : le premier porte
++//! `clé XOR données`, le second les données. Un lecteur reconstruit la clé par
++//! un XOR ; si les deux mots viennent d'écritures différentes — une entrée
++//! *déchirée* par un autre fil —, la clé reconstruite ne correspond à rien et
++//! l'entrée se rejette comme une collision ordinaire. **Pas de verrou, et la
++//! seule conséquence d'un déchirement est un défaut de cache, jamais un score
++//! faux.** C'est le schéma de Hyatt.
++//!
++//! Toutes les méthodes prennent donc `&self`, y compris celles qui écrivent :
++//! c'est ce qui rend la table partageable entre plusieurs fils de recherche.
+ 
+ use cozy_chess::{Move, Piece, Square};
+ 
+@@ -52,31 +62,124 @@ pub struct Hit {
+     pub bound: Bound,
+ }
+ 
+-#[derive(Clone, Copy)]
++impl Bound {
++    /// Deux bits suffisent : la borne n'a que trois valeurs.
++    const fn to_bits(self) -> u64 {
++        match self {
++            Self::Exact => 0,
++            Self::Lower => 1,
++            Self::Upper => 2,
++        }
++    }
++
++    /// La valeur 3 n'est jamais écrite ; la lire signifie une entrée déchirée,
++    /// que le contrôle de clé a déjà rejetée. On rend `Exact` plutôt que de
++    /// paniquer — une donnée fausse se borne, elle n'arrête pas la partie.
++    const fn from_bits(bits: u64) -> Self {
++        match bits & 0b11 {
++            1 => Self::Lower,
++            2 => Self::Upper,
++            _ => Self::Exact,
++        }
++    }
++}
++
++/// Répartition des 64 bits de données. Cinquante bits utilisés sur soixante-
++/// quatre ; les quatorze restants sont libres.
++///
++/// **Le score tient sur seize bits, et ce n'est pas un pari** : `MATE` vaut
++/// 30 000, et une assertion posée dans `store` le 22 sept. 2026 n'a jamais été
++/// déclenchée — ni par la suite de tests complète, ni par les critères
++/// d'acceptation, tournoi de vingt-quatre parties compris. La borne défensive
++/// ci-dessous couvre le cas qu'aucun chemin connu ne produit.
++///
++/// **La génération garde ses huit bits**, donc le schéma de remplacement est
++/// identique au bit près à celui de la version non atomique. C'était le risque
++/// d'un encodage serré, et il est écarté.
++const SCORE_SHIFT: u32 = 0;
++const MV_SHIFT: u32 = 16;
++const DEPTH_SHIFT: u32 = 32;
++const BOUND_SHIFT: u32 = 40;
++const GEN_SHIFT: u32 = 42;
++
++/// Empaquette les données d'une entrée.
++fn pack_data(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8) -> u64 {
++    debug_assert!(
++        score.abs() <= crate::eval::MATE,
++        "score hors bornes au stockage : {score}"
++    );
++    let score = score.clamp(i32::from(i16::MIN), i32::from(i16::MAX));
++    let score = u64::from(u16::from_ne_bytes((score as i16).to_ne_bytes()));
++    (score << SCORE_SHIFT)
++        | (u64::from(mv) << MV_SHIFT)
++        | (u64::from(u8::from_ne_bytes(depth.to_ne_bytes())) << DEPTH_SHIFT)
++        | (bound.to_bits() << BOUND_SHIFT)
++        | (u64::from(generation) << GEN_SHIFT)
++}
++
++/// Opération inverse de [`pack_data`].
++fn unpack_data(data: u64) -> (i32, u16, i8, Bound, u8) {
++    let score = i16::from_ne_bytes((((data >> SCORE_SHIFT) & 0xFFFF) as u16).to_ne_bytes());
++    let mv = ((data >> MV_SHIFT) & 0xFFFF) as u16;
++    let depth = i8::from_ne_bytes((((data >> DEPTH_SHIFT) & 0xFF) as u8).to_ne_bytes());
++    let bound = Bound::from_bits(data >> BOUND_SHIFT);
++    let generation = ((data >> GEN_SHIFT) & 0xFF) as u8;
++    (i32::from(score), mv, depth, bound, generation)
++}
++
++/// Les données d'une entrée vierge : profondeur `-1`, que `probe` rejette.
++///
++/// La clé d'une entrée vierge vaut donc zéro. Une position dont le hash Zobrist
++/// vaut exactement zéro y correspondrait — c'est pourquoi le contrôle de
++/// profondeur reste nécessaire, exactement comme dans la version non atomique.
++fn empty_data() -> u64 {
++    pack_data(0, 0, -1, Bound::Exact, 0)
++}
++
++/// Une entrée : deux mots atomiques, seize octets.
++///
++/// **Et c'est huit octets de MOINS que la version non atomique** (mesuré :
++/// `size_of` valait 24). À mébioctets égaux la table double donc de capacité,
++/// ce qui change les collisions et l'arbre de recherche — ce n'est pas une
++/// réécriture pure, et ça ne se valide pas par « nœuds identiques ».
+ struct Entry {
+-    key: u64,
+-    score: i32,
+-    mv: u16,
+-    depth: i8,
+-    bound: Bound,
+-    generation: u8,
++    key_xor_data: u64,
++    data: u64,
+ }
+ 
+ impl Entry {
+-    const EMPTY: Self = Self {
+-        key: 0,
+-        score: 0,
+-        mv: 0,
+-        depth: -1,
+-        bound: Bound::Exact,
+-        generation: 0,
+-    };
++    fn empty() -> Self {
++        let data = empty_data();
++        Self {
++            // Clé zéro : `0 ^ data` vaut `data`.
++            key_xor_data: data,
++            data,
++        }
++    }
++
++    /// Lit la clé reconstruite et les données.
++    ///
++    /// L'ordre de lecture est l'inverse de l'ordre d'écriture : c'est ce qui
++    /// rend un déchirement détectable. `Relaxed` suffit — on ne synchronise
++    /// aucune autre mémoire, et une entrée lue de travers est rejetée par sa
++    /// clé, pas par une barrière.
++    fn load(&self) -> (u64, u64) {
++        (self.key_xor_data ^ self.data, self.data)
++    }
++
++    fn store(&mut self, key: u64, data: u64) {
++        self.key_xor_data = key ^ data;
++        self.data = data;
++    }
+ }
+ 
+ /// Taille par défaut, en mébioctets.
+ pub const DEFAULT_SIZE_MB: usize = 16;
+ 
+ /// La table.
++///
++/// Toutes ses méthodes prennent `&self`, écriture comprise : c'est ce qui la
++/// rend partageable entre plusieurs fils de recherche sans verrou.
+ pub struct TranspositionTable {
+     entries: Vec<Entry>,
+     /// `entries.len() - 1`. La longueur est une puissance de deux, donc un
+@@ -97,7 +200,9 @@ impl TranspositionTable {
+     #[must_use]
+     pub fn new(megabytes: usize) -> Self {
+         let bytes = megabytes.clamp(1, 4_096) * 1024 * 1024;
+-        let wanted = bytes / size_of::<Entry>();
++        // MESURE B9, TROISIÈME COIN — capacité forcée à celle de l'entrée de
++        // 24 octets, pour que les nœuds soient identiques au bit près.
++        let wanted = bytes / 24;
+         let count = wanted.next_power_of_two().min(wanted).max(1);
+         // `next_power_of_two` arrondit vers le haut ; on veut rester sous la
+         // taille demandée, d'où la puissance de deux immédiatement inférieure.
+@@ -106,8 +211,23 @@ impl TranspositionTable {
+         } else {
+             count.next_power_of_two() / 2
+         };
++        Self::with_entry_count(count)
++    }
++
++    /// Crée une table d'un nombre d'entrées imposé.
++    ///
++    /// **Existe pour la mesure, et c'est sa seule raison d'être.** L'entrée
++    /// atomique fait seize octets contre vingt-quatre pour l'ancienne, donc à
++    /// mébioctets égaux la capacité double et l'arbre de recherche change. Le
++    /// coût des accès atomiques ne se mesure qu'à **capacité forcée égale** —
++    /// là, le nombre de nœuds est identique au bit près et `tools/timing.sh`
++    /// s'applique. Mélanger les deux effets rendrait un chiffre qui répond à
++    /// une autre question.
++    #[must_use]
++    pub fn with_entry_count(count: usize) -> Self {
++        let count = count.next_power_of_two().max(1);
+         Self {
+-            entries: vec![Entry::EMPTY; count],
++            entries: (0..count).map(|_| Entry::empty()).collect(),
+             mask: count - 1,
+             generation: 0,
+         }
+@@ -116,7 +236,10 @@ impl TranspositionTable {
+     /// Vide la table. À appeler sur `ucinewgame` : les positions d'une partie
+     /// précédente n'ont rien à dire sur la suivante.
+     pub fn clear(&mut self) {
+-        self.entries.fill(Entry::EMPTY);
++        let data = empty_data();
++        for entry in &mut self.entries {
++            entry.store(0, data);
++        }
+         self.generation = 0;
+     }
+ 
+@@ -145,7 +268,10 @@ impl TranspositionTable {
+         }
+         let used = self.entries[..sample]
+             .iter()
+-            .filter(|entry| entry.depth >= 0)
++            .filter(|entry| {
++                let (_, data) = entry.load();
++                unpack_data(data).2 >= 0
++            })
+             .count();
+         u32::try_from(used * 1_000 / sample).unwrap_or(1_000)
+     }
+@@ -154,15 +280,21 @@ impl TranspositionTable {
+     /// profondeur courante.
+     #[must_use]
+     pub fn probe(&self, key: u64, ply: i32) -> Option<Hit> {
+-        let entry = self.entries[key as usize & self.mask];
+-        if entry.depth < 0 || entry.key != key {
++        let (stored_key, data) = self.entries[key as usize & self.mask].load();
++        // Une entrée déchirée rend une clé qui ne correspond à rien : elle se
++        // rejette ici, par le même test qu'une collision ordinaire.
++        if stored_key != key {
++            return None;
++        }
++        let (score, mv, depth, bound, _) = unpack_data(data);
++        if depth < 0 {
+             return None;
+         }
+         Some(Hit {
+-            mv: unpack_move(entry.mv),
+-            score: score_from_tt(entry.score, ply),
+-            depth: entry.depth,
+-            bound: entry.bound,
++            mv: unpack_move(mv),
++            score: score_from_tt(score, ply),
++            depth,
++            bound,
+         })
+     }
+ 
+@@ -181,18 +313,20 @@ impl TranspositionTable {
+         bound: Bound,
+         ply: i32,
+     ) {
+-        let index = key as usize & self.mask;
+-        let existing = self.entries[index];
++        // La génération se lit AVANT l'emprunt mutable de l'entrée : sans
++        // cela les deux emprunts de `self` se chevauchent.
++        let generation = self.generation;
++        let slot = &mut self.entries[key as usize & self.mask];
++        let (existing_key, existing_data) = slot.load();
++        let (_, existing_mv, existing_depth, _, existing_gen) = unpack_data(existing_data);
+         let depth = i8::try_from(depth.clamp(0, i32::from(i8::MAX))).unwrap_or(i8::MAX);
+ 
+         // Pas de test d'entrée vierge ici, contrairement à `probe` : `depth` est
+         // borné à `[0, 127]` et une entrée vierge porte `-1`, donc
+-        // `depth >= existing.depth` couvre déjà ce cas. Le tester en plus
++        // `depth >= existing_depth` couvre déjà ce cas. Le tester en plus
+         // donnerait une branche que rien ne peut distinguer — et qu'aucun test
+         // ne pourrait donc protéger.
+-        let replace = existing.key != key
+-            || existing.generation != self.generation
+-            || depth >= existing.depth;
++        let replace = existing_key != key || existing_gen != generation || depth >= existing_depth;
+         if !replace {
+             return;
+         }
+@@ -201,18 +335,14 @@ impl TranspositionTable {
+         // même sans score exploitable, un coup à essayer en premier vaut cher.
+         let packed = match mv {
+             Some(mv) => pack_move(mv),
+-            None if existing.key == key => existing.mv,
++            None if existing_key == key => existing_mv,
+             None => 0,
+         };
+ 
+-        self.entries[index] = Entry {
++        slot.store(
+             key,
+-            score: score_to_tt(score, ply),
+-            mv: packed,
+-            depth,
+-            bound,
+-            generation: self.generation,
+-        };
++            pack_data(score_to_tt(score, ply), packed, depth, bound, generation),
++        );
+     }
+ }
+ 
