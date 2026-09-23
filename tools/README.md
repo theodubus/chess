@@ -705,6 +705,8 @@ dernière relève est faite.
 | ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | **RELEVÉ** — finis entiers entre 18 h 37 et 18 h 40 | **+67,63 ± 9,19 contre notre jumeau : l'activer rapporte** — 2,7 × l'attendu, l'écart localisé par sonde (sa section) |
 | C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 19 h 45, 2 × 2 880 parties | **+2,65 ± 6,40 : pas d'effet décelable, FUSIONNÉ** au titre de la règle (`25fd727`) |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
+| C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | plafond vers 01 h 50 le 24 — ~2 880 parties chacun | fusion sauf régression — correctif de règle, même critère que C22 |
+| balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | ~21 h | `search.rs` touché par C23 ; `tt.rs` devrait rendre 6, les décalages nuls étant retirés |
 | balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 19 h 44 | `tt.rs` **8** contre 2, tous équivalents : deux décalages nuls retirés comme code mort, plafond inscrit à 8, le chiffre mesuré (PR #56). `search.rs` **43** contre 45 : les trois survivants de `ponder_move` tués par la PR #50, 47 expirés comme au balayage précédent — plafond resserré à 43. Les autres au plafond. Issue #57 fermée |
 
 Les candidats de C22, B9 et C23 ont chacun été **committés puis révoqués
@@ -751,6 +753,7 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 | C22 — **relevé** | **non fusionné** : le critère de régression est atteint | rien ne bouge — banc, table de l'attic et rustines C23 restent tels quels. La suite est « C22 rejeté », ci-dessous |
 | B9 — **fusionné** | `git revert 7552320`, fait (`481f8af`) | référence du banc → **114 026** ; rustines B9 de l'attic → « non », leur code est entré ; chiffres de neutralité inchangés, la base n'ayant pas bougé ; **balayage de mutation de `tt.rs` lancé après la fusion** |
 | ponder — **relevé** | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la conversion plis → Elo de `CLAUDE.md`, qui a désormais deux points mesurés |
+| C22 sur C23 (~01 h 55 le 24) | `git revert 898e195` sur `main` à jour | banc des profondeurs 10 et 12 ; la ligne `c18-extension-echec.patch` de l'attic passe à « non » pour de bon, C22 déplaçant son contexte ; balayage de mutation |
 | C23 — **fusionné** | `git revert 1ab033f` sur `main` à jour, fait (`25fd727`) — **sans conflit de code**, seule la table de l'attic conflictait | banc inchangé aux profondeurs 5 et 7 ; l'invariant de la fenêtre revenu dans `CLAUDE.md` ; trois lignes de l'attic recalculées au vrai `git apply --check` ; balayage de mutation relancé. **C22 porté par-dessus et remesuré** — section « C22 sur C23 » |
 
 **Les branches qui ne fusionnent pas ont aussi leur suite, écrite d'avance :**
@@ -1172,11 +1175,12 @@ ne fait plus ce qu'il dit.
 
 | runs | graine | parties | cadence |
 |---|---|---|---|
-| *inscrits au lancement* | tirée par le run | 3000 | `8+0,08` |
-| *inscrits au lancement* | tirée par le run | 3000 | `8+0,08` |
+| [35912945157](https://github.com/theodubus/chess/actions/runs/35912945157) | tirée par le run | 3000 | `8+0,08` |
+| [35912948746](https://github.com/theodubus/chess/actions/runs/35912948746) | tirée par le run | 3000 | `8+0,08` |
 
 Candidat `cd45ffa`, révoqué aussitôt par `898e195` ; référence `1eec468`,
-`main` d'après C23. Ce critère est committé avant le lancement ; heure et runs au commit suivant.
+`main` d'après C23. Critère committé avant le lancement (`ded82d7`) ;
+lancés à 19 h 59 UTC, plafond de 350 minutes vers 01 h 50 le 24 sept.
 
 #### Au verdict, dans l'ordre
 
