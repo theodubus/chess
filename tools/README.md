@@ -885,7 +885,8 @@ découpage de B2, la fiche C21 et la note de saturation. Le voici entier.
 | défaut de `movestogo` (devenu **C21**) | **écrit, en mesure** | +0,54 à 0,70 pli ; SPRT expiré à +14,59 ± 8,31, relancé en longueur fixe |
 | « s'arrêter tôt sur un coup stable » | **RÉFUTÉ, clos** | et il *empire* au régime cible : 13,9 % de coups changés à `8+0,08`, **18,4 % à `30+0,3`**. Le temps épargné n'est de surcroît pas dépensable — avec `restant/d`, une seconde économisée ne revient qu'au `d`-ième |
 | « prolonger sur un score qui s'effondre » | **OUVERT — écran passé, jamais écrit** | survit sur **2,7 à 3,0 % des coups** |
-| **allocation inégale** | **PAS COMMENCÉ** | le seul chantier restant qui puisse dépasser le plafond. **Une de ses entrées est déjà dans le moteur et jetée** : la pendule de l'adversaire — voir la section qui suit |
+| **allocation inégale** | **PAS COMMENCÉ** | le seul chantier restant qui puisse dépasser le plafond — dépenser plus sur les positions **dures** (score instable, coup unique, sortie de livre) |
+| *(examiné, écarté)* pendule de l'adversaire | **non souhaitable maintenant** | déjà reçue et jetée par le moteur ; mais dans un match à cadence égale les deux pendules se suivent, donc **inmesurable dans notre protocole** — voir la section qui suit |
 | *(hors B2)* **ponder** | **jamais ouvert** | légal et prévu par UCI, ~0,8 pli à taux de succès 0,5 — mais **inmesurable avec l'arbitre actuel**, voir la section qui suit |
 
 #### Pourquoi l'allocation inégale est le vrai reste
@@ -980,10 +981,16 @@ let (remaining, increment) = match side {
 **L'information de l'adversaire est parsée, testée, et écartée du budget.**
 Rien à ajouter au protocole : tout est déjà là.
 
-**C'est un ENTRÉE du chantier « allocation inégale »**, le seul qui reste
-ouvert en gestion du temps — et la fiche ne la nommait pas. Dépenser plus quand
-l'adversaire est court, ou quand on est loin devant à la pendule, est
-précisément une allocation qui cesse d'être plate.
+**Souhaitable ? Oui en principe, NON maintenant** — et la raison n'est pas la
+difficulté, c'est le **régime**.
+
+<s>C'est une entrée du chantier « allocation inégale ».</s> **Trop généreux,
+corrigé le 23 sept. au matin même.** L'allocation inégale au sens habituel
+dépense plus sur les positions **dures** — score qui bouge d'une itération à
+l'autre, coup unique, sortie de livre. *Ça*, c'est mesurable chez nous et le
+levier est plus gros. Exploiter la pendule adverse est une tactique de **flag**,
+dont la valeur se concentre contre un humain ou contre un moteur à gestion du
+temps différente.
 
 **Mais l'écran à passer d'abord contredit peut-être l'idée, et il est
 gratuit.** Dans un match moteur contre moteur à la même cadence, **les deux
