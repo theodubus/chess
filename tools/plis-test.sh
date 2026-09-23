@@ -50,11 +50,15 @@ partie() {
 { partie 10 12 -- 10 12; partie 14 9 -- 14 9; } > "$TMP/temoin"
 attend "témoin : moteurs identiques, écart nul" \
   "écart apparié : +0.00 ± 0.00 pli sur 2 parties (IC 95 %)" "$TMP/temoin"
+attend "témoin : rapport des n/s à 1" \
+  "n/s des coups partis d'un go : candidat 100000, reference 100000 — reference / candidat = 1.000" "$TMP/temoin"
 
-# --- 2. écart connu : +1 puis +2, donc +1,50 ± 1,96 × 0,5 --------------------
+# --- 2. écart connu : +1 puis +2, donc +1,50 ± 12,706 × 0,5 ------------------
+# Student à UN degré de liberté, pas 1,96 : deux parties ne disent presque rien,
+# et l'intervalle doit le dire. Avec 1,96, ce cas rendrait ± 0,98.
 { partie 11 11 -- 10 10; partie 12 -- 10; } > "$TMP/connu"
 attend "écart connu, apparié par partie" \
-  "écart apparié : +1.50 ± 0.98 pli sur 2 parties (IC 95 %)" "$TMP/connu"
+  "écart apparié : +1.50 ± 6.35 pli sur 2 parties (IC 95 %)" "$TMP/connu"
 
 # --- 3. ponder : le stop est jeté, le ponderhit compte -----------------------
 # Partie 1 : un ponder à la profondeur 30 terminé par stop, puis un vrai coup
@@ -68,20 +72,25 @@ t=0
   echo "260 >candidat(0): stop"
   echo "261 <candidat(0): bestmove e2e4"
   echo "270 >candidat(0): go wtime 8000 btime 8000 winc 80 binc 80"
-  echo "360 <candidat(0): info depth 10 score cp 0 nodes 9000 time 90 nps 100000 pv e2e4"
+  echo "360 <candidat(0): info depth 10 score cp 0 nodes 12000 time 90 nps 133333 pv e2e4"
   echo "361 <candidat(0): bestmove e2e4"
   t=400
   partie -- 10
   echo "500 >candidat(0): go ponder wtime 8000 btime 8000 winc 80 binc 80"
   echo "550 <candidat(0): info depth 12 score cp 0 nodes 9000 time 50 nps 180000 pv e2e4"
   echo "560 >candidat(0): ponderhit"
-  echo "590 <candidat(0): info depth 13 score cp 0 nodes 9000 time 90 nps 100000 pv e2e4"
+  echo "590 <candidat(0): info depth 13 score cp 0 nodes 18000 time 90 nps 200000 pv e2e4"
   echo "591 <candidat(0): bestmove e2e4"
 } > "$TMP/ponder"
 attend "ponder : stop jeté, ponderhit compté (écarts 0 et +3)" \
-  "écart apparié : +1.50 ± 2.94 pli sur 2 parties (IC 95 %)" "$TMP/ponder"
+  "écart apparié : +1.50 ± 19.06 pli sur 2 parties (IC 95 %)" "$TMP/ponder"
 attend "ponder : taux de succès" \
   "ponder de candidat : 2 go ponder, 1 ponderhit, 1 stop — taux 0.500" "$TMP/ponder"
+# Le rapport des n/s ne prend que les coups partis d'un `go` ordinaire : le
+# coup joué sur ponderhit (200 000 n/s) en est exclu, sinon le candidat
+# vaudrait 166 667 et le rapport 0,600.
+attend "ponder : n/s des seuls coups partis d'un go" \
+  "n/s des coups partis d'un go : candidat 133333, reference 100000 — reference / candidat = 0.750" "$TMP/ponder"
 
 # --- 4. les refus -------------------------------------------------------------
 partie 10 -- > "$TMP/seul"

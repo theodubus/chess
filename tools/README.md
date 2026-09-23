@@ -1320,16 +1320,25 @@ s'annule, ce qu'une moyenne entre deux matchs ne ferait pas.
 
 | sonde, 20 parties chacune | écart de profondeur apparié | temps de recherche | ce qu'elle dit |
 |---|---|---|---|
-| **ponder** — `136dda4`, candidat pondère | **+0,94 ± 0,19 pli** | × 1,54 | le mécanisme prévu, **0,90**, tombe dedans |
-| **témoin** — `136dda4`, personne ne pondère | −0,00 ± 0,12 | × 1,00 | la méthode rend zéro quand rien ne diffère |
-| **C21** — `ebe93ad` contre `6d5e7c6` | **+0,41 ± 0,19 pli** | × 1,32 | **moins que les 0,54 à 0,70** qui servaient à convertir |
+| **ponder** — `136dda4`, candidat pondère | **+0,94 ± 0,20 pli** | × 1,54 | le mécanisme prévu, **0,90**, tombe dedans |
+| **témoin** — `136dda4`, personne ne pondère | −0,00 ± 0,13 | × 1,00 | la méthode rend zéro quand rien ne diffère |
+| **C21** — `ebe93ad` contre `6d5e7c6` | **+0,41 ± 0,20 pli** | × 1,32 | **moins que les 0,54 à 0,70** qui servaient à convertir |
+
+> **Intervalles de Student depuis le 23 sept. au soir**, à dix-neuf degrés de
+> liberté. `plis.sh` prenait 1,96 quel que soit l'effectif, ce qui rendait
+> ces intervalles 7 % trop étroits — ± 0,19 et ± 0,12 publiés d'abord. Vu en
+> rejouant une sonde à quatre parties, où l'écart était 38 %. Les deux
+> intervalles d'Elo par pli ci-dessous en dépendent, et sont recalculés sur les
+> demi-largeurs EXACTES : le « 116 » d'abord publié venait même d'une
+> demi-largeur arrondie — exacte, elle donnait 112,7 à 1,96, et donne 119,4
+> avec Student.
 
 **Le mécanisme était juste, la conversion ne l'était pas.** L'attendu divisait
 les +19,13 de C21 par **0,54 à 0,70 pli estimés par son budget** ; mesurés en
 partie, ils valent 0,41. Recalculé sur la profondeur mesurée, l'attendu
 aurait été **~+42**, et surtout son intervalle : Elo et plis de C21 portent
-chacun leur incertitude, et leur rapport s'étend de **21 à 116 Elo par
-pli**. Celui du ponder s'étend de **52 à 102**. *Les deux points sont
+chacun leur incertitude, et leur rapport s'étend de **21 à 119 Elo par
+pli**. Celui du ponder s'étend de **51 à 104**. *Les deux points sont
 compatibles* ; le « ~+25 » écrit comme un nombre cachait un intervalle
 d'un facteur cinq. **Une conversion par un point unique porte l'incertitude
 des DEUX mesures qui la composent : écrire l'intervalle, pas le point.**
@@ -1373,8 +1382,8 @@ la fin de la partie</span>. *C'est le gisement du réglage suivant*,
    le supplément qui ramène la pendule dépensée par coup du camp qui pondère
    à celle de la référence (202 ms ici), puis **un** match en `les-deux`,
    critère écrit avant. <span>Ordre de grandeur, confiance faible : 13 % de
-   pendule, soit ~0,27 pli à 1,36 par doublement, soit 6 à 31 Elo sur
-   l'étendue de 21 à 116 Elo par pli — donc plusieurs jobs.</span>
+   pendule, soit ~0,27 pli à 1,36 par doublement, soit 6 à 32 Elo sur
+   l'étendue de 21 à 119 Elo par pli — donc plusieurs jobs.</span>
 2. **La sonde appariée par partie est devenue un outil, le soir même** :
    `tools/plis.sh <journal>`, sur la sortie de cutechess `-debug all` —
    commande complète en tête du script. Huit minutes de conteneur donnent
@@ -1441,6 +1450,111 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 3. Inscrire le verdict ici, dans la table « Ce qui reste à faire », dans la
    fiche du carnet ; et dire à quelle cadence il vaut.
 
+### Vol de CPU du ponder sur runner — EN VOL : la sonde, avant tout autre match `candidat`
+
+Le verdict du ponder (+67,63 ± 9,19) a été rendu sur des runners dont
+**personne n'avait regardé la topologie** : « quatre cœurs » peut vouloir dire
+deux cœurs physiques à deux fils chacun, et deux fils d'un même cœur s'en
+partagent les unités de calcul. Si le candidat pondère sur le cœur frère de la
+référence, il la ralentit — **vers l'hypothèse**. En conteneur, quatre cœurs
+sans SMT, le vol mesuré est nul (−0,8 %, section ponder). Sur runner, rien.
+
+**Ce qui le mesure.** `match.yml` imprime désormais la topologie du runner, et
+sa sonde fait rendre à `tools/plis.sh` le rapport des n/s **dans un même run**
+— la référence, qui cherche pendant que le candidat pondère, contre le
+candidat quand il cherche seul, sur ses coups partis d'un `go` ordinaire. Même
+binaire, même machine : la vitesse du runner, qui varie de 22 à 58 %, s'annule.
+Un témoin sans ponder donne le même rapport sans contention.
+
+**Sa limite, mesurée avant de lancer.** Rejoué sur les journaux de conteneur,
+le rapport vaut **1,010 au témoin et 0,976 en ponder** — soit 0,966, quand les
+n/s de la référence d'un run à l'autre ne bougeaient que de −0,8 %. L'écart
+vient de l'échantillon : chez le camp qui pondère, les coups partis d'un `go`
+suivent un ponder MANQUÉ. **Le rapport sépare donc un vol massif d'une absence
+de vol, pas 2 % de 0 %.** C'est suffisant pour la question posée : ce qui
+biaiserait le verdict, c'est un cœur partagé, qui coûte des dizaines de pour
+cent, pas quelques-uns.
+
+**La règle — écrite AVANT de lancer.** Deux sondes, même commit (`main`),
+`8+0,08`, soixante parties chacune, graine « auto » : l'une `ponder =
+candidat`, l'autre témoin. On lit `r = rapport en ponder / rapport au témoin`,
+et la ligne de topologie.
+
+| `r` | ce que ça veut dire | ce qu'on fait |
+|---|---|---|
+| ≥ 0,93 | pas de cœur partagé — le conteneur, où le vol est nul, rend 0,966. Borne dure : même si tout l'écart à 1 était du vol, 7 % de n/s font 0,14 pli | le verdict du ponder tient ; la question est close |
+| < 0,85 | cœur partagé : ≥ 0,3 pli volés à la référence, soit ~15 à 30 Elo du verdict aux deux points mesurés | épingler chaque moteur à son cœur physique (`taskset`), **remesurer le ponder**, et corriger le verdict publié avant tout autre match `candidat` |
+| entre les deux | le confondant ne se sépare plus du vol | les deux sondes dans UN job, pour comparer les n/s de la référence d'un run à l'autre sur la même machine |
+
+<span>Attendu, confiance moyenne : ≥ 0,93. Un ordonnanceur Linux place deux fils
+actifs sur deux cœurs physiques distincts quand il en a le choix, et une partie
+à la fois n'en occupe que deux sur quatre processeurs logiques.</span>
+
+### Calibrer l'Elo par pli — EN VOL : un doublement de temps, mesuré en Elo ET en plis
+
+Décidé par Théo le 23 sept. au soir, premier chantier après les relèves. Le
+projet compare ses chantiers en plis — 1,36 par doublement de temps — mais ne
+sait pas ce qu'un pli vaut : deux points, **21 à 119** (C21) et **51 à 104**
+(ponder) Elo par pli. Trop large pour classer la génération par étapes
+(0,21 pli), le remboursement du ponder (~0,27) ou Lazy SMP (1,0 à 1,8).
+
+**Et les deux points mêlent deux machines** : leurs plis viennent de sondes en
+conteneur, leur Elo de matchs sur runner, plus rapide d'un demi-pli environ.
+Cette mesure-ci prend les deux sur runner.
+
+**Le protocole.** Le même binaire des deux côtés, `main`. Le candidat joue à
+`16+0,16`, la référence à `8+0,08` : exactement un doublement de pendule, à la
+cadence cible.
+
+- **l'Elo** : deux matchs à longueur fixe, fastchess, 1 900 parties chacun,
+  graine « auto », mis en commun par `tools/mettre-en-commun.sh` ;
+- **les plis** : une sonde, mêmes cadences, cent parties, une à la fois —
+  l'écart de profondeur apparié par partie, dans le régime réel.
+
+Elo par pli = Elo du doublement / plis du doublement, **avec l'intervalle des
+deux**, jamais le point.
+
+**L'attendu — écrit AVANT de lancer.** <span>Inférence, confiance moyenne : si
+les deux points existants disent vrai, leur intersection (51 à 104 Elo par
+pli) et 1,36 pli par doublement donnent **69 à 141 Elo** pour le doublement.</span>
+Un Elo par pli hors de 51 à 104 dirait qu'une des deux conversions existantes
+était fausse — probablement par le mélange des machines.
+
+**Ce que la mesure ne décide pas.** Rien ne fusionne : c'est un étalon. Il
+convertit ensuite chaque chantier de vitesse ou de temps en Elo attendu, donc
+en budget de match — ce que la relation `parties × Elo` ne sait faire qu'avec
+un Elo en entrée.
+
+### Une cadence par moteur, et la sonde — ce que `match.yml` sait depuis le 23 sept. au soir
+
+Deux entrées, écrites pour la calibration et le vol de CPU, et qui serviront à
+B6.
+
+- **`cadence_candidat`** — la pendule du seul candidat ; `cadence` est
+  toujours celle de la référence. Différentes, elles admettent le même commit
+  des deux côtés : c'est le match à handicap de temps. Les deux arbitres
+  prennent un `tc=` par moteur, **mais un `tc=` dans `-each` écrase ceux des
+  moteurs** — vérifié sur les deux : le candidat recevait `wtime 1010` au lieu
+  de 2020. `match.yml` ne le met donc plus jamais dans `-each`.
+- **`sonde = oui`** — cutechess avec `-debug all`, **une partie à la fois**
+  (`plis.sh` apparie par numéro de partie), et la sortie de `tools/plis.sh`
+  dans le résumé : profondeur, pendule, n/s de chaque camp, écart apparié,
+  rapport des n/s. Admet le même commit (le témoin). Le dialogue UCI fait
+  ~0,5 Mo par partie à `8+0,08` : il va dans l'artefact `match-log`, le journal
+  du job n'en reçoit que la progression.
+- **La topologie du runner** entre dans l'étalonnage et le résumé :
+  processeurs logiques, cœurs physiques, fils par cœur, modèle.
+
+Rejoué en local avant d'être poussé, étape par étape : la garde du même commit
+refuse sans raison et admet en sonde ; la sonde témoin, la sonde avec ponder et
+le handicap sous fastchess tournent de bout en bout — fastchess imprime
+lui-même `2+0.02 - 1+0.01` en tête de ses résultats ; le chemin ordinaire à
+deux commits ne change pas.
+
+**`plis.sh` y a gagné deux corrections.** Le rapport des n/s des coups partis
+d'un `go`, et **un intervalle de Student** au lieu de 1,96 : à vingt parties,
+les intervalles publiés étaient 7 % trop étroits (section ponder).
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
@@ -1458,13 +1572,13 @@ qu'en partie dans le dépôt n'existe pas.*
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Porté sur C23 et EN MESURE** (`cd45ffa`), même critère — voir « C22 sur C23 » |
-| **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,19**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule —, réglé à la sonde puis mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
+| **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule —, réglé à la sonde puis mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
-| **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **proposé le 23 sept., pas commencé.** Deux points mesurés donnent 21 à 116 et 52 à 102 Elo par pli (section ponder) : trop large pour classer les chantiers de vitesse. Un doublement de temps vaut 1,36 pli ; le match rend directement l'Elo de ce doublement, à la cadence cible. Coût : une cadence par moteur dans `match.yml`, puis un job — deux au pire, si l'effet est au bas de l'étendue |
+| **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **EN COURS — décidé n° 1.** `match.yml` sait jouer une cadence par moteur et une sonde depuis le 23 sept. au soir ; deux matchs pour l'Elo, une sonde pour les plis, protocole et attendu écrits avant — voir « Calibrer l'Elo par pli — EN VOL ». Deux points mesurés donnent 21 à 119 et 51 à 104 Elo par pli (section ponder) : trop large pour classer les chantiers de vitesse |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
-| **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie). **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
+| **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie). Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
