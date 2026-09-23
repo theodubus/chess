@@ -308,18 +308,6 @@ pub struct Search {
     aborted: bool,
     /// Clés Zobrist de la partie puis du chemin courant dans l'arbre.
     path: Vec<u64>,
-    /// Indices, dans `path`, des positions atteintes par un coup nul — une
-    /// pile, puisque les coups nuls s'emboîtent.
-    ///
-    /// Une répétition ne se cherche jamais au-delà du dernier. Un coup nul
-    /// n'existe dans aucune vraie partie : une « répétition » qui le traverse
-    /// compare la ligne supposée à une position qu'elle ne peut pas retrouver.
-    /// Le cas courant est bête — deux coups nuls de suite recréent la position
-    /// de départ, au même trait, et la recherche y voyait une nulle. Mesuré en
-    /// partie le 23 sept. 2026, c'étaient **87,8 %** des répétitions qu'elle
-    /// détectait (C23, `tools/README.md`). Stockfish borne sa fenêtre de même
-    /// (`pliesFromNull`).
-    null_marks: Vec<usize>,
     pv: PvTable,
     root_best: Option<Move>,
     /// Mémoire des positions déjà évaluées, conservée entre les coups.
@@ -376,7 +364,6 @@ impl Search {
             node_limit: None,
             aborted: false,
             path: Vec::new(),
-            null_marks: Vec::new(),
             pv: PvTable::new(),
             root_best: None,
             tt: TranspositionTable::default(),
@@ -682,13 +669,7 @@ impl Search {
     }
 
     fn is_repetition(&self, board: &Board) -> bool {
-        // La fenêtre commence au dernier coup nul, position d'après comprise :
-        // les positions qui le suivent forment une ligne cohérente entre
-        // elles, pas avec celles d'avant. Voir `null_marks`.
-        let from = self.null_marks.last().copied().unwrap_or(0);
-        self.path
-            .get(from..)
-            .is_some_and(|window| repetitions(window, board.hash(), board.halfmove_clock()) > 0)
+        repetitions(&self.path, board.hash(), board.halfmove_clock()) > 0
     }
 
     /// Retient un coup tranquille qui vient de provoquer une coupure bêta.
@@ -931,7 +912,6 @@ impl Search {
             && has_non_pawn_material(board)
             && let Some(passed) = board.null_move()
         {
-            self.null_marks.push(self.path.len());
             self.path.push(passed.hash());
             let score = -self.negamax(
                 &passed,
@@ -942,7 +922,6 @@ impl Search {
                 rest,
             );
             self.path.pop();
-            self.null_marks.pop();
 
             if self.aborted {
                 return 0;
@@ -2931,84 +2910,6 @@ mod tests {
         assert!(s.is_repetition(&b), "la position doit être reconnue");
         s.path = vec![b.hash() ^ 1, 0xAAAA, 0xBBBB];
         assert!(!s.is_repetition(&b), "une autre position ne compte pas");
-    }
-
-    #[test]
-    fn deux_coups_nuls_de_suite_ne_font_pas_une_repetition() {
-        // Chacun passe son tour : la position de départ revient, au même
-        // trait, donc avec la même clé. Ce n'est pas une nulle — aucune partie
-        // ne peut y arriver. Mesuré en partie, ce cas faisait à lui seul
-        // 86,8 % des fausses répétitions (C23).
-        let mut s = search();
-        let b = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 4 3");
-        s.path = vec![b.hash(), 0xAAAA, b.hash()];
-        s.null_marks = vec![1, 2];
-        assert!(!s.is_repetition(&b), "deux coups nuls ne répètent rien");
-        // Témoin : le même chemin sans coup nul EST une répétition. Sans lui,
-        // l'assertion ci-dessus pourrait passer pour une autre raison.
-        s.null_marks.clear();
-        assert!(s.is_repetition(&b));
-    }
-
-    #[test]
-    fn une_repetition_ne_traverse_pas_un_coup_nul() {
-        // Le cas moins bête : un camp passe, l'autre joue et revient, le
-        // premier repasse. Deux coups nuls, SÉPARÉS, et la position d'avant le
-        // premier revient — le reste des fausses répétitions mesurées.
-        let mut s = search();
-        let b = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 4 3");
-        s.path = vec![b.hash(), 0xA1, 0xB2, 0xC3, b.hash()];
-        s.null_marks = vec![1, 3];
-        assert!(
-            !s.is_repetition(&b),
-            "la fenêtre s'arrête au dernier coup nul"
-        );
-        s.null_marks.clear();
-        assert!(
-            s.is_repetition(&b),
-            "témoin : sans coup nul, c'est une répétition"
-        );
-    }
-
-    #[test]
-    fn un_second_coup_nul_ne_rend_pas_une_nulle() {
-        // Le même défaut, mais par la recherche elle-même : les tests voisins
-        // posent la pile des coups nuls à la main, et ne diraient rien si
-        // `negamax` cessait de l'alimenter.
-        //
-        // Les Blancs ont une dame et une tour de plus. Les Noirs sont au trait
-        // juste après un coup nul blanc, avec une tour, donc en droit de passer
-        // à leur tour — et leur coup nul recrée la position blanche, au même
-        // trait. Sans borne, la recherche y voit une répétition, rend 0, et ce
-        // 0 suffit à couper : les Noirs « tiennent la nulle » avec une dame et
-        // une tour de moins. Vérifié : l'ancien code rend 0 ici.
-        let mut s = search();
-        let blancs = board("r3k3/8/8/8/8/8/8/3QK2R w - - 0 1");
-        let noirs = blancs.null_move().unwrap();
-        s.path = vec![blancs.hash(), noirs.hash()];
-        let score = s.negamax(&noirs, 4, 1, -1, 0, &mut ardoise());
-        assert!(
-            score < 0,
-            "les Noirs sont perdus, la recherche a rendu {score}"
-        );
-        // Et la pile se vide en remontant. Une marque oubliée survivrait à
-        // son coup nul et désignerait, plus tard, une position sans rapport :
-        // la fenêtre y serait coupée, et de VRAIES répétitions manquées. Ce
-        // défaut passait toute la suite avant cette ligne.
-        assert!(s.null_marks.is_empty());
-    }
-
-    #[test]
-    fn une_repetition_apres_le_coup_nul_compte_toujours() {
-        // La borne ne doit pas aller plus loin que le coup nul : les positions
-        // qui le suivent se répètent entre elles comme n'importe où ailleurs.
-        // Un correctif trop zélé — ignorer les répétitions sous un coup nul —
-        // ferait tomber ce test.
-        let mut s = search();
-        let b = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 4 3");
-        s.path = vec![0x11, b.hash(), 0xA1, 0xB2, 0xC3, b.hash()];
-        s.null_marks = vec![1];
-        assert!(s.is_repetition(&b));
     }
 
     #[test]
