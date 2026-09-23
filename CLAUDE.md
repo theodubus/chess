@@ -190,10 +190,12 @@ une mesure, pas une préférence.
   différentes. **Les accès atomiques ne coûtent rien, ils RAPPORTENT** :
   −4,3 % de temps à la profondeur 10, 15 paires sur 20, p = 0,0192 — la fiche
   disait le coût « plat », ce qui parlait du *rétrofit*, et personne n'avait
-  vérifié la vitesse monothread ; elle monte. <span>Confondant nommé : à
-  capacité forcée égale l'entrée fait quand même 16 octets au lieu de 24, donc
-  les −4,3 % sont l'effet net de l'empaquetage ET des atomiques, pas des
-  atomiques seuls — les séparer ne changerait aucune décision.</span> Enfin
+  vérifié la vitesse monothread ; elle monte. **Le confondant est levé, troisième coin
+  mesuré** : l'empaquetage seul vaut **−4,0 %** (33/44, p = 0,0013), les
+  **atomiques seules −0,2 %** (8/20, p = 0,65). *Le gain est entièrement
+  l'empaquetage ; les accès atomiques ne coûtent rien*, et les deux viennent
+  donc ensemble sans surcoût. Cohérence interne : −4,0 puis −0,2 composent
+  −4,2 contre −4,3 mesuré. Enfin
   **l'effet de CAPACITÉ est un autre changement** : l'entrée passant de 24 à
   16 octets, la table double à mémoire constante, et cela demande un SPRT.
   Chiffres dans `tools/README.md`.

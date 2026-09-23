@@ -930,13 +930,34 @@ La fiche B9 disait le coût « plat » — ce qui parlait du *rétrofit* — san
 personne ait jamais vérifié si des entrées atomiques ralentissent la recherche
 **monothread**. Elles l'accélèrent.
 
-**Confondant à nommer, et ce chiffre n'est PAS « le coût des atomiques »** : à
-capacité forcée égale, l'entrée fait quand même 16 octets au lieu de 24, donc
-la table occupe 8 Mio au lieu de 12. Les −4,3 % sont l'effet **net** de
-(empaquetage 24 → 16 octets) + (accès simple → atomique `Relaxed`). Les séparer
-demanderait un troisième coin — une version empaquetée non atomique — qui ne
-changerait **aucune décision** : on ne peut pas avoir des entrées atomiques de
-24 octets en deux mots. Non mesuré, délibérément.
+**Le confondant a été levé — troisième coin mesuré le 23 sept. 2026.** Les
+−4,3 % étaient l'effet *net* de deux choses : l'entrée passe de 24 à 16 octets
+**et** les accès deviennent atomiques. `tools/attic/b9-troisieme-coin.patch`
+construit la variante manquante — empaquetée, **non** atomique, capacité
+forcée — et les trois binaires explorent le même arbre au bit près :
+
+| ce qu'on isole | écart médian | paires | p |
+|---|---|---|---|
+| **empaquetage seul** (16 o non atomique contre 24 o) | **−4,0 %** | 33/44 | **0,0013** |
+| **atomiques seules** (atomique contre empaqueté) | **−0,2 %** | 8/20 | 0,65 |
+| les deux ensemble (atomique contre 24 o) | −4,3 % | 15/20 | 0,019 |
+
+**Le gain est entièrement l'empaquetage ; les accès atomiques ne coûtent
+rien** — huit paires gagnantes sur vingt est un pile ou face. *Contrôle de
+cohérence interne, et il passe* : −4,0 puis −0,2 composent −4,2, contre −4,3
+mesuré directement.
+
+**Ce que ça change.** J'avais écarté ce troisième coin en disant qu'il ne
+changerait aucune décision. C'était juste — on ne peut pas avoir d'entrées
+atomiques de 24 octets en deux mots — mais c'est maintenant **établi au lieu
+d'être affirmé**, et ça ajoute un fait utile : *les atomiques étant gratuites,
+il n'y a aucune raison de préférer la version non atomique.* Elles viennent
+ensemble sans surcoût.
+
+**Et `timing.sh` a refusé sur moi.** Le premier relevé de l'empaquetage donnait
+−4,8 % à 20 paires avec p = 0,1153, et le script a rendu *« aucun écart
+démontré, ne pas inscrire de chiffre »*. Il en fallait 44. C'est exactement la
+faute que ce script existe pour empêcher.
 
 #### 3. L'effet de capacité est un autre changement, et le banc ne peut pas le juger
 
