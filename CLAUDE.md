@@ -101,6 +101,13 @@ une mesure, pas une préférence.
   `has_non_pawn_material`.
 - **Un score de mat obtenu après un coup nul n'est pas rendu tel quel.** Il
   viendrait d'un coup qu'on n'a pas le droit de jouer.
+- **Une répétition ne se cherche jamais au-delà du dernier coup nul.** Même
+  raison : deux coups nuls de suite recréent la position de départ, au même
+  trait, et la recherche y voyait une nulle — **87,8 % des répétitions
+  qu'elle détectait**, mesuré en partie le 23 sept. 2026 (C23). La borne vit
+  dans `null_marks`, posée au coup nul et retirée au retour : une marque
+  oubliée couperait la fenêtre sur une position étrangère et ferait manquer
+  de VRAIES répétitions, sans qu'aucun autre test ne bronche.
 - **Une réduction de coup tardif se rattrape toujours.** Si la recherche
   réduite dépasse `alpha`, on recommence à profondeur pleine — sans quoi un bon
   coup mal classé serait perdu. On ne réduit jamais les captures, les
