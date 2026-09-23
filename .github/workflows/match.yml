@@ -63,7 +63,7 @@ on:
         required: true
         type: string
       cadence:
-        description: "Cadence fastchess, par exemple 8+0.08 ou 30+0.3"
+        description: "Cadence de la référence — et du candidat si « cadence_candidat » est vide. Par exemple 8+0.08 ou 30+0.3."
         required: true
         default: "8+0.08"
         type: string
@@ -96,6 +96,19 @@ on:
           - "non"
           - "candidat"
           - "les-deux"
+      cadence_candidat:
+        description: "Cadence du SEUL candidat, pour un match à handicap de temps (calibrer l'Elo par pli). Vide : celle de « cadence », qui est toujours celle de la référence. Différente : le même commit des deux côtés est admis."
+        required: false
+        default: ""
+        type: string
+      sonde:
+        description: "« oui » : cutechess avec -debug all, UNE partie à la fois, et tools/plis.sh dans le résumé — plis et n/s de chaque camp, appariés par partie. Mesure des plis, pas de l'Elo : quelques dizaines de parties suffisent. Admet le même commit des deux côtés (témoin)."
+        required: false
+        default: "non"
+        type: choice
+        options:
+          - "non"
+          - "oui"
 
 jobs:
   match:
@@ -144,19 +157,48 @@ jobs:
           base=$(resoudre "${{ inputs.reference }}" "référence")
           echo "candidat  ${{ inputs.candidat }}  -> $cand"
           echo "reference ${{ inputs.reference }} -> $base"
+
+          # UNE CADENCE PAR MOTEUR. `cadence` est celle de la référence, et
+          # du candidat quand `cadence_candidat` est vide. Les deux arbitres
+          # prennent un `tc=` par moteur — mais un `tc=` dans `-each` ÉCRASE
+          # ceux des moteurs, vérifié sur les deux le 23 sept. 2026 : le
+          # candidat recevait `wtime 1010` au lieu de 2020. L'étape « Jouer »
+          # ne le met donc jamais dans `-each`.
+          tc_ref="${{ inputs.cadence }}"
+          tc_cand="${{ inputs.cadence_candidat }}"
+          [ -n "$tc_cand" ] || tc_cand="$tc_ref"
+
+          # cutechess joue le ponder, que fastchess ignore, et la sonde, dont
+          # `tools/plis.sh` lit le format `-debug all`. fastchess tout le reste.
+          if [ "${{ inputs.ponder }}" != "non" ] || [ "${{ inputs.sonde }}" = "oui" ]; then
+            arbitre=cutechess
+          else
+            arbitre=fastchess
+          fi
+
           # Deux références qui pointent le même commit : le match rendrait
           # 0 Elo et personne ne saurait pourquoi. Détecté ici, où c'est
           # gratuit, plutôt qu'après deux compilations.
           #
-          # SAUF quand seul le candidat pondère : le même binaire des deux
-          # côtés, et le seul drapeau `ponder` de l'arbitre qui les distingue,
-          # c'est exactement la mesure de ce que vaut le ponder.
-          if [ "$cand" = "$base" ] && [ "${{ inputs.ponder }}" != "candidat" ]; then
+          # SAUF quand quelque chose d'autre que le binaire les distingue :
+          # le seul candidat pondère (la mesure du ponder lui-même), il a une
+          # autre pendule (le handicap de temps qui calibre l'Elo par pli),
+          # ou c'est une sonde, dont le témoin est justement le même binaire.
+          meme_binaire_admis=non
+          if [ "${{ inputs.ponder }}" = "candidat" ] || [ "$tc_cand" != "$tc_ref" ] \
+             || [ "${{ inputs.sonde }}" = "oui" ]; then
+            meme_binaire_admis=oui
+          fi
+          if [ "$cand" = "$base" ] && [ "$meme_binaire_admis" = "non" ]; then
             echo "::error::les deux références pointent le même commit ($cand) : il n'y a rien à mesurer" >&2
             exit 1
           fi
           echo "candidat=$cand"  >> "$GITHUB_OUTPUT"
           echo "reference=$base" >> "$GITHUB_OUTPUT"
+          echo "tc_cand=$tc_cand" >> "$GITHUB_OUTPUT"
+          echo "tc_ref=$tc_ref"   >> "$GITHUB_OUTPUT"
+          echo "arbitre=$arbitre" >> "$GITHUB_OUTPUT"
+          echo "meme_binaire_admis=$meme_binaire_admis" >> "$GITHUB_OUTPUT"
 
           # La graine est une CONDITION DE VALIDITÉ, dans les DEUX sens, et
           # c'est pourquoi elle se résout ici plutôt que dans l'étape qui joue.
@@ -186,7 +228,7 @@ jobs:
           # réduit modulo 2³² SANS LE DIRE — mesuré le 23 sept. 2026 :
           # 35861838168 et 1502099800 y jouent les mêmes ouvertures. Réduite
           # ICI, pour que la graine imprimée soit celle qui a joué.
-          if [ "${{ inputs.ponder }}" != "non" ]; then
+          if [ "$arbitre" = "cutechess" ]; then
             graine=$(( graine % 4294967296 ))
           fi
           echo "graine=$graine" >> "$GITHUB_OUTPUT"
@@ -216,7 +258,7 @@ jobs:
           b=$(md5sum /tmp/reference | cut -d' ' -f1)
           echo "candidat  $a"
           echo "reference $b"
-          if [ "$a" = "$b" ] && [ "${{ inputs.ponder }}" != "candidat" ]; then
+          if [ "$a" = "$b" ] && [ "${{ steps.refs.outputs.meme_binaire_admis }}" != "oui" ]; then
             echo "::error::les deux binaires sont identiques bien que les commits diffèrent : il n'y a rien à mesurer"
             exit 1
           fi
@@ -229,7 +271,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${{ inputs.ponder }}" = "non" ]; then
+          if [ "${{ steps.refs.outputs.arbitre }}" = "fastchess" ]; then
             tools/setup-arbiters.sh
           else
             tools/setup-arbiters.sh --with-cutechess
@@ -260,6 +302,17 @@ jobs:
           echo "profondeur=$prof"    >> "$GITHUB_OUTPUT"
           echo "coeurs=$(nproc)"     >> "$GITHUB_OUTPUT"
 
+          # LA TOPOLOGIE, parce que « quatre cœurs » peut vouloir dire deux
+          # cœurs physiques à deux fils chacun. Le conteneur de session en a
+          # quatre sans SMT ; les runners n'avaient jamais été regardés. Or le
+          # ponder et Lazy SMP font réfléchir plusieurs fils à la fois, et deux
+          # fils d'un même cœur physique s'en partagent les unités de calcul.
+          lscpu
+          fils=$(lscpu | awk -F: '/^Thread\(s\) per core/ {gsub(/ /, "", $2); print $2}')
+          physiques=$(lscpu -p=CORE,SOCKET | grep -v '^#' | sort -u | wc -l)
+          modele=$(lscpu | awk -F: '/^Model name/ {sub(/^ +/, "", $2); print $2; exit}')
+          echo "topologie=$(nproc) processeurs logiques, $physiques cœurs physiques, $fils fil(s) par cœur — $modele" >> "$GITHUB_OUTPUT"
+
       - name: Jouer
         id: jouer
         shell: bash
@@ -287,10 +340,24 @@ jobs:
             echo "::error::$(nproc) cœur(s) pour des parties qui en occupent $par_partie chacune : l'inégalité ne tient pas." >&2
             exit 1
           fi
+          # La sonde joue UNE partie à la fois : `tools/plis.sh` apparie les
+          # deux camps par le numéro de partie, qu'il compte aux `ucinewgame`,
+          # et des parties entrelacées mêleraient les numéros.
+          if [ "${{ inputs.sonde }}" = "oui" ]; then concurrence=1; fi
           echo "concurrence=$concurrence" >> "$GITHUB_OUTPUT"
           echo "debut=$(date +%s)"        >> "$GITHUB_OUTPUT"
 
-          if [ "${{ inputs.ponder }}" != "non" ]; then
+          tc_cand="${{ steps.refs.outputs.tc_cand }}"
+          tc_ref="${{ steps.refs.outputs.tc_ref }}"
+          # Durée d'une partie par la formule conservatrice du projet : chaque
+          # camp dépense au plus sa base plus quarante incréments, chacun SA
+          # pendule — elles diffèrent dans un match à handicap de temps.
+          s_partie=$(awk -v a="$tc_cand" -v b="$tc_ref" -v c="$concurrence" 'BEGIN {
+            split(a, x, "+"); split(b, y, "+")
+            printf "%.3f", ((x[1] + 40 * x[2]) + (y[1] + 40 * y[2])) / c }')
+          tient=$(awk -v s="$s_partie" 'BEGIN { printf "%d", 350 * 60 / s }')
+
+          if [ "${{ steps.refs.outputs.arbitre }}" = "cutechess" ]; then
             # LONGUEUR FIXE SEULEMENT. Le SPRT de cutechess n'a pas le modèle
             # de celui de fastchess (`model=normalized`), et deux verdicts
             # séquentiels de modèles différents ne se comparent pas. Surtout,
@@ -300,39 +367,41 @@ jobs:
             # — et cutechess n'imprimant pas le vecteur pentanomial,
             # `tools/paires.sh` le reconstruit dans le résumé.
             if [ "${{ inputs.parties }}" -le 0 ]; then
-              echo "::error::pas de SPRT avec ponder : passer un nombre de parties, et lancer plusieurs jobs à graine « auto »." >&2
+              echo "::error::pas de SPRT sous cutechess (ponder ou sonde) : passer un nombre de parties, et lancer plusieurs jobs à graine « auto »." >&2
               exit 1
             fi
-            if [ "${{ inputs.ponder }}" = "les-deux" ]; then ponder_ref=(ponder); else ponder_ref=(); fi
+            ponder_cand=(); ponder_ref=()
+            if [ "${{ inputs.ponder }}" != "non" ]; then ponder_cand=(ponder); fi
+            if [ "${{ inputs.ponder }}" = "les-deux" ]; then ponder_ref=(ponder); fi
+            # `-debug all` imprime TOUT le dialogue UCI — ~0,5 Mo par partie à
+            # `8+0,08`. Il va dans le fichier, que lit `tools/plis.sh` ; le
+            # journal du job n'en reçoit que ce qui n'est pas du dialogue.
+            debug=()
+            if [ "${{ inputs.sonde }}" = "oui" ]; then debug=(-debug all); fi
             rondes=$(( (${{ inputs.parties }} + 1) / 2 ))
-            base=$(echo "${{ inputs.cadence }}" | cut -d+ -f1)
-            inc=$(echo "${{ inputs.cadence }}"  | cut -d+ -f2)
-            tient=$(awk -v b="$base" -v i="$inc" -v c="$concurrence" \
-              'BEGIN { printf "%d", 350 * 60 / (2 * (b + 40 * i) / c) }')
             if [ "${{ inputs.parties }}" -gt "$tient" ]; then
               echo "::warning::${{ inputs.parties }} parties demandées, ce job en tient au moins ~$tient" \
-                   "à ${{ inputs.cadence }} et à $concurrence partie(s) à la fois (estimation" \
+                   "à $s_partie s par partie et $concurrence partie(s) à la fois (estimation" \
                    "conservatrice). Tronqué, un match à longueur fixe reste non biaisé — mais" \
                    "plus court que prévu."
             fi
-            QT_QPA_PLATFORM=offscreen tools/arbiters/cutechess-cli \
-              -engine cmd=/tmp/candidat  name=candidat  proto=uci ponder \
-              -engine cmd=/tmp/reference name=reference proto=uci "${ponder_ref[@]}" \
-              -each tc="${{ inputs.cadence }}" \
+            QT_QPA_PLATFORM=offscreen tools/arbiters/cutechess-cli "${debug[@]}" \
+              -engine cmd=/tmp/candidat  name=candidat  proto=uci tc="$tc_cand" "${ponder_cand[@]}" \
+              -engine cmd=/tmp/reference name=reference proto=uci tc="$tc_ref"  "${ponder_ref[@]}" \
               -openings file=tools/book.epd format=epd order=random \
               -srand "${{ steps.refs.outputs.graine }}" \
               -games 2 -repeat -rounds "$rondes" \
               -concurrency "$concurrence" \
               -draw movenumber=40 movecount=8 score=10 \
               -resign movecount=4 score=600 twosided=true \
-              | tee /tmp/match.log
+              | tee /tmp/match.log | grep --line-buffered -vE '^[0-9]+ [<>]'
             exit 0
           fi
 
           commun=(
-            -engine cmd=/tmp/candidat  name=candidat
-            -engine cmd=/tmp/reference name=reference
-            -each tc="${{ inputs.cadence }}" proto=uci
+            -engine cmd=/tmp/candidat  name=candidat  tc="$tc_cand"
+            -engine cmd=/tmp/reference name=reference tc="$tc_ref"
+            -each proto=uci
             -openings file=tools/book.epd format=epd order=random
             -srand "${{ steps.refs.outputs.graine }}"
             -games 2 -repeat
@@ -393,14 +462,9 @@ jobs:
             # (~7,25 s/partie, C22, deux jobs coupés au plafond). 3 000
             # parties ne tiennent plus dans un job à 8+0,08 : ~2 880 au plus.
             # L'estimation de ce bloc reste CONSERVATRICE, puisque 0,97 < 1.
-            base=$(echo "${{ inputs.cadence }}" | cut -d+ -f1)
-            inc=$(echo "${{ inputs.cadence }}"  | cut -d+ -f2)
-            par_partie=$(awk -v b="$base" -v i="$inc" -v c="$concurrence" \
-              'BEGIN { printf "%.3f", 2 * (b + 40 * i) / c }')
-            tient=$(awk -v s="$par_partie" 'BEGIN { printf "%d", 350 * 60 / s }')
             plafond=$(( tient * 3 / 2 ))
-            echo "::notice::Ce job atteint au moins ~$tient parties à ${{ inputs.cadence }}" \
-                 "(estimation CONSERVATRICE de ~$par_partie s/partie, plafond de 350 min :" \
+            echo "::notice::Ce job atteint au moins ~$tient parties" \
+                 "(estimation CONSERVATRICE de ~$s_partie s/partie, plafond de 350 min :" \
                  "les deux matchs historiques ont fait 25 % de plus). Le SPRT s'arrêtera" \
                  "avant s'il tranche ; ce nombre n'est PAS une cible."
             tools/arbiters/fastchess "${commun[@]}" -rounds $(( (plafond + 1) / 2 )) \
@@ -418,18 +482,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          arbitre="${{ steps.refs.outputs.arbitre }}"
+          tc_cand="${{ steps.refs.outputs.tc_cand }}"
+          tc_ref="${{ steps.refs.outputs.tc_ref }}"
+          if [ "$tc_cand" = "$tc_ref" ]; then
+            cadence="\`$tc_ref\`"
+          else
+            cadence="candidat \`$tc_cand\` contre référence \`$tc_ref\` — **handicap de temps**"
+          fi
           {
-            echo "## Match — ${{ inputs.cadence }}"
+            echo "## Match — ${cadence//\`/}"
             echo
             echo "| | |"
             echo "|---|---|"
             echo "| candidat | \`${{ inputs.candidat }}\` → \`${{ steps.refs.outputs.candidat }}\` |"
             echo "| référence | \`${{ inputs.reference }}\` → \`${{ steps.refs.outputs.reference }}\` |"
-            echo "| cadence | \`${{ inputs.cadence }}\` |"
+            echo "| cadence | $cadence |"
             echo "| graine des ouvertures | \`${{ steps.refs.outputs.graine }}\` |"
             echo "| ponder | \`${{ inputs.ponder }}\` |"
+            echo "| sonde | \`${{ inputs.sonde }}\` |"
+            echo "| arbitre | $arbitre |"
             echo "| parties à la fois | ${{ steps.jouer.outputs.concurrence }} |"
             echo "| cœurs du runner | ${{ steps.etalon.outputs.coeurs }} |"
+            echo "| topologie du runner | ${{ steps.etalon.outputs.topologie }} |"
             echo "| **nœuds/s au bench** | **${{ steps.etalon.outputs.nps }}** |"
             echo "| profondeur en 250 ms | ${{ steps.etalon.outputs.profondeur }} |"
             echo
@@ -451,7 +526,7 @@ jobs:
             echo '```'
             # La dernière ligne de résultats, jamais la première : les arbitres
             # impriment un score courant après CHAQUE partie.
-            if [ "${{ inputs.ponder }}" = "non" ]; then
+            if [ "$arbitre" = "fastchess" ]; then
               grep -E "^(Elo|LOS|Games|Ptnml|LLR|SPRT|Results)" /tmp/match.log \
                 | tail -14 || echo "aucun résultat lisible — voir le journal"
             else
@@ -467,7 +542,7 @@ jobs:
               sed 's/^/paires.sh : /' /tmp/paires.err || true
             fi
             echo '```'
-            if [ "${{ inputs.ponder }}" != "non" ]; then
+            if [ "$arbitre" = "cutechess" ]; then
               echo
               echo "> Le vecteur \`Ptnml\` ci-dessus est **reconstruit par"
               echo "> \`tools/paires.sh\`** — cutechess ne l'imprime pas. Une paire"
@@ -533,7 +608,7 @@ jobs:
             echo '### Avertissements de l’arbitre — par nature et par moteur'
             echo
             echo '```'
-            if [ "${{ inputs.ponder }}" = "non" ]; then
+            if [ "$arbitre" = "fastchess" ]; then
               # `.*` et non `[^-]+` : « fifty-move » porte un tiret, et la
               # première version du motif ratait exactement ces avertissements.
               grep -oE 'Warning; .* - move [^ ]+ from [^ ]+' /tmp/match.log \
@@ -555,7 +630,7 @@ jobs:
               | grep -oE '[0-9]+$' || true)
             # cutechess n'imprime ni l'un ni l'autre : la durée se prend à la
             # pendule du job, les parties se comptent.
-            if [ "${{ inputs.ponder }}" != "non" ] && [ -n "${{ steps.jouer.outputs.debut }}" ]; then
+            if [ "$arbitre" = "cutechess" ] && [ -n "${{ steps.jouer.outputs.debut }}" ]; then
               s=$(( $(date +%s) - ${{ steps.jouer.outputs.debut }} ))
               duree=$(printf '%d:%02d:%02d' $(( s / 3600 )) $(( s % 3600 / 60 )) $(( s % 60 )))
               parties=$(grep -cE '^Finished game' /tmp/match.log || true)
@@ -567,6 +642,22 @@ jobs:
               echo "| $duree | $parties |" \
                    "$(awk -F: -v n="$parties" \
                       '{printf "%.2f", ($1*3600+$2*60+$3)/n}' <<< "$duree") |"
+            fi
+            # LA SONDE : les plis que chaque camp atteint, appariés par
+            # partie, et les n/s des coups partis d'un `go` ordinaire. Même
+            # binaire, même machine, mêmes parties : si le candidat pondère,
+            # le rapport des n/s dit ce que son ponder vole à la référence,
+            # sans comparer deux runners — dont la vitesse varie de 22 à 58 %.
+            # Sans ponder, ce rapport est le témoin et doit valoir ~1. Il porte
+            # un confondant de quelques pour cent, écrit dans `plis.sh` : il
+            # sépare un cœur partagé d'une absence de vol, pas 2 % de 0 %.
+            if [ "${{ inputs.sonde }}" = "oui" ]; then
+              echo
+              echo '### Sonde — plis et n/s, appariés par partie'
+              echo
+              echo '```'
+              tools/plis.sh /tmp/match.log 2>&1 || true
+              echo '```'
             fi
           } | tee -a "$GITHUB_STEP_SUMMARY"
           # `tee` et non `>>` : le résumé du job ne s'affiche que dans
