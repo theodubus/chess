@@ -432,7 +432,14 @@ jobs:
                    "$(awk -F: -v n="$parties" \
                       '{printf "%.2f", ($1*3600+$2*60+$3)/n}' <<< "$duree") |"
             fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          # `tee` et non `>>` : le résumé du job ne s'affiche que dans
+          # l'interface web, l'API de GitHub ne le sert pas. Une relève faite
+          # depuis une session ne lit que le JOURNAL — et seulement sa fin,
+          # 5000 lignes au plus. Ce bloc étant le dernier du job, le recopier
+          # dans le journal le met exactement là où l'API le sert. Le
+          # recensement des pertes au temps sur le journal ENTIER n'a de
+          # valeur que s'il est lisible par qui fait la relève.
 
       - name: Journal complet
         if: always()

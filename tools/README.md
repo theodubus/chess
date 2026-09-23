@@ -698,7 +698,11 @@ bénins », sans en lire un seul. Question de Théo : *« tu as bien analysé le
 sorties de match ? »* — non, pas celles-là.
 
 **Un avertissement d'arbitre est une mesure, pas du bruit.** Depuis ce jour,
-le résumé de `match.yml` les recense par nature, sur le journal entier.
+le résumé de `match.yml` les recense par nature, sur le journal entier — **et
+le recopie à la fin du journal du job**, parce que l'API de GitHub ne sert pas
+le résumé : sans cette copie, une relève faite depuis une session ne l'aurait
+jamais lu. Les deux jobs de C22 ont été lancés avant ce correctif ; leur
+relève lira donc les pertes au temps à l'ancienne, sur la fin du journal.
 
 #### Ce qu'ils disaient
 
