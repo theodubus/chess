@@ -1362,6 +1362,11 @@ l'annonce, `ponderhit`, le drapeau posé **avant** de lancer le fil, et
 **Ponder désactivé, rien ne change** : le banc rend 114 028 et 31 637, au nœud
 près. Seule la ligne `bestmove` gagne ` ponder Y` — fastchess lit le jeton qui
 suit `bestmove` (`findElement`, lu dans son source), cutechess lit le pari.
+**Et pas de ralentissement démontré** : `tools/timing.sh` contre `main`,
+24 paires à la profondeur 10, 12 gagnantes sur 24, p = 1,0. Le chemin chaud
+ne gagne qu'une lecture atomique tous les `CHECK_INTERVAL` nœuds et une copie
+de la variante par itération — mais c'est la mesure qui le dit, pas cette
+phrase.
 
 **Sept défauts injectés à la main, sept attrapés — mais pas du premier coup.**
 Deux survivaient à la première version des tests, et chacun enseigne quelque
