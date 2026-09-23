@@ -522,6 +522,11 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-22 | **D5 — retrait des trois termes d'évaluation (sécurité du roi, structure de pions, tours sur colonne ouverte), à `8+0,08`** | **H0 accepté** — **−37,53 Elo ± 13,40** sur 1580 parties, bornes `[-5, 0]`, LLR −2,95, 44,62 % de score, LOS 0,00 %, Ptnml [121, 155, 344, 113, 57]. [run 35692850670](https://github.com/theodubus/chess/actions/runs/35692850670), candidat `adcbd14` contre `091e75e`, graine 20260913. Étalonnage : **2 177 503 n/s, profondeur 11**. 2 h 32 de match. **Les trois termes valent 2,5 fois le +14,9 mesuré à `1+0,01`.** Banc du candidat : 88 495 nœuds (÷ 1,29). |
 | 2026-09-22 | **D5 — retrait de l'élagage delta, à `8+0,08`** | **PAS DE VERDICT — SPRT tué par le plafond du job** à 3 738 parties. Retrait : **−1,49 Elo ± 7,83**, IC `[−9,3 ; +6,3]`, 49,79 % de score, **LLR 0,06 sur ±2,94**, Ptnml [141, 373, 851, 369, 135]. [run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914), candidat `cbaa8d4` contre `a57c835`, bornes `[-5, 0]`, graine 20260913. Étalonnage : **2 324 708 n/s, profondeur 12**. **Ne pas lire comme un verdict** : un SPRT arrêté par l'horloge est conditionné à n'avoir pas touché ses bornes, donc biaisé vers zéro. Ce qui est établi, c'est que l'effet n'a **rien à voir avec les +32,5 Elo** du verdict de `1+0,01` — celui-là aurait tranché vers 1 825 parties. L'élagage **reste dans `main`**. Banc du candidat : 138 458 nœuds (× 1,21). |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
+| 2026-09-23 | **C21 — défaut de `movestogo` de 30 à 12, à `8+0,08`** | **+19,13 Elo ± 6,31** sur 6 000 parties à longueur fixe, deux matchs mis en commun, zéro perte au temps. **Fusionné.** Le SPRT qui l'avait précédé avait expiré à +14,59 ± 8,31 — un minorant, et c'en était un. Section « C21 — VERDICT ». |
+| 2026-09-23 | **C22 — le test de nulle avant l'aiguillage vers la quiescence, à `8+0,08`** | **−10,44 Elo ± 6,34** sur 5 760 parties — **régression, non fusionné**, arrêté par son critère écrit avant. 92 % des nulles qu'il ajoutait à l'horizon étaient fausses (C23) : **remesuré sur C23, en vol**. Section « C22 — VERDICT ». |
+| 2026-09-23 | **B9 — effet de capacité de la table à entrées atomiques, à `8+0,08`** | **−1,27 Elo ± 6,34** sur 5 740 parties — pas d'effet décelable. **Fusionné au titre de l'infrastructure** (la table se partage entre fils ; −4,3 % de temps déjà prouvé). Section « B9 — VERDICT ». |
+| 2026-09-23 | **Ponder activé pour un seul camp, même binaire, à `8+0,08`** | **+67,63 Elo ± 9,19** sur 2 700 parties (cutechess, une partie à la fois), zéro anomalie — **contre notre jumeau**, donc un chiffre qui appartient à son adversaire. Le ponder reste désactivé par défaut ; l'interface l'active. Section « Ponder — VERDICT ». |
+| 2026-09-23 | **C23 — la fenêtre de répétition bornée au dernier coup nul, à `8+0,08`** | **+2,65 Elo ± 6,40** sur 5 760 parties — pas d'effet décelable, **fusionné au titre de la règle** : 87,8 % des répétitions que voyait la recherche étaient fausses. Section « C23 — VERDICT ». |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -706,7 +711,7 @@ dernière relève est faite.
 | C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 19 h 45, 2 × 2 880 parties | **+2,65 ± 6,40 : pas d'effet décelable, FUSIONNÉ** au titre de la règle (`25fd727`) |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
 | C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | plafond vers 01 h 50 le 24 — ~2 880 parties chacun | fusion sauf régression — correctif de règle, même critère que C22 |
-| balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | ~21 h | `search.rs` touché par C23 ; `tt.rs` devrait rendre 6, les décalages nuls étant retirés |
+| balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | ~21 h — `search.rs` et `eval.rs` encore en cours à 20 h 30 | `tt.rs` **rendu : 6**, exactement la prédiction (les quatre `\|` de `pack_data` et les deux de `pack_move`) → plafond à baisser de 8 à 6. `search.rs` touché par C23 : à lire |
 | balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 19 h 44 | `tt.rs` **8** contre 2, tous équivalents : deux décalages nuls retirés comme code mort, plafond inscrit à 8, le chiffre mesuré (PR #56). `search.rs` **43** contre 45 : les trois survivants de `ponder_move` tués par la PR #50, 47 expirés comme au balayage précédent — plafond resserré à 43. Les autres au plafond. Issue #57 fermée |
 
 Les candidats de C22, B9 et C23 ont chacun été **committés puis révoqués
@@ -1438,6 +1443,12 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 
 ### Ce qui reste à faire, par ordre mesuré
 
+**L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
+d'abord les relèves en vol (C22 sur C23, balayage de mutation), puis
+**calibrer l'Elo par pli**, puis **B6 — Lazy SMP**. Les autres lignes gardent
+l'ordre mesuré du tableau ; « ce sur quoi travailler » reste une question à
+lui poser au-delà de ces deux-là.
+
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Porté sur C23 et EN MESURE** (`cd45ffa`), même critère — voir « C22 sur C23 » |
@@ -1445,11 +1456,13 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
+| **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **proposé le 23 sept., pas commencé.** Deux points mesurés donnent 21 à 116 et 52 à 102 Elo par pli (section ponder) : trop large pour classer les chantiers de vitesse. Un doublement de temps vaut 1,36 pli ; le match rend directement l'Elo de ce doublement, à la cadence cible. Coût : une cadence par moteur dans `match.yml`, puis un job — deux au pire, si l'effet est au bas de l'étendue |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
 | B6 — Lazy SMP | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie). **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
+| **interdire deux coups nuls consécutifs** | — changement d'arbre | **pas commencé** — après le verdict de C22 sur C23, et mesuré **seul**. Avec C23, un double coup nul ne rend plus de fausse nulle, il re-cherche la position à profondeur réduite : du travail qu'aucune partie ne demande. **10,1 %** des recherches de coup nul partent juste après un coup nul (sonde de C23). Stockfish l'interdit |
 | B7 / C13 | — | inchangés, bloqués sur leurs déclencheurs |
 
 > **B8 (réglage des constantes de recherche) : son déclencheur écrit est
@@ -1660,12 +1673,12 @@ découpage de B2, la fiche C21 et la note de saturation. Le voici entier.
 
 | ce que B2 nommait | état | ce qui le tient |
 |---|---|---|
-| défaut de `movestogo` (devenu **C21**) | **écrit, en mesure** | +0,54 à 0,70 pli ; SPRT expiré à +14,59 ± 8,31, relancé en longueur fixe |
+| défaut de `movestogo` (devenu **C21**) | <s>écrit, en mesure</s> **FUSIONNÉ** : +19,13 ± 6,31 Elo à `8+0,08` | +0,54 à 0,70 pli ; SPRT expiré à +14,59 ± 8,31, relancé en longueur fixe |
 | « s'arrêter tôt sur un coup stable » | **RÉFUTÉ, clos** | et il *empire* au régime cible : 13,9 % de coups changés à `8+0,08`, **18,4 % à `30+0,3`**. Le temps épargné n'est de surcroît pas dépensable — avec `restant/d`, une seconde économisée ne revient qu'au `d`-ième |
 | « prolonger sur un score qui s'effondre » | **OUVERT — écran passé, jamais écrit** | survit sur **2,7 à 3,0 % des coups** |
 | **allocation inégale** | **PAS COMMENCÉ** | le seul chantier restant qui puisse dépasser le plafond — dépenser plus sur les positions **dures** (score instable, coup unique, sortie de livre) |
 | *(examiné, écarté)* pendule de l'adversaire | **écran PASSÉ le 23 sept., petit levier de signe inconnu** | déjà reçue et jetée par le moteur. Écart signé entre les deux pendules : **médiane −12 ms** une fois l'artefact de comptage de coups retiré — donc un verdict symétrique rendrait zéro par construction. L'écart absolu dépasse 20 % sur **1,6 %** des coups : l'ordre de grandeur de l'extension d'échec, qui valait −5,0 |
-| *(hors B2)* **ponder** | **jamais ouvert — protocole écrit, `p` mesuré** | légal et prévu par UCI. `p = 0,659` contre notre jumeau à `8+0,08`, soit **0,90 pli** — plus que C21. <s>Reste : le proxy à cadence asymétrique</s> — il ne pouvait pas être nul, donc ce n'était pas une porte. Reste : **écrire** (liste de dix lignes, vérifiée contre le source de Stockfish), puis mesurer sous cutechess à `-concurrency 1`. Voir la section qui suit |
+| *(hors B2)* **ponder** | <s>jamais ouvert — protocole écrit, `p` mesuré</s> **ÉCRIT et MESURÉ** : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau ; reste à dépenser le remboursement | légal et prévu par UCI. `p = 0,659` contre notre jumeau à `8+0,08`, soit **0,90 pli** — plus que C21. <s>Reste : le proxy à cadence asymétrique</s> — il ne pouvait pas être nul, donc ce n'était pas une porte. Reste : **écrire** (liste de dix lignes, vérifiée contre le source de Stockfish), puis mesurer sous cutechess à `-concurrency 1`. Voir la section qui suit |
 
 #### Pourquoi l'allocation inégale est le vrai reste
 
@@ -2250,10 +2263,14 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 | **l'estimation de durée de `match.yml`** | <s>le jour où C21 fusionne</s> **C21 a fusionné le 23 sept.** — reste à relire la durée au **premier match où les DEUX moteurs portent C21** | le facteur **EST** le gaspillage de pendule. Mesuré : 0,75 avec deux moteurs d'avant, **0,85** avec un seul moteur C21, ~0,95 extrapolé pour deux. La notice « les deux matchs historiques ont fait 25 % de plus » deviendra alors fausse. **Le résumé de `match.yml` imprime désormais les s/partie** : la relecture ne demande plus de calcul |
 | <s>`mesure/d5-delta` sur le distant</s> | **FAIT le 23 sept.** — supprimée par Théo ; son code est à l'attic | <s>le jeton de session ne peut pas supprimer une référence distante</s> |
 | **le déclencheur de B8** | maintenant | sa **lettre** est satisfaite (C12 clos, C18 décidé), son **esprit** non (C17, C19, C21 sont entrés depuis). Ça demande une re-spécification, pas une mesure — donc personne ne peut la calculer |
-| `attack_dump.rs` et `see_check.rs` | au prochain dépôt dans `tools/src/bin/` | **autodécouverts par cargo**, non déclarés dans `tools/Cargo.toml`. `outillage_documente.rs` exige qu'ils soient documentés, pas qu'ils soient déclarés |
+| <s>`attack_dump.rs` et `see_check.rs`</s> | **FAIT le 23 sept.** — `tools/Cargo.toml` porte `autobins = false` et les deux y sont déclarés (voir `CLAUDE.md`) | <s>autodécouverts par cargo, non déclarés</s> |
+| **une routine hebdomadaire HORS dépôt**, « ShallowRed — verdict du balayage par mutation » (créée le 15 sept., mardi 03 h UTC, session neuve) | maintenant — elle tourne encore, dernier passage le 22 sept. | le job `Verdict` ouvre lui-même l'issue depuis le 15 sept. ; cette routine en ouvrirait une seconde, au même titre le même jour. Elle vit hors du dépôt, donc aucun test ne la voit. **À supprimer** — décision de Théo, elle est à son compte |
 | le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
 
-### B9 — écrit et mesuré le 23 sept. 2026, à l'attic
+### B9 — écrit et mesuré le 23 sept. 2026 — état d'AVANT la fusion, gardé pour ses chiffres
+
+**Fusionné depuis, le soir même** : voir « B9 — VERDICT ». Ce qui suit décrit
+l'état d'avant, tel qu'il était écrit.
 
 Le code est dans `tools/attic/b9-table-atomique.patch`, avec ses chiffres. Il
 n'est **pas** sur une branche : l'effet de capacité attend un SPRT, et le
