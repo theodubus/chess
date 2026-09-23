@@ -71,6 +71,18 @@ eval.rs 121
 #   parties 7,8 % mieux sur 66 376 positions tenues à l'écart, et jouait
 #   25 Elo PLUS MAL. Les figer par des tests coûterait donc de l'Elo.
 #
+# search.rs — 23 sept. 2026, après le ponder : 46 contre 45, et le plafond
+#   NE BOUGE PAS. Les trois survivants neufs étaient tous dans la garde de
+#   `ponder_move` (`*first == best`) : le test existant ne séparait pas le
+#   pari tiré de la variante de celui tiré de la table, qui coïncident
+#   après une vraie recherche. Un test à table vide les tue — vérifié en
+#   injectant les trois à la main. Ce n'était pas du réglage : un pari
+#   tiré de la variante d'un AUTRE coup passe le contrôle de légalité
+#   quand le coup se trouve légal des deux côtés.
+#   Le plafond n'est pas baissé à 43 pour autant : ce balayage compte 47
+#   mutants expirés dans ce fichier, et une baisse lue sur un runner
+#   chargé peut n'être qu'un artefact. Le balayage suivant tranchera.
+#
 # search.rs — 45 au 22 sept. 2026, contre 110 le matin même et 89 la veille.
 # eval.rs  — 121 au 22 sept. 2026, contre 219 le matin même et 212 la veille.
 #

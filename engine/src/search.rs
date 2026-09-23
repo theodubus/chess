@@ -2326,6 +2326,37 @@ mod tests {
     }
 
     #[test]
+    fn le_pari_ne_vient_que_dune_variante_qui_commence_par_le_coup_joue() {
+        // Le test voisin ne sépare pas les deux sources du pari : après une
+        // vraie recherche, la variante et la table proposent le même coup, et
+        // trois mutants de la garde `*first == best` survivaient au balayage
+        // du 23 sept. 2026. Table vide ici, donc seule la variante peut parier.
+        let b = Board::default();
+        let mut s = search();
+        let e4 = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let d4 = cozy_chess::util::parse_uci_move(&b, "d2d4").unwrap();
+        let mut apres = b.clone();
+        apres.play_unchecked(e4);
+        let e5 = cozy_chess::util::parse_uci_move(&apres, "e7e5").unwrap();
+
+        s.last_pv = vec![e4, e5];
+        assert_eq!(
+            s.ponder_move(&b, e4),
+            Some(e5),
+            "une variante qui commence par le coup joué donne son deuxième coup"
+        );
+
+        // `e7e5` répond aussi bien à `d2d4` : sans la garde, il passerait le
+        // contrôle de légalité et partirait comme pari d'un autre coup.
+        s.last_pv = vec![d4, e5];
+        assert_eq!(
+            s.ponder_move(&b, e4),
+            None,
+            "la variante d'un autre coup ne parie pas pour celui-ci"
+        );
+    }
+
+    #[test]
     fn go_infinite_sarrete_sur_le_drapeau() {
         let stop = Arc::new(AtomicBool::new(false));
         let mut s = Search::new(Arc::clone(&stop));
