@@ -819,6 +819,60 @@ jusqu'à son verdict. **Au verdict : révoquer la révocation.** La rustine
 8. **Les chiffres de neutralité de B9** (114 028 / 635 210) sont relatifs au
    banc d'avant : les refaire avant son verdict de capacité.
 
+### B9 — EN VOL : l'effet de CAPACITÉ de la table atomique
+
+La réécriture est prouvée neutre à capacité forcée égale et plus rapide de
+4,3 % (sections B9 plus bas). Reste l'effet que le banc ne peut pas juger :
+l'entrée passe de 24 à 16 octets, donc **la table double à mémoire constante**
+— 524 288 → 1 048 576 entrées à 16 Mio. Le banc ne la remplit pas ; un match,
+si.
+
+| runs | graine | parties | cadence |
+|---|---|---|---|
+| lancés le 23 sept. vers 12 h 45 UTC — numéros inscrits à la relève | tirée par le run | 2 × 3000 | `8+0,08` |
+
+Candidat `bd896ba` (la rustine appliquée telle quelle), révoqué aussitôt dans
+le commit suivant ; référence `main` d'avant C22.
+
+#### Le critère — écrit AVANT de lancer
+
+B9 n'est pas un pari sur un gain : c'est **l'infrastructure qu'exige B6**,
+dont la logique est prouvée neutre et la vitesse prouvée meilleure. La
+question du match est donc la même que pour un correctif de règle : **le jeu
+se dégrade-t-il ?**
+
+- **borne haute de l'intervalle mis en commun < 0** → régression
+  significative : ne pas fusionner, et chercher — la seule différence de
+  comportement est la capacité ;
+- **borne basse > 0** → gain démontré, fusionner ;
+- **entre les deux** → pas d'effet décelable : **fusionner**, au titre de
+  l'infrastructure et de la vitesse déjà prouvée.
+
+**Puissance** : ± 6,3 Elo sur 6 000 parties, comme C22.
+
+#### La base est celle d'AVANT C22 — pourquoi ça ne fausse pas la mesure
+
+C22 sera tranché avant B9 et fusionnera peut-être entre-temps. B9 et C22
+touchent des objets **disjoints** — la capacité de la table d'un côté, la
+détection des nulles à l'horizon de l'autre — et leurs rustines s'appliquent
+ensemble sans conflit (`git apply --check` sur les deux). <span>Inférence,
+confiance moyenne-haute : leurs effets s'additionnent sans interaction
+notable.</span> C'est le contraire du cas de l'élagage delta, qui avait fondu
+parce que l'échange statique coupait **les mêmes captures au même endroit**.
+
+#### Au verdict, dans l'ordre
+
+1. Étalonnages, pertes au temps et avertissements — désormais recopiés à la
+   fin du journal par `match.yml`, donc lisibles depuis une session.
+2. Mise en commun, puis le critère ci-dessus, sans le déplacer.
+3. Si fusion : révoquer la révocation **sur la base du moment** — si C22 a
+   fusionné, les deux s'empilent sans conflit. Refaire alors les chiffres de
+   neutralité **sur le banc d'après C22** (capacité forcée : nœuds identiques
+   à `main` ; capacité naturelle : le nouveau chiffre), et mettre à jour la
+   référence du banc.
+4. **Balayage de mutation** après la fusion : `tt.rs` est réécrit entièrement.
+5. Inscrire le verdict, la table de l'attic, la fiche du carnet.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 | chantier | plis | état — et la PROCHAINE action |
@@ -828,7 +882,7 @@ jusqu'à son verdict. **Au verdict : révoquer la révocation.** La rustine
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
-| **B9 — table à entrées atomiques** | — | **écrite et mesurée à l'attic** : neutre à capacité forcée, −4,3 % de temps. **Prochaine action : son verdict de CAPACITÉ** (la table double à mémoire constante), prêt à lancer. Ses chiffres de neutralité sont relatifs au banc d'avant C22 : si C22 fusionne, les refaire |
+| **B9 — table à entrées atomiques** | — | **EN MESURE** : verdict de capacité, deux jobs, critère de non-régression écrit d'avance — voir « B9 — EN VOL ». Ses chiffres de neutralité sont relatifs au banc d'avant C22 : si C22 fusionne, les refaire |
 | B6 — Lazy SMP | 1,0 à 1,8, **seul chiffre encore hérité** | exige B9. **Et sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
