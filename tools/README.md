@@ -282,11 +282,22 @@ ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 > source de vérité, et est-ce la bonne ? »** — ici le répertoire que cargo
 > compile, jamais la liste qu'on a en tête.
 >
-> **Et `attack_dump.rs` comme `see_check.rs` ne sont pas déclarés dans
-> `tools/Cargo.toml`**, contrairement aux quatre autres. Ils fonctionnent par
-> autodécouverte. Ce n'est pas une faute — c'est ce qui rend le dépôt de
-> sondes si facile, et c'est exactement pourquoi la documentation doit être la
-> barrière.
+> **`attack_dump.rs` et `see_check.rs` vivaient par autodécouverte** jusqu'au
+> 23 sept. 2026, contrairement aux quatre autres. Ils sont désormais déclarés,
+> et surtout `tools/Cargo.toml` porte **`autobins = false`** : un fichier
+> déposé dans `src/bin/` **n'est plus compilé tant qu'il n'a pas sa section
+> `[[bin]]`**. Déposer une sonde redevient un acte délibéré, et l'oublier ne
+> coûte plus un arbre cassé — ce qui est précisément arrivé le 22 sept.
+>
+> Éprouvé dans les deux sens : un fichier délibérément non compilable laisse
+> le build vert tant qu'il n'est pas déclaré, et rend deux erreurs dès qu'il
+> l'est. Le second sens compte autant que le premier — un mécanisme qui avale
+> tout passerait le premier test sans rien garder.
+>
+> **Les deux dispositifs sont complémentaires, aucun ne remplace l'autre** :
+> `autobins = false` empêche la compilation accidentelle,
+> `engine/tests/outillage_documente.rs` empêche le binaire qui dort sans que
+> personne sache ce qu'il fait.
 
 ## Vérifier que l'arbitre est fiable
 

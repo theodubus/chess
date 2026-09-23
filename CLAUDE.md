@@ -283,6 +283,15 @@ une mesure, pas une préférence.
   `tools/Cargo.toml`, ils vivent par autodécouverte. Troisième occurrence de
   « un garde-fou correct qui garde le mauvais ensemble », après `see.rs` hors
   du cliquet (Q4) et le chiffre de bench lu dans un seul fichier (B10).
+  <br>**La casse d'arbre, elle, est devenue inexprimable le 23 sept. 2026** :
+  `tools/Cargo.toml` porte `autobins = false`, donc un fichier déposé dans
+  `tools/src/bin/` **n'est plus compilé tant qu'il n'a pas sa section
+  `[[bin]]`**. Les deux oracles qui vivaient par autodécouverte —
+  `see_check.rs` et `attack_dump.rs` — y sont désormais déclarés. Éprouvé dans
+  les deux sens : un fichier délibérément non compilable laisse le build vert
+  tant qu'il n'est pas déclaré, et le casse dès qu'il l'est. *La discipline
+  — une sonde vit dans sa rustine — reste du jugement ; ce qui est fermé, c'est
+  le mode de défaillance qu'elle laissait passer.*
 - **Un mécanisme vérifié à l'arithmétique qui ne retombe pas sur la mesure
   n'est pas réfuté — il est incomplet, et le résidu se nomme.** Le gaspillage
   de pendule était prédit à 31 % de restant par le modèle `restant/30 + inc/2`

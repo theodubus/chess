@@ -1,0 +1,49 @@
+# d5 — candidat de RETRAIT de l'élagage delta en quiescence
+#
+# À NE JAMAIS FUSIONNER. C'est un candidat de retrait : il ENLÈVE un acquis,
+# pour mesurer ce que cet acquis vaut encore. L'élagage delta reste dans
+# `main`.
+#
+# Verdict, 22 sept. 2026 : PAS DE VERDICT — le SPRT a été tué par le plafond
+# du job à 3 738 parties. Retrait mesuré à −1,49 Elo ± 7,83, IC [−9,3 ; +6,3],
+# LLR 0,06 sur ±2,94, bornes [-5, 0] à `8+0,08`, graine 20260913.
+# Run 35714977914, étalonnage 2 324 708 n/s, profondeur 12.
+#
+# Un SPRT arrêté par l'horloge est conditionné à n'avoir pas touché ses bornes,
+# donc biaisé VERS ZÉRO : la vraie valeur du retrait est plus négative que
+# −1,49, jamais moins. Ce qui est établi, c'est qu'elle n'a rien à voir avec
+# les +32,5 Elo du verdict de `1+0,01` — celui-là aurait tranché vers 1 825
+# parties. La cause est mesurée par les quatre coins : l'échange statique de
+# C19 coupe les mêmes objets au même endroit, et absorbe environ la moitié de
+# ce qui restait à delta.
+#
+# Banc du candidat : 138 458 nœuds à la profondeur 7 (× 1,21 contre `main`).
+#
+# DÉPOSÉE ICI LE 23 SEPT. 2026, et c'est le point : ce code n'existait que sur
+# la branche distante `mesure/d5-delta`, qui n'est PAS dans `main`. La règle du
+# dépôt est que le code retiré se garde en rustine, jamais par un SHA ni par
+# une branche — une branche se supprime encore plus facilement qu'un commit ne
+# se perd. La branche peut maintenant partir.
+#
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 8c5a32c..eacb1cd 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -1023,12 +1023,11 @@ impl Search {
+ 
+         let mut best = if in_check { -INFINITY } else { alpha };
+         for &(mv, _) in &buffer[..count] {
+-            if self.delta_prunable(board, mv, in_check, stand_pat, alpha) {
+-                // Sauter et non rompre : l'ordre MVV-LVA mêle la valeur de la
+-                // victime, celle de l'agresseur et la promotion, donc une
+-                // capture élagable peut en précéder une qui ne l'est pas.
+-                continue;
+-            }
++            // D5 — CANDIDAT DE RETRAIT, à ne jamais fusionner.
++            // L'appel à `delta_prunable` est SUPPRIMÉ et non neutralisé : la
++            // mesure d'origine (14 sept., +32,5 Elo) avait ajouté la décision
++            // ET son coût — un `captured_piece` par capture de quiescence,
++            // soit sur 90 % des nœuds — donc l'inverse exact retire les deux.
+             if see_prunable(board, mv, in_check) {
+                 continue;
+             }
