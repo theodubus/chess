@@ -79,12 +79,17 @@ fi
 #                 c'est le travail du script de la dire.
 echo "à lire avant de décider quoi faire :"
 
+# TOUS les titres qui correspondent, pas le premier : deux mesures peuvent être
+# en vol à la fois (C22 et B9 l'ont été le 23 sept. 2026), et la première
+# version n'en montrait qu'une — un état calculé qui CACHE une mesure en vol.
 renvoi() {
   local motif="$1" quoi="$2" obligatoire="$3"
-  local titre
-  titre=$(grep -m1 -E "^#{2,4} .*$motif" tools/README.md 2>/dev/null | sed -E 's/^#+ //')
-  if [ -n "$titre" ]; then
-    echo "  tools/README.md § « $titre »${quoi:+ — $quoi}"
+  local titres
+  titres=$(grep -E "^#{2,4} .*$motif" tools/README.md 2>/dev/null | sed -E 's/^#+ //')
+  if [ -n "$titres" ]; then
+    while IFS= read -r titre; do
+      echo "  tools/README.md § « $titre »${quoi:+ — $quoi}"
+    done <<< "$titres"
   elif [ "$obligatoire" = oui ]; then
     echo "  !! tools/README.md n'a plus de section « $motif » — renvoi à corriger"
   fi
@@ -93,7 +98,7 @@ renvoi() {
 renvoi "EN VOL"                    "ce qui tourne en ce moment"                        non
 renvoi "VERDICT"                   "ce qui vient d'être tranché, et la suite"          non
 renvoi "Ce qu.il faut surveiller"  "ce qui vieillit sans que rien ne le signale"       oui
-renvoi "Ce qui reste à faire"      ""                                                  oui
+renvoi "Ce qui reste à faire, par ordre mesuré" ""                                oui
 
 # Le carnet est privé et hors du dépôt (décision de Théo) : son adresse vit
 # dans un fichier local ignoré par git, pour que le pointeur soit mécanique
