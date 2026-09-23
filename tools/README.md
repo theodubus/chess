@@ -794,6 +794,31 @@ changement de recherche au bas d'une pile retient tout ce qui s'empile dessus
 jusqu'à son verdict. **Au verdict : révoquer la révocation.** La rustine
 `c22-nulle-horizon.patch` en garde une copie qui survit à tout.
 
+#### Au verdict, dans l'ordre — y compris ce qui ne se voit qu'après
+
+1. **Étalonnage** de chaque job, avant toute mise en commun.
+2. **Pertes au temps avant l'Elo.** Ces deux jobs sont partis avant que
+   `match.yml` recopie son recensement dans le journal : lire la fin du
+   journal (5000 lignes au plus) et dire quelle part du match est couverte.
+3. **Les avertissements, par moteur** : le candidat ne doit presque plus
+   produire de « PV continues after threefold repetition / fifty-move rule »,
+   la référence doit en garder. C'est la vérification *en partie réelle* que
+   le correctif fait ce qu'il dit.
+4. **Mise en commun** par `mettre-en-commun.sh`, puis le critère écrit
+   plus haut — sans le déplacer après avoir vu le chiffre.
+5. **Le facteur de durée** : ce sont les **premiers matchs où les DEUX moteurs
+   portent C21**. Les s/partie (« Total Time » ÷ parties) diront si le facteur
+   atteint le ~0,95 extrapolé, et si la notice de `match.yml` doit changer.
+6. **Si le critère autorise la fusion** : révoquer la révocation, banc à
+   113 214, `tools/verify.sh` en entier, PR, fusion en `merge`.
+7. **Après la fusion, un balayage de mutation** (`workflow_dispatch`) : C22
+   ajoute du code — `is_rule_draw`, `is_checkmate` — et trois tests qui
+   peuvent tuer des survivants existants. Sans ce balayage, le cliquet
+   hebdomadaire découvrirait la hausse seul, un mardi, sans contexte. Relever
+   le plafond demande une raison écrite ; le baisser, rien.
+8. **Les chiffres de neutralité de B9** (114 028 / 635 210) sont relatifs au
+   banc d'avant : les refaire avant son verdict de capacité.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 | chantier | plis | état — et la PROCHAINE action |
