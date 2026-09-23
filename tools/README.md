@@ -874,6 +874,44 @@ l'ordre des matchs ne change rien, que le refus se déclenche sur des matchs
 contradictoires, et que la dernière ligne d'un journal est bien celle qui est
 lue. Le test tourne dans `tools/verify.sh`.
 
+### La gestion du temps : NON, ce n'est pas clos — état au 23 sept. 2026
+
+Question de Théo. Elle a mérité d'être posée parce que **l'état de ce chantier
+n'était écrit nulle part d'un seul tenant** : il était éclaté entre le
+découpage de B2, la fiche C21 et la note de saturation. Le voici entier.
+
+| ce que B2 nommait | état | ce qui le tient |
+|---|---|---|
+| défaut de `movestogo` (devenu **C21**) | **écrit, en mesure** | +0,54 à 0,70 pli ; SPRT expiré à +14,59 ± 8,31, relancé en longueur fixe |
+| « s'arrêter tôt sur un coup stable » | **RÉFUTÉ, clos** | et il *empire* au régime cible : 13,9 % de coups changés à `8+0,08`, **18,4 % à `30+0,3`**. Le temps épargné n'est de surcroît pas dépensable — avec `restant/d`, une seconde économisée ne revient qu'au `d`-ième |
+| « prolonger sur un score qui s'effondre » | **OUVERT — écran passé, jamais écrit** | survit sur **2,7 à 3,0 % des coups** |
+| **allocation inégale** | **PAS COMMENCÉ** | le seul chantier restant qui puisse dépasser le plafond |
+
+#### Pourquoi l'allocation inégale est le vrai reste
+
+Un diviseur est une **famille à un paramètre**, et le balayage a atteint sa
+limite : le plafond d'une allocation *plate* vaut `(pendule + coups × inc) /
+coups` = **280 ms**, et le diviseur 12 en alloue 285 quand le 10 en alloue 283.
+**Aucune valeur de diviseur ne fera mieux.** Dépenser davantage sur les
+positions dures — score qui bouge, coup unique, sortie de livre — est le seul
+chemin au-delà, et c'est une autre mécanique, pas un autre réglage.
+
+Le **résidu de l'échéance douce** appartient à la même famille : le moteur ne
+dépense même pas ce qu'il s'alloue, parce qu'il s'interdit d'entamer une
+itération à mi-budget. C'est ce résidu qui explique l'écart entre 31 % de
+pendule restante prédits et 47 % mesurés.
+
+#### Ce qu'on peut dire de « prolonger sur un effondrement », et ce qu'on ne peut pas
+
+**2,7 à 3,0 % des coups**, c'est un *majorant* de ce que le mécanisme peut
+rapporter — et ce dépôt a une mesure qui rappelle que ça ne dit rien du
+**signe** : l'extension d'échec touchait 1,39 % de l'arbre et a rendu
+**−5,01 ± 8,11**. Un mécanisme qui coûte sans améliorer la décision dépense en
+pure perte.
+
+**Donc : petit levier, signe inconnu.** Il ne passe pas devant l'allocation
+inégale sur la seule foi de sa part.
+
 ### Ce qu'il faut surveiller — et que rien ne signalera tout seul
 
 Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
