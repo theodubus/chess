@@ -1,0 +1,100 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index a227cf8..6673002 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -31,6 +31,11 @@ use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
+ 
+ use crate::eval::{self, DRAW, INFINITY, MATE, MATE_THRESHOLD};
+ use crate::position::{Position, repetitions};
++pub static SONDE_ENTREES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++pub static SONDE_REPET: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++pub static SONDE_CINQUANTE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++pub static SONDE_INTERIEUR: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++
+ use crate::see;
+ use crate::tt::{Bound, TranspositionTable, pack_move};
+ 
+@@ -733,6 +738,12 @@ impl Search {
+         self.pv.clear(ply);
+ 
+         if depth <= 0 {
++            if ply > 0 {
++                use std::sync::atomic::Ordering::Relaxed;
++                SONDE_ENTREES.fetch_add(1, Relaxed);
++                if self.is_repetition(board) { SONDE_REPET.fetch_add(1, Relaxed); }
++                else if board.halfmove_clock() >= 100 { SONDE_CINQUANTE.fetch_add(1, Relaxed); }
++            }
+             return self.quiescence(board, alpha, beta, ply, scratch);
+         }
+ 
+@@ -762,6 +773,7 @@ impl Search {
+                 || board.halfmove_clock() >= 100
+                 || eval::is_insufficient_material(board))
+         {
++            SONDE_INTERIEUR.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+             return DRAW;
+         }
+ 
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index 81744d5..e2b00a8 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -317,6 +317,13 @@ impl Engine {
+                 ));
+             });
+ 
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                use crate::search::{SONDE_ENTREES, SONDE_REPET, SONDE_CINQUANTE, SONDE_INTERIEUR};
++                send(&format!("info string sonde entrees {} repet {} cinquante {} interieur {}",
++                    SONDE_ENTREES.load(Relaxed), SONDE_REPET.load(Relaxed),
++                    SONDE_CINQUANTE.load(Relaxed), SONDE_INTERIEUR.load(Relaxed)));
++            }
+             match best {
+                 Some(mv) => send(&format!(
+                     "bestmove {}",
+diff --git a/tools/sonde-c22/rejouer.py b/tools/sonde-c22/rejouer.py
+new file mode 100644
+index 0000000..62c6da3
+--- /dev/null
++++ b/tools/sonde-c22/rejouer.py
+@@ -0,0 +1,39 @@
++#!/usr/bin/env python3
++"""Lecteur de la sonde C22 — rejoue le RÉGIME RÉEL d'un match dans le binaire instrumenté.
++
++  python3 tools/sonde-c22/rejouer.py <journal fastchess, -log engine=true> <binaire sondé> <indices des flux>
++
++Chaque flux (fil, moteur) du journal est la suite exacte des commandes qu'un
++moteur a reçues pendant le match — mêmes positions, mêmes pendules, table
++conservée d'un coup à l'autre. Le rejouer mesure ce que la recherche rencontre
++EN PARTIE, pas sur des positions visitées à froid (piège du moteur froid,
++CLAUDE.md). Le binaire sondé imprime ses compteurs cumulés avant chaque
++bestmove ; la dernière ligne vaut pour tout le flux.
++"""
++import re, sys, subprocess
++from collections import defaultdict
++ENG = re.compile(r'^\[Engine\] \[[^\]]+\] <\s*(\d+)>\s+(\S+) <--- (.*)$')
++flux = defaultdict(list)
++for l in open(sys.argv[1], encoding='utf-8', errors='replace'):
++    m = ENG.match(l.rstrip('\n'))
++    if m: flux[(m.group(1), m.group(2))].append(m.group(3))
++cles = sorted(flux)
++for k in [cles[int(i)] for i in sys.argv[3].split(',')]:
++    p = subprocess.Popen([sys.argv[2]], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
++    derniere = None
++    for cmd in flux[k]:
++        if cmd == 'quit': break
++        p.stdin.write(cmd + '\n'); p.stdin.flush()
++        if cmd.startswith('go'):
++            while True:
++                out = p.stdout.readline()
++                if not out: break
++                if out.startswith('info string sonde'): derniere = out.split()
++                if out.startswith('bestmove'): break
++        elif cmd in ('uci', 'isready'):
++            attendu = 'uciok' if cmd == 'uci' else 'readyok'
++            while True:
++                out = p.stdout.readline()
++                if not out or out.strip() == attendu: break
++    p.stdin.write('quit\n'); p.stdin.flush(); p.wait(timeout=30)
++    print('/'.join(k), ' '.join(derniere[2:]) if derniere else '—', flush=True)
