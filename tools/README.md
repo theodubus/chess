@@ -703,13 +703,14 @@ dernière relève est faite.
 | C22 — la nulle à l'horizon | 35857125439, 35857128461 | `05a9dc4` → `e1971a8` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 17 h 43, 2 × 2 880 parties | **−10,44 ± 6,34 : régression, non fusionné** — à remesurer sur C23 |
 | B9 — capacité de la table atomique | 35861835486, 35861838168 | `bd896ba` → `1b5afa8` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 18 h 29, 2 860 + 2 880 parties | **−1,27 ± 6,34 : pas d'effet décelable, FUSIONNÉ** (`481f8af`) |
 | ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | **RELEVÉ** — finis entiers entre 18 h 37 et 18 h 40 | **+67,63 ± 9,19 contre notre jumeau : l'activer rapporte** — 2,7 × l'attendu, l'écart localisé par sonde (sa section) |
-| C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | plafond à ~19 h 45 — ~2 880 parties attendues | fusion sauf régression — correctif de règle |
+| C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 19 h 45, 2 × 2 880 parties | **+2,65 ± 6,40 : pas d'effet décelable, FUSIONNÉ** au titre de la règle (`25fd727`) |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
-| balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | ~19 h 45 — le précédent a pris une heure | `tt.rs` est réécrit entièrement : son plafond se remesure, à la baisse sans rien demander, à la hausse avec une raison écrite |
+| balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 19 h 44 | `tt.rs` **8** contre 2, tous équivalents : deux décalages nuls retirés comme code mort, plafond inscrit à 8, le chiffre mesuré (PR #56). `search.rs` **43** contre 45 : les trois survivants de `ponder_move` tués par la PR #50, 47 expirés comme au balayage précédent — plafond resserré à 43. Les autres au plafond. Issue #57 fermée |
 
-Les candidats de C22, B9 et C23 sont chacun **committés puis révoqués
-aussitôt** (`8e08920`, `7552320`, `1ab033f`) : `main` ne contient aucun des
-trois, et leurs SHA restent mesurables. **Fusionner, c'est révoquer la
+Les candidats de C22, B9 et C23 ont chacun été **committés puis révoqués
+aussitôt** (`8e08920`, `7552320`, `1ab033f`), et leurs SHA restent
+mesurables. **B9 et C23 sont depuis entrés dans `main`** par révocation de
+leur révocation ; C22 n'y est pas. **Fusionner, c'est révoquer la
 révocation sur `main` à jour** — jamais repartir de la rustine, qui n'est que
 la copie de secours.
 
@@ -746,11 +747,11 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 
 | relève | si le critère autorise la fusion | ce qui bouge avec |
 |---|---|---|
-| mutation — **faite** | — | plafonds inchangés ; le balayage suivant, après C22, dira si `search.rs` redescend à 43 |
+| mutation — **faite** | — | plafonds inchangés ; <s>le balayage suivant, après C22, dira si `search.rs` redescend à 43</s> — celui d'après B9 l'a dit, **sans C22** : 43, plafond resserré |
 | C22 — **relevé** | **non fusionné** : le critère de régression est atteint | rien ne bouge — banc, table de l'attic et rustines C23 restent tels quels. La suite est « C22 rejeté », ci-dessous |
 | B9 — **fusionné** | `git revert 7552320`, fait (`481f8af`) | référence du banc → **114 026** ; rustines B9 de l'attic → « non », leur code est entré ; chiffres de neutralité inchangés, la base n'ayant pas bougé ; **balayage de mutation de `tt.rs` lancé après la fusion** |
 | ponder — **relevé** | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la conversion plis → Elo de `CLAUDE.md`, qui a désormais deux points mesurés |
-| C23 (~19 h 50) | `git revert 1ab033f` sur `main` à jour — **sans conflit**, C22 n'ayant pas fusionné | banc inchangé à la profondeur 7 ; l'invariant de la fenêtre revient dans `CLAUDE.md` ; attic ; balayage de mutation. **Puis, s'il fusionne : C22 porté par-dessus et remesuré** |
+| C23 — **fusionné** | `git revert 1ab033f` sur `main` à jour, fait (`25fd727`) — **sans conflit de code**, seule la table de l'attic conflictait | banc inchangé aux profondeurs 5 et 7 ; l'invariant de la fenêtre revenu dans `CLAUDE.md` ; trois lignes de l'attic recalculées au vrai `git apply --check` ; balayage de mutation relancé. **C22 porté par-dessus et remesuré** — section « C22 sur C23 » |
 
 **Les branches qui ne fusionnent pas ont aussi leur suite, écrite d'avance :**
 
@@ -990,7 +991,37 @@ l'idée de C22.
    table de l'attic ; le correctif, lui, se porte par `git apply -C1`, vérifié
    avec les tests des deux.
 
-### C23 — EN VOL : la fenêtre de répétition traversait le coup nul
+### C23 — VERDICT, 23 sept. 2026 : +2,65 ± 6,40 Elo à `8+0,08` — pas d'effet décelable, FUSIONNÉ au titre de la règle
+
+#### Le verdict — rendu à 19 h 55, sur le critère écrit avant
+
+| | job 35870416179 | job 35870420031 | en commun |
+|---|---|---|---|
+| étalonnage | 2 291 546 n/s, profondeur 11 | 2 230 118 n/s, profondeur 11 | runners à 3 % d'écart |
+| graine | `35870416179` | `35870420031` | distinctes |
+| parties comptées | 2 880 | 2 880 | **5 760** |
+| Elo | +1,33 ± 8,93 | +3,98 ± 9,17 | **+2,65 ± 6,40** |
+| Ptnml(0-2) | [105, 285, 651, 292, 107] | [113, 277, 634, 296, 120] | homogènes, z = −0,41 |
+
+**Intervalle [−3,8 ; +9,1] : zéro dedans, donc « fusionner au titre de la
+règle »**, comme le critère le disait. Fusionné par révocation de la
+révocation (`25fd727`), sans conflit de code. Les deux jobs, coupés par le
+plafond à 19 h 45, comptent **zéro anomalie sur la totalité de leurs
+journaux**.
+
+**Les avertissements de l'arbitre ne se séparent pas, et c'est
+informatif** : « PV continues after threefold repetition » 101 au candidat
+contre 110 à la référence, « … after fifty-move rule » 42 contre 57.
+<span>Inférence, confiance moyenne : une fausse nulle *intérieure* ne
+produit pas cet avertissement — elle écourte la variante au lieu de la
+prolonger, et un coup nul n'entre jamais dans une variante —, donc ces
+avertissements viennent d'ailleurs : des nulles **vraies** que la recherche
+ne voit pas à l'horizon.</span> C'est l'objet de C22, pas de C23, et c'est ce que le match de C22
+porté sur C23 doit faire reculer.
+
+**Banc** : 31 637 et 114 026 aux profondeurs 5 et 7, inchangés ; 642 441 à
+la profondeur 10, 2 043 590 à la profondeur 12. **Puissance** : ± 6,4 Elo,
+une régression de 1 ou 2 Elo passerait inaperçue, et c'était écrit avant.
 
 #### Ce que disait la ligne du tableau, et ce que la mesure a trouvé
 
@@ -1358,7 +1389,7 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 | B6 — Lazy SMP | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie). **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
-| **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **EN MESURE** : mesuré avant d'écrire, 87,8 % des répétitions de l'arbre étaient fausses, et 92,1 % de celles que C22 ajoute à l'horizon. Candidat `3236f12`, révoqué aussitôt ; critère de non-régression écrit d'avance — voir sa section. Ensuite, et seul : interdire deux coups nuls consécutifs |
+| **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
 | B7 / C13 | — | inchangés, bloqués sur leurs déclencheurs |
 
 > **B8 (réglage des constantes de recherche) : son déclencheur écrit est
