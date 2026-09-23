@@ -686,15 +686,128 @@ n'a fait qu'un demi-pas. <span>Inférence, confiance moyenne : (0,75 + f)/2 =
 d'un camp ne dépend pas de l'autre, alors que la LONGUEUR de la partie est
 commune.</span>
 
+### C22 — EN VOL : la recherche ne voyait pas 40 % des nulles, celles de l’horizon
+
+#### Comment c'est sorti : des avertissements que j'avais classés bénins
+
+Les journaux des deux matchs de C21 portaient **~200 avertissements** de
+l'arbitre, `PV continues after threefold repetition` et `… after fifty-move
+rule`, émis **autant par le candidat que par la référence** — donc antérieurs à
+C21. Je les avais recensés, puis écartés comme « avertissements de variante,
+bénins », sans en lire un seul. Question de Théo : *« tu as bien analysé les
+sorties de match ? »* — non, pas celles-là.
+
+**Un avertissement d'arbitre est une mesure, pas du bruit.** Depuis ce jour,
+le résumé de `match.yml` les recense par nature, sur le journal entier — **et
+le recopie à la fin du journal du job**, parce que l'API de GitHub ne sert pas
+le résumé : sans cette copie, une relève faite depuis une session ne l'aurait
+jamais lu. Les deux jobs de C22 ont été lancés avant ce correctif ; leur
+relève lira donc les pertes au temps à l'ancienne, sur la fin du journal.
+
+#### Ce qu'ils disaient
+
+Reproduit sur la position exacte d'un avertissement, rejouée dans le moteur :
+
+```
+info depth 1 score cp -1 ... pv f8e8 e6f6     ← f8e8 termine la partie par triple répétition
+info depth 2 score cp 0  ... pv f8e8
+```
+
+Dans `negamax`, le test de nulle — répétition, cinquante coups, matériel
+insuffisant — venait **après** l'aiguillage vers la quiescence. Il ne voyait
+donc que les nœuds intérieurs : une position nulle atteinte à l'**horizon**
+était évaluée comme si la partie continuait. À la profondeur 1, l'horizon est
+à un coup de la racine ; à toute profondeur, il est au bout de chaque branche.
+
+#### Mesuré avant d'écrire le correctif — dans le régime réel
+
+`tools/attic/c22-sonde-nulle-horizon.patch`, sonde et lecteur ensemble. Le
+lecteur rejoue dans un binaire instrumenté **la suite exacte des commandes
+qu'un moteur a reçues pendant un match** — mêmes positions, mêmes pendules,
+table conservée d'un coup à l'autre. Ni banc, ni positions visitées à froid.
+
+| sur ~2 600 recherches | |
+|---|---|
+| entrées en quiescence depuis `negamax` | 423,0 M |
+| répétitions manquées à l'horizon | 2,53 M — **0,60 %** |
+| cinquante coups manqués à l'horizon | 0,33 M — **0,08 %** |
+| nulles vues à l'intérieur | 4,22 M |
+
+**40 % de toutes les positions nulles rencontrées** passaient inaperçues.
+*Ce que ce chiffre ne donne pas : l'Elo* — la part de l'arbre touchée majore,
+elle ne prédit ni la taille ni le signe (l'extension d'échec touchait 1,39 %
+et valait −5,0).
+
+#### Le correctif, et une faute de règle trouvée dans la même ligne
+
+- **Le test de nulle passe avant l'aiguillage.** La quiescence elle-même n'a
+  pas à le refaire : ses coups sont des captures et des promotions, qui
+  remettent la pendule des cinquante coups à zéro et interdisent toute
+  répétition en aval. Seul son nœud d'entrée, atteint par un coup tranquille,
+  pouvait être une nulle.
+- **La règle des cinquante coups cède devant le mat.** Le test rendait nul un
+  mat donné au centième demi-coup. Le mat termine la partie à l'instant où il
+  est donné ; la règle des cinquante coups demande qu'on la réclame.
+- **Trois tests, et chacun ÉCHOUE sur l'ancien code** à l'assertion qui vise
+  le défaut — vérifié en les greffant sur l'arbre d'avant. Chacun porte un
+  **témoin** : la même position hors de la règle vaut ~900, jamais zéro.
+- **Banc** : 31 637 nœuds à la profondeur 5, inchangé ; **114 028 → 113 214**
+  à la profondeur 7.
+
+#### Le protocole — écrit AVANT de lancer, et pourquoi il est celui-là
+
+C'est un **correctif de règle**, pas un gain espéré : 0,68 % des entrées en
+quiescence, un effet vraisemblablement sous le seuil de résolution de
+plusieurs jobs. Exiger qu'il **prouve un gain** reviendrait à ne jamais
+corriger une règle ; ne rien mesurer reviendrait à fusionner un changement
+d'arbre sur une impression. **Le critère est donc l'absence de régression
+significative** :
+
+| runs | graine | parties | cadence |
+|---|---|---|---|
+| [35857125439](https://github.com/theodubus/chess/actions/runs/35857125439) | tirée par le run | 3000 | `8+0,08` |
+| [35857128461](https://github.com/theodubus/chess/actions/runs/35857128461) | tirée par le run | 3000 | `8+0,08` |
+
+Candidat `05a9dc4`, référence `e1971a8` (`main`). Mis en commun par
+`mettre-en-commun.sh`.
+
+- **borne haute de l'intervalle < 0** → régression significative : ne pas
+  fusionner, chercher le coût — le test de répétition s'exécute désormais à
+  chaque entrée en quiescence ;
+- **borne basse > 0** → gain démontré, fusionner ;
+- **entre les deux** → pas d'effet décelable : **fusionner au titre de la
+  règle**, et l'écrire ainsi.
+
+**La puissance, dite d'avance** : ± 6,3 Elo sur 6 000 parties. Une vraie
+régression de −8 Elo serait vue ~70 fois sur 100, une de −11,5 ~94 fois sur
+100 ; une régression de 1 ou 2 Elo — l'ordre du coût d'un test de répétition —
+ne le serait pas. C'est accepté pour un correctif de règle, et c'est écrit ici
+pour ne pas être découvert après.
+
+#### Mesurer sans bloquer la branche
+
+`05a9dc4` porte le correctif ; **le commit suivant le révoque aussitôt**. Le
+SHA reste mesurable par `match.yml` — l'historique complet est récupéré, et la
+fusion se fait en `merge`, jamais en `squash` — pendant que la branche reste
+fusionnable. La leçon est celle des dix-sept commits retenus par C21 : un
+changement de recherche au bas d'une pile retient tout ce qui s'empile dessus
+jusqu'à son verdict. **Au verdict : révoquer la révocation.** La rustine
+`c22-nulle-horizon.patch` en garde une copie qui survit à tout.
+
 ### Ce qui reste à faire, par ordre mesuré
 
-| chantier | plis | état |
+| chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **ponder** | **0,90** — `p = 0,659` mesuré le 23 sept., × 1,36 | **jamais ouvert, protocole écrit**. Le plus gros levier chiffré hors Lazy SMP — **mais il ne vaut que si on déploie avec ponder, ce qui est un arbitrage de Théo, pas une mesure**, et son verdict coûte 3 × plus de jobs (`-concurrency 1`) |
-| **C21 — dépenser la pendule** | 0,54 à 0,70 | **MESURÉ, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties** — voir la section du verdict |
+| **C22 — la nulle vue à l'horizon** | — correctif de règle, pas un gain espéré | **EN MESURE** : deux jobs de 3000 parties à `8+0,08` sur le candidat `05a9dc4`. Critère **écrit avant de lancer** : fusion sauf régression significative. Voir sa section |
+| **ponder** | **0,90** — `p = 0,659` contre notre jumeau à `8+0,08`, × 1,36 ; un **majorant** contre un autre adversaire | **protocole écrit, rien d'autre**. Prochaine action : **écrire** — les dix lignes de la liste de l'étape 2, avec leurs tests. Puis un chemin de match **cutechess**, la reconstruction des paires depuis `Finished game N`, et `-concurrency 1`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
+| **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
+| **allocation inégale** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
-| **B9 — table à entrées atomiques** | — | prérequis dur de B6, **non entamé**. Réserve toujours non mesurée : sa fiche dit le coût « plat », ce qui parle du **rétrofit** et non de la vitesse. Voir l'encadré ci-dessous : <s>se mesure par nœuds identiques + `timing.sh`</s> — **faux, et mesuré le 22 sept. au soir** |
-| B6 — Lazy SMP | 1,0 à 1,8 | **seul chiffre encore hérité** du tableau. Le mesurer exige B9 |
+| **B9 — table à entrées atomiques** | — | **écrite et mesurée à l'attic** : neutre à capacité forcée, −4,3 % de temps. **Prochaine action : son verdict de CAPACITÉ** (la table double à mémoire constante), prêt à lancer. Ses chiffres de neutralité sont relatifs au banc d'avant C22 : si C22 fusionne, les refaire |
+| B6 — Lazy SMP | 1,0 à 1,8, **seul chiffre encore hérité** | exige B9. **Et sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
+| pendule de l'adversaire | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
+| « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
+| fenêtre de répétition à travers le coup nul | — | **observé le 23 sept., non mesuré** : `null_move` de cozy-chess incrémente la pendule des cinquante coups, donc la fenêtre de `repetitions` remonte au-delà du coup nul et peut y trouver une fausse répétition. Stockfish borne la fenêtre au dernier coup nul. Mesurer la fréquence avant d'écrire |
 | B7 / C13 | — | inchangés, bloqués sur leurs déclencheurs |
 
 > **B8 (réglage des constantes de recherche) : son déclencheur écrit est
@@ -910,7 +1023,7 @@ découpage de B2, la fiche C21 et la note de saturation. Le voici entier.
 | « prolonger sur un score qui s'effondre » | **OUVERT — écran passé, jamais écrit** | survit sur **2,7 à 3,0 % des coups** |
 | **allocation inégale** | **PAS COMMENCÉ** | le seul chantier restant qui puisse dépasser le plafond — dépenser plus sur les positions **dures** (score instable, coup unique, sortie de livre) |
 | *(examiné, écarté)* pendule de l'adversaire | **écran PASSÉ le 23 sept., petit levier de signe inconnu** | déjà reçue et jetée par le moteur. Écart signé entre les deux pendules : **médiane −12 ms** une fois l'artefact de comptage de coups retiré — donc un verdict symétrique rendrait zéro par construction. L'écart absolu dépasse 20 % sur **1,6 %** des coups : l'ordre de grandeur de l'extension d'échec, qui valait −5,0 |
-| *(hors B2)* **ponder** | **jamais ouvert — protocole écrit, étape 0 FAITE** | légal et prévu par UCI. `p = 0,659` mesuré contre notre jumeau à `8+0,08`, soit **0,90 pli** — plus que C21. Reste : le proxy à cadence asymétrique, puis cutechess à `-concurrency 1`. Voir la section qui suit |
+| *(hors B2)* **ponder** | **jamais ouvert — protocole écrit, `p` mesuré** | légal et prévu par UCI. `p = 0,659` contre notre jumeau à `8+0,08`, soit **0,90 pli** — plus que C21. <s>Reste : le proxy à cadence asymétrique</s> — il ne pouvait pas être nul, donc ce n'était pas une porte. Reste : **écrire** (liste de dix lignes, vérifiée contre le source de Stockfish), puis mesurer sous cutechess à `-concurrency 1`. Voir la section qui suit |
 
 #### Pourquoi l'allocation inégale est le vrai reste
 
@@ -969,7 +1082,7 @@ un verdict**. `sprt.sh` et `match.yml` passent tous deux `-each tc=`
 aujourd'hui : rendre une cadence asymétrique demande de **déplacer** `tc=`
 dans chaque bloc `-engine`, pas d'ajouter une option à côté.
 
-#### 1. Le ponder — ce qu'il vaut, et les trois étapes pour le savoir
+#### 1. Le ponder — ce qu'il vaut, comment l'écrire, comment le mesurer
 
 **C'est prévu par le protocole** : UCI a `go ponder` et `ponderhit` pour
 exactement ça. Rien à inventer côté norme.
@@ -1038,53 +1151,140 @@ chercher plus profond devrait mieux prédire — mais <span>ça n'est pas mesur�
 ici, et je ne l'inscris pas comme un fait</span>. **Étiqueter `p` avec son
 adversaire et sa cadence, jamais le citer nu.**
 
-##### Étape 1 — le proxy asymétrique : un majorant, pour le prix d'un job ordinaire
+##### Un seul coup prédit, ou plusieurs quand plusieurs réponses se valent ? — mesuré le 23 sept. 2026
 
-Donner au candidat `(1 + p) ×` le temps de la référence, par un `tc=` dans
-chaque bloc `-engine`. **Zéro ligne de ponder, zéro changement de contention**,
-un job ordinaire à `-concurrency 3`. Avec `p = 0,659`, c'est
-`tc=13.27+0.1327` contre `tc=8+0.08` — les deux termes multipliés par le même
-facteur, donc la forme de l'allocation est identique des deux côtés.
+Question de Théo. **Un seul — la mesure le tranche, et l'arithmétique dit
+pourquoi.**
 
-**Et sa vraie utilité n'est pas le majorant, c'est le CHIFFRE.** Le dépôt
-interdit de convertir des plis en Elo — « combien vaut un pli n'est mesuré
-nulle part ici ». Le proxy, lui, rend un **Elo mesuré**, donc c'est lui qui
-dimensionnera le match du vrai ponder par la relation de budget, au lieu de
-multiplier une constante héritée. *Un job ordinaire pour savoir combien de
-jobs extraordinaires acheter.*
+*L'arithmétique.* Le gain d'un surcroît de temps est **logarithmique**.
+Partager le temps adverse entre deux candidats, à parts `x` et `1 − x`, rend
+`1,36 × (p₁ log₂(1+x) + p₂ log₂(2−x))` pli, où `p₁` et `p₂` sont les chances
+que l'adversaire joue chacun. L'optimum vaut `x* = (2p₁ − p₂) / (p₁ + p₂)`,
+qui atteint 1 — **tout sur le premier** — dès que **`p₁ ≥ 2 p₂`**. Autrement
+dit : *partager ne paie que si le deuxième candidat est au moins moitié aussi
+probable que le premier.* Même au mieux, partager à égalité entre deux coups
+qui couvriraient **toutes** les réponses rendrait `log₂(1,5) × 1,36 = 0,80`
+pli — moins que les 0,90 du coup unique mesuré.
 
-- **Ce que ça prouve** : un majorant **en plis**, puisque `log₂(1+p) > p`.
-- **Ce que ça ne prouve pas** : que son Elo majore celui du ponder. La
-  profondeur supplémentaire n'est pas *distribuée* pareil — le ponder la
-  concentre sur les coups dont la réponse était prévisible, le proxy l'étale.
-  <span>Inférence, confiance moyenne : un proxy nul ferme la question, un proxy
-  positif ne la tranche pas.</span> C'est une asymétrie utile et il faut la
-  nommer avant de lancer, pas après avoir vu le résultat.
-- **Le piège d'invocation ci-dessus s'applique en plein** : `tc=` dans `-each`
-  et le proxy mesure un jumeau contre lui-même.
+*La mesure.* Même journal, 4 995 recherches. Le candidat naturel au deuxième
+rang est le deuxième coup de la variante à l'itération d'avant, quand il a
+changé depuis :
 
-##### Étape 2 — seulement si le proxy tranche : écrire, puis mesurer à `-concurrency 1`
+| stabilité du coup prédit sur les dernières itérations | part | `p₁` | `p₂` | `p₂ / p₁` |
+|---|---|---|---|---|
+| vient de changer | 29,4 % | 0,566 | 0,099 | 0,17 |
+| stable 2 à 3 itérations | 40,4 % | 0,709 | 0,036 | 0,05 |
+| stable 4 à 6 | 14,4 % | 0,722 | 0,051 | 0,07 |
+| stable 7 ou plus | 15,8 % | 0,745 | 0,046 | 0,06 |
+| **4 candidats distincts ou plus** pendant la recherche | 17,0 % | 0,595 | 0,112 | **0,19** |
 
-Côté moteur, les deux moitiés viennent **ensemble** : annoncer
-`option name Ponder type check default false`, traiter `go ponder` comme une
-recherche **sans échéance**, et traiter `ponderhit` en posant les échéances à
-cet instant sans jeter l'arbre. Sur `stop`, rendre le coup.
+**Le seuil est 0,5, et aucune classe ne dépasse 0,19** — pas même la plus
+instable. Les échecs de prédiction se dispersent sur beaucoup de coups au lieu
+de se concentrer sur un deuxième. <span>Limite : le candidat au deuxième rang
+est ici celui de l'itération précédente, pas le vrai deuxième meilleur coup,
+qu'il faudrait un MultiPV pour connaître. Mais pour que le partage paie dans
+la classe la plus instable, ce deuxième coup devrait capter 74 % de tous les
+échecs — confiance moyenne-haute que non.</span>
 
-**Pourquoi `-concurrency 1` est obligatoire et pas prudent.** La mesure est
-*candidat qui pondère* contre *référence qui ne pondère pas* — les deux qui
-pondèrent ne mesurent rien. Or le camp qui pense sur le temps adverse brûle du
-CPU pendant que l'autre cherche : à `-concurrency 3` on passe à six moteurs
-actifs pour quatre cœurs, et **le vol tombe sur l'adversaire du candidat**,
-c'est-à-dire dans le sens de l'hypothèse. *Un biais orienté vers sa propre
-hypothèse est le pire des biais.* C'est la physique exacte de la règle « jamais
-deux matchs sur une même machine », appliquée à l'intérieur d'un match.
+*Et le protocole n'offre qu'un coup.* UCI prévoit `bestmove X ponder Y` puis
+`go ponder` sur **une** position. Chercher ailleurs que ce qu'on nous donne
+serait une affaire interne au moteur, non standard. La variante « chercher la
+position d'AVANT la réponse adverse », qui répartit l'effort par l'alpha-bêta
+lui-même, perd sur chaque succès la profondeur que coûtent les réfutations des
+autres réponses ; <span>inférence, confiance moyenne : avec une prédiction
+aussi concentrée, elle est dominée</span>.
 
-Le coût est connu : à `-concurrency 1`, un job de 350 min rend **~1 250 parties
-au lieu de ~3 750**. Quel que soit l'Elo que le proxy rendra, il faudra donc
-**plusieurs jobs à longueur fixe mis en commun**, jamais un SPRT — la règle de
-`mettre-en-commun.sh` s'applique telle quelle, graines distinctes comprises.
-Pour fixer les idées sans convertir de plis : un effet de 20 Elo demanderait
-~2 960 parties, soit **trois jobs**.
+*Ce que la table dit en plus* : la prédiction s'améliore avec sa stabilité
+(0,566 → 0,745), et la stabilité croît avec la profondeur. **`p` devrait donc
+monter à cadence longue** — <span>inférence : non mesuré à `30+0,3`</span>.
+
+##### Étape 1 — le proxy asymétrique : ce n'est PLUS une porte
+
+Je l'avais écrit comme la porte d'entrée : *« un proxy nul ferme la
+question »*. **Il ne peut pas être nul.** Donner `1,66 ×` le temps à un camp
+gagne toujours — C21 a rendu **+19,13** pour un budget par coup `× 1,32`. Une
+porte dont on connaît l'issue d'avance n'est pas une porte ; c'est un job
+dépensé pour rien. Il ne resterait au proxy que de *dimensionner* le vrai
+match, et le vrai match se dimensionne aussi bien par ses premiers jobs. **Le
+proxy sort du chemin.** Le piège d'invocation (`-each tc=`) reste écrit plus
+haut, pour le jour où une cadence asymétrique servira à autre chose.
+
+##### Étape 2 — écrire : la liste complète, et les pièges de chaque ligne
+
+Les deux moitiés viennent **ensemble** — voir plus bas pourquoi une moitié
+serait pire que rien. Trois pratiques sont **vérifiées dans le source de
+Stockfish** (`master`, lu le 23 sept. 2026), pas citées de mémoire :
+
+1. **Annoncer** `option name Ponder type check default false`. C'est
+   l'interface qui l'active ; le moteur ne pondère jamais de lui-même.
+2. **`bestmove X ponder Y`**, avec `Y` le deuxième coup de la variante —
+   **converti sur le plateau APRÈS `X`**. Un roque en `Y` rendu sur le mauvais
+   plateau sortirait en notation interne : c'est l'invariant de frontière de
+   `CLAUDE.md`, et `pv_to_uci` le respecte déjà coup par coup.
+3. **Variante d'un seul coup** — 3,42 % des recherches : tirer `Y` de la
+   **table de transposition** à la position d'après `X`, comme Stockfish
+   (`RootMove::extract_ponder_from_tt`, appelé quand `pv.size() == 1`). Sinon,
+   ne pas écrire `ponder` du tout.
+4. **`go ponder`** : chercher **sans échéance**. Et le piège qu'on rate : **une
+   recherche qui FINIT pendant le ponder** — mat trouvé, profondeur maximale —
+   **n'a pas le droit d'écrire `bestmove`**. Elle attend `ponderhit` ou `stop`.
+   Stockfish le fait explicitement (*« we simply wait here »*). Écrire le coup
+   pendant le tour adverse est une faute de protocole que l'arbitre sanctionne.
+5. **`ponderhit`** : l'horloge démarre **maintenant**. Le budget se calcule sur
+   la pendule reçue dans `go ponder` — la nôtre n'a pas bougé pendant que
+   l'adversaire réfléchissait — et la recherche continue **sur le même arbre**.
+   Si le ponder a déjà duré plus que ce budget, s'arrêter à la prochaine
+   itération close.
+6. **`stop` pendant le ponder** (échec de prédiction) : écrire un `bestmove`
+   immédiatement ; l'interface l'ignore. Puis viennent la vraie position et un
+   `go` ordinaire, avec une table déjà chaude.
+7. **Le temps quand `Ponder` est activé** : la norme UCI prévoit que le moteur
+   puisse changer sa gestion du temps quand le ponder est permis. Stockfish
+   ajoute **25 %** à son temps optimal (`optimumTime += optimumTime / 4` dans
+   `timeman.cpp`). **Réglage à mesurer séparément**, jamais à recopier : leur
+   gestion du temps n'est pas la nôtre.
+8. **Les invariants tiennent** : le moteur ne garde toujours aucun état entre
+   deux `position` — le ponder part d'un `position` suivi d'un `go ponder`. La
+   table persiste, comme elle le fait déjà.
+9. **Tests, écrits avec le code** : pas de `bestmove` avant `ponderhit` ou
+   `stop`, même si la recherche finit ; `ponderhit` rend un coup dans le
+   budget ; `stop` rend un coup tout de suite ; le coup de `ponder` est légal
+   sur le plateau d'après, roque compris.
+10. **`tools/crosscheck.sh` après** — `CLAUDE.md` l'exige après toute
+    modification de la couche UCI.
+
+##### Étape 3 — mesurer : le protocole, et ses pièges
+
+- **Le même binaire des deux côtés, `Ponder` activé contre désactivé.** On
+  mesure le ponder, pas le binaire. Mais vérifier d'abord que ce binaire,
+  `Ponder` désactivé, rend **exactement** le banc de `main` : si le code du
+  ponder a touché la recherche, ce n'est plus une mesure du ponder seul.
+- **cutechess-cli, pas fastchess** — fastchess ne sait pas pondérer (lu dans
+  son source, plus haut). Il faut donc un chemin de match qui n'existe pas :
+  `match.yml` ne connaît que fastchess.
+- **`-concurrency 1` est obligatoire, pas prudent.** Le camp qui pense sur le
+  temps adverse brûle du CPU pendant que l'autre cherche ; à `-concurrency 3`
+  on passerait à six moteurs actifs pour quatre cœurs, et **le vol tomberait
+  sur l'adversaire du candidat**, c'est-à-dire dans le sens de l'hypothèse. La
+  règle générale est plus bas : *la concurrence se déduit des cœurs qu'occupe
+  une partie*. Coût : ~1 250 parties par job au lieu de ~3 750.
+- **cutechess n'imprime AUCUN vecteur pentanomial** — vérifié dans son source
+  épinglé : seulement `Score of A vs B: V - D - N`. **`mettre-en-commun.sh` ne
+  peut donc pas lire ses journaux tels quels.** Les paires se reconstruisent
+  depuis les lignes `Finished game N` : avec `-repeat` et `-games 2`, les
+  parties `2k−1` et `2k` jouent la même ouverture des deux côtés. À écrire,
+  et à éprouver sur une vérité terrain comme l'a été `mettre-en-commun.sh`.
+- **Le recensement des pertes au temps** de `match.yml` cherche les chaînes de
+  fastchess. cutechess a les siennes : les relire dans SON source.
+- **Le taux de succès se relit en partie réelle** : cutechess le calcule
+  (`m_ponderHits`) mais ne l'affiche que dans son interface graphique. Le
+  journal `-debug` porte tout le dialogue ; `tools/lire-journal.sh` ne lit que
+  le format de fastchess.
+- **Limite connue, et elle joue pour le candidat** : même sans vol de cœur,
+  deux moteurs actifs à la fois se partagent le cache et la mémoire. Un
+  déploiement où l'adversaire tourne sur une autre machine n'a pas ce coût.
+  <span>Inférence, ordre de grandeur inconnu.</span>
+- **Fixed-length, graines distinctes, mis en commun** — jamais un SPRT.
 
 ##### Ce que l'absence de ponder coûte aujourd'hui : rien — et c'est une cohérence, pas une chance
 
@@ -1101,15 +1301,20 @@ l'option sans traiter `ponderhit` ferait chercher à l'infini et perdre au
 temps. Rien à corriger tant qu'on n'implémente pas ; tout à implémenter d'un
 coup le jour où on le fait.
 
-##### Et le régime de déploiement décide si la question se pose
+##### Le « déploiement » n'était pas une question à poser — corrigé le 23 sept. 2026
 
-Les listes de classement jouent habituellement sans ponder <span>inférence,
-confiance moyenne : non vérifié pour CCRL</span> ; un bot qui affronte des
-humains sur un serveur l'a généralement autorisé. *Un gain qui n'existe que
-dans un régime doit être nommé avec son régime* — la leçon de la cadence,
-appliquée au déploiement. **C'est un arbitrage de Théo, pas une mesure** : si
-on ne déploie jamais avec ponder, les trois étapes ci-dessus ne valent pas
-d'être achetées.
+<s>« C'est un arbitrage de Théo, pas une mesure : si on ne déploie jamais avec
+ponder, les trois étapes ne valent pas d'être achetées. »</s> **Faux cadre,
+relevé par Théo.** Le moteur ne choisit pas de pondérer : **c'est l'interface
+qui l'active ou non** — une liste de classement le laisse éteint, un serveur
+de jeu l'allume. Ce que le moteur décide, c'est seulement de le
+**supporter**. Et le supporter correctement ne change **rien** là où le ponder
+est éteint — le code ne s'exécute pas — et rapporte là où il est allumé.
+C'est exactement le cas que couvre l'arbitrage du 21 sept. 2026 : *« tout ce
+qui peut se résoudre par la mesure et par l'objectif de qualité long terme ne
+nécessite pas d'arbitrage »*. **Le ponder entre dans la file, à son rang de
+plis.** Seul son verdict en Elo appartient à un régime — celui où il est
+allumé — et c'est ainsi qu'il s'étiquettera, comme une cadence.
 
 #### 2. La pendule de l'adversaire — elle est DÉJÀ reçue, et jetée
 
@@ -1207,13 +1412,63 @@ moteurs variés, un adversaire dont la gestion du temps diffère **ressemble
 davantage au régime cible** qu'un jumeau parfait. Le pis-aller serait de
 mesurer contre soi-même et de lire le zéro que le protocole impose.
 
+##### À faire pour la pendule adverse, dans l'ordre — et ce qui n'est PAS à faire
+
+1. **Rien avant l'allocation inégale.** Son levier est plus gros et son régime
+   de mesure est le nôtre ; la pendule adverse est petite et de signe inconnu.
+2. **Le jour venu, le mécanisme (b) seulement** : moduler le budget par le
+   rapport des deux pendules, borné — par exemple multiplier `restant / d` par
+   `(nôtre / sienne)^α`, écrêté. `α` se mesure, il ne se choisit pas. Le flag
+   (a) n'entre pas : sa valeur est dans la queue, contre un humain.
+3. **La mesure, conditionnelle et étiquetée** : contre le parent de `ebe93ad`
+   (`movestogo` 30), dont les pendules divergent réellement de celles de
+   `main`. **Jamais contre soi-même** : l'écart signé y est nul par
+   construction, le verdict serait zéro quelle que soit la vraie valeur.
+4. **Avant de conclure de l'écran d'un autre match**, séparer les deux
+   couleurs — `tools/lire-journal.sh` le fait ; sans cela on mesure l'artefact
+   de comptage de coups (+60 ms « en notre faveur », −6 ms en vrai).
+
 **L'ordre d'achat, lui, a changé — et c'est la mesure qui l'a changé.** Avant
 l'écran, le ponder était écrit « ~0,8 pli, inmesurable » et rangé nulle part ;
-il vaut **0,90 pli**, plus que C21, et il est mesurable en trois étapes dont la
-première est déjà faite. L'allocation inégale sur les positions dures garde
-son rang devant *la pendule adverse*, qui reste petite et de signe inconnu.
-Mais elle ne passe plus devant le ponder sur la foi des plis — seul l'arbitrage
-de déploiement les sépare.
+il vaut **0,90 pli**, plus que C21, et il se mesure — son protocole est
+ci-dessus. L'allocation inégale sur les positions dures garde son rang devant
+*la pendule adverse*. <s>Seul l'arbitrage de déploiement sépare ponder et
+allocation inégale.</s> **Il n'y a pas d'arbitrage** (voir « Le déploiement
+n'était pas une question à poser ») : les plis ordonnent, et le ponder passe
+devant.
+
+### La concurrence d'un match se DÉDUIT des cœurs qu'occupe une partie
+
+Question de Théo, 23 sept. 2026 — *les cas où l'on ne peut plus jouer à la
+concurrence maximale*. La règle « jamais deux matchs sur une même machine »
+en est le cas particulier ; la règle générale est une inégalité, et deux
+chantiers déjà dans la file la franchissent.
+
+> **cœurs occupés par une partie × concurrence ≤ cœurs du runner − 1**
+>
+> Le cœur de réserve est pour l'arbitre et le système : un moteur qui attend
+> un cœur perd du temps de pendule, et le perd de façon asymétrique.
+
+| ce que font les moteurs | cœurs par partie | concurrence sur 4 cœurs |
+|---|---|---|
+| monofil, sans ponder — **tout ce qui a été mesuré jusqu'ici** | 1 (un seul moteur réfléchit à la fois) | **3** |
+| un camp pondère (mesure du ponder) | 2 | **1** |
+| Lazy SMP à `T` fils, sans ponder (B6) | `T` — le plus grand des deux camps | `⌊3 / T⌋` : **1** dès `T = 2` |
+| Lazy SMP à `T` fils ET ponder | `T` + `T` | **impossible** à `T ≥ 2` sur 4 cœurs |
+
+**Le sens du biais n'est pas le même selon le chantier**, et c'est ce qui rend
+la règle dangereuse à oublier : le ponder vole du CPU **à l'adversaire du
+candidat** (biais vers l'hypothèse), Lazy SMP en vole **au candidat
+lui-même**, dont les fils se disputent les cœurs (biais contre). *Dans les
+deux cas le verdict ne vaut rien.*
+
+**Ce qui la rend aujourd'hui inexprimable, et ce qui ne le fait pas.**
+`match.yml` calcule `concurrence = nproc − 1` et ne connaît ni fils ni ponder
+— ce qui est juste tant que les moteurs sont monofils et que fastchess ne sait
+pas pondérer. **Le jour où un match passe `option.Threads` ou `ponder`,
+cette ligne doit dériver la concurrence de l'inégalité ci-dessus, et refuser
+de lancer si elle ne tient pas.** C'est une étape des chantiers B6 et ponder,
+écrite dans leurs listes, pas une précaution à retenir.
 
 ### Ce qu'il faut surveiller — et que rien ne signalera tout seul
 
@@ -1222,8 +1477,8 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 
 | quoi | quand ça devient actionnable | pourquoi aucun test ne le dira |
 |---|---|---|
-| **l'estimation de durée de `match.yml`** | **le jour où C21 fusionne** | le facteur 0,77 mesuré **EST** le gaspillage de pendule : un moteur qui laisse 48 % de son horloge finit ses parties plus vite que la cadence nominale. C21 corrige exactement ça, donc le facteur dérive vers 1 et la notice se met à mentir dans l'autre sens |
-| `mesure/d5-delta` sur le distant | quand Théo veut | le jeton de session **ne peut pas supprimer une référence distante** (vérifié : `the remote end hung up unexpectedly`). Cinq des six branches `mesure/*` ont disparu, celle-là reste |
+| **l'estimation de durée de `match.yml`** | <s>le jour où C21 fusionne</s> **C21 a fusionné le 23 sept.** — reste à relire la durée au **premier match où les DEUX moteurs portent C21** | le facteur **EST** le gaspillage de pendule. Mesuré : 0,75 avec deux moteurs d'avant, **0,85** avec un seul moteur C21, ~0,95 extrapolé pour deux. La notice « les deux matchs historiques ont fait 25 % de plus » deviendra alors fausse. **Le résumé de `match.yml` imprime désormais les s/partie** : la relecture ne demande plus de calcul |
+| <s>`mesure/d5-delta` sur le distant</s> | **FAIT le 23 sept.** — supprimée par Théo ; son code est à l'attic | <s>le jeton de session ne peut pas supprimer une référence distante</s> |
 | **le déclencheur de B8** | maintenant | sa **lettre** est satisfaite (C12 clos, C18 décidé), son **esprit** non (C17, C19, C21 sont entrés depuis). Ça demande une re-spécification, pas une mesure — donc personne ne peut la calculer |
 | `attack_dump.rs` et `see_check.rs` | au prochain dépôt dans `tools/src/bin/` | **autodécouverts par cargo**, non déclarés dans `tools/Cargo.toml`. `outillage_documente.rs` exige qu'ils soient documentés, pas qu'ils soient déclarés |
 | le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
