@@ -926,10 +926,11 @@ passerait inaperçue, et c'est accepté parce que c'est écrit.
 
 | runs | graine | parties | cadence |
 |---|---|---|---|
-| *lancés après ce commit — voir le suivant* | tirée par le run | 3000 × 2 | `8+0,08` |
+| [35870416179](https://github.com/theodubus/chess/actions/runs/35870416179) | tirée par le run | 3000 | `8+0,08` |
+| [35870420031](https://github.com/theodubus/chess/actions/runs/35870420031) | tirée par le run | 3000 | `8+0,08` |
 
 Candidat `3236f12`, référence `0c29d6b` — son parent, `main` au moment du
-lancement.
+lancement. Lancés à 13 h 55 UTC, fin attendue vers 19 h 30.
 
 #### Pourquoi `main` sans C22 — et ce que ça suppose
 
