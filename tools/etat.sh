@@ -65,10 +65,35 @@ if [ -n "$modifies" ]; then
   fi
 fi
 
+# Les renvois sont DÉRIVÉS du fichier, jamais recopiés. La première version
+# nommait « § EN VOL » en dur ; la section a été renommée au verdict de C21 et
+# le pointeur a survécu, parfaitement lisible, en désignant le vide. C'est le
+# piège du renvoi par position, dans le script même qui existe pour qu'aucun
+# état ne vieillisse.
+#
+# Deux classes, et la distinction est le tout du dispositif :
+#   ÉPISODIQUE  — « EN VOL », « VERDICT » n'existent que quand quelque chose
+#                 tourne ou vient d'être tranché. Absentes, elles se taisent :
+#                 un garde-fou qui crie en permanence finit par être ignoré.
+#   STRUCTUREL  — les autres doivent exister. Leur absence est une erreur, et
+#                 c'est le travail du script de la dire.
 echo "à lire avant de décider quoi faire :"
-echo "  tools/README.md § « EN VOL » — ce qui tourne en ce moment, et la marche à suivre au verdict"
-echo "  tools/README.md § « Ce qu'il faut surveiller » — ce qui vieillit sans que rien ne le signale"
-echo "  tools/README.md § « Ce qui reste à faire, par ordre mesuré »"
+
+renvoi() {
+  local motif="$1" quoi="$2" obligatoire="$3"
+  local titre
+  titre=$(grep -m1 -E "^#{2,4} .*$motif" tools/README.md 2>/dev/null | sed -E 's/^#+ //')
+  if [ -n "$titre" ]; then
+    echo "  tools/README.md § « $titre »${quoi:+ — $quoi}"
+  elif [ "$obligatoire" = oui ]; then
+    echo "  !! tools/README.md n'a plus de section « $motif » — renvoi à corriger"
+  fi
+}
+
+renvoi "EN VOL"                    "ce qui tourne en ce moment"                        non
+renvoi "VERDICT"                   "ce qui vient d'être tranché, et la suite"          non
+renvoi "Ce qu.il faut surveiller"  "ce qui vieillit sans que rien ne le signale"       oui
+renvoi "Ce qui reste à faire"      ""                                                  oui
 
 # Le carnet est privé et hors du dépôt (décision de Théo) : son adresse vit
 # dans un fichier local ignoré par git, pour que le pointeur soit mécanique

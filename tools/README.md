@@ -146,7 +146,7 @@ mesuré correctement, qui ne répond pas à la question qu'on lui pose.
 
 **La sonde de profondeur suit bien la vitesse** : 10 à 2,51 et 2,67 M n/s,
 **11** à 3,14 M. Première validation qu'elle mesure ce qu'elle prétend. Traduit dans la
-seule unité qui compte — le projet a mesuré **1,33 ply par doublement de
+seule unité qui compte — le projet a mesuré **1,36 pli par doublement de
 temps** — cela vaut **+0,2 à +0,6 ply** : un verdict rendu en CI siège un
 demi-ply plus profond que la même cadence nominale mesurée ici. À comparer aux
 **4 plies** qui ont inversé le verdict de l'élagage par compte de coups.
@@ -629,47 +629,69 @@ fait 3262 en 350 min, soit 6,44 s par partie. Il faudrait ~436 min. La règle du
 projet le prévoyait : *en dessous de ~17 Elo, passer à des matchs à longueur
 fixe sur plusieurs jobs et les mettre en commun.*
 
-### EN VOL au 23 sept. 2026, 05 h 30 UTC — C21 en longueur fixe, deux jobs
+### C21 — VERDICT, 23 sept. 2026 : +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties
 
-| run | graine | parties |
-|---|---|---|
-| [35822658045](https://github.com/theodubus/chess/actions/runs/35822658045) | `20260923` | 3000 |
-| [35822663218](https://github.com/theodubus/chess/actions/runs/35822663218) | `20260924` | 3000 |
+Le défaut de `movestogo` passe de trente à douze. **Deux matchs à longueur
+fixe, mis en commun par `tools/mettre-en-commun.sh`** — jamais un SPRT, la
+règle du dépôt.
 
-Mêmes binaires, même cadence `8+0,08`. Mis en commun : ~6000 parties, donc
-un intervalle attendu autour de **± 6,1 Elo** — assez pour séparer l'effet de
-la borne haute de 5.
+| run | graine | parties | Elo | Ptnml | étalonnage |
+|---|---|---|---|---|---|
+| [35822658045](https://github.com/theodubus/chess/actions/runs/35822658045) | `20260923` | 3000 | +14,72 ± 9,03 | [109, 261, 666, 322, 142] | 2 624 962 n/s, **profondeur 12** |
+| [35822663218](https://github.com/theodubus/chess/actions/runs/35822663218) | `20260924` | 3000 | +23,55 ± 8,81 | [79, 271, 669, 330, 151] | 2 256 969 n/s, **profondeur 11** |
+| **en commun** | — | **6000** | **+19,13 ± 6,31** | — | — |
 
-**Les deux graines DIFFÈRENT, et c'est une condition de validité, pas un
-détail.** Le moteur est déterministe : mêmes binaires + même graine = **les
-mêmes parties, coup pour coup**. Rejouer avec `20260913` n'aurait rien apporté
-qu'une copie du run expiré, et donner la même graine aux deux jobs aurait
-produit deux copies l'une de l'autre. *Une graine partagée entre deux matchs
-qu'on veut mettre en commun détruit exactement ce qu'on cherchait à gagner.*
+Candidat `ebe93ad`, référence `6d5e7c6`, cadence **`8+0,08`**, livre `book.epd`,
+adjudication et abandon inchangés. **L'intervalle exclut largement la borne
+haute de 5 Elo** : la borne basse est **+12,82**.
 
-**Deux matchs en parallèle sont permis ici** : ils tournent sur des runners
-GitHub distincts, donc sans vol de CPU. La règle n'interdit la concurrence que
-sur une même machine.
+**Homogénéité contrôlée, pas supposée.** Les deux matchs diffèrent de 8,83 Elo,
+**z = −1,37** — le script refuserait de conclure au-delà de 2. Et le sens
+rassure : c'est le runner le plus **rapide** (profondeur 12) qui rend le plus
+**petit** Elo, à l'inverse de ce que la règle de cadence prédirait si l'écart
+venait du point de fonctionnement. *Un écart qui va dans le sens contraire de
+l'explication disponible est plus facile à attribuer au hasard.*
 
-#### Au verdict
+**Pertes au temps : zéro** — aucun `loses on time`, aucun coup illégal, aucun
+moteur perdu. <span>**Couverture : 64 % de chaque match** (parties 1081–3000 et
+1070–3000). L'API de journaux de GitHub plafonne à 5000 lignes et ne sert que
+la fin ; l'artefact complet passe par un domaine que le proxy de session
+refuse.</span> **C'est pourquoi `match.yml` recense désormais les fins de
+partie et les anomalies lui-même, sur le journal entier** : le contrôle qui
+décide d'une fusion ne se lit pas sur un échantillon dont on n'a pas choisi la
+taille. Pour un changement de gestion du temps, la perte au temps *est* le mode
+de défaillance propre — il ne se voit pas dans l'Elo.
 
-- lire l'**étalonnage** de chaque job avant de mettre en commun — deux runners
-  peuvent différer de 58 % ;
-- le **contrôle des pertes au temps** passe avant l'Elo ;
-- inscrire le résultat avec **sa cadence et son effectif**, ici et dans la
-  fiche C21 du carnet ;
-- si l'effet tient : PR depuis `claude/project-documentation-review-denp0n`,
-  fusion en `merge`, jamais `squash` ;
-- **au moment de la fusion**, reprendre la notice de durée de `match.yml` : son
-  facteur 0,77 *est* le gaspillage de pendule, donc C21 le fait dériver vers 1.
+#### Trois prédictions écrites d'avance, et ce qu'elles ont rendu
 
+- **« Un SPRT expiré est une estimation biaisée VERS ZÉRO, donc un
+  minorant. »** Le SPRT du 23 sept. avait expiré à 3 262 parties en rendant
+  **+14,59 ± 8,31**. La mesure non biaisée donne **+19,13**. *Le minorant
+  minorait.*
+- **« ~6000 parties donnent environ ± 6,1 Elo. »** Rendu : **± 6,31**.
+- **`parties × Elo` ≈ 59 256.** Ici 6 000 × 19,13 = 114 780, hors de l'étendue
+  — et c'est normal : la relation décrit l'effectif qu'un **SPRT** consomme
+  pour trancher, pas un effectif qu'on a choisi. Elle prédit 59 256 ÷ 19,13
+  ≈ **3 100 parties**, et le SPRT était à 84 % du chemin à 3 262. *La relation
+  tient là où elle s'applique.*
+
+#### Et le facteur de durée a bougé, exactement comme annoncé
+
+`match.yml` disait : *« ce facteur 0,77 EST le gaspillage de pendule, donc la
+constante dériverait vers 1 le jour où C21 fusionne »*. Mesuré : **6,38 et
+6,34 s/partie** contre 7,47 prédites, soit **0,85** — contre 0,75 avec deux
+moteurs d'avant. Un seul des deux camps porte le changement, donc le facteur
+n'a fait qu'un demi-pas. <span>Inférence, confiance moyenne : (0,75 + f)/2 =
+0,85 donne **f ≈ 0,95** pour deux moteurs C21 — elle suppose que la dépense
+d'un camp ne dépend pas de l'autre, alors que la LONGUEUR de la partie est
+commune.</span>
 
 ### Ce qui reste à faire, par ordre mesuré
 
 | chantier | plis | état |
 |---|---|---|
 | **ponder** | **0,90** — `p = 0,659` mesuré le 23 sept., × 1,36 | **jamais ouvert, protocole écrit**. Le plus gros levier chiffré hors Lazy SMP — **mais il ne vaut que si on déploie avec ponder, ce qui est un arbitrage de Théo, pas une mesure**, et son verdict coûte 3 × plus de jobs (`-concurrency 1`) |
-| **C21 — dépenser la pendule** | 0,54 à 0,70 | **écrit, en mesure** |
+| **C21 — dépenser la pendule** | 0,54 à 0,70 | **MESURÉ, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties** — voir la section du verdict |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
 | **B9 — table à entrées atomiques** | — | prérequis dur de B6, **non entamé**. Réserve toujours non mesurée : sa fiche dit le coût « plat », ce qui parle du **rétrofit** et non de la vitesse. Voir l'encadré ci-dessous : <s>se mesure par nœuds identiques + `timing.sh`</s> — **faux, et mesuré le 22 sept. au soir** |
 | B6 — Lazy SMP | 1,0 à 1,8 | **seul chiffre encore hérité** du tableau. Le mesurer exige B9 |
