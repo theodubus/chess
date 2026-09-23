@@ -58,10 +58,14 @@ d'un aveu sur la profondeur de recherche.
 > `(pendule + coups × inc) / coups`, et le balayage y butte déjà. Aller plus
 > loin demande une allocation **inégale**, pas un autre réglage.
 >
-> Il n'a encore ni recherche parallèle, ni NNUE, ni **ponder** — ce dernier
-> vaut pourtant 0,90 pli au taux de succès mesuré contre lui-même, et c'est le
-> prochain chantier par ordre de plis. Le moteur ne décide pas de pondérer :
-> c'est l'interface qui l'active ; il n'a qu'à le supporter.
+> **Il sait pondérer depuis le 23 sept. 2026** — réfléchir pendant le temps
+> de l'adversaire, sur le coup qu'il prévoit — mais seulement si l'interface
+> l'active : l'option `Ponder` est désactivée par défaut, comme chez
+> Stockfish, Ethereal et Leela. Désactivé, rien ne change, au nœud près et en
+> vitesse. Ce qu'il vaut une fois activé est en mesure ; la prévision tombe
+> juste sur 65 % des coups contre lui-même.
+>
+> Il n'a encore ni recherche parallèle, ni NNUE.
 
 ## Structure
 

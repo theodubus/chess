@@ -686,6 +686,90 @@ n'a fait qu'un demi-pas. <span>Inférence, confiance moyenne : (0,75 + f)/2 =
 d'un camp ne dépend pas de l'autre, alors que la LONGUEUR de la partie est
 commune.</span>
 
+### Ce qui est EN VOL le 23 sept. — l'ordre des relèves, des fusions et des conflits
+
+Plusieurs mesures tournent en même temps, chacune sur ses propres runners :
+aucune ne vole de CPU à une autre, et chacune reste valide en interne. Chaque
+chantier a sa section — runs, critère écrit avant de lancer, étapes du
+verdict — et **c'est elle qui fait foi**. Celle-ci ne dit que ce qu'aucune
+ne peut dire seule : **dans quel ordre tout reprendre, ce que chaque fusion
+change aux autres, et où ça conflictue.** À renommer en « VERDICTS » quand la
+dernière relève est faite.
+
+#### Les jobs
+
+| chantier | runs | candidat → référence | effectif, arbitre | fin attendue (UTC) | ce que la relève décide |
+|---|---|---|---|---|---|
+| C22 — la nulle à l'horizon | 35857125439, 35857128461 | `05a9dc4` → `e1971a8` | 2 × 3000, fastchess | ~17 h 15 | fusion sauf régression — correctif de règle |
+| B9 — capacité de la table atomique | 35861835486, 35861838168 | `bd896ba` → `1b5afa8` | 2 × 3000, fastchess | ~18 h | fusion sauf régression — infrastructure de B6 |
+| ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | ~18 h 30 | **aucune fusion** : ce que vaut l'activer |
+| C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | ~19 h 30 | fusion sauf régression — correctif de règle |
+| balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | ~15 h | plafonds de `search.rs` et `uci.rs` |
+
+Les candidats de C22, B9 et C23 sont chacun **committés puis révoqués
+aussitôt** (`8e08920`, `7552320`, `1ab033f`) : `main` ne contient aucun des
+trois, et leurs SHA restent mesurables. **Fusionner, c'est révoquer la
+révocation sur `main` à jour** — jamais repartir de la rustine, qui n'est que
+la copie de secours.
+
+**Si la session qui a programmé les relèves n'existe plus**, rien ne les
+fera toutes seules : les journaux de job restent lisibles tant que GitHub
+les garde — 90 jours par défaut, le réglage de ce dépôt n'est pas vérifié —
+et l'artefact `match-log` 30 jours (`retention-days` dans `match.yml`). Le
+résumé de chaque job est recopié à la **fin** de son
+journal, donc `get_job_logs` avec ~300 lignes de fin suffit — sauf pour les
+deux jobs de C22, partis avant ce recopiage (voir sa section).
+
+#### Ce qui lie les chantiers entre eux
+
+- **C22 et C23 touchent le même objet**, la détection de répétition. C23 a
+  montré que **92,1 % de ce que C22 ajoute à l'horizon sont de fausses
+  nulles** : le critère de C22 ne bouge pas, sa lecture si (section C22).
+  Chacun est mesuré dans le contexte qui lui est le moins favorable (section
+  C23, « Pourquoi `main` sans C22 »).
+- **Leurs textes conflictuent, leur logique non.** C22 insère `is_rule_draw`
+  juste après `is_repetition`, dont C23 réécrit le corps : la rustine C23 ne
+  s'applique plus après C22 que par `git apply -C1`. Vérifié : les tests des
+  deux passent ensemble.
+- **B9 est disjoint des deux** — la table d'un côté, la répétition de
+  l'autre. Vérifié le 23 sept. : les trois rustines ensemble — C22, C23 par
+  `-C1`, puis B9 — compilent, **192 tests passent**, banc 31 637 à la
+  profondeur 5 et 114 026 à la profondeur 7.
+- **Le ponder ne dépend d'aucun** : il mesure un binaire contre lui-même, et
+  ne fusionne rien.
+
+#### L'ordre des fusions, et ce que chacune change ailleurs
+
+L'ordre est celui des verdicts. Chaque fusion déplace des choses que d'autres
+tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
+
+| relève | si le critère autorise la fusion | ce qui bouge avec |
+|---|---|---|
+| mutation (~15 h 10) | — | plafonds de `.github/mutation-baseline.txt` : baisser ne demande rien, relever demande une raison écrite |
+| C22 (~17 h 25) | `git revert 8e08920` sur `main` | banc à la profondeur 7 → **113 214** (`bench_reference.rs` exige de le recopier) ; attic : lignes `c18-extension-echec` et sonde C22 → « non », **les deux rustines C23 → « non »** (`rustines_attic.rs` le signalera) ; les invariants de C22 reviennent dans `CLAUDE.md` avec son commit ; balayage de mutation |
+| B9 (~18 h 15) | `git revert 7552320` sur `main` à jour | chiffres de neutralité à refaire **sur le banc du moment** ; référence du banc ; balayage de mutation de `tt.rs` |
+| ponder (~18 h 50) | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la suite dépend du critère (sa section) |
+| C23 (~19 h 40) | `git revert 1ab033f` sur `main` à jour — **si C22 a fusionné, conflit attendu autour d'`is_repetition` : garder les deux** | banc : C22 + C23 rend **114 028** à la profondeur 7, celui de `main` d'avant ; l'invariant de la fenêtre revient dans `CLAUDE.md` ; attic ; balayage de mutation |
+
+**Les branches qui ne fusionnent pas ont aussi leur suite, écrite d'avance :**
+
+- **C22 rejeté** → ne pas conclure contre la règle. Attendre C23 ; s'il
+  fusionne, porter C22 sur `main` d'après C23 et le **remesurer là** — sa
+  lecture le demande, 92 % de ce qu'il ajoutait étant faux.
+- **C23 rejeté** → chercher d'abord le coût du double coup nul : avec C23, il
+  ne rend plus une fausse nulle, il re-cherche la position à profondeur
+  réduite. C'est précisément ce que retire l'étape suivante — interdire deux
+  coups nuls consécutifs.
+- **B9 rejeté** → la seule différence de comportement est la capacité (sa
+  section) ; B6 reste bloqué derrière lui.
+
+#### Et ensuite
+
+L'ordre des chantiers suivants vit dans « Ce qui reste à faire, par ordre
+mesuré » et ne se recopie pas ici. Ce qui dépend directement de ces relèves :
+interdire deux coups nuls consécutifs (après C23, seul) ; dépenser davantage
+quand le ponder est permis (après le ponder, en `les-deux`) ; B6 (après B9).
+
 ### C22 — EN VOL : la recherche ne voyait pas 40 % des nulles, celles de l’horizon
 
 #### Comment c'est sorti : des avertissements que j'avais classés bénins
@@ -1070,11 +1154,11 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 | **C22 — la nulle vue à l'horizon** | — correctif de règle, pas un gain espéré | **EN MESURE** : deux jobs de 3000 parties à `8+0,08` sur le candidat `05a9dc4`. Critère **écrit avant de lancer** : fusion sauf régression significative. Voir sa section. **Découvert pendant le vol** : 92,1 % de ce qu'il ajoute à l'horizon sont de fausses nulles (C23) — le critère ne bouge pas, sa lecture si |
 | **ponder** | **0,90** — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36 ; un **majorant** contre un autre adversaire | **ÉCRIT et vérifié le 23 sept.** — tests éprouvés par mutation, banc identique, `crosscheck.sh` d'accord, match de correction ponder activé sans une faute. `tools/paires.sh` reconstruit le vecteur que cutechess n'imprime pas. Chemin de mesure en Elo **en place** : `match.yml`, entrée `ponder`, éprouvé en local sur ses refus. **EN MESURE** : trois jobs de 900 parties, critère écrit avant — voir « Ponder — EN VOL ». Après : dépenser davantage quand le ponder est permis, mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
-| **allocation inégale** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération |
+| **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
 | **B9 — table à entrées atomiques** | — | **EN MESURE** : verdict de capacité, deux jobs, critère de non-régression écrit d'avance — voir « B9 — EN VOL ». Ses chiffres de neutralité sont relatifs au banc d'avant C22 : si C22 fusionne, les refaire |
 | B6 — Lazy SMP | 1,0 à 1,8, **seul chiffre encore hérité** | exige B9. **Et sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
-| pendule de l'adversaire | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
+| pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **EN MESURE** : mesuré avant d'écrire, 87,8 % des répétitions de l'arbre étaient fausses, et 92,1 % de celles que C22 ajoute à l'horizon. Candidat `3236f12`, révoqué aussitôt ; critère de non-régression écrit d'avance — voir sa section. Ensuite, et seul : interdire deux coups nuls consécutifs |
 | B7 / C13 | — | inchangés, bloqués sur leurs déclencheurs |
