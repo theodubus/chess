@@ -835,9 +835,24 @@ qu'un point unique, qui est la cible déclarée du projet — mais **ça doit ê
 dit, pas subi**. `mettre-en-commun.sh` compare les matchs deux à deux par un
 test en `z` et **refuse de conclure en silence** au-delà de `z = 2`.
 
-**Et les graines doivent différer.** Mêmes binaires plus même graine donnent
-les mêmes parties coup pour coup : deux jobs de même graine, c'est un effectif
-qui double sur le papier sans que l'information bouge.
+**Et les graines doivent différer — ce n'est plus une règle à retenir.**
+Mêmes binaires plus même graine donnent les mêmes parties coup pour coup :
+deux jobs de même graine, c'est un effectif qui double sur le papier sans que
+l'information bouge. Deux dispositifs, aux deux bouts :
+
+- **au lancement**, `match.yml` accepte `graine: auto`, qui en tire une propre
+  au run. Elle est imprimée dans le résumé, donc le match reste rejouable à
+  l'identique en la repassant telle quelle. Le défaut `20260913` ne bouge pas :
+  il rend les matchs **appariés**, ce qui est l'autre besoin — c'est lui qui a
+  permis de comparer une même technique à deux cadences ;
+- **à la mise en commun**, `mettre-en-commun.sh` **refuse** deux vecteurs
+  pentanomiaux identiques, avec un code 3. Le moteur étant déterministe, deux
+  matchs indépendants de plusieurs milliers de parties ne peuvent pas rendre
+  cinq comptes égaux : un vecteur répété *est* une graine répétée.
+
+*C'est le seul endroit où cette règle peut être imposée par un code de sortie
+plutôt que rappelée : au lancement on ne tient qu'une intention, à la mise en
+commun on tient les données.*
 
 #### L'outil
 

@@ -83,7 +83,7 @@ on:
         default: "5"
         type: string
       graine:
-        description: "Graine des ouvertures. La même qu'un match antérieur le rend apparié."
+        description: "Graine des ouvertures. La même qu'un match antérieur le rend apparié ; « auto » en tire une propre au run, à utiliser dès qu'on compte mettre plusieurs matchs en commun."
         required: false
         default: "20260913"
         type: string
@@ -144,6 +144,31 @@ jobs:
           fi
           echo "candidat=$cand"  >> "$GITHUB_OUTPUT"
           echo "reference=$base" >> "$GITHUB_OUTPUT"
+
+          # La graine est une CONDITION DE VALIDITÉ, dans les DEUX sens, et
+          # c'est pourquoi elle se résout ici plutôt que dans l'étape qui joue.
+          #
+          # Le moteur est déterministe : mêmes binaires plus même graine
+          # donnent les mêmes parties, coup pour coup. Garder la graine par
+          # défaut rend deux matchs APPARIÉS — c'est ce qui a permis de
+          # comparer une même technique à deux cadences, et il ne faut pas le
+          # perdre. Mais deux matchs à longueur fixe qu'on veut METTRE EN
+          # COMMUN doivent être INDÉPENDANTS : à graine égale, l'effectif
+          # double sur le papier sans que l'information bouge.
+          #
+          # « auto » tire une graine propre au run. Elle est imprimée dans le
+          # résumé comme les autres, donc le match reste rejouable à
+          # l'identique en la repassant telle quelle.
+          #
+          # Elle passe par GITHUB_OUTPUT et non par une variable de shell : le
+          # résumé est une AUTRE étape, et une variable de shell ne la
+          # traverse pas — elle y serait simplement vide.
+          graine="${{ inputs.graine }}"
+          if [ "$graine" = "auto" ]; then
+            graine="${{ github.run_id }}"
+            echo "::notice::graine tirée du run : $graine — la repasser telle quelle rejoue ce match à l'identique"
+          fi
+          echo "graine=$graine" >> "$GITHUB_OUTPUT"
 
       # Les deux binaires se construisent en worktree détaché, jamais par
       # `git stash` : le stash emporte tout le travail non committé, outils de
@@ -212,12 +237,13 @@ jobs:
           # déjà commise sur le verdict de mutation le 15 sept. 2026.
           set -euo pipefail
           concurrence=$(( $(nproc) > 1 ? $(nproc) - 1 : 1 ))
+
           commun=(
             -engine cmd=/tmp/candidat  name=candidat
             -engine cmd=/tmp/reference name=reference
             -each tc="${{ inputs.cadence }}" proto=uci
             -openings file=tools/book.epd format=epd order=random
-            -srand "${{ inputs.graine }}"
+            -srand "${{ steps.refs.outputs.graine }}"
             -games 2 -repeat
             -concurrency "$concurrence"
             -draw movenumber=40 movecount=8 score=10
@@ -295,7 +321,7 @@ jobs:
             echo "| candidat | \`${{ inputs.candidat }}\` → \`${{ steps.refs.outputs.candidat }}\` |"
             echo "| référence | \`${{ inputs.reference }}\` → \`${{ steps.refs.outputs.reference }}\` |"
             echo "| cadence | \`${{ inputs.cadence }}\` |"
-            echo "| graine des ouvertures | \`${{ inputs.graine }}\` |"
+            echo "| graine des ouvertures | \`${{ steps.refs.outputs.graine }}\` |"
             echo "| cœurs du runner | ${{ steps.etalon.outputs.coeurs }} |"
             echo "| **nœuds/s au bench** | **${{ steps.etalon.outputs.nps }}** |"
             echo "| profondeur en 250 ms | ${{ steps.etalon.outputs.profondeur }} |"

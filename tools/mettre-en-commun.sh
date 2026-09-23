@@ -69,6 +69,34 @@ for arg in "$@"; do
   VECTEURS+=("$v")
 done
 
+# Deux matchs bit à bit identiques ne sont pas deux matchs.
+#
+# Le moteur est déterministe : mêmes binaires plus même graine donnent les
+# mêmes parties, coup pour coup, donc le même vecteur pentanomial. La
+# probabilité que deux matchs INDÉPENDANTS de plusieurs milliers de parties
+# rendent cinq comptes identiques est négligeable — un vecteur répété veut dire
+# une graine répétée, et les additionner double l'effectif sur le papier sans
+# que l'information bouge.
+#
+# C'est le seul endroit où la règle « les graines doivent différer » peut être
+# imposée par un code de sortie plutôt que rappelée : ici on tient les données,
+# alors qu'au lancement on ne tient qu'une intention.
+for ((i = 0; i < ${#VECTEURS[@]}; i++)); do
+  for ((j = i + 1; j < ${#VECTEURS[@]}; j++)); do
+    if [[ "${VECTEURS[i]}" == "${VECTEURS[j]}" && "${VECTEURS[i]}" != "0,0,0,0,0" ]]; then
+      echo "les matchs $((i+1)) et $((j+1)) sont IDENTIQUES : ${VECTEURS[i]}" >&2
+      echo >&2
+      echo "Le moteur est déterministe — mêmes binaires et même graine donnent les" >&2
+      echo "mêmes parties coup pour coup. Deux matchs indépendants de cette taille" >&2
+      echo "ne peuvent pas rendre cinq comptes égaux." >&2
+      echo >&2
+      echo "Les additionner doublerait l'effectif sans ajouter d'information." >&2
+      echo "Relancer avec des graines DIFFÉRENTES (entrée « graine » de match.yml)." >&2
+      exit 3
+    fi
+  done
+done
+
 printf '%s\n' "${VECTEURS[@]}" | awk -F, '
 function elo(mu)   { return (mu <= 0 || mu >= 1) ? 0 : -400 * log(1/mu - 1) / log(10) }
 function pente(mu) { return 400 / (log(10) * mu * (1 - mu)) }

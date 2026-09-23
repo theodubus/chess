@@ -43,19 +43,36 @@ cas_code() {
 # Le SPRT expiré de C21, run 35784289654 : fastchess a imprimé
 #   Elo: 14.59 +/- 8.31   sur Ptnml(0-2): [97, 284, 766, 332, 141]
 C21="97,284,766,332,141"
-cas_contient "vérité terrain : Elo de fastchess"  "+14.59" "$OUTIL" "$C21" "$C21"
-cas_contient "vérité terrain : IC de fastchess"   "8.31"   "$OUTIL" "$C21" "$C21"
+AUTRE="90,250,780,320,130"
+cas_contient "vérité terrain : Elo de fastchess"  "+14.59" "$OUTIL" "$C21" "$AUTRE"
+cas_contient "vérité terrain : IC de fastchess"   "8.31"   "$OUTIL" "$C21" "$AUTRE"
 
 # ── 2. La mise en commun divise l'écart-type par racine de deux ──────────────
 # 8,31 / sqrt(2) = 5,876. C'est la propriété qui justifie de paralléliser.
-# L'assertion porte sur la LIGNE mise en commun, pas sur l'espacement du
-# format : « ± 5.87 » aurait échoué sur les deux espaces de `%5.2f`, ce qui
-# fait échouer le test pour une raison qui n'est pas celle qu'il mesure.
-commun=$("$OUTIL" "$C21" "$C21" 2>&1 | grep "EN COMMUN")
-if grep -qE '5\.8[67]' <<<"$commun"; then
+# ── 2. EXACTITUDE : deux moitiés doivent reconstituer le tout ───────────────
+# Le test le plus fort disponible. Ces deux vecteurs somment EXACTEMENT au
+# Ptnml de C21 sans être égaux, donc leur mise en commun doit rendre le chiffre
+# que fastchess a imprimé sur le match entier — Elo et intervalle.
+#
+# Il remplace un ancien cas qui passait deux fois le MÊME vecteur : le
+# garde-fou des matchs identiques le refuse désormais, à raison, et un test qui
+# demande à l'outil de faire ce qu'il doit interdire ne mesure rien de bon.
+MOITIE_A="48,142,383,166,70"
+MOITIE_B="49,142,383,166,71"
+commun=$("$OUTIL" "$MOITIE_A" "$MOITIE_B" 2>&1 | grep "EN COMMUN")
+if grep -qF "+14.59" <<<"$commun" && grep -qE '8\.3[01]' <<<"$commun"; then
+  ok "deux moitiés reconstituent le tout, Elo et intervalle"
+else
+  rate "deux moitiés reconstituent le tout, Elo et intervalle" "$commun"
+fi
+
+# Et la propriété qui justifie de paralléliser : doubler l'effectif divise
+# l'intervalle par racine de deux. 8,31 / sqrt(2) = 5,876.
+double=$("$OUTIL" "$C21" "97,284,766,332,142" 2>&1 | grep "EN COMMUN")
+if grep -qE '5\.8[6-8]' <<<"$double"; then
   ok "doubler l'effectif rétrécit l'IC d'un facteur racine de 2"
 else
-  rate "doubler l'effectif rétrécit l'IC d'un facteur racine de 2" "$commun"
+  rate "doubler l'effectif rétrécit l'IC d'un facteur racine de 2" "$double"
 fi
 
 # ── 3. L'ordre des matchs ne change rien ────────────────────────────────────
@@ -83,10 +100,16 @@ Results of candidat vs reference (8+0.08, NULL, 16MB, book.epd):
 Elo: 14.59 +/- 8.31, nElo: 21.04 +/- 11.96
 Ptnml(0-2): [97, 284, 766, 332, 141]
 LOG
+# Le second argument DIFFÈRE du contenu du journal : le garde-fou des matchs
+# identiques refuserait sinon, et il aurait raison.
 cas_contient "un journal rend sa DERNIÈRE ligne Ptnml, pas la première" "1620 paires" \
-  "$OUTIL" "$ATELIER/journal.log" "$C21"
+  "$OUTIL" "$ATELIER/journal.log" "$AUTRE"
 
 # ── 6. Les refus ────────────────────────────────────────────────────────────
+# Le garde-fou de la graine, imposé par un code de sortie plutôt que rappelé.
+cas_code     "deux matchs identiques : code 3" 3 "$OUTIL" "$C21" "$C21"
+cas_contient "deux matchs identiques : le dit" "sont IDENTIQUES" "$OUTIL" "$C21" "$C21"
+
 cas_code "un seul match est refusé"        1 "$OUTIL" "$C21"
 cas_code "un vecteur malformé est refusé"  1 "$OUTIL" "1,2,3" "$C21"
 cas_code "un journal sans Ptnml est refusé" 1 "$OUTIL" "/etc/hostname" "$C21"
