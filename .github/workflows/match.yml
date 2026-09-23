@@ -398,6 +398,24 @@ jobs:
               echo "> Aucune perte au temps, aucun coup illégal, aucun moteur"
               echo "> perdu — **sur la totalité du journal**, pas sur sa fin."
             fi
+            # LES AVERTISSEMENTS DE L'ARBITRE — une mesure, pas du bruit.
+            #
+            # Les deux matchs de C21 en portaient ~200, « PV continues after
+            # threefold repetition » et « … after fifty-move rule », émis par
+            # les DEUX moteurs. Classés bénins sans être lus, ils signalaient
+            # que la recherche ne voyait pas 40 % des nulles — celles de
+            # l'horizon (C22). Les compter ici les rend visibles à chaque
+            # match, et dira si C22, une fois fusionné, les fait disparaître.
+            echo
+            echo '### Avertissements de l’arbitre — par nature et par moteur'
+            echo
+            echo '```'
+            # `.*` et non `[^-]+` : « fifty-move » porte un tiret, et la
+            # première version du motif ratait exactement ces avertissements.
+            grep -oE 'Warning; .* - move [^ ]+ from [^ ]+' /tmp/match.log \
+              | sed -E 's/ - move [^ ]+ from / | /' | sort | uniq -c | sort -rn \
+              || echo "aucun avertissement"
+            echo '```'
             # Le temps réel par partie, qui est ce qui dimensionne les jobs
             # suivants. Il dépend du GASPILLAGE de pendule, donc il bouge
             # quand la gestion du temps change : voir la notice de l'étape

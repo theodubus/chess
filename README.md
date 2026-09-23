@@ -59,8 +59,9 @@ d'un aveu sur la profondeur de recherche.
 > loin demande une allocation **inégale**, pas un autre réglage.
 >
 > Il n'a encore ni recherche parallèle, ni NNUE, ni **ponder** — ce dernier
-> vaut pourtant 0,90 pli au taux de succès mesuré, et n'attend qu'un arbitrage
-> de déploiement.
+> vaut pourtant 0,90 pli au taux de succès mesuré contre lui-même, et c'est le
+> prochain chantier par ordre de plis. Le moteur ne décide pas de pondérer :
+> c'est l'interface qui l'active ; il n'a qu'à le supporter.
 
 ## Structure
 
