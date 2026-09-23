@@ -810,7 +810,12 @@ jusqu'à son verdict. **Au verdict : révoquer la révocation.** La rustine
    portent C21**. Les s/partie (« Total Time » ÷ parties) diront si le facteur
    atteint le ~0,95 extrapolé, et si la notice de `match.yml` doit changer.
 6. **Si le critère autorise la fusion** : révoquer la révocation, banc à
-   113 214, `tools/verify.sh` en entier, PR, fusion en `merge`.
+   113 214, `tools/verify.sh` en entier, PR, fusion en `merge`. **Un conflit
+   est attendu, et un seul** : la ligne de `c22-sonde-nulle-horizon.patch`
+   dans la table de l'attic, que le ponder a déjà passée à « non » pour une
+   autre raison (il a réécrit l'impression de `bestmove`). Garder « non », en
+   nommant les deux raisons. Le code, lui, s'applique sans conflit — vérifié
+   par `git apply --check` sur la branche du ponder.
 7. **Après la fusion, un balayage de mutation** (`workflow_dispatch`) : C22
    ajoute du code — `is_rule_draw`, `is_checkmate` — et trois tests qui
    peuvent tuer des survivants existants. Sans ce balayage, le cliquet
