@@ -704,7 +704,7 @@ dernière relève est faite.
 | B9 — capacité de la table atomique | 35861835486, 35861838168 | `bd896ba` → `1b5afa8` | 2 × 3000, fastchess | ~18 h | fusion sauf régression — infrastructure de B6 |
 | ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | ~18 h 30 | **aucune fusion** : ce que vaut l'activer |
 | C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | ~19 h 30 | fusion sauf régression — correctif de règle |
-| balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | ~15 h | plafonds de `search.rs` et `uci.rs` |
+| balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
 
 Les candidats de C22, B9 et C23 sont chacun **committés puis révoqués
 aussitôt** (`8e08920`, `7552320`, `1ab033f`) : `main` ne contient aucun des
@@ -745,7 +745,7 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 
 | relève | si le critère autorise la fusion | ce qui bouge avec |
 |---|---|---|
-| mutation (~15 h 10) | — | plafonds de `.github/mutation-baseline.txt` : baisser ne demande rien, relever demande une raison écrite |
+| mutation — **faite** | — | plafonds inchangés ; le balayage suivant, après C22, dira si `search.rs` redescend à 43 |
 | C22 (~17 h 25) | `git revert 8e08920` sur `main` | banc à la profondeur 7 → **113 214** (`bench_reference.rs` exige de le recopier) ; attic : lignes `c18-extension-echec` et sonde C22 → « non », **les deux rustines C23 → « non »** (`rustines_attic.rs` le signalera) ; les invariants de C22 reviennent dans `CLAUDE.md` avec son commit ; balayage de mutation |
 | B9 (~18 h 15) | `git revert 7552320` sur `main` à jour | chiffres de neutralité à refaire **sur le banc du moment** ; référence du banc ; balayage de mutation de `tt.rs` |
 | ponder (~18 h 50) | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la suite dépend du critère (sa section) |
