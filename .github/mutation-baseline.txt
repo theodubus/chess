@@ -26,7 +26,7 @@
 
 position.rs 0
 uci.rs 0
-tt.rs 2
+tt.rs 8
 main.rs 0
 perft.rs 1
 bench.rs 2
@@ -195,10 +195,24 @@ eval.rs 121
 #   de rien sur ce projet — ils varient d'un run à l'autre, c'est écrit dans
 #   CLAUDE.md.
 #
-# tt.rs — 2.  `|` contre `^` dans `pack_move`, sur trois champs de bits
-#   disjoints par construction (départ 0-5, arrivée 6-11, promotion 12-14).
-#   Les deux opérateurs y calculent la même chose. Aucun test ne peut les
-#   distinguer : mutants équivalents, et non un trou.
+# tt.rs — 8, mesuré le 23 sept. 2026 (run 35904545718, après B9 : 170
+#   mutants, 121 attrapés, 40 inviables, 1 expiré).  Relevé de 2 : `tt.rs` a
+#   été réécrit en entrées atomiques (B9), et la réécriture empaquette cinq
+#   champs dans un mot de données.
+#     · 2 — `|` contre `^` dans `pack_move`, sur trois champs de bits
+#       disjoints par construction (départ 0-5, arrivée 6-11, promotion
+#       12-14). Les deux opérateurs y calculent la même chose. Aucun test ne
+#       peut les distinguer : mutants équivalents, et non un trou.
+#     · 4 — la même famille dans `pack_data`, qui joint cinq champs disjoints
+#       (score 0-15, coup 16-31, profondeur 32-39, borne 40-41, génération
+#       42-49). Même argument, même conclusion.
+#     · 2 — un décalage NUL du score, `<< 0` et `>> 0`, que la mutation
+#       retourne en décalage nul. Équivalents aussi, mais c'était du code
+#       mort écrit pour la symétrie — `CLAUDE.md`, « un mutant équivalent est
+#       souvent du code mort » : RETIRÉ dans le commit qui inscrit ce plafond.
+#       Le balayage suivant devrait donc rendre 6, et le plafond descendra
+#       alors sans rien demander ; il reste à 8 d'ici là parce qu'un plafond
+#       est un chiffre MESURÉ, jamais extrapolé.
 #
 # see.rs — 2, mesuré le 21 sept. 2026 (run 35603991267 : 59 mutants, 55
 #   attrapés, 1 inviable, 1 expiré).  MÊME FAMILLE QUE `tt.rs`, et par le même
