@@ -810,7 +810,12 @@ jusqu'à son verdict. **Au verdict : révoquer la révocation.** La rustine
    portent C21**. Les s/partie (« Total Time » ÷ parties) diront si le facteur
    atteint le ~0,95 extrapolé, et si la notice de `match.yml` doit changer.
 6. **Si le critère autorise la fusion** : révoquer la révocation, banc à
-   113 214, `tools/verify.sh` en entier, PR, fusion en `merge`.
+   113 214, `tools/verify.sh` en entier, PR, fusion en `merge`. **Un conflit
+   est attendu, et un seul** : la ligne de `c22-sonde-nulle-horizon.patch`
+   dans la table de l'attic, que le ponder a déjà passée à « non » pour une
+   autre raison (il a réécrit l'impression de `bestmove`). Garder « non », en
+   nommant les deux raisons. Le code, lui, s'applique sans conflit — vérifié
+   par `git apply --check` sur la branche du ponder.
 7. **Après la fusion, un balayage de mutation** (`workflow_dispatch`) : C22
    ajoute du code — `is_rule_draw`, `is_checkmate` — et trois tests qui
    peuvent tuer des survivants existants. Sans ce balayage, le cliquet
@@ -875,12 +880,64 @@ parce que l'échange statique coupait **les mêmes captures au même endroit**.
 4. **Balayage de mutation** après la fusion : `tt.rs` est réécrit entièrement.
 5. Inscrire le verdict, la table de l'attic, la fiche du carnet.
 
+### Ponder — EN VOL : ce que vaut le ponder activé, à `8+0,08`
+
+Le **même binaire** des deux côtés — `Ponder` activé pour le candidat, pas
+pour la référence —, joué par cutechess à une partie à la fois, selon
+l'entrée `ponder = candidat` de `match.yml`. Commit `136dda4` des deux
+côtés ; lancés à 13 h 23 UTC, fin attendue vers 18 h 30.
+
+| runs | graine | parties | cadence |
+|---|---|---|---|
+| [35866707040](https://github.com/theodubus/chess/actions/runs/35866707040) | tirée par le run | 900 | `8+0,08` |
+| [35866710329](https://github.com/theodubus/chess/actions/runs/35866710329) | tirée par le run | 900 | `8+0,08` |
+| [35866713797](https://github.com/theodubus/chess/actions/runs/35866713797) | tirée par le run | 900 | `8+0,08` |
+
+**900 parties par job, pas 1 000** : à ~20 s par partie, 1 000 frôleraient
+le plafond de 350 minutes, et un job coupé ne garantit pas que son résumé —
+le seul endroit où cutechess a un vecteur pentanomial — soit écrit.
+
+#### Ce que cette mesure décide — écrit AVANT de lancer
+
+Aucune fusion n'en dépend : le ponder est inerte tant que l'interface ne
+l'active pas, et c'est prouvé au nœud près. La mesure dit **ce que vaut
+l'activer**, et elle sert de point de départ au réglage suivant — dépenser
+davantage quand le ponder est permis, qui se mesurera en `les-deux`.
+
+- **une seule anomalie** — perte au temps, coup illégal, déconnexion —
+  → la mesure ne vaut rien ; c'est la sémantique du temps de ponder qu'il
+  faut relire avant tout le reste ;
+- **borne basse > 0** → l'activer rapporte ce que dit le point estimé, et
+  tout déploiement qui le permet l'active ;
+- **zéro dans l'intervalle** → le mécanisme de 0,90 pli ne se retrouve pas en
+  jeu : mesurer le taux de succès et la pendule en ponder réel à `8+0,08`
+  **avant** tout réglage — le premier n'y est connu que par la variante
+  principale, la seconde ne l'est qu'à `2+0,02` ;
+- **borne haute < 0** → un défaut, pas un résultat : ne pas le recommander,
+  et chercher.
+
+**Attendu** : positif, **~+25 Elo**, en convertissant les 0,90 pli par
+l'unique point du projet qui relie des plis à des Elo à cette cadence — C21,
++19,13 pour 0,54 à 0,70 pli, soit 27 à 35 Elo par pli. <span>Inférence,
+confiance faible : un point de mesure, et le ponder ne gagne du temps que sur
+les coups prédits, alors que C21 en gagnait sur tous.</span>
+
+**Puissance** : ± 9,4 Elo sur 2 700 parties.
+
+#### Au verdict, dans l'ordre
+
+1. Anomalies des trois jobs — recopiées en fin de journal par `match.yml`.
+2. `tools/mettre-en-commun.sh` sur les trois vecteurs `Ptnml` reconstruits,
+   puis le critère ci-dessus, sans le déplacer.
+3. Inscrire le verdict ici, dans la table « Ce qui reste à faire », dans la
+   fiche du carnet ; et dire à quelle cadence il vaut.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
 | **C22 — la nulle vue à l'horizon** | — correctif de règle, pas un gain espéré | **EN MESURE** : deux jobs de 3000 parties à `8+0,08` sur le candidat `05a9dc4`. Critère **écrit avant de lancer** : fusion sauf régression significative. Voir sa section |
-| **ponder** | **0,90** — `p = 0,659` contre notre jumeau à `8+0,08`, × 1,36 ; un **majorant** contre un autre adversaire | **protocole écrit, rien d'autre**. Prochaine action : **écrire** — les dix lignes de la liste de l'étape 2, avec leurs tests. Puis un chemin de match **cutechess**, la reconstruction des paires depuis `Finished game N`, et `-concurrency 1`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
+| **ponder** | **0,90** — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36 ; un **majorant** contre un autre adversaire | **ÉCRIT et vérifié le 23 sept.** — tests éprouvés par mutation, banc identique, `crosscheck.sh` d'accord, match de correction ponder activé sans une faute. `tools/paires.sh` reconstruit le vecteur que cutechess n'imprime pas. Chemin de mesure en Elo **en place** : `match.yml`, entrée `ponder`, éprouvé en local sur ses refus. **EN MESURE** : trois jobs de 900 parties, critère écrit avant — voir « Ponder — EN VOL ». Après : dépenser davantage quand le ponder est permis, mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
@@ -1311,11 +1368,21 @@ Stockfish** (`master`, lu le 23 sept. 2026), pas citées de mémoire :
    **n'a pas le droit d'écrire `bestmove`**. Elle attend `ponderhit` ou `stop`.
    Stockfish le fait explicitement (*« we simply wait here »*). Écrire le coup
    pendant le tour adverse est une faute de protocole que l'arbitre sanctionne.
-5. **`ponderhit`** : l'horloge démarre **maintenant**. Le budget se calcule sur
-   la pendule reçue dans `go ponder` — la nôtre n'a pas bougé pendant que
-   l'adversaire réfléchissait — et la recherche continue **sur le même arbre**.
-   Si le ponder a déjà duré plus que ce budget, s'arrêter à la prochaine
-   itération close.
+5. **`ponderhit`** — <s>l'horloge démarre maintenant ; le budget se calcule
+   sur la pendule reçue et la recherche continue ; si le ponder a déjà duré
+   plus que ce budget, s'arrêter à la prochaine itération close.</s> **Cette
+   ligne se contredisait, corrigée le jour même en lisant Stockfish** : elle
+   disait à la fois « l'horloge démarre maintenant » et « le temps déjà passé
+   compte ». Stockfish tranche — `limits.startTime` est posé au `go ponder`,
+   les contrôles de temps sont suspendus pendant le ponder, et au
+   `ponderhit` l'échéance comptée **depuis le `go ponder`** s'applique. *Le
+   temps de ponder compte comme déjà dépensé sur ce coup* : sur un succès
+   long, le moteur joue aussitôt et **garde sa pendule pour les coups
+   suivants**. C'est aussi le bon choix par l'arithmétique des pages
+   précédentes : répartir un surplus de temps sur tous les coups rend
+   `log₂(1+p) × 1,36 ≈ 0,99` pli, le concentrer sur les coups prédits
+   `p × 1,36 ≈ 0,90`. <span>Inférence, confiance moyenne : le modèle
+   idéalise la redistribution par `restant / movestogo`.</span>
 6. **`stop` pendant le ponder** (échec de prédiction) : écrire un `bestmove`
    immédiatement ; l'interface l'ignore. Puis viennent la vraie position et un
    `go` ordinaire, avec une table déjà chaude.
@@ -1334,6 +1401,86 @@ Stockfish** (`master`, lu le 23 sept. 2026), pas citées de mémoire :
 10. **`tools/crosscheck.sh` après** — `CLAUDE.md` l'exige après toute
     modification de la couche UCI.
 
+##### ÉCRIT le 23 sept. 2026 — ce qui est en place, et ce que les tests ont attrapé
+
+Les dix lignes de l'étape 2, sauf la septième (le temps quand `Ponder` est
+permis, qui reste un réglage à mesurer). Dans `search.rs` : un drapeau
+`pondering` partagé, qui suspend les deux échéances et retient le coup d'une
+recherche finie ; `ponder_move`, qui rend le deuxième coup de la dernière
+variante **achevée** ou, à défaut, celui de la table. Dans `uci.rs` :
+l'annonce, `ponderhit`, le drapeau posé **avant** de lancer le fil, et
+`bestmove_line`, qui convertit le pari sur le plateau d'après.
+
+**Ponder désactivé, rien ne change** : le banc rend 114 028 et 31 637, au nœud
+près. Seule la ligne `bestmove` gagne ` ponder Y` — fastchess lit le jeton qui
+suit `bestmove` (`findElement`, lu dans son source), cutechess lit le pari.
+**Et pas de ralentissement démontré** : `tools/timing.sh` contre `main`,
+24 paires à la profondeur 10, 12 gagnantes sur 24, p = 1,0. Le chemin chaud
+ne gagne qu'une lecture atomique tous les `CHECK_INTERVAL` nœuds et une copie
+de la variante par itération — mais c'est la mesure qui le dit, pas cette
+phrase.
+
+**Sept défauts injectés à la main, sept attrapés — mais pas du premier coup.**
+Deux survivaient à la première version des tests, et chacun enseigne quelque
+chose :
+
+- *une recherche qui s'arrêterait à l'échéance puis attendrait `ponderhit`*
+  passait : le fil ne finissait pas, comme il le doit. Ce qui trahit ce défaut
+  n'est pas que le fil tourne, c'est qu'il cesse d'**approfondir**. Et la
+  première façon de le mesurer — comparer la profondeur à celle d'une
+  recherche ordinaire au même budget — laissait encore passer le mutant :
+  **l'échéance douce se vérifie à chaque fin d'itération, la dure tous les
+  `CHECK_INTERVAL` nœuds**, donc la référence s'arrêtait *plus tôt* que le
+  mutant lui-même. La grandeur qui tranche est l'instant où la dernière
+  itération s'achève ;
+- *un `ponderhit` qui arrêterait aussi la recherche* passait : le test de la
+  recherche baissait le drapeau directement, sans passer par la commande. Le
+  test UCI vérifie désormais que `ponderhit` n'est pas un `stop` — sans quoi
+  66 % des coups se joueraient avec la seule profondeur du temps adverse.
+
+**Vérifié avant de fusionner, le 23 sept. 2026 :**
+
+- **`tools/crosscheck.sh`** — la couche UCI a changé : les deux arbitres
+  rendent **14-9-1** l'un et l'autre, accord ;
+- **un match de correction PONDER ACTIVÉ** sous cutechess — même binaire,
+  l'un pondère, l'autre non, une partie à la fois, 40 parties à `2+0,02`,
+  dialogue complet journalisé : **aucune perte au temps, aucun coup illégal,
+  aucune déconnexion, aucun avertissement de l'arbitre**. Et chaque
+  `go ponder` s'est terminé par un `ponderhit` ou un `stop`, jamais par un
+  coup rendu trop tôt ;
+- **le taux de succès, compté par l'arbitre lui-même** : 1 344 `ponderhit`
+  sur 2 054 `go ponder`, soit **0,654** — la mesure du matin, par une tout
+  autre méthode (le deuxième coup de la variante, relu dans un journal
+  fastchess), donnait **0,659**. Deux méthodes, un même chiffre ;
+- **la pendule** : le moteur qui pondère finit ses parties avec une médiane
+  de **604 ms** restantes, contre **283 ms** pour l'autre. Il garde bien le
+  temps gagné — c'est la sémantique voulue — mais n'en dépense qu'une partie.
+  C'est exactement ce que viendrait récupérer la septième ligne de la liste,
+  dépenser davantage quand le ponder est permis. **Réglage à mesurer**, pas à
+  recopier de Stockfish.
+
+Le score de ce match, 25-7-8, **n'est pas une mesure** : 40 parties, une
+cadence de dégrossissage. Il ne dit que « rien ne casse ». Le verdict en Elo
+passe par le protocole ci-dessous.
+
+Après la fusion : un balayage de mutation de `search.rs` et `uci.rs`, qui
+portent du code neuf.
+
+##### `tools/paires.sh` — le vecteur que cutechess n'imprime pas
+
+cutechess-cli, le seul arbitre qui sait pondérer, n'écrit aucun vecteur
+pentanomial ; `mettre-en-commun.sh` ne sait sommer que ceux-là.
+`tools/paires.sh <journal> [candidat]` les reconstruit depuis les lignes
+`Finished game N (…)` que les deux arbitres écrivent : avec `-repeat` et
+`-games 2`, les parties `2k−1` et `2k` forment une paire. Sa sortie se passe
+telle quelle à `mettre-en-commun.sh`.
+
+**Vérité terrain** : sur un vrai journal fastchess de 80 parties, il retombe
+exactement sur le vecteur que fastchess a calculé lui-même, `[3, 11, 8, 13,
+5]`. `tools/paires-test.sh` l'éprouve dans `tools/verify.sh`, avec les refus
+qui ne servent qu'en cas de problème : une partie sans sa jumelle est écartée
+et signalée, jamais comptée à moitié.
+
 ##### Étape 3 — mesurer : le protocole, et ses pièges
 
 - **Le même binaire des deux côtés, `Ponder` activé contre désactivé.** On
@@ -1341,22 +1488,41 @@ Stockfish** (`master`, lu le 23 sept. 2026), pas citées de mémoire :
   `Ponder` désactivé, rend **exactement** le banc de `main` : si le code du
   ponder a touché la recherche, ce n'est plus une mesure du ponder seul.
 - **cutechess-cli, pas fastchess** — fastchess ne sait pas pondérer (lu dans
-  son source, plus haut). Il faut donc un chemin de match qui n'existe pas :
-  `match.yml` ne connaît que fastchess.
+  son source, plus haut). **EN PLACE le 23 sept.** : `match.yml` prend une
+  entrée `ponder` — `non`, `candidat` ou `les-deux` — qui fait jouer
+  cutechess. Avec `candidat`, le même commit des deux côtés est admis : c'est
+  précisément la mesure du ponder seul.
 - **`-concurrency 1` est obligatoire, pas prudent.** Le camp qui pense sur le
   temps adverse brûle du CPU pendant que l'autre cherche ; à `-concurrency 3`
   on passerait à six moteurs actifs pour quatre cœurs, et **le vol tomberait
   sur l'adversaire du candidat**, c'est-à-dire dans le sens de l'hypothèse. La
   règle générale est plus bas : *la concurrence se déduit des cœurs qu'occupe
-  une partie*. Coût : ~1 250 parties par job au lieu de ~3 750.
+  une partie*. Coût : **un tiers des parties par job** — ~1 000 à `8+0,08`,
+  pas les ~1 250 écrits d'abord : ce chiffre venait des 5,57 s par partie
+  d'avant C21, et les matchs de C21 en ont rendu 6,34 à 6,44 à concurrence 3,
+  parce qu'il dépense la pendule. *Une constante qu'un chantier fusionné
+  invalide se recalcule avant de dimensionner, pas après.*
+  **`match.yml` la dérive désormais de l'inégalité** et refuse de lancer
+  quand elle ne tient pas — éprouvé : deux cœurs, ponder demandé, refus.
 - **cutechess n'imprime AUCUN vecteur pentanomial** — vérifié dans son source
-  épinglé : seulement `Score of A vs B: V - D - N`. **`mettre-en-commun.sh` ne
-  peut donc pas lire ses journaux tels quels.** Les paires se reconstruisent
-  depuis les lignes `Finished game N` : avec `-repeat` et `-games 2`, les
-  parties `2k−1` et `2k` jouent la même ouverture des deux côtés. À écrire,
-  et à éprouver sur une vérité terrain comme l'a été `mettre-en-commun.sh`.
-- **Le recensement des pertes au temps** de `match.yml` cherche les chaînes de
-  fastchess. cutechess a les siennes : les relire dans SON source.
+  épinglé : seulement `Score of A vs B: V - D - N`. `tools/paires.sh` le
+  reconstruit (section suivante), et **le résumé du job l'écrit au format de
+  fastchess**, `Ptnml(0-2): […]` : `mettre-en-commun.sh` lit donc un journal
+  de job cutechess comme un autre. Sur le match de correction, le vecteur
+  reconstruit rend 29 points sur 40, exactement le `[0.725]` de cutechess.
+- **Le recensement des pertes au temps** cherchait les chaînes de fastchess.
+  Celles de cutechess, relues dans son source (`Result::description`), en
+  ajoutent trois : une **nulle** par temps, par déconnexion ou par blocage,
+  quand l'adversaire ne peut plus mater. Une perte au temps quand même — le
+  motif de fastchess l'aurait laissée passer. Ajoutées.
+- **La graine de cutechess tient sur 32 bits** (`-srand`, `QMetaType::UInt`)
+  et un identifiant de run en fait 35 : il la **réduit modulo 2³² sans le
+  dire** — mesuré, 35 861 838 168 et 1 502 099 800 jouent les mêmes
+  ouvertures. `match.yml` la réduit lui-même, pour que la graine imprimée soit
+  celle qui a joué.
+- **Pas de SPRT sous cutechess** — `match.yml` le refuse : son test n'a pas
+  le modèle de celui de fastchess, et la mesure passe de toute façon par
+  plusieurs jobs.
 - **Le taux de succès se relit en partie réelle** : cutechess le calcule
   (`m_ponderHits`) mais ne l'affiche que dans son interface graphique. Le
   journal `-debug` porte tout le dialogue ; `tools/lire-journal.sh` ne lit que
@@ -1562,12 +1728,13 @@ lui-même**, dont les fils se disputent les cœurs (biais contre). *Dans les
 deux cas le verdict ne vaut rien.*
 
 **Ce qui la rend aujourd'hui inexprimable, et ce qui ne le fait pas.**
-`match.yml` calcule `concurrence = nproc − 1` et ne connaît ni fils ni ponder
-— ce qui est juste tant que les moteurs sont monofils et que fastchess ne sait
-pas pondérer. **Le jour où un match passe `option.Threads` ou `ponder`,
-cette ligne doit dériver la concurrence de l'inégalité ci-dessus, et refuser
-de lancer si elle ne tient pas.** C'est une étape des chantiers B6 et ponder,
-écrite dans leurs listes, pas une précaution à retenir.
+<s>`match.yml` calcule `concurrence = nproc − 1` et ne connaît ni fils ni
+ponder.</s> **Depuis le 23 sept., `match.yml` dérive la concurrence de
+l'inégalité** — deux cœurs par partie dès que quelqu'un pondère — et refuse de
+lancer quand elle ne tient pas. **Les fils, non** : le jour où un match passe
+`option.Threads`, le nombre de cœurs par partie devient `T` et la même ligne
+doit le savoir. C'est une étape de B6, écrite dans sa liste, pas une
+précaution à retenir.
 
 ### Ce qu'il faut surveiller — et que rien ne signalera tout seul
 

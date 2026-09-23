@@ -192,6 +192,10 @@ pub struct Limits {
     pub nodes: Option<u64>,
     /// Chercher jusqu'à réception de `stop`.
     pub infinite: bool,
+    /// `go ponder` : chercher sur le temps de l'adversaire, la position qui
+    /// suivrait le coup qu'on a parié. Les échéances sont posées comme pour un
+    /// `go` ordinaire, mais ne s'appliquent qu'après `ponderhit`.
+    pub ponder: bool,
 }
 
 /// Le score d'une position, tel qu'UCI le distingue.
@@ -289,6 +293,18 @@ pub struct Search {
     soft_deadline: Option<Instant>,
     /// Budget de nœuds, quand `go nodes` en impose un.
     node_limit: Option<u64>,
+    /// Vrai tant que la recherche PONDÈRE : lancée par `go ponder`, pas encore
+    /// confirmée par `ponderhit`. Partagé avec la couche UCI, qui seule
+    /// l'écrit — à vrai AVANT de lancer le fil, à faux sur `ponderhit` ou
+    /// `stop`. L'écrire depuis le fil de recherche ouvrirait une course : un
+    /// `ponderhit` arrivé avant le démarrage du fil serait perdu, et le moteur
+    /// pondérerait jusqu'à perdre au temps.
+    pondering: Arc<AtomicBool>,
+    /// La variante de la dernière itération ACHEVÉE. Son deuxième coup est le
+    /// pari annoncé par `bestmove … ponder …`. On ne la relit pas dans la
+    /// table de variante après coup : une itération interrompue l'a peut-être
+    /// déjà écrasée en partie.
+    last_pv: Vec<Move>,
     aborted: bool,
     /// Clés Zobrist de la partie puis du chemin courant dans l'arbre.
     path: Vec<u64>,
@@ -343,6 +359,8 @@ impl Search {
             started: Instant::now(),
             hard_deadline: None,
             soft_deadline: None,
+            pondering: Arc::new(AtomicBool::new(false)),
+            last_pv: Vec::new(),
             node_limit: None,
             aborted: false,
             path: Vec::new(),
@@ -387,6 +405,47 @@ impl Search {
         self.nodes
     }
 
+    /// Branche le drapeau de ponder que la couche UCI écrira.
+    ///
+    /// Séparé de [`Search::new`] pour ne pas changer une signature que tous
+    /// les tests emploient : une recherche qu'on ne branche pas garde son
+    /// propre drapeau, toujours faux, donc ne pondère jamais.
+    pub fn set_ponder_flag(&mut self, pondering: Arc<AtomicBool>) {
+        self.pondering = pondering;
+    }
+
+    fn is_pondering(&self) -> bool {
+        self.pondering.load(Ordering::Relaxed)
+    }
+
+    /// Le coup qu'on parie que l'adversaire jouera après `best`.
+    ///
+    /// Le deuxième coup de la dernière variante ACHEVÉE, s'il prolonge bien
+    /// `best`. Sinon — variante d'un seul coup, 3,42 % des recherches mesurées
+    /// — le coup que la table retient pour la position d'après, comme le fait
+    /// Stockfish (`extract_ponder_from_tt`, lu dans son source). Sinon rien :
+    /// `bestmove` part alors sans `ponder`, et l'interface ne pondère pas ce
+    /// coup-là.
+    ///
+    /// Le coup rendu est LÉGAL sur la position d'après `best` : le contrôle
+    /// couvre une variante incohérente comme une collision de clés.
+    #[must_use]
+    pub fn ponder_move(&self, board: &Board, best: Move) -> Option<Move> {
+        if !board.is_legal(best) {
+            return None;
+        }
+        let mut child = board.clone();
+        child.play_unchecked(best);
+
+        let from_pv = match self.last_pv.as_slice() {
+            [first, second, ..] if *first == best => Some(*second),
+            _ => None,
+        };
+        from_pv
+            .or_else(|| self.tt.probe(child.hash(), 0).and_then(|hit| hit.mv))
+            .filter(|&mv| child.is_legal(mv))
+    }
+
     /// Cherche le meilleur coup de la position.
     ///
     /// Renvoie `None` si la position n'a aucun coup légal, auquel cas la couche
@@ -401,6 +460,7 @@ impl Search {
         self.nodes = 0;
         self.aborted = false;
         self.root_best = None;
+        self.last_pv.clear();
         self.path = position.history().to_vec();
         self.tt.new_search();
         // Les killers valent pour un ply donné d'une recherche donnée : les
@@ -446,12 +506,13 @@ impl Search {
             let Some(mv) = self.root_best else { break };
             best = Some(mv);
             previous = score;
+            self.last_pv = self.pv.line();
             report(&Info {
                 depth,
                 score: Score::from_internal(score),
                 nodes: self.nodes,
                 time_ms: self.elapsed_ms(),
-                pv: self.pv.line(),
+                pv: self.last_pv.clone(),
                 hashfull: self.tt.permille_used(),
             });
 
@@ -459,7 +520,10 @@ impl Search {
             if score.abs() > MATE_THRESHOLD {
                 break;
             }
-            if self.soft_deadline.is_some_and(|at| Instant::now() >= at) {
+            // En ponder, l'échéance douce ne vaut pas : c'est le temps de
+            // l'adversaire, on approfondit tant qu'il réfléchit. Elle
+            // s'appliquera dès `ponderhit`, à la fin de l'itération en cours.
+            if !self.is_pondering() && self.soft_deadline.is_some_and(|at| Instant::now() >= at) {
                 break;
             }
         }
@@ -474,6 +538,16 @@ impl Search {
             while !self.stop.load(Ordering::Relaxed) {
                 std::thread::sleep(Duration::from_millis(1));
             }
+        }
+
+        // Une recherche qui FINIT pendant le ponder — mat trouvé, profondeur
+        // maximale atteinte — n'a pas le droit de rendre son coup : l'interface
+        // n'attend `bestmove` qu'après `ponderhit` ou `stop`, et le recevoir
+        // pendant le tour adverse est une faute de protocole. C'est le piège
+        // que l'on rate, et Stockfish l'écrit explicitement (« we simply wait
+        // here »).
+        while self.is_pondering() && !self.stop.load(Ordering::Relaxed) {
+            std::thread::sleep(Duration::from_millis(1));
         }
 
         best
@@ -572,8 +646,14 @@ impl Search {
             return true;
         }
         if self.nodes.is_multiple_of(CHECK_INTERVAL) {
+            // En ponder, la pendule ne court pas pour nous : seule l'interface
+            // arrête la recherche. Après `ponderhit`, l'échéance posée au
+            // `go ponder` s'applique — le temps passé à pondérer compte comme
+            // déjà dépensé sur ce coup, et un ponder plus long que le budget
+            // fait jouer aussitôt, en gardant la pendule pour la suite.
             self.aborted = self.stop.load(Ordering::Relaxed)
-                || self.hard_deadline.is_some_and(|at| Instant::now() >= at);
+                || (!self.is_pondering()
+                    && self.hard_deadline.is_some_and(|at| Instant::now() >= at));
         }
         self.aborted
     }
@@ -2071,6 +2151,178 @@ mod tests {
         let mut neuve = search();
         neuve.go(&Position::startpos(), &limits, |_| {});
         assert_eq!(s.nodes(), neuve.nodes());
+    }
+
+    // ---- Ponder ----
+    //
+    // Chaque test lance la recherche dans un fil et ne regarde que ce que
+    // l'interface verrait : QUAND le coup revient. Les marges sont larges —
+    // plusieurs centaines de millisecondes — parce qu'un test de temps serré
+    // tombe sur une machine chargée sans que le code ait changé.
+
+    /// Lance `go` sur son propre fil, drapeau de ponder branché et levé.
+    fn pondere(
+        position: Position,
+        limites: Limits,
+    ) -> (
+        Arc<AtomicBool>,
+        Arc<AtomicBool>,
+        std::thread::JoinHandle<Option<Move>>,
+    ) {
+        let stop = Arc::new(AtomicBool::new(false));
+        let ponder = Arc::new(AtomicBool::new(true));
+        let mut s = Search::new(Arc::clone(&stop));
+        s.set_ponder_flag(Arc::clone(&ponder));
+        let fil = std::thread::spawn(move || s.go(&position, &limites, |_| {}));
+        (stop, ponder, fil)
+    }
+
+    fn attend_la_fin(fil: &std::thread::JoinHandle<Option<Move>>, limite: Duration) -> bool {
+        let debut = Instant::now();
+        while !fil.is_finished() && debut.elapsed() < limite {
+            std::thread::sleep(Duration::from_millis(2));
+        }
+        fil.is_finished()
+    }
+
+    #[test]
+    fn une_recherche_finie_pendant_le_ponder_attend_ponderhit() {
+        // Profondeur 1 : la recherche est finie en une milliseconde. Elle ne
+        // doit pas rendre son coup pour autant — l'interface n'attend
+        // `bestmove` qu'après `ponderhit` ou `stop`.
+        let limites = Limits {
+            ponder: true,
+            depth: Some(1),
+            ..Limits::default()
+        };
+        let (_stop, ponder, fil) = pondere(Position::startpos(), limites);
+        std::thread::sleep(Duration::from_millis(150));
+        assert!(!fil.is_finished(), "aucun coup avant ponderhit");
+        ponder.store(false, Ordering::Relaxed);
+        assert!(
+            attend_la_fin(&fil, Duration::from_secs(5)),
+            "ponderhit libère le coup"
+        );
+        assert!(fil.join().unwrap().is_some());
+    }
+
+    #[test]
+    fn en_ponder_lecheance_ne_court_pas() {
+        // Budget d'une milliseconde : sans ponder, la recherche serait rendue
+        // depuis longtemps. En ponder, c'est le temps de l'adversaire — elle
+        // doit continuer d'APPROFONDIR.
+        //
+        // « Le fil n'a pas fini » ne suffit pas à le prouver : une recherche
+        // qui s'arrêterait à l'échéance puis ATTENDRAIT ponderhit ne finirait
+        // pas non plus. Et comparer sa profondeur à celle d'une recherche
+        // ordinaire au même budget ne suffit pas davantage — éprouvé par
+        // mutation : la recherche ordinaire s'arrête à l'échéance DOUCE,
+        // vérifiée à chaque fin d'itération, quand la dure ne se vérifie que
+        // tous les `CHECK_INTERVAL` nœuds ; le mutant allait donc plus loin que
+        // la référence. La grandeur qui tranche est l'instant où la dernière
+        // itération S'ACHÈVE : sous le mutant, plus rien ne s'achève après
+        // quelques millisecondes.
+        let achevee_a = Arc::new(std::sync::atomic::AtomicU64::new(0));
+        let vue = Arc::clone(&achevee_a);
+        let stop = Arc::new(AtomicBool::new(false));
+        let ponder = Arc::new(AtomicBool::new(true));
+        let mut s = Search::new(Arc::clone(&stop));
+        s.set_ponder_flag(Arc::clone(&ponder));
+        let limites = Limits {
+            ponder: true,
+            movetime: Some(1),
+            ..Limits::default()
+        };
+        let fil = std::thread::spawn(move || {
+            s.go(&Position::startpos(), &limites, |info| {
+                vue.store(info.time_ms, Ordering::Relaxed);
+            })
+        });
+        std::thread::sleep(Duration::from_millis(400));
+        assert!(!fil.is_finished(), "l'échéance ne vaut pas en ponder");
+        assert!(
+            achevee_a.load(Ordering::Relaxed) >= 50,
+            "en 400 ms de ponder, une itération doit s'achever bien après \
+             l'échéance d'une milliseconde — la dernière s'est achevée à {} ms",
+            achevee_a.load(Ordering::Relaxed)
+        );
+        // Après ponderhit, l'échéance posée au `go ponder` est dépassée
+        // depuis longtemps : le temps de ponder compte comme déjà dépensé,
+        // et le coup part aussitôt.
+        ponder.store(false, Ordering::Relaxed);
+        assert!(
+            attend_la_fin(&fil, Duration::from_millis(1_000)),
+            "un ponder plus long que le budget fait jouer aussitôt"
+        );
+        assert!(fil.join().unwrap().is_some());
+    }
+
+    #[test]
+    fn un_ponderhit_precoce_laisse_chercher_jusqua_lecheance() {
+        // Le pendant du test précédent : si ponderhit arrive tôt, la recherche
+        // ne s'arrête pas là — elle va jusqu'à l'échéance du `go ponder`.
+        // Sans ce test, un code qui jouerait dès ponderhit passerait.
+        let limites = Limits {
+            ponder: true,
+            movetime: Some(1_500),
+            ..Limits::default()
+        };
+        let (_stop, ponder, fil) = pondere(Position::startpos(), limites);
+        std::thread::sleep(Duration::from_millis(50));
+        ponder.store(false, Ordering::Relaxed);
+        std::thread::sleep(Duration::from_millis(400));
+        assert!(!fil.is_finished(), "ponderhit n'est pas un stop");
+        assert!(attend_la_fin(&fil, Duration::from_secs(10)));
+    }
+
+    #[test]
+    fn stop_pendant_le_ponder_rend_un_coup_tout_de_suite() {
+        let limites = Limits {
+            ponder: true,
+            ..Limits::default()
+        };
+        let (stop, _ponder, fil) = pondere(Position::startpos(), limites);
+        std::thread::sleep(Duration::from_millis(100));
+        stop.store(true, Ordering::Relaxed);
+        assert!(attend_la_fin(&fil, Duration::from_millis(1_000)));
+        assert!(fil.join().unwrap().is_some(), "l'interface attend un coup");
+    }
+
+    #[test]
+    fn le_pari_est_le_deuxieme_coup_de_la_variante_puis_celui_de_la_table() {
+        let b = Board::default();
+        let mut s = search();
+        let limites = Limits {
+            depth: Some(5),
+            ..Limits::default()
+        };
+        let meilleur = s.go(&Position::startpos(), &limites, |_| {}).unwrap();
+        let variante = s.last_pv.clone();
+        assert!(
+            variante.len() >= 2,
+            "à la profondeur 5, la variante a un pari"
+        );
+        assert_eq!(variante[0], meilleur);
+        assert_eq!(
+            s.ponder_move(&b, meilleur),
+            Some(variante[1]),
+            "le pari est le deuxième coup de la dernière variante achevée"
+        );
+
+        // Variante réduite à un coup : le pari vient de la table, et il est
+        // légal sur la position d'après — jamais un coup de la racine.
+        s.last_pv.truncate(1);
+        let mut apres = b.clone();
+        apres.play_unchecked(meilleur);
+        let pari = s.ponder_move(&b, meilleur);
+        assert!(pari.is_some(), "la table connaît la réponse");
+        assert!(apres.is_legal(pari.unwrap()));
+
+        // Un « meilleur coup » illégal ne produit aucun pari.
+        let illegal = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let mut noirs = b.clone();
+        noirs.play_unchecked(illegal);
+        assert_eq!(s.ponder_move(&noirs, illegal), None);
     }
 
     #[test]

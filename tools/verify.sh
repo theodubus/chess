@@ -69,6 +69,9 @@ etape "références de mesure"      tools/ref-test.sh
 # cas de problème. Le premier cas du test confronte la formule pentanomiale à
 # ce que fastchess a réellement imprimé.
 etape "mise en commun"            tools/mettre-en-commun-test.sh
+# `paires.sh` reconstruit le vecteur pentanomial que cutechess n'imprime pas ;
+# son test porte une vérité terrain — un vrai journal fastchess — et ses refus.
+etape "paires"                    tools/paires-test.sh
 # `etat.sh` s'exécute à chaque démarrage et après chaque compactage, sa
 # sortie entrant dans le contexte du modèle. Un script devenu MUET ne se
 # verrait pas — on croirait simplement qu'il n'y a rien à dire.
