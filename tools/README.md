@@ -1338,7 +1338,25 @@ est éteint — le code ne s'exécute pas — et rapporte là où il est allumé
 C'est exactement le cas que couvre l'arbitrage du 21 sept. 2026 : *« tout ce
 qui peut se résoudre par la mesure et par l'objectif de qualité long terme ne
 nécessite pas d'arbitrage »*. **Le ponder entre dans la file, à son rang de
-plis.** Seul son verdict en Elo appartient à un régime — celui où il est
+plis.**
+
+**Et c'est bien ainsi que font les autres — vérifié dans leurs sources le
+23 sept. 2026, pas de mémoire.** Question de Théo : *« les autres moteurs ont
+ça ? »*
+
+| | ce qu'il fait du ponder | lu dans |
+|---|---|---|
+| **Stockfish** | annonce `option name Ponder type check default false`, écrit `bestmove e2e4 ponder e7e6`, ajoute 25 % à son temps quand l'option est activée | `timeman.cpp`, `search.cpp`, et sa page « UCI Protocol and Stockfish Commands » |
+| **Ethereal** | annonce `Ponder` désactivé par défaut, traite `ponderhit` | `src/uci.c` |
+| **Leela Chess Zero** | option `Ponder`, `false` par défaut, traite `ponderhit` | `src/engine.cc`, `src/chess/uciloop.cc` |
+| **cutechess-cli** — le logiciel qui fait jouer | drapeau `ponder` par moteur, **désactivé par défaut**, et seulement si le moteur a annoncé `Ponder` ; envoie alors `go … ponder`, puis `ponderhit` ou `stop` | `uciengine.cpp`, `help.txt` |
+| **lichess-bot** — le pont vers les serveurs de jeu | réglage `ponder: true  # Think on opponent's time.` dans sa configuration d'exemple | `config.yml.default` |
+| **fastchess** | ne sait pas pondérer | tout son dépôt |
+
+Trois moteurs, un même motif : **le moteur annonce, désactivé par défaut ; le
+logiciel décide.** <span>Ce que je n'ai pas pu vérifier : que les listes de
+classement jouent ponder désactivé — CCRL n'est pas joignable depuis le
+conteneur. Inférence, confiance moyenne.</span> Seul son verdict en Elo appartient à un régime — celui où il est
 allumé — et c'est ainsi qu'il s'étiquettera, comme une cadence.
 
 #### 2. La pendule de l'adversaire — elle est DÉJÀ reçue, et jetée
