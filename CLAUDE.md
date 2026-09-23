@@ -185,14 +185,17 @@ une mesure, pas une préférence.
 - **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
   La valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
 - **Table de transposition partagée, le jour où la recherche devient
-  parallèle.** Pas en place, et c'est le seul endroit du dépôt où le design
-  actuel bloque une fonctionnalité déjà prévue : `store` prend `&mut self`,
-  ce qui est inexprimable quand plusieurs threads écrivent dans la même table.
+  parallèle.** **En place depuis le 23 sept. 2026 (B9)** : entrées atomiques,
+  `store` prend `&self`, la table se partage entre fils. <s>Pas en place, et
+  c'est le seul endroit du dépôt où le design actuel bloque une
+  fonctionnalité déjà prévue : `store` prend `&mut self`, ce qui est
+  inexprimable quand plusieurs threads écrivent dans la même table.</s>
+  Historique, gardé pour ses raisons :
   Le passage à des entrées atomiques (XOR clé/données, qui rend détectable une
   entrée déchirée sans verrou) est une réécriture contenue de `tt.rs` plus un
   changement de signature qui traverse `search.rs`.
-  <br>**Écrit et mesuré le 23 sept. 2026 — le code est à
-  `tools/attic/b9-table-atomique.patch`, pas sur une branche.** Trois
+  <br>**Écrit et mesuré le 23 sept. 2026, fusionné le même jour** — capacité
+  −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable. Trois
   résultats. **La réécriture est neutre, prouvée** : à capacité forcée égale,
   le banc rend 114 028 et 635 210, exactement la référence, avec des empreintes
   différentes. **Les accès atomiques ne coûtent rien, ils RAPPORTENT** :

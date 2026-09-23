@@ -701,7 +701,7 @@ dernière relève est faite.
 | chantier | runs | candidat → référence | effectif, arbitre | fin attendue (UTC) | ce que la relève décide |
 |---|---|---|---|---|---|
 | C22 — la nulle à l'horizon | 35857125439, 35857128461 | `05a9dc4` → `e1971a8` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 17 h 43, 2 × 2 880 parties | **−10,44 ± 6,34 : régression, non fusionné** — à remesurer sur C23 |
-| B9 — capacité de la table atomique | 35861835486, 35861838168 | `bd896ba` → `1b5afa8` | 2 × 3000, fastchess | plafond à ~18 h 29 — ~2 880 parties attendues | fusion sauf régression — infrastructure de B6 |
+| B9 — capacité de la table atomique | 35861835486, 35861838168 | `bd896ba` → `1b5afa8` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 18 h 29, 2 860 + 2 880 parties | **−1,27 ± 6,34 : pas d'effet décelable, FUSIONNÉ** (`481f8af`) |
 | ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | plafond à ~19 h 13 | **aucune fusion** : ce que vaut l'activer |
 | C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | plafond à ~19 h 45 — ~2 880 parties attendues | fusion sauf régression — correctif de règle |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
@@ -747,7 +747,7 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 |---|---|---|
 | mutation — **faite** | — | plafonds inchangés ; le balayage suivant, après C22, dira si `search.rs` redescend à 43 |
 | C22 — **relevé** | **non fusionné** : le critère de régression est atteint | rien ne bouge — banc, table de l'attic et rustines C23 restent tels quels. La suite est « C22 rejeté », ci-dessous |
-| B9 (~18 h 33) | `git revert 7552320` sur `main` à jour | chiffres de neutralité à refaire **sur le banc du moment** ; référence du banc ; balayage de mutation de `tt.rs` |
+| B9 — **fusionné** | `git revert 7552320`, fait (`481f8af`) | référence du banc → **114 026** ; rustines B9 de l'attic → « non », leur code est entré ; chiffres de neutralité inchangés, la base n'ayant pas bougé ; **balayage de mutation de `tt.rs` lancé après la fusion** |
 | ponder (~19 h 17) | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la suite dépend du critère (sa section) |
 | C23 (~19 h 50) | `git revert 1ab033f` sur `main` à jour — **sans conflit**, C22 n'ayant pas fusionné | banc inchangé à la profondeur 7 ; l'invariant de la fenêtre revient dans `CLAUDE.md` ; attic ; balayage de mutation. **Puis, s'il fusionne : C22 porté par-dessus et remesuré** |
 
@@ -1098,7 +1098,35 @@ l'inverse du raisonnement de B9, dont les objets étaient disjoints.
 4. Balayage de mutation : `search.rs`.
 5. Ensuite, et séparément : interdire deux coups nuls consécutifs.
 
-### B9 — EN VOL : l'effet de CAPACITÉ de la table atomique
+### B9 — VERDICT, 23 sept. 2026 : capacité −1,27 ± 6,34 Elo à `8+0,08` — pas d'effet décelable, FUSIONNÉ
+
+#### Le verdict — rendu à 18 h 40, sur le critère écrit avant
+
+| | job 35861835486 | job 35861838168 | en commun |
+|---|---|---|---|
+| étalonnage | 3 197 486 n/s, profondeur 12 en 250 ms | 2 272 163 n/s, profondeur 11 | runners à 41 % d'écart |
+| parties comptées | 2 860 | 2 880 | **5 740** |
+| Elo | −2,79 ± 8,72 | +0,24 ± 9,19 | **−1,27 ± 6,34** |
+| Ptnml(0-2) | [100, 296, 647, 301, 86] | [124, 272, 633, 300, 111] | homogènes, z = −0,47 |
+
+**Intervalle [−7,6 ; +5,1] : zéro dedans, donc « pas d'effet décelable ».
+Fusionné**, comme le critère le disait, au titre de l'infrastructure de B6 et
+de la vitesse déjà prouvée. Les deux jobs, coupés par le plafond à 18 h 29,
+comptent **zéro anomalie sur la totalité de leurs journaux** — les premiers
+à le dire en entier, grâce au recensement recopié en fin de journal. Les
+avertissements sont symétriques entre les deux moteurs, comme attendu d'un
+changement qui ne touche pas aux nulles. ~7,3 s par partie : même facteur de
+durée que C22.
+
+**Ce qui entre dans `main`** (`481f8af`) : la table à entrées atomiques, et
+`store` prend désormais `&self` — **la table se partage entre fils**, ce qui
+était le seul endroit où le design bloquait B6. Banc : 31 637 à la
+profondeur 5, **114 026** à la profondeur 7, 634 933 à la profondeur 10.
+
+**Les chiffres de neutralité restent valides tels quels** : ils avaient été
+mesurés sur `1b5afa8`, et C22 n'ayant pas fusionné, le banc de `main`
+n'avait pas bougé depuis — le ponder est inerte au nœud près.
+
 
 La réécriture est prouvée neutre à capacité forcée égale et plus rapide de
 4,3 % (sections B9 plus bas). Reste l'effet que le banc ne peut pas juger :
@@ -1215,8 +1243,8 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
-| **B9 — table à entrées atomiques** | — | **EN MESURE** : verdict de capacité, deux jobs, critère de non-régression écrit d'avance — voir « B9 — EN VOL ». Ses chiffres de neutralité sont relatifs au banc d'avant C22 : si C22 fusionne, les refaire |
-| B6 — Lazy SMP | 1,0 à 1,8, **seul chiffre encore hérité** | exige B9. **Et sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
+| **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
+| B6 — Lazy SMP | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie). **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **EN MESURE** : mesuré avant d'écrire, 87,8 % des répétitions de l'arbre étaient fausses, et 92,1 % de celles que C22 ajoute à l'horizon. Candidat `3236f12`, révoqué aussitôt ; critère de non-régression écrit d'avance — voir sa section. Ensuite, et seul : interdire deux coups nuls consécutifs |
