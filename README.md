@@ -62,8 +62,10 @@ d'un aveu sur la profondeur de recherche.
 > de l'adversaire, sur le coup qu'il prévoit — mais seulement si l'interface
 > l'active : l'option `Ponder` est désactivée par défaut, comme chez
 > Stockfish, Ethereal et Leela. Désactivé, rien ne change, au nœud près et en
-> vitesse. Ce qu'il vaut une fois activé est en mesure ; la prévision tombe
-> juste sur 65 % des coups contre lui-même.
+> vitesse. **Activé, il vaut +67,6 ± 9,2 Elo à `8+0,08` contre lui-même**
+> (2 700 parties, zéro perte au temps) : la prévision y tombe juste sur 70 %
+> des coups, et il cherche 0,94 pli plus profond. Contre un autre adversaire
+> le chiffre change — prévoir un jumeau est le cas le plus facile.
 >
 > Il n'a encore ni recherche parallèle, ni NNUE.
 
