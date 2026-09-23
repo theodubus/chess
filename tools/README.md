@@ -557,50 +557,101 @@ aussi) ou **multiplie une magnitude** (aspiration × 2,7, trois termes × 2,5).
 > base actuelle — et cette fois l'imputation changerait quelque chose, parce
 > qu'elle dirait si l'érosion vient de l'empilement ou du régime.</span>
 
-### EN VOL au 22 sept. 2026, 22 h 30 UTC — le SPRT de C21
+### C21 — le SPRT a EXPIRÉ, et il a rendu un chiffre quand même
 
-**Ce qui tourne** : [run 35784289654](https://github.com/theodubus/chess/actions/runs/35784289654),
-candidat `ebe93ad` (défaut de `movestogo` 30 → 12) contre `6d5e7c6`, SPRT
-bornes `[0, 5]` à `8+0,08`, graine `20260913`. Lancé à 21 h 04 UTC, **plafond
-de 350 min donc mort au plus tard à 02 h 54 UTC**.
+**Le run est mort au plafond**, pas sur une frontière : [run
+35784289654](https://github.com/theodubus/chess/actions/runs/35784289654),
+annulé à 02 h 54 UTC le 23 sept. après exactement 350 minutes. Candidat
+`ebe93ad` (défaut de `movestogo` 30 → 12) contre `6d5e7c6`, bornes `[0, 5]` à
+`8+0,08`, graine `20260913`. **3262 parties lancées**, aucune frontière LLR
+atteinte.
 
-| repère | valeur |
+**C'est le risque qui avait été énoncé avant le lancement**, mot pour mot :
+*« si l'effet réel est sous ~18 Elo, le SPRT expire »*. Il l'était.
+
+#### Ce que le dernier bloc complet donne — 3240 parties
+
+| grandeur | valeur |
 |---|---|
-| cadence mesurée du job | **6,45 s par partie** |
-| ce qui tient dans le plafond | **~3 250 parties** |
-| budget estimé du verdict | ~1 850 parties, soit ~3 h 20 |
+| **Elo** | **+14,59 ± 8,31** |
+| nElo | +21,04 ± 11,96 |
+| LOS | **99,97 %** |
+| score | 1168 V / 1032 D / 1040 N, **52,10 %** |
+| Ptnml(0-2) | [97, 284, 766, 332, 141] |
+| **LLR** | **2,48 sur 2,94, soit 84,2 %** du chemin vers H1 |
+| étalonnage du runner | **3 427 286 n/s, profondeur 12 en 250 ms** |
 
-> **Le risque, et il est réel.** Le budget vient de ~32 Elo attendus, lesquels
-> viennent de « 1 % de vitesse ≈ 1 Elo » — **une constante héritée, jamais
-> mesurée sur ce projet**. Si l'effet réel est sous ~18 Elo, le SPRT **expire**
-> et rend une estimation biaisée vers zéro, donc inexploitable comme verdict.
-> Un match à longueur fixe y aurait été robuste. *Le choix du SPRT était
-> défendable ; ne pas énoncer ce risque avant de lancer ne l'était pas.*
+**L'étalonnage est le plus rapide jamais relevé sur ce projet** — l'étendue
+connue allait de 2 067 101 à 3 268 241 n/s. Une ligne d'étalonnage ne compare
+que des runs du même binaire ; celle-ci est à lire avant toute comparaison
+entre ce run et un autre.
 
-**Ce qu'il faut faire au verdict**, dans cet ordre :
+**Contrôle de vraisemblance, et il passe** : `parties × Elo` = 3240 × 14,59 =
+**47 272**, contre une médiane de 59 256 et une étendue de 45 900 à 80 200 sur
+dix-huit SPRT. Le point tombe dans le bas de l'étendue, donc rien ne sent le
+protocole cassé.
 
-1. Lire **l'étalonnage du runner** en tête du résumé — deux runs ne se
-   comparent pas sans lui.
-2. **Zéro perte au temps sur le match entier**, lu dans le journal de
-   l'arbitre et non supposé. *Ce contrôle compte plus que l'Elo* : une
-   formule de budget qui gagne 30 Elo et perd une partie au temps sur mille
-   est un mauvais échange.
-3. Inscrire le verdict ici avec sa cadence et son effectif, puis la fiche C21
-   et le §1 du carnet.
-4. **Si H1** : la branche `claude/project-documentation-review-denp0n` porte
-   `ebe93ad` (C21) *et* `3ea9173` (le correctif du plafond de `match.yml`,
-   indépendant). PR puis fusion en `merge`.
-5. **Si H0** : retirer le changement de `movestogo`, **garder** le correctif de
-   `match.yml`, déposer la rustine à l'attic avec son verdict.
-6. **S'il expire** : ne pas le reprendre ni le prolonger — un test séquentiel
-   interrompu puis prolongé n'a plus ses taux d'erreur. Relancer en **longueur
-   fixe**, dont l'estimation reste non biaisée quand elle est coupée.
+**Le contrôle qui comptait plus que l'Elo** : <span>zéro perte au temps, zéro
+incident — vérifié sur les parties **1356 à 3259**, soit 1904 parties et 58 %
+du match. <strong>Le début n'a pas pu être lu</strong> : l'API de journaux
+plafonne à 5000 lignes et ne sert que la fin. Les fins de partie sont toutes
+ordinaires (adjudication, répétition, matériel insuffisant, cinquante coups,
+mat, pat) — aucune anomalie.</span> Le balayage préalable avait déjà rendu zéro
+perte au temps **aux deux cadences et jusqu'au diviseur 10**, plus agressif que
+le 12 livré.
 
-**Ce que ce verdict donne en plus de C21** : l'Elo par pli, à la profondeur où
-le moteur joue. C21 vaut +0,54 pli, donc `Elo / 0,54` est la constante
-manquante qui convertit les trois chantiers de D6. *Un match à profondeur fixe
-10 contre 11 aurait donné le même chiffre trois plis trop haut, pour un job de
-plus — il n'est donc pas acheté.*
+#### Pourquoi on ne reprend pas ce SPRT
+
+**Un test séquentiel interrompu puis prolongé n'a plus ses taux d'erreur.**
+C'est écrit dans `CLAUDE.md` et ce n'est pas négociable : reprendre à 3262
+parties pour « aller chercher les 16 % manquants » fabriquerait un verdict dont
+α et β ne valent plus rien.
+
+**Et l'estimation d'un SPRT expiré est biaisée vers zéro** : l'échantillon est
+conditionné à n'avoir jamais franchi ±2,94, ce qui tronque les extrêmes. Le
+vrai effet est donc plausiblement **au-dessus** de 14,59. <span>Inférence,
+confiance moyenne.</span>
+
+**Un seul job ne peut pas conclure sur cet effet.** Le budget vaut
+59 256 ÷ 14,59 ≈ **4 060 parties**, et ce runner — le plus rapide mesuré — en a
+fait 3262 en 350 min, soit 6,44 s par partie. Il faudrait ~436 min. La règle du
+projet le prévoyait : *en dessous de ~17 Elo, passer à des matchs à longueur
+fixe sur plusieurs jobs et les mettre en commun.*
+
+### EN VOL au 23 sept. 2026, 05 h 30 UTC — C21 en longueur fixe, deux jobs
+
+| run | graine | parties |
+|---|---|---|
+| [35822658045](https://github.com/theodubus/chess/actions/runs/35822658045) | `20260923` | 3000 |
+| [35822663218](https://github.com/theodubus/chess/actions/runs/35822663218) | `20260924` | 3000 |
+
+Mêmes binaires, même cadence `8+0,08`. Mis en commun : ~6000 parties, donc
+un intervalle attendu autour de **± 6,1 Elo** — assez pour séparer l'effet de
+la borne haute de 5.
+
+**Les deux graines DIFFÈRENT, et c'est une condition de validité, pas un
+détail.** Le moteur est déterministe : mêmes binaires + même graine = **les
+mêmes parties, coup pour coup**. Rejouer avec `20260913` n'aurait rien apporté
+qu'une copie du run expiré, et donner la même graine aux deux jobs aurait
+produit deux copies l'une de l'autre. *Une graine partagée entre deux matchs
+qu'on veut mettre en commun détruit exactement ce qu'on cherchait à gagner.*
+
+**Deux matchs en parallèle sont permis ici** : ils tournent sur des runners
+GitHub distincts, donc sans vol de CPU. La règle n'interdit la concurrence que
+sur une même machine.
+
+#### Au verdict
+
+- lire l'**étalonnage** de chaque job avant de mettre en commun — deux runners
+  peuvent différer de 58 % ;
+- le **contrôle des pertes au temps** passe avant l'Elo ;
+- inscrire le résultat avec **sa cadence et son effectif**, ici et dans la
+  fiche C21 du carnet ;
+- si l'effet tient : PR depuis `claude/project-documentation-review-denp0n`,
+  fusion en `merge`, jamais `squash` ;
+- **au moment de la fusion**, reprendre la notice de durée de `match.yml` : son
+  facteur 0,77 *est* le gaspillage de pendule, donc C21 le fait dériver vers 1.
+
 
 ### Ce qui reste à faire, par ordre mesuré
 

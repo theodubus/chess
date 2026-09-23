@@ -580,6 +580,20 @@ une mesure, pas une préférence.
   `workflow_dispatch`** : les runners GitHub ne dorment pas, et le journal
   reste lisible après coup. C'est ainsi que le plafond d'`eval.rs` a fini par
   être mesuré.
+- **Un SPRT expiré n'est pas « rien appris » — c'est une estimation biaisée
+  VERS ZÉRO, donc un minorant.** C21 a épuisé ses 350 minutes le 23 sept. 2026
+  à **3262 parties sans frontière**, et le dernier bloc complet donnait
+  **+14,59 ± 8,31 Elo, LOS 99,97 %, LLR 2,48 sur 2,94** — 84 % du chemin vers
+  H1. L'échantillon étant conditionné à n'avoir jamais franchi ±2,94, ses
+  extrêmes sont tronqués : le vrai effet est plausiblement **au-dessus** du
+  point estimé. <span>Inférence, confiance moyenne.</span> Ce qu'un tel run
+  interdit, c'est de servir de **verdict** — et de se faire *reprendre* :
+  prolonger un test séquentiel interrompu lui retire ses taux d'erreur. Ce
+  qu'il autorise, c'est de dimensionner le match suivant : ici 59 256 ÷ 14,59
+  ≈ 4 060 parties, quand le runner le plus rapide jamais mesuré n'en fait que
+  3 262 en 350 min. **La règle « en dessous de ~17 Elo, plusieurs jobs à
+  longueur fixe mis en commun » n'était pas une précaution, c'était une
+  prédiction.**
 - **Contrôler la vraisemblance avant d'inscrire un chiffre.** Un rapport
   parfaitement rond, nul, ou de plusieurs ordres de grandeur est un signe de
   protocole cassé, pas un résultat.
@@ -588,6 +602,13 @@ une mesure, pas une préférence.
 - **Un livre d'ouvertures est une condition de validité**, pas un agrément :
   le moteur étant déterministe, sans livre toutes les parties d'un match sont
   la même partie.
+  <br>**Et la GRAINE l'est tout autant, entre deux matchs qu'on veut mettre en
+  commun.** Mêmes binaires plus même graine donnent **les mêmes parties, coup
+  pour coup** — c'est la même propriété, d'un cran plus haut. Rejouer un match
+  expiré avec sa graine d'origine n'apporte donc *rien*, et donner la même
+  graine à deux jobs qu'on additionne produit deux copies l'une de l'autre :
+  l'effectif double sur le papier et l'information ne bouge pas. *Vérifier que
+  les graines diffèrent avant de lancer, jamais après avoir additionné.*
 - **Des pièges de ce fichier sont partis dans `tools/pieges-fermes.md`.**
   Chacun est désormais tenu par un dispositif qui le rend inexprimable —
   `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
