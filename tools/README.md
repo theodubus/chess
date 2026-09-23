@@ -829,10 +829,12 @@ si.
 
 | runs | graine | parties | cadence |
 |---|---|---|---|
-| lancés le 23 sept. vers 12 h 45 UTC — numéros inscrits à la relève | tirée par le run | 2 × 3000 | `8+0,08` |
+| [35861835486](https://github.com/theodubus/chess/actions/runs/35861835486) | tirée par le run | 3000 | `8+0,08` |
+| [35861838168](https://github.com/theodubus/chess/actions/runs/35861838168) | tirée par le run | 3000 | `8+0,08` |
 
 Candidat `bd896ba` (la rustine appliquée telle quelle), révoqué aussitôt dans
-le commit suivant ; référence `main` d'avant C22.
+le commit suivant ; référence `1b5afa8`, `main` d'avant C22. Lancés à
+12 h 39 UTC, fin attendue vers 18 h.
 
 #### Le critère — écrit AVANT de lancer
 
