@@ -741,6 +741,7 @@ tools/setup-arbiters.sh                    # construit fastchess
 tools/ref.sh <commit|branche|tag> [sortie] # construit un binaire de référence
 tools/sprt.sh <candidat> <référence>       # verdict sur un changement de décision
 tools/timing.sh <candidat> <référence>     # verdict sur une optimisation pure
+tools/plis.sh <journal cutechess -debug>   # plis gagnés EN PARTIE, appariés par partie
 tools/crosscheck.sh                        # les deux arbitres s'accordent-ils
 tools/mutants.sh --file engine/src/tt.rs   # balayage par mutation, sous verrou
 ```

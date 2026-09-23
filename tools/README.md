@@ -1279,11 +1279,17 @@ la fin de la partie</span>. *C'est le gisement du réglage suivant*,
    critère écrit avant. <span>Ordre de grandeur, confiance faible : 13 % de
    pendule, soit ~0,27 pli à 1,36 par doublement, soit 6 à 31 Elo sur
    l'étendue de 21 à 116 Elo par pli — donc plusieurs jobs.</span>
-2. **La sonde appariée par partie devient un outil** : huit minutes de
-   conteneur donnent les plis réellement gagnés par n'importe quel chantier de
-   temps ou de vitesse — ponder, allocation inégale, génération par étapes,
-   Lazy SMP. Elle vaut d'être écrite avec son test (un témoin fabriqué qui
-   doit rendre zéro), comme `paires.sh`.
+2. **La sonde appariée par partie est devenue un outil, le soir même** :
+   `tools/plis.sh <journal>`, sur la sortie de cutechess `-debug all` —
+   commande complète en tête du script. Huit minutes de conteneur donnent
+   les plis réellement gagnés par n'importe quel chantier de temps ou de
+   vitesse : allocation inégale, génération par étapes, Lazy SMP, réglage du
+   ponder. Son test, `tools/plis-test.sh`, tourne dans `verify.sh` : un
+   témoin fabriqué qui doit rendre zéro, le ponder jeté qui ne doit pas
+   compter, les refus ; **deux défauts injectés** — le `stop` compté comme un
+   coup, l'écart pris entre moyennes globales au lieu d'être apparié —
+   **tous deux attrapés**. Rejoué sur les trois journaux de la sonde, il rend
+   les chiffres du tableau ci-dessus.
 3. **Le vol de CPU sur runner** reste non mesuré : sans objet en `les-deux`,
    où il est symétrique ; à mesurer avant tout autre match `candidat`.
 
