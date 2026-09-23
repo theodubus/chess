@@ -592,6 +592,20 @@ impl Search {
         repetitions(&self.path, board.hash(), board.halfmove_clock()) > 0
     }
 
+    /// Vrai si la position est nulle PAR RÈGLE, vue depuis la recherche.
+    ///
+    /// Une seule répétition suffit — c'est le critère de recherche, voir
+    /// [`Position::is_repetition`]. La règle des cinquante coups, elle, cède
+    /// devant le mat : le mat termine la partie à l'instant où il est donné,
+    /// la règle des cinquante coups demande qu'on la réclame. Un mat donné au
+    /// centième demi-coup reste donc un mat, et le rendre nul ferait jouer au
+    /// moteur un coup qui perd en croyant tenir.
+    fn is_rule_draw(&self, board: &Board) -> bool {
+        self.is_repetition(board)
+            || (board.halfmove_clock() >= 100 && !is_checkmate(board))
+            || eval::is_insufficient_material(board)
+    }
+
     /// Retient un coup tranquille qui vient de provoquer une coupure bêta.
     ///
     /// Les captures en sont exclues : elles sont déjà ordonnées par MVV-LVA, et
@@ -732,6 +746,34 @@ impl Search {
     ) -> i32 {
         self.pv.clear(ply);
 
+        // Une répétition, la règle des cinquante coups ou un matériel
+        // insuffisant font nulle. Jamais à la racine : la position de départ
+        // n'est pas un résultat, il faut jouer.
+        //
+        // Le test se fait AVANT l'aiguillage vers la quiescence, et c'est tout
+        // son sens (C22). Placé après, il ne voyait que les nœuds intérieurs :
+        // une position nulle atteinte à l'HORIZON était évaluée par la
+        // quiescence comme si la partie continuait. Mesuré le 23 sept. 2026
+        // en rejouant le régime réel d'un match : 0,68 % des entrées en
+        // quiescence, soit 40 % de toutes les positions nulles que la
+        // recherche rencontre. L'arbitre le signalait depuis toujours — « PV
+        // continues after threefold repetition » — et la variante le montrait :
+        // à la profondeur 1, `f8e8 e6f6` pour un coup qui termine la partie.
+        //
+        // La quiescence elle-même n'a pas à le refaire : ses coups sont des
+        // captures et des promotions, qui remettent la pendule des cinquante
+        // coups à zéro et interdisent toute répétition en aval. Seul son nœud
+        // d'ENTRÉE, atteint par un coup tranquille, pouvait être une nulle.
+        //
+        // Le matériel insuffisant est déjà rendu à zéro par `evaluate` ; le
+        // tester **aussi** ici n'est pas une redondance mais une coupure. Sans
+        // elle, on parcourrait tout le sous-arbre d'une position morte pour
+        // que chacune de ses feuilles rende le même zéro.
+        if ply > 0 && self.is_rule_draw(board) {
+            self.nodes += 1;
+            return DRAW;
+        }
+
         if depth <= 0 {
             return self.quiescence(board, alpha, beta, ply, scratch);
         }
@@ -747,22 +789,6 @@ impl Search {
         self.nodes += 1;
         if self.should_abort() {
             return 0;
-        }
-
-        // Une répétition, la règle des cinquante coups ou un matériel
-        // insuffisant font nulle. Jamais à la racine : la position de départ
-        // n'est pas un résultat, il faut jouer.
-        //
-        // Le matériel insuffisant est déjà rendu à zéro par `evaluate` ; le
-        // tester **aussi** ici n'est pas une redondance mais une coupure. Sans
-        // elle, on parcourrait tout le sous-arbre d'une position morte pour
-        // que chacune de ses feuilles rende le même zéro.
-        if ply > 0
-            && (self.is_repetition(board)
-                || board.halfmove_clock() >= 100
-                || eval::is_insufficient_material(board))
-        {
-            return DRAW;
         }
 
         let key = board.hash();
@@ -1333,6 +1359,15 @@ const SCORE_KILLER_2: i32 = 900_000;
 /// Plafond de l'historique, au-delà duquel toutes les valeurs sont divisées par
 /// deux. Sans cela elles finiraient par déborder et par écraser les paliers.
 const HISTORY_MAX: i32 = 800_000;
+
+/// Vrai si le camp au trait est mat.
+///
+/// La génération de coups ne s'exécute qu'en échec, donc presque jamais : cette
+/// fonction ne sert qu'à la règle des cinquante coups, où elle départage une
+/// nulle d'un mat.
+fn is_checkmate(board: &Board) -> bool {
+    !board.checkers().is_empty() && first_legal_move(board).is_none()
+}
 
 /// Le premier coup légal de la position, dans l'ordre de génération.
 fn first_legal_move(board: &Board) -> Option<Move> {
@@ -2894,6 +2929,98 @@ mod tests {
             s.negamax(&pat, 3, 2, -INFINITY, INFINITY, &mut a),
             DRAW,
             "zéro coup sans échec est un pat, pas un mat"
+        );
+    }
+
+    // ---- Une nulle se détecte à l'intérieur ET à l'horizon (C22) ----
+    //
+    // Même leçon que le mat : deux branches, et un test qui n'en couvre
+    // qu'une laisse l'autre fausse sans bruit. Le test de nulle était placé
+    // APRÈS l'aiguillage vers la quiescence, donc invisible à `depth <= 0`.
+    // L'arbitre l'avait signalé des centaines de fois — « PV continues after
+    // threefold repetition » — et personne n'avait lu l'avertissement.
+    //
+    // Chaque test porte un TÉMOIN : la même position hors de la règle doit
+    // valoir autre chose que zéro. Sans lui, une position qui vaudrait déjà
+    // zéro ferait passer le test quelle que soit la branche empruntée — un
+    // test vrai qui ne mesure rien.
+
+    #[test]
+    fn une_repetition_se_voit_aussi_a_lhorizon() {
+        // Les blancs ont une dame de plus : la quiescence rend ~900, jamais 0.
+        let b = board("7k/8/8/8/8/8/8/1Q5K w - - 4 3");
+        let mut a = ardoise();
+
+        let mut temoin = search();
+        assert!(
+            temoin.negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a) > 500,
+            "témoin : sans répétition, la position ne vaut pas zéro"
+        );
+
+        // Le dernier élément du chemin est la position courante elle-même,
+        // comme dans la recherche, qui empile l'enfant avant de descendre.
+        let mut s = search();
+        s.path = vec![b.hash(), 0xAAAA, b.hash()];
+        assert_eq!(
+            s.negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "à l'horizon, une répétition est une nulle — pas une évaluation"
+        );
+        assert_eq!(
+            s.negamax(&b, 1, 1, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "à l'intérieur aussi, comme avant"
+        );
+    }
+
+    #[test]
+    fn la_regle_des_cinquante_coups_se_voit_aussi_a_lhorizon() {
+        let mut a = ardoise();
+        let temoin = board("7k/8/8/8/8/8/8/1Q5K w - - 99 80");
+        assert!(
+            search().negamax(&temoin, 0, 1, -INFINITY, INFINITY, &mut a) > 500,
+            "témoin : à 99 demi-coups, la partie continue"
+        );
+        let b = board("7k/8/8/8/8/8/8/1Q5K w - - 100 80");
+        assert_eq!(
+            search().negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "à 100 demi-coups, c'est nul — à l'horizon comme ailleurs"
+        );
+        assert_eq!(
+            search().negamax(&b, 2, 1, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "et à l'intérieur"
+        );
+    }
+
+    #[test]
+    fn un_mat_au_centieme_demi_coup_reste_un_mat() {
+        // Mat du couloir, donné au centième demi-coup. Le mat termine la
+        // partie à l'instant où il est donné ; la règle des cinquante coups
+        // demande qu'on la réclame. Rendre cette position nulle ferait jouer
+        // au moteur, du côté qui mate, un coup qu'il croirait sans valeur, et
+        // du côté maté, une ligne perdue qu'il croirait tenir.
+        let mut a = ardoise();
+        let mat = board("3R2k1/5ppp/8/8/8/8/5PPP/6K1 b - - 100 80");
+        assert_eq!(
+            search().negamax(&mat, 3, 2, -INFINITY, INFINITY, &mut a),
+            -MATE + 2,
+            "à l'intérieur, le mat l'emporte sur la règle des cinquante coups"
+        );
+        assert_eq!(
+            search().negamax(&mat, 0, 2, -INFINITY, INFINITY, &mut a),
+            -MATE + 2,
+            "à l'horizon aussi"
+        );
+
+        // Le contre-cas : en échec mais PAS mat — le roi s'échappe en g7.
+        // L'exception ne vaut que pour le mat ; ici la règle s'applique.
+        let echec = board("3R3k/7p/8/8/8/8/5PPP/6K1 b - - 100 80");
+        assert_eq!(
+            search().negamax(&echec, 3, 2, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "un simple échec ne suspend pas la règle des cinquante coups"
         );
     }
 
