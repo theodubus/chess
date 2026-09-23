@@ -114,6 +114,14 @@ une mesure, pas une préférence.
   restante. Sans cela, le signe du score de mat de negamax peut s'inverser
   sans qu'un seul test bronche — une position matée valant alors un gain
   écrasant.
+- **Une recherche en ponder ne rend jamais son coup avant `ponderhit` ou
+  `stop`**, même finie — mat trouvé, profondeur maximale. Recevoir `bestmove`
+  pendant le tour adverse est une faute de protocole. Et **le drapeau de
+  ponder s'écrit dans la couche UCI, avant de lancer le fil**, jamais par le
+  fil : un `ponderhit` arrivé avant son démarrage serait sinon écrasé, et le
+  moteur pondérerait jusqu'à perdre au temps. **Le temps de ponder compte
+  comme déjà dépensé sur ce coup** — l'échéance court depuis le `go ponder`,
+  comme chez Stockfish.
 - **L'échéance douce se déclenche quand le budget est dépassé, jamais avant.**
   Inverser sa comparaison ferait cesser l'approfondissement dès la première
   itération : le moteur jouerait **toute une partie à la profondeur 1** dès

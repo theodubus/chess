@@ -43,7 +43,12 @@ build_cutechess() {
   # explicitement la contre-vérification.
   if ! ls /usr/lib/*/cmake/Qt6 >/dev/null 2>&1; then
     echo "    installation de Qt6 (sudo requis)"
-    sudo apt-get update -qq
+    # `update` peut échouer pour une raison étrangère au dépôt — un PPA tiers
+    # de l'environnement qui n'est plus signé l'a fait le 23 sept. 2026 dans
+    # le conteneur de session. L'installation, elle, réussit souvent avec les
+    # listes déjà présentes : c'est elle qui doit trancher, pas `update`.
+    sudo apt-get update -qq \
+      || echo "    apt-get update a échoué — installation tentée avec les listes présentes"
     sudo apt-get install -y -qq qt6-base-dev qt6-base-dev-tools qt6-svg-dev
   fi
   local src="$DEST/cutechess-src"
@@ -63,4 +68,11 @@ build_fastchess
 
 echo
 echo "Arbitres prêts dans tools/arbiters/."
-[[ $WITH_CUTECHESS -eq 0 ]] && echo "cutechess-cli non construit : relancer avec --with-cutechess."
+# `if` et non `[[ … ]] && echo` : en DERNIÈRE ligne, ce raccourci rendait son
+# code d'échec au script entier. Avec --with-cutechess, le test est faux, donc
+# le script réussi sortait en 1 — vu le 23 sept. 2026 en construisant
+# cutechess pour le ponder. Toute étape de CI qui l'aurait appelé aurait
+# échoué sur une construction réussie.
+if [[ $WITH_CUTECHESS -eq 0 ]]; then
+  echo "cutechess-cli non construit : relancer avec --with-cutechess."
+fi

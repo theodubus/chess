@@ -20,6 +20,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::{self, JoinHandle};
 
+use cozy_chess::Move;
 use cozy_chess::util::display_uci_move;
 
 use crate::bench;
@@ -78,6 +79,7 @@ fn parse_go<'a>(tokens: &mut impl Iterator<Item = &'a str>) -> (Limits, Option<u
             "depth" => limits.depth = next_value(tokens),
             "nodes" => limits.nodes = next_value(tokens),
             "infinite" => limits.infinite = true,
+            "ponder" => limits.ponder = true,
             _ => {}
         }
     }
@@ -116,16 +118,73 @@ fn pv_to_uci(root: &cozy_chess::Board, pv: &[cozy_chess::Move]) -> String {
     parts.join(" ")
 }
 
+/// Ce que le moteur répond à `uci` : son nom, ses options, puis `uciok`.
+///
+/// Séparée de la boucle pour que l'annonce se teste : supprimer la ligne
+/// `Ponder` ne ferait tomber aucun match — fastchess ne pondère jamais — et
+/// une interface cesserait simplement de pondérer, sans rien signaler.
+fn identification() -> Vec<String> {
+    vec![
+        format!("id name {NAME} {VERSION}"),
+        format!("id author {AUTHOR}"),
+        format!("option name Hash type spin default {DEFAULT_SIZE_MB} min 1 max 4096"),
+        // Le moteur ANNONCE qu'il sait pondérer ; c'est l'interface qui décide
+        // de s'en servir, en envoyant `go ponder`. Désactivé par défaut, comme
+        // chez Stockfish, Ethereal et Leela Chess Zero (lu dans leurs sources).
+        "option name Ponder type check default false".to_owned(),
+        "uciok".to_owned(),
+    ]
+}
+
+/// La ligne `bestmove`, avec le pari `ponder` quand il existe.
+///
+/// Chaque coup est converti sur le plateau OÙ IL SE JOUE : le pari sur celui
+/// d'après `best`. Converti sur la racine, un roque adverse sortirait en
+/// notation interne — c'est l'invariant de frontière, et le pari est
+/// exactement le genre de coup où on l'oublie.
+///
+/// Séparée du fil de recherche pour la même raison que [`parse_go`] : sa
+/// logique se prouve, l'écriture sur stdout ne se regarde pas.
+fn bestmove_line(board: &cozy_chess::Board, best: Option<Move>, ponder: Option<Move>) -> String {
+    let Some(best) = best else {
+        // Aucun coup légal : mat ou pat. L'interface attend tout de même une
+        // réponse, et `0000` est le coup nul conventionnel.
+        return "bestmove 0000".to_owned();
+    };
+    let mut line = format!("bestmove {}", display_uci_move(board, best));
+    if let Some(ponder) = ponder
+        && board.is_legal(best)
+    {
+        let mut after = board.clone();
+        after.play_unchecked(best);
+        if after.is_legal(ponder) {
+            line.push_str(&format!(" ponder {}", display_uci_move(&after, ponder)));
+        }
+    }
+    line
+}
+
 /// L'état du moteur entre deux commandes.
 pub struct Engine {
     position: Position,
     stop: Arc<AtomicBool>,
+    /// Vrai entre `go ponder` et `ponderhit` ou `stop`. Écrit ICI seulement,
+    /// jamais par le fil de recherche — voir le champ du même nom dans
+    /// `Search`.
+    pondering: Arc<AtomicBool>,
     /// Le fil de recherche rend l'objet `Search` en se terminant, ce qui
     /// conserve la table de transposition d'un coup à l'autre sans partage
     /// entre fils ni verrou. C'est tout l'intérêt d'une table : la recherche
     /// du coup suivant part de ce que la précédente a déjà établi.
     worker: Option<JoinHandle<Search>>,
     search: Option<Search>,
+}
+
+/// Une recherche branchée sur les deux drapeaux du moteur.
+fn new_search(stop: &Arc<AtomicBool>, pondering: &Arc<AtomicBool>) -> Search {
+    let mut search = Search::new(Arc::clone(stop));
+    search.set_ponder_flag(Arc::clone(pondering));
+    search
 }
 
 impl Default for Engine {
@@ -139,10 +198,12 @@ impl Engine {
     #[must_use]
     pub fn new() -> Self {
         let stop = Arc::new(AtomicBool::new(false));
+        let pondering = Arc::new(AtomicBool::new(false));
         Self {
             position: Position::startpos(),
-            search: Some(Search::new(Arc::clone(&stop))),
+            search: Some(new_search(&stop, &pondering)),
             stop,
+            pondering,
             worker: None,
         }
     }
@@ -171,12 +232,9 @@ impl Engine {
 
         match command {
             "uci" => {
-                send(&format!("id name {NAME} {VERSION}"));
-                send(&format!("id author {AUTHOR}"));
-                send(&format!(
-                    "option name Hash type spin default {DEFAULT_SIZE_MB} min 1 max 4096"
-                ));
-                send("uciok");
+                for line in identification() {
+                    send(&line);
+                }
             }
             "isready" => send("readyok"),
             "ucinewgame" => {
@@ -191,7 +249,13 @@ impl Engine {
             "setoption" => self.set_option(tokens),
             "position" => self.set_position(tokens),
             "go" => self.go(tokens),
-            "stop" => self.stop.store(true, Ordering::Relaxed),
+            "stop" => {
+                self.pondering.store(false, Ordering::Relaxed);
+                self.stop.store(true, Ordering::Relaxed);
+            }
+            // L'adversaire a joué le coup parié : la recherche continue, et
+            // l'échéance posée au `go ponder` s'applique désormais.
+            "ponderhit" => self.pondering.store(false, Ordering::Relaxed),
             "d" => send(&self.position.board().to_string()),
             "bench" => {
                 let depth = tokens
@@ -210,8 +274,12 @@ impl Engine {
 
     /// `setoption name <nom> value <valeur>`.
     ///
-    /// Seul `Hash` est reconnu. Une option inconnue est ignorée en silence,
-    /// comme le protocole l'exige.
+    /// Seul `Hash` change quelque chose. `Ponder` est accepté en silence : il
+    /// n'annonce qu'une capacité, et la norme laisse au moteur le choix d'en
+    /// tenir compte dans sa gestion du temps. Stockfish ajoute alors 25 % à
+    /// son temps optimal ; ici rien encore — c'est un réglage à mesurer, pas à
+    /// recopier. Une option inconnue est ignorée en silence, comme le
+    /// protocole l'exige.
     fn set_option<'a>(&mut self, tokens: impl Iterator<Item = &'a str>) {
         let words: Vec<&str> = tokens.collect();
         let Some((name, value)) = parse_option(&words) else {
@@ -287,11 +355,15 @@ impl Engine {
         }
 
         self.stop.store(false, Ordering::Relaxed);
+        // AVANT de lancer le fil : un `ponderhit` qui arriverait avant que le
+        // fil ait démarré serait sinon écrasé par lui, et le moteur
+        // pondérerait jusqu'à perdre au temps.
+        self.pondering.store(limits.ponder, Ordering::Relaxed);
         let position = self.position.clone();
         let mut search = self
             .search
             .take()
-            .unwrap_or_else(|| Search::new(Arc::clone(&self.stop)));
+            .unwrap_or_else(|| new_search(&self.stop, &self.pondering));
 
         self.worker = Some(thread::spawn(move || {
             let best = search.go(&position, &limits, |info| {
@@ -317,15 +389,8 @@ impl Engine {
                 ));
             });
 
-            match best {
-                Some(mv) => send(&format!(
-                    "bestmove {}",
-                    display_uci_move(position.board(), mv)
-                )),
-                // Aucun coup légal : mat ou pat. L'interface attend tout de même
-                // une réponse, et `0000` est le coup nul conventionnel.
-                None => send("bestmove 0000"),
-            }
+            let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
+            send(&bestmove_line(position.board(), best, ponder));
             search
         }));
     }
@@ -355,6 +420,7 @@ impl Engine {
     /// récupérée. Sert aux réglages qui ne peuvent s'appliquer qu'entre deux
     /// recherches.
     fn abort_search_keeping(&mut self, f: impl FnOnce(&mut Search)) {
+        self.pondering.store(false, Ordering::Relaxed);
         self.stop.store(true, Ordering::Relaxed);
         if let Some(worker) = self.worker.take() {
             self.search = worker.join().ok();
@@ -373,6 +439,99 @@ mod tests {
 
     fn go(ligne: &str) -> (Limits, Option<u32>) {
         parse_go(&mut ligne.split_whitespace())
+    }
+
+    #[test]
+    fn go_ponder_se_lit_sans_deranger_la_pendule() {
+        let (limites, _) = go("ponder wtime 1000 btime 2000 winc 10 binc 20");
+        assert!(limites.ponder, "le jeton ponder doit être vu");
+        assert_eq!(limites.wtime, Some(1000), "la pendule reste lue");
+        assert_eq!(limites.btime, Some(2000));
+        let (sans, _) = go("wtime 1000 btime 2000");
+        assert!(!sans.ponder, "sans le jeton, pas de ponder");
+    }
+
+    #[test]
+    fn le_moteur_annonce_le_ponder_desactive_avant_uciok() {
+        let lignes = identification();
+        let ponder = lignes
+            .iter()
+            .position(|l| l == "option name Ponder type check default false");
+        assert!(
+            ponder.is_some(),
+            "l'option Ponder doit être annoncée, désactivée par défaut"
+        );
+        let ponder = ponder.unwrap();
+        let fin = lignes.iter().position(|l| l == "uciok").unwrap();
+        assert!(ponder < fin, "une option annoncée après uciok est ignorée");
+        assert_eq!(fin, lignes.len() - 1, "uciok clôt l'identification");
+    }
+
+    #[test]
+    fn le_pari_se_convertit_sur_le_plateau_dapres() {
+        // Les noirs peuvent roquer après le coup blanc : cozy-chess note le
+        // petit roque noir e8h8, UCI attend e8g8. Converti sur la RACINE, où
+        // c'est aux blancs de jouer, le coup serait illégal — et le pari
+        // disparaîtrait sans bruit, ou sortirait en notation interne.
+        let racine: cozy_chess::Board = "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1".parse().unwrap();
+        let meilleur = cozy_chess::util::parse_uci_move(&racine, "a1a2").unwrap();
+        let mut apres = racine.clone();
+        apres.play_unchecked(meilleur);
+        let roque = cozy_chess::util::parse_uci_move(&apres, "e8g8").unwrap();
+        assert_eq!(
+            bestmove_line(&racine, Some(meilleur), Some(roque)),
+            "bestmove a1a2 ponder e8g8"
+        );
+    }
+
+    #[test]
+    fn un_pari_illegal_ou_absent_disparait_de_bestmove() {
+        let racine = cozy_chess::Board::default();
+        let e4 = cozy_chess::util::parse_uci_move(&racine, "e2e4").unwrap();
+        assert_eq!(bestmove_line(&racine, Some(e4), None), "bestmove e2e4");
+        // Un « pari » qui n'est pas un coup noir légal après e4.
+        assert_eq!(
+            bestmove_line(&racine, Some(e4), Some(e4)),
+            "bestmove e2e4",
+            "un pari illégal ne sort jamais"
+        );
+        assert_eq!(bestmove_line(&racine, None, None), "bestmove 0000");
+    }
+
+    #[test]
+    fn ponderhit_et_stop_baissent_le_drapeau_de_ponder() {
+        let mut moteur = Engine::new();
+        assert!(moteur.handle("position startpos moves e2e4 e7e5"));
+        assert!(moteur.handle("go ponder wtime 60000 btime 60000"));
+        assert!(
+            moteur.pondering.load(Ordering::Relaxed),
+            "`go ponder` lève le drapeau AVANT de lancer le fil"
+        );
+        assert!(moteur.handle("ponderhit"));
+        assert!(
+            !moteur.pondering.load(Ordering::Relaxed),
+            "ponderhit le baisse"
+        );
+        // Et ponderhit n'est PAS un stop : l'adversaire a joué le coup parié,
+        // la recherche continue jusqu'à son échéance. Un `ponderhit` qui
+        // arrêterait tout jouerait chaque coup prédit avec la profondeur du
+        // seul temps adverse — le cas le plus fréquent, 66 % des coups.
+        assert!(
+            !moteur.stop.load(Ordering::Relaxed),
+            "ponderhit ne doit pas arrêter la recherche"
+        );
+
+        assert!(moteur.handle("go ponder wtime 60000 btime 60000"));
+        assert!(moteur.pondering.load(Ordering::Relaxed));
+        assert!(moteur.handle("stop"));
+        assert!(!moteur.pondering.load(Ordering::Relaxed), "stop aussi");
+
+        assert!(moteur.handle("go wtime 60000 btime 60000"));
+        assert!(
+            !moteur.pondering.load(Ordering::Relaxed),
+            "un go ordinaire ne pondère pas"
+        );
+        assert!(!moteur.handle("quit"));
     }
 
     #[test]
@@ -456,7 +615,19 @@ mod tests {
         // Le pendant du test précédent : sans lui, une analyse qui remplirait
         // tous les champs quoi qu'il arrive passerait.
         assert_eq!(go(""), (Limits::default(), None));
-        assert_eq!(go("ponder"), (Limits::default(), None));
+        // `ponder` était ignoré tant que le moteur ne pondérait pas ; il est
+        // lu depuis qu'il pondère. Ce qui reste vrai, et que ce test garde :
+        // il ne contraint RIEN d'autre — ni pendule, ni profondeur.
+        assert_eq!(
+            go("ponder"),
+            (
+                Limits {
+                    ponder: true,
+                    ..Limits::default()
+                },
+                None
+            )
+        );
     }
 
     #[test]
