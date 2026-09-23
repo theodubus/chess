@@ -86,8 +86,15 @@ impl Bound {
     }
 }
 
-/// Répartition des 64 bits de données. Cinquante bits utilisés sur soixante-
-/// quatre ; les quatorze restants sont libres.
+/// Répartition des 64 bits de données : score aux bits 0 à 15, coup 16 à 31,
+/// profondeur 32 à 39, borne 40 et 41, génération 42 à 49. Cinquante bits
+/// utilisés sur soixante-quatre ; les quatorze restants sont libres.
+///
+/// **Le score n'a pas de décalage**, il occupe les bits de poids faible. Un
+/// décalage nul écrit pour la symétrie se mute en décalage nul dans l'autre
+/// sens : deux mutants équivalents, que le balayage du 23 sept. 2026 a
+/// trouvés, et du code qu'aucun test ne peut garder — `CLAUDE.md`, « un
+/// mutant équivalent est souvent du code mort ».
 ///
 /// **Le score tient sur seize bits, et ce n'est pas un pari** : `MATE` vaut
 /// 30 000, et une assertion posée dans `store` le 22 sept. 2026 n'a jamais été
@@ -98,7 +105,6 @@ impl Bound {
 /// **La génération garde ses huit bits**, donc le schéma de remplacement est
 /// identique au bit près à celui de la version non atomique. C'était le risque
 /// d'un encodage serré, et il est écarté.
-const SCORE_SHIFT: u32 = 0;
 const MV_SHIFT: u32 = 16;
 const DEPTH_SHIFT: u32 = 32;
 const BOUND_SHIFT: u32 = 40;
@@ -112,7 +118,7 @@ fn pack_data(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8) -> u6
     );
     let score = score.clamp(i32::from(i16::MIN), i32::from(i16::MAX));
     let score = u64::from(u16::from_ne_bytes((score as i16).to_ne_bytes()));
-    (score << SCORE_SHIFT)
+    score
         | (u64::from(mv) << MV_SHIFT)
         | (u64::from(u8::from_ne_bytes(depth.to_ne_bytes())) << DEPTH_SHIFT)
         | (bound.to_bits() << BOUND_SHIFT)
@@ -121,7 +127,7 @@ fn pack_data(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8) -> u6
 
 /// Opération inverse de [`pack_data`].
 fn unpack_data(data: u64) -> (i32, u16, i8, Bound, u8) {
-    let score = i16::from_ne_bytes((((data >> SCORE_SHIFT) & 0xFFFF) as u16).to_ne_bytes());
+    let score = i16::from_ne_bytes(((data & 0xFFFF) as u16).to_ne_bytes());
     let mv = ((data >> MV_SHIFT) & 0xFFFF) as u16;
     let depth = i8::from_ne_bytes((((data >> DEPTH_SHIFT) & 0xFF) as u8).to_ne_bytes());
     let bound = Bound::from_bits(data >> BOUND_SHIFT);
