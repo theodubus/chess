@@ -1761,6 +1761,42 @@ n'est pas la force** — un temps jusqu'à une profondeur, sur des positions
 d'ouverture, un relevé par position et non déterministe : il dit seulement
 que l'implémentation accélère, avant de dépenser un runner.
 
+#### Ce que font les listes, les tournois et les autres moteurs — vérifié le 24 sept. 2026
+
+Question de Théo : « a-t-on le droit à un nombre de cœurs libre en compétition,
+ou c'est 4 au plus ? ». **Le cadre était faux** : ce n'est jamais le moteur qui
+choisit — l'organisateur fixe la machine et règle `Threads` pour chacun ; le
+moteur doit bien employer ce qu'on lui donne, quel qu'en soit le nombre.
+
+- **CCRL 40/15** : chaque moteur y est testé à **1 et à 4 fils**, en deux
+  entrées distinctes — le suffixe « 4CPU » désigne la seconde, l'absence de
+  suffixe la première ; la table est quadruplée à 4 fils. **CCRL Blitz**
+  (`2'+1"`) : **1 et 8 fils** (« 8CPU »), **ponder désactivé**. Sources : les
+  pages de conditions du CCRL et des fils de TalkChess, **lues par le moteur de
+  recherche seulement** — le proxy de la session bloque les deux sites.
+  Confiance moyenne à élevée : plusieurs sources concordent.
+- **TCEC** : tous les moteurs sur un même serveur ; celui de la saison 28 est
+  donné pour **2 × AMD EPYC 9754, 256 cœurs / 512 fils** (Chessdom,
+  TalkChess — secondaires, un résumé portait aussi « 52 cœurs / 104 fils »,
+  divergence non levée). Combien de fils chaque moteur reçoit : **non vérifié**.
+- **Stockfish** — lu dans son source le 24 sept. : `Threads` vaut 1 par
+  défaut, **au plus `max(1024, 4 × fils matériels)`** ; le coup joué est celui
+  du **meilleur fil** (`get_best_thread`), pas toujours du principal ; certains
+  historiques sont **partagés** entre fils. Lazy SMP y remplace YBWC depuis
+  Stockfish 7, janvier 2016 (PR #467). Variante courante ailleurs : des fils
+  lancés à des profondeurs différentes.
+
+**Ce que ça change ici.** (1) **`MAX_THREADS` vaut 64** : une borne sous les
+machines de TCEC. La relever ne change rien à 1 ou 2 fils ; **l'échelle au-delà
+de quatre fils reste non mesurée**, les runners n'ayant que deux cœurs
+physiques et le conteneur quatre — ce sera écrit comme tel. (2) Notre Lazy SMP
+est la forme la plus simple : fil principal seul décideur, aucun décalage de
+profondeur, pas de vote du meilleur fil, pas d'historique partagé — autant de
+variantes à mesurer, chacune seule. (3) Sur les listes, **la force monofil
+reste une entrée à part entière** : le multifil s'ajoute, il ne la remplace pas.
+(4) **Ponder désactivé au CCRL Blitz** : le remboursement du ponder ne sert que
+là où le ponder est permis.
+
 #### La mesure à deux fils — écrite AVANT de lancer
 
 Sur les runners, deux cœurs physiques : Lazy SMP ne s'y mesure qu'à **deux
@@ -1830,7 +1866,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
-| **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
+| **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | génération par étapes | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
