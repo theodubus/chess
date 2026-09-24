@@ -146,7 +146,8 @@ C'est la seule condition de sortie de ce fichier.
   <br>**Ce qu'il a rapporté, mesuré le 22 sept. : 163 mutants tués par un seul
   test.** `search.rs` 110 → **45**, `eval.rs` 219 → **121**, total du dépôt
   336 → **173**. Le trou ne datait pas de la veille : il existait depuis la
-  création du cliquet.
+  création du cliquet. **Passé à la profondeur 6 le 24 sept. au soir** :
+  `eval.rs` 121 → **89** de plus, sans changer une ligne du fichier.
   <br>**Tenu par** : `engine/tests/bench_reference.rs`, test `larbre_de_recherche_ne_bouge_pas_en_silence` — le banc figé à la profondeur 6, non ignoré, donc visible du cliquet de mutation.
 
 - **Deux balayages de mutation concurrents se corrompent.** Le 15 sept. 2026,
