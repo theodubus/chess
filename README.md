@@ -65,7 +65,10 @@ d'un aveu sur la profondeur de recherche.
 > vitesse. **Activé, il vaut +67,6 ± 9,2 Elo à `8+0,08` contre lui-même**
 > (2 700 parties, zéro perte au temps) : la prévision y tombe juste sur 70 %
 > des coups, et il cherche 0,94 pli plus profond. Contre un autre adversaire
-> le chiffre change — prévoir un jumeau est le cas le plus facile.
+> le chiffre change — prévoir un jumeau est le cas le plus facile. Et sur les
+> machines de mesure, qui n'ont que deux cœurs physiques, le camp qui pondère
+> prend 3 à 5 % de vitesse à l'autre : 3 à 10 Elo de ce chiffre en viennent
+> (estimation, mesurée le 23 sept.).
 >
 > Il n'a encore ni recherche parallèle, ni NNUE.
 

@@ -523,6 +523,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-22 | **D5 — retrait de l'élagage delta, à `8+0,08`** | **PAS DE VERDICT — SPRT tué par le plafond du job** à 3 738 parties. Retrait : **−1,49 Elo ± 7,83**, IC `[−9,3 ; +6,3]`, 49,79 % de score, **LLR 0,06 sur ±2,94**, Ptnml [141, 373, 851, 369, 135]. [run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914), candidat `cbaa8d4` contre `a57c835`, bornes `[-5, 0]`, graine 20260913. Étalonnage : **2 324 708 n/s, profondeur 12**. **Ne pas lire comme un verdict** : un SPRT arrêté par l'horloge est conditionné à n'avoir pas touché ses bornes, donc biaisé vers zéro. Ce qui est établi, c'est que l'effet n'a **rien à voir avec les +32,5 Elo** du verdict de `1+0,01` — celui-là aurait tranché vers 1 825 parties. L'élagage **reste dans `main`**. Banc du candidat : 138 458 nœuds (× 1,21). |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 | 2026-09-23 | **C21 — défaut de `movestogo` de 30 à 12, à `8+0,08`** | **+19,13 Elo ± 6,31** sur 6 000 parties à longueur fixe, deux matchs mis en commun, zéro perte au temps. **Fusionné.** Le SPRT qui l'avait précédé avait expiré à +14,59 ± 8,31 — un minorant, et c'en était un. Section « C21 — VERDICT ». |
+| 2026-09-23 | **Vol de CPU du ponder sur runner — deux sondes de 60 parties, à `8+0,08`** | **r = 0,948** (rapport des n/s 0,950 en ponder, 1,002 au témoin) ≥ 0,93 : **le verdict du ponder tient**, sur la règle écrite avant. Vol estimé 3 à 5 % de vitesse, 3 à 10 Elo des +67,63. **Topologie : 2 cœurs physiques, 2 fils par cœur (AMD EPYC 7763)**. [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290), [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087). Section « Vol de CPU du ponder sur runner — VERDICT ». |
 | 2026-09-23 | **C22 — le test de nulle avant l'aiguillage vers la quiescence, à `8+0,08`** | **−10,44 Elo ± 6,34** sur 5 760 parties — **régression, non fusionné**, arrêté par son critère écrit avant. 92 % des nulles qu'il ajoutait à l'horizon étaient fausses (C23) : **remesuré sur C23, en vol**. Section « C22 — VERDICT ». |
 | 2026-09-23 | **B9 — effet de capacité de la table à entrées atomiques, à `8+0,08`** | **−1,27 Elo ± 6,34** sur 5 740 parties — pas d'effet décelable. **Fusionné au titre de l'infrastructure** (la table se partage entre fils ; −4,3 % de temps déjà prouvé). Section « B9 — VERDICT ». |
 | 2026-09-23 | **Ponder activé pour un seul camp, même binaire, à `8+0,08`** | **+67,63 Elo ± 9,19** sur 2 700 parties (cutechess, une partie à la fois), zéro anomalie — **contre notre jumeau**, donc un chiffre qui appartient à son adversaire. Le ponder reste désactivé par défaut ; l'interface l'active. Section « Ponder — VERDICT ». |
@@ -711,8 +712,8 @@ dernière relève est faite.
 | C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 19 h 45, 2 × 2 880 parties | **+2,65 ± 6,40 : pas d'effet décelable, FUSIONNÉ** au titre de la règle (`25fd727`) |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
 | C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | plafond vers 01 h 50 le 24 — ~2 880 parties chacun | fusion sauf régression — correctif de règle, même critère que C22 |
-| **vol de CPU du ponder sur runner** — deux sondes | parmi 35933841290, 35933844087, 35933846266, 35933847908, 35933850590 — les rôles se lisent dans les résumés, les appels étant partis en parallèle | `2f3bf1a` des deux côtés, `8+0,08`, 60 parties chacune, une à la fois : `ponder = candidat` et témoin | cutechess, sonde | ~00 h 05 | la règle écrite dans sa section : rapport ponder / témoin ≥ 0,93, le verdict du ponder tient ; < 0,85, remesurer en épinglant les moteurs |
-| **calibrer l'Elo par pli** — deux matchs et une sonde | les trois autres runs du même groupe | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties (fastchess, graine « auto ») et une sonde de 100 parties | fastchess ; cutechess pour la sonde | sonde ~00 h 40 ; matchs ~05 h 20, au plafond | Elo et plis du doublement, et leur rapport **en intervalle** ; attendu 69 à 141 Elo, écrit avant |
+| **vol de CPU du ponder sur runner** — deux sondes | **35933841290** (`ponder = candidat`), **35933844087** (témoin) | `2f3bf1a` des deux côtés, `8+0,08`, 60 parties chacune, une à la fois | cutechess, sonde | **RELEVÉ** — finies à 23 h 53 et 23 h 55 | **r = 0,948 ≥ 0,93 : le verdict du ponder tient.** Et les runners n'ont que **deux cœurs physiques** (SMT) — voir son verdict |
+| **calibrer l'Elo par pli** — deux matchs et une sonde | 35933846266, 35933847908, 35933850590 — les rôles se liront dans les résumés | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties (fastchess, graine « auto ») et une sonde de 100 parties | fastchess ; cutechess pour la sonde | sonde ~00 h 40 ; matchs ~05 h 20, au plafond | Elo et plis du doublement, et leur rapport **en intervalle** ; attendu 69 à 141 Elo, écrit avant |
 | balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 20 h 44, verdict vert | `tt.rs` **6**, exactement la prédiction (les quatre `\|` de `pack_data` et les deux de `pack_move`) → plafond **baissé de 8 à 6**. `search.rs` **43** : les mêmes survivants un pour un, et aucun dans le code de C23 — qui ne porte aucun opérateur mutable, donc le balayage ne pouvait rien en dire ; sa couverture reste celle mesurée à la main (quatre défauts injectés, quatre attrapés). Les autres au plafond, aucune issue |
 | balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 19 h 44 | `tt.rs` **8** contre 2, tous équivalents : deux décalages nuls retirés comme code mort, plafond inscrit à 8, le chiffre mesuré (PR #56). `search.rs` **43** contre 45 : les trois survivants de `ponder_move` tués par la PR #50, 47 expirés comme au balayage précédent — plafond resserré à 43. Les autres au plafond. Issue #57 fermée |
 
@@ -1397,8 +1398,11 @@ la fin de la partie</span>. *C'est le gisement du réglage suivant*,
    coup, l'écart pris entre moyennes globales au lieu d'être apparié —
    **tous deux attrapés**. Rejoué sur les trois journaux de la sonde, il rend
    les chiffres du tableau ci-dessus.
-3. **Le vol de CPU sur runner** reste non mesuré : sans objet en `les-deux`,
-   où il est symétrique ; à mesurer avant tout autre match `candidat`.
+3. <s>**Le vol de CPU sur runner** reste non mesuré</s> — **MESURÉ le 23 sept.
+   au soir : r = 0,948, le verdict tient**, mais 3 à 10 Elo des +67,63
+   viennent du vol, les runners n'ayant que deux cœurs physiques. Voir « Vol
+   de CPU du ponder sur runner — VERDICT ». Sans objet en `les-deux`, où il
+   est symétrique.
 
 #### Ce qui avait été lancé
 
@@ -1452,7 +1456,54 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 3. Inscrire le verdict ici, dans la table « Ce qui reste à faire », dans la
    fiche du carnet ; et dire à quelle cadence il vaut.
 
-### Vol de CPU du ponder sur runner — EN VOL : la sonde, avant tout autre match `candidat`
+### Vol de CPU du ponder sur runner — VERDICT, 23 sept. 2026 : r = 0,948, le verdict du ponder tient — et les runners n'ont que DEUX cœurs physiques
+
+#### Le verdict — rendu à 23 h 58, sur la règle écrite avant
+
+| sonde, `8+0,08`, 60 parties, `2f3bf1a` des deux côtés | rapport des n/s, coups partis d'un `go` | écart de plis apparié | taux de succès du ponder |
+|---|---|---|---|
+| `ponder = candidat` — [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290) | **0,950** (candidat 2 687 240, référence 2 553 531) | +0,85 ± 0,24 | 0,681 |
+| témoin — [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087) | **1,002** (2 698 290 contre 2 704 881) | −0,02 ± 0,08 | — |
+
+**r = 0,950 / 1,002 = 0,948 ≥ 0,93 : le verdict du ponder tient, comme la
+règle écrite avant le prévoyait** — et comme l'attendu, « ≥ 0,93 ». Le témoin
+rend 1,002 et un écart de plis nul : la méthode ne fabrique rien quand rien ne
+diffère. Les +0,85 ± 0,24 pli du ponder sur runner retombent sur les +0,94 ±
+0,20 du conteneur. Zéro anomalie dans les deux journaux.
+
+**Ce que la ligne de topologie a trouvé, et c'est plus grand que la
+question** : `4 processeurs logiques, 2 cœurs physiques, 2 fil(s) par cœur —
+AMD EPYC 7763`, sur les deux runners. **Les runners ont le SMT** ; le conteneur
+de session, non.
+
+**Le vol, chiffré au-delà de la règle.** <span>Inférence, confiance
+moyenne.</span> Les deux runners avaient un banc à 1 % près (2 215 051 et
+2 237 531 n/s) : pour une fois, les n/s de la référence se comparent d'un run
+à l'autre — 2 553 531 contre 2 704 881, soit **−4,6 %** une fois le banc
+corrigé, quand le conteneur rendait −0,8 %. Le rapport dans le run, lui, rend
+0,948 contre 0,966 en conteneur. Les deux disent **3 à 5 % de vitesse volés à
+la référence**, soit 0,06 à 0,09 pli : **3 à 10 Elo des +67,63**, aux deux
+points d'Elo par pli mesurés. C'est dans l'intervalle du verdict, et ça ne
+change pas la décision — activer le ponder quand le déploiement le permet.
+**Mais +67,63 se cite désormais avec cette réserve.** Tout futur match
+`candidat` seul porte le même biais ; le réglage du remboursement se mesure
+en `les-deux`, où il est symétrique.
+
+#### Ce que deux cœurs physiques changent ailleurs
+
+- **Tous les matchs à concurrence 3** mettent trois moteurs en réflexion sur
+  deux cœurs physiques. Le partage est symétrique entre candidat et référence,
+  donc **chaque verdict reste valide en interne**. Mais le point de
+  fonctionnement réel — la profondeur atteinte EN PARTIE — est plus bas que
+  ne le dit l'étalonnage, qui mesure un banc seul sur la machine. De combien,
+  ce n'est pas mesuré (liste de surveillance).
+- **B6** : sur ces runners, Lazy SMP ne se mesure sans SMT qu'à **deux fils**.
+  Le « 1,0 à 1,8 pli » hérité supposait quatre vrais cœurs ; un gain mesuré
+  ici en sera un minorant pour une machine qui en a plus.
+- La table de « La concurrence d'un match se DÉDUIT des cœurs » compte des
+  processeurs logiques ; elle le dit désormais.
+
+#### La règle et le protocole, tels qu'écrits avant de lancer
 
 Le verdict du ponder (+67,63 ± 9,19) a été rendu sur des runners dont
 **personne n'avait regardé la topologie** : « quatre cœurs » peut vouloir dire
@@ -1580,7 +1631,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
 | **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **EN COURS — décidé n° 1.** `match.yml` sait jouer une cadence par moteur et une sonde depuis le 23 sept. au soir ; deux matchs pour l'Elo, une sonde pour les plis, protocole et attendu écrits avant — voir « Calibrer l'Elo par pli — EN VOL ». Deux points mesurés donnent 21 à 119 et 51 à 104 Elo par pli (section ponder) : trop large pour classer les chantiers de vitesse |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
-| **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie). Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
+| **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie). Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
@@ -2359,7 +2410,7 @@ chantiers déjà dans la file la franchissent.
 > Le cœur de réserve est pour l'arbitre et le système : un moteur qui attend
 > un cœur perd du temps de pendule, et le perd de façon asymétrique.
 
-| ce que font les moteurs | cœurs par partie | concurrence sur 4 cœurs |
+| ce que font les moteurs | cœurs par partie | concurrence sur 4 processeurs logiques — **2 cœurs physiques**, mesuré le 23 sept. |
 |---|---|---|
 | monofil, sans ponder — **tout ce qui a été mesuré jusqu'ici** | 1 (un seul moteur réfléchit à la fois) | **3** |
 | un camp pondère (mesure du ponder) | 2 | **1** |
@@ -2393,6 +2444,7 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 | **le déclencheur de B8** | maintenant | sa **lettre** est satisfaite (C12 clos, C18 décidé), son **esprit** non (C17, C19, C21 sont entrés depuis). Ça demande une re-spécification, pas une mesure — donc personne ne peut la calculer |
 | <s>`attack_dump.rs` et `see_check.rs`</s> | **FAIT le 23 sept.** — `tools/Cargo.toml` porte `autobins = false` et les deux y sont déclarés (voir `CLAUDE.md`) | <s>autodécouverts par cargo, non déclarés</s> |
 | <s>une routine hebdomadaire HORS dépôt, « ShallowRed — verdict du balayage par mutation »</s> | **FAIT le 23 sept. au soir** — supprimée, **remplacée** par `tools/balayage-vivant.sh` dans la CI | **Vérifiée avant d'être jugée, et c'était pire qu'un doublon.** Les quatre issues « mutation » viennent toutes du job `Verdict` ; aucune d'elle. Le 22 sept., seul mardi où le cliquet a cassé sur `main`, GitHub a lancé le cron de 00:00 avec **3 h 48 de retard** : la routine de 03:00 a lu l'exécution précédente et s'est tue. Elle avait pourtant **une** fonction que rien d'autre ne tenait — dire que le balayage ne tourne plus, ce que GitHub provoque sur un dépôt public après soixante jours sans activité. C'est cette fonction-là qui est entrée dans le dépôt, testée |
+| **la profondeur EN PARTIE à concurrence 3 sur deux cœurs physiques** | avant de comparer un point de fonctionnement à un autre — cadence, runner, conteneur | l'étalonnage mesure un banc SEUL sur la machine ; trois moteurs sur deux cœurs physiques (SMT, mesuré le 23 sept.) cherchent moins profond. Symétrique, donc aucun verdict ne se fausse — mais « profondeur 12 à `8+0,08` » décrit le banc, pas les parties. Se mesure par la profondeur non appariée des coups d'un témoin joué à concurrence 3 contre celle de la sonde témoin, sur des runners au banc voisin |
 | le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
 
 ### B9 — écrit et mesuré le 23 sept. 2026 — état d'AVANT la fusion, gardé pour ses chiffres

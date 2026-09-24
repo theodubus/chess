@@ -505,6 +505,11 @@ une mesure, pas une préférence.
   de l'inégalité depuis le 23 sept.** — deux cœurs par partie dès que
   quelqu'un pondère — et refuse de lancer si elle ne tient pas ; il ne sait
   encore rien des fils, étape de B6. Tableau dans `tools/README.md`.
+  <br>**Mesuré le 23 sept. : ces quatre cœurs sont quatre processeurs
+  LOGIQUES pour deux cœurs physiques** (SMT). À concurrence 3, trois moteurs
+  s'en partagent deux : symétrique, donc chaque verdict reste valide en
+  interne, mais la profondeur EN PARTIE est plus basse que l'étalonnage ne le
+  dit, et Lazy SMP ne s'y mesure sans SMT qu'à deux fils.
 - **Un renvoi par POSITION vieillit comme un chiffre recopié, et sans bruit.**
   `tools/README.md` commentait « la dernière ligne » d'un tableau de nœuds ;
   écrite le 16 sept. 2026 elle visait juste, puis deux mesures ajoutées sous
