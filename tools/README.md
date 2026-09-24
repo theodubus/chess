@@ -719,7 +719,8 @@ dernière relève est faite.
 | calibrer l'Elo par pli — deux matchs et une sonde | matchs d'Elo : 35933846266, 35933847908 ; sonde de plis : 35933850590 | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties et une sonde de 100 parties | fastchess ; cutechess pour la sonde | **RELEVÉ** — sonde à 00 h 27, matchs finis entiers à 05 h 11 et 05 h 12 | **+107,74 ± 8,19 Elo et +1,38 ± 0,28 pli pour un doublement : 60 à 105 Elo par pli.** L'attendu écrit avant tient (section de son verdict) |
 | **B6 — la sonde à deux fils** | 35947696926 | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, 60 parties, une à la fois | cutechess, sonde | **RELEVÉE à 02 h 58** | **+0,48 ± 0,08 pli, n/s × 2,05** : dans l'attendu, chaque fil a son cœur — le match d'Elo est lancé (section B6) |
 | **B6 — l'Elo à deux fils** | **35949564324, 35949565830, 35949567986** | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, graine « auto » | 3 × 900, fastchess, une partie à la fois | **RELEVÉ** — finis entiers entre 08 h 26 et 08 h 28 | **+42,16 ± 9,23 en commun, homogènes : deux fils rapportent** (section B6). 0,31 à 0,86 pli par l'étalon |
-| **A18 — génération par étapes, la sonde** | **35971800328** | `087edb8` → `d01183d`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | ~08 h 35 | La règle écrite avant (section A18) : n/s ≤ 1,00 ou plis entièrement ≤ 0 → pas de match ; sinon les deux jobs de 3 000 parties |
+| **A18 — génération par étapes, la sonde** | 35971800328 | `087edb8` → `d01183d`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | **RELEVÉE à 08 h 29** | **n/s × 1,09, +0,17 ± 0,07 pli** : dans l'attendu, la règle lance l'Elo (section A18) |
+| **A18 — l'Elo** | **35975781390, 35975784326** | `087edb8` → `d01183d`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | ~14 h 25, au plafond vers 2 880 parties chacun | Mise en commun, puis le critère en bornes écrit avant (section A18) : fusion sauf borne haute sous zéro |
 | balayage de mutation après B6 | 35949682016 | `main` à `65d0b03`, Lazy SMP | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 04 h 03, verdict vert | **La prédiction tient** : `search.rs` 40, **les mêmes survivants** qu'après C22 — le couple déplacé de `go` vers `iterate` compris —, Lazy SMP n'en ajoute aucun ; `uci.rs` 0. 472 mutants, 357 attrapés, 22 inviables, **53 expirés contre 47** : inférence, ce sont les mutants qui rendent un budget de nœuds inatteignable ou suppriment l'arrêt des auxiliaires — un test pend au lieu d'échouer ; le résumé ne liste pas les expirés |
 | balayage de mutation après la PR #72 | 35954091395 | `main` à `8ad3198`, les deux tests des survivants neufs | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 05 h 20, verdict vert | `search.rs` **38, exactement la prédiction** : les deux survivants visés disparus, les 38 autres un pour un → plafond **resserré à 38**. Les autres fichiers au plafond, total 170 |
 | balayage de mutation après C22 | 35945758614 (35945260912 annulé au départ) | `main` à `8dbb133`, C22 et son test | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 03 h 08, verdict vert | `search.rs` **40** contre 43 → plafond **resserré à 40**. Le compte tombe juste, par fonction et opérateur : cinq survivants de l'ancienne ligne de nulle disparus, deux neufs. **La prédiction écrite avant était fausse sur ces deux-là** : `&&` en `||` dans `is_checkmate` — la nulle arrivait un ply plus tard dans le contre-cas, même score — et `ply > 0` en `ply >= 0`, la règle à la racine. Un test chacun, dont le témoin coupe la propagation (une parade qui remet la pendule à zéro) ; prochain balayage attendu à 38. Les autres fichiers au plafond |
@@ -2020,6 +2021,29 @@ Candidat `087edb8` contre son parent `d01183d` (`main`), `8+0,08`.
      historique de continuation), sans qu'aucun ne soit décidé.
    - **Puissance** : ± 6,3 Elo sur ~5 760 parties. Une régression de 1 à 3 Elo
      passerait inaperçue, et c'est accepté *parce que c'est écrit*.
+
+#### La sonde — rendue à 08 h 29 : n/s × 1,09, +0,17 ± 0,07 pli — l'Elo est lancé
+
+| [run 35971800328](https://github.com/theodubus/chess/actions/runs/35971800328) — 100 parties, graine 1612061960, EPYC 7763 | candidat `087edb8` | référence `d01183d` |
+|---|---|---|
+| profondeur moyenne des coups joués | 15,11 | 14,91 |
+| temps de recherche par coup | 206,3 ms | 205,9 ms |
+| n/s des coups partis d'un `go` | 2 739 260 | 2 514 112 — **× 1,09** |
+| écart apparié par partie | **+0,17 ± 0,07 pli** (Student) | |
+
+- **Lue sur la règle écrite avant** : n/s au-dessus de 1,00, plis entièrement
+  positifs — le mécanisme se retrouve en partie. **Dans l'attendu** sur les
+  deux grandeurs : × 1,08 à 1,15 attendu, × 1,09 mesuré, au bas ; +0,10 à
+  +0,25 pli attendu, +0,17 mesuré. Zéro anomalie, temps de recherche égal
+  (× 1,00) : la sonde compare bien deux vitesses à pendule égale.
+- **Le n/s en partie (× 1,09) est au bas de ce que disaient les positions
+  visitées à froid (× 1,10 à 1,14).** <span><strong>Inférence, confiance
+  faible</strong> : en partie, la table est chaude et coupe davantage sur le
+  coup de la table, étage que les deux versions servent au même prix — la
+  part du travail que le sélecteur épargne y est plus petite.</span>
+- **Attendu de l'Elo, resserré par la sonde et l'étalon** : 0,10 à 0,24 pli ×
+  60 à 105 Elo par pli, soit **+6 à +25 Elo**, confiance faible. Deux jobs
+  lancés à 08 h 31 (section « Ce qui est EN VOL »).
 
 ### Ce qui reste à faire, par ordre mesuré
 
