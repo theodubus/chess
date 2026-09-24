@@ -323,6 +323,15 @@ une mesure, pas une préférence.
   vitesse ou de temps total ; pour une réallocation, l'étalon est l'accord à
   temps plat, et l'écran d'allocation sait le calculer
   (`tools/attic/c24-sonde-allocation.patch`).
+  <br>**Un second point le même jour, sur C25, et il borne l'étalon** : la
+  douce par stabilité du coup, +0,17 à +0,36 pli d'accord à l'écran, vaut
+  **+7,87 ± 6,08** — **22 à 46 Elo par pli d'accord** au point, contre ~69
+  pour C24. L'accord a prédit le SIGNE, pas le TAUX. La réserve écrite avant
+  le disait : un coup instable hésite entre deux coups presque équivalents,
+  donc la règle qui le cible achète des plis d'accord qui valent moins.
+  *L'Elo d'un pli d'accord appartient à la règle qui l'achète* : converti au
+  taux d'une autre règle, un attendu est un majorant dès que la nouvelle
+  cible davantage ce que l'étalon surestime.
 - **Une comparaison entre réglages qui CHANGENT le déroulement n'est pas
   appariée.** La même sonde a d'abord donné le gain de profondeur non monotone
   — −0,22 à +0,66 pli pour un budget × 3. Cause : plus de temps fait jouer
