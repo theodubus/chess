@@ -722,7 +722,7 @@ dernière relève est faite.
 | **B6 — l'Elo à deux fils** | **35949564324, 35949565830, 35949567986** | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, graine « auto » | 3 × 900, fastchess, une partie à la fois | **RELEVÉ** — finis entiers entre 08 h 26 et 08 h 28 | **+42,16 ± 9,23 en commun, homogènes : deux fils rapportent** (section B6). 0,31 à 0,86 pli par l'étalon |
 | **A18 — génération par étapes, la sonde** | 35971800328 | `087edb8` → `d01183d`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | **RELEVÉE à 08 h 29** | **n/s × 1,09, +0,17 ± 0,07 pli** : dans l'attendu, la règle lance l'Elo (section A18) |
 | **A18 — l'Elo** | 35975781390, 35975784326 | `087edb8` → `d01183d`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 14 h 22, 2 880 + 2 860 parties | **+23,10 ± 6,39, homogènes : gain démontré, FUSIONNÉ** (section A18) |
-| **balayage de mutation après la PR #77** — A18 fusionnée | **36013927958** | `main` à `3b80e1a` : la génération par étapes | un job par fichier, puis `Verdict` | ~15 h 20 à 16 h 00 | **Prédiction écrite avant** : `search.rs` **39** — les 38 d'avant plus la garde de débordement de `stage_moves`, mesurée survivante sur l'arbre fusionné, plafond relevé en conséquence — ; tous les autres fichiers à leur plafond. Un compte différent se lit mutant par mutant avant tout geste sur le plafond |
+| **balayage de mutation après la PR #77** — A18 fusionnée | 36013927958 | `main` à `3b80e1a` : la génération par étapes | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 57 — CASSÉ** : `search.rs` **43** > 39, `eval.rs` **122** > 121 ; le verdict a commenté l'issue #69, restée ouverte depuis le balayage annulé de 02 h | **La prédiction était fausse.** `search.rs` : les 38 d'avant un pour un, la garde de `stage_moves` prévue, et **quatre de code qu'A18 n'écrit pas** — la prime d'historique `depth * depth` (en `+` et en `/`), le `ply + 1` de l'appel au coup nul et celui de la quiescence. Mesuré mutant par mutant : avant A18, les trois premiers déplaçaient le banc à la profondeur 5 (31 570, 31 585, 31 571 contre 31 637) ; après, 31 829 avec ou sans eux, mais 70 995, 70 996, 70 758 contre 70 719 à la profondeur 6. Le quatrième ne déplace aucun banc : seul le test de légalité de la PV l'attrapait, sur UNE position que l'arbre neuf ne fait plus passer par la quiescence fautive. **Corrigé par les tests, pas par le plafond** (`3ac4d71`) : banc figé à la profondeur 6, PV vérifiée sur une quarantaine de positions de la marche seedée ; re-mesuré localement, les quatre attrapés. `eval.rs` : +4 −3 `delete -` dans les tables — A18 change ce que le banc figé voit des valeurs, du réglage que le SPRT juge. **Suite** : fusionner les tests, rebalayer, lire `eval.rs` sur la mesure |
 | **balayage de mutation après la PR #76** | 35976435127 | `main` à `ea8116f` : chaque fil tient le budget de nœuds, `MAX_THREADS` 1 024 ; A18 révoqué, donc absent | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 09 h 54, verdict vert | **La prédiction tient** : `search.rs` **38**, au plafond, et tous les autres fichiers au leur, total 170. **La réserve ne s'est pas matérialisée** : le test à plusieurs fils, qui n'est plus instable, n'attrapait par hasard aucun mutant équivalent. Parmi les 38, les deux que le balayage local d'A18 avait donnés pour anciens — `*` en `+` dans la note des promotions, la garde de débordement d'`ordered_moves` |
 | **C24 — laisser finir l'itération, la sonde** | 35982959972 | `7274844` → `7fc5959`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | **RELEVÉE à 10 h 25** | **Temps × 1,00, plis −0,00 ± 0,09** : la règle lance l'Elo. L'attendu écrit (+0,15 à +0,35) est manqué, et c'est l'attendu qui était faux — l'écran, interrogé, prédisait +0,05 (section C24) |
 | **C24 — l'Elo** | **35987710644, 35987713472** | `7274844` → `7fc5959`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | ~16 h 25, au plafond vers 2 880 parties chacun | Mise en commun, puis le critère en bornes écrit avant (section C24) : fusion sauf borne haute sous zéro. **Il tranche aussi entre deux lectures de l'écran** — +2 à +7 par la profondeur moyenne, +39 à +68 par l'accord —, et C25 dépend de la seconde |
@@ -2097,7 +2097,11 @@ Candidat `087edb8` contre son parent `d01183d` (`main`), `8+0,08`.
   mesuré sur l'arbre fusionné et non seulement prédit — la garde de
   débordement de `stage_moves`, équivalente (raison écrite dans
   `.github/mutation-baseline.txt`). Le balayage qui suit la fusion doit
-  rendre 39.
+  rendre 39. **Il a rendu 43, et `eval.rs` 122** — la prédiction
+  était fausse : quatre mutants de code qu'A18 n'écrit pas, que l'arbre neuf
+  cachait au banc figé et à un test de PV sur une seule position. Tests
+  corrigés (`3ac4d71`) ; détail sur la ligne du balayage, section « Ce qui
+  est EN VOL ».
 
 ### C24 — laisser finir l'itération entamée : ÉCRIT le 24 sept. 2026, la mesure écrite AVANT de lancer
 
@@ -2435,7 +2439,7 @@ context and reduce adherence »*, avec une cible sous 200 lignes par fichier.
 Les pièges qui en sont sortis l'ont été sur un critère unique, et c'est celui
 du projet : **une règle écrite se contourne, un code de sortie non.** Un piège
 que `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
-`rustines_attic.rs`, le banc à la profondeur 5 ou le plafond calculé de
+`rustines_attic.rs`, le banc à la profondeur 6 ou le plafond calculé de
 `match.yml` rendent *inexprimable* n'a pas besoin d'être relu à chaque
 session ; il a besoin d'être trouvable le jour où le dispositif se déclenche.
 

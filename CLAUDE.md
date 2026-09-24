@@ -572,6 +572,15 @@ une mesure, pas une préférence.
   le score — dans la recherche comme dans l'évaluation. Vingt-huit mutants
   perdus d'un coup. **Après avoir touché à un test, remesurer le plafond**, ou
   au minimum se demander ce que ce test attrapait qu'on ne lui demandait pas.
+  <br>**Et un changement d'ARBRE déplace ce que les tests de nœuds voient,
+  dans du code qu'il ne touche pas.** 24 sept. 2026, fusion d'A18 : le crible
+  local, prédiction écrite, ne balayait que le code NEUF — 39 prédits, **43**
+  rendus. Les quatre de trop vivaient dans des lignes qu'A18 n'a pas écrites
+  (la prime d'historique, le `ply + 1` du coup nul et de la quiescence) et
+  que seuls le banc figé et un test de PV sur une position attrapaient :
+  l'arbre neuf ne les leur montrait plus. *Le crible d'un changement d'arbre
+  couvre le FICHIER entier, jamais le seul diff* ; et un test de nœuds figé
+  à une profondeur ne voit que ce que cet arbre-là exerce.
 - **Un mutant « de réglage » n'est hors de portée des tests que si rien de
   DÉTERMINISTE ne dépend du réglage.** Le plafond d'`eval.rs` était justifié
   depuis le 15 sept. 2026 par « le fichier est en très grande part des VALEURS,
@@ -780,7 +789,7 @@ une mesure, pas une préférence.
 - **Des pièges de ce fichier sont partis dans `tools/pieges-fermes.md`.**
   Chacun est désormais tenu par un dispositif qui le rend inexprimable —
   `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
-  `rustines_attic.rs`, le banc à la profondeur 5, le plafond calculé de
+  `rustines_attic.rs`, le banc à la profondeur 6, le plafond calculé de
   `match.yml`. **Une règle qu'un code de sortie impose n'a pas besoin d'être
   relue à chaque session** ; elle a besoin d'être trouvable le jour où le
   dispositif se déclenche. Ceux qui restent ci-dessus sont ceux que **seul le
