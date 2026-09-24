@@ -32,7 +32,7 @@ perft.rs 1
 bench.rs 2
 see.rs 2
 search.rs 39
-eval.rs 121
+eval.rs 89
 
 # ---------------------------------------------------------------------------
 # Pourquoi ces plafonds ne sont pas zéro
@@ -43,6 +43,15 @@ eval.rs 121
 # porte sur LA FORCE DE JEU. Le SPRT juge la seconde catégorie, et aucun test
 # unitaire ne peut trancher à sa place — pire, un test qui fige une valeur
 # d'évaluation empêche le SPRT de la déplacer.
+#
+# eval.rs — 89 au 24 sept. 2026 au soir (run 36028076680, `main` à
+#   `f2dd0cf`), contre 121 et 122 le même jour. Le fichier n'a pas changé :
+#   c'est le banc figé qui voit plus loin. Passé de la profondeur 5 à 6 pour
+#   rendre visibles trois mutants de `search.rs` que l'arbre d'A18 cachait,
+#   il attrape du même geste 33 `delete -` de plus dans les tables
+#   piece-square — l'itération 6 exerce des cases que la 5 ne touchait pas.
+#   Ce qui survit reste du réglage, que le SPRT juge. Mesuré, pas prédit :
+#   la prédiction écrite disait « ≤ 122 », juste et peu informative.
 #
 # eval.rs — 212 au 21 sept. 2026, contre 214 le 15 sept. Le fichier n'a pas
 #   changé depuis — vérifié par `git log` : seuls `see.rs`, `search.rs` et
