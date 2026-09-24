@@ -1851,6 +1851,106 @@ contre lui-même à un fil :
   **Calibration rendue à 05 h 13** : 60 à 105 Elo par pli, donc **24 à 59 Elo**
   attendus — le même ordre, écrit avant que les matchs ne rendent.
 
+### A18 — génération par étapes : ÉCRITE le 24 sept. 2026, un changement d'arbre ; sonde puis match, protocole écrit AVANT
+
+Décidée par Théo le 24 sept. au matin (« Ce qui reste à faire »). Candidat
+**`087edb8`**, révoqué aussitôt par `908ed46` ; la rustine
+`tools/attic/a18-generation-par-etapes.patch` en garde une copie.
+
+#### Ce qui est écrit
+
+- **Le `MovePicker`** : `negamax` tire ses coups un à un, par étages — le coup
+  de la table, les tactiques par MVV-LVA, les killers, les tranquilles par
+  historique. Un étage n'est généré qu'au moment où on en a besoin : un nœud
+  qui coupe sur le coup de la table ne génère rien du tout.
+- **Ce n'est pas une optimisation pure, et les deux écarts d'ordre sont
+  nommés** : les ex æquo se départagent au sein de chaque étage — le tri reste
+  `sort_unstable`, qui ne les départage pas comme sur la liste entière — et
+  les tranquilles sont notés avec l'historique **mis à jour** par les coups
+  déjà cherchés, non tel qu'il était à l'entrée du nœud. Quiescence :
+  inchangée, sauf le correctif qui suit.
+- **Le partage tactique/tranquille est exact**, et un défaut de la quiescence
+  s'est corrigé en route. Son filtre ajoutait la case de prise en passant aux
+  cibles de TOUTES les pièces : un cavalier ou un fou qui s'y posait — une
+  case vide — passait pour une capture, et la quiescence cherchait ce coup
+  tranquille. `cozy-chess` pose cette case après **chaque** double pas de pion,
+  qu'un pion adverse puisse prendre ou non. Le défaut contredisait la doc de
+  `ordered_moves` (« seuls les coups qui changent le matériel »). Seul, le
+  correctif déplace le banc de **5, 37 et 195 nœuds** aux profondeurs 5, 7
+  et 10, soit 0,03 %.
+- **Deux défauts attrapés avant le commit.** Le compte des coups rendus,
+  incrémenté en fin de boucle, restait à zéro quand le premier coup coupait :
+  `negamax` aurait déclaré mat un roi en échec qui prend la dame adverse —
+  vu à la relecture, puis tenu par un test. Et un killer qui promeut ici
+  était rendu deux fois — trouvé par le test « chaque coup légal exactement
+  une fois », qui passe au sélecteur des killers quelconques.
+  `remember_quiet` ne retient jamais de promotion, mais le sélecteur ne s'y
+  fie pas.
+- **Tests** : cinq neufs (`move_picker_tests`) sur six positions pièges et une
+  marche seedée de 60 parties, quatre adaptés. **Quatorze défauts injectés,
+  tous attrapés** : chacune des quatre gardes d'un killer retirée, la case de
+  prise en passant cible de toutes les pièces ou oubliée, le pion de 7e
+  rangée mal classé, l'étage tranquille qui rend tout, les omissions
+  (killers, coup de la table) retirées, le tri inversé, les notes échangées,
+  le compte après la coupure. **Une assertion tautologique corrigée** : le
+  test des killers vérifiait « pas à un autre ply » par
+  `assert_eq!(f(x), f(x))`.
+
+#### Hors partie : le sélecteur va 10 à 14 % plus vite par nœud, et le banc disait le contraire
+
+| | banc, 6 positions | 400 positions de vraies parties, prof. 10 | 150 de ces positions, prof. 12 |
+|---|---|---|---|
+| nœuds | −4,4 % à 7, −2,0 % à 10 — puis **+27,6 % à 11, +14,9 % à 12** | +1,7 % — moyenne géométrique × 1,016, médiane × 1,000 | −2,2 % — × 1,021, médiane × 1,006 |
+| temps | **+15,9 % à 11, +4,8 % à 12** | **−10,7 %** | **−11,3 %** |
+| n/s | × 1,10 | × 1,14 | × 1,10 |
+
+- **Le banc renversait le signe du temps.** À la profondeur 12, la position
+  initiale y grossit de **+66 %** à elle seule, quand quatre des six
+  positions rétrécissent : un changement d'ordre déplace la taille de chaque
+  arbre dans les deux sens, et six positions ne moyennent rien. Sur des
+  positions de parties, l'arbre ne bouge pas (médianes × 1,000 et × 1,006) et
+  le temps baisse de 11 %. Même piège que « le banc n'est pas un échantillon
+  de jeu », sous une forme qui inverse une conclusion (`CLAUDE.md`).
+- **Ce sont des positions visitées à froid** — table vidée entre chacune —,
+  pas des parties : « un moteur qui démarre froid n'est pas un moteur en
+  partie ». La sonde, ci-dessous, mesure le régime réel.
+- **Le plafond mesuré le 22 sept. était 11,5 % du temps** (section « La
+  génération par étapes, et le bon dénominateur ») ; 10,7 et 11,3 % épargnés
+  le rejoignent. Le plafond était dit minorant — cache chaud —, et le n/s
+  × 1,14 le dépasse un peu.
+- **Une variante écartée par la mesure.** Retenir, à l'étage tactique, les
+  destinations tranquilles de chaque pièce, pour que l'étage tranquille ne
+  rappelle pas le générateur de `cozy-chess` : même arbre au nœud près, et
+  `tools/timing.sh` rend **19/40, p = 1,0** — aucun écart. Le second appel au
+  générateur ne coûte rien de mesurable ; la version simple reste.
+
+#### La mesure — écrite AVANT de lancer
+
+Candidat `087edb8` contre son parent `d01183d` (`main`), `8+0,08`.
+
+1. **La sonde** — `sonde = oui`, **100 parties**. Elle rend les plis gagnés
+   en partie, appariés par partie, et le rapport des n/s. **Attendu, confiance
+   moyenne** : n/s × 1,08 à 1,15 ; **+0,10 à +0,25 pli** — un temps divisé
+   par ~1,12 vaut 0,16 doublement, soit ~0,23 pli à 1,38 pli par doublement,
+   et le plafond du 22 sept. donnait 0,21. **Règle** : n/s ≤ 1,00, ou un
+   intervalle des plis entièrement ≤ 0 → le mécanisme ne se retrouve pas en
+   partie : pas de match avant d'avoir compris pourquoi. Sinon, le match.
+2. **L'Elo** — longueur fixe, graine « auto », **deux jobs de 3 000
+   parties**, coupés par le plafond vers 2 880, mis en commun par
+   `tools/mettre-en-commun.sh`. **Attendu, confiance faible** : 0,10 à 0,25
+   pli × 60 à 105 Elo par pli, soit **+6 à +26 Elo**. **Critère** :
+   - borne haute de l'intervalle mis en commun < 0 → régression : ne pas
+     fusionner, et chercher. Les suspects sont les deux écarts d'ordre
+     nommés plus haut : les ex æquo, et l'historique frais.
+   - borne basse > 0 → gain démontré : fusionner.
+   - entre les deux → pas d'effet décelable : **fusionner**, au titre de la
+     vitesse — mesurée hors partie, puis en partie par la sonde — et du
+     correctif de la quiescence. Les étages sont aussi la forme sur laquelle
+     s'écrirait tout raffinement d'ordonnancement futur (coup de réfutation,
+     historique de continuation), sans qu'aucun ne soit décidé.
+   - **Puissance** : ± 6,3 Elo sur ~5 760 parties. Une régression de 1 à 3 Elo
+     passerait inaperçue, et c'est accepté *parce que c'est écrit*.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
@@ -1877,7 +1977,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
-| **génération par étapes** — **décidée n° 3** (Théo, 24 sept.) | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | **non entamée ; la suivante après B6.** ~1,5 job à mettre en commun, **pas** une optimisation pure — le tri n'est pas stable, l'arbre bougera |
+| **génération par étapes** — **décidée n° 3** (Théo, 24 sept.) | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | <s>non entamée ; la suivante après B6.</s> **ÉCRITE le 24 sept.** — candidat `087edb8`, révoqué le temps de sa mesure. Hors partie : temps −10,7 à −11,3 %, arbre inchangé. **Prochaine action : la sonde, puis deux jobs de 3 000 parties, critère écrit avant** — section « A18 ». **Pas** une optimisation pure : ex æquo et historique frais déplacent l'arbre |
 | **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **FAIT le 24 sept.** : un doublement vaut **+107,74 ± 8,19 Elo** et **+1,38 ± 0,28 pli**, soit **60 à 105 Elo par pli** à `8+0,08` — voir son verdict. Les plis de chaque ligne se convertissent désormais en Elo, en intervalle ; l'incertitude de l'étalon vient presque toute des plis |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
 | **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | <s>1,0 à 1,8, seul chiffre encore hérité</s> **+0,48 ± 0,08 mesurés à deux fils** en partie sur runner — **24 à 59 Elo** par l'étalon, écrit avant que ses matchs ne rendent | <s>exige B9</s> — **B9 est fusionné, la table se partage**. <s>Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie).</s> **Fait le 24 sept.** — voir « La concurrence d'un match se déduit des cœurs ». <s>Prochaine action : **écrire Lazy SMP**, l'option `Threads` et ses tests.</s> **ÉCRIT le 24 sept., neutre à un fil** (banc au nœud près, `timing.sh` trois fois). Prochaine action : fusionner, puis la sonde et le match à deux fils, **protocole écrit avant** — section « B6 — Lazy SMP ». Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |

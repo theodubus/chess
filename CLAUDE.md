@@ -201,7 +201,11 @@ une mesure, pas une préférence.
   **filtre tactique** de la quiescence existe (`tactical_only`, qui restreint
   les destinations par un `AND` de bitboards). La génération par étapes
   proprement dite — produire les captures, s'arrêter sur coupure bêta, ne
-  générer les coups tranquilles que si nécessaire — reste entièrement à faire.
+  générer les coups tranquilles que si nécessaire — <s>reste entièrement à
+  faire</s> **est écrite depuis le 24 sept. 2026 (A18, le `MovePicker`), et
+  révoquée le temps de sa mesure** : candidat `087edb8`, protocole et critère
+  dans `tools/README.md`, section A18. Hors partie, 10 à 14 % plus rapide par
+  nœud, l'arbre inchangé.
 - **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
   La valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
 - **Table de transposition partagée, le jour où la recherche devient
@@ -374,6 +378,13 @@ une mesure, pas une préférence.
   banc dit vraiment, c'est qu'il ne la remplit pas. *Avant de conclure d'un
   banc qu'un dimensionnement n'a pas d'effet, vérifier qu'il atteint seulement
   la borne qu'on déplace.*
+  <br>**Et il peut INVERSER une conclusion de temps.** A18, 24 sept. 2026 : à
+  la profondeur 12, le banc donnait le sélecteur par étapes **4,8 % plus
+  lent**, son arbre **+14,9 %** — la position initiale y grossissait de 66 % à
+  elle seule, quand quatre positions sur six rétrécissaient. Sur 150 positions
+  de vraies parties, à la même profondeur : **−11,3 % de temps**, l'arbre
+  −2,2 %. *Un changement d'ordre déplace chaque arbre dans les deux sens ; six
+  positions n'en moyennent pas la taille.*
 - **Quand un mécanisme est rare par construction, compter ses nœuds ne
   tranche rien — compter ses DÉGÂTS, si.** D2 supposait que PVS vaut par le
   gatage de LMP sur les nœuds hors variante principale. La question naturelle
@@ -666,6 +677,10 @@ une mesure, pas une préférence.
   **Se demander : qu'est-ce que je casserais dans le code pour faire tomber ce
   test ?** Si la réponse n'est pas la ligne visée, le test mesure autre chose.
   Ici la bonne mesure était le nombre de nœuds, déterministe sur ce moteur.
+  <br>**Sa forme la plus nue, trouvée le 24 sept. 2026** : `assert_eq!(f(x),
+  f(x))`. Le test des killers affirmait « pas à un autre ply » en comparant
+  une note à elle-même — vrai quoi que fasse le code, donc aucun mutant ne
+  pouvait le faire tomber, et rien ne le signalait.
 - **Ne pas recopier un compteur en prose.** Le 15 sept. 2026, j'ai écrit
   « ces cinq dispositifs » au-dessus d'un tableau qui en listait six, et
   « dix cas » pour un auto-test qui en comptait onze — **les deux étaient faux
