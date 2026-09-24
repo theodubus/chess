@@ -2095,6 +2095,48 @@ Candidat `7274844` contre son parent `7fc5959`, `8+0,08`.
    - **Puissance** : ± 6,3 Elo sur ~5 760 parties ; une régression de 1 à 3
      Elo passerait inaperçue, et c'est accepté *parce que c'est écrit*.
 
+**La sonde — relevée le 24 sept. 2026, run `35982959972`** : 100 parties,
+zéro perte au temps, zéro coup illégal.
+
+| camp | coups | profondeur | temps par coup | n/s |
+|---|---|---|---|---|
+| candidat `7274844` | 5 335 | 14,88 | 203,9 ms | 2 497 785 |
+| référence `7fc5959` | 5 339 | 14,89 | 204,3 ms | 2 515 534 |
+
+Temps par coup × 1,00, n/s × 1,00 : l'écran décrit ce que le moteur fait en
+partie. Écart apparié **−0,00 ± 0,09 pli** : l'intervalle n'est pas
+entièrement ≤ 0, donc **la règle écrite dit : l'Elo.**
+
+**Mais l'attendu écrit — +0,15 à +0,35 pli — est manqué, et la faute est
+dans l'attendu, pas dans l'écran.** Je l'avais dérivé de tête : les ~22 % de
+coups arrêtés par la dure y gagnent une itération achevée, « et la douce un
+peu plus tôt en retire un peu ailleurs ». L'écran savait le calculer — sa
+trace prolongée simule n'importe quelle règle d'arrêt, coup par coup — et je
+ne le lui ai pas demandé. Demandé après coup, section 6 du lecteur de
+`tools/attic/c24-sonde-allocation.patch` : **+0,046 pli, IC 95 %
+[+0,030 ; +0,062]** — 957 coups gagnent un pli, 658 en perdent un, un en perd
+deux : la douce avancée de 0,50 à 0,44 budget reprend presque tout ce que la
+dure rend. Temps simulé 203,4 ms contre 203,5. **La sonde en partie retombe
+sur l'écran, pas sur mon attendu.**
+
+**Ce que C24 change n'est donc pas la profondeur moyenne, c'est OÙ elle
+va** : à profondeur moyenne presque égale, l'accord avec l'oracle passe de
+80,8 à 83,9 %. La dure laisse finir les itérations longues — celles des
+positions difficiles —, la douce plus précoce prend le pli aux positions
+faciles. L'attendu en Elo, **réécrit avant de lancer**, a deux lectures :
+
+- **par la profondeur moyenne** : +0,05 pli × 60 à 105 Elo par pli, soit
+  **+2 à +7 Elo** — l'étalon suppose qu'un pli vaut autant partout ;
+- **par l'accord** : × 1,38 de temps plat, +0,65 pli, **+39 à +68 Elo** — la
+  lecture haute, celle que la réserve de l'écran frappe.
+
+<s>+9 à +37 Elo</s> ne découle plus de rien. **Le match tranche entre les deux
+lectures**, et c'est ce qui le rend utile au-delà de C24 : **C25 n'a de
+valeur que par l'accord** — la répartition par la stabilité ne change pas la
+profondeur moyenne non plus. Un C24 sans effet décelable condamnerait la
+lecture par l'accord, et C25 avec ; un C24 nettement positif la validerait.
+Le critère ne bouge pas.
+
 ### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
 
 Premier geste du chantier décidé par Théo (A19) : **mesurer le mécanisme

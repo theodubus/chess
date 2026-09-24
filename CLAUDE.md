@@ -302,6 +302,14 @@ une mesure, pas une préférence.
   gaspille X % » en « on peut en avoir X % de plus », vérifier si la ressource
   est allouée par unité ou consommée en commun.* Même famille que le
   dénominateur, appliquée cette fois à une ressource partagée dans le temps.
+  <br>**Deuxième occurrence le 24 sept. 2026, sur C24.** « La dure repoussée
+  rend un pli aux 22 % de coups qu'elle coupait » : attendu écrit +0,15 à
+  +0,35 pli. La douce avancée de 0,50 à 0,44 budget en reprend presque autant
+  ailleurs — l'écran, interrogé, rendait **+0,05**, et la partie a mesuré
+  −0,00 ± 0,09. *Une réallocation à total constant a deux côtés, et un
+  attendu dérivé de tête n'en compte qu'un.* **Quand l'instrument qui calcule
+  l'attendu existe déjà, l'attendu se calcule** : la trace de l'écran simulait
+  toute règle d'arrêt, et je ne le lui avais pas demandé.
 - **Une comparaison entre réglages qui CHANGENT le déroulement n'est pas
   appariée.** La même sonde a d'abord donné le gain de profondeur non monotone
   — −0,22 à +0,66 pli pour un budget × 3. Cause : plus de temps fait jouer

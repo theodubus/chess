@@ -155,10 +155,10 @@ index 65ba4f3..606cb70 100644
  cozy-chess = "0.3.4"
 diff --git a/tools/sonde-alloc/analyser.py b/tools/sonde-alloc/analyser.py
 new file mode 100644
-index 0000000..e9ec9b1
+index 0000000..1b9eb99
 --- /dev/null
 +++ b/tools/sonde-alloc/analyser.py
-@@ -0,0 +1,369 @@
+@@ -0,0 +1,409 @@
 +#!/usr/bin/env python3
 +"""Lecteur de la sonde de l'allocation inégale (`alloc-probe`).
 +
@@ -181,6 +181,10 @@ index 0000000..e9ec9b1
 +5. une règle INÉGALE — poursuivre tant que la probabilité qu'une itération de
 +   plus change le coup, rapportée à son coût, dépasse un seuil —, apprise sur
 +   une moitié des parties et évaluée sur l'autre, à temps total égal.
++6. C24 tel qu'écrit — douce à 0,44 budget, dure à 2,2 budgets bornée par la
++   pendule — contre la règle actuelle, coup par coup : PROFONDEUR achevée,
++   temps, accord. C'est l'attendu de la sonde en partie, calculé au lieu
++   d'être dérivé de tête.
 +
 +Usage : analyser.py fichier.jsonl [...]
 +"""
@@ -524,6 +528,42 @@ index 0000000..e9ec9b1
 +                    f"   {nom_cle}, dure {plafond} × budget, {nom} : accord {100 * a:.1f} % contre {100 * a_plate:.1f} % à plat, "
 +                    f"temps {t:.3f} ; × {gain:.2f} de temps plat, {plis:+.2f} pli, IC 95 % {ic}"
 +                )
++
++    # 6. C24 tel qu'écrit, coup par coup contre la règle actuelle.
++    print("\n6. C24 tel qu'écrit (douce 0,44 budget, dure min(2,2 budgets, restant − 50)) contre la règle actuelle")
++    paires = []
++    for c in coups:
++        b = c["budget"]
++        i0, t0, cause0, _ = simuler(c["ext"], b / 2, b)
++        i1, t1, cause1, _ = simuler(c["ext"], 0.44 * b, max(1, min(2.2 * b, c["remaining"] - 50)))
++        if i0 is None or i1 is None:
++            continue
++        paires.append((c, i0, t0, cause0, i1, t1, cause1))
++    n = len(paires)
++    for nom, k in (("actuelle", 1), ("C24", 4)):
++        prof = sum(p[0]["ext"][p[k]][0] for p in paires) / n
++        temps = sum(p[k + 1] for p in paires) / sum(p[0]["budget"] for p in paires)
++        ms = sum(p[k + 1] for p in paires) / n
++        dure = sum(p[k + 2] == "dure" for p in paires) / n
++        acc = sum(p[0]["ext"][p[k]][2] == p[0]["ext"][-1][2] for p in paires) / n
++        print(f"   {nom:8} profondeur achevée {prof:.3f}, temps / budget {temps:.3f} ({ms:.1f} ms), "
++              f"arrêts par la dure {100 * dure:.1f} %, accord {100 * acc:.1f} %")
++    ecarts = defaultdict(list)
++    compte = defaultdict(int)
++    for c, i0, _, _, i1, _, _ in paires:
++        d = c["ext"][i1][0] - c["ext"][i0][0]
++        ecarts[c["game"]].append(d)
++        compte[d] += 1
++    moyenne = sum(sum(v) for v in ecarts.values()) / n
++    ids = list(ecarts)
++    rng = random.Random(11)
++    tirages = []
++    for _ in range(2000):
++        tir = [ecarts[rng.choice(ids)] for _ in ids]
++        tirages.append(sum(map(sum, tir)) / sum(map(len, tir)))
++    tirages.sort()
++    print(f"   écart de profondeur apparié {moyenne:+.3f} pli, IC 95 % [{tirages[49]:+.3f} ; {tirages[1949]:+.3f}] "
++          f"(rééchantillonnage des parties) — " + ", ".join(f"{d:+d} : {v}" for d, v in sorted(compte.items())))
 +
 +
 +if __name__ == "__main__":
