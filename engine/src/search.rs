@@ -3406,6 +3406,32 @@ mod tests {
         );
     }
 
+    #[test]
+    fn une_nulle_compte_pour_un_noeud() {
+        // Le test de nulle passe AVANT l'aiguillage vers la quiescence et
+        // avant l'incrément de `negamax`, qui comptent chacun leur nœud : sans
+        // le sien, une position nulle ne compterait plus du tout. Rien
+        // d'autre ne le voit — le banc à la profondeur 5 ne passe jamais par
+        // cette branche, et rend 31 637 nœuds avec ou sans l'incrément
+        // (mesuré le 24 sept. 2026). Or un nombre de nœuds est ce que lisent
+        // `go nodes`, le banc et chaque comparaison d'arbre de ce dépôt.
+        let b = board("7k/8/8/8/8/8/8/1Q5K w - - 4 3");
+        let mut a = ardoise();
+        for profondeur in [0, 1] {
+            let mut s = search();
+            s.path = vec![b.hash(), 0xAAAA, b.hash()];
+            assert_eq!(
+                s.negamax(&b, profondeur, 1, -INFINITY, INFINITY, &mut a),
+                DRAW
+            );
+            assert_eq!(
+                s.nodes(),
+                1,
+                "profondeur {profondeur} : une nulle est un nœud visité, ni plus ni moins"
+            );
+        }
+    }
+
     // ---- Table de variante principale ----
     //
     // Dix mutants y survivaient : toute l'arithmétique d'indexation pouvait
