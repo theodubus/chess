@@ -2145,6 +2145,12 @@ Duration` ne compile pas — ; les autres attrapés par les valeurs exactes du
 test des échéances, et les deux `now - Duration` de `set_deadlines` par le
 test qui vérifie qu'on ne s'arrête pas trop tôt. Si le verdict fusionne C24,
 le balayage suivant ne doit donc rien ajouter à `search.rs`.
+**Rendu en 4 minutes : la prédiction tient** — 24 attrapés, les 2 inviables
+prévus, **aucun survivant**, et 3 expirés : `set_deadlines` vidé,
+`time_budget_ms` et `deadlines_ms` rendant `None`. Sans échéance, une
+recherche à la pendule ne s'arrête plus et le test pend jusqu'au délai de
+`cargo mutants` : attrapés quand même, mais par un blocage, pas par un échec
+qui nomme la faute.
 
 ### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
 
