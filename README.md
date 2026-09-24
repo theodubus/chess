@@ -63,6 +63,9 @@ d'un aveu sur la profondeur de recherche.
 > **Premier pas le 24 sept. : laisser finir l'itération entamée** au lieu de
 > la jeter — **+44,6 ± 6,2 Elo** à `8+0,08`, sans chercher plus profond en
 > moyenne : le temps va aux positions difficiles, où l'itération dure.
+> **Puis, le même jour, s'arrêter plus tard quand le coup vient de changer**
+> et plus tôt quand il tient depuis sept itérations — **+7,9 ± 6,1 Elo**
+> à `8+0,08`, zéro perte au temps.
 >
 > **Il sait pondérer depuis le 23 sept. 2026** — réfléchir pendant le temps
 > de l'adversaire, sur le coup qu'il prévoit — mais seulement si l'interface
