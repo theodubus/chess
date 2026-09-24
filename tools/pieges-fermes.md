@@ -135,7 +135,10 @@ C'est la seule condition de sortie de ce fichier.
   fort du dépôt — ne voyait aucun mutant. Tout changement silencieux de l'arbre
   de recherche survivait alors qu'un simple compte de nœuds l'aurait vu.
   `larbre_de_recherche_ne_bouge_pas_en_silence` fige donc le banc à la
-  **profondeur 5**, non ignoré, pour 0,32 s en debug. **Éprouvé en le faisant
+  <s>profondeur 5</s> **profondeur 6 depuis le 24 sept. 2026**, non ignoré,
+  pour 0,86 s en debug — la génération par étapes avait rendu l'arbre de la
+  profondeur 5 aveugle à trois mutants qu'il voyait, et le balayage qui a
+  suivi l'a montré. **Éprouvé en le faisant
   échouer** : un signe retiré dans une table piece-square le fait passer de
   31 637 à 31 942 nœuds. <span>Limite mesurée, pas supposée : il n'attrape pas
   tout — un mutant sur l'ordonnancement des promotions ne change pas ces six
@@ -144,7 +147,7 @@ C'est la seule condition de sortie de ce fichier.
   test.** `search.rs` 110 → **45**, `eval.rs` 219 → **121**, total du dépôt
   336 → **173**. Le trou ne datait pas de la veille : il existait depuis la
   création du cliquet.
-  <br>**Tenu par** : `engine/tests/bench_reference.rs`, test `larbre_de_recherche_ne_bouge_pas_en_silence` — le banc figé à la profondeur 5, non ignoré, donc visible du cliquet de mutation.
+  <br>**Tenu par** : `engine/tests/bench_reference.rs`, test `larbre_de_recherche_ne_bouge_pas_en_silence` — le banc figé à la profondeur 6, non ignoré, donc visible du cliquet de mutation.
 
 - **Deux balayages de mutation concurrents se corrompent.** Le 15 sept. 2026,
   j'ai relancé `cargo mutants` sans vérifier que le précédent avait fini. Les

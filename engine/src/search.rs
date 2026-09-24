@@ -2509,26 +2509,62 @@ mod tests {
         assert!(search().go(&position, &Limits::default(), |_| {}).is_none());
     }
 
+    /// La variante principale se joue coup après coup depuis la racine.
+    ///
+    /// **Sur un échantillon, pas sur une position.** Jusqu'au 24 sept. 2026,
+    /// ce test ne cherchait que la première position ci-dessous, et il a
+    /// cessé de voir un enfant de quiescence posé au ply de son parent
+    /// (`ply + 1` changé en `ply`) : la PV y est corrompue, mais la
+    /// génération par étapes (A18) a changé l'arbre de cette position-là, et
+    /// sa PV finale ne passait plus par la quiescence fautive. Le balayage de
+    /// mutation qui a suivi la fusion l'a rendu survivant. Une propriété
+    /// générale assertée sur UNE position passe par chance (`CLAUDE.md`).
+    ///
+    /// Une seule recherche pour tout l'échantillon : la table reste chaude
+    /// d'une position à l'autre, comme en partie, et le test coûte 0,4 s en
+    /// debug au lieu de 2 s — une table neuve par position se paie en
+    /// remplissage de mémoire.
     #[test]
     fn la_variante_principale_est_legale_depuis_la_racine() {
+        fn verifier(recherche: &mut Search, position: &Position, profondeur: u32) {
+            let mut pv = Vec::new();
+            recherche.go(
+                position,
+                &Limits {
+                    depth: Some(profondeur),
+                    ..Limits::default()
+                },
+                |info| pv.clone_from(&info.pv),
+            );
+            assert!(!pv.is_empty(), "la variante ne doit pas être vide");
+            let mut b = position.board().clone();
+            for mv in pv {
+                assert!(
+                    b.is_legal(mv),
+                    "coup illégal dans la variante : {mv} sur {}",
+                    position.board()
+                );
+                b.play_unchecked(mv);
+            }
+        }
+
         let position =
             Position::from_fen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
                 .unwrap();
-        let mut pv = Vec::new();
-        search().go(
-            &position,
-            &Limits {
-                depth: Some(5),
-                ..Limits::default()
-            },
-            |info| pv.clone_from(&info.pv),
-        );
-        assert!(!pv.is_empty(), "la variante ne doit pas être vide");
-        let mut b = position.board().clone();
-        for mv in pv {
-            assert!(b.is_legal(mv), "coup illégal dans la variante : {mv}");
-            b.play_unchecked(mv);
-        }
+        let mut recherche = search();
+        verifier(&mut recherche, &position, 5);
+
+        let mut plis = 0u32;
+        let mut vues = 0u32;
+        marche(10, 60, |board| {
+            plis += 1;
+            if plis.is_multiple_of(15) {
+                verifier(&mut recherche, &Position::from_board(board.clone()), 3);
+                vues += 1;
+            }
+        });
+        // Un test qui n'a rien regardé passe aussi. Le compte le dit.
+        assert!(vues >= 30, "échantillon trop maigre : {vues} positions");
     }
 
     #[test]
