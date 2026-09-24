@@ -1674,6 +1674,67 @@ deux commits ne change pas.
 d'un `go`, et **un intervalle de Student** au lieu de 1,96 : à vingt parties,
 les intervalles publiés étaient 7 % trop étroits (section ponder).
 
+### B6 — Lazy SMP : ÉCRIT le 24 sept. 2026, neutre à un fil ; la mesure à deux fils, protocole écrit AVANT
+
+#### Ce qui est écrit
+
+- **L'option UCI `Threads`**, 1 par défaut, de 1 à 64. À `T` fils, `T − 1`
+  auxiliaires cherchent la même position par le même approfondissement, sur
+  la même table — partagée par un `Arc`, possible depuis B9 —, sans pendule
+  ni rapport. **Seul le fil principal rend le coup et la variante.**
+- **Aucun décalage de profondeur entre les fils.** C'est une variante connue ;
+  la version la plus simple se mesure d'abord, et la variante se mesurera
+  seule si celle-ci ne rend pas ce qu'on attend. Pas recopiée d'avance.
+- Les auxiliaires se créent une fois, par `set_threads`, pas à chaque coup —
+  chacun porte une ardoise de 256 Kio ; `resize_table` les refait sur la
+  nouvelle table.
+- **Les nœuds** : chaque auxiliaire publie son compte tous les
+  `CHECK_INTERVAL` nœuds et son reste en finissant. `info nodes` et `go nodes`
+  comptent tous les fils. Un compteur commun incrémenté à chaque nœud aurait
+  coûté une instruction verrouillée par nœud.
+- **L'arrêt** : la fin de la recherche principale lève le drapeau des
+  auxiliaires par un garde qui tient aussi en cas de panique —
+  `std::thread::scope` attend tous ses fils, et un auxiliaire jamais arrêté
+  ferait attendre `go` pour toujours.
+
+#### Neutre à un fil — prouvé, pas supposé
+
+- **Banc au nœud près** : 114 026 à la profondeur 7, 642 442 à la profondeur 10.
+- **Vitesse**, `tools/timing.sh` contre `main` (`8dbb133`) : 11/30 (p = 0,20),
+  24/60 (p = 0,19), puis un **relevé décisif de 100 paires, règle fixée
+  d'avance** — p < 0,05 et candidat plus lent, le coût est réel et se documente
+  avant de fusionner : **43/100, p = 0,31, aucun écart démontré.** Les trois
+  penchent du même côté, +0,5 à +1,4 % sur la médiane : un coût de l'ordre de
+  1 % n'est pas exclu, et il ne se démontrerait qu'avec des centaines de
+  paires. *Réunir les trois relevés après coup reviendrait à choisir
+  l'effectif en voyant les données.*
+- **Six tests à plusieurs fils et un test UCI**, chacun éprouvé par un défaut
+  injecté : publication vide, `-` en `+`, total en `-`, budget sur le seul fil
+  principal, redimensionnement qui oublie les auxiliaires, garde d'arrêt vidé —
+  ce dernier fait échouer le test d'arrêt en vingt secondes au lieu de pendre.
+
+#### La mesure à deux fils — écrite AVANT de lancer
+
+Sur les runners, deux cœurs physiques : Lazy SMP ne s'y mesure qu'à **deux
+fils**, et `match.yml` refuse davantage. Deux mesures, sur le SHA fusionné,
+contre lui-même à un fil :
+
+1. **La sonde** — `sonde = oui`, `fils_candidat = 2`, `8+0,08`, 60 parties.
+   Elle rend les plis gagnés en partie, appariés par partie, et le rapport des
+   n/s, qui mesure ici le **parallélisme obtenu** (≈ 2 si chaque fil a son
+   cœur), pas un vol. **Attendu, confiance faible** : +0,4 à +1,1 pli — un
+   temps effectif multiplié par 1,2 à 1,7, à 1,38 pli par doublement. Le
+   « 1,0 à 1,8 pli » hérité supposait quatre vrais cœurs. **Rapport des n/s
+   attendu entre 1,7 et 2,0 ; sous 1,5, les deux fils se disputent un cœur, et
+   la mesure d'Elo ne se lance pas avant d'avoir compris pourquoi.**
+2. **L'Elo** — `fils_candidat = 2`, `8+0,08`, longueur fixe, graine « auto »,
+   **trois jobs de 900 parties** (une partie à la fois), mis en commun par
+   `tools/mettre-en-commun.sh`. **Critère** : borne basse > 0 → deux fils
+   rapportent contre notre jumeau monofil ; borne haute < 0 → Lazy SMP tel
+   qu'écrit coûte, et le moteur n'annonce plus `Threads` tant que la cause
+   n'est pas trouvée ; entre les deux → pas de conclusion, des parties de
+   plus. Converti en plis par la calibration en cours, **en intervalle**.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
@@ -1697,7 +1758,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
 | **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **EN COURS — décidé n° 1.** `match.yml` sait jouer une cadence par moteur et une sonde depuis le 23 sept. au soir ; deux matchs pour l'Elo, une sonde pour les plis, protocole et attendu écrits avant — voir « Calibrer l'Elo par pli — EN VOL ». Deux points mesurés donnent 21 à 119 et 51 à 104 Elo par pli (section ponder) : trop large pour classer les chantiers de vitesse |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
-| **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. <s>Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie).</s> **Fait le 24 sept.** — voir « La concurrence d'un match se déduit des cœurs ». Prochaine action : **écrire Lazy SMP**, l'option `Threads` et ses tests. Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
+| **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. <s>Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie).</s> **Fait le 24 sept.** — voir « La concurrence d'un match se déduit des cœurs ». <s>Prochaine action : **écrire Lazy SMP**, l'option `Threads` et ses tests.</s> **ÉCRIT le 24 sept., neutre à un fil** (banc au nœud près, `timing.sh` trois fois). Prochaine action : fusionner, puis la sonde et le match à deux fils, **protocole écrit avant** — section « B6 — Lazy SMP ». Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
