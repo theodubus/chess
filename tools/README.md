@@ -527,6 +527,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-24 | **Calibration — un doublement de temps, même binaire, `16+0,16` contre `8+0,08`** | **+107,74 Elo ± 8,19** sur 3 800 parties à longueur fixe (deux matchs homogènes, z = 0,19 ; +108,54 et +106,94), zéro anomalie ; **+1,38 ± 0,28 pli** en partie (sonde de 100 parties). **Soit 60 à 105 Elo par pli** à `8+0,08`, bornes croisées. Étalonnages : EPYC 7763 2 192 324 n/s et EPYC 9V74 2 020 660 n/s, profondeur 12 |
 | 2026-09-24 | **B6 — Lazy SMP, deux fils contre un, même binaire (`65d0b03`), à `8+0,08`** | **+42,16 Elo ± 9,23** sur 2 700 parties à longueur fixe — trois matchs homogènes (+35,64, +49,36, +41,50 ; \|z\| ≤ 1,19), une partie à la fois, zéro anomalie — **contre notre jumeau monofil**. Borne basse > 0 : **deux fils rapportent**, sur le critère écrit avant, et dans l'attendu écrit avant les matchs (+24 à +59). Converti par l'étalon : **0,31 à 0,86 pli** ; la sonde en mesurait +0,48 ± 0,08 en partie |
 | 2026-09-24 | **A18 — génération par étapes (`087edb8`) contre son parent (`d01183d`), à `8+0,08`** | **+23,10 Elo ± 6,39** sur 5 740 parties à longueur fixe — deux matchs homogènes (+27,81 et +18,36 ; z = 1,45), zéro anomalie. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant, au haut de l'attendu écrit avant (+6 à +25). La sonde en mesurait n/s × 1,09 et +0,17 ± 0,07 pli : **70 à 295 Elo par pli**, bornes croisées |
+| 2026-09-24 | **C24 — laisser finir l'itération entamée (`7274844`) contre son parent (`7fc5959`), à `8+0,08`** | **+44,64 Elo ± 6,24** sur 5 760 parties à longueur fixe — deux matchs homogènes (+45,01 et +44,27 ; z = 0,12), deux runners différents, zéro anomalie. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant. **Profondeur moyenne inchangée** (sonde : −0,00 ± 0,09 pli) : des deux lectures écrites avant le match, celle des plis moyens (+2 à +7) tombe, celle de l'accord avec l'oracle (+39 à +68) tient |
 | 2026-09-23 | **Vol de CPU du ponder sur runner — deux sondes de 60 parties, à `8+0,08`** | **r = 0,948** (rapport des n/s 0,950 en ponder, 1,002 au témoin) ≥ 0,93 : **le verdict du ponder tient**, sur la règle écrite avant. Vol estimé 3 à 5 % de vitesse, 3 à 10 Elo des +67,63. **Topologie : 2 cœurs physiques, 2 fils par cœur (AMD EPYC 7763)**. [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290), [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087). Section « Vol de CPU du ponder sur runner — VERDICT ». |
 | 2026-09-23 | **C22 — le test de nulle avant l'aiguillage vers la quiescence, à `8+0,08`** | **−10,44 Elo ± 6,34** sur 5 760 parties — **régression, non fusionné**, arrêté par son critère écrit avant. 92 % des nulles qu'il ajoutait à l'horizon étaient fausses (C23) : **remesuré sur C23, en vol**. Section « C22 — VERDICT ». |
 | 2026-09-23 | **B9 — effet de capacité de la table à entrées atomiques, à `8+0,08`** | **−1,27 Elo ± 6,34** sur 5 740 parties — pas d'effet décelable. **Fusionné au titre de l'infrastructure** (la table se partage entre fils ; −4,3 % de temps déjà prouvé). Section « B9 — VERDICT ». |
@@ -725,7 +726,7 @@ dernière relève est faite.
 | **balayage de mutation après la PR #77** — A18 fusionnée | 36013927958 | `main` à `3b80e1a` : la génération par étapes | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 57 — CASSÉ** : `search.rs` **43** > 39, `eval.rs` **122** > 121 ; le verdict a commenté l'issue #69, restée ouverte depuis le balayage annulé de 02 h | **La prédiction était fausse.** `search.rs` : les 38 d'avant un pour un, la garde de `stage_moves` prévue, et **quatre de code qu'A18 n'écrit pas** — la prime d'historique `depth * depth` (en `+` et en `/`), le `ply + 1` de l'appel au coup nul et celui de la quiescence. Mesuré mutant par mutant : avant A18, les trois premiers déplaçaient le banc à la profondeur 5 (31 570, 31 585, 31 571 contre 31 637) ; après, 31 829 avec ou sans eux, mais 70 995, 70 996, 70 758 contre 70 719 à la profondeur 6. Le quatrième ne déplace aucun banc : seul le test de légalité de la PV l'attrapait, sur UNE position que l'arbre neuf ne fait plus passer par la quiescence fautive. **Corrigé par les tests, pas par le plafond** (`3ac4d71`) : banc figé à la profondeur 6, PV vérifiée sur une quarantaine de positions de la marche seedée ; re-mesuré localement, les quatre attrapés. `eval.rs` : +4 −3 `delete -` dans les tables — A18 change ce que le banc figé voit des valeurs, du réglage que le SPRT juge. **Suite** : fusionner les tests, rebalayer, lire `eval.rs` sur la mesure |
 | **balayage de mutation après la PR #76** | 35976435127 | `main` à `ea8116f` : chaque fil tient le budget de nœuds, `MAX_THREADS` 1 024 ; A18 révoqué, donc absent | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 09 h 54, verdict vert | **La prédiction tient** : `search.rs` **38**, au plafond, et tous les autres fichiers au leur, total 170. **La réserve ne s'est pas matérialisée** : le test à plusieurs fils, qui n'est plus instable, n'attrapait par hasard aucun mutant équivalent. Parmi les 38, les deux que le balayage local d'A18 avait donnés pour anciens — `*` en `+` dans la note des promotions, la garde de débordement d'`ordered_moves` |
 | **C24 — laisser finir l'itération, la sonde** | 35982959972 | `7274844` → `7fc5959`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | **RELEVÉE à 10 h 25** | **Temps × 1,00, plis −0,00 ± 0,09** : la règle lance l'Elo. L'attendu écrit (+0,15 à +0,35) est manqué, et c'est l'attendu qui était faux — l'écran, interrogé, prédisait +0,05 (section C24) |
-| **C24 — l'Elo** | **35987710644, 35987713472** | `7274844` → `7fc5959`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | ~16 h 25, au plafond vers 2 880 parties chacun | Mise en commun, puis le critère en bornes écrit avant (section C24) : fusion sauf borne haute sous zéro. **Il tranche aussi entre deux lectures de l'écran** — +2 à +7 par la profondeur moyenne, +39 à +68 par l'accord —, et C25 dépend de la seconde |
+| **C24 — l'Elo** | 35987710644, 35987713472 | `7274844` → `7fc5959`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 16 h 22, 2 × 2 880 parties | **+44,64 ± 6,24, homogènes : gain démontré, FUSIONNÉ.** La lecture par l'accord tient, celle des plis moyens tombe ; **C25 s'écrit**, par sa règle écrite avant (section C24) |
 | balayage de mutation après B6 | 35949682016 | `main` à `65d0b03`, Lazy SMP | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 04 h 03, verdict vert | **La prédiction tient** : `search.rs` 40, **les mêmes survivants** qu'après C22 — le couple déplacé de `go` vers `iterate` compris —, Lazy SMP n'en ajoute aucun ; `uci.rs` 0. 472 mutants, 357 attrapés, 22 inviables, **53 expirés contre 47** : inférence, ce sont les mutants qui rendent un budget de nœuds inatteignable ou suppriment l'arrêt des auxiliaires — un test pend au lieu d'échouer ; le résumé ne liste pas les expirés |
 | balayage de mutation après la PR #72 | 35954091395 | `main` à `8ad3198`, les deux tests des survivants neufs | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 05 h 20, verdict vert | `search.rs` **38, exactement la prédiction** : les deux survivants visés disparus, les 38 autres un pour un → plafond **resserré à 38**. Les autres fichiers au plafond, total 170 |
 | balayage de mutation après C22 | 35945758614 (35945260912 annulé au départ) | `main` à `8dbb133`, C22 et son test | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 03 h 08, verdict vert | `search.rs` **40** contre 43 → plafond **resserré à 40**. Le compte tombe juste, par fonction et opérateur : cinq survivants de l'ancienne ligne de nulle disparus, deux neufs. **La prédiction écrite avant était fausse sur ces deux-là** : `&&` en `||` dans `is_checkmate` — la nulle arrivait un ply plus tard dans le contre-cas, même score — et `ply > 0` en `ply >= 0`, la règle à la racine. Un test chacun, dont le témoin coupe la propagation (une parade qui remet la pendule à zéro) ; prochain balayage attendu à 38. Les autres fichiers au plafond |
@@ -2103,7 +2104,7 @@ Candidat `087edb8` contre son parent `d01183d` (`main`), `8+0,08`.
   corrigés (`3ac4d71`) ; détail sur la ligne du balayage, section « Ce qui
   est EN VOL ».
 
-### C24 — laisser finir l'itération entamée : ÉCRIT le 24 sept. 2026, la mesure écrite AVANT de lancer
+### C24 — laisser finir l'itération — VERDICT, 24 sept. 2026 : +44,64 ± 6,24 Elo à `8+0,08` — gain démontré, FUSIONNÉ ; la lecture par l'accord tient
 
 Premier candidat du chantier « allocation inégale » (A19), sorti de son écran
 — section suivante, « L'allocation inégale — l'écran ». Candidat
@@ -2201,6 +2202,36 @@ prévus, **aucun survivant**, et 3 expirés : `set_deadlines` vidé,
 recherche à la pendule ne s'arrête plus et le test pend jusqu'au délai de
 `cargo mutants` : attrapés quand même, mais par un blocage, pas par un échec
 qui nomme la faute.
+
+#### L'Elo — rendu à 16 h 22 : +44,64 ± 6,24, gain démontré — FUSIONNÉ
+
+| run | graine | runner, n/s au banc | profondeur en 250 ms | parties | Elo | `Ptnml(0-2)` |
+|---|---|---|---|---|---|---|
+| [35987710644](https://github.com/theodubus/chess/actions/runs/35987710644) | 35987710644 | EPYC 7763, 2 290 188 | 12 | 2 880 | +45,01 ± 8,90 | 72, 173, 665, 372, 158 |
+| [35987713472](https://github.com/theodubus/chess/actions/runs/35987713472) | 35987713472 | Xeon Platinum 8573C, 2 343 279 | 12 | 2 880 | +44,27 ± 8,75 | 63, 193, 645, 394, 145 |
+| **en commun** (`tools/mettre-en-commun.sh`) | | | | **5 760** | **+44,64 ± 6,24** | homogènes, z = 0,12 |
+
+- **Lu sur le critère écrit avant** : borne basse +38,4 > 0 — **gain
+  démontré : fusionner.** Coupés par le plafond comme prévu, graines
+  distinctes, deux processeurs différents et le même verdict à 0,7 Elo près,
+  zéro perte au temps, zéro coup illégal.
+- **Le match a tranché entre les deux lectures écrites avant lui.** Par la
+  profondeur moyenne, +2 à +7 : **réfutée**, d'un facteur six. Par l'accord
+  avec l'oracle, +39 à +68 : **elle tient**, le point au bas de l'intervalle
+  — la lecture que la réserve de l'écran disait surestimée ne l'était pas ici.
+  C24 ne cherche pas plus profond en moyenne ; il cherche **là où la décision
+  se joue**, et c'est ce que l'accord mesure.
+- <span><strong>Inférence, confiance moyenne</strong> : 44,64 ÷ 0,65 ≈ 69
+  Elo par pli d'accord, dans l'étalon des plis réels (60 à 105). Un pli
+  d'accord vaudrait donc un pli de profondeur — sur un point unique, qui ne
+  fait pas une loi.</span>
+- **Conséquence pour C25**, par la règle écrite avant ce verdict (écran,
+  « Ce qui en sort ») : `E` = +44,64 ≥ +11, **C25 s'écrit**. Son supplément
+  attendu : 0,08 × `E` à 0,54 × `E`, soit **+3,6 à +24 Elo**, un majorant.
+- **La fusion** : la révocation `40afb49` est révoquée à son tour, répétée à
+  blanc à 12 h. Banc inchangé — aucune échéance ne joue à profondeur fixe.
+  La rustine `c24-laisser-finir-literation.patch` cesse de s'appliquer, son
+  code est entré ; `c24-sonde-allocation.patch` s'applique toujours.
 
 ### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
 
@@ -2327,6 +2358,8 @@ entre les classes**.
    décelable ». **En dessous, l'allocation inégale s'arrête à C24**, et la
    suite se repose à Théo. Si C24 régresse, C25 — qui réalloue davantage —
    tombe avec lui.
+   **Appliquée le 24 sept. à 16 h 25 : `E` = +44,64 — C25 s'écrit**, supplément
+   attendu +3,6 à +24 Elo.
 
 ### Ce qui reste à faire, par ordre mesuré
 
@@ -2359,7 +2392,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
-| **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : écrit, en mesure** (section C24) — sonde faite : plis −0,00 ± 0,09, ce que l'écran prédisait ; C24 change *où* va la profondeur, pas sa moyenne. **L'Elo en vol, relève vers 16 h 25.** **C25 — la répartition par la stabilité** : après le verdict de C24, décidé sur ce que C24 aura rendu en Elo — C25 ne vaut que par l'accord, que ce verdict met à l'épreuve. *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
+| **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : FUSIONNÉ le 24 sept., +44,64 ± 6,24 Elo à `8+0,08`** (section C24) — profondeur moyenne inchangée, le gain est dans la répartition, et la lecture par l'accord a tenu. **C25 — la répartition par la stabilité : s'écrit**, par la règle écrite avant le verdict de C24 ; supplément attendu +3,6 à +24 Elo, majorant. Prochaine action : l'écrire, avec sa mesure écrite avant. *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | **génération par étapes** — **décidée n° 3** (Théo, 24 sept.) | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | <s>non entamée ; la suivante après B6.</s> **ÉCRITE le 24 sept.** — candidat `087edb8`, révoqué le temps de sa mesure. Hors partie : temps −10,7 à −11,3 %, arbre inchangé. <s>Prochaine action : la sonde, puis deux jobs de 3 000 parties</s> **Sonde faite : n/s × 1,09, +0,17 ± 0,07 pli.** <s>L'Elo en vol, relève vers 14 h 25</s> **MESURÉE le 24 sept. : +23,10 ± 6,39 Elo à `8+0,08`, gain démontré — FUSIONNÉE** ; section « A18 — VERDICT ». **Pas** une optimisation pure : ex æquo et historique frais déplacent l'arbre |
 | **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **FAIT le 24 sept.** : un doublement vaut **+107,74 ± 8,19 Elo** et **+1,38 ± 0,28 pli**, soit **60 à 105 Elo par pli** à `8+0,08` — voir son verdict. Les plis de chaque ligne se convertissent désormais en Elo, en intervalle ; l'incertitude de l'étalon vient presque toute des plis |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |

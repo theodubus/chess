@@ -60,6 +60,9 @@ d'un aveu sur la profondeur de recherche.
 > **Le diviseur a atteint sa limite** : le plafond d'une allocation plate vaut
 > `(pendule + coups × inc) / coups`, et le balayage y butte déjà. Aller plus
 > loin demande une allocation **inégale**, pas un autre réglage.
+> **Premier pas le 24 sept. : laisser finir l'itération entamée** au lieu de
+> la jeter — **+44,6 ± 6,2 Elo** à `8+0,08`, sans chercher plus profond en
+> moyenne : le temps va aux positions difficiles, où l'itération dure.
 >
 > **Il sait pondérer depuis le 23 sept. 2026** — réfléchir pendant le temps
 > de l'adversaire, sur le coup qu'il prévoit — mais seulement si l'interface
