@@ -3563,6 +3563,54 @@ mod tests {
     }
 
     #[test]
+    fn un_echec_au_centieme_demi_coup_est_nul_meme_quand_la_parade_remet_la_pendule_a_zero() {
+        // Le contre-cas ci-dessus ne distingue pas « échec ET pas de coup »
+        // de « échec OU pas de coup » : son roi s'échappe par un coup
+        // tranquille, la pendule court encore, et la nulle arrive un ply plus
+        // tard — même score. Le balayage de mutation du 24 sept. 2026 l'a
+        // montré : `&&` en `||` dans `is_checkmate` survivait. Ici la seule
+        // parade est une PRISE, qui remet la pendule à zéro : sans la règle au
+        // nœud même, les noirs gagnent une tour. Position validée par
+        // exécution : un seul coup légal, d2d8.
+        let mut a = ardoise();
+        let temoin = board("3R3k/6pp/8/8/8/8/3r1PPP/6K1 b - - 99 80");
+        assert!(
+            search().negamax(&temoin, 3, 2, -INFINITY, INFINITY, &mut a) > 300,
+            "témoin : à 99 demi-coups, la prise de la tour gagne"
+        );
+        let b = board("3R3k/6pp/8/8/8/8/3r1PPP/6K1 b - - 100 80");
+        assert_eq!(
+            search().negamax(&b, 3, 2, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "en échec sans être mat, à 100 demi-coups, c'est nul — au nœud même"
+        );
+    }
+
+    #[test]
+    fn jamais_de_nulle_a_la_racine_meme_au_centieme_demi_coup() {
+        // Au centième demi-coup la position est nulle PAR RÈGLE — pour qui la
+        // réclame. À la racine, le moteur doit jouer : prendre la dame remet
+        // la pendule à zéro et gagne. Appliquer la règle à la racine rendrait
+        // une nulle sans coup, aucune itération ne s'achèverait, et `go`
+        // jouerait le premier coup légal venu. Le balayage de mutation du
+        // 24 sept. 2026 l'a montré : `ply > 0` en `ply >= 0` survivait.
+        // Position validée par exécution : 17 coups légaux, d1d5 gagne.
+        assert_eq!(best("4k3/8/8/3q4/8/8/8/3QK3 w - - 100 80", 3), "d1d5");
+
+        let position = Position::from_fen("4k3/8/8/3q4/8/8/8/3QK3 w - - 100 80").unwrap();
+        let limits = Limits {
+            depth: Some(3),
+            ..Limits::default()
+        };
+        let mut scores = Vec::new();
+        search().go(&position, &limits, |info| scores.push(info.score));
+        assert!(
+            matches!(scores.last(), Some(Score::Cp(cp)) if *cp > 500),
+            "la racine se cherche et rend le gain : {scores:?}"
+        );
+    }
+
+    #[test]
     fn une_nulle_compte_pour_un_noeud() {
         // Le test de nulle passe AVANT l'aiguillage vers la quiescence et
         // avant l'incrément de `negamax`, qui comptent chacun leur nœud : sans
