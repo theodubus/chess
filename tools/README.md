@@ -763,6 +763,19 @@ deux jobs de C22, partis avant ce recopiage (voir sa section).
   profondeur 5 et 114 026 à la profondeur 7.
 - **Le ponder ne dépend d'aucun** : il mesure un binaire contre lui-même, et
   ne fusionne rien.
+- **A18 et C24, en vol ensemble le 24 sept., touchent `search.rs` à des
+  endroits disjoints** — l'ordre des coups d'un côté, les échéances de
+  l'autre. **Répété à blanc à 12 h, sur la tête de la branche** : leurs
+  révocations (`908ed46`, `40afb49`) se lèvent sans conflit, seules ou
+  ensemble ; ensemble, `verify.sh --rapide` passe et le banc rend 109 047 à
+  la profondeur 7 (celui d'A18 ; C24 n'y change rien, aucune échéance ne
+  joue à profondeur fixe). **La table de l'attic ne change que sur la ligne
+  du candidat fusionné** — sa rustine cesse de s'appliquer parce que son
+  code est entré — et la révocation levée d'A18 remet d'elle-même les lignes
+  de `c19-see-ordering`, `d2-sonde-pv` et `d6-sonde-ordonnancement` à
+  « non ». Vérifié dans les trois cas : A18 seul, C24 seul, les deux ; la
+  rustine de l'autre s'applique toujours, et `c24-sonde-allocation` dans les
+  trois.
 
 #### L'ordre des fusions, et ce que chacune change ailleurs
 
