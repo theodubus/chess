@@ -2494,6 +2494,26 @@ match au critère écrit d'avance. Candidat committé puis révoqué aussitôt.
    - **Pas de match à `8+0,08`** : sans `movestogo`, candidat et parent
      rendent les mêmes échéances à la milliseconde, et un test le fixe.
 
+**La sonde d'après — rendue à 23 h 58, même graine** : 60 parties, 7 211
+coups, 121 cycles. **Aucun cycle affamé** (5,3 % avant) ; au-delà de la
+borne, 4, 5 et 2 coups à deux, trois et quatre coups du contrôle, **aucun de
+plus de 10 ms** — la latence de l'arbitre, comme prévu (8, 7 et 4 avant) ;
+à cinq coups et plus, toujours 0,601 au plus. **Zéro perte au temps**,
+marge minimale au contrôle 45 ms. **Conforme à l'attendu : le match se
+lance.**
+
+Candidat **`6daf7d7`**, révoqué aussitôt par `3189a95` ; la rustine
+`tools/attic/c26-controle-annonce.patch` en garde une copie. Référence : son
+parent `4620495` — `main` avec C25.
+
+**Crible de mutation du code de C26, au candidat, prédiction écrite avant le
+résultat** — `deadlines_ms` : 17 mutants, dont 5 dans le code neuf.
+**Aucun survivant** : les cinq neufs — `>=` en `<` dans le filtre, `- 1` et
+`100 * n` changés d'opérateur — déplacent tous la dure à deux coups du
+contrôle, que le test fixe à 7 500 ; les douze anciens comme aux cribles de
+C24 et de C25. Un inviable, `Some(Default::default())` ; un expiré,
+`deadlines_ms` à `None`.
+
 ### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
 
 Premier geste du chantier décidé par Théo (A19) : **mesurer le mécanisme
