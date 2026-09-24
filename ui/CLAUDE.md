@@ -124,7 +124,7 @@ ignorée sans casser la session.
 ```
 option name Hash type spin default <n> min 1 max 4096
 option name Ponder type check default false
-option name Threads type spin default 1 min 1 max 64
+option name Threads type spin default 1 min 1 max 1024
 ```
 
 - `Hash` : la table de transposition, en mégaoctets.

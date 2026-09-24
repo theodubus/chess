@@ -43,10 +43,17 @@ pub const MAX_PLY: usize = 128;
 
 /// Nombre maximal de fils de recherche, l'option UCI `Threads`.
 ///
-/// Au-delà, chaque fil ne ferait que se disputer les cœurs avec les autres ;
-/// la borne existe pour qu'une valeur aberrante ne crée pas des milliers de
-/// recherches, chacune avec son ardoise.
-pub const MAX_THREADS: usize = 64;
+/// **1 024, comme Stockfish** (`max(1024, 4 × fils matériels)`), et non une
+/// borne tirée de nos machines : c'est l'organisateur d'une compétition qui
+/// règle `Threads`, et ses serveurs offrent des centaines de fils — TCEC en
+/// donne 512 à sa saison 28, selon des sources secondaires. La borne n'existe
+/// que pour qu'une valeur aberrante ne crée pas des millions de recherches :
+/// chaque auxiliaire occupe **345 Kio** de mémoire résidente, son ardoise
+/// surtout (mesuré le 24 sept. 2026), soit ~345 Mio à 1 024 fils.
+///
+/// **L'échelle n'est mesurée qu'à deux fils** — +42 Elo contre un, B6 —, les
+/// runners de mesure n'ayant que deux cœurs physiques. 64 jusqu'au verdict.
+pub const MAX_THREADS: usize = 1024;
 
 /// Profondeur maximale à laquelle on ose la futilité inverse.
 ///
@@ -460,7 +467,7 @@ impl Search {
     /// porte une ardoise de 256 Kio, et la remplir à chaque `go` serait le
     /// coût d'initialisation que C15 a déjà payé une fois.
     pub fn set_threads(&mut self, threads: usize) {
-        self.threads = threads.clamp(1, MAX_THREADS);
+        self.threads = thread_count(threads);
         let helpers = (1..self.threads).map(|_| self.new_helper()).collect();
         self.helpers = helpers;
     }
@@ -1485,6 +1492,13 @@ impl Search {
         let gain = self.params.mg_value[victim as usize].max(self.params.eg_value[victim as usize]);
         stand_pat.saturating_add(gain).saturating_add(DELTA_MARGIN) <= alpha
     }
+}
+
+/// Le nombre de fils retenu pour une demande : au moins un, au plus
+/// [`MAX_THREADS`]. Hors de `set_threads` pour se tester sans créer mille
+/// auxiliaires de 345 Kio chacun.
+fn thread_count(requested: usize) -> usize {
+    requested.clamp(1, MAX_THREADS)
 }
 
 /// Lève un drapeau en sortant de portée — y compris quand on en sort par une
@@ -3672,10 +3686,14 @@ mod tests {
         s.set_threads(0);
         assert_eq!((s.threads(), s.helpers.len()), (1, 0), "borné à un fil");
 
-        s.set_threads(MAX_THREADS + 10);
+        // La borne haute se vérifie sur la fonction pure : la traverser par
+        // `set_threads` créerait mille auxiliaires, ~345 Mio.
+        assert_eq!(thread_count(0), 1);
+        assert_eq!(thread_count(7), 7);
+        assert_eq!(thread_count(MAX_THREADS), MAX_THREADS);
         assert_eq!(
-            (s.threads(), s.helpers.len()),
-            (MAX_THREADS, MAX_THREADS - 1),
+            thread_count(MAX_THREADS + 10),
+            MAX_THREADS,
             "borné à MAX_THREADS"
         );
     }

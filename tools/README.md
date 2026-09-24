@@ -1721,7 +1721,7 @@ les intervalles publiés étaient 7 % trop étroits (section ponder).
 
 #### Ce qui est écrit
 
-- **L'option UCI `Threads`**, 1 par défaut, de 1 à 64. À `T` fils, `T − 1`
+- **L'option UCI `Threads`**, 1 par défaut, de 1 à <s>64</s> **1 024** depuis le verdict. À `T` fils, `T − 1`
   auxiliaires cherchent la même position par le même approfondissement, sur
   la même table — partagée par un `Arc`, possible depuis B9 —, sans pendule
   ni rapport. **Seul le fil principal rend le coup et la variante.**
@@ -1807,10 +1807,15 @@ moteur doit bien employer ce qu'on lui donne, quel qu'en soit le nombre.
   Stockfish 7, janvier 2016 (PR #467). Variante courante ailleurs : des fils
   lancés à des profondeurs différentes.
 
-**Ce que ça change ici.** (1) **`MAX_THREADS` vaut 64** : une borne sous les
-machines de TCEC. La relever ne change rien à 1 ou 2 fils ; **l'échelle au-delà
-de quatre fils reste non mesurée**, les runners n'ayant que deux cœurs
-physiques et le conteneur quatre — ce sera écrit comme tel. (2) Notre Lazy SMP
+**Ce que ça change ici.** (1) <s>**`MAX_THREADS` vaut 64** : une borne sous les
+machines de TCEC.</s> **Relevé à 1 024 le 24 sept., après le verdict**, comme
+Stockfish : au-dessus des machines de compétition. Chaque auxiliaire occupe
+**345 Kio** de mémoire résidente (mesuré : 21 760 Kio pour 63 auxiliaires),
+soit ~345 Mio à 1 024 fils. La relever ne change rien à 1 ou 2 fils ;
+**l'échelle au-delà de deux fils reste non mesurée**, les runners n'ayant que
+deux cœurs physiques et le conteneur quatre — écrit comme tel dans le code.
+Et les auxiliaires sont relancés à chaque `go` : à des centaines de fils,
+créer les fils coûtera un temps que personne n'a mesuré. (2) Notre Lazy SMP
 est la forme la plus simple : fil principal seul décideur, aucun décalage de
 profondeur, pas de vote du meilleur fil, pas d'historique partagé — autant de
 variantes à mesurer, chacune seule. (3) Sur les listes, **la force monofil
