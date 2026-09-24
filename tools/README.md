@@ -2062,8 +2062,14 @@ travailler » reste une question à lui poser au-delà de ces deux-là.</s>
 24 sept. 2026, au matin** : après B6, **la génération par étapes**, sur la
 recommandation qu'elle sert dans toutes les conditions de jeu — tout nombre de
 fils, ponder permis ou non —, là où le remboursement du ponder ne sert que
-quand le ponder est permis (désactivé au CCRL Blitz). Au-delà, « ce sur quoi
-travailler » redevient une question à lui poser.
+quand le ponder est permis (désactivé au CCRL Blitz). <s>Au-delà, « ce sur quoi
+travailler » redevient une question à lui poser.</s> **Posée, et DÉCIDÉE —
+Théo, 24 sept. 2026, vers 09 h** : après la génération par étapes,
+**l'allocation inégale**, sur la recommandation qu'on peut la chiffrer vite
+avant de s'engager et qu'elle sert dans toutes les conditions de jeu —
+« *Ok pour 1, on oublie pas le reste mais d'abord 1* ». Les autres candidats
+présentés gardent leur place au tableau : raffinements d'ordonnancement sur
+les étages, NNUE, remboursement du ponder. Au-delà, la question se repose.
 
 **Ce tableau porte TOUT le backlog du moteur**, reportés et bloqués compris,
 chacun avec sa condition. Il ne portait jusqu'au 23 sept. au soir que les
@@ -2076,7 +2082,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
-| **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
+| **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée** ; la suivante, entamée pendant que l'Elo d'A18 tourne. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | **génération par étapes** — **décidée n° 3** (Théo, 24 sept.) | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | <s>non entamée ; la suivante après B6.</s> **ÉCRITE le 24 sept.** — candidat `087edb8`, révoqué le temps de sa mesure. Hors partie : temps −10,7 à −11,3 %, arbre inchangé. <s>Prochaine action : la sonde, puis deux jobs de 3 000 parties</s> **Sonde faite : n/s × 1,09, +0,17 ± 0,07 pli. L'Elo en vol, relève vers 14 h 25**, critère écrit avant — section « A18 ». **Pas** une optimisation pure : ex æquo et historique frais déplacent l'arbre |
 | **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **FAIT le 24 sept.** : un doublement vaut **+107,74 ± 8,19 Elo** et **+1,38 ± 0,28 pli**, soit **60 à 105 Elo par pli** à `8+0,08` — voir son verdict. Les plis de chaque ligne se convertissent désormais en Elo, en intervalle ; l'incertitude de l'étalon vient presque toute des plis |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |

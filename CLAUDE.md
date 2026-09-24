@@ -9,6 +9,10 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 - `ui/` — TypeScript. **Chantier parallèle, avec son propre `ui/CLAUDE.md`
   qui fait autorité sous `ui/`.** Rien de ce fichier-ci ne s'y applique :
   une interface n'a pas de force de jeu, donc ni SPRT, ni perft, ni bench.
+  **Un autre agent, Codex, y travaille en parallèle** sur ses propres branches
+  (`codex/…`) et leurs PR : c'est normal, et ça ne touche qu'à `ui/` (Théo,
+  24 sept. 2026). Ne pas les prendre pour des anomalies, ni les fusionner
+  ou les nettoyer.
 - `tools/` — arbitres de match, livre d'ouvertures, SPRT. Voir `tools/README.md`.
 
 ## Par où commencer, sans contexte
