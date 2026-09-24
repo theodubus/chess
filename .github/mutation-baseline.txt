@@ -31,7 +31,7 @@ main.rs 0
 perft.rs 1
 bench.rs 2
 see.rs 2
-search.rs 40
+search.rs 38
 eval.rs 121
 
 # ---------------------------------------------------------------------------
@@ -70,6 +70,13 @@ eval.rs 121
 #   Précédent décisif : un ajustement de ces valeurs prédisait le résultat des
 #   parties 7,8 % mieux sur 66 376 positions tenues à l'écart, et jouait
 #   25 Elo PLUS MAL. Les figer par des tests coûterait donc de l'Elo.
+#
+# search.rs — 38, resserré le 24 sept. 2026 (run 35954091395, main à
+#   `8ad3198` : 474 mutants, 359 attrapés, 22 inviables, 53 expirés).
+#   EXACTEMENT la prédiction écrite au paragraphe suivant : les deux
+#   survivants neufs de C22 — `&&` en `||` dans `is_checkmate`, `ply > 0` en
+#   `ply >= 0` au test de nulle — sont tués par les deux tests de la PR #72,
+#   et les trente-huit autres sont les mêmes, un pour un.
 #
 # search.rs — 40, resserré le 24 sept. 2026 (run 35945758614, après C22 et
 #   son test d'incrément : 458 mutants, 352 attrapés, 19 inviables, 47
