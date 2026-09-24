@@ -788,8 +788,10 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 
 L'ordre des chantiers suivants vit dans « Ce qui reste à faire, par ordre
 mesuré » et ne se recopie pas ici. Ce qui dépend directement de ces relèves :
-interdire deux coups nuls consécutifs (débloqué : C22 sur C23 est tranché ; mesuré seul) ; dépenser davantage
-quand le ponder est permis (après le ponder, en `les-deux`) ; B6 (après B9).
+<s>interdire deux coups nuls consécutifs (débloqué : C22 sur C23 est tranché ; mesuré seul)</s>
+écranté en nœuds le 24 sept., pas prioritaire ; dépenser davantage
+quand le ponder est permis (après le ponder, en `les-deux`) ; <s>B6 (après B9)</s>
+B6 écrit, son Elo en vol ; puis **la génération par étapes, décidée le 24 sept.**
 
 ### C22 — VERDICT, 23 sept. 2026 : −10,44 ± 6,34 Elo à `8+0,08` — régression, non fusionné, à remesurer sur C23
 
@@ -1854,8 +1856,14 @@ contre lui-même à un fil :
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
 d'abord les relèves en vol (C22 sur C23, balayage de mutation), puis
 **calibrer l'Elo par pli**, puis **B6 — la recherche multithread** (Lazy
-SMP). Les autres lignes gardent l'ordre mesuré du tableau ; « ce sur quoi
-travailler » reste une question à lui poser au-delà de ces deux-là.
+SMP). <s>Les autres lignes gardent l'ordre mesuré du tableau ; « ce sur quoi
+travailler » reste une question à lui poser au-delà de ces deux-là.</s>
+**Calibration faite, B6 écrit et en mesure. La suite est DÉCIDÉE — Théo,
+24 sept. 2026, au matin** : après B6, **la génération par étapes**, sur la
+recommandation qu'elle sert dans toutes les conditions de jeu — tout nombre de
+fils, ponder permis ou non —, là où le remboursement du ponder ne sert que
+quand le ponder est permis (désactivé au CCRL Blitz). Au-delà, « ce sur quoi
+travailler » redevient une question à lui poser.
 
 **Ce tableau porte TOUT le backlog du moteur**, reportés et bloqués compris,
 chacun avec sa condition. Il ne portait jusqu'au 23 sept. au soir que les
@@ -1869,7 +1877,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
-| génération par étapes | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
+| **génération par étapes** — **décidée n° 3** (Théo, 24 sept.) | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | **non entamée ; la suivante après B6.** ~1,5 job à mettre en commun, **pas** une optimisation pure — le tri n'est pas stable, l'arbre bougera |
 | **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **FAIT le 24 sept.** : un doublement vaut **+107,74 ± 8,19 Elo** et **+1,38 ± 0,28 pli**, soit **60 à 105 Elo par pli** à `8+0,08` — voir son verdict. Les plis de chaque ligne se convertissent désormais en Elo, en intervalle ; l'incertitude de l'étalon vient presque toute des plis |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
 | **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | <s>1,0 à 1,8, seul chiffre encore hérité</s> **+0,48 ± 0,08 mesurés à deux fils** en partie sur runner — **24 à 59 Elo** par l'étalon, écrit avant que ses matchs ne rendent | <s>exige B9</s> — **B9 est fusionné, la table se partage**. <s>Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie).</s> **Fait le 24 sept.** — voir « La concurrence d'un match se déduit des cœurs ». <s>Prochaine action : **écrire Lazy SMP**, l'option `Threads` et ses tests.</s> **ÉCRIT le 24 sept., neutre à un fil** (banc au nœud près, `timing.sh` trois fois). Prochaine action : fusionner, puis la sonde et le match à deux fils, **protocole écrit avant** — section « B6 — Lazy SMP ». Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
@@ -2689,7 +2697,10 @@ deux refus de plus, chacun pour un zéro qui se lirait comme un verdict :
   deux fils sans ponder passe, deux fils plus un camp qui pondère non.
 
 `option.Threads` passe **par moteur, jamais dans `-each`**, qui écraserait les
-valeurs des moteurs comme il le fait de `tc=`. Éprouvé en rejouant les étapes
+valeurs des moteurs comme il le fait de `tc=`. **Douze entrées** : GitHub en
+admet vingt-cinq par `workflow_dispatch` depuis le 4 déc. 2025 — vérifié à la
+source (changelog GitHub) avant d'ajouter la onzième, et au contact : la
+première sonde à deux fils est partie avec les douze. Éprouvé en rejouant les étapes
 en local : les trois refus, et un moteur témoin qui déclare `Threads` et
 journalise ce qu'il reçoit — `setoption name Threads value 2` au seul
 candidat, une partie à la fois, sous les deux arbitres.
@@ -2698,6 +2709,13 @@ candidat, une partie à la fois, sous les deux arbitres.
 
 Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 **vieillissent**, et c'est pourquoi ils sont écrits plutôt que gardés.
+
+- **Les runners changent de MODÈLE, pas seulement de vitesse** — relevé le
+  24 sept. 2026 : EPYC 7763, EPYC 9V74 et EPYC 9V45 dans la même nuit, de
+  2,02 à 4,06 M n/s au banc sur des binaires voisins. Un verdict reste valide
+  en interne ; deux runs ne se comparent qu'après lecture de leurs
+  étalonnages, et un chiffre de vitesse ne se recopie jamais d'un run à
+  l'autre.
 
 | quoi | quand ça devient actionnable | pourquoi aucun test ne le dira |
 |---|---|---|
