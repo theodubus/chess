@@ -503,8 +503,12 @@ une mesure, pas une préférence.
   ponder vole du CPU à l'adversaire du candidat, donc *vers* l'hypothèse ;
   Lazy SMP en vole au candidat lui-même. **`match.yml` dérive la concurrence
   de l'inégalité depuis le 23 sept.** — deux cœurs par partie dès que
-  quelqu'un pondère — et refuse de lancer si elle ne tient pas ; il ne sait
-  encore rien des fils, étape de B6. Tableau dans `tools/README.md`.
+  quelqu'un pondère — et refuse de lancer si elle ne tient pas ; **les fils
+  depuis le 24 sept.** (`fils_candidat`, `fils_reference`), avec deux refus
+  de plus : un moteur qui ne DÉCLARE pas `Threads` — il l'ignorerait en
+  silence et jouerait monofil —, et, dans une partie, plus de fils
+  réfléchissant à la fois que de cœurs physiques.
+  Tableau dans `tools/README.md`.
   <br>**Mesuré le 23 sept. : ces quatre cœurs sont quatre processeurs
   LOGIQUES pour deux cœurs physiques** (SMT). À concurrence 3, trois moteurs
   s'en partagent deux : symétrique, donc chaque verdict reste valide en

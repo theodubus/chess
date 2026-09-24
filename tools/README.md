@@ -1697,7 +1697,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
 | **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **EN COURS — décidé n° 1.** `match.yml` sait jouer une cadence par moteur et une sonde depuis le 23 sept. au soir ; deux matchs pour l'Elo, une sonde pour les plis, protocole et attendu écrits avant — voir « Calibrer l'Elo par pli — EN VOL ». Deux points mesurés donnent 21 à 119 et 51 à 104 Elo par pli (section ponder) : trop large pour classer les chantiers de vitesse |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
-| **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie). Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
+| **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. <s>Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie).</s> **Fait le 24 sept.** — voir « La concurrence d'un match se déduit des cœurs ». Prochaine action : **écrire Lazy SMP**, l'option `Threads` et ses tests. Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
@@ -2493,10 +2493,31 @@ deux cas le verdict ne vaut rien.*
 <s>`match.yml` calcule `concurrence = nproc − 1` et ne connaît ni fils ni
 ponder.</s> **Depuis le 23 sept., `match.yml` dérive la concurrence de
 l'inégalité** — deux cœurs par partie dès que quelqu'un pondère — et refuse de
-lancer quand elle ne tient pas. **Les fils, non** : le jour où un match passe
+lancer quand elle ne tient pas. <s>**Les fils, non** : le jour où un match passe
 `option.Threads`, le nombre de cœurs par partie devient `T` et la même ligne
 doit le savoir. C'est une étape de B6, écrite dans sa liste, pas une
-précaution à retenir.
+précaution à retenir.</s> **Les fils aussi depuis le 24 sept.** — première étape
+de B6. Deux entrées, `fils_candidat` et `fils_reference` (1 par défaut) ; la
+partie occupe le plus gros des deux camps sans ponder, leur somme avec ; et
+deux refus de plus, chacun pour un zéro qui se lirait comme un verdict :
+
+- **un moteur qui ne DÉCLARE pas `Threads`** en réponse à `uci`. Le protocole
+  veut qu'une option inconnue soit ignorée en silence — ce moteur le fait —,
+  donc un match « deux fils contre un » sur un binaire d'avant Lazy SMP
+  jouerait monofil des deux côtés et rendrait zéro ;
+- **plus de fils réfléchissant à la fois, DANS une partie, que de cœurs
+  PHYSIQUES** (`lscpu`, dans l'étalonnage). Deux fils d'un même cœur s'en
+  partagent les unités de calcul : la mesure dirait ce que vaut le SMT, avec
+  un biais contre le camp qui a le plus de fils. Entre deux parties le partage
+  frappe les deux camps pareil, d'où la concurrence 3 des matchs monofils ;
+  dans une partie, non. Sur les runners, deux cœurs physiques : Lazy SMP à
+  deux fils sans ponder passe, deux fils plus un camp qui pondère non.
+
+`option.Threads` passe **par moteur, jamais dans `-each`**, qui écraserait les
+valeurs des moteurs comme il le fait de `tc=`. Éprouvé en rejouant les étapes
+en local : les trois refus, et un moteur témoin qui déclare `Threads` et
+journalise ce qu'il reçoit — `setoption name Threads value 2` au seul
+candidat, une partie à la fois, sous les deux arbitres.
 
 ### Ce qu'il faut surveiller — et que rien ne signalera tout seul
 
