@@ -8,6 +8,8 @@ import { estimatedLoss } from "./model";
 import { analysisEngineFactory } from "../engine/DevelopmentEngine";
 import { scoreLabel } from "../engine/analysis";
 import Board from "../Board";
+import CapturedPieces from "../CapturedPieces";
+import { capturedMaterial } from "../material";
 import EvaluationBar from "../EvaluationBar";
 import EvaluationChart from "./EvaluationChart";
 import MoveNavigation from "../MoveNavigation";
@@ -97,6 +99,7 @@ export default function InteractiveReview({
   const previousMoment = moments.filter((index) => index < selected).at(-1);
   const displayedTree = branch?.tree ?? new StudyTree(position);
   const board = displayedTree.board(branch?.node ?? 0);
+  const captures = capturedMaterial(board.history({ verbose: true }));
   const path = branch?.tree.path(branch.node) ?? [];
   const matching =
     !!branch && live.tree === branch.tree && live.node === branch.node;
@@ -272,6 +275,11 @@ export default function InteractiveReview({
               : `${branch.retry && path.length === 1 ? "Votre tentative" : "Variante"} · ${branch.node ? branch.tree.nodes[branch.node].label : branch.tree.root.label}`
             : position.label}
         </p>
+        <CapturedPieces
+          captures={captures}
+          side={orientation === "white" ? "b" : "w"}
+          label
+        />
         <div
           className={`board-with-evaluation ${showEvaluation ? "show-evaluation" : ""}`}
         >
@@ -314,6 +322,11 @@ export default function InteractiveReview({
             )}
           </Board>
         </div>
+        <CapturedPieces
+          captures={captures}
+          side={orientation === "white" ? "w" : "b"}
+          label
+        />
         {branch ? (
           <>
             <div className="study-navigation">

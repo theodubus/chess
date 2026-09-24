@@ -379,3 +379,19 @@ Chessground est publié sous `@lichess-org/chessground` (GPL-3.0-or-later),
 chess.js sous BSD-2-Clause. Les pièces sont incluses localement. L’ensemble
 du code du dépôt est sous AGPL-3.0-or-later. Les données d’ouvertures Lichess
 conservent leur licence CC0-1.0, incluse dans `data/openings/COPYING.txt`.
+
+## Scores et prises
+
+La barre d’évaluation affiche le score en pions (`+1,25` favorise les Blancs,
+`−1,25` les Noirs), ou `M3` pour un mat annoncé en trois coups. Le chiffre se
+place du côté du camp favorisé et suit le retournement du plateau. `Mat`
+signale le mat atteint ; `?` une évaluation indisponible. Les bornes restent
+indiquées, avec le détail dans l’infobulle. L’affichage reste optionnel.
+
+Les pièces capturées sont regroupées par type, auprès du joueur qui les a prises.
+Le `+N` indique uniquement son excédent de points capturés sur l’adversaire :
+pion 1, cavalier/fou 3, tour 5, dame 9. Aucun chiffre en cas d’égalité.
+Ce bilan est indépendant de l’évaluation moteur et suit la position affichée,
+ainsi que les variantes et retentatives. Il inclut la prise en passant ; une
+promotion seule n’est pas une capture. Pour un PGN depuis une FEN, les captures
+antérieures à la position initiale sont inconnues et ne sont pas inventées.

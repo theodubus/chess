@@ -396,10 +396,22 @@ try {
       ),
       "position initiale personnalisée et moteur mémorisé",
     );
+    assert(
+      await evaluate(
+        `document.querySelector('.evaluation-score')?.textContent==='M1'`,
+      ),
+      "mat forcé visible dans la barre",
+    );
     await pressKey(">");
     await waitFor(
       `document.querySelector('.review-position').textContent.includes('Dh4#')`,
       "coup final importé",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.evaluation-score')?.textContent==='Mat'`,
+      ),
+      "mat atteint visible dans la barre",
     );
     await pressKey("<");
     await button("Prochain moment clé");
@@ -476,6 +488,53 @@ try {
     await waitFor(
       `document.querySelector('.learning-workspace piece.white.knight') && document.querySelector('.study-evaluation')?.textContent.includes('Position nulle')`,
       "sous-promotion légale et nulle analysée",
+    );
+    await button("Revenir à la partie");
+    await button("Importer un PGN");
+    const captureGame = new Chess();
+    for (const san of ["e4", "d5", "exd5", "Qxd5"]) captureGame.move(san);
+    await fillPgn(captureGame.pgn());
+    await button("Importer et analyser");
+    await waitFor(
+      `document.querySelector('.review-progress')?.textContent.includes('Analyse terminée')`,
+      "analyse de la partie avec prises",
+      90000,
+    );
+    await click('.review-navigation [aria-label="Position finale"]');
+    assert(
+      await evaluate(
+        `document.querySelectorAll('.captured-material img').length===2 && !document.querySelector('.capture-advantage')`,
+      ),
+      "prises égales sans faux avantage",
+    );
+    await pressKey("<");
+    assert(
+      await evaluate(
+        `document.querySelector('.captured-material[data-side=w] .capture-advantage')?.textContent==='+1' && !document.querySelector('.captured-material[data-side=b] img')`,
+      ),
+      "bilan des prises à la position relue",
+    );
+    await screenshot("00f-captures-review");
+    await pressKey("<");
+    assert(
+      await evaluate(
+        `document.querySelectorAll('.captured-material img').length===0`,
+      ),
+      "aucune prise anticipée",
+    );
+    await move("e4", "d5", ".learning-workspace");
+    assert(
+      await evaluate(
+        `document.querySelector('.captured-material[data-side=w] .capture-advantage')?.textContent==='+1'`,
+      ),
+      "prise dans une variante",
+    );
+    await move("d8", "d5", ".learning-workspace");
+    assert(
+      await evaluate(
+        `document.querySelectorAll('.captured-material img').length===2 && !document.querySelector('.capture-advantage')`,
+      ),
+      "reprise dans une variante",
     );
     await button("Revenir à la partie");
     await button("Importer un PGN");
