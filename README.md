@@ -9,7 +9,8 @@ d'un aveu sur la profondeur de recherche.
 > plusieurs fils par l'option `Threads` (Lazy SMP, 24 sept. 2026 : deux fils
 > valent **+42 ± 9 Elo** contre un à `8+0,08`, voir `tools/README.md`). Negamax avec
 > élagage alpha-bêta, approfondissement itératif, quiescence, table de
-> transposition et ordonnancement des coups, plus **des élagages avancés
+> transposition et ordonnancement des coups — générés par étapes depuis le
+> 24 sept., **+23 ± 6 Elo** à `8+0,08` —, plus **des élagages avancés
 > mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
 > d'aspiration, élagage delta en quiescence, futilité inverse, l'élagage par
 > **échange statique** en quiescence et l'**élagage par compte de coups**.
@@ -72,13 +73,13 @@ d'un aveu sur la profondeur de recherche.
 > prend 3 à 5 % de vitesse à l'autre : 3 à 10 Elo de ce chiffre en viennent
 > (estimation, mesurée le 23 sept.).
 >
-> Il n'a encore ni recherche parallèle, ni NNUE.
+> Il n'a pas encore de NNUE.
 
 ## Structure
 
 | Dossier | Contenu | Statut |
 |---|---|---|
-| `engine/` | Moteur UCI en Rust | Recherche et évaluation, monothread |
+| `engine/` | Moteur UCI en Rust | Recherche et évaluation — un fil par défaut, plusieurs par l'option `Threads` |
 | `ui/` | Interface TypeScript | **En chantier, mené séparément** — consignes dans `ui/CLAUDE.md` |
 | `tools/` | Arbitres, livre d'ouvertures, SPRT | Opérationnel |
 
@@ -159,7 +160,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
 dépend ni de la machine ni de sa charge.
 
-Référence à la profondeur 7 : **114 026** nœuds.
+Référence à la profondeur 7 : **109 047** nœuds.
 
 Ce chiffre est vérifié par la CI — voir
 [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a

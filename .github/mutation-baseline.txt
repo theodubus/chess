@@ -31,7 +31,7 @@ main.rs 0
 perft.rs 1
 bench.rs 2
 see.rs 2
-search.rs 38
+search.rs 39
 eval.rs 121
 
 # ---------------------------------------------------------------------------
@@ -70,6 +70,20 @@ eval.rs 121
 #   Précédent décisif : un ajustement de ces valeurs prédisait le résultat des
 #   parties 7,8 % mieux sur 66 376 positions tenues à l'écart, et jouait
 #   25 Elo PLUS MAL. Les figer par des tests coûterait donc de l'Elo.
+#
+# search.rs — 39, RELEVÉ le 24 sept. 2026 avec la fusion d'A18 (génération
+#   par étapes). Un survivant de plus, et un seul : `<` en `<=` dans la garde
+#   de débordement de `stage_moves` — `if count < buffer.len()` —, l'homologue
+#   exact de celle d'`ordered_moves`, qui survit déjà et compte dans les 38.
+#   ÉQUIVALENT par construction : une position légale a au plus 218 coups et
+#   le tampon en tient 256, donc `count` n'atteint jamais `buffer.len()` et la
+#   borne ne décide rien. La garde reste — déborder en silence perdrait des
+#   coups, et un `debug_assert!` la double en debug. MESURÉ avant la fusion,
+#   pas seulement prédit : sur l'arbre fusionné, les 26 mutants de
+#   `stage_moves` et d'`ordered_moves` rendent 24 attrapés et ces deux
+#   survivants (`tools/mutants.sh --re 'stage_moves|ordered_moves'`). Prédit
+#   depuis l'écran d'A18 (`tools/README.md`, section A18) ; le balayage qui
+#   suit la fusion doit rendre 39.
 #
 # search.rs — 38, resserré le 24 sept. 2026 (run 35954091395, main à
 #   `8ad3198` : 474 mutants, 359 attrapés, 22 inviables, 53 expirés).

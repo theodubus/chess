@@ -1,0 +1,812 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 4dd99c4..85b2186 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -252,6 +252,9 @@ pub struct Info {
+     pub pv: Vec<Move>,
+     /// Remplissage de la table de transposition, en pour mille.
+     pub hashfull: u32,
++    /// SONDE — part des nœuds de la racine passée sur le meilleur coup, en
++    /// pour mille, sur l'itération achevée.
++    pub effort_permille: u32,
+ }
+ 
+ /// Table triangulaire de variante principale.
+@@ -370,6 +373,9 @@ pub struct Search {
+     /// Vrai pour un auxiliaire. Il publie ses nœuds, ne rapporte rien, ne
+     /// consulte aucune pendule et ne touche pas à la génération de la table.
+     is_helper: bool,
++    /// SONDE — nœuds passés sous chaque coup de la racine, sur l'itération en
++    /// cours (fenêtres d'aspiration comprises).
++    root_nodes: Vec<(Move, u64)>,
+     /// Deux coups tranquilles par ply ayant provoqué une coupure bêta.
+     ///
+     /// Un coup qui réfute une variante à un ply donné en réfute souvent
+@@ -438,6 +444,7 @@ impl Search {
+             published_nodes: Arc::new(AtomicU64::new(0)),
+             published: 0,
+             is_helper: false,
++            root_nodes: Vec::new(),
+             killers: vec![[0; 2]; MAX_PLY],
+             history: vec![0; 64 * 64],
+             lmr: build_lmr_table(),
+@@ -472,6 +479,12 @@ impl Search {
+         self.helpers = helpers;
+     }
+ 
++    /// SONDE — la table, pour la copier et la rétablir.
++    #[must_use]
++    pub fn table(&self) -> &TranspositionTable {
++        &self.tt
++    }
++
+     /// Nombre de fils de recherche.
+     #[must_use]
+     pub fn threads(&self) -> usize {
+@@ -672,6 +685,17 @@ impl Search {
+             best = Some(mv);
+             previous = score;
+             self.last_pv = self.pv.line();
++            let total: u64 = self.root_nodes.iter().map(|&(_, n)| n).sum();
++            let on_best = self
++                .root_nodes
++                .iter()
++                .find(|&&(m, _)| m == mv)
++                .map_or(0, |&(_, n)| n);
++            let effort_permille = if total > 0 {
++                u32::try_from(on_best * 1000 / total).unwrap_or(0)
++            } else {
++                0
++            };
+             report(&Info {
+                 depth,
+                 score: Score::from_internal(score),
+@@ -679,6 +703,7 @@ impl Search {
+                 time_ms: self.elapsed_ms(),
+                 pv: self.last_pv.clone(),
+                 hashfull: self.tt.permille_used(),
++                effort_permille,
+             });
+ 
+             // Un mat trouvé ne s'améliore pas en cherchant plus loin.
+@@ -753,6 +778,7 @@ impl Search {
+         previous: i32,
+         scratch: &mut [(Move, i32)],
+     ) -> i32 {
++        self.root_nodes.clear();
+         if iteration <= ASPIRATION_MIN_DEPTH || previous.abs() > MATE_THRESHOLD {
+             return self.negamax(board, depth, 0, -INFINITY, INFINITY, scratch);
+         }
+@@ -1214,6 +1240,7 @@ impl Search {
+                 0
+             };
+ 
++            let before = self.nodes;
+             self.path.push(child.hash());
+             let mut score =
+                 -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha, rest);
+@@ -1228,6 +1255,13 @@ impl Search {
+                 score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha, rest);
+             }
+             self.path.pop();
++            if ply == 0 {
++                let spent = self.nodes - before;
++                match self.root_nodes.iter_mut().find(|(m, _)| *m == mv) {
++                    Some((_, n)) => *n += spent,
++                    None => self.root_nodes.push((mv, spent)),
++                }
++            }
+ 
+             if self.aborted {
+                 return 0;
+diff --git a/engine/src/tt.rs b/engine/src/tt.rs
+index 19ec1cb..1d67a90 100644
+--- a/engine/src/tt.rs
++++ b/engine/src/tt.rs
+@@ -251,6 +251,33 @@ impl TranspositionTable {
+         self.generation.store(0, Ordering::Relaxed);
+     }
+ 
++    /// SONDE — copie de la table entière, génération comprise. Sert à rejouer
++    /// une recherche prolongée sans que la partie en garde la trace.
++    #[must_use]
++    pub fn snapshot(&self) -> (Vec<(u64, u64)>, u8) {
++        (
++            self.entries
++                .iter()
++                .map(|e| {
++                    (
++                        e.key_xor_data.load(Ordering::Relaxed),
++                        e.data.load(Ordering::Relaxed),
++                    )
++                })
++                .collect(),
++            self.generation.load(Ordering::Relaxed),
++        )
++    }
++
++    /// SONDE — rétablit une copie prise par [`TranspositionTable::snapshot`].
++    pub fn restore(&self, snapshot: &(Vec<(u64, u64)>, u8)) {
++        for (entry, &(key, data)) in self.entries.iter().zip(&snapshot.0) {
++            entry.key_xor_data.store(key, Ordering::Relaxed);
++            entry.data.store(data, Ordering::Relaxed);
++        }
++        self.generation.store(snapshot.1, Ordering::Relaxed);
++    }
++
+     /// Marque le début d'une nouvelle recherche.
+     ///
+     /// Les entrées des recherches précédentes restent lisibles mais deviennent
+diff --git a/tools/Cargo.toml b/tools/Cargo.toml
+index 65ba4f3..606cb70 100644
+--- a/tools/Cargo.toml
++++ b/tools/Cargo.toml
+@@ -53,6 +53,11 @@ path = "src/bin/tune.rs"
+ name = "nnue-probe"
+ path = "src/bin/nnue_probe.rs"
+ 
++# SONDE JETABLE — vit dans sa rustine de l'attic, jamais dans l'arbre.
++[[bin]]
++name = "alloc-probe"
++path = "src/bin/alloc_probe.rs"
++
+ [dependencies]
+ shallowred = { path = "../engine" }
+ cozy-chess = "0.3.4"
+diff --git a/tools/sonde-alloc/analyser.py b/tools/sonde-alloc/analyser.py
+new file mode 100644
+index 0000000..1b9eb99
+--- /dev/null
++++ b/tools/sonde-alloc/analyser.py
+@@ -0,0 +1,409 @@
++#!/usr/bin/env python3
++"""Lecteur de la sonde de l'allocation inégale (`alloc-probe`).
++
++Chaque ligne JSON est un coup d'une vraie partie : la trace de la recherche
++PROLONGÉE (jusqu'à `mult` × budget, depuis une copie de la table) et celle de
++la recherche NORMALE qui a joué. Une itération est
++`[profondeur, instant_ms, coup, cp, nœuds, effort_pour_mille]`.
++
++Ce que le lecteur rend, dans l'ordre :
++
++1. la cohérence : la règle actuelle, simulée sur la trace prolongée, rend-elle
++   le coup que la recherche normale a joué ?
++2. la comptabilité du temps de la règle actuelle : arrêts par l'échéance douce
++   ou dure, et le temps JETÉ dans les itérations interrompues ;
++3. la courbe d'accord avec l'oracle — la décision au bout de la trace
++   prolongée — quand on multiplie le budget uniformément : c'est l'étalon qui
++   convertit un gain d'accord en temps équivalent ;
++4. par classe de position au moment où la règle actuelle décide : ce que
++   coûte un demi-budget, ce que rapporte un double budget ;
++5. une règle INÉGALE — poursuivre tant que la probabilité qu'une itération de
++   plus change le coup, rapportée à son coût, dépasse un seuil —, apprise sur
++   une moitié des parties et évaluée sur l'autre, à temps total égal.
++6. C24 tel qu'écrit — douce à 0,44 budget, dure à 2,2 budgets bornée par la
++   pendule — contre la règle actuelle, coup par coup : PROFONDEUR achevée,
++   temps, accord. C'est l'attendu de la sonde en partie, calculé au lieu
++   d'être dérivé de tête.
++
++Usage : analyser.py fichier.jsonl [...]
++"""
++import json
++import math
++import random
++import sys
++from collections import defaultdict
++
++PLIS_PAR_DOUBLEMENT = 1.38  # étalon du 24 sept. 2026, ± 0,28
++ELO_PAR_PLI = (60, 105)  # étalon du 24 sept. 2026, bornes croisées
++MATE = 20_000
++
++
++def charger(chemins):
++    coups = []
++    for chemin in chemins:
++        with open(chemin, encoding="utf-8") as f:
++            for ligne in f:
++                ligne = ligne.strip()
++                if not ligne:
++                    continue
++                try:
++                    coups.append(json.loads(ligne))
++                except json.JSONDecodeError:
++                    pass  # ligne tronquée par un arrêt en cours de partie
++    return [c for c in coups if c["ext"]]
++
++
++def simuler(ext, douce, dure):
++    """La règle actuelle : pas d'itération entamée après `douce`, abandon à
++    `dure`. Rend (indice de la dernière itération achevée, temps dépensé,
++    cause, temps jeté)."""
++    dernier, t_prec = None, 0
++    for i, it in enumerate(ext):
++        if dernier is not None and t_prec >= douce:
++            return dernier, t_prec, "douce", 0
++        if it[1] > dure:
++            return dernier, dure, "dure", dure - t_prec
++        dernier, t_prec = i, it[1]
++    if abs(ext[-1][3]) > MATE:  # mat trouvé : la recherche s'arrête d'elle-même
++        return dernier, t_prec, "fin", 0
++    # La trace s'arrête à l'horizon : l'itération suivante n'y a pas fini.
++    if t_prec >= douce:
++        return dernier, t_prec, "douce", 0
++    return dernier, dure, "dure", dure - t_prec
++
++
++def simuler_prudente(ext, douce, dure, rho):
++    """La règle plate, sans gaspillage : en plus de l'échéance douce, elle
++    n'entame pas une itération dont la fin prévue — `rho` fois l'instant
++    présent — tomberait après la dure. Rend (indice, temps, temps jeté)."""
++    dernier, t_prec = None, 0
++    for i, it in enumerate(ext):
++        if dernier is not None and (t_prec >= douce or t_prec * rho > dure):
++            return dernier, t_prec, 0
++        if it[1] > dure:
++            return dernier, dure, dure - t_prec
++        dernier, t_prec = i, it[1]
++    if abs(ext[-1][3]) > MATE or t_prec >= douce or t_prec * rho > dure:
++        return dernier, t_prec, 0
++    return dernier, dure, dure - t_prec
++
++
++def evaluer_prudente(coups, m, fraction_douce, rho):
++    accord, temps, jete = 0, 0, 0
++    for c in coups:
++        b = c["budget"] * m
++        i, t, j = simuler_prudente(c["ext"], b * fraction_douce, b, rho)
++        if i is not None and c["ext"][i][2] == c["ext"][-1][2]:
++            accord += 1
++        temps += t
++        jete += j
++    total = sum(c["budget"] for c in coups)
++    return accord / len(coups), temps / total, jete / max(temps, 1)
++
++
++def ajuster_m(coups, fraction_douce, rho, cible):
++    lo, hi = 0.2, 6.0
++    for _ in range(50):
++        mid = (lo + hi) / 2
++        if evaluer_prudente(coups, mid, fraction_douce, rho)[1] > cible:
++            hi = mid
++        else:
++            lo = mid
++    return (lo + hi) / 2
++
++
++def stabilite(ext, i):
++    k = 1
++    while i - k >= 0 and ext[i - k][2] == ext[i][2]:
++        k += 1
++    return k
++
++
++def classe_stabilite(k):
++    return "vient de changer" if k == 1 else "2-3" if k <= 3 else "4-6" if k <= 6 else "7+"
++
++
++def classe_effort(e):
++    return "<50 %" if e < 500 else "50-80 %" if e < 800 else "80-95 %" if e < 950 else "≥95 %"
++
++
++def croissance(coups):
++    """Rapport médian entre les instants de fin de deux itérations successives,
++    au-delà de 20 ms (le bruit d'horloge domine en dessous)."""
++    rapports = sorted(
++        c["ext"][i][1] / c["ext"][i - 1][1]
++        for c in coups
++        for i in range(1, len(c["ext"]))
++        if c["ext"][i - 1][1] >= 20
++    )
++    return rapports[len(rapports) // 2] if rapports else 2.0
++
++
++def courbe_plate(coups, mults):
++    """Accord avec l'oracle et temps total, budget multiplié uniformément."""
++    out = []
++    budget_total = sum(c["budget"] for c in coups)
++    for m in mults:
++        accord, temps = 0, 0
++        for c in coups:
++            b = c["budget"] * m
++            i, t, _, _ = simuler(c["ext"], b / 2, b)
++            if i is not None and c["ext"][i][2] == c["ext"][-1][2]:
++                accord += 1
++            temps += t
++        out.append((m, accord / len(coups), temps / budget_total))
++    return out
++
++
++def interpoler_temps(courbe, accord):
++    """Le temps relatif auquel la règle plate atteint `accord` (interpolation
++    en log du temps)."""
++    for (m0, a0, t0), (m1, a1, t1) in zip(courbe, courbe[1:]):
++        if a0 <= accord <= a1 and a1 > a0:
++            x = (accord - a0) / (a1 - a0)
++            return math.exp(math.log(t0) + x * (math.log(t1) - math.log(t0)))
++    return None
++
++
++def cle_2d(ext, i):
++    return (classe_stabilite(stabilite(ext, i)), classe_effort(ext[i][5]))
++
++
++def cle_stabilite(ext, i):
++    return (classe_stabilite(stabilite(ext, i)),)
++
++
++def table_changement(coups, cle=cle_2d, effectifs=False):
++    """P(l'itération suivante change le coup | classe), comptée sur toutes les
++    itérations des traces prolongées."""
++    n = defaultdict(lambda: [0, 0])
++    for c in coups:
++        ext = c["ext"]
++        for i in range(len(ext) - 1):
++            k = cle(ext, i)
++            n[k][0] += 1
++            n[k][1] += ext[i + 1][2] != ext[i][2]
++    table = {k: (chg + 1) / (tot + 2) for k, (tot, chg) in n.items()}  # Laplace
++    return (table, dict(n)) if effectifs else table
++
++
++def regle_inegale(c, table, lam, rho, plafond, cle=cle_2d):
++    """Poursuit tant que P(changement) / coût relatif de l'itération suivante
++    ≥ `lam`, sans entamer une itération qui ne finirait pas avant la dure."""
++    ext, b = c["ext"], c["budget"]
++    dure = plafond * b
++    if c["legal"] == 1:
++        return 0, ext[0][1], 0
++    for i, it in enumerate(ext):
++        if it[1] > dure:  # ne devrait pas arriver : on n'entame pas ce qui déborde
++            return i - 1, dure, dure - ext[i - 1][1]
++        t = max(it[1], 1)
++        cout = t * (rho - 1) / b
++        p = table.get(cle(ext, i), 0.1)
++        if t * rho > dure or p / max(cout, 1e-6) < lam:
++            return i, it[1], 0
++    return len(ext) - 1, ext[-1][1], 0
++
++
++def evaluer(coups, table, lam, rho, plafond, cle=cle_2d):
++    accord, temps = 0, 0
++    for c in coups:
++        i, t, _ = regle_inegale(c, table, lam, rho, plafond, cle)
++        if c["ext"][i][2] == c["ext"][-1][2]:
++            accord += 1
++        temps += t
++    return accord / len(coups), temps / sum(c["budget"] for c in coups)
++
++
++def ajuster_lambda(coups, table, rho, plafond, cible, cle=cle_2d):
++    lo, hi = 1e-4, 1e4
++    for _ in range(60):
++        mid = math.sqrt(lo * hi)
++        _, t = evaluer(coups, table, mid, rho, plafond, cle)
++        if t > cible:
++            lo = mid
++        else:
++            hi = mid
++    return math.sqrt(lo * hi)
++
++
++def main():
++    coups = charger(sys.argv[1:])
++    parties = sorted({c["game"] for c in coups})
++    print(f"{len(coups)} coups, {len(parties)} parties")
++    if not coups:
++        return
++    rho = croissance(coups)
++    print(f"croissance médiane d'une itération à la suivante : × {rho:.2f}")
++
++    # 1. Cohérence.
++    ok = sum(
++        1
++        for c in coups
++        if (i := simuler(c["ext"], c["budget"] / 2, c["budget"])[0]) is not None
++        and c["ext"][i][2] == c["played"]
++    )
++    print(f"\n1. la règle simulée rend le coup joué : {ok}/{len(coups)} ({100 * ok / len(coups):.1f} %)")
++
++    # 2. Comptabilité du temps de la règle actuelle.
++    causes, jete, depense = defaultdict(int), 0, 0
++    for c in coups:
++        _, t, cause, j = simuler(c["ext"], c["budget"] / 2, c["budget"])
++        causes[cause] += 1
++        jete += j
++        depense += t
++    budget_total = sum(c["budget"] for c in coups)
++    reel = sum(c["used"] for c in coups)
++    print("\n2. comptabilité du temps, règle actuelle (douce = budget/2, dure = budget)")
++    print(f"   temps dépensé / budget : {depense / budget_total:.3f} simulé, {reel / budget_total:.3f} réel")
++    print("   arrêts : " + ", ".join(f"{k} {100 * v / len(coups):.1f} %" for k, v in sorted(causes.items())))
++    print(f"   temps JETÉ dans les itérations interrompues : {100 * jete / depense:.1f} % du temps dépensé")
++
++    # 3. Courbe plate.
++    mults = [0.25, 0.35, 0.5, 0.71, 1.0, 1.41, 2.0, 2.83]
++    courbe = courbe_plate(coups, mults)
++    print("\n3. budget multiplié uniformément — accord avec l'oracle (décision au bout de la trace prolongée)")
++    for m, a, t in courbe:
++        print(f"   × {m:<5} accord {100 * a:5.1f} %   temps dépensé / budget {t:.3f}")
++
++    # 4. Par classe, au moment où la règle actuelle décide.
++    print("\n4. par classe, au moment où la règle actuelle décide")
++    par = defaultdict(lambda: [0, 0, 0, 0])
++    for c in coups:
++        b = c["budget"]
++        i1 = simuler(c["ext"], b / 2, b)[0]
++        if i1 is None:
++            continue
++        i2 = simuler(c["ext"], b, 2 * b)[0]
++        i05 = simuler(c["ext"], b / 4, b / 2)[0]
++        ext = c["ext"]
++        cles = [
++            "tous",
++            "stabilité " + classe_stabilite(stabilite(ext, i1)),
++            "effort " + classe_effort(ext[i1][5]),
++            "un seul coup légal" if c["legal"] == 1 else "plusieurs coups légaux",
++        ]
++        if i1 > 0 and ext[i1][3] - ext[i1 - 1][3] <= -50 and abs(ext[i1][3]) < MATE:
++            cles.append("score en chute de 50 cp ou plus")
++        for cle in cles:
++            v = par[cle]
++            v[0] += 1
++            v[1] += i2 is not None and ext[i2][2] != ext[i1][2]
++            v[2] += i05 is None or ext[i05][2] != ext[i1][2]
++            v[3] += ext[i1][2] != ext[-1][2]
++    print(f"   {'classe':34} {'part':>7} {'×2 change':>10} {'×½ change':>10} {'≠ oracle':>9}")
++    for cle, (n, d2, d05, dor) in sorted(par.items(), key=lambda kv: -kv[1][0]):
++        print(f"   {cle:34} {100 * n / len(coups):6.1f}% {100 * d2 / n:9.1f}% {100 * d05 / n:9.1f}% {100 * dor / n:8.1f}%")
++
++    # 5 bis. Règle plate sans gaspillage, au même temps total.
++    print("\n5 bis. règle PLATE sans gaspillage — n'entame pas une itération promise à l'abandon ; même temps total")
++    cible = next(t for m, _, t in courbe if m == 1.0)
++    a_plate = next(a for m, a, _ in courbe if m == 1.0)
++    for fraction_douce in (0.5,):
++        for rho_prevu in (2.0, 2.5, 3.0, 3.5, 4.0, 5.0):
++            m = ajuster_m(coups, fraction_douce, rho_prevu, cible)
++            a, t, j = evaluer_prudente(coups, m, fraction_douce, rho_prevu)
++            t_eq = interpoler_temps(courbe, a)
++            gain = f"× {t_eq / t:.2f} de temps plat, {PLIS_PAR_DOUBLEMENT * math.log2(t_eq / t):+.2f} pli" if t_eq else "hors courbe"
++            douce_eff = min(fraction_douce, 1 / rho_prevu) * m
++            print(
++                f"   dure / douce = {rho_prevu} : douce {douce_eff:.2f} × budget, dure {m:.2f} × budget ; accord {100 * a:.1f} % "
++                f"(actuelle {100 * a_plate:.1f} %), jeté {100 * j:.1f} % — {gain}"
++            )
++
++    # 5. Règle inégale, apprise sur une moitié, évaluée sur l'autre.
++    print("\n5. règle inégale — apprise sur une moitié des parties, évaluée sur l'autre, à temps égal")
++    table, eff = table_changement(coups, cle_2d, effectifs=True)
++    print("   P(l'itération suivante change le coup), toutes parties — stabilité × effort (effectif) :")
++    efforts = ["<50 %", "50-80 %", "80-95 %", "≥95 %"]
++    print("   " + " " * 18 + "".join(f"{e:>16}" for e in efforts))
++    for st in ["vient de changer", "2-3", "4-6", "7+"]:
++        cells = []
++        for e in efforts:
++            k = (st, e)
++            cells.append(f"{100 * table[k]:5.1f} % ({eff[k][0]:>5})" if k in eff else " " * 16)
++        print(f"   {st:18}" + "".join(f"{c:>16}" for c in cells))
++    graine = random.Random(20260924)
++    melange = parties[:]
++    graine.shuffle(melange)
++    moitie = set(melange[: len(melange) // 2])
++    moities = [
++        ("A → B", [c for c in coups if c["game"] in moitie], [c for c in coups if c["game"] not in moitie]),
++        ("B → A", [c for c in coups if c["game"] not in moitie], [c for c in coups if c["game"] in moitie]),
++    ]
++    for nom_cle, cle in (("stabilité × effort", cle_2d), ("stabilité seule", cle_stabilite)):
++        for plafond in (2.0, 3.0):
++            for nom, app, test in moities:
++                if not app or not test:
++                    continue
++                tab = table_changement(app, cle)
++                cible = courbe_plate(app, [1.0])[0][2]
++                lam = ajuster_lambda(app, tab, rho, plafond, cible, cle)
++                a, t = evaluer(test, tab, lam, rho, plafond, cle)
++                courbe_test = courbe_plate(test, mults)
++                a_plate = next(a for m, a, _ in courbe_test if m == 1.0)
++                t_eq = interpoler_temps(courbe_test, a)
++                if t_eq is None:
++                    print(f"   {nom_cle}, dure {plafond} × budget, {nom} : hors de la courbe")
++                    continue
++                gain = t_eq / t
++                plis = PLIS_PAR_DOUBLEMENT * math.log2(gain)
++                # Intervalle : rééchantillonnage des parties du jeu d'évaluation.
++                par_partie = defaultdict(list)
++                for c in test:
++                    par_partie[c["game"]].append(c)
++                ids = list(par_partie)
++                tirages = []
++                rng = random.Random(7)
++                for _ in range(100):
++                    echantillon = [c for g in (rng.choice(ids) for _ in ids) for c in par_partie[g]]
++                    ab, tb = evaluer(echantillon, tab, lam, rho, plafond, cle)
++                    teb = interpoler_temps(courbe_plate(echantillon, mults), ab)
++                    if teb:
++                        tirages.append(PLIS_PAR_DOUBLEMENT * math.log2(teb / tb))
++                tirages.sort()
++                ic = f"[{tirages[2]:+.2f} ; {tirages[-3]:+.2f}]" if len(tirages) >= 50 else "—"
++                print(
++                    f"   {nom_cle}, dure {plafond} × budget, {nom} : accord {100 * a:.1f} % contre {100 * a_plate:.1f} % à plat, "
++                    f"temps {t:.3f} ; × {gain:.2f} de temps plat, {plis:+.2f} pli, IC 95 % {ic}"
++                )
++
++    # 6. C24 tel qu'écrit, coup par coup contre la règle actuelle.
++    print("\n6. C24 tel qu'écrit (douce 0,44 budget, dure min(2,2 budgets, restant − 50)) contre la règle actuelle")
++    paires = []
++    for c in coups:
++        b = c["budget"]
++        i0, t0, cause0, _ = simuler(c["ext"], b / 2, b)
++        i1, t1, cause1, _ = simuler(c["ext"], 0.44 * b, max(1, min(2.2 * b, c["remaining"] - 50)))
++        if i0 is None or i1 is None:
++            continue
++        paires.append((c, i0, t0, cause0, i1, t1, cause1))
++    n = len(paires)
++    for nom, k in (("actuelle", 1), ("C24", 4)):
++        prof = sum(p[0]["ext"][p[k]][0] for p in paires) / n
++        temps = sum(p[k + 1] for p in paires) / sum(p[0]["budget"] for p in paires)
++        ms = sum(p[k + 1] for p in paires) / n
++        dure = sum(p[k + 2] == "dure" for p in paires) / n
++        acc = sum(p[0]["ext"][p[k]][2] == p[0]["ext"][-1][2] for p in paires) / n
++        print(f"   {nom:8} profondeur achevée {prof:.3f}, temps / budget {temps:.3f} ({ms:.1f} ms), "
++              f"arrêts par la dure {100 * dure:.1f} %, accord {100 * acc:.1f} %")
++    ecarts = defaultdict(list)
++    compte = defaultdict(int)
++    for c, i0, _, _, i1, _, _ in paires:
++        d = c["ext"][i1][0] - c["ext"][i0][0]
++        ecarts[c["game"]].append(d)
++        compte[d] += 1
++    moyenne = sum(sum(v) for v in ecarts.values()) / n
++    ids = list(ecarts)
++    rng = random.Random(11)
++    tirages = []
++    for _ in range(2000):
++        tir = [ecarts[rng.choice(ids)] for _ in ids]
++        tirages.append(sum(map(sum, tir)) / sum(map(len, tir)))
++    tirages.sort()
++    print(f"   écart de profondeur apparié {moyenne:+.3f} pli, IC 95 % [{tirages[49]:+.3f} ; {tirages[1949]:+.3f}] "
++          f"(rééchantillonnage des parties) — " + ", ".join(f"{d:+d} : {v}" for d, v in sorted(compte.items())))
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/tools/src/bin/alloc_probe.rs b/tools/src/bin/alloc_probe.rs
+new file mode 100644
+index 0000000..b4c7b8d
+--- /dev/null
++++ b/tools/src/bin/alloc_probe.rs
+@@ -0,0 +1,236 @@
++//! SONDE JETABLE — l'allocation inégale : où un surcroît de temps change-t-il
++//! la décision, et où un temps retiré ne coûte-t-il rien ?
++//!
++//! Vit dans sa rustine de l'attic, avec l'instrumentation qu'elle lit (copie
++//! de la table, effort à la racine) : jamais dans l'arbre.
++//!
++//! # Le régime
++//!
++//! Des parties entières, depuis le livre des matchs, pendule qui décroît,
++//! **une table par camp** comme en match — `b2_probe` en partageait une entre
++//! les deux camps. Chaque coup est joué par la recherche NORMALE, au budget
++//! que le moteur se donne : c'est elle qui fait avancer la partie et la table.
++//!
++//! # La mesure
++//!
++//! Avant chaque recherche normale, la table du camp au trait est copiée, puis
++//! une recherche PROLONGÉE jusqu'à `mult × budget` part de cette copie et
++//! rapporte chaque itération achevée : profondeur, instant, coup, score,
++//! effort à la racine. La table est ensuite rétablie, pour que la partie ne
++//! garde aucune trace de la recherche prolongée — sans quoi elle jouerait
++//! dans une table plus chaude que celle d'un match.
++//!
++//! La recherche prolongée avance exactement comme la normale jusqu'à ce que
++//! la normale s'arrête : même position, même table, mêmes nœuds. Toute règle
++//! d'arrêt se simule donc hors ligne sur sa trace — c'est le rôle de
++//! `tools/sonde-alloc/analyser.py`.
++//!
++//! Une recherche à l'horloge n'est pas déterministe : les chiffres
++//! appartiennent à leur machine, comme un étalonnage de runner.
++//!
++//! Usage : `alloc-probe <parties> <base_ms> <inc_ms> <premier_indice_du_livre> <livre.epd> <sortie.jsonl> [mult]`
++use std::fmt::Write as _;
++use std::io::Write as _;
++use std::sync::Arc;
++use std::sync::atomic::{AtomicBool, Ordering};
++use std::time::{Duration, Instant};
++
++use cozy_chess::{Board, Color, Move};
++use shallowred::eval::is_insufficient_material;
++use shallowred::position::Position;
++use shallowred::search::{Info, Limits, Score, Search};
++
++/// La MÊME formule que `time_budget_ms`, `movestogo` à douze par défaut.
++fn budget_ms(remaining: u64, inc: u64) -> u64 {
++    (remaining / 12 + inc / 2).clamp(1, remaining.saturating_sub(50).max(1))
++}
++
++fn cp(score: Score) -> i32 {
++    match score {
++        Score::Cp(cp) => cp,
++        Score::Mate(m) if m > 0 => 30_000 - m,
++        Score::Mate(m) => -30_000 - m,
++    }
++}
++
++fn legal_count(board: &Board) -> usize {
++    let mut n = 0;
++    board.generate_moves(|set| {
++        n += set.len();
++        false
++    });
++    n
++}
++
++fn iteration_json(info: &Info) -> String {
++    let mv = info.pv.first().map_or_else(String::new, Move::to_string);
++    format!(
++        "[{},{},\"{}\",{},{},{}]",
++        info.depth,
++        info.time_ms,
++        mv,
++        cp(info.score),
++        info.nodes,
++        info.effort_permille
++    )
++}
++
++/// Une ligne EPD : les quatre premiers champs forment la FEN.
++fn epd_to_fen(line: &str) -> Option<String> {
++    let fields: Vec<&str> = line.split_whitespace().take(4).collect();
++    (fields.len() == 4).then(|| format!("{} 0 1", fields.join(" ")))
++}
++
++fn main() {
++    let args: Vec<String> = std::env::args().skip(1).collect();
++    let arg = |i: usize| args.get(i).map(String::as_str);
++    let games: usize = arg(0).and_then(|a| a.parse().ok()).unwrap_or(1);
++    let base: u64 = arg(1).and_then(|a| a.parse().ok()).unwrap_or(8_000);
++    let inc: u64 = arg(2).and_then(|a| a.parse().ok()).unwrap_or(80);
++    let first: usize = arg(3).and_then(|a| a.parse().ok()).unwrap_or(0);
++    let book = arg(4).unwrap_or("tools/book.epd");
++    let out = arg(5).unwrap_or("alloc.jsonl");
++    let mult: u64 = arg(6).and_then(|a| a.parse().ok()).unwrap_or(4);
++
++    let lines: Vec<String> = std::fs::read_to_string(book)
++        .unwrap_or_default()
++        .lines()
++        .filter_map(epd_to_fen)
++        .collect();
++    if lines.is_empty() {
++        eprintln!("livre vide ou illisible : {book}");
++        std::process::exit(1);
++    }
++    let Ok(mut file) = std::fs::File::create(out) else {
++        eprintln!("sortie impossible : {out}");
++        std::process::exit(1);
++    };
++
++    for g in 0..games {
++        let Some(fen) = lines.get((first + g) % lines.len()) else {
++            continue;
++        };
++        let Ok(mut position) = Position::from_fen(fen) else {
++            continue;
++        };
++        // Une table par camp, comme en match.
++        let stops = [
++            Arc::new(AtomicBool::new(false)),
++            Arc::new(AtomicBool::new(false)),
++        ];
++        let mut engines = [
++            Search::new(Arc::clone(&stops[0])),
++            Search::new(Arc::clone(&stops[1])),
++        ];
++        let mut clock = [base, base];
++        // Scores des recherches normales, du point de vue des Blancs, pour
++        // l'adjudication — la même que `match.yml`.
++        let mut white_scores: Vec<i32> = Vec::new();
++        let started = Instant::now();
++
++        for ply in 0..400usize {
++            let board = position.board().clone();
++            let legal = legal_count(&board);
++            if legal == 0
++                || position.is_repetition()
++                || position.is_fifty_move_draw()
++                || is_insufficient_material(&board)
++            {
++                break;
++            }
++            let side = board.side_to_move();
++            let s = usize::from(side == Color::Black);
++            let remaining = clock[s];
++            let budget = budget_ms(remaining, inc);
++
++            // La recherche prolongée, depuis une copie de la table.
++            let snapshot = engines[s].table().snapshot();
++            stops[s].store(false, Ordering::Relaxed);
++            let stop = Arc::clone(&stops[s]);
++            let horizon = budget * mult;
++            let timer = std::thread::spawn(move || {
++                std::thread::sleep(Duration::from_millis(horizon));
++                stop.store(true, Ordering::Relaxed);
++            });
++            let mut extended = String::new();
++            let infinite = Limits {
++                infinite: true,
++                ..Limits::default()
++            };
++            engines[s].go(&position, &infinite, |info| {
++                if !extended.is_empty() {
++                    extended.push(',');
++                }
++                extended.push_str(&iteration_json(info));
++            });
++            let _ = timer.join();
++            engines[s].table().restore(&snapshot);
++            stops[s].store(false, Ordering::Relaxed);
++
++            // La recherche normale, qui joue.
++            let limits = Limits {
++                wtime: Some(clock[0]),
++                btime: Some(clock[1]),
++                winc: Some(inc),
++                binc: Some(inc),
++                ..Limits::default()
++            };
++            let mut normal = String::new();
++            let mut last_cp = 0;
++            let start = Instant::now();
++            let played = engines[s].go(&position, &limits, |info| {
++                if !normal.is_empty() {
++                    normal.push(',');
++                }
++                normal.push_str(&iteration_json(info));
++                last_cp = cp(info.score);
++            });
++            let used = u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX);
++            let Some(mv) = played else { break };
++
++            let mut line = String::new();
++            let _ = write!(
++                line,
++                "{{\"game\":{},\"ply\":{},\"side\":\"{}\",\"remaining\":{},\"budget\":{},\"used\":{},\"legal\":{},\"played\":\"{}\",\"ext\":[{}],\"norm\":[{}]}}",
++                first + g,
++                ply,
++                if s == 0 { "w" } else { "b" },
++                remaining,
++                budget,
++                used,
++                legal,
++                mv,
++                extended,
++                normal
++            );
++            let _ = writeln!(file, "{line}");
++
++            if used >= remaining + inc {
++                eprintln!("partie {} : perte au temps au demi-coup {ply}", first + g);
++                break;
++            }
++            clock[s] = remaining + inc - used;
++            position.play(mv);
++
++            white_scores.push(if s == 0 { last_cp } else { -last_cp });
++            let n = white_scores.len();
++            // Abandon : quatre coups de chaque camp à 600 cp ou plus, même sens.
++            if n >= 8 {
++                let tail = &white_scores[n - 8..];
++                if tail.iter().all(|&v| v >= 600) || tail.iter().all(|&v| v <= -600) {
++                    break;
++                }
++            }
++            // Nulle : après le 40e coup, huit coups de chaque camp à 10 cp ou moins.
++            if ply >= 80 && n >= 16 && white_scores[n - 16..].iter().all(|&v| v.abs() <= 10) {
++                break;
++            }
++        }
++        let _ = file.flush();
++        eprintln!(
++            "partie {} finie en {:.0} s",
++            first + g,
++            started.elapsed().as_secs_f64()
++        );
++    }
++}
