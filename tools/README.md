@@ -726,7 +726,7 @@ dernière relève est faite.
 | **A18 — l'Elo** | 35975781390, 35975784326 | `087edb8` → `d01183d`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 14 h 22, 2 880 + 2 860 parties | **+23,10 ± 6,39, homogènes : gain démontré, FUSIONNÉ** (section A18) |
 | **C25 — la répartition par la stabilité, la sonde** | 36030127970 | `41d590f` → `910a6c9`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | **RELEVÉE à 17 h 32** | **Temps × 0,98, zéro perte au temps** : la règle lance l'Elo. Plis −0,20 ± 0,07, ce que l'écran prédisait (−0,16) — plus un critère (section C25) |
 | **C25 — l'Elo** | **36035213241, 36035217166** | `41d590f` → `910a6c9`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 23 h 24, 2 880 + 2 860 parties | **+7,87 ± 6,08, homogènes, zéro perte au temps : gain démontré, FUSIONNÉ** (section C25). Sous l'attendu (+12 à +25) : le taux de C24 ne se transfère qu'aux extrêmes, comme sa réserve le disait. Crible au candidat : la prédiction tient, rien de neuf dans `search.rs` |
-| **balayage de mutation après la PR #81** — C25 fusionné | *à lancer* | `main` à `04bf6f8` | un job par fichier, puis `Verdict` | ~1 h 30 après le lancement | **Prédiction, écrite avant** : `search.rs` **39**, au plafond — le crible au candidat ne trouvait que les deux survivants anciens, et C25 ne déplace aucun arbre à profondeur fixe, donc aucun test de nœuds ne voit autrement le reste du fichier ; des expirés en plus, `set_deadlines` vidé et `deadlines_ms` à `None`. Tous les autres fichiers à leur plafond, total 139 |
+| **balayage de mutation après la PR #81** — C25 fusionné | 36073858328 | `main` à `04bf6f8` | un job par fichier, puis `Verdict` | lancé à 23 h 40, fin vers 01 h 00 | **Prédiction, écrite avant** : `search.rs` **39**, au plafond — le crible au candidat ne trouvait que les deux survivants anciens, et C25 ne déplace aucun arbre à profondeur fixe, donc aucun test de nœuds ne voit autrement le reste du fichier ; des expirés en plus, `set_deadlines` vidé et `deadlines_ms` à `None`. Tous les autres fichiers à leur plafond, total 139 |
 | **balayage de mutation après les PR #78 et #79** — tests corrigés, C24 fusionné | 36028076680 | `main` à `f2dd0cf` | un job par fichier, puis `Verdict` | **RELEVÉ à 17 h 38, VERT** | **La prédiction tient** : `search.rs` **39**, au plafond — les quatre mutants cachés par l'arbre d'A18 attrapés, la garde de `stage_moves` seule en plus des 38, C24 n'ajoute rien. `eval.rs` **89** contre 121 → plafond **resserré à 89** : le banc à la profondeur 6 attrape 33 `delete -` de plus dans les tables. Total du dépôt 139. Issue #69 fermée |
 | **balayage de mutation après la PR #77** — A18 fusionnée | 36013927958 | `main` à `3b80e1a` : la génération par étapes | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 57 — CASSÉ** : `search.rs` **43** > 39, `eval.rs` **122** > 121 ; le verdict a commenté l'issue #69, restée ouverte depuis le balayage annulé de 02 h | **La prédiction était fausse.** `search.rs` : les 38 d'avant un pour un, la garde de `stage_moves` prévue, et **quatre de code qu'A18 n'écrit pas** — la prime d'historique `depth * depth` (en `+` et en `/`), le `ply + 1` de l'appel au coup nul et celui de la quiescence. Mesuré mutant par mutant : avant A18, les trois premiers déplaçaient le banc à la profondeur 5 (31 570, 31 585, 31 571 contre 31 637) ; après, 31 829 avec ou sans eux, mais 70 995, 70 996, 70 758 contre 70 719 à la profondeur 6. Le quatrième ne déplace aucun banc : seul le test de légalité de la PV l'attrapait, sur UNE position que l'arbre neuf ne fait plus passer par la quiescence fautive. **Corrigé par les tests, pas par le plafond** (`3ac4d71`) : banc figé à la profondeur 6, PV vérifiée sur une quarantaine de positions de la marche seedée ; re-mesuré localement, les quatre attrapés. `eval.rs` : +4 −3 `delete -` dans les tables — A18 change ce que le banc figé voit des valeurs, du réglage que le SPRT juge. **Suite** : fusionner les tests, rebalayer, lire `eval.rs` sur la mesure |
 | **balayage de mutation après la PR #76** | 35976435127 | `main` à `ea8116f` : chaque fil tient le budget de nœuds, `MAX_THREADS` 1 024 ; A18 révoqué, donc absent | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 09 h 54, verdict vert | **La prédiction tient** : `search.rs` **38**, au plafond, et tous les autres fichiers au leur, total 170. **La réserve ne s'est pas matérialisée** : le test à plusieurs fils, qui n'est plus instable, n'attrapait par hasard aucun mutant équivalent. Parmi les 38, les deux que le balayage local d'A18 avait donnés pour anciens — `*` en `+` dans la note des promotions, la garde de débordement d'`ordered_moves` |
@@ -2418,6 +2418,81 @@ pendule. **Prédiction** :
 - **zéro perte au temps** : la marge de 50 ms tient, et le dommage est la
   qualité du 40ᵉ coup, pas un drapeau. *Confiance moyenne* — la latence de
   l'arbitre sous charge n'est mesurée nulle part ici.
+
+#### Rendu à 23 h 47 : le risque existe, moins souvent que prédit, et plus loin du contrôle
+
+60 parties, 8 435 coups, 152 cycles. Le lecteur est la rustine
+`tools/attic/c26-sonde-controle.patch`, qui porte aussi la commande.
+
+| `movestogo` | coups | part moyenne de la pendule | 9ᵉ décile | max |
+|---|---|---|---|---|
+| 1 | 152 | 0,396 | 0,881 | 0,965 |
+| 2 | 157 | 0,272 | 0,634 | **0,975** |
+| 3 | 164 | 0,203 | 0,393 | **0,967** |
+| 4 | 172 | 0,139 | 0,274 | 0,753 |
+| 5 et plus | 7 790 | 0,037 | 0,078 | 0,601 |
+
+- **Cycles affamés : 8 sur 152, 5,3 %** — sous la prédiction, 10 à 25 %.
+  Dans chacun, le 39ᵉ coup a dépensé 83 à 97 % de sa pendule et laissé
+  **49 à 50 ms** au 40ᵉ, joué en 0 ou 1 ms à la profondeur 2 à 4 — la table
+  de transposition évite le premier coup légal, pas le coup faible. La
+  médiane d'un cycle ordinaire lui laisse 892 ms : **5 à 6 %** de ce qu'il
+  aurait eu, dans la prédiction (moins de 20 %).
+- **La prédiction se trompait d'endroit** : elle ne comptait que
+  `movestogo 2`. À trois coups du contrôle, trois budgets valent la
+  pendule entière, et un coup y a dépensé **96,7 %** — deux coups affamés
+  derrière lui. Au-delà de la borne qu'on s'apprête à poser, `(n + 1) / 2n`
+  de la pendule : **5,7 %** des coups à deux coups du contrôle, **4,3 %** à
+  trois, **2,3 %** à quatre.
+- À cinq coups et plus, jamais plus de 0,601 — trois budgets, la dure,
+  comme prédit.
+- **Zéro perte au temps** ; marge minimale au contrôle **44 ms** sur les 50
+  de la marge. Elle tient, à six millisecondes près.
+
+#### Le correctif — écrit le 24 sept. 2026 au soir
+
+Quand l'interface annonce `movestogo` = n ≥ 2, la dure est bornée pour que
+chacun des n − 1 coups suivants garde au moins **la moitié de sa part
+plate**, `restant / n` : `dure ≤ restant − ⌈(n − 1) × restant / 2n⌉`. Les
+douces restent sous la dure, comme avant. **Pourquoi la moitié** : c'est ce
+que trois budgets laissent déjà à cinq coups du contrôle — la borne étend
+jusqu'au contrôle une garantie que C25 tient partout ailleurs, et ne mord,
+sans incrément, qu'à deux, trois et quatre coups. **Sans `movestogo`
+annoncé, rien ne change** : les douze coups du défaut sont un horizon, pas
+un contrôle, et la mort subite — où C24 et C25 ont été mesurés — garde ses
+échéances à la milliseconde. `movestogo 1` non plus : rien après lui qu'il
+faille protéger. La borne ne compte pas les incréments que recevront les
+coups suivants : avec un incrément, elle mord un peu plus loin du contrôle,
+du côté prudent.
+
+Tests : les valeurs exactes de `movestogo` 1 à 5 — à 2, 3 et 4 elles
+échouent sur le code d'avant (vérifié : 9 950 contre 7 500 à deux coups),
+1 et 5 sont les témoins ; la garantie elle-même sur une grille de 59
+`movestogo` × 4 pendules, à la milliseconde près — la réserve s'arrondit
+vers le haut ; et la mort subite à pendule serrée, où la borne mordrait si
+elle s'appliquait au défaut. Banc inchangé.
+
+#### La mesure — écrite AVANT de lancer
+
+**C26 est un correctif, pas un gain** : la règle est celle d'un correctif
+de règle (`CLAUDE.md`, « ce qui compte comme preuve ») — des tests qui
+échouent sur l'ancien code, le mécanisme mesuré en régime réel, puis un
+match au critère écrit d'avance. Candidat committé puis révoqué aussitôt.
+
+1. **La sonde, après** — la même, sur le candidat, même graine. **Attendu** :
+   **aucun cycle affamé**, et aucun coup à 2, 3 ou 4 coups du contrôle
+   au-delà de sa borne, à la latence de l'arbitre près ; zéro perte au
+   temps.
+2. **Le match** — `40/8`, candidat contre son parent, longueur fixe, graine
+   « auto », **deux jobs de 3 000 parties**, mis en commun. **Critère** :
+   fusion **sauf si la borne haute de l'intervalle mis en commun est sous
+   zéro** ; **une seule perte au temps du candidat** se lit avant toute
+   fusion. **Puissance, dite d'avance** : ± 6 Elo sur ~5 700 parties — un
+   effet de quelques Elo passe inaperçu, et c'est accepté parce que c'est
+   écrit. **Attendu, confiance faible** : 0 à +5 Elo — un 40ᵉ coup joué à
+   la profondeur 2 à 4 dans un cycle sur vingt, contre un 39ᵉ plus court.
+   - **Pas de match à `8+0,08`** : sans `movestogo`, candidat et parent
+     rendent les mêmes échéances à la milliseconde, et un test le fixe.
 
 ### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
 
