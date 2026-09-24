@@ -1733,6 +1733,22 @@ les intervalles publiés étaient 7 % trop étroits (section ponder).
   `CHECK_INTERVAL` nœuds et son reste en finissant. `info nodes` et `go nodes`
   comptent tous les fils. Un compteur commun incrémenté à chaque nœud aurait
   coûté une instruction verrouillée par nœud.
+- **Corrigé le 24 sept. : le budget de `go nodes` débordait sans borne.** Seul
+  le fil principal le tenait ; privé de CPU, il laissait les auxiliaires
+  chercher sans rien vérifier. Reproduit en serrant les trois fils sur un seul
+  cœur (`taskset -c 0`) : **66 792 et 68 177 nœuds pour un budget de 50 000**,
+  deux échecs sur six. Trouvé par le balayage de mutation local d'A18 : un
+  mutant sans effet logique — la garde de débordement de `stage_moves` —
+  s'y déclarait « attrapé » par `le_budget_de_noeuds_compte_tous_les_fils`.
+  Désormais **tous les fils publient** dans un compteur commun, principal
+  compris, et **chacun tient le budget** sur le total : le dépassement est
+  borné par deux intervalles non publiés par autre fil, quel que soit
+  l'ordonnancement. Sous `taskset -c 0` : **0 échec sur 30**. Deux tests
+  neufs, chacun éprouvé par son témoin — l'auxiliaire qui ignore le budget
+  (40 059 nœuds au lieu de 10 000), le fil principal qui ne publie pas. Banc
+  au nœud près, `timing.sh` 12/30 (p = 0,57) : rien à un fil, où seule une
+  addition atomique tous les 2 048 nœuds s'ajoute. Le jeu à la pendule n'est
+  pas touché : sans budget de nœuds, rien ne change pour les auxiliaires.
 - **L'arrêt** : la fin de la recherche principale lève le drapeau des
   auxiliaires par un garde qui tient aussi en cas de panique —
   `std::thread::scope` attend tous ses fils, et un auxiliaire jamais arrêté
@@ -1924,6 +1940,22 @@ Décidée par Théo le 24 sept. au matin (« Ce qui reste à faire »). Candidat
   rappelle pas le générateur de `cozy-chess` : même arbre au nœud près, et
   `tools/timing.sh` rend **19/40, p = 1,0** — aucun écart. Le second appel au
   générateur ne coûte rien de mesurable ; la version simple reste.
+
+#### Le balayage de mutation du code neuf — local, prédit avant
+
+72 mutants filtrés sur le code neuf, et le même filtre sur `main` en témoin.
+**Candidat : 2 survivants, 62 attrapés, 6 inviables, 2 expirés.** Les deux
+survivants existent déjà sur `main` — la garde de débordement
+d'`ordered_moves`, et `*` en `+` dans la note des promotions, déplacée de
+`score_move` à `tactical_score` : l'ordre relatif n'y change qu'entre deux
+promotions qui capturent des pièces différentes, et le banc à la profondeur 5
+n'en rencontre pas. **La prédiction écrite avant était fausse sur un point** :
+elle donnait pour survivant neuf certain la garde de débordement de
+`stage_moves`, équivalente. Elle a été « attrapée » — par un test à
+plusieurs fils instable, et c'est ainsi qu'est apparu le défaut du budget de
+nœuds de B6 (section B6, « Corrigé le 24 sept. »). Correction faite, cette
+garde doit survivre : **attendu au balayage suivant la fusion d'A18,
+`search.rs` 38 → 39.**
 
 #### La mesure — écrite AVANT de lancer
 

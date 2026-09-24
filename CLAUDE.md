@@ -653,6 +653,17 @@ une mesure, pas une préférence.
   plus lent : la réserve d'origine avait aussi le signe faux. **Un point unique
   qui tombe dans l'intervalle attendu ressemble exactement à une confirmation**,
   et n'en est pas une : il ne mesure pas la dispersion de ce qu'on caractérise.
+- **Un mutant sans effet logique qui se dit « attrapé » est un signal, pas
+  un succès.** 24 sept. 2026 : la garde de débordement de `stage_moves`, en
+  `<=` au lieu de `<`, ne change rien — le débordement est inatteignable. Le
+  balayage l'a pourtant déclarée attrapée, par un test à plusieurs fils. Ce
+  test était instable, et il l'était pour une vraie raison : **le budget de
+  `go nodes` n'était tenu que par le fil principal**, et un fil privé de CPU
+  ne tient rien. Reproduit en serrant les fils sur un seul cœur, corrigé.
+  *Une garde tenue par UN fil ne tient que si ce fil tourne — et
+  l'ordonnancement n'est pas une ressource qu'un test contrôle.* Un test
+  instable fausse aussi le cliquet, dans le sens que son asymétrie tolère :
+  il ne peut que faire baisser le compte des survivants.
 - **Un mutant équivalent est souvent du code mort.** Deux survivants de `tt.rs`
   inversaient la borne d'un test d'entrée vierge dans `store` sans qu'aucun
   test ne bouge. Ce n'était pas un trou de couverture : la clause ne pouvait
