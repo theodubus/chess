@@ -2366,6 +2366,58 @@ fusionné, le balayage suivant ne doit rien ajouter à `search.rs`.
   fixe. La rustine `c25-stabilite.patch` cesse de s'appliquer, son code est
   entré ; `c24-sonde-allocation.patch` s'applique toujours.
 
+### C26 — la dure à l'approche d'un contrôle à coups comptés : le mécanisme mesuré AVANT le code
+
+Le risque est au backlog depuis le 24 sept. : quand l'interface annonce
+`movestogo`, le budget vaut `restant / movestogo + inc/2`, et à deux coups
+du contrôle la dure de C25 — trois budgets — vaut `min(1,5 × restant,
+restant − 50)` = **`restant − 50`**. La douce du coup qui vient de changer,
+1,825 budget, en vaut 0,91. Avant C24, la dure valait le budget : `restant /
+2`. Nos matchs sont en mort subite, sans `movestogo` : ce chemin n'y passe
+jamais.
+
+**Ce que fait Stockfish — lu dans son source, pas de mémoire.** La ligne du
+backlog disait « Stockfish plafonne l'excès à ~1,7 budget à deux coups du
+contrôle ». **Faux sur le source actuel** : `src/timeman.cpp` au commit
+`0a215d6c9e48856ef630013b8ab8312941a59057` (`master` le 24 sept. 2026) borne
+la durée maximale par `max(optimum, min(0,8097 × pendule − surcoût,
+maxScale × optimum))`, avec `maxScale = 1,3 + 0,11 × movestogo` aux
+cadences cycliques — et c'est la **fraction de pendule**, 81 %, qui mord
+près du contrôle. L'optimum lui-même y est haut : `(0,88 + ply / 116,4) /
+movestogo`, soit ~0,77 de la pendule à deux coups du contrôle, vers le
+39ᵉ coup. **Stockfish accepte donc de dépenser les trois quarts de sa
+pendule à deux coups du contrôle ; ce qu'il interdit, c'est d'en dépasser
+81 %.** Notre dure va jusqu'à `restant − 50`. Le « ~1,7 » venait d'une
+formule plus ancienne, `1,5 + 0,11 × movestogo`, citée de tête. *Même
+famille que « l'outil ne sait pas le faire » : une référence extérieure se
+lit dans son source, au commit qu'on cite.*
+
+#### La sonde — protocole et prédiction, écrits le 24 sept. 2026 à 23 h 38, avant de lancer
+
+`main` avec C25 (moteur de `4b38bc5`, identique au candidat `41d590f`) contre
+lui-même, **`40/8`** — 40 coups en 8 s, cyclique, ~200 ms par coup comme
+`8+0,08` —, cutechess-cli avec `-debug all`, 60 parties, livre
+`tools/book.epd` au hasard, `-srand 20260925`, trois parties à la fois dans
+le conteneur (4 cœurs, monofil, pas de ponder : 1 × 3 ≤ 3). Pas
+d'adjudication par abandon — elle finirait des parties avant le premier
+contrôle ; la nulle par adjudication à partir du 40ᵉ coup, comme
+`match.yml`. Mesuré pour chaque coup, par `movestogo` annoncé : la part de
+la pendule dépensée entre `go` et `bestmove`, vue de l'arbitre.
+
+**Un cycle AFFAMÉ** : le coup à `movestogo 2` dépense plus de 80 % de sa
+pendule. **Prédiction** :
+
+- à `movestogo` 5 et plus : jamais plus de trois budgets, la dure — rien
+  à voir ;
+- **10 à 25 % des cycles affamés** — un coup instable, ou une itération
+  entamée avant une douce plus basse et finie contre une dure à `restant −
+  50` ; avant C24, aucun, la dure tombant à la moitié de la pendule ;
+- dans ces cycles, le coup à `movestogo 1` cherche avec moins de 20 % de ce
+  que lui laisse un cycle ordinaire ;
+- **zéro perte au temps** : la marge de 50 ms tient, et le dommage est la
+  qualité du 40ᵉ coup, pas un drapeau. *Confiance moyenne* — la latence de
+  l'arbitre sous charge n'est mesurée nulle part ici.
+
 ### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
 
 Premier geste du chantier décidé par Théo (A19) : **mesurer le mécanisme
@@ -2539,7 +2591,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | <s>1,0 à 1,8, seul chiffre encore hérité</s> **+0,48 ± 0,08 mesurés à deux fils** en partie sur runner — **24 à 59 Elo** par l'étalon, écrit avant que ses matchs ne rendent | <s>exige B9</s> — **B9 est fusionné, la table se partage**. <s>Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie).</s> **Fait le 24 sept.** — voir « La concurrence d'un match se déduit des cœurs ». <s>Prochaine action : **écrire Lazy SMP**, l'option `Threads` et ses tests.</s> **ÉCRIT le 24 sept., neutre à un fil** (banc au nœud près, `timing.sh` trois fois). <s>Prochaine action : fusionner, puis la sonde et le match à deux fils, **protocole écrit avant**</s> **MESURÉ le 24 sept. : +42,16 ± 9,23 Elo à deux fils contre un**, 2 700 parties à `8+0,08`, trois matchs homogènes — **deux fils rapportent** ; section « B6 — Lazy SMP — VERDICT ». Suite : relever `MAX_THREADS` au-dessus des machines de compétition ; l'échelle au-delà de deux fils reste non mesurée, faute de cœurs physiques sur les runners. Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | **Lazy SMP — ses variantes** : décalage de profondeur entre fils, coup du meilleur fil, historiques partagés, fils gardés d'un coup à l'autre | non chiffrées | **pas commencées** ; chacune se mesure seule, contre B6 tel qu'écrit (section B6). **Angle mort du dispositif** : les runners n'ont que deux cœurs physiques. <span><strong>Inférence, confiance moyenne</strong> : ces variantes servent la diversité entre fils, qui compte d'autant plus qu'il y a de fils — mesurées à deux, elles seraient sous-évaluées, la même famille que la cadence.</span> Condition : mesurer à plus de deux cœurs physiques. Les fils gardés répondent à un coût non mesuré — relancer des centaines d'auxiliaires à chaque `go` |
 | **raffinements d'ordonnancement sur les étages** : coup de réfutation, historique de continuation | non chiffrés | <s>après A18</s> **A18 est fusionné le 24 sept. : les étages existent**, et c'est la forme qui les accueille ; aucun n'est décidé. <s>Reléguer les captures perdantes derrière les tranquilles</s> : **+31,6 % de nœuds ici** (C19), ne se rouvre pas sans fait neuf |
-| **C26 — la dure à l'approche d'un contrôle à coups comptés** — trouvé le 24 sept. en relisant les échéances pour C25 | — un **risque**, pas un gain : invisible à `8+0,08` | <s>Pas commencé ; après le verdict de C25, dont il touche la même fonction.</s> **Le suivant : C25 est fusionné le 24 sept., le risque est dans `main`.** Le budget vaut `restant / movestogo + inc/2` : à `movestogo 2`, `restant / 2`. La dure de C24, 2,2 budgets, vaut alors `min(1,1 × restant, restant − 50)` = **`restant − 50`** : une itération longue au 39ᵉ coup d'un 40/X peut ne laisser que 50 ms au 40ᵉ. Avant C24, elle valait `restant / 2`. **C25 aggrave** : sa douce du coup instable monte à 0,91 × restant. Nos matchs sont en mort subite avec incrément, sans `movestogo` : ce chemin n'y passe jamais, et le CCRL 40/15 y passe à chaque contrôle. Prochaine action : borner la dure — et les douces — pour que les coups restants avant le contrôle gardent une part de leur budget (Stockfish plafonne l'excès à ~1,7 budget à deux coups du contrôle) ; tests aux valeurs exactes de `movestogo` 1 à 4 ; puis un match à cadence à coups comptés — `match.yml` passe la cadence telle quelle aux arbitres (`40/8`), et <s>son estimation de durée lit `8+0,08` et devra apprendre l'autre forme</s> son estimation de durée lit `N/T+I` **depuis le 24 sept.** (elle prenait `40/8` pour quarante secondes) —, critère de non-régression écrit avant et **zéro perte au temps** |
+| **C26 — la dure à l'approche d'un contrôle à coups comptés** — trouvé le 24 sept. en relisant les échéances pour C25 | — un **risque**, pas un gain : invisible à `8+0,08` | <s>Pas commencé ; après le verdict de C25, dont il touche la même fonction.</s> **Le suivant : C25 est fusionné le 24 sept., le risque est dans `main`.** Le budget vaut `restant / movestogo + inc/2` : à `movestogo 2`, `restant / 2`. La dure de C24, 2,2 budgets, vaut alors `min(1,1 × restant, restant − 50)` = **`restant − 50`** : une itération longue au 39ᵉ coup d'un 40/X peut ne laisser que 50 ms au 40ᵉ. Avant C24, elle valait `restant / 2`. **C25 aggrave** : sa douce du coup instable monte à 0,91 × restant. Nos matchs sont en mort subite avec incrément, sans `movestogo` : ce chemin n'y passe jamais, et le CCRL 40/15 y passe à chaque contrôle. Prochaine action : borner la dure — et les douces — pour que les coups restants avant le contrôle gardent une part de leur budget (<s>Stockfish plafonne l'excès à ~1,7 budget à deux coups du contrôle</s> — **faux, cité de tête** : son source borne à 81 % de la pendule, section C26) ; tests aux valeurs exactes de `movestogo` 1 à 4 ; puis un match à cadence à coups comptés — `match.yml` passe la cadence telle quelle aux arbitres (`40/8`), et <s>son estimation de durée lit `8+0,08` et devra apprendre l'autre forme</s> son estimation de durée lit `N/T+I` **depuis le 24 sept.** (elle prenait `40/8` pour quarante secondes) —, critère de non-régression écrit avant et **zéro perte au temps** |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
