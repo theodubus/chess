@@ -715,6 +715,7 @@ dernière relève est faite.
 | C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 01 h 49, 2 880 + 2 878 parties | **+10,86 et −2,90, hétérogènes (z = 2,15) ; aucune borne haute sous zéro : FUSIONNÉ au titre de la règle** |
 | **vol de CPU du ponder sur runner** — deux sondes | **35933841290** (`ponder = candidat`), **35933844087** (témoin) | `2f3bf1a` des deux côtés, `8+0,08`, 60 parties chacune, une à la fois | cutechess, sonde | **RELEVÉ** — finies à 23 h 53 et 23 h 55 | **r = 0,948 ≥ 0,93 : le verdict du ponder tient.** Et les runners n'ont que **deux cœurs physiques** (SMT) — voir son verdict |
 | **calibrer l'Elo par pli** — deux matchs et une sonde | matchs d'Elo : **35933846266, 35933847908** ; sonde de plis : **35933850590**, RELEVÉE à 00 h 27 — **+1,38 ± 0,28 pli** | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties (fastchess, graine « auto ») et une sonde de 100 parties | fastchess ; cutechess pour la sonde | sonde ~00 h 40 ; matchs ~05 h 20, au plafond | Elo et plis du doublement, et leur rapport **en intervalle** ; attendu 69 à 141 Elo, écrit avant |
+| **B6 — la sonde à deux fils** | **35947696926** | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, 60 parties, une à la fois | cutechess, sonde | ~03 h 00 (lancée à 02 h 32) | Plis gagnés en partie et parallélisme en n/s, lus sur la règle écrite avant (section B6) : n/s sous 1,5, pas de match d'Elo avant d'avoir compris ; sinon trois jobs de 900 parties |
 | **balayage de mutation après C22** | **35945758614** — relancé après la fusion du test (35945260912 annulé au départ) | `main` à `8dbb133`, C22 et son test | un job par fichier, puis `Verdict` | ~02 h 50 (lancé à 02 h 05) | `search.rs` **43 attendu, aucun survivant nouveau.** Contrairement à C23, C22 porte des opérateurs mutables — `ply > 0 &&`, les `\|\|` et le `>= 100` d'`is_rule_draw`, `!is_checkmate`, le `self.nodes += 1` de la branche de nulle, les corps d'`is_rule_draw` et d'`is_checkmate` — et chaque clause a son test à témoin. **Sauf le `+= 1`, et c'est mesuré, pas supposé** : ses deux mutants (`*=`, `-=`) passaient TOUTE la suite, le banc de la profondeur 5 ne traversant jamais la branche (31 637 nœuds avec ou sans). D'où l'annulation : le cliquet aurait cassé à 45 pour une cause déjà connue. Le test `une_nulle_compte_pour_un_noeud` les tue tous deux, en debug comme au profil `mutants` |
 | balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 20 h 44, verdict vert | `tt.rs` **6**, exactement la prédiction (les quatre `\|` de `pack_data` et les deux de `pack_move`) → plafond **baissé de 8 à 6**. `search.rs` **43** : les mêmes survivants un pour un, et aucun dans le code de C23 — qui ne porte aucun opérateur mutable, donc le balayage ne pouvait rien en dire ; sa couverture reste celle mesurée à la main (quatre défauts injectés, quatre attrapés). Les autres au plafond, aucune issue |
 | balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 19 h 44 | `tt.rs` **8** contre 2, tous équivalents : deux décalages nuls retirés comme code mort, plafond inscrit à 8, le chiffre mesuré (PR #56). `search.rs` **43** contre 45 : les trois survivants de `ponder_move` tués par la PR #50, 47 expirés comme au balayage précédent — plafond resserré à 43. Les autres au plafond. Issue #57 fermée |
@@ -1101,7 +1102,9 @@ aussitôt** par `1ab033f`.
 *Ce que le correctif ne fait pas* : interdire deux coups nuls consécutifs,
 comme Stockfish le fait aussi. C'est un autre changement de l'arbre — avec
 C23, un double coup nul ne rend plus de nulle, il re-cherche `X` à profondeur
-réduite, du travail qu'aucune partie ne demande — et il se mesurera seul.
+réduite, <s>du travail qu'aucune partie ne demande</s> — et il se mesurera seul.
+*Le mécanisme était faux, mesuré le 24 sept. : l'interdire fait GROSSIR
+l'arbre — voir sa ligne dans « Ce qui reste à faire ».*
 
 #### Le protocole — écrit AVANT de lancer
 
@@ -1713,6 +1716,16 @@ les intervalles publiés étaient 7 % trop étroits (section ponder).
   principal, redimensionnement qui oublie les auxiliaires, garde d'arrêt vidé —
   ce dernier fait échouer le test d'arrêt en vingt secondes au lieu de pendre.
 
+#### Un contrôle grossier en conteneur, pas une mesure
+
+Quatre cœurs physiques sans SMT, 12 positions tirées du livre, `go depth 13`,
+temps de la dernière ligne `info` : le temps est divisé par **1,36** à deux
+fils et **1,87** à quatre (moyennes géométriques ; 0,77 à 2,05 et 1,55 à 2,15
+selon la position). Soit ~0,6 et ~1,25 pli à 1,38 pli par doublement. **Ce
+n'est pas la force** — un temps jusqu'à une profondeur, sur des positions
+d'ouverture, un relevé par position et non déterministe : il dit seulement
+que l'implémentation accélère, avant de dépenser un runner.
+
 #### La mesure à deux fils — écrite AVANT de lancer
 
 Sur les runners, deux cœurs physiques : Lazy SMP ne s'y mesure qu'à **deux
@@ -1762,7 +1775,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
-| **interdire deux coups nuls consécutifs** | — changement d'arbre | **pas commencé — débloqué le 24 sept.**, C22 sur C23 étant tranché ; mesuré **seul**. Avec C23, un double coup nul ne rend plus de fausse nulle, il re-cherche la position à profondeur réduite : du travail qu'aucune partie ne demande. **10,1 %** des recherches de coup nul partent juste après un coup nul (sonde de C23). Stockfish l'interdit |
+| **interdire deux coups nuls consécutifs** | — changement d'arbre | **débloqué le 24 sept., et ÉCRANTÉ en nœuds le même jour : ce n'est pas du travail retiré.** L'interdire fait grossir l'arbre : banc **+1,80 %** à la profondeur 10 (653 982 contre 642 442), **+0,52 %** à 12, −0,42 % à 7. Le second coup nul cherchait la position d'origine à profondeur réduite, et coupait tôt le nœud intermédiaire quand elle tenait — une coupure bon marché, pas un gaspillage. <s>Avec C23, un double coup nul ne rend plus de fausse nulle, il re-cherche la position à profondeur réduite : du travail qu'aucune partie ne demande.</s> **10,1 %** des recherches de coup nul partent juste après un coup nul (sonde de C23). Stockfish l'interdit — ce qui, ici, ne prouve rien. **Effet sur la décision de signe inconnu, de quelques Elo au plus : ~12 000 parties pour le voir.** Pas prioritaire devant B6 ; la garde tient en une condition, `null_marks.last() != Some(&(path.len() - 1))` |
 | **D5 — revérifier les acquis** | — | **CLOS le 23 sept.** Six lignes examinées : trois remesurées en match — aspiration × 2,7, trois termes d'évaluation × 2,5, élagage delta **érodé** — et trois écrantées en nœuds sans signal d'érosion (futilité inverse, mobilité ; LMR, coup nul et table ont des marges qui l'absorbent). Les écrans datent du 22 ; rien de fusionné depuis ne coupe au même endroit. **L'élagage delta reste dans `main`** : un acquis se retire par un verdict, et un effet de −1,5 Elo en demanderait ~40 000 parties — une quinzaine de jobs pour quelques Elo au plus, quand la calibration et B6 en achètent davantage. *À rouvrir quand la quiescence ou l'échelle de l'évaluation change* (NNUE), l'écran en nœuds d'abord : trois minutes, sans hasard |
 | **B8 — régler les constantes de recherche** | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau) |
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
