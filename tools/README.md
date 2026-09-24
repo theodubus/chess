@@ -523,6 +523,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-22 | **D5 — retrait de l'élagage delta, à `8+0,08`** | **PAS DE VERDICT — SPRT tué par le plafond du job** à 3 738 parties. Retrait : **−1,49 Elo ± 7,83**, IC `[−9,3 ; +6,3]`, 49,79 % de score, **LLR 0,06 sur ±2,94**, Ptnml [141, 373, 851, 369, 135]. [run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914), candidat `cbaa8d4` contre `a57c835`, bornes `[-5, 0]`, graine 20260913. Étalonnage : **2 324 708 n/s, profondeur 12**. **Ne pas lire comme un verdict** : un SPRT arrêté par l'horloge est conditionné à n'avoir pas touché ses bornes, donc biaisé vers zéro. Ce qui est établi, c'est que l'effet n'a **rien à voir avec les +32,5 Elo** du verdict de `1+0,01` — celui-là aurait tranché vers 1 825 parties. L'élagage **reste dans `main`**. Banc du candidat : 138 458 nœuds (× 1,21). |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 | 2026-09-23 | **C21 — défaut de `movestogo` de 30 à 12, à `8+0,08`** | **+19,13 Elo ± 6,31** sur 6 000 parties à longueur fixe, deux matchs mis en commun, zéro perte au temps. **Fusionné.** Le SPRT qui l'avait précédé avait expiré à +14,59 ± 8,31 — un minorant, et c'en était un. Section « C21 — VERDICT ». |
+| 2026-09-24 | **C22 sur C23 — le test de nulle avant la quiescence, sans les fausses nulles, à `8+0,08`** | **+3,98 ± 6,26** en commun sur 5 758 parties — mais deux matchs hétérogènes, **+10,86 ± 8,91** et **−2,90 ± 8,80** (z = 2,15, runners étalonnés à 0,3 % près). Aucune borne haute sous zéro dans aucune lecture : **FUSIONNÉ au titre de la règle**, aucun gain revendiqué. Avertissements « PV continues after » : 85 et 94 à la référence, 4 et 3 au candidat. Section « C22 sur C23 — VERDICT ». |
 | 2026-09-23 | **Vol de CPU du ponder sur runner — deux sondes de 60 parties, à `8+0,08`** | **r = 0,948** (rapport des n/s 0,950 en ponder, 1,002 au témoin) ≥ 0,93 : **le verdict du ponder tient**, sur la règle écrite avant. Vol estimé 3 à 5 % de vitesse, 3 à 10 Elo des +67,63. **Topologie : 2 cœurs physiques, 2 fils par cœur (AMD EPYC 7763)**. [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290), [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087). Section « Vol de CPU du ponder sur runner — VERDICT ». |
 | 2026-09-23 | **C22 — le test de nulle avant l'aiguillage vers la quiescence, à `8+0,08`** | **−10,44 Elo ± 6,34** sur 5 760 parties — **régression, non fusionné**, arrêté par son critère écrit avant. 92 % des nulles qu'il ajoutait à l'horizon étaient fausses (C23) : **remesuré sur C23, en vol**. Section « C22 — VERDICT ». |
 | 2026-09-23 | **B9 — effet de capacité de la table à entrées atomiques, à `8+0,08`** | **−1,27 Elo ± 6,34** sur 5 740 parties — pas d'effet décelable. **Fusionné au titre de l'infrastructure** (la table se partage entre fils ; −4,3 % de temps déjà prouvé). Section « B9 — VERDICT ». |
@@ -711,7 +712,7 @@ dernière relève est faite.
 | ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | **RELEVÉ** — finis entiers entre 18 h 37 et 18 h 40 | **+67,63 ± 9,19 contre notre jumeau : l'activer rapporte** — 2,7 × l'attendu, l'écart localisé par sonde (sa section) |
 | C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 19 h 45, 2 × 2 880 parties | **+2,65 ± 6,40 : pas d'effet décelable, FUSIONNÉ** au titre de la règle (`25fd727`) |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
-| C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | plafond vers 01 h 50 le 24 — ~2 880 parties chacun | fusion sauf régression — correctif de règle, même critère que C22 |
+| C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 01 h 49, 2 880 + 2 878 parties | **+10,86 et −2,90, hétérogènes (z = 2,15) ; aucune borne haute sous zéro : FUSIONNÉ au titre de la règle** |
 | **vol de CPU du ponder sur runner** — deux sondes | **35933841290** (`ponder = candidat`), **35933844087** (témoin) | `2f3bf1a` des deux côtés, `8+0,08`, 60 parties chacune, une à la fois | cutechess, sonde | **RELEVÉ** — finies à 23 h 53 et 23 h 55 | **r = 0,948 ≥ 0,93 : le verdict du ponder tient.** Et les runners n'ont que **deux cœurs physiques** (SMT) — voir son verdict |
 | **calibrer l'Elo par pli** — deux matchs et une sonde | matchs d'Elo : **35933846266, 35933847908** ; sonde de plis : **35933850590**, RELEVÉE à 00 h 27 — **+1,38 ± 0,28 pli** | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties (fastchess, graine « auto ») et une sonde de 100 parties | fastchess ; cutechess pour la sonde | sonde ~00 h 40 ; matchs ~05 h 20, au plafond | Elo et plis du doublement, et leur rapport **en intervalle** ; attendu 69 à 141 Elo, écrit avant |
 | balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 20 h 44, verdict vert | `tt.rs` **6**, exactement la prédiction (les quatre `\|` de `pack_data` et les deux de `pack_move`) → plafond **baissé de 8 à 6**. `search.rs` **43** : les mêmes survivants un pour un, et aucun dans le code de C23 — qui ne porte aucun opérateur mutable, donc le balayage ne pouvait rien en dire ; sa couverture reste celle mesurée à la main (quatre défauts injectés, quatre attrapés). Les autres au plafond, aucune issue |
@@ -763,6 +764,7 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 | ponder — **relevé** | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la conversion plis → Elo de `CLAUDE.md`, qui a désormais deux points mesurés |
 | C22 sur C23 (~01 h 55 le 24) | `git revert 898e195` sur `main` à jour | banc des profondeurs 10 et 12 ; la ligne `c18-extension-echec.patch` de l'attic passe à « non » pour de bon, C22 déplaçant son contexte ; balayage de mutation |
 | C23 — **fusionné** | `git revert 1ab033f` sur `main` à jour, fait (`25fd727`) — **sans conflit de code**, seule la table de l'attic conflictait | banc inchangé aux profondeurs 5 et 7 ; l'invariant de la fenêtre revenu dans `CLAUDE.md` ; trois lignes de l'attic recalculées au vrai `git apply --check` ; balayage de mutation relancé. **C22 porté par-dessus et remesuré** — section « C22 sur C23 » |
+| C22 sur C23 — **fusionné** | `git revert 898e195` sur `main` à jour, fait le 24 sept. — sans conflit | banc inchangé à la profondeur 7 (114 026), **642 442** à la profondeur 10 comme annoncé ; trois lignes de l'attic recalculées au vrai `git apply --check` (C22 porté et d'origine, C18) ; balayage de mutation de `search.rs` relancé après la fusion. **Débloque** « interdire deux coups nuls consécutifs » |
 
 **Les branches qui ne fusionnent pas ont aussi leur suite, écrite d'avance :**
 
@@ -780,10 +782,14 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 
 L'ordre des chantiers suivants vit dans « Ce qui reste à faire, par ordre
 mesuré » et ne se recopie pas ici. Ce qui dépend directement de ces relèves :
-interdire deux coups nuls consécutifs (après C23, seul) ; dépenser davantage
+interdire deux coups nuls consécutifs (débloqué : C22 sur C23 est tranché ; mesuré seul) ; dépenser davantage
 quand le ponder est permis (après le ponder, en `les-deux`) ; B6 (après B9).
 
 ### C22 — VERDICT, 23 sept. 2026 : −10,44 ± 6,34 Elo à `8+0,08` — régression, non fusionné, à remesurer sur C23
+
+> **Remesuré sur C23 et FUSIONNÉ le 24 sept.**, au titre de la règle — voir
+> « C22 sur C23 — VERDICT ». Ce qui suit est le verdict de la première mesure,
+> sur la base à fausses nulles.
 
 #### Le verdict — rendu à 17 h 50, sur le critère écrit avant
 
@@ -1141,7 +1147,48 @@ l'inverse du raisonnement de B9, dont les objets étaient disjoints.
 4. Balayage de mutation : `search.rs`.
 5. Ensuite, et séparément : interdire deux coups nuls consécutifs.
 
-### C22 sur C23 — EN VOL : la nulle à l'horizon, remesurée sans les fausses nulles
+### C22 sur C23 — VERDICT, 24 sept. 2026 : aucune borne haute sous zéro, FUSIONNÉ au titre de la règle — deux matchs hétérogènes
+
+#### Le verdict — rendu à 01 h 55, sur le critère écrit avant
+
+| run | graine | parties | Elo | IC 95 % | Ptnml | étalonnage |
+|---|---|---|---|---|---|---|
+| [35912945157](https://github.com/theodubus/chess/actions/runs/35912945157) | 35912945157 | 2 880 | **+10,86 ± 8,91** | [+1,95 ; +19,77] | [93, 263, 670, 289, 125] | 2 201 226 n/s, profondeur 12 |
+| [35912948746](https://github.com/theodubus/chess/actions/runs/35912948746) | 35912948746 | 2 878 | **−2,90 ± 8,80** | [−11,70 ; +5,90] | [99, 304, 660, 274, 102] | 2 207 460 n/s, profondeur 12 |
+| en commun, si l'écart est du hasard | — | 5 758 | **+3,98 ± 6,26** | [−2,28 ; +10,24] | — | — |
+
+Les deux jobs coupés au plafond de 350 minutes à 01 h 49, **zéro anomalie**
+sur les deux journaux complets.
+
+**`mettre-en-commun.sh` a refusé de conclure** — première fois qu'il le fait
+sur une vraie relève : les deux matchs diffèrent de 13,76 Elo, **z = 2,15**.
+Sa doc désigne la cause habituelle, deux runners de vitesses différentes ;
+**elle est exclue ici** — étalonnages à 0,3 % près, même profondeur. Même
+binaires, graines différentes : il ne reste que les parties tirées.
+<span>Inférence, confiance moyenne : le hasard. p = 0,031 pour une paire ; sur
+les huit comparaisons deux à deux faites depuis le 23 sept., en voir une à ce
+niveau a ~22 % de chances.</span>
+
+**La décision ne dépend pas de la lecture, et c'est le critère écrit avant
+qui le permet** : formulé en bornes, il se lit sur chaque match comme sur
+l'ensemble. En commun, entre les deux ; match 2, entre les deux ; match 1,
+borne basse au-dessus de zéro. **Aucune lecture ne met la borne haute sous
+zéro** : la branche « ne pas fusionner » n'est prise nulle part. **Fusionné au
+titre de la règle, aucun gain revendiqué** — le match 1 seul ne démontre rien
+quand son jumeau le contredit.
+
+**Les deux prédictions écrites avant tiennent.** « Entre les deux » : oui, en
+commun. Et **les avertissements de l'arbitre se séparent** : « PV continues
+after threefold repetition / fifty-move rule », **85 et 94 pour la référence,
+4 et 3 pour le candidat** — le correctif fait ce qu'il dit, sur une base qui
+n'a plus de fausses nulles.
+
+**Le code fusionné est le candidat mesuré** : révocation de la révocation
+`898e195` sur `main` à jour ; banc 114 026 à la profondeur 7 et **642 442 à la
+profondeur 10**, exactement les chiffres inscrits avant le lancement ;
+`tools/verify.sh` complet vert.
+
+#### Ce qui était écrit avant de lancer
 
 C22 a été arrêté par son critère — **−10,44 ± 6,34** à `8+0,08` — sur une
 base où **92,1 %** de ce qu'il ajoutait à l'horizon étaient de fausses nulles,
@@ -1642,7 +1689,7 @@ qu'en partie dans le dépôt n'existe pas.*
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Porté sur C23 et EN MESURE** (`cd45ffa`), même critère — voir « C22 sur C23 » |
+| **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule —, réglé à la sonde puis mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
@@ -1653,7 +1700,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
-| **interdire deux coups nuls consécutifs** | — changement d'arbre | **pas commencé** — après le verdict de C22 sur C23, et mesuré **seul**. Avec C23, un double coup nul ne rend plus de fausse nulle, il re-cherche la position à profondeur réduite : du travail qu'aucune partie ne demande. **10,1 %** des recherches de coup nul partent juste après un coup nul (sonde de C23). Stockfish l'interdit |
+| **interdire deux coups nuls consécutifs** | — changement d'arbre | **pas commencé — débloqué le 24 sept.**, C22 sur C23 étant tranché ; mesuré **seul**. Avec C23, un double coup nul ne rend plus de fausse nulle, il re-cherche la position à profondeur réduite : du travail qu'aucune partie ne demande. **10,1 %** des recherches de coup nul partent juste après un coup nul (sonde de C23). Stockfish l'interdit |
 | **D5 — revérifier les acquis** | — | **CLOS le 23 sept.** Six lignes examinées : trois remesurées en match — aspiration × 2,7, trois termes d'évaluation × 2,5, élagage delta **érodé** — et trois écrantées en nœuds sans signal d'érosion (futilité inverse, mobilité ; LMR, coup nul et table ont des marges qui l'absorbent). Les écrans datent du 22 ; rien de fusionné depuis ne coupe au même endroit. **L'élagage delta reste dans `main`** : un acquis se retire par un verdict, et un effet de −1,5 Elo en demanderait ~40 000 parties — une quinzaine de jobs pour quelques Elo au plus, quand la calibration et B6 en achètent davantage. *À rouvrir quand la quiescence ou l'échelle de l'évaluation change* (NNUE), l'écran en nœuds d'abord : trois minutes, sans hasard |
 | **B8 — régler les constantes de recherche** | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau) |
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
