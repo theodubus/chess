@@ -792,18 +792,23 @@ impl Search {
         u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX)
     }
 
-    /// Pose les deux échéances du coup à partir des pendules — voir
-    /// [`deadlines_ms`], qui en porte l'arithmétique et ses raisons.
+    /// Calcule le budget de temps à partir des pendules.
+    ///
+    /// Volontairement grossier : la gestion fine du temps est un travail à part
+    /// entière. Ce budget suffit à ne pas perdre au temps, ce qui est le seul
+    /// objectif ici.
     fn set_deadlines(&mut self, limits: &Limits, side: Color) {
-        let Some((soft_ms, hard_ms)) = deadlines_ms(limits, side) else {
+        let Some(budget_ms) = time_budget_ms(limits, side) else {
             self.hard_deadline = None;
             self.soft_deadline = None;
             return;
         };
 
         let now = Instant::now();
-        self.hard_deadline = Some(now + Duration::from_millis(hard_ms));
-        self.soft_deadline = Some(now + Duration::from_millis(soft_ms));
+        self.hard_deadline = Some(now + Duration::from_millis(budget_ms));
+        // Entamer une itération alors que plus de la moitié du budget est
+        // consommée revient presque toujours à la jeter.
+        self.soft_deadline = Some(now + Duration::from_millis(budget_ms / 2));
     }
 
     /// Vrai si la recherche doit cesser.
@@ -1725,9 +1730,8 @@ pub fn random_legal_move(board: &Board) -> Option<Move> {
 /// coups en deux heures » — c'est le vrai nombre de coups avant le prochain
 /// contrôle, et on l'honore tel quel. Cette constante n'est que le défaut.
 ///
-/// Le budget reste plat ; c'est la façon de le DÉPENSER qui ne l'est plus —
-/// voir [`deadlines_ms`] : laisser finir l'itération entamée donne déjà plus
-/// de temps aux positions difficiles.
+/// Reste grossier : dépenser *inégalement* — plus sur les positions dures —
+/// est un autre chantier, et le seul moyen de dépasser le plafond plat.
 #[must_use]
 fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
     if limits.infinite {
@@ -1750,56 +1754,6 @@ fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
     // que soit la position.
     Some(budget.clamp(1, remaining.saturating_sub(50).max(1)))
 }
-
-/// Les deux échéances d'un coup, en millisecondes depuis le début de la
-/// recherche : `(douce, dure)`.
-///
-/// La DOUCE interdit d'entamer une itération ; la DURE interrompt celle qui
-/// court — et une itération interrompue est jetée, jamais acceptée.
-///
-/// # Pourquoi la dure tombe si loin du budget (C24)
-///
-/// Elle tombait AU budget, et la douce à sa moitié : une itération entamée
-/// juste avant la douce devait finir dans l'autre moitié, et une fois sur
-/// cinq elle n'y arrivait pas. Mesuré le 24 sept. 2026 en régime réel — sonde
-/// `alloc-probe`, parties entières à `8+0,08`, une table par camp : **18,8 % du
-/// temps dépensé était jeté** dans des itérations interrompues, une perte
-/// sèche. Désormais la douce tombe à 0,44 budget et la dure à 2,2 : une
-/// itération entamée finit presque toujours (2,8 % jetés), et le temps moyen
-/// dépensé par coup ne bouge pas — la douce, un peu plus tôt, compense ce que
-/// la dure laisse finir.
-///
-/// Ce que la mesure a montré en plus, et qui n'était pas cherché : **laisser
-/// finir l'itération est déjà une allocation inégale.** Une itération dure
-/// longtemps quand la position est difficile — le coup change, la fenêtre
-/// d'aspiration échoue —, et c'est précisément là qu'elle achète le plus.
-///
-/// La dure reste bornée par la pendule, avec la même marge que le budget. Un
-/// `movetime` n'en change rien : un temps imposé se respecte, et la dure y
-/// reste le temps demandé.
-#[must_use]
-fn deadlines_ms(limits: &Limits, side: Color) -> Option<(u64, u64)> {
-    let budget = time_budget_ms(limits, side)?;
-    if limits.movetime.is_some() {
-        return Some((budget / 2, budget));
-    }
-    let remaining = match side {
-        Color::White => limits.wtime,
-        Color::Black => limits.btime,
-    }
-    .unwrap_or(budget);
-    let hard = (budget * HARD_PERCENT / 100).clamp(1, remaining.saturating_sub(50).max(1));
-    let soft = (budget * SOFT_PERCENT / 100).min(hard);
-    Some((soft, hard))
-}
-
-/// L'échéance douce, en pour cent du budget. Mesurée, pas choisie : voir
-/// [`deadlines_ms`].
-const SOFT_PERCENT: u64 = 44;
-
-/// L'échéance dure, en pour cent du budget — cinq fois la douce. Mesurée, pas
-/// choisie : voir [`deadlines_ms`].
-const HARD_PERCENT: u64 = 220;
 
 /// Coups supposés restants quand l'interface n'annonce pas `movestogo`.
 ///
@@ -3467,54 +3421,6 @@ mod tests {
             ),
             None,
             "une recherche à profondeur imposée n'a pas d'échéance"
-        );
-    }
-
-    #[test]
-    fn les_echeances_laissent_finir_une_iteration_entamee() {
-        // C24 : la douce à 0,44 budget, la dure à 2,2 — cinq fois plus loin,
-        // pour qu'une itération entamée ne soit presque jamais jetée.
-        let pendule = Limits {
-            wtime: Some(60_000),
-            winc: Some(600),
-            ..Limits::default()
-        };
-        assert_eq!(time_budget_ms(&pendule, Color::White), Some(5_300));
-        assert_eq!(deadlines_ms(&pendule, Color::White), Some((2_332, 11_660)));
-
-        // La pendule lue est celle du camp au trait.
-        let noirs = Limits {
-            btime: Some(24_000),
-            ..Limits::default()
-        };
-        assert_eq!(deadlines_ms(&noirs, Color::Black), Some((880, 4_400)));
-
-        // La dure reste bornée par la pendule, avec la marge du budget : à
-        // 300 ms, elle ne dépasse pas 250 quel que soit l'incrément.
-        let serre = Limits {
-            wtime: Some(300),
-            winc: Some(1_000),
-            ..Limits::default()
-        };
-        assert_eq!(deadlines_ms(&serre, Color::White), Some((110, 250)));
-
-        // Un temps imposé se respecte : la dure y reste le temps demandé.
-        let impose = Limits {
-            movetime: Some(1_000),
-            ..Limits::default()
-        };
-        assert_eq!(deadlines_ms(&impose, Color::White), Some((490, 980)));
-
-        // Sans pendule, pas d'échéance.
-        assert_eq!(
-            deadlines_ms(
-                &Limits {
-                    infinite: true,
-                    ..Limits::default()
-                },
-                Color::White
-            ),
-            None
         );
     }
 
