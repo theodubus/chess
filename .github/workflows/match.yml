@@ -63,7 +63,7 @@ on:
         required: true
         type: string
       cadence:
-        description: "Cadence de la référence — et du candidat si « cadence_candidat » est vide. Par exemple 8+0.08 ou 30+0.3."
+        description: "Cadence de la référence — et du candidat si « cadence_candidat » est vide. Par exemple 8+0.08 ou 30+0.3 ; à coups comptés, 40/8 — quarante coups en huit secondes, renouvelés."
         required: true
         default: "8+0.08"
         type: string
@@ -425,9 +425,22 @@ jobs:
           # Durée d'une partie par la formule conservatrice du projet : chaque
           # camp dépense au plus sa base plus quarante incréments, chacun SA
           # pendule — elles diffèrent dans un match à handicap de temps.
-          s_partie=$(awk -v a="$tc_cand" -v b="$tc_ref" -v c="$concurrence" 'BEGIN {
-            split(a, x, "+"); split(b, y, "+")
-            printf "%.3f", ((x[1] + 40 * x[2]) + (y[1] + 40 * y[2])) / c }')
+          #
+          # Une cadence À COUPS COMPTÉS, « N/T+I » — N coups en T secondes,
+          # renouvelés —, rend T à chaque contrôle : quarante coups par camp en
+          # traversent 40 / N quand N < 40, un seul sinon. L'ancienne lecture
+          # découpait sur « + » seul et prenait « 40/8 » pour quarante secondes,
+          # cinq fois trop (C26, 24 sept. 2026). Éprouvée sur les formes
+          # existantes : 8+0.08 rend toujours 7,467 s à trois parties à la fois.
+          s_partie=$(awk -v a="$tc_cand" -v b="$tc_ref" -v c="$concurrence" '
+            function camp(tc,   m, p, n, t) {
+              n = 0
+              if (split(tc, m, "/") == 2) { n = m[1] + 0; tc = m[2] }
+              split(tc, p, "+"); t = p[1] + 0
+              if (n > 0 && n < 40) t = t * 40 / n
+              return t + 40 * (p[2] + 0)
+            }
+            BEGIN { printf "%.3f", (camp(a) + camp(b)) / c }')
           tient=$(awk -v s="$s_partie" 'BEGIN { printf "%d", 350 * 60 / s }')
 
           if [ "${{ steps.refs.outputs.arbitre }}" = "cutechess" ]; then
