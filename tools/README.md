@@ -715,7 +715,8 @@ dernière relève est faite.
 | C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 01 h 49, 2 880 + 2 878 parties | **+10,86 et −2,90, hétérogènes (z = 2,15) ; aucune borne haute sous zéro : FUSIONNÉ au titre de la règle** |
 | **vol de CPU du ponder sur runner** — deux sondes | **35933841290** (`ponder = candidat`), **35933844087** (témoin) | `2f3bf1a` des deux côtés, `8+0,08`, 60 parties chacune, une à la fois | cutechess, sonde | **RELEVÉ** — finies à 23 h 53 et 23 h 55 | **r = 0,948 ≥ 0,93 : le verdict du ponder tient.** Et les runners n'ont que **deux cœurs physiques** (SMT) — voir son verdict |
 | **calibrer l'Elo par pli** — deux matchs et une sonde | matchs d'Elo : **35933846266, 35933847908** ; sonde de plis : **35933850590**, RELEVÉE à 00 h 27 — **+1,38 ± 0,28 pli** | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties (fastchess, graine « auto ») et une sonde de 100 parties | fastchess ; cutechess pour la sonde | sonde ~00 h 40 ; matchs ~05 h 20, au plafond | Elo et plis du doublement, et leur rapport **en intervalle** ; attendu 69 à 141 Elo, écrit avant |
-| **B6 — la sonde à deux fils** | **35947696926** | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, 60 parties, une à la fois | cutechess, sonde | ~03 h 00 (lancée à 02 h 32) | Plis gagnés en partie et parallélisme en n/s, lus sur la règle écrite avant (section B6) : n/s sous 1,5, pas de match d'Elo avant d'avoir compris ; sinon trois jobs de 900 parties |
+| **B6 — la sonde à deux fils** | 35947696926 | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, 60 parties, une à la fois | cutechess, sonde | **RELEVÉE à 02 h 58** | **+0,48 ± 0,08 pli, n/s × 2,05** : dans l'attendu, chaque fil a son cœur — le match d'Elo est lancé (section B6) |
+| **B6 — l'Elo à deux fils** | **35949564324, 35949565830, 35949567986** | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, graine « auto » | 3 × 900, fastchess, une partie à la fois | ~08 h 30 à 08 h 50, au plafond — 900 parties y tiennent à peine | Mise en commun puis le critère en bornes écrit avant (section B6) ; converti en plis par la calibration, en intervalle |
 | **balayage de mutation après C22** | **35945758614** — relancé après la fusion du test (35945260912 annulé au départ) | `main` à `8dbb133`, C22 et son test | un job par fichier, puis `Verdict` | ~02 h 50 (lancé à 02 h 05) | `search.rs` **43 attendu, aucun survivant nouveau.** Contrairement à C23, C22 porte des opérateurs mutables — `ply > 0 &&`, les `\|\|` et le `>= 100` d'`is_rule_draw`, `!is_checkmate`, le `self.nodes += 1` de la branche de nulle, les corps d'`is_rule_draw` et d'`is_checkmate` — et chaque clause a son test à témoin. **Sauf le `+= 1`, et c'est mesuré, pas supposé** : ses deux mutants (`*=`, `-=`) passaient TOUTE la suite, le banc de la profondeur 5 ne traversant jamais la branche (31 637 nœuds avec ou sans). D'où l'annulation : le cliquet aurait cassé à 45 pour une cause déjà connue. Le test `une_nulle_compte_pour_un_noeud` les tue tous deux, en debug comme au profil `mutants` |
 | balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 20 h 44, verdict vert | `tt.rs` **6**, exactement la prédiction (les quatre `\|` de `pack_data` et les deux de `pack_move`) → plafond **baissé de 8 à 6**. `search.rs` **43** : les mêmes survivants un pour un, et aucun dans le code de C23 — qui ne porte aucun opérateur mutable, donc le balayage ne pouvait rien en dire ; sa couverture reste celle mesurée à la main (quatre défauts injectés, quatre attrapés). Les autres au plafond, aucune issue |
 | balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 19 h 44 | `tt.rs` **8** contre 2, tous équivalents : deux décalages nuls retirés comme code mort, plafond inscrit à 8, le chiffre mesuré (PR #56). `search.rs` **43** contre 45 : les trois survivants de `ponder_move` tués par la PR #50, 47 expirés comme au balayage précédent — plafond resserré à 43. Les autres au plafond. Issue #57 fermée |
@@ -1747,6 +1748,34 @@ contre lui-même à un fil :
    qu'écrit coûte, et le moteur n'annonce plus `Threads` tant que la cause
    n'est pas trouvée ; entre les deux → pas de conclusion, des parties de
    plus. Converti en plis par la calibration en cours, **en intervalle**.
+
+#### La sonde — rendue à 02 h 58 : +0,48 ± 0,08 pli, n/s × 2,05 — l'Elo est lancé
+
+| [run 35947696926](https://github.com/theodubus/chess/actions/runs/35947696926) — 60 parties, graine 1587958558 | candidat, 2 fils | référence, 1 fil |
+|---|---|---|
+| profondeur moyenne des coups joués | 16,84 | 16,40 |
+| temps de recherche par coup | 189,4 ms | 189,4 ms |
+| n/s des coups partis d'un `go` | 8 687 555 | 4 235 194 — **× 2,05** |
+| écart apparié par partie | **+0,48 ± 0,08 pli** (Student) | |
+
+- **Lue sur la règle écrite avant.** Le parallélisme passe largement le seuil
+  de 1,5 : les deux fils ont chacun leur cœur physique. Les plis tombent dans
+  l'attendu (+0,4 à +1,1), à son bas. Zéro anomalie.
+- **Ce que ça dit de Lazy SMP ici** : deux fois plus de nœuds n'achètent que
+  **+0,48 pli**, soit le pli d'un temps multiplié par ~1,27 — une bonne part du
+  travail des auxiliaires recoupe celui du fil principal. C'est la forme
+  connue de la technique ; ce que les plis ne disent pas, c'est ce que les
+  auxiliaires apportent AUTREMENT qu'en profondeur — des entrées de table
+  meilleures —, et c'est le match qui le dira.
+- **Le contrôle grossier en conteneur annonçait ~0,6 pli** (temps jusqu'à une
+  profondeur, 12 positions d'ouverture) : même ordre, un peu au-dessus.
+- **Un nouveau modèle de runner** : AMD EPYC 9V45, **4 064 503 n/s** au banc et
+  la profondeur 13 en 250 ms — le plus rapide jamais relevé ici (étendue
+  connue 2,07 à 3,43 M sur EPYC 7763). Les runners ne diffèrent plus seulement
+  de vitesse, mais de modèle. Valide en interne, comme toujours.
+- **Attendu du match, confiance faible** : 0,48 pli × 51 à 104 Elo par pli
+  (ponder) donne **+20 à +55 Elo** ; la calibration en cours resserrera la
+  conversion. **Lancés à 02 h 59** : trois jobs de 900 parties, EN VOL.
 
 ### Ce qui reste à faire, par ordre mesuré
 
