@@ -2266,6 +2266,17 @@ entre les classes**.
    verdict de C24**. Son supplément à l'écran, +0,05 à +0,35 pli, est la
    lecture que la réserve frappe le plus ; il se décidera sur ce que C24 aura
    rendu en Elo pour ses +0,65 pli d'écran.
+   **La règle, écrite le 24 sept. à 10 h 45, AVANT le verdict de C24** — les
+   deux jobs volent depuis 10 h 31. Soit `E` le point estimé de C24 mis en
+   commun. C24 révèle ce que vaut un pli d'accord : `E / 0,65`. Le supplément
+   de C25 vaut donc au plus **0,54 × E** (0,35 / 0,65) et au moins 0,08 × E —
+   un majorant, puisque la conversion surestime une règle qui cible les coups
+   instables plus qu'elle ne surestime C24. **C25 s'écrit si ce majorant
+   atteint 6 Elo, soit `E` ≥ +11** : 6 Elo sont la résolution de deux jobs,
+   et une règle plus complexe que C24 ne se fusionne pas sur un « pas d'effet
+   décelable ». **En dessous, l'allocation inégale s'arrête à C24**, et la
+   suite se repose à Théo. Si C24 régresse, C25 — qui réalloue davantage —
+   tombe avec lui.
 
 ### Ce qui reste à faire, par ordre mesuré
 
