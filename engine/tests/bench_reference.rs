@@ -324,17 +324,27 @@ fn les_milliers_se_regroupent_comme_dans_le_document() {
 /// couverture perdus d'un coup, parce que la couverture reposait sur une
 /// assertion de score incidente plutôt que sur un invariant nommé.
 ///
-/// **Profondeur 5 et non 7** : le nombre de nœuds y est tout aussi
+/// **Profondeur 6 et non 7** : le nombre de nœuds y est tout aussi
 /// déterministe, et l'arbre est assez petit pour que le test reste négligeable
 /// en debug, où toute la suite tourne à chaque `verify.sh --rapide`.
+///
+/// **Profondeur 6 et non plus 5, depuis le 24 sept. 2026** : la génération par
+/// étapes (A18) a rendu l'arbre à la profondeur 5 aveugle à trois mutants qu'il
+/// voyait — la prime d'historique `depth * depth` changée en `depth + depth` ou
+/// `depth / depth`, et le `ply + 1` de l'appel au coup nul changé en `ply`.
+/// Mesuré mutant par mutant : 31 829 nœuds à la profondeur 5 avec ou sans eux,
+/// 70 995, 70 996 et 70 758 contre 70 719 à la profondeur 6. Le balayage qui
+/// a suivi la fusion d'A18 les a rendus survivants. Coût mesuré en debug :
+/// 0,86 s contre 0,51 s. L'approfondissement itératif fait de la profondeur 6
+/// un sur-ensemble de la 5 : l'itération 5 y est cherchée en entier.
 ///
 /// **Conséquence assumée, la même que pour la profondeur 7** : tout changement
 /// délibéré de l'arbre rend ce test rouge tant que le chiffre n'est pas
 /// recopié. C'est l'effet recherché.
 #[test]
 fn larbre_de_recherche_ne_bouge_pas_en_silence() {
-    const PROFONDEUR: u32 = 5;
-    const NOEUDS: u64 = 31_829;
+    const PROFONDEUR: u32 = 6;
+    const NOEUDS: u64 = 70_719;
 
     let noeuds = shallowred::bench::run(PROFONDEUR).unwrap();
     assert_eq!(
