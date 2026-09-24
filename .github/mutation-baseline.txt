@@ -31,7 +31,7 @@ main.rs 0
 perft.rs 1
 bench.rs 2
 see.rs 2
-search.rs 43
+search.rs 40
 eval.rs 121
 
 # ---------------------------------------------------------------------------
@@ -70,6 +70,31 @@ eval.rs 121
 #   Précédent décisif : un ajustement de ces valeurs prédisait le résultat des
 #   parties 7,8 % mieux sur 66 376 positions tenues à l'écart, et jouait
 #   25 Elo PLUS MAL. Les figer par des tests coûterait donc de l'Elo.
+#
+# search.rs — 40, resserré le 24 sept. 2026 (run 35945758614, après C22 et
+#   son test d'incrément : 458 mutants, 352 attrapés, 19 inviables, 47
+#   expirés). Le compte se lit par fonction et par opérateur, les lignes
+#   ayant bougé : des 43 d'avant, CINQ vivaient dans l'ancienne ligne de
+#   nulle que C22 a remplacée — `ply > 0` muté trois fois, et ses deux `||`
+#   —, et C22 en ajoute DEUX. 43 − 5 + 2 = 40, les 38 autres un pour un.
+#   Les deux neufs contredisaient la prédiction écrite avant (« aucun
+#   survivant nouveau, chaque clause a son test à témoin ») :
+#   - `&&` en `||` dans `is_checkmate`. Le contre-cas « échec, pas mat »
+#     laissait fuir le roi par un coup tranquille : la pendule courait
+#     encore, la nulle arrivait UN PLY PLUS TARD, même score. Tué par un
+#     test dont la seule parade est une prise, qui remet la pendule à zéro ;
+#   - `ply > 0` en `ply >= 0` : la nulle par règle appliquée à la racine,
+#     où il faut jouer. Aucun test ne cherchait une racine au centième
+#     demi-coup. Tué par un test dont le coup gagnant remet la pendule à
+#     zéro, et qui exige un score, donc une itération achevée.
+#   Les deux tests suivent le balayage, ils ne le précèdent pas : 40 est le
+#   chiffre MESURÉ, et le prochain balayage dira 38 ou non. Ces deux survivants
+#   touchaient une règle du jeu et un invariant de recherche : corrigés au
+#   fil, comme le veut l'arbitrage du 15 sept.
+#   La leçon, plus large que C22 : une règle dont la conséquence se PROPAGE
+#   d'un ply ne se teste pas sur une position où elle se propage — le témoin
+#   doit couper la propagation. Même famille que le mat détecté à deux
+#   endroits.
 #
 # search.rs — 43, confirmé le 23 sept. 2026 au soir (run 35912951112, après
 #   C23 : 448 mutants, 340 attrapés, 19 inviables, 46 expirés).  Les MÊMES
