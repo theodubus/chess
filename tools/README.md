@@ -524,6 +524,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 | 2026-09-23 | **C21 — défaut de `movestogo` de 30 à 12, à `8+0,08`** | **+19,13 Elo ± 6,31** sur 6 000 parties à longueur fixe, deux matchs mis en commun, zéro perte au temps. **Fusionné.** Le SPRT qui l'avait précédé avait expiré à +14,59 ± 8,31 — un minorant, et c'en était un. Section « C21 — VERDICT ». |
 | 2026-09-24 | **C22 sur C23 — le test de nulle avant la quiescence, sans les fausses nulles, à `8+0,08`** | **+3,98 ± 6,26** en commun sur 5 758 parties — mais deux matchs hétérogènes, **+10,86 ± 8,91** et **−2,90 ± 8,80** (z = 2,15, runners étalonnés à 0,3 % près). Aucune borne haute sous zéro dans aucune lecture : **FUSIONNÉ au titre de la règle**, aucun gain revendiqué. Avertissements « PV continues after » : 85 et 94 à la référence, 4 et 3 au candidat. Section « C22 sur C23 — VERDICT ». |
+| 2026-09-24 | **Calibration — un doublement de temps, même binaire, `16+0,16` contre `8+0,08`** | **+107,74 Elo ± 8,19** sur 3 800 parties à longueur fixe (deux matchs homogènes, z = 0,19 ; +108,54 et +106,94), zéro anomalie ; **+1,38 ± 0,28 pli** en partie (sonde de 100 parties). **Soit 60 à 105 Elo par pli** à `8+0,08`, bornes croisées. Étalonnages : EPYC 7763 2 192 324 n/s et EPYC 9V74 2 020 660 n/s, profondeur 12 |
 | 2026-09-23 | **Vol de CPU du ponder sur runner — deux sondes de 60 parties, à `8+0,08`** | **r = 0,948** (rapport des n/s 0,950 en ponder, 1,002 au témoin) ≥ 0,93 : **le verdict du ponder tient**, sur la règle écrite avant. Vol estimé 3 à 5 % de vitesse, 3 à 10 Elo des +67,63. **Topologie : 2 cœurs physiques, 2 fils par cœur (AMD EPYC 7763)**. [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290), [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087). Section « Vol de CPU du ponder sur runner — VERDICT ». |
 | 2026-09-23 | **C22 — le test de nulle avant l'aiguillage vers la quiescence, à `8+0,08`** | **−10,44 Elo ± 6,34** sur 5 760 parties — **régression, non fusionné**, arrêté par son critère écrit avant. 92 % des nulles qu'il ajoutait à l'horizon étaient fausses (C23) : **remesuré sur C23, en vol**. Section « C22 — VERDICT ». |
 | 2026-09-23 | **B9 — effet de capacité de la table à entrées atomiques, à `8+0,08`** | **−1,27 Elo ± 6,34** sur 5 740 parties — pas d'effet décelable. **Fusionné au titre de l'infrastructure** (la table se partage entre fils ; −4,3 % de temps déjà prouvé). Section « B9 — VERDICT ». |
@@ -714,7 +715,7 @@ dernière relève est faite.
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
 | C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 01 h 49, 2 880 + 2 878 parties | **+10,86 et −2,90, hétérogènes (z = 2,15) ; aucune borne haute sous zéro : FUSIONNÉ au titre de la règle** |
 | **vol de CPU du ponder sur runner** — deux sondes | **35933841290** (`ponder = candidat`), **35933844087** (témoin) | `2f3bf1a` des deux côtés, `8+0,08`, 60 parties chacune, une à la fois | cutechess, sonde | **RELEVÉ** — finies à 23 h 53 et 23 h 55 | **r = 0,948 ≥ 0,93 : le verdict du ponder tient.** Et les runners n'ont que **deux cœurs physiques** (SMT) — voir son verdict |
-| **calibrer l'Elo par pli** — deux matchs et une sonde | matchs d'Elo : **35933846266, 35933847908** ; sonde de plis : **35933850590**, RELEVÉE à 00 h 27 — **+1,38 ± 0,28 pli** | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties (fastchess, graine « auto ») et une sonde de 100 parties | fastchess ; cutechess pour la sonde | sonde ~00 h 40 ; matchs ~05 h 20, au plafond | Elo et plis du doublement, et leur rapport **en intervalle** ; attendu 69 à 141 Elo, écrit avant |
+| calibrer l'Elo par pli — deux matchs et une sonde | matchs d'Elo : 35933846266, 35933847908 ; sonde de plis : 35933850590 | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties et une sonde de 100 parties | fastchess ; cutechess pour la sonde | **RELEVÉ** — sonde à 00 h 27, matchs finis entiers à 05 h 11 et 05 h 12 | **+107,74 ± 8,19 Elo et +1,38 ± 0,28 pli pour un doublement : 60 à 105 Elo par pli.** L'attendu écrit avant tient (section de son verdict) |
 | **B6 — la sonde à deux fils** | 35947696926 | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, 60 parties, une à la fois | cutechess, sonde | **RELEVÉE à 02 h 58** | **+0,48 ± 0,08 pli, n/s × 2,05** : dans l'attendu, chaque fil a son cœur — le match d'Elo est lancé (section B6) |
 | **B6 — l'Elo à deux fils** | **35949564324, 35949565830, 35949567986** | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, graine « auto » | 3 × 900, fastchess, une partie à la fois | ~08 h 30 à 08 h 50, au plafond — 900 parties y tiennent à peine | Mise en commun puis le critère en bornes écrit avant (section B6) ; converti en plis par la calibration, en intervalle |
 | balayage de mutation après B6 | 35949682016 | `main` à `65d0b03`, Lazy SMP | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 04 h 03, verdict vert | **La prédiction tient** : `search.rs` 40, **les mêmes survivants** qu'après C22 — le couple déplacé de `go` vers `iterate` compris —, Lazy SMP n'en ajoute aucun ; `uci.rs` 0. 472 mutants, 357 attrapés, 22 inviables, **53 expirés contre 47** : inférence, ce sont les mutants qui rendent un budget de nœuds inatteignable ou suppriment l'arrêt des auxiliaires — un test pend au lieu d'échouer ; le résumé ne liste pas les expirés |
@@ -1597,7 +1598,7 @@ et la ligne de topologie.
 actifs sur deux cœurs physiques distincts quand il en a le choix, et une partie
 à la fois n'en occupe que deux sur quatre processeurs logiques.</span>
 
-### Calibrer l'Elo par pli — EN VOL : un doublement de temps, mesuré en Elo ET en plis
+### Calibrer l'Elo par pli — VERDICT, 24 sept. 2026 : un doublement vaut +107,7 ± 8,2 Elo et +1,38 ± 0,28 pli, soit 60 à 105 Elo par pli
 
 Décidé par Théo le 23 sept. au soir, premier chantier après les relèves. Le
 projet compare ses chantiers en plis — 1,36 par doublement de temps — mais ne
@@ -1620,6 +1621,34 @@ cadence cible.
 
 Elo par pli = Elo du doublement / plis du doublement, **avec l'intervalle des
 deux**, jamais le point.
+
+#### Le verdict — rendu à 05 h 13 le 24 sept., sur le protocole écrit avant
+
+| | [run 35933846266](https://github.com/theodubus/chess/actions/runs/35933846266) | [run 35933847908](https://github.com/theodubus/chess/actions/runs/35933847908) | en commun |
+|---|---|---|---|
+| runner | EPYC 7763, 2 192 324 n/s, profondeur 12 | EPYC 9V74, 2 020 660 n/s, profondeur 12 | |
+| parties | 1 900, finies avant le plafond | 1 900, finies avant le plafond | **3 800** |
+| Elo du doublement | +108,54 ± 11,42 | +106,94 ± 11,75 | **+107,74 ± 8,19** |
+| Ptnml(0-2) | [14, 75, 371, 302, 188] | [19, 78, 366, 291, 196] | homogènes, z = 0,19 |
+
+- **Zéro anomalie** sur les deux journaux entiers ; 10,75 et 10,79 s par partie.
+- **Elo par pli = 107,74 ± 8,19 / 1,38 ± 0,28 : de 60 à 105**, bornes croisées
+  comme pour les deux points antérieurs — le point, 78, ne s'écrit pas seul.
+  L'incertitude vient presque toute des PLIS (± 20 %) : l'Elo, lui, est à
+  ± 8 %. *Resserrer la conversion demande une sonde plus longue, pas un
+  match de plus.*
+- **L'attendu écrit avant tient** : 70 à 144 Elo pour le doublement, mesuré
+  107,7 ; 51 à 104 Elo par pli, mesuré 60 à 105. Les deux points antérieurs
+  sont compatibles — le ponder rend 72 Elo par pli à son point (67,63 / 0,94),
+  C21 47 (19,13 / 0,41), dans son intervalle de 21 à 119.
+- **Ce que l'étalon convertit**, dans le régime de ces matchs (`8+0,08`, trois
+  parties à la fois sur deux cœurs physiques) : Lazy SMP à deux fils,
+  +0,48 ± 0,08 pli mesurés → **24 à 59 Elo attendus** ; la génération par
+  étapes, 0,21 pli → **13 à 22** ; le remboursement du ponder, ~0,27 pli →
+  **16 à 28**. Des intervalles, qui se multiplient par l'incertitude des plis
+  de chaque chantier.
+- **Ce qu'il ne dit pas** : l'Elo par pli à une autre cadence. Il dépend de la
+  profondeur où l'on joue ; mesuré ici autour de la profondeur 14 à 16.
 
 #### Les plis — rendus à 00 h 27 le 24 sept. : +1,38 ± 0,28 pli pour un doublement, en partie, sur runner
 
@@ -1778,6 +1807,8 @@ contre lui-même à un fil :
 - **Attendu du match, confiance faible** : 0,48 pli × 51 à 104 Elo par pli
   (ponder) donne **+20 à +55 Elo** ; la calibration en cours resserrera la
   conversion. **Lancés à 02 h 59** : trois jobs de 900 parties, EN VOL.
+  **Calibration rendue à 05 h 13** : 60 à 105 Elo par pli, donc **24 à 59 Elo**
+  attendus — le même ordre, écrit avant que les matchs ne rendent.
 
 ### Ce qui reste à faire, par ordre mesuré
 
@@ -1800,7 +1831,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
-| **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **EN COURS — décidé n° 1.** `match.yml` sait jouer une cadence par moteur et une sonde depuis le 23 sept. au soir ; deux matchs pour l'Elo, une sonde pour les plis, protocole et attendu écrits avant — voir « Calibrer l'Elo par pli — EN VOL ». Deux points mesurés donnent 21 à 119 et 51 à 104 Elo par pli (section ponder) : trop large pour classer les chantiers de vitesse |
+| **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **FAIT le 24 sept.** : un doublement vaut **+107,74 ± 8,19 Elo** et **+1,38 ± 0,28 pli**, soit **60 à 105 Elo par pli** à `8+0,08` — voir son verdict. Les plis de chaque ligne se convertissent désormais en Elo, en intervalle ; l'incertitude de l'étalon vient presque toute des plis |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
 | **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. <s>Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie).</s> **Fait le 24 sept.** — voir « La concurrence d'un match se déduit des cœurs ». <s>Prochaine action : **écrire Lazy SMP**, l'option `Threads` et ses tests.</s> **ÉCRIT le 24 sept., neutre à un fil** (banc au nœud près, `timing.sh` trois fois). Prochaine action : fusionner, puis la sonde et le match à deux fils, **protocole écrit avant** — section « B6 — Lazy SMP ». Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
