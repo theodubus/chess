@@ -43,10 +43,17 @@ pub const MAX_PLY: usize = 128;
 
 /// Nombre maximal de fils de recherche, l'option UCI `Threads`.
 ///
-/// Au-delà, chaque fil ne ferait que se disputer les cœurs avec les autres ;
-/// la borne existe pour qu'une valeur aberrante ne crée pas des milliers de
-/// recherches, chacune avec son ardoise.
-pub const MAX_THREADS: usize = 64;
+/// **1 024, comme Stockfish** (`max(1024, 4 × fils matériels)`), et non une
+/// borne tirée de nos machines : c'est l'organisateur d'une compétition qui
+/// règle `Threads`, et ses serveurs offrent des centaines de fils — TCEC en
+/// donne 512 à sa saison 28, selon des sources secondaires. La borne n'existe
+/// que pour qu'une valeur aberrante ne crée pas des millions de recherches :
+/// chaque auxiliaire occupe **345 Kio** de mémoire résidente, son ardoise
+/// surtout (mesuré le 24 sept. 2026), soit ~345 Mio à 1 024 fils.
+///
+/// **L'échelle n'est mesurée qu'à deux fils** — +42 Elo contre un, B6 —, les
+/// runners de mesure n'ayant que deux cœurs physiques. 64 jusqu'au verdict.
+pub const MAX_THREADS: usize = 1024;
 
 /// Profondeur maximale à laquelle on ose la futilité inverse.
 ///
@@ -345,13 +352,20 @@ pub struct Search {
     /// à l'interface : c'est la fin de la recherche PRINCIPALE qui les arrête,
     /// et elle a ses raisons à elle — profondeur atteinte, mat, échéance.
     helper_stop: Arc<AtomicBool>,
-    /// Les nœuds que les auxiliaires ont publiés pendant la recherche en
-    /// cours. Chacun y verse son compte tous les `CHECK_INTERVAL` nœuds, et le
-    /// reste en finissant : un compteur partagé incrémenté à chaque nœud
-    /// coûterait une instruction verrouillée par nœud, et sa ligne de cache
-    /// ferait la navette entre les cœurs.
-    helper_nodes: Arc<AtomicU64>,
-    /// Pour un auxiliaire : les nœuds déjà versés dans `helper_nodes`.
+    /// Les nœuds que TOUS les fils — principal compris — ont publiés pendant
+    /// la recherche en cours. Chacun y verse son compte tous les
+    /// `CHECK_INTERVAL` nœuds, et le reste en finissant : un compteur partagé
+    /// incrémenté à chaque nœud coûterait une instruction verrouillée par
+    /// nœud, et sa ligne de cache ferait la navette entre les cœurs.
+    ///
+    /// Le fil principal y publie AUSSI, et c'est ce qui permet à chaque fil de
+    /// tenir le budget de `go nodes` lui-même. Tenu par le seul fil principal,
+    /// le budget débordait sans borne dès qu'il manquait de CPU : les
+    /// auxiliaires cherchaient sans rien vérifier — 66 792 et 68 177 nœuds pour
+    /// un budget de 50 000, reproduits en serrant les trois fils sur un seul
+    /// cœur (`taskset -c 0`), 24 sept. 2026.
+    published_nodes: Arc<AtomicU64>,
+    /// Les nœuds de CE fil déjà versés dans `published_nodes`.
     published: u64,
     /// Vrai pour un auxiliaire. Il publie ses nœuds, ne rapporte rien, ne
     /// consulte aucune pendule et ne touche pas à la génération de la table.
@@ -421,7 +435,7 @@ impl Search {
             threads: 1,
             helpers: Vec::new(),
             helper_stop: Arc::new(AtomicBool::new(false)),
-            helper_nodes: Arc::new(AtomicU64::new(0)),
+            published_nodes: Arc::new(AtomicU64::new(0)),
             published: 0,
             is_helper: false,
             killers: vec![[0; 2]; MAX_PLY],
@@ -453,7 +467,7 @@ impl Search {
     /// porte une ardoise de 256 Kio, et la remplir à chaque `go` serait le
     /// coût d'initialisation que C15 a déjà payé une fois.
     pub fn set_threads(&mut self, threads: usize) {
-        self.threads = threads.clamp(1, MAX_THREADS);
+        self.threads = thread_count(threads);
         let helpers = (1..self.threads).map(|_| self.new_helper()).collect();
         self.helpers = helpers;
     }
@@ -468,7 +482,7 @@ impl Search {
     /// d'arrêt que lève la recherche principale.
     fn new_helper(&self) -> Self {
         let mut helper = Self::with_table(Arc::clone(&self.helper_stop), Arc::clone(&self.tt));
-        helper.helper_nodes = Arc::clone(&self.helper_nodes);
+        helper.published_nodes = Arc::clone(&self.published_nodes);
         helper.is_helper = true;
         helper
     }
@@ -493,7 +507,9 @@ impl Search {
     /// exact, chacun publiant son reste en finissant.
     #[must_use]
     pub fn nodes(&self) -> u64 {
-        self.nodes + self.helper_nodes.load(Ordering::Relaxed)
+        // Les siens au nœud près, ceux des autres fils tels que publiés : le
+        // compteur commun contient déjà la part publiée de ce fil-ci.
+        self.nodes + self.published_nodes.load(Ordering::Relaxed) - self.published
     }
 
     /// Branche le drapeau de ponder que la couche UCI écrira.
@@ -549,7 +565,8 @@ impl Search {
     ) -> Option<Move> {
         self.started = Instant::now();
         self.nodes = 0;
-        self.helper_nodes.store(0, Ordering::Relaxed);
+        self.published = 0;
+        self.published_nodes.store(0, Ordering::Relaxed);
         self.aborted = false;
         self.root_best = None;
         self.last_pv.clear();
@@ -592,7 +609,10 @@ impl Search {
             let _stop = StopOnDrop(&helper_stop);
             for helper in &mut helpers {
                 let board = &board;
-                scope.spawn(move || helper.search_as_helper(board, history, max_depth));
+                let node_limit = self.node_limit;
+                scope.spawn(move || {
+                    helper.search_as_helper(board, history, max_depth, node_limit);
+                });
             }
             self.iterate(&board, max_depth, &mut scratch, &mut report)
         });
@@ -678,14 +698,22 @@ impl Search {
     /// Ce que cherche un fil auxiliaire : la même position que la recherche
     /// principale, par le même approfondissement, sans pendule ni rapport. Il
     /// s'arrête quand elle lève `helper_stop`, ou de lui-même s'il atteint la
-    /// profondeur maximale avant elle.
+    /// profondeur maximale avant elle — ou le budget de nœuds, qu'il tient
+    /// comme elle, sur le total de tous les fils.
     ///
     /// Aucun décalage de profondeur entre les fils. C'est une variante connue
     /// de Lazy SMP ; elle se mesurera à part si la version la plus simple ne
     /// rend pas ce qu'on attend — pas recopiée d'avance.
-    fn search_as_helper(&mut self, board: &Board, history: &[u64], max_depth: u32) {
+    fn search_as_helper(
+        &mut self,
+        board: &Board,
+        history: &[u64],
+        max_depth: u32,
+        node_limit: Option<u64>,
+    ) {
         self.nodes = 0;
         self.published = 0;
+        self.node_limit = node_limit;
         self.aborted = false;
         self.root_best = None;
         self.path = history.to_vec();
@@ -699,15 +727,11 @@ impl Search {
         self.publish_nodes();
     }
 
-    /// Verse dans `helper_nodes` ce que ce fil n'a pas encore publié — s'il
-    /// est auxiliaire : la recherche principale compte les siens elle-même,
-    /// et les y verser les compterait deux fois.
+    /// Verse dans `published_nodes` ce que ce fil n'a pas encore publié.
     fn publish_nodes(&mut self) {
-        if self.is_helper {
-            self.helper_nodes
-                .fetch_add(self.nodes - self.published, Ordering::Relaxed);
-            self.published = self.nodes;
-        }
+        self.published_nodes
+            .fetch_add(self.nodes - self.published, Ordering::Relaxed);
+        self.published = self.nodes;
     }
 
     /// Recherche la racine à une profondeur donnée, en pariant sur la stabilité
@@ -1468,6 +1492,13 @@ impl Search {
         let gain = self.params.mg_value[victim as usize].max(self.params.eg_value[victim as usize]);
         stand_pat.saturating_add(gain).saturating_add(DELTA_MARGIN) <= alpha
     }
+}
+
+/// Le nombre de fils retenu pour une demande : au moins un, au plus
+/// [`MAX_THREADS`]. Hors de `set_threads` pour se tester sans créer mille
+/// auxiliaires de 345 Kio chacun.
+fn thread_count(requested: usize) -> usize {
+    requested.clamp(1, MAX_THREADS)
 }
 
 /// Lève un drapeau en sortant de portée — y compris quand on en sort par une
@@ -3655,10 +3686,14 @@ mod tests {
         s.set_threads(0);
         assert_eq!((s.threads(), s.helpers.len()), (1, 0), "borné à un fil");
 
-        s.set_threads(MAX_THREADS + 10);
+        // La borne haute se vérifie sur la fonction pure : la traverser par
+        // `set_threads` créerait mille auxiliaires, ~345 Mio.
+        assert_eq!(thread_count(0), 1);
+        assert_eq!(thread_count(7), 7);
+        assert_eq!(thread_count(MAX_THREADS), MAX_THREADS);
         assert_eq!(
-            (s.threads(), s.helpers.len()),
-            (MAX_THREADS, MAX_THREADS - 1),
+            thread_count(MAX_THREADS + 10),
+            MAX_THREADS,
             "borné à MAX_THREADS"
         );
     }
@@ -3675,7 +3710,7 @@ mod tests {
                 Arc::ptr_eq(&aux.tt, &s.tt),
                 "un auxiliaire qui cherche dans sa propre table n'aide personne"
             );
-            assert!(Arc::ptr_eq(&aux.helper_nodes, &s.helper_nodes));
+            assert!(Arc::ptr_eq(&aux.published_nodes, &s.published_nodes));
             assert!(Arc::ptr_eq(&aux.stop, &s.helper_stop));
         }
     }
@@ -3688,15 +3723,68 @@ mod tests {
         let mut aux = s.helpers.pop().unwrap();
         let position = Position::startpos();
 
-        aux.search_as_helper(position.board(), position.history(), 4);
+        aux.search_as_helper(position.board(), position.history(), 4, None);
 
         assert!(aux.nodes > 0);
         assert_eq!(
-            s.helper_nodes.load(Ordering::Relaxed),
+            s.published_nodes.load(Ordering::Relaxed),
             aux.nodes,
             "publié = visité, ni plus ni moins"
         );
         assert_eq!(s.nodes(), aux.nodes, "le total compte l'auxiliaire");
+        assert_eq!(
+            aux.nodes(),
+            aux.nodes,
+            "et l'auxiliaire ne se compte qu'une fois"
+        );
+    }
+
+    #[test]
+    fn le_fil_principal_publie_ses_noeuds_lui_aussi() {
+        // Sans quoi un auxiliaire tiendrait le budget sans compter les nœuds
+        // du fil principal. Un seul fil : le compte est déterministe.
+        let mut s = search();
+        let limits = Limits {
+            depth: Some(7),
+            ..Limits::default()
+        };
+        s.go(&Position::startpos(), &limits, |_| {});
+        assert!(
+            s.nodes > 4 * CHECK_INTERVAL,
+            "la recherche doit franchir plusieurs intervalles : {}",
+            s.nodes
+        );
+        assert!(
+            s.published + 2 * CHECK_INTERVAL > s.nodes,
+            "publié {} sur {}",
+            s.published,
+            s.nodes
+        );
+        assert_eq!(s.published_nodes.load(Ordering::Relaxed), s.published);
+        assert_eq!(s.nodes(), s.nodes, "un seul fil ne se compte qu'une fois");
+    }
+
+    #[test]
+    fn un_auxiliaire_tient_le_budget_sur_le_total_de_tous_les_fils() {
+        // Le défaut du 24 sept. 2026 : le budget n'était vérifié que par le
+        // fil principal. Privé de CPU, il laissait les auxiliaires chercher
+        // sans borne. Appelé ici sans fil, donc déterministe : les autres
+        // fils ont déjà publié 40 000 nœuds, et l'auxiliaire doit s'arrêter
+        // après les 10 000 qui restent — pas chercher ses neuf plis entiers.
+        let mut s = search();
+        s.set_threads(2);
+        let mut aux = s.helpers.pop().unwrap();
+        let position = Position::startpos();
+        s.published_nodes.store(40_000, Ordering::Relaxed);
+
+        aux.search_as_helper(position.board(), position.history(), 9, Some(50_000));
+
+        assert!(
+            (10_000..=10_001).contains(&aux.nodes),
+            "l'auxiliaire a cherché {} nœuds sur les 10 000 restants",
+            aux.nodes
+        );
+        assert_eq!(s.nodes(), 40_000 + aux.nodes);
     }
 
     #[test]
@@ -3715,11 +3803,11 @@ mod tests {
         // Toujours vrai, pas seulement probable : un auxiliaire ne regarde
         // le drapeau d'arrêt que tous les `CHECK_INTERVAL` nœuds, donc il en
         // visite au moins un même lancé après la fin de la recherche.
-        let aux = s.helper_nodes.load(Ordering::Relaxed);
+        let aux = s.helpers.iter().map(|h| h.nodes).sum::<u64>();
         assert!(aux > 0, "les auxiliaires n'ont rien cherché");
         assert_eq!(
-            aux,
-            s.helpers.iter().map(|h| h.nodes).sum::<u64>(),
+            s.published_nodes.load(Ordering::Relaxed),
+            s.published + aux,
             "chaque auxiliaire a publié son reste en finissant"
         );
         assert_eq!(s.nodes(), s.nodes + aux);
@@ -3767,13 +3855,16 @@ mod tests {
 
         s.go(&Position::startpos(), &limits, |_| {});
 
-        // La recherche principale s'arrête dès que le total publié atteint le
-        // budget. Chaque auxiliaire peut alors garder jusqu'à deux intervalles
-        // non publiés — la branche de nulle compte un nœud sans consulter le
-        // drapeau, et peut sauter un multiple —, puis en chercher autant avant
-        // de voir l'arrêt. Compter la seule recherche principale rendrait
-        // environ trois fois le budget.
-        let marge = 2 * 4 * CHECK_INTERVAL;
+        // Chaque fil s'arrête dès que ses propres nœuds et ceux que les autres
+        // ont publiés atteignent le budget. Ce qu'il ne voit pas, ce sont les
+        // nœuds non publiés des AUTRES : au plus deux intervalles chacun — la
+        // branche de nulle compte un nœud sans consulter le drapeau, et peut
+        // sauter un multiple. La borne ne dépend donc pas de l'ordonnancement,
+        // ce qui n'était pas le cas quand seul le fil principal tenait le
+        // budget : privé de CPU, il laissait les auxiliaires chercher sans
+        // limite. Compter la seule recherche principale rendrait environ
+        // trois fois le budget.
+        let marge = (3 - 1) * 2 * CHECK_INTERVAL;
         assert!(
             s.nodes() <= budget + marge,
             "{} nœuds pour un budget de {budget}",
