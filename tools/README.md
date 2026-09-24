@@ -2138,6 +2138,14 @@ profondeur moyenne non plus. Un C24 sans effet décelable condamnerait la
 lecture par l'accord, et C25 avec ; un C24 nettement positif la validerait.
 Le critère ne bouge pas.
 
+**Crible de mutation du code de C24, au candidat, pendant que l'Elo vole** —
+`set_deadlines`, `time_budget_ms`, `deadlines_ms` : 29 mutants. **Prédiction,
+écrite avant le résultat** : **aucun survivant** ; deux inviables — `Instant *
+Duration` ne compile pas — ; les autres attrapés par les valeurs exactes du
+test des échéances, et les deux `now - Duration` de `set_deadlines` par le
+test qui vérifie qu'on ne s'arrête pas trop tôt. Si le verdict fusionne C24,
+le balayage suivant ne doit donc rien ajouter à `search.rs`.
+
 ### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
 
 Premier geste du chantier décidé par Théo (A19) : **mesurer le mécanisme
