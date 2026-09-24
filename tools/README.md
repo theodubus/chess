@@ -2314,6 +2314,13 @@ un critère, et l'écran le prédisait : −0,156 [−0,211 ; −0,101] à temps
 Les coups stables, majoritaires, reçoivent moins ; les instables, plus ; la
 moyenne suit la majorité. **La partie retombe sur l'écran.**
 
+**Crible de mutation du code de C25, au candidat, prédiction écrite avant le
+résultat** — `stability_class`, `deadlines_ms`, `set_deadlines`, `iterate` :
+33 mutants. **Deux survivants, tous deux anciens** — la comparaison
+`score.abs() > MATE_THRESHOLD` d'`iterate`, en `==` et en `>=`, déjà comptée
+dans les 39 ; **aucun dans le code neuf** ; des expirés possibles pour les
+mutants qui retirent les échéances.
+
 ### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
 
 Premier geste du chantier décidé par Théo (A19) : **mesurer le mécanisme
