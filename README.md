@@ -5,7 +5,9 @@ Un moteur d'échecs UCI écrit en Rust, et l'interface qui va avec.
 Le nom est un contrepied de Deep Blue, doublé de la couleur de la rouille et
 d'un aveu sur la profondeur de recherche.
 
-> Statut : **recherche et évaluation en place, monothread**. Negamax avec
+> Statut : **recherche et évaluation en place, monofil par défaut** —
+> plusieurs fils par l'option `Threads` (Lazy SMP, 24 sept. 2026 ; sa force
+> est en mesure, voir `tools/README.md`). Negamax avec
 > élagage alpha-bêta, approfondissement itératif, quiescence, table de
 > transposition et ordonnancement des coups, plus **des élagages avancés
 > mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres

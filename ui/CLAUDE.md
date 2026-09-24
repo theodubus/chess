@@ -108,22 +108,36 @@ binaire.
 Vérifié dans `engine/src/uci.rs`, pas supposé. **Ne pas présumer d'autres
 commandes** : ce qui n'est pas listé n'existe pas.
 
+*Revérifié le 24 sept. 2026 : le ponder (23 sept.) et `Threads` (24 sept.)
+sont arrivés depuis la première version de cette section, qui disait « une
+seule option » et « ni `ponder` ».*
+
 **Commandes acceptées** — `uci`, `isready`, `ucinewgame`, `setoption`,
-`position`, `go`, `stop`, `quit`. Une commande inconnue est ignorée sans casser
-la session.
+`position`, `go`, `stop`, `ponderhit`, `quit`. Une commande inconnue est
+ignorée sans casser la session.
 
 **`go` accepte** — `wtime`, `btime`, `winc`, `binc`, `movestogo`, `movetime`,
-`depth`, `nodes`, `infinite`, et `perft <n>` pour le diagnostic.
+`depth`, `nodes`, `infinite`, `ponder`, et `perft <n>` pour le diagnostic.
 
-**Une seule option** — `Hash`, en mégaoctets :
+**Trois options** :
 
 ```
 option name Hash type spin default <n> min 1 max 4096
+option name Ponder type check default false
+option name Threads type spin default 1 min 1 max 64
 ```
 
-**Il n'y a NI `ponder`, NI `MultiPV`.** Ne pas construire d'interface qui les
-suppose. Si l'analyse en a besoin un jour, c'est une demande à formuler au
-moteur, pas à contourner.
+- `Hash` : la table de transposition, en mégaoctets.
+- `Ponder` : le moteur SAIT pondérer ; c'est l'interface qui décide de s'en
+  servir. Elle envoie `go ponder …` avec le coup prédit joué, puis
+  `ponderhit` si l'adversaire le joue, `stop` sinon. **Le moteur n'envoie
+  jamais `bestmove` avant `ponderhit` ou `stop`**, même s'il a fini.
+- `Threads` : le nombre de fils de recherche (Lazy SMP). Un par défaut ;
+  c'est l'interface qui sait combien de cœurs elle peut donner.
+
+**Il n'y a PAS de `MultiPV`.** Ne pas construire d'interface qui le suppose.
+Si l'analyse en a besoin un jour, c'est une demande à formuler au moteur, pas
+à contourner.
 
 **Ce que le moteur émet** :
 
@@ -132,6 +146,7 @@ info depth <d> score cp <n> nodes <n> time <ms> nps <n> hashfull <n> pv <coups>
 info depth <d> score mate <n> ...
 info string <message>
 bestmove <coup>
+bestmove <coup> ponder <coup>   ← avec le coup qu'il prédit pour l'adversaire
 bestmove 0000          ← aucun coup légal : mat ou pat
 ```
 

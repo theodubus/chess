@@ -24,7 +24,7 @@
 
 use std::cmp::Reverse;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
@@ -40,6 +40,13 @@ pub const MAX_DEPTH: u32 = 64;
 /// Plafond de profondeur, quiescence comprise. Borne les tableaux indexés par
 /// ply et empêche une quiescence pathologique de déborder la pile.
 pub const MAX_PLY: usize = 128;
+
+/// Nombre maximal de fils de recherche, l'option UCI `Threads`.
+///
+/// Au-delà, chaque fil ne ferait que se disputer les cœurs avec les autres ;
+/// la borne existe pour qu'une valeur aberrante ne crée pas des milliers de
+/// recherches, chacune avec son ardoise.
+pub const MAX_THREADS: usize = 64;
 
 /// Profondeur maximale à laquelle on ose la futilité inverse.
 ///
@@ -322,8 +329,33 @@ pub struct Search {
     null_marks: Vec<usize>,
     pv: PvTable,
     root_best: Option<Move>,
-    /// Mémoire des positions déjà évaluées, conservée entre les coups.
-    tt: TranspositionTable,
+    /// Mémoire des positions déjà évaluées, conservée entre les coups — et
+    /// PARTAGÉE entre les fils d'une même recherche : c'est tout Lazy SMP
+    /// (B6). Ses entrées sont atomiques depuis B9, `store` prend `&self`.
+    tt: Arc<TranspositionTable>,
+    /// Nombre de fils de recherche, l'option UCI `Threads`. Un par défaut.
+    threads: usize,
+    /// Les fils auxiliaires : `threads - 1` recherches complètes, chacune avec
+    /// ses killers, son historique et son ardoise, qui cherchent la même
+    /// position que celle-ci et ne communiquent avec elle QUE par la table.
+    /// Vide avec un seul fil — le cas par défaut, le moteur d'avant B6 au
+    /// nœud près.
+    helpers: Vec<Search>,
+    /// Le drapeau d'arrêt des auxiliaires, distinct de `stop`, qui appartient
+    /// à l'interface : c'est la fin de la recherche PRINCIPALE qui les arrête,
+    /// et elle a ses raisons à elle — profondeur atteinte, mat, échéance.
+    helper_stop: Arc<AtomicBool>,
+    /// Les nœuds que les auxiliaires ont publiés pendant la recherche en
+    /// cours. Chacun y verse son compte tous les `CHECK_INTERVAL` nœuds, et le
+    /// reste en finissant : un compteur partagé incrémenté à chaque nœud
+    /// coûterait une instruction verrouillée par nœud, et sa ligne de cache
+    /// ferait la navette entre les cœurs.
+    helper_nodes: Arc<AtomicU64>,
+    /// Pour un auxiliaire : les nœuds déjà versés dans `helper_nodes`.
+    published: u64,
+    /// Vrai pour un auxiliaire. Il publie ses nœuds, ne rapporte rien, ne
+    /// consulte aucune pendule et ne touche pas à la génération de la table.
+    is_helper: bool,
     /// Deux coups tranquilles par ply ayant provoqué une coupure bêta.
     ///
     /// Un coup qui réfute une variante à un ply donné en réfute souvent
@@ -365,6 +397,12 @@ impl Search {
     /// Crée une recherche pilotée par le drapeau d'arrêt fourni.
     #[must_use]
     pub fn new(stop: Arc<AtomicBool>) -> Self {
+        Self::with_table(stop, Arc::new(TranspositionTable::default()))
+    }
+
+    /// Une recherche sur une table donnée — la sienne, ou celle qu'elle
+    /// partage avec la recherche principale si c'est un auxiliaire.
+    fn with_table(stop: Arc<AtomicBool>, tt: Arc<TranspositionTable>) -> Self {
         Self {
             stop,
             nodes: 0,
@@ -379,7 +417,13 @@ impl Search {
             null_marks: Vec::new(),
             pv: PvTable::new(),
             root_best: None,
-            tt: TranspositionTable::default(),
+            tt,
+            threads: 1,
+            helpers: Vec::new(),
+            helper_stop: Arc::new(AtomicBool::new(false)),
+            helper_nodes: Arc::new(AtomicU64::new(0)),
+            published: 0,
+            is_helper: false,
             killers: vec![[0; 2]; MAX_PLY],
             history: vec![0; 64 * 64],
             lmr: build_lmr_table(),
@@ -396,7 +440,37 @@ impl Search {
 
     /// Redimensionne la table de transposition et la vide.
     pub fn resize_table(&mut self, megabytes: usize) {
-        self.tt = TranspositionTable::new(megabytes);
+        self.tt = Arc::new(TranspositionTable::new(megabytes));
+        // Les auxiliaires tiennent encore l'ancienne : on les refait sur la
+        // nouvelle, sans quoi chacun chercherait dans sa propre table.
+        self.set_threads(self.threads);
+    }
+
+    /// Règle le nombre de fils de recherche — l'option UCI `Threads`, bornée
+    /// à `[1, MAX_THREADS]`.
+    ///
+    /// Les auxiliaires se créent ici, une fois, et non à chaque coup : chacun
+    /// porte une ardoise de 256 Kio, et la remplir à chaque `go` serait le
+    /// coût d'initialisation que C15 a déjà payé une fois.
+    pub fn set_threads(&mut self, threads: usize) {
+        self.threads = threads.clamp(1, MAX_THREADS);
+        let helpers = (1..self.threads).map(|_| self.new_helper()).collect();
+        self.helpers = helpers;
+    }
+
+    /// Nombre de fils de recherche.
+    #[must_use]
+    pub fn threads(&self) -> usize {
+        self.threads
+    }
+
+    /// Un auxiliaire : même table, compteur de nœuds commun, et le drapeau
+    /// d'arrêt que lève la recherche principale.
+    fn new_helper(&self) -> Self {
+        let mut helper = Self::with_table(Arc::clone(&self.helper_stop), Arc::clone(&self.tt));
+        helper.helper_nodes = Arc::clone(&self.helper_nodes);
+        helper.is_helper = true;
+        helper
     }
 
     /// Vide la table de transposition. À appeler sur `ucinewgame`.
@@ -412,10 +486,14 @@ impl Search {
         self.tt.permille_used()
     }
 
-    /// Nombre de nœuds visités par la dernière recherche.
+    /// Nombre de nœuds visités par la dernière recherche, tous fils compris.
+    ///
+    /// Pendant la recherche, les auxiliaires n'ont versé que ce qu'ils ont
+    /// publié — à `CHECK_INTERVAL` nœuds près chacun ; après, le compte est
+    /// exact, chacun publiant son reste en finissant.
     #[must_use]
     pub fn nodes(&self) -> u64 {
-        self.nodes
+        self.nodes + self.helper_nodes.load(Ordering::Relaxed)
     }
 
     /// Branche le drapeau de ponder que la couche UCI écrira.
@@ -471,6 +549,7 @@ impl Search {
     ) -> Option<Move> {
         self.started = Instant::now();
         self.nodes = 0;
+        self.helper_nodes.store(0, Ordering::Relaxed);
         self.aborted = false;
         self.root_best = None;
         self.last_pv.clear();
@@ -498,49 +577,26 @@ impl Search {
             scratch = vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES];
         }
 
-        let mut best = None;
-
-        let mut previous = DRAW;
-        for depth in 1..=max_depth {
-            let score = self.search_root(
-                &board,
-                i32::try_from(depth).unwrap_or(1),
-                depth,
-                previous,
-                &mut scratch,
-            );
-
-            // Une itération interrompue a exploré ses coups dans le désordre :
-            // son résultat est partiel et ne remplace pas le précédent.
-            if self.aborted {
-                break;
+        // LAZY SMP (B6). Les auxiliaires cherchent la même position sur la
+        // même table, sans pendule ni rapport ; seul ce fil-ci décide du coup.
+        // Avec un seul fil, `helpers` est vide : aucun fil lancé, et pas un
+        // nœud de différence avec le moteur d'avant B6.
+        self.helper_stop.store(false, Ordering::Relaxed);
+        let helper_stop = Arc::clone(&self.helper_stop);
+        let history = position.history();
+        let mut helpers = std::mem::take(&mut self.helpers);
+        let best = std::thread::scope(|scope| {
+            // Lève `helper_stop` en sortant de ce bloc, PANIQUE COMPRISE :
+            // `scope` attend tous ses fils avant de rendre la main, et des
+            // auxiliaires jamais arrêtés le feraient attendre pour toujours.
+            let _stop = StopOnDrop(&helper_stop);
+            for helper in &mut helpers {
+                let board = &board;
+                scope.spawn(move || helper.search_as_helper(board, history, max_depth));
             }
-
-            let Some(mv) = self.root_best else { break };
-            best = Some(mv);
-            previous = score;
-            self.last_pv = self.pv.line();
-            report(&Info {
-                depth,
-                score: Score::from_internal(score),
-                nodes: self.nodes,
-                time_ms: self.elapsed_ms(),
-                pv: self.last_pv.clone(),
-                hashfull: self.tt.permille_used(),
-            });
-
-            // Un mat trouvé ne s'améliore pas en cherchant plus loin.
-            if score.abs() > MATE_THRESHOLD {
-                break;
-            }
-            // En ponder, l'échéance douce ne vaut pas : c'est le temps de
-            // l'adversaire, on approfondit tant qu'il réfléchit. Elle
-            // s'appliquera dès `ponderhit`, à la fin de l'itération en cours.
-            if !self.is_pondering() && self.soft_deadline.is_some_and(|at| Instant::now() >= at) {
-                break;
-            }
-        }
-
+            self.iterate(&board, max_depth, &mut scratch, &mut report)
+        });
+        self.helpers = helpers;
         self.scratch = scratch;
 
         // Filet de sécurité : si la toute première itération a été interrompue,
@@ -564,6 +620,94 @@ impl Search {
         }
 
         best
+    }
+
+    /// L'approfondissement itératif, commun à la recherche principale et aux
+    /// auxiliaires. Rend le coup de la dernière itération ACHEVÉE.
+    fn iterate(
+        &mut self,
+        board: &Board,
+        max_depth: u32,
+        scratch: &mut [(Move, i32)],
+        report: &mut impl FnMut(&Info),
+    ) -> Option<Move> {
+        let mut best = None;
+        let mut previous = DRAW;
+        for depth in 1..=max_depth {
+            let score = self.search_root(
+                board,
+                i32::try_from(depth).unwrap_or(1),
+                depth,
+                previous,
+                scratch,
+            );
+
+            // Une itération interrompue a exploré ses coups dans le désordre :
+            // son résultat est partiel et ne remplace pas le précédent.
+            if self.aborted {
+                break;
+            }
+
+            let Some(mv) = self.root_best else { break };
+            best = Some(mv);
+            previous = score;
+            self.last_pv = self.pv.line();
+            report(&Info {
+                depth,
+                score: Score::from_internal(score),
+                nodes: self.nodes(),
+                time_ms: self.elapsed_ms(),
+                pv: self.last_pv.clone(),
+                hashfull: self.tt.permille_used(),
+            });
+
+            // Un mat trouvé ne s'améliore pas en cherchant plus loin.
+            if score.abs() > MATE_THRESHOLD {
+                break;
+            }
+            // En ponder, l'échéance douce ne vaut pas : c'est le temps de
+            // l'adversaire, on approfondit tant qu'il réfléchit. Elle
+            // s'appliquera dès `ponderhit`, à la fin de l'itération en cours.
+            if !self.is_pondering() && self.soft_deadline.is_some_and(|at| Instant::now() >= at) {
+                break;
+            }
+        }
+        best
+    }
+
+    /// Ce que cherche un fil auxiliaire : la même position que la recherche
+    /// principale, par le même approfondissement, sans pendule ni rapport. Il
+    /// s'arrête quand elle lève `helper_stop`, ou de lui-même s'il atteint la
+    /// profondeur maximale avant elle.
+    ///
+    /// Aucun décalage de profondeur entre les fils. C'est une variante connue
+    /// de Lazy SMP ; elle se mesurera à part si la version la plus simple ne
+    /// rend pas ce qu'on attend — pas recopiée d'avance.
+    fn search_as_helper(&mut self, board: &Board, history: &[u64], max_depth: u32) {
+        self.nodes = 0;
+        self.published = 0;
+        self.aborted = false;
+        self.root_best = None;
+        self.path = history.to_vec();
+        self.killers.fill([0; 2]);
+        self.history.fill(0);
+        // Pas de reprise d'une ardoise perdue, contrairement à `go` : un
+        // auxiliaire qui panique emporte toute la recherche avec lui.
+        let mut scratch = std::mem::take(&mut self.scratch);
+        self.iterate(board, max_depth, &mut scratch, &mut |_| {});
+        self.scratch = scratch;
+        self.publish_nodes();
+    }
+
+    /// Verse dans `helper_nodes` ce que ce fil n'a pas encore publié — s'il
+    /// est auxiliaire : la recherche principale compte les siens elle-même,
+    /// et les y verser les compterait deux fois.
+    fn publish_nodes(&mut self) {
+        if self.is_helper {
+            self.helper_nodes
+                .fetch_add(self.nodes - self.published, Ordering::Relaxed);
+            self.published = self.nodes;
+        }
     }
 
     /// Recherche la racine à une profondeur donnée, en pariant sur la stabilité
@@ -654,11 +798,12 @@ impl Search {
         if self.aborted {
             return true;
         }
-        if self.node_limit.is_some_and(|limit| self.nodes >= limit) {
+        if self.node_limit.is_some_and(|limit| self.nodes() >= limit) {
             self.aborted = true;
             return true;
         }
         if self.nodes.is_multiple_of(CHECK_INTERVAL) {
+            self.publish_nodes();
             // En ponder, la pendule ne court pas pour nous : seule l'interface
             // arrête la recherche. Après `ponderhit`, l'échéance posée au
             // `go ponder` s'applique — le temps passé à pondérer compte comme
@@ -1322,6 +1467,17 @@ impl Search {
         };
         let gain = self.params.mg_value[victim as usize].max(self.params.eg_value[victim as usize]);
         stand_pat.saturating_add(gain).saturating_add(DELTA_MARGIN) <= alpha
+    }
+}
+
+/// Lève un drapeau en sortant de portée — y compris quand on en sort par une
+/// panique. C'est ce qui arrête les auxiliaires de Lazy SMP quoi qu'il arrive
+/// à la recherche principale.
+struct StopOnDrop<'a>(&'a AtomicBool);
+
+impl Drop for StopOnDrop<'_> {
+    fn drop(&mut self) {
+        self.0.store(true, Ordering::Relaxed);
     }
 }
 
@@ -3430,6 +3586,151 @@ mod tests {
                 "profondeur {profondeur} : une nulle est un nœud visité, ni plus ni moins"
             );
         }
+    }
+
+    // ---- Lazy SMP (B6) ----
+    //
+    // Plusieurs fils sont NON DÉTERMINISTES par nature : l'ordonnanceur
+    // décide qui écrit le premier dans la table. Ces tests n'assertent donc
+    // jamais un arbre ni un score, seulement ce qui doit tenir quel que soit
+    // l'ordre — un coup légal, un arrêt, un compte de nœuds. Avec un seul fil,
+    // le banc garde l'arbre au nœud près, comme avant.
+
+    #[test]
+    fn un_seul_fil_ne_cree_aucun_auxiliaire() {
+        let mut s = search();
+        assert_eq!((s.threads(), s.helpers.len()), (1, 0));
+
+        s.set_threads(3);
+        assert_eq!((s.threads(), s.helpers.len()), (3, 2));
+
+        s.set_threads(0);
+        assert_eq!((s.threads(), s.helpers.len()), (1, 0), "borné à un fil");
+
+        s.set_threads(MAX_THREADS + 10);
+        assert_eq!(
+            (s.threads(), s.helpers.len()),
+            (MAX_THREADS, MAX_THREADS - 1),
+            "borné à MAX_THREADS"
+        );
+    }
+
+    #[test]
+    fn les_auxiliaires_partagent_la_table_meme_apres_un_redimensionnement() {
+        let mut s = search();
+        s.set_threads(3);
+        s.resize_table(1);
+        assert!(!s.is_helper);
+        for aux in &s.helpers {
+            assert!(aux.is_helper);
+            assert!(
+                Arc::ptr_eq(&aux.tt, &s.tt),
+                "un auxiliaire qui cherche dans sa propre table n'aide personne"
+            );
+            assert!(Arc::ptr_eq(&aux.helper_nodes, &s.helper_nodes));
+            assert!(Arc::ptr_eq(&aux.stop, &s.helper_stop));
+        }
+    }
+
+    #[test]
+    fn un_auxiliaire_publie_tous_ses_noeuds() {
+        // Appelé directement, sans fil : le compte est alors déterministe.
+        let mut s = search();
+        s.set_threads(2);
+        let mut aux = s.helpers.pop().unwrap();
+        let position = Position::startpos();
+
+        aux.search_as_helper(position.board(), position.history(), 4);
+
+        assert!(aux.nodes > 0);
+        assert_eq!(
+            s.helper_nodes.load(Ordering::Relaxed),
+            aux.nodes,
+            "publié = visité, ni plus ni moins"
+        );
+        assert_eq!(s.nodes(), aux.nodes, "le total compte l'auxiliaire");
+    }
+
+    #[test]
+    fn plusieurs_fils_rendent_un_coup_legal_et_comptent_tous_leurs_noeuds() {
+        let position = Position::startpos();
+        let mut s = search();
+        s.set_threads(3);
+        let limits = Limits {
+            depth: Some(6),
+            ..Limits::default()
+        };
+
+        let best = s.go(&position, &limits, |_| {}).unwrap();
+
+        assert!(position.board().is_legal(best));
+        // Toujours vrai, pas seulement probable : un auxiliaire ne regarde
+        // le drapeau d'arrêt que tous les `CHECK_INTERVAL` nœuds, donc il en
+        // visite au moins un même lancé après la fin de la recherche.
+        let aux = s.helper_nodes.load(Ordering::Relaxed);
+        assert!(aux > 0, "les auxiliaires n'ont rien cherché");
+        assert_eq!(
+            aux,
+            s.helpers.iter().map(|h| h.nodes).sum::<u64>(),
+            "chaque auxiliaire a publié son reste en finissant"
+        );
+        assert_eq!(s.nodes(), s.nodes + aux);
+    }
+
+    #[test]
+    fn larret_de_linterface_arrete_aussi_les_auxiliaires() {
+        let stop = Arc::new(AtomicBool::new(false));
+        let mut s = Search::new(Arc::clone(&stop));
+        s.set_threads(3);
+        let (tx, rx) = std::sync::mpsc::channel();
+        let fil = std::thread::spawn(move || {
+            let limits = Limits {
+                infinite: true,
+                ..Limits::default()
+            };
+            tx.send(s.go(&Position::startpos(), &limits, |_| {}))
+                .unwrap();
+        });
+
+        std::thread::sleep(Duration::from_millis(50));
+        stop.store(true, Ordering::Relaxed);
+
+        // Un délai et non un `join` nu : si un auxiliaire ne s'arrêtait pas,
+        // `go` ne rendrait jamais la main et le test pendrait au lieu
+        // d'échouer.
+        let best = rx
+            .recv_timeout(Duration::from_secs(20))
+            .unwrap_or_else(|_| {
+                panic!("la recherche ne rend pas la main : un auxiliaire tourne encore")
+            });
+        assert!(best.is_some());
+        fil.join().unwrap();
+    }
+
+    #[test]
+    fn le_budget_de_noeuds_compte_tous_les_fils() {
+        let mut s = search();
+        s.set_threads(3);
+        let budget = 50_000;
+        let limits = Limits {
+            nodes: Some(budget),
+            ..Limits::default()
+        };
+
+        s.go(&Position::startpos(), &limits, |_| {});
+
+        // La recherche principale s'arrête dès que le total publié atteint le
+        // budget. Chaque auxiliaire peut alors garder jusqu'à deux intervalles
+        // non publiés — la branche de nulle compte un nœud sans consulter le
+        // drapeau, et peut sauter un multiple —, puis en chercher autant avant
+        // de voir l'arrêt. Compter la seule recherche principale rendrait
+        // environ trois fois le budget.
+        let marge = 2 * 4 * CHECK_INTERVAL;
+        assert!(
+            s.nodes() <= budget + marge,
+            "{} nœuds pour un budget de {budget}",
+            s.nodes()
+        );
     }
 
     // ---- Table de variante principale ----

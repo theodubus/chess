@@ -109,6 +109,16 @@ on:
         options:
           - "non"
           - "oui"
+      fils_candidat:
+        description: "Fils de recherche du candidat (option UCI Threads). Au-delà de 1 : le moteur doit déclarer l'option, pas plus de fils que de cœurs PHYSIQUES, et la concurrence se déduit des fils — une partie à la fois dès 2 fils sur un runner à 4 processeurs logiques."
+        required: false
+        default: "1"
+        type: string
+      fils_reference:
+        description: "Fils de recherche de la référence. Des fils différents admettent le même commit des deux côtés : c'est la mesure de Lazy SMP elle-même."
+        required: false
+        default: "1"
+        type: string
 
 jobs:
   match:
@@ -168,6 +178,19 @@ jobs:
           tc_cand="${{ inputs.cadence_candidat }}"
           [ -n "$tc_cand" ] || tc_cand="$tc_ref"
 
+          # LES FILS DE RECHERCHE, un nombre par moteur — l'option UCI
+          # `Threads`. Validés ici, où une faute de frappe coûte cinq
+          # secondes : « 2 » tapé « 2 fils » ferait sinon échouer l'étape qui
+          # joue, après deux compilations.
+          fils_cand="${{ inputs.fils_candidat }}"
+          fils_ref="${{ inputs.fils_reference }}"
+          for f in "$fils_cand" "$fils_ref"; do
+            if ! [[ "$f" =~ ^[1-9][0-9]?$ ]]; then
+              echo "::error::nombre de fils illisible : « $f » — un entier de 1 à 99." >&2
+              exit 1
+            fi
+          done
+
           # cutechess joue le ponder, que fastchess ignore, et la sonde, dont
           # `tools/plis.sh` lit le format `-debug all`. fastchess tout le reste.
           if [ "${{ inputs.ponder }}" != "non" ] || [ "${{ inputs.sonde }}" = "oui" ]; then
@@ -183,10 +206,11 @@ jobs:
           # SAUF quand quelque chose d'autre que le binaire les distingue :
           # le seul candidat pondère (la mesure du ponder lui-même), il a une
           # autre pendule (le handicap de temps qui calibre l'Elo par pli),
-          # ou c'est une sonde, dont le témoin est justement le même binaire.
+          # d'autres fils (la mesure de Lazy SMP elle-même), ou c'est une
+          # sonde, dont le témoin est justement le même binaire.
           meme_binaire_admis=non
           if [ "${{ inputs.ponder }}" = "candidat" ] || [ "$tc_cand" != "$tc_ref" ] \
-             || [ "${{ inputs.sonde }}" = "oui" ]; then
+             || [ "$fils_cand" != "$fils_ref" ] || [ "${{ inputs.sonde }}" = "oui" ]; then
             meme_binaire_admis=oui
           fi
           if [ "$cand" = "$base" ] && [ "$meme_binaire_admis" = "non" ]; then
@@ -199,6 +223,8 @@ jobs:
           echo "tc_ref=$tc_ref"   >> "$GITHUB_OUTPUT"
           echo "arbitre=$arbitre" >> "$GITHUB_OUTPUT"
           echo "meme_binaire_admis=$meme_binaire_admis" >> "$GITHUB_OUTPUT"
+          echo "fils_cand=$fils_cand" >> "$GITHUB_OUTPUT"
+          echo "fils_ref=$fils_ref"   >> "$GITHUB_OUTPUT"
 
           # La graine est une CONDITION DE VALIDITÉ, dans les DEUX sens, et
           # c'est pourquoi elle se résout ici plutôt que dans l'étape qui joue.
@@ -263,6 +289,28 @@ jobs:
             exit 1
           fi
 
+      # UN MOTEUR IGNORE EN SILENCE UNE OPTION QU'IL NE CONNAÎT PAS — le
+      # protocole l'exige, et ce moteur le fait. Un match « deux fils contre
+      # un » lancé sur un binaire d'avant Lazy SMP jouerait donc monofil des
+      # deux côtés et rendrait zéro, lisible comme un verdict. D'où ce
+      # contrôle : au-delà d'un fil, le binaire doit DÉCLARER `Threads` en
+      # réponse à `uci`, ou le job s'arrête ici.
+      - name: Les moteurs déclarent-ils leurs fils ?
+        shell: bash
+        run: |
+          set -euo pipefail
+          verifier() {
+            local camp="$1" nom="$2" fils="$3"
+            [ "$fils" -gt 1 ] || return 0
+            if ! printf 'uci\nquit\n' | timeout 10 "/tmp/$camp" | grep -q '^option name Threads '; then
+              echo "::error::$fils fils demandés $nom, qui ne déclare pas l'option Threads : le moteur jouerait monofil sans le dire." >&2
+              exit 1
+            fi
+            echo "$camp : déclare Threads, $fils fils"
+          }
+          verifier candidat  "au candidat"     "${{ steps.refs.outputs.fils_cand }}"
+          verifier reference "à la référence" "${{ steps.refs.outputs.fils_ref }}"
+
       # fastchess ne sait pas pondérer : pas une occurrence du mot dans son
       # arbre au commit épinglé, établi par un `grep` avec témoin et non par
       # son README. cutechess-cli, si — `ponder` par moteur, dans son
@@ -312,6 +360,7 @@ jobs:
           physiques=$(lscpu -p=CORE,SOCKET | grep -v '^#' | sort -u | wc -l)
           modele=$(lscpu | awk -F: '/^Model name/ {sub(/^ +/, "", $2); print $2; exit}')
           echo "topologie=$(nproc) processeurs logiques, $physiques cœurs physiques, $fils fil(s) par cœur — $modele" >> "$GITHUB_OUTPUT"
+          echo "physiques=$physiques" >> "$GITHUB_OUTPUT"
 
       - name: Jouer
         id: jouer
@@ -334,7 +383,31 @@ jobs:
           # verdict biaisé dans le sens de ce qu'on espère. Voir « La
           # concurrence d'un match se DÉDUIT des cœurs qu'occupe une partie »
           # dans tools/README.md.
-          if [ "${{ inputs.ponder }}" = "non" ]; then par_partie=1; else par_partie=2; fi
+          #
+          # AVEC DES FILS, un moteur qui réfléchit occupe autant de cœurs que
+          # de fils : sans ponder, le plus gros des deux camps ; avec ponder,
+          # les deux camps réfléchissent en même temps, donc leur somme.
+          fils_cand="${{ steps.refs.outputs.fils_cand }}"
+          fils_ref="${{ steps.refs.outputs.fils_ref }}"
+          fils_max=$(( fils_cand > fils_ref ? fils_cand : fils_ref ))
+          if [ "${{ inputs.ponder }}" = "non" ]; then
+            par_partie=$fils_max
+          else
+            par_partie=$(( fils_cand + fils_ref ))
+          fi
+          # Et, DANS une partie, pas plus de fils qui réfléchissent à la fois
+          # que de cœurs PHYSIQUES. Les runners ont quatre processeurs
+          # logiques pour deux cœurs (SMT, mesuré le 23 sept. 2026) : deux
+          # fils d'un même cœur s'en partagent les unités de calcul, et la
+          # mesure dirait ce que vaut le SMT, pas ce que vaut la technique.
+          # Entre deux parties, le partage frappe les deux camps pareil — c'est
+          # pourquoi la concurrence 3 des matchs monofils reste valide en
+          # interne. Dans une partie, il frappe le camp qui a le plus de fils.
+          physiques="${{ steps.etalon.outputs.physiques }}"
+          if [ "$par_partie" -gt "$physiques" ]; then
+            echo "::error::une partie fait réfléchir $par_partie fils à la fois pour $physiques cœur(s) physique(s) : des fils partageraient un cœur." >&2
+            exit 1
+          fi
           concurrence=$(( ($(nproc) - 1) / par_partie ))
           if [ "$concurrence" -lt 1 ]; then
             echo "::error::$(nproc) cœur(s) pour des parties qui en occupent $par_partie chacune : l'inégalité ne tient pas." >&2
@@ -372,6 +445,9 @@ jobs:
             fi
             ponder_cand=(); ponder_ref=()
             if [ "${{ inputs.ponder }}" != "non" ]; then ponder_cand=(ponder); fi
+            fils_c=(); fils_r=()
+            if [ "$fils_cand" -gt 1 ]; then fils_c=("option.Threads=$fils_cand"); fi
+            if [ "$fils_ref" -gt 1 ]; then fils_r=("option.Threads=$fils_ref"); fi
             if [ "${{ inputs.ponder }}" = "les-deux" ]; then ponder_ref=(ponder); fi
             # `-debug all` imprime TOUT le dialogue UCI — ~0,5 Mo par partie à
             # `8+0,08`. Il va dans le fichier, que lit `tools/plis.sh` ; le
@@ -386,8 +462,8 @@ jobs:
                    "plus court que prévu."
             fi
             QT_QPA_PLATFORM=offscreen tools/arbiters/cutechess-cli "${debug[@]}" \
-              -engine cmd=/tmp/candidat  name=candidat  proto=uci tc="$tc_cand" "${ponder_cand[@]}" \
-              -engine cmd=/tmp/reference name=reference proto=uci tc="$tc_ref"  "${ponder_ref[@]}" \
+              -engine cmd=/tmp/candidat  name=candidat  proto=uci tc="$tc_cand" "${ponder_cand[@]}" "${fils_c[@]}" \
+              -engine cmd=/tmp/reference name=reference proto=uci tc="$tc_ref"  "${ponder_ref[@]}" "${fils_r[@]}" \
               -openings file=tools/book.epd format=epd order=random \
               -srand "${{ steps.refs.outputs.graine }}" \
               -games 2 -repeat -rounds "$rondes" \
@@ -398,9 +474,14 @@ jobs:
             exit 0
           fi
 
+          # `option.Threads` par moteur, jamais dans `-each` : comme `tc=`,
+          # une clé de `-each` écrase celles des moteurs.
+          fils_c=(); fils_r=()
+          if [ "$fils_cand" -gt 1 ]; then fils_c=("option.Threads=$fils_cand"); fi
+          if [ "$fils_ref" -gt 1 ]; then fils_r=("option.Threads=$fils_ref"); fi
           commun=(
-            -engine cmd=/tmp/candidat  name=candidat  tc="$tc_cand"
-            -engine cmd=/tmp/reference name=reference tc="$tc_ref"
+            -engine cmd=/tmp/candidat  name=candidat  tc="$tc_cand" "${fils_c[@]}"
+            -engine cmd=/tmp/reference name=reference tc="$tc_ref"  "${fils_r[@]}"
             -each proto=uci
             -openings file=tools/book.epd format=epd order=random
             -srand "${{ steps.refs.outputs.graine }}"
@@ -501,6 +582,7 @@ jobs:
             echo "| graine des ouvertures | \`${{ steps.refs.outputs.graine }}\` |"
             echo "| ponder | \`${{ inputs.ponder }}\` |"
             echo "| sonde | \`${{ inputs.sonde }}\` |"
+            echo "| fils de recherche | candidat ${{ steps.refs.outputs.fils_cand }}, référence ${{ steps.refs.outputs.fils_ref }} |"
             echo "| arbitre | $arbitre |"
             echo "| parties à la fois | ${{ steps.jouer.outputs.concurrence }} |"
             echo "| cœurs du runner | ${{ steps.etalon.outputs.coeurs }} |"

@@ -80,6 +80,19 @@ une mesure, pas une préférence.
   l'état de la table, donc de l'historique de la recherche. Même position *et*
   même table donnent le même coup ; même position seule ne suffit plus. C'est
   le comportement normal d'un moteur, pas une entorse à l'invariant.
+  **Seconde nuance, depuis Lazy SMP (B6)** : à plus d'un fil, l'ordonnanceur
+  décide qui écrit le premier dans la table, et deux recherches identiques ne
+  rendent plus le même arbre. **Un fil — le défaut, le banc, les tests de
+  score — reste déterministe au nœud près.** Un test à plusieurs fils
+  n'asserte jamais un arbre ni un score, seulement ce qui tient quel que soit
+  l'ordre : un coup légal, un arrêt, un compte de nœuds.
+- **Un fil auxiliaire ne décide rien et s'arrête avec la recherche
+  principale, panique comprise.** Il cherche la même position sur la même
+  table, sans pendule ni rapport ; seul le fil principal rend le coup. Son
+  arrêt passe par un garde (`StopOnDrop`) et non par une ligne après la
+  boucle : `std::thread::scope` attend tous ses fils, et un auxiliaire jamais
+  arrêté ferait attendre `go` pour toujours. Le test qui le garde échoue au
+  bout de vingt secondes au lieu de pendre.
 - **Un score de mat stocké dans la table doit être normalisé du ply.** Un mat
   vaut `±(MATE - ply)`, donc il dépend de l'endroit d'où on le regarde. Stocker
   tel quel et relire ailleurs annonce un mat faux. `score_to_tt` et
@@ -192,7 +205,8 @@ une mesure, pas une préférence.
 - **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
   La valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
 - **Table de transposition partagée, le jour où la recherche devient
-  parallèle.** **En place depuis le 23 sept. 2026 (B9)** : entrées atomiques,
+  parallèle.** **Le jour est venu le 24 sept. 2026** : Lazy SMP (B6) la
+  partage entre fils par un `Arc`, et l'option `Threads` vaut 1 par défaut. **En place depuis le 23 sept. 2026 (B9)** : entrées atomiques,
   `store` prend `&self`, la table se partage entre fils. <s>Pas en place, et
   c'est le seul endroit du dépôt où le design actuel bloque une
   fonctionnalité déjà prévue : `store` prend `&mut self`, ce qui est
@@ -503,8 +517,12 @@ une mesure, pas une préférence.
   ponder vole du CPU à l'adversaire du candidat, donc *vers* l'hypothèse ;
   Lazy SMP en vole au candidat lui-même. **`match.yml` dérive la concurrence
   de l'inégalité depuis le 23 sept.** — deux cœurs par partie dès que
-  quelqu'un pondère — et refuse de lancer si elle ne tient pas ; il ne sait
-  encore rien des fils, étape de B6. Tableau dans `tools/README.md`.
+  quelqu'un pondère — et refuse de lancer si elle ne tient pas ; **les fils
+  depuis le 24 sept.** (`fils_candidat`, `fils_reference`), avec deux refus
+  de plus : un moteur qui ne DÉCLARE pas `Threads` — il l'ignorerait en
+  silence et jouerait monofil —, et, dans une partie, plus de fils
+  réfléchissant à la fois que de cœurs physiques.
+  Tableau dans `tools/README.md`.
   <br>**Mesuré le 23 sept. : ces quatre cœurs sont quatre processeurs
   LOGIQUES pour deux cœurs physiques** (SMT). À concurrence 3, trois moteurs
   s'en partagent deux : symétrique, donc chaque verdict reste valide en
