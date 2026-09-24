@@ -311,6 +311,18 @@ une mesure, pas une préférence.
   attendu dérivé de tête n'en compte qu'un.* **Quand l'instrument qui calcule
   l'attendu existe déjà, l'attendu se calcule** : la trace de l'écran simulait
   toute règle d'arrêt, et je ne le lui avais pas demandé.
+- **Une réallocation à temps constant ne se lit pas en plis moyens.** C24,
+  24 sept. 2026 : laisser finir l'itération entamée ne change pas la
+  profondeur moyenne — +0,05 pli à l'écran, −0,00 ± 0,09 en partie — et vaut
+  **+44,64 ± 6,24 Elo** à `8+0,08`. Deux lectures avaient été écrites avant le
+  match : par les plis moyens, +2 à +7 ; par l'**accord avec un oracle** — la
+  décision au bout d'une recherche six fois plus longue, convertie en temps
+  plat équivalent —, +39 à +68. **La seconde a tenu, la première a manqué
+  d'un facteur six.** *Les plis moyens mesurent COMBIEN on cherche ; une
+  réallocation change OÙ.* Les plis restent l'unité commune pour un gain de
+  vitesse ou de temps total ; pour une réallocation, l'étalon est l'accord à
+  temps plat, et l'écran d'allocation sait le calculer
+  (`tools/attic/c24-sonde-allocation.patch`).
 - **Une comparaison entre réglages qui CHANGENT le déroulement n'est pas
   appariée.** La même sonde a d'abord donné le gain de profondeur non monotone
   — −0,22 à +0,66 pli pour un budget × 3. Cause : plus de temps fait jouer
