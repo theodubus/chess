@@ -95,6 +95,10 @@ eval.rs 121
 #   d'un ply ne se teste pas sur une position où elle se propage — le témoin
 #   doit couper la propagation. Même famille que le mat détecté à deux
 #   endroits.
+#   Confirmé sur `65d0b03` (B6, run 35949682016) : 40, LES MÊMES — Lazy SMP
+#   n'ajoute aucun survivant (472 mutants, 357 attrapés, 22 inviables, 53
+#   expirés : ses mutants qui rendent un budget de nœuds inatteignable ou
+#   suppriment l'arrêt des auxiliaires font pendre un test, donc expirent).
 #
 # search.rs — 43, confirmé le 23 sept. 2026 au soir (run 35912951112, après
 #   C23 : 448 mutants, 340 attrapés, 19 inviables, 46 expirés).  Les MÊMES
