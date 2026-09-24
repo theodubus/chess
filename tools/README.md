@@ -2051,6 +2051,49 @@ Candidat `087edb8` contre son parent `d01183d` (`main`), `8+0,08`.
   60 à 105 Elo par pli, soit **+6 à +25 Elo**, confiance faible. Deux jobs
   lancés à 08 h 31 (section « Ce qui est EN VOL »).
 
+### C24 — laisser finir l'itération entamée : ÉCRIT le 24 sept. 2026, la mesure écrite AVANT de lancer
+
+Premier candidat du chantier « allocation inégale » (A19), sorti de son écran
+— section suivante, « L'allocation inégale — l'écran ». Candidat
+**`7274844`**, révoqué aussitôt par `40afb49`.
+
+**Ce qui change** : l'échéance dure passe du budget à **2,2 budgets**, la
+douce de 0,5 à **0,44** — un rapport de cinq au lieu de deux. Le budget ne
+change pas. Une itération entamée juste avant la douce finit presque
+toujours, au lieu d'être jetée une fois sur cinq. La dure reste bornée par la
+pendule ; `movetime` n'en change rien. Les échéances passent par une fonction
+pure, `deadlines_ms`, testée sur ses valeurs exactes. Banc inchangé : à
+profondeur fixe, aucune échéance ne joue.
+
+**Ce que l'écran en dit, à temps moyen égal** : le temps jeté tombe de
+18,8 % à 2,9 % du temps dépensé, et l'accord avec l'oracle vaut × 1,38 de
+temps à répartition égale, soit **+0,65 pli** — une lecture haute, la mesure
+par accord surestimant probablement (section de l'écran).
+
+Candidat `7274844` contre son parent `7fc5959`, `8+0,08`.
+
+1. **La sonde** — `sonde = oui`, **100 parties**. **Attendu, confiance
+   moyenne** : **+0,15 à +0,35 pli** en partie — les ~22 % de coups qui
+   s'arrêtaient sur la dure y gagnent une itération achevée, et la douce un
+   peu plus tôt en retire un peu ailleurs ; **temps de recherche par coup
+   inchangé**, × 0,95 à 1,05 — c'est l'égalité de temps que l'écran suppose ;
+   n/s inchangé. **Règle** : temps par coup hors de × 0,90 à 1,10 → l'écran
+   ne décrit pas ce que fait le moteur en partie, comprendre avant l'Elo ;
+   plis entièrement ≤ 0 → pas de match. Sinon, l'Elo.
+2. **L'Elo** — longueur fixe, graine « auto », **deux jobs de 3 000
+   parties**, mis en commun. **Attendu, confiance faible** : +0,15 à +0,35
+   pli × 60 à 105 Elo par pli, soit **+9 à +37 Elo** ; la lecture haute de
+   l'écran (+0,65 pli) donnerait +39 à +68. **Critère** :
+   - borne haute de l'intervalle mis en commun < 0 → régression : ne pas
+     fusionner, et chercher — le temps rendu aux itérations longues se paie
+     ailleurs, sur les coups que la douce plus précoce écourte ;
+   - borne basse > 0 → gain démontré : fusionner ;
+   - entre les deux → pas d'effet décelable : **fusionner**, au titre du
+     mécanisme mesuré — un temps jeté ramené de 18,8 à 2,9 % — et d'une règle
+     qui n'est pas plus complexe que la précédente.
+   - **Puissance** : ± 6,3 Elo sur ~5 760 parties ; une régression de 1 à 3
+     Elo passerait inaperçue, et c'est accepté *parce que c'est écrit*.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
