@@ -2095,6 +2095,119 @@ Candidat `7274844` contre son parent `7fc5959`, `8+0,08`.
    - **Puissance** : ± 6,3 Elo sur ~5 760 parties ; une régression de 1 à 3
      Elo passerait inaperçue, et c'est accepté *parce que c'est écrit*.
 
+### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
+
+Premier geste du chantier décidé par Théo (A19) : **mesurer le mécanisme
+avant d'écrire une ligne du moteur.** La question : où un surcroît de temps
+change-t-il la décision, et où un temps retiré ne coûte-t-il rien ?
+
+#### La sonde, et ce qui la rend fiable
+
+`tools/attic/c24-sonde-allocation.patch` — l'instrumentation, la sonde
+`alloc-probe` et son lecteur `tools/sonde-alloc/analyser.py`, dans la même
+rustine. **60 parties à `8+0,08`** depuis le livre des matchs, pendule qui
+décroît, **une table par camp** comme en match — `b2_probe` en partageait une
+entre les deux camps. Chaque coup est joué par la recherche normale. Avant
+elle, une recherche **prolongée jusqu'à six budgets** part d'une **copie** de
+la table, rétablie ensuite : la partie ne garde aucune trace de la recherche
+prolongée, sans quoi elle jouerait dans une table plus chaude qu'en match.
+
+- **La recherche prolongée refait la normale nœud pour nœud jusqu'à son
+  arrêt** — même position, même table, mêmes nœuds à chaque profondeur,
+  vérifié sur la trace. Toute règle d'arrêt se simule donc hors ligne sur sa
+  trace ; la règle actuelle, simulée, rend le coup effectivement joué dans
+  **98,5 %** des cas, le reste étant le bruit d'horloge.
+- **Instrumentation neutre** : banc à 114 026. **6 400 coups, zéro perte au
+  temps.** Conteneur, trois processus sur quatre cœurs, ~1 h.
+- **L'oracle** est la décision au bout des six budgets. **L'étalon** est la
+  courbe d'accord de la règle actuelle quand on multiplie le budget
+  uniformément : elle convertit un gain d'accord en temps équivalent, puis
+  en plis par l'étalon du 24 sept. (1,38 pli par doublement).
+
+#### Ce que la règle actuelle fait du temps
+
+La douce tombe à la moitié du budget, la dure au budget. Temps dépensé :
+**0,765 budget** en moyenne. Arrêts : **78 % par la douce, 22 % par la
+dure**. **18,7 % du temps dépensé est JETÉ** dans des itérations entamées
+avant la douce et interrompues par la dure — une perte sèche, que personne
+n'avait mesurée.
+
+| budget × | 0,5 | 0,71 | 1 | 1,41 | 2 | 2,83 |
+|---|---|---|---|---|---|---|
+| accord avec l'oracle | 76,2 % | 78,5 % | **80,8 %** | 83,9 % | 86,8 % | 90,3 % |
+| temps dépensé / budget | 0,400 | 0,558 | 0,763 | 1,061 | 1,478 | 2,077 |
+
+#### Par classe de position, au moment où la règle actuelle décide
+
+| classe | part | un budget × 2 change le coup | ≠ oracle |
+|---|---|---|---|
+| tous | 100 % | 9,3 % | 19,2 % |
+| coup stable depuis 7 itérations ou plus | 73,0 % | **6,5 %** | 14,5 % |
+| coup stable depuis 4 à 6 | 8,2 % | 11,0 % | 24,8 % |
+| coup stable depuis 2 à 3 | 8,8 % | 16,0 % | 31,8 % |
+| **coup qui vient de changer** | 9,9 % | **22,9 %** | 38,0 % |
+| effort à la racine 80 à 95 % | 21,2 % | **4,1 %** | 8,7 % |
+| effort à la racine sous 50 % | 27,4 % | 17,0 % | 31,2 % |
+| score en chute de 50 cp ou plus | 1,5 % | 15,5 % | 26,8 % |
+
+Un facteur **3,5** entre les classes sur ce que rapporte un double budget :
+le mécanisme existe. L'effort — la part des nœuds de la racine passée sous le
+meilleur coup — se confond avec la profondeur, faible aux premières
+itérations ; la stabilité porte le signal.
+
+#### Deux règles, à temps moyen égal
+
+**Règle plate qui laisse finir l'itération** — même douce ou presque, dure
+bien plus loin, budget ajusté pour que le temps moyen ne bouge pas :
+
+| dure / douce | douce | dure | temps jeté | équivaut à |
+|---|---|---|---|---|
+| 2 (actuelle) | 0,50 budget | 1,00 | 18,9 % | — |
+| 3 | 0,46 | 1,37 | 9,4 % | × 1,23, +0,41 pli |
+| 4 | 0,44 | 1,78 | 4,6 % | × 1,35, +0,59 pli |
+| **5 — C24** | **0,44** | **2,20** | **2,8 %** | **× 1,38, +0,65 pli** |
+
+Le gain plafonne entre 5 et 8 (vu sur 4 510 coups : +0,73 à 8) ; 5 borne
+mieux le pire cas. **Laisser finir l'itération est déjà une allocation
+inégale** : une itération dure longtemps quand la position est difficile —
+le coup change, la fenêtre d'aspiration échoue —, et c'est là qu'elle achète
+le plus.
+
+**Règle inégale** — poursuivre tant que la probabilité qu'une itération de
+plus change le coup, rapportée à son coût, dépasse un seuil ; la probabilité
+apprise sur une moitié des parties, la règle évaluée sur l'autre, dans les
+deux sens, intervalles par rééchantillonnage des parties :
+
+| table de probabilité | dure | A → B | B → A |
+|---|---|---|---|
+| stabilité seule | 2 budgets | +0,77 pli [+0,64 ; +0,89] | +0,69 [+0,56 ; +0,81] |
+| stabilité seule | 3 budgets | +1,00 [+0,79 ; +1,14] | +0,86 [+0,75 ; +0,95] |
+| stabilité × effort | 2 budgets | +0,70 [+0,56 ; +0,88] | +0,58 [+0,45 ; +0,73] |
+| stabilité × effort | 3 budgets | +0,91 [+0,67 ; +1,12] | +0,72 [+0,56 ; +0,86] |
+
+**La répartition par la stabilité n'ajoute que +0,05 à +0,35 pli à ce que C24
+prend déjà**, et la table plus riche fait moins bien que la seule stabilité.
+
+#### La réserve, et elle compte
+
+**L'accord avec un oracle n'est pas de l'Elo.** Un coup instable hésite
+souvent entre deux coups presque équivalents : le « corriger » vaut peu.
+<span><strong>Inférence, confiance moyenne</strong> : la conversion surestime
+toutes les règles, et d'autant plus qu'une règle cible les coups instables —
+donc la règle inégale plus que C24.</span> Et les parties rejouées sont
+celles de la règle actuelle : une autre règle jouerait d'autres parties. Ce
+que l'écran établit sans réserve : **le temps jeté** — 18,7 % — et **l'écart
+entre les classes**.
+
+#### Ce qui en sort
+
+1. **C24 — laisser finir l'itération** : écrit, en mesure (section C24). Il
+   porte l'essentiel, pour deux constantes.
+2. **C25 — la répartition par la stabilité**, par-dessus C24 : **après le
+   verdict de C24**. Son supplément à l'écran, +0,05 à +0,35 pli, est la
+   lecture que la réserve frappe le plus ; il se décidera sur ce que C24 aura
+   rendu en Elo pour ses +0,65 pli d'écran.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
@@ -2126,7 +2239,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
-| **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée** ; la suivante, entamée pendant que l'Elo d'A18 tourne. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
+| **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : écrit, en mesure** (section C24). **C25 — la répartition par la stabilité** : après le verdict de C24, décidé sur ce que C24 aura rendu en Elo. *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | **génération par étapes** — **décidée n° 3** (Théo, 24 sept.) | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | <s>non entamée ; la suivante après B6.</s> **ÉCRITE le 24 sept.** — candidat `087edb8`, révoqué le temps de sa mesure. Hors partie : temps −10,7 à −11,3 %, arbre inchangé. <s>Prochaine action : la sonde, puis deux jobs de 3 000 parties</s> **Sonde faite : n/s × 1,09, +0,17 ± 0,07 pli. L'Elo en vol, relève vers 14 h 25**, critère écrit avant — section « A18 ». **Pas** une optimisation pure : ex æquo et historique frais déplacent l'arbre |
 | **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **FAIT le 24 sept.** : un doublement vaut **+107,74 ± 8,19 Elo** et **+1,38 ± 0,28 pli**, soit **60 à 105 Elo par pli** à `8+0,08` — voir son verdict. Les plis de chaque ligne se convertissent désormais en Elo, en intervalle ; l'incertitude de l'étalon vient presque toute des plis |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
