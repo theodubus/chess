@@ -713,7 +713,7 @@ dernière relève est faite.
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
 | C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | plafond vers 01 h 50 le 24 — ~2 880 parties chacun | fusion sauf régression — correctif de règle, même critère que C22 |
 | **vol de CPU du ponder sur runner** — deux sondes | **35933841290** (`ponder = candidat`), **35933844087** (témoin) | `2f3bf1a` des deux côtés, `8+0,08`, 60 parties chacune, une à la fois | cutechess, sonde | **RELEVÉ** — finies à 23 h 53 et 23 h 55 | **r = 0,948 ≥ 0,93 : le verdict du ponder tient.** Et les runners n'ont que **deux cœurs physiques** (SMT) — voir son verdict |
-| **calibrer l'Elo par pli** — deux matchs et une sonde | 35933846266, 35933847908, 35933850590 — les rôles se liront dans les résumés | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties (fastchess, graine « auto ») et une sonde de 100 parties | fastchess ; cutechess pour la sonde | sonde ~00 h 40 ; matchs ~05 h 20, au plafond | Elo et plis du doublement, et leur rapport **en intervalle** ; attendu 69 à 141 Elo, écrit avant |
+| **calibrer l'Elo par pli** — deux matchs et une sonde | matchs d'Elo : **35933846266, 35933847908** ; sonde de plis : **35933850590**, RELEVÉE à 00 h 27 — **+1,38 ± 0,28 pli** | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties (fastchess, graine « auto ») et une sonde de 100 parties | fastchess ; cutechess pour la sonde | sonde ~00 h 40 ; matchs ~05 h 20, au plafond | Elo et plis du doublement, et leur rapport **en intervalle** ; attendu 69 à 141 Elo, écrit avant |
 | balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 20 h 44, verdict vert | `tt.rs` **6**, exactement la prédiction (les quatre `\|` de `pack_data` et les deux de `pack_move`) → plafond **baissé de 8 à 6**. `search.rs` **43** : les mêmes survivants un pour un, et aucun dans le code de C23 — qui ne porte aucun opérateur mutable, donc le balayage ne pouvait rien en dire ; sa couverture reste celle mesurée à la main (quatre défauts injectés, quatre attrapés). Les autres au plafond, aucune issue |
 | balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 19 h 44 | `tt.rs` **8** contre 2, tous équivalents : deux décalages nuls retirés comme code mort, plafond inscrit à 8, le chiffre mesuré (PR #56). `search.rs` **43** contre 45 : les trois survivants de `ponder_move` tués par la PR #50, 47 expirés comme au balayage précédent — plafond resserré à 43. Les autres au plafond. Issue #57 fermée |
 
@@ -1566,6 +1566,24 @@ cadence cible.
 
 Elo par pli = Elo du doublement / plis du doublement, **avec l'intervalle des
 deux**, jamais le point.
+
+#### Les plis — rendus à 00 h 27 le 24 sept. : +1,38 ± 0,28 pli pour un doublement, en partie, sur runner
+
+| [run 35933850590](https://github.com/theodubus/chess/actions/runs/35933850590) — sonde, 100 parties, graine 1574112222 | candidat `16+0,16` | référence `8+0,08` |
+|---|---|---|
+| profondeur moyenne des coups joués | 15,59 | 14,16 |
+| temps de recherche par coup | 420,4 ms | 210,1 ms — **× 2,00** |
+| écart apparié par partie | **+1,38 ± 0,28 pli** (Student, 99 degrés de liberté) | |
+
+**La pendule doublée se traduit exactement en temps doublé par coup**, et
+**le doublement rend 1,38 pli EN PARTIE** — les 1,36 mesurés le 22 sept. à
+positions fixes, en conteneur, tombent au milieu de l'intervalle. La
+conversion temps → plis du projet tient donc sur les deux machines et dans le
+régime réel. Zéro anomalie ; topologie : deux cœurs physiques, comme partout.
+
+L'Elo de ce job — +127 ± 62 sur cent parties — **n'est pas la mesure** : il
+attend les deux matchs de 1 900 parties. Avec ces plis, l'attendu écrit
+ci-dessous devient 1,38 × 51 à 104 = **70 à 144 Elo**, à peine déplacé.
 
 **L'attendu — écrit AVANT de lancer.** <span>Inférence, confiance moyenne : si
 les deux points existants disent vrai, leur intersection (51 à 104 Elo par
