@@ -9,20 +9,24 @@ import type { GameController } from "./GameController";
 import { formatTime } from "./GameClock";
 import Board from "./Board";
 import EvaluationBar from "./EvaluationBar";
+import CapturedPieces from "./CapturedPieces";
+import { capturedMaterial, type Captures } from "./material";
 import GameHistory from "./GameHistory";
 import Dialog from "./Dialog";
 import { downloadPgn } from "./pgn";
-import { scoreLabel, type Side } from "./engine/analysis";
+import { type Side } from "./engine/analysis";
 import type { Promotion } from "./game";
 
 function Player({
   controller,
   color,
   showDepth,
+  captures,
 }: {
   controller: GameController;
   color: Side;
   showDepth: boolean;
+  captures: Captures;
 }) {
   const [, render] = useState(0);
   useEffect(() => {
@@ -59,6 +63,7 @@ function Player({
             ? ` · Profondeur ${controller.snapshot.analysis.depth}`
             : ""}
         </small>
+        <CapturedPieces captures={captures} side={color} />
       </div>
       <div
         className={`clock ${running ? "running" : ""} ${controller.clock.remaining[color] < 20000 ? "low-time" : ""}`}
@@ -101,6 +106,7 @@ export default function GameView({
   const selected =
     cursor === null ? moves.length : Math.min(cursor, moves.length);
   const browsing = selected < moves.length;
+  const captures = capturedMaterial(moves.slice(0, selected));
   const last = selected > 0 ? moves[selected - 1] : undefined;
   const board = browsing
     ? new Chess(last?.after ?? moves[0].before)
@@ -139,6 +145,7 @@ export default function GameView({
         </div>
         <Player
           controller={controller}
+          captures={captures}
           showDepth={showDepth && !browsing}
           color={orientation === "white" ? "b" : "w"}
         />
@@ -204,6 +211,7 @@ export default function GameView({
         </div>
         <Player
           controller={controller}
+          captures={captures}
           showDepth={showDepth && !browsing}
           color={orientation === "white" ? "w" : "b"}
         />
@@ -263,11 +271,6 @@ export default function GameView({
             )}
           </div>
         </div>
-        {evaluation && score && (
-          <p className="live-score">
-            Dernière évaluation · {scoreLabel(score)}
-          </p>
-        )}
         {controller.snapshot?.state === "error" && !controller.finished && (
           <div className="connection-error">
             <p>{controller.snapshot.error}</p>

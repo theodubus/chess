@@ -1391,8 +1391,6 @@ dialog p {
 }
 
 .add-engine-form { display:grid; gap:12px; padding-top:14px; }
-.review-mode { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-.review-mode [aria-pressed=true] { background:#d8bd8030; border-color:#d8bd80; color:#ffe0a3; }
 .study-details { padding:20px; display:flex; flex-direction:column; gap:16px; align-self:start; }
 .study-details h2,.study-details p { margin:0; }
 .study-details p { line-height:1.6; }
@@ -1412,5 +1410,40 @@ dialog p {
  .study-details { padding:16px; }
  .study-moments button { font-size:11px; }
  .learning-workspace .board-column { width:100%; }
- .review-mode button { flex:1; font-size:11px; }
 }
+
+/* Un seul parcours : la variante garde les mêmes repères que la partie. */
+.study-details .review-details { padding:0; display:grid; gap:16px; }
+.study-details .pane-tabs { margin:-20px -20px 0; }
+.study-details .position-details summary { cursor:pointer; color:#acbcb1; font-size:13px; }
+.study-details .position-details dl { margin-top:14px; }
+.study-line [aria-pressed=true] { border-color:#d8bd80; background:#d8bd8020; }
+@media(max-width:650px) {
+ .study-details .pane-tabs { margin:-16px -16px 0; }
+}
+
+@media(max-width:650px) {
+ .study-details .review-details { max-height:none; overflow:visible; }
+}
+
+/* Le chiffre reste lisible même quand une couleur de la barre est presque vide. */
+.board-with-evaluation.show-evaluation { grid-template-columns: 44px minmax(0, 1fr); }
+.evaluation-score { position:absolute; left:1px; right:1px; padding:3px 0; border-radius:3px; text-align:center; font-size:10px; line-height:1.2; font-weight:750; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.evaluation-score.for-white { background:#eee3c9; color:#18201b; }
+.evaluation-score.for-black { background:#202420; color:#fff5de; }
+.captured-material { display:flex; align-items:center; flex-wrap:wrap; column-gap:7px; min-height:23px; line-height:1; font-size:12px; }
+.captured-icons { display:inline-flex; flex-wrap:wrap; align-items:center; gap:5px; }
+.captured-group { display:inline-flex; align-items:center; }
+.captured-group img { display:block; width:22px; height:22px; filter:drop-shadow(0 0 1px #d9dfd2); }
+.captured-group img + img { margin-left:-11px; }
+.capture-advantage { color:#ece2cd; font-variant-numeric:tabular-nums; }
+.capture-side { min-width:42px; color:#acbcb1; font-size:11px; }
+.learning-workspace .board-column > .captured-material { margin:3px 0; }
+.player-name .captured-material { margin-top:3px; }
+@media(max-width:650px) {
+ .board-with-evaluation.show-evaluation { grid-template-columns:38px minmax(0,1fr); }
+ .evaluation-score { font-size:9px; }
+}
+.player { height:auto; min-height:57px; }
+.player-name { flex:1; }
+.clock { flex-shrink:0; }

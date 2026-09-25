@@ -93,7 +93,9 @@ export async function connectDevelopmentEngine(
     );
     socket.addEventListener("error", () => {
       if (!opened)
-        fail("Pont local inaccessible. Lancez npm run engine:bridge.");
+        fail(
+          "Pont local inaccessible. Depuis la racine du dépôt, lancez npm --prefix ui run engine:bridge -- ../target/release/shallowred.",
+        );
       else if (!disposed) onFailure("Erreur de connexion au moteur.");
     });
     socket.addEventListener(

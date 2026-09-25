@@ -64,6 +64,29 @@ export class StudyTree {
   board(id: number) {
     return boardFromCommand(this.command(id));
   }
+  position(id: number, played: string | null = null): ReviewPosition {
+    const board = this.board(id);
+    const move = played
+      ? board
+          .moves({ verbose: true })
+          .find(
+            (move) => move.from + move.to + (move.promotion ?? "") === played,
+          )
+      : null;
+    return {
+      fen: board.fen(),
+      command: this.command(id),
+      turn: board.turn(),
+      label: this.nodes[id].label,
+      played,
+      playedSan: move ? frenchSan(move.san) : null,
+      terminal: board.isCheckmate()
+        ? { kind: "mate", value: 0, winner: board.turn() === "w" ? "b" : "w" }
+        : board.isDraw()
+          ? { kind: "cp", value: 0 }
+          : null,
+    };
+  }
   destinations(id: number) {
     const board = this.board(id),
       destinations = new Map<Key, Key[]>();
