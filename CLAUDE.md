@@ -761,6 +761,13 @@ une mesure, pas une préférence.
   `workflow_dispatch`** : les runners GitHub ne dorment pas, et le journal
   reste lisible après coup. C'est ainsi que le plafond d'`eval.rs` a fini par
   être mesuré.
+  <br>**Deuxième occurrence le 25 sept. 2026, alors que la règle était
+  écrite** : le crible de `search.rs` entier au candidat A20, lancé dans le
+  conteneur parce que le workflow ne savait balayer que la tête de la branche
+  — et le candidat y était révoqué. Mort à 57 mutants sur 570, au
+  redémarrage du conteneur qu'un rappel programmé réveillait. *Une règle que
+  l'outillage ne permet pas de suivre se contourne* : `Mutation` accepte
+  désormais `commit`.
 - **Un SPRT expiré n'est pas « rien appris » — c'est une estimation biaisée
   VERS ZÉRO, donc un minorant.** C21 a épuisé ses 350 minutes le 23 sept. 2026
   à **3262 parties sans frontière**, et le dernier bloc complet donnait
@@ -931,6 +938,12 @@ dispositif d'alerte.**
 `workflow_dispatch` accepte l'entrée `simuler_une_alerte` : elle force l'échec
 du verdict pour vérifier que l'issue part, sans attendre un vrai rouge. Une
 issue ouverte par ce chemin le dit en tête.
+
+**Et l'entrée `commit`, depuis le 25 sept. 2026** : elle balaie un SHA au lieu
+de la tête de la branche — le crible d'un candidat révoqué le temps de sa
+mesure, que la branche ne porte plus. Un tel balayage n'ouvre jamais d'issue :
+le cliquet garde `main`. Sans elle, le crible du fichier entier se lançait dans
+le conteneur, où il est mort à 57 mutants sur 570 au premier redémarrage.
 
 **Durée du balayage** : 35 puis 81 minutes sur deux exécutions réelles. Les
 runners partagés varient du simple au double — ne pas caler un rendez-vous
