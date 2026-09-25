@@ -102,6 +102,15 @@ une mesure, pas une préférence.
   tel quel et relire ailleurs annonce un mat faux. `score_to_tt` et
   `score_from_tt` s'en chargent — c'est la source de bug la plus classique
   d'une table de transposition.
+- **Une fenêtre ne promet jamais plus qu'un mat atteignable.** À l'entrée de
+  `negamax`, hors racine, `alpha` et `beta` se bornent à `-MATE + ply` et
+  `MATE - ply - 1` — l'élagage par distance au mat. Sans lui, une borne
+  héritée d'un ply moins profond remontait comme un SCORE dès qu'un retour de
+  borne la rendait — la quiescence rend `alpha` quand rien ne l'améliore — et
+  `score_to_tt` la poussait hors de ±MATE : **1,82 % des recherches en
+  partie** stockaient un score non représentable (C27, 25 sept. 2026).
+  `une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage` tombe sur l'ancien
+  code dans les deux profils.
 - **Pas de coupure par la table à la racine.** Il y faut un coup à jouer, pas
   seulement un score.
 - **Une itération d'approfondissement interrompue est jetée**, jamais acceptée :
@@ -919,7 +928,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `engine/tests/outillage_documente.rs` | exige que chaque dispositif soit **nommé avec son extension** dans une doc — scripts de `tools/`, workflows, hooks, et depuis le 22 sept. 2026 les **binaires de `tools/src/bin/`**, qui étaient son angle mort. Énumération par répertoire et par extension, jamais nom par nom |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
 | `tools/balayage-vivant.sh` | étape du job `Moteur`, à chaque push : échoue si le workflow `Mutation` est endormi ou n'a pas tourné depuis quinze jours. **Le cliquet ne peut pas signaler sa propre absence**, et GitHub endort les workflows planifiés d'un dépôt public après soixante jours sans activité. Remplace une routine hors dépôt qui, le seul mardi où le cliquet a cassé, était passée **avant** le balayage — cron lancé avec 3 h 48 de retard. Éprouvé par `tools/balayage-vivant-test.sh`, dans `verify.sh` et juste avant lui dans la CI : deux défauts injectés, deux attrapés |
-| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Remesuré le 21 sept. 2026 : 58 % d'écart entre deux runners sur le même binaire** (2 067 101 contre 3 268 241 n/s, profondeurs 11 et 12), contre les 25 % relevés le 16. Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
+| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Remesuré le 21 sept. 2026 : 58 % d'écart entre deux runners sur le même binaire** (2 067 101 contre 3 268 241 n/s, profondeurs 11 et 12), contre les 25 % relevés le 16. **83 % le 25 sept.** (4 019 409 contre 2 199 922 n/s, profondeurs 13 et 12, les deux jobs de C27). Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
 
 **Le cliquet de mutation.** `.github/mutation-baseline.txt` porte le nombre de
 survivants admis par fichier **et la raison écrite de chaque valeur non
