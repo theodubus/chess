@@ -630,6 +630,14 @@ une mesure, pas une préférence.
   **Les deux omissions se couvraient l'une l'autre.** La question à se poser
   n'est pas « ce garde-fou marche-t-il ? » mais « **quelle est sa source de
   vérité, et est-ce la bonne ?** » — ici le répertoire, jamais la liste.
+- **Une assertion qui ne s'est jamais déclenchée ne prouve rien si aucun
+  test n'atteint l'état qu'elle garde.** `pack_data` borne le score stocké
+  depuis le 22 sept. 2026, et `tt.rs` en tirait « le score tient sur seize
+  bits, et ce n'est pas un pari ». Aucun test ne jouait une partie jusqu'au
+  mat depuis une position gagnante ; ceux du générateur NNUE, qui le font,
+  l'ont déclenchée en quelques secondes — et le défaut touchait **1,82 % des
+  recherches** en partie (C27). *Le silence d'une assertion mesure ce que les
+  tests parcourent, pas l'absence du défaut.*
 - **Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué ne garde
   rien.** La première version de `engine/tests/bench_reference.rs` ne lisait
   que `CLAUDE.md`. Elle a été écrite alors que `README.md` portait déjà

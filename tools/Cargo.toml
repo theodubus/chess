@@ -49,6 +49,13 @@ path = "src/bin/datagen.rs"
 name = "tune"
 path = "src/bin/tune.rs"
 
+# Données d'entraînement NNUE (B4, A21), au format `viriformat` que lit
+# l'entraîneur bullet. Déclaré AVANT `nnue-probe` : la rustine de l'attic
+# `c24-sonde-allocation.patch` s'ancre juste après lui.
+[[bin]]
+name = "nnue-datagen"
+path = "src/bin/nnue_datagen.rs"
+
 [[bin]]
 name = "nnue-probe"
 path = "src/bin/nnue_probe.rs"
@@ -56,3 +63,7 @@ path = "src/bin/nnue_probe.rs"
 [dependencies]
 shallowred = { path = "../engine" }
 cozy-chess = "0.3.4"
+# La crate de RÉFÉRENCE du format que lit bullet (MIT) : le générateur NNUE
+# écrit ses parties par elle, jamais par une réimplémentation. Version épinglée
+# — c'est celle qu'emploie bullet au commit lu (`10e7e82`).
+viriformat = "=2.0.1"
