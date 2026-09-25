@@ -1,0 +1,345 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 750e378..ef024a8 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -34,6 +34,19 @@ use crate::position::{Position, repetitions};
+ use crate::see;
+ use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
+ 
++// EXPÉRIENCE A20 — jamais fusionnée telle quelle.
++const A20_PT: usize = 12 * 64;
++fn a20_pt(color: Color, piece: Piece, to: Square) -> usize {
++    color as usize * 6 * 64 + piece as usize * 64 + to as usize
++}
++fn a20_pt_of(board: &Board, mv: Move) -> usize {
++    a20_pt(
++        board.side_to_move(),
++        board.piece_on(mv.from).unwrap_or(Piece::Pawn),
++        mv.to,
++    )
++}
++
+ /// Profondeur maximale de la recherche principale.
+ pub const MAX_DEPTH: u32 = 64;
+ 
+@@ -379,6 +392,10 @@ pub struct Search {
+     killers: Vec<[u16; 2]>,
+     /// Table butterfly indexée par case de départ puis d'arrivée.
+     history: Vec<i32>,
++    a20: u8,
++    a20_prev: Vec<Option<usize>>,
++    a20_cm: Vec<u16>,
++    a20_ch: Vec<i32>,
+     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
+     lmr: Vec<i32>,
+     /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
+@@ -442,6 +459,17 @@ impl Search {
+             is_helper: false,
+             killers: vec![[0; 2]; MAX_PLY],
+             history: vec![0; 64 * 64],
++            a20: match std::env::var("A20").as_deref() {
++                Ok("cm") => 1,
++                Ok("ch") => 2,
++                Ok("chk") => 3,
++                Ok("hk") => 4,
++                Ok("malus") => 5,
++                _ => 0,
++            },
++            a20_prev: vec![None; MAX_PLY + 2],
++            a20_cm: vec![0; A20_PT],
++            a20_ch: vec![0; A20_PT * A20_PT],
+             lmr: build_lmr_table(),
+             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
+             params: eval::Params::DEFAULT,
+@@ -494,6 +522,8 @@ impl Search {
+         self.tt.clear();
+         self.killers.fill([0; 2]);
+         self.history.fill(0);
++        self.a20_cm.fill(0);
++        self.a20_ch.fill(0);
+     }
+ 
+     /// Taux de remplissage de la table, en pour mille.
+@@ -577,7 +607,14 @@ impl Search {
+         // Les killers valent pour un ply donné d'une recherche donnée : les
+         // garder d'un coup à l'autre proposerait des coups sans rapport.
+         self.killers.fill([0; 2]);
+-        self.history.fill(0);
++        if self.a20 != 4 {
++            self.history.fill(0);
++        }
++        if self.a20 == 2 {
++            self.a20_ch.fill(0);
++        }
++        self.a20_cm.fill(0);
++        self.a20_prev.fill(None);
+         self.node_limit = limits.nodes;
+         self.set_deadlines(limits, position.board().side_to_move());
+ 
+@@ -881,6 +918,50 @@ impl Search {
+             || eval::is_insufficient_material(board)
+     }
+ 
++    /// EXPÉRIENCE A20 : ce que chaque variante apprend d'un coupeur tranquille.
++    fn a20_learn(
++        &mut self,
++        board: &Board,
++        mv: Move,
++        depth: i32,
++        p1: Option<usize>,
++        p2: Option<usize>,
++        tried: &[Move],
++    ) {
++        let bonus = depth * depth;
++        match self.a20 {
++            1 => {
++                if let Some(p) = p1 {
++                    self.a20_cm[p] = pack_move(mv);
++                }
++            }
++            2 | 3 => {
++                let pt = a20_pt_of(board, mv);
++                let mut overflow = false;
++                for p in [p1, p2].into_iter().flatten() {
++                    let e = &mut self.a20_ch[p * A20_PT + pt];
++                    *e += bonus;
++                    overflow |= *e > HISTORY_MAX;
++                }
++                if overflow {
++                    for e in &mut self.a20_ch {
++                        *e /= 2;
++                    }
++                }
++            }
++            5 => {
++                // Le malus suit la convention du bonus : − d², borné par
++                // HISTORY_MAX en négatif comme le bonus l'est en positif.
++                for &q in tried {
++                    if let Some(e) = self.history.get_mut(q.from as usize * 64 + q.to as usize) {
++                        *e = (*e - bonus).max(-HISTORY_MAX);
++                    }
++                }
++            }
++            _ => {}
++        }
++    }
++
+     /// Retient un coup tranquille qui vient de provoquer une coupure bêta.
+     ///
+     /// Les captures en sont exclues : elles sont déjà ordonnées par MVV-LVA, et
+@@ -965,6 +1046,17 @@ impl Search {
+         tactical: bool,
+         skip: &[Option<Move>],
+         buffer: &mut [(Move, i32)],
++    ) -> usize {
++        self.stage_moves_ctx(board, tactical, skip, buffer, [None, None])
++    }
++
++    fn stage_moves_ctx(
++        &self,
++        board: &Board,
++        tactical: bool,
++        skip: &[Option<Move>],
++        buffer: &mut [(Move, i32)],
++        ctx: [Option<usize>; 2],
+     ) -> usize {
+         let side = board.side_to_move();
+         let enemies = board.colors(!side);
+@@ -1001,7 +1093,13 @@ impl Search {
+                     let score = if tactical {
+                         tactical_score(board, mv)
+                     } else {
++                        let pt = a20_pt(side, piece_moves.piece, mv.to);
+                         self.history_score(mv)
++                            + ctx
++                                .iter()
++                                .flatten()
++                                .map(|p| self.a20_ch[p * A20_PT + pt])
++                                .sum::<i32>()
+                     };
+                     buffer[count] = (mv, score);
+                     count += 1;
+@@ -1180,6 +1278,9 @@ impl Search {
+         {
+             self.null_marks.push(self.path.len());
+             self.path.push(passed.hash());
++            if let Some(slot) = self.a20_prev.get_mut(ply + 1) {
++                *slot = None;
++            }
+             let score = -self.negamax(
+                 &passed,
+                 depth - 1 - NULL_MOVE_REDUCTION,
+@@ -1213,6 +1314,18 @@ impl Search {
+         // nœuds ne cherchaient aucun coup tranquille.
+         let killers = self.killers.get(ply).copied().unwrap_or([0; 2]);
+         let mut picker = MovePicker::new(buffer, tt_move, killers);
++        let a20_p1 = self.a20_prev.get(ply).copied().flatten();
++        let a20_p2 = ply
++            .checked_sub(1)
++            .and_then(|p| self.a20_prev.get(p).copied().flatten());
++        if self.a20 == 1 {
++            picker.cm = a20_p1.and_then(|p| unpack_move(self.a20_cm[p]));
++        }
++        if self.a20 == 2 || self.a20 == 3 {
++            picker.ctx = [a20_p1, a20_p2];
++        }
++        let mut a20_tried = [NO_MOVE; 64];
++        let mut a20_ntried = 0usize;
+ 
+         let original_alpha = alpha;
+         let mut best = -INFINITY;
+@@ -1241,6 +1354,9 @@ impl Search {
+                 quiets_seen += 1;
+             }
+ 
++            if let Some(slot) = self.a20_prev.get_mut(ply + 1) {
++                *slot = Some(a20_pt_of(board, mv));
++            }
+             let mut child = board.clone();
+             child.play_unchecked(mv);
+ 
+@@ -1303,11 +1419,16 @@ impl Search {
+                         // souvent d'autres : on s'en souvient.
+                         if quiet {
+                             self.remember_quiet(mv, ply, depth);
++                            self.a20_learn(board, mv, depth, a20_p1, a20_p2, &a20_tried[..a20_ntried]);
+                         }
+                         break;
+                     }
+                 }
+             }
++            if quiet && a20_ntried < a20_tried.len() {
++                a20_tried[a20_ntried] = mv;
++                a20_ntried += 1;
++            }
+         }
+ 
+         // Aucun coup rendu : il n'y en a aucun de légal. L'élagage par compte
+@@ -1592,6 +1713,7 @@ enum Stage {
+     TtMove,
+     Tactical,
+     Killers,
++    Counter,
+     Quiet,
+     Done,
+ }
+@@ -1619,6 +1741,8 @@ struct MovePicker<'b> {
+     stage: Stage,
+     next: usize,
+     len: usize,
++    cm: Option<Move>,
++    ctx: [Option<usize>; 2],
+ }
+ 
+ impl<'b> MovePicker<'b> {
+@@ -1632,6 +1756,8 @@ impl<'b> MovePicker<'b> {
+             stage: Stage::TtMove,
+             next: 0,
+             len: 0,
++            cm: None,
++            ctx: [None, None],
+         }
+     }
+ 
+@@ -1676,6 +1802,21 @@ impl<'b> MovePicker<'b> {
+                             self.len += 1;
+                         }
+                     }
++                    self.stage = Stage::Counter;
++                }
++                Stage::Counter => {
++                    self.len = 0;
++                    if let Some(c) = self.cm
++                        && Some(c) != self.tt_move
++                        && !self.killers.contains(&Some(c))
++                        && captured_piece(board, c).is_none()
++                        && c.promotion.is_none()
++                        && board.is_legal(c)
++                        && let Some(slot) = self.buffer.get_mut(0)
++                    {
++                        *slot = (c, 0);
++                        self.len = 1;
++                    }
+                     self.stage = Stage::Quiet;
+                 }
+                 Stage::Quiet => {
+@@ -1683,8 +1824,8 @@ impl<'b> MovePicker<'b> {
+                     // killer non rendu est illégal, tactique ou déjà rendu
+                     // comme coup de la table — dans les trois cas, l'étage
+                     // tranquille ne le produirait pas une seconde fois.
+-                    let skip = [self.tt_move, self.killers[0], self.killers[1]];
+-                    self.len = search.stage_moves(board, false, &skip, self.buffer);
++                    let skip = [self.tt_move, self.killers[0], self.killers[1], self.cm];
++                    self.len = search.stage_moves_ctx(board, false, &skip, self.buffer, self.ctx);
+                     self.stage = Stage::Done;
+                 }
+                 Stage::Done => return None,
+diff --git a/tools/sonde-a20/rejouer-profondeur.py b/tools/sonde-a20/rejouer-profondeur.py
+new file mode 100644
+index 0000000..a9b3f6f
+--- /dev/null
++++ b/tools/sonde-a20/rejouer-profondeur.py
+@@ -0,0 +1,63 @@
++#!/usr/bin/env python3
++"""Rejoue les flux de commandes d'un journal cutechess `-debug all` dans un
++binaire, chaque `go` remplacé par `go depth D` : mêmes positions, dans l'ordre
++des parties, table et historiques conservés d'un coup à l'autre comme en
++partie. Rend le total des nœuds par flux — déterministe à un fil, donc
++comparable au nœud près entre deux binaires ou deux variantes.
++
++    A20=cm python3 rejouer-profondeur.py <journal> <binaire> <D> <flux,...>
++"""
++import re
++import subprocess
++import sys
++from collections import defaultdict
++
++CMD = re.compile(r'^\d+ >(\w+)\((\d+)\): (.*)$')
++flux = defaultdict(list)
++for brut in open(sys.argv[1], errors='replace'):
++    m = CMD.match(brut.rstrip('\n'))
++    if m:
++        flux[(m[1], m[2])].append(m[3])
++cles = sorted(flux, key=lambda k: (k[0], int(k[1])))
++profondeur = sys.argv[3]
++choisis = [cles[int(i)] for i in sys.argv[4].split(',')] if len(sys.argv) > 4 else cles
++
++def attendre(p, fin):
++    nodes = None
++    while True:
++        ligne = p.stdout.readline()
++        if not ligne:
++            sys.exit("le moteur s'est tu")
++        if ligne.startswith('info depth') and ' nodes ' in ligne:
++            nodes = int(ligne.split(' nodes ')[1].split()[0])
++        if ligne.startswith(fin):
++            return nodes
++
++total, recherches = 0, 0
++for cle in choisis:
++    p = subprocess.Popen([sys.argv[2]], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
++                         text=True, bufsize=1)
++    def envoyer(s):
++        p.stdin.write(s + '\n')
++        p.stdin.flush()
++    envoyer('uci')
++    attendre(p, 'uciok')
++    somme, n = 0, 0
++    for cmd in flux[cle]:
++        if cmd in ('uci', 'quit') or cmd.startswith('debug'):
++            continue
++        if cmd.startswith('go'):
++            envoyer(f'go depth {profondeur}')
++            somme += attendre(p, 'bestmove') or 0
++            n += 1
++        elif cmd == 'isready':
++            envoyer('isready')
++            attendre(p, 'readyok')
++        else:
++            envoyer(cmd)
++    envoyer('quit')
++    p.wait(timeout=30)
++    print(f"{cle[0]}({cle[1]}) {n} {somme}", flush=True)
++    total += somme
++    recherches += n
++print(f"TOTAL {recherches} {total}")

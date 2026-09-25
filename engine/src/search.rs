@@ -37,6 +37,14 @@ use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
 /// Profondeur maximale de la recherche principale.
 pub const MAX_DEPTH: u32 = 64;
 
+/// Nombre de « pièce colorée × case d'arrivée » : ce qui identifie un coup
+/// dans l'historique de continuation, douze pièces sur soixante-quatre cases.
+const PIECE_TO: usize = 12 * 64;
+
+/// Les deux coups qui précèdent un nœud, pour l'historique de continuation :
+/// aucun, à la racine ou après un coup nul.
+const NO_CONTEXT: [Option<usize>; 2] = [None, None];
+
 /// Plafond de profondeur, quiescence comprise. Borne les tableaux indexés par
 /// ply et empêche une quiescence pathologique de déborder la pile.
 pub const MAX_PLY: usize = 128;
@@ -379,6 +387,24 @@ pub struct Search {
     killers: Vec<[u16; 2]>,
     /// Table butterfly indexée par case de départ puis d'arrivée.
     history: Vec<i32>,
+    /// Historique de continuation (A20) : la note d'un coup tranquille
+    /// SACHANT un coup qui le précède — celui de l'adversaire, et le nôtre
+    /// avant lui —, indexée par la pièce et la case d'arrivée du coup
+    /// précédent, puis par celles du coup noté. `PIECE_TO²` entrées, 2,25 Mio.
+    ///
+    /// **Conservé d'un coup à l'autre, vidé par `ucinewgame`**, à l'inverse
+    /// du papillon, et c'est mesuré : rejouées à la profondeur 10 sur les
+    /// positions de 120 parties, table conservée, la continuation vidée à
+    /// chaque coup grossit l'arbre de 1,2 % ; conservée, elle le réduit de
+    /// 3,1 %. Un papillon conservé, lui, le grossit de 4,4 %. Une table de
+    /// 590 000 entrées n'apprend rien en un coup ; une de 4 096 apprend en un
+    /// coup, et ce qu'elle garde du précédent l'égare.
+    continuation: Vec<i32>,
+    /// Par ply : la pièce et la case d'arrivée du coup qui y a mené, `None`
+    /// après un coup nul. Chaque case est écrite par le nœud parent avant
+    /// d'être lue par l'enfant, et la racine n'est jamais écrite : aucune
+    /// remise à zéro n'est nécessaire entre deux recherches.
+    moved: Vec<Option<usize>>,
     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
     lmr: Vec<i32>,
     /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
@@ -443,6 +469,8 @@ impl Search {
             killers: vec![[0; 2]; MAX_PLY],
             history: vec![0; 64 * 64],
             lmr: build_lmr_table(),
+            continuation: vec![0; PIECE_TO * PIECE_TO],
+            moved: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
             #[cfg(test)]
@@ -494,6 +522,10 @@ impl Search {
         self.tt.clear();
         self.killers.fill([0; 2]);
         self.history.fill(0);
+        self.continuation.fill(0);
+        for helper in &mut self.helpers {
+            helper.continuation.fill(0);
+        }
     }
 
     /// Taux de remplissage de la table, en pour mille.
@@ -881,11 +913,38 @@ impl Search {
             || eval::is_insufficient_material(board)
     }
 
-    /// Retient un coup tranquille qui vient de provoquer une coupure bêta.
+    /// Retient un coup tranquille qui vient de provoquer une coupure bêta,
+    /// joué depuis `board`, les deux coups qui précèdent le nœud étant
+    /// `context`.
     ///
     /// Les captures en sont exclues : elles sont déjà ordonnées par MVV-LVA, et
     /// les mêler à l'historique noierait le signal des coups tranquilles.
-    fn remember_quiet(&mut self, mv: Move, ply: usize, depth: i32) {
+    fn remember_quiet(
+        &mut self,
+        board: &Board,
+        mv: Move,
+        ply: usize,
+        depth: i32,
+        context: [Option<usize>; 2],
+    ) {
+        let bonus = depth * depth;
+        let target = piece_to(board, mv);
+        let mut overflow = false;
+        for previous in context.into_iter().flatten() {
+            if let Some(value) = self.continuation.get_mut(previous * PIECE_TO + target) {
+                *value += bonus;
+                overflow |= *value > HISTORY_MAX;
+            }
+        }
+        if overflow {
+            // Même règle que le papillon : diviser toute la table préserve
+            // l'ordre relatif. Rare — une entrée de continuation ne voit que
+            // les coupures de son contexte.
+            for entry in &mut self.continuation {
+                *entry /= 2;
+            }
+        }
+
         let packed = pack_move(mv);
         if let Some(slot) = self.killers.get_mut(ply)
             && slot[0] != packed
@@ -895,7 +954,7 @@ impl Search {
         }
         let index = mv.from as usize * 64 + mv.to as usize;
         if let Some(value) = self.history.get_mut(index) {
-            *value += depth * depth;
+            *value += bonus;
             if *value > HISTORY_MAX {
                 // Diviser toute la table préserve l'ordre relatif tout en
                 // laissant de la place aux coupures à venir.
@@ -940,10 +999,28 @@ impl Search {
             .unwrap_or(0)
     }
 
+    /// La note d'un coup tranquille dans l'étage des tranquilles : le
+    /// papillon, plus la continuation sachant chacun des deux coups qui
+    /// précèdent. `target` est l'index [`piece_to`] du coup.
+    fn quiet_score(&self, mv: Move, target: usize, context: [Option<usize>; 2]) -> i32 {
+        self.history_score(mv)
+            + context
+                .into_iter()
+                .flatten()
+                .map(|previous| {
+                    self.continuation
+                        .get(previous * PIECE_TO + target)
+                        .copied()
+                        .unwrap_or(0)
+                })
+                .sum::<i32>()
+    }
+
     /// Écrit dans `buffer` les coups d'UN étage de la génération par étapes,
     /// notés et triés, et rend leur nombre : les coups **tactiques** —
     /// captures, prises en passant, promotions — ou les **tranquilles**. Les
-    /// coups de `skip`, déjà rendus par un étage précédent, sont omis.
+    /// coups de `skip`, déjà rendus par un étage précédent, sont omis ;
+    /// `context` ne sert qu'aux tranquilles, voir [`Search::quiet_score`].
     ///
     /// Le partage est exact : un coup est tactique si et seulement s'il change
     /// le matériel, c'est-à-dire exactement le contraire de `quiet` dans
@@ -965,6 +1042,7 @@ impl Search {
         tactical: bool,
         skip: &[Option<Move>],
         buffer: &mut [(Move, i32)],
+        context: [Option<usize>; 2],
     ) -> usize {
         let side = board.side_to_move();
         let enemies = board.colors(!side);
@@ -1001,7 +1079,8 @@ impl Search {
                     let score = if tactical {
                         tactical_score(board, mv)
                     } else {
-                        self.history_score(mv)
+                        let target = piece_to_index(side, piece_moves.piece, mv.to);
+                        self.quiet_score(mv, target, context)
                     };
                     buffer[count] = (mv, score);
                     count += 1;
@@ -1180,6 +1259,9 @@ impl Search {
         {
             self.null_marks.push(self.path.len());
             self.path.push(passed.hash());
+            if let Some(slot) = self.moved.get_mut(ply + 1) {
+                *slot = None;
+            }
             let score = -self.negamax(
                 &passed,
                 depth - 1 - NULL_MOVE_REDUCTION,
@@ -1212,7 +1294,15 @@ impl Search {
         // 85 % des coups générés ici n'étaient jamais cherchés, et 49 % des
         // nœuds ne cherchaient aucun coup tranquille.
         let killers = self.killers.get(ply).copied().unwrap_or([0; 2]);
-        let mut picker = MovePicker::new(buffer, tt_move, killers);
+        // Les deux coups qui précèdent ce nœud : celui de l'adversaire, et le
+        // nôtre avant lui. La continuation note chaque tranquille sachant
+        // l'un et l'autre.
+        let context = [
+            self.moved.get(ply).copied().flatten(),
+            ply.checked_sub(1)
+                .and_then(|p| self.moved.get(p).copied().flatten()),
+        ];
+        let mut picker = MovePicker::new(buffer, tt_move, killers, context);
 
         let original_alpha = alpha;
         let mut best = -INFINITY;
@@ -1241,6 +1331,9 @@ impl Search {
                 quiets_seen += 1;
             }
 
+            if let Some(slot) = self.moved.get_mut(ply + 1) {
+                *slot = Some(piece_to(board, mv));
+            }
             let mut child = board.clone();
             child.play_unchecked(mv);
 
@@ -1302,7 +1395,7 @@ impl Search {
                         // Un coup tranquille qui réfute une variante en réfute
                         // souvent d'autres : on s'en souvient.
                         if quiet {
-                            self.remember_quiet(mv, ply, depth);
+                            self.remember_quiet(board, mv, ply, depth, context);
                         }
                         break;
                     }
@@ -1380,7 +1473,7 @@ impl Search {
         let count = if in_check {
             self.ordered_moves(board, ply, buffer)
         } else {
-            self.stage_moves(board, true, &[], buffer)
+            self.stage_moves(board, true, &[], buffer, NO_CONTEXT)
         };
         if count == 0 {
             return if in_check {
@@ -1619,12 +1712,19 @@ struct MovePicker<'b> {
     stage: Stage,
     next: usize,
     len: usize,
+    /// Les deux coups qui précèdent le nœud, pour noter les tranquilles.
+    context: [Option<usize>; 2],
 }
 
 impl<'b> MovePicker<'b> {
     /// `tt_move` doit être légal : `negamax` le vérifie déjà, à cause des
     /// collisions de clés.
-    fn new(buffer: &'b mut [(Move, i32)], tt_move: Option<Move>, killers: [u16; 2]) -> Self {
+    fn new(
+        buffer: &'b mut [(Move, i32)],
+        tt_move: Option<Move>,
+        killers: [u16; 2],
+        context: [Option<usize>; 2],
+    ) -> Self {
         Self {
             buffer,
             tt_move,
@@ -1632,6 +1732,7 @@ impl<'b> MovePicker<'b> {
             stage: Stage::TtMove,
             next: 0,
             len: 0,
+            context,
         }
     }
 
@@ -1653,7 +1754,8 @@ impl<'b> MovePicker<'b> {
                     }
                 }
                 Stage::Tactical => {
-                    self.len = search.stage_moves(board, true, &[self.tt_move], self.buffer);
+                    self.len =
+                        search.stage_moves(board, true, &[self.tt_move], self.buffer, NO_CONTEXT);
                     self.stage = Stage::Killers;
                 }
                 Stage::Killers => {
@@ -1684,13 +1786,33 @@ impl<'b> MovePicker<'b> {
                     // comme coup de la table — dans les trois cas, l'étage
                     // tranquille ne le produirait pas une seconde fois.
                     let skip = [self.tt_move, self.killers[0], self.killers[1]];
-                    self.len = search.stage_moves(board, false, &skip, self.buffer);
+                    self.len = search.stage_moves(board, false, &skip, self.buffer, self.context);
                     self.stage = Stage::Done;
                 }
                 Stage::Done => return None,
             }
         }
     }
+}
+
+/// L'index d'un coup dans l'historique de continuation : la pièce colorée
+/// qui bouge, puis sa case d'arrivée.
+fn piece_to_index(side: Color, piece: Piece, to: Square) -> usize {
+    (side as usize * 6 + piece as usize) * 64 + to as usize
+}
+
+/// [`piece_to_index`] d'un coup joué depuis `board`.
+///
+/// Le roque, codé roi-prend-tour par `cozy-chess`, arrive sur la case de sa
+/// tour : l'index reste le même d'un roque identique à l'autre, et c'est tout
+/// ce qu'une table demande. La case de départ d'un coup légal porte toujours
+/// une pièce ; le pion n'est qu'un repli de totalité.
+fn piece_to(board: &Board, mv: Move) -> usize {
+    piece_to_index(
+        board.side_to_move(),
+        board.piece_on(mv.from).unwrap_or(Piece::Pawn),
+        mv.to,
+    )
 }
 
 /// La pièce réellement capturée par un coup, s'il y en a une.
@@ -2212,7 +2334,7 @@ mod tests {
         let b = board("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
         let s = search();
         let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
-        let tactiques = s.stage_moves(&b, true, &[], &mut buffer);
+        let tactiques = s.stage_moves(&b, true, &[], &mut buffer, NO_CONTEXT);
         assert_eq!(tactiques, 1, "seule exd5 change le matériel");
         assert!(s.ordered_moves(&b, 0, &mut buffer) > 1);
     }
@@ -2236,7 +2358,7 @@ mod tests {
         );
         // Le sélecteur de `negamax` écrit dans le même tampon, un étage à la
         // fois : il doit rendre les 218 aussi.
-        let mut picker = MovePicker::new(&mut buffer, None, [0; 2]);
+        let mut picker = MovePicker::new(&mut buffer, None, [0; 2], NO_CONTEXT);
         let mut rendus = 0;
         while picker.next_move(&s, &b).is_some() {
             rendus += 1;
@@ -2400,7 +2522,7 @@ mod tests {
         let b = board("r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4");
         let s = search();
         let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
-        let mut picker = MovePicker::new(&mut buffer, None, [0; 2]);
+        let mut picker = MovePicker::new(&mut buffer, None, [0; 2], NO_CONTEXT);
         let mut tranquille_vu = false;
         let mut captures = 0;
         while let Some(mv) = picker.next_move(&s, &b) {
@@ -3044,7 +3166,7 @@ mod tests {
         let prise = cozy_chess::util::parse_uci_move(&b, "e4d5").unwrap();
         let s = search();
         let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
-        let mut picker = MovePicker::new(&mut buffer, Some(tranquille), [0; 2]);
+        let mut picker = MovePicker::new(&mut buffer, Some(tranquille), [0; 2], NO_CONTEXT);
         assert_eq!(picker.next_move(&s, &b), Some(tranquille));
         assert_eq!(picker.next_move(&s, &b), Some(prise));
     }
@@ -3055,7 +3177,7 @@ mod tests {
         let killer = cozy_chess::util::parse_uci_move(&b, "a2a3").unwrap();
         let autre = cozy_chess::util::parse_uci_move(&b, "h2h3").unwrap();
         let mut s = search();
-        s.remember_quiet(killer, 3, 4);
+        s.remember_quiet(&b, killer, 3, 4, NO_CONTEXT);
         // Dans la quiescence en échec, par la note…
         assert!(s.score_move(&b, killer, 3) > s.score_move(&b, autre, 3));
         // … mais pas à un autre ply : les killers sont propres à leur
@@ -3067,9 +3189,168 @@ mod tests {
         // tranquilles — y compris ceux dont l'historique est meilleur.
         s.history[autre.from as usize * 64 + autre.to as usize] = HISTORY_MAX;
         let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
-        let mut picker = MovePicker::new(&mut buffer, None, s.killers[3]);
+        let mut picker = MovePicker::new(&mut buffer, None, s.killers[3], NO_CONTEXT);
         assert_eq!(picker.next_move(&s, &b), Some(killer));
         assert_eq!(picker.next_move(&s, &b), Some(autre));
+    }
+
+    #[test]
+    fn l_index_de_continuation_distingue_la_piece_sa_couleur_et_sa_case() {
+        // Douze pièces colorées sur soixante-quatre cases : autant d'index
+        // distincts, tous sous `PIECE_TO`.
+        let mut vus = std::collections::HashSet::new();
+        for side in Color::ALL {
+            for piece in Piece::ALL {
+                for to in Square::ALL {
+                    let index = piece_to_index(side, piece, to);
+                    assert!(
+                        index < PIECE_TO,
+                        "{side:?} {piece:?} {to:?} hors de la table"
+                    );
+                    vus.insert(index);
+                }
+            }
+        }
+        assert_eq!(
+            vus.len(),
+            PIECE_TO,
+            "deux coups différents partagent un index"
+        );
+        // `piece_to` lit la pièce qui bouge sur sa case de départ, du camp
+        // au trait.
+        let b = Board::default();
+        let cavalier = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+        assert_eq!(
+            piece_to(&b, cavalier),
+            piece_to_index(Color::White, Piece::Knight, Square::F3)
+        );
+        let noirs = board("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
+        let fou = cozy_chess::util::parse_uci_move(&noirs, "e7e5").unwrap();
+        assert_eq!(
+            piece_to(&noirs, fou),
+            piece_to_index(Color::Black, Piece::Pawn, Square::E5)
+        );
+    }
+
+    #[test]
+    fn une_coupure_tranquille_nourrit_la_continuation_de_ses_deux_contextes() {
+        let b = Board::default();
+        let coup = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+        let cible = piece_to(&b, coup);
+        let (adverse, notre) = (5, 77);
+        let mut s = search();
+        s.remember_quiet(&b, coup, 2, 3, [Some(adverse), Some(notre)]);
+        // + d², dans chacun des deux contextes…
+        assert_eq!(s.continuation[adverse * PIECE_TO + cible], 9);
+        assert_eq!(s.continuation[notre * PIECE_TO + cible], 9);
+        // … et nulle part ailleurs : ni pour un autre contexte, ni pour un
+        // autre coup de ces contextes.
+        assert_eq!(s.continuation.iter().filter(|&&v| v != 0).count(), 2);
+        // Sans contexte — la racine, l'enfant d'un coup nul —, rien.
+        let mut t = search();
+        t.remember_quiet(&b, coup, 2, 3, NO_CONTEXT);
+        assert!(t.continuation.iter().all(|&v| v == 0));
+    }
+
+    #[test]
+    fn le_debordement_de_la_continuation_divise_toute_la_table() {
+        let b = Board::default();
+        let coup = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let cible = piece_to(&b, coup);
+        let temoin = 300;
+        // Les deux contextes débordent ensemble : un seul suffit à diviser,
+        // deux ne s'annulent pas.
+        let mut s = search();
+        s.continuation[7 * PIECE_TO + cible] = HISTORY_MAX;
+        s.continuation[8 * PIECE_TO + cible] = HISTORY_MAX;
+        s.continuation[temoin] = 1000;
+        s.remember_quiet(&b, coup, 0, 1, [Some(7), Some(8)]);
+        assert_eq!(s.continuation[7 * PIECE_TO + cible], (HISTORY_MAX + 1) / 2);
+        assert_eq!(
+            s.continuation[temoin], 500,
+            "toute la table, pas la seule entrée"
+        );
+        // Un seul contexte qui déborde.
+        let mut t = search();
+        t.continuation[7 * PIECE_TO + cible] = HISTORY_MAX;
+        t.continuation[temoin] = 1000;
+        t.remember_quiet(&b, coup, 0, 1, [Some(7), None]);
+        assert_eq!(t.continuation[temoin], 500);
+        // Atteindre HISTORY_MAX n'est pas le dépasser : la borne est stricte,
+        // comme celle du papillon.
+        let mut u = search();
+        u.continuation[7 * PIECE_TO + cible] = HISTORY_MAX - 1;
+        u.continuation[temoin] = 1000;
+        u.remember_quiet(&b, coup, 0, 1, [Some(7), None]);
+        assert_eq!(u.continuation[temoin], 1000);
+    }
+
+    #[test]
+    fn l_etage_tranquille_ordonne_par_papillon_plus_continuation() {
+        let b = Board::default();
+        let favori = cozy_chess::util::parse_uci_move(&b, "b1c3").unwrap();
+        let rival = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+        let contexte = 42;
+        let mut s = search();
+        // Le papillon préfère le rival, la continuation le favori, un peu
+        // plus : c'est la somme qui classe.
+        s.history[rival.from as usize * 64 + rival.to as usize] = 100;
+        s.continuation[contexte * PIECE_TO + piece_to(&b, favori)] = 101;
+        for context in [[Some(contexte), None], [None, Some(contexte)]] {
+            let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+            let mut picker = MovePicker::new(&mut buffer, None, [0; 2], context);
+            assert_eq!(
+                picker.next_move(&s, &b),
+                Some(favori),
+                "contexte {context:?}"
+            );
+            assert_eq!(
+                picker.next_move(&s, &b),
+                Some(rival),
+                "contexte {context:?}"
+            );
+        }
+        // Sans contexte, le papillon seul : le rival repasse devant.
+        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+        let mut picker = MovePicker::new(&mut buffer, None, [0; 2], NO_CONTEXT);
+        assert_eq!(picker.next_move(&s, &b), Some(rival));
+    }
+
+    #[test]
+    fn la_continuation_survit_a_go_et_se_vide_a_ucinewgame() {
+        let mut s = search();
+        s.set_threads(2);
+        s.continuation[123] = 4567;
+        s.helpers[0].continuation[89] = 10;
+        let position =
+            Position::from_fen("r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3")
+                .unwrap();
+        let limits = Limits {
+            depth: Some(4),
+            ..Limits::default()
+        };
+        s.go(&position, &limits, |_| {});
+        // Une recherche ne vide pas la continuation — à l'inverse du
+        // papillon, qui repart de zéro à chaque coup.
+        assert!(
+            s.continuation[123] >= 4567 / 2,
+            "la continuation a été vidée par go"
+        );
+        assert!(
+            s.helpers[0].continuation[89] >= 10 / 2,
+            "celle de l'auxiliaire aussi"
+        );
+        s.clear_table();
+        assert!(
+            s.continuation.iter().all(|&v| v == 0),
+            "ucinewgame doit la vider"
+        );
+        assert!(
+            s.helpers
+                .iter()
+                .all(|h| h.continuation.iter().all(|&v| v == 0)),
+            "et celle des auxiliaires, qui la conservent aussi"
+        );
     }
 
     #[test]
@@ -3717,7 +3998,7 @@ mod tests {
         let prise = cozy_chess::util::parse_uci_move(&b, "e5f6").unwrap();
         let s = search();
         let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
-        let count = s.stage_moves(&b, true, &[], &mut buffer);
+        let count = s.stage_moves(&b, true, &[], &mut buffer, NO_CONTEXT);
         assert!(
             buffer[..count].iter().any(|(mv, _)| *mv == prise),
             "la prise en passant doit figurer parmi les coups tactiques"
@@ -4755,7 +5036,7 @@ mod move_picker_tests {
         killers: [u16; 2],
     ) -> Vec<Move> {
         let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
-        let mut picker = MovePicker::new(&mut buffer, tt_move, killers);
+        let mut picker = MovePicker::new(&mut buffer, tt_move, killers, NO_CONTEXT);
         let mut moves = Vec::new();
         while let Some(mv) = picker.next_move(search, board) {
             moves.push(mv);
@@ -4801,9 +5082,9 @@ mod move_picker_tests {
         let s = search();
         let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
         partout(|b| {
-            let count = s.stage_moves(b, true, &[], &mut buffer);
+            let count = s.stage_moves(b, true, &[], &mut buffer, NO_CONTEXT);
             let tactiques: Vec<Move> = buffer[..count].iter().map(|&(mv, _)| mv).collect();
-            let count = s.stage_moves(b, false, &[], &mut buffer);
+            let count = s.stage_moves(b, false, &[], &mut buffer, NO_CONTEXT);
             let tranquilles: Vec<Move> = buffer[..count].iter().map(|&(mv, _)| mv).collect();
             let legaux = legal_moves(b);
             assert_eq!(tactiques.len() + tranquilles.len(), legaux.len(), "{b}");

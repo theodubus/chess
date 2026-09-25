@@ -1,0 +1,570 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 750e378..b5a5354 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -34,6 +34,33 @@ use crate::position::{Position, repetitions};
+ use crate::see;
+ use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
+ 
++// SONDE jetable (A20 — raffinements d'ordonnancement) — ne jamais fusionner.
++// Compteurs cumulés du processus, imprimés par la couche UCI avant chaque
++// `bestmove` ; leur sens est dans `tools/sonde-a20/analyser.py`.
++pub static SONDES: [AtomicU64; 40] = [const { AtomicU64::new(0) }; 40];
++fn sonde_add(i: usize, v: u64) {
++    SONDES[i].fetch_add(v, Ordering::Relaxed);
++}
++/// Pièce colorée × case d'arrivée : l'index d'un coup dans les tables
++/// contrefactuelles de la sonde.
++const SONDE_PT: usize = 12 * 64;
++fn sonde_gravity(e: &mut i32, b: i32) {
++    *e += b - *e * b.abs() / 16_384;
++}
++fn sonde_pt(board: &Board, mv: Move) -> usize {
++    let piece = board.piece_on(mv.from).map_or(0, |p| p as usize);
++    board.side_to_move() as usize * 6 * 64 + piece * 64 + mv.to as usize
++}
++/// Variantes contrefactuelles : 0 coup de réfutation devant l'étage, 1
++/// papillon + continuation (somme), 2 continuation d'abord (papillon pour
++/// départager), 3 papillon CONSERVÉ d'un coup à l'autre, 4 la 3 +
++/// continuation. Les tables contrefactuelles se conservent toutes d'un coup
++/// à l'autre, remises à zéro par `ucinewgame` : une continuation de
++/// 768 × 768 entrées n'apprend rien en un coup. Le malus n'en est
++/// pas : il punit ce que l'ordre ACTUEL essaie en premier, donc appris sous
++/// cet ordre il se condamne d'avance — biais de politique.
++const SONDE_V: usize = 5;
++
+ /// Profondeur maximale de la recherche principale.
+ pub const MAX_DEPTH: u32 = 64;
+ 
+@@ -379,6 +406,20 @@ pub struct Search {
+     killers: Vec<[u16; 2]>,
+     /// Table butterfly indexée par case de départ puis d'arrivée.
+     history: Vec<i32>,
++    // SONDE A20 — l'état contrefactuel.
++    sonde_prev: Vec<Option<usize>>,
++    sonde_cm: Vec<u16>,
++    sonde_ch: Vec<i32>,
++    sonde_chm: Vec<i32>,
++    sonde_hm: Vec<i32>,
++    sonde_hk: Vec<i32>,
++    sonde_keys: Vec<i64>,
++    // Par ply : nœuds qu'un ordre parfait épargnerait dans le sous-arbre —
++    // l'UNION des sous-arbres cherchés avant le coupeur (tous étages ; étage
++    // tranquille seul). Sommer nœud par nœud compterait deux fois les
++    // sous-arbres emboîtés.
++    sonde_u: Vec<[u64; 6]>,
++    sonde_root_start: u64,
+     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
+     lmr: Vec<i32>,
+     /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
+@@ -442,6 +483,15 @@ impl Search {
+             is_helper: false,
+             killers: vec![[0; 2]; MAX_PLY],
+             history: vec![0; 64 * 64],
++            sonde_prev: vec![None; MAX_PLY + 2],
++            sonde_cm: vec![0; SONDE_PT],
++            sonde_ch: vec![0; SONDE_PT * SONDE_PT],
++            sonde_chm: vec![0; SONDE_PT * SONDE_PT],
++            sonde_hm: vec![0; 64 * 64],
++            sonde_hk: vec![0; 64 * 64],
++            sonde_keys: vec![0; MAX_PLY * MAX_MOVES * SONDE_V],
++            sonde_u: vec![[0; 6]; MAX_PLY + 2],
++            sonde_root_start: 0,
+             lmr: build_lmr_table(),
+             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
+             params: eval::Params::DEFAULT,
+@@ -494,6 +544,9 @@ impl Search {
+         self.tt.clear();
+         self.killers.fill([0; 2]);
+         self.history.fill(0);
++        self.sonde_cm.fill(0);
++        self.sonde_ch.fill(0);
++        self.sonde_hk.fill(0);
+     }
+ 
+     /// Taux de remplissage de la table, en pour mille.
+@@ -578,6 +631,7 @@ impl Search {
+         // garder d'un coup à l'autre proposerait des coups sans rapport.
+         self.killers.fill([0; 2]);
+         self.history.fill(0);
++        self.sonde_prev.fill(None);
+         self.node_limit = limits.nodes;
+         self.set_deadlines(limits, position.board().side_to_move());
+ 
+@@ -881,6 +935,137 @@ impl Search {
+             || eval::is_insufficient_material(board)
+     }
+ 
++    /// SONDE A20 : note chaque coup de l'étage tranquille sous chaque
++    /// variante, dans l'état où un sélecteur aurait lu les tables.
++    fn sonde_snapshot(
++        &mut self,
++        board: &Board,
++        ply: usize,
++        p1: Option<usize>,
++        p2: Option<usize>,
++        quiets: &[(Move, i32)],
++    ) {
++        let base = ply * MAX_MOVES * SONDE_V;
++        let cm = p1
++            .and_then(|p| self.sonde_cm.get(p).copied())
++            .filter(|&c| c != 0);
++        for (j, &(mv, butterfly)) in quiets.iter().enumerate() {
++            let pt = sonde_pt(board, mv);
++            let ch = |t: &[i32], p: Option<usize>| p.map_or(0i64, |p| i64::from(t[p * SONDE_PT + pt]));
++            let is_cm = cm == Some(pack_move(mv));
++            let cont = ch(&self.sonde_ch, p1) + ch(&self.sonde_ch, p2);
++            // Le papillon reste sous 2^20 (HISTORY_MAX) : la continuation
++            // décalée de 24 bits le domine sans jamais le toucher.
++            let lexi = (cont << 24) + i64::from(butterfly);
++            let kept = i64::from(self.sonde_hk[mv.from as usize * 64 + mv.to as usize]);
++            let keys = [
++                if is_cm { i64::MAX } else { i64::from(butterfly) },
++                i64::from(butterfly) + cont,
++                lexi,
++                kept,
++                kept + cont,
++            ];
++            let at = base + j * SONDE_V;
++            if let Some(slot) = self.sonde_keys.get_mut(at..at + SONDE_V) {
++                slot.copy_from_slice(&keys);
++            }
++        }
++    }
++
++    /// SONDE A20 : une coupure bêta dans la boucle de `negamax`.
++    #[allow(clippy::too_many_arguments)]
++    fn sonde_cutoff(
++        &mut self,
++        board: &Board,
++        ply: usize,
++        depth: i32,
++        mv: Move,
++        index: usize,
++        stage: u8,
++        quiet: bool,
++        qindex: usize,
++        qlen: usize,
++        p1: Option<usize>,
++        p2: Option<usize>,
++        spent_all: u64,
++        spent_quiet: u64,
++        tried: &[Move],
++        reduced: bool,
++    ) {
++        sonde_add(1, 1);
++        if index == 0 {
++            sonde_add(2, 1);
++        }
++        sonde_add(3 + stage as usize, 1);
++        sonde_add(9, spent_all);
++        if stage == 3 {
++            sonde_add(7, qindex as u64);
++            if qindex == 0 {
++                sonde_add(8, 1);
++            }
++            sonde_add(10, spent_quiet);
++            sonde_add(24, qlen as u64);
++            if reduced {
++                sonde_add(22, 1);
++            }
++            // Rangs contrefactuels : combien de coups de l'étage passeraient
++            // devant le coupeur. Les ex æquo comptent pour moitié — le tri est
++            // instable —, d'où le double.
++            let base = ply * MAX_MOVES * SONDE_V;
++            for v in 0..SONDE_V {
++                let key = |j: usize| self.sonde_keys[base + j * SONDE_V + v];
++                let k = key(qindex);
++                let (mut above, mut ties) = (0u64, 0u64);
++                for j in (0..qlen).filter(|&j| j != qindex) {
++                    let x = key(j);
++                    if x > k {
++                        above += 1;
++                    } else if x == k {
++                        ties += 1;
++                    }
++                }
++                let at = if v < 4 { 12 + 2 * v } else { 32 + 2 * (v - 4) };
++                sonde_add(at, 2 * above + ties);
++                if above == 0 && ties == 0 {
++                    sonde_add(at + 1, 1);
++                }
++            }
++            let cm = p1
++                .and_then(|p| self.sonde_cm.get(p).copied())
++                .filter(|&c| c != 0);
++            if let Some(c) = cm {
++                if c == pack_move(mv) {
++                    sonde_add(20, 1);
++                } else if (0..qlen).any(|j| self.sonde_keys[base + j * SONDE_V] == i64::MAX) {
++                    sonde_add(21, 1);
++                }
++            }
++        }
++        // Les tables contrefactuelles apprennent des mêmes événements que
++        // `remember_quiet` : les coupeurs tranquilles, de tout étage.
++        if quiet {
++            let _ = tried;
++            let bonus = depth * depth;
++            let pt = sonde_pt(board, mv);
++            if let Some(p) = p1 {
++                self.sonde_cm[p] = pack_move(mv);
++            }
++            for p in [p1, p2].into_iter().flatten() {
++                let e = &mut self.sonde_ch[p * SONDE_PT + pt];
++                *e = e.saturating_add(bonus);
++            }
++            // Le papillon conservé suit la règle du vrai : + d², moitié de
++            // toute la table au-delà de HISTORY_MAX.
++            let e = &mut self.sonde_hk[mv.from as usize * 64 + mv.to as usize];
++            *e += bonus;
++            if *e > HISTORY_MAX {
++                for x in &mut self.sonde_hk {
++                    *x /= 2;
++                }
++            }
++        }
++    }
++
+     /// Retient un coup tranquille qui vient de provoquer une coupure bêta.
+     ///
+     /// Les captures en sont exclues : elles sont déjà ordonnées par MVV-LVA, et
+@@ -1065,6 +1250,12 @@ impl Search {
+         scratch: &mut [(Move, i32)],
+     ) -> i32 {
+         self.pv.clear(ply);
++        if let Some(u) = self.sonde_u.get_mut(ply) {
++            *u = [0; 6];
++        }
++        if ply == 0 {
++            self.sonde_root_start = self.nodes;
++        }
+ 
+         // Une répétition, la règle des cinquante coups ou un matériel
+         // insuffisant font nulle. Jamais à la racine : la position de départ
+@@ -1171,6 +1362,7 @@ impl Search {
+         //   coupure serait fausse (voir `has_non_pawn_material`) ;
+         // - contre une borne de mat, la coupure produirait un mat imaginaire ;
+         // - jamais à la racine, où il faut rendre un coup.
++        let mut sonde_null = [0u64; 6];
+         if ply > 0
+             && depth >= NULL_MOVE_MIN_DEPTH
+             && board.checkers().is_empty()
+@@ -1180,6 +1372,9 @@ impl Search {
+         {
+             self.null_marks.push(self.path.len());
+             self.path.push(passed.hash());
++            if let Some(slot) = self.sonde_prev.get_mut(ply + 1) {
++                *slot = None;
++            }
+             let score = -self.negamax(
+                 &passed,
+                 depth - 1 - NULL_MOVE_REDUCTION,
+@@ -1190,11 +1385,15 @@ impl Search {
+             );
+             self.path.pop();
+             self.null_marks.pop();
++            sonde_null = self.sonde_u.get(ply + 1).copied().unwrap_or([0; 6]);
+ 
+             if self.aborted {
+                 return 0;
+             }
+             if score >= beta {
++                if let Some(u) = self.sonde_u.get_mut(ply) {
++                    *u = sonde_null;
++                }
+                 // Un score de mat obtenu grâce à un coup qu'on n'a pas le droit
+                 // de jouer est faux : on rend la borne, pas le mat.
+                 return if score.abs() > MATE_THRESHOLD {
+@@ -1222,6 +1421,24 @@ impl Search {
+         let mut quiets_seen = 0usize;
+         let mut moves = 0usize;
+ 
++        // SONDE A20 : l'état contrefactuel du nœud.
++        let sonde_p1 = self.sonde_prev.get(ply).copied().flatten();
++        let sonde_p2 = ply
++            .checked_sub(1)
++            .and_then(|p| self.sonde_prev.get(p).copied().flatten());
++        let mut sonde_spent_all = 0u64;
++        let mut sonde_spent_quiet = 0u64;
++        let mut sonde_tried = [NO_MOVE; 64];
++        let mut sonde_ntried = 0usize;
++        sonde_add(0, 1);
++        // Somme des unions des fils cherchés (le coup nul compris) ; la
++        // composante 1 sans les fils de l'étage tranquille, à part ; et les
++        // coûts entiers des coups cherchés, par étage.
++        let mut sonde_sum_u = sonde_null;
++        let mut sonde_sum_u_q_nonq = sonde_null[1];
++        let mut sonde_spent_stage = [0u64; 4];
++        let mut sonde_cut = false;
++
+         while let Some(mv) = picker.next_move(self, board) {
+             // Compté AVANT toute coupure : `moves` dit après la boucle s'il
+             // existait un coup légal, et une coupure bêta sur le premier coup
+@@ -1229,6 +1446,13 @@ impl Search {
+             let index = moves;
+             moves += 1;
+             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
++            let sonde_stage = picker.sonde_stage();
++            // Premier coup de l'étage tranquille : l'étage vient d'être généré,
++            // les tables contrefactuelles sont dans l'état où un sélecteur les
++            // aurait lues.
++            if sonde_stage == 3 && picker.next == 1 {
++                self.sonde_snapshot(board, ply, sonde_p1, sonde_p2, &picker.buffer[..picker.len]);
++            }
+ 
+             // Élagage par compte de coups : on abandonne les coups tranquilles
+             // restants. `break` et non `continue`, parce que l'ordonnancement
+@@ -1241,6 +1465,9 @@ impl Search {
+                 quiets_seen += 1;
+             }
+ 
++            if let Some(slot) = self.sonde_prev.get_mut(ply + 1) {
++                *slot = Some(sonde_pt(board, mv));
++            }
+             let mut child = board.clone();
+             child.play_unchecked(mv);
+ 
+@@ -1270,9 +1497,11 @@ impl Search {
+                 0
+             };
+ 
++            let sonde_before = self.nodes;
+             self.path.push(child.hash());
+             let mut score =
+                 -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha, rest);
++            let mut sonde_cu = self.sonde_u.get(ply + 1).copied().unwrap_or([0; 6]);
+             // La réduction a menti : ce coup mérite la profondeur pleine.
+             //
+             // `!self.aborted` n'est pas décoratif : une recherche interrompue
+@@ -1282,8 +1511,13 @@ impl Search {
+             // budget de nœuds, qui dépassait d'exactement un nœud.
+             if reduction > 0 && !self.aborted && score > alpha {
+                 score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha, rest);
++                let r = self.sonde_u.get(ply + 1).copied().unwrap_or([0; 6]);
++                for (a, b) in sonde_cu.iter_mut().zip(r) {
++                    *a += b;
++                }
+             }
+             self.path.pop();
++            let sonde_cost = self.nodes - sonde_before;
+ 
+             if self.aborted {
+                 return 0;
+@@ -1299,6 +1533,40 @@ impl Search {
+                     alpha = score;
+                     self.pv.push(ply, mv);
+                     if alpha >= beta {
++                        // Tout coup cherché avant le coupeur est perdu en
++                        // entier ; le coupeur et le coup nul gardent leurs
++                        // propres unions.
++                        let mut u = [0u64; 6];
++                        u[0] = sonde_null[0] + sonde_spent_all + sonde_cu[0];
++                        u[1] = if sonde_stage == 3 {
++                            sonde_spent_quiet + sonde_sum_u_q_nonq + sonde_cu[1]
++                        } else {
++                            sonde_sum_u[1] + sonde_cu[1]
++                        };
++                        for k in 0..4 {
++                            u[2 + k] = sonde_null[2 + k] + sonde_spent_stage[k] + sonde_cu[2 + k];
++                        }
++                        if let Some(slot) = self.sonde_u.get_mut(ply) {
++                            *slot = u;
++                        }
++                        sonde_cut = true;
++                        self.sonde_cutoff(
++                            board,
++                            ply,
++                            depth,
++                            mv,
++                            index,
++                            sonde_stage,
++                            quiet,
++                            picker.next.wrapping_sub(1),
++                            picker.len,
++                            sonde_p1,
++                            sonde_p2,
++                            sonde_spent_all,
++                            sonde_spent_quiet,
++                            &sonde_tried[..sonde_ntried],
++                            reduction > 0,
++                        );
+                         // Un coup tranquille qui réfute une variante en réfute
+                         // souvent d'autres : on s'en souvient.
+                         if quiet {
+@@ -1308,6 +1576,38 @@ impl Search {
+                     }
+                 }
+             }
++            sonde_spent_all += sonde_cost;
++            for (a, b) in sonde_sum_u.iter_mut().zip(sonde_cu) {
++                *a += b;
++            }
++            if sonde_stage != 3 {
++                sonde_sum_u_q_nonq += sonde_cu[1];
++            }
++            if let Some(s) = sonde_spent_stage.get_mut(usize::from(sonde_stage)) {
++                *s += sonde_cost;
++            }
++            if sonde_stage == 3 {
++                sonde_spent_quiet += sonde_cost;
++            }
++            if quiet && sonde_ntried < sonde_tried.len() {
++                sonde_tried[sonde_ntried] = mv;
++                sonde_ntried += 1;
++            }
++        }
++        if best > original_alpha && best < beta {
++            sonde_add(23, 1);
++        }
++        if !sonde_cut && let Some(u) = self.sonde_u.get_mut(ply) {
++            *u = sonde_sum_u;
++        }
++        if ply == 0 && !self.aborted {
++            let u = self.sonde_u[0];
++            sonde_add(25, u[0]);
++            sonde_add(26, u[1]);
++            sonde_add(27, self.nodes - self.sonde_root_start);
++            for k in 0..4 {
++                sonde_add(28 + k, u[2 + k]);
++            }
+         }
+ 
+         // Aucun coup rendu : il n'y en a aucun de légal. L'élagage par compte
+@@ -1635,6 +1935,17 @@ impl<'b> MovePicker<'b> {
+         }
+     }
+ 
++    /// SONDE A20 : l'étage du coup qui vient d'être rendu — 0 la table,
++    /// 1 un tactique, 2 un killer, 3 l'étage tranquille.
++    fn sonde_stage(&self) -> u8 {
++        match self.stage {
++            Stage::Tactical => 0,
++            Stage::Killers => 1,
++            Stage::Quiet => 2,
++            Stage::Done | Stage::TtMove => 3,
++        }
++    }
++
+     /// Le coup suivant, ou `None` quand tous les coups légaux ont été rendus
+     /// — chacun exactement une fois.
+     fn next_move(&mut self, search: &Search, board: &Board) -> Option<Move> {
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index 87c1692..b5a1931 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -399,6 +399,14 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            crate::search::SONDES[11].fetch_add(search.nodes(), Ordering::Relaxed);
++            {
++                let v: Vec<String> = crate::search::SONDES
++                    .iter()
++                    .map(|c| c.load(Ordering::Relaxed).to_string())
++                    .collect();
++                send(&format!("info string sonde {}", v.join(" ")));
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
+diff --git a/tools/sonde-a20/analyser.py b/tools/sonde-a20/analyser.py
+new file mode 100644
+index 0000000..fb23b7f
+--- /dev/null
++++ b/tools/sonde-a20/analyser.py
+@@ -0,0 +1,94 @@
++#!/usr/bin/env python3
++"""Lecteur de la sonde A20 — ce que l'ordre des coups tranquilles laisse sur
++la table, et ce que les raffinements décidés y changeraient.
++
++Lit un journal cutechess-cli `-debug all` d'un match joué par le binaire
++sondé contre lui-même : le régime réel, table et historiques accumulés comme
++en partie (piège du moteur froid, CLAUDE.md). Chaque processus imprime ses
++compteurs CUMULÉS avant chaque `bestmove` ; la dernière ligne d'un processus
++vaut pour tout ce qu'il a cherché.
++
++    QT_QPA_PLATFORM=offscreen tools/arbiters/cutechess-cli -debug all \\
++      -engine cmd=SONDE name=a proto=uci -engine cmd=SONDE name=b proto=uci \\
++      -each tc=8+0.08 -openings file=tools/book.epd format=epd order=random \\
++      -srand 20260925 -games 2 -repeat -rounds 60 -concurrency 3 \\
++      -draw movenumber=40 movecount=8 score=10 \\
++      -resign movecount=4 score=600 twosided=true > sonde.log
++    python3 tools/sonde-a20/analyser.py sonde.log
++
++Compteurs (`SONDES`, `engine/src/search.rs`) :
++   0 nœuds de `negamax` qui atteignent la boucle des coups
++   1 coupures bêta ; 2 dont au premier coup
++   3-6 étage du coupeur : table, tactique, killer, étage tranquille
++   7 somme des indices du coupeur dans l'étage tranquille ; 8 à l'indice 0
++   9-10 sommes NAÏVES des sous-arbres perdus (tous étages ; étage tranquille)
++        — comptent deux fois les emboîtements, gardées pour mémoire
++  11 nœuds totaux
++  12-19, 32-33 par variante : 2 × somme des rangs contrefactuels du coupeur
++        (ex æquo pour moitié), puis coupeur strictement premier
++  20 coup de réfutation présent et coupeur ; 21 présent dans l'étage et faux
++  22 coupeur de l'étage réduit par LMR ; 23 alpha monte sans coupure
++  24 somme des tailles de l'étage aux coupures de l'étage
++  25 UNION des sous-arbres cherchés avant un coupeur ; 26 celle de l'étage
++     tranquille (emboîtements sous d'autres étages permis)
++  27 nœuds des recherches de racine ACHEVÉES — le dénominateur des unions
++  28-31 union ventilée par l'étage du coup perdu, au niveau le plus haut
++"""
++import math
++import re
++import sys
++
++LIGNE = re.compile(r'^\d+ <(\w+)\((\d+)\): info string sonde (.*)$')
++derniere = {}
++for brut in open(sys.argv[1], errors='replace'):
++    m = LIGNE.match(brut.rstrip('\n'))
++    if m:
++        derniere[(m[1], m[2])] = list(map(int, m[3].split()))
++if not derniere:
++    sys.exit("aucune ligne de sonde")
++n = max(len(v) for v in derniere.values())
++t = [sum(v[i] for v in derniere.values() if i < len(v)) for i in range(n)]
++
++def pc(a, b):
++    return 100 * a / b if b else float('nan')
++
++def plis(f):
++    """Plis d'une épargne de f % des nœuds : 1,36 pli par doublement."""
++    return math.copysign(1.36 * math.log2(1 / (1 - abs(f) / 100)), f)
++
++print(f"{len(derniere)} processus ; {t[11]:,} nœuds, dont {t[27]:,} dans des recherches de "
++      f"racine achevées ; {t[0]:,} nœuds de boucle".replace(',', ' '))
++coupes, etage = t[1], t[6]
++print(f"\ncoupures bêta : {pc(coupes, t[0]):.1f} % des nœuds de boucle ; au premier coup : "
++      f"{pc(t[2], coupes):.1f} % ; alpha monte sans couper : {pc(t[23], t[0]):.1f} %")
++for nom, i in (("table", 3), ("tactique", 4), ("killer", 5), ("étage tranquille", 6)):
++    print(f"   coupeur {nom:17s} {pc(t[i], coupes):5.1f} %")
++
++print(f"\nunion des sous-arbres cherchés avant le coupeur : {pc(t[25], t[27]):.1f} % des nœuds "
++      f"(plafond d'un ordre parfait, {plis(pc(t[25], t[27])):.2f} pli)")
++for nom, i in (("le coup de table", 28), ("un tactique", 29), ("un killer", 30),
++               ("un tranquille de l'étage", 31)):
++    print(f"   perdus dans {nom:26s} {pc(t[i], t[27]):5.1f} %")
++uq = pc(t[26], t[27])
++print(f"union de l'étage tranquille, emboîtements permis : {uq:.1f} % — "
++      f"LE PLAFOND DES RAFFINEMENTS DÉCIDÉS, {plis(uq):.2f} pli")
++print(f"   (sommes naïves, pour mémoire : {pc(t[9], t[11]):.0f} % et {pc(t[10], t[11]):.0f} %)")
++
++print(f"\nétage tranquille : {etage:,} coupures, {t[24] / max(etage, 1):.1f} coups par étage ; "
++      f"coupeur à l'indice 0 : {pc(t[8], etage):.1f} % ; réduit par LMR : {pc(t[22], etage):.1f} %"
++      .replace(',', ' '))
++reel = t[7]
++print(f"\n{'ordre':40s} rang moyen   premier   rang/réel   épargne estimée")
++print(f"{'papillon, tel que joué':40s} {reel / max(etage, 1):10.3f}  {pc(t[8], etage):6.1f} %")
++variantes = (("coup de réfutation devant l'étage", 12), ("papillon + continuation", 14),
++             ("continuation d'abord", 16), ("papillon conservé entre les coups", 18),
++             ("papillon conservé + continuation", 32))
++for nom, i in variantes:
++    rangs = t[i] / 2
++    rapport = rangs / reel if reel else float('nan')
++    # Au premier ordre, l'union perdue suit la somme des rangs.
++    epargne = uq * (1 - rapport)
++    print(f"{nom:40s} {rangs / max(etage, 1):10.3f}  {pc(t[i + 1], etage):6.1f} %  "
++          f"{rapport:9.3f}   {epargne:+.2f} % des nœuds ({plis(epargne):+.3f} pli)")
++print(f"\ncoup de réfutation : juste {pc(t[20], etage):.1f} % des coupures de l'étage, "
++      f"présent et faux {pc(t[21], etage):.1f} %")

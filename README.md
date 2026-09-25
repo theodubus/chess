@@ -10,7 +10,8 @@ d'un aveu sur la profondeur de recherche.
 > valent **+42 ± 9 Elo** contre un à `8+0,08`, voir `tools/README.md`). Negamax avec
 > élagage alpha-bêta, approfondissement itératif, quiescence, table de
 > transposition et ordonnancement des coups — générés par étapes depuis le
-> 24 sept., **+23 ± 6 Elo** à `8+0,08` —, plus **des élagages avancés
+> 24 sept., **+23 ± 6 Elo** à `8+0,08`, et notés sachant les deux coups qui
+> les précèdent depuis le 25 sept., **+12,6 ± 4,4** —, plus **des élagages avancés
 > mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
 > d'aspiration, élagage delta en quiescence, futilité inverse, l'élagage par
 > **échange statique** en quiescence et l'**élagage par compte de coups**.
@@ -169,7 +170,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
 dépend ni de la machine ni de sa charge.
 
-Référence à la profondeur 7 : **109 047** nœuds.
+Référence à la profondeur 7 : **107 548** nœuds.
 
 Ce chiffre est vérifié par la CI — voir
 [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
