@@ -96,15 +96,11 @@ impl Bound {
 /// trouvés, et du code qu'aucun test ne peut garder — `CLAUDE.md`, « un
 /// mutant équivalent est souvent du code mort ».
 ///
-/// **Le score tient sur seize bits** : `MATE` vaut 30 000, et l'élagage par
-/// distance au mat de `negamax` borne la fenêtre à l'atteignable, donc tout
-/// score stocké reste dans ±MATE une fois normalisé du ply (C27).
-/// <s>Une assertion posée ici le 22 sept. 2026 n'a jamais été déclenchée.</s>
-/// **Elle l'a été le 25 sept.**, par les tests du générateur NNUE, qui jouent
-/// des parties jusqu'au mat depuis des positions gagnantes : un retour de
-/// borne de mat hors plage, dans 1,82 % des recherches en partie. Son silence
-/// mesurait ce que les tests parcouraient, pas l'absence du défaut. La borne
-/// défensive ci-dessous reste.
+/// **Le score tient sur seize bits, et ce n'est pas un pari** : `MATE` vaut
+/// 30 000, et une assertion posée dans `store` le 22 sept. 2026 n'a jamais été
+/// déclenchée — ni par la suite de tests complète, ni par les critères
+/// d'acceptation, tournoi de vingt-quatre parties compris. La borne défensive
+/// ci-dessous couvre le cas qu'aucun chemin connu ne produit.
 ///
 /// **La génération garde ses huit bits**, donc le schéma de remplacement est
 /// identique au bit près à celui de la version non atomique. C'était le risque
@@ -209,22 +205,6 @@ impl Default for TranspositionTable {
 }
 
 impl TranspositionTable {
-    /// Le plus grand score stocké, en valeur absolue, entrées vierges exclues.
-    ///
-    /// Pour les tests seulement : c'est ce qui rend l'invariant « un score de
-    /// mat stocké reste dans ±MATE » vérifiable EN RELEASE aussi, où
-    /// l'assertion de `pack_data` n'existe pas (C27).
-    #[cfg(test)]
-    pub(crate) fn max_abs_stored_score(&self) -> i32 {
-        self.entries
-            .iter()
-            .map(|entry| unpack_data(entry.load().1))
-            .filter(|&(_, _, depth, _, _)| depth >= 0)
-            .map(|(score, _, _, _, _)| score.abs())
-            .max()
-            .unwrap_or(0)
-    }
-
     /// Crée une table d'environ `megabytes` mébioctets, arrondie à la puissance
     /// de deux inférieure. Au moins une entrée.
     #[must_use]

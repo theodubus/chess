@@ -1173,31 +1173,6 @@ impl Search {
             return DRAW;
         }
 
-        // ÉLAGAGE PAR DISTANCE AU MAT (C27). Au ply `ply`, le mieux atteignable
-        // est de mater au ply suivant, `MATE - ply - 1`, et le pire d'être maté
-        // ici même, `-MATE + ply`. Une borne héritée d'un ply moins profond
-        // peut promettre davantage : un mat en deux trouvé ailleurs fait de
-        // `MATE - 2` l'alpha d'un nœud du ply 3, où `MATE - 4` est le maximum.
-        // Tout retour de BORNE — la quiescence rend `alpha` quand rien ne
-        // l'améliore — la faisait alors remonter comme un score, et
-        // `score_to_tt` la poussait hors de ±MATE : −30 002 stocké au ply 4,
-        // trouvé le 25 sept. 2026 par les tests du générateur NNUE. Bornée ici,
-        // AVANT l'aiguillage vers la quiescence, la fenêtre ne promet plus que
-        // l'atteignable, et tout ce que la table reçoit reste représentable.
-        //
-        // Sans mat dans la fenêtre, les bornes sont déjà à l'intérieur de
-        // l'atteignable — un score réel l'est toujours — et rien ne change.
-        // Jamais à la racine : il y faut un coup à jouer.
-        let mut beta = beta;
-        if ply > 0 {
-            let reach = i32::try_from(ply).unwrap_or(0);
-            alpha = alpha.max(-MATE + reach);
-            beta = beta.min(MATE - reach - 1);
-            if alpha >= beta {
-                return alpha;
-            }
-        }
-
         if depth <= 0 {
             return self.quiescence(board, alpha, beta, ply, scratch);
         }
@@ -4422,32 +4397,6 @@ mod tests {
             DRAW,
             "zéro coup sans échec est un pat, pas un mat"
         );
-    }
-
-    /// C27 : ce qui est stocké dans la table reste dans ±MATE, même quand un
-    /// mat trouvé ailleurs fait hériter aux nœuds profonds une borne qu'ils ne
-    /// peuvent pas atteindre. Les Noirs, au trait, sont matés en un quoi
-    /// qu'ils jouent : la première réponse trouvée fait de `MATE - 2` l'alpha
-    /// des nœuds blancs du ply 3, où `MATE - 4` est le mieux atteignable, et
-    /// la quiescence rendait cette borne comme un score.
-    ///
-    /// Témoin, dans les deux profils : sans l'élagage par distance au mat, la
-    /// table porte −30 002 — en release la valeur est stockée telle quelle, en
-    /// debug l'assertion de `pack_data` panique. La position vient d'une
-    /// partie du générateur NNUE, dont les tests l'ont rencontrée.
-    #[test]
-    fn une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage() {
-        let mut s = search();
-        let position = Position::from_fen("5Q2/R4B1k/1p6/4P1pp/8/4K3/1BP3PP/8 b - - 0 34").unwrap();
-        let limits = Limits {
-            depth: Some(6),
-            ..Limits::default()
-        };
-        let mut last = None;
-        s.go(&position, &limits, |info| last = Some(info.score));
-        assert_eq!(last, Some(Score::Mate(-1)), "matés en un, quoi qu'on joue");
-        let stored = s.tt.max_abs_stored_score();
-        assert!(stored <= MATE, "score stocké hors de ±MATE : {stored}");
     }
 
     // ---- Une nulle se détecte à l'intérieur ET à l'horizon (C22) ----
