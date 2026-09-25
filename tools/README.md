@@ -3089,7 +3089,8 @@ avec sa raison :
   ces données sont celles qu'aurait produites `main` — à vérifier à la fusion,
   par le même `git diff`. **Vérifié le 25 sept. à 23 h 20** : C27 fusionné,
   hors documentation le `git diff` de `bb6e4c0` à la révocation de sa
-  révocation est vide.
+  révocation est vide ; l'extraction de `mate_distance_window` qui suit est
+  une réécriture pure, banc identique au nœud près.
 
 **Les données se regénèrent à l'identique** : chaque partie est une fonction
 pure de (graine, numéro, nœuds) au commit donné, et un job a joué exactement
@@ -3175,8 +3176,9 @@ sous zéro, ni en commun ni par match. Zéro perte au temps, zéro coup illégal
 L'attendu (0 à +3) est dans l'intervalle ; le point est négatif, et la
 puissance dite d'avance ne distingue pas −3,6 de zéro — c'est ce que la règle
 d'un correctif accepte, par écrit avant le match. Rétabli en révoquant sa
-révocation (`e5589d1`) : hors documentation, le moteur de `main` est celui de
-`bb6e4c0` octet pour octet.
+révocation (`e5589d1`) : hors documentation, cette révocation rend le moteur
+de `bb6e4c0` octet pour octet ; l'extraction qui la suit (ci-dessous) ne change
+aucun nœud.
 
 **Les deux runners diffèrent de 83 %** : 4 019 409 n/s à la profondeur 13
 contre 2 199 922 à la profondeur 12, même binaire — le plus grand écart relevé
