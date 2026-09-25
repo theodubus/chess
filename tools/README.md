@@ -737,6 +737,8 @@ dernière relève est faite.
 | **A20 — l'Elo de la continuation** | **36110519468, 36110522377, 36110524982, 36110528007** | `54e6c60` → `a08af76`, `8+0,08`, graine « auto » | 4 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond vers 13 h 50, 2 900, 2 900, 2 900 et 2 920 parties | **+12,56 ± 4,35 en commun, homogènes (z ≤ 1,17), zéro perte au temps : gain démontré, FUSIONNÉ** (section A20) — au-dessus de ce que l'arbre seul promettait. — *Attendu, écrit avant* : 0 à +15, dont +4 à +7 par l'arbre seul. **Critère de gain** : fusion si la borne basse commune est au-dessus de zéro ; +5 y serait démontré 64 fois sur 100, +8 96 fois sur 100 |
 | **A20 — le crible de mutation au candidat** | <s>—</s> **36114952595** | `54e6c60`, `search.rs` entier, 570 mutants — et les huit autres fichiers | <s>`tools/mutants.sh`, dans le conteneur</s> **`Mutation`, entrée `commit`, sur runner** | <s>lancé à 08 h 01, fin vers 09 h</s> **mort dans le conteneur à 57 mutants sur 570**, au redémarrage de 08 h 11 — la règle « une mesure longue ne survit pas dans le conteneur », enfreinte faute d'outil ; **relancé sur runner à 08 h 48** — extraction du candidat vérifiée au journal — **RELEVÉ à 10 h 25, VERT** | **La prédiction tient, au bas de sa fourchette** : `search.rs` **39**, et ce sont les MÊMES survivants que sur `main`, un pour un, décalés de lignes par le code neuf ; aucun mutant du code neuf ne survit, et l'arbre neuf ne cache aucun ancien mutant au banc figé. Tous les autres fichiers à leur plafond, total **139**. — *Prédiction, écrite avant* : 39, au plafond, les mêmes ; jusqu'à 43 si l'arbre neuf cache d'anciens mutants au banc figé. Les 57 premiers dans le conteneur : un survivant, l'ancien de `Score::from_internal` |
 | **C27 — l'élagage par distance au mat, l'Elo** | 36166287710, 36166290276 | `bb6e4c0` → `3aa5986`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 23 h 08, 2 900 + 2 860 parties | **−3,56 ± 5,97 en commun, homogènes (z = 0,54), zéro perte au temps : aucune borne haute sous zéro, FUSIONNÉ au titre de la règle** (section C27). Étalonnages 4 019 409 et 2 199 922 n/s : 83 % d'écart, le plus grand relevé. — *Critère, écrit avant* : fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match |
+| **C27 — le crible du code neuf, dans le conteneur** | — | la révocation de la révocation, puis l'extraction de `mate_distance_window` | `tools/mutants.sh --in-diff` | **RELEVÉS à 23 h 25 et 23 h 30** | **7 survivants sur 11** dans le bornage, puis **22 attrapés sur 23, un expiré** — bornes extraites en fonction pure, deux tests neufs (section C27) |
+| **balayage de mutation après la fusion de C27** | à lancer | `main` après fusion | un job par fichier, puis `Verdict` | à lancer dès la fusion | *Prédiction, écrite avant* : `search.rs` **39**, au plafond, les MÊMES survivants que le balayage après la PR #83 (36145534414), un pour un — le banc est identique au nœud près, donc les tests de nœuds voient le même arbre, et le crible du code neuf n'y laisse aucun survivant ; **un expiré de plus**, `alpha >= beta` en `<`. `tt.rs` **6** : `max_abs_stored_score` est sous `#[cfg(test)]`. Tous les autres fichiers à leur plafond, total **139** |
 | **A21 — le débit de génération sur runner** | 36166785450 | le générateur de `main` à `0eb1e9b`, 5 000 nœuds, graine « auto », un fil par processeur logique | un job court, 20 minutes | **RELEVÉ** — fini à 17 h 43 | **1 713 positions par seconde, dans l'attendu** (1 200 à 1 800, écrit avant) : 17 976 parties, 2 055 456 positions, 62,2 % gardées par le filtre par défaut ; artefact de 7,4 Mo, expire le 24 déc. **Il ne se relit pas d'ici** : le proxy de sortie refuse le stockage des artefacts. Décide quatre jobs (section A21) |
 | **A21 — la génération, première vague** | **36179538497, 36179541822, 36179544454, 36179547648** | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **lancés à 19 h 25**, fin vers 00 h 57 | *Attendu, écrit avant* (section A21) : **34 millions de positions par job** au débit relevé, 21 à 54 aux extrêmes de vitesse des runners ; **136 millions pour les quatre**, dont 62 % gardées par le filtre. Chaque résumé doit nommer `bb6e4c0`. Sous 100 millions en tout, une vague de complément, dimensionnée sur les débits relevés |
 | **balayage de mutation après la PR #83** — A20 fusionné | **36145534414** | `main` à `d23d1b5` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 40, VERT** — `search.rs` le plus long, 71 min : 461 attrapés, 42 expirés | **La prédiction tient, exactement — jusqu'aux expirés** : `search.rs` **39**, les mêmes survivants que le crible au candidat, un pour un, aux mêmes lignes ; et le tableau entier du verdict est celui du crible, colonne par colonne — survivants, attrapés ET expirés, pour les neuf fichiers. Total **139**, aucune issue. *Le crible par l'entrée `commit` et le balayage de `main` voient donc la même chose.* — *Prédiction, écrite avant* : `search.rs` **39**, au plafond, et les MÊMES survivants que le crible au candidat (36114952595), un pour un, aux mêmes lignes — le code moteur de `main` est celui du candidat octet pour octet (`git diff 54e6c60 d23d1b5 -- engine/` est vide) et le crible a balayé tous les fichiers ; seul le compte d'expirés peut bouger avec la charge du runner, et il ne peut que faire baisser celui des survivants. Tous les autres fichiers à leur plafond, total **139**. Un écart, quel qu'il soit, dirait que le crible et le balayage ne voient pas la même chose |
@@ -3085,7 +3087,7 @@ avec sa raison :
   touche que `engine/`, le correctif. Et le correctif est juste par ses tests quel que soit le verdict
   d'Elo, qui juge la force, pas la justesse des scores. Si C27 est fusionné,
   ces données sont celles qu'aurait produites `main` — à vérifier à la fusion,
-  par le même `git diff`. **Vérifié le 25 sept. à 23 h 30** : C27 fusionné,
+  par le même `git diff`. **Vérifié le 25 sept. à 23 h 20** : C27 fusionné,
   hors documentation le `git diff` de `bb6e4c0` à la révocation de sa
   révocation est vide.
 
@@ -3180,6 +3182,18 @@ révocation (`e5589d1`) : hors documentation, le moteur de `main` est celui de
 contre 2 199 922 à la profondeur 12, même binaire — le plus grand écart relevé
 (58 % le 21 sept.). Chaque verdict reste valide en interne ; deux runs ne se
 comparent pas sans leurs étalonnages.
+
+**Le crible du code neuf, avant de fusionner** (`tools/mutants.sh --in-diff`,
+dans le conteneur, quatre minutes) : **sept mutants sur onze survivaient**
+dans les trois lignes du bornage. Le test de partie ne traverse que les bornes
+de SA position — même affaiblir la borne basse en `-MATE - ply` le laissait
+passer. Un invariant de recherche se corrige au fil : les deux bornes sont
+extraites dans `mate_distance_window`, fonction pure testée par ses valeurs à
+plusieurs plis (`la_fenetre_ne_promet_que_le_mat_atteignable`), et la garde de
+la racine par son effet, avec témoin (`a_la_racine_la_fenetre_n_est_jamais_bornee`).
+Banc identique au nœud près, 107 548 et 594 679 aux profondeurs 7 et 10.
+Recriblé : **22 attrapés sur 23, un expiré** — `alpha >= beta` en `<`, qui
+fait tourner la recherche à vide.
 
 ### Ce qui reste à faire, par ordre mesuré
 
