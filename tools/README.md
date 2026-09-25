@@ -2833,6 +2833,46 @@ l'attic. **Un arbre plus petit n'est pas un gain** — il chiffre le coût, pas
 la décision, huit mesures du projet le montrent : il ordonne l'achat des
 matchs, il ne les remplace pas.
 
+**Le rejeu, rendu à 07 h 47** — 4 951 recherches à la profondeur 10, deux
+flux du match de la sonde (un processus de chaque couleur de départ),
+rustine `tools/attic/a20-variantes-ordonnancement.patch`, rejoueur
+`tools/sonde-a20/rejouer-profondeur.py` :
+
+| variante | nœuds | contre `main` | par flux | attendu |
+|---|---|---|---|---|
+| `main` | 314 907 163 | — | — | — |
+| coup de réfutation | 318 760 360 | **+1,2 %** | −0,1 / +2,5 % | −0,5 à −3 % |
+| continuation, vidée à chaque coup | 318 720 906 | **+1,2 %** | +0,5 / +1,9 % | −2 à −8 % |
+| **continuation, conservée** | **305 090 247** | **−3,1 %** | −3,0 / −3,2 % | −2 à −8 % |
+| papillon conservé | 328 873 073 | **+4,4 %** | +4,1 / +4,8 % | −1 à −5 % |
+| malus du papillon | 310 975 805 | −1,2 % | −2,1 / −0,4 % | −5 à +5 % |
+
+Ce qui en sort :
+1. **Une seule variante passe le critère : la continuation CONSERVÉE**,
+   −3,1 %, la même sur les deux flux. Elle va au match. Les quatre autres
+   restent à l'attic : trois grossissent l'arbre, le malus le réduit sous
+   le seuil et pas de la même façon sur les deux flux.
+2. **Trois attendus sur cinq avaient le mauvais signe.** Le coup de
+   réfutation et le papillon conservé devaient réduire l'arbre ; ils le
+   grossissent.
+3. **Conserver aide une table creuse et nuit à une table dense.** La
+   continuation — 590 000 entrées — n'apprend rien en un coup : vidée, elle
+   grossit l'arbre de 1,2 % ; conservée, elle le réduit de 3,1 %. Le
+   papillon — 4 096 entrées — apprend en un coup, et ce qu'il garde du coup
+   précédent l'égare : +4,4 %. <span><strong>Inférence, confiance
+   moyenne</strong> : ce qu'une table retient doit durer à proportion de ce
+   qu'il lui faut pour apprendre.</span>
+4. **Le banc a inversé une conclusion de plus.** À la profondeur 10, il
+   donnait la continuation vidée à −5,6 % — en partie, +1,2 %. C'est le
+   piège « le banc peut INVERSER une conclusion » (A18), et ici par le
+   régime : six positions cherchées à froid ne voient ni la table ni les
+   historiques d'une partie.
+5. **Ce que l'arbre promet est petit** : −3,1 % à profondeur fixe, c'est
+   un facteur 1,032 de vitesse, soit **0,06 pli — 4 à 7 Elo** à l'étalon
+   de 60 à 105 Elo par pli. Le canal des décisions — ce que LMR et LMP
+   font d'un meilleur ordre — n'est pas dans ce chiffre, et son signe
+   n'est pas connu.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
