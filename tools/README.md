@@ -736,7 +736,8 @@ dernière relève est faite.
 | **A20 — l'Elo de la continuation** | **36110519468, 36110522377, 36110524982, 36110528007** | `54e6c60` → `a08af76`, `8+0,08`, graine « auto » | 4 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond vers 13 h 50, 2 900, 2 900, 2 900 et 2 920 parties | **+12,56 ± 4,35 en commun, homogènes (z ≤ 1,17), zéro perte au temps : gain démontré, FUSIONNÉ** (section A20) — au-dessus de ce que l'arbre seul promettait. — *Attendu, écrit avant* : 0 à +15, dont +4 à +7 par l'arbre seul. **Critère de gain** : fusion si la borne basse commune est au-dessus de zéro ; +5 y serait démontré 64 fois sur 100, +8 96 fois sur 100 |
 | **A20 — le crible de mutation au candidat** | <s>—</s> **36114952595** | `54e6c60`, `search.rs` entier, 570 mutants — et les huit autres fichiers | <s>`tools/mutants.sh`, dans le conteneur</s> **`Mutation`, entrée `commit`, sur runner** | <s>lancé à 08 h 01, fin vers 09 h</s> **mort dans le conteneur à 57 mutants sur 570**, au redémarrage de 08 h 11 — la règle « une mesure longue ne survit pas dans le conteneur », enfreinte faute d'outil ; **relancé sur runner à 08 h 48** — extraction du candidat vérifiée au journal — **RELEVÉ à 10 h 25, VERT** | **La prédiction tient, au bas de sa fourchette** : `search.rs` **39**, et ce sont les MÊMES survivants que sur `main`, un pour un, décalés de lignes par le code neuf ; aucun mutant du code neuf ne survit, et l'arbre neuf ne cache aucun ancien mutant au banc figé. Tous les autres fichiers à leur plafond, total **139**. — *Prédiction, écrite avant* : 39, au plafond, les mêmes ; jusqu'à 43 si l'arbre neuf cache d'anciens mutants au banc figé. Les 57 premiers dans le conteneur : un survivant, l'ancien de `Score::from_internal` |
 | **C27 — l'élagage par distance au mat, l'Elo** | **36166287710, 36166290276** | `bb6e4c0` → `3aa5986`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **lancés à 17 h 18**, coupés par le plafond vers 23 h 10 | *Critère, écrit avant* (section C27) : **fusion sauf si la borne haute est sous zéro**, en commun comme sur chaque match. Puissance : ± 6 Elo ; attendu 0 à +3, invisible |
-| **A21 — le débit de génération sur runner** | *à lancer après la fusion* — `nnue-datagen.yml` doit être sur `main` pour se déclencher | le générateur de `main`, 5 000 nœuds, graine « auto », quatre fils | un job court, 20 minutes | — | *Attendu, écrit avant* (section A21) : **1 200 à 1 800 positions par seconde** ; l'artefact se dépose et se relit. Décide combien de jobs pour la première cible |
+| **A21 — le débit de génération sur runner** | 36166785450 | le générateur de `main` à `0eb1e9b`, 5 000 nœuds, graine « auto », un fil par processeur logique | un job court, 20 minutes | **RELEVÉ** — fini à 17 h 43 | **1 713 positions par seconde, dans l'attendu** (1 200 à 1 800, écrit avant) : 17 976 parties, 2 055 456 positions, 62,2 % gardées par le filtre par défaut ; artefact de 7,4 Mo, expire le 24 déc. **Il ne se relit pas d'ici** : le proxy de sortie refuse le stockage des artefacts. Décide quatre jobs (section A21) |
+| **A21 — la génération, première vague** | **36179538497, 36179541822, 36179544454, 36179547648** | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **lancés à 19 h 25**, fin vers 00 h 57 | *Attendu, écrit avant* (section A21) : **34 millions de positions par job** au débit relevé, 21 à 54 aux extrêmes de vitesse des runners ; **136 millions pour les quatre**, dont 62 % gardées par le filtre. Chaque résumé doit nommer `bb6e4c0`. Sous 100 millions en tout, une vague de complément, dimensionnée sur les débits relevés |
 | **balayage de mutation après la PR #83** — A20 fusionné | **36145534414** | `main` à `d23d1b5` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 40, VERT** — `search.rs` le plus long, 71 min : 461 attrapés, 42 expirés | **La prédiction tient, exactement — jusqu'aux expirés** : `search.rs` **39**, les mêmes survivants que le crible au candidat, un pour un, aux mêmes lignes ; et le tableau entier du verdict est celui du crible, colonne par colonne — survivants, attrapés ET expirés, pour les neuf fichiers. Total **139**, aucune issue. *Le crible par l'entrée `commit` et le balayage de `main` voient donc la même chose.* — *Prédiction, écrite avant* : `search.rs` **39**, au plafond, et les MÊMES survivants que le crible au candidat (36114952595), un pour un, aux mêmes lignes — le code moteur de `main` est celui du candidat octet pour octet (`git diff 54e6c60 d23d1b5 -- engine/` est vide) et le crible a balayé tous les fichiers ; seul le compte d'expirés peut bouger avec la charge du runner, et il ne peut que faire baisser celui des survivants. Tous les autres fichiers à leur plafond, total **139**. Un écart, quel qu'il soit, dirait que le crible et le balayage ne voient pas la même chose |
 | **balayage de mutation après la PR #81** — C25 fusionné | 36073858328 | `main` à `04bf6f8` | un job par fichier, puis `Verdict` | **RELEVÉ à 01 h 10, VERT** — `search.rs` le plus long, 90 min : 526 mutants, 410 attrapés, 28 inviables, 49 expirés | **La prédiction tient, exactement** : `search.rs` **39**, les deux survivants d'`iterate` que le crible au candidat avait trouvés parmi eux, et tous les autres fichiers à leur plafond, total **139**. Aucune issue. — *Prédiction, écrite avant* : `search.rs` **39**, au plafond — le crible au candidat ne trouvait que les deux survivants anciens, et C25 ne déplace aucun arbre à profondeur fixe, donc aucun test de nœuds ne voit autrement le reste du fichier ; des expirés en plus, `set_deadlines` vidé et `deadlines_ms` à `None`. Tous les autres fichiers à leur plafond, total 139 |
 | **balayage de mutation après les PR #78 et #79** — tests corrigés, C24 fusionné | 36028076680 | `main` à `f2dd0cf` | un job par fichier, puis `Verdict` | **RELEVÉ à 17 h 38, VERT** | **La prédiction tient** : `search.rs` **39**, au plafond — les quatre mutants cachés par l'arbre d'A18 attrapés, la garde de `stage_moves` seule en plus des 38, C24 n'ajoute rien. `eval.rs` **89** contre 121 → plafond **resserré à 89** : le banc à la profondeur 6 attrape 33 `delete -` de plus dans les tables. Total du dépôt 139. Issue #69 fermée |
@@ -3032,11 +3033,71 @@ Soit 4 à 6,5 millions de positions par heure, 24 à 36 millions par job de 330
 minutes, 100 à 150 Mo. Ce que la mesure tranchera : le nombre de jobs d'une
 première cible.
 
+**Relevé sur runner le 25 sept. à 17 h 43 — dans l'attendu** (run
+36166785450, 20 minutes) : **1 713 positions par seconde** ; 17 976 parties et
+357 écartées (1,9 %), 114 demi-coups en moyenne ; **62,2 % gardées** par le
+filtre par défaut ; 7 251 gains blancs, 7 397 noirs, 3 328 nulles — **81,5 %
+de parties décisives**, comme en conteneur. 4,3 octets par position sur
+disque, 3,6 dans l'artefact compressé. Le runner rend 84 % du débit du
+conteneur avec deux cœurs physiques pour quatre : le SMT rend plus que je ne
+l'avais compté. *Un runner, pas une dispersion* : la vitesse de recherche a
+varié de 58 % entre deux runners le 21 sept., et un point unique qui tombe
+dans l'intervalle attendu n'en mesure rien (`CLAUDE.md`).
+
+**L'artefact ne se relit pas depuis le conteneur** : le proxy de sortie y
+refuse le stockage où GitHub dépose les artefacts
+(`*.blob.core.windows.net`, politique d'organisation). Il se relira sur la
+machine d'entraînement, par `viriformat`, **avant tout entraînement** : ses
+comptes doivent retomber sur ceux du résumé de chaque job, parties et
+positions. Ce qui est vérifié d'ici : le code qui écrit est celui que les
+tests relisent par `viriformat`, et l'écriture finit par un `flush` dont
+l'erreur fait échouer le job.
+
 **Première cible : 100 millions de positions — provisoire, non mesurée.**
 L'exemple de bullet voit 4 milliards d'échantillons en 40 superbatches, ce qui
 ne dit rien de la taille du jeu de données. La bonne quantité se mesurera par
 une courbe d'apprentissage : entraîner sur la moitié, puis sur le tout, et
 comparer en match.
+
+**La génération, lancée le 25 sept. à 19 h 25 — quatre jobs de 330 minutes**
+(runs 36179538497, 36179541822, 36179544454, 36179547648). Trois choix, chacun
+avec sa raison :
+
+- **quatre jobs, pas trois** : trois donnent 102 millions au débit relevé, sans
+  marge pour un runner plus lent ; quatre en donnent 136, et la courbe
+  d'apprentissage prévue compare la moitié au tout. Sous 100 millions en tout,
+  une vague de complément se dimensionne sur les débits relevés ;
+- **découpés sous les limites de temps** — Théo, le 25 sept. : « *Tu devras
+  faire gaffe a bien découper ou générer en plusieurs fois pour faire gaffe
+  aux limites de temps* ». Un job hébergé est tué à six heures (`github/docs`
+  au commit `2494c72`, `content/actions/reference/limits.md`) ; le nôtre
+  plafonne à 350 minutes, et le générateur s'arrête de lui-même à 330 : aucune
+  partie n'est entamée après l'échéance, celles en cours finissent, le fichier
+  est vidé avec contrôle d'erreur. Build et dépôt prennent moins d'une minute.
+  Un job perdu ne perd que sa part — un artefact par job, une graine par job,
+  le numéro du run ;
+- **au candidat C27, `bb6e4c0`, pas à `main`** : le défaut de C27 a été trouvé
+  par les tests de ce générateur, donc son régime l'atteint ; une borne hors
+  plage relue ailleurs peut changer une recherche voisine, donc une étiquette
+  — <span>inférence, non mesurée</span>. Le générateur y est celui de `main`
+  au bit près : hors documentation et attic, `git diff bb6e4c0 0eb1e9b` ne
+  touche que `engine/`, le correctif. Et le correctif est juste par ses tests quel que soit le verdict
+  d'Elo, qui juge la force, pas la justesse des scores. Si C27 est fusionné,
+  ces données sont celles qu'aurait produites `main` — à vérifier à la fusion,
+  par le même `git diff`.
+
+**Les données se regénèrent à l'identique** : chaque partie est une fonction
+pure de (graine, numéro, nœuds) au commit donné, et un job a joué exactement
+les numéros 0 à K − 1, K = parties + écartées, lus dans son résumé. `--games K`
+avec la même graine rend les mêmes parties, réparties autrement entre les
+fichiers. L'expiration des artefacts à 90 jours ne coûterait que du temps de
+runner.
+
+**Le coût, lu au source** (`github/docs` au commit `2494c72`,
+`content/billing/concepts/product-billing/github-actions.md`) : « *GitHub
+Actions usage is free for self-hosted runners and for public repositories that
+use standard GitHub-hosted runners* » ; les quotas de minutes et de stockage
+d'artefacts visent les dépôts privés.
 
 **La suite, dans l'ordre** :
 1. la génération, sur quelques runners à la fois ;
@@ -3157,7 +3218,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **B8 — régler les constantes de recherche** | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau) |
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
 | **C13 — mesurer la force absolue** | — | **reporté** : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread |
-| **B4 — évaluation NNUE** | — | **reporté.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation. **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 |
+| **B4 — évaluation NNUE** | — | **reporté.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation. **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 ; **première vague lancée le 25 sept. à 19 h 25**, quatre jobs |
 | **tablebases de finale** (reste de B6) | — | **reporté**, non chiffré |
 | **B5 — analyse dans l'interface ; A8 — transport interface ↔ moteur** | — | **côté `ui/`**, chantier mené séparément sous son propre `ui/CLAUDE.md` : listés ici pour que le tableau soit complet, pas pour être ordonnés avec le moteur |
 
