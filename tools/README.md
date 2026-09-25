@@ -2873,6 +2873,51 @@ Ce qui en sort :
    font d'un meilleur ordre — n'est pas dans ce chiffre, et son signe
    n'est pas connu.
 
+#### Le candidat et sa mesure — écrits le 25 sept. 2026 AVANT de lancer
+
+**Candidat `54e6c60`**, révoqué aussitôt par `99df7ca` ; la rustine
+`tools/attic/a20-continuation.patch` en garde une copie. Référence : son
+parent `a08af76`. Chaque tranquille est noté par le papillon plus sa note
+sachant chacun des deux coups qui précèdent le nœud ; la table apprend des
+mêmes coupures que le papillon, se conserve d'un coup à l'autre, se vide à
+`ucinewgame` — pour les auxiliaires aussi. 2,25 Mio par fil. Cinq tests
+neufs.
+
+**Le code mesuré et le code candidat sont le même arbre, vérifié** : banc
+107 548 et 594 679 à la profondeur 7 et 10, et le rejeu rend **305 090 247
+nœuds, exactement** ceux de la variante `chk` de l'expérience. Banc de
+référence 109 047 → 107 548 ; banc figé à la profondeur 6, 70 719 → 70 594.
+
+**Pas de sonde des plis** : l'arbre promet 0,06 pli, et la sonde en partie
+mesure à ± 0,07 à 0,09 — elle ne départagerait rien. Et elle ne verrait pas
+ce qu'une table de 2,25 Mio coûte par nœud en accès mémoire, que l'arbre ne
+compte pas : c'est à l'Elo de le payer ou non.
+
+**Attendu, écrit avant** : **+4 à +7 Elo par le seul canal de l'arbre**,
+moins le coût par nœud des accès à la table ; le canal des décisions, de
+signe inconnu, peut ajouter ou retrancher. Ensemble : **0 à +15**,
+confiance faible.
+
+**La mesure** : quatre jobs de 3 000 parties à `8+0,08`, `match.yml`,
+graine « auto », candidat contre parent, mis en commun par
+`tools/mettre-en-commun.sh`. **Quatre et non deux, contre ce que l'écran
+écrivait** — la puissance, calculée avant : à 6 000 parties l'intervalle
+vaut ± 6 Elo, et un effet de +5 n'y serait démontré qu'une fois sur quatre ;
+à 12 000, ± 4,3, **+5 démontré 64 fois sur 100, +8 96 fois sur 100**.
+
+**Critère de gain, écrit avant** : **fusion si la borne basse de
+l'intervalle mis en commun est au-dessus de zéro** ; sinon, pas de fusion,
+et la rustine reste à l'attic. Des jobs qui se contredisent se lisent comme
+C22 sur C23 : un critère écrit en bornes se lit sur chaque match comme sur
+l'ensemble.
+
+**Crible de mutation au candidat, prédiction écrite avant** — le FICHIER
+`search.rs` entier, pas le seul diff (la leçon d'A18) : **39 survivants, au
+plafond, les mêmes**. Les mutants du code neuf sont tous attrapés par les
+cinq tests ou par le banc figé. Risque nommé : un ancien mutant que l'arbre
+neuf ne montre plus au banc figé, comme les quatre d'A18 — d'où **39 à
+43**.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
