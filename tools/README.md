@@ -2773,6 +2773,35 @@ clause du critère s'appuyait sur ces rangs : elle ne s'applique pas.** La
 première suffit à trancher, puisque l'union de l'étage tranquille dépasse
 5 % (chiffre final plus bas).
 
+**L'écran, rendu à 07 h 43** — 120 parties à `8+0,08`, six processus,
+6,25 milliards de nœuds ; rustine `tools/attic/a20-sonde-ordonnancement.patch`,
+lecteur `tools/sonde-a20/analyser.py`. Les rangs contrefactuels n'y figurent
+plus que pour mémoire.
+
+| grandeur | attendu | mesuré |
+|---|---|---|
+| coupures au premier coup | 75 à 90 % | **81,8 %** |
+| étage du coupeur : table, tactique, killer, étage tranquille | — | 28,4 / 50,6 / 16,1 / **4,9 %** |
+| coupeurs de l'étage tranquille | 2 à 8 % des coupures | **4,9 %** |
+| union des sous-arbres cherchés avant le coupeur | — | **41,6 %** des nœuds : 1,06 pli pour un ordre parfait de TOUS les étages |
+| … perdus dans le coup de table, un tactique, un killer, un tranquille | — | 18,3 / 10,5 / 5,1 / 7,7 % |
+| **union de l'étage tranquille**, emboîtements permis | 4 à 12 % | **10,9 %**, soit **0,23 pli au plus** |
+| l'étage tranquille, aux coupures qu'il rend | — | 20,3 coups ; coupeur premier 49,8 % ; réduit par LMR 7,6 % |
+| coup de réfutation | — | juste sur **17,0 %** des coupures de l'étage, présent et faux sur 15,3 % |
+
+Ce qui en sort :
+1. **Le critère ne clôt pas le canal de l'arbre** : 10,9 % dépasse 5 %.
+   Mais 0,23 pli — **14 à 24 Elo** à l'étalon de 60 à 105 Elo par pli —
+   est ce que rendrait un ordre PARFAIT des tranquilles ; une heuristique
+   n'en prendra qu'une part, et c'est le rejeu qui dira laquelle.
+2. **Le plus gros gisement n'est pas dans le chantier décidé** : le coup de
+   table perdu avant un autre coupeur pèse 18,3 % des nœuds, les tactiques
+   perdus 10,5 %. Aucun raffinement de l'étage tranquille n'y touche. Noté,
+   pas ouvert.
+3. **Le coup de réfutation a une portée bornée d'avance** : l'étage
+   tranquille rend 4,9 % des coupures, et la réfutation n'y désigne le
+   coupeur qu'une fois sur six.
+
 **La mesure suivante est donc celle que le critère prévoyait, et c'est la
 bonne : l'arbre de chaque variante APPLIQUÉE.** Un binaire expérimental — la
 variante choisie par l'environnement, `main` au nœud près sans elle (banc
