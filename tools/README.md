@@ -2760,6 +2760,50 @@ est informé. Confiance faible sur chaque ligne :
    deux jobs de 3 000 parties à `8+0,08`. Critère de gain : fusion si la
    borne basse est au-dessus de zéro.
 
+**Un biais de MÉTHODE, trouvé en lisant les premiers chiffres (25 sept.,
+07 h 30).** Toutes les variantes sortaient pires que l'ordre joué — même le
+coup de réfutation, qui tombe juste sur 16,8 % des coupures de l'étage. Ce
+n'est pas un résultat : **le coupeur est le premier coup qui coupe DANS
+L'ORDRE JOUÉ**. Les coups qu'un autre ordre placerait devant lui n'ont
+jamais été cherchés, certains auraient coupé aussi, et les compter comme des
+échecs condamne toute variante qui diffère de l'ordre joué. Le malus n'en
+était qu'un cas particulier. Restent valides : l'union — le plafond — et,
+pour une variante, le « coupeur premier » comme **minorant**. **La seconde
+clause du critère s'appuyait sur ces rangs : elle ne s'applique pas.** La
+première suffit à trancher, puisque l'union de l'étage tranquille dépasse
+5 % (chiffre final plus bas).
+
+**La mesure suivante est donc celle que le critère prévoyait, et c'est la
+bonne : l'arbre de chaque variante APPLIQUÉE.** Un binaire expérimental — la
+variante choisie par l'environnement, `main` au nœud près sans elle (banc
+109 047 et 629 735) — rejoue les parties du match de la sonde, chaque `go`
+remplacé par `go depth 10`, table et historiques conservés d'un coup à
+l'autre. Déterministe à un fil : ni bruit, ni appariement à faire, les mêmes
+positions dans le même ordre. Cinq variantes :
+- **coup de réfutation**, un étage entre les killers et les tranquilles ;
+- **continuation** à un et deux plis, ajoutée au papillon, vidée à chaque
+  coup ;
+- la même, **conservée** d'un coup à l'autre ;
+- **papillon conservé** d'un coup à l'autre ;
+- **malus** du papillon : − d² aux tranquilles essayés avant le coupeur.
+
+**Attendu, écrit avant.** Confiance faible. Le banc — six positions à
+froid — a été vu : à la profondeur 10, réfutation −0,9 %, continuation
+−5,6 %, malus +3,5 %.
+
+| variante | arbre attendu |
+|---|---|
+| réfutation | −0,5 à −3 % |
+| continuation | −2 à −8 %, la conservée un peu mieux que la vidée |
+| papillon conservé | −1 à −5 % |
+| malus | signe inconnu, −5 à +5 % |
+
+**Critère, écrit avant** : une variante dont l'arbre rétrécit d'au moins
+2 % passe au match, dans l'ordre du rétrécissement ; les autres restent à
+l'attic. **Un arbre plus petit n'est pas un gain** — il chiffre le coût, pas
+la décision, huit mesures du projet le montrent : il ordonne l'achat des
+matchs, il ne les remplace pas.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
