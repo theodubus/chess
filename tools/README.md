@@ -253,8 +253,8 @@ sur douze positions de vraies parties :
 
 ## Ce que `tools/src/bin/` contient
 
-Six binaires, tous hors ligne : aucun n'est appelé par le moteur, et aucun ne
-change sa force. Ils sont nommés ici **avec leur extension**, parce que c'est
+Tous hors ligne : aucun n'est appelé par le moteur, et aucun ne change sa
+force. Leur compte n'est pas écrit : il vit dans la table. Ils sont nommés ici **avec leur extension**, parce que c'est
 ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 
 | binaire | ce qu'il fait |
@@ -263,6 +263,7 @@ ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 | `datagen.rs` | produit le corpus `FEN;résultat` de l'ajustement Texel, étiqueté par le **résultat de la partie** et jamais par le score de l'évaluation. Sert aussi à tirer des positions de vraies parties pour toute sonde |
 | `tune.rs` | l'ajustement Texel lui-même. Son verdict a été **rejeté** (−9,96 Elo) ; l'outil reste parce qu'il resservira avec un corpus plus grand |
 | `nnue_probe.rs` | le benchmark obligatoire de B4 : ce que coûtent le copy-make (7,2 %) et la dérivation du delta d'accumulateur NNUE (2,8 %) en part du temps d'un nœud |
+| `nnue_datagen.rs` | les données d'entraînement NNUE (A21) : parties d'auto-jeu à nœuds fixes, au format `viriformat` que lit bullet, **écrit par la crate de référence** et jamais réimplémenté. Lancé sur runner par `.github/workflows/nnue-datagen.yml`, un artefact par job |
 | `see_check.rs` | confronte l'échange statique à un oracle par force brute. Il a trouvé un **bug du manuel** au premier passage — 27 valeurs fausses sur 771 |
 | `attack_dump.rs` | confronte la géométrie d'attaque de `see::least_valuable_attacker` à `python-chess`, case par case |
 
@@ -734,6 +735,8 @@ dernière relève est faite.
 | **A20 — l'écran et le rejeu, dans le conteneur** | — | `main` sondé contre lui-même, `8+0,08`, 120 parties, `-srand 20260925` ; puis cinq variantes rejouées à la profondeur 10 sur deux flux | cutechess, `-debug all` ; `rejouer-profondeur.py` | **RELEVÉS à 07 h 43 et 07 h 47** | union de l'étage tranquille **10,9 %** des nœuds, 0,23 pli au plus ; une seule variante réduit l'arbre, **la continuation conservée, −3,1 %** (section A20) |
 | **A20 — l'Elo de la continuation** | **36110519468, 36110522377, 36110524982, 36110528007** | `54e6c60` → `a08af76`, `8+0,08`, graine « auto » | 4 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond vers 13 h 50, 2 900, 2 900, 2 900 et 2 920 parties | **+12,56 ± 4,35 en commun, homogènes (z ≤ 1,17), zéro perte au temps : gain démontré, FUSIONNÉ** (section A20) — au-dessus de ce que l'arbre seul promettait. — *Attendu, écrit avant* : 0 à +15, dont +4 à +7 par l'arbre seul. **Critère de gain** : fusion si la borne basse commune est au-dessus de zéro ; +5 y serait démontré 64 fois sur 100, +8 96 fois sur 100 |
 | **A20 — le crible de mutation au candidat** | <s>—</s> **36114952595** | `54e6c60`, `search.rs` entier, 570 mutants — et les huit autres fichiers | <s>`tools/mutants.sh`, dans le conteneur</s> **`Mutation`, entrée `commit`, sur runner** | <s>lancé à 08 h 01, fin vers 09 h</s> **mort dans le conteneur à 57 mutants sur 570**, au redémarrage de 08 h 11 — la règle « une mesure longue ne survit pas dans le conteneur », enfreinte faute d'outil ; **relancé sur runner à 08 h 48** — extraction du candidat vérifiée au journal — **RELEVÉ à 10 h 25, VERT** | **La prédiction tient, au bas de sa fourchette** : `search.rs` **39**, et ce sont les MÊMES survivants que sur `main`, un pour un, décalés de lignes par le code neuf ; aucun mutant du code neuf ne survit, et l'arbre neuf ne cache aucun ancien mutant au banc figé. Tous les autres fichiers à leur plafond, total **139**. — *Prédiction, écrite avant* : 39, au plafond, les mêmes ; jusqu'à 43 si l'arbre neuf cache d'anciens mutants au banc figé. Les 57 premiers dans le conteneur : un survivant, l'ancien de `Score::from_internal` |
+| **C27 — l'élagage par distance au mat, l'Elo** | **36166287710, 36166290276** | `bb6e4c0` → `3aa5986`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **lancés à 17 h 18**, coupés par le plafond vers 23 h 10 | *Critère, écrit avant* (section C27) : **fusion sauf si la borne haute est sous zéro**, en commun comme sur chaque match. Puissance : ± 6 Elo ; attendu 0 à +3, invisible |
+| **A21 — le débit de génération sur runner** | *à lancer après la fusion* — `nnue-datagen.yml` doit être sur `main` pour se déclencher | le générateur de `main`, 5 000 nœuds, graine « auto », quatre fils | un job court, 20 minutes | — | *Attendu, écrit avant* (section A21) : **1 200 à 1 800 positions par seconde** ; l'artefact se dépose et se relit. Décide combien de jobs pour la première cible |
 | **balayage de mutation après la PR #83** — A20 fusionné | **36145534414** | `main` à `d23d1b5` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 40, VERT** — `search.rs` le plus long, 71 min : 461 attrapés, 42 expirés | **La prédiction tient, exactement — jusqu'aux expirés** : `search.rs` **39**, les mêmes survivants que le crible au candidat, un pour un, aux mêmes lignes ; et le tableau entier du verdict est celui du crible, colonne par colonne — survivants, attrapés ET expirés, pour les neuf fichiers. Total **139**, aucune issue. *Le crible par l'entrée `commit` et le balayage de `main` voient donc la même chose.* — *Prédiction, écrite avant* : `search.rs` **39**, au plafond, et les MÊMES survivants que le crible au candidat (36114952595), un pour un, aux mêmes lignes — le code moteur de `main` est celui du candidat octet pour octet (`git diff 54e6c60 d23d1b5 -- engine/` est vide) et le crible a balayé tous les fichiers ; seul le compte d'expirés peut bouger avec la charge du runner, et il ne peut que faire baisser celui des survivants. Tous les autres fichiers à leur plafond, total **139**. Un écart, quel qu'il soit, dirait que le crible et le balayage ne voient pas la même chose |
 | **balayage de mutation après la PR #81** — C25 fusionné | 36073858328 | `main` à `04bf6f8` | un job par fichier, puis `Verdict` | **RELEVÉ à 01 h 10, VERT** — `search.rs` le plus long, 90 min : 526 mutants, 410 attrapés, 28 inviables, 49 expirés | **La prédiction tient, exactement** : `search.rs` **39**, les deux survivants d'`iterate` que le crible au candidat avait trouvés parmi eux, et tous les autres fichiers à leur plafond, total **139**. Aucune issue. — *Prédiction, écrite avant* : `search.rs` **39**, au plafond — le crible au candidat ne trouvait que les deux survivants anciens, et C25 ne déplace aucun arbre à profondeur fixe, donc aucun test de nœuds ne voit autrement le reste du fichier ; des expirés en plus, `set_deadlines` vidé et `deadlines_ms` à `None`. Tous les autres fichiers à leur plafond, total 139 |
 | **balayage de mutation après les PR #78 et #79** — tests corrigés, C24 fusionné | 36028076680 | `main` à `f2dd0cf` | un job par fichier, puis `Verdict` | **RELEVÉ à 17 h 38, VERT** | **La prédiction tient** : `search.rs` **39**, au plafond — les quatre mutants cachés par l'arbre d'A18 attrapés, la garde de `stage_moves` seule en plus des 38, C24 n'ajoute rien. `eval.rs` **89** contre 121 → plafond **resserré à 89** : le banc à la profondeur 6 attrape 33 `delete -` de plus dans les tables. Total du dépôt 139. Issue #69 fermée |
@@ -2958,6 +2961,146 @@ appris à `Mutation` à balayer un SHA.
 - Banc de référence **107 548** à la profondeur 7, banc figé 70 594 à la
   profondeur 6 ; crible au candidat : 39, les mêmes.
 
+### A21 — NNUE : la génération des données — écran écrit le 25 sept. 2026
+
+**Décidé — Théo, 25 sept. 2026, après la fusion d'A20** : « *Est ce que pour
+NNUE on aurait besoin de mon GPU dès maintenant ? Je n'ai pas accès a mon PC
+avant qq jours. Mais si on peut juste lancer la génération de parties sans GPU
+et que c'est long ça peut le faire* ». Lu comme le feu vert de B4, génération
+d'abord. Réponse : **non** — le GPU ne sert qu'à l'entraînement ; la génération
+des données et l'inférence dans le moteur sont du CPU.
+
+**Le format, lu au source** — bullet au commit `10e7e82`, `docs/3-data.md` et
+`examples/simple.rs` ; les crates `viriformat` 2.0.1 et `bulletformat` 1.8.0,
+aux versions que bullet épingle :
+
+- bullet recommande de stocker les données dans un format « binpack », et nomme
+  celui de Viridithas — `viriformat` — comme le plus employé par ceux qui
+  génèrent les leurs ; son exemple de référence le charge par
+  `ViriBinpackLoader` avec `Filter::default()` ;
+- une partie, c'est un en-tête de 32 octets, 4 octets par coup (le coup et le
+  score sur seize bits chacun), puis 4 octets nuls. **Mesuré : 4,3 octets par
+  position**, contre 32 pour le format direct `ChessBoard` — un facteur 7 sur
+  ce qu'il faudra transférer des runners vers la machine d'entraînement ;
+- **le score est du point de vue des Blancs** : `ChessBoard::from_raw` le
+  retourne lui-même vers le camp au trait, et `viriformat` le lui passe tel
+  quel. La recherche, elle, rend le point de vue du camp au trait ;
+- le roque est noté roi-prend-tour, comme dans `cozy-chess`, mais roque, prise
+  en passant et promotion portent des drapeaux que les deux cases ne donnent
+  pas ;
+- **le filtrage se fait au chargement** — positions en échec, coups tactiques,
+  seize premiers demi-coups : des parties entières se refiltrent sans être
+  regénérées.
+
+`viriformat` est sous licence MIT ; c'est une dépendance de `tools/` seulement,
+jamais du moteur.
+
+**Le générateur — `tools/src/bin/nnue_datagen.rs`** :
+
+- auto-jeu à **5 000 nœuds par coup** — choix NON mesuré, l'ordre de grandeur
+  courant ; 8 à 11 demi-coups tirés au hasard avant d'enregistrer, comme le
+  corpus Texel ; la partie est écartée si le premier score dépasse 1 000 ;
+- fin par les règles — mat, pat, triple répétition, cinquante coups, matériel
+  insuffisant —, adjudication de gain à 2 000 pendant huit demi-coups, nulle
+  au-delà de 400. **Pas d'adjudication de nulle** : ce qu'elle économiserait se
+  mesure sur les données avant de se décider ;
+- chaque partie est une fonction pure de (graine, numéro, nœuds) : table vidée
+  à chaque partie, un fil par recherche ;
+- le format est écrit **par la crate `viriformat` elle-même**, jamais
+  réimplémenté.
+
+Dix tests, dont : le signe du score, avec son témoin (écrire le point de vue
+du trait fait tomber les assertions noires) ; les coups spéciaux confrontés à
+l'**oracle** qu'est le générateur de coups de `viriformat` — roques, prises en
+passant, promotions et sous-promotions, chacun compté ; la relecture par
+`viriformat`, qui vérifie en debug la légalité de chaque coup ; le
+déterminisme. **Ils ont trouvé un défaut du moteur à leur première exécution**
+— section C27.
+
+**Mesuré en conteneur, une minute sur quatre fils — et AVANT d'avoir écrit
+l'attendu**, entorse au protocole que je signale plutôt que de la taire :
+1 072 parties de 115 demi-coups en moyenne, 28 écartées ; **2 044 positions par
+seconde** ; 62 % gardées par le filtre par défaut ; 429 gains blancs, 445
+noirs, 198 nulles — **82 % de parties décisives**. Une propriété des données à
+surveiller, pas un défaut : l'étiquette de résultat pèse 25 % dans l'exemple
+de bullet.
+
+**Attendu sur runner, écrit AVANT de lancer** : **1 200 à 1 800 positions par
+seconde**. Le runner a quatre processeurs logiques mais deux cœurs physiques
+(SMT, mesuré le 23 sept.), contre quatre cœurs sans SMT dans le conteneur.
+Soit 4 à 6,5 millions de positions par heure, 24 à 36 millions par job de 330
+minutes, 100 à 150 Mo. Ce que la mesure tranchera : le nombre de jobs d'une
+première cible.
+
+**Première cible : 100 millions de positions — provisoire, non mesurée.**
+L'exemple de bullet voit 4 milliards d'échantillons en 40 superbatches, ce qui
+ne dit rien de la taille du jeu de données. La bonne quantité se mesurera par
+une courbe d'apprentissage : entraîner sur la moitié, puis sur le tout, et
+comparer en match.
+
+**La suite, dans l'ordre** :
+1. la génération, sur quelques runners à la fois ;
+2. l'inférence dans le moteur — la pile d'accumulateurs par ply de la
+   contrainte d'architecture, et l'architecture de l'exemple de bullet
+   (768 → 128 ×2 → 1, SCReLU, quantification 255/64, échelle 400) —, éprouvée
+   sur un réseau aléatoire contre un calcul complet de référence ;
+3. l'entraînement, sur la carte de Théo ;
+4. le SPRT, à `8+0,08`.
+
+### C27 — une borne de mat hors plage stockée dans la table — trouvé le 25 sept. 2026, correctif EN MESURE
+
+**Trouvé par les tests du générateur NNUE**, qui jouent des parties entières
+depuis des positions gagnantes — ce qu'aucun test du moteur ne faisait. En
+debug, l'assertion de `pack_data` panique : `score hors bornes au stockage :
+-30002`. Le binaire UCI lui-même le reproduit : `position fen
+5Q2/R4B1k/1p6/4P1pp/8/4K3/1BP3PP/8 b - - 0 34`, puis `go depth 6`.
+
+**Le mécanisme, instrumenté et non supposé.** Les Noirs sont matés en un quoi
+qu'ils jouent. La première réponse trouvée fait de `MATE − 2` l'alpha des
+nœuds blancs du ply 3, où `MATE − 4` est le mieux atteignable. La quiescence,
+hors échec, initialise `best = alpha` : quand rien ne l'améliore, elle rend la
+BORNE comme un score. Remontée, niée, puis normalisée par `score_to_tt`
+(`− ply`), elle sort de ±MATE — −30 002 au ply 4. En release l'assertion
+n'existe pas : la valeur est stockée telle quelle, et `score_from_tt` la
+ressert ailleurs.
+
+**L'assertion « jamais déclenchée » ne prouvait rien.** Le commentaire de
+`tt.rs` l'écrivait depuis le 22 sept. : « ni par la suite de tests complète, ni
+par les critères d'acceptation ». Ni l'une ni les autres ne jouaient une partie
+jusqu'au mat depuis une position gagnante (`CLAUDE.md`, pièges de mesure).
+
+**Mesuré en régime réel, sur l'ancien code instrumenté** — 60 parties à
+`8+0,08` contre lui-même, livre du dépôt, `-srand 20260925`, 7 355
+recherches ; rustine `tools/attic/c27-sonde-hors-plage.patch` :
+
+| grandeur | recherches touchées | total |
+|---|---|---|
+| scores hors de ±MATE effectivement stockés | **134, soit 1,82 %** | 4,1 millions d'écritures |
+| nœuds que le correctif couperait (fenêtre vide une fois bornée) | **353, soit 4,80 %** | 26,6 millions, ~0,55 % des nœuds |
+
+Aucun « mate 0 » n'est remonté en UCI : la corruption reste interne à la table.
+Un troisième compteur de la sonde, les fenêtres « bornées », est inutilisable
+— il comptait aussi le bornage trivial d'une borne infinie — et n'est pas
+retenu.
+
+**Le correctif : l'élagage par distance au mat**, à l'entrée de `negamax`, hors
+racine et avant l'aiguillage vers la quiescence — `alpha ≥ −MATE + ply`,
+`beta ≤ MATE − ply − 1`, retour immédiat si la fenêtre est vide. Tout retour de
+borne reste alors représentable là où il est stocké. **Le banc est identique au
+nœud près** à `main` aux profondeurs 7, 10, 12 et 14 : sans mat dans la
+fenêtre, rien ne change.
+
+**Le test** `une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage` tombe sur
+l'ancien code **dans les deux profils** : en debug par l'assertion, en release
+parce que la table, lue par `max_abs_stored_score`, porte 30 002.
+
+**Critère, écrit AVANT le match** — la règle d'un correctif (`CLAUDE.md`) :
+deux jobs de 3 000 parties à `8+0,08`, le candidat contre son parent ;
+**fusion sauf si la borne haute de l'intervalle est sous zéro, en commun comme
+sur chaque match**. Puissance dite d'avance : ± 6 Elo. L'attendu est de 0 à
++3, donc invisible : le défaut ne touche que des positions où un mat est déjà
+vu, et il ne s'y voit pas en UCI.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
@@ -2980,8 +3123,12 @@ les étages, NNUE, remboursement du ponder. <s>Au-delà, la question se repose.<
 **Reposée le 25 sept. au matin, C26 fusionné, et DÉCIDÉE — Théo** : après
 l'allocation inégale, **les raffinements d'ordonnancement sur les étages** —
 « *Ok pour le raffinement de coups en prochain chantier* ». Comme les
-précédents : le mécanisme se mesure avant d'écrire une ligne. Au-delà, la
-question se repose.
+précédents : le mécanisme se mesure avant d'écrire une ligne. <s>Au-delà, la
+question se repose.</s> **Reposée le 25 sept. après la fusion d'A20, et DÉCIDÉE
+— Théo** : **NNUE (B4)**, en commençant par la génération des données — « *si
+on peut juste lancer la génération de parties sans GPU et que c'est long ça
+peut le faire* » ; sa machine, qui portera l'entraînement, n'est pas
+disponible avant quelques jours. Section A21.
 
 **Ce tableau porte TOUT le backlog du moteur**, reportés et bloqués compris,
 chacun avec sa condition. Il ne portait jusqu'au 23 sept. au soir que les
@@ -3010,7 +3157,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **B8 — régler les constantes de recherche** | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau) |
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
 | **C13 — mesurer la force absolue** | — | **reporté** : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread |
-| **B4 — évaluation NNUE** | — | **reporté.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation. **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé |
+| **B4 — évaluation NNUE** | — | **reporté.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation. **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 |
 | **tablebases de finale** (reste de B6) | — | **reporté**, non chiffré |
 | **B5 — analyse dans l'interface ; A8 — transport interface ↔ moteur** | — | **côté `ui/`**, chantier mené séparément sous son propre `ui/CLAUDE.md` : listés ici pour que le tableau soit complet, pas pour être ordonnés avec le moteur |
 

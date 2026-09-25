@@ -1,0 +1,114 @@
+# Génère des données d'entraînement NNUE sur un runner GitHub (B4, chantier A21).
+#
+# # Pourquoi sur un runner
+#
+# La génération est un travail CPU : des parties d'auto-jeu, chaque coup
+# cherché à un budget fixe de nœuds. L'entraînement, lui, demande un GPU
+# (bullet n'entraîne que sur CUDA, ROCm ou Metal, lu au source), et se fera
+# ailleurs. Le conteneur de session ne survit pas à une mesure de plusieurs
+# heures ; les runners tiennent six heures et ne dorment pas.
+#
+# Les conditions de GitHub Actions le permettent — lues au source le 25 sept.
+# 2026 (`tools/README.md`, ligne B4) : produire le réseau du dépôt relève de sa
+# production. La même section exclut une charge disproportionnée : on génère
+# donc par quelques jobs à la fois, pas par dizaines.
+#
+# # Ce que produit un job
+#
+# Un artefact `nnue-<run>` : un fichier `viriformat` par fil de génération,
+# lisible tel quel par le chargeur `ViriBinpackLoader` de bullet. Chaque partie
+# est une fonction pure de (graine, numéro, budget de nœuds) ; la graine par
+# défaut est le numéro du run, donc deux jobs ne produisent jamais les mêmes
+# parties — la faute de « même graine, deux copies » est écartée par
+# construction (`CLAUDE.md`, pièges de mesure).
+name: NNUE — génération de données
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit, branche ou tag du générateur (vide : la référence lancée)"
+        type: string
+        default: ""
+      minutes:
+        description: "Minutes de génération — le job plafonne à 350, build compris"
+        type: string
+        default: "330"
+      noeuds:
+        description: "Nœuds par coup"
+        type: string
+        default: "5000"
+      graine:
+        description: "Graine (auto : le numéro du run)"
+        type: string
+        default: "auto"
+      fils:
+        description: "Fils de génération (auto : un par processeur logique)"
+        type: string
+        default: "auto"
+
+permissions:
+  contents: read
+
+jobs:
+  generer:
+    name: Générer
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit }}
+
+      - name: Toolchain
+        run: |
+          rustup show active-toolchain
+          rustc --version && cargo --version
+
+      - name: Construire le générateur
+        run: cargo build --release -p shallowred-tools --bin nnue-datagen
+
+      - name: Générer
+        shell: bash
+        env:
+          MINUTES: ${{ inputs.minutes }}
+          NOEUDS: ${{ inputs.noeuds }}
+          GRAINE: ${{ inputs.graine }}
+          FILS: ${{ inputs.fils }}
+        run: |
+          # `bash -e` n'active PAS pipefail : sans lui, le code de retour serait
+          # celui de `tee`, et une génération interrompue passerait pour finie.
+          set -euo pipefail
+          graine="$GRAINE"; [ "$graine" = "auto" ] && graine="${{ github.run_id }}"
+          fils="$FILS"; [ "$fils" = "auto" ] && fils="$(nproc)"
+
+          # La topologie, parce que « quatre processeurs » peut vouloir dire
+          # deux cœurs physiques à deux fils : le débit n'est pas le même.
+          physiques=$(lscpu -p=CORE,SOCKET | grep -v '^#' | sort -u | wc -l)
+          modele=$(lscpu | awk -F: '/^Model name/ {sub(/^ +/, "", $2); print $2; exit}')
+
+          ./target/release/nnue-datagen --out donnees --threads "$fils" \
+            --nodes "$NOEUDS" --seed "$graine" --minutes "$MINUTES" | tee stats.txt
+
+          {
+            echo "### NNUE — génération, run ${{ github.run_id }}"
+            echo
+            echo "- générateur : \`$(git rev-parse HEAD)\`"
+            echo "- runner : $(nproc) processeurs logiques, $physiques cœurs physiques — $modele"
+            echo "- volume : $(du -sh donnees | cut -f1) sur disque"
+            echo
+            echo '```'
+            cat stats.txt
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Déposer les données
+        uses: actions/upload-artifact@v4
+        with:
+          name: nnue-${{ github.run_id }}
+          path: donnees/
+          if-no-files-found: error
+          # Le maximum d'un dépôt public. Les données doivent survivre jusqu'à
+          # l'entraînement, qui attend une machine avec GPU.
+          retention-days: 90
