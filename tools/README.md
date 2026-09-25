@@ -2690,6 +2690,76 @@ entre les classes**.
    chute ne touche que 1,5 % des coups. **Les deux règles que l'écran
    désignait sont fusionnées.**
 
+### A20 — raffinements d'ordonnancement : l'écran, écrit le 25 sept. 2026 AVANT de mesurer
+
+**La question.** Le chantier est décidé (Théo, 25 sept.) : coup de
+réfutation, historique de continuation. Avant d'écrire une ligne : que laisse
+l'ordre des coups tranquilles sur la table, et combien chaque raffinement en
+reprendrait-il ?
+
+**La sonde** — instrumentation et lecteur dans une même rustine de l'attic,
+versée avec le résultat. **L'arbre est inchangé au nœud près** : banc 109 047
+à la profondeur 7 et 629 735 à la profondeur 10, identiques à `main`. Aux
+nœuds de `negamax`, elle compte :
+- les coupures bêta, l'**étage de leur coupeur** (table, tactique, killer,
+  étage tranquille) et la part au premier coup ;
+- **l'UNION des sous-arbres cherchés avant le coupeur**, ce qu'un ordre
+  parfait épargnerait, propagée de fils en père. *Sommer ces sous-arbres
+  nœud par nœud compte deux fois ceux qui s'emboîtent* : le premier essai
+  rendait 67 % des nœuds, impossible pour un plafond ; l'union en rend la
+  moitié ;
+- cette union **ventilée par l'étage du coup perdu**, et celle de l'étage
+  tranquille seul — le plafond des raffinements décidés ;
+- aux coupures de l'étage tranquille, le **rang contrefactuel** du coupeur
+  sous cinq ordres : coup de réfutation devant l'étage ; papillon +
+  continuation à un et deux plis ; continuation d'abord ; papillon
+  **conservé** d'un coup à l'autre ; ce dernier + continuation. Les tables
+  contrefactuelles apprennent des mêmes coupures que l'historique réel, se
+  conservent d'un coup à l'autre et se vident à `ucinewgame` — une
+  continuation de 768 × 768 entrées vidée à chaque coup n'apprend rien.
+
+**Ce qu'elle ne peut pas mesurer, écrit avant** :
+- **le malus d'historique.** Il punit ce que l'ordre ACTUEL essaie en
+  premier ; appris sous cet ordre, il se condamne d'avance. Le premier essai
+  le donnait trois fois pire que l'historique réel : **un biais de politique,
+  pas une mesure**. Il se juge en l'écrivant ;
+- **le canal LMR/LMP.** Un bon coup mal classé est réduit ou élagué, et
+  c'est de la décision, pas de l'arbre. L'écran compte les coupeurs de
+  l'étage que LMR a réduits ; il ne voit pas les coups élagués qui auraient
+  coupé ;
+- **le second ordre.** Un autre ordre changerait l'arbre, donc les tables.
+
+**Régime** : parties entières à `8+0,08`, le binaire sondé contre lui-même,
+adjudication de `match.yml`, table et tables conservées comme en partie —
+piège du moteur froid.
+
+**Attendu, écrit avant — et ce que j'ai déjà vu.** Une position cherchée
+deux secondes, à froid, a servi à mettre la sonde au point : 78 % des
+coupures au premier coup ; l'étage tranquille ne coupe que 3 % des fois ;
+union 34 % des nœuds, dont 9 % dans l'étage tranquille ; aucune variante ne
+réduisait le rang moyen du coupeur de plus de 2 %, et « continuation
+d'abord » l'augmentait. Un point à froid, pas le régime, mais l'attendu en
+est informé. Confiance faible sur chaque ligne :
+- coupures au premier coup : 75 à 90 % ;
+- coupeurs de l'étage tranquille : 2 à 8 % des coupures ;
+- union de l'étage tranquille : **4 à 12 % des nœuds**, soit un plafond de
+  0,08 à 0,25 pli par la règle de 1,36 pli par doublement ;
+- rang moyen du coupeur : aucune variante ne le réduit de plus de 10 %, sauf
+  peut-être le papillon conservé, 0 à 20 %.
+
+**Critère, écrit avant :**
+1. **Union de l'étage tranquille sous 5 % des nœuds** — 0,10 pli, 6 à
+   10 Elo à l'étalon de 60 à 105 Elo par pli — **et aucune variante qui
+   réduise le rang moyen de 10 %** : le canal de l'arbre est clos pour ces
+   raffinements. Une variante réaliste n'en prendrait qu'une fraction, sous
+   la résolution de deux jobs. Reste le canal LMR/LMP : une sonde des DÉGÂTS,
+   comme D2, avant tout code — et la suite se repose à Théo avec les
+   chiffres.
+2. **Sinon**, écrire la variante au meilleur gain contrefactuel, mesurer son
+   arbre à profondeur fixe sur des positions de parties (déterministe), puis
+   deux jobs de 3 000 parties à `8+0,08`. Critère de gain : fusion si la
+   borne basse est au-dessus de zéro.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
