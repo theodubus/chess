@@ -1,0 +1,120 @@
+diff --git a/tools/sonde-controle/analyser.py b/tools/sonde-controle/analyser.py
+new file mode 100644
+index 0000000..7bdc57c
+--- /dev/null
++++ b/tools/sonde-controle/analyser.py
+@@ -0,0 +1,114 @@
++#!/usr/bin/env python3
++"""Sonde C26 : ce que la gestion du temps fait aux coups qui précèdent un
++contrôle à coups comptés. Lit un journal cutechess-cli `-debug all`.
++
++Pour chaque coup : movestogo annoncé, pendule propre au `go`, temps écoulé
++jusqu'au `bestmove` (vu de l'arbitre). Un cycle est la paire de coups d'un
++même camp à movestogo 2 puis 1, dans la même partie.
++
++Le journal du 24 sept. 2026 (voir `tools/README.md`, section C26) :
++
++    QT_QPA_PLATFORM=offscreen tools/arbiters/cutechess-cli -debug all \
++      -engine cmd=MOTEUR name=a proto=uci tc=40/8 \
++      -engine cmd=MOTEUR name=b proto=uci tc=40/8 \
++      -openings file=tools/book.epd format=epd order=random \
++      -srand 20260925 -games 2 -repeat -rounds 30 -concurrency 3 \
++      -draw movenumber=40 movecount=8 score=10 > sonde.log
++    python3 tools/sonde-controle/analyser.py sonde.log
++
++Pas d'abandon par adjudication : il finirait des parties avant le premier
++contrôle, qui est ce qu'on mesure.
++"""
++import re
++import statistics as st
++import sys
++from collections import defaultdict
++
++LIGNE = re.compile(r'^(\d+) ([<>])(\w+)\((\d+)\): (.*)$')
++
++def camp_au_trait(msg):
++    """Le camp au trait d'après la commande `position`."""
++    m = re.match(r'position (startpos|fen (\S+) ([wb]) \S+ \S+ \S+ \S+)(?: moves (.*))?$', msg)
++    if not m:
++        return None
++    base = 'w' if m[1] == 'startpos' else m[3]
++    n = len(m[4].split()) if m[4] else 0
++    return base if n % 2 == 0 else ('b' if base == 'w' else 'w')
++
++pos = {}          # process -> camp au trait
++partie = {}       # process -> numéro de partie (ucinewgame)
++encours = {}      # process -> coup en cours
++coups = []        # (process, partie, camp, movestogo, pendule, écoulé)
++
++for brut in open(sys.argv[1], errors='replace'):
++    m = LIGNE.match(brut.rstrip('\n'))
++    if not m:
++        continue
++    t, sens, cle, msg = int(m[1]), m[2], (m[3], m[4]), m[5]
++    if sens == '>':
++        if msg == 'ucinewgame':
++            partie[cle] = partie.get(cle, 0) + 1
++        elif msg.startswith('position'):
++            pos[cle] = camp_au_trait(msg)
++        elif msg.startswith('go'):
++            champs = dict(re.findall(r'(\w+) (\d+)', msg))
++            camp = pos.get(cle)
++            pendule = int(champs['wtime' if camp == 'w' else 'btime'])
++            encours[cle] = (t, camp, int(champs.get('movestogo', 0)), pendule)
++    elif msg.startswith('bestmove') and cle in encours:
++        t0, camp, mtg, pendule = encours.pop(cle)
++        coups.append((cle, partie.get(cle, 0), camp, mtg, pendule, t - t0))
++
++print(f"{len(coups)} coups lus")
++
++# 1. Part de la pendule dépensée, par movestogo.
++par = defaultdict(list)
++for c in coups:
++    classe = c[3] if c[3] <= 4 else 5
++    par[classe].append(c[5] / c[4])
++print("\nmovestogo  coups  part moyenne  p90    max")
++for k in sorted(par):
++    v = sorted(par[k])
++    p90 = v[int(0.9 * (len(v) - 1))]
++    nom = f"{k}" if k <= 4 else "5 et +"
++    print(f"{nom:>9s}  {len(v):5d}  {st.mean(v):11.3f}  {p90:5.3f}  {max(v):5.3f}")
++
++# 2. Les cycles : le coup à movestogo 2 puis celui à movestogo 1, même camp.
++suite = defaultdict(list)
++for c in coups:
++    suite[(c[0], c[1], c[2])].append(c)
++cycles = []
++for cle, cs in suite.items():
++    for a, b in zip(cs, cs[1:]):
++        if a[3] == 2 and b[3] == 1:
++            cycles.append((a, b))
++print(f"\n{len(cycles)} cycles (movestogo 2 puis 1, même camp, même partie)")
++if cycles:
++    affames = [(a, b) for a, b in cycles if a[5] / a[4] > 0.8]
++    print(f"affamés — le coup à movestogo 2 dépense plus de 80 % : {len(affames)} "
++          f"({100 * len(affames) / len(cycles):.1f} %)")
++    ordinaires = [b[4] for a, b in cycles if a[5] / a[4] <= 0.8]
++    if ordinaires:
++        med = st.median(ordinaires)
++        print(f"pendule au coup à movestogo 1, cycles ordinaires : médiane {med:.0f} ms")
++        for a, b in affames:
++            print(f"   affamé : {a[4]} ms au coup 39, dépensé {a[5]} ms ({a[5] / a[4]:.2f}) ; "
++                  f"reste {b[4]} ms au coup 40 ({b[4] / med:.2f} de la médiane ordinaire), "
++                  f"dépensé {b[5]} ms")
++    r = sorted(b[4] - b[5] for a, b in cycles)
++    print(f"marge au contrôle (pendule − dépensé au coup à movestogo 1) : min {r[0]} ms, "
++          f"médiane {st.median(r):.0f} ms")
++
++# 3. Ce que la borne de C26 couperait : la part des coups, à 2, 3 et 4 coups
++# du contrôle, qui dépensent plus que (n + 1) / 2n de leur pendule.
++print("\nau-delà de la borne de C26, (n + 1) / 2n de la pendule :")
++# La latence de l'arbitre s'ajoute au temps du moteur : « de plus de 10 ms »
++# sépare ce que la borne laisse passer de ce que la latence y ajoute.
++for n in (2, 3, 4):
++    borne = (n + 1) / (2 * n)
++    v = [c for c in coups if c[3] == n]
++    if v:
++        au_dela = sum(1 for c in v if c[5] > borne * c[4])
++        loin = sum(1 for c in v if c[5] > borne * c[4] + 10)
++        print(f"   movestogo {n} : borne {borne:.3f}, {au_dela} coups sur {len(v)} "
++              f"({100 * au_dela / len(v):.1f} %), dont {loin} de plus de 10 ms")

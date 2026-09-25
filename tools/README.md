@@ -529,6 +529,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-24 | **A18 — génération par étapes (`087edb8`) contre son parent (`d01183d`), à `8+0,08`** | **+23,10 Elo ± 6,39** sur 5 740 parties à longueur fixe — deux matchs homogènes (+27,81 et +18,36 ; z = 1,45), zéro anomalie. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant, au haut de l'attendu écrit avant (+6 à +25). La sonde en mesurait n/s × 1,09 et +0,17 ± 0,07 pli : **70 à 295 Elo par pli**, bornes croisées |
 | 2026-09-24 | **C24 — laisser finir l'itération entamée (`7274844`) contre son parent (`7fc5959`), à `8+0,08`** | **+44,64 Elo ± 6,24** sur 5 760 parties à longueur fixe — deux matchs homogènes (+45,01 et +44,27 ; z = 0,12), deux runners différents, zéro anomalie. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant. **Profondeur moyenne inchangée** (sonde : −0,00 ± 0,09 pli) : des deux lectures écrites avant le match, celle des plis moyens (+2 à +7) tombe, celle de l'accord avec l'oracle (+39 à +68) tient |
 | 2026-09-24 | **C25 — une échéance douce par stabilité du coup, la dure à 3 budgets (`41d590f`), contre son parent (`910a6c9`), à `8+0,08`** | **+7,87 Elo ± 6,08** sur 5 740 parties à longueur fixe — deux matchs homogènes (+8,45 et +7,29 ; z = 0,19), deux runners différents, zéro perte au temps. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant. **Sous l'attendu** (+12 à +25, converti au taux de C24) : **22 à 46 Elo par pli d'accord** au point, contre ~69 pour C24 — l'écran surestime davantage une règle qui cible les coups instables, ce que sa réserve disait |
+| 2026-09-25 | **C26 — la dure bornée à l'approche d'un contrôle annoncé (`6daf7d7`) contre son parent (`4620495`), à `40/8`** | **+2,43 Elo ± 6,01** sur 6 000 parties à longueur fixe — deux matchs homogènes (+4,98 et −0,12 ; z = 0,83), zéro perte au temps. **Correctif** : aucune borne haute sous zéro, **FUSIONNÉ au titre de la règle** — le mécanisme mesuré en partie (5,3 % de cycles affamés avant, aucun après), dans l'attendu écrit avant (0 à +5), sous la puissance dite d'avance (± 6). Première mesure du projet à une cadence à coups comptés ; sans `movestogo`, rien ne change |
 | 2026-09-23 | **Vol de CPU du ponder sur runner — deux sondes de 60 parties, à `8+0,08`** | **r = 0,948** (rapport des n/s 0,950 en ponder, 1,002 au témoin) ≥ 0,93 : **le verdict du ponder tient**, sur la règle écrite avant. Vol estimé 3 à 5 % de vitesse, 3 à 10 Elo des +67,63. **Topologie : 2 cœurs physiques, 2 fils par cœur (AMD EPYC 7763)**. [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290), [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087). Section « Vol de CPU du ponder sur runner — VERDICT ». |
 | 2026-09-23 | **C22 — le test de nulle avant l'aiguillage vers la quiescence, à `8+0,08`** | **−10,44 Elo ± 6,34** sur 5 760 parties — **régression, non fusionné**, arrêté par son critère écrit avant. 92 % des nulles qu'il ajoutait à l'horizon étaient fausses (C23) : **remesuré sur C23, en vol**. Section « C22 — VERDICT ». |
 | 2026-09-23 | **B9 — effet de capacité de la table à entrées atomiques, à `8+0,08`** | **−1,27 Elo ± 6,34** sur 5 740 parties — pas d'effet décelable. **Fusionné au titre de l'infrastructure** (la table se partage entre fils ; −4,3 % de temps déjà prouvé). Section « B9 — VERDICT ». |
@@ -726,6 +727,9 @@ dernière relève est faite.
 | **A18 — l'Elo** | 35975781390, 35975784326 | `087edb8` → `d01183d`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 14 h 22, 2 880 + 2 860 parties | **+23,10 ± 6,39, homogènes : gain démontré, FUSIONNÉ** (section A18) |
 | **C25 — la répartition par la stabilité, la sonde** | 36030127970 | `41d590f` → `910a6c9`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | **RELEVÉE à 17 h 32** | **Temps × 0,98, zéro perte au temps** : la règle lance l'Elo. Plis −0,20 ± 0,07, ce que l'écran prédisait (−0,16) — plus un critère (section C25) |
 | **C25 — l'Elo** | **36035213241, 36035217166** | `41d590f` → `910a6c9`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 23 h 24, 2 880 + 2 860 parties | **+7,87 ± 6,08, homogènes, zéro perte au temps : gain démontré, FUSIONNÉ** (section C25). Sous l'attendu (+12 à +25) : le taux de C24 ne se transfère qu'aux extrêmes, comme sa réserve le disait. Crible au candidat : la prédiction tient, rien de neuf dans `search.rs` |
+| **C26 — les deux sondes, dans le conteneur** | — | `main` avec C25, puis le candidat `6daf7d7`, chacun contre lui-même, `40/8`, 60 parties, `-srand 20260925` | cutechess, `-debug all` | **RELEVÉES à 23 h 47 et 23 h 58** | **5,3 % de cycles affamés avant, aucun après** ; aucun coup au-delà de sa borne de plus de 10 ms ; zéro perte au temps des deux côtés — le match se lance (section C26) |
+| **C26 — l'Elo à `40/8`** | 36075386225, 36075388587 | `6daf7d7` → `4620495`, `40/8`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — finis entiers à 05 h 24 et 05 h 28, 2 × 3 000 parties, 6,5 s par partie | **+2,43 ± 6,01, homogènes (z = 0,83), zéro perte au temps : aucune borne haute sous zéro, FUSIONNÉ au titre de la règle** (section C26) |
+| **balayage de mutation après la PR #81** — C25 fusionné | 36073858328 | `main` à `04bf6f8` | un job par fichier, puis `Verdict` | **RELEVÉ à 01 h 10, VERT** — `search.rs` le plus long, 90 min : 526 mutants, 410 attrapés, 28 inviables, 49 expirés | **La prédiction tient, exactement** : `search.rs` **39**, les deux survivants d'`iterate` que le crible au candidat avait trouvés parmi eux, et tous les autres fichiers à leur plafond, total **139**. Aucune issue. — *Prédiction, écrite avant* : `search.rs` **39**, au plafond — le crible au candidat ne trouvait que les deux survivants anciens, et C25 ne déplace aucun arbre à profondeur fixe, donc aucun test de nœuds ne voit autrement le reste du fichier ; des expirés en plus, `set_deadlines` vidé et `deadlines_ms` à `None`. Tous les autres fichiers à leur plafond, total 139 |
 | **balayage de mutation après les PR #78 et #79** — tests corrigés, C24 fusionné | 36028076680 | `main` à `f2dd0cf` | un job par fichier, puis `Verdict` | **RELEVÉ à 17 h 38, VERT** | **La prédiction tient** : `search.rs` **39**, au plafond — les quatre mutants cachés par l'arbre d'A18 attrapés, la garde de `stage_moves` seule en plus des 38, C24 n'ajoute rien. `eval.rs` **89** contre 121 → plafond **resserré à 89** : le banc à la profondeur 6 attrape 33 `delete -` de plus dans les tables. Total du dépôt 139. Issue #69 fermée |
 | **balayage de mutation après la PR #77** — A18 fusionnée | 36013927958 | `main` à `3b80e1a` : la génération par étapes | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 57 — CASSÉ** : `search.rs` **43** > 39, `eval.rs` **122** > 121 ; le verdict a commenté l'issue #69, restée ouverte depuis le balayage annulé de 02 h | **La prédiction était fausse.** `search.rs` : les 38 d'avant un pour un, la garde de `stage_moves` prévue, et **quatre de code qu'A18 n'écrit pas** — la prime d'historique `depth * depth` (en `+` et en `/`), le `ply + 1` de l'appel au coup nul et celui de la quiescence. Mesuré mutant par mutant : avant A18, les trois premiers déplaçaient le banc à la profondeur 5 (31 570, 31 585, 31 571 contre 31 637) ; après, 31 829 avec ou sans eux, mais 70 995, 70 996, 70 758 contre 70 719 à la profondeur 6. Le quatrième ne déplace aucun banc : seul le test de légalité de la PV l'attrapait, sur UNE position que l'arbre neuf ne fait plus passer par la quiescence fautive. **Corrigé par les tests, pas par le plafond** (`3ac4d71`) : banc figé à la profondeur 6, PV vérifiée sur une quarantaine de positions de la marche seedée ; re-mesuré localement, les quatre attrapés. `eval.rs` : +4 −3 `delete -` dans les tables — A18 change ce que le banc figé voit des valeurs, du réglage que le SPRT juge. **Suite** : fusionner les tests, rebalayer, lire `eval.rs` sur la mesure |
 | **balayage de mutation après la PR #76** | 35976435127 | `main` à `ea8116f` : chaque fil tient le budget de nœuds, `MAX_THREADS` 1 024 ; A18 révoqué, donc absent | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 09 h 54, verdict vert | **La prédiction tient** : `search.rs` **38**, au plafond, et tous les autres fichiers au leur, total 170. **La réserve ne s'est pas matérialisée** : le test à plusieurs fils, qui n'est plus instable, n'attrapait par hasard aucun mutant équivalent. Parmi les 38, les deux que le balayage local d'A18 avait donnés pour anciens — `*` en `+` dans la note des promotions, la garde de débordement d'`ordered_moves` |
@@ -2366,6 +2370,190 @@ fusionné, le balayage suivant ne doit rien ajouter à `search.rs`.
   fixe. La rustine `c25-stabilite.patch` cesse de s'appliquer, son code est
   entré ; `c24-sonde-allocation.patch` s'applique toujours.
 
+### C26 — la dure à l'approche d'un contrôle à coups comptés — VERDICT, 25 sept. 2026 : +2,43 ± 6,01 Elo à `40/8`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
+
+Le risque est au backlog depuis le 24 sept. : quand l'interface annonce
+`movestogo`, le budget vaut `restant / movestogo + inc/2`, et à deux coups
+du contrôle la dure de C25 — trois budgets — vaut `min(1,5 × restant,
+restant − 50)` = **`restant − 50`**. La douce du coup qui vient de changer,
+1,825 budget, en vaut 0,91. Avant C24, la dure valait le budget : `restant /
+2`. Nos matchs sont en mort subite, sans `movestogo` : ce chemin n'y passe
+jamais.
+
+**Ce que fait Stockfish — lu dans son source, pas de mémoire.** La ligne du
+backlog disait « Stockfish plafonne l'excès à ~1,7 budget à deux coups du
+contrôle ». **Faux sur le source actuel** : `src/timeman.cpp` au commit
+`0a215d6c9e48856ef630013b8ab8312941a59057` (`master` le 24 sept. 2026) borne
+la durée maximale par `max(optimum, min(0,8097 × pendule − surcoût,
+maxScale × optimum))`, avec `maxScale = 1,3 + 0,11 × movestogo` aux
+cadences cycliques — et c'est la **fraction de pendule**, 81 %, qui mord
+près du contrôle. L'optimum lui-même y est haut : `(0,88 + ply / 116,4) /
+movestogo`, soit ~0,77 de la pendule à deux coups du contrôle, vers le
+39ᵉ coup. **Stockfish accepte donc de dépenser les trois quarts de sa
+pendule à deux coups du contrôle ; ce qu'il interdit, c'est d'en dépasser
+81 %.** Notre dure va jusqu'à `restant − 50`. Le « ~1,7 » venait d'une
+formule plus ancienne, `1,5 + 0,11 × movestogo`, citée de tête. *Même
+famille que « l'outil ne sait pas le faire » : une référence extérieure se
+lit dans son source, au commit qu'on cite.*
+
+#### La sonde — protocole et prédiction, écrits le 24 sept. 2026 à 23 h 38, avant de lancer
+
+`main` avec C25 (moteur de `4b38bc5`, identique au candidat `41d590f`) contre
+lui-même, **`40/8`** — 40 coups en 8 s, cyclique, ~200 ms par coup comme
+`8+0,08` —, cutechess-cli avec `-debug all`, 60 parties, livre
+`tools/book.epd` au hasard, `-srand 20260925`, trois parties à la fois dans
+le conteneur (4 cœurs, monofil, pas de ponder : 1 × 3 ≤ 3). Pas
+d'adjudication par abandon — elle finirait des parties avant le premier
+contrôle ; la nulle par adjudication à partir du 40ᵉ coup, comme
+`match.yml`. Mesuré pour chaque coup, par `movestogo` annoncé : la part de
+la pendule dépensée entre `go` et `bestmove`, vue de l'arbitre.
+
+**Un cycle AFFAMÉ** : le coup à `movestogo 2` dépense plus de 80 % de sa
+pendule. **Prédiction** :
+
+- à `movestogo` 5 et plus : jamais plus de trois budgets, la dure — rien
+  à voir ;
+- **10 à 25 % des cycles affamés** — un coup instable, ou une itération
+  entamée avant une douce plus basse et finie contre une dure à `restant −
+  50` ; avant C24, aucun, la dure tombant à la moitié de la pendule ;
+- dans ces cycles, le coup à `movestogo 1` cherche avec moins de 20 % de ce
+  que lui laisse un cycle ordinaire ;
+- **zéro perte au temps** : la marge de 50 ms tient, et le dommage est la
+  qualité du 40ᵉ coup, pas un drapeau. *Confiance moyenne* — la latence de
+  l'arbitre sous charge n'est mesurée nulle part ici.
+
+#### Rendu à 23 h 47 : le risque existe, moins souvent que prédit, et plus loin du contrôle
+
+60 parties, 8 435 coups, 152 cycles. Le lecteur est la rustine
+`tools/attic/c26-sonde-controle.patch`, qui porte aussi la commande.
+
+| `movestogo` | coups | part moyenne de la pendule | 9ᵉ décile | max |
+|---|---|---|---|---|
+| 1 | 152 | 0,396 | 0,881 | 0,965 |
+| 2 | 157 | 0,272 | 0,634 | **0,975** |
+| 3 | 164 | 0,203 | 0,393 | **0,967** |
+| 4 | 172 | 0,139 | 0,274 | 0,753 |
+| 5 et plus | 7 790 | 0,037 | 0,078 | 0,601 |
+
+- **Cycles affamés : 8 sur 152, 5,3 %** — sous la prédiction, 10 à 25 %.
+  Dans chacun, le 39ᵉ coup a dépensé 83 à 97 % de sa pendule et laissé
+  **49 à 50 ms** au 40ᵉ, joué en 0 ou 1 ms à la profondeur 2 à 4 — la table
+  de transposition évite le premier coup légal, pas le coup faible. La
+  médiane d'un cycle ordinaire lui laisse 892 ms : **5 à 6 %** de ce qu'il
+  aurait eu, dans la prédiction (moins de 20 %).
+- **La prédiction se trompait d'endroit** : elle ne comptait que
+  `movestogo 2`. À trois coups du contrôle, trois budgets valent la
+  pendule entière, et un coup y a dépensé **96,7 %** — deux coups affamés
+  derrière lui. Au-delà de la borne qu'on s'apprête à poser, `(n + 1) / 2n`
+  de la pendule : **5,7 %** des coups à deux coups du contrôle, **4,3 %** à
+  trois, **2,3 %** à quatre.
+- À cinq coups et plus, jamais plus de 0,601 — trois budgets, la dure,
+  comme prédit.
+- **Zéro perte au temps** ; marge minimale au contrôle **44 ms** sur les 50
+  de la marge. Elle tient, à six millisecondes près.
+
+#### Le correctif — écrit le 24 sept. 2026 au soir
+
+Quand l'interface annonce `movestogo` = n ≥ 2, la dure est bornée pour que
+chacun des n − 1 coups suivants garde au moins **la moitié de sa part
+plate**, `restant / n` : `dure ≤ restant − ⌈(n − 1) × restant / 2n⌉`. Les
+douces restent sous la dure, comme avant. **Pourquoi la moitié** : c'est ce
+que trois budgets laissent déjà à cinq coups du contrôle — la borne étend
+jusqu'au contrôle une garantie que C25 tient partout ailleurs, et ne mord,
+sans incrément, qu'à deux, trois et quatre coups. **Sans `movestogo`
+annoncé, rien ne change** : les douze coups du défaut sont un horizon, pas
+un contrôle, et la mort subite — où C24 et C25 ont été mesurés — garde ses
+échéances à la milliseconde. `movestogo 1` non plus : rien après lui qu'il
+faille protéger. La borne ne compte pas les incréments que recevront les
+coups suivants : avec un incrément, elle mord un peu plus loin du contrôle,
+du côté prudent.
+
+Tests : les valeurs exactes de `movestogo` 1 à 5 — à 2, 3 et 4 elles
+échouent sur le code d'avant (vérifié : 9 950 contre 7 500 à deux coups),
+1 et 5 sont les témoins ; la garantie elle-même sur une grille de 59
+`movestogo` × 4 pendules, à la milliseconde près — la réserve s'arrondit
+vers le haut ; et la mort subite à pendule serrée, où la borne mordrait si
+elle s'appliquait au défaut. Banc inchangé.
+
+#### La mesure — écrite AVANT de lancer
+
+**C26 est un correctif, pas un gain** : la règle est celle d'un correctif
+de règle (`CLAUDE.md`, « ce qui compte comme preuve ») — des tests qui
+échouent sur l'ancien code, le mécanisme mesuré en régime réel, puis un
+match au critère écrit d'avance. Candidat committé puis révoqué aussitôt.
+
+1. **La sonde, après** — la même, sur le candidat, même graine. **Attendu** :
+   **aucun cycle affamé**, et aucun coup à 2, 3 ou 4 coups du contrôle
+   au-delà de sa borne, à la latence de l'arbitre près ; zéro perte au
+   temps.
+2. **Le match** — `40/8`, candidat contre son parent, longueur fixe, graine
+   « auto », **deux jobs de 3 000 parties**, mis en commun. **Critère** :
+   fusion **sauf si la borne haute de l'intervalle mis en commun est sous
+   zéro** ; **une seule perte au temps du candidat** se lit avant toute
+   fusion. **Puissance, dite d'avance** : ± 6 Elo sur ~5 700 parties — un
+   effet de quelques Elo passe inaperçu, et c'est accepté parce que c'est
+   écrit. **Attendu, confiance faible** : 0 à +5 Elo — un 40ᵉ coup joué à
+   la profondeur 2 à 4 dans un cycle sur vingt, contre un 39ᵉ plus court.
+   - **Pas de match à `8+0,08`** : sans `movestogo`, candidat et parent
+     rendent les mêmes échéances à la milliseconde, et un test le fixe.
+
+**La sonde d'après — rendue à 23 h 58, même graine** : 60 parties, 7 211
+coups, 121 cycles. **Aucun cycle affamé** (5,3 % avant) ; au-delà de la
+borne, 4, 5 et 2 coups à deux, trois et quatre coups du contrôle, **aucun de
+plus de 10 ms** — la latence de l'arbitre, comme prévu (8, 7 et 4 avant) ;
+à cinq coups et plus, toujours 0,601 au plus. **Zéro perte au temps**,
+marge minimale au contrôle 45 ms. **Conforme à l'attendu : le match se
+lance.**
+
+Candidat **`6daf7d7`**, révoqué aussitôt par `3189a95` ; la rustine
+`tools/attic/c26-controle-annonce.patch` en garde une copie. Référence : son
+parent `4620495` — `main` avec C25.
+
+**Crible de mutation du code de C26, au candidat, prédiction écrite avant le
+résultat** — `deadlines_ms` : 17 mutants, dont 5 dans le code neuf.
+**Aucun survivant** : les cinq neufs — `>=` en `<` dans le filtre, `- 1` et
+`100 * n` changés d'opérateur — déplacent tous la dure à deux coups du
+contrôle, que le test fixe à 7 500 ; les douze anciens comme aux cribles de
+C24 et de C25. Un inviable, `Some(Default::default())` ; un expiré,
+`deadlines_ms` à `None`.
+**Rendu en 2 minutes : la prédiction tient, exactement** — 15 attrapés,
+l'inviable et l'expiré prévus, aucun survivant. Si C26 est fusionné, le
+balayage suivant ne doit rien ajouter à `search.rs`.
+
+#### L'Elo — rendu à 05 h 28 : +2,43 ± 6,01, aucune borne haute sous zéro — FUSIONNÉ
+
+| run | graine | runner, n/s au banc | profondeur en 250 ms | parties | Elo | `Ptnml(0-2)` |
+|---|---|---|---|---|---|---|
+| [36075386225](https://github.com/theodubus/chess/actions/runs/36075386225) | 36075386225 | Xeon 6973P-C, 3 472 557 | 12 | 3 000 | +4,98 ± 8,42 | 101, 266, 720, 315, 98 |
+| [36075388587](https://github.com/theodubus/chess/actions/runs/36075388587) | 36075388587 | EPYC 7763, 2 430 129 | 12 | 3 000 | −0,12 ± 8,59 | 117, 263, 726, 292, 102 |
+| **en commun** (`tools/mettre-en-commun.sh`) | | | | **6 000** | **+2,43 ± 6,01** | homogènes, z = 0,83 |
+
+- **Lu sur le critère écrit avant** : intervalle mis en commun [−3,6 ;
+  +8,4], **borne haute au-dessus de zéro — fusionner**. Chaque match lu
+  seul ne la met pas sous zéro non plus (+13,4 et +8,5) : *un critère écrit
+  en bornes se lit sur chaque match comme sur l'ensemble*. **Zéro perte au
+  temps** dans les 6 000 parties, zéro coup illégal. Les deux jobs ont fini
+  **entiers**, sans le plafond : 6,5 s par partie à `40/8`, contre ~7,25 à
+  `8+0,08` — la première estimation de durée d'une cadence à coups comptés,
+  mesurée.
+- **Dans l'attendu écrit avant**, 0 à +5, confiance faible — et sous la
+  puissance dite d'avance : ± 6 Elo, donc aucun signe n'est établi. C'est ce
+  que la règle d'un correctif accepte, *parce que c'est écrit* : le
+  mécanisme est mesuré en régime réel (5,3 % de cycles affamés avant, aucun
+  après), les tests tombent sur l'ancien code, et le match n'y trouve pas
+  de régression.
+- **Ce que la sonde avait mal prédit, et qu'il faut garder** : sa
+  prédiction ne comptait que les coups à `movestogo 2`, parce que c'est là
+  que j'avais vu le risque en relisant le code. Il était aussi à trois
+  coups du contrôle — trois budgets y valent la pendule entière. *Une
+  prédiction bornée au cas qu'on a en tête ne voit pas son voisin* ; le
+  correctif, lui, avait été écrit pour tous les `movestogo` et couvrait le
+  voisin sans le savoir.
+- **La fusion** : la révocation `3189a95` est révoquée à son tour. Banc
+  inchangé, 109 047 à la profondeur 7 — aucune échéance à profondeur fixe.
+  La rustine `c26-controle-annonce.patch` cesse de s'appliquer, son code est
+  entré ; `c26-sonde-controle.patch` s'applique toujours.
+
 ### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
 
 Premier geste du chantier décidé par Théo (A19) : **mesurer le mécanisme
@@ -2532,14 +2720,14 @@ qu'en partie dans le dépôt n'existe pas.*
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
-| **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : FUSIONNÉ le 24 sept., +44,64 ± 6,24 Elo à `8+0,08`** (section C24) — profondeur moyenne inchangée, le gain est dans la répartition, et la lecture par l'accord a tenu. <s>C25 — la répartition par la stabilité : ÉCRIT le 24 sept.</s> **C25 — la répartition par la stabilité : FUSIONNÉ au verdict du 24 sept., +7,87 ± 6,08 Elo à `8+0,08`** (section C25) — sous l'attendu de +12 à +25 : l'Elo d'un pli d'accord dépend de la règle, 22 à 46 ici contre ~69 pour C24. **Le chantier est au bout de ce que l'écran désignait** — l'effort à la racine n'ajoute rien, le score en chute est rare (écran, « Ce qui en sort »). Prochaine action : **C26**, le risque que C24 et C25 ont aggravé ; ensuite, la question se repose à Théo. *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
+| **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : FUSIONNÉ le 24 sept., +44,64 ± 6,24 Elo à `8+0,08`** (section C24) — profondeur moyenne inchangée, le gain est dans la répartition, et la lecture par l'accord a tenu. <s>C25 — la répartition par la stabilité : ÉCRIT le 24 sept.</s> **C25 — la répartition par la stabilité : FUSIONNÉ au verdict du 24 sept., +7,87 ± 6,08 Elo à `8+0,08`** (section C25) — sous l'attendu de +12 à +25 : l'Elo d'un pli d'accord dépend de la règle, 22 à 46 ici contre ~69 pour C24. **Le chantier est au bout de ce que l'écran désignait** — l'effort à la racine n'ajoute rien, le score en chute est rare (écran, « Ce qui en sort »). <s>Prochaine action : C26, le risque que C24 et C25 ont aggravé ; ensuite, la question se repose à Théo.</s> **C26 est FUSIONNÉ le 25 sept.** (ligne C26) : **l'allocation inégale est close, et la suite se repose à Théo.** *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
 | **génération par étapes** — **décidée n° 3** (Théo, 24 sept.) | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | <s>non entamée ; la suivante après B6.</s> **ÉCRITE le 24 sept.** — candidat `087edb8`, révoqué le temps de sa mesure. Hors partie : temps −10,7 à −11,3 %, arbre inchangé. <s>Prochaine action : la sonde, puis deux jobs de 3 000 parties</s> **Sonde faite : n/s × 1,09, +0,17 ± 0,07 pli.** <s>L'Elo en vol, relève vers 14 h 25</s> **MESURÉE le 24 sept. : +23,10 ± 6,39 Elo à `8+0,08`, gain démontré — FUSIONNÉE** ; section « A18 — VERDICT ». **Pas** une optimisation pure : ex æquo et historique frais déplacent l'arbre |
 | **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **FAIT le 24 sept.** : un doublement vaut **+107,74 ± 8,19 Elo** et **+1,38 ± 0,28 pli**, soit **60 à 105 Elo par pli** à `8+0,08` — voir son verdict. Les plis de chaque ligne se convertissent désormais en Elo, en intervalle ; l'incertitude de l'étalon vient presque toute des plis |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
 | **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | <s>1,0 à 1,8, seul chiffre encore hérité</s> **+0,48 ± 0,08 mesurés à deux fils** en partie sur runner — **24 à 59 Elo** par l'étalon, écrit avant que ses matchs ne rendent | <s>exige B9</s> — **B9 est fusionné, la table se partage**. <s>Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie).</s> **Fait le 24 sept.** — voir « La concurrence d'un match se déduit des cœurs ». <s>Prochaine action : **écrire Lazy SMP**, l'option `Threads` et ses tests.</s> **ÉCRIT le 24 sept., neutre à un fil** (banc au nœud près, `timing.sh` trois fois). <s>Prochaine action : fusionner, puis la sonde et le match à deux fils, **protocole écrit avant**</s> **MESURÉ le 24 sept. : +42,16 ± 9,23 Elo à deux fils contre un**, 2 700 parties à `8+0,08`, trois matchs homogènes — **deux fils rapportent** ; section « B6 — Lazy SMP — VERDICT ». Suite : relever `MAX_THREADS` au-dessus des machines de compétition ; l'échelle au-delà de deux fils reste non mesurée, faute de cœurs physiques sur les runners. Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
 | **Lazy SMP — ses variantes** : décalage de profondeur entre fils, coup du meilleur fil, historiques partagés, fils gardés d'un coup à l'autre | non chiffrées | **pas commencées** ; chacune se mesure seule, contre B6 tel qu'écrit (section B6). **Angle mort du dispositif** : les runners n'ont que deux cœurs physiques. <span><strong>Inférence, confiance moyenne</strong> : ces variantes servent la diversité entre fils, qui compte d'autant plus qu'il y a de fils — mesurées à deux, elles seraient sous-évaluées, la même famille que la cadence.</span> Condition : mesurer à plus de deux cœurs physiques. Les fils gardés répondent à un coût non mesuré — relancer des centaines d'auxiliaires à chaque `go` |
 | **raffinements d'ordonnancement sur les étages** : coup de réfutation, historique de continuation | non chiffrés | <s>après A18</s> **A18 est fusionné le 24 sept. : les étages existent**, et c'est la forme qui les accueille ; aucun n'est décidé. <s>Reléguer les captures perdantes derrière les tranquilles</s> : **+31,6 % de nœuds ici** (C19), ne se rouvre pas sans fait neuf |
-| **C26 — la dure à l'approche d'un contrôle à coups comptés** — trouvé le 24 sept. en relisant les échéances pour C25 | — un **risque**, pas un gain : invisible à `8+0,08` | <s>Pas commencé ; après le verdict de C25, dont il touche la même fonction.</s> **Le suivant : C25 est fusionné le 24 sept., le risque est dans `main`.** Le budget vaut `restant / movestogo + inc/2` : à `movestogo 2`, `restant / 2`. La dure de C24, 2,2 budgets, vaut alors `min(1,1 × restant, restant − 50)` = **`restant − 50`** : une itération longue au 39ᵉ coup d'un 40/X peut ne laisser que 50 ms au 40ᵉ. Avant C24, elle valait `restant / 2`. **C25 aggrave** : sa douce du coup instable monte à 0,91 × restant. Nos matchs sont en mort subite avec incrément, sans `movestogo` : ce chemin n'y passe jamais, et le CCRL 40/15 y passe à chaque contrôle. Prochaine action : borner la dure — et les douces — pour que les coups restants avant le contrôle gardent une part de leur budget (Stockfish plafonne l'excès à ~1,7 budget à deux coups du contrôle) ; tests aux valeurs exactes de `movestogo` 1 à 4 ; puis un match à cadence à coups comptés — `match.yml` passe la cadence telle quelle aux arbitres (`40/8`), et <s>son estimation de durée lit `8+0,08` et devra apprendre l'autre forme</s> son estimation de durée lit `N/T+I` **depuis le 24 sept.** (elle prenait `40/8` pour quarante secondes) —, critère de non-régression écrit avant et **zéro perte au temps** |
+| **C26 — la dure à l'approche d'un contrôle à coups comptés** — trouvé le 24 sept. en relisant les échéances pour C25 | — un **risque**, pas un gain : invisible à `8+0,08` | <s>Pas commencé ; après le verdict de C25, dont il touche la même fonction.</s> <s>Le suivant : C25 est fusionné le 24 sept., le risque est dans `main`.</s> <s>ÉCRIT et EN MESURE le 24 sept.</s> **FUSIONNÉ le 25 sept. au titre de la règle : +2,43 ± 6,01 Elo à `40/8`**, zéro perte au temps (section C26) — sonde d'abord : **5,3 % des cycles affamés à `40/8`**, et à trois coups du contrôle aussi ; la dure laisse désormais à chaque coup restant la moitié de sa part plate ; sonde d'après : aucun cycle affamé. **Clos.** Le risque, tel qu'écrit avant la sonde : Le budget vaut `restant / movestogo + inc/2` : à `movestogo 2`, `restant / 2`. La dure de C24, 2,2 budgets, vaut alors `min(1,1 × restant, restant − 50)` = **`restant − 50`** : une itération longue au 39ᵉ coup d'un 40/X peut ne laisser que 50 ms au 40ᵉ. Avant C24, elle valait `restant / 2`. **C25 aggrave** : sa douce du coup instable monte à 0,91 × restant. Nos matchs sont en mort subite avec incrément, sans `movestogo` : ce chemin n'y passe jamais, et le CCRL 40/15 y passe à chaque contrôle. Prochaine action : borner la dure — et les douces — pour que les coups restants avant le contrôle gardent une part de leur budget (<s>Stockfish plafonne l'excès à ~1,7 budget à deux coups du contrôle</s> — **faux, cité de tête** : son source borne à 81 % de la pendule, section C26) ; tests aux valeurs exactes de `movestogo` 1 à 4 ; puis un match à cadence à coups comptés — `match.yml` passe la cadence telle quelle aux arbitres (`40/8`), et <s>son estimation de durée lit `8+0,08` et devra apprendre l'autre forme</s> son estimation de durée lit `N/T+I` **depuis le 24 sept.** (elle prenait `40/8` pour quarante secondes) —, critère de non-régression écrit avant et **zéro perte au temps** |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |

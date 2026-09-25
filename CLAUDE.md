@@ -445,6 +445,14 @@ une mesure, pas une préférence.
   outils au lieu de penser à celui qu'on vient d'utiliser.* Même famille que
   « un garde-fou peut garder la mauvaise chose », appliquée non plus à un
   dispositif mais à une conclusion.
+  <br>**Deuxième occurrence le 24 sept. 2026, sur une référence et non un
+  outil.** Le backlog de C26 citait « Stockfish plafonne l'excès à ~1,7
+  budget à deux coups du contrôle » — de tête, d'une formule ancienne. Son
+  source, lu au commit, borne la durée maximale à **81 % de la pendule** et
+  accepte d'en dépenser ~77 % à deux coups du contrôle : le chiffre était
+  faux, et la conclusion qu'on en tirait aussi. *Une référence extérieure se
+  lit dans son source, au commit qu'on cite* — sans quoi c'est un souvenir
+  qui passe pour une mesure.
 - **Avant d'ordonner deux chantiers par une dépendance, vérifier qu'ils
   touchent les mêmes objets.** Le projet a inscrit que l'échange statique était
   « la précondition » de l'élagage par compte de coups, au motif que la prémisse

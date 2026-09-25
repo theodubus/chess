@@ -65,7 +65,10 @@ d'un aveu sur la profondeur de recherche.
 > moyenne : le temps va aux positions difficiles, où l'itération dure.
 > **Puis, le même jour, s'arrêter plus tard quand le coup vient de changer**
 > et plus tôt quand il tient depuis sept itérations — **+7,9 ± 6,1 Elo**
-> à `8+0,08`, zéro perte au temps.
+> à `8+0,08`, zéro perte au temps. **Et il ne s'affame plus avant un
+> contrôle à coups comptés** (quarante coups en X) : un coup ne dépense
+> plus la pendule des suivants — à `40/8`, +2,4 ± 6,0 Elo, zéro perte au
+> temps, un correctif fusionné au titre de la règle.
 >
 > **Il sait pondérer depuis le 23 sept. 2026** — réfléchir pendant le temps
 > de l'adversaire, sur le coup qu'il prévoit — mais seulement si l'interface
