@@ -532,6 +532,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-24 | **C25 — une échéance douce par stabilité du coup, la dure à 3 budgets (`41d590f`), contre son parent (`910a6c9`), à `8+0,08`** | **+7,87 Elo ± 6,08** sur 5 740 parties à longueur fixe — deux matchs homogènes (+8,45 et +7,29 ; z = 0,19), deux runners différents, zéro perte au temps. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant. **Sous l'attendu** (+12 à +25, converti au taux de C24) : **22 à 46 Elo par pli d'accord** au point, contre ~69 pour C24 — l'écran surestime davantage une règle qui cible les coups instables, ce que sa réserve disait |
 | 2026-09-25 | **C26 — la dure bornée à l'approche d'un contrôle annoncé (`6daf7d7`) contre son parent (`4620495`), à `40/8`** | **+2,43 Elo ± 6,01** sur 6 000 parties à longueur fixe — deux matchs homogènes (+4,98 et −0,12 ; z = 0,83), zéro perte au temps. **Correctif** : aucune borne haute sous zéro, **FUSIONNÉ au titre de la règle** — le mécanisme mesuré en partie (5,3 % de cycles affamés avant, aucun après), dans l'attendu écrit avant (0 à +5), sous la puissance dite d'avance (± 6). Première mesure du projet à une cadence à coups comptés ; sans `movestogo`, rien ne change |
 | 2026-09-25 | **A20 — l'historique de continuation, conservé d'un coup à l'autre (`54e6c60`), contre son parent (`a08af76`), à `8+0,08`** | **+12,56 Elo ± 4,35** sur 11 620 parties à longueur fixe — quatre matchs homogènes (+14,26, +11,75, +15,83, +8,45 ; plus grand écart z = 1,17), deux Xeon 8370C et deux EPYC 7763, profondeur 12 partout, zéro perte au temps. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant, dans l'attendu écrit avant (0 à +15) et **au-dessus de ce que l'arbre seul promettait** (+4 à +7, pour −3,1 % de nœuds) : le canal des décisions est positif. Première mesure du projet à quatre jobs, sur une puissance calculée avant |
+| 2026-09-25 | **C27 — l'élagage par distance au mat (`bb6e4c0`) contre son parent (`3aa5986`), à `8+0,08`** | **−3,56 Elo ± 5,97** sur 5 760 parties à longueur fixe — deux matchs homogènes (−1,92 et −5,22 ; z = 0,54), zéro perte au temps. **Correctif** : aucune borne haute sous zéro (+2,41 en commun, +6,24 et +3,50 par match), **FUSIONNÉ au titre de la règle** — le mécanisme mesuré en partie (1,82 % des recherches stockaient un score hors de ±MATE), l'attendu écrit avant (0 à +3) dans l'intervalle, sous la puissance dite d'avance (± 6) |
 | 2026-09-23 | **Vol de CPU du ponder sur runner — deux sondes de 60 parties, à `8+0,08`** | **r = 0,948** (rapport des n/s 0,950 en ponder, 1,002 au témoin) ≥ 0,93 : **le verdict du ponder tient**, sur la règle écrite avant. Vol estimé 3 à 5 % de vitesse, 3 à 10 Elo des +67,63. **Topologie : 2 cœurs physiques, 2 fils par cœur (AMD EPYC 7763)**. [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290), [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087). Section « Vol de CPU du ponder sur runner — VERDICT ». |
 | 2026-09-23 | **C22 — le test de nulle avant l'aiguillage vers la quiescence, à `8+0,08`** | **−10,44 Elo ± 6,34** sur 5 760 parties — **régression, non fusionné**, arrêté par son critère écrit avant. 92 % des nulles qu'il ajoutait à l'horizon étaient fausses (C23) : **remesuré sur C23, en vol**. Section « C22 — VERDICT ». |
 | 2026-09-23 | **B9 — effet de capacité de la table à entrées atomiques, à `8+0,08`** | **−1,27 Elo ± 6,34** sur 5 740 parties — pas d'effet décelable. **Fusionné au titre de l'infrastructure** (la table se partage entre fils ; −4,3 % de temps déjà prouvé). Section « B9 — VERDICT ». |
@@ -735,7 +736,9 @@ dernière relève est faite.
 | **A20 — l'écran et le rejeu, dans le conteneur** | — | `main` sondé contre lui-même, `8+0,08`, 120 parties, `-srand 20260925` ; puis cinq variantes rejouées à la profondeur 10 sur deux flux | cutechess, `-debug all` ; `rejouer-profondeur.py` | **RELEVÉS à 07 h 43 et 07 h 47** | union de l'étage tranquille **10,9 %** des nœuds, 0,23 pli au plus ; une seule variante réduit l'arbre, **la continuation conservée, −3,1 %** (section A20) |
 | **A20 — l'Elo de la continuation** | **36110519468, 36110522377, 36110524982, 36110528007** | `54e6c60` → `a08af76`, `8+0,08`, graine « auto » | 4 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond vers 13 h 50, 2 900, 2 900, 2 900 et 2 920 parties | **+12,56 ± 4,35 en commun, homogènes (z ≤ 1,17), zéro perte au temps : gain démontré, FUSIONNÉ** (section A20) — au-dessus de ce que l'arbre seul promettait. — *Attendu, écrit avant* : 0 à +15, dont +4 à +7 par l'arbre seul. **Critère de gain** : fusion si la borne basse commune est au-dessus de zéro ; +5 y serait démontré 64 fois sur 100, +8 96 fois sur 100 |
 | **A20 — le crible de mutation au candidat** | <s>—</s> **36114952595** | `54e6c60`, `search.rs` entier, 570 mutants — et les huit autres fichiers | <s>`tools/mutants.sh`, dans le conteneur</s> **`Mutation`, entrée `commit`, sur runner** | <s>lancé à 08 h 01, fin vers 09 h</s> **mort dans le conteneur à 57 mutants sur 570**, au redémarrage de 08 h 11 — la règle « une mesure longue ne survit pas dans le conteneur », enfreinte faute d'outil ; **relancé sur runner à 08 h 48** — extraction du candidat vérifiée au journal — **RELEVÉ à 10 h 25, VERT** | **La prédiction tient, au bas de sa fourchette** : `search.rs` **39**, et ce sont les MÊMES survivants que sur `main`, un pour un, décalés de lignes par le code neuf ; aucun mutant du code neuf ne survit, et l'arbre neuf ne cache aucun ancien mutant au banc figé. Tous les autres fichiers à leur plafond, total **139**. — *Prédiction, écrite avant* : 39, au plafond, les mêmes ; jusqu'à 43 si l'arbre neuf cache d'anciens mutants au banc figé. Les 57 premiers dans le conteneur : un survivant, l'ancien de `Score::from_internal` |
-| **C27 — l'élagage par distance au mat, l'Elo** | **36166287710, 36166290276** | `bb6e4c0` → `3aa5986`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **lancés à 17 h 18**, coupés par le plafond vers 23 h 10 | *Critère, écrit avant* (section C27) : **fusion sauf si la borne haute est sous zéro**, en commun comme sur chaque match. Puissance : ± 6 Elo ; attendu 0 à +3, invisible |
+| **C27 — l'élagage par distance au mat, l'Elo** | 36166287710, 36166290276 | `bb6e4c0` → `3aa5986`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 23 h 08, 2 900 + 2 860 parties | **−3,56 ± 5,97 en commun, homogènes (z = 0,54), zéro perte au temps : aucune borne haute sous zéro, FUSIONNÉ au titre de la règle** (section C27). Étalonnages 4 019 409 et 2 199 922 n/s : 83 % d'écart, le plus grand relevé. — *Critère, écrit avant* : fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match |
+| **C27 — le crible du code neuf, dans le conteneur** | — | la révocation de la révocation, puis l'extraction de `mate_distance_window` | `tools/mutants.sh --in-diff` | **RELEVÉS à 23 h 25 et 23 h 30** | **7 survivants sur 11** dans le bornage, puis **22 attrapés sur 23, un expiré** — bornes extraites en fonction pure, deux tests neufs (section C27) |
+| **balayage de mutation après la fusion de C27** | à lancer | `main` après fusion | un job par fichier, puis `Verdict` | à lancer dès la fusion | *Prédiction, écrite avant* : `search.rs` **39**, au plafond, les MÊMES survivants que le balayage après la PR #83 (36145534414), un pour un — le banc est identique au nœud près, donc les tests de nœuds voient le même arbre, et le crible du code neuf n'y laisse aucun survivant ; **un expiré de plus**, `alpha >= beta` en `<`. `tt.rs` **6** : `max_abs_stored_score` est sous `#[cfg(test)]`. Tous les autres fichiers à leur plafond, total **139** |
 | **A21 — le débit de génération sur runner** | 36166785450 | le générateur de `main` à `0eb1e9b`, 5 000 nœuds, graine « auto », un fil par processeur logique | un job court, 20 minutes | **RELEVÉ** — fini à 17 h 43 | **1 713 positions par seconde, dans l'attendu** (1 200 à 1 800, écrit avant) : 17 976 parties, 2 055 456 positions, 62,2 % gardées par le filtre par défaut ; artefact de 7,4 Mo, expire le 24 déc. **Il ne se relit pas d'ici** : le proxy de sortie refuse le stockage des artefacts. Décide quatre jobs (section A21) |
 | **A21 — la génération, première vague** | **36179538497, 36179541822, 36179544454, 36179547648** | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **lancés à 19 h 25**, fin vers 00 h 57 | *Attendu, écrit avant* (section A21) : **34 millions de positions par job** au débit relevé, 21 à 54 aux extrêmes de vitesse des runners ; **136 millions pour les quatre**, dont 62 % gardées par le filtre. Chaque résumé doit nommer `bb6e4c0`. Sous 100 millions en tout, une vague de complément, dimensionnée sur les débits relevés |
 | **balayage de mutation après la PR #83** — A20 fusionné | **36145534414** | `main` à `d23d1b5` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 40, VERT** — `search.rs` le plus long, 71 min : 461 attrapés, 42 expirés | **La prédiction tient, exactement — jusqu'aux expirés** : `search.rs` **39**, les mêmes survivants que le crible au candidat, un pour un, aux mêmes lignes ; et le tableau entier du verdict est celui du crible, colonne par colonne — survivants, attrapés ET expirés, pour les neuf fichiers. Total **139**, aucune issue. *Le crible par l'entrée `commit` et le balayage de `main` voient donc la même chose.* — *Prédiction, écrite avant* : `search.rs` **39**, au plafond, et les MÊMES survivants que le crible au candidat (36114952595), un pour un, aux mêmes lignes — le code moteur de `main` est celui du candidat octet pour octet (`git diff 54e6c60 d23d1b5 -- engine/` est vide) et le crible a balayé tous les fichiers ; seul le compte d'expirés peut bouger avec la charge du runner, et il ne peut que faire baisser celui des survivants. Tous les autres fichiers à leur plafond, total **139**. Un écart, quel qu'il soit, dirait que le crible et le balayage ne voient pas la même chose |
@@ -3084,7 +3087,10 @@ avec sa raison :
   touche que `engine/`, le correctif. Et le correctif est juste par ses tests quel que soit le verdict
   d'Elo, qui juge la force, pas la justesse des scores. Si C27 est fusionné,
   ces données sont celles qu'aurait produites `main` — à vérifier à la fusion,
-  par le même `git diff`.
+  par le même `git diff`. **Vérifié le 25 sept. à 23 h 20** : C27 fusionné,
+  hors documentation le `git diff` de `bb6e4c0` à la révocation de sa
+  révocation est vide ; l'extraction de `mate_distance_window` qui suit est
+  une réécriture pure, banc identique au nœud près.
 
 **Les données se regénèrent à l'identique** : chaque partie est une fonction
 pure de (graine, numéro, nœuds) au commit donné, et un job a joué exactement
@@ -3108,7 +3114,7 @@ d'artefacts visent les dépôts privés.
 3. l'entraînement, sur la carte de Théo ;
 4. le SPRT, à `8+0,08`.
 
-### C27 — une borne de mat hors plage stockée dans la table — trouvé le 25 sept. 2026, correctif EN MESURE
+### C27 — une borne de mat hors plage stockée dans la table — VERDICT, 25 sept. 2026 : −3,56 ± 5,97 Elo à `8+0,08`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
 
 **Trouvé par les tests du générateur NNUE**, qui jouent des parties entières
 depuis des positions gagnantes — ce qu'aucun test du moteur ne faisait. En
@@ -3161,6 +3167,35 @@ deux jobs de 3 000 parties à `8+0,08`, le candidat contre son parent ;
 sur chaque match**. Puissance dite d'avance : ± 6 Elo. L'attendu est de 0 à
 +3, donc invisible : le défaut ne touche que des positions où un mat est déjà
 vu, et il ne s'y voit pas en UCI.
+
+**VERDICT, 25 sept. 2026 à 23 h 15 — aucune borne haute sous zéro, FUSIONNÉ au
+titre de la règle.** Deux jobs coupés par le plafond, 2 900 et 2 860 parties :
+**−1,92 ± 8,16** et **−5,22 ± 8,72**, homogènes (z = 0,54) ; en commun
+**−3,56 ± 5,97** sur 5 760 parties. Bornes hautes +6,24, +3,50 et +2,41 : aucune
+sous zéro, ni en commun ni par match. Zéro perte au temps, zéro coup illégal.
+L'attendu (0 à +3) est dans l'intervalle ; le point est négatif, et la
+puissance dite d'avance ne distingue pas −3,6 de zéro — c'est ce que la règle
+d'un correctif accepte, par écrit avant le match. Rétabli en révoquant sa
+révocation (`e5589d1`) : hors documentation, cette révocation rend le moteur
+de `bb6e4c0` octet pour octet ; l'extraction qui la suit (ci-dessous) ne change
+aucun nœud.
+
+**Les deux runners diffèrent de 83 %** : 4 019 409 n/s à la profondeur 13
+contre 2 199 922 à la profondeur 12, même binaire — le plus grand écart relevé
+(58 % le 21 sept.). Chaque verdict reste valide en interne ; deux runs ne se
+comparent pas sans leurs étalonnages.
+
+**Le crible du code neuf, avant de fusionner** (`tools/mutants.sh --in-diff`,
+dans le conteneur, quatre minutes) : **sept mutants sur onze survivaient**
+dans les trois lignes du bornage. Le test de partie ne traverse que les bornes
+de SA position — même affaiblir la borne basse en `-MATE - ply` le laissait
+passer. Un invariant de recherche se corrige au fil : les deux bornes sont
+extraites dans `mate_distance_window`, fonction pure testée par ses valeurs à
+plusieurs plis (`la_fenetre_ne_promet_que_le_mat_atteignable`), et la garde de
+la racine par son effet, avec témoin (`a_la_racine_la_fenetre_n_est_jamais_bornee`).
+Banc identique au nœud près, 107 548 et 594 679 aux profondeurs 7 et 10.
+Recriblé : **22 attrapés sur 23, un expiré** — `alpha >= beta` en `<`, qui
+fait tourner la recherche à vide.
 
 ### Ce qui reste à faire, par ordre mesuré
 

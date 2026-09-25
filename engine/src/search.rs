@@ -1173,6 +1173,29 @@ impl Search {
             return DRAW;
         }
 
+        // ÉLAGAGE PAR DISTANCE AU MAT (C27). Au ply `ply`, le mieux atteignable
+        // est de mater au ply suivant, `MATE - ply - 1`, et le pire d'être maté
+        // ici même, `-MATE + ply`. Une borne héritée d'un ply moins profond
+        // peut promettre davantage : un mat en deux trouvé ailleurs fait de
+        // `MATE - 2` l'alpha d'un nœud du ply 3, où `MATE - 4` est le maximum.
+        // Tout retour de BORNE — la quiescence rend `alpha` quand rien ne
+        // l'améliore — la faisait alors remonter comme un score, et
+        // `score_to_tt` la poussait hors de ±MATE : −30 002 stocké au ply 4,
+        // trouvé le 25 sept. 2026 par les tests du générateur NNUE. Bornée ici,
+        // AVANT l'aiguillage vers la quiescence, la fenêtre ne promet plus que
+        // l'atteignable, et tout ce que la table reçoit reste représentable.
+        //
+        // Sans mat dans la fenêtre, les bornes sont déjà à l'intérieur de
+        // l'atteignable — un score réel l'est toujours — et rien ne change.
+        // Jamais à la racine : il y faut un coup à jouer.
+        let mut beta = beta;
+        if ply > 0 {
+            (alpha, beta) = mate_distance_window(alpha, beta, ply);
+            if alpha >= beta {
+                return alpha;
+            }
+        }
+
         if depth <= 0 {
             return self.quiescence(board, alpha, beta, ply, scratch);
         }
@@ -1908,6 +1931,19 @@ fn may_lose_material(board: &Board, mv: Move, victim: Piece) -> bool {
 /// a de chances de se révéler bon, donc plus on en examine avant de renoncer.
 fn lmp_limit(depth: i32) -> usize {
     LMP_BASE + (depth.max(0) as usize).pow(2)
+}
+
+/// La fenêtre de l'élagage par distance au mat au ply `ply` (C27) : rien de
+/// mieux que mater au ply suivant, `MATE - ply - 1`, rien de pire qu'être maté
+/// ici même, `-MATE + ply`.
+///
+/// Extraite de `negamax` pour la même raison que `lmp_limit` : le seul test de
+/// partie ne voyait presque rien de ces deux bornes — le crible du 25 sept.
+/// 2026 laissait survivre sept mutants sur onze dans ces trois lignes. Une
+/// fonction pure se teste par ses valeurs, à plusieurs plis et des deux côtés.
+fn mate_distance_window(alpha: i32, beta: i32, ply: usize) -> (i32, i32) {
+    let reach = i32::try_from(ply).unwrap_or(0);
+    (alpha.max(-MATE + reach), beta.min(MATE - reach - 1))
 }
 
 const LMR_TABLE_SIDE: usize = 64;
@@ -4397,6 +4433,76 @@ mod tests {
             DRAW,
             "zéro coup sans échec est un pat, pas un mat"
         );
+    }
+
+    /// C27 : ce qui est stocké dans la table reste dans ±MATE, même quand un
+    /// mat trouvé ailleurs fait hériter aux nœuds profonds une borne qu'ils ne
+    /// peuvent pas atteindre. Les Noirs, au trait, sont matés en un quoi
+    /// qu'ils jouent : la première réponse trouvée fait de `MATE - 2` l'alpha
+    /// des nœuds blancs du ply 3, où `MATE - 4` est le mieux atteignable, et
+    /// la quiescence rendait cette borne comme un score.
+    ///
+    /// Témoin, dans les deux profils : sans l'élagage par distance au mat, la
+    /// table porte −30 002 — en release la valeur est stockée telle quelle, en
+    /// debug l'assertion de `pack_data` panique. La position vient d'une
+    /// partie du générateur NNUE, dont les tests l'ont rencontrée.
+    #[test]
+    fn une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage() {
+        let mut s = search();
+        let position = Position::from_fen("5Q2/R4B1k/1p6/4P1pp/8/4K3/1BP3PP/8 b - - 0 34").unwrap();
+        let limits = Limits {
+            depth: Some(6),
+            ..Limits::default()
+        };
+        let mut last = None;
+        s.go(&position, &limits, |info| last = Some(info.score));
+        assert_eq!(last, Some(Score::Mate(-1)), "matés en un, quoi qu'on joue");
+        let stored = s.tt.max_abs_stored_score();
+        assert!(stored <= MATE, "score stocké hors de ±MATE : {stored}");
+    }
+
+    // Le test ci-dessus est une partie, et une partie ne voit que les bornes
+    // qu'elle traverse : le crible du 25 sept. 2026 laissait survivre sept
+    // mutants sur onze dans l'élagage par distance au mat. Les bornes se
+    // testent donc par leur valeur, et la garde de la racine par son effet.
+
+    #[test]
+    fn la_fenetre_ne_promet_que_le_mat_atteignable() {
+        // Au ply 3 : au pire maté ici même, au mieux matant au ply 4.
+        assert_eq!(
+            mate_distance_window(-INFINITY, INFINITY, 3),
+            (-MATE + 3, MATE - 4)
+        );
+        // Les deux bornes suivent le ply.
+        assert_eq!(
+            mate_distance_window(-INFINITY, INFINITY, 1),
+            (-MATE + 1, MATE - 2)
+        );
+        assert_eq!(
+            mate_distance_window(-INFINITY, INFINITY, 8),
+            (-MATE + 8, MATE - 9)
+        );
+        // Sans mat dans la fenêtre, rien ne bouge — c'est pourquoi le banc
+        // est identique au nœud près.
+        assert_eq!(mate_distance_window(-120, 350, 5), (-120, 350));
+    }
+
+    #[test]
+    fn a_la_racine_la_fenetre_n_est_jamais_bornee() {
+        // Une fenêtre au-dessus de tout mat atteignable : hors racine, le
+        // bornage la vide et `negamax` rend `alpha` sans rien chercher.
+        let b = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        let mut temoin = search();
+        temoin.negamax(&b, 2, 1, MATE - 1, INFINITY, &mut ardoise());
+        assert_eq!(
+            temoin.nodes, 0,
+            "témoin : au ply 1, la fenêtre vide coupe tout"
+        );
+
+        // À la racine il faut un coup à jouer : la recherche a lieu.
+        let mut s = search();
+        s.negamax(&b, 2, 0, MATE - 1, INFINITY, &mut ardoise());
+        assert!(s.nodes > 0, "la racine n'a rien cherché");
     }
 
     // ---- Une nulle se détecte à l'intérieur ET à l'horizon (C22) ----
