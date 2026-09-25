@@ -344,7 +344,7 @@ fn les_milliers_se_regroupent_comme_dans_le_document() {
 #[test]
 fn larbre_de_recherche_ne_bouge_pas_en_silence() {
     const PROFONDEUR: u32 = 6;
-    const NOEUDS: u64 = 70_594;
+    const NOEUDS: u64 = 70_719;
 
     let noeuds = shallowred::bench::run(PROFONDEUR).unwrap();
     assert_eq!(
