@@ -3191,9 +3191,9 @@ sortis de là :
   partout — zéro coup nul sur 54 nœuds candidats. Un réseau aux évaluations
   de partie, et un appel direct de `negamax` futilité coupée, l'attrapent ;
 - la confrontation des entrées se fait **au code de l'entraîneur**, pas à ma
-  lecture de ce code : un test de `nnue_datagen.rs` fait passer 4 800
-  positions par `to_bulletformat` et l'itération de `bulletformat`, et ne
-  recopie que les cinq lignes de `Chess768`.
+  lecture de ce code : un test de `nnue_datagen.rs` fait passer 4 793
+  positions, dont 2 396 aux Noirs, par `to_bulletformat` et l'itération de
+  `bulletformat`, et ne recopie que les cinq lignes de `Chess768`.
 
 **Ce qui reste à vérifier au retour du réseau entraîné** : que le moteur
 évalue une position comme l'entraîneur. La commande `eval` imprime
