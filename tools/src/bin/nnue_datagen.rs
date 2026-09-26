@@ -523,6 +523,7 @@ fn main() {
 #[expect(clippy::unwrap_used, reason = "les tests doivent échouer bruyamment")]
 mod tests {
     use super::*;
+    use shallowred::nnue::feature;
 
     fn search() -> Search {
         Search::new(Arc::new(AtomicBool::new(false)))
@@ -673,6 +674,68 @@ mod tests {
         assert!(
             castles > 0 && en_passant > 0 && promotions > 0 && under > 0,
             "roques {castles}, en passant {en_passant}, promotions {promotions}, sous-promotions {under}"
+        );
+    }
+
+    /// Les entrées que le moteur calcule sont celles sur lesquelles bullet
+    /// entraîne. La même position passe par la chaîne de l'entraîneur —
+    /// `Board::to_bulletformat` de `viriformat`, qui retourne l'échiquier
+    /// quand les Noirs ont le trait, puis l'itération de
+    /// `bulletformat::ChessBoard` —, et seule la formule de `Chess768`, cinq
+    /// lignes, est recopiée de son source (bullet `10e7e82`,
+    /// `game/inputs/chess768.rs`). C'est le seul test qui confronte le moteur
+    /// au CODE de l'entraîneur plutôt qu'à une lecture de ce code : une case
+    /// retournée d'un seul côté ne fait rien planter, elle entraîne un réseau
+    /// sur d'autres positions que celles qu'il évaluera.
+    #[test]
+    fn les_entrees_du_moteur_sont_celles_de_l_entraineur() {
+        let (mut checked, mut black) = (0, 0);
+        let mut state = 0x00B0_11E7_u64 | 1;
+        for _ in 0..40 {
+            let mut ours = Board::default();
+            for _ in 0..120 {
+                let moves = legal_moves(&ours);
+                if moves.is_empty() || ours.halfmove_clock() >= 100 {
+                    break;
+                }
+                let theirs = vf_board(&ours.to_string()).unwrap();
+                let mut trainer: Vec<(usize, usize)> = theirs
+                    .to_bulletformat(1, 0)
+                    .unwrap()
+                    .into_iter()
+                    .map(|(piece, square)| {
+                        let c = usize::from(piece & 8 > 0);
+                        let pc = 64 * usize::from(piece & 7);
+                        let sq = usize::from(square);
+                        ([0, 384][c] + pc + sq, [384, 0][c] + pc + (sq ^ 56))
+                    })
+                    .collect();
+                trainer.sort_unstable();
+
+                let us = ours.side_to_move();
+                let mut engine = Vec::new();
+                for color in Color::ALL {
+                    for piece in Piece::ALL {
+                        for square in ours.colored_pieces(color, piece) {
+                            engine.push((
+                                feature(us, color, piece, square),
+                                feature(!us, color, piece, square),
+                            ));
+                        }
+                    }
+                }
+                engine.sort_unstable();
+                assert_eq!(engine, trainer, "sur {ours}");
+                checked += 1;
+                black += usize::from(us == Color::Black);
+
+                let mv = moves[(next_random(&mut state) % moves.len() as u64) as usize];
+                ours.play_unchecked(mv);
+            }
+        }
+        assert!(
+            checked >= 2_000 && black >= 1_000,
+            "positions {checked}, dont {black} aux Noirs"
         );
     }
 

@@ -30,6 +30,7 @@ use std::time::{Duration, Instant};
 use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
 
 use crate::eval::{self, DRAW, INFINITY, MATE, MATE_THRESHOLD};
+use crate::nnue::{Accumulators, Network};
 use crate::position::{Position, repetitions};
 use crate::see;
 use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
@@ -416,6 +417,20 @@ pub struct Search {
     /// Les valeurs que consulte l'évaluation. Le moteur emploie toujours les
     /// valeurs par défaut ; seul le tuner en substitue d'autres.
     params: eval::Params,
+    /// Le réseau NNUE, quand l'option `EvalFile` en a chargé un (A21). Sans
+    /// lui, l'évaluation faite main — et pas un nœud de différence avec le
+    /// moteur d'avant. Partagé en lecture seule entre les fils.
+    network: Option<Arc<Network>>,
+    /// Les accumulateurs NNUE, un couple par ply : ceux du ply `p` sont ceux
+    /// de la position cherchée à ce ply. C'est la pile que la contrainte
+    /// d'architecture réservait depuis le copy-make (A5) — jamais dans le
+    /// `Board`, qu'on copie à chaque nœud.
+    ///
+    /// Seuls ceux de la racine se recalculent ; tous les autres sont DÉRIVÉS
+    /// par le nœud parent, du coup et du plateau d'avant, juste avant de
+    /// descendre — comme `moved`, écrit par le parent avant d'être lu par
+    /// l'enfant. Vide sans réseau.
+    accumulators: Vec<Accumulators>,
     /// Permet à un test de désactiver la seule futilité inverse.
     ///
     /// Hors test, la constante `true` est connue du compilateur : la condition
@@ -433,6 +448,12 @@ pub struct Search {
     /// Permet à un test de désactiver le seul élagage par compte de coups.
     #[cfg(test)]
     late_move_pruning: bool,
+    /// Fait vérifier à chaque évaluation que les accumulateurs dérivés coup
+    /// par coup sont ceux d'un recalcul complet, et compte les vérifications
+    /// — sans ce compte, un test qui ne passerait jamais par là resterait
+    /// vert.
+    #[cfg(test)]
+    checked_accumulators: Option<std::cell::Cell<u64>>,
 }
 
 impl Search {
@@ -473,12 +494,16 @@ impl Search {
             moved: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
+            network: None,
+            accumulators: Vec::new(),
             #[cfg(test)]
             reverse_futility: true,
             #[cfg(test)]
             delta_pruning: true,
             #[cfg(test)]
             late_move_pruning: true,
+            #[cfg(test)]
+            checked_accumulators: None,
         }
     }
 
@@ -514,7 +539,85 @@ impl Search {
         let mut helper = Self::with_table(Arc::clone(&self.helper_stop), Arc::clone(&self.tt));
         helper.published_nodes = Arc::clone(&self.published_nodes);
         helper.is_helper = true;
+        helper.set_network(self.network.clone());
         helper
+    }
+
+    /// Branche un réseau NNUE, ou revient à l'évaluation faite main avec
+    /// `None` — l'option UCI `EvalFile`. Les auxiliaires suivent : un fil qui
+    /// évaluerait autrement que les autres remplirait la table partagée de
+    /// scores d'une autre échelle.
+    pub fn set_network(&mut self, network: Option<Arc<Network>>) {
+        self.accumulators = if network.is_some() {
+            vec![Accumulators::default(); MAX_PLY + 1]
+        } else {
+            Vec::new()
+        };
+        for helper in &mut self.helpers {
+            helper.set_network(network.clone());
+        }
+        self.network = network;
+    }
+
+    /// Vrai si l'évaluation passe par un réseau NNUE.
+    #[must_use]
+    pub fn uses_network(&self) -> bool {
+        self.network.is_some()
+    }
+
+    /// L'évaluation statique d'une position isolée, du point de vue du camp
+    /// au trait — la commande `eval`. Celle qu'emploie la recherche, réseau
+    /// compris, mais ses accumulateurs recalculés de zéro.
+    #[must_use]
+    pub fn evaluate(&self, board: &Board) -> i32 {
+        match &self.network {
+            Some(network) => network_eval(network, &network.refresh(board), board),
+            None => eval::evaluate(board, &self.params),
+        }
+    }
+
+    /// L'évaluation statique de `board`, cherché au ply `ply` : celle du
+    /// réseau sur les accumulateurs de ce ply quand il y en a un, sinon la
+    /// faite main. Le seul point d'entrée de l'évaluation dans la recherche.
+    fn static_eval(&self, board: &Board, ply: usize) -> i32 {
+        let Some(network) = &self.network else {
+            return eval::evaluate(board, &self.params);
+        };
+        let Some(accumulators) = self.accumulators.get(ply) else {
+            // Hors de la pile — impossible, le ply étant borné par `MAX_PLY`
+            // comme la pile elle-même. Le recalcul rend la fonction totale
+            // sans jamais mêler les deux évaluations.
+            return self.evaluate(board);
+        };
+        #[cfg(test)]
+        if let Some(count) = &self.checked_accumulators {
+            assert_eq!(
+                *accumulators,
+                network.refresh(board),
+                "accumulateurs dérivés faux au ply {ply} sur {board}"
+            );
+            count.set(count.get() + 1);
+        }
+        network_eval(network, accumulators, board)
+    }
+
+    /// Dérive les accumulateurs du ply `ply + 1` pour `mv`, joué depuis
+    /// `board` au ply `ply`. Sans réseau, rien.
+    fn push_move(&mut self, board: &Board, mv: Move, ply: usize) {
+        if let Some(network) = &self.network
+            && let Some([before, after]) = self.accumulators.get_mut(ply..=ply + 1)
+        {
+            network.apply_move(before, after, board, mv);
+        }
+    }
+
+    /// Le coup nul ne déplace aucune pièce : les accumulateurs du ply suivant
+    /// sont ceux-ci. Rangés par camp et non par trait, ils n'ont pas même à
+    /// s'échanger.
+    fn push_null(&mut self, ply: usize) {
+        if let Some([before, after]) = self.accumulators.get_mut(ply..=ply + 1) {
+            *after = *before;
+        }
     }
 
     /// Vide la table de transposition. À appeler sur `ucinewgame`.
@@ -689,6 +792,11 @@ impl Search {
         let mut previous = DRAW;
         // Itérations achevées de suite sur le même coup, celle-ci comprise.
         let mut stable = 0;
+        // Les seuls accumulateurs recalculés de zéro : tout le reste de
+        // l'arbre en dérive, coup par coup.
+        if let (Some(network), Some(root)) = (&self.network, self.accumulators.first_mut()) {
+            *root = network.refresh(board);
+        }
         for depth in 1..=max_depth {
             let score = self.search_root(
                 board,
@@ -1204,7 +1312,7 @@ impl Search {
         // signifierait avoir dépassé cette borne ; la garde rend la fonction
         // totale au lieu de reposer sur un raisonnement de profondeur.
         if scratch.len() < MAX_MOVES {
-            return eval::evaluate(board, &self.params);
+            return self.static_eval(board, ply);
         }
         let (buffer, rest) = scratch.split_at_mut(MAX_MOVES);
 
@@ -1285,6 +1393,7 @@ impl Search {
             if let Some(slot) = self.moved.get_mut(ply + 1) {
                 *slot = None;
             }
+            self.push_null(ply);
             let score = -self.negamax(
                 &passed,
                 depth - 1 - NULL_MOVE_REDUCTION,
@@ -1357,6 +1466,7 @@ impl Search {
             if let Some(slot) = self.moved.get_mut(ply + 1) {
                 *slot = Some(piece_to(board, mv));
             }
+            self.push_move(board, mv, ply);
             let mut child = board.clone();
             child.play_unchecked(mv);
 
@@ -1473,7 +1583,7 @@ impl Search {
             return 0;
         }
         if ply + 1 >= MAX_PLY || scratch.len() < MAX_MOVES {
-            return eval::evaluate(board, &self.params);
+            return self.static_eval(board, ply);
         }
         let (buffer, rest) = scratch.split_at_mut(MAX_MOVES);
 
@@ -1484,7 +1594,7 @@ impl Search {
             // « Stand pat » : ne rien jouer est une option, et la plupart des
             // positions sont déjà au moins aussi bonnes que ce qu'une capture
             // forcée donnerait.
-            stand_pat = eval::evaluate(board, &self.params);
+            stand_pat = self.static_eval(board, ply);
             if stand_pat >= beta {
                 return stand_pat;
             }
@@ -1518,6 +1628,7 @@ impl Search {
                 continue;
             }
 
+            self.push_move(board, mv, ply);
             let mut child = board.clone();
             child.play_unchecked(mv);
 
@@ -1564,7 +1675,7 @@ impl Search {
             return None;
         }
 
-        let static_eval = eval::evaluate(board, &self.params);
+        let static_eval = self.static_eval(board, ply);
         (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
     }
 
@@ -1681,6 +1792,16 @@ impl Search {
         let gain = self.params.mg_value[victim as usize].max(self.params.eg_value[victim as usize]);
         stand_pat.saturating_add(gain).saturating_add(DELTA_MARGIN) <= alpha
     }
+}
+
+/// L'évaluation du réseau sur des accumulateurs donnés. Une position morte
+/// vaut zéro quoi qu'en pense le réseau : la règle de l'évaluation faite
+/// main, et pour la même raison — aucun appelant ne doit pouvoir l'oublier.
+fn network_eval(network: &Network, accumulators: &Accumulators, board: &Board) -> i32 {
+    if eval::is_insufficient_material(board) {
+        return DRAW;
+    }
+    network.evaluate(accumulators, board.side_to_move())
 }
 
 /// Le nombre de fils retenu pour une demande : au moins un, au plus
@@ -5340,5 +5461,181 @@ mod move_picker_tests {
             (100..MATE_THRESHOLD).contains(&score),
             "Rxd2 gagne une tour d'avance, la recherche a rendu {score}"
         );
+    }
+}
+
+/// La recherche évaluée par un réseau NNUE (A21) : la pile d'accumulateurs,
+/// les auxiliaires, et le retour à l'évaluation faite main.
+#[cfg(test)]
+#[expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
+mod nnue_tests {
+    use super::*;
+
+    fn board(fen: &str) -> Board {
+        fen.parse().unwrap()
+    }
+
+    fn search() -> Search {
+        Search::new(Arc::new(AtomicBool::new(false)))
+    }
+
+    fn ardoise() -> Vec<(Move, i32)> {
+        vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES]
+    }
+
+    /// Une recherche qui évalue par un réseau aléatoire, et vérifie à chaque
+    /// évaluation que ses accumulateurs sont ceux d'un recalcul complet.
+    fn verifiee_par_un_reseau(graine: u64) -> Search {
+        let mut s = search();
+        s.set_network(Some(Arc::new(crate::nnue::testing::small_network(graine))));
+        s.checked_accumulators = Some(std::cell::Cell::new(0));
+        s
+    }
+
+    #[test]
+    fn avec_un_reseau_chaque_evaluation_part_d_accumulateurs_justes() {
+        // Tout ce que la recherche fait à la pile — coups, captures de
+        // quiescence, coups nuls, re-recherches de LMR, ply après ply — doit
+        // laisser à chaque nœud les accumulateurs de SA position. Un couple
+        // oublié ou décalé d'un ply ne ferait rien planter : il évaluerait
+        // une autre position que celle qu'on cherche, et aucun autre test ne
+        // le verrait.
+        //
+        // Un budget de nœuds plutôt qu'une profondeur : le recalcul complet
+        // qui vérifie chaque évaluation est cher en debug, et c'est le nombre
+        // de nœuds qui le paie. L'approfondissement s'arrête où il peut.
+        let limites = Limits {
+            depth: Some(8),
+            nodes: Some(1_500),
+            ..Limits::default()
+        };
+        let mut s = verifiee_par_un_reseau(21);
+        for fen in [
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+            "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",
+            "r3k2r/pP4P1/8/8/8/8/1p4p1/R3K2R w KQkq - 0 1",
+            "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
+        ] {
+            // La même recherche d'une position à l'autre : chacune part d'une
+            // pile déjà écrite par la précédente, que seule la racine remet
+            // à zéro.
+            let position = Position::from_fen(fen).unwrap();
+            let coup = s.go(&position, &limites, |_| {});
+            assert!(coup.is_some_and(|mv| position.board().is_legal(mv)));
+        }
+        let verifiees = s.checked_accumulators.as_ref().unwrap().get();
+        assert!(verifiees >= 1_000, "évaluations vérifiées : {verifiees}");
+    }
+
+    #[test]
+    fn le_coup_nul_passe_les_accumulateurs_tels_quels() {
+        // Appelé directement, pour que le chemin soit parcouru à COUP SÛR :
+        // hors échec, pièces présentes, fenêtre finie, profondeur 3 au ply 1,
+        // table vide, et la futilité inverse coupée — sans quoi elle rend la
+        // main avant le coup nul dès que l'évaluation dépasse `beta`. Le fils
+        // du coup nul part en quiescence au ply 2 et y évalue : sur la pile
+        // d'un autre coup, la vérification tombe.
+        let mut s = verifiee_par_un_reseau(21);
+        s.reverse_futility = false;
+        let b = board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+        // Le ply 2 porte d'abord une pile qui n'est pas celle du coup nul.
+        s.accumulators[1] = s.network.as_ref().unwrap().refresh(&b);
+        s.accumulators[2] = Accumulators::default();
+        let score = s.negamax(&b, 3, 1, -100, 100, &mut ardoise());
+        assert!(score.abs() < MATE_THRESHOLD);
+        assert!(s.checked_accumulators.as_ref().unwrap().get() > 0);
+    }
+
+    #[test]
+    fn le_reseau_decide_et_son_retrait_rend_l_evaluation_faite_main() {
+        let limites = Limits {
+            depth: Some(5),
+            ..Limits::default()
+        };
+        let position = Position::from_fen(crate::bench::BENCH_FENS[1]).unwrap();
+        let noeuds = |s: &mut Search| {
+            s.go(&position, &limites, |_| {});
+            s.nodes()
+        };
+        let faite_main = noeuds(&mut search());
+
+        let mut avec = search();
+        avec.set_network(Some(Arc::new(crate::nnue::testing::random_network(21))));
+        assert!(avec.uses_network());
+        assert_ne!(noeuds(&mut avec), faite_main, "le réseau doit décider");
+
+        let mut retire = search();
+        retire.set_network(Some(Arc::new(crate::nnue::testing::random_network(21))));
+        retire.set_network(None);
+        assert!(!retire.uses_network());
+        assert!(retire.accumulators.is_empty(), "la pile se libère");
+        assert_eq!(noeuds(&mut retire), faite_main, "pas un nœud de différence");
+    }
+
+    #[test]
+    fn les_auxiliaires_evaluent_par_le_meme_reseau() {
+        // Dans les deux ordres : le réseau puis les fils, les fils puis le
+        // réseau. Un fil qui évaluerait autrement que les autres remplirait
+        // la table partagée de scores d'une autre échelle.
+        let reseau = Arc::new(crate::nnue::testing::random_network(21));
+        let pile = |s: &Search| s.uses_network() && s.accumulators.len() == MAX_PLY + 1;
+
+        let mut s = search();
+        s.set_network(Some(Arc::clone(&reseau)));
+        s.set_threads(3);
+        assert_eq!(s.helpers.len(), 2);
+        assert!(pile(&s) && s.helpers.iter().all(pile));
+
+        let mut t = search();
+        t.set_threads(3);
+        t.set_network(Some(reseau));
+        assert!(pile(&t) && t.helpers.iter().all(pile));
+        t.set_network(None);
+        assert!(
+            t.helpers
+                .iter()
+                .all(|h| !h.uses_network() && h.accumulators.is_empty())
+        );
+
+        // Et la recherche à plusieurs fils joue : un coup légal, rien de plus
+        // à asserter quand l'ordonnanceur décide de l'arbre.
+        let mut u = search();
+        u.set_threads(2);
+        u.set_network(Some(Arc::new(crate::nnue::testing::random_network(5))));
+        let position = Position::from_fen(crate::bench::BENCH_FENS[5]).unwrap();
+        let limites = Limits {
+            depth: Some(4),
+            ..Limits::default()
+        };
+        let coup = u.go(&position, &limites, |_| {});
+        assert!(coup.is_some_and(|mv| position.board().is_legal(mv)));
+    }
+
+    #[test]
+    fn l_evaluation_statique_suit_le_reseau_sauf_sur_une_position_morte() {
+        let reseau = crate::nnue::testing::random_network(21);
+        let depart = board(crate::bench::BENCH_FENS[0]);
+        let morte = board("8/8/4k3/8/8/2BK4/8/8 w - - 0 1");
+        // Le témoin : le réseau seul ne dirait pas zéro sur la position morte.
+        assert_ne!(reseau.evaluate(&reseau.refresh(&morte), Color::White), DRAW);
+
+        let faite_main = search();
+        assert_eq!(
+            faite_main.evaluate(&depart),
+            eval::evaluate(&depart, &eval::Params::DEFAULT)
+        );
+
+        let mut s = search();
+        s.set_network(Some(Arc::new(crate::nnue::testing::random_network(21))));
+        assert_eq!(
+            s.evaluate(&depart),
+            reseau.evaluate(&reseau.refresh(&depart), Color::White)
+        );
+        assert_eq!(s.evaluate(&morte), DRAW, "une position morte vaut zéro");
+        // Hors de la pile — inatteignable par la recherche —, le recalcul.
+        s.accumulators[0] = reseau.refresh(&depart);
+        assert_eq!(s.static_eval(&depart, 0), s.evaluate(&depart));
+        assert_eq!(s.static_eval(&depart, MAX_PLY + 5), s.evaluate(&depart));
+        assert_eq!(s.static_eval(&morte, MAX_PLY + 5), DRAW);
     }
 }
