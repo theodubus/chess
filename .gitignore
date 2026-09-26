@@ -1,5 +1,7 @@
 # Rust
 /target
+# La crate d'entraînement NNUE a son propre espace de travail (voir son manifeste).
+/tools/nnue-train/target/
 **/*.rs.bk
 
 # Node / UI

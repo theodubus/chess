@@ -3144,7 +3144,8 @@ d'artefacts visent les dépôts privés.
    (768 → 128 ×2 → 1, SCReLU, quantification 255/64, échelle 400) —, éprouvée
    sur un réseau aléatoire contre un calcul complet de référence —
    **écrite le 26 sept.**, voir ci-dessous ;
-3. l'entraînement, sur la carte de Théo ;
+3. l'entraînement, sur la carte de Théo — **préparé le 26 sept.**, voir
+   ci-dessous : le programme et la procédure attendent sa machine ;
 4. le SPRT, à `8+0,08`.
 
 #### Étape 2 — l'inférence dans le moteur, écrite le 26 sept. 2026
@@ -3198,9 +3199,56 @@ sortis de là :
 **Ce qui reste à vérifier au retour du réseau entraîné** : que le moteur
 évalue une position comme l'entraîneur. La commande `eval` imprime
 l'évaluation statique ; `trainer.eval(fen)` de bullet, × 400, donne la
-sienne. **Attendu : quelques centièmes d'écart, dus à la seule quantification.**
-Un écart de l'ordre de l'évaluation elle-même dirait des entrées mal
-indexées, que rien d'autre ne signalerait.
+sienne. Un écart de l'ordre de l'évaluation elle-même dirait des entrées mal
+indexées, que rien d'autre ne signalerait. **Le programme d'entraînement le
+vérifie lui-même** (étape 3), sur un critère écrit avant le premier
+entraînement.
+
+#### Étape 3 — l'entraînement, préparé le 26 sept. 2026 : la procédure
+
+**Le programme : `tools/nnue-train/`**, une crate à part — son propre espace
+de travail, que la CI ne compile pas : bullet est lourd, et n'entraîne que
+sur GPU. bullet y est épinglé au commit `10e7e82`, celui dont le moteur a lu
+le source ; l'architecture vient des constantes de `engine/src/nnue.rs`, et
+le réseau entraîné est rechargé par le chargeur du moteur. Compilé dans le
+conteneur sans CUDA, contre le runtime factice de bullet : le programme
+compile, rien de plus n'est vérifiable ici. Trois temps, chacun bloquant :
+
+1. **relire** chaque fichier jusqu'au dernier octet — une partie illisible
+   avant la fin est une erreur, pas une fin de fichier — et confronter les
+   comptes aux résumés : `--attendu 1098403:125098300` pour la première
+   vague ;
+2. **entraîner** selon `examples/progression/1_simple.rs` de bullet : 128
+   unités, SCReLU, `AdamW`, 40 superlots de 6 104 lots de 16 384 positions,
+   `wdl` 0,75, pas d'apprentissage en cosinus de 0,001 à 0,001 × 0,3⁵ — le
+   premier pas que bullet recommande (« *start simple, and then
+   incrementally increase complexity* »). Les fichiers sont entrelacés, et
+   filtrés par le filtre par défaut de `viriformat` — celui des 77,7 M
+   positions gardées ;
+3. **confronter** le réseau quantifié, chargé par le moteur, à
+   `trainer.eval(fen) × 400` sur douze positions dont six au trait noir.
+   **Critère écrit avant le premier entraînement : écart médian ≤ 15
+   centièmes, maximal ≤ 50.** <span>Inférence, confiance faible</span> :
+   estimée à la main, la quantification — poids arrondis à 1/255 dans la
+   couche cachée, à 1/64 en sortie — vaut une dizaine de centièmes ; un
+   réseau mal indexé s'écarte de l'ordre de l'évaluation elle-même. Un
+   échec interdit de mesurer le réseau.
+
+**La procédure, sur la machine de Théo** :
+
+1. installer Rust (`rustup`), le pilote NVIDIA et le CUDA Toolkit le plus
+   récent possible ; `CUDA_PATH` doit désigner l'installation (elle contient
+   `bin`, `lib` et `include`) — `docs/2-getting-started.md` de bullet ;
+2. récupérer les quatre artefacts de la première vague — runs 36179538497,
+   36179541822, 36179544454 et 36179547648, page du run, section
+   *Artifacts*, ou `gh run download <run>` — **avant le 24 déc. 2026**, et
+   les décompresser dans un même dossier : seize fichiers `.vf` ;
+3. `cd tools/nnue-train && cargo run --release --features cuda --
+   --attendu 1098403:125098300 <dossier>` ;
+4. si le programme finit sur `RÉSEAU PRÊT`, le fichier
+   `checkpoints/shallowred-768x128-40/quantised.bin` — 197 440 octets — est
+   le réseau : le pousser sur une branche, ou le transmettre. L'étape 4 —
+   l'embarquer et le mesurer — se fait ensuite ici.
 
 **Le coût d'un nœud avec réseau — attendu écrit AVANT de mesurer.** Un réseau
 aléatoire aux évaluations de partie, les six positions du banc, profondeur
