@@ -264,3 +264,53 @@ fn bench_est_accessible_en_ligne_de_commande() {
         "`bench` ne doit pas basculer dans la boucle UCI"
     );
 }
+
+#[test]
+fn evalfile_et_eval_de_bout_en_bout() {
+    // Un réseau nul partout sauf son biais de sortie, `QA × QB` : il évalue
+    // toute position vivante à exactement 400 centièmes, du point de vue du
+    // trait — un calcul qu'on sait faire à la main.
+    use shallowred::nnue::{FILE_BYTES, HIDDEN, INPUTS};
+    let mut octets = vec![0u8; FILE_BYTES];
+    let biais = 2 * (INPUTS * HIDDEN + HIDDEN + 2 * HIDDEN);
+    octets[biais..biais + 2].copy_from_slice(&16_320i16.to_le_bytes());
+    let chemin = std::env::temp_dir().join(format!("shallowred-eval {}.bin", std::process::id()));
+    std::fs::write(&chemin, &octets).unwrap();
+    let charger = format!("setoption name EvalFile value {}", chemin.display());
+
+    let out = drive(&[
+        "eval",
+        &charger,
+        "eval",
+        "go depth 3",
+        "isready",
+        "position fen 8/8/4k3/8/8/2BK4/8/8 w - - 0 1",
+        "eval",
+        "setoption name EvalFile value <empty>",
+        "position startpos",
+        "eval",
+        "isready",
+    ]);
+    let _ = std::fs::remove_file(&chemin);
+
+    let evals: Vec<&str> = out
+        .lines()
+        .filter(|l| l.starts_with("info string évaluation statique"))
+        .collect();
+    assert_eq!(evals.len(), 4, "{out}");
+    assert!(evals[0].ends_with("(faite main)"), "{out}");
+    assert!(
+        out.contains("info string EvalFile : réseau chargé"),
+        "{out}"
+    );
+    assert!(
+        evals[1].contains(" 400 cp") && evals[1].ends_with("(réseau)"),
+        "{out}"
+    );
+    assert_eq!(count(&out, "bestmove"), 1, "{out}");
+    assert!(
+        evals[2].contains(" 0 cp") && evals[2].ends_with("(réseau)"),
+        "une position morte vaut zéro, réseau ou non : {out}"
+    );
+    assert_eq!(evals[3], evals[0], "le retour à la faite main est complet");
+}

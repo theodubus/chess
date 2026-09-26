@@ -31,6 +31,7 @@ main.rs 0
 perft.rs 1
 bench.rs 2
 see.rs 2
+nnue.rs 1
 search.rs 39
 eval.rs 89
 
@@ -317,6 +318,14 @@ eval.rs 89
 #       Le balayage suivant devrait donc rendre 6, et le plafond descendra
 #       alors sans rien demander ; il reste à 8 d'ici là parce qu'un plafond
 #       est un chiffre MESURÉ, jamais extrapolé.
+#
+# nnue.rs — 1, PRÉDIT le 26 sept. 2026, À MESURER AVANT FUSION : le
+#   fichier naît avec l'inférence NNUE (A21, étape 2), et son plafond se
+#   mesure sur runner par l'entrée `commit` de `Mutation` — la fusion attend
+#   la mesure, et cette ligne sera remplacée par elle. 98 mutants annoncés.
+#   Le survivant prédit est ÉQUIVALENT : dans `changes`, le côté du roque se
+#   lit `mv.to.file() > mv.from.file()`, et `>=` ne s'en distingue jamais —
+#   le roi et la tour qu'il « prend » ne sont jamais sur la même colonne.
 #
 # see.rs — 2, mesuré le 21 sept. 2026 (run 35603991267 : 59 mutants, 55
 #   attrapés, 1 inviable, 1 expiré).  MÊME FAMILLE QUE `tt.rs`, et par le même
