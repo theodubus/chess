@@ -740,6 +740,7 @@ dernière relève est faite.
 | **C27 — le crible du code neuf, dans le conteneur** | — | la révocation de la révocation, puis l'extraction de `mate_distance_window` | `tools/mutants.sh --in-diff` | **RELEVÉS à 23 h 25 et 23 h 30** | **7 survivants sur 11** dans le bornage, puis **22 attrapés sur 23, un expiré** — bornes extraites en fonction pure, deux tests neufs (section C27) |
 | **balayage de mutation après la fusion de C27** | 36201927482 | `main` à `70522b7` | un job par fichier, puis `Verdict` | **RELEVÉ le 26 sept. à 01 h 20, VERT** — `search.rs` le plus long, 95 min : 483 attrapés, 40 expirés, 28 inviables | **Les survivants tiennent la prédiction, un pour un** : `search.rs` **39**, les mêmes que 36145534414, aux mêmes colonnes, décalés de 23 lignes au-delà du bornage ; aucun dans le code neuf. Tous les fichiers à leur plafond, total **139**, aucune issue. **Les expirés, non** : 40 contre 43 prédits — le crible donnait aux vingt mutants neufs 19 attrapés et un expiré, donc trois mutants qui expiraient la veille sont attrapés cette fois ; le compte d'expirés suit la charge du runner, et la prédiction aurait dû le dire comme les précédentes. — *Prédiction, écrite avant* : `search.rs` **39**, les MÊMES survivants que 36145534414, un pour un ; un expiré de plus, `alpha >= beta` en `<` ; `tt.rs` **6** ; tous les autres à leur plafond, total **139** |
 | **A21 — le débit de génération sur runner** | 36166785450 | le générateur de `main` à `0eb1e9b`, 5 000 nœuds, graine « auto », un fil par processeur logique | un job court, 20 minutes | **RELEVÉ** — fini à 17 h 43 | **1 713 positions par seconde, dans l'attendu** (1 200 à 1 800, écrit avant) : 17 976 parties, 2 055 456 positions, 62,2 % gardées par le filtre par défaut ; artefact de 7,4 Mo, expire le 24 déc. **Il ne se relit pas d'ici** : le proxy de sortie refuse le stockage des artefacts. Décide quatre jobs (section A21) |
+| **A21, étape 2 — le crible de mutation du candidat** | 36210591242 | `cc8e105` : `nnue.rs` neuf, `search.rs` et `uci.rs` touchés — et les autres fichiers | un job par fichier, puis `Verdict` ; entrée `commit`, donc aucune issue | ~03 h 40 — `search.rs` le plus long | Fixe le plafond de `nnue.rs`, que la fusion attend. — *Prédiction, écrite avant* : `nnue.rs` **1** sur 98 mutants — le `>` du côté du roque en `>=`, équivalent, roi et tour n'étant jamais sur la même colonne ; `search.rs` **39**, les mêmes survivants, aucun dans le code neuf ; `uci.rs` **0** ; les autres à leur plafond ; total **140**. Les expirés ne se prédisent pas : ils suivent la charge du runner. |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
 | **balayage de mutation après la PR #83** — A20 fusionné | **36145534414** | `main` à `d23d1b5` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 40, VERT** — `search.rs` le plus long, 71 min : 461 attrapés, 42 expirés | **La prédiction tient, exactement — jusqu'aux expirés** : `search.rs` **39**, les mêmes survivants que le crible au candidat, un pour un, aux mêmes lignes ; et le tableau entier du verdict est celui du crible, colonne par colonne — survivants, attrapés ET expirés, pour les neuf fichiers. Total **139**, aucune issue. *Le crible par l'entrée `commit` et le balayage de `main` voient donc la même chose.* — *Prédiction, écrite avant* : `search.rs` **39**, au plafond, et les MÊMES survivants que le crible au candidat (36114952595), un pour un, aux mêmes lignes — le code moteur de `main` est celui du candidat octet pour octet (`git diff 54e6c60 d23d1b5 -- engine/` est vide) et le crible a balayé tous les fichiers ; seul le compte d'expirés peut bouger avec la charge du runner, et il ne peut que faire baisser celui des survivants. Tous les autres fichiers à leur plafond, total **139**. Un écart, quel qu'il soit, dirait que le crible et le balayage ne voient pas la même chose |
 | **balayage de mutation après la PR #81** — C25 fusionné | 36073858328 | `main` à `04bf6f8` | un job par fichier, puis `Verdict` | **RELEVÉ à 01 h 10, VERT** — `search.rs` le plus long, 90 min : 526 mutants, 410 attrapés, 28 inviables, 49 expirés | **La prédiction tient, exactement** : `search.rs` **39**, les deux survivants d'`iterate` que le crible au candidat avait trouvés parmi eux, et tous les autres fichiers à leur plafond, total **139**. Aucune issue. — *Prédiction, écrite avant* : `search.rs` **39**, au plafond — le crible au candidat ne trouvait que les deux survivants anciens, et C25 ne déplace aucun arbre à profondeur fixe, donc aucun test de nœuds ne voit autrement le reste du fichier ; des expirés en plus, `set_deadlines` vidé et `deadlines_ms` à `None`. Tous les autres fichiers à leur plafond, total 139 |
@@ -3141,9 +3142,77 @@ d'artefacts visent les dépôts privés.
 2. l'inférence dans le moteur — la pile d'accumulateurs par ply de la
    contrainte d'architecture, et l'architecture de l'exemple de bullet
    (768 → 128 ×2 → 1, SCReLU, quantification 255/64, échelle 400) —, éprouvée
-   sur un réseau aléatoire contre un calcul complet de référence ;
+   sur un réseau aléatoire contre un calcul complet de référence —
+   **écrite le 26 sept.**, voir ci-dessous ;
 3. l'entraînement, sur la carte de Théo ;
 4. le SPRT, à `8+0,08`.
+
+#### Étape 2 — l'inférence dans le moteur, écrite le 26 sept. 2026
+
+**Derrière l'option UCI `EvalFile`, et sans réseau rien ne change** : banc
+identique au nœud près, 107 548 à la profondeur 7 et 594 679 à la profondeur
+10. Tout est lu au source de bullet au commit `10e7e82`, jamais de mémoire :
+
+- **les entrées** — `game/inputs/chess768.rs`, et `ChessBoard::from_raw` de
+  `bulletformat` 1.8.0, qui retourne l'échiquier quand les Noirs ont le trait
+  (`swap_bytes` sur chaque bitboard, couleurs échangées). Ramené aux cases
+  réelles : `384 × (pièce adverse) + 64 × type + case`, la case retournée
+  (`^ 56`) pour la perspective noire ;
+- **le fichier** — `examples/simple.rs` (`SavedFormat`) et
+  `to_quantised_buffer` : poids de la couche cachée par entrée (× 255), ses
+  biais (× 255), les 256 poids de sortie, camp au trait d'abord (× 64), le
+  biais de sortie (× 255 × 64), en `i16` petit-boutistes arrondis, puis un
+  bourrage jusqu'au multiple de 64 : **197 440 octets**, et tout autre taille
+  est refusée ;
+- **la sortie** — le `Network::evaluate` de l'exemple : SCReLU, produit
+  scalaire, `/ 255`, biais, `× 400`, `/ (255 × 64)`, troncatures vers zéro.
+
+**Ce que le chargeur refuse** : un réseau dont une unité, avec ses 32 plus
+grands poids — autant que de pièces sur un échiquier légal —, sortirait d'un
+`i16`, ou dont les poids de sortie totalisent plus de 33 025 en valeur
+absolue — au-delà, le produit scalaire sortirait d'un `i32`. Un réseau
+entraîné avec les réglages par défaut de bullet (`AdamW` borne à ±1,98) passe
+les deux : 16 665 au plus dans un accumulateur, 32 512 en sortie. La sortie
+est bornée à `MATE_THRESHOLD - 1`, et une position morte vaut zéro, réseau ou
+non.
+
+**Où vivent les accumulateurs** : une pile par ply dans `Search`, la
+contrainte d'architecture posée avec le copy-make. Seule la racine se
+recalcule ; le parent dérive ceux de l'enfant du plateau d'avant et du coup
+— la dérivation de `nnue_probe`, déplacée dans `engine/src/nnue.rs`, seule
+copie : `nnue-probe` l'emploie et retombe sur ses chiffres du 14 sept.,
+283 677 coups dont 3 255 roques, 48 prises en passant et 13 628 promotions,
+sans un écart.
+
+**Chaque test a été vu tomber sur une faute injectée**, et deux faits sont
+sortis de là :
+- le coup nul oublié **n'était vu par aucun test** tant que le réseau de test
+  évaluait tout à ±8 000 : la futilité inverse coupait avant le coup nul
+  partout — zéro coup nul sur 54 nœuds candidats. Un réseau aux évaluations
+  de partie, et un appel direct de `negamax` futilité coupée, l'attrapent ;
+- la confrontation des entrées se fait **au code de l'entraîneur**, pas à ma
+  lecture de ce code : un test de `nnue_datagen.rs` fait passer 4 800
+  positions par `to_bulletformat` et l'itération de `bulletformat`, et ne
+  recopie que les cinq lignes de `Chess768`.
+
+**Ce qui reste à vérifier au retour du réseau entraîné** : que le moteur
+évalue une position comme l'entraîneur. La commande `eval` imprime
+l'évaluation statique ; `trainer.eval(fen)` de bullet, × 400, donne la
+sienne. **Attendu : quelques centièmes d'écart, dus à la seule quantification.**
+Un écart de l'ordre de l'évaluation elle-même dirait des entrées mal
+indexées, que rien d'autre ne signalerait.
+
+**Le coût d'un nœud avec réseau — attendu écrit AVANT de mesurer.** Un réseau
+aléatoire aux évaluations de partie, les six positions du banc, profondeur
+fixe, un processus par mesure, cinq paires alternées ; on compare les
+nanosecondes par nœud, les arbres différant. <span>Inférence, confiance
+faible</span> : la mise à jour coûte une copie de 512 octets et deux à quatre
+lignes de 128 par perspective ; la sortie multiplie des `i32`, que le jeu
+d'instructions de base (SSE2) ne vectorise pas nativement ; l'évaluation
+faite main, elle, n'est pas donnée — la structure de pions pesait à elle
+seule 24 % du temps le 14 sept. Attendu : **le nœud avec réseau entre 0,8 et
+1,6 fois le nœud fait main** sur le binaire de base, **entre 0,6 et 1,1** en
+AVX2 (`-C target-cpu=native`).
 
 ### C27 — une borne de mat hors plage stockée dans la table — VERDICT, 25 sept. 2026 : −3,56 ± 5,97 Elo à `8+0,08`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
 
