@@ -9,6 +9,10 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 - `ui/` — TypeScript. **Chantier parallèle, avec son propre `ui/CLAUDE.md`
   qui fait autorité sous `ui/`.** Rien de ce fichier-ci ne s'y applique :
   une interface n'a pas de force de jeu, donc ni SPRT, ni perft, ni bench.
+  **Un autre agent, Codex, y travaille en parallèle** sur ses propres branches
+  (`codex/…`) et leurs PR : c'est normal, et ça ne touche qu'à `ui/` (Théo,
+  24 sept. 2026). Ne pas les prendre pour des anomalies, ni les fusionner
+  ou les nettoyer.
 - `tools/` — arbitres de match, livre d'ouvertures, SPRT. Voir `tools/README.md`.
 
 ## Par où commencer, sans contexte
@@ -80,11 +84,33 @@ une mesure, pas une préférence.
   l'état de la table, donc de l'historique de la recherche. Même position *et*
   même table donnent le même coup ; même position seule ne suffit plus. C'est
   le comportement normal d'un moteur, pas une entorse à l'invariant.
+  **Seconde nuance, depuis Lazy SMP (B6)** : à plus d'un fil, l'ordonnanceur
+  décide qui écrit le premier dans la table, et deux recherches identiques ne
+  rendent plus le même arbre. **Un fil — le défaut, le banc, les tests de
+  score — reste déterministe au nœud près.** Un test à plusieurs fils
+  n'asserte jamais un arbre ni un score, seulement ce qui tient quel que soit
+  l'ordre : un coup légal, un arrêt, un compte de nœuds.
+- **Un fil auxiliaire ne décide rien et s'arrête avec la recherche
+  principale, panique comprise.** Il cherche la même position sur la même
+  table, sans pendule ni rapport ; seul le fil principal rend le coup. Son
+  arrêt passe par un garde (`StopOnDrop`) et non par une ligne après la
+  boucle : `std::thread::scope` attend tous ses fils, et un auxiliaire jamais
+  arrêté ferait attendre `go` pour toujours. Le test qui le garde échoue au
+  bout de vingt secondes au lieu de pendre.
 - **Un score de mat stocké dans la table doit être normalisé du ply.** Un mat
   vaut `±(MATE - ply)`, donc il dépend de l'endroit d'où on le regarde. Stocker
   tel quel et relire ailleurs annonce un mat faux. `score_to_tt` et
   `score_from_tt` s'en chargent — c'est la source de bug la plus classique
   d'une table de transposition.
+- **Une fenêtre ne promet jamais plus qu'un mat atteignable.** À l'entrée de
+  `negamax`, hors racine, `alpha` et `beta` se bornent à `-MATE + ply` et
+  `MATE - ply - 1` — l'élagage par distance au mat. Sans lui, une borne
+  héritée d'un ply moins profond remontait comme un SCORE dès qu'un retour de
+  borne la rendait — la quiescence rend `alpha` quand rien ne l'améliore — et
+  `score_to_tt` la poussait hors de ±MATE : **1,82 % des recherches en
+  partie** stockaient un score non représentable (C27, 25 sept. 2026).
+  `une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage` tombe sur l'ancien
+  code dans les deux profils.
 - **Pas de coupure par la table à la racine.** Il y faut un coup à jouer, pas
   seulement un score.
 - **Une itération d'approfondissement interrompue est jetée**, jamais acceptée :
@@ -188,11 +214,17 @@ une mesure, pas une préférence.
   **filtre tactique** de la quiescence existe (`tactical_only`, qui restreint
   les destinations par un `AND` de bitboards). La génération par étapes
   proprement dite — produire les captures, s'arrêter sur coupure bêta, ne
-  générer les coups tranquilles que si nécessaire — reste entièrement à faire.
+  générer les coups tranquilles que si nécessaire — <s>reste entièrement à
+  faire</s> **est écrite depuis le 24 sept. 2026 (A18, le `MovePicker`)** et
+  **FUSIONNÉE le même jour : +23,10 ± 6,39 Elo à `8+0,08`**, 5 740 parties,
+  gain démontré. Hors partie, 10 à 14 % plus rapide par nœud, l'arbre
+  inchangé ; en partie, n/s × 1,09 et +0,17 ± 0,07 pli. Protocole, critère et
+  verdict dans `tools/README.md`, section A18.
 - **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
   La valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
 - **Table de transposition partagée, le jour où la recherche devient
-  parallèle.** **En place depuis le 23 sept. 2026 (B9)** : entrées atomiques,
+  parallèle.** **Le jour est venu le 24 sept. 2026** : Lazy SMP (B6) la
+  partage entre fils par un `Arc`, et l'option `Threads` vaut 1 par défaut. **En place depuis le 23 sept. 2026 (B9)** : entrées atomiques,
   `store` prend `&self`, la table se partage entre fils. <s>Pas en place, et
   c'est le seul endroit du dépôt où le design actuel bloque une
   fonctionnalité déjà prévue : `store` prend `&mut self`, ce qui est
@@ -229,11 +261,11 @@ une mesure, pas une préférence.
 | « ce code est testé » | `tools/mutants.sh`. Un mutant **survivant** est une modification du code que toute la suite accepte : une ligne dont rien ne vérifie le comportement. Le plafond par fichier vit dans `.github/mutation-baseline.txt`, et le balayage hebdomadaire (workflow `Mutation`, mardi) casse à la hausse, signale la baisse. **Ne dit rien de la force de jeu** : un survivant sur une valeur d'évaluation ou une marge d'élagage relève du SPRT, jamais d'un test unitaire. |
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « ce verdict vaut pour le moteur qu'on livrera » | **La cadence de mesure peut INVERSER un verdict — mesuré, pas redouté.** 16 sept. 2026, mêmes binaires, même livre, **même graine d'ouvertures**, même adjudication, même estimateur (1000 parties à longueur fixe chacun) : l'élagage par compte de coups vaut **−21,57 ± 16,71** à `1+0,01` et **+15,30 ± 15,08** à `8+0,08`. Écart **+36,9 Elo**, z = 3,21, **p = 0,0013**, intervalles disjoints. Le biais d'arrêt du SPRT ne vaut que 3,6 Elo : ce n'était pas l'explication. Profondeur médiane atteinte : **8,5** contre **12,5** — et **17,0** à ~30+0,3, le régime où le moteur jouera. **Les douze premiers verdicts du projet sont tous à `1+0,01`**, alors que `tools/sprt.sh` a pour défaut `8+0.08` depuis sa création — défaut jamais utilisé. Ce n'était pas un arbitrage, c'était une habitude. **Nommer la cadence d'un verdict, et ne jamais comparer deux verdicts de cadences différentes.** Mesurer long passe par `.github/workflows/match.yml`. |
-| « ce chantier passe avant cet autre » | **Une unité commune, et les plis en sont une.** Le projet a comparé ses chantiers en pourcentage de nœuds, en part de l'arbre, et en « très sous-estimé » hérité d'un backlog — trois unités qui ne se comparent pas. **Mesuré le 22 sept. 2026 : 1,36 pli par doublement de temps**, stable sur quatre doublements, ce qui ramène tout gain de vitesse OU de temps à la même échelle. Génération par étapes 0,21 pli, **dépenser la pendule 0,54 à 0,70**, Lazy SMP 1,0 à 1,8. <s>Pendule pleine ~1,36.</s> **Faux d'un facteur 2,5, corrigé le 22 sept. au soir** — et la faute mérite d'être nommée parce qu'elle est conceptuelle : *j'ai confondu la RESSOURCE TOTALE consommée sur une partie avec l'ALLOCATION PAR COUP*. Le budget vaut `restant / movestogo` — proportionnel à ce qui reste — donc dépenser plus tôt laisse moins ensuite : la consommation totale monte bien de × 1,9, mais le budget moyen par coup ne monte que de **× 1,32**, et il **sature** (le diviseur 12 alloue 285 ms, le 10 en alloue 283). La saturation n'est pas un hasard : le plafond d'une allocation *plate* vaut `(pendule + coups × inc) / coups` = **280 ms**. Un diviseur est une famille à un paramètre qui bute sur la physique du problème ; faire mieux demande une allocation **inégale**, ce qui est un autre chantier. **Ce que ça ne donne pas : l'Elo — sinon par un intervalle.** <s>Combien vaut un pli n'est mesuré nulle part ici</s> — **deux points depuis le 23 sept. 2026**, plis mesurés **en partie** par une sonde appariée par partie, à `8+0,08` contre notre jumeau : C21 **21 à 116 Elo par pli**, ponder **52 à 102**. Compatibles, et larges. L'attendu du ponder, converti par le seul point de C21 et ses plis *estimés par le budget* (0,54 à 0,70 ; 0,41 mesurés), disait ~+25 ; mesuré **+67,6**. **Une conversion par un point unique porte l'incertitude des DEUX mesures qui la composent : écrire l'intervalle, jamais le point.** Et le multiplier par une constante héritée reste ce que ce dépôt a démenti trois fois. Chiffres dans `tools/README.md`, section ponder. |
+| « ce chantier passe avant cet autre » | **Une unité commune, et les plis en sont une.** Le projet a comparé ses chantiers en pourcentage de nœuds, en part de l'arbre, et en « très sous-estimé » hérité d'un backlog — trois unités qui ne se comparent pas. **Mesuré le 22 sept. 2026 : 1,36 pli par doublement de temps**, stable sur quatre doublements, ce qui ramène tout gain de vitesse OU de temps à la même échelle. Génération par étapes 0,21 pli, **dépenser la pendule 0,54 à 0,70**, Lazy SMP 1,0 à 1,8 — <s>hérité</s> **mesuré le 24 sept. : +0,48 ± 0,08 pli à deux fils**, en partie sur runner, et **+42,16 ± 9,23 Elo** contre notre jumeau monofil ; le chiffre hérité supposait quatre vrais cœurs. <s>Pendule pleine ~1,36.</s> **Faux d'un facteur 2,5, corrigé le 22 sept. au soir** — et la faute mérite d'être nommée parce qu'elle est conceptuelle : *j'ai confondu la RESSOURCE TOTALE consommée sur une partie avec l'ALLOCATION PAR COUP*. Le budget vaut `restant / movestogo` — proportionnel à ce qui reste — donc dépenser plus tôt laisse moins ensuite : la consommation totale monte bien de × 1,9, mais le budget moyen par coup ne monte que de **× 1,32**, et il **sature** (le diviseur 12 alloue 285 ms, le 10 en alloue 283). La saturation n'est pas un hasard : le plafond d'une allocation *plate* vaut `(pendule + coups × inc) / coups` = **280 ms**. Un diviseur est une famille à un paramètre qui bute sur la physique du problème ; faire mieux demande une allocation **inégale**, ce qui est un autre chantier. **Ce que ça ne donne pas : l'Elo — sinon par un intervalle.** <s>Combien vaut un pli n'est mesuré nulle part ici</s> — **deux points depuis le 23 sept. 2026**, plis mesurés **en partie** par une sonde appariée par partie, à `8+0,08` contre notre jumeau : C21 **21 à 119 Elo par pli**, ponder **51 à 104**, B6 **59 à 128** (24 sept.), A18 **70 à 295** (24 sept.) — intervalles de Student, que 1,96 rendait trop étroits. Compatibles, et larges. **Et un étalon depuis le 24 sept.** : un doublement de temps, même binaire, vaut **+107,7 ± 8,2 Elo** et **+1,38 ± 0,28 pli**, mesurés tous deux sur runner dans le même régime — **60 à 105 Elo par pli** à `8+0,08`. L'incertitude vient presque toute des plis : la resserrer demande une sonde plus longue, pas un match de plus. L'attendu du ponder, converti par le seul point de C21 et ses plis *estimés par le budget* (0,54 à 0,70 ; 0,41 mesurés), disait ~+25 ; mesuré **+67,6**. **Une conversion par un point unique porte l'incertitude des DEUX mesures qui la composent : écrire l'intervalle, jamais le point.** Et le multiplier par une constante héritée reste ce que ce dépôt a démenti trois fois. Chiffres dans `tools/README.md`, section ponder. |
 | « ce changement vaut la peine d'être mesuré » | Budget estimé du verdict. **Dix-huit SPRT du projet — la relation tient, sa DISPERSION est connue, et elle ne dépend PAS de la cadence** : `parties × Elo`, médiane **59 256**, étendue 45 900 à 80 200, **facteur 1,75**. Quatre techniques ont un point à chaque cadence ; l'Elo y change d'un facteur 2,5 et même de signe, le produit tient à ± 15 %. **Mais l'Elo qu'on MET dans la division appartient, lui, à une cadence** : le projet a écrit que les trois termes d'évaluation « tombaient juste sous la ligne » (59 500 ÷ 14,9 = 3 993 parties, au-delà du plafond de 3 750) ; le verdict est tombé en **1 580**, l'effet valant +37,5 et non +14,9. **Un budget estimé depuis un verdict à `1+0,01` est un majorant — ne jamais renoncer à un match sur cette base.** Un seul point dépasse 67 000 — le tout premier, +164 Elo sur 488 parties ; <span>inférence, confiance moyenne : le biais d'arrêt du SPRT gonfle d'autant plus l'estimation que l'effectif est petit</span>. Hors ce point, le facteur tombe à **1,45**. La constante n'a presque pas bougé (62 000 avait été établie sur quatre points), **mais un budget estimé se lit désormais à ± 50 %, pas comme un nombre** : +30 Elo ≈ 2000 parties ≈ 25 min ; +5 ≈ 11 900 ≈ 2 h 30 ; +2 ≈ 29 750 ≈ 6 h. Le temps machine est la ressource rare — 4 cœurs, concurrence 3, plafond atteint. Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. **À `8+0,08` par `match.yml`, un job tranche les effets de ~20 Elo et plus** : ~7,25 s par partie depuis que les deux moteurs dépensent leur pendule (mesuré le 23 sept. 2026 ; 5,57 s avant C21), plafond de 350 min, soit ~2 880 parties — 3 000 ne tiennent plus. En dessous, passer à des matchs à longueur fixe sur plusieurs jobs et les mettre en commun par `tools/mettre-en-commun.sh` — **jamais un SPRT, et la raison est plus large que « ne pas reprendre un SPRT expiré »** : un test séquentiel tire ses taux d'erreur d'une règle d'arrêt unique sur un flux unique. Lancer N SPRT et s'arrêter dès que l'un franchit sa borne multiplie le risque de première espèce par ~N ; recoller leurs parties après coup ne rend pas un test séquentiel mais un échantillon dont la taille a été choisie après avoir vu les données, ce qui est pire. **Un match à longueur fixe, lui, se parallélise sans rien casser** : effectif connu d'avance, estimation non biaisée, et la somme des comptes pentanomiaux est exacte là où moyenner des Elo ne l'est pas. Voir `tools/README.md`. |
-| « ce correctif de règle ne dégrade pas le jeu » | **Trois choses, et pas un gain.** Des tests qui **échouent sur l'ancien code** et passent sur le nouveau, chacun avec un témoin ; le mécanisme **mesuré en régime réel** ; puis un match dont le critère est **écrit avant de lancer** : fusion sauf si la borne haute de l'intervalle est sous zéro. Exiger qu'un correctif de règle *prouve un gain* reviendrait à ne jamais corriger une règle — son effet tombe presque toujours sous le seuil de résolution. Ne rien mesurer reviendrait à fusionner un changement d'arbre sur une impression. **Dire la puissance d'avance** : à 6 000 parties, une régression de 1 ou 2 Elo passe inaperçue, et c'est accepté *parce que c'est écrit*. Premier cas : C22, 23 sept. 2026 — **arrêté par son critère** (−10,44 ± 6,34), et la cause trouvée pendant le vol : le test qu'il étendait à l'horizon était lui-même faux à 92 % (C23). |
+| « ce correctif de règle ne dégrade pas le jeu » | **Trois choses, et pas un gain.** Des tests qui **échouent sur l'ancien code** et passent sur le nouveau, chacun avec un témoin ; le mécanisme **mesuré en régime réel** ; puis un match dont le critère est **écrit avant de lancer** : fusion sauf si la borne haute de l'intervalle est sous zéro. Exiger qu'un correctif de règle *prouve un gain* reviendrait à ne jamais corriger une règle — son effet tombe presque toujours sous le seuil de résolution. Ne rien mesurer reviendrait à fusionner un changement d'arbre sur une impression. **Dire la puissance d'avance** : à 6 000 parties, une régression de 1 ou 2 Elo passe inaperçue, et c'est accepté *parce que c'est écrit*. Premier cas : C22, 23 sept. 2026 — **arrêté par son critère** (−10,44 ± 6,34), et la cause trouvée pendant le vol : le test qu'il étendait à l'horizon était lui-même faux à 92 % (C23). **Remesuré sur C23, fusionné le 24 sept.** — et ses deux jobs se contredisaient (+10,86 et −2,90, z = 2,15), sans que la décision en dépende : **un critère écrit en bornes se lit sur chaque match comme sur l'ensemble**, et aucune lecture ne mettait la borne haute sous zéro. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après. Comparer d'abord le **nombre de nœuds**, qui est déterministe ; les nœuds par seconde varient d'un run à l'autre. |
-| « c'est plus fort » | **Jamais** déduit d'un nombre de nœuds, dans aucun sens. Huit mesures, et les trois combinaisons de signes sont représentées : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration ÷1,07 → +30 ; élagage delta ÷1,68 → +33 ; futilité inverse ÷1,45 → +24 (moins de nœuds, plus fort) ; **PVS ÷1,03 → −11, H0 accepté** (moins de nœuds, plus faible) ; **mobilité ×1,29 → +63** (*plus* de nœuds, plus fort). Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. **Deux rapports voisins, ÷1,68 et ÷2,52, rapportent +33 et +75 : même le classement ne se déduit pas.** Deux points de plus le 21 sept. 2026, tous deux nuls : extension d'échec ×1,16 → **−5,0 ± 8,1**, PVS réécrit ÷1,07 → **−0,8 ± 8,2**, à `8+0,08`. Et un point du 22 sept. qui tombe pile sur un point existant : **les trois termes d'évaluation ×1,29 → +37,5**, exactement le rapport de nœuds de la mobilité, qui vaut **+62,6**. *Même coût en nœuds, presque du simple au double en Elo.* |
+| « c'est plus fort » | **Jamais** déduit d'un nombre de nœuds, dans aucun sens. Huit mesures, et les trois combinaisons de signes sont représentées : table + killers + historique ÷5,8 → +164 Elo ; coup nul ÷2,5 → +75 ; LMR ÷5,7 → +69 ; fenêtres d'aspiration ÷1,07 → +30 ; élagage delta ÷1,68 → +33 ; futilité inverse ÷1,45 → +24 (moins de nœuds, plus fort) ; **PVS ÷1,03 → −11, H0 accepté** (moins de nœuds, plus faible) ; **mobilité ×1,29 → +63** (*plus* de nœuds, plus fort). Un rapport de nœuds mesure le travail à une profondeur donnée, jamais la force. Seul le SPRT tranche. **Deux rapports voisins, ÷1,68 et ÷2,52, rapportent +33 et +75 : même le classement ne se déduit pas.** **Et un même rapport rend les deux signes** : l'historique de continuation, ÷1,03 → **+12,6 ± 4,4** (25 sept. 2026, `8+0,08`) — exactement le rapport de PVS, qui valait −11. Deux points de plus le 21 sept. 2026, tous deux nuls : extension d'échec ×1,16 → **−5,0 ± 8,1**, PVS réécrit ÷1,07 → **−0,8 ± 8,2**, à `8+0,08`. Et un point du 22 sept. qui tombe pile sur un point existant : **les trois termes d'évaluation ×1,29 → +37,5**, exactement le rapport de nœuds de la mobilité, qui vaut **+62,6**. *Même coût en nœuds, presque du simple au double en Elo.* |
 | « cette technique est standard, donc elle aide » | **Rien.** Ce n'est pas une preuve, et le dépôt en porte maintenant **trois** démentis. PVS est dans tous les manuels et la mesure l'a rejeté **deux fois, à deux cadences** : −10,9 ± 7,9 à `1+0,01` (4214 parties, septembre) puis **−0,8 ± 8,2 à `8+0,08`** (3400 parties, 21 sept., sur la base post-C19 et post-LMP). Le second chiffre corrige le premier plus qu'il ne le confirme : **PVS n'est pas un coût, c'est un néant.** Empilé sur LMR, coup nul et fenêtres d'aspiration, il n'apporte plus rien à couper, et son coût de re-recherche compense exactement son économie de nœuds. La coupure du manuel dans l'échange statique rend une valeur fausse — 27 écarts sur 771, l'oracle l'a vue au premier passage. Et reléguer les captures perdantes **derrière les coups tranquilles**, comme le font les moteurs modernes, coûte **+31,6 % de nœuds** ici, contre −4,2 % pour le palier le plus doux. Une technique standard entre par le SPRT comme toutes les autres. |
 | « cette rustine de l'attic s'applique encore » | **`git apply --check`, jamais la table.** Trois des sept lignes de `tools/attic/README.md` étaient fausses le 22 sept. 2026, toutes par la même fusion, et rien ne pouvait le signaler : personne n'avait rien fait de mal, la table avait vieilli pendant qu'une PR avançait. Le contrôle est `engine/tests/rustines_attic.rs`, et il garde **la copie que les humains lisent** — déplacer la déclaration dans un fichier annexe aurait laissé la table dériver, ce qui est la faute de B10. **Une rustine qui cesse de s'appliquer parce que son code est ENTRÉ dans `main` n'est pas une régression** : c'est un rejet levé, et ça se raconte dans la colonne. |
 | « ce réglage était mauvais, pas la technique » | **Une bissection par le paramètre, pas une intuition** — et la bissection appartient elle aussi à sa cadence. L'élagage par compte de coups a été bissecté à `1+0,01` : seuil `6 + d²` → **−25,2 Elo**, seuil `12 + d²` → **−12,6**, le coût suivant le **risque mesuré** (3,8 % puis 2,0 % des montées d'`alpha` détruites, × 0,53 pour × 0,50, droite par l'origine). J'en avais conclu « il n'y a pas de seuil qui paie sur ce moteur ». **Réfuté le 21 sept. 2026** : à `8+0,08`, sur la base post-C19, les deux seuils sont **H1** — +22,85 ± 9,88 et +17,24 ± 8,51. La bissection était juste, la généralisation ne l'était pas. **Deux points ferment une question que zéro point laisserait ouverte — mais ils ne la ferment qu'à leur cadence.** |
@@ -280,6 +312,35 @@ une mesure, pas une préférence.
   gaspille X % » en « on peut en avoir X % de plus », vérifier si la ressource
   est allouée par unité ou consommée en commun.* Même famille que le
   dénominateur, appliquée cette fois à une ressource partagée dans le temps.
+  <br>**Deuxième occurrence le 24 sept. 2026, sur C24.** « La dure repoussée
+  rend un pli aux 22 % de coups qu'elle coupait » : attendu écrit +0,15 à
+  +0,35 pli. La douce avancée de 0,50 à 0,44 budget en reprend presque autant
+  ailleurs — l'écran, interrogé, rendait **+0,05**, et la partie a mesuré
+  −0,00 ± 0,09. *Une réallocation à total constant a deux côtés, et un
+  attendu dérivé de tête n'en compte qu'un.* **Quand l'instrument qui calcule
+  l'attendu existe déjà, l'attendu se calcule** : la trace de l'écran simulait
+  toute règle d'arrêt, et je ne le lui avais pas demandé.
+- **Une réallocation à temps constant ne se lit pas en plis moyens.** C24,
+  24 sept. 2026 : laisser finir l'itération entamée ne change pas la
+  profondeur moyenne — +0,05 pli à l'écran, −0,00 ± 0,09 en partie — et vaut
+  **+44,64 ± 6,24 Elo** à `8+0,08`. Deux lectures avaient été écrites avant le
+  match : par les plis moyens, +2 à +7 ; par l'**accord avec un oracle** — la
+  décision au bout d'une recherche six fois plus longue, convertie en temps
+  plat équivalent —, +39 à +68. **La seconde a tenu, la première a manqué
+  d'un facteur six.** *Les plis moyens mesurent COMBIEN on cherche ; une
+  réallocation change OÙ.* Les plis restent l'unité commune pour un gain de
+  vitesse ou de temps total ; pour une réallocation, l'étalon est l'accord à
+  temps plat, et l'écran d'allocation sait le calculer
+  (`tools/attic/c24-sonde-allocation.patch`).
+  <br>**Un second point le même jour, sur C25, et il borne l'étalon** : la
+  douce par stabilité du coup, +0,17 à +0,36 pli d'accord à l'écran, vaut
+  **+7,87 ± 6,08** — **22 à 46 Elo par pli d'accord** au point, contre ~69
+  pour C24. L'accord a prédit le SIGNE, pas le TAUX. La réserve écrite avant
+  le disait : un coup instable hésite entre deux coups presque équivalents,
+  donc la règle qui le cible achète des plis d'accord qui valent moins.
+  *L'Elo d'un pli d'accord appartient à la règle qui l'achète* : converti au
+  taux d'une autre règle, un attendu est un majorant dès que la nouvelle
+  cible davantage ce que l'étalon surestime.
 - **Une comparaison entre réglages qui CHANGENT le déroulement n'est pas
   appariée.** La même sonde a d'abord donné le gain de profondeur non monotone
   — −0,22 à +0,66 pli pour un budget × 3. Cause : plus de temps fait jouer
@@ -360,6 +421,13 @@ une mesure, pas une préférence.
   banc dit vraiment, c'est qu'il ne la remplit pas. *Avant de conclure d'un
   banc qu'un dimensionnement n'a pas d'effet, vérifier qu'il atteint seulement
   la borne qu'on déplace.*
+  <br>**Et il peut INVERSER une conclusion de temps.** A18, 24 sept. 2026 : à
+  la profondeur 12, le banc donnait le sélecteur par étapes **4,8 % plus
+  lent**, son arbre **+14,9 %** — la position initiale y grossissait de 66 % à
+  elle seule, quand quatre positions sur six rétrécissaient. Sur 150 positions
+  de vraies parties, à la même profondeur : **−11,3 % de temps**, l'arbre
+  −2,2 %. *Un changement d'ordre déplace chaque arbre dans les deux sens ; six
+  positions n'en moyennent pas la taille.*
 - **Quand un mécanisme est rare par construction, compter ses nœuds ne
   tranche rien — compter ses DÉGÂTS, si.** D2 supposait que PVS vaut par le
   gatage de LMP sur les nœuds hors variante principale. La question naturelle
@@ -386,6 +454,14 @@ une mesure, pas une préférence.
   outils au lieu de penser à celui qu'on vient d'utiliser.* Même famille que
   « un garde-fou peut garder la mauvaise chose », appliquée non plus à un
   dispositif mais à une conclusion.
+  <br>**Deuxième occurrence le 24 sept. 2026, sur une référence et non un
+  outil.** Le backlog de C26 citait « Stockfish plafonne l'excès à ~1,7
+  budget à deux coups du contrôle » — de tête, d'une formule ancienne. Son
+  source, lu au commit, borne la durée maximale à **81 % de la pendule** et
+  accepte d'en dépenser ~77 % à deux coups du contrôle : le chiffre était
+  faux, et la conclusion qu'on en tirait aussi. *Une référence extérieure se
+  lit dans son source, au commit qu'on cite* — sans quoi c'est un souvenir
+  qui passe pour une mesure.
 - **Avant d'ordonner deux chantiers par une dépendance, vérifier qu'ils
   touchent les mêmes objets.** Le projet a inscrit que l'échange statique était
   « la précondition » de l'élagage par compte de coups, au motif que la prémisse
@@ -503,8 +579,17 @@ une mesure, pas une préférence.
   ponder vole du CPU à l'adversaire du candidat, donc *vers* l'hypothèse ;
   Lazy SMP en vole au candidat lui-même. **`match.yml` dérive la concurrence
   de l'inégalité depuis le 23 sept.** — deux cœurs par partie dès que
-  quelqu'un pondère — et refuse de lancer si elle ne tient pas ; il ne sait
-  encore rien des fils, étape de B6. Tableau dans `tools/README.md`.
+  quelqu'un pondère — et refuse de lancer si elle ne tient pas ; **les fils
+  depuis le 24 sept.** (`fils_candidat`, `fils_reference`), avec deux refus
+  de plus : un moteur qui ne DÉCLARE pas `Threads` — il l'ignorerait en
+  silence et jouerait monofil —, et, dans une partie, plus de fils
+  réfléchissant à la fois que de cœurs physiques.
+  Tableau dans `tools/README.md`.
+  <br>**Mesuré le 23 sept. : ces quatre cœurs sont quatre processeurs
+  LOGIQUES pour deux cœurs physiques** (SMT). À concurrence 3, trois moteurs
+  s'en partagent deux : symétrique, donc chaque verdict reste valide en
+  interne, mais la profondeur EN PARTIE est plus basse que l'étalonnage ne le
+  dit, et Lazy SMP ne s'y mesure sans SMT qu'à deux fils.
 - **Un renvoi par POSITION vieillit comme un chiffre recopié, et sans bruit.**
   `tools/README.md` commentait « la dernière ligne » d'un tableau de nœuds ;
   écrite le 16 sept. 2026 elle visait juste, puis deux mesures ajoutées sous
@@ -525,6 +610,15 @@ une mesure, pas une préférence.
   le score — dans la recherche comme dans l'évaluation. Vingt-huit mutants
   perdus d'un coup. **Après avoir touché à un test, remesurer le plafond**, ou
   au minimum se demander ce que ce test attrapait qu'on ne lui demandait pas.
+  <br>**Et un changement d'ARBRE déplace ce que les tests de nœuds voient,
+  dans du code qu'il ne touche pas.** 24 sept. 2026, fusion d'A18 : le crible
+  local, prédiction écrite, ne balayait que le code NEUF — 39 prédits, **43**
+  rendus. Les quatre de trop vivaient dans des lignes qu'A18 n'a pas écrites
+  (la prime d'historique, le `ply + 1` du coup nul et de la quiescence) et
+  que seuls le banc figé et un test de PV sur une position attrapaient :
+  l'arbre neuf ne les leur montrait plus. *Le crible d'un changement d'arbre
+  couvre le FICHIER entier, jamais le seul diff* ; et un test de nœuds figé
+  à une profondeur ne voit que ce que cet arbre-là exerce.
 - **Un mutant « de réglage » n'est hors de portée des tests que si rien de
   DÉTERMINISTE ne dépend du réglage.** Le plafond d'`eval.rs` était justifié
   depuis le 15 sept. 2026 par « le fichier est en très grande part des VALEURS,
@@ -545,6 +639,14 @@ une mesure, pas une préférence.
   **Les deux omissions se couvraient l'une l'autre.** La question à se poser
   n'est pas « ce garde-fou marche-t-il ? » mais « **quelle est sa source de
   vérité, et est-ce la bonne ?** » — ici le répertoire, jamais la liste.
+- **Une assertion qui ne s'est jamais déclenchée ne prouve rien si aucun
+  test n'atteint l'état qu'elle garde.** `pack_data` borne le score stocké
+  depuis le 22 sept. 2026, et `tt.rs` en tirait « le score tient sur seize
+  bits, et ce n'est pas un pari ». Aucun test ne jouait une partie jusqu'au
+  mat depuis une position gagnante ; ceux du générateur NNUE, qui le font,
+  l'ont déclenchée en quelques secondes — et le défaut touchait **1,82 % des
+  recherches** en partie (C27). *Le silence d'une assertion mesure ce que les
+  tests parcourent, pas l'absence du défaut.*
 - **Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué ne garde
   rien.** La première version de `engine/tests/bench_reference.rs` ne lisait
   que `CLAUDE.md`. Elle a été écrite alors que `README.md` portait déjà
@@ -619,6 +721,17 @@ une mesure, pas une préférence.
   plus lent : la réserve d'origine avait aussi le signe faux. **Un point unique
   qui tombe dans l'intervalle attendu ressemble exactement à une confirmation**,
   et n'en est pas une : il ne mesure pas la dispersion de ce qu'on caractérise.
+- **Un mutant sans effet logique qui se dit « attrapé » est un signal, pas
+  un succès.** 24 sept. 2026 : la garde de débordement de `stage_moves`, en
+  `<=` au lieu de `<`, ne change rien — le débordement est inatteignable. Le
+  balayage l'a pourtant déclarée attrapée, par un test à plusieurs fils. Ce
+  test était instable, et il l'était pour une vraie raison : **le budget de
+  `go nodes` n'était tenu que par le fil principal**, et un fil privé de CPU
+  ne tient rien. Reproduit en serrant les fils sur un seul cœur, corrigé.
+  *Une garde tenue par UN fil ne tient que si ce fil tourne — et
+  l'ordonnancement n'est pas une ressource qu'un test contrôle.* Un test
+  instable fausse aussi le cliquet, dans le sens que son asymétrie tolère :
+  il ne peut que faire baisser le compte des survivants.
 - **Un mutant équivalent est souvent du code mort.** Deux survivants de `tt.rs`
   inversaient la borne d'un test d'entrée vierge dans `store` sans qu'aucun
   test ne bouge. Ce n'était pas un trou de couverture : la clause ne pouvait
@@ -643,6 +756,10 @@ une mesure, pas une préférence.
   **Se demander : qu'est-ce que je casserais dans le code pour faire tomber ce
   test ?** Si la réponse n'est pas la ligne visée, le test mesure autre chose.
   Ici la bonne mesure était le nombre de nœuds, déterministe sur ce moteur.
+  <br>**Sa forme la plus nue, trouvée le 24 sept. 2026** : `assert_eq!(f(x),
+  f(x))`. Le test des killers affirmait « pas à un autre ply » en comparant
+  une note à elle-même — vrai quoi que fasse le code, donc aucun mutant ne
+  pouvait le faire tomber, et rien ne le signalait.
 - **Ne pas recopier un compteur en prose.** Le 15 sept. 2026, j'ai écrit
   « ces cinq dispositifs » au-dessus d'un tableau qui en listait six, et
   « dix cas » pour un auto-test qui en comptait onze — **les deux étaient faux
@@ -661,6 +778,13 @@ une mesure, pas une préférence.
   `workflow_dispatch`** : les runners GitHub ne dorment pas, et le journal
   reste lisible après coup. C'est ainsi que le plafond d'`eval.rs` a fini par
   être mesuré.
+  <br>**Deuxième occurrence le 25 sept. 2026, alors que la règle était
+  écrite** : le crible de `search.rs` entier au candidat A20, lancé dans le
+  conteneur parce que le workflow ne savait balayer que la tête de la branche
+  — et le candidat y était révoqué. Mort à 57 mutants sur 570, au
+  redémarrage du conteneur qu'un rappel programmé réveillait. *Une règle que
+  l'outillage ne permet pas de suivre se contourne* : `Mutation` accepte
+  désormais `commit`.
 - **Un SPRT expiré n'est pas « rien appris » — c'est une estimation biaisée
   VERS ZÉRO, donc un minorant.** C21 a épuisé ses 350 minutes le 23 sept. 2026
   à **3262 parties sans frontière**, et le dernier bloc complet donnait
@@ -692,6 +816,23 @@ une mesure, pas une préférence.
   d'avance qui l'a arrêté, pas la sonde. *Avant de compter un phénomène avec
   le code qui le détecte, vérifier ce code sur les cas qu'il détecte* — la
   même idée que deux arbitres indépendants, appliquée à une sonde.
+- **Un contrefactuel d'ORDRE est biaisé vers l'ordre joué.** A20, 25 sept.
+  2026 : pour classer cinq raffinements de l'ordre des coups sans les écrire,
+  la sonde calculait le rang qu'aurait eu le coupeur sous chaque ordre.
+  Toutes les variantes sortaient pires que l'ordre joué — même le coup de
+  réfutation, juste une fois sur six. **Le coupeur est le premier coup qui
+  coupe DANS L'ORDRE JOUÉ** : ceux qu'un autre ordre placerait devant lui
+  n'ont jamais été cherchés, et certains auraient coupé aussi. Le malus en
+  était le cas visible : appris sous l'ordre joué, il punit ce que cet ordre
+  essaie d'abord. **Il reste valide un plafond et un minorant, pas un
+  classement.** La mesure juste était l'arbre de chaque variante APPLIQUÉE,
+  rejouée sur des parties : déterministe, elle a désigné la seule qui a
+  ensuite rendu +12,56 ± 4,35.
+  <br>**La même sonde portait un dénominateur faux d'une autre sorte** :
+  sommer nœud par nœud les sous-arbres cherchés avant le coupeur comptait
+  deux fois ceux qui s'emboîtent — 67 % des nœuds sur une position,
+  impossible pour un plafond ; l'union, propagée de fils en père, en rendait
+  la moitié. *Un total de coûts emboîtés est une union, jamais une somme.*
 - **Un changement de recherche se mesure sur un commit RÉVOQUÉ aussitôt**,
   pas au bas de la branche. C21 était le plus ancien de sa pile : dix-sept
   commits de documentation ont attendu son verdict. Le geste depuis C22 :
@@ -718,7 +859,7 @@ une mesure, pas une préférence.
 - **Des pièges de ce fichier sont partis dans `tools/pieges-fermes.md`.**
   Chacun est désormais tenu par un dispositif qui le rend inexprimable —
   `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
-  `rustines_attic.rs`, le banc à la profondeur 5, le plafond calculé de
+  `rustines_attic.rs`, le banc à la profondeur 6, le plafond calculé de
   `match.yml`. **Une règle qu'un code de sortie impose n'a pas besoin d'être
   relue à chaque session** ; elle a besoin d'être trouvable le jour où le
   dispositif se déclenche. Ceux qui restent ci-dessus sont ceux que **seul le
@@ -786,7 +927,8 @@ pannes, et de refaire ce qu'ils font déjà.
 | `engine/tests/pieges_fermes.rs` | confronte `tools/pieges-fermes.md` au dépôt : **chaque piège archivé doit nommer un dispositif qui existe**, et l'archive doit rester nommée dans `CLAUDE.md`. Sans lui, supprimer `ref.sh` laisserait son piège archivé comme « tenu » alors que plus rien ne le tient — il serait **moins** protégé qu'avant d'être archivé. Même faute que la table de l'attic. Éprouvé en le faisant échouer, et il a attrapé deux imprécisions de ma prose à sa première exécution |
 | `engine/tests/outillage_documente.rs` | exige que chaque dispositif soit **nommé avec son extension** dans une doc — scripts de `tools/`, workflows, hooks, et depuis le 22 sept. 2026 les **binaires de `tools/src/bin/`**, qui étaient son angle mort. Énumération par répertoire et par extension, jamais nom par nom |
 | `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
-| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Remesuré le 21 sept. 2026 : 58 % d'écart entre deux runners sur le même binaire** (2 067 101 contre 3 268 241 n/s, profondeurs 11 et 12), contre les 25 % relevés le 16. Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
+| `tools/balayage-vivant.sh` | étape du job `Moteur`, à chaque push : échoue si le workflow `Mutation` est endormi ou n'a pas tourné depuis quinze jours. **Le cliquet ne peut pas signaler sa propre absence**, et GitHub endort les workflows planifiés d'un dépôt public après soixante jours sans activité. Remplace une routine hors dépôt qui, le seul mardi où le cliquet a cassé, était passée **avant** le balayage — cron lancé avec 3 h 48 de retard. Éprouvé par `tools/balayage-vivant-test.sh`, dans `verify.sh` et juste avant lui dans la CI : deux défauts injectés, deux attrapés |
+| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Remesuré le 21 sept. 2026 : 58 % d'écart entre deux runners sur le même binaire** (2 067 101 contre 3 268 241 n/s, profondeurs 11 et 12), contre les 25 % relevés le 16. **83 % le 25 sept.** (4 019 409 contre 2 199 922 n/s, profondeurs 13 et 12, les deux jobs de C27). Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
 
 **Le cliquet de mutation.** `.github/mutation-baseline.txt` porte le nombre de
 survivants admis par fichier **et la raison écrite de chaque valeur non
@@ -831,6 +973,12 @@ dispositif d'alerte.**
 du verdict pour vérifier que l'issue part, sans attendre un vrai rouge. Une
 issue ouverte par ce chemin le dit en tête.
 
+**Et l'entrée `commit`, depuis le 25 sept. 2026** : elle balaie un SHA au lieu
+de la tête de la branche — le crible d'un candidat révoqué le temps de sa
+mesure, que la branche ne porte plus. Un tel balayage n'ouvre jamais d'issue :
+le cliquet garde `main`. Sans elle, le crible du fichier entier se lançait dans
+le conteneur, où il est mort à 57 mutants sur 570 au premier redémarrage.
+
 **Durée du balayage** : 35 puis 81 minutes sur deux exécutions réelles. Les
 runners partagés varient du simple au double — ne pas caler un rendez-vous
 serré dessus. **Ce chiffre porte sur un débit de COMPILATION**, et ne dit rien
@@ -852,7 +1000,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
 rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
 commit.
 
-Référence à la profondeur 7 : 114 026 nœuds.
+Référence à la profondeur 7 : 107 548 nœuds.
 
 Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
 `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que

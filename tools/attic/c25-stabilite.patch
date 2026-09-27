@@ -1,0 +1,378 @@
+commit 41d590ff3ad03ffc764c92fbeccae1960f8c4bb8
+Author: Claude <noreply@anthropic.com>
+Date:   Thu Sep 24 16:43:45 2026 +0000
+
+    C25 — la répartition par la stabilité : une douce par classe, la dure à trois budgets
+    
+    Par-dessus C24. La sonde de l'allocation mesure, sur 107 000 itérations, la
+    probabilité qu'une itération de plus change le coup : 26,1 % quand il vient
+    de changer, 12,7 % stable depuis 2 à 3 itérations, 7,3 % depuis 4 à 6,
+    3,7 % depuis 7 et plus. Poursuivre tant que cette probabilité, rapportée au
+    coût de l'itération suivante, dépasse un seuil revient à une douce
+    proportionnelle à elle : 1,825 / 0,885 / 0,513 / 0,257 budget, à l'échelle
+    qui rend le temps moyen de C24. La dure passe de 2,2 à 3 budgets, bornée par
+    la pendule comme avant ; movetime inchangé.
+    
+    - `deadlines_ms` rend une `DeadlinesMs` : quatre douces et une dure.
+    - `iterate` compte les itérations achevées de suite sur le même coup ;
+      `stability_class` en tire la douce en vigueur.
+    - Tests : valeurs exactes des échéances, bornes des classes, et la douce
+      en vigueur pilotée par la stabilité (`iterate` s'arrête à la première
+      itération qui confirme le coup quand seule la douce du coup qui change
+      est dans le futur). Huit défauts injectés, tous attrapés.
+    - Banc inchangé : 109 047, aucune échéance ne joue à profondeur fixe.
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+    Claude-Session: https://claude.ai/code/session_011QmyEJPgm9NaJ5124tmeJj
+
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index cb4c6d0..f39d836 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -303,8 +303,10 @@ pub struct Search {
+     started: Instant,
+     /// Instant au-delà duquel la recherche s'interrompt en cours d'itération.
+     hard_deadline: Option<Instant>,
+-    /// Instant au-delà duquel on n'entame pas d'itération supplémentaire.
+-    soft_deadline: Option<Instant>,
++    /// Instants au-delà desquels on n'entame pas d'itération supplémentaire,
++    /// un par classe de stabilité du coup — voir [`deadlines_ms`] et
++    /// [`stability_class`].
++    soft_deadlines: Option<[Instant; STABILITY_CLASSES]>,
+     /// Budget de nœuds, quand `go nodes` en impose un.
+     node_limit: Option<u64>,
+     /// Vrai tant que la recherche PONDÈRE : lancée par `go ponder`, pas encore
+@@ -422,7 +424,7 @@ impl Search {
+             nodes: 0,
+             started: Instant::now(),
+             hard_deadline: None,
+-            soft_deadline: None,
++            soft_deadlines: None,
+             pondering: Arc::new(AtomicBool::new(false)),
+             last_pv: Vec::new(),
+             node_limit: None,
+@@ -653,6 +655,8 @@ impl Search {
+     ) -> Option<Move> {
+         let mut best = None;
+         let mut previous = DRAW;
++        // Itérations achevées de suite sur le même coup, celle-ci comprise.
++        let mut stable = 0;
+         for depth in 1..=max_depth {
+             let score = self.search_root(
+                 board,
+@@ -669,6 +673,7 @@ impl Search {
+             }
+ 
+             let Some(mv) = self.root_best else { break };
++            stable = if best == Some(mv) { stable + 1 } else { 1 };
+             best = Some(mv);
+             previous = score;
+             self.last_pv = self.pv.line();
+@@ -688,7 +693,14 @@ impl Search {
+             // En ponder, l'échéance douce ne vaut pas : c'est le temps de
+             // l'adversaire, on approfondit tant qu'il réfléchit. Elle
+             // s'appliquera dès `ponderhit`, à la fin de l'itération en cours.
+-            if !self.is_pondering() && self.soft_deadline.is_some_and(|at| Instant::now() >= at) {
++            // Laquelle s'applique dépend de la stabilité du coup (C25) : un
++            // coup qui vient de changer mérite une itération de plus bien plus
++            // qu'un coup inchangé depuis sept.
++            if !self.is_pondering()
++                && self
++                    .soft_deadlines
++                    .is_some_and(|at| Instant::now() >= at[stability_class(stable)])
++            {
+                 break;
+             }
+         }
+@@ -795,15 +807,15 @@ impl Search {
+     /// Pose les deux échéances du coup à partir des pendules — voir
+     /// [`deadlines_ms`], qui en porte l'arithmétique et ses raisons.
+     fn set_deadlines(&mut self, limits: &Limits, side: Color) {
+-        let Some((soft_ms, hard_ms)) = deadlines_ms(limits, side) else {
++        let Some(deadlines) = deadlines_ms(limits, side) else {
+             self.hard_deadline = None;
+-            self.soft_deadline = None;
++            self.soft_deadlines = None;
+             return;
+         };
+ 
+         let now = Instant::now();
+-        self.hard_deadline = Some(now + Duration::from_millis(hard_ms));
+-        self.soft_deadline = Some(now + Duration::from_millis(soft_ms));
++        self.hard_deadline = Some(now + Duration::from_millis(deadlines.hard));
++        self.soft_deadlines = Some(deadlines.soft.map(|ms| now + Duration::from_millis(ms)));
+     }
+ 
+     /// Vrai si la recherche doit cesser.
+@@ -1941,8 +1953,17 @@ fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
+     Some(budget.clamp(1, remaining.saturating_sub(50).max(1)))
+ }
+ 
+-/// Les deux échéances d'un coup, en millisecondes depuis le début de la
+-/// recherche : `(douce, dure)`.
++/// Les échéances d'un coup, en millisecondes depuis le début de la recherche.
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++struct DeadlinesMs {
++    /// Au-delà, on n'entame pas d'itération — une valeur par classe de
++    /// stabilité du coup, dans l'ordre de [`stability_class`].
++    soft: [u64; STABILITY_CLASSES],
++    /// Au-delà, l'itération qui court est interrompue, et jetée.
++    hard: u64,
++}
++
++/// Les échéances d'un coup.
+ ///
+ /// La DOUCE interdit d'entamer une itération ; la DURE interrompt celle qui
+ /// court — et une itération interrompue est jetée, jamais acceptée.
+@@ -1954,24 +1975,36 @@ fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
+ /// cinq elle n'y arrivait pas. Mesuré le 24 sept. 2026 en régime réel — sonde
+ /// `alloc-probe`, parties entières à `8+0,08`, une table par camp : **18,8 % du
+ /// temps dépensé était jeté** dans des itérations interrompues, une perte
+-/// sèche. Désormais la douce tombe à 0,44 budget et la dure à 2,2 : une
+-/// itération entamée finit presque toujours (2,8 % jetés), et le temps moyen
+-/// dépensé par coup ne bouge pas — la douce, un peu plus tôt, compense ce que
+-/// la dure laisse finir.
++/// sèche. C24 a mis la douce à 0,44 budget et la dure à 2,2 : une itération
++/// entamée finit presque toujours, et le temps moyen dépensé par coup ne
++/// bouge pas. **+44,64 ± 6,24 Elo à `8+0,08`**, sans chercher plus profond en
++/// moyenne : laisser finir l'itération est déjà une allocation inégale — une
++/// itération dure longtemps quand la position est difficile.
++///
++/// # Pourquoi une douce par classe de stabilité (C25)
+ ///
+-/// Ce que la mesure a montré en plus, et qui n'était pas cherché : **laisser
+-/// finir l'itération est déjà une allocation inégale.** Une itération dure
+-/// longtemps quand la position est difficile — le coup change, la fenêtre
+-/// d'aspiration échoue —, et c'est précisément là qu'elle achète le plus.
++/// La même sonde mesure, sur 107 000 itérations, la probabilité qu'une
++/// itération de plus change le coup : **26 %** quand il vient de changer,
++/// 13 % stable depuis 2 à 3 itérations, 7 % depuis 4 à 6, **4 %** depuis 7 et
++/// plus. Poursuivre tant que cette probabilité, rapportée au coût de
++/// l'itération suivante, dépasse un seuil revient à une douce proportionnelle
++/// à elle : c'est [`SOFT_PERMILLE`], dont l'échelle est calibrée pour que le
++/// temps moyen dépensé par coup soit celui de C24. La dure passe à trois
++/// budgets, pour que les itérations longues qu'autorise une douce tardive
++/// puissent finir.
+ ///
+-/// La dure reste bornée par la pendule, avec la même marge que le budget. Un
+-/// `movetime` n'en change rien : un temps imposé se respecte, et la dure y
+-/// reste le temps demandé.
++/// La dure reste bornée par la pendule, avec la même marge que le budget, et
++/// aucune douce ne la dépasse. Un `movetime` n'en change rien : un temps
++/// imposé se respecte, la douce y reste la moitié du temps demandé et la dure
++/// le temps demandé, quelle que soit la stabilité.
+ #[must_use]
+-fn deadlines_ms(limits: &Limits, side: Color) -> Option<(u64, u64)> {
++fn deadlines_ms(limits: &Limits, side: Color) -> Option<DeadlinesMs> {
+     let budget = time_budget_ms(limits, side)?;
+     if limits.movetime.is_some() {
+-        return Some((budget / 2, budget));
++        return Some(DeadlinesMs {
++            soft: [budget / 2; STABILITY_CLASSES],
++            hard: budget,
++        });
+     }
+     let remaining = match side {
+         Color::White => limits.wtime,
+@@ -1979,17 +2012,41 @@ fn deadlines_ms(limits: &Limits, side: Color) -> Option<(u64, u64)> {
+     }
+     .unwrap_or(budget);
+     let hard = (budget * HARD_PERCENT / 100).clamp(1, remaining.saturating_sub(50).max(1));
+-    let soft = (budget * SOFT_PERCENT / 100).min(hard);
+-    Some((soft, hard))
++    let soft = SOFT_PERMILLE.map(|permille| (budget * permille / 1000).min(hard));
++    Some(DeadlinesMs { soft, hard })
++}
++
++/// Le nombre de classes de stabilité du coup — voir [`stability_class`].
++const STABILITY_CLASSES: usize = 4;
++
++/// La classe de stabilité du coup, d'après le nombre d'itérations achevées de
++/// suite sur le même coup, la dernière comprise : il vient de changer (1),
++/// stable depuis 2 à 3, depuis 4 à 6, depuis 7 et plus.
++///
++/// Les bornes sont celles de la sonde qui a mesuré les probabilités de
++/// [`SOFT_PERMILLE`] : les changer sans remesurer ferait mentir la table.
++#[must_use]
++fn stability_class(stable: u32) -> usize {
++    match stable {
++        0 | 1 => 0,
++        2 | 3 => 1,
++        4..=6 => 2,
++        _ => 3,
++    }
+ }
+ 
+-/// L'échéance douce, en pour cent du budget. Mesurée, pas choisie : voir
++/// Les échéances douces, en pour mille du budget, par classe de stabilité :
++/// le coup vient de changer, stable depuis 2 à 3 itérations, 4 à 6, 7 et plus.
++///
++/// Proportionnelles à la probabilité mesurée qu'une itération de plus change
++/// le coup (26,1 %, 12,7 %, 7,3 %, 3,7 %), à l'échelle qui rend le temps moyen
++/// de C24 sur les parties de la sonde. Mesurées, pas choisies : voir
+ /// [`deadlines_ms`].
+-const SOFT_PERCENT: u64 = 44;
++const SOFT_PERMILLE: [u64; STABILITY_CLASSES] = [1825, 885, 513, 257];
+ 
+-/// L'échéance dure, en pour cent du budget — cinq fois la douce. Mesurée, pas
+-/// choisie : voir [`deadlines_ms`].
+-const HARD_PERCENT: u64 = 220;
++/// L'échéance dure, en pour cent du budget. Mesurée, pas choisie : voir
++/// [`deadlines_ms`].
++const HARD_PERCENT: u64 = 300;
+ 
+ /// Coups supposés restants quand l'interface n'annonce pas `movestogo`.
+ ///
+@@ -3745,38 +3802,66 @@ mod tests {
+ 
+     #[test]
+     fn les_echeances_laissent_finir_une_iteration_entamee() {
+-        // C24 : la douce à 0,44 budget, la dure à 2,2 — cinq fois plus loin,
+-        // pour qu'une itération entamée ne soit presque jamais jetée.
++        // C24 : la dure loin du budget, pour qu'une itération entamée ne soit
++        // presque jamais jetée. C25 : la douce dépend de la stabilité du coup,
++        // de 1,825 budget quand il vient de changer à 0,257 quand il est
++        // stable depuis sept itérations ; la dure à trois budgets.
+         let pendule = Limits {
+             wtime: Some(60_000),
+             winc: Some(600),
+             ..Limits::default()
+         };
+         assert_eq!(time_budget_ms(&pendule, Color::White), Some(5_300));
+-        assert_eq!(deadlines_ms(&pendule, Color::White), Some((2_332, 11_660)));
++        assert_eq!(
++            deadlines_ms(&pendule, Color::White),
++            Some(DeadlinesMs {
++                soft: [9_672, 4_690, 2_718, 1_362],
++                hard: 15_900
++            })
++        );
+ 
+         // La pendule lue est celle du camp au trait.
+         let noirs = Limits {
+             btime: Some(24_000),
+             ..Limits::default()
+         };
+-        assert_eq!(deadlines_ms(&noirs, Color::Black), Some((880, 4_400)));
++        assert_eq!(
++            deadlines_ms(&noirs, Color::Black),
++            Some(DeadlinesMs {
++                soft: [3_650, 1_770, 1_026, 514],
++                hard: 6_000
++            })
++        );
+ 
+         // La dure reste bornée par la pendule, avec la marge du budget : à
+-        // 300 ms, elle ne dépasse pas 250 quel que soit l'incrément.
++        // 300 ms, elle ne dépasse pas 250 quel que soit l'incrément — et
++        // aucune douce ne la dépasse.
+         let serre = Limits {
+             wtime: Some(300),
+             winc: Some(1_000),
+             ..Limits::default()
+         };
+-        assert_eq!(deadlines_ms(&serre, Color::White), Some((110, 250)));
++        assert_eq!(
++            deadlines_ms(&serre, Color::White),
++            Some(DeadlinesMs {
++                soft: [250, 221, 128, 64],
++                hard: 250
++            })
++        );
+ 
+-        // Un temps imposé se respecte : la dure y reste le temps demandé.
++        // Un temps imposé se respecte : la douce à sa moitié, la dure au
++        // temps demandé, quelle que soit la stabilité.
+         let impose = Limits {
+             movetime: Some(1_000),
+             ..Limits::default()
+         };
+-        assert_eq!(deadlines_ms(&impose, Color::White), Some((490, 980)));
++        assert_eq!(
++            deadlines_ms(&impose, Color::White),
++            Some(DeadlinesMs {
++                soft: [490; STABILITY_CLASSES],
++                hard: 980
++            })
++        );
+ 
+         // Sans pendule, pas d'échéance.
+         assert_eq!(
+@@ -3791,6 +3876,64 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn la_classe_de_stabilite_suit_les_bornes_de_la_sonde() {
++        // Les probabilités de `SOFT_PERMILLE` ont été mesurées par classe :
++        // déplacer une borne ferait appliquer à une classe la douce d'une
++        // autre, sans que rien d'autre ne bronche.
++        let classes: Vec<usize> = (1..=9).map(stability_class).collect();
++        assert_eq!(classes, [0, 1, 1, 2, 2, 2, 3, 3, 3]);
++        assert_eq!(stability_class(0), 0, "avant tout coup, rien n'est stable");
++        assert_eq!(stability_class(u32::MAX), 3);
++        // Plus le coup est stable, plus tôt tombe la douce.
++        assert!(SOFT_PERMILLE.windows(2).all(|w| w[0] > w[1]));
++        assert!(SOFT_PERMILLE[0] < HARD_PERCENT * 10);
++    }
++
++    #[test]
++    fn la_douce_en_vigueur_est_celle_de_la_stabilite_du_coup() {
++        // Seule la douce du coup qui vient de changer est dans le futur : la
++        // recherche doit continuer tant que le coup change, et s'arrêter à la
++        // PREMIÈRE itération qui le confirme. Si `iterate` ignorait la
++        // stabilité, ou ne la tenait plus à jour, elle irait au bout de la
++        // profondeur ; si elle la surestimait, elle s'arrêterait dès la
++        // première itération.
++        let position = Position::startpos();
++        let mut s = search();
++        s.started = Instant::now();
++        s.path = position.history().to_vec();
++        let passe = Instant::now() - Duration::from_secs(1);
++        let futur = Instant::now() + Duration::from_secs(3_600);
++        s.soft_deadlines = Some([futur, passe, passe, passe]);
++        let profondeur = 12;
++        let mut coups = Vec::new();
++        let mut a = vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES];
++        s.iterate(position.board(), profondeur, &mut a, &mut |info: &Info| {
++            coups.push(info.pv[0]);
++        });
++
++        assert!(
++            coups.len() >= 2,
++            "arrêtée avant de pouvoir confirmer un coup"
++        );
++        let dernier = coups.len() - 1;
++        for i in 1..dernier {
++            assert_ne!(
++                coups[i],
++                coups[i - 1],
++                "le coup était confirmé à l'itération {} et la recherche a continué",
++                i + 1
++            );
++        }
++        if coups.len() < profondeur as usize {
++            assert_eq!(
++                coups[dernier],
++                coups[dernier - 1],
++                "arrêtée sans que le coup soit confirmé"
++            );
++        }
++    }
++
+     #[test]
+     fn lecheance_douce_precede_toujours_la_dure() {
+         // Si la douce passait après la dure, elle ne se déclencherait jamais :
+@@ -3804,8 +3947,10 @@ mod tests {
+             },
+             Color::White,
+         );
+-        let (douce, dure) = (s.soft_deadline.unwrap(), s.hard_deadline.unwrap());
+-        assert!(douce < dure, "l'échéance douce doit précéder la dure");
++        let (douces, dure) = (s.soft_deadlines.unwrap(), s.hard_deadline.unwrap());
++        for douce in douces {
++            assert!(douce < dure, "chaque échéance douce doit précéder la dure");
++        }
+     }
+ 
+     #[test]

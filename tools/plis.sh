@@ -31,9 +31,9 @@
 # et c'est la dispersion de ces écarts entre parties qui donne l'intervalle.
 #
 # Ce que ça a tranché, le 23 sept. 2026 : le ponder gagnait les 0,90 pli
-# prévus (+0,94 ± 0,19), et C21 n'en gagnait que 0,41 ± 0,19 — pas les 0,54
+# prévus (+0,94 ± 0,20), et C21 n'en gagnait que 0,41 ± 0,20 — pas les 0,54
 # à 0,70 estimés par son budget, qui servaient à convertir des plis en Elo.
-# Un témoin sans aucune différence rend −0,00 ± 0,12.
+# Un témoin sans aucune différence rend −0,00 ± 0,13.
 #
 # Ce que ça compte
 #
@@ -44,6 +44,22 @@
 #   est comptée dans le taux de succès, jamais dans les profondeurs.
 # - « pendule » court depuis le `go` ou le `ponderhit` ; « recherche » depuis
 #   le `go`, donc temps de ponder compris.
+# - Le rapport des n/s ne prend que les coups partis d'un `go` ORDINAIRE. Sur
+#   un tel coup, le camp qui pondère cherche seul — l'autre vient de jouer et
+#   ne pondère pas —, alors que la référence cherche PENDANT que le candidat
+#   pondère. Même binaire, même machine, mêmes parties : le rapport dit ce que
+#   le ponder vole à l'adversaire, sans comparer deux runners dont la vitesse
+#   varie de 22 à 58 %. Un coup joué sur `ponderhit` mêle les deux régimes et
+#   en est exclu. Sans ponder, le rapport est un témoin : il doit valoir ~1.
+#   **Il porte un confondant de quelques pour cent**, et il faut le savoir
+#   avant de le lire : chez le camp qui pondère, les coups partis d'un `go`
+#   sont ceux qui suivent un ponder MANQUÉ — table chaude d'une autre ligne.
+#   Rejoué sur les journaux de conteneur du 23 sept. : témoin 1,010, ponder
+#   0,976, quand les n/s de la référence d'un run à l'autre, même machine,
+#   ne bougeaient que de −0,8 %. Il sépare donc un vol MASSIF — deux fils
+#   d'un même cœur physique — d'une absence de vol ; pas 2 % de 0 %.
+# - L'intervalle suit Student à n − 1 degrés de liberté, pas 1,96 : à vingt
+#   parties, 1,96 le rendait 7 % trop étroit, et à quatre, de 38 %.
 #
 # Python en document-ci-inclus, comme `lire-journal.sh` et `timing.sh`.
 set -euo pipefail
@@ -97,7 +113,7 @@ for brut in open(sys.argv[1], errors='replace'):
             if r['ponder'] and not r['succes']:
                 continue   # ponder jeté : pas un coup joué
             joues.append((parties.get(moteur, 0), moteur, r['prof'], t - r['tpendule'],
-                          t - r['t0'], r['noeuds'], r['temps']))
+                          t - r['t0'], r['noeuds'], r['temps'], not r['ponder']))
 
 par_moteur = {m: [j for j in joues if j[1] == m] for m in MOTEURS}
 if not all(par_moteur.values()):
@@ -114,6 +130,14 @@ for m in MOTEURS:
     go, hit, stop = ponder[m]
     if go:
         print(f"ponder de {m} : {go} go ponder, {hit} ponderhit, {stop} stop — taux {hit / go:.3f}")
+nps_go = {}
+for m, J in par_moteur.items():
+    noeuds, temps = sum(j[5] for j in J if j[7]), sum(j[6] for j in J if j[7])
+    nps_go[m] = noeuds * 1000 / temps if temps else 0
+if all(nps_go.values()):
+    print(f"n/s des coups partis d'un go : candidat {round(nps_go['candidat'])}, "
+          f"reference {round(nps_go['reference'])} — "
+          f"reference / candidat = {nps_go['reference'] / nps_go['candidat']:.3f}")
 
 ecarts = []
 for g in sorted({j[0] for j in joues}):
@@ -125,7 +149,14 @@ if len(ecarts) < 2:
     print("refus : moins de deux parties jouées par les deux moteurs, pas d'intervalle", file=sys.stderr)
     sys.exit(1)
 rapport = st.mean(j[4] for j in par_moteur['candidat']) / st.mean(j[4] for j in par_moteur['reference'])
-demi = 1.96 * st.stdev(ecarts) / len(ecarts) ** 0.5
+# Quantile 0,975 de Student ; au-delà de trente degrés, 1,96 + 2,5 / ddl colle
+# à la table au millième près (40 : 2,021 ; 120 : 1,980).
+T975 = [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228,
+        2.201, 2.179, 2.160, 2.145, 2.131, 2.120, 2.110, 2.101, 2.093, 2.086,
+        2.080, 2.074, 2.069, 2.064, 2.060, 2.056, 2.052, 2.048, 2.045, 2.042]
+ddl = len(ecarts) - 1
+t975 = T975[ddl - 1] if ddl <= len(T975) else 1.96 + 2.5 / ddl
+demi = t975 * st.stdev(ecarts) / len(ecarts) ** 0.5
 print(f"rapport des temps de recherche : x {rapport:.2f}")
 print(f"écart apparié : {st.mean(ecarts):+.2f} ± {demi:.2f} pli sur {len(ecarts)} parties (IC 95 %)")
 PY

@@ -1,0 +1,99 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 0368687..ec2c3fa 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -220,6 +220,12 @@ pub struct Limits {
+     pub ponder: bool,
+ }
+ 
++/// SONDE C27 : nœuds dont une borne héritée dépasse l'atteignable (hors
++/// fenêtre pleine), et nœuds que l'élagage par distance au mat couperait.
++pub static SONDE_BORNEE: AtomicU64 = AtomicU64::new(0);
++/// Voir `SONDE_BORNEE`.
++pub static SONDE_COUPERAIT: AtomicU64 = AtomicU64::new(0);
++
+ /// Le score d'une position, tel qu'UCI le distingue.
+ #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+ pub enum Score {
+@@ -1173,6 +1179,18 @@ impl Search {
+             return DRAW;
+         }
+ 
++        // SONDE C27 : ce que l'élagage par distance au mat ferait ici.
++        if ply > 0 {
++            let reach = i32::try_from(ply).unwrap_or(0);
++            let (a2, b2) = (alpha.max(-MATE + reach), beta.min(MATE - reach - 1));
++            if (a2, b2) != (alpha, beta) && (alpha > -MATE || beta < MATE) {
++                SONDE_BORNEE.fetch_add(1, Ordering::Relaxed);
++            }
++            if a2 >= b2 {
++                SONDE_COUPERAIT.fetch_add(1, Ordering::Relaxed);
++            }
++        }
++
+         if depth <= 0 {
+             return self.quiescence(board, alpha, beta, ply, scratch);
+         }
+diff --git a/engine/src/tt.rs b/engine/src/tt.rs
+index 19ec1cb..212a6c9 100644
+--- a/engine/src/tt.rs
++++ b/engine/src/tt.rs
+@@ -111,11 +111,13 @@ const BOUND_SHIFT: u32 = 40;
+ const GEN_SHIFT: u32 = 42;
+ 
+ /// Empaquette les données d'une entrée.
++/// SONDE C27 : scores hors de ±MATE effectivement stockés.
++pub static SONDE_HORS_PLAGE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++
+ fn pack_data(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8) -> u64 {
+-    debug_assert!(
+-        score.abs() <= crate::eval::MATE,
+-        "score hors bornes au stockage : {score}"
+-    );
++    if score.abs() > crate::eval::MATE {
++        SONDE_HORS_PLAGE.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++    }
+     let score = score.clamp(i32::from(i16::MIN), i32::from(i16::MAX));
+     let score = u64::from(u16::from_ne_bytes((score as i16).to_ne_bytes()));
+     score
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index 87c1692..ee80007 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -399,6 +399,13 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                let h = crate::tt::SONDE_HORS_PLAGE.swap(0, Relaxed);
++                let bo = crate::search::SONDE_BORNEE.swap(0, Relaxed);
++                let c = crate::search::SONDE_COUPERAIT.swap(0, Relaxed);
++                send(&format!("info string sonde-c27 hors_plage={h} bornee={bo} couperait={c}"));
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
+diff --git a/tools/sonde-c27/lire.sh b/tools/sonde-c27/lire.sh
+new file mode 100755
+index 0000000..ba414cb
+--- /dev/null
++++ b/tools/sonde-c27/lire.sh
+@@ -0,0 +1,17 @@
++#!/usr/bin/env bash
++# Lecteur de la sonde C27 : agrège les lignes `info string sonde-c27` qu'émet
++# le moteur instrumenté avant chaque `bestmove`, dans un journal cutechess
++# lancé avec `-debug all`.
++#
++# Le match du 25 sept. 2026 (ancien code instrumenté contre lui-même) :
++#   tools/arbiters/cutechess-cli -engine cmd=$BIN name=a -engine cmd=$BIN name=b \
++#     -each proto=uci tc=8+0.08 -openings file=tools/book.epd format=epd \
++#     order=random -repeat -games 2 -rounds 30 -concurrency 3 -srand 20260925 \
++#     -debug all > c27-sonde.log
++#
++# `bornee` est INUTILISABLE tel quel : il compte aussi le bornage trivial d'une
++# borne infinie. Seuls `hors_plage` et `couperait` répondent à la question.
++set -euo pipefail
++grep -o "sonde-c27 hors_plage=[0-9]* bornee=[0-9]* couperait=[0-9]*" "${1:?journal}" |
++  awk -F'[= ]' '{n++; h+=$3; c+=$7; if($3>0) nh++; if($7>0) nc++}
++    END {printf "recherches %d\nhors_plage : %d écritures, %d recherches (%.2f %%)\ncouperait : %d nœuds, %d recherches (%.2f %%)\n", n, h, nh, 100*nh/n, c, nc, 100*nc/n}'

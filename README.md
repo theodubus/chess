@@ -5,9 +5,13 @@ Un moteur d'échecs UCI écrit en Rust, et l'interface qui va avec.
 Le nom est un contrepied de Deep Blue, doublé de la couleur de la rouille et
 d'un aveu sur la profondeur de recherche.
 
-> Statut : **recherche et évaluation en place, monothread**. Negamax avec
+> Statut : **recherche et évaluation en place, monofil par défaut** —
+> plusieurs fils par l'option `Threads` (Lazy SMP, 24 sept. 2026 : deux fils
+> valent **+42 ± 9 Elo** contre un à `8+0,08`, voir `tools/README.md`). Negamax avec
 > élagage alpha-bêta, approfondissement itératif, quiescence, table de
-> transposition et ordonnancement des coups, plus **des élagages avancés
+> transposition et ordonnancement des coups — générés par étapes depuis le
+> 24 sept., **+23 ± 6 Elo** à `8+0,08`, et notés sachant les deux coups qui
+> les précèdent depuis le 25 sept., **+12,6 ± 4,4** —, plus **des élagages avancés
 > mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
 > d'aspiration, élagage delta en quiescence, futilité inverse, l'élagage par
 > **échange statique** en quiescence et l'**élagage par compte de coups**.
@@ -57,6 +61,15 @@ d'un aveu sur la profondeur de recherche.
 > **Le diviseur a atteint sa limite** : le plafond d'une allocation plate vaut
 > `(pendule + coups × inc) / coups`, et le balayage y butte déjà. Aller plus
 > loin demande une allocation **inégale**, pas un autre réglage.
+> **Premier pas le 24 sept. : laisser finir l'itération entamée** au lieu de
+> la jeter — **+44,6 ± 6,2 Elo** à `8+0,08`, sans chercher plus profond en
+> moyenne : le temps va aux positions difficiles, où l'itération dure.
+> **Puis, le même jour, s'arrêter plus tard quand le coup vient de changer**
+> et plus tôt quand il tient depuis sept itérations — **+7,9 ± 6,1 Elo**
+> à `8+0,08`, zéro perte au temps. **Et il ne s'affame plus avant un
+> contrôle à coups comptés** (quarante coups en X) : un coup ne dépense
+> plus la pendule des suivants — à `40/8`, +2,4 ± 6,0 Elo, zéro perte au
+> temps, un correctif fusionné au titre de la règle.
 >
 > **Il sait pondérer depuis le 23 sept. 2026** — réfléchir pendant le temps
 > de l'adversaire, sur le coup qu'il prévoit — mais seulement si l'interface
@@ -65,15 +78,18 @@ d'un aveu sur la profondeur de recherche.
 > vitesse. **Activé, il vaut +67,6 ± 9,2 Elo à `8+0,08` contre lui-même**
 > (2 700 parties, zéro perte au temps) : la prévision y tombe juste sur 70 %
 > des coups, et il cherche 0,94 pli plus profond. Contre un autre adversaire
-> le chiffre change — prévoir un jumeau est le cas le plus facile.
+> le chiffre change — prévoir un jumeau est le cas le plus facile. Et sur les
+> machines de mesure, qui n'ont que deux cœurs physiques, le camp qui pondère
+> prend 3 à 5 % de vitesse à l'autre : 3 à 10 Elo de ce chiffre en viennent
+> (estimation, mesurée le 23 sept.).
 >
-> Il n'a encore ni recherche parallèle, ni NNUE.
+> Il n'a pas encore de NNUE.
 
 ## Structure
 
 | Dossier | Contenu | Statut |
 |---|---|---|
-| `engine/` | Moteur UCI en Rust | Recherche et évaluation, monothread |
+| `engine/` | Moteur UCI en Rust | Recherche et évaluation — un fil par défaut, plusieurs par l'option `Threads` |
 | `ui/` | Interface TypeScript | **En chantier, mené séparément** — consignes dans `ui/CLAUDE.md` |
 | `tools/` | Arbitres, livre d'ouvertures, SPRT | Opérationnel |
 
@@ -154,7 +170,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
 dépend ni de la machine ni de sa charge.
 
-Référence à la profondeur 7 : **114 026** nœuds.
+Référence à la profondeur 7 : **107 548** nœuds.
 
 Ce chiffre est vérifié par la CI — voir
 [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a

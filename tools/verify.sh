@@ -75,6 +75,9 @@ etape "paires"                    tools/paires-test.sh
 # `plis.sh` rend les plis qu'un changement gagne en partie ; son premier cas
 # est un témoin qui doit rendre zéro, et un défaut d'appariement le fait tomber.
 etape "plis appariés"             tools/plis-test.sh
+# `balayage-vivant.sh` ne tombe qu'après des semaines sans balayage ; sans cas
+# fabriqués, sa branche d'échec ne s'exécuterait jamais avant d'être utile.
+etape "balayage vivant"           tools/balayage-vivant-test.sh
 # `etat.sh` s'exécute à chaque démarrage et après chaque compactage, sa
 # sortie entrant dans le contexte du modèle. Un script devenu MUET ne se
 # verrait pas — on croirait simplement qu'il n'y a rien à dire.

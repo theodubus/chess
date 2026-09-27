@@ -1,0 +1,936 @@
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 6e96623..391eb06 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -876,7 +876,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
+ rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
+ commit.
+ 
+-Référence à la profondeur 7 : 114 026 nœuds.
++Référence à la profondeur 7 : 109 047 nœuds.
+ 
+ Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
+ `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
+diff --git a/README.md b/README.md
+index 44b150d..f6d8aee 100644
+--- a/README.md
++++ b/README.md
+@@ -159,7 +159,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
+ Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
+ dépend ni de la machine ni de sa charge.
+ 
+-Référence à la profondeur 7 : **114 026** nœuds.
++Référence à la profondeur 7 : **109 047** nœuds.
+ 
+ Ce chiffre est vérifié par la CI — voir
+ [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index db41001..3dcd1e9 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -32,7 +32,7 @@ use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
+ use crate::eval::{self, DRAW, INFINITY, MATE, MATE_THRESHOLD};
+ use crate::position::{Position, repetitions};
+ use crate::see;
+-use crate::tt::{Bound, TranspositionTable, pack_move};
++use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
+ 
+ /// Profondeur maximale de la recherche principale.
+ pub const MAX_DEPTH: u32 = 64;
+@@ -879,20 +879,12 @@ impl Search {
+     ///
+     /// Un bon ordre ne change pas le résultat de la recherche, seulement le
+     /// nombre de nœuds visités — mais il le change d'un ordre de grandeur.
+-    fn score_move(&self, board: &Board, mv: Move, tt_move: Option<Move>, ply: usize) -> i32 {
+-        if tt_move == Some(mv) {
+-            return SCORE_TT;
+-        }
+-        let mut score = 0;
+-        if let Some(victim) = captured_piece(board, mv) {
+-            let attacker = board
+-                .piece_on(mv.from)
+-                .map_or(0, |piece| ORDER_VALUE[piece as usize]);
+-            score += SCORE_CAPTURE + 1_000 * ORDER_VALUE[victim as usize] - attacker;
+-        }
+-        if let Some(promotion) = mv.promotion {
+-            score += SCORE_PROMOTION + 1_000 * ORDER_VALUE[promotion as usize];
+-        }
++    ///
++    /// Ne sert plus qu'à la quiescence en échec, par [`Search::ordered_moves`] :
++    /// `negamax` ordonne par étages ([`MovePicker`]), et la quiescence n'a pas
++    /// de coup de table — elle ne sonde pas la table.
++    fn score_move(&self, board: &Board, mv: Move, ply: usize) -> i32 {
++        let score = tactical_score(board, mv);
+         if score > 0 {
+             return score;
+         }
+@@ -906,59 +898,112 @@ impl Search {
+                 return SCORE_KILLER_2;
+             }
+         }
++        self.history_score(mv)
++    }
++
++    /// La note d'historique d'un coup tranquille.
++    fn history_score(&self, mv: Move) -> i32 {
+         self.history
+             .get(mv.from as usize * 64 + mv.to as usize)
+             .copied()
+             .unwrap_or(0)
+     }
+ 
+-    /// Écrit les coups légaux dans `buffer`, du plus prometteur au moins
+-    /// prometteur, et rend leur nombre.
++    /// Écrit dans `buffer` les coups d'UN étage de la génération par étapes,
++    /// notés et triés, et rend leur nombre : les coups **tactiques** —
++    /// captures, prises en passant, promotions — ou les **tranquilles**. Les
++    /// coups de `skip`, déjà rendus par un étage précédent, sont omis.
+     ///
+-    /// Avec `tactical_only`, seuls les coups qui changent le matériel sont
+-    /// produits — captures, prises en passant et promotions. C'est ce dont la
+-    /// quiescence a besoin, et `cozy-chess` le rend bon marché :
+-    /// `PieceMoves.to` est un `BitBoard` public, donc filtrer les destinations
+-    /// coûte un `AND` par pièce.
++    /// Le partage est exact : un coup est tactique si et seulement s'il change
++    /// le matériel, c'est-à-dire exactement le contraire de `quiet` dans
++    /// `negamax` — un test le vérifie coup par coup. `cozy-chess` le rend bon
++    /// marché : `PieceMoves.to` est un `BitBoard` public, donc séparer les
++    /// destinations coûte un `AND` par pièce.
+     ///
+-    /// # Pourquoi un tampon fourni par l'appelant
+-    ///
+-    /// Cette fonction rendait un `Vec`, donc **allouait dans le tas à chaque
+-    /// nœud** — et 90 % des nœuds de ce moteur sont des nœuds de quiescence.
+-    /// Le précédent était connu sur ce dépôt : la première version de
+-    /// `nnue_probe` allouait par nœud et faisait paraître sa mesure 2,8 fois
+-    /// plus chère qu'elle ne l'est.
+-    ///
+-    /// Le tampon appartient à l'appelant plutôt qu'à `Search` pour une raison
+-    /// d'invariant : une fonction qui répond à une question ne mute rien, donc
+-    /// `&self` et non `&mut self`. Une pile de tampons indexée par ply aurait
+-    /// exigé `&mut self` sur un chemin de pure lecture.
+-    fn ordered_moves(
++    /// **La case de prise en passant n'est une cible que pour un pion.** Le
++    /// filtre de la quiescence l'ajoutait aux cibles de TOUTES les pièces :
++    /// un cavalier ou un fou qui s'y posait — une case vide, rien de pris —
++    /// passait pour une capture, et la quiescence cherchait ce coup
++    /// tranquille. `cozy-chess` pose la case après CHAQUE double pas de pion,
++    /// qu'un pion adverse puisse prendre ou non. Corrigé avec la génération
++    /// par étapes, le 24 sept. 2026, où l'écart aurait en plus rendu un
++    /// killer deux fois.
++    fn stage_moves(
+         &self,
+         board: &Board,
+-        tactical_only: bool,
+-        tt_move: Option<Move>,
+-        ply: usize,
++        tactical: bool,
++        skip: &[Option<Move>],
+         buffer: &mut [(Move, i32)],
+     ) -> usize {
+         let side = board.side_to_move();
+-        let mut targets = board.colors(!side);
++        let enemies = board.colors(!side);
++        let mut pawn_targets = enemies;
+         if let Some(square) = en_passant_square(board) {
+-            targets |= square.bitboard();
++            pawn_targets |= square.bitboard();
+         }
+         let promotion_rank = Rank::Seventh.relative_to(side);
+ 
+         let mut count = 0;
+         board.generate_moves(|mut piece_moves| {
+-            if tactical_only {
++            let material = match piece_moves.piece {
+                 // Un pion sur la 7e rangée promeut quel que soit son coup :
+                 // toutes ses destinations sont tactiques.
+-                let promoting =
+-                    piece_moves.piece == Piece::Pawn && piece_moves.from.rank() == promotion_rank;
+-                if !promoting {
+-                    piece_moves.to &= targets;
++                Piece::Pawn if piece_moves.from.rank() == promotion_rank => piece_moves.to,
++                Piece::Pawn => piece_moves.to & pawn_targets,
++                // Le roque, codé roi-prend-tour, arrive sur NOTRE tour : il
++                // tombe du côté tranquille.
++                _ => piece_moves.to & enemies,
++            };
++            piece_moves.to = if tactical {
++                material
++            } else {
++                piece_moves.to ^ material
++            };
++            for mv in piece_moves {
++                if skip.contains(&Some(mv)) {
++                    continue;
++                }
++                // Même garde que dans `ordered_moves` : inatteignable, mais
++                // déborder en silence perdrait des coups.
++                debug_assert!(count < buffer.len(), "tampon de coups débordé");
++                if count < buffer.len() {
++                    let score = if tactical {
++                        tactical_score(board, mv)
++                    } else {
++                        self.history_score(mv)
++                    };
++                    buffer[count] = (mv, score);
++                    count += 1;
+                 }
+             }
++            false
++        });
++        buffer[..count].sort_unstable_by_key(|&(_, score)| Reverse(score));
++        count
++    }
++
++    /// Écrit TOUS les coups légaux dans `buffer`, du plus prometteur au moins
++    /// prometteur, et rend leur nombre.
++    ///
++    /// Ne sert plus qu'à la quiescence en échec, où toute parade doit être
++    /// examinée. `negamax` passe par [`MovePicker`], la quiescence hors échec
++    /// par le seul étage tactique de [`Search::stage_moves`].
++    ///
++    /// # Pourquoi un tampon fourni par l'appelant
++    ///
++    /// Cette fonction rendait un `Vec`, donc **allouait dans le tas à chaque
++    /// nœud** — et 90 % des nœuds de ce moteur sont des nœuds de quiescence.
++    /// Le précédent était connu sur ce dépôt : la première version de
++    /// `nnue_probe` allouait par nœud et faisait paraître sa mesure 2,8 fois
++    /// plus chère qu'elle ne l'est.
++    ///
++    /// Le tampon appartient à l'appelant plutôt qu'à `Search` pour une raison
++    /// d'invariant : une fonction qui répond à une question ne mute rien, donc
++    /// `&self` et non `&mut self`. Une pile de tampons indexée par ply aurait
++    /// exigé `&mut self` sur un chemin de pure lecture.
++    fn ordered_moves(&self, board: &Board, ply: usize, buffer: &mut [(Move, i32)]) -> usize {
++        let mut count = 0;
++        board.generate_moves(|piece_moves| {
+             for mv in piece_moves {
+                 // Inatteignable : une position d'échecs a au plus 218 coups
+                 // légaux et le tampon en porte 256. La garde est là parce que
+@@ -966,7 +1011,7 @@ impl Search {
+                 // meilleur — sans que rien ne le signale.
+                 debug_assert!(count < buffer.len(), "tampon de coups débordé");
+                 if count < buffer.len() {
+-                    buffer[count] = (mv, self.score_move(board, mv, tt_move, ply));
++                    buffer[count] = (mv, self.score_move(board, mv, ply));
+                     count += 1;
+                 }
+             }
+@@ -1129,16 +1174,14 @@ impl Search {
+             }
+         }
+ 
+-        let count = self.ordered_moves(board, false, tt_move, ply, buffer);
+-        if count == 0 {
+-            return if board.checkers().is_empty() {
+-                DRAW // pat
+-            } else {
+-                // Un mat proche vaut mieux qu'un mat lointain : soustraire le
+-                // ply fait préférer la ligne la plus courte.
+-                -MATE + ply_i32
+-            };
+-        }
++        // GÉNÉRATION PAR ÉTAPES (A18). Les coups sortent un par un, et chaque
++        // étage n'est généré qu'au moment où l'on en a besoin : un nœud qui
++        // coupe sur le coup de la table ou sur une capture ne génère, ne note
++        // ni ne trie jamais ses coups tranquilles. Mesuré le 22 sept. 2026 :
++        // 85 % des coups générés ici n'étaient jamais cherchés, et 49 % des
++        // nœuds ne cherchaient aucun coup tranquille.
++        let killers = self.killers.get(ply).copied().unwrap_or([0; 2]);
++        let mut picker = MovePicker::new(buffer, tt_move, killers);
+ 
+         let original_alpha = alpha;
+         let mut best = -INFINITY;
+@@ -1146,8 +1189,14 @@ impl Search {
+         let in_check = !board.checkers().is_empty();
+ 
+         let mut quiets_seen = 0usize;
+-
+-        for (index, &(mv, _)) in buffer[..count].iter().enumerate() {
++        let mut moves = 0usize;
++
++        while let Some(mv) = picker.next_move(self, board) {
++            // Compté AVANT toute coupure : `moves` dit après la boucle s'il
++            // existait un coup légal, et une coupure bêta sur le premier coup
++            // ne doit pas faire croire à un mat.
++            let index = moves;
++            moves += 1;
+             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
+ 
+             // Élagage par compte de coups : on abandonne les coups tranquilles
+@@ -1230,6 +1279,19 @@ impl Search {
+             }
+         }
+ 
++        // Aucun coup rendu : il n'y en a aucun de légal. L'élagage par compte
++        // de coups ne peut pas en être la cause — il ne coupe qu'après avoir vu
++        // des coups tranquilles, donc jamais avant le premier coup.
++        if moves == 0 {
++            return if in_check {
++                // Un mat proche vaut mieux qu'un mat lointain : soustraire le
++                // ply fait préférer la ligne la plus courte.
++                -MATE + ply_i32
++            } else {
++                DRAW // pat
++            };
++        }
++
+         // Le type de borne dit ce que le score garantit : exact si tous les
+         // coups ont été examinés sans coupure, minorant après une coupure bêta,
+         // majorant si aucun coup n'a amélioré alpha.
+@@ -1284,7 +1346,11 @@ impl Search {
+             }
+         }
+ 
+-        let count = self.ordered_moves(board, !in_check, None, ply, buffer);
++        let count = if in_check {
++            self.ordered_moves(board, ply, buffer)
++        } else {
++            self.stage_moves(board, true, &[], buffer)
++        };
+         if count == 0 {
+             return if in_check {
+                 -MATE + i32::try_from(ply).unwrap_or(0)
+@@ -1481,6 +1547,114 @@ impl Drop for StopOnDrop<'_> {
+     }
+ }
+ 
++/// Les étages de la génération par étapes, dans l'ordre où ils rendent leurs
++/// coups.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++enum Stage {
++    TtMove,
++    Tactical,
++    Killers,
++    Quiet,
++    Done,
++}
++
++/// Rend les coups d'un nœud de `negamax` un à un, en ne générant chaque étage
++/// qu'au moment où on en a besoin : le coup de la table, puis les tactiques
++/// par MVV-LVA, puis les killers, puis les tranquilles par historique.
++///
++/// L'ordre est celui de l'ancien tri d'un bloc, à deux écarts près — et ce
++/// sont eux qui font de ce changement un changement d'ARBRE, pas une
++/// optimisation pure :
++/// - les ex æquo sont départagés au sein de chaque étage, et
++///   `sort_unstable` ne les départage pas comme sur la liste entière ;
++/// - les tranquilles sont notés quand leur étage arrive, donc avec un
++///   historique mis à jour par la recherche des coups précédents, et non
++///   tel qu'il était à l'entrée du nœud.
++///
++/// Le sélecteur ne tient aucun emprunt sur `Search` : il le reçoit à chaque
++/// appel, en lecture, ce qui laisse `negamax` libre de se rappeler entre
++/// deux coups.
++struct MovePicker<'b> {
++    buffer: &'b mut [(Move, i32)],
++    tt_move: Option<Move>,
++    killers: [Option<Move>; 2],
++    stage: Stage,
++    next: usize,
++    len: usize,
++}
++
++impl<'b> MovePicker<'b> {
++    /// `tt_move` doit être légal : `negamax` le vérifie déjà, à cause des
++    /// collisions de clés.
++    fn new(buffer: &'b mut [(Move, i32)], tt_move: Option<Move>, killers: [u16; 2]) -> Self {
++        Self {
++            buffer,
++            tt_move,
++            killers: killers.map(unpack_move),
++            stage: Stage::TtMove,
++            next: 0,
++            len: 0,
++        }
++    }
++
++    /// Le coup suivant, ou `None` quand tous les coups légaux ont été rendus
++    /// — chacun exactement une fois.
++    fn next_move(&mut self, search: &Search, board: &Board) -> Option<Move> {
++        loop {
++            if self.next < self.len {
++                let mv = self.buffer[self.next].0;
++                self.next += 1;
++                return Some(mv);
++            }
++            self.next = 0;
++            match self.stage {
++                Stage::TtMove => {
++                    self.stage = Stage::Tactical;
++                    if self.tt_move.is_some() {
++                        return self.tt_move;
++                    }
++                }
++                Stage::Tactical => {
++                    self.len = search.stage_moves(board, true, &[self.tt_move], self.buffer);
++                    self.stage = Stage::Killers;
++                }
++                Stage::Killers => {
++                    // Un killer vient d'une AUTRE position au même ply : il
++                    // peut y être illégal, ou y changer le matériel — auquel
++                    // cas l'étage tactique l'a déjà rendu. `remember_quiet`
++                    // ne retient jamais de promotion ; le sélecteur ne s'y
++                    // fie pas pour autant, et un test lui en passe. Les deux
++                    // emplacements sont distincts par construction, donc
++                    // aucun ne double l'autre.
++                    self.len = 0;
++                    for killer in self.killers.into_iter().flatten() {
++                        if Some(killer) != self.tt_move
++                            && captured_piece(board, killer).is_none()
++                            && killer.promotion.is_none()
++                            && board.is_legal(killer)
++                            && let Some(slot) = self.buffer.get_mut(self.len)
++                        {
++                            *slot = (killer, 0);
++                            self.len += 1;
++                        }
++                    }
++                    self.stage = Stage::Quiet;
++                }
++                Stage::Quiet => {
++                    // Les killers sont omis qu'ils aient été rendus ou non : un
++                    // killer non rendu est illégal, tactique ou déjà rendu
++                    // comme coup de la table — dans les trois cas, l'étage
++                    // tranquille ne le produirait pas une seconde fois.
++                    let skip = [self.tt_move, self.killers[0], self.killers[1]];
++                    self.len = search.stage_moves(board, false, &skip, self.buffer);
++                    self.stage = Stage::Done;
++                }
++                Stage::Done => return None,
++            }
++        }
++    }
++}
++
+ /// La pièce réellement capturée par un coup, s'il y en a une.
+ ///
+ /// Trois cas qu'une simple lecture de la case d'arrivée manquerait :
+@@ -1504,6 +1678,23 @@ pub fn captured_piece(board: &Board, mv: Move) -> Option<Piece> {
+     None
+ }
+ 
++/// La note d'ordonnancement d'un coup qui change le matériel — MVV-LVA pour
++/// une capture, la pièce promue pour une promotion, les deux s'il fait les
++/// deux —, et zéro pour tout autre coup.
++fn tactical_score(board: &Board, mv: Move) -> i32 {
++    let mut score = 0;
++    if let Some(victim) = captured_piece(board, mv) {
++        let attacker = board
++            .piece_on(mv.from)
++            .map_or(0, |piece| ORDER_VALUE[piece as usize]);
++        score += SCORE_CAPTURE + 1_000 * ORDER_VALUE[victim as usize] - attacker;
++    }
++    if let Some(promotion) = mv.promotion {
++        score += SCORE_PROMOTION + 1_000 * ORDER_VALUE[promotion as usize];
++    }
++    score
++}
++
+ fn see_prunable(board: &Board, mv: Move, in_check: bool) -> bool {
+     if in_check {
+         return false;
+@@ -1608,7 +1799,6 @@ const ORDER_VALUE: [i32; Piece::NUM] = [1, 2, 3, 4, 5, 6];
+ // Paliers d'ordonnancement. Les écarts sont larges pour qu'aucune catégorie ne
+ // puisse en dépasser une autre, quelle que soit la valeur accumulée par
+ // l'heuristique d'historique.
+-const SCORE_TT: i32 = 8_000_000;
+ const SCORE_CAPTURE: i32 = 4_000_000;
+ const SCORE_PROMOTION: i32 = 2_000_000;
+ const SCORE_KILLER_1: i32 = 1_000_000;
+@@ -1755,6 +1945,36 @@ fn next_random(state: &mut u64) -> u64 {
+     x.wrapping_mul(0x2545_F491_4F6C_DD1D)
+ }
+ 
++#[cfg(test)]
++/// Une marche déterministe depuis la position initiale.
++///
++/// Les positions de `bench` ne sont pas un échantillon de jeu — le projet
++/// l'a mesuré, un facteur 3 à 5 sur la fréquence d'un phénomène. Une marche
++/// couvre l'ouverture, le milieu et la finale, et le xorshift la rend
++/// rejouable : un échec se reproduit à l'identique.
++fn marche(parties: u32, plis: u32, mut visiter: impl FnMut(&Board)) {
++    for graine in 1..=parties {
++        let mut etat = (u64::from(graine) * 2_654_435_761) | 1;
++        let mut board = Board::default();
++        for _ in 0..plis {
++            let mut coups = Vec::new();
++            board.generate_moves(|set| {
++                coups.extend(set);
++                false
++            });
++            if coups.is_empty() {
++                break;
++            }
++            visiter(&board);
++            etat ^= etat << 13;
++            etat ^= etat >> 7;
++            etat ^= etat << 17;
++            let mv = coups[(etat as usize) % coups.len()];
++            board.play_unchecked(mv);
++        }
++    }
++}
++
+ #[cfg(test)]
+ #[expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
+ mod tests {
+@@ -1792,7 +2012,8 @@ mod tests {
+         let b = board("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+         let roque = cozy_chess::util::parse_uci_move(&b, "e1g1").unwrap();
+         assert_eq!(captured_piece(&b, roque), None);
+-        assert_eq!(search().score_move(&b, roque, None, 0), 0);
++        assert_eq!(search().score_move(&b, roque, 0), 0);
++        assert_eq!(tactical_score(&b, roque), 0);
+     }
+ 
+     #[test]
+@@ -1801,7 +2022,7 @@ mod tests {
+         let b = board("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
+         let prise = cozy_chess::util::parse_uci_move(&b, "e5f6").unwrap();
+         assert_eq!(captured_piece(&b, prise), Some(Piece::Pawn));
+-        assert!(search().score_move(&b, prise, None, 0) > 0);
++        assert!(search().score_move(&b, prise, 0) > 0);
+     }
+ 
+     #[test]
+@@ -1811,7 +2032,7 @@ mod tests {
+         assert_eq!(captured_piece(&b, prise), Some(Piece::Pawn));
+         let tranquille = cozy_chess::util::parse_uci_move(&b, "d2d3").unwrap();
+         let s = search();
+-        assert!(s.score_move(&b, prise, None, 0) > s.score_move(&b, tranquille, None, 0));
++        assert!(s.score_move(&b, prise, 0) > s.score_move(&b, tranquille, 0));
+     }
+ 
+     #[test]
+@@ -1819,9 +2040,9 @@ mod tests {
+         let b = board("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
+         let s = search();
+         let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
+-        let tactiques = s.ordered_moves(&b, true, None, 0, &mut buffer);
++        let tactiques = s.stage_moves(&b, true, &[], &mut buffer);
+         assert_eq!(tactiques, 1, "seule exd5 change le matériel");
+-        assert!(s.ordered_moves(&b, false, None, 0, &mut buffer) > 1);
++        assert!(s.ordered_moves(&b, 0, &mut buffer) > 1);
+     }
+ 
+     #[test]
+@@ -1832,7 +2053,7 @@ mod tests {
+         let b = board("R6R/3Q4/1Q4Q1/4Q3/2Q4Q/Q4Q2/pp1Q4/kBNN1KB1 w - - 0 1");
+         let s = search();
+         let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
+-        let count = s.ordered_moves(&b, false, None, 0, &mut buffer);
++        let count = s.ordered_moves(&b, 0, &mut buffer);
+         assert_eq!(
+             count, 218,
+             "la position de référence doit produire 218 coups"
+@@ -1841,6 +2062,14 @@ mod tests {
+             count < MAX_MOVES,
+             "le tampon doit rester plus grand que le maximum"
+         );
++        // Le sélecteur de `negamax` écrit dans le même tampon, un étage à la
++        // fois : il doit rendre les 218 aussi.
++        let mut picker = MovePicker::new(&mut buffer, None, [0; 2]);
++        let mut rendus = 0;
++        while picker.next_move(&s, &b).is_some() {
++            rendus += 1;
++        }
++        assert_eq!(rendus, 218);
+     }
+ 
+     #[test]
+@@ -1992,15 +2221,17 @@ mod tests {
+     #[test]
+     fn toutes_les_captures_precedent_tous_les_coups_tranquilles() {
+         // C'est l'invariant qui rend `break` licite plutôt que `continue` :
+-        // interrompre la boucle ne saute jamais une capture. Il repose sur les
+-        // barèmes d'ordonnancement, donc il se vérifie au lieu de se lire.
++        // interrompre la boucle ne saute jamais une capture. Il repose sur
++        // l'ordre des étages du sélecteur, donc il se vérifie au lieu de se
++        // lire — ici sur une position, et sur toute une marche dans
++        // `move_picker_tests`.
+         let b = board("r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4");
+         let s = search();
+         let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+-        let count = s.ordered_moves(&b, false, None, 1, &mut buffer);
++        let mut picker = MovePicker::new(&mut buffer, None, [0; 2]);
+         let mut tranquille_vu = false;
+         let mut captures = 0;
+-        for &(mv, _) in &buffer[..count] {
++        while let Some(mv) = picker.next_move(&s, &b) {
+             let quiet = captured_piece(&b, mv).is_none() && mv.promotion.is_none();
+             if quiet {
+                 tranquille_vu = true;
+@@ -2598,18 +2829,16 @@ mod tests {
+ 
+     #[test]
+     fn le_coup_de_la_table_passe_devant_tous_les_autres() {
+-        let b = Board::default();
++        // Même un coup tranquille, et même devant une capture : c'est le
++        // meilleur coup connu de cette position.
++        let b = board("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
+         let tranquille = cozy_chess::util::parse_uci_move(&b, "a2a3").unwrap();
++        let prise = cozy_chess::util::parse_uci_move(&b, "e4d5").unwrap();
+         let s = search();
+-        let sans = s.score_move(&b, tranquille, None, 0);
+-        let avec = s.score_move(&b, tranquille, Some(tranquille), 0);
+-        assert!(avec > sans);
+-        // Doit aussi dépasser n'importe quelle capture.
+-        let capture_board: Board = "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
+-            .parse()
+-            .unwrap();
+-        let prise = cozy_chess::util::parse_uci_move(&capture_board, "e4d5").unwrap();
+-        assert!(avec > s.score_move(&capture_board, prise, None, 0));
++        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
++        let mut picker = MovePicker::new(&mut buffer, Some(tranquille), [0; 2]);
++        assert_eq!(picker.next_move(&s, &b), Some(tranquille));
++        assert_eq!(picker.next_move(&s, &b), Some(prise));
+     }
+ 
+     #[test]
+@@ -2619,12 +2848,20 @@ mod tests {
+         let autre = cozy_chess::util::parse_uci_move(&b, "h2h3").unwrap();
+         let mut s = search();
+         s.remember_quiet(killer, 3, 4);
+-        assert!(s.score_move(&b, killer, None, 3) > s.score_move(&b, autre, None, 3));
+-        // Mais pas à un autre ply : les killers sont propres à leur profondeur.
+-        assert_eq!(
+-            s.score_move(&b, killer, None, 5),
+-            s.score_move(&b, killer, None, 5)
+-        );
++        // Dans la quiescence en échec, par la note…
++        assert!(s.score_move(&b, killer, 3) > s.score_move(&b, autre, 3));
++        // … mais pas à un autre ply : les killers sont propres à leur
++        // profondeur. L'historique, lui, est commun à tous les plies ; on le
++        // remet à zéro pour ne comparer que le killer.
++        s.history.fill(0);
++        assert_eq!(s.score_move(&b, killer, 5), s.score_move(&b, autre, 5));
++        // Dans `negamax`, par l'étage des killers, qui passe devant tous les
++        // tranquilles — y compris ceux dont l'historique est meilleur.
++        s.history[autre.from as usize * 64 + autre.to as usize] = HISTORY_MAX;
++        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
++        let mut picker = MovePicker::new(&mut buffer, None, s.killers[3]);
++        assert_eq!(picker.next_move(&s, &b), Some(killer));
++        assert_eq!(picker.next_move(&s, &b), Some(autre));
+     }
+ 
+     #[test]
+@@ -3272,7 +3509,7 @@ mod tests {
+         let prise = cozy_chess::util::parse_uci_move(&b, "e5f6").unwrap();
+         let s = search();
+         let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
+-        let count = s.ordered_moves(&b, true, None, 0, &mut buffer);
++        let count = s.stage_moves(&b, true, &[], &mut buffer);
+         assert!(
+             buffer[..count].iter().any(|(mv, _)| *mv == prise),
+             "la prise en passant doit figurer parmi les coups tactiques"
+@@ -3877,35 +4114,6 @@ mod see_pruning_tests {
+         fen.parse().unwrap()
+     }
+ 
+-    /// Une marche déterministe depuis la position initiale.
+-    ///
+-    /// Les positions de `bench` ne sont pas un échantillon de jeu — le projet
+-    /// l'a mesuré, un facteur 3 à 5 sur la fréquence d'un phénomène. Une marche
+-    /// couvre l'ouverture, le milieu et la finale, et le xorshift la rend
+-    /// rejouable : un échec se reproduit à l'identique.
+-    fn marche(parties: u32, plis: u32, mut visiter: impl FnMut(&Board)) {
+-        for graine in 1..=parties {
+-            let mut etat = (u64::from(graine) * 2_654_435_761) | 1;
+-            let mut board = Board::default();
+-            for _ in 0..plis {
+-                let mut coups = Vec::new();
+-                board.generate_moves(|set| {
+-                    coups.extend(set);
+-                    false
+-                });
+-                if coups.is_empty() {
+-                    break;
+-                }
+-                visiter(&board);
+-                etat ^= etat << 13;
+-                etat ^= etat >> 7;
+-                etat ^= etat << 17;
+-                let mv = coups[(etat as usize) % coups.len()];
+-                board.play_unchecked(mv);
+-            }
+-        }
+-    }
+-
+     /// L'économie de `may_lose_material` ne doit jamais coûter un élagage.
+     ///
+     /// Rendre `false` à tort ne casse rien — on n'élague pas — mais cela
+@@ -4039,3 +4247,240 @@ mod see_pruning_tests {
+         assert!(!see_prunable(&b, egale, false));
+     }
+ }
++
++#[cfg(test)]
++#[expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
++mod move_picker_tests {
++    use super::*;
++    use cozy_chess::util::parse_uci_move;
++
++    fn board(fen: &str) -> Board {
++        fen.parse().unwrap()
++    }
++
++    fn search() -> Search {
++        Search::new(Arc::new(AtomicBool::new(false)))
++    }
++
++    fn legal_moves(board: &Board) -> Vec<Move> {
++        let mut moves = Vec::new();
++        board.generate_moves(|set| {
++            moves.extend(set);
++            false
++        });
++        moves
++    }
++
++    /// Le contraire exact de `quiet` dans `negamax`.
++    fn changes_material(board: &Board, mv: Move) -> bool {
++        captured_piece(board, mv).is_some() || mv.promotion.is_some()
++    }
++
++    /// Tous les coups que rend le sélecteur, dans l'ordre.
++    fn picked(
++        search: &Search,
++        board: &Board,
++        tt_move: Option<Move>,
++        killers: [u16; 2],
++    ) -> Vec<Move> {
++        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
++        let mut picker = MovePicker::new(&mut buffer, tt_move, killers);
++        let mut moves = Vec::new();
++        while let Some(mv) = picker.next_move(search, board) {
++            moves.push(mv);
++            assert!(moves.len() <= MAX_MOVES, "le sélecteur ne termine pas");
++        }
++        moves
++    }
++
++    /// Les positions où le partage se trompe le plus facilement.
++    const PIEGES: [&str; 6] = [
++        // Un CAVALIER atteint la case de prise en passant : Cd6+ ne prend
++        // rien. L'ancien filtre de la quiescence le comptait comme capture.
++        "rnbqkbnr/1pp1pppp/p7/3p4/4N3/8/PPPPPPPP/R1BQKBNR w KQkq d6 0 3",
++        // Une vraie prise en passant, sur une case vide.
++        "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",
++        // Côté noir : prise en passant, un FOU qui atteint la case, et une
++        // promotion avec et sans capture.
++        "4k3/8/8/6b1/3pP3/8/6p1/4K2R b K e3 0 1",
++        // Promotions blanches avec et sans capture, et les deux roques.
++        "r3k2r/1P4P1/8/8/8/8/8/R3K2R w KQkq - 0 1",
++        // Échec : parades par capture, interposition et fuite.
++        "rnbqkbnr/ppp2ppp/8/1B1pp3/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 3",
++        // Échec double : seul le roi bouge.
++        "4k3/8/8/4r3/8/3n4/8/4K3 w - - 0 1",
++    ];
++
++    /// Chaque position de `PIEGES`, puis toute une marche seedée.
++    fn partout(mut visiter: impl FnMut(&Board)) {
++        for fen in PIEGES {
++            visiter(&board(fen));
++        }
++        marche(60, 80, visiter);
++    }
++
++    #[test]
++    fn le_partage_tactique_est_exact() {
++        // Le témoin : l'ancien filtre donnait ce coup tactique.
++        let b = board(PIEGES[0]);
++        let cavalier = parse_uci_move(&b, "e4d6").unwrap();
++        assert!(legal_moves(&b).contains(&cavalier));
++        assert!(!changes_material(&b, cavalier));
++
++        let s = search();
++        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
++        partout(|b| {
++            let count = s.stage_moves(b, true, &[], &mut buffer);
++            let tactiques: Vec<Move> = buffer[..count].iter().map(|&(mv, _)| mv).collect();
++            let count = s.stage_moves(b, false, &[], &mut buffer);
++            let tranquilles: Vec<Move> = buffer[..count].iter().map(|&(mv, _)| mv).collect();
++            let legaux = legal_moves(b);
++            assert_eq!(tactiques.len() + tranquilles.len(), legaux.len(), "{b}");
++            for mv in legaux {
++                let attendu = changes_material(b, mv);
++                assert_eq!(tactiques.contains(&mv), attendu, "{b} : {mv}");
++                assert_eq!(tranquilles.contains(&mv), !attendu, "{b} : {mv}");
++            }
++        });
++    }
++
++    /// Les configurations de coup de table et de killers éprouvées sur
++    /// chaque position — dont les trois où un killer ne doit PAS être rendu
++    /// par son étage : il capture ici, il est le coup de la table, ou il est
++    /// illégal ici. Un killer vient d'une autre position au même ply.
++    fn configurations(b: &Board) -> Vec<(Option<Move>, [u16; 2])> {
++        let legaux = legal_moves(b);
++        let tranquilles: Vec<Move> = legaux
++            .iter()
++            .copied()
++            .filter(|&mv| !changes_material(b, mv))
++            .collect();
++        let tactiques: Vec<Move> = legaux
++            .iter()
++            .copied()
++            .filter(|&mv| changes_material(b, mv))
++            .collect();
++        let q = |i: usize| tranquilles.get(i).copied();
++        let t = |i: usize| tactiques.get(i).copied();
++        let pack = |mv: Option<Move>| mv.map_or(0, pack_move);
++        // D'une case vide : illégal dans toute position.
++        let vide = Square::ALL
++            .into_iter()
++            .find(|&square| b.piece_on(square).is_none())
++            .unwrap();
++        let illegal = Move {
++            from: vide,
++            to: if vide == Square::H8 {
++                Square::A1
++            } else {
++                Square::H8
++            },
++            promotion: None,
++        };
++        vec![
++            (None, [0, 0]),
++            (q(0), [pack(q(1)), pack(q(2))]),
++            (t(0), [pack(t(1)), pack(q(0))]),
++            (q(0), [pack(q(0)), pack(q(1))]),
++            (None, [pack(Some(illegal)), pack(q(3))]),
++        ]
++    }
++
++    #[test]
++    fn chaque_coup_legal_est_rendu_exactement_une_fois() {
++        let s = search();
++        let mut cas = 0u32;
++        partout(|b| {
++            let mut attendus = legal_moves(b);
++            attendus.sort_by_key(|&mv| pack_move(mv));
++            for (tt_move, killers) in configurations(b) {
++                let mut rendus = picked(&s, b, tt_move, killers);
++                rendus.sort_by_key(|&mv| pack_move(mv));
++                assert_eq!(
++                    rendus, attendus,
++                    "{b}, table {tt_move:?}, killers {killers:?}"
++                );
++                cas += 1;
++            }
++        });
++        assert!(cas > 10_000, "la marche doit couvrir assez de cas : {cas}");
++    }
++
++    #[test]
++    fn les_etages_rendent_leurs_coups_dans_lordre() {
++        // Coup de la table, tactiques par MVV-LVA décroissant, killers dans
++        // l'ordre de leurs emplacements, tranquilles par historique
++        // décroissant — et jamais un coup tactique après un tranquille, ce
++        // qui rend licite le `break` de l'élagage par compte de coups.
++        let mut s = search();
++        for (index, value) in s.history.iter_mut().enumerate() {
++            *value = i32::try_from(index * 7_919 % 1_000).unwrap();
++        }
++        partout(|b| {
++            for (tt_move, killers) in configurations(b) {
++                let rendus = picked(&s, b, tt_move, killers);
++                let mut i = 0;
++                if let Some(tt) = tt_move {
++                    assert_eq!(rendus[0], tt, "{b}");
++                    i = 1;
++                }
++                let mut precedente = i32::MAX;
++                while i < rendus.len() && changes_material(b, rendus[i]) {
++                    let note = tactical_score(b, rendus[i]);
++                    assert!(note <= precedente, "{b} : tactiques hors d'ordre");
++                    precedente = note;
++                    i += 1;
++                }
++                for killer in killers.map(unpack_move).into_iter().flatten() {
++                    if Some(killer) != tt_move && !changes_material(b, killer) && b.is_legal(killer)
++                    {
++                        assert_eq!(rendus[i], killer, "{b} : killer attendu");
++                        i += 1;
++                    }
++                }
++                let mut precedente = i32::MAX;
++                for &mv in &rendus[i..] {
++                    assert!(
++                        !changes_material(b, mv),
++                        "{b} : {mv} tactique après les tranquilles"
++                    );
++                    let note = s.history_score(mv);
++                    assert!(note <= precedente, "{b} : tranquilles hors d'ordre");
++                    precedente = note;
++                }
++            }
++        });
++    }
++
++    #[test]
++    fn un_killer_qui_capture_ici_nest_rendu_quune_fois() {
++        // Tranquille là où il a coupé, il capture ici : l'étage tactique le
++        // rend, celui des killers ne doit pas le rendre une seconde fois.
++        let b = board("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
++        let prise = parse_uci_move(&b, "e4d5").unwrap();
++        let rendus = picked(&search(), &b, None, [pack_move(prise), 0]);
++        assert_eq!(rendus.iter().filter(|&&mv| mv == prise).count(), 1);
++    }
++
++    #[test]
++    fn une_coupure_sur_le_premier_coup_nest_pas_un_mat() {
++        // `negamax` décide « aucun coup légal » APRÈS la boucle, sur le compte
++        // des coups rendus. Compté après la coupure, ce compte vaudrait zéro
++        // quand le premier coup coupe — et un roi en échec qui prend la dame
++        // adverse serait déclaré mat.
++        let b = board("4k3/8/8/8/8/8/3q4/R3K3 w - - 0 1");
++        let mut s = search();
++        let score = s.negamax(
++            &b,
++            2,
++            1,
++            99,
++            100,
++            &mut vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
++        );
++        assert!(
++            (100..MATE_THRESHOLD).contains(&score),
++            "Rxd2 gagne une tour d'avance, la recherche a rendu {score}"
++        );
++    }
++}
+diff --git a/engine/tests/bench_reference.rs b/engine/tests/bench_reference.rs
+index df25162..5db80be 100644
+--- a/engine/tests/bench_reference.rs
++++ b/engine/tests/bench_reference.rs
+@@ -334,7 +334,7 @@ fn les_milliers_se_regroupent_comme_dans_le_document() {
+ #[test]
+ fn larbre_de_recherche_ne_bouge_pas_en_silence() {
+     const PROFONDEUR: u32 = 5;
+-    const NOEUDS: u64 = 31_637;
++    const NOEUDS: u64 = 31_829;
+ 
+     let noeuds = shallowred::bench::run(PROFONDEUR).unwrap();
+     assert_eq!(
+diff --git a/tools/attic/README.md b/tools/attic/README.md
+index a939616..37a6555 100644
+--- a/tools/attic/README.md
++++ b/tools/attic/README.md
+@@ -27,12 +27,12 @@ réseau.
+ |---|---|---|---|
+ | `c12-pvs.patch` | recherche à variante principale | **H0**, −10,9 Elo ± 7,9, 4214 parties, `1+0,01` | `git apply --check` : **non** — écrite sur un `search.rs` de trois jours plus vieux. Portée à la main le 21 sept. sur le moteur post-C19 ; cette version-là est la rustine datée du 21 septembre. Celle-ci reste le document de référence pour la structure |
+ | `c17-lmp.patch` | élagage par compte de coups, seuil `6 + d²` | **H0** deux fois à `1+0,01` (−25,2 puis −12,6), puis **H1 à `8+0,08`, +22,85 ± 9,88 — FUSIONNÉ** (PR&nbsp;#21) | `git apply --check` : **non**, et c'est le signe que le rejet est levé — elle échoue parce que son code EST dans `main`. Document d'histoire, plus un bouton |
+-| `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | `git apply --check` : **oui**, SUR l'élagage en quiescence |
+-| `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | `git apply --check` : **oui**, directement sur `main` — la condition « après la rustine de C17 » est tombée avec la fusion de C17 |
++| `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | `git apply --check` : **non** depuis la génération par étapes (A18, 24 sept. 2026) — elle s'insère dans la note des captures de `score_move`, déplacée dans `tactical_score`. Elle s'appliquait jusque-là SUR l'élagage en quiescence ; la remesurer demande de la porter sur l'étage tactique |
++| `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | `git apply --check` : **non** depuis la génération par étapes (A18, 24 sept. 2026) — elle instrumente la boucle de `negamax`, qui tire désormais ses coups du `MovePicker`. Elle s'appliquait directement sur `main` de la fusion de C17 à A18 ; la rejouer demande de la porter |
+ | `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. Le dimensionnement a été suivi d'un match, voir ci-dessous | `git apply --check` : **non** — échoue sur `engine/src/search.rs:837` depuis la fusion de C17. La sonde reste lisible ; la rejouer demande de la porter |
+ | `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | `git apply --check` : **non** — C22 est entré dans `main` le 24 sept. et déplace le contexte de `negamax` où elle s'insère. À porter comme C22 l'a été, le jour où on la remesure |
+ | `c12-pvs-2026-09-21.patch` | PVS réécrit à la main sur le moteur post-C19 et post-LMP | **−0,82 Elo ± 8,19**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | `git apply --check` : **oui**, sur `main` |
+-| `d6-sonde-ordonnancement.patch` | sonde : que peut épargner un générateur par étapes ? | **pas un changement** — 85 % des coups générés par `negamax` ne sont jamais cherchés, mais l'ordonnancement ne pèse que 26,2 % du temps. Plafond **11,5 %**, soit **0,21 pli** | `git apply --check` : **oui**, sur `main` |
++| `d6-sonde-ordonnancement.patch` | sonde : que peut épargner un générateur par étapes ? | **pas un changement** — 85 % des coups générés par `negamax` ne sont jamais cherchés, mais l'ordonnancement ne pèse que 26,2 % du temps. Plafond **11,5 %**, soit **0,21 pli** | `git apply --check` : **non** — son objet est écrit : la génération par étapes (A18, 24 sept. 2026) a réécrit `ordered_moves` et la boucle de `negamax` qu'elle instrumente. Sa mesure reste celle qui a dimensionné A18, et se rejoue sur `d01183d` |
+ | `d6-sonde-pendule.patch` | sonde : que reste-t-il sur la pendule, et que vaut chaque raffinement de B2 ? | **pas un changement** — **46,9 % de la pendule inutilisée** en fin de partie, soit ~1,36 pli. « S'arrêter tôt sur un coup stable » **réfuté** aux deux cadences | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
+ | `d6-sonde-profondeur.patch` | sonde : combien de plis un doublement de vitesse achète-t-il ? | **pas un changement** — **1,36 pli par doublement**, stable sur quatre doublements. C'est l'unité qui rend les chantiers comparables | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
+ | `b9-troisieme-coin.patch` | **variante de MESURE**, pas un candidat : table empaquetée **non atomique**, capacité forcée, pour séparer les deux effets de `b9-table-atomique.patch` | **empaquetage seul −4,0 %** (33/44, p = 0,0013), **atomiques seules −0,2 %** (8/20, p = 0,65), les deux ensemble −4,3 %. *Le gain est entièrement l'empaquetage ; les accès atomiques ne coûtent rien.* Cohérence interne : −4,0 puis −0,2 composent −4,2 contre −4,3 mesuré | `git apply --check` : **non** — écrite contre la table d'avant B9 ; B9 fusionné, elle ne sert plus qu'à relire la mesure du troisième coin, sur `1b5afa8` |

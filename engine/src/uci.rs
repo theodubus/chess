@@ -26,7 +26,7 @@ use cozy_chess::util::display_uci_move;
 use crate::bench;
 use crate::perft;
 use crate::position::Position;
-use crate::search::{Limits, Score, Search};
+use crate::search::{Limits, MAX_THREADS, Score, Search};
 use crate::tt::DEFAULT_SIZE_MB;
 
 /// Nom annoncé à l'interface.
@@ -132,6 +132,9 @@ fn identification() -> Vec<String> {
         // de s'en servir, en envoyant `go ponder`. Désactivé par défaut, comme
         // chez Stockfish, Ethereal et Leela Chess Zero (lu dans leurs sources).
         "option name Ponder type check default false".to_owned(),
+        // Un fil par défaut, comme partout : c'est l'interface qui sait
+        // combien de cœurs elle peut donner au moteur (B6, Lazy SMP).
+        format!("option name Threads type spin default 1 min 1 max {MAX_THREADS}"),
         "uciok".to_owned(),
     ]
 }
@@ -274,7 +277,7 @@ impl Engine {
 
     /// `setoption name <nom> value <valeur>`.
     ///
-    /// Seul `Hash` change quelque chose. `Ponder` est accepté en silence : il
+    /// `Hash` et `Threads` changent quelque chose. `Ponder` est accepté en silence : il
     /// n'annonce qu'une capacité, et la norme laisse au moteur le choix d'en
     /// tenir compte dans sa gestion du temps. Stockfish ajoute alors 25 % à
     /// son temps optimal ; ici rien encore — c'est un réglage à mesurer, pas à
@@ -292,6 +295,12 @@ impl Engine {
             // Redimensionner pendant une recherche invaliderait ses index :
             // on l'arrête d'abord, ce que `abort_search_keeping` garantit.
             self.abort_search_keeping(|search| search.resize_table(megabytes));
+        } else if name.eq_ignore_ascii_case("threads")
+            && let Some(threads) = value.and_then(|v| v.parse().ok())
+        {
+            // Même raison : les auxiliaires se refont, la recherche doit être
+            // arrêtée d'abord.
+            self.abort_search_keeping(|search| search.set_threads(threads));
         }
     }
 
@@ -465,6 +474,30 @@ mod tests {
         let fin = lignes.iter().position(|l| l == "uciok").unwrap();
         assert!(ponder < fin, "une option annoncée après uciok est ignorée");
         assert_eq!(fin, lignes.len() - 1, "uciok clôt l'identification");
+    }
+
+    #[test]
+    fn threads_est_annonce_et_regle_le_nombre_de_fils() {
+        // Sans l'annonce, `match.yml` refuse de mesurer — et une interface
+        // laisserait le moteur monofil sans rien signaler.
+        let lignes = identification();
+        let annonce = format!("option name Threads type spin default 1 min 1 max {MAX_THREADS}");
+        let threads = lignes.iter().position(|l| *l == annonce);
+        let fin = lignes.iter().position(|l| l == "uciok").unwrap();
+        assert!(
+            threads.is_some_and(|t| t < fin),
+            "Threads annoncé avant uciok"
+        );
+
+        let mut moteur = Engine::new();
+        let fils = |m: &Engine| m.search.as_ref().unwrap().threads();
+        assert_eq!(fils(&moteur), 1, "un fil par défaut");
+        assert!(moteur.handle("setoption name Threads value 3"));
+        assert_eq!(fils(&moteur), 3);
+        assert!(moteur.handle("setoption name threads value 2"));
+        assert_eq!(fils(&moteur), 2, "le nom d'une option ignore la casse");
+        assert!(moteur.handle("setoption name Threads value deux"));
+        assert_eq!(fils(&moteur), 2, "une valeur illisible ne change rien");
     }
 
     #[test]

@@ -12,6 +12,10 @@ jobs:
   engine:
     name: Moteur
     runs-on: ubuntu-latest
+    # `actions: read` pour le contrôle du balayage de mutation, plus bas.
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
 
@@ -38,6 +42,26 @@ jobs:
       # qu'elle fasse passer une régression de couverture pour un succès.
       - name: Verdict de mutation (auto-test)
         run: .github/mutation-verdict-test.sh
+
+      # Le cliquet de mutation ne peut pas signaler sa propre absence : si
+      # GitHub endort le workflow planifié — soixante jours sans activité sur
+      # un dépôt public —, plus rien ne tourne et tout reste vert. Ce contrôle
+      # vit ici parce que ce job tourne à chaque push, donc exactement quand le
+      # code bouge. Une API injoignable ne fait qu'avertir ; seul un balayage
+      # réellement arrêté fait échouer. Il remplace une routine hors dépôt qui
+      # passait avant le balayage qu'elle surveillait — voir le script.
+      - name: Le balayage de mutation tourne-t-il encore ?
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tools/balayage-vivant-test.sh
+          api="repos/$GITHUB_REPOSITORY/actions/workflows/mutation.yml"
+          if ! etat=$(gh api "$api" --jq .state) \
+            || ! derniere=$(gh api "$api/runs?per_page=1" --jq '.workflow_runs[0].created_at // ""'); then
+            echo "::warning::API GitHub injoignable — contrôle du balayage de mutation sauté"
+            exit 0
+          fi
+          tools/balayage-vivant.sh "$etat" "$derniere"
 
       - name: Tests (release)
         run: cargo test --workspace --release

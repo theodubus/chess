@@ -1,0 +1,136 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index f39d836..750e378 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -1997,6 +1997,23 @@ struct DeadlinesMs {
+ /// aucune douce ne la dépasse. Un `movetime` n'en change rien : un temps
+ /// imposé se respecte, la douce y reste la moitié du temps demandé et la dure
+ /// le temps demandé, quelle que soit la stabilité.
++///
++/// # Pourquoi une borne de plus quand l'interface annonce `movestogo` (C26)
++///
++/// À deux coups d'un contrôle, le budget vaut la moitié de la pendule, et
++/// trois budgets la dépassent : la dure tombait à `restant − 50`. Mesuré le
++/// 24 sept. 2026 en partie, à `40/8` : dans un cycle sur vingt, le 39ᵉ coup
++/// dépensait jusqu'à 97 % de sa pendule et le 40ᵉ se jouait avec 50 ms, à la
++/// profondeur 2 à 4 ; à trois coups du contrôle, un coup en a dépensé 96,7 %,
++/// affamant les deux suivants. Loin du contrôle, la dure de C25 laisse à
++/// chaque coup restant au moins la moitié de sa part plate — à cinq coups,
++/// exactement la moitié. La borne étend cette garantie jusqu'au contrôle :
++/// [`CONTROL_RESERVE_PERCENT`].
++///
++/// Seulement quand `movestogo` est ANNONCÉ : sans lui, les douze coups de
++/// `MOVES_TO_GO_DEFAUT` sont un horizon, pas un contrôle, et rien n'arrive
++/// après eux qu'il faille protéger. La mort subite, où C24 et C25 ont été
++/// mesurés, n'en change pas d'une milliseconde.
+ #[must_use]
+ fn deadlines_ms(limits: &Limits, side: Color) -> Option<DeadlinesMs> {
+     let budget = time_budget_ms(limits, side)?;
+@@ -2011,11 +2028,32 @@ fn deadlines_ms(limits: &Limits, side: Color) -> Option<DeadlinesMs> {
+         Color::Black => limits.btime,
+     }
+     .unwrap_or(budget);
+-    let hard = (budget * HARD_PERCENT / 100).clamp(1, remaining.saturating_sub(50).max(1));
++    let mut hard = (budget * HARD_PERCENT / 100).clamp(1, remaining.saturating_sub(50).max(1));
++    if let Some(moves_to_go) = limits.movestogo.map(u64::from).filter(|&n| n >= 2) {
++        // Ce que les coups suivants gardent avant le contrôle : la moitié de
++        // leur part plate chacun, arrondie vers le haut — la garantie tient
++        // à la milliseconde près. Le calcul sature au lieu de déborder sur
++        // une pendule absurde ; une réserve sous-estimée n'y fait que rendre
++        // la borne plus lâche.
++        let reserve = remaining
++            .saturating_mul(moves_to_go - 1)
++            .saturating_mul(CONTROL_RESERVE_PERCENT)
++            .div_ceil(100 * moves_to_go);
++        hard = hard.min(remaining.saturating_sub(reserve).max(1));
++    }
+     let soft = SOFT_PERMILLE.map(|permille| (budget * permille / 1000).min(hard));
+     Some(DeadlinesMs { soft, hard })
+ }
+ 
++/// À l'approche d'un contrôle annoncé, la part de sa part plate que chaque
++/// coup restant avant le contrôle garde au moins, en pour cent — voir
++/// [`deadlines_ms`]. Cinquante, parce que c'est ce que la dure de C25
++/// garantit déjà à cinq coups du contrôle : sans incrément, la borne ne mord
++/// qu'à deux, trois et quatre coups. Elle ne compte pas les incréments que
++/// recevront les coups suivants, donc un incrément la fait mordre un peu
++/// plus loin du contrôle — du côté prudent.
++const CONTROL_RESERVE_PERCENT: u64 = 50;
++
+ /// Le nombre de classes de stabilité du coup — voir [`stability_class`].
+ const STABILITY_CLASSES: usize = 4;
+ 
+@@ -3876,6 +3914,73 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn a_lapproche_dun_controle_la_dure_laisse_leur_part_aux_coups_suivants() {
++        // C26 : dix secondes à la pendule, sans incrément, à N coups d'un
++        // contrôle annoncé. Chacun des N − 1 coups suivants garde au moins la
++        // moitié de sa part plate, 10 000 / N.
++        let avant_controle = |movestogo| Limits {
++            wtime: Some(10_000),
++            movestogo: Some(movestogo),
++            ..Limits::default()
++        };
++        let attendu = [
++            // Le dernier coup avant le contrôle : rien à protéger après lui,
++            // la marge seule — témoin, inchangé par C26.
++            (1, [9_950, 8_805, 5_104, 2_557], 9_950),
++            // Avant C26, la dure valait 9 950 aux deux coups suivants : le
++            // 40ᵉ se jouait avec 50 ms. La douce du coup instable, 1,825
++            // budget, reste sous la dure.
++            (2, [7_500, 4_425, 2_565, 1_285], 7_500),
++            (3, [6_082, 2_949, 1_709, 856], 6_666),
++            (4, [4_562, 2_212, 1_282, 642], 6_250),
++            // À cinq coups, trois budgets laissent déjà la moitié : la borne
++            // tombe pile sur la dure de C25 — témoin, inchangé.
++            (5, [3_650, 1_770, 1_026, 514], 6_000),
++        ];
++        for (movestogo, soft, hard) in attendu {
++            assert_eq!(
++                deadlines_ms(&avant_controle(movestogo), Color::White),
++                Some(DeadlinesMs { soft, hard }),
++                "movestogo {movestogo}"
++            );
++        }
++
++        // La garantie elle-même, sur une grille : ce que la dure laisse
++        // couvre la moitié de la part plate de chaque coup suivant.
++        for movestogo in 2..=60_u32 {
++            for remaining in [700, 10_000, 123_457, 900_000] {
++                let limits = Limits {
++                    btime: Some(remaining),
++                    movestogo: Some(movestogo),
++                    ..Limits::default()
++                };
++                let Some(deadlines) = deadlines_ms(&limits, Color::Black) else {
++                    panic!("une pendule donne des échéances");
++                };
++                let n = u64::from(movestogo);
++                assert!(
++                    (remaining - deadlines.hard) * 2 * n >= remaining * (n - 1),
++                    "movestogo {movestogo}, pendule {remaining} : dure {}",
++                    deadlines.hard
++                );
++            }
++        }
++
++        // Sans `movestogo`, les douze coups du défaut sont un horizon, pas un
++        // contrôle : la borne ne s'applique pas. À 300 ms et une seconde
++        // d'incrément, elle rendrait 163 ; la dure reste à 250, la marge.
++        let serre = Limits {
++            wtime: Some(300),
++            winc: Some(1_000),
++            ..Limits::default()
++        };
++        assert_eq!(
++            deadlines_ms(&serre, Color::White).map(|d| d.hard),
++            Some(250)
++        );
++    }
++
+     #[test]
+     fn la_classe_de_stabilite_suit_les_bornes_de_la_sonde() {
+         // Les probabilités de `SOFT_PERMILLE` ont été mesurées par classe :

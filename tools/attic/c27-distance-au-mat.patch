@@ -1,0 +1,117 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 0368687..0d8ea21 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -1173,6 +1173,31 @@ impl Search {
+             return DRAW;
+         }
+ 
++        // ÉLAGAGE PAR DISTANCE AU MAT (C27). Au ply `ply`, le mieux atteignable
++        // est de mater au ply suivant, `MATE - ply - 1`, et le pire d'être maté
++        // ici même, `-MATE + ply`. Une borne héritée d'un ply moins profond
++        // peut promettre davantage : un mat en deux trouvé ailleurs fait de
++        // `MATE - 2` l'alpha d'un nœud du ply 3, où `MATE - 4` est le maximum.
++        // Tout retour de BORNE — la quiescence rend `alpha` quand rien ne
++        // l'améliore — la faisait alors remonter comme un score, et
++        // `score_to_tt` la poussait hors de ±MATE : −30 002 stocké au ply 4,
++        // trouvé le 25 sept. 2026 par les tests du générateur NNUE. Bornée ici,
++        // AVANT l'aiguillage vers la quiescence, la fenêtre ne promet plus que
++        // l'atteignable, et tout ce que la table reçoit reste représentable.
++        //
++        // Sans mat dans la fenêtre, les bornes sont déjà à l'intérieur de
++        // l'atteignable — un score réel l'est toujours — et rien ne change.
++        // Jamais à la racine : il y faut un coup à jouer.
++        let mut beta = beta;
++        if ply > 0 {
++            let reach = i32::try_from(ply).unwrap_or(0);
++            alpha = alpha.max(-MATE + reach);
++            beta = beta.min(MATE - reach - 1);
++            if alpha >= beta {
++                return alpha;
++            }
++        }
++
+         if depth <= 0 {
+             return self.quiescence(board, alpha, beta, ply, scratch);
+         }
+@@ -4399,6 +4424,32 @@ mod tests {
+         );
+     }
+ 
++    /// C27 : ce qui est stocké dans la table reste dans ±MATE, même quand un
++    /// mat trouvé ailleurs fait hériter aux nœuds profonds une borne qu'ils ne
++    /// peuvent pas atteindre. Les Noirs, au trait, sont matés en un quoi
++    /// qu'ils jouent : la première réponse trouvée fait de `MATE - 2` l'alpha
++    /// des nœuds blancs du ply 3, où `MATE - 4` est le mieux atteignable, et
++    /// la quiescence rendait cette borne comme un score.
++    ///
++    /// Témoin, dans les deux profils : sans l'élagage par distance au mat, la
++    /// table porte −30 002 — en release la valeur est stockée telle quelle, en
++    /// debug l'assertion de `pack_data` panique. La position vient d'une
++    /// partie du générateur NNUE, dont les tests l'ont rencontrée.
++    #[test]
++    fn une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage() {
++        let mut s = search();
++        let position = Position::from_fen("5Q2/R4B1k/1p6/4P1pp/8/4K3/1BP3PP/8 b - - 0 34").unwrap();
++        let limits = Limits {
++            depth: Some(6),
++            ..Limits::default()
++        };
++        let mut last = None;
++        s.go(&position, &limits, |info| last = Some(info.score));
++        assert_eq!(last, Some(Score::Mate(-1)), "matés en un, quoi qu'on joue");
++        let stored = s.tt.max_abs_stored_score();
++        assert!(stored <= MATE, "score stocké hors de ±MATE : {stored}");
++    }
++
+     // ---- Une nulle se détecte à l'intérieur ET à l'horizon (C22) ----
+     //
+     // Même leçon que le mat : deux branches, et un test qui n'en couvre
+diff --git a/engine/src/tt.rs b/engine/src/tt.rs
+index 19ec1cb..7a47af9 100644
+--- a/engine/src/tt.rs
++++ b/engine/src/tt.rs
+@@ -96,11 +96,15 @@ impl Bound {
+ /// trouvés, et du code qu'aucun test ne peut garder — `CLAUDE.md`, « un
+ /// mutant équivalent est souvent du code mort ».
+ ///
+-/// **Le score tient sur seize bits, et ce n'est pas un pari** : `MATE` vaut
+-/// 30 000, et une assertion posée dans `store` le 22 sept. 2026 n'a jamais été
+-/// déclenchée — ni par la suite de tests complète, ni par les critères
+-/// d'acceptation, tournoi de vingt-quatre parties compris. La borne défensive
+-/// ci-dessous couvre le cas qu'aucun chemin connu ne produit.
++/// **Le score tient sur seize bits** : `MATE` vaut 30 000, et l'élagage par
++/// distance au mat de `negamax` borne la fenêtre à l'atteignable, donc tout
++/// score stocké reste dans ±MATE une fois normalisé du ply (C27).
++/// <s>Une assertion posée ici le 22 sept. 2026 n'a jamais été déclenchée.</s>
++/// **Elle l'a été le 25 sept.**, par les tests du générateur NNUE, qui jouent
++/// des parties jusqu'au mat depuis des positions gagnantes : un retour de
++/// borne de mat hors plage, dans 1,82 % des recherches en partie. Son silence
++/// mesurait ce que les tests parcouraient, pas l'absence du défaut. La borne
++/// défensive ci-dessous reste.
+ ///
+ /// **La génération garde ses huit bits**, donc le schéma de remplacement est
+ /// identique au bit près à celui de la version non atomique. C'était le risque
+@@ -205,6 +209,22 @@ impl Default for TranspositionTable {
+ }
+ 
+ impl TranspositionTable {
++    /// Le plus grand score stocké, en valeur absolue, entrées vierges exclues.
++    ///
++    /// Pour les tests seulement : c'est ce qui rend l'invariant « un score de
++    /// mat stocké reste dans ±MATE » vérifiable EN RELEASE aussi, où
++    /// l'assertion de `pack_data` n'existe pas (C27).
++    #[cfg(test)]
++    pub(crate) fn max_abs_stored_score(&self) -> i32 {
++        self.entries
++            .iter()
++            .map(|entry| unpack_data(entry.load().1))
++            .filter(|&(_, _, depth, _, _)| depth >= 0)
++            .map(|(score, _, _, _, _)| score.abs())
++            .max()
++            .unwrap_or(0)
++    }
++
+     /// Crée une table d'environ `megabytes` mébioctets, arrondie à la puissance
+     /// de deux inférieure. Au moins une entrée.
+     #[must_use]

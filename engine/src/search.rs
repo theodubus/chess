@@ -24,7 +24,7 @@
 
 use std::cmp::Reverse;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
@@ -32,14 +32,36 @@ use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
 use crate::eval::{self, DRAW, INFINITY, MATE, MATE_THRESHOLD};
 use crate::position::{Position, repetitions};
 use crate::see;
-use crate::tt::{Bound, TranspositionTable, pack_move};
+use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
 
 /// Profondeur maximale de la recherche principale.
 pub const MAX_DEPTH: u32 = 64;
 
+/// Nombre de « pièce colorée × case d'arrivée » : ce qui identifie un coup
+/// dans l'historique de continuation, douze pièces sur soixante-quatre cases.
+const PIECE_TO: usize = 12 * 64;
+
+/// Les deux coups qui précèdent un nœud, pour l'historique de continuation :
+/// aucun, à la racine ou après un coup nul.
+const NO_CONTEXT: [Option<usize>; 2] = [None, None];
+
 /// Plafond de profondeur, quiescence comprise. Borne les tableaux indexés par
 /// ply et empêche une quiescence pathologique de déborder la pile.
 pub const MAX_PLY: usize = 128;
+
+/// Nombre maximal de fils de recherche, l'option UCI `Threads`.
+///
+/// **1 024, comme Stockfish** (`max(1024, 4 × fils matériels)`), et non une
+/// borne tirée de nos machines : c'est l'organisateur d'une compétition qui
+/// règle `Threads`, et ses serveurs offrent des centaines de fils — TCEC en
+/// donne 512 à sa saison 28, selon des sources secondaires. La borne n'existe
+/// que pour qu'une valeur aberrante ne crée pas des millions de recherches :
+/// chaque auxiliaire occupe **345 Kio** de mémoire résidente, son ardoise
+/// surtout (mesuré le 24 sept. 2026), soit ~345 Mio à 1 024 fils.
+///
+/// **L'échelle n'est mesurée qu'à deux fils** — +42 Elo contre un, B6 —, les
+/// runners de mesure n'ayant que deux cœurs physiques. 64 jusqu'au verdict.
+pub const MAX_THREADS: usize = 1024;
 
 /// Profondeur maximale à laquelle on ose la futilité inverse.
 ///
@@ -289,8 +311,10 @@ pub struct Search {
     started: Instant,
     /// Instant au-delà duquel la recherche s'interrompt en cours d'itération.
     hard_deadline: Option<Instant>,
-    /// Instant au-delà duquel on n'entame pas d'itération supplémentaire.
-    soft_deadline: Option<Instant>,
+    /// Instants au-delà desquels on n'entame pas d'itération supplémentaire,
+    /// un par classe de stabilité du coup — voir [`deadlines_ms`] et
+    /// [`stability_class`].
+    soft_deadlines: Option<[Instant; STABILITY_CLASSES]>,
     /// Budget de nœuds, quand `go nodes` en impose un.
     node_limit: Option<u64>,
     /// Vrai tant que la recherche PONDÈRE : lancée par `go ponder`, pas encore
@@ -322,8 +346,40 @@ pub struct Search {
     null_marks: Vec<usize>,
     pv: PvTable,
     root_best: Option<Move>,
-    /// Mémoire des positions déjà évaluées, conservée entre les coups.
-    tt: TranspositionTable,
+    /// Mémoire des positions déjà évaluées, conservée entre les coups — et
+    /// PARTAGÉE entre les fils d'une même recherche : c'est tout Lazy SMP
+    /// (B6). Ses entrées sont atomiques depuis B9, `store` prend `&self`.
+    tt: Arc<TranspositionTable>,
+    /// Nombre de fils de recherche, l'option UCI `Threads`. Un par défaut.
+    threads: usize,
+    /// Les fils auxiliaires : `threads - 1` recherches complètes, chacune avec
+    /// ses killers, son historique et son ardoise, qui cherchent la même
+    /// position que celle-ci et ne communiquent avec elle QUE par la table.
+    /// Vide avec un seul fil — le cas par défaut, le moteur d'avant B6 au
+    /// nœud près.
+    helpers: Vec<Search>,
+    /// Le drapeau d'arrêt des auxiliaires, distinct de `stop`, qui appartient
+    /// à l'interface : c'est la fin de la recherche PRINCIPALE qui les arrête,
+    /// et elle a ses raisons à elle — profondeur atteinte, mat, échéance.
+    helper_stop: Arc<AtomicBool>,
+    /// Les nœuds que TOUS les fils — principal compris — ont publiés pendant
+    /// la recherche en cours. Chacun y verse son compte tous les
+    /// `CHECK_INTERVAL` nœuds, et le reste en finissant : un compteur partagé
+    /// incrémenté à chaque nœud coûterait une instruction verrouillée par
+    /// nœud, et sa ligne de cache ferait la navette entre les cœurs.
+    ///
+    /// Le fil principal y publie AUSSI, et c'est ce qui permet à chaque fil de
+    /// tenir le budget de `go nodes` lui-même. Tenu par le seul fil principal,
+    /// le budget débordait sans borne dès qu'il manquait de CPU : les
+    /// auxiliaires cherchaient sans rien vérifier — 66 792 et 68 177 nœuds pour
+    /// un budget de 50 000, reproduits en serrant les trois fils sur un seul
+    /// cœur (`taskset -c 0`), 24 sept. 2026.
+    published_nodes: Arc<AtomicU64>,
+    /// Les nœuds de CE fil déjà versés dans `published_nodes`.
+    published: u64,
+    /// Vrai pour un auxiliaire. Il publie ses nœuds, ne rapporte rien, ne
+    /// consulte aucune pendule et ne touche pas à la génération de la table.
+    is_helper: bool,
     /// Deux coups tranquilles par ply ayant provoqué une coupure bêta.
     ///
     /// Un coup qui réfute une variante à un ply donné en réfute souvent
@@ -331,6 +387,24 @@ pub struct Search {
     killers: Vec<[u16; 2]>,
     /// Table butterfly indexée par case de départ puis d'arrivée.
     history: Vec<i32>,
+    /// Historique de continuation (A20) : la note d'un coup tranquille
+    /// SACHANT un coup qui le précède — celui de l'adversaire, et le nôtre
+    /// avant lui —, indexée par la pièce et la case d'arrivée du coup
+    /// précédent, puis par celles du coup noté. `PIECE_TO²` entrées, 2,25 Mio.
+    ///
+    /// **Conservé d'un coup à l'autre, vidé par `ucinewgame`**, à l'inverse
+    /// du papillon, et c'est mesuré : rejouées à la profondeur 10 sur les
+    /// positions de 120 parties, table conservée, la continuation vidée à
+    /// chaque coup grossit l'arbre de 1,2 % ; conservée, elle le réduit de
+    /// 3,1 %. Un papillon conservé, lui, le grossit de 4,4 %. Une table de
+    /// 590 000 entrées n'apprend rien en un coup ; une de 4 096 apprend en un
+    /// coup, et ce qu'elle garde du précédent l'égare.
+    continuation: Vec<i32>,
+    /// Par ply : la pièce et la case d'arrivée du coup qui y a mené, `None`
+    /// après un coup nul. Chaque case est écrite par le nœud parent avant
+    /// d'être lue par l'enfant, et la racine n'est jamais écrite : aucune
+    /// remise à zéro n'est nécessaire entre deux recherches.
+    moved: Vec<Option<usize>>,
     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
     lmr: Vec<i32>,
     /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
@@ -365,12 +439,18 @@ impl Search {
     /// Crée une recherche pilotée par le drapeau d'arrêt fourni.
     #[must_use]
     pub fn new(stop: Arc<AtomicBool>) -> Self {
+        Self::with_table(stop, Arc::new(TranspositionTable::default()))
+    }
+
+    /// Une recherche sur une table donnée — la sienne, ou celle qu'elle
+    /// partage avec la recherche principale si c'est un auxiliaire.
+    fn with_table(stop: Arc<AtomicBool>, tt: Arc<TranspositionTable>) -> Self {
         Self {
             stop,
             nodes: 0,
             started: Instant::now(),
             hard_deadline: None,
-            soft_deadline: None,
+            soft_deadlines: None,
             pondering: Arc::new(AtomicBool::new(false)),
             last_pv: Vec::new(),
             node_limit: None,
@@ -379,10 +459,18 @@ impl Search {
             null_marks: Vec::new(),
             pv: PvTable::new(),
             root_best: None,
-            tt: TranspositionTable::default(),
+            tt,
+            threads: 1,
+            helpers: Vec::new(),
+            helper_stop: Arc::new(AtomicBool::new(false)),
+            published_nodes: Arc::new(AtomicU64::new(0)),
+            published: 0,
+            is_helper: false,
             killers: vec![[0; 2]; MAX_PLY],
             history: vec![0; 64 * 64],
             lmr: build_lmr_table(),
+            continuation: vec![0; PIECE_TO * PIECE_TO],
+            moved: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
             #[cfg(test)]
@@ -396,7 +484,37 @@ impl Search {
 
     /// Redimensionne la table de transposition et la vide.
     pub fn resize_table(&mut self, megabytes: usize) {
-        self.tt = TranspositionTable::new(megabytes);
+        self.tt = Arc::new(TranspositionTable::new(megabytes));
+        // Les auxiliaires tiennent encore l'ancienne : on les refait sur la
+        // nouvelle, sans quoi chacun chercherait dans sa propre table.
+        self.set_threads(self.threads);
+    }
+
+    /// Règle le nombre de fils de recherche — l'option UCI `Threads`, bornée
+    /// à `[1, MAX_THREADS]`.
+    ///
+    /// Les auxiliaires se créent ici, une fois, et non à chaque coup : chacun
+    /// porte une ardoise de 256 Kio, et la remplir à chaque `go` serait le
+    /// coût d'initialisation que C15 a déjà payé une fois.
+    pub fn set_threads(&mut self, threads: usize) {
+        self.threads = thread_count(threads);
+        let helpers = (1..self.threads).map(|_| self.new_helper()).collect();
+        self.helpers = helpers;
+    }
+
+    /// Nombre de fils de recherche.
+    #[must_use]
+    pub fn threads(&self) -> usize {
+        self.threads
+    }
+
+    /// Un auxiliaire : même table, compteur de nœuds commun, et le drapeau
+    /// d'arrêt que lève la recherche principale.
+    fn new_helper(&self) -> Self {
+        let mut helper = Self::with_table(Arc::clone(&self.helper_stop), Arc::clone(&self.tt));
+        helper.published_nodes = Arc::clone(&self.published_nodes);
+        helper.is_helper = true;
+        helper
     }
 
     /// Vide la table de transposition. À appeler sur `ucinewgame`.
@@ -404,6 +522,10 @@ impl Search {
         self.tt.clear();
         self.killers.fill([0; 2]);
         self.history.fill(0);
+        self.continuation.fill(0);
+        for helper in &mut self.helpers {
+            helper.continuation.fill(0);
+        }
     }
 
     /// Taux de remplissage de la table, en pour mille.
@@ -412,10 +534,16 @@ impl Search {
         self.tt.permille_used()
     }
 
-    /// Nombre de nœuds visités par la dernière recherche.
+    /// Nombre de nœuds visités par la dernière recherche, tous fils compris.
+    ///
+    /// Pendant la recherche, les auxiliaires n'ont versé que ce qu'ils ont
+    /// publié — à `CHECK_INTERVAL` nœuds près chacun ; après, le compte est
+    /// exact, chacun publiant son reste en finissant.
     #[must_use]
     pub fn nodes(&self) -> u64 {
-        self.nodes
+        // Les siens au nœud près, ceux des autres fils tels que publiés : le
+        // compteur commun contient déjà la part publiée de ce fil-ci.
+        self.nodes + self.published_nodes.load(Ordering::Relaxed) - self.published
     }
 
     /// Branche le drapeau de ponder que la couche UCI écrira.
@@ -471,6 +599,8 @@ impl Search {
     ) -> Option<Move> {
         self.started = Instant::now();
         self.nodes = 0;
+        self.published = 0;
+        self.published_nodes.store(0, Ordering::Relaxed);
         self.aborted = false;
         self.root_best = None;
         self.last_pv.clear();
@@ -498,49 +628,29 @@ impl Search {
             scratch = vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES];
         }
 
-        let mut best = None;
-
-        let mut previous = DRAW;
-        for depth in 1..=max_depth {
-            let score = self.search_root(
-                &board,
-                i32::try_from(depth).unwrap_or(1),
-                depth,
-                previous,
-                &mut scratch,
-            );
-
-            // Une itération interrompue a exploré ses coups dans le désordre :
-            // son résultat est partiel et ne remplace pas le précédent.
-            if self.aborted {
-                break;
+        // LAZY SMP (B6). Les auxiliaires cherchent la même position sur la
+        // même table, sans pendule ni rapport ; seul ce fil-ci décide du coup.
+        // Avec un seul fil, `helpers` est vide : aucun fil lancé, et pas un
+        // nœud de différence avec le moteur d'avant B6.
+        self.helper_stop.store(false, Ordering::Relaxed);
+        let helper_stop = Arc::clone(&self.helper_stop);
+        let history = position.history();
+        let mut helpers = std::mem::take(&mut self.helpers);
+        let best = std::thread::scope(|scope| {
+            // Lève `helper_stop` en sortant de ce bloc, PANIQUE COMPRISE :
+            // `scope` attend tous ses fils avant de rendre la main, et des
+            // auxiliaires jamais arrêtés le feraient attendre pour toujours.
+            let _stop = StopOnDrop(&helper_stop);
+            for helper in &mut helpers {
+                let board = &board;
+                let node_limit = self.node_limit;
+                scope.spawn(move || {
+                    helper.search_as_helper(board, history, max_depth, node_limit);
+                });
             }
-
-            let Some(mv) = self.root_best else { break };
-            best = Some(mv);
-            previous = score;
-            self.last_pv = self.pv.line();
-            report(&Info {
-                depth,
-                score: Score::from_internal(score),
-                nodes: self.nodes,
-                time_ms: self.elapsed_ms(),
-                pv: self.last_pv.clone(),
-                hashfull: self.tt.permille_used(),
-            });
-
-            // Un mat trouvé ne s'améliore pas en cherchant plus loin.
-            if score.abs() > MATE_THRESHOLD {
-                break;
-            }
-            // En ponder, l'échéance douce ne vaut pas : c'est le temps de
-            // l'adversaire, on approfondit tant qu'il réfléchit. Elle
-            // s'appliquera dès `ponderhit`, à la fin de l'itération en cours.
-            if !self.is_pondering() && self.soft_deadline.is_some_and(|at| Instant::now() >= at) {
-                break;
-            }
-        }
-
+            self.iterate(&board, max_depth, &mut scratch, &mut report)
+        });
+        self.helpers = helpers;
         self.scratch = scratch;
 
         // Filet de sécurité : si la toute première itération a été interrompue,
@@ -564,6 +674,108 @@ impl Search {
         }
 
         best
+    }
+
+    /// L'approfondissement itératif, commun à la recherche principale et aux
+    /// auxiliaires. Rend le coup de la dernière itération ACHEVÉE.
+    fn iterate(
+        &mut self,
+        board: &Board,
+        max_depth: u32,
+        scratch: &mut [(Move, i32)],
+        report: &mut impl FnMut(&Info),
+    ) -> Option<Move> {
+        let mut best = None;
+        let mut previous = DRAW;
+        // Itérations achevées de suite sur le même coup, celle-ci comprise.
+        let mut stable = 0;
+        for depth in 1..=max_depth {
+            let score = self.search_root(
+                board,
+                i32::try_from(depth).unwrap_or(1),
+                depth,
+                previous,
+                scratch,
+            );
+
+            // Une itération interrompue a exploré ses coups dans le désordre :
+            // son résultat est partiel et ne remplace pas le précédent.
+            if self.aborted {
+                break;
+            }
+
+            let Some(mv) = self.root_best else { break };
+            stable = if best == Some(mv) { stable + 1 } else { 1 };
+            best = Some(mv);
+            previous = score;
+            self.last_pv = self.pv.line();
+            report(&Info {
+                depth,
+                score: Score::from_internal(score),
+                nodes: self.nodes(),
+                time_ms: self.elapsed_ms(),
+                pv: self.last_pv.clone(),
+                hashfull: self.tt.permille_used(),
+            });
+
+            // Un mat trouvé ne s'améliore pas en cherchant plus loin.
+            if score.abs() > MATE_THRESHOLD {
+                break;
+            }
+            // En ponder, l'échéance douce ne vaut pas : c'est le temps de
+            // l'adversaire, on approfondit tant qu'il réfléchit. Elle
+            // s'appliquera dès `ponderhit`, à la fin de l'itération en cours.
+            // Laquelle s'applique dépend de la stabilité du coup (C25) : un
+            // coup qui vient de changer mérite une itération de plus bien plus
+            // qu'un coup inchangé depuis sept.
+            if !self.is_pondering()
+                && self
+                    .soft_deadlines
+                    .is_some_and(|at| Instant::now() >= at[stability_class(stable)])
+            {
+                break;
+            }
+        }
+        best
+    }
+
+    /// Ce que cherche un fil auxiliaire : la même position que la recherche
+    /// principale, par le même approfondissement, sans pendule ni rapport. Il
+    /// s'arrête quand elle lève `helper_stop`, ou de lui-même s'il atteint la
+    /// profondeur maximale avant elle — ou le budget de nœuds, qu'il tient
+    /// comme elle, sur le total de tous les fils.
+    ///
+    /// Aucun décalage de profondeur entre les fils. C'est une variante connue
+    /// de Lazy SMP ; elle se mesurera à part si la version la plus simple ne
+    /// rend pas ce qu'on attend — pas recopiée d'avance.
+    fn search_as_helper(
+        &mut self,
+        board: &Board,
+        history: &[u64],
+        max_depth: u32,
+        node_limit: Option<u64>,
+    ) {
+        self.nodes = 0;
+        self.published = 0;
+        self.node_limit = node_limit;
+        self.aborted = false;
+        self.root_best = None;
+        self.path = history.to_vec();
+        self.killers.fill([0; 2]);
+        self.history.fill(0);
+        // Pas de reprise d'une ardoise perdue, contrairement à `go` : un
+        // auxiliaire qui panique emporte toute la recherche avec lui.
+        let mut scratch = std::mem::take(&mut self.scratch);
+        self.iterate(board, max_depth, &mut scratch, &mut |_| {});
+        self.scratch = scratch;
+        self.publish_nodes();
+    }
+
+    /// Verse dans `published_nodes` ce que ce fil n'a pas encore publié.
+    fn publish_nodes(&mut self) {
+        self.published_nodes
+            .fetch_add(self.nodes - self.published, Ordering::Relaxed);
+        self.published = self.nodes;
     }
 
     /// Recherche la racine à une profondeur donnée, en pariant sur la stabilité
@@ -624,23 +836,18 @@ impl Search {
         u64::try_from(self.started.elapsed().as_millis()).unwrap_or(u64::MAX)
     }
 
-    /// Calcule le budget de temps à partir des pendules.
-    ///
-    /// Volontairement grossier : la gestion fine du temps est un travail à part
-    /// entière. Ce budget suffit à ne pas perdre au temps, ce qui est le seul
-    /// objectif ici.
+    /// Pose les deux échéances du coup à partir des pendules — voir
+    /// [`deadlines_ms`], qui en porte l'arithmétique et ses raisons.
     fn set_deadlines(&mut self, limits: &Limits, side: Color) {
-        let Some(budget_ms) = time_budget_ms(limits, side) else {
+        let Some(deadlines) = deadlines_ms(limits, side) else {
             self.hard_deadline = None;
-            self.soft_deadline = None;
+            self.soft_deadlines = None;
             return;
         };
 
         let now = Instant::now();
-        self.hard_deadline = Some(now + Duration::from_millis(budget_ms));
-        // Entamer une itération alors que plus de la moitié du budget est
-        // consommée revient presque toujours à la jeter.
-        self.soft_deadline = Some(now + Duration::from_millis(budget_ms / 2));
+        self.hard_deadline = Some(now + Duration::from_millis(deadlines.hard));
+        self.soft_deadlines = Some(deadlines.soft.map(|ms| now + Duration::from_millis(ms)));
     }
 
     /// Vrai si la recherche doit cesser.
@@ -654,11 +861,12 @@ impl Search {
         if self.aborted {
             return true;
         }
-        if self.node_limit.is_some_and(|limit| self.nodes >= limit) {
+        if self.node_limit.is_some_and(|limit| self.nodes() >= limit) {
             self.aborted = true;
             return true;
         }
         if self.nodes.is_multiple_of(CHECK_INTERVAL) {
+            self.publish_nodes();
             // En ponder, la pendule ne court pas pour nous : seule l'interface
             // arrête la recherche. Après `ponderhit`, l'échéance posée au
             // `go ponder` s'applique — le temps passé à pondérer compte comme
@@ -691,11 +899,52 @@ impl Search {
             .is_some_and(|window| repetitions(window, board.hash(), board.halfmove_clock()) > 0)
     }
 
-    /// Retient un coup tranquille qui vient de provoquer une coupure bêta.
+    /// Vrai si la position est nulle PAR RÈGLE, vue depuis la recherche.
+    ///
+    /// Une seule répétition suffit — c'est le critère de recherche, voir
+    /// [`Position::is_repetition`]. La règle des cinquante coups, elle, cède
+    /// devant le mat : le mat termine la partie à l'instant où il est donné,
+    /// la règle des cinquante coups demande qu'on la réclame. Un mat donné au
+    /// centième demi-coup reste donc un mat, et le rendre nul ferait jouer au
+    /// moteur un coup qui perd en croyant tenir.
+    fn is_rule_draw(&self, board: &Board) -> bool {
+        self.is_repetition(board)
+            || (board.halfmove_clock() >= 100 && !is_checkmate(board))
+            || eval::is_insufficient_material(board)
+    }
+
+    /// Retient un coup tranquille qui vient de provoquer une coupure bêta,
+    /// joué depuis `board`, les deux coups qui précèdent le nœud étant
+    /// `context`.
     ///
     /// Les captures en sont exclues : elles sont déjà ordonnées par MVV-LVA, et
     /// les mêler à l'historique noierait le signal des coups tranquilles.
-    fn remember_quiet(&mut self, mv: Move, ply: usize, depth: i32) {
+    fn remember_quiet(
+        &mut self,
+        board: &Board,
+        mv: Move,
+        ply: usize,
+        depth: i32,
+        context: [Option<usize>; 2],
+    ) {
+        let bonus = depth * depth;
+        let target = piece_to(board, mv);
+        let mut overflow = false;
+        for previous in context.into_iter().flatten() {
+            if let Some(value) = self.continuation.get_mut(previous * PIECE_TO + target) {
+                *value += bonus;
+                overflow |= *value > HISTORY_MAX;
+            }
+        }
+        if overflow {
+            // Même règle que le papillon : diviser toute la table préserve
+            // l'ordre relatif. Rare — une entrée de continuation ne voit que
+            // les coupures de son contexte.
+            for entry in &mut self.continuation {
+                *entry /= 2;
+            }
+        }
+
         let packed = pack_move(mv);
         if let Some(slot) = self.killers.get_mut(ply)
             && slot[0] != packed
@@ -705,7 +954,7 @@ impl Search {
         }
         let index = mv.from as usize * 64 + mv.to as usize;
         if let Some(value) = self.history.get_mut(index) {
-            *value += depth * depth;
+            *value += bonus;
             if *value > HISTORY_MAX {
                 // Diviser toute la table préserve l'ordre relatif tout en
                 // laissant de la place aux coupures à venir.
@@ -720,20 +969,12 @@ impl Search {
     ///
     /// Un bon ordre ne change pas le résultat de la recherche, seulement le
     /// nombre de nœuds visités — mais il le change d'un ordre de grandeur.
-    fn score_move(&self, board: &Board, mv: Move, tt_move: Option<Move>, ply: usize) -> i32 {
-        if tt_move == Some(mv) {
-            return SCORE_TT;
-        }
-        let mut score = 0;
-        if let Some(victim) = captured_piece(board, mv) {
-            let attacker = board
-                .piece_on(mv.from)
-                .map_or(0, |piece| ORDER_VALUE[piece as usize]);
-            score += SCORE_CAPTURE + 1_000 * ORDER_VALUE[victim as usize] - attacker;
-        }
-        if let Some(promotion) = mv.promotion {
-            score += SCORE_PROMOTION + 1_000 * ORDER_VALUE[promotion as usize];
-        }
+    ///
+    /// Ne sert plus qu'à la quiescence en échec, par [`Search::ordered_moves`] :
+    /// `negamax` ordonne par étages ([`MovePicker`]), et la quiescence n'a pas
+    /// de coup de table — elle ne sonde pas la table.
+    fn score_move(&self, board: &Board, mv: Move, ply: usize) -> i32 {
+        let score = tactical_score(board, mv);
         if score > 0 {
             return score;
         }
@@ -747,20 +988,116 @@ impl Search {
                 return SCORE_KILLER_2;
             }
         }
+        self.history_score(mv)
+    }
+
+    /// La note d'historique d'un coup tranquille.
+    fn history_score(&self, mv: Move) -> i32 {
         self.history
             .get(mv.from as usize * 64 + mv.to as usize)
             .copied()
             .unwrap_or(0)
     }
 
-    /// Écrit les coups légaux dans `buffer`, du plus prometteur au moins
+    /// La note d'un coup tranquille dans l'étage des tranquilles : le
+    /// papillon, plus la continuation sachant chacun des deux coups qui
+    /// précèdent. `target` est l'index [`piece_to`] du coup.
+    fn quiet_score(&self, mv: Move, target: usize, context: [Option<usize>; 2]) -> i32 {
+        self.history_score(mv)
+            + context
+                .into_iter()
+                .flatten()
+                .map(|previous| {
+                    self.continuation
+                        .get(previous * PIECE_TO + target)
+                        .copied()
+                        .unwrap_or(0)
+                })
+                .sum::<i32>()
+    }
+
+    /// Écrit dans `buffer` les coups d'UN étage de la génération par étapes,
+    /// notés et triés, et rend leur nombre : les coups **tactiques** —
+    /// captures, prises en passant, promotions — ou les **tranquilles**. Les
+    /// coups de `skip`, déjà rendus par un étage précédent, sont omis ;
+    /// `context` ne sert qu'aux tranquilles, voir [`Search::quiet_score`].
+    ///
+    /// Le partage est exact : un coup est tactique si et seulement s'il change
+    /// le matériel, c'est-à-dire exactement le contraire de `quiet` dans
+    /// `negamax` — un test le vérifie coup par coup. `cozy-chess` le rend bon
+    /// marché : `PieceMoves.to` est un `BitBoard` public, donc séparer les
+    /// destinations coûte un `AND` par pièce.
+    ///
+    /// **La case de prise en passant n'est une cible que pour un pion.** Le
+    /// filtre de la quiescence l'ajoutait aux cibles de TOUTES les pièces :
+    /// un cavalier ou un fou qui s'y posait — une case vide, rien de pris —
+    /// passait pour une capture, et la quiescence cherchait ce coup
+    /// tranquille. `cozy-chess` pose la case après CHAQUE double pas de pion,
+    /// qu'un pion adverse puisse prendre ou non. Corrigé avec la génération
+    /// par étapes, le 24 sept. 2026, où l'écart aurait en plus rendu un
+    /// killer deux fois.
+    fn stage_moves(
+        &self,
+        board: &Board,
+        tactical: bool,
+        skip: &[Option<Move>],
+        buffer: &mut [(Move, i32)],
+        context: [Option<usize>; 2],
+    ) -> usize {
+        let side = board.side_to_move();
+        let enemies = board.colors(!side);
+        let mut pawn_targets = enemies;
+        if let Some(square) = en_passant_square(board) {
+            pawn_targets |= square.bitboard();
+        }
+        let promotion_rank = Rank::Seventh.relative_to(side);
+
+        let mut count = 0;
+        board.generate_moves(|mut piece_moves| {
+            let material = match piece_moves.piece {
+                // Un pion sur la 7e rangée promeut quel que soit son coup :
+                // toutes ses destinations sont tactiques.
+                Piece::Pawn if piece_moves.from.rank() == promotion_rank => piece_moves.to,
+                Piece::Pawn => piece_moves.to & pawn_targets,
+                // Le roque, codé roi-prend-tour, arrive sur NOTRE tour : il
+                // tombe du côté tranquille.
+                _ => piece_moves.to & enemies,
+            };
+            piece_moves.to = if tactical {
+                material
+            } else {
+                piece_moves.to ^ material
+            };
+            for mv in piece_moves {
+                if skip.contains(&Some(mv)) {
+                    continue;
+                }
+                // Même garde que dans `ordered_moves` : inatteignable, mais
+                // déborder en silence perdrait des coups.
+                debug_assert!(count < buffer.len(), "tampon de coups débordé");
+                if count < buffer.len() {
+                    let score = if tactical {
+                        tactical_score(board, mv)
+                    } else {
+                        let target = piece_to_index(side, piece_moves.piece, mv.to);
+                        self.quiet_score(mv, target, context)
+                    };
+                    buffer[count] = (mv, score);
+                    count += 1;
+                }
+            }
+            false
+        });
+        buffer[..count].sort_unstable_by_key(|&(_, score)| Reverse(score));
+        count
+    }
+
+    /// Écrit TOUS les coups légaux dans `buffer`, du plus prometteur au moins
     /// prometteur, et rend leur nombre.
     ///
-    /// Avec `tactical_only`, seuls les coups qui changent le matériel sont
-    /// produits — captures, prises en passant et promotions. C'est ce dont la
-    /// quiescence a besoin, et `cozy-chess` le rend bon marché :
-    /// `PieceMoves.to` est un `BitBoard` public, donc filtrer les destinations
-    /// coûte un `AND` par pièce.
+    /// Ne sert plus qu'à la quiescence en échec, où toute parade doit être
+    /// examinée. `negamax` passe par [`MovePicker`], la quiescence hors échec
+    /// par le seul étage tactique de [`Search::stage_moves`].
     ///
     /// # Pourquoi un tampon fourni par l'appelant
     ///
@@ -774,32 +1111,9 @@ impl Search {
     /// d'invariant : une fonction qui répond à une question ne mute rien, donc
     /// `&self` et non `&mut self`. Une pile de tampons indexée par ply aurait
     /// exigé `&mut self` sur un chemin de pure lecture.
-    fn ordered_moves(
-        &self,
-        board: &Board,
-        tactical_only: bool,
-        tt_move: Option<Move>,
-        ply: usize,
-        buffer: &mut [(Move, i32)],
-    ) -> usize {
-        let side = board.side_to_move();
-        let mut targets = board.colors(!side);
-        if let Some(square) = en_passant_square(board) {
-            targets |= square.bitboard();
-        }
-        let promotion_rank = Rank::Seventh.relative_to(side);
-
+    fn ordered_moves(&self, board: &Board, ply: usize, buffer: &mut [(Move, i32)]) -> usize {
         let mut count = 0;
-        board.generate_moves(|mut piece_moves| {
-            if tactical_only {
-                // Un pion sur la 7e rangée promeut quel que soit son coup :
-                // toutes ses destinations sont tactiques.
-                let promoting =
-                    piece_moves.piece == Piece::Pawn && piece_moves.from.rank() == promotion_rank;
-                if !promoting {
-                    piece_moves.to &= targets;
-                }
-            }
+        board.generate_moves(|piece_moves| {
             for mv in piece_moves {
                 // Inatteignable : une position d'échecs a au plus 218 coups
                 // légaux et le tampon en porte 256. La garde est là parce que
@@ -807,7 +1121,7 @@ impl Search {
                 // meilleur — sans que rien ne le signale.
                 debug_assert!(count < buffer.len(), "tampon de coups débordé");
                 if count < buffer.len() {
-                    buffer[count] = (mv, self.score_move(board, mv, tt_move, ply));
+                    buffer[count] = (mv, self.score_move(board, mv, ply));
                     count += 1;
                 }
             }
@@ -831,6 +1145,57 @@ impl Search {
     ) -> i32 {
         self.pv.clear(ply);
 
+        // Une répétition, la règle des cinquante coups ou un matériel
+        // insuffisant font nulle. Jamais à la racine : la position de départ
+        // n'est pas un résultat, il faut jouer.
+        //
+        // Le test se fait AVANT l'aiguillage vers la quiescence, et c'est tout
+        // son sens (C22). Placé après, il ne voyait que les nœuds intérieurs :
+        // une position nulle atteinte à l'HORIZON était évaluée par la
+        // quiescence comme si la partie continuait. Mesuré le 23 sept. 2026
+        // en rejouant le régime réel d'un match : 0,68 % des entrées en
+        // quiescence, soit 40 % de toutes les positions nulles que la
+        // recherche rencontre. L'arbitre le signalait depuis toujours — « PV
+        // continues after threefold repetition » — et la variante le montrait :
+        // à la profondeur 1, `f8e8 e6f6` pour un coup qui termine la partie.
+        //
+        // La quiescence elle-même n'a pas à le refaire : ses coups sont des
+        // captures et des promotions, qui remettent la pendule des cinquante
+        // coups à zéro et interdisent toute répétition en aval. Seul son nœud
+        // d'ENTRÉE, atteint par un coup tranquille, pouvait être une nulle.
+        //
+        // Le matériel insuffisant est déjà rendu à zéro par `evaluate` ; le
+        // tester **aussi** ici n'est pas une redondance mais une coupure. Sans
+        // elle, on parcourrait tout le sous-arbre d'une position morte pour
+        // que chacune de ses feuilles rende le même zéro.
+        if ply > 0 && self.is_rule_draw(board) {
+            self.nodes += 1;
+            return DRAW;
+        }
+
+        // ÉLAGAGE PAR DISTANCE AU MAT (C27). Au ply `ply`, le mieux atteignable
+        // est de mater au ply suivant, `MATE - ply - 1`, et le pire d'être maté
+        // ici même, `-MATE + ply`. Une borne héritée d'un ply moins profond
+        // peut promettre davantage : un mat en deux trouvé ailleurs fait de
+        // `MATE - 2` l'alpha d'un nœud du ply 3, où `MATE - 4` est le maximum.
+        // Tout retour de BORNE — la quiescence rend `alpha` quand rien ne
+        // l'améliore — la faisait alors remonter comme un score, et
+        // `score_to_tt` la poussait hors de ±MATE : −30 002 stocké au ply 4,
+        // trouvé le 25 sept. 2026 par les tests du générateur NNUE. Bornée ici,
+        // AVANT l'aiguillage vers la quiescence, la fenêtre ne promet plus que
+        // l'atteignable, et tout ce que la table reçoit reste représentable.
+        //
+        // Sans mat dans la fenêtre, les bornes sont déjà à l'intérieur de
+        // l'atteignable — un score réel l'est toujours — et rien ne change.
+        // Jamais à la racine : il y faut un coup à jouer.
+        let mut beta = beta;
+        if ply > 0 {
+            (alpha, beta) = mate_distance_window(alpha, beta, ply);
+            if alpha >= beta {
+                return alpha;
+            }
+        }
+
         if depth <= 0 {
             return self.quiescence(board, alpha, beta, ply, scratch);
         }
@@ -846,22 +1211,6 @@ impl Search {
         self.nodes += 1;
         if self.should_abort() {
             return 0;
-        }
-
-        // Une répétition, la règle des cinquante coups ou un matériel
-        // insuffisant font nulle. Jamais à la racine : la position de départ
-        // n'est pas un résultat, il faut jouer.
-        //
-        // Le matériel insuffisant est déjà rendu à zéro par `evaluate` ; le
-        // tester **aussi** ici n'est pas une redondance mais une coupure. Sans
-        // elle, on parcourrait tout le sous-arbre d'une position morte pour
-        // que chacune de ses feuilles rende le même zéro.
-        if ply > 0
-            && (self.is_repetition(board)
-                || board.halfmove_clock() >= 100
-                || eval::is_insufficient_material(board))
-        {
-            return DRAW;
         }
 
         let key = board.hash();
@@ -933,6 +1282,9 @@ impl Search {
         {
             self.null_marks.push(self.path.len());
             self.path.push(passed.hash());
+            if let Some(slot) = self.moved.get_mut(ply + 1) {
+                *slot = None;
+            }
             let score = -self.negamax(
                 &passed,
                 depth - 1 - NULL_MOVE_REDUCTION,
@@ -958,16 +1310,22 @@ impl Search {
             }
         }
 
-        let count = self.ordered_moves(board, false, tt_move, ply, buffer);
-        if count == 0 {
-            return if board.checkers().is_empty() {
-                DRAW // pat
-            } else {
-                // Un mat proche vaut mieux qu'un mat lointain : soustraire le
-                // ply fait préférer la ligne la plus courte.
-                -MATE + ply_i32
-            };
-        }
+        // GÉNÉRATION PAR ÉTAPES (A18). Les coups sortent un par un, et chaque
+        // étage n'est généré qu'au moment où l'on en a besoin : un nœud qui
+        // coupe sur le coup de la table ou sur une capture ne génère, ne note
+        // ni ne trie jamais ses coups tranquilles. Mesuré le 22 sept. 2026 :
+        // 85 % des coups générés ici n'étaient jamais cherchés, et 49 % des
+        // nœuds ne cherchaient aucun coup tranquille.
+        let killers = self.killers.get(ply).copied().unwrap_or([0; 2]);
+        // Les deux coups qui précèdent ce nœud : celui de l'adversaire, et le
+        // nôtre avant lui. La continuation note chaque tranquille sachant
+        // l'un et l'autre.
+        let context = [
+            self.moved.get(ply).copied().flatten(),
+            ply.checked_sub(1)
+                .and_then(|p| self.moved.get(p).copied().flatten()),
+        ];
+        let mut picker = MovePicker::new(buffer, tt_move, killers, context);
 
         let original_alpha = alpha;
         let mut best = -INFINITY;
@@ -975,8 +1333,14 @@ impl Search {
         let in_check = !board.checkers().is_empty();
 
         let mut quiets_seen = 0usize;
+        let mut moves = 0usize;
 
-        for (index, &(mv, _)) in buffer[..count].iter().enumerate() {
+        while let Some(mv) = picker.next_move(self, board) {
+            // Compté AVANT toute coupure : `moves` dit après la boucle s'il
+            // existait un coup légal, et une coupure bêta sur le premier coup
+            // ne doit pas faire croire à un mat.
+            let index = moves;
+            moves += 1;
             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
 
             // Élagage par compte de coups : on abandonne les coups tranquilles
@@ -990,6 +1354,9 @@ impl Search {
                 quiets_seen += 1;
             }
 
+            if let Some(slot) = self.moved.get_mut(ply + 1) {
+                *slot = Some(piece_to(board, mv));
+            }
             let mut child = board.clone();
             child.play_unchecked(mv);
 
@@ -1051,12 +1418,25 @@ impl Search {
                         // Un coup tranquille qui réfute une variante en réfute
                         // souvent d'autres : on s'en souvient.
                         if quiet {
-                            self.remember_quiet(mv, ply, depth);
+                            self.remember_quiet(board, mv, ply, depth, context);
                         }
                         break;
                     }
                 }
             }
+        }
+
+        // Aucun coup rendu : il n'y en a aucun de légal. L'élagage par compte
+        // de coups ne peut pas en être la cause — il ne coupe qu'après avoir vu
+        // des coups tranquilles, donc jamais avant le premier coup.
+        if moves == 0 {
+            return if in_check {
+                // Un mat proche vaut mieux qu'un mat lointain : soustraire le
+                // ply fait préférer la ligne la plus courte.
+                -MATE + ply_i32
+            } else {
+                DRAW // pat
+            };
         }
 
         // Le type de borne dit ce que le score garantit : exact si tous les
@@ -1113,7 +1493,11 @@ impl Search {
             }
         }
 
-        let count = self.ordered_moves(board, !in_check, None, ply, buffer);
+        let count = if in_check {
+            self.ordered_moves(board, ply, buffer)
+        } else {
+            self.stage_moves(board, true, &[], buffer, NO_CONTEXT)
+        };
         if count == 0 {
             return if in_check {
                 -MATE + i32::try_from(ply).unwrap_or(0)
@@ -1299,6 +1683,161 @@ impl Search {
     }
 }
 
+/// Le nombre de fils retenu pour une demande : au moins un, au plus
+/// [`MAX_THREADS`]. Hors de `set_threads` pour se tester sans créer mille
+/// auxiliaires de 345 Kio chacun.
+fn thread_count(requested: usize) -> usize {
+    requested.clamp(1, MAX_THREADS)
+}
+
+/// Lève un drapeau en sortant de portée — y compris quand on en sort par une
+/// panique. C'est ce qui arrête les auxiliaires de Lazy SMP quoi qu'il arrive
+/// à la recherche principale.
+struct StopOnDrop<'a>(&'a AtomicBool);
+
+impl Drop for StopOnDrop<'_> {
+    fn drop(&mut self) {
+        self.0.store(true, Ordering::Relaxed);
+    }
+}
+
+/// Les étages de la génération par étapes, dans l'ordre où ils rendent leurs
+/// coups.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Stage {
+    TtMove,
+    Tactical,
+    Killers,
+    Quiet,
+    Done,
+}
+
+/// Rend les coups d'un nœud de `negamax` un à un, en ne générant chaque étage
+/// qu'au moment où on en a besoin : le coup de la table, puis les tactiques
+/// par MVV-LVA, puis les killers, puis les tranquilles par historique.
+///
+/// L'ordre est celui de l'ancien tri d'un bloc, à deux écarts près — et ce
+/// sont eux qui font de ce changement un changement d'ARBRE, pas une
+/// optimisation pure :
+/// - les ex æquo sont départagés au sein de chaque étage, et
+///   `sort_unstable` ne les départage pas comme sur la liste entière ;
+/// - les tranquilles sont notés quand leur étage arrive, donc avec un
+///   historique mis à jour par la recherche des coups précédents, et non
+///   tel qu'il était à l'entrée du nœud.
+///
+/// Le sélecteur ne tient aucun emprunt sur `Search` : il le reçoit à chaque
+/// appel, en lecture, ce qui laisse `negamax` libre de se rappeler entre
+/// deux coups.
+struct MovePicker<'b> {
+    buffer: &'b mut [(Move, i32)],
+    tt_move: Option<Move>,
+    killers: [Option<Move>; 2],
+    stage: Stage,
+    next: usize,
+    len: usize,
+    /// Les deux coups qui précèdent le nœud, pour noter les tranquilles.
+    context: [Option<usize>; 2],
+}
+
+impl<'b> MovePicker<'b> {
+    /// `tt_move` doit être légal : `negamax` le vérifie déjà, à cause des
+    /// collisions de clés.
+    fn new(
+        buffer: &'b mut [(Move, i32)],
+        tt_move: Option<Move>,
+        killers: [u16; 2],
+        context: [Option<usize>; 2],
+    ) -> Self {
+        Self {
+            buffer,
+            tt_move,
+            killers: killers.map(unpack_move),
+            stage: Stage::TtMove,
+            next: 0,
+            len: 0,
+            context,
+        }
+    }
+
+    /// Le coup suivant, ou `None` quand tous les coups légaux ont été rendus
+    /// — chacun exactement une fois.
+    fn next_move(&mut self, search: &Search, board: &Board) -> Option<Move> {
+        loop {
+            if self.next < self.len {
+                let mv = self.buffer[self.next].0;
+                self.next += 1;
+                return Some(mv);
+            }
+            self.next = 0;
+            match self.stage {
+                Stage::TtMove => {
+                    self.stage = Stage::Tactical;
+                    if self.tt_move.is_some() {
+                        return self.tt_move;
+                    }
+                }
+                Stage::Tactical => {
+                    self.len =
+                        search.stage_moves(board, true, &[self.tt_move], self.buffer, NO_CONTEXT);
+                    self.stage = Stage::Killers;
+                }
+                Stage::Killers => {
+                    // Un killer vient d'une AUTRE position au même ply : il
+                    // peut y être illégal, ou y changer le matériel — auquel
+                    // cas l'étage tactique l'a déjà rendu. `remember_quiet`
+                    // ne retient jamais de promotion ; le sélecteur ne s'y
+                    // fie pas pour autant, et un test lui en passe. Les deux
+                    // emplacements sont distincts par construction, donc
+                    // aucun ne double l'autre.
+                    self.len = 0;
+                    for killer in self.killers.into_iter().flatten() {
+                        if Some(killer) != self.tt_move
+                            && captured_piece(board, killer).is_none()
+                            && killer.promotion.is_none()
+                            && board.is_legal(killer)
+                            && let Some(slot) = self.buffer.get_mut(self.len)
+                        {
+                            *slot = (killer, 0);
+                            self.len += 1;
+                        }
+                    }
+                    self.stage = Stage::Quiet;
+                }
+                Stage::Quiet => {
+                    // Les killers sont omis qu'ils aient été rendus ou non : un
+                    // killer non rendu est illégal, tactique ou déjà rendu
+                    // comme coup de la table — dans les trois cas, l'étage
+                    // tranquille ne le produirait pas une seconde fois.
+                    let skip = [self.tt_move, self.killers[0], self.killers[1]];
+                    self.len = search.stage_moves(board, false, &skip, self.buffer, self.context);
+                    self.stage = Stage::Done;
+                }
+                Stage::Done => return None,
+            }
+        }
+    }
+}
+
+/// L'index d'un coup dans l'historique de continuation : la pièce colorée
+/// qui bouge, puis sa case d'arrivée.
+fn piece_to_index(side: Color, piece: Piece, to: Square) -> usize {
+    (side as usize * 6 + piece as usize) * 64 + to as usize
+}
+
+/// [`piece_to_index`] d'un coup joué depuis `board`.
+///
+/// Le roque, codé roi-prend-tour par `cozy-chess`, arrive sur la case de sa
+/// tour : l'index reste le même d'un roque identique à l'autre, et c'est tout
+/// ce qu'une table demande. La case de départ d'un coup légal porte toujours
+/// une pièce ; le pion n'est qu'un repli de totalité.
+fn piece_to(board: &Board, mv: Move) -> usize {
+    piece_to_index(
+        board.side_to_move(),
+        board.piece_on(mv.from).unwrap_or(Piece::Pawn),
+        mv.to,
+    )
+}
+
 /// La pièce réellement capturée par un coup, s'il y en a une.
 ///
 /// Trois cas qu'une simple lecture de la case d'arrivée manquerait :
@@ -1320,6 +1859,23 @@ pub fn captured_piece(board: &Board, mv: Move) -> Option<Piece> {
         return Some(Piece::Pawn); // prise en passant
     }
     None
+}
+
+/// La note d'ordonnancement d'un coup qui change le matériel — MVV-LVA pour
+/// une capture, la pièce promue pour une promotion, les deux s'il fait les
+/// deux —, et zéro pour tout autre coup.
+fn tactical_score(board: &Board, mv: Move) -> i32 {
+    let mut score = 0;
+    if let Some(victim) = captured_piece(board, mv) {
+        let attacker = board
+            .piece_on(mv.from)
+            .map_or(0, |piece| ORDER_VALUE[piece as usize]);
+        score += SCORE_CAPTURE + 1_000 * ORDER_VALUE[victim as usize] - attacker;
+    }
+    if let Some(promotion) = mv.promotion {
+        score += SCORE_PROMOTION + 1_000 * ORDER_VALUE[promotion as usize];
+    }
+    score
 }
 
 fn see_prunable(board: &Board, mv: Move, in_check: bool) -> bool {
@@ -1377,6 +1933,19 @@ fn lmp_limit(depth: i32) -> usize {
     LMP_BASE + (depth.max(0) as usize).pow(2)
 }
 
+/// La fenêtre de l'élagage par distance au mat au ply `ply` (C27) : rien de
+/// mieux que mater au ply suivant, `MATE - ply - 1`, rien de pire qu'être maté
+/// ici même, `-MATE + ply`.
+///
+/// Extraite de `negamax` pour la même raison que `lmp_limit` : le seul test de
+/// partie ne voyait presque rien de ces deux bornes — le crible du 25 sept.
+/// 2026 laissait survivre sept mutants sur onze dans ces trois lignes. Une
+/// fonction pure se teste par ses valeurs, à plusieurs plis et des deux côtés.
+fn mate_distance_window(alpha: i32, beta: i32, ply: usize) -> (i32, i32) {
+    let reach = i32::try_from(ply).unwrap_or(0);
+    (alpha.max(-MATE + reach), beta.min(MATE - reach - 1))
+}
+
 const LMR_TABLE_SIDE: usize = 64;
 
 /// Précalcule les réductions.
@@ -1426,7 +1995,6 @@ const ORDER_VALUE: [i32; Piece::NUM] = [1, 2, 3, 4, 5, 6];
 // Paliers d'ordonnancement. Les écarts sont larges pour qu'aucune catégorie ne
 // puisse en dépasser une autre, quelle que soit la valeur accumulée par
 // l'heuristique d'historique.
-const SCORE_TT: i32 = 8_000_000;
 const SCORE_CAPTURE: i32 = 4_000_000;
 const SCORE_PROMOTION: i32 = 2_000_000;
 const SCORE_KILLER_1: i32 = 1_000_000;
@@ -1434,6 +2002,15 @@ const SCORE_KILLER_2: i32 = 900_000;
 /// Plafond de l'historique, au-delà duquel toutes les valeurs sont divisées par
 /// deux. Sans cela elles finiraient par déborder et par écraser les paliers.
 const HISTORY_MAX: i32 = 800_000;
+
+/// Vrai si le camp au trait est mat.
+///
+/// La génération de coups ne s'exécute qu'en échec, donc presque jamais : cette
+/// fonction ne sert qu'à la règle des cinquante coups, où elle départage une
+/// nulle d'un mat.
+fn is_checkmate(board: &Board) -> bool {
+    !board.checkers().is_empty() && first_legal_move(board).is_none()
+}
 
 /// Le premier coup légal de la position, dans l'ordre de génération.
 fn first_legal_move(board: &Board) -> Option<Move> {
@@ -1508,8 +2085,9 @@ pub fn random_legal_move(board: &Board) -> Option<Move> {
 /// coups en deux heures » — c'est le vrai nombre de coups avant le prochain
 /// contrôle, et on l'honore tel quel. Cette constante n'est que le défaut.
 ///
-/// Reste grossier : dépenser *inégalement* — plus sur les positions dures —
-/// est un autre chantier, et le seul moyen de dépasser le plafond plat.
+/// Le budget reste plat ; c'est la façon de le DÉPENSER qui ne l'est plus —
+/// voir [`deadlines_ms`] : laisser finir l'itération entamée donne déjà plus
+/// de temps aux positions difficiles.
 #[must_use]
 fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
     if limits.infinite {
@@ -1532,6 +2110,139 @@ fn time_budget_ms(limits: &Limits, side: Color) -> Option<u64> {
     // que soit la position.
     Some(budget.clamp(1, remaining.saturating_sub(50).max(1)))
 }
+
+/// Les échéances d'un coup, en millisecondes depuis le début de la recherche.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct DeadlinesMs {
+    /// Au-delà, on n'entame pas d'itération — une valeur par classe de
+    /// stabilité du coup, dans l'ordre de [`stability_class`].
+    soft: [u64; STABILITY_CLASSES],
+    /// Au-delà, l'itération qui court est interrompue, et jetée.
+    hard: u64,
+}
+
+/// Les échéances d'un coup.
+///
+/// La DOUCE interdit d'entamer une itération ; la DURE interrompt celle qui
+/// court — et une itération interrompue est jetée, jamais acceptée.
+///
+/// # Pourquoi la dure tombe si loin du budget (C24)
+///
+/// Elle tombait AU budget, et la douce à sa moitié : une itération entamée
+/// juste avant la douce devait finir dans l'autre moitié, et une fois sur
+/// cinq elle n'y arrivait pas. Mesuré le 24 sept. 2026 en régime réel — sonde
+/// `alloc-probe`, parties entières à `8+0,08`, une table par camp : **18,8 % du
+/// temps dépensé était jeté** dans des itérations interrompues, une perte
+/// sèche. C24 a mis la douce à 0,44 budget et la dure à 2,2 : une itération
+/// entamée finit presque toujours, et le temps moyen dépensé par coup ne
+/// bouge pas. **+44,64 ± 6,24 Elo à `8+0,08`**, sans chercher plus profond en
+/// moyenne : laisser finir l'itération est déjà une allocation inégale — une
+/// itération dure longtemps quand la position est difficile.
+///
+/// # Pourquoi une douce par classe de stabilité (C25)
+///
+/// La même sonde mesure, sur 107 000 itérations, la probabilité qu'une
+/// itération de plus change le coup : **26 %** quand il vient de changer,
+/// 13 % stable depuis 2 à 3 itérations, 7 % depuis 4 à 6, **4 %** depuis 7 et
+/// plus. Poursuivre tant que cette probabilité, rapportée au coût de
+/// l'itération suivante, dépasse un seuil revient à une douce proportionnelle
+/// à elle : c'est [`SOFT_PERMILLE`], dont l'échelle est calibrée pour que le
+/// temps moyen dépensé par coup soit celui de C24. La dure passe à trois
+/// budgets, pour que les itérations longues qu'autorise une douce tardive
+/// puissent finir.
+///
+/// La dure reste bornée par la pendule, avec la même marge que le budget, et
+/// aucune douce ne la dépasse. Un `movetime` n'en change rien : un temps
+/// imposé se respecte, la douce y reste la moitié du temps demandé et la dure
+/// le temps demandé, quelle que soit la stabilité.
+///
+/// # Pourquoi une borne de plus quand l'interface annonce `movestogo` (C26)
+///
+/// À deux coups d'un contrôle, le budget vaut la moitié de la pendule, et
+/// trois budgets la dépassent : la dure tombait à `restant − 50`. Mesuré le
+/// 24 sept. 2026 en partie, à `40/8` : dans un cycle sur vingt, le 39ᵉ coup
+/// dépensait jusqu'à 97 % de sa pendule et le 40ᵉ se jouait avec 50 ms, à la
+/// profondeur 2 à 4 ; à trois coups du contrôle, un coup en a dépensé 96,7 %,
+/// affamant les deux suivants. Loin du contrôle, la dure de C25 laisse à
+/// chaque coup restant au moins la moitié de sa part plate — à cinq coups,
+/// exactement la moitié. La borne étend cette garantie jusqu'au contrôle :
+/// [`CONTROL_RESERVE_PERCENT`].
+///
+/// Seulement quand `movestogo` est ANNONCÉ : sans lui, les douze coups de
+/// `MOVES_TO_GO_DEFAUT` sont un horizon, pas un contrôle, et rien n'arrive
+/// après eux qu'il faille protéger. La mort subite, où C24 et C25 ont été
+/// mesurés, n'en change pas d'une milliseconde.
+#[must_use]
+fn deadlines_ms(limits: &Limits, side: Color) -> Option<DeadlinesMs> {
+    let budget = time_budget_ms(limits, side)?;
+    if limits.movetime.is_some() {
+        return Some(DeadlinesMs {
+            soft: [budget / 2; STABILITY_CLASSES],
+            hard: budget,
+        });
+    }
+    let remaining = match side {
+        Color::White => limits.wtime,
+        Color::Black => limits.btime,
+    }
+    .unwrap_or(budget);
+    let mut hard = (budget * HARD_PERCENT / 100).clamp(1, remaining.saturating_sub(50).max(1));
+    if let Some(moves_to_go) = limits.movestogo.map(u64::from).filter(|&n| n >= 2) {
+        // Ce que les coups suivants gardent avant le contrôle : la moitié de
+        // leur part plate chacun, arrondie vers le haut — la garantie tient
+        // à la milliseconde près. Le calcul sature au lieu de déborder sur
+        // une pendule absurde ; une réserve sous-estimée n'y fait que rendre
+        // la borne plus lâche.
+        let reserve = remaining
+            .saturating_mul(moves_to_go - 1)
+            .saturating_mul(CONTROL_RESERVE_PERCENT)
+            .div_ceil(100 * moves_to_go);
+        hard = hard.min(remaining.saturating_sub(reserve).max(1));
+    }
+    let soft = SOFT_PERMILLE.map(|permille| (budget * permille / 1000).min(hard));
+    Some(DeadlinesMs { soft, hard })
+}
+
+/// À l'approche d'un contrôle annoncé, la part de sa part plate que chaque
+/// coup restant avant le contrôle garde au moins, en pour cent — voir
+/// [`deadlines_ms`]. Cinquante, parce que c'est ce que la dure de C25
+/// garantit déjà à cinq coups du contrôle : sans incrément, la borne ne mord
+/// qu'à deux, trois et quatre coups. Elle ne compte pas les incréments que
+/// recevront les coups suivants, donc un incrément la fait mordre un peu
+/// plus loin du contrôle — du côté prudent.
+const CONTROL_RESERVE_PERCENT: u64 = 50;
+
+/// Le nombre de classes de stabilité du coup — voir [`stability_class`].
+const STABILITY_CLASSES: usize = 4;
+
+/// La classe de stabilité du coup, d'après le nombre d'itérations achevées de
+/// suite sur le même coup, la dernière comprise : il vient de changer (1),
+/// stable depuis 2 à 3, depuis 4 à 6, depuis 7 et plus.
+///
+/// Les bornes sont celles de la sonde qui a mesuré les probabilités de
+/// [`SOFT_PERMILLE`] : les changer sans remesurer ferait mentir la table.
+#[must_use]
+fn stability_class(stable: u32) -> usize {
+    match stable {
+        0 | 1 => 0,
+        2 | 3 => 1,
+        4..=6 => 2,
+        _ => 3,
+    }
+}
+
+/// Les échéances douces, en pour mille du budget, par classe de stabilité :
+/// le coup vient de changer, stable depuis 2 à 3 itérations, 4 à 6, 7 et plus.
+///
+/// Proportionnelles à la probabilité mesurée qu'une itération de plus change
+/// le coup (26,1 %, 12,7 %, 7,3 %, 3,7 %), à l'échelle qui rend le temps moyen
+/// de C24 sur les parties de la sonde. Mesurées, pas choisies : voir
+/// [`deadlines_ms`].
+const SOFT_PERMILLE: [u64; STABILITY_CLASSES] = [1825, 885, 513, 257];
+
+/// L'échéance dure, en pour cent du budget. Mesurée, pas choisie : voir
+/// [`deadlines_ms`].
+const HARD_PERCENT: u64 = 300;
 
 /// Coups supposés restants quand l'interface n'annonce pas `movestogo`.
 ///
@@ -1562,6 +2273,36 @@ fn next_random(state: &mut u64) -> u64 {
     x ^= x >> 27;
     *state = x;
     x.wrapping_mul(0x2545_F491_4F6C_DD1D)
+}
+
+#[cfg(test)]
+/// Une marche déterministe depuis la position initiale.
+///
+/// Les positions de `bench` ne sont pas un échantillon de jeu — le projet
+/// l'a mesuré, un facteur 3 à 5 sur la fréquence d'un phénomène. Une marche
+/// couvre l'ouverture, le milieu et la finale, et le xorshift la rend
+/// rejouable : un échec se reproduit à l'identique.
+fn marche(parties: u32, plis: u32, mut visiter: impl FnMut(&Board)) {
+    for graine in 1..=parties {
+        let mut etat = (u64::from(graine) * 2_654_435_761) | 1;
+        let mut board = Board::default();
+        for _ in 0..plis {
+            let mut coups = Vec::new();
+            board.generate_moves(|set| {
+                coups.extend(set);
+                false
+            });
+            if coups.is_empty() {
+                break;
+            }
+            visiter(&board);
+            etat ^= etat << 13;
+            etat ^= etat >> 7;
+            etat ^= etat << 17;
+            let mv = coups[(etat as usize) % coups.len()];
+            board.play_unchecked(mv);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -1601,7 +2342,8 @@ mod tests {
         let b = board("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
         let roque = cozy_chess::util::parse_uci_move(&b, "e1g1").unwrap();
         assert_eq!(captured_piece(&b, roque), None);
-        assert_eq!(search().score_move(&b, roque, None, 0), 0);
+        assert_eq!(search().score_move(&b, roque, 0), 0);
+        assert_eq!(tactical_score(&b, roque), 0);
     }
 
     #[test]
@@ -1610,7 +2352,7 @@ mod tests {
         let b = board("rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3");
         let prise = cozy_chess::util::parse_uci_move(&b, "e5f6").unwrap();
         assert_eq!(captured_piece(&b, prise), Some(Piece::Pawn));
-        assert!(search().score_move(&b, prise, None, 0) > 0);
+        assert!(search().score_move(&b, prise, 0) > 0);
     }
 
     #[test]
@@ -1620,7 +2362,7 @@ mod tests {
         assert_eq!(captured_piece(&b, prise), Some(Piece::Pawn));
         let tranquille = cozy_chess::util::parse_uci_move(&b, "d2d3").unwrap();
         let s = search();
-        assert!(s.score_move(&b, prise, None, 0) > s.score_move(&b, tranquille, None, 0));
+        assert!(s.score_move(&b, prise, 0) > s.score_move(&b, tranquille, 0));
     }
 
     #[test]
@@ -1628,9 +2370,9 @@ mod tests {
         let b = board("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
         let s = search();
         let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
-        let tactiques = s.ordered_moves(&b, true, None, 0, &mut buffer);
+        let tactiques = s.stage_moves(&b, true, &[], &mut buffer, NO_CONTEXT);
         assert_eq!(tactiques, 1, "seule exd5 change le matériel");
-        assert!(s.ordered_moves(&b, false, None, 0, &mut buffer) > 1);
+        assert!(s.ordered_moves(&b, 0, &mut buffer) > 1);
     }
 
     #[test]
@@ -1641,7 +2383,7 @@ mod tests {
         let b = board("R6R/3Q4/1Q4Q1/4Q3/2Q4Q/Q4Q2/pp1Q4/kBNN1KB1 w - - 0 1");
         let s = search();
         let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
-        let count = s.ordered_moves(&b, false, None, 0, &mut buffer);
+        let count = s.ordered_moves(&b, 0, &mut buffer);
         assert_eq!(
             count, 218,
             "la position de référence doit produire 218 coups"
@@ -1650,6 +2392,14 @@ mod tests {
             count < MAX_MOVES,
             "le tampon doit rester plus grand que le maximum"
         );
+        // Le sélecteur de `negamax` écrit dans le même tampon, un étage à la
+        // fois : il doit rendre les 218 aussi.
+        let mut picker = MovePicker::new(&mut buffer, None, [0; 2], NO_CONTEXT);
+        let mut rendus = 0;
+        while picker.next_move(&s, &b).is_some() {
+            rendus += 1;
+        }
+        assert_eq!(rendus, 218);
     }
 
     #[test]
@@ -1801,15 +2551,17 @@ mod tests {
     #[test]
     fn toutes_les_captures_precedent_tous_les_coups_tranquilles() {
         // C'est l'invariant qui rend `break` licite plutôt que `continue` :
-        // interrompre la boucle ne saute jamais une capture. Il repose sur les
-        // barèmes d'ordonnancement, donc il se vérifie au lieu de se lire.
+        // interrompre la boucle ne saute jamais une capture. Il repose sur
+        // l'ordre des étages du sélecteur, donc il se vérifie au lieu de se
+        // lire — ici sur une position, et sur toute une marche dans
+        // `move_picker_tests`.
         let b = board("r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4");
         let s = search();
         let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
-        let count = s.ordered_moves(&b, false, None, 1, &mut buffer);
+        let mut picker = MovePicker::new(&mut buffer, None, [0; 2], NO_CONTEXT);
         let mut tranquille_vu = false;
         let mut captures = 0;
-        for &(mv, _) in &buffer[..count] {
+        while let Some(mv) = picker.next_move(&s, &b) {
             let quiet = captured_piece(&b, mv).is_none() && mv.promotion.is_none();
             if quiet {
                 tranquille_vu = true;
@@ -2056,26 +2808,62 @@ mod tests {
         assert!(search().go(&position, &Limits::default(), |_| {}).is_none());
     }
 
+    /// La variante principale se joue coup après coup depuis la racine.
+    ///
+    /// **Sur un échantillon, pas sur une position.** Jusqu'au 24 sept. 2026,
+    /// ce test ne cherchait que la première position ci-dessous, et il a
+    /// cessé de voir un enfant de quiescence posé au ply de son parent
+    /// (`ply + 1` changé en `ply`) : la PV y est corrompue, mais la
+    /// génération par étapes (A18) a changé l'arbre de cette position-là, et
+    /// sa PV finale ne passait plus par la quiescence fautive. Le balayage de
+    /// mutation qui a suivi la fusion l'a rendu survivant. Une propriété
+    /// générale assertée sur UNE position passe par chance (`CLAUDE.md`).
+    ///
+    /// Une seule recherche pour tout l'échantillon : la table reste chaude
+    /// d'une position à l'autre, comme en partie, et le test coûte 0,4 s en
+    /// debug au lieu de 2 s — une table neuve par position se paie en
+    /// remplissage de mémoire.
     #[test]
     fn la_variante_principale_est_legale_depuis_la_racine() {
+        fn verifier(recherche: &mut Search, position: &Position, profondeur: u32) {
+            let mut pv = Vec::new();
+            recherche.go(
+                position,
+                &Limits {
+                    depth: Some(profondeur),
+                    ..Limits::default()
+                },
+                |info| pv.clone_from(&info.pv),
+            );
+            assert!(!pv.is_empty(), "la variante ne doit pas être vide");
+            let mut b = position.board().clone();
+            for mv in pv {
+                assert!(
+                    b.is_legal(mv),
+                    "coup illégal dans la variante : {mv} sur {}",
+                    position.board()
+                );
+                b.play_unchecked(mv);
+            }
+        }
+
         let position =
             Position::from_fen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1")
                 .unwrap();
-        let mut pv = Vec::new();
-        search().go(
-            &position,
-            &Limits {
-                depth: Some(5),
-                ..Limits::default()
-            },
-            |info| pv.clone_from(&info.pv),
-        );
-        assert!(!pv.is_empty(), "la variante ne doit pas être vide");
-        let mut b = position.board().clone();
-        for mv in pv {
-            assert!(b.is_legal(mv), "coup illégal dans la variante : {mv}");
-            b.play_unchecked(mv);
-        }
+        let mut recherche = search();
+        verifier(&mut recherche, &position, 5);
+
+        let mut plis = 0u32;
+        let mut vues = 0u32;
+        marche(10, 60, |board| {
+            plis += 1;
+            if plis.is_multiple_of(15) {
+                verifier(&mut recherche, &Position::from_board(board.clone()), 3);
+                vues += 1;
+            }
+        });
+        // Un test qui n'a rien regardé passe aussi. Le compte le dit.
+        assert!(vues >= 30, "échantillon trop maigre : {vues} positions");
     }
 
     #[test]
@@ -2407,18 +3195,16 @@ mod tests {
 
     #[test]
     fn le_coup_de_la_table_passe_devant_tous_les_autres() {
-        let b = Board::default();
+        // Même un coup tranquille, et même devant une capture : c'est le
+        // meilleur coup connu de cette position.
+        let b = board("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
         let tranquille = cozy_chess::util::parse_uci_move(&b, "a2a3").unwrap();
+        let prise = cozy_chess::util::parse_uci_move(&b, "e4d5").unwrap();
         let s = search();
-        let sans = s.score_move(&b, tranquille, None, 0);
-        let avec = s.score_move(&b, tranquille, Some(tranquille), 0);
-        assert!(avec > sans);
-        // Doit aussi dépasser n'importe quelle capture.
-        let capture_board: Board = "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"
-            .parse()
-            .unwrap();
-        let prise = cozy_chess::util::parse_uci_move(&capture_board, "e4d5").unwrap();
-        assert!(avec > s.score_move(&capture_board, prise, None, 0));
+        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+        let mut picker = MovePicker::new(&mut buffer, Some(tranquille), [0; 2], NO_CONTEXT);
+        assert_eq!(picker.next_move(&s, &b), Some(tranquille));
+        assert_eq!(picker.next_move(&s, &b), Some(prise));
     }
 
     #[test]
@@ -2427,12 +3213,179 @@ mod tests {
         let killer = cozy_chess::util::parse_uci_move(&b, "a2a3").unwrap();
         let autre = cozy_chess::util::parse_uci_move(&b, "h2h3").unwrap();
         let mut s = search();
-        s.remember_quiet(killer, 3, 4);
-        assert!(s.score_move(&b, killer, None, 3) > s.score_move(&b, autre, None, 3));
-        // Mais pas à un autre ply : les killers sont propres à leur profondeur.
+        s.remember_quiet(&b, killer, 3, 4, NO_CONTEXT);
+        // Dans la quiescence en échec, par la note…
+        assert!(s.score_move(&b, killer, 3) > s.score_move(&b, autre, 3));
+        // … mais pas à un autre ply : les killers sont propres à leur
+        // profondeur. L'historique, lui, est commun à tous les plies ; on le
+        // remet à zéro pour ne comparer que le killer.
+        s.history.fill(0);
+        assert_eq!(s.score_move(&b, killer, 5), s.score_move(&b, autre, 5));
+        // Dans `negamax`, par l'étage des killers, qui passe devant tous les
+        // tranquilles — y compris ceux dont l'historique est meilleur.
+        s.history[autre.from as usize * 64 + autre.to as usize] = HISTORY_MAX;
+        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+        let mut picker = MovePicker::new(&mut buffer, None, s.killers[3], NO_CONTEXT);
+        assert_eq!(picker.next_move(&s, &b), Some(killer));
+        assert_eq!(picker.next_move(&s, &b), Some(autre));
+    }
+
+    #[test]
+    fn l_index_de_continuation_distingue_la_piece_sa_couleur_et_sa_case() {
+        // Douze pièces colorées sur soixante-quatre cases : autant d'index
+        // distincts, tous sous `PIECE_TO`.
+        let mut vus = std::collections::HashSet::new();
+        for side in Color::ALL {
+            for piece in Piece::ALL {
+                for to in Square::ALL {
+                    let index = piece_to_index(side, piece, to);
+                    assert!(
+                        index < PIECE_TO,
+                        "{side:?} {piece:?} {to:?} hors de la table"
+                    );
+                    vus.insert(index);
+                }
+            }
+        }
         assert_eq!(
-            s.score_move(&b, killer, None, 5),
-            s.score_move(&b, killer, None, 5)
+            vus.len(),
+            PIECE_TO,
+            "deux coups différents partagent un index"
+        );
+        // `piece_to` lit la pièce qui bouge sur sa case de départ, du camp
+        // au trait.
+        let b = Board::default();
+        let cavalier = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+        assert_eq!(
+            piece_to(&b, cavalier),
+            piece_to_index(Color::White, Piece::Knight, Square::F3)
+        );
+        let noirs = board("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
+        let fou = cozy_chess::util::parse_uci_move(&noirs, "e7e5").unwrap();
+        assert_eq!(
+            piece_to(&noirs, fou),
+            piece_to_index(Color::Black, Piece::Pawn, Square::E5)
+        );
+    }
+
+    #[test]
+    fn une_coupure_tranquille_nourrit_la_continuation_de_ses_deux_contextes() {
+        let b = Board::default();
+        let coup = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+        let cible = piece_to(&b, coup);
+        let (adverse, notre) = (5, 77);
+        let mut s = search();
+        s.remember_quiet(&b, coup, 2, 3, [Some(adverse), Some(notre)]);
+        // + d², dans chacun des deux contextes…
+        assert_eq!(s.continuation[adverse * PIECE_TO + cible], 9);
+        assert_eq!(s.continuation[notre * PIECE_TO + cible], 9);
+        // … et nulle part ailleurs : ni pour un autre contexte, ni pour un
+        // autre coup de ces contextes.
+        assert_eq!(s.continuation.iter().filter(|&&v| v != 0).count(), 2);
+        // Sans contexte — la racine, l'enfant d'un coup nul —, rien.
+        let mut t = search();
+        t.remember_quiet(&b, coup, 2, 3, NO_CONTEXT);
+        assert!(t.continuation.iter().all(|&v| v == 0));
+    }
+
+    #[test]
+    fn le_debordement_de_la_continuation_divise_toute_la_table() {
+        let b = Board::default();
+        let coup = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+        let cible = piece_to(&b, coup);
+        let temoin = 300;
+        // Les deux contextes débordent ensemble : un seul suffit à diviser,
+        // deux ne s'annulent pas.
+        let mut s = search();
+        s.continuation[7 * PIECE_TO + cible] = HISTORY_MAX;
+        s.continuation[8 * PIECE_TO + cible] = HISTORY_MAX;
+        s.continuation[temoin] = 1000;
+        s.remember_quiet(&b, coup, 0, 1, [Some(7), Some(8)]);
+        assert_eq!(s.continuation[7 * PIECE_TO + cible], (HISTORY_MAX + 1) / 2);
+        assert_eq!(
+            s.continuation[temoin], 500,
+            "toute la table, pas la seule entrée"
+        );
+        // Un seul contexte qui déborde.
+        let mut t = search();
+        t.continuation[7 * PIECE_TO + cible] = HISTORY_MAX;
+        t.continuation[temoin] = 1000;
+        t.remember_quiet(&b, coup, 0, 1, [Some(7), None]);
+        assert_eq!(t.continuation[temoin], 500);
+        // Atteindre HISTORY_MAX n'est pas le dépasser : la borne est stricte,
+        // comme celle du papillon.
+        let mut u = search();
+        u.continuation[7 * PIECE_TO + cible] = HISTORY_MAX - 1;
+        u.continuation[temoin] = 1000;
+        u.remember_quiet(&b, coup, 0, 1, [Some(7), None]);
+        assert_eq!(u.continuation[temoin], 1000);
+    }
+
+    #[test]
+    fn l_etage_tranquille_ordonne_par_papillon_plus_continuation() {
+        let b = Board::default();
+        let favori = cozy_chess::util::parse_uci_move(&b, "b1c3").unwrap();
+        let rival = cozy_chess::util::parse_uci_move(&b, "g1f3").unwrap();
+        let contexte = 42;
+        let mut s = search();
+        // Le papillon préfère le rival, la continuation le favori, un peu
+        // plus : c'est la somme qui classe.
+        s.history[rival.from as usize * 64 + rival.to as usize] = 100;
+        s.continuation[contexte * PIECE_TO + piece_to(&b, favori)] = 101;
+        for context in [[Some(contexte), None], [None, Some(contexte)]] {
+            let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+            let mut picker = MovePicker::new(&mut buffer, None, [0; 2], context);
+            assert_eq!(
+                picker.next_move(&s, &b),
+                Some(favori),
+                "contexte {context:?}"
+            );
+            assert_eq!(
+                picker.next_move(&s, &b),
+                Some(rival),
+                "contexte {context:?}"
+            );
+        }
+        // Sans contexte, le papillon seul : le rival repasse devant.
+        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+        let mut picker = MovePicker::new(&mut buffer, None, [0; 2], NO_CONTEXT);
+        assert_eq!(picker.next_move(&s, &b), Some(rival));
+    }
+
+    #[test]
+    fn la_continuation_survit_a_go_et_se_vide_a_ucinewgame() {
+        let mut s = search();
+        s.set_threads(2);
+        s.continuation[123] = 4567;
+        s.helpers[0].continuation[89] = 10;
+        let position =
+            Position::from_fen("r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3")
+                .unwrap();
+        let limits = Limits {
+            depth: Some(4),
+            ..Limits::default()
+        };
+        s.go(&position, &limits, |_| {});
+        // Une recherche ne vide pas la continuation — à l'inverse du
+        // papillon, qui repart de zéro à chaque coup.
+        assert!(
+            s.continuation[123] >= 4567 / 2,
+            "la continuation a été vidée par go"
+        );
+        assert!(
+            s.helpers[0].continuation[89] >= 10 / 2,
+            "celle de l'auxiliaire aussi"
+        );
+        s.clear_table();
+        assert!(
+            s.continuation.iter().all(|&v| v == 0),
+            "ucinewgame doit la vider"
+        );
+        assert!(
+            s.helpers
+                .iter()
+                .all(|h| h.continuation.iter().all(|&v| v == 0)),
+            "et celle des auxiliaires, qui la conservent aussi"
         );
     }
 
@@ -3081,7 +4034,7 @@ mod tests {
         let prise = cozy_chess::util::parse_uci_move(&b, "e5f6").unwrap();
         let s = search();
         let mut buffer = [(NO_MOVE, 0); MAX_MOVES];
-        let count = s.ordered_moves(&b, true, None, 0, &mut buffer);
+        let count = s.stage_moves(&b, true, &[], &mut buffer, NO_CONTEXT);
         assert!(
             buffer[..count].iter().any(|(mv, _)| *mv == prise),
             "la prise en passant doit figurer parmi les coups tactiques"
@@ -3203,6 +4156,207 @@ mod tests {
     }
 
     #[test]
+    fn les_echeances_laissent_finir_une_iteration_entamee() {
+        // C24 : la dure loin du budget, pour qu'une itération entamée ne soit
+        // presque jamais jetée. C25 : la douce dépend de la stabilité du coup,
+        // de 1,825 budget quand il vient de changer à 0,257 quand il est
+        // stable depuis sept itérations ; la dure à trois budgets.
+        let pendule = Limits {
+            wtime: Some(60_000),
+            winc: Some(600),
+            ..Limits::default()
+        };
+        assert_eq!(time_budget_ms(&pendule, Color::White), Some(5_300));
+        assert_eq!(
+            deadlines_ms(&pendule, Color::White),
+            Some(DeadlinesMs {
+                soft: [9_672, 4_690, 2_718, 1_362],
+                hard: 15_900
+            })
+        );
+
+        // La pendule lue est celle du camp au trait.
+        let noirs = Limits {
+            btime: Some(24_000),
+            ..Limits::default()
+        };
+        assert_eq!(
+            deadlines_ms(&noirs, Color::Black),
+            Some(DeadlinesMs {
+                soft: [3_650, 1_770, 1_026, 514],
+                hard: 6_000
+            })
+        );
+
+        // La dure reste bornée par la pendule, avec la marge du budget : à
+        // 300 ms, elle ne dépasse pas 250 quel que soit l'incrément — et
+        // aucune douce ne la dépasse.
+        let serre = Limits {
+            wtime: Some(300),
+            winc: Some(1_000),
+            ..Limits::default()
+        };
+        assert_eq!(
+            deadlines_ms(&serre, Color::White),
+            Some(DeadlinesMs {
+                soft: [250, 221, 128, 64],
+                hard: 250
+            })
+        );
+
+        // Un temps imposé se respecte : la douce à sa moitié, la dure au
+        // temps demandé, quelle que soit la stabilité.
+        let impose = Limits {
+            movetime: Some(1_000),
+            ..Limits::default()
+        };
+        assert_eq!(
+            deadlines_ms(&impose, Color::White),
+            Some(DeadlinesMs {
+                soft: [490; STABILITY_CLASSES],
+                hard: 980
+            })
+        );
+
+        // Sans pendule, pas d'échéance.
+        assert_eq!(
+            deadlines_ms(
+                &Limits {
+                    infinite: true,
+                    ..Limits::default()
+                },
+                Color::White
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn a_lapproche_dun_controle_la_dure_laisse_leur_part_aux_coups_suivants() {
+        // C26 : dix secondes à la pendule, sans incrément, à N coups d'un
+        // contrôle annoncé. Chacun des N − 1 coups suivants garde au moins la
+        // moitié de sa part plate, 10 000 / N.
+        let avant_controle = |movestogo| Limits {
+            wtime: Some(10_000),
+            movestogo: Some(movestogo),
+            ..Limits::default()
+        };
+        let attendu = [
+            // Le dernier coup avant le contrôle : rien à protéger après lui,
+            // la marge seule — témoin, inchangé par C26.
+            (1, [9_950, 8_805, 5_104, 2_557], 9_950),
+            // Avant C26, la dure valait 9 950 aux deux coups suivants : le
+            // 40ᵉ se jouait avec 50 ms. La douce du coup instable, 1,825
+            // budget, reste sous la dure.
+            (2, [7_500, 4_425, 2_565, 1_285], 7_500),
+            (3, [6_082, 2_949, 1_709, 856], 6_666),
+            (4, [4_562, 2_212, 1_282, 642], 6_250),
+            // À cinq coups, trois budgets laissent déjà la moitié : la borne
+            // tombe pile sur la dure de C25 — témoin, inchangé.
+            (5, [3_650, 1_770, 1_026, 514], 6_000),
+        ];
+        for (movestogo, soft, hard) in attendu {
+            assert_eq!(
+                deadlines_ms(&avant_controle(movestogo), Color::White),
+                Some(DeadlinesMs { soft, hard }),
+                "movestogo {movestogo}"
+            );
+        }
+
+        // La garantie elle-même, sur une grille : ce que la dure laisse
+        // couvre la moitié de la part plate de chaque coup suivant.
+        for movestogo in 2..=60_u32 {
+            for remaining in [700, 10_000, 123_457, 900_000] {
+                let limits = Limits {
+                    btime: Some(remaining),
+                    movestogo: Some(movestogo),
+                    ..Limits::default()
+                };
+                let Some(deadlines) = deadlines_ms(&limits, Color::Black) else {
+                    panic!("une pendule donne des échéances");
+                };
+                let n = u64::from(movestogo);
+                assert!(
+                    (remaining - deadlines.hard) * 2 * n >= remaining * (n - 1),
+                    "movestogo {movestogo}, pendule {remaining} : dure {}",
+                    deadlines.hard
+                );
+            }
+        }
+
+        // Sans `movestogo`, les douze coups du défaut sont un horizon, pas un
+        // contrôle : la borne ne s'applique pas. À 300 ms et une seconde
+        // d'incrément, elle rendrait 163 ; la dure reste à 250, la marge.
+        let serre = Limits {
+            wtime: Some(300),
+            winc: Some(1_000),
+            ..Limits::default()
+        };
+        assert_eq!(
+            deadlines_ms(&serre, Color::White).map(|d| d.hard),
+            Some(250)
+        );
+    }
+
+    #[test]
+    fn la_classe_de_stabilite_suit_les_bornes_de_la_sonde() {
+        // Les probabilités de `SOFT_PERMILLE` ont été mesurées par classe :
+        // déplacer une borne ferait appliquer à une classe la douce d'une
+        // autre, sans que rien d'autre ne bronche.
+        let classes: Vec<usize> = (1..=9).map(stability_class).collect();
+        assert_eq!(classes, [0, 1, 1, 2, 2, 2, 3, 3, 3]);
+        assert_eq!(stability_class(0), 0, "avant tout coup, rien n'est stable");
+        assert_eq!(stability_class(u32::MAX), 3);
+        // Plus le coup est stable, plus tôt tombe la douce.
+        assert!(SOFT_PERMILLE.windows(2).all(|w| w[0] > w[1]));
+        assert!(SOFT_PERMILLE[0] < HARD_PERCENT * 10);
+    }
+
+    #[test]
+    fn la_douce_en_vigueur_est_celle_de_la_stabilite_du_coup() {
+        // Seule la douce du coup qui vient de changer est dans le futur : la
+        // recherche doit continuer tant que le coup change, et s'arrêter à la
+        // PREMIÈRE itération qui le confirme. Si `iterate` ignorait la
+        // stabilité, ou ne la tenait plus à jour, elle irait au bout de la
+        // profondeur ; si elle la surestimait, elle s'arrêterait dès la
+        // première itération.
+        let position = Position::startpos();
+        let mut s = search();
+        s.started = Instant::now();
+        s.path = position.history().to_vec();
+        let passe = Instant::now() - Duration::from_secs(1);
+        let futur = Instant::now() + Duration::from_secs(3_600);
+        s.soft_deadlines = Some([futur, passe, passe, passe]);
+        let profondeur = 12;
+        let mut coups = Vec::new();
+        let mut a = vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES];
+        s.iterate(position.board(), profondeur, &mut a, &mut |info: &Info| {
+            coups.push(info.pv[0]);
+        });
+
+        assert!(
+            coups.len() >= 2,
+            "arrêtée avant de pouvoir confirmer un coup"
+        );
+        let dernier = coups.len() - 1;
+        for i in 1..dernier {
+            assert_ne!(
+                coups[i],
+                coups[i - 1],
+                "le coup était confirmé à l'itération {} et la recherche a continué",
+                i + 1
+            );
+        }
+        if coups.len() < profondeur as usize {
+            assert_eq!(
+                coups[dernier],
+                coups[dernier - 1],
+                "arrêtée sans que le coup soit confirmé"
+            );
+        }
+    }
+
+    #[test]
     fn lecheance_douce_precede_toujours_la_dure() {
         // Si la douce passait après la dure, elle ne se déclencherait jamais :
         // chaque itération irait au bout du budget et serait jetée, et le
@@ -3215,8 +4369,10 @@ mod tests {
             },
             Color::White,
         );
-        let (douce, dure) = (s.soft_deadline.unwrap(), s.hard_deadline.unwrap());
-        assert!(douce < dure, "l'échéance douce doit précéder la dure");
+        let (douces, dure) = (s.soft_deadlines.unwrap(), s.hard_deadline.unwrap());
+        for douce in douces {
+            assert!(douce < dure, "chaque échéance douce doit précéder la dure");
+        }
     }
 
     #[test]
@@ -3276,6 +4432,447 @@ mod tests {
             s.negamax(&pat, 3, 2, -INFINITY, INFINITY, &mut a),
             DRAW,
             "zéro coup sans échec est un pat, pas un mat"
+        );
+    }
+
+    /// C27 : ce qui est stocké dans la table reste dans ±MATE, même quand un
+    /// mat trouvé ailleurs fait hériter aux nœuds profonds une borne qu'ils ne
+    /// peuvent pas atteindre. Les Noirs, au trait, sont matés en un quoi
+    /// qu'ils jouent : la première réponse trouvée fait de `MATE - 2` l'alpha
+    /// des nœuds blancs du ply 3, où `MATE - 4` est le mieux atteignable, et
+    /// la quiescence rendait cette borne comme un score.
+    ///
+    /// Témoin, dans les deux profils : sans l'élagage par distance au mat, la
+    /// table porte −30 002 — en release la valeur est stockée telle quelle, en
+    /// debug l'assertion de `pack_data` panique. La position vient d'une
+    /// partie du générateur NNUE, dont les tests l'ont rencontrée.
+    #[test]
+    fn une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage() {
+        let mut s = search();
+        let position = Position::from_fen("5Q2/R4B1k/1p6/4P1pp/8/4K3/1BP3PP/8 b - - 0 34").unwrap();
+        let limits = Limits {
+            depth: Some(6),
+            ..Limits::default()
+        };
+        let mut last = None;
+        s.go(&position, &limits, |info| last = Some(info.score));
+        assert_eq!(last, Some(Score::Mate(-1)), "matés en un, quoi qu'on joue");
+        let stored = s.tt.max_abs_stored_score();
+        assert!(stored <= MATE, "score stocké hors de ±MATE : {stored}");
+    }
+
+    // Le test ci-dessus est une partie, et une partie ne voit que les bornes
+    // qu'elle traverse : le crible du 25 sept. 2026 laissait survivre sept
+    // mutants sur onze dans l'élagage par distance au mat. Les bornes se
+    // testent donc par leur valeur, et la garde de la racine par son effet.
+
+    #[test]
+    fn la_fenetre_ne_promet_que_le_mat_atteignable() {
+        // Au ply 3 : au pire maté ici même, au mieux matant au ply 4.
+        assert_eq!(
+            mate_distance_window(-INFINITY, INFINITY, 3),
+            (-MATE + 3, MATE - 4)
+        );
+        // Les deux bornes suivent le ply.
+        assert_eq!(
+            mate_distance_window(-INFINITY, INFINITY, 1),
+            (-MATE + 1, MATE - 2)
+        );
+        assert_eq!(
+            mate_distance_window(-INFINITY, INFINITY, 8),
+            (-MATE + 8, MATE - 9)
+        );
+        // Sans mat dans la fenêtre, rien ne bouge — c'est pourquoi le banc
+        // est identique au nœud près.
+        assert_eq!(mate_distance_window(-120, 350, 5), (-120, 350));
+    }
+
+    #[test]
+    fn a_la_racine_la_fenetre_n_est_jamais_bornee() {
+        // Une fenêtre au-dessus de tout mat atteignable : hors racine, le
+        // bornage la vide et `negamax` rend `alpha` sans rien chercher.
+        let b = board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        let mut temoin = search();
+        temoin.negamax(&b, 2, 1, MATE - 1, INFINITY, &mut ardoise());
+        assert_eq!(
+            temoin.nodes, 0,
+            "témoin : au ply 1, la fenêtre vide coupe tout"
+        );
+
+        // À la racine il faut un coup à jouer : la recherche a lieu.
+        let mut s = search();
+        s.negamax(&b, 2, 0, MATE - 1, INFINITY, &mut ardoise());
+        assert!(s.nodes > 0, "la racine n'a rien cherché");
+    }
+
+    // ---- Une nulle se détecte à l'intérieur ET à l'horizon (C22) ----
+    //
+    // Même leçon que le mat : deux branches, et un test qui n'en couvre
+    // qu'une laisse l'autre fausse sans bruit. Le test de nulle était placé
+    // APRÈS l'aiguillage vers la quiescence, donc invisible à `depth <= 0`.
+    // L'arbitre l'avait signalé des centaines de fois — « PV continues after
+    // threefold repetition » — et personne n'avait lu l'avertissement.
+    //
+    // Chaque test porte un TÉMOIN : la même position hors de la règle doit
+    // valoir autre chose que zéro. Sans lui, une position qui vaudrait déjà
+    // zéro ferait passer le test quelle que soit la branche empruntée — un
+    // test vrai qui ne mesure rien.
+
+    #[test]
+    fn une_repetition_se_voit_aussi_a_lhorizon() {
+        // Les blancs ont une dame de plus : la quiescence rend ~900, jamais 0.
+        let b = board("7k/8/8/8/8/8/8/1Q5K w - - 4 3");
+        let mut a = ardoise();
+
+        let mut temoin = search();
+        assert!(
+            temoin.negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a) > 500,
+            "témoin : sans répétition, la position ne vaut pas zéro"
+        );
+
+        // Le dernier élément du chemin est la position courante elle-même,
+        // comme dans la recherche, qui empile l'enfant avant de descendre.
+        let mut s = search();
+        s.path = vec![b.hash(), 0xAAAA, b.hash()];
+        assert_eq!(
+            s.negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "à l'horizon, une répétition est une nulle — pas une évaluation"
+        );
+        assert_eq!(
+            s.negamax(&b, 1, 1, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "à l'intérieur aussi, comme avant"
+        );
+    }
+
+    #[test]
+    fn la_regle_des_cinquante_coups_se_voit_aussi_a_lhorizon() {
+        let mut a = ardoise();
+        let temoin = board("7k/8/8/8/8/8/8/1Q5K w - - 99 80");
+        assert!(
+            search().negamax(&temoin, 0, 1, -INFINITY, INFINITY, &mut a) > 500,
+            "témoin : à 99 demi-coups, la partie continue"
+        );
+        let b = board("7k/8/8/8/8/8/8/1Q5K w - - 100 80");
+        assert_eq!(
+            search().negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "à 100 demi-coups, c'est nul — à l'horizon comme ailleurs"
+        );
+        assert_eq!(
+            search().negamax(&b, 2, 1, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "et à l'intérieur"
+        );
+    }
+
+    #[test]
+    fn un_mat_au_centieme_demi_coup_reste_un_mat() {
+        // Mat du couloir, donné au centième demi-coup. Le mat termine la
+        // partie à l'instant où il est donné ; la règle des cinquante coups
+        // demande qu'on la réclame. Rendre cette position nulle ferait jouer
+        // au moteur, du côté qui mate, un coup qu'il croirait sans valeur, et
+        // du côté maté, une ligne perdue qu'il croirait tenir.
+        let mut a = ardoise();
+        let mat = board("3R2k1/5ppp/8/8/8/8/5PPP/6K1 b - - 100 80");
+        assert_eq!(
+            search().negamax(&mat, 3, 2, -INFINITY, INFINITY, &mut a),
+            -MATE + 2,
+            "à l'intérieur, le mat l'emporte sur la règle des cinquante coups"
+        );
+        assert_eq!(
+            search().negamax(&mat, 0, 2, -INFINITY, INFINITY, &mut a),
+            -MATE + 2,
+            "à l'horizon aussi"
+        );
+
+        // Le contre-cas : en échec mais PAS mat — le roi s'échappe en g7.
+        // L'exception ne vaut que pour le mat ; ici la règle s'applique.
+        let echec = board("3R3k/7p/8/8/8/8/5PPP/6K1 b - - 100 80");
+        assert_eq!(
+            search().negamax(&echec, 3, 2, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "un simple échec ne suspend pas la règle des cinquante coups"
+        );
+    }
+
+    #[test]
+    fn un_echec_au_centieme_demi_coup_est_nul_meme_quand_la_parade_remet_la_pendule_a_zero() {
+        // Le contre-cas ci-dessus ne distingue pas « échec ET pas de coup »
+        // de « échec OU pas de coup » : son roi s'échappe par un coup
+        // tranquille, la pendule court encore, et la nulle arrive un ply plus
+        // tard — même score. Le balayage de mutation du 24 sept. 2026 l'a
+        // montré : `&&` en `||` dans `is_checkmate` survivait. Ici la seule
+        // parade est une PRISE, qui remet la pendule à zéro : sans la règle au
+        // nœud même, les noirs gagnent une tour. Position validée par
+        // exécution : un seul coup légal, d2d8.
+        let mut a = ardoise();
+        let temoin = board("3R3k/6pp/8/8/8/8/3r1PPP/6K1 b - - 99 80");
+        assert!(
+            search().negamax(&temoin, 3, 2, -INFINITY, INFINITY, &mut a) > 300,
+            "témoin : à 99 demi-coups, la prise de la tour gagne"
+        );
+        let b = board("3R3k/6pp/8/8/8/8/3r1PPP/6K1 b - - 100 80");
+        assert_eq!(
+            search().negamax(&b, 3, 2, -INFINITY, INFINITY, &mut a),
+            DRAW,
+            "en échec sans être mat, à 100 demi-coups, c'est nul — au nœud même"
+        );
+    }
+
+    #[test]
+    fn jamais_de_nulle_a_la_racine_meme_au_centieme_demi_coup() {
+        // Au centième demi-coup la position est nulle PAR RÈGLE — pour qui la
+        // réclame. À la racine, le moteur doit jouer : prendre la dame remet
+        // la pendule à zéro et gagne. Appliquer la règle à la racine rendrait
+        // une nulle sans coup, aucune itération ne s'achèverait, et `go`
+        // jouerait le premier coup légal venu. Le balayage de mutation du
+        // 24 sept. 2026 l'a montré : `ply > 0` en `ply >= 0` survivait.
+        // Position validée par exécution : 17 coups légaux, d1d5 gagne.
+        assert_eq!(best("4k3/8/8/3q4/8/8/8/3QK3 w - - 100 80", 3), "d1d5");
+
+        let position = Position::from_fen("4k3/8/8/3q4/8/8/8/3QK3 w - - 100 80").unwrap();
+        let limits = Limits {
+            depth: Some(3),
+            ..Limits::default()
+        };
+        let mut scores = Vec::new();
+        search().go(&position, &limits, |info| scores.push(info.score));
+        assert!(
+            matches!(scores.last(), Some(Score::Cp(cp)) if *cp > 500),
+            "la racine se cherche et rend le gain : {scores:?}"
+        );
+    }
+
+    #[test]
+    fn une_nulle_compte_pour_un_noeud() {
+        // Le test de nulle passe AVANT l'aiguillage vers la quiescence et
+        // avant l'incrément de `negamax`, qui comptent chacun leur nœud : sans
+        // le sien, une position nulle ne compterait plus du tout. Rien
+        // d'autre ne le voit — le banc à la profondeur 5 ne passe jamais par
+        // cette branche, et rend 31 637 nœuds avec ou sans l'incrément
+        // (mesuré le 24 sept. 2026). Or un nombre de nœuds est ce que lisent
+        // `go nodes`, le banc et chaque comparaison d'arbre de ce dépôt.
+        let b = board("7k/8/8/8/8/8/8/1Q5K w - - 4 3");
+        let mut a = ardoise();
+        for profondeur in [0, 1] {
+            let mut s = search();
+            s.path = vec![b.hash(), 0xAAAA, b.hash()];
+            assert_eq!(
+                s.negamax(&b, profondeur, 1, -INFINITY, INFINITY, &mut a),
+                DRAW
+            );
+            assert_eq!(
+                s.nodes(),
+                1,
+                "profondeur {profondeur} : une nulle est un nœud visité, ni plus ni moins"
+            );
+        }
+    }
+
+    // ---- Lazy SMP (B6) ----
+    //
+    // Plusieurs fils sont NON DÉTERMINISTES par nature : l'ordonnanceur
+    // décide qui écrit le premier dans la table. Ces tests n'assertent donc
+    // jamais un arbre ni un score, seulement ce qui doit tenir quel que soit
+    // l'ordre — un coup légal, un arrêt, un compte de nœuds. Avec un seul fil,
+    // le banc garde l'arbre au nœud près, comme avant.
+
+    #[test]
+    fn un_seul_fil_ne_cree_aucun_auxiliaire() {
+        let mut s = search();
+        assert_eq!((s.threads(), s.helpers.len()), (1, 0));
+
+        s.set_threads(3);
+        assert_eq!((s.threads(), s.helpers.len()), (3, 2));
+
+        s.set_threads(0);
+        assert_eq!((s.threads(), s.helpers.len()), (1, 0), "borné à un fil");
+
+        // La borne haute se vérifie sur la fonction pure : la traverser par
+        // `set_threads` créerait mille auxiliaires, ~345 Mio.
+        assert_eq!(thread_count(0), 1);
+        assert_eq!(thread_count(7), 7);
+        assert_eq!(thread_count(MAX_THREADS), MAX_THREADS);
+        assert_eq!(
+            thread_count(MAX_THREADS + 10),
+            MAX_THREADS,
+            "borné à MAX_THREADS"
+        );
+    }
+
+    #[test]
+    fn les_auxiliaires_partagent_la_table_meme_apres_un_redimensionnement() {
+        let mut s = search();
+        s.set_threads(3);
+        s.resize_table(1);
+        assert!(!s.is_helper);
+        for aux in &s.helpers {
+            assert!(aux.is_helper);
+            assert!(
+                Arc::ptr_eq(&aux.tt, &s.tt),
+                "un auxiliaire qui cherche dans sa propre table n'aide personne"
+            );
+            assert!(Arc::ptr_eq(&aux.published_nodes, &s.published_nodes));
+            assert!(Arc::ptr_eq(&aux.stop, &s.helper_stop));
+        }
+    }
+
+    #[test]
+    fn un_auxiliaire_publie_tous_ses_noeuds() {
+        // Appelé directement, sans fil : le compte est alors déterministe.
+        let mut s = search();
+        s.set_threads(2);
+        let mut aux = s.helpers.pop().unwrap();
+        let position = Position::startpos();
+
+        aux.search_as_helper(position.board(), position.history(), 4, None);
+
+        assert!(aux.nodes > 0);
+        assert_eq!(
+            s.published_nodes.load(Ordering::Relaxed),
+            aux.nodes,
+            "publié = visité, ni plus ni moins"
+        );
+        assert_eq!(s.nodes(), aux.nodes, "le total compte l'auxiliaire");
+        assert_eq!(
+            aux.nodes(),
+            aux.nodes,
+            "et l'auxiliaire ne se compte qu'une fois"
+        );
+    }
+
+    #[test]
+    fn le_fil_principal_publie_ses_noeuds_lui_aussi() {
+        // Sans quoi un auxiliaire tiendrait le budget sans compter les nœuds
+        // du fil principal. Un seul fil : le compte est déterministe.
+        let mut s = search();
+        let limits = Limits {
+            depth: Some(7),
+            ..Limits::default()
+        };
+        s.go(&Position::startpos(), &limits, |_| {});
+        assert!(
+            s.nodes > 4 * CHECK_INTERVAL,
+            "la recherche doit franchir plusieurs intervalles : {}",
+            s.nodes
+        );
+        assert!(
+            s.published + 2 * CHECK_INTERVAL > s.nodes,
+            "publié {} sur {}",
+            s.published,
+            s.nodes
+        );
+        assert_eq!(s.published_nodes.load(Ordering::Relaxed), s.published);
+        assert_eq!(s.nodes(), s.nodes, "un seul fil ne se compte qu'une fois");
+    }
+
+    #[test]
+    fn un_auxiliaire_tient_le_budget_sur_le_total_de_tous_les_fils() {
+        // Le défaut du 24 sept. 2026 : le budget n'était vérifié que par le
+        // fil principal. Privé de CPU, il laissait les auxiliaires chercher
+        // sans borne. Appelé ici sans fil, donc déterministe : les autres
+        // fils ont déjà publié 40 000 nœuds, et l'auxiliaire doit s'arrêter
+        // après les 10 000 qui restent — pas chercher ses neuf plis entiers.
+        let mut s = search();
+        s.set_threads(2);
+        let mut aux = s.helpers.pop().unwrap();
+        let position = Position::startpos();
+        s.published_nodes.store(40_000, Ordering::Relaxed);
+
+        aux.search_as_helper(position.board(), position.history(), 9, Some(50_000));
+
+        assert!(
+            (10_000..=10_001).contains(&aux.nodes),
+            "l'auxiliaire a cherché {} nœuds sur les 10 000 restants",
+            aux.nodes
+        );
+        assert_eq!(s.nodes(), 40_000 + aux.nodes);
+    }
+
+    #[test]
+    fn plusieurs_fils_rendent_un_coup_legal_et_comptent_tous_leurs_noeuds() {
+        let position = Position::startpos();
+        let mut s = search();
+        s.set_threads(3);
+        let limits = Limits {
+            depth: Some(6),
+            ..Limits::default()
+        };
+
+        let best = s.go(&position, &limits, |_| {}).unwrap();
+
+        assert!(position.board().is_legal(best));
+        // Toujours vrai, pas seulement probable : un auxiliaire ne regarde
+        // le drapeau d'arrêt que tous les `CHECK_INTERVAL` nœuds, donc il en
+        // visite au moins un même lancé après la fin de la recherche.
+        let aux = s.helpers.iter().map(|h| h.nodes).sum::<u64>();
+        assert!(aux > 0, "les auxiliaires n'ont rien cherché");
+        assert_eq!(
+            s.published_nodes.load(Ordering::Relaxed),
+            s.published + aux,
+            "chaque auxiliaire a publié son reste en finissant"
+        );
+        assert_eq!(s.nodes(), s.nodes + aux);
+    }
+
+    #[test]
+    fn larret_de_linterface_arrete_aussi_les_auxiliaires() {
+        let stop = Arc::new(AtomicBool::new(false));
+        let mut s = Search::new(Arc::clone(&stop));
+        s.set_threads(3);
+        let (tx, rx) = std::sync::mpsc::channel();
+        let fil = std::thread::spawn(move || {
+            let limits = Limits {
+                infinite: true,
+                ..Limits::default()
+            };
+            tx.send(s.go(&Position::startpos(), &limits, |_| {}))
+                .unwrap();
+        });
+
+        std::thread::sleep(Duration::from_millis(50));
+        stop.store(true, Ordering::Relaxed);
+
+        // Un délai et non un `join` nu : si un auxiliaire ne s'arrêtait pas,
+        // `go` ne rendrait jamais la main et le test pendrait au lieu
+        // d'échouer.
+        let best = rx
+            .recv_timeout(Duration::from_secs(20))
+            .unwrap_or_else(|_| {
+                panic!("la recherche ne rend pas la main : un auxiliaire tourne encore")
+            });
+        assert!(best.is_some());
+        fil.join().unwrap();
+    }
+
+    #[test]
+    fn le_budget_de_noeuds_compte_tous_les_fils() {
+        let mut s = search();
+        s.set_threads(3);
+        let budget = 50_000;
+        let limits = Limits {
+            nodes: Some(budget),
+            ..Limits::default()
+        };
+
+        s.go(&Position::startpos(), &limits, |_| {});
+
+        // Chaque fil s'arrête dès que ses propres nœuds et ceux que les autres
+        // ont publiés atteignent le budget. Ce qu'il ne voit pas, ce sont les
+        // nœuds non publiés des AUTRES : au plus deux intervalles chacun — la
+        // branche de nulle compte un nœud sans consulter le drapeau, et peut
+        // sauter un multiple. La borne ne dépend donc pas de l'ordonnancement,
+        // ce qui n'était pas le cas quand seul le fil principal tenait le
+        // budget : privé de CPU, il laissait les auxiliaires chercher sans
+        // limite. Compter la seule recherche principale rendrait environ
+        // trois fois le budget.
+        let marge = (3 - 1) * 2 * CHECK_INTERVAL;
+        assert!(
+            s.nodes() <= budget + marge,
+            "{} nœuds pour un budget de {budget}",
+            s.nodes()
         );
     }
 
@@ -3373,35 +4970,6 @@ mod see_pruning_tests {
 
     fn board(fen: &str) -> Board {
         fen.parse().unwrap()
-    }
-
-    /// Une marche déterministe depuis la position initiale.
-    ///
-    /// Les positions de `bench` ne sont pas un échantillon de jeu — le projet
-    /// l'a mesuré, un facteur 3 à 5 sur la fréquence d'un phénomène. Une marche
-    /// couvre l'ouverture, le milieu et la finale, et le xorshift la rend
-    /// rejouable : un échec se reproduit à l'identique.
-    fn marche(parties: u32, plis: u32, mut visiter: impl FnMut(&Board)) {
-        for graine in 1..=parties {
-            let mut etat = (u64::from(graine) * 2_654_435_761) | 1;
-            let mut board = Board::default();
-            for _ in 0..plis {
-                let mut coups = Vec::new();
-                board.generate_moves(|set| {
-                    coups.extend(set);
-                    false
-                });
-                if coups.is_empty() {
-                    break;
-                }
-                visiter(&board);
-                etat ^= etat << 13;
-                etat ^= etat >> 7;
-                etat ^= etat << 17;
-                let mv = coups[(etat as usize) % coups.len()];
-                board.play_unchecked(mv);
-            }
-        }
     }
 
     /// L'économie de `may_lose_material` ne doit jamais coûter un élagage.
@@ -3535,5 +5103,242 @@ mod see_pruning_tests {
         let egale = parse_uci_move(&b, "e4d5").unwrap();
         assert_eq!(see::see(&b, egale), 0);
         assert!(!see_prunable(&b, egale, false));
+    }
+}
+
+#[cfg(test)]
+#[expect(clippy::unwrap_used, reason = "un test doit échouer bruyamment")]
+mod move_picker_tests {
+    use super::*;
+    use cozy_chess::util::parse_uci_move;
+
+    fn board(fen: &str) -> Board {
+        fen.parse().unwrap()
+    }
+
+    fn search() -> Search {
+        Search::new(Arc::new(AtomicBool::new(false)))
+    }
+
+    fn legal_moves(board: &Board) -> Vec<Move> {
+        let mut moves = Vec::new();
+        board.generate_moves(|set| {
+            moves.extend(set);
+            false
+        });
+        moves
+    }
+
+    /// Le contraire exact de `quiet` dans `negamax`.
+    fn changes_material(board: &Board, mv: Move) -> bool {
+        captured_piece(board, mv).is_some() || mv.promotion.is_some()
+    }
+
+    /// Tous les coups que rend le sélecteur, dans l'ordre.
+    fn picked(
+        search: &Search,
+        board: &Board,
+        tt_move: Option<Move>,
+        killers: [u16; 2],
+    ) -> Vec<Move> {
+        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+        let mut picker = MovePicker::new(&mut buffer, tt_move, killers, NO_CONTEXT);
+        let mut moves = Vec::new();
+        while let Some(mv) = picker.next_move(search, board) {
+            moves.push(mv);
+            assert!(moves.len() <= MAX_MOVES, "le sélecteur ne termine pas");
+        }
+        moves
+    }
+
+    /// Les positions où le partage se trompe le plus facilement.
+    const PIEGES: [&str; 6] = [
+        // Un CAVALIER atteint la case de prise en passant : Cd6+ ne prend
+        // rien. L'ancien filtre de la quiescence le comptait comme capture.
+        "rnbqkbnr/1pp1pppp/p7/3p4/4N3/8/PPPPPPPP/R1BQKBNR w KQkq d6 0 3",
+        // Une vraie prise en passant, sur une case vide.
+        "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",
+        // Côté noir : prise en passant, un FOU qui atteint la case, et une
+        // promotion avec et sans capture.
+        "4k3/8/8/6b1/3pP3/8/6p1/4K2R b K e3 0 1",
+        // Promotions blanches avec et sans capture, et les deux roques.
+        "r3k2r/1P4P1/8/8/8/8/8/R3K2R w KQkq - 0 1",
+        // Échec : parades par capture, interposition et fuite.
+        "rnbqkbnr/ppp2ppp/8/1B1pp3/4P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 3",
+        // Échec double : seul le roi bouge.
+        "4k3/8/8/4r3/8/3n4/8/4K3 w - - 0 1",
+    ];
+
+    /// Chaque position de `PIEGES`, puis toute une marche seedée.
+    fn partout(mut visiter: impl FnMut(&Board)) {
+        for fen in PIEGES {
+            visiter(&board(fen));
+        }
+        marche(60, 80, visiter);
+    }
+
+    #[test]
+    fn le_partage_tactique_est_exact() {
+        // Le témoin : l'ancien filtre donnait ce coup tactique.
+        let b = board(PIEGES[0]);
+        let cavalier = parse_uci_move(&b, "e4d6").unwrap();
+        assert!(legal_moves(&b).contains(&cavalier));
+        assert!(!changes_material(&b, cavalier));
+
+        let s = search();
+        let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+        partout(|b| {
+            let count = s.stage_moves(b, true, &[], &mut buffer, NO_CONTEXT);
+            let tactiques: Vec<Move> = buffer[..count].iter().map(|&(mv, _)| mv).collect();
+            let count = s.stage_moves(b, false, &[], &mut buffer, NO_CONTEXT);
+            let tranquilles: Vec<Move> = buffer[..count].iter().map(|&(mv, _)| mv).collect();
+            let legaux = legal_moves(b);
+            assert_eq!(tactiques.len() + tranquilles.len(), legaux.len(), "{b}");
+            for mv in legaux {
+                let attendu = changes_material(b, mv);
+                assert_eq!(tactiques.contains(&mv), attendu, "{b} : {mv}");
+                assert_eq!(tranquilles.contains(&mv), !attendu, "{b} : {mv}");
+            }
+        });
+    }
+
+    /// Les configurations de coup de table et de killers éprouvées sur
+    /// chaque position — dont les trois où un killer ne doit PAS être rendu
+    /// par son étage : il capture ici, il est le coup de la table, ou il est
+    /// illégal ici. Un killer vient d'une autre position au même ply.
+    fn configurations(b: &Board) -> Vec<(Option<Move>, [u16; 2])> {
+        let legaux = legal_moves(b);
+        let tranquilles: Vec<Move> = legaux
+            .iter()
+            .copied()
+            .filter(|&mv| !changes_material(b, mv))
+            .collect();
+        let tactiques: Vec<Move> = legaux
+            .iter()
+            .copied()
+            .filter(|&mv| changes_material(b, mv))
+            .collect();
+        let q = |i: usize| tranquilles.get(i).copied();
+        let t = |i: usize| tactiques.get(i).copied();
+        let pack = |mv: Option<Move>| mv.map_or(0, pack_move);
+        // D'une case vide : illégal dans toute position.
+        let vide = Square::ALL
+            .into_iter()
+            .find(|&square| b.piece_on(square).is_none())
+            .unwrap();
+        let illegal = Move {
+            from: vide,
+            to: if vide == Square::H8 {
+                Square::A1
+            } else {
+                Square::H8
+            },
+            promotion: None,
+        };
+        vec![
+            (None, [0, 0]),
+            (q(0), [pack(q(1)), pack(q(2))]),
+            (t(0), [pack(t(1)), pack(q(0))]),
+            (q(0), [pack(q(0)), pack(q(1))]),
+            (None, [pack(Some(illegal)), pack(q(3))]),
+        ]
+    }
+
+    #[test]
+    fn chaque_coup_legal_est_rendu_exactement_une_fois() {
+        let s = search();
+        let mut cas = 0u32;
+        partout(|b| {
+            let mut attendus = legal_moves(b);
+            attendus.sort_by_key(|&mv| pack_move(mv));
+            for (tt_move, killers) in configurations(b) {
+                let mut rendus = picked(&s, b, tt_move, killers);
+                rendus.sort_by_key(|&mv| pack_move(mv));
+                assert_eq!(
+                    rendus, attendus,
+                    "{b}, table {tt_move:?}, killers {killers:?}"
+                );
+                cas += 1;
+            }
+        });
+        assert!(cas > 10_000, "la marche doit couvrir assez de cas : {cas}");
+    }
+
+    #[test]
+    fn les_etages_rendent_leurs_coups_dans_lordre() {
+        // Coup de la table, tactiques par MVV-LVA décroissant, killers dans
+        // l'ordre de leurs emplacements, tranquilles par historique
+        // décroissant — et jamais un coup tactique après un tranquille, ce
+        // qui rend licite le `break` de l'élagage par compte de coups.
+        let mut s = search();
+        for (index, value) in s.history.iter_mut().enumerate() {
+            *value = i32::try_from(index * 7_919 % 1_000).unwrap();
+        }
+        partout(|b| {
+            for (tt_move, killers) in configurations(b) {
+                let rendus = picked(&s, b, tt_move, killers);
+                let mut i = 0;
+                if let Some(tt) = tt_move {
+                    assert_eq!(rendus[0], tt, "{b}");
+                    i = 1;
+                }
+                let mut precedente = i32::MAX;
+                while i < rendus.len() && changes_material(b, rendus[i]) {
+                    let note = tactical_score(b, rendus[i]);
+                    assert!(note <= precedente, "{b} : tactiques hors d'ordre");
+                    precedente = note;
+                    i += 1;
+                }
+                for killer in killers.map(unpack_move).into_iter().flatten() {
+                    if Some(killer) != tt_move && !changes_material(b, killer) && b.is_legal(killer)
+                    {
+                        assert_eq!(rendus[i], killer, "{b} : killer attendu");
+                        i += 1;
+                    }
+                }
+                let mut precedente = i32::MAX;
+                for &mv in &rendus[i..] {
+                    assert!(
+                        !changes_material(b, mv),
+                        "{b} : {mv} tactique après les tranquilles"
+                    );
+                    let note = s.history_score(mv);
+                    assert!(note <= precedente, "{b} : tranquilles hors d'ordre");
+                    precedente = note;
+                }
+            }
+        });
+    }
+
+    #[test]
+    fn un_killer_qui_capture_ici_nest_rendu_quune_fois() {
+        // Tranquille là où il a coupé, il capture ici : l'étage tactique le
+        // rend, celui des killers ne doit pas le rendre une seconde fois.
+        let b = board("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
+        let prise = parse_uci_move(&b, "e4d5").unwrap();
+        let rendus = picked(&search(), &b, None, [pack_move(prise), 0]);
+        assert_eq!(rendus.iter().filter(|&&mv| mv == prise).count(), 1);
+    }
+
+    #[test]
+    fn une_coupure_sur_le_premier_coup_nest_pas_un_mat() {
+        // `negamax` décide « aucun coup légal » APRÈS la boucle, sur le compte
+        // des coups rendus. Compté après la coupure, ce compte vaudrait zéro
+        // quand le premier coup coupe — et un roi en échec qui prend la dame
+        // adverse serait déclaré mat.
+        let b = board("4k3/8/8/8/8/8/3q4/R3K3 w - - 0 1");
+        let mut s = search();
+        let score = s.negamax(
+            &b,
+            2,
+            1,
+            99,
+            100,
+            &mut vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
+        );
+        assert!(
+            (100..MATE_THRESHOLD).contains(&score),
+            "Rxd2 gagne une tour d'avance, la recherche a rendu {score}"
+        );
     }
 }

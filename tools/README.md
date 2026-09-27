@@ -253,8 +253,8 @@ sur douze positions de vraies parties :
 
 ## Ce que `tools/src/bin/` contient
 
-Six binaires, tous hors ligne : aucun n'est appelé par le moteur, et aucun ne
-change sa force. Ils sont nommés ici **avec leur extension**, parce que c'est
+Tous hors ligne : aucun n'est appelé par le moteur, et aucun ne change sa
+force. Leur compte n'est pas écrit : il vit dans la table. Ils sont nommés ici **avec leur extension**, parce que c'est
 ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 
 | binaire | ce qu'il fait |
@@ -263,6 +263,7 @@ ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 | `datagen.rs` | produit le corpus `FEN;résultat` de l'ajustement Texel, étiqueté par le **résultat de la partie** et jamais par le score de l'évaluation. Sert aussi à tirer des positions de vraies parties pour toute sonde |
 | `tune.rs` | l'ajustement Texel lui-même. Son verdict a été **rejeté** (−9,96 Elo) ; l'outil reste parce qu'il resservira avec un corpus plus grand |
 | `nnue_probe.rs` | le benchmark obligatoire de B4 : ce que coûtent le copy-make (7,2 %) et la dérivation du delta d'accumulateur NNUE (2,8 %) en part du temps d'un nœud |
+| `nnue_datagen.rs` | les données d'entraînement NNUE (A21) : parties d'auto-jeu à nœuds fixes, au format `viriformat` que lit bullet, **écrit par la crate de référence** et jamais réimplémenté. Lancé sur runner par `.github/workflows/nnue-datagen.yml`, un artefact par job |
 | `see_check.rs` | confronte l'échange statique à un oracle par force brute. Il a trouvé un **bug du manuel** au premier passage — 27 valeurs fausses sur 771 |
 | `attack_dump.rs` | confronte la géométrie d'attaque de `see::least_valuable_attacker` à `python-chess`, case par case |
 
@@ -523,6 +524,16 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-22 | **D5 — retrait de l'élagage delta, à `8+0,08`** | **PAS DE VERDICT — SPRT tué par le plafond du job** à 3 738 parties. Retrait : **−1,49 Elo ± 7,83**, IC `[−9,3 ; +6,3]`, 49,79 % de score, **LLR 0,06 sur ±2,94**, Ptnml [141, 373, 851, 369, 135]. [run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914), candidat `cbaa8d4` contre `a57c835`, bornes `[-5, 0]`, graine 20260913. Étalonnage : **2 324 708 n/s, profondeur 12**. **Ne pas lire comme un verdict** : un SPRT arrêté par l'horloge est conditionné à n'avoir pas touché ses bornes, donc biaisé vers zéro. Ce qui est établi, c'est que l'effet n'a **rien à voir avec les +32,5 Elo** du verdict de `1+0,01` — celui-là aurait tranché vers 1 825 parties. L'élagage **reste dans `main`**. Banc du candidat : 138 458 nœuds (× 1,21). |
 | 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
 | 2026-09-23 | **C21 — défaut de `movestogo` de 30 à 12, à `8+0,08`** | **+19,13 Elo ± 6,31** sur 6 000 parties à longueur fixe, deux matchs mis en commun, zéro perte au temps. **Fusionné.** Le SPRT qui l'avait précédé avait expiré à +14,59 ± 8,31 — un minorant, et c'en était un. Section « C21 — VERDICT ». |
+| 2026-09-24 | **C22 sur C23 — le test de nulle avant la quiescence, sans les fausses nulles, à `8+0,08`** | **+3,98 ± 6,26** en commun sur 5 758 parties — mais deux matchs hétérogènes, **+10,86 ± 8,91** et **−2,90 ± 8,80** (z = 2,15, runners étalonnés à 0,3 % près). Aucune borne haute sous zéro dans aucune lecture : **FUSIONNÉ au titre de la règle**, aucun gain revendiqué. Avertissements « PV continues after » : 85 et 94 à la référence, 4 et 3 au candidat. Section « C22 sur C23 — VERDICT ». |
+| 2026-09-24 | **Calibration — un doublement de temps, même binaire, `16+0,16` contre `8+0,08`** | **+107,74 Elo ± 8,19** sur 3 800 parties à longueur fixe (deux matchs homogènes, z = 0,19 ; +108,54 et +106,94), zéro anomalie ; **+1,38 ± 0,28 pli** en partie (sonde de 100 parties). **Soit 60 à 105 Elo par pli** à `8+0,08`, bornes croisées. Étalonnages : EPYC 7763 2 192 324 n/s et EPYC 9V74 2 020 660 n/s, profondeur 12 |
+| 2026-09-24 | **B6 — Lazy SMP, deux fils contre un, même binaire (`65d0b03`), à `8+0,08`** | **+42,16 Elo ± 9,23** sur 2 700 parties à longueur fixe — trois matchs homogènes (+35,64, +49,36, +41,50 ; \|z\| ≤ 1,19), une partie à la fois, zéro anomalie — **contre notre jumeau monofil**. Borne basse > 0 : **deux fils rapportent**, sur le critère écrit avant, et dans l'attendu écrit avant les matchs (+24 à +59). Converti par l'étalon : **0,31 à 0,86 pli** ; la sonde en mesurait +0,48 ± 0,08 en partie |
+| 2026-09-24 | **A18 — génération par étapes (`087edb8`) contre son parent (`d01183d`), à `8+0,08`** | **+23,10 Elo ± 6,39** sur 5 740 parties à longueur fixe — deux matchs homogènes (+27,81 et +18,36 ; z = 1,45), zéro anomalie. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant, au haut de l'attendu écrit avant (+6 à +25). La sonde en mesurait n/s × 1,09 et +0,17 ± 0,07 pli : **70 à 295 Elo par pli**, bornes croisées |
+| 2026-09-24 | **C24 — laisser finir l'itération entamée (`7274844`) contre son parent (`7fc5959`), à `8+0,08`** | **+44,64 Elo ± 6,24** sur 5 760 parties à longueur fixe — deux matchs homogènes (+45,01 et +44,27 ; z = 0,12), deux runners différents, zéro anomalie. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant. **Profondeur moyenne inchangée** (sonde : −0,00 ± 0,09 pli) : des deux lectures écrites avant le match, celle des plis moyens (+2 à +7) tombe, celle de l'accord avec l'oracle (+39 à +68) tient |
+| 2026-09-24 | **C25 — une échéance douce par stabilité du coup, la dure à 3 budgets (`41d590f`), contre son parent (`910a6c9`), à `8+0,08`** | **+7,87 Elo ± 6,08** sur 5 740 parties à longueur fixe — deux matchs homogènes (+8,45 et +7,29 ; z = 0,19), deux runners différents, zéro perte au temps. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant. **Sous l'attendu** (+12 à +25, converti au taux de C24) : **22 à 46 Elo par pli d'accord** au point, contre ~69 pour C24 — l'écran surestime davantage une règle qui cible les coups instables, ce que sa réserve disait |
+| 2026-09-25 | **C26 — la dure bornée à l'approche d'un contrôle annoncé (`6daf7d7`) contre son parent (`4620495`), à `40/8`** | **+2,43 Elo ± 6,01** sur 6 000 parties à longueur fixe — deux matchs homogènes (+4,98 et −0,12 ; z = 0,83), zéro perte au temps. **Correctif** : aucune borne haute sous zéro, **FUSIONNÉ au titre de la règle** — le mécanisme mesuré en partie (5,3 % de cycles affamés avant, aucun après), dans l'attendu écrit avant (0 à +5), sous la puissance dite d'avance (± 6). Première mesure du projet à une cadence à coups comptés ; sans `movestogo`, rien ne change |
+| 2026-09-25 | **A20 — l'historique de continuation, conservé d'un coup à l'autre (`54e6c60`), contre son parent (`a08af76`), à `8+0,08`** | **+12,56 Elo ± 4,35** sur 11 620 parties à longueur fixe — quatre matchs homogènes (+14,26, +11,75, +15,83, +8,45 ; plus grand écart z = 1,17), deux Xeon 8370C et deux EPYC 7763, profondeur 12 partout, zéro perte au temps. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant, dans l'attendu écrit avant (0 à +15) et **au-dessus de ce que l'arbre seul promettait** (+4 à +7, pour −3,1 % de nœuds) : le canal des décisions est positif. Première mesure du projet à quatre jobs, sur une puissance calculée avant |
+| 2026-09-25 | **C27 — l'élagage par distance au mat (`bb6e4c0`) contre son parent (`3aa5986`), à `8+0,08`** | **−3,56 Elo ± 5,97** sur 5 760 parties à longueur fixe — deux matchs homogènes (−1,92 et −5,22 ; z = 0,54), zéro perte au temps. **Correctif** : aucune borne haute sous zéro (+2,41 en commun, +6,24 et +3,50 par match), **FUSIONNÉ au titre de la règle** — le mécanisme mesuré en partie (1,82 % des recherches stockaient un score hors de ±MATE), l'attendu écrit avant (0 à +3) dans l'intervalle, sous la puissance dite d'avance (± 6) |
+| 2026-09-23 | **Vol de CPU du ponder sur runner — deux sondes de 60 parties, à `8+0,08`** | **r = 0,948** (rapport des n/s 0,950 en ponder, 1,002 au témoin) ≥ 0,93 : **le verdict du ponder tient**, sur la règle écrite avant. Vol estimé 3 à 5 % de vitesse, 3 à 10 Elo des +67,63. **Topologie : 2 cœurs physiques, 2 fils par cœur (AMD EPYC 7763)**. [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290), [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087). Section « Vol de CPU du ponder sur runner — VERDICT ». |
 | 2026-09-23 | **C22 — le test de nulle avant l'aiguillage vers la quiescence, à `8+0,08`** | **−10,44 Elo ± 6,34** sur 5 760 parties — **régression, non fusionné**, arrêté par son critère écrit avant. 92 % des nulles qu'il ajoutait à l'horizon étaient fausses (C23) : **remesuré sur C23, en vol**. Section « C22 — VERDICT ». |
 | 2026-09-23 | **B9 — effet de capacité de la table à entrées atomiques, à `8+0,08`** | **−1,27 Elo ± 6,34** sur 5 740 parties — pas d'effet décelable. **Fusionné au titre de l'infrastructure** (la table se partage entre fils ; −4,3 % de temps déjà prouvé). Section « B9 — VERDICT ». |
 | 2026-09-23 | **Ponder activé pour un seul camp, même binaire, à `8+0,08`** | **+67,63 Elo ± 9,19** sur 2 700 parties (cutechess, une partie à la fois), zéro anomalie — **contre notre jumeau**, donc un chiffre qui appartient à son adversaire. Le ponder reste désactivé par défaut ; l'interface l'active. Section « Ponder — VERDICT ». |
@@ -710,14 +721,44 @@ dernière relève est faite.
 | ponder activé | 35866707040, 35866710329, 35866713797 | `136dda4` des deux côtés, `ponder = candidat` | 3 × 900, cutechess, une partie à la fois | **RELEVÉ** — finis entiers entre 18 h 37 et 18 h 40 | **+67,63 ± 9,19 contre notre jumeau : l'activer rapporte** — 2,7 × l'attendu, l'écart localisé par sonde (sa section) |
 | C23 — la fenêtre au dernier coup nul | 35870416179, 35870420031 | `3236f12` → `0c29d6b` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 19 h 45, 2 × 2 880 parties | **+2,65 ± 6,40 : pas d'effet décelable, FUSIONNÉ** au titre de la règle (`25fd727`) |
 | balayage de mutation après le ponder | 35867704624 | `main` à `0c29d6b` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 20** | `search.rs` 46 contre 45 : trois survivants dans la garde de `ponder_move`, tués par un test (PR #50) ; plafond laissé à 45 — 47 expirés dans ce balayage. `uci.rs` à 0. Issue #49 fermée |
-| C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | plafond vers 01 h 50 le 24 — ~2 880 parties chacun | fusion sauf régression — correctif de règle, même critère que C22 |
-| balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | ~21 h — `search.rs` et `eval.rs` encore en cours à 20 h 30 | `tt.rs` **rendu : 6**, exactement la prédiction (les quatre `\|` de `pack_data` et les deux de `pack_move`) → plafond à baisser de 8 à 6. `search.rs` touché par C23 : à lire |
+| C22 sur C23 — la nulle à l'horizon, sans les fausses nulles | 35912945157, 35912948746 | `cd45ffa` → `1eec468` | 2 × 3000, fastchess | **RELEVÉ** — coupés par le plafond à 01 h 49, 2 880 + 2 878 parties | **+10,86 et −2,90, hétérogènes (z = 2,15) ; aucune borne haute sous zéro : FUSIONNÉ au titre de la règle** |
+| **vol de CPU du ponder sur runner** — deux sondes | **35933841290** (`ponder = candidat`), **35933844087** (témoin) | `2f3bf1a` des deux côtés, `8+0,08`, 60 parties chacune, une à la fois | cutechess, sonde | **RELEVÉ** — finies à 23 h 53 et 23 h 55 | **r = 0,948 ≥ 0,93 : le verdict du ponder tient.** Et les runners n'ont que **deux cœurs physiques** (SMT) — voir son verdict |
+| calibrer l'Elo par pli — deux matchs et une sonde | matchs d'Elo : 35933846266, 35933847908 ; sonde de plis : 35933850590 | `2f3bf1a` des deux côtés ; candidat `16+0,16`, référence `8+0,08` : 2 × 1 900 parties et une sonde de 100 parties | fastchess ; cutechess pour la sonde | **RELEVÉ** — sonde à 00 h 27, matchs finis entiers à 05 h 11 et 05 h 12 | **+107,74 ± 8,19 Elo et +1,38 ± 0,28 pli pour un doublement : 60 à 105 Elo par pli.** L'attendu écrit avant tient (section de son verdict) |
+| **B6 — la sonde à deux fils** | 35947696926 | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, 60 parties, une à la fois | cutechess, sonde | **RELEVÉE à 02 h 58** | **+0,48 ± 0,08 pli, n/s × 2,05** : dans l'attendu, chaque fil a son cœur — le match d'Elo est lancé (section B6) |
+| **B6 — l'Elo à deux fils** | **35949564324, 35949565830, 35949567986** | `65d0b03` des deux côtés, 2 fils contre 1, `8+0,08`, graine « auto » | 3 × 900, fastchess, une partie à la fois | **RELEVÉ** — finis entiers entre 08 h 26 et 08 h 28 | **+42,16 ± 9,23 en commun, homogènes : deux fils rapportent** (section B6). 0,31 à 0,86 pli par l'étalon |
+| **A18 — génération par étapes, la sonde** | 35971800328 | `087edb8` → `d01183d`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | **RELEVÉE à 08 h 29** | **n/s × 1,09, +0,17 ± 0,07 pli** : dans l'attendu, la règle lance l'Elo (section A18) |
+| **A18 — l'Elo** | 35975781390, 35975784326 | `087edb8` → `d01183d`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 14 h 22, 2 880 + 2 860 parties | **+23,10 ± 6,39, homogènes : gain démontré, FUSIONNÉ** (section A18) |
+| **C25 — la répartition par la stabilité, la sonde** | 36030127970 | `41d590f` → `910a6c9`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | **RELEVÉE à 17 h 32** | **Temps × 0,98, zéro perte au temps** : la règle lance l'Elo. Plis −0,20 ± 0,07, ce que l'écran prédisait (−0,16) — plus un critère (section C25) |
+| **C25 — l'Elo** | **36035213241, 36035217166** | `41d590f` → `910a6c9`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 23 h 24, 2 880 + 2 860 parties | **+7,87 ± 6,08, homogènes, zéro perte au temps : gain démontré, FUSIONNÉ** (section C25). Sous l'attendu (+12 à +25) : le taux de C24 ne se transfère qu'aux extrêmes, comme sa réserve le disait. Crible au candidat : la prédiction tient, rien de neuf dans `search.rs` |
+| **balayage de mutation après la PR #82** — C26 fusionné | 36103336914 | `main` à `32a0954` | un job par fichier, puis `Verdict` | **RELEVÉ à 08 h 12, VERT** — `search.rs` le plus long, 90 min : 416 attrapés, 48 expirés | **La prédiction tient, exactement** : `search.rs` **39**, et la liste des survivants est identique à celle d'après la PR #81, ligne pour ligne ; les cinq mutants neufs de C26 sont attrapés, un expiré de moins. Tous les autres fichiers à leur plafond, total **139**. Aucune issue. — *Prédiction, écrite avant* : `search.rs` **39**, au plafond, les mêmes survivants un pour un — le crible au candidat n'a trouvé aucun survivant dans `deadlines_ms`, et C26 ne déplace aucun arbre à profondeur fixe ; le compte d'expirés peut bouger avec la charge du runner — les cinq mutants neufs n'en produisent aucun au crible. Tous les autres fichiers à leur plafond, total **139** |
+| **C26 — les deux sondes, dans le conteneur** | — | `main` avec C25, puis le candidat `6daf7d7`, chacun contre lui-même, `40/8`, 60 parties, `-srand 20260925` | cutechess, `-debug all` | **RELEVÉES à 23 h 47 et 23 h 58** | **5,3 % de cycles affamés avant, aucun après** ; aucun coup au-delà de sa borne de plus de 10 ms ; zéro perte au temps des deux côtés — le match se lance (section C26) |
+| **C26 — l'Elo à `40/8`** | 36075386225, 36075388587 | `6daf7d7` → `4620495`, `40/8`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — finis entiers à 05 h 24 et 05 h 28, 2 × 3 000 parties, 6,5 s par partie | **+2,43 ± 6,01, homogènes (z = 0,83), zéro perte au temps : aucune borne haute sous zéro, FUSIONNÉ au titre de la règle** (section C26) |
+| **A20 — l'écran et le rejeu, dans le conteneur** | — | `main` sondé contre lui-même, `8+0,08`, 120 parties, `-srand 20260925` ; puis cinq variantes rejouées à la profondeur 10 sur deux flux | cutechess, `-debug all` ; `rejouer-profondeur.py` | **RELEVÉS à 07 h 43 et 07 h 47** | union de l'étage tranquille **10,9 %** des nœuds, 0,23 pli au plus ; une seule variante réduit l'arbre, **la continuation conservée, −3,1 %** (section A20) |
+| **A20 — l'Elo de la continuation** | **36110519468, 36110522377, 36110524982, 36110528007** | `54e6c60` → `a08af76`, `8+0,08`, graine « auto » | 4 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond vers 13 h 50, 2 900, 2 900, 2 900 et 2 920 parties | **+12,56 ± 4,35 en commun, homogènes (z ≤ 1,17), zéro perte au temps : gain démontré, FUSIONNÉ** (section A20) — au-dessus de ce que l'arbre seul promettait. — *Attendu, écrit avant* : 0 à +15, dont +4 à +7 par l'arbre seul. **Critère de gain** : fusion si la borne basse commune est au-dessus de zéro ; +5 y serait démontré 64 fois sur 100, +8 96 fois sur 100 |
+| **A20 — le crible de mutation au candidat** | <s>—</s> **36114952595** | `54e6c60`, `search.rs` entier, 570 mutants — et les huit autres fichiers | <s>`tools/mutants.sh`, dans le conteneur</s> **`Mutation`, entrée `commit`, sur runner** | <s>lancé à 08 h 01, fin vers 09 h</s> **mort dans le conteneur à 57 mutants sur 570**, au redémarrage de 08 h 11 — la règle « une mesure longue ne survit pas dans le conteneur », enfreinte faute d'outil ; **relancé sur runner à 08 h 48** — extraction du candidat vérifiée au journal — **RELEVÉ à 10 h 25, VERT** | **La prédiction tient, au bas de sa fourchette** : `search.rs` **39**, et ce sont les MÊMES survivants que sur `main`, un pour un, décalés de lignes par le code neuf ; aucun mutant du code neuf ne survit, et l'arbre neuf ne cache aucun ancien mutant au banc figé. Tous les autres fichiers à leur plafond, total **139**. — *Prédiction, écrite avant* : 39, au plafond, les mêmes ; jusqu'à 43 si l'arbre neuf cache d'anciens mutants au banc figé. Les 57 premiers dans le conteneur : un survivant, l'ancien de `Score::from_internal` |
+| **C27 — l'élagage par distance au mat, l'Elo** | 36166287710, 36166290276 | `bb6e4c0` → `3aa5986`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 23 h 08, 2 900 + 2 860 parties | **−3,56 ± 5,97 en commun, homogènes (z = 0,54), zéro perte au temps : aucune borne haute sous zéro, FUSIONNÉ au titre de la règle** (section C27). Étalonnages 4 019 409 et 2 199 922 n/s : 83 % d'écart, le plus grand relevé. — *Critère, écrit avant* : fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match |
+| **C27 — le crible du code neuf, dans le conteneur** | — | la révocation de la révocation, puis l'extraction de `mate_distance_window` | `tools/mutants.sh --in-diff` | **RELEVÉS à 23 h 25 et 23 h 30** | **7 survivants sur 11** dans le bornage, puis **22 attrapés sur 23, un expiré** — bornes extraites en fonction pure, deux tests neufs (section C27) |
+| **balayage de mutation après la fusion de C27** | 36201927482 | `main` à `70522b7` | un job par fichier, puis `Verdict` | **RELEVÉ le 26 sept. à 01 h 20, VERT** — `search.rs` le plus long, 95 min : 483 attrapés, 40 expirés, 28 inviables | **Les survivants tiennent la prédiction, un pour un** : `search.rs` **39**, les mêmes que 36145534414, aux mêmes colonnes, décalés de 23 lignes au-delà du bornage ; aucun dans le code neuf. Tous les fichiers à leur plafond, total **139**, aucune issue. **Les expirés, non** : 40 contre 43 prédits — le crible donnait aux vingt mutants neufs 19 attrapés et un expiré, donc trois mutants qui expiraient la veille sont attrapés cette fois ; le compte d'expirés suit la charge du runner, et la prédiction aurait dû le dire comme les précédentes. — *Prédiction, écrite avant* : `search.rs` **39**, les MÊMES survivants que 36145534414, un pour un ; un expiré de plus, `alpha >= beta` en `<` ; `tt.rs` **6** ; tous les autres à leur plafond, total **139** |
+| **A21 — le débit de génération sur runner** | 36166785450 | le générateur de `main` à `0eb1e9b`, 5 000 nœuds, graine « auto », un fil par processeur logique | un job court, 20 minutes | **RELEVÉ** — fini à 17 h 43 | **1 713 positions par seconde, dans l'attendu** (1 200 à 1 800, écrit avant) : 17 976 parties, 2 055 456 positions, 62,2 % gardées par le filtre par défaut ; artefact de 7,4 Mo, expire le 24 déc. **Il ne se relit pas d'ici** : le proxy de sortie refuse le stockage des artefacts. Décide quatre jobs (section A21) |
+| **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
+| **balayage de mutation après la PR #83** — A20 fusionné | **36145534414** | `main` à `d23d1b5` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 40, VERT** — `search.rs` le plus long, 71 min : 461 attrapés, 42 expirés | **La prédiction tient, exactement — jusqu'aux expirés** : `search.rs` **39**, les mêmes survivants que le crible au candidat, un pour un, aux mêmes lignes ; et le tableau entier du verdict est celui du crible, colonne par colonne — survivants, attrapés ET expirés, pour les neuf fichiers. Total **139**, aucune issue. *Le crible par l'entrée `commit` et le balayage de `main` voient donc la même chose.* — *Prédiction, écrite avant* : `search.rs` **39**, au plafond, et les MÊMES survivants que le crible au candidat (36114952595), un pour un, aux mêmes lignes — le code moteur de `main` est celui du candidat octet pour octet (`git diff 54e6c60 d23d1b5 -- engine/` est vide) et le crible a balayé tous les fichiers ; seul le compte d'expirés peut bouger avec la charge du runner, et il ne peut que faire baisser celui des survivants. Tous les autres fichiers à leur plafond, total **139**. Un écart, quel qu'il soit, dirait que le crible et le balayage ne voient pas la même chose |
+| **balayage de mutation après la PR #81** — C25 fusionné | 36073858328 | `main` à `04bf6f8` | un job par fichier, puis `Verdict` | **RELEVÉ à 01 h 10, VERT** — `search.rs` le plus long, 90 min : 526 mutants, 410 attrapés, 28 inviables, 49 expirés | **La prédiction tient, exactement** : `search.rs` **39**, les deux survivants d'`iterate` que le crible au candidat avait trouvés parmi eux, et tous les autres fichiers à leur plafond, total **139**. Aucune issue. — *Prédiction, écrite avant* : `search.rs` **39**, au plafond — le crible au candidat ne trouvait que les deux survivants anciens, et C25 ne déplace aucun arbre à profondeur fixe, donc aucun test de nœuds ne voit autrement le reste du fichier ; des expirés en plus, `set_deadlines` vidé et `deadlines_ms` à `None`. Tous les autres fichiers à leur plafond, total 139 |
+| **balayage de mutation après les PR #78 et #79** — tests corrigés, C24 fusionné | 36028076680 | `main` à `f2dd0cf` | un job par fichier, puis `Verdict` | **RELEVÉ à 17 h 38, VERT** | **La prédiction tient** : `search.rs` **39**, au plafond — les quatre mutants cachés par l'arbre d'A18 attrapés, la garde de `stage_moves` seule en plus des 38, C24 n'ajoute rien. `eval.rs` **89** contre 121 → plafond **resserré à 89** : le banc à la profondeur 6 attrape 33 `delete -` de plus dans les tables. Total du dépôt 139. Issue #69 fermée |
+| **balayage de mutation après la PR #77** — A18 fusionnée | 36013927958 | `main` à `3b80e1a` : la génération par étapes | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 57 — CASSÉ** : `search.rs` **43** > 39, `eval.rs` **122** > 121 ; le verdict a commenté l'issue #69, restée ouverte depuis le balayage annulé de 02 h | **La prédiction était fausse.** `search.rs` : les 38 d'avant un pour un, la garde de `stage_moves` prévue, et **quatre de code qu'A18 n'écrit pas** — la prime d'historique `depth * depth` (en `+` et en `/`), le `ply + 1` de l'appel au coup nul et celui de la quiescence. Mesuré mutant par mutant : avant A18, les trois premiers déplaçaient le banc à la profondeur 5 (31 570, 31 585, 31 571 contre 31 637) ; après, 31 829 avec ou sans eux, mais 70 995, 70 996, 70 758 contre 70 719 à la profondeur 6. Le quatrième ne déplace aucun banc : seul le test de légalité de la PV l'attrapait, sur UNE position que l'arbre neuf ne fait plus passer par la quiescence fautive. **Corrigé par les tests, pas par le plafond** (`3ac4d71`) : banc figé à la profondeur 6, PV vérifiée sur une quarantaine de positions de la marche seedée ; re-mesuré localement, les quatre attrapés. `eval.rs` : +4 −3 `delete -` dans les tables — A18 change ce que le banc figé voit des valeurs, du réglage que le SPRT juge. **Suite** : fusionner les tests, rebalayer, lire `eval.rs` sur la mesure |
+| **balayage de mutation après la PR #76** | 35976435127 | `main` à `ea8116f` : chaque fil tient le budget de nœuds, `MAX_THREADS` 1 024 ; A18 révoqué, donc absent | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 09 h 54, verdict vert | **La prédiction tient** : `search.rs` **38**, au plafond, et tous les autres fichiers au leur, total 170. **La réserve ne s'est pas matérialisée** : le test à plusieurs fils, qui n'est plus instable, n'attrapait par hasard aucun mutant équivalent. Parmi les 38, les deux que le balayage local d'A18 avait donnés pour anciens — `*` en `+` dans la note des promotions, la garde de débordement d'`ordered_moves` |
+| **C24 — laisser finir l'itération, la sonde** | 35982959972 | `7274844` → `7fc5959`, `8+0,08`, 100 parties, une à la fois | cutechess, sonde | **RELEVÉE à 10 h 25** | **Temps × 1,00, plis −0,00 ± 0,09** : la règle lance l'Elo. L'attendu écrit (+0,15 à +0,35) est manqué, et c'est l'attendu qui était faux — l'écran, interrogé, prédisait +0,05 (section C24) |
+| **C24 — l'Elo** | 35987710644, 35987713472 | `7274844` → `7fc5959`, `8+0,08`, graine « auto » | 2 × 3 000, fastchess | **RELEVÉ** — coupés par le plafond à 16 h 22, 2 × 2 880 parties | **+44,64 ± 6,24, homogènes : gain démontré, FUSIONNÉ.** La lecture par l'accord tient, celle des plis moyens tombe ; **C25 s'écrit**, par sa règle écrite avant (section C24) |
+| balayage de mutation après B6 | 35949682016 | `main` à `65d0b03`, Lazy SMP | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 04 h 03, verdict vert | **La prédiction tient** : `search.rs` 40, **les mêmes survivants** qu'après C22 — le couple déplacé de `go` vers `iterate` compris —, Lazy SMP n'en ajoute aucun ; `uci.rs` 0. 472 mutants, 357 attrapés, 22 inviables, **53 expirés contre 47** : inférence, ce sont les mutants qui rendent un budget de nœuds inatteignable ou suppriment l'arrêt des auxiliaires — un test pend au lieu d'échouer ; le résumé ne liste pas les expirés |
+| balayage de mutation après la PR #72 | 35954091395 | `main` à `8ad3198`, les deux tests des survivants neufs | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 05 h 20, verdict vert | `search.rs` **38, exactement la prédiction** : les deux survivants visés disparus, les 38 autres un pour un → plafond **resserré à 38**. Les autres fichiers au plafond, total 170 |
+| balayage de mutation après C22 | 35945758614 (35945260912 annulé au départ) | `main` à `8dbb133`, C22 et son test | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 03 h 08, verdict vert | `search.rs` **40** contre 43 → plafond **resserré à 40**. Le compte tombe juste, par fonction et opérateur : cinq survivants de l'ancienne ligne de nulle disparus, deux neufs. **La prédiction écrite avant était fausse sur ces deux-là** : `&&` en `||` dans `is_checkmate` — la nulle arrivait un ply plus tard dans le contre-cas, même score — et `ply > 0` en `ply >= 0`, la règle à la racine. Un test chacun, dont le témoin coupe la propagation (une parade qui remet la pendule à zéro) ; prochain balayage attendu à 38. Les autres fichiers au plafond |
+| balayage de mutation après C23 | 35912951112 | `main` à `1eec468` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 20 h 44, verdict vert | `tt.rs` **6**, exactement la prédiction (les quatre `\|` de `pack_data` et les deux de `pack_move`) → plafond **baissé de 8 à 6**. `search.rs` **43** : les mêmes survivants un pour un, et aucun dans le code de C23 — qui ne porte aucun opérateur mutable, donc le balayage ne pouvait rien en dire ; sa couverture reste celle mesurée à la main (quatre défauts injectés, quatre attrapés). Les autres au plafond, aucune issue |
 | balayage de mutation après B9 | 35904545718 | `main` à `423c446` | un job par fichier, puis `Verdict` | **RELEVÉ** — fini à 19 h 44 | `tt.rs` **8** contre 2, tous équivalents : deux décalages nuls retirés comme code mort, plafond inscrit à 8, le chiffre mesuré (PR #56). `search.rs` **43** contre 45 : les trois survivants de `ponder_move` tués par la PR #50, 47 expirés comme au balayage précédent — plafond resserré à 43. Les autres au plafond. Issue #57 fermée |
 
 Les candidats de C22, B9 et C23 ont chacun été **committés puis révoqués
 aussitôt** (`8e08920`, `7552320`, `1ab033f`), et leurs SHA restent
 mesurables. **B9 et C23 sont depuis entrés dans `main`** par révocation de
-leur révocation ; C22 n'y est pas. **Fusionner, c'est révoquer la
+leur révocation, **puis C22 le 24 sept.** — porté sur C23 (`cd45ffa`,
+révoqué par `898e195`) : c'est cette seconde révocation qui a été révoquée. **Fusionner, c'est révoquer la
 révocation sur `main` à jour** — jamais repartir de la rustine, qui n'est que
 la copie de secours.
 
@@ -746,6 +787,19 @@ deux jobs de C22, partis avant ce recopiage (voir sa section).
   profondeur 5 et 114 026 à la profondeur 7.
 - **Le ponder ne dépend d'aucun** : il mesure un binaire contre lui-même, et
   ne fusionne rien.
+- **A18 et C24, en vol ensemble le 24 sept., touchent `search.rs` à des
+  endroits disjoints** — l'ordre des coups d'un côté, les échéances de
+  l'autre. **Répété à blanc à 12 h, sur la tête de la branche** : leurs
+  révocations (`908ed46`, `40afb49`) se lèvent sans conflit, seules ou
+  ensemble ; ensemble, `verify.sh --rapide` passe et le banc rend 109 047 à
+  la profondeur 7 (celui d'A18 ; C24 n'y change rien, aucune échéance ne
+  joue à profondeur fixe). **La table de l'attic ne change que sur la ligne
+  du candidat fusionné** — sa rustine cesse de s'appliquer parce que son
+  code est entré — et la révocation levée d'A18 remet d'elle-même les lignes
+  de `c19-see-ordering`, `d2-sonde-pv` et `d6-sonde-ordonnancement` à
+  « non ». Vérifié dans les trois cas : A18 seul, C24 seul, les deux ; la
+  rustine de l'autre s'applique toujours, et `c24-sonde-allocation` dans les
+  trois.
 
 #### L'ordre des fusions, et ce que chacune change ailleurs
 
@@ -758,8 +812,8 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 | C22 — **relevé** | **non fusionné** : le critère de régression est atteint | rien ne bouge — banc, table de l'attic et rustines C23 restent tels quels. La suite est « C22 rejeté », ci-dessous |
 | B9 — **fusionné** | `git revert 7552320`, fait (`481f8af`) | référence du banc → **114 026** ; rustines B9 de l'attic → « non », leur code est entré ; chiffres de neutralité inchangés, la base n'ayant pas bougé ; **balayage de mutation de `tt.rs` lancé après la fusion** |
 | ponder — **relevé** | rien à fusionner | la ligne ponder de « Ce qui reste à faire » ; la conversion plis → Elo de `CLAUDE.md`, qui a désormais deux points mesurés |
-| C22 sur C23 (~01 h 55 le 24) | `git revert 898e195` sur `main` à jour | banc des profondeurs 10 et 12 ; la ligne `c18-extension-echec.patch` de l'attic passe à « non » pour de bon, C22 déplaçant son contexte ; balayage de mutation |
 | C23 — **fusionné** | `git revert 1ab033f` sur `main` à jour, fait (`25fd727`) — **sans conflit de code**, seule la table de l'attic conflictait | banc inchangé aux profondeurs 5 et 7 ; l'invariant de la fenêtre revenu dans `CLAUDE.md` ; trois lignes de l'attic recalculées au vrai `git apply --check` ; balayage de mutation relancé. **C22 porté par-dessus et remesuré** — section « C22 sur C23 » |
+| C22 sur C23 — **fusionné** | `git revert 898e195` sur `main` à jour, fait le 24 sept. — sans conflit | banc inchangé à la profondeur 7 (114 026), **642 442** à la profondeur 10 comme annoncé ; trois lignes de l'attic recalculées au vrai `git apply --check` (C22 porté et d'origine, C18) ; balayage de mutation de `search.rs` relancé après la fusion. **Débloque** « interdire deux coups nuls consécutifs » |
 
 **Les branches qui ne fusionnent pas ont aussi leur suite, écrite d'avance :**
 
@@ -777,10 +831,16 @@ tests surveillent, et **ce sont eux qui le signaleront** — pas la mémoire :
 
 L'ordre des chantiers suivants vit dans « Ce qui reste à faire, par ordre
 mesuré » et ne se recopie pas ici. Ce qui dépend directement de ces relèves :
-interdire deux coups nuls consécutifs (après C23, seul) ; dépenser davantage
-quand le ponder est permis (après le ponder, en `les-deux`) ; B6 (après B9).
+<s>interdire deux coups nuls consécutifs (débloqué : C22 sur C23 est tranché ; mesuré seul)</s>
+écranté en nœuds le 24 sept., pas prioritaire ; dépenser davantage
+quand le ponder est permis (après le ponder, en `les-deux`) ; <s>B6 (après B9)</s>
+B6 écrit, son Elo en vol ; puis **la génération par étapes, décidée le 24 sept.**
 
 ### C22 — VERDICT, 23 sept. 2026 : −10,44 ± 6,34 Elo à `8+0,08` — régression, non fusionné, à remesurer sur C23
+
+> **Remesuré sur C23 et FUSIONNÉ le 24 sept.**, au titre de la règle — voir
+> « C22 sur C23 — VERDICT ». Ce qui suit est le verdict de la première mesure,
+> sur la base à fausses nulles.
 
 #### Le verdict — rendu à 17 h 50, sur le critère écrit avant
 
@@ -1091,7 +1151,9 @@ aussitôt** par `1ab033f`.
 *Ce que le correctif ne fait pas* : interdire deux coups nuls consécutifs,
 comme Stockfish le fait aussi. C'est un autre changement de l'arbre — avec
 C23, un double coup nul ne rend plus de nulle, il re-cherche `X` à profondeur
-réduite, du travail qu'aucune partie ne demande — et il se mesurera seul.
+réduite, <s>du travail qu'aucune partie ne demande</s> — et il se mesurera seul.
+*Le mécanisme était faux, mesuré le 24 sept. : l'interdire fait GROSSIR
+l'arbre — voir sa ligne dans « Ce qui reste à faire ».*
 
 #### Le protocole — écrit AVANT de lancer
 
@@ -1138,7 +1200,48 @@ l'inverse du raisonnement de B9, dont les objets étaient disjoints.
 4. Balayage de mutation : `search.rs`.
 5. Ensuite, et séparément : interdire deux coups nuls consécutifs.
 
-### C22 sur C23 — EN VOL : la nulle à l'horizon, remesurée sans les fausses nulles
+### C22 sur C23 — VERDICT, 24 sept. 2026 : aucune borne haute sous zéro, FUSIONNÉ au titre de la règle — deux matchs hétérogènes
+
+#### Le verdict — rendu à 01 h 55, sur le critère écrit avant
+
+| run | graine | parties | Elo | IC 95 % | Ptnml | étalonnage |
+|---|---|---|---|---|---|---|
+| [35912945157](https://github.com/theodubus/chess/actions/runs/35912945157) | 35912945157 | 2 880 | **+10,86 ± 8,91** | [+1,95 ; +19,77] | [93, 263, 670, 289, 125] | 2 201 226 n/s, profondeur 12 |
+| [35912948746](https://github.com/theodubus/chess/actions/runs/35912948746) | 35912948746 | 2 878 | **−2,90 ± 8,80** | [−11,70 ; +5,90] | [99, 304, 660, 274, 102] | 2 207 460 n/s, profondeur 12 |
+| en commun, si l'écart est du hasard | — | 5 758 | **+3,98 ± 6,26** | [−2,28 ; +10,24] | — | — |
+
+Les deux jobs coupés au plafond de 350 minutes à 01 h 49, **zéro anomalie**
+sur les deux journaux complets.
+
+**`mettre-en-commun.sh` a refusé de conclure** — première fois qu'il le fait
+sur une vraie relève : les deux matchs diffèrent de 13,76 Elo, **z = 2,15**.
+Sa doc désigne la cause habituelle, deux runners de vitesses différentes ;
+**elle est exclue ici** — étalonnages à 0,3 % près, même profondeur. Même
+binaires, graines différentes : il ne reste que les parties tirées.
+<span>Inférence, confiance moyenne : le hasard. p = 0,031 pour une paire ; sur
+les huit comparaisons deux à deux faites depuis le 23 sept., en voir une à ce
+niveau a ~22 % de chances.</span>
+
+**La décision ne dépend pas de la lecture, et c'est le critère écrit avant
+qui le permet** : formulé en bornes, il se lit sur chaque match comme sur
+l'ensemble. En commun, entre les deux ; match 2, entre les deux ; match 1,
+borne basse au-dessus de zéro. **Aucune lecture ne met la borne haute sous
+zéro** : la branche « ne pas fusionner » n'est prise nulle part. **Fusionné au
+titre de la règle, aucun gain revendiqué** — le match 1 seul ne démontre rien
+quand son jumeau le contredit.
+
+**Les deux prédictions écrites avant tiennent.** « Entre les deux » : oui, en
+commun. Et **les avertissements de l'arbitre se séparent** : « PV continues
+after threefold repetition / fifty-move rule », **85 et 94 pour la référence,
+4 et 3 pour le candidat** — le correctif fait ce qu'il dit, sur une base qui
+n'a plus de fausses nulles.
+
+**Le code fusionné est le candidat mesuré** : révocation de la révocation
+`898e195` sur `main` à jour ; banc 114 026 à la profondeur 7 et **642 442 à la
+profondeur 10**, exactement les chiffres inscrits avant le lancement ;
+`tools/verify.sh` complet vert.
+
+#### Ce qui était écrit avant de lancer
 
 C22 a été arrêté par son critère — **−10,44 ± 6,34** à `8+0,08` — sur une
 base où **92,1 %** de ce qu'il ajoutait à l'horizon étaient de fausses nulles,
@@ -1320,16 +1423,25 @@ s'annule, ce qu'une moyenne entre deux matchs ne ferait pas.
 
 | sonde, 20 parties chacune | écart de profondeur apparié | temps de recherche | ce qu'elle dit |
 |---|---|---|---|
-| **ponder** — `136dda4`, candidat pondère | **+0,94 ± 0,19 pli** | × 1,54 | le mécanisme prévu, **0,90**, tombe dedans |
-| **témoin** — `136dda4`, personne ne pondère | −0,00 ± 0,12 | × 1,00 | la méthode rend zéro quand rien ne diffère |
-| **C21** — `ebe93ad` contre `6d5e7c6` | **+0,41 ± 0,19 pli** | × 1,32 | **moins que les 0,54 à 0,70** qui servaient à convertir |
+| **ponder** — `136dda4`, candidat pondère | **+0,94 ± 0,20 pli** | × 1,54 | le mécanisme prévu, **0,90**, tombe dedans |
+| **témoin** — `136dda4`, personne ne pondère | −0,00 ± 0,13 | × 1,00 | la méthode rend zéro quand rien ne diffère |
+| **C21** — `ebe93ad` contre `6d5e7c6` | **+0,41 ± 0,20 pli** | × 1,32 | **moins que les 0,54 à 0,70** qui servaient à convertir |
+
+> **Intervalles de Student depuis le 23 sept. au soir**, à dix-neuf degrés de
+> liberté. `plis.sh` prenait 1,96 quel que soit l'effectif, ce qui rendait
+> ces intervalles 7 % trop étroits — ± 0,19 et ± 0,12 publiés d'abord. Vu en
+> rejouant une sonde à quatre parties, où l'écart était 38 %. Les deux
+> intervalles d'Elo par pli ci-dessous en dépendent, et sont recalculés sur les
+> demi-largeurs EXACTES : le « 116 » d'abord publié venait même d'une
+> demi-largeur arrondie — exacte, elle donnait 112,7 à 1,96, et donne 119,4
+> avec Student.
 
 **Le mécanisme était juste, la conversion ne l'était pas.** L'attendu divisait
 les +19,13 de C21 par **0,54 à 0,70 pli estimés par son budget** ; mesurés en
 partie, ils valent 0,41. Recalculé sur la profondeur mesurée, l'attendu
 aurait été **~+42**, et surtout son intervalle : Elo et plis de C21 portent
-chacun leur incertitude, et leur rapport s'étend de **21 à 116 Elo par
-pli**. Celui du ponder s'étend de **52 à 102**. *Les deux points sont
+chacun leur incertitude, et leur rapport s'étend de **21 à 119 Elo par
+pli**. Celui du ponder s'étend de **51 à 104**. *Les deux points sont
 compatibles* ; le « ~+25 » écrit comme un nombre cachait un intervalle
 d'un facteur cinq. **Une conversion par un point unique porte l'incertitude
 des DEUX mesures qui la composent : écrire l'intervalle, pas le point.**
@@ -1373,8 +1485,8 @@ la fin de la partie</span>. *C'est le gisement du réglage suivant*,
    le supplément qui ramène la pendule dépensée par coup du camp qui pondère
    à celle de la référence (202 ms ici), puis **un** match en `les-deux`,
    critère écrit avant. <span>Ordre de grandeur, confiance faible : 13 % de
-   pendule, soit ~0,27 pli à 1,36 par doublement, soit 6 à 31 Elo sur
-   l'étendue de 21 à 116 Elo par pli — donc plusieurs jobs.</span>
+   pendule, soit ~0,27 pli à 1,36 par doublement, soit 6 à 32 Elo sur
+   l'étendue de 21 à 119 Elo par pli — donc plusieurs jobs.</span>
 2. **La sonde appariée par partie est devenue un outil, le soir même** :
    `tools/plis.sh <journal>`, sur la sortie de cutechess `-debug all` —
    commande complète en tête du script. Huit minutes de conteneur donnent
@@ -1386,8 +1498,11 @@ la fin de la partie</span>. *C'est le gisement du réglage suivant*,
    coup, l'écart pris entre moyennes globales au lieu d'être apparié —
    **tous deux attrapés**. Rejoué sur les trois journaux de la sonde, il rend
    les chiffres du tableau ci-dessus.
-3. **Le vol de CPU sur runner** reste non mesuré : sans objet en `les-deux`,
-   où il est symétrique ; à mesurer avant tout autre match `candidat`.
+3. <s>**Le vol de CPU sur runner** reste non mesuré</s> — **MESURÉ le 23 sept.
+   au soir : r = 0,948, le verdict tient**, mais 3 à 10 Elo des +67,63
+   viennent du vol, les runners n'ayant que deux cœurs physiques. Voir « Vol
+   de CPU du ponder sur runner — VERDICT ». Sans objet en `les-deux`, où il
+   est symétrique.
 
 #### Ce qui avait été lancé
 
@@ -1441,29 +1556,1737 @@ les coups prédits, alors que C21 en gagnait sur tous.</span>
 3. Inscrire le verdict ici, dans la table « Ce qui reste à faire », dans la
    fiche du carnet ; et dire à quelle cadence il vaut.
 
+### Vol de CPU du ponder sur runner — VERDICT, 23 sept. 2026 : r = 0,948, le verdict du ponder tient — et les runners n'ont que DEUX cœurs physiques
+
+#### Le verdict — rendu à 23 h 58, sur la règle écrite avant
+
+| sonde, `8+0,08`, 60 parties, `2f3bf1a` des deux côtés | rapport des n/s, coups partis d'un `go` | écart de plis apparié | taux de succès du ponder |
+|---|---|---|---|
+| `ponder = candidat` — [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290) | **0,950** (candidat 2 687 240, référence 2 553 531) | +0,85 ± 0,24 | 0,681 |
+| témoin — [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087) | **1,002** (2 698 290 contre 2 704 881) | −0,02 ± 0,08 | — |
+
+**r = 0,950 / 1,002 = 0,948 ≥ 0,93 : le verdict du ponder tient, comme la
+règle écrite avant le prévoyait** — et comme l'attendu, « ≥ 0,93 ». Le témoin
+rend 1,002 et un écart de plis nul : la méthode ne fabrique rien quand rien ne
+diffère. Les +0,85 ± 0,24 pli du ponder sur runner retombent sur les +0,94 ±
+0,20 du conteneur. Zéro anomalie dans les deux journaux.
+
+**Ce que la ligne de topologie a trouvé, et c'est plus grand que la
+question** : `4 processeurs logiques, 2 cœurs physiques, 2 fil(s) par cœur —
+AMD EPYC 7763`, sur les deux runners. **Les runners ont le SMT** ; le conteneur
+de session, non.
+
+**Le vol, chiffré au-delà de la règle.** <span>Inférence, confiance
+moyenne.</span> Les deux runners avaient un banc à 1 % près (2 215 051 et
+2 237 531 n/s) : pour une fois, les n/s de la référence se comparent d'un run
+à l'autre — 2 553 531 contre 2 704 881, soit **−4,6 %** une fois le banc
+corrigé, quand le conteneur rendait −0,8 %. Le rapport dans le run, lui, rend
+0,948 contre 0,966 en conteneur. Les deux disent **3 à 5 % de vitesse volés à
+la référence**, soit 0,06 à 0,09 pli : **3 à 10 Elo des +67,63**, aux deux
+points d'Elo par pli mesurés. C'est dans l'intervalle du verdict, et ça ne
+change pas la décision — activer le ponder quand le déploiement le permet.
+**Mais +67,63 se cite désormais avec cette réserve.** Tout futur match
+`candidat` seul porte le même biais ; le réglage du remboursement se mesure
+en `les-deux`, où il est symétrique.
+
+#### Ce que deux cœurs physiques changent ailleurs
+
+- **Tous les matchs à concurrence 3** mettent trois moteurs en réflexion sur
+  deux cœurs physiques. Le partage est symétrique entre candidat et référence,
+  donc **chaque verdict reste valide en interne**. Mais le point de
+  fonctionnement réel — la profondeur atteinte EN PARTIE — est plus bas que
+  ne le dit l'étalonnage, qui mesure un banc seul sur la machine. De combien,
+  ce n'est pas mesuré (liste de surveillance).
+- **B6** : sur ces runners, Lazy SMP ne se mesure sans SMT qu'à **deux fils**.
+  Le « 1,0 à 1,8 pli » hérité supposait quatre vrais cœurs ; un gain mesuré
+  ici en sera un minorant pour une machine qui en a plus.
+- La table de « La concurrence d'un match se DÉDUIT des cœurs » compte des
+  processeurs logiques ; elle le dit désormais.
+
+#### La règle et le protocole, tels qu'écrits avant de lancer
+
+Le verdict du ponder (+67,63 ± 9,19) a été rendu sur des runners dont
+**personne n'avait regardé la topologie** : « quatre cœurs » peut vouloir dire
+deux cœurs physiques à deux fils chacun, et deux fils d'un même cœur s'en
+partagent les unités de calcul. Si le candidat pondère sur le cœur frère de la
+référence, il la ralentit — **vers l'hypothèse**. En conteneur, quatre cœurs
+sans SMT, le vol mesuré est nul (−0,8 %, section ponder). Sur runner, rien.
+
+**Ce qui le mesure.** `match.yml` imprime désormais la topologie du runner, et
+sa sonde fait rendre à `tools/plis.sh` le rapport des n/s **dans un même run**
+— la référence, qui cherche pendant que le candidat pondère, contre le
+candidat quand il cherche seul, sur ses coups partis d'un `go` ordinaire. Même
+binaire, même machine : la vitesse du runner, qui varie de 22 à 58 %, s'annule.
+Un témoin sans ponder donne le même rapport sans contention.
+
+**Sa limite, mesurée avant de lancer.** Rejoué sur les journaux de conteneur,
+le rapport vaut **1,010 au témoin et 0,976 en ponder** — soit 0,966, quand les
+n/s de la référence d'un run à l'autre ne bougeaient que de −0,8 %. L'écart
+vient de l'échantillon : chez le camp qui pondère, les coups partis d'un `go`
+suivent un ponder MANQUÉ. **Le rapport sépare donc un vol massif d'une absence
+de vol, pas 2 % de 0 %.** C'est suffisant pour la question posée : ce qui
+biaiserait le verdict, c'est un cœur partagé, qui coûte des dizaines de pour
+cent, pas quelques-uns.
+
+**La règle — écrite AVANT de lancer.** Deux sondes, même commit (`main`),
+`8+0,08`, soixante parties chacune, graine « auto » : l'une `ponder =
+candidat`, l'autre témoin. On lit `r = rapport en ponder / rapport au témoin`,
+et la ligne de topologie.
+
+| `r` | ce que ça veut dire | ce qu'on fait |
+|---|---|---|
+| ≥ 0,93 | pas de cœur partagé — le conteneur, où le vol est nul, rend 0,966. Borne dure : même si tout l'écart à 1 était du vol, 7 % de n/s font 0,14 pli | le verdict du ponder tient ; la question est close |
+| < 0,85 | cœur partagé : ≥ 0,3 pli volés à la référence, soit ~15 à 30 Elo du verdict aux deux points mesurés | épingler chaque moteur à son cœur physique (`taskset`), **remesurer le ponder**, et corriger le verdict publié avant tout autre match `candidat` |
+| entre les deux | le confondant ne se sépare plus du vol | les deux sondes dans UN job, pour comparer les n/s de la référence d'un run à l'autre sur la même machine |
+
+<span>Attendu, confiance moyenne : ≥ 0,93. Un ordonnanceur Linux place deux fils
+actifs sur deux cœurs physiques distincts quand il en a le choix, et une partie
+à la fois n'en occupe que deux sur quatre processeurs logiques.</span>
+
+### Calibrer l'Elo par pli — VERDICT, 24 sept. 2026 : un doublement vaut +107,7 ± 8,2 Elo et +1,38 ± 0,28 pli, soit 60 à 105 Elo par pli
+
+Décidé par Théo le 23 sept. au soir, premier chantier après les relèves. Le
+projet compare ses chantiers en plis — 1,36 par doublement de temps — mais ne
+sait pas ce qu'un pli vaut : deux points, **21 à 119** (C21) et **51 à 104**
+(ponder) Elo par pli. Trop large pour classer la génération par étapes
+(0,21 pli), le remboursement du ponder (~0,27) ou Lazy SMP (1,0 à 1,8).
+
+**Et les deux points mêlent deux machines** : leurs plis viennent de sondes en
+conteneur, leur Elo de matchs sur runner, plus rapide d'un demi-pli environ.
+Cette mesure-ci prend les deux sur runner.
+
+**Le protocole.** Le même binaire des deux côtés, `main`. Le candidat joue à
+`16+0,16`, la référence à `8+0,08` : exactement un doublement de pendule, à la
+cadence cible.
+
+- **l'Elo** : deux matchs à longueur fixe, fastchess, 1 900 parties chacun,
+  graine « auto », mis en commun par `tools/mettre-en-commun.sh` ;
+- **les plis** : une sonde, mêmes cadences, cent parties, une à la fois —
+  l'écart de profondeur apparié par partie, dans le régime réel.
+
+Elo par pli = Elo du doublement / plis du doublement, **avec l'intervalle des
+deux**, jamais le point.
+
+#### Le verdict — rendu à 05 h 13 le 24 sept., sur le protocole écrit avant
+
+| | [run 35933846266](https://github.com/theodubus/chess/actions/runs/35933846266) | [run 35933847908](https://github.com/theodubus/chess/actions/runs/35933847908) | en commun |
+|---|---|---|---|
+| runner | EPYC 7763, 2 192 324 n/s, profondeur 12 | EPYC 9V74, 2 020 660 n/s, profondeur 12 | |
+| parties | 1 900, finies avant le plafond | 1 900, finies avant le plafond | **3 800** |
+| Elo du doublement | +108,54 ± 11,42 | +106,94 ± 11,75 | **+107,74 ± 8,19** |
+| Ptnml(0-2) | [14, 75, 371, 302, 188] | [19, 78, 366, 291, 196] | homogènes, z = 0,19 |
+
+- **Zéro anomalie** sur les deux journaux entiers ; 10,75 et 10,79 s par partie.
+  **Graines différentes, vérifié avant d'additionner** : 35933846266 et
+  35933847908, tirées par « auto » — deux jobs de même graine n'auraient été
+  que deux copies d'un même match.
+- **Elo par pli = 107,74 ± 8,19 / 1,38 ± 0,28 : de 60 à 105**, bornes croisées
+  comme pour les deux points antérieurs — le point, 78, ne s'écrit pas seul.
+  L'incertitude vient presque toute des PLIS (± 20 %) : l'Elo, lui, est à
+  ± 8 %. *Resserrer la conversion demande une sonde plus longue, pas un
+  match de plus.*
+- **L'attendu écrit avant tient** : 70 à 144 Elo pour le doublement, mesuré
+  107,7 ; 51 à 104 Elo par pli, mesuré 60 à 105. Les deux points antérieurs
+  sont compatibles — le ponder rend 72 Elo par pli à son point (67,63 / 0,94),
+  C21 47 (19,13 / 0,41), dans son intervalle de 21 à 119.
+- **Ce que l'étalon convertit**, dans le régime de ces matchs (`8+0,08`, trois
+  parties à la fois sur deux cœurs physiques) : Lazy SMP à deux fils,
+  +0,48 ± 0,08 pli mesurés → **24 à 59 Elo attendus** ; la génération par
+  étapes, 0,21 pli → **13 à 22** ; le remboursement du ponder, ~0,27 pli →
+  **16 à 28**. Des intervalles, qui se multiplient par l'incertitude des plis
+  de chaque chantier.
+- **Ce qu'il ne dit pas** : l'Elo par pli à une autre cadence. Il dépend de la
+  profondeur où l'on joue ; mesuré ici autour de la profondeur 14 à 16.
+
+#### Les plis — rendus à 00 h 27 le 24 sept. : +1,38 ± 0,28 pli pour un doublement, en partie, sur runner
+
+| [run 35933850590](https://github.com/theodubus/chess/actions/runs/35933850590) — sonde, 100 parties, graine 1574112222 | candidat `16+0,16` | référence `8+0,08` |
+|---|---|---|
+| profondeur moyenne des coups joués | 15,59 | 14,16 |
+| temps de recherche par coup | 420,4 ms | 210,1 ms — **× 2,00** |
+| écart apparié par partie | **+1,38 ± 0,28 pli** (Student, 99 degrés de liberté) | |
+
+**La pendule doublée se traduit exactement en temps doublé par coup**, et
+**le doublement rend 1,38 pli EN PARTIE** — les 1,36 mesurés le 22 sept. à
+positions fixes, en conteneur, tombent au milieu de l'intervalle. La
+conversion temps → plis du projet tient donc sur les deux machines et dans le
+régime réel. Zéro anomalie ; topologie : deux cœurs physiques, comme partout.
+
+L'Elo de ce job — +127 ± 62 sur cent parties — **n'est pas la mesure** : il
+attend les deux matchs de 1 900 parties. Avec ces plis, l'attendu écrit
+ci-dessous devient 1,38 × 51 à 104 = **70 à 144 Elo**, à peine déplacé.
+
+**L'attendu — écrit AVANT de lancer.** <span>Inférence, confiance moyenne : si
+les deux points existants disent vrai, leur intersection (51 à 104 Elo par
+pli) et 1,36 pli par doublement donnent **69 à 141 Elo** pour le doublement.</span>
+Un Elo par pli hors de 51 à 104 dirait qu'une des deux conversions existantes
+était fausse — probablement par le mélange des machines.
+
+**Ce que la mesure ne décide pas.** Rien ne fusionne : c'est un étalon. Il
+convertit ensuite chaque chantier de vitesse ou de temps en Elo attendu, donc
+en budget de match — ce que la relation `parties × Elo` ne sait faire qu'avec
+un Elo en entrée.
+
+### Une cadence par moteur, et la sonde — ce que `match.yml` sait depuis le 23 sept. au soir
+
+Deux entrées, écrites pour la calibration et le vol de CPU, et qui serviront à
+B6.
+
+- **`cadence_candidat`** — la pendule du seul candidat ; `cadence` est
+  toujours celle de la référence. Différentes, elles admettent le même commit
+  des deux côtés : c'est le match à handicap de temps. Les deux arbitres
+  prennent un `tc=` par moteur, **mais un `tc=` dans `-each` écrase ceux des
+  moteurs** — vérifié sur les deux : le candidat recevait `wtime 1010` au lieu
+  de 2020. `match.yml` ne le met donc plus jamais dans `-each`.
+- **`sonde = oui`** — cutechess avec `-debug all`, **une partie à la fois**
+  (`plis.sh` apparie par numéro de partie), et la sortie de `tools/plis.sh`
+  dans le résumé : profondeur, pendule, n/s de chaque camp, écart apparié,
+  rapport des n/s. Admet le même commit (le témoin). Le dialogue UCI fait
+  ~0,5 Mo par partie à `8+0,08` : il va dans l'artefact `match-log`, le journal
+  du job n'en reçoit que la progression.
+- **La topologie du runner** entre dans l'étalonnage et le résumé :
+  processeurs logiques, cœurs physiques, fils par cœur, modèle.
+
+Rejoué en local avant d'être poussé, étape par étape : la garde du même commit
+refuse sans raison et admet en sonde ; la sonde témoin, la sonde avec ponder et
+le handicap sous fastchess tournent de bout en bout — fastchess imprime
+lui-même `2+0.02 - 1+0.01` en tête de ses résultats ; le chemin ordinaire à
+deux commits ne change pas.
+
+**`plis.sh` y a gagné deux corrections.** Le rapport des n/s des coups partis
+d'un `go`, et **un intervalle de Student** au lieu de 1,96 : à vingt parties,
+les intervalles publiés étaient 7 % trop étroits (section ponder).
+
+### B6 — Lazy SMP — VERDICT, 24 sept. 2026 : +42,16 ± 9,23 Elo à deux fils contre un, à `8+0,08` — deux fils rapportent
+
+#### Ce qui est écrit
+
+- **L'option UCI `Threads`**, 1 par défaut, de 1 à <s>64</s> **1 024** depuis le verdict. À `T` fils, `T − 1`
+  auxiliaires cherchent la même position par le même approfondissement, sur
+  la même table — partagée par un `Arc`, possible depuis B9 —, sans pendule
+  ni rapport. **Seul le fil principal rend le coup et la variante.**
+- **Aucun décalage de profondeur entre les fils.** C'est une variante connue ;
+  la version la plus simple se mesure d'abord, et la variante se mesurera
+  seule si celle-ci ne rend pas ce qu'on attend. Pas recopiée d'avance.
+- Les auxiliaires se créent une fois, par `set_threads`, pas à chaque coup —
+  chacun porte une ardoise de 256 Kio ; `resize_table` les refait sur la
+  nouvelle table.
+- **Les nœuds** : chaque auxiliaire publie son compte tous les
+  `CHECK_INTERVAL` nœuds et son reste en finissant. `info nodes` et `go nodes`
+  comptent tous les fils. Un compteur commun incrémenté à chaque nœud aurait
+  coûté une instruction verrouillée par nœud.
+- **Corrigé le 24 sept. : le budget de `go nodes` débordait sans borne.** Seul
+  le fil principal le tenait ; privé de CPU, il laissait les auxiliaires
+  chercher sans rien vérifier. Reproduit en serrant les trois fils sur un seul
+  cœur (`taskset -c 0`) : **66 792 et 68 177 nœuds pour un budget de 50 000**,
+  deux échecs sur six. Trouvé par le balayage de mutation local d'A18 : un
+  mutant sans effet logique — la garde de débordement de `stage_moves` —
+  s'y déclarait « attrapé » par `le_budget_de_noeuds_compte_tous_les_fils`.
+  Désormais **tous les fils publient** dans un compteur commun, principal
+  compris, et **chacun tient le budget** sur le total : le dépassement est
+  borné par deux intervalles non publiés par autre fil, quel que soit
+  l'ordonnancement. Sous `taskset -c 0` : **0 échec sur 30**. Deux tests
+  neufs, chacun éprouvé par son témoin — l'auxiliaire qui ignore le budget
+  (40 059 nœuds au lieu de 10 000), le fil principal qui ne publie pas. Banc
+  au nœud près, `timing.sh` 12/30 (p = 0,57) : rien à un fil, où seule une
+  addition atomique tous les 2 048 nœuds s'ajoute. Le jeu à la pendule n'est
+  pas touché : sans budget de nœuds, rien ne change pour les auxiliaires.
+- **L'arrêt** : la fin de la recherche principale lève le drapeau des
+  auxiliaires par un garde qui tient aussi en cas de panique —
+  `std::thread::scope` attend tous ses fils, et un auxiliaire jamais arrêté
+  ferait attendre `go` pour toujours.
+
+#### Neutre à un fil — prouvé, pas supposé
+
+- **Banc au nœud près** : 114 026 à la profondeur 7, 642 442 à la profondeur 10.
+- **Vitesse**, `tools/timing.sh` contre `main` (`8dbb133`) : 11/30 (p = 0,20),
+  24/60 (p = 0,19), puis un **relevé décisif de 100 paires, règle fixée
+  d'avance** — p < 0,05 et candidat plus lent, le coût est réel et se documente
+  avant de fusionner : **43/100, p = 0,31, aucun écart démontré.** Les trois
+  penchent du même côté, +0,5 à +1,4 % sur la médiane : un coût de l'ordre de
+  1 % n'est pas exclu, et il ne se démontrerait qu'avec des centaines de
+  paires. *Réunir les trois relevés après coup reviendrait à choisir
+  l'effectif en voyant les données.*
+- **Six tests à plusieurs fils et un test UCI**, chacun éprouvé par un défaut
+  injecté : publication vide, `-` en `+`, total en `-`, budget sur le seul fil
+  principal, redimensionnement qui oublie les auxiliaires, garde d'arrêt vidé —
+  ce dernier fait échouer le test d'arrêt en vingt secondes au lieu de pendre.
+
+#### Un contrôle grossier en conteneur, pas une mesure
+
+Quatre cœurs physiques sans SMT, 12 positions tirées du livre, `go depth 13`,
+temps de la dernière ligne `info` : le temps est divisé par **1,36** à deux
+fils et **1,87** à quatre (moyennes géométriques ; 0,77 à 2,05 et 1,55 à 2,15
+selon la position). Soit ~0,6 et ~1,25 pli à 1,38 pli par doublement. **Ce
+n'est pas la force** — un temps jusqu'à une profondeur, sur des positions
+d'ouverture, un relevé par position et non déterministe : il dit seulement
+que l'implémentation accélère, avant de dépenser un runner.
+
+#### Ce que font les listes, les tournois et les autres moteurs — vérifié le 24 sept. 2026
+
+Question de Théo : « a-t-on le droit à un nombre de cœurs libre en compétition,
+ou c'est 4 au plus ? ». **Le cadre était faux** : ce n'est jamais le moteur qui
+choisit — l'organisateur fixe la machine et règle `Threads` pour chacun ; le
+moteur doit bien employer ce qu'on lui donne, quel qu'en soit le nombre.
+
+- **CCRL 40/15** : chaque moteur y est testé à **1 et à 4 fils**, en deux
+  entrées distinctes — le suffixe « 4CPU » désigne la seconde, l'absence de
+  suffixe la première ; la table est quadruplée à 4 fils. **CCRL Blitz**
+  (`2'+1"`) : **1 et 8 fils** (« 8CPU »), **ponder désactivé**. Sources : les
+  pages de conditions du CCRL et des fils de TalkChess, **lues par le moteur de
+  recherche seulement** — le proxy de la session bloque les deux sites.
+  Confiance moyenne à élevée : plusieurs sources concordent.
+- **TCEC** : tous les moteurs sur un même serveur ; celui de la saison 28 est
+  donné pour **2 × AMD EPYC 9754, 256 cœurs / 512 fils** (Chessdom,
+  TalkChess — secondaires, un résumé portait aussi « 52 cœurs / 104 fils »,
+  divergence non levée). Combien de fils chaque moteur reçoit : **non vérifié**.
+- **Stockfish** — lu dans son source le 24 sept. : `Threads` vaut 1 par
+  défaut, **au plus `max(1024, 4 × fils matériels)`** ; le coup joué est celui
+  du **meilleur fil** (`get_best_thread`), pas toujours du principal ; certains
+  historiques sont **partagés** entre fils. Lazy SMP y remplace YBWC depuis
+  Stockfish 7, janvier 2016 (PR #467). Variante courante ailleurs : des fils
+  lancés à des profondeurs différentes.
+
+**Ce que ça change ici.** (1) <s>**`MAX_THREADS` vaut 64** : une borne sous les
+machines de TCEC.</s> **Relevé à 1 024 le 24 sept., après le verdict**, comme
+Stockfish : au-dessus des machines de compétition. Chaque auxiliaire occupe
+**345 Kio** de mémoire résidente (mesuré : 21 760 Kio pour 63 auxiliaires),
+soit ~345 Mio à 1 024 fils. La relever ne change rien à 1 ou 2 fils ;
+**l'échelle au-delà de deux fils reste non mesurée**, les runners n'ayant que
+deux cœurs physiques et le conteneur quatre — écrit comme tel dans le code.
+Et les auxiliaires sont relancés à chaque `go` : à des centaines de fils,
+créer les fils coûtera un temps que personne n'a mesuré. (2) Notre Lazy SMP
+est la forme la plus simple : fil principal seul décideur, aucun décalage de
+profondeur, pas de vote du meilleur fil, pas d'historique partagé — autant de
+variantes à mesurer, chacune seule. (3) Sur les listes, **la force monofil
+reste une entrée à part entière** : le multifil s'ajoute, il ne la remplace pas.
+(4) **Ponder désactivé au CCRL Blitz** : le remboursement du ponder ne sert que
+là où le ponder est permis.
+
+#### La mesure à deux fils — écrite AVANT de lancer
+
+Sur les runners, deux cœurs physiques : Lazy SMP ne s'y mesure qu'à **deux
+fils**, et `match.yml` refuse davantage. Deux mesures, sur le SHA fusionné,
+contre lui-même à un fil :
+
+1. **La sonde** — `sonde = oui`, `fils_candidat = 2`, `8+0,08`, 60 parties.
+   Elle rend les plis gagnés en partie, appariés par partie, et le rapport des
+   n/s, qui mesure ici le **parallélisme obtenu** (≈ 2 si chaque fil a son
+   cœur), pas un vol. **Attendu, confiance faible** : +0,4 à +1,1 pli — un
+   temps effectif multiplié par 1,2 à 1,7, à 1,38 pli par doublement. Le
+   « 1,0 à 1,8 pli » hérité supposait quatre vrais cœurs. **Rapport des n/s
+   attendu entre 1,7 et 2,0 ; sous 1,5, les deux fils se disputent un cœur, et
+   la mesure d'Elo ne se lance pas avant d'avoir compris pourquoi.**
+2. **L'Elo** — `fils_candidat = 2`, `8+0,08`, longueur fixe, graine « auto »,
+   **trois jobs de 900 parties** (une partie à la fois), mis en commun par
+   `tools/mettre-en-commun.sh`. **Critère** : borne basse > 0 → deux fils
+   rapportent contre notre jumeau monofil ; borne haute < 0 → Lazy SMP tel
+   qu'écrit coûte, et le moteur n'annonce plus `Threads` tant que la cause
+   n'est pas trouvée ; entre les deux → pas de conclusion, des parties de
+   plus. Converti en plis par la calibration en cours, **en intervalle**.
+
+#### La sonde — rendue à 02 h 58 : +0,48 ± 0,08 pli, n/s × 2,05 — l'Elo est lancé
+
+| [run 35947696926](https://github.com/theodubus/chess/actions/runs/35947696926) — 60 parties, graine 1587958558 | candidat, 2 fils | référence, 1 fil |
+|---|---|---|
+| profondeur moyenne des coups joués | 16,84 | 16,40 |
+| temps de recherche par coup | 189,4 ms | 189,4 ms |
+| n/s des coups partis d'un `go` | 8 687 555 | 4 235 194 — **× 2,05** |
+| écart apparié par partie | **+0,48 ± 0,08 pli** (Student) | |
+
+- **Lue sur la règle écrite avant.** Le parallélisme passe largement le seuil
+  de 1,5 : les deux fils ont chacun leur cœur physique. Les plis tombent dans
+  l'attendu (+0,4 à +1,1), à son bas. Zéro anomalie.
+- **Ce que ça dit de Lazy SMP ici** : deux fois plus de nœuds n'achètent que
+  **+0,48 pli**, soit le pli d'un temps multiplié par ~1,27 — une bonne part du
+  travail des auxiliaires recoupe celui du fil principal. C'est la forme
+  connue de la technique ; ce que les plis ne disent pas, c'est ce que les
+  auxiliaires apportent AUTREMENT qu'en profondeur — des entrées de table
+  meilleures —, et c'est le match qui le dira.
+- **Le contrôle grossier en conteneur annonçait ~0,6 pli** (temps jusqu'à une
+  profondeur, 12 positions d'ouverture) : même ordre, un peu au-dessus.
+- **Un nouveau modèle de runner** : AMD EPYC 9V45, **4 064 503 n/s** au banc et
+  la profondeur 13 en 250 ms — le plus rapide jamais relevé ici (étendue
+  connue 2,07 à 3,43 M sur EPYC 7763). Les runners ne diffèrent plus seulement
+  de vitesse, mais de modèle. Valide en interne, comme toujours.
+- **Attendu du match, confiance faible** : 0,48 pli × 51 à 104 Elo par pli
+  (ponder) donne **+20 à +55 Elo** ; la calibration en cours resserrera la
+  conversion. **Lancés à 02 h 59** : trois jobs de 900 parties, EN VOL.
+  **Calibration rendue à 05 h 13** : 60 à 105 Elo par pli, donc **24 à 59 Elo**
+  attendus — le même ordre, écrit avant que les matchs ne rendent.
+
+#### L'Elo — rendu à 08 h 28 : +42,16 ± 9,23, deux fils rapportent
+
+| | [35949564324](https://github.com/theodubus/chess/actions/runs/35949564324) | [35949565830](https://github.com/theodubus/chess/actions/runs/35949565830) | [35949567986](https://github.com/theodubus/chess/actions/runs/35949567986) | en commun |
+|---|---|---|---|---|
+| runner | Xeon Platinum 8370C | EPYC 9V74 | EPYC 9V74 | deux cœurs physiques chacun |
+| étalonnage | 2 164 200 n/s, prof. 12 | 2 202 024 n/s, prof. 12 | 2 216 102 n/s, prof. 12 | à 2,4 % près |
+| parties | 900 | 900 | 900 | **2 700** |
+| Elo | +35,64 ± 15,54 | +49,36 ± 16,51 | +41,50 ± 15,87 | **+42,16 ± 9,23** |
+| Ptnml(0-2) | [16, 77, 201, 111, 45] | [21, 62, 194, 115, 58] | [19, 70, 192, 123, 46] | homogènes, \|z\| ≤ 1,19 |
+
+- **Lu sur le critère écrit avant** : borne basse +32,9 > 0 — **deux fils
+  rapportent contre notre jumeau monofil**. Les trois jobs, finis entiers en
+  5 h 26 (21,8 s par partie, une à la fois), comptent **zéro perte au temps,
+  zéro coup illégal** sur la totalité de leurs journaux, et cinq
+  avertissements d'arbitre en tout, répartis entre les deux moteurs.
+- **Dans l'attendu écrit avant les matchs** : +24 à +59 Elo, par les plis de
+  la sonde et l'étalon. Le point tombe au milieu.
+- **En plis, par l'étalon : 0,31 à 0,86** (bornes croisées, 32,9 ÷ 105 et
+  51,4 ÷ 60). La sonde en mesurait +0,48 ± 0,08 : compatible.
+- **Un quatrième point Elo par pli** : 42,16 ÷ 0,48, soit **59 à 128 Elo par
+  pli** en bornes croisées — après C21 (21 à 119), le ponder (51 à 104) et
+  l'étalon (60 à 105). Tous compatibles. <span><strong>Inférence, confiance
+  faible</strong> : le point de B6 (88) au-dessus du centre de l'étalon (78)
+  laisserait aux auxiliaires un apport AUTRE que la profondeur — des entrées
+  de table meilleures ; la largeur des intervalles ne permet pas de le
+  distinguer du hasard.</span>
+- **Ce que ce chiffre n'est pas** : la force contre un autre moteur, ni à plus
+  de deux fils. C'est un match contre notre propre version monofil, sur deux
+  cœurs physiques. **L'échelle au-delà de deux fils n'est pas mesurée** — les
+  runners n'en ont que deux ; le conteneur, quatre, n'a servi qu'au contrôle
+  grossier du temps jusqu'à une profondeur.
+- **Ce que ça change** : le moteur garde `Threads`, à 1 par défaut — l'usage
+  UCI, et le régime déterministe du banc et des tests. `MAX_THREADS` se relève
+  au-delà de 64 : la borne doit rester au-dessus des machines de compétition
+  (section précédente).
+
+### A18 — génération par étapes — VERDICT, 24 sept. 2026 : +23,10 ± 6,39 Elo à `8+0,08` — gain démontré, FUSIONNÉ
+
+Décidée par Théo le 24 sept. au matin (« Ce qui reste à faire »). Candidat
+**`087edb8`**, révoqué aussitôt par `908ed46` ; la rustine
+`tools/attic/a18-generation-par-etapes.patch` en garde une copie.
+
+#### Ce qui est écrit
+
+- **Le `MovePicker`** : `negamax` tire ses coups un à un, par étages — le coup
+  de la table, les tactiques par MVV-LVA, les killers, les tranquilles par
+  historique. Un étage n'est généré qu'au moment où on en a besoin : un nœud
+  qui coupe sur le coup de la table ne génère rien du tout.
+- **Ce n'est pas une optimisation pure, et les deux écarts d'ordre sont
+  nommés** : les ex æquo se départagent au sein de chaque étage — le tri reste
+  `sort_unstable`, qui ne les départage pas comme sur la liste entière — et
+  les tranquilles sont notés avec l'historique **mis à jour** par les coups
+  déjà cherchés, non tel qu'il était à l'entrée du nœud. Quiescence :
+  inchangée, sauf le correctif qui suit.
+- **Le partage tactique/tranquille est exact**, et un défaut de la quiescence
+  s'est corrigé en route. Son filtre ajoutait la case de prise en passant aux
+  cibles de TOUTES les pièces : un cavalier ou un fou qui s'y posait — une
+  case vide — passait pour une capture, et la quiescence cherchait ce coup
+  tranquille. `cozy-chess` pose cette case après **chaque** double pas de pion,
+  qu'un pion adverse puisse prendre ou non. Le défaut contredisait la doc de
+  `ordered_moves` (« seuls les coups qui changent le matériel »). Seul, le
+  correctif déplace le banc de **5, 37 et 195 nœuds** aux profondeurs 5, 7
+  et 10, soit 0,03 %.
+- **Deux défauts attrapés avant le commit.** Le compte des coups rendus,
+  incrémenté en fin de boucle, restait à zéro quand le premier coup coupait :
+  `negamax` aurait déclaré mat un roi en échec qui prend la dame adverse —
+  vu à la relecture, puis tenu par un test. Et un killer qui promeut ici
+  était rendu deux fois — trouvé par le test « chaque coup légal exactement
+  une fois », qui passe au sélecteur des killers quelconques.
+  `remember_quiet` ne retient jamais de promotion, mais le sélecteur ne s'y
+  fie pas.
+- **Tests** : cinq neufs (`move_picker_tests`) sur six positions pièges et une
+  marche seedée de 60 parties, quatre adaptés. **Quatorze défauts injectés,
+  tous attrapés** : chacune des quatre gardes d'un killer retirée, la case de
+  prise en passant cible de toutes les pièces ou oubliée, le pion de 7e
+  rangée mal classé, l'étage tranquille qui rend tout, les omissions
+  (killers, coup de la table) retirées, le tri inversé, les notes échangées,
+  le compte après la coupure. **Une assertion tautologique corrigée** : le
+  test des killers vérifiait « pas à un autre ply » par
+  `assert_eq!(f(x), f(x))`.
+
+#### Hors partie : le sélecteur va 10 à 14 % plus vite par nœud, et le banc disait le contraire
+
+| | banc, 6 positions | 400 positions de vraies parties, prof. 10 | 150 de ces positions, prof. 12 |
+|---|---|---|---|
+| nœuds | −4,4 % à 7, −2,0 % à 10 — puis **+27,6 % à 11, +14,9 % à 12** | +1,7 % — moyenne géométrique × 1,016, médiane × 1,000 | −2,2 % — × 1,021, médiane × 1,006 |
+| temps | **+15,9 % à 11, +4,8 % à 12** | **−10,7 %** | **−11,3 %** |
+| n/s | × 1,10 | × 1,14 | × 1,10 |
+
+- **Le banc renversait le signe du temps.** À la profondeur 12, la position
+  initiale y grossit de **+66 %** à elle seule, quand quatre des six
+  positions rétrécissent : un changement d'ordre déplace la taille de chaque
+  arbre dans les deux sens, et six positions ne moyennent rien. Sur des
+  positions de parties, l'arbre ne bouge pas (médianes × 1,000 et × 1,006) et
+  le temps baisse de 11 %. Même piège que « le banc n'est pas un échantillon
+  de jeu », sous une forme qui inverse une conclusion (`CLAUDE.md`).
+- **Ce sont des positions visitées à froid** — table vidée entre chacune —,
+  pas des parties : « un moteur qui démarre froid n'est pas un moteur en
+  partie ». La sonde, ci-dessous, mesure le régime réel.
+- **Le plafond mesuré le 22 sept. était 11,5 % du temps** (section « La
+  génération par étapes, et le bon dénominateur ») ; 10,7 et 11,3 % épargnés
+  le rejoignent. Le plafond était dit minorant — cache chaud —, et le n/s
+  × 1,14 le dépasse un peu.
+- **Une variante écartée par la mesure.** Retenir, à l'étage tactique, les
+  destinations tranquilles de chaque pièce, pour que l'étage tranquille ne
+  rappelle pas le générateur de `cozy-chess` : même arbre au nœud près, et
+  `tools/timing.sh` rend **19/40, p = 1,0** — aucun écart. Le second appel au
+  générateur ne coûte rien de mesurable ; la version simple reste.
+
+#### Le balayage de mutation du code neuf — local, prédit avant
+
+72 mutants filtrés sur le code neuf, et le même filtre sur `main` en témoin.
+**Candidat : 2 survivants, 62 attrapés, 6 inviables, 2 expirés.** Les deux
+survivants existent déjà sur `main` — la garde de débordement
+d'`ordered_moves`, et `*` en `+` dans la note des promotions, déplacée de
+`score_move` à `tactical_score` : l'ordre relatif n'y change qu'entre deux
+promotions qui capturent des pièces différentes, et le banc à la profondeur 5
+n'en rencontre pas. **La prédiction écrite avant était fausse sur un point** :
+elle donnait pour survivant neuf certain la garde de débordement de
+`stage_moves`, équivalente. Elle a été « attrapée » — par un test à
+plusieurs fils instable, et c'est ainsi qu'est apparu le défaut du budget de
+nœuds de B6 (section B6, « Corrigé le 24 sept. »). Correction faite, cette
+garde doit survivre : **attendu au balayage suivant la fusion d'A18,
+`search.rs` 38 → 39.**
+
+#### La mesure — écrite AVANT de lancer
+
+Candidat `087edb8` contre son parent `d01183d` (`main`), `8+0,08`.
+
+1. **La sonde** — `sonde = oui`, **100 parties**. Elle rend les plis gagnés
+   en partie, appariés par partie, et le rapport des n/s. **Attendu, confiance
+   moyenne** : n/s × 1,08 à 1,15 ; **+0,10 à +0,25 pli** — un temps divisé
+   par ~1,12 vaut 0,16 doublement, soit ~0,23 pli à 1,38 pli par doublement,
+   et le plafond du 22 sept. donnait 0,21. **Règle** : n/s ≤ 1,00, ou un
+   intervalle des plis entièrement ≤ 0 → le mécanisme ne se retrouve pas en
+   partie : pas de match avant d'avoir compris pourquoi. Sinon, le match.
+2. **L'Elo** — longueur fixe, graine « auto », **deux jobs de 3 000
+   parties**, coupés par le plafond vers 2 880, mis en commun par
+   `tools/mettre-en-commun.sh`. **Attendu, confiance faible** : 0,10 à 0,25
+   pli × 60 à 105 Elo par pli, soit **+6 à +26 Elo**. **Critère** :
+   - borne haute de l'intervalle mis en commun < 0 → régression : ne pas
+     fusionner, et chercher. Les suspects sont les deux écarts d'ordre
+     nommés plus haut : les ex æquo, et l'historique frais.
+   - borne basse > 0 → gain démontré : fusionner.
+   - entre les deux → pas d'effet décelable : **fusionner**, au titre de la
+     vitesse — mesurée hors partie, puis en partie par la sonde — et du
+     correctif de la quiescence. Les étages sont aussi la forme sur laquelle
+     s'écrirait tout raffinement d'ordonnancement futur (coup de réfutation,
+     historique de continuation), sans qu'aucun ne soit décidé.
+   - **Puissance** : ± 6,3 Elo sur ~5 760 parties. Une régression de 1 à 3 Elo
+     passerait inaperçue, et c'est accepté *parce que c'est écrit*.
+
+#### La sonde — rendue à 08 h 29 : n/s × 1,09, +0,17 ± 0,07 pli — l'Elo est lancé
+
+| [run 35971800328](https://github.com/theodubus/chess/actions/runs/35971800328) — 100 parties, graine 1612061960, EPYC 7763 | candidat `087edb8` | référence `d01183d` |
+|---|---|---|
+| profondeur moyenne des coups joués | 15,11 | 14,91 |
+| temps de recherche par coup | 206,3 ms | 205,9 ms |
+| n/s des coups partis d'un `go` | 2 739 260 | 2 514 112 — **× 1,09** |
+| écart apparié par partie | **+0,17 ± 0,07 pli** (Student) | |
+
+- **Lue sur la règle écrite avant** : n/s au-dessus de 1,00, plis entièrement
+  positifs — le mécanisme se retrouve en partie. **Dans l'attendu** sur les
+  deux grandeurs : × 1,08 à 1,15 attendu, × 1,09 mesuré, au bas ; +0,10 à
+  +0,25 pli attendu, +0,17 mesuré. Zéro anomalie, temps de recherche égal
+  (× 1,00) : la sonde compare bien deux vitesses à pendule égale.
+- **Le n/s en partie (× 1,09) est au bas de ce que disaient les positions
+  visitées à froid (× 1,10 à 1,14).** <span><strong>Inférence, confiance
+  faible</strong> : en partie, la table est chaude et coupe davantage sur le
+  coup de la table, étage que les deux versions servent au même prix — la
+  part du travail que le sélecteur épargne y est plus petite.</span>
+- **Attendu de l'Elo, resserré par la sonde et l'étalon** : 0,10 à 0,24 pli ×
+  60 à 105 Elo par pli, soit **+6 à +25 Elo**, confiance faible. Deux jobs
+  lancés à 08 h 31 (section « Ce qui est EN VOL »).
+
+#### L'Elo — rendu à 14 h 22 : +23,10 ± 6,39, gain démontré — FUSIONNÉ
+
+| run | graine | runner, n/s au banc | profondeur en 250 ms | parties | Elo | `Ptnml(0-2)` |
+|---|---|---|---|---|---|---|
+| [35975781390](https://github.com/theodubus/chess/actions/runs/35975781390) | 35975781390 | 2 196 259 | 12 | 2 880 | +27,81 ± 8,87 | 69, 247, 652, 329, 143 |
+| [35975784326](https://github.com/theodubus/chess/actions/runs/35975784326) | 35975784326 | 2 239 070 | 12 | 2 860 | +18,36 ± 9,20 | 87, 260, 651, 279, 153 |
+| **en commun** (`tools/mettre-en-commun.sh`) | | | | **5 740** | **+23,10 ± 6,39** | homogènes, z = 1,45 |
+
+- **Lu sur le critère écrit avant** : borne basse +16,7 > 0 — **gain
+  démontré : fusionner.** Coupés par le plafond comme prévu, graines
+  distinctes, runners étalonnés à 2 % près, zéro perte au temps, zéro coup
+  illégal sur les deux journaux entiers. Avertissements « PV continues
+  after » : 1 et 1, puis 3 et 2 — rien à lire.
+- **Au haut de l'attendu** (+6 à +25). Rapporté aux plis de la sonde, +0,17
+  ± 0,07 : **70 à 295 Elo par pli**, bornes croisées — compatible avec
+  l'étalon (60 à 105), le point (136) au-dessus.
+  <span><strong>Inférence, confiance faible</strong> : A18 n'est pas qu'une
+  vitesse — l'historique frais et les ex æquo par étage changent l'ordre, et
+  ce surplus pourrait venir de là ; l'intervalle des plis, trop large, ne
+  permet pas de le séparer du bruit.</span>
+- **La fusion — PR #77, `3b80e1a`, 14 h 35** : la révocation `908ed46` est révoquée à son tour sur la
+  branche, répétée à blanc à 12 h (section « Ce qui est EN VOL »). Banc
+  **109 047** à la profondeur 7, 31 829 à la profondeur 5. La rustine
+  `a18-generation-par-etapes.patch` cesse de s'appliquer — son code est
+  entré — et `c19-see-ordering`, `d2-sonde-pv`, `d6-sonde-ordonnancement`
+  repassent à « non ». **Plafond de mutation de `search.rs` : 38 → 39**,
+  mesuré sur l'arbre fusionné et non seulement prédit — la garde de
+  débordement de `stage_moves`, équivalente (raison écrite dans
+  `.github/mutation-baseline.txt`). Le balayage qui suit la fusion doit
+  rendre 39. **Il a rendu 43, et `eval.rs` 122** — la prédiction
+  était fausse : quatre mutants de code qu'A18 n'écrit pas, que l'arbre neuf
+  cachait au banc figé et à un test de PV sur une seule position. Tests
+  corrigés (`3ac4d71`) ; détail sur la ligne du balayage, section « Ce qui
+  est EN VOL ».
+
+### C24 — laisser finir l'itération — VERDICT, 24 sept. 2026 : +44,64 ± 6,24 Elo à `8+0,08` — gain démontré, FUSIONNÉ ; la lecture par l'accord tient
+
+Premier candidat du chantier « allocation inégale » (A19), sorti de son écran
+— section suivante, « L'allocation inégale — l'écran ». Candidat
+**`7274844`**, révoqué aussitôt par `40afb49`.
+
+**Ce qui change** : l'échéance dure passe du budget à **2,2 budgets**, la
+douce de 0,5 à **0,44** — un rapport de cinq au lieu de deux. Le budget ne
+change pas. Une itération entamée juste avant la douce finit presque
+toujours, au lieu d'être jetée une fois sur cinq. La dure reste bornée par la
+pendule ; `movetime` n'en change rien. Les échéances passent par une fonction
+pure, `deadlines_ms`, testée sur ses valeurs exactes. Banc inchangé : à
+profondeur fixe, aucune échéance ne joue.
+
+**Ce que l'écran en dit, à temps moyen égal** : le temps jeté tombe de
+18,8 % à 2,9 % du temps dépensé, et l'accord avec l'oracle vaut × 1,38 de
+temps à répartition égale, soit **+0,65 pli** — une lecture haute, la mesure
+par accord surestimant probablement (section de l'écran).
+
+Candidat `7274844` contre son parent `7fc5959`, `8+0,08`.
+
+1. **La sonde** — `sonde = oui`, **100 parties**. **Attendu, confiance
+   moyenne** : **+0,15 à +0,35 pli** en partie — les ~22 % de coups qui
+   s'arrêtaient sur la dure y gagnent une itération achevée, et la douce un
+   peu plus tôt en retire un peu ailleurs ; **temps de recherche par coup
+   inchangé**, × 0,95 à 1,05 — c'est l'égalité de temps que l'écran suppose ;
+   n/s inchangé. **Règle** : temps par coup hors de × 0,90 à 1,10 → l'écran
+   ne décrit pas ce que fait le moteur en partie, comprendre avant l'Elo ;
+   plis entièrement ≤ 0 → pas de match. Sinon, l'Elo.
+2. **L'Elo** — longueur fixe, graine « auto », **deux jobs de 3 000
+   parties**, mis en commun. **Attendu, confiance faible** : +0,15 à +0,35
+   pli × 60 à 105 Elo par pli, soit **+9 à +37 Elo** ; la lecture haute de
+   l'écran (+0,65 pli) donnerait +39 à +68. **Critère** :
+   - borne haute de l'intervalle mis en commun < 0 → régression : ne pas
+     fusionner, et chercher — le temps rendu aux itérations longues se paie
+     ailleurs, sur les coups que la douce plus précoce écourte ;
+   - borne basse > 0 → gain démontré : fusionner ;
+   - entre les deux → pas d'effet décelable : **fusionner**, au titre du
+     mécanisme mesuré — un temps jeté ramené de 18,8 à 2,9 % — et d'une règle
+     qui n'est pas plus complexe que la précédente.
+   - **Puissance** : ± 6,3 Elo sur ~5 760 parties ; une régression de 1 à 3
+     Elo passerait inaperçue, et c'est accepté *parce que c'est écrit*.
+
+**La sonde — relevée le 24 sept. 2026, run `35982959972`** : 100 parties,
+zéro perte au temps, zéro coup illégal.
+
+| camp | coups | profondeur | temps par coup | n/s |
+|---|---|---|---|---|
+| candidat `7274844` | 5 335 | 14,88 | 203,9 ms | 2 497 785 |
+| référence `7fc5959` | 5 339 | 14,89 | 204,3 ms | 2 515 534 |
+
+Temps par coup × 1,00, n/s × 1,00 : l'écran décrit ce que le moteur fait en
+partie. Écart apparié **−0,00 ± 0,09 pli** : l'intervalle n'est pas
+entièrement ≤ 0, donc **la règle écrite dit : l'Elo.**
+
+**Mais l'attendu écrit — +0,15 à +0,35 pli — est manqué, et la faute est
+dans l'attendu, pas dans l'écran.** Je l'avais dérivé de tête : les ~22 % de
+coups arrêtés par la dure y gagnent une itération achevée, « et la douce un
+peu plus tôt en retire un peu ailleurs ». L'écran savait le calculer — sa
+trace prolongée simule n'importe quelle règle d'arrêt, coup par coup — et je
+ne le lui ai pas demandé. Demandé après coup, section 6 du lecteur de
+`tools/attic/c24-sonde-allocation.patch` : **+0,046 pli, IC 95 %
+[+0,030 ; +0,062]** — 957 coups gagnent un pli, 658 en perdent un, un en perd
+deux : la douce avancée de 0,50 à 0,44 budget reprend presque tout ce que la
+dure rend. Temps simulé 203,4 ms contre 203,5. **La sonde en partie retombe
+sur l'écran, pas sur mon attendu.**
+
+**Ce que C24 change n'est donc pas la profondeur moyenne, c'est OÙ elle
+va** : à profondeur moyenne presque égale, l'accord avec l'oracle passe de
+80,8 à 83,9 %. La dure laisse finir les itérations longues — celles des
+positions difficiles —, la douce plus précoce prend le pli aux positions
+faciles. L'attendu en Elo, **réécrit avant de lancer**, a deux lectures :
+
+- **par la profondeur moyenne** : +0,05 pli × 60 à 105 Elo par pli, soit
+  **+2 à +7 Elo** — l'étalon suppose qu'un pli vaut autant partout ;
+- **par l'accord** : × 1,38 de temps plat, +0,65 pli, **+39 à +68 Elo** — la
+  lecture haute, celle que la réserve de l'écran frappe.
+
+<s>+9 à +37 Elo</s> ne découle plus de rien. **Le match tranche entre les deux
+lectures**, et c'est ce qui le rend utile au-delà de C24 : **C25 n'a de
+valeur que par l'accord** — la répartition par la stabilité ne change pas la
+profondeur moyenne non plus. Un C24 sans effet décelable condamnerait la
+lecture par l'accord, et C25 avec ; un C24 nettement positif la validerait.
+Le critère ne bouge pas.
+
+**Crible de mutation du code de C24, au candidat, pendant que l'Elo vole** —
+`set_deadlines`, `time_budget_ms`, `deadlines_ms` : 29 mutants. **Prédiction,
+écrite avant le résultat** : **aucun survivant** ; deux inviables — `Instant *
+Duration` ne compile pas — ; les autres attrapés par les valeurs exactes du
+test des échéances, et les deux `now - Duration` de `set_deadlines` par le
+test qui vérifie qu'on ne s'arrête pas trop tôt. Si le verdict fusionne C24,
+le balayage suivant ne doit donc rien ajouter à `search.rs`.
+**Rendu en 4 minutes : la prédiction tient** — 24 attrapés, les 2 inviables
+prévus, **aucun survivant**, et 3 expirés : `set_deadlines` vidé,
+`time_budget_ms` et `deadlines_ms` rendant `None`. Sans échéance, une
+recherche à la pendule ne s'arrête plus et le test pend jusqu'au délai de
+`cargo mutants` : attrapés quand même, mais par un blocage, pas par un échec
+qui nomme la faute.
+
+#### L'Elo — rendu à 16 h 22 : +44,64 ± 6,24, gain démontré — FUSIONNÉ
+
+| run | graine | runner, n/s au banc | profondeur en 250 ms | parties | Elo | `Ptnml(0-2)` |
+|---|---|---|---|---|---|---|
+| [35987710644](https://github.com/theodubus/chess/actions/runs/35987710644) | 35987710644 | EPYC 7763, 2 290 188 | 12 | 2 880 | +45,01 ± 8,90 | 72, 173, 665, 372, 158 |
+| [35987713472](https://github.com/theodubus/chess/actions/runs/35987713472) | 35987713472 | Xeon Platinum 8573C, 2 343 279 | 12 | 2 880 | +44,27 ± 8,75 | 63, 193, 645, 394, 145 |
+| **en commun** (`tools/mettre-en-commun.sh`) | | | | **5 760** | **+44,64 ± 6,24** | homogènes, z = 0,12 |
+
+- **Lu sur le critère écrit avant** : borne basse +38,4 > 0 — **gain
+  démontré : fusionner.** Coupés par le plafond comme prévu, graines
+  distinctes, deux processeurs différents et le même verdict à 0,7 Elo près,
+  zéro perte au temps, zéro coup illégal.
+- **Le match a tranché entre les deux lectures écrites avant lui.** Par la
+  profondeur moyenne, +2 à +7 : **réfutée**, d'un facteur six. Par l'accord
+  avec l'oracle, +39 à +68 : **elle tient**, le point au bas de l'intervalle
+  — la lecture que la réserve de l'écran disait surestimée ne l'était pas ici.
+  C24 ne cherche pas plus profond en moyenne ; il cherche **là où la décision
+  se joue**, et c'est ce que l'accord mesure.
+- <span><strong>Inférence, confiance moyenne</strong> : 44,64 ÷ 0,65 ≈ 69
+  Elo par pli d'accord, dans l'étalon des plis réels (60 à 105). Un pli
+  d'accord vaudrait donc un pli de profondeur — sur un point unique, qui ne
+  fait pas une loi.</span>
+- **Conséquence pour C25**, par la règle écrite avant ce verdict (écran,
+  « Ce qui en sort ») : `E` = +44,64 ≥ +11, **C25 s'écrit**. Son supplément
+  attendu : 0,08 × `E` à 0,54 × `E`, soit **+3,6 à +24 Elo**, un majorant.
+- **La fusion** : la révocation `40afb49` est révoquée à son tour, répétée à
+  blanc à 12 h. Banc inchangé — aucune échéance ne joue à profondeur fixe.
+  La rustine `c24-laisser-finir-literation.patch` cesse de s'appliquer, son
+  code est entré ; `c24-sonde-allocation.patch` s'applique toujours.
+
+### C25 — la répartition par la stabilité — VERDICT, 24 sept. 2026 : +7,87 ± 6,08 Elo à `8+0,08` — gain démontré, FUSIONNÉ ; sous l'attendu, le taux de C24 ne se transfère qu'aux extrêmes
+
+Deuxième candidat de l'allocation inégale, par-dessus C24, décidé par la
+règle écrite avant le verdict de C24 (écran, « Ce qui en sort ») :
+`E` = +44,64 ≥ +11. Candidat **`41d590f`**, révoqué aussitôt par `c4c356c` ;
+la rustine `tools/attic/c25-stabilite.patch` en garde une copie. Référence :
+son parent `910a6c9` — `main` avec A18 et C24.
+
+**Ce qui change** : l'échéance douce n'est plus une, elle dépend de la
+**stabilité du coup** — le nombre d'itérations achevées de suite sur le même
+coup. La sonde de l'allocation mesure, sur 107 000 itérations, la
+probabilité qu'une itération de plus change le coup : 26,1 % quand il vient
+de changer, 12,7 % stable depuis 2 à 3 itérations, 7,3 % depuis 4 à 6,
+3,7 % depuis 7 et plus. Poursuivre tant que cette probabilité, rapportée au
+coût de l'itération suivante, dépasse un seuil revient à une douce
+proportionnelle à elle : **1,825 / 0,885 / 0,513 / 0,257 budget**, à
+l'échelle qui rend le temps moyen de C24. La dure passe de 2,2 à **3
+budgets**, bornée par la pendule comme avant ; `movetime` inchangé.
+Tests : valeurs exactes, bornes des classes, et la douce en vigueur pilotée
+par la stabilité — huit défauts injectés, tous attrapés. Banc inchangé.
+
+**Ce que l'écran en dit** — section 7 du lecteur de
+`tools/attic/c24-sonde-allocation.patch`, supplément sur C24 en plis
+d'accord, appris sur une moitié des parties et évalué sur l'autre :
+
+| variante | A → B | B → A |
+|---|---|---|
+| douce par stabilité, dure 2,2 | +0,20 [+0,04 ; +0,35] | +0,02 [−0,12 ; +0,12] |
+| **douce par stabilité, dure 3 — C25** | **+0,36 [+0,17 ; +0,57]** | **+0,17 [+0,05 ; +0,28]** |
+| témoin : douce plate, dure 3 | +0,11 [+0,04 ; +0,19] | +0,07 [+0,02 ; +0,13] |
+
+La stabilité seule, à la dure de C24, ne se distingue pas du bruit sur une
+moitié ; la dure seule rapporte peu. **Ensemble, ils rapportent plus que
+leur somme** : une douce tardive sur un coup instable a besoin de place pour
+finir son itération. D'où un seul candidat pour les deux, mesuré comme la
+règle de l'écran qu'il est.
+
+Candidat `41d590f` contre son parent `910a6c9`, `8+0,08`.
+
+1. **La sonde** — `sonde = oui`, **100 parties**. **Attendu** : temps de
+   recherche par coup × 0,95 à 1,05 — c'est l'égalité de temps que la
+   calibration suppose ; profondeur moyenne quelconque — C24 a montré
+   qu'une réallocation ne se lit pas en plis moyens, **ce n'est donc plus un
+   critère**. **Règle** : temps par coup hors de × 0,90 à 1,10, ou une seule
+   perte au temps → l'écran ne décrit pas le moteur en partie, comprendre
+   avant l'Elo. Sinon, l'Elo.
+2. **L'Elo** — longueur fixe, graine « auto », **deux jobs de 3 000
+   parties**, mis en commun. **Attendu, confiance moyenne** : +0,17 à +0,36
+   pli d'accord × ~69 Elo par pli d'accord — le seul point de conversion,
+   celui de C24 —, soit **+12 à +25 Elo**. La réserve de l'écran frappe
+   davantage une règle qui cible les coups instables : le taux de C24 peut
+   ne pas se transférer. **Critère** :
+   - borne haute de l'intervalle mis en commun < 0 → régression : ne pas
+     fusionner ;
+   - borne basse > 0 → gain démontré : fusionner ;
+   - entre les deux → pas d'effet décelable : **NE PAS fusionner** — C25 est
+     plus complexe que C24 (un compteur, quatre constantes au lieu d'une),
+     et la règle écrite avant le verdict de C24 le disait : une règle plus
+     complexe ne se fusionne pas sur un « pas d'effet décelable ».
+   - **Une perte au temps** dans les 5 760 parties se lit avant toute
+     fusion, quel que soit l'Elo : la dure à trois budgets est la seule part
+     du changement qui touche à ce risque.
+   - **Puissance** : ± 6,3 Elo sur ~5 760 parties.
+
+**La sonde — relevée le 24 sept. 2026 à 17 h 32, run `36030127970`** : 100
+parties, zéro perte au temps, zéro coup illégal.
+
+| camp | coups | profondeur | temps par coup | n/s |
+|---|---|---|---|---|
+| candidat `41d590f` | 5 518 | 14,34 | 200,7 ms | 2 692 183 |
+| référence `910a6c9` | 5 514 | 14,55 | 204,2 ms | 2 703 922 |
+
+Temps par coup × 0,98, dans × 0,90 à 1,10, aucune perte au temps : **la règle
+écrite dit l'Elo.** Profondeur moyenne : **−0,20 ± 0,07 pli** — ce n'est plus
+un critère, et l'écran le prédisait : −0,156 [−0,211 ; −0,101] à temps égal.
+Les coups stables, majoritaires, reçoivent moins ; les instables, plus ; la
+moyenne suit la majorité. **La partie retombe sur l'écran.**
+
+**Crible de mutation du code de C25, au candidat, prédiction écrite avant le
+résultat** — `stability_class`, `deadlines_ms`, `set_deadlines`, `iterate` :
+33 mutants. **Deux survivants, tous deux anciens** — la comparaison
+`score.abs() > MATE_THRESHOLD` d'`iterate`, en `==` et en `>=`, déjà comptée
+dans les 39 ; **aucun dans le code neuf** ; des expirés possibles pour les
+mutants qui retirent les échéances.
+**Rendu en 4 minutes : la prédiction tient** — 25 attrapés, dont tous ceux
+de `stability_class` ; 4 inviables — `Instant * Duration` ne compile pas,
+ni un `Default` que `Move` et `DeadlinesMs` n'ont pas — ; **les deux
+survivants prévus, et eux seuls** ; 2 expirés : `set_deadlines` vidé et
+`deadlines_ms` rendant `None`. Sans échéance, une recherche à la pendule ne
+s'arrête plus : attrapés par un blocage, comme pour C24. Si C25 est
+fusionné, le balayage suivant ne doit rien ajouter à `search.rs`.
+
+#### L'Elo — rendu à 23 h 24 : +7,87 ± 6,08, gain démontré — FUSIONNÉ
+
+| run | graine | runner, n/s au banc | profondeur en 250 ms | parties | Elo | `Ptnml(0-2)` |
+|---|---|---|---|---|---|---|
+| [36035213241](https://github.com/theodubus/chess/actions/runs/36035213241) | 36035213241 | Xeon 6973P-C, 3 365 445 | 12 | 2 880 | +8,45 ± 8,51 | 81, 272, 682, 306, 99 |
+| [36035217166](https://github.com/theodubus/chess/actions/runs/36035217166) | 36035217166 | EPYC 9V45, 3 882 592 | 12 | 2 860 | +7,29 ± 8,70 | 91, 270, 652, 322, 95 |
+| **en commun** (`tools/mettre-en-commun.sh`) | | | | **5 740** | **+7,87 ± 6,08** | homogènes, z = 0,19 |
+
+- **Lu sur le critère écrit avant** : borne basse +1,79 > 0 — **gain
+  démontré : fusionner.** Coupés par le plafond comme prévu, graines
+  distinctes, deux processeurs différents et le même verdict à 1,2 Elo près.
+  **Zéro perte au temps** dans les 5 740 parties — la dure à trois budgets,
+  seule part du changement qui touchait ce risque, ne s'est pas fait
+  prendre à `8+0,08` —, zéro coup illégal.
+- **Sous l'attendu écrit avant, sans le démentir tout entier.** Attendu +12
+  à +25 ; mesuré +7,87 [+1,79 ; +13,95]. Le haut de l'attendu est exclu
+  (+25 est à z = 5,5), son bas reste dans l'intervalle (+12 est à z = 1,3).
+- **Le taux de conversion de C24 ne se transfère qu'aux extrêmes — et la
+  réserve écrite avant le disait.** 7,87 ÷ 0,17 à 0,36 pli d'accord :
+  **22 à 46 Elo par pli d'accord** au point, contre ~69 pour C24 ; aux bornes
+  croisées, 5 à 82 — 69 n'y entre qu'avec le supplément d'écran à son bas et
+  l'Elo au haut de son intervalle. La réserve de l'écran : « la conversion
+  surestime toutes les règles, et d'autant plus qu'une règle cible les coups
+  instables — donc la règle inégale plus que C24 ». C'est ce qui est arrivé.
+  <span><strong>Inférence, confiance moyenne</strong> : un coup instable
+  hésite souvent entre deux coups presque équivalents, donc en « corriger »
+  la décision vaut moins qu'en moyenne ; C24 reprenait son temps aux coups
+  faciles, C25 le donne aux coups instables — le premier pli d'accord est le
+  moins cher à rendre utile.</span> **Deux points, deux taux : l'Elo d'un pli
+  d'accord dépend de la règle qui l'achète.** Pour la suite de l'allocation
+  inégale, un attendu converti au taux de C24 est un majorant, pas une
+  estimation.
+- **La fusion** : la révocation `c4c356c` est révoquée à son tour. Banc
+  inchangé, 109 047 à la profondeur 7 — aucune échéance ne joue à profondeur
+  fixe. La rustine `c25-stabilite.patch` cesse de s'appliquer, son code est
+  entré ; `c24-sonde-allocation.patch` s'applique toujours.
+
+### C26 — la dure à l'approche d'un contrôle à coups comptés — VERDICT, 25 sept. 2026 : +2,43 ± 6,01 Elo à `40/8`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
+
+Le risque est au backlog depuis le 24 sept. : quand l'interface annonce
+`movestogo`, le budget vaut `restant / movestogo + inc/2`, et à deux coups
+du contrôle la dure de C25 — trois budgets — vaut `min(1,5 × restant,
+restant − 50)` = **`restant − 50`**. La douce du coup qui vient de changer,
+1,825 budget, en vaut 0,91. Avant C24, la dure valait le budget : `restant /
+2`. Nos matchs sont en mort subite, sans `movestogo` : ce chemin n'y passe
+jamais.
+
+**Ce que fait Stockfish — lu dans son source, pas de mémoire.** La ligne du
+backlog disait « Stockfish plafonne l'excès à ~1,7 budget à deux coups du
+contrôle ». **Faux sur le source actuel** : `src/timeman.cpp` au commit
+`0a215d6c9e48856ef630013b8ab8312941a59057` (`master` le 24 sept. 2026) borne
+la durée maximale par `max(optimum, min(0,8097 × pendule − surcoût,
+maxScale × optimum))`, avec `maxScale = 1,3 + 0,11 × movestogo` aux
+cadences cycliques — et c'est la **fraction de pendule**, 81 %, qui mord
+près du contrôle. L'optimum lui-même y est haut : `(0,88 + ply / 116,4) /
+movestogo`, soit ~0,77 de la pendule à deux coups du contrôle, vers le
+39ᵉ coup. **Stockfish accepte donc de dépenser les trois quarts de sa
+pendule à deux coups du contrôle ; ce qu'il interdit, c'est d'en dépasser
+81 %.** Notre dure va jusqu'à `restant − 50`. Le « ~1,7 » venait d'une
+formule plus ancienne, `1,5 + 0,11 × movestogo`, citée de tête. *Même
+famille que « l'outil ne sait pas le faire » : une référence extérieure se
+lit dans son source, au commit qu'on cite.*
+
+#### La sonde — protocole et prédiction, écrits le 24 sept. 2026 à 23 h 38, avant de lancer
+
+`main` avec C25 (moteur de `4b38bc5`, identique au candidat `41d590f`) contre
+lui-même, **`40/8`** — 40 coups en 8 s, cyclique, ~200 ms par coup comme
+`8+0,08` —, cutechess-cli avec `-debug all`, 60 parties, livre
+`tools/book.epd` au hasard, `-srand 20260925`, trois parties à la fois dans
+le conteneur (4 cœurs, monofil, pas de ponder : 1 × 3 ≤ 3). Pas
+d'adjudication par abandon — elle finirait des parties avant le premier
+contrôle ; la nulle par adjudication à partir du 40ᵉ coup, comme
+`match.yml`. Mesuré pour chaque coup, par `movestogo` annoncé : la part de
+la pendule dépensée entre `go` et `bestmove`, vue de l'arbitre.
+
+**Un cycle AFFAMÉ** : le coup à `movestogo 2` dépense plus de 80 % de sa
+pendule. **Prédiction** :
+
+- à `movestogo` 5 et plus : jamais plus de trois budgets, la dure — rien
+  à voir ;
+- **10 à 25 % des cycles affamés** — un coup instable, ou une itération
+  entamée avant une douce plus basse et finie contre une dure à `restant −
+  50` ; avant C24, aucun, la dure tombant à la moitié de la pendule ;
+- dans ces cycles, le coup à `movestogo 1` cherche avec moins de 20 % de ce
+  que lui laisse un cycle ordinaire ;
+- **zéro perte au temps** : la marge de 50 ms tient, et le dommage est la
+  qualité du 40ᵉ coup, pas un drapeau. *Confiance moyenne* — la latence de
+  l'arbitre sous charge n'est mesurée nulle part ici.
+
+#### Rendu à 23 h 47 : le risque existe, moins souvent que prédit, et plus loin du contrôle
+
+60 parties, 8 435 coups, 152 cycles. Le lecteur est la rustine
+`tools/attic/c26-sonde-controle.patch`, qui porte aussi la commande.
+
+| `movestogo` | coups | part moyenne de la pendule | 9ᵉ décile | max |
+|---|---|---|---|---|
+| 1 | 152 | 0,396 | 0,881 | 0,965 |
+| 2 | 157 | 0,272 | 0,634 | **0,975** |
+| 3 | 164 | 0,203 | 0,393 | **0,967** |
+| 4 | 172 | 0,139 | 0,274 | 0,753 |
+| 5 et plus | 7 790 | 0,037 | 0,078 | 0,601 |
+
+- **Cycles affamés : 8 sur 152, 5,3 %** — sous la prédiction, 10 à 25 %.
+  Dans chacun, le 39ᵉ coup a dépensé 83 à 97 % de sa pendule et laissé
+  **49 à 50 ms** au 40ᵉ, joué en 0 ou 1 ms à la profondeur 2 à 4 — la table
+  de transposition évite le premier coup légal, pas le coup faible. La
+  médiane d'un cycle ordinaire lui laisse 892 ms : **5 à 6 %** de ce qu'il
+  aurait eu, dans la prédiction (moins de 20 %).
+- **La prédiction se trompait d'endroit** : elle ne comptait que
+  `movestogo 2`. À trois coups du contrôle, trois budgets valent la
+  pendule entière, et un coup y a dépensé **96,7 %** — deux coups affamés
+  derrière lui. Au-delà de la borne qu'on s'apprête à poser, `(n + 1) / 2n`
+  de la pendule : **5,7 %** des coups à deux coups du contrôle, **4,3 %** à
+  trois, **2,3 %** à quatre.
+- À cinq coups et plus, jamais plus de 0,601 — trois budgets, la dure,
+  comme prédit.
+- **Zéro perte au temps** ; marge minimale au contrôle **44 ms** sur les 50
+  de la marge. Elle tient, à six millisecondes près.
+
+#### Le correctif — écrit le 24 sept. 2026 au soir
+
+Quand l'interface annonce `movestogo` = n ≥ 2, la dure est bornée pour que
+chacun des n − 1 coups suivants garde au moins **la moitié de sa part
+plate**, `restant / n` : `dure ≤ restant − ⌈(n − 1) × restant / 2n⌉`. Les
+douces restent sous la dure, comme avant. **Pourquoi la moitié** : c'est ce
+que trois budgets laissent déjà à cinq coups du contrôle — la borne étend
+jusqu'au contrôle une garantie que C25 tient partout ailleurs, et ne mord,
+sans incrément, qu'à deux, trois et quatre coups. **Sans `movestogo`
+annoncé, rien ne change** : les douze coups du défaut sont un horizon, pas
+un contrôle, et la mort subite — où C24 et C25 ont été mesurés — garde ses
+échéances à la milliseconde. `movestogo 1` non plus : rien après lui qu'il
+faille protéger. La borne ne compte pas les incréments que recevront les
+coups suivants : avec un incrément, elle mord un peu plus loin du contrôle,
+du côté prudent.
+
+Tests : les valeurs exactes de `movestogo` 1 à 5 — à 2, 3 et 4 elles
+échouent sur le code d'avant (vérifié : 9 950 contre 7 500 à deux coups),
+1 et 5 sont les témoins ; la garantie elle-même sur une grille de 59
+`movestogo` × 4 pendules, à la milliseconde près — la réserve s'arrondit
+vers le haut ; et la mort subite à pendule serrée, où la borne mordrait si
+elle s'appliquait au défaut. Banc inchangé.
+
+#### La mesure — écrite AVANT de lancer
+
+**C26 est un correctif, pas un gain** : la règle est celle d'un correctif
+de règle (`CLAUDE.md`, « ce qui compte comme preuve ») — des tests qui
+échouent sur l'ancien code, le mécanisme mesuré en régime réel, puis un
+match au critère écrit d'avance. Candidat committé puis révoqué aussitôt.
+
+1. **La sonde, après** — la même, sur le candidat, même graine. **Attendu** :
+   **aucun cycle affamé**, et aucun coup à 2, 3 ou 4 coups du contrôle
+   au-delà de sa borne, à la latence de l'arbitre près ; zéro perte au
+   temps.
+2. **Le match** — `40/8`, candidat contre son parent, longueur fixe, graine
+   « auto », **deux jobs de 3 000 parties**, mis en commun. **Critère** :
+   fusion **sauf si la borne haute de l'intervalle mis en commun est sous
+   zéro** ; **une seule perte au temps du candidat** se lit avant toute
+   fusion. **Puissance, dite d'avance** : ± 6 Elo sur ~5 700 parties — un
+   effet de quelques Elo passe inaperçu, et c'est accepté parce que c'est
+   écrit. **Attendu, confiance faible** : 0 à +5 Elo — un 40ᵉ coup joué à
+   la profondeur 2 à 4 dans un cycle sur vingt, contre un 39ᵉ plus court.
+   - **Pas de match à `8+0,08`** : sans `movestogo`, candidat et parent
+     rendent les mêmes échéances à la milliseconde, et un test le fixe.
+
+**La sonde d'après — rendue à 23 h 58, même graine** : 60 parties, 7 211
+coups, 121 cycles. **Aucun cycle affamé** (5,3 % avant) ; au-delà de la
+borne, 4, 5 et 2 coups à deux, trois et quatre coups du contrôle, **aucun de
+plus de 10 ms** — la latence de l'arbitre, comme prévu (8, 7 et 4 avant) ;
+à cinq coups et plus, toujours 0,601 au plus. **Zéro perte au temps**,
+marge minimale au contrôle 45 ms. **Conforme à l'attendu : le match se
+lance.**
+
+Candidat **`6daf7d7`**, révoqué aussitôt par `3189a95` ; la rustine
+`tools/attic/c26-controle-annonce.patch` en garde une copie. Référence : son
+parent `4620495` — `main` avec C25.
+
+**Crible de mutation du code de C26, au candidat, prédiction écrite avant le
+résultat** — `deadlines_ms` : 17 mutants, dont 5 dans le code neuf.
+**Aucun survivant** : les cinq neufs — `>=` en `<` dans le filtre, `- 1` et
+`100 * n` changés d'opérateur — déplacent tous la dure à deux coups du
+contrôle, que le test fixe à 7 500 ; les douze anciens comme aux cribles de
+C24 et de C25. Un inviable, `Some(Default::default())` ; un expiré,
+`deadlines_ms` à `None`.
+**Rendu en 2 minutes : la prédiction tient, exactement** — 15 attrapés,
+l'inviable et l'expiré prévus, aucun survivant. Si C26 est fusionné, le
+balayage suivant ne doit rien ajouter à `search.rs`.
+
+#### L'Elo — rendu à 05 h 28 : +2,43 ± 6,01, aucune borne haute sous zéro — FUSIONNÉ
+
+| run | graine | runner, n/s au banc | profondeur en 250 ms | parties | Elo | `Ptnml(0-2)` |
+|---|---|---|---|---|---|---|
+| [36075386225](https://github.com/theodubus/chess/actions/runs/36075386225) | 36075386225 | Xeon 6973P-C, 3 472 557 | 12 | 3 000 | +4,98 ± 8,42 | 101, 266, 720, 315, 98 |
+| [36075388587](https://github.com/theodubus/chess/actions/runs/36075388587) | 36075388587 | EPYC 7763, 2 430 129 | 12 | 3 000 | −0,12 ± 8,59 | 117, 263, 726, 292, 102 |
+| **en commun** (`tools/mettre-en-commun.sh`) | | | | **6 000** | **+2,43 ± 6,01** | homogènes, z = 0,83 |
+
+- **Lu sur le critère écrit avant** : intervalle mis en commun [−3,6 ;
+  +8,4], **borne haute au-dessus de zéro — fusionner**. Chaque match lu
+  seul ne la met pas sous zéro non plus (+13,4 et +8,5) : *un critère écrit
+  en bornes se lit sur chaque match comme sur l'ensemble*. **Zéro perte au
+  temps** dans les 6 000 parties, zéro coup illégal. Les deux jobs ont fini
+  **entiers**, sans le plafond : 6,5 s par partie à `40/8`, contre ~7,25 à
+  `8+0,08` — la première estimation de durée d'une cadence à coups comptés,
+  mesurée.
+- **Dans l'attendu écrit avant**, 0 à +5, confiance faible — et sous la
+  puissance dite d'avance : ± 6 Elo, donc aucun signe n'est établi. C'est ce
+  que la règle d'un correctif accepte, *parce que c'est écrit* : le
+  mécanisme est mesuré en régime réel (5,3 % de cycles affamés avant, aucun
+  après), les tests tombent sur l'ancien code, et le match n'y trouve pas
+  de régression.
+- **Ce que la sonde avait mal prédit, et qu'il faut garder** : sa
+  prédiction ne comptait que les coups à `movestogo 2`, parce que c'est là
+  que j'avais vu le risque en relisant le code. Il était aussi à trois
+  coups du contrôle — trois budgets y valent la pendule entière. *Une
+  prédiction bornée au cas qu'on a en tête ne voit pas son voisin* ; le
+  correctif, lui, avait été écrit pour tous les `movestogo` et couvrait le
+  voisin sans le savoir.
+- **La fusion** : la révocation `3189a95` est révoquée à son tour. Banc
+  inchangé, 109 047 à la profondeur 7 — aucune échéance à profondeur fixe.
+  La rustine `c26-controle-annonce.patch` cesse de s'appliquer, son code est
+  entré ; `c26-sonde-controle.patch` s'applique toujours.
+
+### L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte l'essentiel
+
+Premier geste du chantier décidé par Théo (A19) : **mesurer le mécanisme
+avant d'écrire une ligne du moteur.** La question : où un surcroît de temps
+change-t-il la décision, et où un temps retiré ne coûte-t-il rien ?
+
+#### La sonde, et ce qui la rend fiable
+
+`tools/attic/c24-sonde-allocation.patch` — l'instrumentation, la sonde
+`alloc-probe` et son lecteur `tools/sonde-alloc/analyser.py`, dans la même
+rustine. **60 parties à `8+0,08`** depuis le livre des matchs, pendule qui
+décroît, **une table par camp** comme en match — `b2_probe` en partageait une
+entre les deux camps. Chaque coup est joué par la recherche normale. Avant
+elle, une recherche **prolongée jusqu'à six budgets** part d'une **copie** de
+la table, rétablie ensuite : la partie ne garde aucune trace de la recherche
+prolongée, sans quoi elle jouerait dans une table plus chaude qu'en match.
+
+- **La recherche prolongée refait la normale nœud pour nœud jusqu'à son
+  arrêt** — même position, même table, mêmes nœuds à chaque profondeur,
+  vérifié sur la trace. Toute règle d'arrêt se simule donc hors ligne sur sa
+  trace ; la règle actuelle, simulée, rend le coup effectivement joué dans
+  **98,5 %** des cas, le reste étant le bruit d'horloge.
+- **Instrumentation neutre** : banc à 114 026. **6 400 coups, zéro perte au
+  temps.** Conteneur, trois processus sur quatre cœurs, ~1 h.
+- **L'oracle** est la décision au bout des six budgets. **L'étalon** est la
+  courbe d'accord de la règle actuelle quand on multiplie le budget
+  uniformément : elle convertit un gain d'accord en temps équivalent, puis
+  en plis par l'étalon du 24 sept. (1,38 pli par doublement).
+
+#### Ce que la règle actuelle fait du temps
+
+La douce tombe à la moitié du budget, la dure au budget. Temps dépensé :
+**0,765 budget** en moyenne. Arrêts : **78 % par la douce, 22 % par la
+dure**. **18,7 % du temps dépensé est JETÉ** dans des itérations entamées
+avant la douce et interrompues par la dure — une perte sèche, que personne
+n'avait mesurée.
+
+| budget × | 0,5 | 0,71 | 1 | 1,41 | 2 | 2,83 |
+|---|---|---|---|---|---|---|
+| accord avec l'oracle | 76,2 % | 78,5 % | **80,8 %** | 83,9 % | 86,8 % | 90,3 % |
+| temps dépensé / budget | 0,400 | 0,558 | 0,763 | 1,061 | 1,478 | 2,077 |
+
+#### Par classe de position, au moment où la règle actuelle décide
+
+| classe | part | un budget × 2 change le coup | ≠ oracle |
+|---|---|---|---|
+| tous | 100 % | 9,3 % | 19,2 % |
+| coup stable depuis 7 itérations ou plus | 73,0 % | **6,5 %** | 14,5 % |
+| coup stable depuis 4 à 6 | 8,2 % | 11,0 % | 24,8 % |
+| coup stable depuis 2 à 3 | 8,8 % | 16,0 % | 31,8 % |
+| **coup qui vient de changer** | 9,9 % | **22,9 %** | 38,0 % |
+| effort à la racine 80 à 95 % | 21,2 % | **4,1 %** | 8,7 % |
+| effort à la racine sous 50 % | 27,4 % | 17,0 % | 31,2 % |
+| score en chute de 50 cp ou plus | 1,5 % | 15,5 % | 26,8 % |
+
+Un facteur **3,5** entre les classes sur ce que rapporte un double budget :
+le mécanisme existe. L'effort — la part des nœuds de la racine passée sous le
+meilleur coup — se confond avec la profondeur, faible aux premières
+itérations ; la stabilité porte le signal.
+
+#### Deux règles, à temps moyen égal
+
+**Règle plate qui laisse finir l'itération** — même douce ou presque, dure
+bien plus loin, budget ajusté pour que le temps moyen ne bouge pas :
+
+| dure / douce | douce | dure | temps jeté | équivaut à |
+|---|---|---|---|---|
+| 2 (actuelle) | 0,50 budget | 1,00 | 18,9 % | — |
+| 3 | 0,46 | 1,37 | 9,4 % | × 1,23, +0,41 pli |
+| 4 | 0,44 | 1,78 | 4,6 % | × 1,35, +0,59 pli |
+| **5 — C24** | **0,44** | **2,20** | **2,8 %** | **× 1,38, +0,65 pli** |
+
+Le gain plafonne entre 5 et 8 (vu sur 4 510 coups : +0,73 à 8) ; 5 borne
+mieux le pire cas. **Laisser finir l'itération est déjà une allocation
+inégale** : une itération dure longtemps quand la position est difficile —
+le coup change, la fenêtre d'aspiration échoue —, et c'est là qu'elle achète
+le plus.
+
+**Règle inégale** — poursuivre tant que la probabilité qu'une itération de
+plus change le coup, rapportée à son coût, dépasse un seuil ; la probabilité
+apprise sur une moitié des parties, la règle évaluée sur l'autre, dans les
+deux sens, intervalles par rééchantillonnage des parties :
+
+| table de probabilité | dure | A → B | B → A |
+|---|---|---|---|
+| stabilité seule | 2 budgets | +0,77 pli [+0,64 ; +0,89] | +0,69 [+0,56 ; +0,81] |
+| stabilité seule | 3 budgets | +1,00 [+0,79 ; +1,14] | +0,86 [+0,75 ; +0,95] |
+| stabilité × effort | 2 budgets | +0,70 [+0,56 ; +0,88] | +0,58 [+0,45 ; +0,73] |
+| stabilité × effort | 3 budgets | +0,91 [+0,67 ; +1,12] | +0,72 [+0,56 ; +0,86] |
+
+**La répartition par la stabilité n'ajoute que +0,05 à +0,35 pli à ce que C24
+prend déjà**, et la table plus riche fait moins bien que la seule stabilité.
+
+#### La réserve, et elle compte
+
+**L'accord avec un oracle n'est pas de l'Elo.** Un coup instable hésite
+souvent entre deux coups presque équivalents : le « corriger » vaut peu.
+<span><strong>Inférence, confiance moyenne</strong> : la conversion surestime
+toutes les règles, et d'autant plus qu'une règle cible les coups instables —
+donc la règle inégale plus que C24.</span> Et les parties rejouées sont
+celles de la règle actuelle : une autre règle jouerait d'autres parties. Ce
+que l'écran établit sans réserve : **le temps jeté** — 18,7 % — et **l'écart
+entre les classes**.
+
+#### Ce qui en sort
+
+1. **C24 — laisser finir l'itération** : écrit, en mesure (section C24). Il
+   porte l'essentiel, pour deux constantes. Sa sonde a montré qu'il ne
+   change pas la profondeur moyenne (+0,05 pli à l'écran, −0,00 ± 0,09 en
+   partie) : son gain, s'il existe, est dans la répartition.
+2. **C25 — la répartition par la stabilité**, par-dessus C24 : **après le
+   verdict de C24**. Son supplément à l'écran, +0,05 à +0,35 pli, est la
+   lecture que la réserve frappe le plus ; il se décidera sur ce que C24 aura
+   rendu en Elo pour ses +0,65 pli d'écran.
+   **La règle, écrite le 24 sept. à 10 h 45, AVANT le verdict de C24** — les
+   deux jobs volent depuis 10 h 31. Soit `E` le point estimé de C24 mis en
+   commun. C24 révèle ce que vaut un pli d'accord : `E / 0,65`. Le supplément
+   de C25 vaut donc au plus **0,54 × E** (0,35 / 0,65) et au moins 0,08 × E —
+   un majorant, puisque la conversion surestime une règle qui cible les coups
+   instables plus qu'elle ne surestime C24. **C25 s'écrit si ce majorant
+   atteint 6 Elo, soit `E` ≥ +11** : 6 Elo sont la résolution de deux jobs,
+   et une règle plus complexe que C24 ne se fusionne pas sur un « pas d'effet
+   décelable ». **En dessous, l'allocation inégale s'arrête à C24**, et la
+   suite se repose à Théo. Si C24 régresse, C25 — qui réalloue davantage —
+   tombe avec lui.
+   **Appliquée le 24 sept. à 16 h 25 : `E` = +44,64 — C25 s'écrit**, supplément
+   attendu +3,6 à +24 Elo.
+   **Mesuré le 24 sept. à 23 h 24 : +7,87 ± 6,08 — FUSIONNÉ** (section C25) :
+   dans cet intervalle, au tiers bas ; sous l'attendu que les moitiés de
+   l'écran resserraient ensuite (+12 à +25).
+3. **Rien d'autre** : l'effort à la racine n'ajoute rien à la stabilité —
+   la table croisée fait moins bien que la stabilité seule —, et le score en
+   chute ne touche que 1,5 % des coups. **Les deux règles que l'écran
+   désignait sont fusionnées.**
+
+### A20 — raffinements d'ordonnancement — VERDICT, 25 sept. 2026 : +12,56 ± 4,35 Elo à `8+0,08` — la continuation conservée, gain démontré, FUSIONNÉ
+
+**La question.** Le chantier est décidé (Théo, 25 sept.) : coup de
+réfutation, historique de continuation. Avant d'écrire une ligne : que laisse
+l'ordre des coups tranquilles sur la table, et combien chaque raffinement en
+reprendrait-il ?
+
+**La sonde** — instrumentation et lecteur dans une même rustine de l'attic,
+versée avec le résultat. **L'arbre est inchangé au nœud près** : banc 109 047
+à la profondeur 7 et 629 735 à la profondeur 10, identiques à `main`. Aux
+nœuds de `negamax`, elle compte :
+- les coupures bêta, l'**étage de leur coupeur** (table, tactique, killer,
+  étage tranquille) et la part au premier coup ;
+- **l'UNION des sous-arbres cherchés avant le coupeur**, ce qu'un ordre
+  parfait épargnerait, propagée de fils en père. *Sommer ces sous-arbres
+  nœud par nœud compte deux fois ceux qui s'emboîtent* : le premier essai
+  rendait 67 % des nœuds, impossible pour un plafond ; l'union en rend la
+  moitié ;
+- cette union **ventilée par l'étage du coup perdu**, et celle de l'étage
+  tranquille seul — le plafond des raffinements décidés ;
+- aux coupures de l'étage tranquille, le **rang contrefactuel** du coupeur
+  sous cinq ordres : coup de réfutation devant l'étage ; papillon +
+  continuation à un et deux plis ; continuation d'abord ; papillon
+  **conservé** d'un coup à l'autre ; ce dernier + continuation. Les tables
+  contrefactuelles apprennent des mêmes coupures que l'historique réel, se
+  conservent d'un coup à l'autre et se vident à `ucinewgame` — une
+  continuation de 768 × 768 entrées vidée à chaque coup n'apprend rien.
+
+**Ce qu'elle ne peut pas mesurer, écrit avant** :
+- **le malus d'historique.** Il punit ce que l'ordre ACTUEL essaie en
+  premier ; appris sous cet ordre, il se condamne d'avance. Le premier essai
+  le donnait trois fois pire que l'historique réel : **un biais de politique,
+  pas une mesure**. Il se juge en l'écrivant ;
+- **le canal LMR/LMP.** Un bon coup mal classé est réduit ou élagué, et
+  c'est de la décision, pas de l'arbre. L'écran compte les coupeurs de
+  l'étage que LMR a réduits ; il ne voit pas les coups élagués qui auraient
+  coupé ;
+- **le second ordre.** Un autre ordre changerait l'arbre, donc les tables.
+
+**Régime** : parties entières à `8+0,08`, le binaire sondé contre lui-même,
+adjudication de `match.yml`, table et tables conservées comme en partie —
+piège du moteur froid.
+
+**Attendu, écrit avant — et ce que j'ai déjà vu.** Une position cherchée
+deux secondes, à froid, a servi à mettre la sonde au point : 78 % des
+coupures au premier coup ; l'étage tranquille ne coupe que 3 % des fois ;
+union 34 % des nœuds, dont 9 % dans l'étage tranquille ; aucune variante ne
+réduisait le rang moyen du coupeur de plus de 2 %, et « continuation
+d'abord » l'augmentait. Un point à froid, pas le régime, mais l'attendu en
+est informé. Confiance faible sur chaque ligne :
+- coupures au premier coup : 75 à 90 % ;
+- coupeurs de l'étage tranquille : 2 à 8 % des coupures ;
+- union de l'étage tranquille : **4 à 12 % des nœuds**, soit un plafond de
+  0,08 à 0,25 pli par la règle de 1,36 pli par doublement ;
+- rang moyen du coupeur : aucune variante ne le réduit de plus de 10 %, sauf
+  peut-être le papillon conservé, 0 à 20 %.
+
+**Critère, écrit avant :**
+1. **Union de l'étage tranquille sous 5 % des nœuds** — 0,10 pli, 6 à
+   10 Elo à l'étalon de 60 à 105 Elo par pli — **et aucune variante qui
+   réduise le rang moyen de 10 %** : le canal de l'arbre est clos pour ces
+   raffinements. Une variante réaliste n'en prendrait qu'une fraction, sous
+   la résolution de deux jobs. Reste le canal LMR/LMP : une sonde des DÉGÂTS,
+   comme D2, avant tout code — et la suite se repose à Théo avec les
+   chiffres.
+2. **Sinon**, écrire la variante au meilleur gain contrefactuel, mesurer son
+   arbre à profondeur fixe sur des positions de parties (déterministe), puis
+   deux jobs de 3 000 parties à `8+0,08`. Critère de gain : fusion si la
+   borne basse est au-dessus de zéro.
+
+**Un biais de MÉTHODE, trouvé en lisant les premiers chiffres (25 sept.,
+07 h 30).** Toutes les variantes sortaient pires que l'ordre joué — même le
+coup de réfutation, qui tombe juste sur 16,8 % des coupures de l'étage. Ce
+n'est pas un résultat : **le coupeur est le premier coup qui coupe DANS
+L'ORDRE JOUÉ**. Les coups qu'un autre ordre placerait devant lui n'ont
+jamais été cherchés, certains auraient coupé aussi, et les compter comme des
+échecs condamne toute variante qui diffère de l'ordre joué. Le malus n'en
+était qu'un cas particulier. Restent valides : l'union — le plafond — et,
+pour une variante, le « coupeur premier » comme **minorant**. **La seconde
+clause du critère s'appuyait sur ces rangs : elle ne s'applique pas.** La
+première suffit à trancher, puisque l'union de l'étage tranquille dépasse
+5 % (chiffre final plus bas).
+
+**L'écran, rendu à 07 h 43** — 120 parties à `8+0,08`, six processus,
+6,25 milliards de nœuds ; rustine `tools/attic/a20-sonde-ordonnancement.patch`,
+lecteur `tools/sonde-a20/analyser.py`. Les rangs contrefactuels n'y figurent
+plus que pour mémoire.
+
+| grandeur | attendu | mesuré |
+|---|---|---|
+| coupures au premier coup | 75 à 90 % | **81,8 %** |
+| étage du coupeur : table, tactique, killer, étage tranquille | — | 28,4 / 50,6 / 16,1 / **4,9 %** |
+| coupeurs de l'étage tranquille | 2 à 8 % des coupures | **4,9 %** |
+| union des sous-arbres cherchés avant le coupeur | — | **41,6 %** des nœuds : 1,06 pli pour un ordre parfait de TOUS les étages |
+| … perdus dans le coup de table, un tactique, un killer, un tranquille | — | 18,3 / 10,5 / 5,1 / 7,7 % |
+| **union de l'étage tranquille**, emboîtements permis | 4 à 12 % | **10,9 %**, soit **0,23 pli au plus** |
+| l'étage tranquille, aux coupures qu'il rend | — | 20,3 coups ; coupeur premier 49,8 % ; réduit par LMR 7,6 % |
+| coup de réfutation | — | juste sur **17,0 %** des coupures de l'étage, présent et faux sur 15,3 % |
+
+Ce qui en sort :
+1. **Le critère ne clôt pas le canal de l'arbre** : 10,9 % dépasse 5 %.
+   Mais 0,23 pli — **14 à 24 Elo** à l'étalon de 60 à 105 Elo par pli —
+   est ce que rendrait un ordre PARFAIT des tranquilles ; une heuristique
+   n'en prendra qu'une part, et c'est le rejeu qui dira laquelle.
+2. **Le plus gros gisement n'est pas dans le chantier décidé** : le coup de
+   table perdu avant un autre coupeur pèse 18,3 % des nœuds, les tactiques
+   perdus 10,5 %. Aucun raffinement de l'étage tranquille n'y touche. Noté,
+   pas ouvert.
+3. **Le coup de réfutation a une portée bornée d'avance** : l'étage
+   tranquille rend 4,9 % des coupures, et la réfutation n'y désigne le
+   coupeur qu'une fois sur six.
+
+**La mesure suivante est donc celle que le critère prévoyait, et c'est la
+bonne : l'arbre de chaque variante APPLIQUÉE.** Un binaire expérimental — la
+variante choisie par l'environnement, `main` au nœud près sans elle (banc
+109 047 et 629 735) — rejoue les parties du match de la sonde, chaque `go`
+remplacé par `go depth 10`, table et historiques conservés d'un coup à
+l'autre. Déterministe à un fil : ni bruit, ni appariement à faire, les mêmes
+positions dans le même ordre. Cinq variantes :
+- **coup de réfutation**, un étage entre les killers et les tranquilles ;
+- **continuation** à un et deux plis, ajoutée au papillon, vidée à chaque
+  coup ;
+- la même, **conservée** d'un coup à l'autre ;
+- **papillon conservé** d'un coup à l'autre ;
+- **malus** du papillon : − d² aux tranquilles essayés avant le coupeur.
+
+**Attendu, écrit avant.** Confiance faible. Le banc — six positions à
+froid — a été vu : à la profondeur 10, réfutation −0,9 %, continuation
+−5,6 %, malus +3,5 %.
+
+| variante | arbre attendu |
+|---|---|
+| réfutation | −0,5 à −3 % |
+| continuation | −2 à −8 %, la conservée un peu mieux que la vidée |
+| papillon conservé | −1 à −5 % |
+| malus | signe inconnu, −5 à +5 % |
+
+**Critère, écrit avant** : une variante dont l'arbre rétrécit d'au moins
+2 % passe au match, dans l'ordre du rétrécissement ; les autres restent à
+l'attic. **Un arbre plus petit n'est pas un gain** — il chiffre le coût, pas
+la décision, huit mesures du projet le montrent : il ordonne l'achat des
+matchs, il ne les remplace pas.
+
+**Le rejeu, rendu à 07 h 47** — 4 951 recherches à la profondeur 10, deux
+flux du match de la sonde (un processus de chaque couleur de départ),
+rustine `tools/attic/a20-variantes-ordonnancement.patch`, rejoueur
+`tools/sonde-a20/rejouer-profondeur.py` :
+
+| variante | nœuds | contre `main` | par flux | attendu |
+|---|---|---|---|---|
+| `main` | 314 907 163 | — | — | — |
+| coup de réfutation | 318 760 360 | **+1,2 %** | −0,1 / +2,5 % | −0,5 à −3 % |
+| continuation, vidée à chaque coup | 318 720 906 | **+1,2 %** | +0,5 / +1,9 % | −2 à −8 % |
+| **continuation, conservée** | **305 090 247** | **−3,1 %** | −3,0 / −3,2 % | −2 à −8 % |
+| papillon conservé | 328 873 073 | **+4,4 %** | +4,1 / +4,8 % | −1 à −5 % |
+| malus du papillon | 310 975 805 | −1,2 % | −2,1 / −0,4 % | −5 à +5 % |
+
+Ce qui en sort :
+1. **Une seule variante passe le critère : la continuation CONSERVÉE**,
+   −3,1 %, la même sur les deux flux. Elle va au match. Les quatre autres
+   restent à l'attic : trois grossissent l'arbre, le malus le réduit sous
+   le seuil et pas de la même façon sur les deux flux.
+2. **Trois attendus sur cinq avaient le mauvais signe.** Le coup de
+   réfutation et le papillon conservé devaient réduire l'arbre ; ils le
+   grossissent.
+3. **Conserver aide une table creuse et nuit à une table dense.** La
+   continuation — 590 000 entrées — n'apprend rien en un coup : vidée, elle
+   grossit l'arbre de 1,2 % ; conservée, elle le réduit de 3,1 %. Le
+   papillon — 4 096 entrées — apprend en un coup, et ce qu'il garde du coup
+   précédent l'égare : +4,4 %. <span><strong>Inférence, confiance
+   moyenne</strong> : ce qu'une table retient doit durer à proportion de ce
+   qu'il lui faut pour apprendre.</span>
+4. **Le banc a inversé une conclusion de plus.** À la profondeur 10, il
+   donnait la continuation vidée à −5,6 % — en partie, +1,2 %. C'est le
+   piège « le banc peut INVERSER une conclusion » (A18), et ici par le
+   régime : six positions cherchées à froid ne voient ni la table ni les
+   historiques d'une partie.
+5. **Ce que l'arbre promet est petit** : −3,1 % à profondeur fixe, c'est
+   un facteur 1,032 de vitesse, soit **0,06 pli — 4 à 7 Elo** à l'étalon
+   de 60 à 105 Elo par pli. Le canal des décisions — ce que LMR et LMP
+   font d'un meilleur ordre — n'est pas dans ce chiffre, et son signe
+   n'est pas connu.
+
+#### Le candidat et sa mesure — écrits le 25 sept. 2026 AVANT de lancer
+
+**Candidat `54e6c60`**, révoqué aussitôt par `99df7ca` ; la rustine
+`tools/attic/a20-continuation.patch` en garde une copie. Référence : son
+parent `a08af76`. Chaque tranquille est noté par le papillon plus sa note
+sachant chacun des deux coups qui précèdent le nœud ; la table apprend des
+mêmes coupures que le papillon, se conserve d'un coup à l'autre, se vide à
+`ucinewgame` — pour les auxiliaires aussi. 2,25 Mio par fil. Cinq tests
+neufs.
+
+**Le code mesuré et le code candidat sont le même arbre, vérifié** : banc
+107 548 et 594 679 à la profondeur 7 et 10, et le rejeu rend **305 090 247
+nœuds, exactement** ceux de la variante `chk` de l'expérience. Banc de
+référence 109 047 → 107 548 ; banc figé à la profondeur 6, 70 719 → 70 594.
+
+**Pas de sonde des plis** : l'arbre promet 0,06 pli, et la sonde en partie
+mesure à ± 0,07 à 0,09 — elle ne départagerait rien. Et elle ne verrait pas
+ce qu'une table de 2,25 Mio coûte par nœud en accès mémoire, que l'arbre ne
+compte pas : c'est à l'Elo de le payer ou non.
+
+**Attendu, écrit avant** : **+4 à +7 Elo par le seul canal de l'arbre**,
+moins le coût par nœud des accès à la table ; le canal des décisions, de
+signe inconnu, peut ajouter ou retrancher. Ensemble : **0 à +15**,
+confiance faible.
+
+**La mesure** : quatre jobs de 3 000 parties à `8+0,08`, `match.yml`,
+graine « auto », candidat contre parent, mis en commun par
+`tools/mettre-en-commun.sh`. **Quatre et non deux, contre ce que l'écran
+écrivait** — la puissance, calculée avant : à 6 000 parties l'intervalle
+vaut ± 6 Elo, et un effet de +5 n'y serait démontré qu'une fois sur quatre ;
+à 12 000, ± 4,3, **+5 démontré 64 fois sur 100, +8 96 fois sur 100**.
+
+**Critère de gain, écrit avant** : **fusion si la borne basse de
+l'intervalle mis en commun est au-dessus de zéro** ; sinon, pas de fusion,
+et la rustine reste à l'attic. Des jobs qui se contredisent se lisent comme
+C22 sur C23 : un critère écrit en bornes se lit sur chaque match comme sur
+l'ensemble.
+
+**Crible de mutation au candidat, prédiction écrite avant** — le FICHIER
+`search.rs` entier, pas le seul diff (la leçon d'A18) : **39 survivants, au
+plafond, les mêmes**. Les mutants du code neuf sont tous attrapés par les
+cinq tests ou par le banc figé. Risque nommé : un ancien mutant que l'arbre
+neuf ne montre plus au banc figé, comme les quatre d'A18 — d'où **39 à
+43**.
+**Rendu à 10 h 25, sur runner** (`Mutation`, entrée `commit`, run
+36114952595) : **39, les mêmes un pour un**, décalés de lignes par le code
+neuf — la prédiction tient au bas de sa fourchette. Un premier essai dans le
+conteneur était mort à 57 mutants sur 570, au redémarrage ; c'est ce qui a
+appris à `Mutation` à balayer un SHA.
+
+#### L'Elo — rendu à 13 h 55 : +12,56 ± 4,35, gain démontré — FUSIONNÉ
+
+| run | graine | runner, n/s au banc | profondeur en 250 ms | parties | Elo | `Ptnml(0-2)` |
+|---|---|---|---|---|---|---|
+| [36110519468](https://github.com/theodubus/chess/actions/runs/36110519468) | 36110519468 | Xeon 8370C, 2 329 342 | 12 | 2 900 | +14,26 ± 8,74 | 89, 251, 679, 314, 117 |
+| [36110522377](https://github.com/theodubus/chess/actions/runs/36110522377) | 36110522377 | EPYC 7763, 2 395 204 | 12 | 2 900 | +11,75 ± 8,49 | 80, 260, 698, 306, 106 |
+| [36110524982](https://github.com/theodubus/chess/actions/runs/36110524982) | 36110524982 | Xeon 8370C, 2 442 918 | 12 | 2 900 | +15,83 ± 8,82 | 81, 272, 659, 310, 128 |
+| [36110528007](https://github.com/theodubus/chess/actions/runs/36110528007) | 36110528007 | EPYC 7763, 2 335 233 | 12 | 2 920 | +8,45 ± 8,73 | 100, 249, 707, 288, 116 |
+| **en commun** (`tools/mettre-en-commun.sh`) | | | | **11 620** | **+12,56 ± 4,35** | homogènes, plus grand écart z = 1,17 |
+
+- **Critère écrit avant : la borne basse commune au-dessus de zéro — elle
+  vaut +8,2. Gain démontré, FUSIONNÉ.** Les quatre jobs, coupés par le
+  plafond de 350 minutes vers 13 h 50 ; zéro perte au temps, aucun coup
+  illégal, sur les quatre journaux entiers.
+- **Dans l'attendu** (0 à +15), et **au-dessus de ce que l'arbre seul
+  promettait** : −3,1 % de nœuds, 0,06 pli, 4 à 7 Elo à l'étalon — la
+  borne basse commune le dépasse déjà. *Le canal des décisions — ce que LMR
+  et LMP font d'un meilleur ordre — est positif, et il porte l'essentiel.*
+  <span><strong>Inférence, confiance moyenne</strong> : le rejeu ne compte
+  que des nœuds, et un meilleur ordre soustrait aussi les bons coups aux
+  réductions et à l'élagage — ce que l'écran nommait comme non mesuré.</span>
+- **Le même rapport de nœuds que PVS, le signe opposé** : ÷ 1,03 pour
+  l'un et l'autre, −11 pour PVS en septembre, +12,6 ici. Un point de plus
+  pour « un nombre de nœuds ne dit pas la force » (`CLAUDE.md`).
+- **La puissance calculée avant** : quatre jobs pour l'hypothèse prudente —
+  l'effet de l'arbre seul, +5 — qu'on ne démontrait qu'une fois sur quatre
+  à deux jobs. L'effet vrai était plus grand ; le choix se jugeait avant.
+- Banc de référence **107 548** à la profondeur 7, banc figé 70 594 à la
+  profondeur 6 ; crible au candidat : 39, les mêmes.
+
+### A21 — NNUE : la génération des données — écran écrit le 25 sept. 2026
+
+**Décidé — Théo, 25 sept. 2026, après la fusion d'A20** : « *Est ce que pour
+NNUE on aurait besoin de mon GPU dès maintenant ? Je n'ai pas accès a mon PC
+avant qq jours. Mais si on peut juste lancer la génération de parties sans GPU
+et que c'est long ça peut le faire* ». Lu comme le feu vert de B4, génération
+d'abord. Réponse : **non** — le GPU ne sert qu'à l'entraînement ; la génération
+des données et l'inférence dans le moteur sont du CPU.
+
+**Le format, lu au source** — bullet au commit `10e7e82`, `docs/3-data.md` et
+`examples/simple.rs` ; les crates `viriformat` 2.0.1 et `bulletformat` 1.8.0,
+aux versions que bullet épingle :
+
+- bullet recommande de stocker les données dans un format « binpack », et nomme
+  celui de Viridithas — `viriformat` — comme le plus employé par ceux qui
+  génèrent les leurs ; son exemple de référence le charge par
+  `ViriBinpackLoader` avec `Filter::default()` ;
+- une partie, c'est un en-tête de 32 octets, 4 octets par coup (le coup et le
+  score sur seize bits chacun), puis 4 octets nuls. **Mesuré : 4,3 octets par
+  position**, contre 32 pour le format direct `ChessBoard` — un facteur 7 sur
+  ce qu'il faudra transférer des runners vers la machine d'entraînement ;
+- **le score est du point de vue des Blancs** : `ChessBoard::from_raw` le
+  retourne lui-même vers le camp au trait, et `viriformat` le lui passe tel
+  quel. La recherche, elle, rend le point de vue du camp au trait ;
+- le roque est noté roi-prend-tour, comme dans `cozy-chess`, mais roque, prise
+  en passant et promotion portent des drapeaux que les deux cases ne donnent
+  pas ;
+- **le filtrage se fait au chargement** — positions en échec, coups tactiques,
+  seize premiers demi-coups : des parties entières se refiltrent sans être
+  regénérées.
+
+`viriformat` est sous licence MIT ; c'est une dépendance de `tools/` seulement,
+jamais du moteur.
+
+**Le générateur — `tools/src/bin/nnue_datagen.rs`** :
+
+- auto-jeu à **5 000 nœuds par coup** — choix NON mesuré, l'ordre de grandeur
+  courant ; 8 à 11 demi-coups tirés au hasard avant d'enregistrer, comme le
+  corpus Texel ; la partie est écartée si le premier score dépasse 1 000 ;
+- fin par les règles — mat, pat, triple répétition, cinquante coups, matériel
+  insuffisant —, adjudication de gain à 2 000 pendant huit demi-coups, nulle
+  au-delà de 400. **Pas d'adjudication de nulle** : ce qu'elle économiserait se
+  mesure sur les données avant de se décider ;
+- chaque partie est une fonction pure de (graine, numéro, nœuds) : table vidée
+  à chaque partie, un fil par recherche ;
+- le format est écrit **par la crate `viriformat` elle-même**, jamais
+  réimplémenté.
+
+Dix tests, dont : le signe du score, avec son témoin (écrire le point de vue
+du trait fait tomber les assertions noires) ; les coups spéciaux confrontés à
+l'**oracle** qu'est le générateur de coups de `viriformat` — roques, prises en
+passant, promotions et sous-promotions, chacun compté ; la relecture par
+`viriformat`, qui vérifie en debug la légalité de chaque coup ; le
+déterminisme. **Ils ont trouvé un défaut du moteur à leur première exécution**
+— section C27.
+
+**Mesuré en conteneur, une minute sur quatre fils — et AVANT d'avoir écrit
+l'attendu**, entorse au protocole que je signale plutôt que de la taire :
+1 072 parties de 115 demi-coups en moyenne, 28 écartées ; **2 044 positions par
+seconde** ; 62 % gardées par le filtre par défaut ; 429 gains blancs, 445
+noirs, 198 nulles — **82 % de parties décisives**. Une propriété des données à
+surveiller, pas un défaut : l'étiquette de résultat pèse 25 % dans l'exemple
+de bullet.
+
+**Attendu sur runner, écrit AVANT de lancer** : **1 200 à 1 800 positions par
+seconde**. Le runner a quatre processeurs logiques mais deux cœurs physiques
+(SMT, mesuré le 23 sept.), contre quatre cœurs sans SMT dans le conteneur.
+Soit 4 à 6,5 millions de positions par heure, 24 à 36 millions par job de 330
+minutes, 100 à 150 Mo. Ce que la mesure tranchera : le nombre de jobs d'une
+première cible.
+
+**Relevé sur runner le 25 sept. à 17 h 43 — dans l'attendu** (run
+36166785450, 20 minutes) : **1 713 positions par seconde** ; 17 976 parties et
+357 écartées (1,9 %), 114 demi-coups en moyenne ; **62,2 % gardées** par le
+filtre par défaut ; 7 251 gains blancs, 7 397 noirs, 3 328 nulles — **81,5 %
+de parties décisives**, comme en conteneur. 4,3 octets par position sur
+disque, 3,6 dans l'artefact compressé. Le runner rend 84 % du débit du
+conteneur avec deux cœurs physiques pour quatre : le SMT rend plus que je ne
+l'avais compté. *Un runner, pas une dispersion* : la vitesse de recherche a
+varié de 58 % entre deux runners le 21 sept., et un point unique qui tombe
+dans l'intervalle attendu n'en mesure rien (`CLAUDE.md`).
+
+**L'artefact ne se relit pas depuis le conteneur** : le proxy de sortie y
+refuse le stockage où GitHub dépose les artefacts
+(`*.blob.core.windows.net`, politique d'organisation). Il se relira sur la
+machine d'entraînement, par `viriformat`, **avant tout entraînement** : ses
+comptes doivent retomber sur ceux du résumé de chaque job, parties et
+positions. Ce qui est vérifié d'ici : le code qui écrit est celui que les
+tests relisent par `viriformat`, et l'écriture finit par un `flush` dont
+l'erreur fait échouer le job.
+
+**Première cible : 100 millions de positions — provisoire, non mesurée.**
+L'exemple de bullet voit 4 milliards d'échantillons en 40 superbatches, ce qui
+ne dit rien de la taille du jeu de données. La bonne quantité se mesurera par
+une courbe d'apprentissage : entraîner sur la moitié, puis sur le tout, et
+comparer en match.
+
+**La génération, lancée le 25 sept. à 19 h 25 — quatre jobs de 330 minutes**
+(runs 36179538497, 36179541822, 36179544454, 36179547648). Trois choix, chacun
+avec sa raison :
+
+- **quatre jobs, pas trois** : trois donnent 102 millions au débit relevé, sans
+  marge pour un runner plus lent ; quatre en donnent 136, et la courbe
+  d'apprentissage prévue compare la moitié au tout. Sous 100 millions en tout,
+  une vague de complément se dimensionne sur les débits relevés ;
+- **découpés sous les limites de temps** — Théo, le 25 sept. : « *Tu devras
+  faire gaffe a bien découper ou générer en plusieurs fois pour faire gaffe
+  aux limites de temps* ». Un job hébergé est tué à six heures (`github/docs`
+  au commit `2494c72`, `content/actions/reference/limits.md`) ; le nôtre
+  plafonne à 350 minutes, et le générateur s'arrête de lui-même à 330 : aucune
+  partie n'est entamée après l'échéance, celles en cours finissent, le fichier
+  est vidé avec contrôle d'erreur. Build et dépôt prennent moins d'une minute.
+  Un job perdu ne perd que sa part — un artefact par job, une graine par job,
+  le numéro du run ;
+- **au candidat C27, `bb6e4c0`, pas à `main`** : le défaut de C27 a été trouvé
+  par les tests de ce générateur, donc son régime l'atteint ; une borne hors
+  plage relue ailleurs peut changer une recherche voisine, donc une étiquette
+  — <span>inférence, non mesurée</span>. Le générateur y est celui de `main`
+  au bit près : hors documentation et attic, `git diff bb6e4c0 0eb1e9b` ne
+  touche que `engine/`, le correctif. Et le correctif est juste par ses tests quel que soit le verdict
+  d'Elo, qui juge la force, pas la justesse des scores. Si C27 est fusionné,
+  ces données sont celles qu'aurait produites `main` — à vérifier à la fusion,
+  par le même `git diff`. **Vérifié le 25 sept. à 23 h 20** : C27 fusionné,
+  hors documentation le `git diff` de `bb6e4c0` à la révocation de sa
+  révocation est vide ; l'extraction de `mate_distance_window` qui suit est
+  une réécriture pure, banc identique au nœud près.
+
+**Relevée le 26 sept. à 01 h 20 — dans l'attendu, au-dessus de la cible.**
+Quatre succès, finis à 00 h 55, chaque résumé nomme `bb6e4c0` :
+
+| run | processeur | parties | écartées | positions | gardées par le filtre | positions/s | artefact |
+|---|---|---|---|---|---|---|---|
+| 36179538497 | Xeon Platinum 8573C | 272 726 | 5 620 | 31 053 159 | 19 277 531 | 1 568 | 111,7 Mo |
+| 36179541822 | EPYC 7763 | 263 035 | 5 484 | 29 974 392 | 18 620 389 | 1 514 | 107,8 Mo |
+| 36179544454 | EPYC 7763 | 262 271 | 5 331 | 29 873 314 | 18 558 127 | 1 509 | 107,4 Mo |
+| 36179547648 | Xeon Platinum 8573C | 300 371 | 6 289 | 34 197 435 | 21 244 034 | 1 727 | 123,0 Mo |
+
+- **125 098 300 positions, dont 77 700 081 gardées par le filtre par défaut**
+  (62,1 %) — 92 % de l'attendu central (136 M), dans sa fourchette, et
+  au-dessus de la cible de 100 millions : **pas de vague de complément** ;
+- 1 098 403 parties, 2,0 % écartées, 114 demi-coups en moyenne ; 39,8 % de
+  gains blancs, 41,3 % noirs, 18,9 % de nulles — **81,1 % de décisives**,
+  comme à la mesure ;
+- **les débits ne varient que de 14 %** (1 509 à 1 727) sur deux modèles de
+  processeur, quand la vitesse de recherche monofil de l'étalonnage variait
+  de 83 % le même soir. Le Xeon rend 1 568 et 1 727, l'EPYC 7763 1 514 et
+  1 509 : le même modèle diffère de 10 %. <span>Inférence, confiance
+  faible : à quatre fils sur deux cœurs, le débit se lit par cœur physique,
+  pas par la vitesse d'un fil seul</span> ;
+- 516 Mio sur disque (4,3 octets par position), **450 Mo d'artefacts**
+  (3,6), expirant le 24 déc. 2026 ;
+- pour les regénérer, K = parties + écartées : 278 346, 268 519, 267 602 et
+  306 660.
+
+**L'artefact de la mesure** (36166785450, 2 055 456 positions) **reste hors du
+jeu** : il vient du moteur d'avant C27, et le jeu reste celui d'un seul moteur.
+
+**Les données se regénèrent à l'identique** : chaque partie est une fonction
+pure de (graine, numéro, nœuds) au commit donné, et un job a joué exactement
+les numéros 0 à K − 1, K = parties + écartées, lus dans son résumé. `--games K`
+avec la même graine rend les mêmes parties, réparties autrement entre les
+fichiers. L'expiration des artefacts à 90 jours ne coûterait que du temps de
+runner.
+
+**Le coût, lu au source** (`github/docs` au commit `2494c72`,
+`content/billing/concepts/product-billing/github-actions.md`) : « *GitHub
+Actions usage is free for self-hosted runners and for public repositories that
+use standard GitHub-hosted runners* » ; les quotas de minutes et de stockage
+d'artefacts visent les dépôts privés.
+
+**La suite, dans l'ordre** :
+1. la génération, sur quelques runners à la fois — **faite pour la première
+   cible** : quatre jobs, 125 M positions, relevée le 26 sept. ;
+2. l'inférence dans le moteur — la pile d'accumulateurs par ply de la
+   contrainte d'architecture, et l'architecture de l'exemple de bullet
+   (768 → 128 ×2 → 1, SCReLU, quantification 255/64, échelle 400) —, éprouvée
+   sur un réseau aléatoire contre un calcul complet de référence ;
+3. l'entraînement, sur la carte de Théo ;
+4. le SPRT, à `8+0,08`.
+
+### C27 — une borne de mat hors plage stockée dans la table — VERDICT, 25 sept. 2026 : −3,56 ± 5,97 Elo à `8+0,08`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
+
+**Trouvé par les tests du générateur NNUE**, qui jouent des parties entières
+depuis des positions gagnantes — ce qu'aucun test du moteur ne faisait. En
+debug, l'assertion de `pack_data` panique : `score hors bornes au stockage :
+-30002`. Le binaire UCI lui-même le reproduit : `position fen
+5Q2/R4B1k/1p6/4P1pp/8/4K3/1BP3PP/8 b - - 0 34`, puis `go depth 6`.
+
+**Le mécanisme, instrumenté et non supposé.** Les Noirs sont matés en un quoi
+qu'ils jouent. La première réponse trouvée fait de `MATE − 2` l'alpha des
+nœuds blancs du ply 3, où `MATE − 4` est le mieux atteignable. La quiescence,
+hors échec, initialise `best = alpha` : quand rien ne l'améliore, elle rend la
+BORNE comme un score. Remontée, niée, puis normalisée par `score_to_tt`
+(`− ply`), elle sort de ±MATE — −30 002 au ply 4. En release l'assertion
+n'existe pas : la valeur est stockée telle quelle, et `score_from_tt` la
+ressert ailleurs.
+
+**L'assertion « jamais déclenchée » ne prouvait rien.** Le commentaire de
+`tt.rs` l'écrivait depuis le 22 sept. : « ni par la suite de tests complète, ni
+par les critères d'acceptation ». Ni l'une ni les autres ne jouaient une partie
+jusqu'au mat depuis une position gagnante (`CLAUDE.md`, pièges de mesure).
+
+**Mesuré en régime réel, sur l'ancien code instrumenté** — 60 parties à
+`8+0,08` contre lui-même, livre du dépôt, `-srand 20260925`, 7 355
+recherches ; rustine `tools/attic/c27-sonde-hors-plage.patch` :
+
+| grandeur | recherches touchées | total |
+|---|---|---|
+| scores hors de ±MATE effectivement stockés | **134, soit 1,82 %** | 4,1 millions d'écritures |
+| nœuds que le correctif couperait (fenêtre vide une fois bornée) | **353, soit 4,80 %** | 26,6 millions, ~0,55 % des nœuds |
+
+Aucun « mate 0 » n'est remonté en UCI : la corruption reste interne à la table.
+Un troisième compteur de la sonde, les fenêtres « bornées », est inutilisable
+— il comptait aussi le bornage trivial d'une borne infinie — et n'est pas
+retenu.
+
+**Le correctif : l'élagage par distance au mat**, à l'entrée de `negamax`, hors
+racine et avant l'aiguillage vers la quiescence — `alpha ≥ −MATE + ply`,
+`beta ≤ MATE − ply − 1`, retour immédiat si la fenêtre est vide. Tout retour de
+borne reste alors représentable là où il est stocké. **Le banc est identique au
+nœud près** à `main` aux profondeurs 7, 10, 12 et 14 : sans mat dans la
+fenêtre, rien ne change.
+
+**Le test** `une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage` tombe sur
+l'ancien code **dans les deux profils** : en debug par l'assertion, en release
+parce que la table, lue par `max_abs_stored_score`, porte 30 002.
+
+**Critère, écrit AVANT le match** — la règle d'un correctif (`CLAUDE.md`) :
+deux jobs de 3 000 parties à `8+0,08`, le candidat contre son parent ;
+**fusion sauf si la borne haute de l'intervalle est sous zéro, en commun comme
+sur chaque match**. Puissance dite d'avance : ± 6 Elo. L'attendu est de 0 à
++3, donc invisible : le défaut ne touche que des positions où un mat est déjà
+vu, et il ne s'y voit pas en UCI.
+
+**VERDICT, 25 sept. 2026 à 23 h 15 — aucune borne haute sous zéro, FUSIONNÉ au
+titre de la règle.** Deux jobs coupés par le plafond, 2 900 et 2 860 parties :
+**−1,92 ± 8,16** et **−5,22 ± 8,72**, homogènes (z = 0,54) ; en commun
+**−3,56 ± 5,97** sur 5 760 parties. Bornes hautes +6,24, +3,50 et +2,41 : aucune
+sous zéro, ni en commun ni par match. Zéro perte au temps, zéro coup illégal.
+L'attendu (0 à +3) est dans l'intervalle ; le point est négatif, et la
+puissance dite d'avance ne distingue pas −3,6 de zéro — c'est ce que la règle
+d'un correctif accepte, par écrit avant le match. Rétabli en révoquant sa
+révocation (`e5589d1`) : hors documentation, cette révocation rend le moteur
+de `bb6e4c0` octet pour octet ; l'extraction qui la suit (ci-dessous) ne change
+aucun nœud.
+
+**Les deux runners diffèrent de 83 %** : 4 019 409 n/s à la profondeur 13
+contre 2 199 922 à la profondeur 12, même binaire — le plus grand écart relevé
+(58 % le 21 sept.). Chaque verdict reste valide en interne ; deux runs ne se
+comparent pas sans leurs étalonnages.
+
+**Le crible du code neuf, avant de fusionner** (`tools/mutants.sh --in-diff`,
+dans le conteneur, quatre minutes) : **sept mutants sur onze survivaient**
+dans les trois lignes du bornage. Le test de partie ne traverse que les bornes
+de SA position — même affaiblir la borne basse en `-MATE - ply` le laissait
+passer. Un invariant de recherche se corrige au fil : les deux bornes sont
+extraites dans `mate_distance_window`, fonction pure testée par ses valeurs à
+plusieurs plis (`la_fenetre_ne_promet_que_le_mat_atteignable`), et la garde de
+la racine par son effet, avec témoin (`a_la_racine_la_fenetre_n_est_jamais_bornee`).
+Banc identique au nœud près, 107 548 et 594 679 aux profondeurs 7 et 10.
+Recriblé : **22 attrapés sur 23, un expiré** — `alpha >= beta` en `<`, qui
+fait tourner la recherche à vide.
+
 ### Ce qui reste à faire, par ordre mesuré
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
 d'abord les relèves en vol (C22 sur C23, balayage de mutation), puis
-**calibrer l'Elo par pli**, puis **B6 — Lazy SMP**. Les autres lignes gardent
-l'ordre mesuré du tableau ; « ce sur quoi travailler » reste une question à
-lui poser au-delà de ces deux-là.
+**calibrer l'Elo par pli**, puis **B6 — la recherche multithread** (Lazy
+SMP). <s>Les autres lignes gardent l'ordre mesuré du tableau ; « ce sur quoi
+travailler » reste une question à lui poser au-delà de ces deux-là.</s>
+**Calibration faite, B6 écrit et en mesure. La suite est DÉCIDÉE — Théo,
+24 sept. 2026, au matin** : après B6, **la génération par étapes**, sur la
+recommandation qu'elle sert dans toutes les conditions de jeu — tout nombre de
+fils, ponder permis ou non —, là où le remboursement du ponder ne sert que
+quand le ponder est permis (désactivé au CCRL Blitz). <s>Au-delà, « ce sur quoi
+travailler » redevient une question à lui poser.</s> **Posée, et DÉCIDÉE —
+Théo, 24 sept. 2026, vers 09 h** : après la génération par étapes,
+**l'allocation inégale**, sur la recommandation qu'on peut la chiffrer vite
+avant de s'engager et qu'elle sert dans toutes les conditions de jeu —
+« *Ok pour 1, on oublie pas le reste mais d'abord 1* ». Les autres candidats
+présentés gardent leur place au tableau : raffinements d'ordonnancement sur
+les étages, NNUE, remboursement du ponder. <s>Au-delà, la question se repose.</s>
+**Reposée le 25 sept. au matin, C26 fusionné, et DÉCIDÉE — Théo** : après
+l'allocation inégale, **les raffinements d'ordonnancement sur les étages** —
+« *Ok pour le raffinement de coups en prochain chantier* ». Comme les
+précédents : le mécanisme se mesure avant d'écrire une ligne. <s>Au-delà, la
+question se repose.</s> **Reposée le 25 sept. après la fusion d'A20, et DÉCIDÉE
+— Théo** : **NNUE (B4)**, en commençant par la génération des données — « *si
+on peut juste lancer la génération de parties sans GPU et que c'est long ça
+peut le faire* » ; sa machine, qui portera l'entraînement, n'est pas
+disponible avant quelques jours. Section A21.
+
+**Ce tableau porte TOUT le backlog du moteur**, reportés et bloqués compris,
+chacun avec sa condition. Il ne portait jusqu'au 23 sept. au soir que les
+chantiers ordonnés : NNUE, tablebases et B8 ne vivaient que dans le carnet, et
+un inventaire fait de mémoire les a laissés passer. *Un backlog qui n'existe
+qu'en partie dans le dépôt n'existe pas.*
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Porté sur C23 et EN MESURE** (`cd45ffa`), même critère — voir « C22 sur C23 » |
-| **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,19**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule —, réglé à la sonde puis mesuré en `les-deux`. <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
+| **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
+| **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
-| **allocation inégale** — dépenser plus sur les positions **dures** | **non chiffrée** — c'est le seul levier de temps au-delà du plafond de 280 ms d'une allocation plate | **pas commencée**. Prochaine action : **mesurer le mécanisme** — sur des parties rejouées, quelle part du budget part sur des coups où la décision ne change plus, et quelle part manque aux coups où elle change à la dernière itération. *Son signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
-| génération par étapes | 0,21 | non entamée, ~1,5 job à mettre en commun, **pas** une optimisation pure |
-| **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **proposé le 23 sept., pas commencé.** Deux points mesurés donnent 21 à 116 et 52 à 102 Elo par pli (section ponder) : trop large pour classer les chantiers de vitesse. Un doublement de temps vaut 1,36 pli ; le match rend directement l'Elo de ce doublement, à la cadence cible. Coût : une cadence par moteur dans `match.yml`, puis un job — deux au pire, si l'effet est au bas de l'étendue |
+| **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : FUSIONNÉ le 24 sept., +44,64 ± 6,24 Elo à `8+0,08`** (section C24) — profondeur moyenne inchangée, le gain est dans la répartition, et la lecture par l'accord a tenu. <s>C25 — la répartition par la stabilité : ÉCRIT le 24 sept.</s> **C25 — la répartition par la stabilité : FUSIONNÉ au verdict du 24 sept., +7,87 ± 6,08 Elo à `8+0,08`** (section C25) — sous l'attendu de +12 à +25 : l'Elo d'un pli d'accord dépend de la règle, 22 à 46 ici contre ~69 pour C24. **Le chantier est au bout de ce que l'écran désignait** — l'effort à la racine n'ajoute rien, le score en chute est rare (écran, « Ce qui en sort »). <s>Prochaine action : C26, le risque que C24 et C25 ont aggravé ; ensuite, la question se repose à Théo.</s> **C26 est FUSIONNÉ le 25 sept.** (ligne C26) : **l'allocation inégale est close, et la suite se repose à Théo.** *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
+| **génération par étapes** — **décidée n° 3** (Théo, 24 sept.) | 0,21 — **13 à 22 Elo** par l'étalon du 24 sept. | <s>non entamée ; la suivante après B6.</s> **ÉCRITE le 24 sept.** — candidat `087edb8`, révoqué le temps de sa mesure. Hors partie : temps −10,7 à −11,3 %, arbre inchangé. <s>Prochaine action : la sonde, puis deux jobs de 3 000 parties</s> **Sonde faite : n/s × 1,09, +0,17 ± 0,07 pli.** <s>L'Elo en vol, relève vers 14 h 25</s> **MESURÉE le 24 sept. : +23,10 ± 6,39 Elo à `8+0,08`, gain démontré — FUSIONNÉE** ; section « A18 — VERDICT ». **Pas** une optimisation pure : ex æquo et historique frais déplacent l'arbre |
+| **calibrer l'Elo par pli** — un match à handicap de temps, même binaire, `16+0,16` contre `8+0,08` | — c'est l'étalon des autres lignes | **FAIT le 24 sept.** : un doublement vaut **+107,74 ± 8,19 Elo** et **+1,38 ± 0,28 pli**, soit **60 à 105 Elo par pli** à `8+0,08` — voir son verdict. Les plis de chaque ligne se convertissent désormais en Elo, en intervalle ; l'incertitude de l'étalon vient presque toute des plis |
 | **B9 — table à entrées atomiques** | — | **FUSIONNÉ le 23 sept.** : capacité −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable, fusionné au titre de l'infrastructure — voir son verdict. La table se partage entre fils |
-| B6 — Lazy SMP | 1,0 à 1,8, **seul chiffre encore hérité** | <s>exige B9</s> — **B9 est fusionné, la table se partage**. Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie). **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
+| **B6 — la recherche multithread** (Lazy SMP : plusieurs fils d'un même processus cherchent la même position et partagent la table) — **décidé, n° 2** | <s>1,0 à 1,8, seul chiffre encore hérité</s> **+0,48 ± 0,08 mesurés à deux fils** en partie sur runner — **24 à 59 Elo** par l'étalon, écrit avant que ses matchs ne rendent | <s>exige B9</s> — **B9 est fusionné, la table se partage**. <s>Prochaine action avant toute mesure : **apprendre les fils à `match.yml`** (`T` cœurs par partie).</s> **Fait le 24 sept.** — voir « La concurrence d'un match se déduit des cœurs ». <s>Prochaine action : **écrire Lazy SMP**, l'option `Threads` et ses tests.</s> **ÉCRIT le 24 sept., neutre à un fil** (banc au nœud près, `timing.sh` trois fois). <s>Prochaine action : fusionner, puis la sonde et le match à deux fils, **protocole écrit avant**</s> **MESURÉ le 24 sept. : +42,16 ± 9,23 Elo à deux fils contre un**, 2 700 parties à `8+0,08`, trois matchs homogènes — **deux fils rapportent** ; section « B6 — Lazy SMP — VERDICT ». Suite : relever `MAX_THREADS` au-dessus des machines de compétition ; l'échelle au-delà de deux fils reste non mesurée, faute de cœurs physiques sur les runners. Deux prérequis de mesure sont en place depuis le 23 sept. au soir : la **topologie du runner** s'imprime — deux fils sur un même cœur physique fausseraient l'échelle —, et la **sonde** rend les n/s et les plis de chaque camp dans un même run. **Les runners n'ont que deux cœurs physiques** (mesuré le 23 sept.) : Lazy SMP ne s'y mesure sans SMT qu'à deux fils, et le « 1,0 à 1,8 » supposait quatre vrais cœurs. **Sa mesure ne peut pas se faire à la concurrence actuelle** : à `T` fils, `⌊3 / T⌋` parties à la fois — voir « La concurrence d'un match se déduit des cœurs qu'occupe une partie » |
+| **Lazy SMP — ses variantes** : décalage de profondeur entre fils, coup du meilleur fil, historiques partagés, fils gardés d'un coup à l'autre | non chiffrées | **pas commencées** ; chacune se mesure seule, contre B6 tel qu'écrit (section B6). **Angle mort du dispositif** : les runners n'ont que deux cœurs physiques. <span><strong>Inférence, confiance moyenne</strong> : ces variantes servent la diversité entre fils, qui compte d'autant plus qu'il y a de fils — mesurées à deux, elles seraient sous-évaluées, la même famille que la cadence.</span> Condition : mesurer à plus de deux cœurs physiques. Les fils gardés répondent à un coût non mesuré — relancer des centaines d'auxiliaires à chaque `go` |
+| **raffinements d'ordonnancement sur les étages** : coup de réfutation, historique de continuation — **décidés n° 5** (Théo, 25 sept.) | <s>non chiffrés</s> plafond 0,23 pli ; la continuation −3,1 % d'arbre | <s>après A18</s> **A18 est fusionné le 24 sept. : les étages existent**, et c'est la forme qui les accueille ; <s>aucun n'est décidé.</s> <s>**Le chantier suivant, décidé le 25 sept.** Prochaine action : mesurer le mécanisme avant d'écrire.</s> **FUSIONNÉ le 25 sept. : l'historique de continuation, conservé d'un coup à l'autre — +12,56 ± 4,35 Elo à `8+0,08`** (section A20), la seule des cinq variantes que le rejeu désignait. Les quatre autres restent à l'attic (`a20-variantes-ordonnancement.patch`) : le malus, −1,2 % d'arbre, sous le seuil et pas le même sur les deux flux ; le coup de réfutation, la continuation vidée et le papillon conservé, qui grossissent l'arbre. **Le chantier est au bout de ce que l'écran et le rejeu désignaient ; la suite se repose à Théo.** Hors du chantier, et noté : le coup de table perdu avant un autre coupeur pèse 18,3 % des nœuds, les tactiques perdus 10,5 % — les plus gros gisements de l'union. <s>Reléguer les captures perdantes derrière les tranquilles</s> : **+31,6 % de nœuds ici** (C19), ne se rouvre pas sans fait neuf |
+| **C26 — la dure à l'approche d'un contrôle à coups comptés** — trouvé le 24 sept. en relisant les échéances pour C25 | — un **risque**, pas un gain : invisible à `8+0,08` | <s>Pas commencé ; après le verdict de C25, dont il touche la même fonction.</s> <s>Le suivant : C25 est fusionné le 24 sept., le risque est dans `main`.</s> <s>ÉCRIT et EN MESURE le 24 sept.</s> **FUSIONNÉ le 25 sept. au titre de la règle : +2,43 ± 6,01 Elo à `40/8`**, zéro perte au temps (section C26) — sonde d'abord : **5,3 % des cycles affamés à `40/8`**, et à trois coups du contrôle aussi ; la dure laisse désormais à chaque coup restant la moitié de sa part plate ; sonde d'après : aucun cycle affamé. **Clos.** Le risque, tel qu'écrit avant la sonde : Le budget vaut `restant / movestogo + inc/2` : à `movestogo 2`, `restant / 2`. La dure de C24, 2,2 budgets, vaut alors `min(1,1 × restant, restant − 50)` = **`restant − 50`** : une itération longue au 39ᵉ coup d'un 40/X peut ne laisser que 50 ms au 40ᵉ. Avant C24, elle valait `restant / 2`. **C25 aggrave** : sa douce du coup instable monte à 0,91 × restant. Nos matchs sont en mort subite avec incrément, sans `movestogo` : ce chemin n'y passe jamais, et le CCRL 40/15 y passe à chaque contrôle. Prochaine action : borner la dure — et les douces — pour que les coups restants avant le contrôle gardent une part de leur budget (<s>Stockfish plafonne l'excès à ~1,7 budget à deux coups du contrôle</s> — **faux, cité de tête** : son source borne à 81 % de la pendule, section C26) ; tests aux valeurs exactes de `movestogo` 1 à 4 ; puis un match à cadence à coups comptés — `match.yml` passe la cadence telle quelle aux arbitres (`40/8`), et <s>son estimation de durée lit `8+0,08` et devra apprendre l'autre forme</s> son estimation de durée lit `N/T+I` **depuis le 24 sept.** (elle prenait `40/8` pour quarante secondes) —, critère de non-régression écrit avant et **zéro perte au temps** |
 | pendule de l'adversaire — dépenser selon l'**écart des deux pendules** | petit, **signe inconnu** — l'écart dépasse 20 % sur 1,6 % des coups | écran passé. **Même famille que l'allocation inégale** — un budget qui n'est plus plat —, **autre signal**, et un signal que l'auto-jeu annule : l'écart signé y est nul, donc un verdict contre soi-même rendrait zéro quelle que soit la vraie valeur. Rien avant l'allocation inégale ; puis mesure **conditionnelle** contre le parent de `ebe93ad`, jamais contre soi-même |
 | « prolonger sur un effondrement » | majoré par 2,7 à 3,0 % des coups, **signe inconnu** | écran passé, jamais écrit |
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
-| **interdire deux coups nuls consécutifs** | — changement d'arbre | **pas commencé** — après le verdict de C22 sur C23, et mesuré **seul**. Avec C23, un double coup nul ne rend plus de fausse nulle, il re-cherche la position à profondeur réduite : du travail qu'aucune partie ne demande. **10,1 %** des recherches de coup nul partent juste après un coup nul (sonde de C23). Stockfish l'interdit |
-| B7 / C13 | — | inchangés, bloqués sur leurs déclencheurs |
+| **interdire deux coups nuls consécutifs** | — changement d'arbre | **débloqué le 24 sept., et ÉCRANTÉ en nœuds le même jour : ce n'est pas du travail retiré.** L'interdire fait grossir l'arbre : banc **+1,80 %** à la profondeur 10 (653 982 contre 642 442), **+0,52 %** à 12, −0,42 % à 7. Le second coup nul cherchait la position d'origine à profondeur réduite, et coupait tôt le nœud intermédiaire quand elle tenait — une coupure bon marché, pas un gaspillage. <s>Avec C23, un double coup nul ne rend plus de fausse nulle, il re-cherche la position à profondeur réduite : du travail qu'aucune partie ne demande.</s> **10,1 %** des recherches de coup nul partent juste après un coup nul (sonde de C23). Stockfish l'interdit — ce qui, ici, ne prouve rien. **Effet sur la décision de signe inconnu, de quelques Elo au plus : ~12 000 parties pour le voir.** Pas prioritaire devant B6 ; la garde tient en une condition, `null_marks.last() != Some(&(path.len() - 1))` |
+| **D5 — revérifier les acquis** | — | **CLOS le 23 sept.** Six lignes examinées : trois remesurées en match — aspiration × 2,7, trois termes d'évaluation × 2,5, élagage delta **érodé** — et trois écrantées en nœuds sans signal d'érosion (futilité inverse, mobilité ; LMR, coup nul et table ont des marges qui l'absorbent). Les écrans datent du 22 ; rien de fusionné depuis ne coupe au même endroit. **L'élagage delta reste dans `main`** : un acquis se retire par un verdict, et un effet de −1,5 Elo en demanderait ~40 000 parties — une quinzaine de jobs pour quelques Elo au plus, quand la calibration et B6 en achètent davantage. *À rouvrir quand la quiescence ou l'échelle de l'évaluation change* (NNUE), l'écran en nœuds d'abord : trois minutes, sans hasard |
+| **B8 — régler les constantes de recherche** | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau) |
+| **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
+| **C13 — mesurer la force absolue** | — | **reporté** : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread |
+| **B4 — évaluation NNUE** | — | **reporté.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation. **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 ; **première vague relevée le 26 sept. : 125 M positions, 77,7 M gardées par le filtre** — la cible de 100 M est atteinte ; suit l'inférence dans le moteur |
+| **tablebases de finale** (reste de B6) | — | **reporté**, non chiffré |
+| **B5 — analyse dans l'interface ; A8 — transport interface ↔ moteur** | — | **côté `ui/`**, chantier mené séparément sous son propre `ui/CLAUDE.md` : listés ici pour que le tableau soit complet, pas pour être ordonnés avec le moteur |
 
 > **B8 (réglage des constantes de recherche) : son déclencheur écrit est
 > ATTEINT et personne ne l'a relevé.** Sa fiche dit « quand le jeu de
@@ -1526,7 +3349,7 @@ context and reduce adherence »*, avec une cible sous 200 lignes par fichier.
 Les pièges qui en sont sortis l'ont été sur un critère unique, et c'est celui
 du projet : **une règle écrite se contourne, un code de sortie non.** Un piège
 que `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
-`rustines_attic.rs`, le banc à la profondeur 5 ou le plafond calculé de
+`rustines_attic.rs`, le banc à la profondeur 6 ou le plafond calculé de
 `match.yml` rendent *inexprimable* n'a pas besoin d'être relu à chaque
 session ; il a besoin d'être trouvable le jour où le dispositif se déclenche.
 
@@ -2231,7 +4054,7 @@ chantiers déjà dans la file la franchissent.
 > Le cœur de réserve est pour l'arbitre et le système : un moteur qui attend
 > un cœur perd du temps de pendule, et le perd de façon asymétrique.
 
-| ce que font les moteurs | cœurs par partie | concurrence sur 4 cœurs |
+| ce que font les moteurs | cœurs par partie | concurrence sur 4 processeurs logiques — **2 cœurs physiques**, mesuré le 23 sept. |
 |---|---|---|
 | monofil, sans ponder — **tout ce qui a été mesuré jusqu'ici** | 1 (un seul moteur réfléchit à la fois) | **3** |
 | un camp pondère (mesure du ponder) | 2 | **1** |
@@ -2248,15 +4071,46 @@ deux cas le verdict ne vaut rien.*
 <s>`match.yml` calcule `concurrence = nproc − 1` et ne connaît ni fils ni
 ponder.</s> **Depuis le 23 sept., `match.yml` dérive la concurrence de
 l'inégalité** — deux cœurs par partie dès que quelqu'un pondère — et refuse de
-lancer quand elle ne tient pas. **Les fils, non** : le jour où un match passe
+lancer quand elle ne tient pas. <s>**Les fils, non** : le jour où un match passe
 `option.Threads`, le nombre de cœurs par partie devient `T` et la même ligne
 doit le savoir. C'est une étape de B6, écrite dans sa liste, pas une
-précaution à retenir.
+précaution à retenir.</s> **Les fils aussi depuis le 24 sept.** — première étape
+de B6. Deux entrées, `fils_candidat` et `fils_reference` (1 par défaut) ; la
+partie occupe le plus gros des deux camps sans ponder, leur somme avec ; et
+deux refus de plus, chacun pour un zéro qui se lirait comme un verdict :
+
+- **un moteur qui ne DÉCLARE pas `Threads`** en réponse à `uci`. Le protocole
+  veut qu'une option inconnue soit ignorée en silence — ce moteur le fait —,
+  donc un match « deux fils contre un » sur un binaire d'avant Lazy SMP
+  jouerait monofil des deux côtés et rendrait zéro ;
+- **plus de fils réfléchissant à la fois, DANS une partie, que de cœurs
+  PHYSIQUES** (`lscpu`, dans l'étalonnage). Deux fils d'un même cœur s'en
+  partagent les unités de calcul : la mesure dirait ce que vaut le SMT, avec
+  un biais contre le camp qui a le plus de fils. Entre deux parties le partage
+  frappe les deux camps pareil, d'où la concurrence 3 des matchs monofils ;
+  dans une partie, non. Sur les runners, deux cœurs physiques : Lazy SMP à
+  deux fils sans ponder passe, deux fils plus un camp qui pondère non.
+
+`option.Threads` passe **par moteur, jamais dans `-each`**, qui écraserait les
+valeurs des moteurs comme il le fait de `tc=`. **Douze entrées** : GitHub en
+admet vingt-cinq par `workflow_dispatch` depuis le 4 déc. 2025 — vérifié à la
+source (changelog GitHub) avant d'ajouter la onzième, et au contact : la
+première sonde à deux fils est partie avec les douze. Éprouvé en rejouant les étapes
+en local : les trois refus, et un moteur témoin qui déclare `Threads` et
+journalise ce qu'il reçoit — `setoption name Threads value 2` au seul
+candidat, une partie à la fois, sous les deux arbitres.
 
 ### Ce qu'il faut surveiller — et que rien ne signalera tout seul
 
 Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 **vieillissent**, et c'est pourquoi ils sont écrits plutôt que gardés.
+
+- **Les runners changent de MODÈLE, pas seulement de vitesse** — relevé le
+  24 sept. 2026 : EPYC 7763, EPYC 9V74 et EPYC 9V45 dans la même nuit, de
+  2,02 à 4,06 M n/s au banc sur des binaires voisins. Un verdict reste valide
+  en interne ; deux runs ne se comparent qu'après lecture de leurs
+  étalonnages, et un chiffre de vitesse ne se recopie jamais d'un run à
+  l'autre.
 
 | quoi | quand ça devient actionnable | pourquoi aucun test ne le dira |
 |---|---|---|
@@ -2264,7 +4118,8 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 | <s>`mesure/d5-delta` sur le distant</s> | **FAIT le 23 sept.** — supprimée par Théo ; son code est à l'attic | <s>le jeton de session ne peut pas supprimer une référence distante</s> |
 | **le déclencheur de B8** | maintenant | sa **lettre** est satisfaite (C12 clos, C18 décidé), son **esprit** non (C17, C19, C21 sont entrés depuis). Ça demande une re-spécification, pas une mesure — donc personne ne peut la calculer |
 | <s>`attack_dump.rs` et `see_check.rs`</s> | **FAIT le 23 sept.** — `tools/Cargo.toml` porte `autobins = false` et les deux y sont déclarés (voir `CLAUDE.md`) | <s>autodécouverts par cargo, non déclarés</s> |
-| **une routine hebdomadaire HORS dépôt**, « ShallowRed — verdict du balayage par mutation » (créée le 15 sept., mardi 03 h UTC, session neuve) | maintenant — elle tourne encore, dernier passage le 22 sept. | le job `Verdict` ouvre lui-même l'issue depuis le 15 sept. ; cette routine en ouvrirait une seconde, au même titre le même jour. Elle vit hors du dépôt, donc aucun test ne la voit. **À supprimer** — décision de Théo, elle est à son compte |
+| <s>une routine hebdomadaire HORS dépôt, « ShallowRed — verdict du balayage par mutation »</s> | **FAIT le 23 sept. au soir** — supprimée, **remplacée** par `tools/balayage-vivant.sh` dans la CI | **Vérifiée avant d'être jugée, et c'était pire qu'un doublon.** Les quatre issues « mutation » viennent toutes du job `Verdict` ; aucune d'elle. Le 22 sept., seul mardi où le cliquet a cassé sur `main`, GitHub a lancé le cron de 00:00 avec **3 h 48 de retard** : la routine de 03:00 a lu l'exécution précédente et s'est tue. Elle avait pourtant **une** fonction que rien d'autre ne tenait — dire que le balayage ne tourne plus, ce que GitHub provoque sur un dépôt public après soixante jours sans activité. C'est cette fonction-là qui est entrée dans le dépôt, testée |
+| **la profondeur EN PARTIE à concurrence 3 sur deux cœurs physiques** | avant de comparer un point de fonctionnement à un autre — cadence, runner, conteneur | l'étalonnage mesure un banc SEUL sur la machine ; trois moteurs sur deux cœurs physiques (SMT, mesuré le 23 sept.) cherchent moins profond. Symétrique, donc aucun verdict ne se fausse — mais « profondeur 12 à `8+0,08` » décrit le banc, pas les parties. Se mesure par la profondeur non appariée des coups d'un témoin joué à concurrence 3 contre celle de la sonde témoin, sur des runners au banc voisin |
 | le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
 
 ### B9 — écrit et mesuré le 23 sept. 2026 — état d'AVANT la fusion, gardé pour ses chiffres

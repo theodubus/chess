@@ -28,6 +28,10 @@ on:
         description: "Forcer l'échec du verdict, pour éprouver l'alerte sans attendre un vrai rouge"
         type: boolean
         default: false
+      commit:
+        description: "SHA à balayer au lieu de la tête de la branche — le crible d'un candidat révoqué le temps de sa mesure. Vide : la tête. Un balayage de candidat n'ouvre jamais d'issue."
+        type: string
+        default: ""
 
 env:
   CARGO_TERM_COLOR: always
@@ -66,7 +70,15 @@ jobs:
           - main.rs
           - see.rs
     steps:
+      # Le crible d'un candidat vit sur un runner, pas dans le conteneur de
+      # session : le 25 sept. 2026, celui de `search.rs` entier au candidat
+      # A20 y est mort à 57 mutants sur 570, au redémarrage du conteneur. Le
+      # candidat, révoqué dans la branche, reste atteignable par son SHA.
+      # Vide — le planifié, ou un dispatch sans `commit` —, `ref` retombe sur
+      # la tête de la branche, comme avant.
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit }}
 
       - name: Toolchain
         run: |
@@ -168,8 +180,11 @@ jobs:
           # `bash -e` n'active pas pipefail : sans lui, le code de retour serait
           # celui de `tee` et le verdict ne pourrait jamais faire échouer le job.
           set -o pipefail
+          if [ -n "${{ inputs.commit }}" ]; then
+            echo "CRIBLE D'UN CANDIDAT — ${{ inputs.commit }} ; aucune issue ne s'ouvre." | tee verdict.txt
+          fi
           bash .github/mutation-verdict.sh resumes .github/mutation-baseline.txt \
-            | tee verdict.txt
+            | tee -a verdict.txt
           if [ "${{ inputs.simuler_une_alerte }}" = "true" ]; then
             echo "SIMULATION — échec forcé pour éprouver l'alerte." | tee -a verdict.txt
             exit 1
@@ -188,8 +203,10 @@ jobs:
       # n'est pas un dispositif d'alerte. Celui-ci est versionné, il a ses
       # droits en propre, et `simuler_une_alerte` permet de l'éprouver sans
       # attendre un vrai rouge.
+      # Jamais pour un candidat : le cliquet garde `main`, et un candidat qui
+      # le dépasse se corrige avant sa fusion, pas par une issue.
       - name: Ouvrir une issue si le cliquet a cassé
-        if: failure()
+        if: failure() && inputs.commit == ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
