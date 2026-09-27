@@ -53,6 +53,9 @@ export async function startApplication({
     (closing ??= (async () => {
       // Terminer les clients moteur avant le proxy évite d'attendre un WebSocket actif.
       await bridge.close();
+      // À froid, annuler l’optimiseur avant la fin des transformations peut
+      // laisser des imports en attente et empêcher Vite de se fermer.
+      if (front?.httpServer?.listening) await front.waitForRequestsIdle();
       await front?.close();
     })());
   try {
