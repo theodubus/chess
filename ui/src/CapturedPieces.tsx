@@ -20,7 +20,6 @@ export default function CapturedPieces({
   const opponent = side === "w" ? "b" : "w";
   const own = captures[side];
   const delta = own.points - captures[opponent].points;
-  if (!label && !own.pieces.length) return null;
   const sideName = side === "w" ? "Blancs" : "Noirs";
   const description = captureOrder
     .flatMap((type) => {

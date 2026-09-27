@@ -5,34 +5,38 @@ L’interface pilote le moteur exclusivement par l’adaptateur `Engine` et UCI.
 
 ## Démarrer
 
-Depuis `ui/`, dans un terminal :
+Une seule commande, depuis la **racine du dépôt** :
 
 ```sh
-npm install
-npm run dev -- --host 127.0.0.1
+npm --prefix ui run dev
 ```
 
-Pour jouer contre le moteur ou analyser une partie, dans un second terminal
-ouvert à la **racine du dépôt** :
+Depuis `ui/`, `npm run dev` fait la même chose. Installer les dépendances avec
+`npm --prefix ui ci` au premier lancement. `npm start` dans `ui/` est un alias.
+
+Ouvrir l’adresse affichée dans le terminal, par défaut `http://127.0.0.1:5173`.
+Le lancement vérifie ShallowRed (protocole UCI et recherches légales), puis
+ouvre le front et son pont privé ensemble. Le binaire par défaut est
+`target/release/shallowred`, résolu depuis le dépôt, indépendamment du terminal.
+S’il manque, compiler une fois depuis la racine :
+`cargo build --release --bin shallowred`.
+
+`Ctrl+C` ferme les deux services et leurs connexions moteur. Si le port est
+occupé, le lancement échoue clairement au lieu de basculer sur 5174 en silence.
+Fermer l’ancien terminal ou choisir explicitement un autre port :
 
 ```sh
-npm --prefix ui run engine:bridge -- ../target/release/shallowred
+npm --prefix ui run dev -- --port 5180
+npm --prefix ui run dev -- --engine /chemin/absolu/vers/un/moteur
 ```
 
-Si ce terminal est déjà dans `ui/`, utilisez `npm run engine:bridge -- ../target/release/shallowred`.
-Une erreur npm `ENOENT` sur `chess/package.json` indique que la commande sans
-`--prefix ui` a été lancée à la racine ; elle ne vient pas du binaire.
-
-Ouvrir `http://127.0.0.1:5173`. Le bouton « Jouer » connecte automatiquement
-le moteur choisi ; aucun panneau de connexion n’est à activer pendant la partie.
-Le navigateur ne lance pas lui-même le pont. Le chemin du binaire peut être
-remplacé par celui d’un autre moteur UCI, ou défini avec `CHESS_ENGINE`.
-
-Le pont écoute sur `127.0.0.1:8787` et accepte les origines Vite
-`http://localhost:5173` et `http://127.0.0.1:5173`. Il lance un processus par
-connexion, envoie `quit` à la fermeture et force l’arrêt si nécessaire.
-Il reste réservé au développement, hors du build Vite. Le transport de
-production n’est pas choisi par cette interface.
+Le navigateur utilise `/engine/` sur la même adresse que le front pour HTTP
+et WebSocket ; il ne dépend plus d’un port moteur 8787. Le pont reçoit un port
+local libre et refuse les origines étrangères. Un autre moteur peut aussi être
+défini par `CHESS_ENGINE`. Ne pas lancer `engine:bridge` en plus : cette ancienne
+commande reste disponible uniquement pour les diagnostics du pont isolé.
+Le transport reste réservé au développement local ; le déploiement de production
+n’est pas choisi par cette interface.
 
 ### Choisir un moteur d’analyse, notamment Stockfish
 
@@ -61,10 +65,10 @@ copie du binaire n’est nécessaire. Exemple pour le Stockfish installé sur Li
 ]
 ```
 
-Enregistrer ce tableau dans `moteurs.json`, puis démarrer le pont :
+Enregistrer ce tableau dans `moteurs.json`, puis démarrer depuis `ui/` :
 
 ```sh
-npm run engine:bridge -- ../target/release/shallowred --engines moteurs.json
+npm run dev -- --engines moteurs.json
 ```
 
 Le fichier peut contenir plusieurs moteurs avec des identifiants uniques et
@@ -74,7 +78,7 @@ rapport au fichier JSON ; un simple nom de commande est cherché dans le PATH.
 les noms et identifiants pour les connexions UCI. L’ajout explicite transmet
 un chemin absolu au formulaire de validation. Les requêtes d’ajout sont réservées
 aux origines locales autorisées, en JSON, et le programme est lancé sans shell.
-Après modification du fichier, relancer le pont puis « Actualiser les moteurs »
+Après modification du fichier, relancer l’application puis « Actualiser les moteurs »
 dans les options. Un moteur absent provoque une erreur explicite, sans substitution.
 
 Le changement de moteur propose « Relancer l’analyse » et recalcule toute la
@@ -348,8 +352,9 @@ annuler/refaire, choix du camp, abonnement/désabonnement, abandon, connexion
 tardive, reconnexion, export et analyse. Les tests de pont ouvrent des ports
 locaux. Les tests avec le vrai moteur sont ignorés sans `CHESS_ENGINE_BINARY`.
 
-Avec Vite et le pont déjà lancés avec un moteur `stockfish` configuré
-(`--engines dev/engines.example.json` sur cette installation), le parcours Chromium se vérifie ainsi :
+Avec `npm run dev -- --engines dev/engines.example.json` lancé depuis `ui/`,
+un moteur `stockfish` est configuré
+sur cette installation ; le parcours Chromium se vérifie ainsi :
 
 ```sh
 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs
@@ -395,3 +400,5 @@ Ce bilan est indépendant de l’évaluation moteur et suit la position affiché
 ainsi que les variantes et retentatives. Il inclut la prise en passant ; une
 promotion seule n’est pas une capture. Pour un PGN depuis une FEN, les captures
 antérieures à la position initiale sont inconnues et ne sont pas inventées.
+
+La ligne des captures conserve sa hauteur avant la première prise, afin de garder le plateau et les commandes à la même place.

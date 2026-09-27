@@ -578,6 +578,33 @@ try {
         `!document.querySelector('.play-workspace select') && !document.querySelector('.play-workspace .evaluation-bar')`,
       ),
     );
+    await move("e2", "e4");
+    await move("d7", "d5");
+    const beforeCapture = await evaluate(
+      `(() => { const b=document.querySelector('.play-workspace cg-board').getBoundingClientRect(); const c=document.querySelector('.play-controls').getBoundingClientRect(); return [b.top,b.bottom,c.top]; })()`,
+    );
+    await move("e4", "d5");
+    const afterCapture = await evaluate(
+      `(() => { const b=document.querySelector('.play-workspace cg-board').getBoundingClientRect(); const c=document.querySelector('.play-controls').getBoundingClientRect(); return [b.top,b.bottom,c.top]; })()`,
+    );
+    assert.deepEqual(
+      afterCapture,
+      beforeCapture,
+      "première capture sans déplacement du plateau ni des commandes",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.player .capture-advantage')?.textContent==='+1'`,
+      ),
+      "prise visible dans la fiche du joueur",
+    );
+    await button("Abandonner");
+    await button("Confirmer l’abandon");
+    await button("Rejouer");
+    await waitFor(
+      `document.querySelector('.review-navigation span').textContent==='0 / 0' && !document.querySelector('.board-result')`,
+      "nouvelle partie après contrôle des captures",
+    );
     await screenshot("02-game-desktop");
     assert(
       await evaluate(

@@ -73,3 +73,13 @@ it("suit les prises de la variante sans les confondre avec la partie", () => {
   ).toBe(0);
   expect(capturedMaterial(board.history({ verbose: true })).w.points).toBe(1);
 });
+
+it("réserve la ligne des captures avant la première prise", () => {
+  const html = renderToStaticMarkup(
+    <CapturedPieces captures={capturedMaterial([])} side="w" />,
+  );
+  expect(html).toContain('class="captured-material"');
+  expect(html).toContain('class="captured-icons"');
+  expect(html).toContain("Prises des Blancs : aucune");
+  expect(html).not.toContain("<img");
+});

@@ -106,13 +106,11 @@ export function startBridge({
         return;
       }
       if (registering) {
-        response
-          .writeHead(409)
-          .end(
-            JSON.stringify({
-              error: "Un moteur est déjà en cours de vérification.",
-            }),
-          );
+        response.writeHead(409).end(
+          JSON.stringify({
+            error: "Un moteur est déjà en cours de vérification.",
+          }),
+        );
         return;
       }
       registering = true;
@@ -189,6 +187,11 @@ export function startBridge({
         [...registry.values()].map(({ id, label }) => ({ id, label })),
       ),
     );
+  });
+  const connections = new Set();
+  http.on("connection", (socket) => {
+    connections.add(socket);
+    socket.once("close", () => connections.delete(socket));
   });
   const server = new WebSocketServer({
     server: http,
@@ -268,7 +271,12 @@ export function startBridge({
       for (const socket of server.clients) socket.terminate();
       await Promise.all(exits);
       await new Promise((resolve) => server.close(resolve));
-      await new Promise((resolve) => http.close(resolve));
+      await new Promise((resolve) => {
+        http.close(resolve);
+        // Le proxy peut conserver une connexion HTTP sans requête en cours.
+        // Elle appartient au pont et ne doit pas retarder son arrêt.
+        for (const socket of connections) socket.destroy();
+      });
     },
   };
 }

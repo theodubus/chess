@@ -4,14 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node dev/start.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "engine:bridge": "node dev/bridge.mjs",
     "test:unit": "vitest run src",
-    "test:bridge": "vitest run dev"
+    "test:bridge": "vitest run dev",
+    "start": "node dev/start.mjs"
   },
   "dependencies": {
     "@lichess-org/chessground": "^10.1.1",

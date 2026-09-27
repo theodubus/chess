@@ -178,11 +178,8 @@ export default function GameSetup({
             <p>{displayError}</p>
             <details>
               <summary>Aide à la connexion</summary>
-              <p>Depuis la racine du dépôt, lancez le pont local :</p>
-              <code>
-                npm --prefix ui run engine:bridge --
-                ../target/release/shallowred
-              </code>
+              <p>Depuis la racine du dépôt, lancez l’application complète :</p>
+              <code>npm --prefix ui run dev</code>
               <p>Puis réessayez. Vos réglages sont conservés.</p>
             </details>
           </div>
