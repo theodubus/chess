@@ -21,6 +21,7 @@ export async function startApplication({
   args = [],
   port = 5173,
   engines = [],
+  cacheDir,
   registryFile = fileURLToPath(
     new URL("./engines.local.json", import.meta.url),
   ),
@@ -59,6 +60,7 @@ export async function startApplication({
     const bridgePort = bridge.server.address().port;
     front = await createServer({
       root: uiRoot,
+      cacheDir,
       configFile: resolve(uiRoot, "vite.config.ts"),
       clearScreen: false,
       plugins: [

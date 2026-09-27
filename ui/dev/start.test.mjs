@@ -1,6 +1,9 @@
 import { once } from "node:events";
 import { createServer } from "node:net";
 import { get } from "node:http";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { WebSocket } from "ws";
@@ -15,6 +18,7 @@ let app;
 afterEach(async () => {
   await app?.close();
   app = undefined;
+  await rm(options.cacheDir, { recursive: true, force: true });
   vi.unstubAllGlobals();
 });
 const fixture = fileURLToPath(new URL("./fixture-probe.mjs", import.meta.url));
@@ -26,6 +30,8 @@ const options = {
 };
 
 beforeEach(async () => {
+  // Les serveurs temporaires ne doivent pas invalider le cache du front ouvert.
+  options.cacheDir = await mkdtemp(join(tmpdir(), "chess-vite-test-"));
   const reservation = createServer();
   reservation.listen(0, "127.0.0.1");
   await once(reservation, "listening");
