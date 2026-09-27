@@ -174,8 +174,8 @@ visuellement à ±5 pions ; les scores absents restent inconnus. Les différence
 avant/après sont des estimations dépendantes du temps de recherche, pas des
 jugements définitifs ni des probabilités. La perte numérique n’est pas calculée
 pour les mats ou les bornes. Les positions terminales connues ne sont pas
-recherchées. Pendant une variante, la barre est indisponible : cette position
-intermédiaire n’a pas été analysée séparément.
+recherchées. Pendant une variante, la barre attend le calcul de la position
+explorée puis affiche son évaluation propre.
 
 L’évaluation est masquée par défaut en jeu et visible en analyse. Les deux
 préférences sont indépendantes. Une ancienne préférence commune est conservée
