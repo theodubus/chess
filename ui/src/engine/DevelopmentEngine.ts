@@ -1,4 +1,6 @@
 import { type Engine, validateCommand } from "./Engine";
+import { UciSession } from "./UciSession";
+import type { EngineCapabilities } from "./options";
 
 function engineUrl(path: string, websocket = false) {
   const url = new URL(`/engine/${path}`, window.location.href);
@@ -149,4 +151,35 @@ export async function connectDevelopmentEngine(
       });
     },
   };
+}
+
+/** Connexion courte dédiée à la préparation, annulée quand on quitte le formulaire. */
+export async function inspectDevelopmentEngine(signal: AbortSignal) {
+  let session: UciSession | undefined;
+  const engine = await connectDevelopmentEngine((message) =>
+    session?.fail(message),
+  );
+  if (signal.aborted) {
+    await engine.dispose();
+    throw new Error("Vérification annulée.");
+  }
+  try {
+    return await new Promise<{
+      name: string;
+      capabilities: EngineCapabilities;
+    }>((resolve, reject) => {
+      const cancel = () => session?.fail("Vérification annulée.");
+      signal.addEventListener("abort", cancel, { once: true });
+      session = new UciSession(engine, (snapshot) => {
+        if (snapshot.state === "ready" || snapshot.state === "error")
+          signal.removeEventListener("abort", cancel);
+        if (snapshot.state === "ready")
+          resolve({ name: snapshot.name, capabilities: session!.capabilities });
+        if (snapshot.state === "error") reject(new Error(snapshot.error));
+      });
+      session.start();
+    });
+  } finally {
+    await session?.dispose();
+  }
 }

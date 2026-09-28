@@ -139,8 +139,14 @@ export default function GameView({
             {status}
           </div>
           <span className="cadence">
-            {controller.clock.control.initialMs / 60000} +{" "}
-            {controller.clock.control.incrementMs / 1000}
+            {controller.clock.balanced
+              ? `${controller.clock.control.initialMs / 60000} + ${controller.clock.control.incrementMs / 1000}`
+              : (["w", "b"] as const)
+                  .map(
+                    (color) =>
+                      `${controller.mode ? (color === controller.humanSide ? "Vous" : "Bot") : color === "w" ? "Blancs" : "Noirs"} ${controller.clock.controls[color].initialMs / 60000} + ${controller.clock.controls[color].incrementMs / 1000}`,
+                  )
+                  .join(" · ")}
           </span>
         </div>
         <Player

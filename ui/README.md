@@ -139,6 +139,34 @@ dans l’analyse, sauf dans les dialogues et les champs de saisie.
 On peut le masquer pour revoir la position ; le bouton « Résultat » le réaffiche.
 Parcourir les coups masque aussi cet encart.
 
+## Cadences et options du moteur
+
+Dans la préparation d’une partie contre le bot, « Donner une cadence différente
+au bot » permet de choisir son temps initial et son incrément indépendamment des
+vôtres. Ces temps suivent les joueurs, même avec les Noirs ou un camp aléatoire.
+Les parties à deux joueurs gardent une cadence commune. Les réglages sont
+mémorisés pour la prochaine partie et pour « Rejouer ».
+
+« Options du moteur » interroge le moteur connecté et propose les fonctions qu’il
+annonce par UCI :
+
+- « Réfléchir pendant mon tour » active `Ponder`, désactivé par défaut. Après
+  son coup, le moteur peut préparer une réponse au coup qu’il anticipe. Si le
+  joueur le choisit, `ponderhit` poursuit cette recherche ; sinon, `stop` et
+  l’attente de son `bestmove` précèdent la recherche de la position réelle.
+  Cette anticipation ne joue aucun coup et ne débite pas la pendule du moteur.
+  Abandon, temps écoulé et nouvelle partie l’arrêtent également. L’évaluation
+  anticipée n’est pas affichée sur la position réelle.
+- « Cœurs de calcul » règle `Threads`, à 1 par défaut. La saisie est bornée par
+  les capacités UCI et les cœurs logiques annoncés par le navigateur. Cette
+  option sollicite davantage le processeur ; elle s’applique au moteur de jeu.
+
+La connexion de début de partie vérifie de nouveau ces options avant de lancer
+les pendules. Un réglage non pris en charge produit une erreur explicite.
+Les cadences asymétriques sont exportées avec `TimeControl "?"` et les en-têtes
+complémentaires `WhiteTimeControl` / `BlackTimeControl`, en secondes, afin de ne
+pas annoncer à tort une cadence commune.
+
 ## Analyse et affichage
 
 « Importer un PGN », depuis l’accueil ou la revue, accepte du texte collé ou un

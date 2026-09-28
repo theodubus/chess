@@ -1,3 +1,4 @@
+import EngineSettings from "./EngineSettings";
 import { useState } from "react";
 import { parseTimeControl, TIME_CONTROLS } from "./GameClock";
 import type { GameSetup as Setup } from "./preferences";
@@ -17,6 +18,18 @@ export default function GameSetup({
   onReturn?: () => void;
 }) {
   const [setup, setSetup] = useState(initial);
+  const [engineSettings, setEngineSettings] = useState(false);
+  const [separate, setSeparate] = useState(initial.engineTimeControl !== null);
+  const [engineMinutes, setEngineMinutes] = useState(
+    String(
+      (initial.engineTimeControl ?? initial.timeControl).initialMs / 60000,
+    ),
+  );
+  const [engineIncrement, setEngineIncrement] = useState(
+    String(
+      (initial.engineTimeControl ?? initial.timeControl).incrementMs / 1000,
+    ),
+  );
   const [more, setMore] = useState(false);
   const [minutes, setMinutes] = useState(
     String(initial.timeControl.initialMs / 60000),
@@ -26,6 +39,9 @@ export default function GameSetup({
   );
   const displayError = setup.opponent === "engine" ? error : "";
   const valid = parseTimeControl(minutes, increment);
+  const engineControl = parseTimeControl(engineMinutes, engineIncrement);
+  const validClocks =
+    valid && (setup.opponent !== "engine" || !separate || engineControl);
   const choose = (control: Setup["timeControl"]) => {
     setMinutes(String(control.initialMs / 60000));
     setIncrement(String(control.incrementMs / 1000));
@@ -41,7 +57,12 @@ export default function GameSetup({
         className="setup-card"
         onSubmit={(event) => {
           event.preventDefault();
-          if (valid && !busy) onStart({ ...setup, timeControl: valid });
+          if (valid && validClocks && !busy)
+            onStart({
+              ...setup,
+              timeControl: valid,
+              engineTimeControl: separate ? engineControl : null,
+            });
         }}
       >
         <fieldset disabled={busy}>
@@ -93,7 +114,9 @@ export default function GameSetup({
         )}
         <fieldset disabled={busy}>
           <legend>
-            Cadence{" "}
+            {separate && setup.opponent === "engine"
+              ? "Votre cadence"
+              : "Cadence"}{" "}
             <span>
               {minutes} min + {increment} s
             </span>
@@ -173,6 +196,79 @@ export default function GameSetup({
             </div>
           )}
         </fieldset>
+        {setup.opponent === "engine" && (
+          <>
+            <fieldset disabled={busy} className="asymmetric-controls">
+              <legend>Temps du moteur</legend>
+              <label className="engine-ponder-toggle">
+                <input
+                  type="checkbox"
+                  name="separate-clock"
+                  checked={separate}
+                  onChange={(event) => {
+                    setSeparate(event.target.checked);
+                    if (event.target.checked) {
+                      setEngineMinutes(minutes);
+                      setEngineIncrement(increment);
+                    }
+                  }}
+                />
+                Donner une cadence différente au bot
+              </label>
+              {separate && (
+                <div className="choice-row custom-controls">
+                  <label>
+                    Minutes du bot
+                    <input
+                      name="engine-minutes"
+                      type="number"
+                      min="0.5"
+                      max="180"
+                      step="0.5"
+                      required
+                      value={engineMinutes}
+                      onChange={(event) => setEngineMinutes(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Incrément du bot (secondes)
+                    <input
+                      name="engine-increment"
+                      type="number"
+                      min="0"
+                      max="60"
+                      step="1"
+                      required
+                      value={engineIncrement}
+                      onChange={(event) =>
+                        setEngineIncrement(event.target.value)
+                      }
+                    />
+                  </label>
+                </div>
+              )}
+            </fieldset>
+            <fieldset disabled={busy}>
+              <details
+                className="engine-settings"
+                open={engineSettings}
+                onToggle={(event) =>
+                  setEngineSettings(event.currentTarget.open)
+                }
+              >
+                <summary>Options du moteur</summary>
+                {engineSettings && (
+                  <EngineSettings
+                    options={setup.engineOptions}
+                    onChange={(engineOptions) =>
+                      setSetup({ ...setup, engineOptions })
+                    }
+                  />
+                )}
+              </details>
+            </fieldset>
+          </>
+        )}
         {displayError && (
           <div className="connection-error" role="alert">
             <p>{displayError}</p>
@@ -186,7 +282,7 @@ export default function GameSetup({
         )}
         <button
           className="primary wide"
-          disabled={busy || !valid}
+          disabled={busy || !validClocks}
           type="submit"
         >
           {busy

@@ -138,3 +138,32 @@ it('conserve une cadence personnalisée lors des nouvelles parties', () => {
   expect(controller.clock.remaining).toEqual({ w: 450_000, b: 450_000 });
   expect(controller.clock.budget()).toEqual({ wtime: 450_000, btime: 450_000, winc: 12_000, binc: 12_000 });
 });
+
+it("applique un temps et un incrément propres à chaque camp et les conserve au reset", () => {
+  let now = 0;
+  const controls = {
+    w: { initialMs: 600_000, incrementMs: 5000 },
+    b: { initialMs: 60_000, incrementMs: 1000 },
+  };
+  const clock = new GameClock(controls, () => now);
+  clock.start("w");
+  now = 2000;
+  clock.update();
+  clock.completeMove("w", false);
+  expect(clock.budget()).toEqual({
+    wtime: 603_000,
+    btime: 60_000,
+    winc: 5000,
+    binc: 1000,
+  });
+  now += 3000;
+  clock.update();
+  clock.completeMove("b", false);
+  expect(clock.remaining).toEqual({ w: 603_000, b: 58_000 });
+  clock.reset();
+  expect(clock.remaining).toEqual({ w: 600_000, b: 60_000 });
+  const game = new GameController({ timeControl: controls, now: () => 0 });
+  expect(game.exportPgn()).toContain('[TimeControl "?"]');
+  expect(game.exportPgn()).toContain('[WhiteTimeControl "600+5"]');
+  expect(game.exportPgn()).toContain('[BlackTimeControl "60+1"]');
+});

@@ -1447,3 +1447,31 @@ dialog p {
 .player { height:auto; min-height:57px; }
 .player-name { flex:1; }
 .clock { flex-shrink:0; }
+
+.engine-settings summary {
+  cursor: pointer;
+  color: var(--gold, #e1c17b);
+  font-weight: 600;
+}
+.engine-settings-body {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+.setup-card label.engine-ponder-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.engine-ponder-toggle input {
+  width: auto;
+  flex: 0 0 auto;
+}
+.setting-help {
+  color: var(--muted, #9cac9d);
+  font-size: 0.9rem;
+  margin: 0;
+}
+.asymmetric-controls .custom-controls {
+  margin-top: 1rem;
+}

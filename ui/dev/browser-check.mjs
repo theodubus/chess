@@ -213,6 +213,89 @@ try {
       ),
     );
     await screenshot("01-setup-desktop");
+    await click(".engine-settings summary");
+    await waitFor(
+      `document.querySelector('input[name="ponder"]')?.disabled === false && document.querySelector('input[name="engine-threads"]')?.disabled === false`,
+      "capacités Ponder et Threads du moteur",
+    );
+    assert(
+      await evaluate(
+        `!document.querySelector('input[name="ponder"]').checked && document.querySelector('input[name="engine-threads"]').value==='1'`,
+      ),
+      "options moteur désactivées par défaut",
+    );
+    async function setupNumber(name, value) {
+      await evaluate(
+        `(() => {const input=document.querySelector('input[name="' + ${JSON.stringify(name)} + '"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(String(value))});input.dispatchEvent(new Event('input',{bubbles:true}));})()`,
+      );
+    }
+    await click('input[name="ponder"]');
+    const threads = await evaluate(
+      `Math.min(2, Number(document.querySelector('input[name="engine-threads"]').max))`,
+    );
+    await setupNumber("engine-threads", threads);
+    await button("10 min");
+    await click('input[name="separate-clock"]');
+    await setupNumber("engine-minutes", 1);
+    await setupNumber("engine-increment", 1);
+    await button("Noirs");
+    await screenshot("01a-engine-options");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
+    assert(
+      await evaluate(`document.documentElement.scrollWidth <= 390`),
+      "options moteur adaptées au mobile",
+    );
+    await screenshot("01b-engine-options-mobile");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await button("Jouer");
+    await waitFor(
+      `document.querySelector('.move-list tbody tr') && !document.querySelector('.status').textContent.includes('réfléchit')`,
+      "premier coup du bot avec horloges différentes",
+    );
+    assert(
+      await evaluate(
+        `(() => { const time = side => { const [m,s]=document.querySelector('[aria-label="Temps des ' + side + '"]').textContent.split(':').map(Number);return m*60+s; };return time('blancs') <= 61 && time('noirs') > 590 && time('noirs') <= 600; })()`,
+      ),
+      "le bot blanc reçoit une minute, le joueur noir dix minutes",
+    );
+    await button("Options");
+    await waitFor(
+      `document.querySelector('dialog pre').textContent.includes('go ponder')`,
+      "réflexion anticipée réellement lancée",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('dialog pre').textContent.includes('setoption name Threads value ' + ${threads})`,
+      ),
+      "nombre de fils appliqué",
+    );
+    await click('dialog [aria-label="Fermer"]');
+    await button("Abandonner");
+    await button("Confirmer l’abandon");
+    await button("Nouvelle partie");
+    await click(".engine-settings summary");
+    await waitFor(
+      `document.querySelector('input[name="ponder"]')?.checked`,
+      "options conservées pour la prochaine partie",
+    );
+    await evaluate(
+      `localStorage.clear();window.browserCheckOptionsReload=true`,
+    );
+    await call("Page.reload");
+    await waitFor(
+      `!window.browserCheckOptionsReload && document.querySelector('.setup-card')`,
+      "retour à la préparation initiale",
+    );
     await button("Importer un PGN");
     await screenshot("00-import-dialog");
     await call("Emulation.setDeviceMetricsOverride", {

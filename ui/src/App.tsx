@@ -7,6 +7,7 @@ import ImportPgnDialog from "./ImportPgnDialog";
 import { connectDevelopmentEngine } from "./engine/DevelopmentEngine";
 import {
   evaluationPreference,
+  gameTimeControls,
   readSetup,
   resolveSide,
   savePreference,
@@ -71,9 +72,11 @@ export default function App() {
     setError("");
     setBusy(true);
     setScreen("setup");
+    const humanSide = resolveSide(next.side);
     const fresh = new GameController({
-      timeControl: next.timeControl,
-      humanSide: resolveSide(next.side),
+      timeControl: gameTimeControls(next, humanSide),
+      humanSide,
+      engineOptions: next.engineOptions,
     });
     const activate = () => {
       if (candidate.current?.controller !== fresh) return;
