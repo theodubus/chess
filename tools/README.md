@@ -3291,8 +3291,16 @@ lit — et il est plus ancien que l'édition 2024 du dépôt : passer par
 `cuda-toolkit`), et doit contenir `lib64/libcudart.so`, `libnvrtc.so` et
 `libcublas.so` ; un toolkit du paquet Ubuntu `nvidia-cuda-toolkit` range
 ailleurs, cas non vérifié ici. **La version du toolkit** (`nvcc`) ne doit pas
-dépasser la « CUDA Version » que `nvidia-smi` prête au pilote — règle sûre,
-sans en éprouver une plus lâche. Et `unzip` n'ouvre qu'une archive par appel
+dépasser la « CUDA Version » que `nvidia-smi` prête au pilote, et la raison
+se lit au source : bullet compile ses noyaux par NVRTC en PTX (`nvrtcGetPTX`,
+`crates/gpu/src/runtime/cuda.rs`) et les confie au pilote
+(`cuModuleLoadData`), qui les recompile. <span>Inférence, confiance
+élevée — la règle de compatibilité de CUDA, pas éprouvée ici</span> : un
+pilote refuse un PTX plus récent que lui. **Premier cas réel, le 28 sept.** :
+toolkit 13.4, pilote 13.2. Réponse sans toucher au pilote : un toolkit 13.2
+à côté (`cuda-toolkit-13-2`), et `CUDA_PATH` ET `LD_LIBRARY_PATH` pointés
+sur lui — sans le second, le chargeur peut prendre la `libnvrtc` du 13.4 à
+l'exécution. `ldd` sur le binaire le vérifie. Et `unzip` n'ouvre qu'une archive par appel
 quand le shell en développe plusieurs : une boucle.
 
 **Le coût d'un nœud avec réseau — attendu écrit AVANT de mesurer.** Un réseau
