@@ -24,6 +24,7 @@ use cozy_chess::Move;
 use cozy_chess::util::display_uci_move;
 
 use crate::bench;
+use crate::nnue::Network;
 use crate::perft;
 use crate::position::Position;
 use crate::search::{Limits, MAX_THREADS, Score, Search};
@@ -91,12 +92,35 @@ fn parse_go<'a>(tokens: &mut impl Iterator<Item = &'a str>) -> (Limits, Option<u
 /// Séparée de [`Engine::set_option`] pour la même raison que [`parse_go`] :
 /// l'action qu'elle déclenche — redimensionner la table — est difficile à
 /// observer, l'analyse ne l'est pas.
-fn parse_option<'a>(words: &[&'a str]) -> Option<(String, Option<&'a str>)> {
+///
+/// La valeur est TOUT ce qui suit `value`, espaces compris : le protocole
+/// l'autorise, et un chemin de fichier — celui d'`EvalFile` — en contient
+/// volontiers. N'en garder que le premier mot chargerait un autre fichier,
+/// ou aucun.
+fn parse_option(words: &[&str]) -> Option<(String, Option<String>)> {
     let name_at = words.iter().position(|&w| w == "name")?;
     let value_at = words.iter().position(|&w| w == "value");
     let name = words[name_at + 1..value_at.unwrap_or(words.len())].join(" ");
-    let value = value_at.and_then(|at| words.get(at + 1)).copied();
+    let value = value_at
+        .map(|at| words[at + 1..].join(" "))
+        .filter(|value| !value.is_empty());
     Some((name, value))
+}
+
+/// Le réseau que désigne la valeur d'`EvalFile` : aucun pour une valeur vide
+/// ou `<empty>` — la convention UCI d'une chaîne vide —, c'est-à-dire
+/// l'évaluation faite main.
+///
+/// # Errors
+/// Un fichier illisible, ou refusé par [`Network::from_bytes`].
+fn load_network(path: Option<&str>) -> Result<Option<Arc<Network>>, String> {
+    let path = path.map(str::trim).unwrap_or_default();
+    if path.is_empty() || path == "<empty>" {
+        return Ok(None);
+    }
+    let bytes = std::fs::read(path).map_err(|e| format!("{path} : {e}"))?;
+    let network = Network::from_bytes(&bytes).map_err(|e| format!("{path} : {e}"))?;
+    Ok(Some(Arc::new(network)))
 }
 
 /// Convertit une variante principale en notation UCI.
@@ -135,6 +159,9 @@ fn identification() -> Vec<String> {
         // Un fil par défaut, comme partout : c'est l'interface qui sait
         // combien de cœurs elle peut donner au moteur (B6, Lazy SMP).
         format!("option name Threads type spin default 1 min 1 max {MAX_THREADS}"),
+        // Le réseau NNUE (A21) : aucun par défaut, l'évaluation faite main.
+        // `<empty>` est la façon qu'a le protocole d'écrire une chaîne vide.
+        "option name EvalFile type string default <empty>".to_owned(),
         "uciok".to_owned(),
     ]
 }
@@ -260,6 +287,23 @@ impl Engine {
             // l'échéance posée au `go ponder` s'applique désormais.
             "ponderhit" => self.pondering.store(false, Ordering::Relaxed),
             "d" => send(&self.position.board().to_string()),
+            // L'évaluation statique de la position — hors protocole, comme
+            // `d`. C'est par elle qu'un réseau entraîné se confronte à ce
+            // que l'entraîneur lui-même en dit, position par position.
+            "eval" => {
+                let board = self.position.board().clone();
+                self.abort_search_keeping(|search| {
+                    let source = if search.uses_network() {
+                        "réseau"
+                    } else {
+                        "faite main"
+                    };
+                    send(&format!(
+                        "info string évaluation statique {} cp, point de vue du trait ({source})",
+                        search.evaluate(&board)
+                    ));
+                });
+            }
             "bench" => {
                 let depth = tokens
                     .next()
@@ -290,17 +334,36 @@ impl Engine {
         };
 
         if name.eq_ignore_ascii_case("hash")
-            && let Some(megabytes) = value.and_then(|v| v.parse().ok())
+            && let Some(megabytes) = value.as_deref().and_then(|v| v.parse().ok())
         {
             // Redimensionner pendant une recherche invaliderait ses index :
             // on l'arrête d'abord, ce que `abort_search_keeping` garantit.
             self.abort_search_keeping(|search| search.resize_table(megabytes));
         } else if name.eq_ignore_ascii_case("threads")
-            && let Some(threads) = value.and_then(|v| v.parse().ok())
+            && let Some(threads) = value.as_deref().and_then(|v| v.parse().ok())
         {
             // Même raison : les auxiliaires se refont, la recherche doit être
             // arrêtée d'abord.
             self.abort_search_keeping(|search| search.set_threads(threads));
+        } else if name.eq_ignore_ascii_case("evalfile") {
+            // Un réseau refusé laisse l'évaluation telle qu'elle était, et le
+            // dit : se rabattre en silence sur la faite main ferait jouer
+            // tout un match avec une autre évaluation que celle qu'on croit
+            // mesurer.
+            match load_network(value.as_deref()) {
+                Ok(network) => {
+                    let message = if network.is_some() {
+                        "info string EvalFile : réseau chargé"
+                    } else {
+                        "info string EvalFile : évaluation faite main"
+                    };
+                    self.abort_search_keeping(|search| search.set_network(network));
+                    send(message);
+                }
+                Err(e) => send(&format!(
+                    "info string EvalFile refusé, rien ne change — {e}"
+                )),
+            }
         }
     }
 
@@ -689,7 +752,10 @@ mod tests {
     #[test]
     fn le_nom_et_la_valeur_dune_option_sont_extraits() {
         let mots: Vec<&str> = "name Hash value 64".split_whitespace().collect();
-        assert_eq!(parse_option(&mots), Some(("Hash".to_owned(), Some("64"))));
+        assert_eq!(
+            parse_option(&mots),
+            Some(("Hash".to_owned(), Some("64".to_owned())))
+        );
     }
 
     #[test]
@@ -700,8 +766,113 @@ mod tests {
         let mots: Vec<&str> = "name Move Overhead value 30".split_whitespace().collect();
         assert_eq!(
             parse_option(&mots),
-            Some(("Move Overhead".to_owned(), Some("30")))
+            Some(("Move Overhead".to_owned(), Some("30".to_owned())))
         );
+    }
+
+    #[test]
+    fn une_valeur_a_espaces_se_lit_en_entier() {
+        // Un chemin de fichier en contient volontiers : n'en garder que le
+        // premier mot chargerait un autre fichier, ou aucun.
+        let mots: Vec<&str> = "name EvalFile value /tmp/mon reseau.bin"
+            .split_whitespace()
+            .collect();
+        assert_eq!(
+            parse_option(&mots),
+            Some((
+                "EvalFile".to_owned(),
+                Some("/tmp/mon reseau.bin".to_owned())
+            ))
+        );
+        let vide: Vec<&str> = "name EvalFile value".split_whitespace().collect();
+        assert_eq!(parse_option(&vide), Some(("EvalFile".to_owned(), None)));
+    }
+
+    /// Un fichier temporaire propre au test, effacé en sortant de portée.
+    struct Fichier(std::path::PathBuf);
+
+    impl Fichier {
+        fn avec(nom: &str, octets: &[u8]) -> Self {
+            let chemin =
+                std::env::temp_dir().join(format!("shallowred-{}-{nom}", std::process::id()));
+            std::fs::write(&chemin, octets).unwrap();
+            Self(chemin)
+        }
+
+        fn chemin(&self) -> String {
+            self.0.display().to_string()
+        }
+    }
+
+    impl Drop for Fichier {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+
+    fn reseau_aleatoire() -> Vec<u8> {
+        use crate::nnue::testing::{file_of, random_values};
+        file_of(&random_values(21, 40, 20))
+    }
+
+    #[test]
+    fn un_reseau_se_charge_ou_se_refuse_avec_sa_raison() {
+        for vide in [None, Some(""), Some("  "), Some("<empty>")] {
+            assert!(
+                load_network(vide).unwrap().is_none(),
+                "{vide:?} : l'évaluation faite main"
+            );
+        }
+        let bon = Fichier::avec("bon.bin", &reseau_aleatoire());
+        assert!(load_network(Some(&bon.chemin())).unwrap().is_some());
+
+        let tronque = Fichier::avec("tronque.bin", &[0; 64]);
+        let erreur = load_network(Some(&tronque.chemin())).err().unwrap();
+        assert!(erreur.contains("64 octets"), "{erreur}");
+        let absent = load_network(Some("/nulle/part/reseau.bin")).err().unwrap();
+        assert!(absent.starts_with("/nulle/part/reseau.bin"), "{absent}");
+    }
+
+    #[test]
+    fn evalfile_est_annonce_vide_avant_uciok() {
+        let lignes = identification();
+        let annonce = lignes
+            .iter()
+            .position(|l| l == "option name EvalFile type string default <empty>");
+        let fin = lignes.iter().position(|l| l == "uciok").unwrap();
+        assert!(
+            annonce.is_some_and(|a| a < fin),
+            "EvalFile annoncé avant uciok"
+        );
+    }
+
+    #[test]
+    fn evalfile_branche_le_reseau_et_un_refus_ne_change_rien() {
+        let reseau = Fichier::avec("reseau un.bin", &reseau_aleatoire());
+        let tronque = Fichier::avec("tronque deux.bin", &[0; 64]);
+        let mut moteur = Engine::new();
+        let branche = |m: &Engine| m.search.as_ref().unwrap().uses_network();
+        assert!(!branche(&moteur), "aucun réseau par défaut");
+
+        let charger = |m: &mut Engine, valeur: &str| {
+            assert!(m.handle(&format!("setoption name EvalFile value {valeur}")));
+        };
+        charger(&mut moteur, &reseau.chemin());
+        assert!(branche(&moteur), "un chemin à espaces se lit en entier");
+        // Refusé : ni retour silencieux à la faite main, ni autre réseau.
+        charger(&mut moteur, &tronque.chemin());
+        assert!(branche(&moteur));
+        charger(&mut moteur, "/nulle/part/reseau.bin");
+        assert!(branche(&moteur));
+        charger(&mut moteur, "<empty>");
+        assert!(!branche(&moteur), "la chaîne vide rend la faite main");
+        assert!(moteur.handle(&format!(
+            "setoption name evalfile value {}",
+            reseau.chemin()
+        )));
+        assert!(branche(&moteur), "le nom d'une option ignore la casse");
+        assert!(moteur.handle("setoption name EvalFile value"));
+        assert!(!branche(&moteur), "sans valeur, la faite main");
     }
 
     #[test]

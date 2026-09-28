@@ -69,6 +69,7 @@ jobs:
           - bench.rs
           - main.rs
           - see.rs
+          - nnue.rs
     steps:
       # Le crible d'un candidat vit sur un runner, pas dans le conteneur de
       # session : le 25 sept. 2026, celui de `search.rs` entier au candidat
