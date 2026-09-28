@@ -24,7 +24,7 @@ use cozy_chess::Move;
 use cozy_chess::util::display_uci_move;
 
 use crate::bench;
-use crate::nnue::Network;
+use crate::nnue::{self, Network};
 use crate::perft;
 use crate::position::Position;
 use crate::search::{Limits, MAX_THREADS, Score, Search};
@@ -107,20 +107,32 @@ fn parse_option(words: &[&str]) -> Option<(String, Option<String>)> {
     Some((name, value))
 }
 
-/// Le réseau que désigne la valeur d'`EvalFile` : aucun pour une valeur vide
-/// ou `<empty>` — la convention UCI d'une chaîne vide —, c'est-à-dire
-/// l'évaluation faite main.
+/// La valeur d'`EvalFile` qui désigne le réseau embarqué — son défaut.
+const EMBEDDED_NETWORK: &str = "<embedded>";
+
+/// La valeur d'`EvalFile` qui retire tout réseau : l'évaluation faite main.
+const NO_NETWORK: &str = "<none>";
+
+/// Le réseau que désigne la valeur d'`EvalFile` :
+/// - le réseau embarqué pour `<embedded>`, et pour une valeur vide ou
+///   `<empty>` — la convention UCI d'une chaîne vide : une interface qui
+///   efface le champ revient au défaut, pas à autre chose ;
+/// - aucun pour `<none>`, c'est-à-dire l'évaluation faite main ;
+/// - sinon, le fichier que la valeur nomme.
 ///
 /// # Errors
-/// Un fichier illisible, ou refusé par [`Network::from_bytes`].
+/// Un fichier illisible, ou refusé par [`Network::from_bytes`] — le réseau
+/// embarqué compris, qu'un test charge pourtant à chaque build.
 fn load_network(path: Option<&str>) -> Result<Option<Arc<Network>>, String> {
-    let path = path.map(str::trim).unwrap_or_default();
-    if path.is_empty() || path == "<empty>" {
-        return Ok(None);
+    match path.map(str::trim).unwrap_or_default() {
+        "" | "<empty>" | EMBEDDED_NETWORK => nnue::embedded().map(Some),
+        NO_NETWORK => Ok(None),
+        path => {
+            let bytes = std::fs::read(path).map_err(|e| format!("{path} : {e}"))?;
+            let network = Network::from_bytes(&bytes).map_err(|e| format!("{path} : {e}"))?;
+            Ok(Some(Arc::new(network)))
+        }
     }
-    let bytes = std::fs::read(path).map_err(|e| format!("{path} : {e}"))?;
-    let network = Network::from_bytes(&bytes).map_err(|e| format!("{path} : {e}"))?;
-    Ok(Some(Arc::new(network)))
 }
 
 /// Convertit une variante principale en notation UCI.
@@ -159,9 +171,9 @@ fn identification() -> Vec<String> {
         // Un fil par défaut, comme partout : c'est l'interface qui sait
         // combien de cœurs elle peut donner au moteur (B6, Lazy SMP).
         format!("option name Threads type spin default 1 min 1 max {MAX_THREADS}"),
-        // Le réseau NNUE (A21) : aucun par défaut, l'évaluation faite main.
-        // `<empty>` est la façon qu'a le protocole d'écrire une chaîne vide.
-        "option name EvalFile type string default <empty>".to_owned(),
+        // Le réseau NNUE (A21) : celui que le binaire embarque, par défaut.
+        // `<none>` rend l'évaluation faite main, un chemin charge un fichier.
+        format!("option name EvalFile type string default {EMBEDDED_NETWORK}"),
         "uciok".to_owned(),
     ]
 }
@@ -210,10 +222,17 @@ pub struct Engine {
     search: Option<Search>,
 }
 
-/// Une recherche branchée sur les deux drapeaux du moteur.
+/// Une recherche branchée sur les deux drapeaux du moteur, qui évalue par le
+/// réseau embarqué.
+///
+/// `Search::new` évalue à la main, et c'est voulu : le banc et les tests de
+/// la recherche ne dépendent pas du réseau. Le moteur, lui, joue avec. Un
+/// réseau embarqué refusé laisserait la faite main — mais un test le charge à
+/// chaque build, et rien ne peut s'écrire avant que l'interface ait parlé.
 fn new_search(stop: &Arc<AtomicBool>, pondering: &Arc<AtomicBool>) -> Search {
     let mut search = Search::new(Arc::clone(stop));
     search.set_ponder_flag(Arc::clone(pondering));
+    search.set_network(nnue::embedded().ok());
     search
 }
 
@@ -352,10 +371,14 @@ impl Engine {
             // mesurer.
             match load_network(value.as_deref()) {
                 Ok(network) => {
-                    let message = if network.is_some() {
-                        "info string EvalFile : réseau chargé"
-                    } else {
-                        "info string EvalFile : évaluation faite main"
+                    let message = match &network {
+                        None => "info string EvalFile : évaluation faite main",
+                        Some(network)
+                            if nnue::embedded().is_ok_and(|e| Arc::ptr_eq(network, &e)) =>
+                        {
+                            "info string EvalFile : réseau embarqué"
+                        }
+                        Some(_) => "info string EvalFile : réseau chargé",
                     };
                     self.abort_search_keeping(|search| search.set_network(network));
                     send(message);
@@ -817,12 +840,25 @@ mod tests {
 
     #[test]
     fn un_reseau_se_charge_ou_se_refuse_avec_sa_raison() {
-        for vide in [None, Some(""), Some("  "), Some("<empty>")] {
+        let embarque = nnue::embedded().unwrap();
+        for defaut in [
+            None,
+            Some(""),
+            Some("  "),
+            Some("<empty>"),
+            Some("<embedded>"),
+        ] {
             assert!(
-                load_network(vide).unwrap().is_none(),
-                "{vide:?} : l'évaluation faite main"
+                load_network(defaut)
+                    .unwrap()
+                    .is_some_and(|reseau| Arc::ptr_eq(&reseau, &embarque)),
+                "{defaut:?} : le réseau embarqué"
             );
         }
+        assert!(
+            load_network(Some("<none>")).unwrap().is_none(),
+            "<none> : l'évaluation faite main"
+        );
         let bon = Fichier::avec("bon.bin", &reseau_aleatoire());
         assert!(load_network(Some(&bon.chemin())).unwrap().is_some());
 
@@ -834,11 +870,11 @@ mod tests {
     }
 
     #[test]
-    fn evalfile_est_annonce_vide_avant_uciok() {
+    fn evalfile_est_annonce_embarque_avant_uciok() {
         let lignes = identification();
         let annonce = lignes
             .iter()
-            .position(|l| l == "option name EvalFile type string default <empty>");
+            .position(|l| l == "option name EvalFile type string default <embedded>");
         let fin = lignes.iter().position(|l| l == "uciok").unwrap();
         assert!(
             annonce.is_some_and(|a| a < fin),
@@ -848,31 +884,56 @@ mod tests {
 
     #[test]
     fn evalfile_branche_le_reseau_et_un_refus_ne_change_rien() {
+        // Chaque évaluation se reconnaît à ce qu'elle dit de la position
+        // initiale, calculé ici plutôt que recopié : le réseau embarqué, le
+        // réseau aléatoire du fichier, la faite main. Trois valeurs
+        // distinctes, sans quoi le test ne distinguerait rien.
+        let depart = cozy_chess::Board::default();
+        let dit =
+            |reseau: &Network| reseau.evaluate(&reseau.refresh(&depart), depart.side_to_move());
+        let embarque = dit(&nnue::embedded().unwrap());
+        let aleatoire = dit(&Network::from_bytes(&reseau_aleatoire()).unwrap());
+        let faite_main = crate::eval::evaluate(&depart, &crate::eval::Params::DEFAULT);
+        assert!(embarque != aleatoire && embarque != faite_main && aleatoire != faite_main);
+
         let reseau = Fichier::avec("reseau un.bin", &reseau_aleatoire());
         let tronque = Fichier::avec("tronque deux.bin", &[0; 64]);
         let mut moteur = Engine::new();
-        let branche = |m: &Engine| m.search.as_ref().unwrap().uses_network();
-        assert!(!branche(&moteur), "aucun réseau par défaut");
+        let evalue = |m: &Engine| m.search.as_ref().unwrap().evaluate(&depart);
+        assert_eq!(evalue(&moteur), embarque, "le réseau embarqué par défaut");
 
         let charger = |m: &mut Engine, valeur: &str| {
             assert!(m.handle(&format!("setoption name EvalFile value {valeur}")));
         };
+        charger(&mut moteur, "<none>");
+        assert_eq!(evalue(&moteur), faite_main, "<none> rend la faite main");
         charger(&mut moteur, &reseau.chemin());
-        assert!(branche(&moteur), "un chemin à espaces se lit en entier");
-        // Refusé : ni retour silencieux à la faite main, ni autre réseau.
+        assert_eq!(
+            evalue(&moteur),
+            aleatoire,
+            "un chemin à espaces se lit en entier"
+        );
+        // Refusé : ni retour silencieux au défaut, ni autre réseau.
         charger(&mut moteur, &tronque.chemin());
-        assert!(branche(&moteur));
+        assert_eq!(evalue(&moteur), aleatoire);
         charger(&mut moteur, "/nulle/part/reseau.bin");
-        assert!(branche(&moteur));
-        charger(&mut moteur, "<empty>");
-        assert!(!branche(&moteur), "la chaîne vide rend la faite main");
+        assert_eq!(evalue(&moteur), aleatoire);
+        charger(&mut moteur, "<embedded>");
+        assert_eq!(evalue(&moteur), embarque, "<embedded> rend le défaut");
         assert!(moteur.handle(&format!(
             "setoption name evalfile value {}",
             reseau.chemin()
         )));
-        assert!(branche(&moteur), "le nom d'une option ignore la casse");
+        assert_eq!(
+            evalue(&moteur),
+            aleatoire,
+            "le nom d'une option ignore la casse"
+        );
         assert!(moteur.handle("setoption name EvalFile value"));
-        assert!(!branche(&moteur), "sans valeur, la faite main");
+        assert_eq!(evalue(&moteur), embarque, "sans valeur, le défaut");
+        charger(&mut moteur, "<none>");
+        charger(&mut moteur, "<empty>");
+        assert_eq!(evalue(&moteur), embarque, "la chaîne vide rend le défaut");
     }
 
     #[test]
