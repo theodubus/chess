@@ -133,6 +133,40 @@ async function move(from, to, workspace = ".play-workspace") {
   }
   await delay(220);
 }
+async function drawArrow(from, to, workspace = ".play-workspace") {
+  await evaluate(
+    `document.querySelector(${JSON.stringify(workspace + " .cg-wrap")}).scrollIntoView({block:'center'})`,
+  );
+  await delay(100);
+  const points = await evaluate(
+    `(() => {const wrap=document.querySelector(${JSON.stringify(workspace + " .cg-wrap")}); const b=wrap.querySelector('cg-board').getBoundingClientRect(); const flipped=wrap.classList.contains('orientation-black'); return ${JSON.stringify([from, to])}.map(s=>{const f=s.charCodeAt(0)-97,r=Number(s[1])-1;return {x:b.x+((flipped?7-f:f)+.5)*b.width/8,y:b.y+((flipped?r:7-r)+.5)*b.height/8};});})()`,
+  );
+  await call("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    ...points[0],
+    button: "right",
+    buttons: 2,
+    clickCount: 1,
+  });
+  await call("Input.dispatchMouseEvent", {
+    type: "mouseMoved",
+    ...points[1],
+    button: "right",
+    buttons: 2,
+  });
+  await delay(100);
+  await call("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    ...points[1],
+    button: "right",
+    buttons: 0,
+    clickCount: 1,
+  });
+  await waitFor(
+    `document.querySelector(${JSON.stringify(workspace + " .cg-shapes line")})`,
+    "flèche dessinée au clic droit",
+  );
+}
 async function pressKey(key) {
   await call("Input.dispatchKeyEvent", { type: "keyDown", key });
   await call("Input.dispatchKeyEvent", { type: "keyUp", key });
@@ -213,6 +247,219 @@ try {
       ),
     );
     await screenshot("01-setup-desktop");
+    await click(".engine-settings summary");
+    await waitFor(
+      `document.querySelector('input[name="ponder"]')?.disabled === false && document.querySelector('input[name="engine-threads"]')?.disabled === false`,
+      "capacités Ponder et Threads du moteur",
+    );
+    assert(
+      await evaluate(
+        `!document.querySelector('input[name="ponder"]').checked && document.querySelector('input[name="engine-threads"]').value==='1'`,
+      ),
+      "options moteur désactivées par défaut",
+    );
+    async function setupNumber(name, value) {
+      await evaluate(
+        `(() => {const input=document.querySelector('input[name="' + ${JSON.stringify(name)} + '"]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(String(value))});input.dispatchEvent(new Event('input',{bubbles:true}));})()`,
+      );
+    }
+    await click('input[name="ponder"]');
+    const threads = await evaluate(
+      `Math.min(2, Number(document.querySelector('input[name="engine-threads"]').max))`,
+    );
+    if (threads > 1) {
+      await click('[aria-label="Utiliser un cœur de plus"]');
+      assert(
+        await evaluate(
+          `document.querySelector('[name="engine-threads"]').value === '2'`,
+        ),
+        "sélecteur de cœurs +",
+      );
+      await click('[aria-label="Utiliser un cœur de moins"]');
+      assert(
+        await evaluate(
+          `document.querySelector('[name="engine-threads"]').value === '1'`,
+        ),
+        "sélecteur de cœurs −",
+      );
+    }
+    await setupNumber("engine-threads", threads);
+    await button("Éditer le camp");
+    await waitFor(
+      `document.querySelector('.army-squares')`,
+      "éditeur du camp adverse",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.army-squares [data-square="a1"]').disabled`,
+      ),
+      "camp humain verrouillé",
+    );
+    await click('.army-squares [data-square="a8"]');
+    await button("Appliquer");
+    assert(
+      await evaluate(
+        `document.querySelector('.army-summary').textContent.includes('Position personnalisée')`,
+      ),
+      "armée personnalisée enregistrée",
+    );
+    await button("Éditer le camp");
+    await button("Déplacer");
+    await click('.army-squares [data-square="b8"]');
+    await click('.army-squares [data-square="c6"]');
+    await click('[aria-label="Placer : Dame"]');
+    await click('.army-squares [data-square="a7"]');
+    await screenshot("01c-army-editor");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
+    assert(
+      await evaluate(
+        `document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth`,
+      ),
+      "éditeur sans débordement sur mobile",
+    );
+    await screenshot("01d-army-editor-mobile");
+    assert(
+      await evaluate(
+        `document.querySelector('.army-squares [data-square="c6"]').getAttribute('aria-label').includes('Cavalier') && document.querySelector('.army-squares [data-square="a7"]').getAttribute('aria-label').includes('Dame')`,
+      ),
+      "déplacement et remplacement dans la palette",
+    );
+    await click('[aria-label="Placer : Cavalier"]');
+    await click('.army-squares [data-square="c6"]');
+    await button("Déplacer");
+    await click('.army-squares [data-square="c6"]');
+    await click('.army-squares [data-square="f3"]');
+    assert(
+      await evaluate(
+        `[...document.querySelectorAll('dialog button')].find(b => b.textContent==='Appliquer').disabled`,
+      ),
+      "impossible d’appliquer une position avec roi attaqué",
+    );
+    await button("Réinitialiser");
+    assert(
+      await evaluate(
+        `document.querySelector('.army-squares [data-square="a8"]').getAttribute('aria-label').includes('Tour') && ![...document.querySelectorAll('dialog button')].find(b => b.textContent==='Appliquer').disabled`,
+      ),
+      "restauration de l’armée classique",
+    );
+    await button("Annuler");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await button("10 min");
+    await click('input[name="separate-clock"]');
+    await setupNumber("engine-minutes", 1);
+    await setupNumber("engine-increment", 1);
+    await button("Noirs");
+    await screenshot("01a-engine-options");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
+    assert(
+      await evaluate(`document.documentElement.scrollWidth <= 390`),
+      "options moteur adaptées au mobile",
+    );
+    await screenshot("01b-engine-options-mobile");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await evaluate(`window.originalPremoveSocket=window.WebSocket;window.WebSocket=class extends window.originalPremoveSocket {
+      addEventListener(type, listener, options) {
+        if(type==='message') return super.addEventListener(type, event => {
+          if(typeof event.data==='string' && event.data.startsWith('bestmove ')) setTimeout(()=>listener.call(this,event),1500);
+          else listener.call(this,event);
+        }, options);
+        return super.addEventListener(type,listener,options);
+      }
+    }`);
+    await button("Jouer");
+    await waitFor(
+      `document.querySelector('.move-list tbody tr') && !document.querySelector('.status').textContent.includes('réfléchit')`,
+      "premier coup du bot avec horloges différentes",
+      30000,
+    );
+    assert(
+      await evaluate(
+        `(() => { const time = side => { const [m,s]=document.querySelector('[aria-label="Temps des ' + side + '"]').textContent.split(':').map(Number);return m*60+s; };return time('blancs') <= 61 && time('noirs') > 590 && time('noirs') <= 600; })()`,
+      ),
+      "le bot blanc reçoit une minute, le joueur noir dix minutes",
+    );
+    assert(
+      await evaluate(
+        `document.querySelectorAll('piece.white.rook:not(.ghost)').length === 1 && document.querySelectorAll('piece.black.rook:not(.ghost)').length === 2`,
+      ),
+      "seul le bot blanc commence sans sa tour",
+    );
+    await button("Options");
+    assert(
+      await evaluate(
+        `document.querySelector('dialog pre').textContent.includes('position fen ')`,
+      ),
+      "position de handicap transmise au moteur réel",
+    );
+    await waitFor(
+      `document.querySelector('dialog pre').textContent.includes('go ponder')`,
+      "réflexion anticipée réellement lancée",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('dialog pre').textContent.includes('setoption name Threads value ' + ${threads})`,
+      ),
+      "nombre de fils appliqué",
+    );
+    await click('dialog [aria-label="Fermer"]');
+    await move("g8", "f6");
+    await move("f6", "g8");
+    await waitFor(
+      `document.querySelector('.play-workspace').textContent.includes('Prémouvement : f6')`,
+      "prémouvement en attente",
+    );
+    await waitFor(
+      `document.querySelector('.move-list').textContent.includes('Cg8')`,
+      "prémouvement joué après la réponse du bot",
+    );
+    assert(
+      await evaluate(
+        `!document.querySelector('.play-workspace').textContent.includes('Prémouvement :')`,
+      ),
+      "prémouvement consommé",
+    );
+    await button("Abandonner");
+    await button("Confirmer l’abandon");
+    await button("Nouvelle partie");
+    await click(".engine-settings summary");
+    await waitFor(
+      `document.querySelector('input[name="ponder"]')?.checked`,
+      "options conservées pour la prochaine partie",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.army-summary').textContent.includes('Position personnalisée')`,
+      ),
+      "handicap conservé pour la prochaine partie",
+    );
+    await evaluate(
+      `localStorage.clear();window.browserCheckOptionsReload=true`,
+    );
+    await call("Page.reload");
+    await waitFor(
+      `!window.browserCheckOptionsReload && document.querySelector('.setup-card')`,
+      "retour à la préparation initiale",
+    );
     await button("Importer un PGN");
     await screenshot("00-import-dialog");
     await call("Emulation.setDeviceMetricsOverride", {
@@ -324,8 +571,19 @@ try {
       90000,
     );
     await screenshot("00b-import-stockfish");
-    await button("Revue guidée & exploration");
-    await button("Explorer cette position");
+    const reviewCursor = await evaluate(
+      `document.querySelector('.review-navigation span').textContent`,
+    );
+    await drawArrow("e2", "e4", ".learning-workspace");
+    await delay(300);
+    assert.equal(
+      await evaluate(
+        `document.querySelector('.review-navigation span').textContent`,
+      ),
+      reviewCursor,
+      "dessin sans changer la position analysée",
+    );
+    await screenshot("00b-analysis-arrow");
     await move("e7", "e5", ".learning-workspace");
     await move("g1", "f3", ".learning-workspace");
     await waitFor(
@@ -361,18 +619,14 @@ try {
       ),
       "exploration ne modifie pas la partie",
     );
-    await button("Analyse détaillée");
-    await button("Revue guidée & exploration");
-    await button("Explorer cette position");
-    await click('[aria-label="Variante suivante"]');
+    await click(".study-branches button");
     assert(
       await evaluate(
         `document.querySelectorAll('.study-branches button').length===2`,
       ),
-      "branches conservées entre modes",
+      "branches conservées après retour à la partie",
     );
     await button("Revenir à la partie");
-    await button("Analyse détaillée");
     await button("Importer un PGN");
     const start = new Chess();
     for (const move of ["f3", "e5", "g4"]) start.move(move);
@@ -402,12 +656,23 @@ try {
       ),
       "position initiale personnalisée et moteur mémorisé",
     );
+    assert(
+      await evaluate(
+        `document.querySelector('.evaluation-score')?.textContent==='M1'`,
+      ),
+      "mat forcé visible dans la barre",
+    );
     await pressKey(">");
     await waitFor(
       `document.querySelector('.review-position').textContent.includes('Dh4#')`,
       "coup final importé",
     );
-    await button("Revue guidée & exploration");
+    assert(
+      await evaluate(
+        `document.querySelector('.evaluation-score')?.textContent==='Mat'`,
+      ),
+      "mat atteint visible dans la barre",
+    );
     await pressKey("<");
     await button("Prochain moment clé");
     await waitFor(
@@ -423,8 +688,14 @@ try {
     );
     await move("d8", "h4", ".learning-workspace");
     await waitFor(
-      `document.querySelector('.retry-feedback')?.textContent.includes('trouvé le choix du moteur')`,
+      `document.querySelector('.retry-feedback')?.textContent.includes('Bonne décision') && document.querySelector('.board-annotation .annotation')`,
       "bonne tentative reconnue",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.board-annotation .annotation').className === document.querySelector('.move-assessment .annotation').className`,
+      ),
+      "badge de tentative cohérent sur le plateau et dans le panneau",
     );
     await screenshot("00d-retry-success");
     await call("Emulation.setDeviceMetricsOverride", {
@@ -458,19 +729,16 @@ try {
       "solution consultable",
     );
     await button("Revenir à la partie");
-    await button("Analyse détaillée");
     await button("Importer un PGN");
     const promotionGame = new Chess("7k/P7/8/8/8/8/8/7K w - - 0 1");
     promotionGame.move({ from: "a7", to: "a8", promotion: "q" });
     await fillPgn(promotionGame.pgn());
     await button("Importer et analyser");
     await waitFor(
-      `document.querySelector('.review-progress')?.textContent.includes('Analyse terminée')`,
+      `document.querySelector('.review-navigation span')?.textContent === '0 / 1' && document.querySelector('.review-progress')?.textContent.includes('Analyse terminée')`,
       "analyse PGN de promotion",
       90000,
     );
-    await button("Revue guidée & exploration");
-    await button("Explorer cette position");
     await move("a7", "a8", ".learning-workspace");
     await waitFor(
       `document.querySelector('dialog')?.textContent.includes('Choisir la promotion')`,
@@ -480,6 +748,53 @@ try {
     await waitFor(
       `document.querySelector('.learning-workspace piece.white.knight') && document.querySelector('.study-evaluation')?.textContent.includes('Position nulle')`,
       "sous-promotion légale et nulle analysée",
+    );
+    await button("Revenir à la partie");
+    await button("Importer un PGN");
+    const captureGame = new Chess();
+    for (const san of ["e4", "d5", "exd5", "Qxd5"]) captureGame.move(san);
+    await fillPgn(captureGame.pgn());
+    await button("Importer et analyser");
+    await waitFor(
+      `document.querySelector('.review-progress')?.textContent.includes('Analyse terminée')`,
+      "analyse de la partie avec prises",
+      90000,
+    );
+    await click('.review-navigation [aria-label="Position finale"]');
+    assert(
+      await evaluate(
+        `document.querySelectorAll('.captured-material img').length===2 && !document.querySelector('.capture-advantage')`,
+      ),
+      "prises égales sans faux avantage",
+    );
+    await pressKey("<");
+    assert(
+      await evaluate(
+        `document.querySelector('.captured-material[data-side=w] .capture-advantage')?.textContent==='+1' && !document.querySelector('.captured-material[data-side=b] img')`,
+      ),
+      "bilan des prises à la position relue",
+    );
+    await screenshot("00f-captures-review");
+    await pressKey("<");
+    assert(
+      await evaluate(
+        `document.querySelectorAll('.captured-material img').length===0`,
+      ),
+      "aucune prise anticipée",
+    );
+    await move("e4", "d5", ".learning-workspace");
+    assert(
+      await evaluate(
+        `document.querySelector('.captured-material[data-side=w] .capture-advantage')?.textContent==='+1'`,
+      ),
+      "prise dans une variante",
+    );
+    await move("d8", "d5", ".learning-workspace");
+    assert(
+      await evaluate(
+        `document.querySelectorAll('.captured-material img').length===2 && !document.querySelector('.capture-advantage')`,
+      ),
+      "reprise dans une variante",
     );
     await button("Revenir à la partie");
     await button("Importer un PGN");
@@ -523,6 +838,33 @@ try {
         `!document.querySelector('.play-workspace select') && !document.querySelector('.play-workspace .evaluation-bar')`,
       ),
     );
+    await move("e2", "e4");
+    await move("d7", "d5");
+    const beforeCapture = await evaluate(
+      `(() => { const b=document.querySelector('.play-workspace cg-board').getBoundingClientRect(); const c=document.querySelector('.play-controls').getBoundingClientRect(); return [b.top,b.bottom,c.top]; })()`,
+    );
+    await move("e4", "d5");
+    const afterCapture = await evaluate(
+      `(() => { const b=document.querySelector('.play-workspace cg-board').getBoundingClientRect(); const c=document.querySelector('.play-controls').getBoundingClientRect(); return [b.top,b.bottom,c.top]; })()`,
+    );
+    assert.deepEqual(
+      afterCapture,
+      beforeCapture,
+      "première capture sans déplacement du plateau ni des commandes",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.player .capture-advantage')?.textContent==='+1'`,
+      ),
+      "prise visible dans la fiche du joueur",
+    );
+    await button("Abandonner");
+    await button("Confirmer l’abandon");
+    await button("Rejouer");
+    await waitFor(
+      `document.querySelector('.review-navigation span').textContent==='0 / 0' && !document.querySelector('.board-result')`,
+      "nouvelle partie après contrôle des captures",
+    );
     await screenshot("02-game-desktop");
     assert(
       await evaluate(
@@ -540,6 +882,9 @@ try {
       if (from === "e7") {
         const played = await evaluate(
           `document.querySelector('.move-list').textContent`,
+        );
+        await evaluate(
+          `document.querySelector('.play-workspace .cg-wrap').focus()`,
         );
         await pressKey("<");
         assert(
@@ -560,11 +905,33 @@ try {
           played,
           "relecture sans modifier la partie",
         );
+        await drawArrow("e2", "e4");
+        await delay(300);
+        assert(
+          await evaluate(
+            `!!document.querySelector('.play-workspace .cg-shapes line')`,
+          ),
+          "dessin conservé en relecture pendant la partie",
+        );
+        assert.equal(
+          await evaluate(`document.querySelector('.move-list').textContent`),
+          played,
+          "le dessin ne joue aucun coup",
+        );
         assert(
           await evaluate(`!!document.querySelector('.clock.running')`),
           "la pendule continue",
         );
+        await evaluate(
+          `document.querySelector('.play-workspace [aria-label="Position suivante"]').focus()`,
+        );
         await pressKey(">");
+        assert(
+          await evaluate(
+            `!document.querySelector('.play-workspace .cg-shapes line')`,
+          ),
+          "dessins effacés au changement de position",
+        );
         await pressKey("ArrowRight");
         assert(
           await evaluate(`!document.querySelector('.replay-notice')`),
@@ -614,7 +981,7 @@ try {
     );
     await screenshot("04-analysis-desktop");
     await evaluate(
-      `document.querySelector('.desktop-chart circle:last-of-type').focus()`,
+      `document.querySelector('.evaluation-chart circle:last-of-type').focus()`,
     );
     await call("Input.dispatchKeyEvent", {
       type: "keyDown",
@@ -700,16 +1067,17 @@ try {
       "le score après g4 décrit le mat au prochain coup",
     );
     await screenshot("04b-move-classification");
-    await button("Revue guidée & exploration");
     assert(
       await evaluate(
         `!!document.querySelector('.retry-invitation') && !!document.querySelector('.board-annotation .annotation-blunder')`,
       ),
       "retry mis en avant après la gaffe",
     );
+    await button("Options d’analyse");
     await evaluate(
       `(() => {const s=document.querySelector('[aria-label="Mon camp pour les exercices"]');s.value='b';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
     );
+    await click('dialog [aria-label="Fermer"]');
     assert(
       await evaluate(
         `!document.querySelector('.retry-invitation') && [...document.querySelectorAll('.study-details button')].some(b=>b.textContent==='Réessayer ce coup')`,
@@ -717,14 +1085,11 @@ try {
       "retry adverse disponible sans invitation prioritaire",
     );
     await button("Réessayer ce coup");
-    assert(
-      await evaluate(
-        `document.querySelector('.study-details').textContent.includes('Blancs') && document.querySelector('.study-details').textContent.includes('solution sont masquées')`,
-      ),
+    await waitFor(
+      `document.querySelector('.study-details').textContent.includes('Blancs') && document.querySelector('.study-details').textContent.includes('solution sont masquées')`,
       "exercice du camp adverse à la bonne position",
     );
     await button("Revenir à la partie");
-    await button("Analyse détaillée");
     await click('.review-navigation [aria-label="Position précédente"]');
     assert(
       await evaluate(
@@ -775,11 +1140,11 @@ try {
     );
     assert(
       await evaluate(
-        `document.querySelector('.variation-moves button').textContent.startsWith('1.')`,
+        `document.querySelector('.study-line button:nth-child(2)').textContent.startsWith('1.')`,
       ),
       "la variante du premier coup commence avant ce coup",
     );
-    await button("Revenir à la position de la partie");
+    await button("Revenir à la partie");
     await button("Options d’analyse");
     await click("dialog .annotation-toggle input");
     await click("dialog .evaluation-toggle input");
@@ -951,21 +1316,21 @@ try {
       "annotations réactivées sans déplacement des options au chargement",
     );
     await evaluate(
-      `(() => {const s=document.querySelector('dialog select');s.value='3000';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+      `(() => {const s=document.querySelector('dialog [aria-label="Temps par position"]');s.value='3000';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
     );
     await waitFor(
       `document.querySelector('dialog .restart-analysis')`,
       "relance proposée après changement du budget",
     );
     await evaluate(
-      `(() => {const s=document.querySelector('dialog select');s.value='500';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+      `(() => {const s=document.querySelector('dialog [aria-label="Temps par position"]');s.value='500';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
     );
     await waitFor(
       `!document.querySelector('.restart-analysis')`,
       "relance masquée quand le réglage initial est rétabli",
     );
     await evaluate(
-      `(() => {const s=document.querySelector('dialog select');s.value='3000';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
+      `(() => {const s=document.querySelector('dialog [aria-label="Temps par position"]');s.value='3000';s.dispatchEvent(new Event('change',{bubbles:true}));})()`,
     );
     await button("Relancer l’analyse");
     await waitFor(
@@ -1070,11 +1435,11 @@ try {
     );
     assert(
       await evaluate(
-        `document.querySelector('.review-navigation').getBoundingClientRect().bottom <= 844`,
+        `document.querySelector('.study-navigation').getBoundingClientRect().bottom <= 844`,
       ),
       "Navigation visible pendant la variante",
     );
-    await button("Revenir à la position de la partie");
+    await button("Revenir à la partie");
     await click('.review-navigation [aria-label="Position finale"]');
     await waitFor(
       `document.querySelector('.review-position').textContent.includes('Dh4#')`,

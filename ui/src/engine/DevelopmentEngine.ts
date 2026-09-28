@@ -1,4 +1,12 @@
 import { type Engine, validateCommand } from "./Engine";
+import { UciSession } from "./UciSession";
+import type { EngineCapabilities } from "./options";
+
+function engineUrl(path: string, websocket = false) {
+  const url = new URL(`/engine/${path}`, window.location.href);
+  if (websocket) url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  return url.href;
+}
 
 export type AnalysisEngineChoice = { id: string; label: string };
 export const DEFAULT_ANALYSIS_ENGINE: AnalysisEngineChoice = {
@@ -8,12 +16,12 @@ export const DEFAULT_ANALYSIS_ENGINE: AnalysisEngineChoice = {
 
 /** La découverte des moteurs fait partie de l'adaptateur local, pas des composants. */
 export async function listAnalysisEngines(): Promise<AnalysisEngineChoice[]> {
-  const response = await fetch("http://127.0.0.1:8787/engines", {
+  const response = await fetch(engineUrl("engines"), {
     signal: AbortSignal.timeout(5000),
   });
   if (!response.ok)
     throw new Error(
-      "Liste des moteurs indisponible. Relancez le pont avec sa configuration.",
+      "Liste des moteurs indisponible. Relancez l’application avec npm --prefix ui run dev.",
     );
   const choices: unknown = await response.json();
   if (
@@ -34,14 +42,14 @@ export function analysisEngineFactory(id: string) {
   return (onFailure: (message: string) => void) =>
     connectDevelopmentEngine(
       onFailure,
-      `ws://127.0.0.1:8787/?engine=${encodeURIComponent(id)}`,
+      engineUrl(`?engine=${encodeURIComponent(id)}`, true),
     );
 }
 
 export async function addAnalysisEngine(
   path: string,
 ): Promise<AnalysisEngineChoice> {
-  const response = await fetch("http://127.0.0.1:8787/engines", {
+  const response = await fetch(engineUrl("engines"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ path }),
@@ -57,7 +65,7 @@ export async function addAnalysisEngine(
 /** Le WebSocket reste confiné à cet adaptateur de développement. */
 export async function connectDevelopmentEngine(
   onFailure: (message: string) => void,
-  url = "ws://127.0.0.1:8787",
+  url = engineUrl("", true),
 ): Promise<Engine> {
   const socket = new WebSocket(url);
   const listeners = new Set<(line: string) => void>();
@@ -93,7 +101,9 @@ export async function connectDevelopmentEngine(
     );
     socket.addEventListener("error", () => {
       if (!opened)
-        fail("Pont local inaccessible. Lancez npm run engine:bridge.");
+        fail(
+          "Moteur local inaccessible. Lancez npm --prefix ui run dev puis ouvrez l’adresse affichée dans ce terminal.",
+        );
       else if (!disposed) onFailure("Erreur de connexion au moteur.");
     });
     socket.addEventListener(
@@ -141,4 +151,35 @@ export async function connectDevelopmentEngine(
       });
     },
   };
+}
+
+/** Connexion courte dédiée à la préparation, annulée quand on quitte le formulaire. */
+export async function inspectDevelopmentEngine(signal: AbortSignal) {
+  let session: UciSession | undefined;
+  const engine = await connectDevelopmentEngine((message) =>
+    session?.fail(message),
+  );
+  if (signal.aborted) {
+    await engine.dispose();
+    throw new Error("Vérification annulée.");
+  }
+  try {
+    return await new Promise<{
+      name: string;
+      capabilities: EngineCapabilities;
+    }>((resolve, reject) => {
+      const cancel = () => session?.fail("Vérification annulée.");
+      signal.addEventListener("abort", cancel, { once: true });
+      session = new UciSession(engine, (snapshot) => {
+        if (snapshot.state === "ready" || snapshot.state === "error")
+          signal.removeEventListener("abort", cancel);
+        if (snapshot.state === "ready")
+          resolve({ name: snapshot.name, capabilities: session!.capabilities });
+        if (snapshot.state === "error") reject(new Error(snapshot.error));
+      });
+      session.start();
+    });
+  } finally {
+    await session?.dispose();
+  }
 }

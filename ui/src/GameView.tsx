@@ -9,20 +9,24 @@ import type { GameController } from "./GameController";
 import { formatTime } from "./GameClock";
 import Board from "./Board";
 import EvaluationBar from "./EvaluationBar";
+import CapturedPieces from "./CapturedPieces";
+import { capturedMaterial, type Captures } from "./material";
 import GameHistory from "./GameHistory";
 import Dialog from "./Dialog";
 import { downloadPgn } from "./pgn";
-import { scoreLabel, type Side } from "./engine/analysis";
+import { type Side } from "./engine/analysis";
 import type { Promotion } from "./game";
 
 function Player({
   controller,
   color,
   showDepth,
+  captures,
 }: {
   controller: GameController;
   color: Side;
   showDepth: boolean;
+  captures: Captures;
 }) {
   const [, render] = useState(0);
   useEffect(() => {
@@ -59,6 +63,7 @@ function Player({
             ? ` · Profondeur ${controller.snapshot.analysis.depth}`
             : ""}
         </small>
+        <CapturedPieces captures={captures} side={color} />
       </div>
       <div
         className={`clock ${running ? "running" : ""} ${controller.clock.remaining[color] < 20000 ? "low-time" : ""}`}
@@ -101,15 +106,31 @@ export default function GameView({
   const selected =
     cursor === null ? moves.length : Math.min(cursor, moves.length);
   const browsing = selected < moves.length;
+  const captures = capturedMaterial(moves.slice(0, selected));
   const last = selected > 0 ? moves[selected - 1] : undefined;
   const board = browsing
     ? new Chess(last?.after ?? moves[0].before)
     : game.chess;
   function navigate(index: number) {
+    controller.cancelPremove();
     if (controller.finished) setResultDismissed(true);
     setCursor(index >= moves.length ? null : Math.max(0, index));
   }
   useMoveKeys(!game.pending, selected, moves.length, navigate);
+  useEffect(() => {
+    const cancel = (event: KeyboardEvent) => {
+      if (
+        event.key === "Escape" &&
+        !document.querySelector("dialog[open]") &&
+        controller.premove
+      ) {
+        event.preventDefault();
+        controller.cancelPremove();
+      }
+    };
+    window.addEventListener("keydown", cancel);
+    return () => window.removeEventListener("keydown", cancel);
+  }, [controller]);
   const score = controller.snapshot?.analysis?.score ?? null;
   const evaluation = Boolean(controller.mode && showEvaluation && !browsing);
   const status = controller.finished
@@ -133,12 +154,19 @@ export default function GameView({
             {status}
           </div>
           <span className="cadence">
-            {controller.clock.control.initialMs / 60000} +{" "}
-            {controller.clock.control.incrementMs / 1000}
+            {controller.clock.balanced
+              ? `${controller.clock.control.initialMs / 60000} + ${controller.clock.control.incrementMs / 1000}`
+              : (["w", "b"] as const)
+                  .map(
+                    (color) =>
+                      `${controller.mode ? (color === controller.humanSide ? "Vous" : "Bot") : color === "w" ? "Blancs" : "Noirs"} ${controller.clock.controls[color].initialMs / 60000} + ${controller.clock.controls[color].incrementMs / 1000}`,
+                  )
+                  .join(" · ")}
           </span>
         </div>
         <Player
           controller={controller}
+          captures={captures}
           showDepth={showDepth && !browsing}
           color={orientation === "white" ? "b" : "w"}
         />
@@ -157,6 +185,17 @@ export default function GameView({
             destinations={
               !browsing && controller.canMove ? game.destinations() : new Map()
             }
+            movableColor={
+              controller.mode
+                ? controller.humanSide === "w"
+                  ? "white"
+                  : "black"
+                : undefined
+            }
+            premoveEnabled={!browsing && controller.canPremove}
+            premove={controller.premove}
+            onPremove={(from, to) => controller.setPremove(from, to)}
+            onCancelPremove={() => controller.cancelPremove()}
             onMove={
               browsing
                 ? undefined
@@ -204,9 +243,24 @@ export default function GameView({
         </div>
         <Player
           controller={controller}
+          captures={captures}
           showDepth={showDepth && !browsing}
           color={orientation === "white" ? "w" : "b"}
         />
+        {controller.premove && !browsing && (
+          <div className="replay-notice" role="status">
+            <span>
+              Prémouvement : {controller.premove.from} → {controller.premove.to}
+              {controller.premove.promotion && " · promotion en dame"}
+            </span>
+            <button
+              className="text-button"
+              onClick={() => controller.cancelPremove()}
+            >
+              Annuler le prémouvement
+            </button>
+          </div>
+        )}
         {browsing && (
           <div className="replay-notice" role="status">
             <span>
@@ -263,11 +317,6 @@ export default function GameView({
             )}
           </div>
         </div>
-        {evaluation && score && (
-          <p className="live-score">
-            Dernière évaluation · {scoreLabel(score)}
-          </p>
-        )}
         {controller.snapshot?.state === "error" && !controller.finished && (
           <div className="connection-error">
             <p>{controller.snapshot.error}</p>
