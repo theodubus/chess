@@ -98,6 +98,10 @@ eval.rs 89
 #   expiré, aucun survivant ; le compteur décrémenté s'y lit « 2^64 − 5 292
 #   évaluations vérifiées pour 6 000 nœuds », les deux tests qui le lisent
 #   tombent. Le balayage qui suit la fusion doit rendre 39.
+#   Confirmé sur `main` à `24fb6ab` (run 36380392695 : 611 mutants, 497
+#   attrapés, 29 inviables, 46 expirés) : 39, LES MÊMES un pour un, et le
+#   compteur attrapé sur runner — absent des lignes MISSED comme TIMEOUT du
+#   journal.
 #
 # search.rs — 39 TENU après une casse, le 24 sept. 2026 (run 36013927958,
 #   `main` à `3b80e1a`, le balayage qui suit la fusion d'A18) : 43. Les 38
@@ -345,7 +349,9 @@ eval.rs 89
 #   `mv.to.file() > mv.from.file()`, et `>=` ne s'en distingue jamais : le
 #   roi et la tour qu'il « prend » ne sont jamais sur la même colonne. La
 #   comparaison décide pourtant — de ses mutations, seul `>=` survit —, donc
-#   il n'y a rien à supprimer : le plafond est le bon endroit.
+#   il n'y a rien à supprimer : le plafond est le bon endroit. Confirmé sur
+#   `main` à `24fb6ab` (run 36380392695) : le même survivant, et les mêmes
+#   comptes que le crible.
 #
 # see.rs — 2, mesuré le 21 sept. 2026 (run 35603991267 : 59 mutants, 55
 #   attrapés, 1 inviable, 1 expiré).  MÊME FAMILLE QUE `tt.rs`, et par le même
