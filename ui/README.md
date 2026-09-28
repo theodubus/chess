@@ -162,12 +162,14 @@ de position. Ils ne changent ni les coups ni le PGN.
 
 ## Cadences et options du moteur
 
-Le menu « Handicap du moteur » retire une pièce du bot au départ : pion f,
-cavalier b, fou c, tour a ou dame, quelle que soit sa couleur. Aucun handicap
-n’est appliqué par défaut ni en mode deux joueurs. La force de calcul reste
-inchangée. La position initiale et les droits de roque sont conservés dans les
-commandes UCI, la réflexion anticipée, la relecture et le PGN (`SetUp` / `FEN`).
-Les pièces retirées au départ ne sont pas comptées comme des captures.
+« Éditer le camp » ouvre un échiquier de préparation : retirer plusieurs pièces,
+les déplacer en deux clics, ou les remplacer depuis la palette. Le camp humain
+est verrouillé. La configuration suit la couleur du moteur, y compris après
+un tirage aléatoire. Annuler conserve la configuration précédente ; Réinitialiser
+restaure l’armée classique. Un roi par camp, au plus 16 pièces et 8 pions côté
+moteur, aucun pion en dernière rangée et aucun roi en échec au départ sont requis.
+La position et les droits de roque sont conservés dans le jeu, le ponder, le PGN
+et l’analyse. Les pièces retirées ne sont pas comptées comme des captures.
 
 Dans la préparation d’une partie contre le bot, « Donner une cadence différente
 au bot » permet de choisir son temps initial et son incrément indépendamment des

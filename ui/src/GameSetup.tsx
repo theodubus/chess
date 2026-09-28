@@ -1,4 +1,4 @@
-import { HANDICAPS, type Handicap } from "./handicap";
+import ArmyEditor from "./ArmyEditor";
 import EngineSettings from "./EngineSettings";
 import { useState } from "react";
 import { parseTimeControl, TIME_CONTROLS } from "./GameClock";
@@ -19,6 +19,7 @@ export default function GameSetup({
   onReturn?: () => void;
 }) {
   const [setup, setSetup] = useState(initial);
+  const [editingArmy, setEditingArmy] = useState(false);
   const [engineSettings, setEngineSettings] = useState(false);
   const [separate, setSeparate] = useState(initial.engineTimeControl !== null);
   const [engineMinutes, setEngineMinutes] = useState(
@@ -115,34 +116,36 @@ export default function GameSetup({
         )}
         {setup.opponent === "engine" && (
           <fieldset disabled={busy}>
-            <legend>Handicap du moteur</legend>
-            <label htmlFor="engine-handicap" className="setting-help">
-              Matériel du bot au départ
-            </label>
-            <select
-              id="engine-handicap"
-              name="engine-handicap"
-              value={setup.handicap}
-              onChange={(event) =>
-                setSetup({ ...setup, handicap: event.target.value as Handicap })
-              }
-            >
-              {HANDICAPS.map((choice) => (
-                <option key={choice.value} value={choice.value}>
-                  {choice.label}
-                </option>
-              ))}
-            </select>
-            {setup.handicap !== "none" && (
-              <p className="setting-help handicap-help">
-                Vous commencez avec{" "}
-                {
-                  HANDICAPS.find((choice) => choice.value === setup.handicap)
-                    ?.points
-                }{" "}
-                {setup.handicap === "pawn" ? "point" : "points"} de matériel en
-                plus. Le moteur garde toute sa force de calcul.
-              </p>
+            <legend>Camp du moteur</legend>
+            <div className="army-summary">
+              <div>
+                <strong>
+                  {setup.handicap
+                    ? "Position personnalisée"
+                    : "Position classique"}
+                </strong>
+                <p className="setting-help">
+                  {setup.handicap
+                    ? "Votre configuration est prête à jouer."
+                    : "Choisissez les pièces et leur disposition."}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => setEditingArmy(true)}
+              >
+                Éditer le camp
+              </button>
+            </div>
+            {setup.handicap && (
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => setSetup({ ...setup, handicap: null })}
+              >
+                Revenir à la position classique
+              </button>
             )}
           </fieldset>
         )}
@@ -339,6 +342,17 @@ export default function GameSetup({
           </button>
         )}
       </form>
+      {editingArmy && (
+        <ArmyEditor
+          initial={setup.handicap}
+          humanSide={setup.side === "b" ? "b" : "w"}
+          onClose={() => setEditingArmy(false)}
+          onSave={(handicap) => {
+            setSetup({ ...setup, handicap });
+            setEditingArmy(false);
+          }}
+        />
+      )}
     </section>
   );
 }

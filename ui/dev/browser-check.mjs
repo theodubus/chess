@@ -284,9 +284,76 @@ try {
       );
     }
     await setupNumber("engine-threads", threads);
-    await evaluate(
-      `(() => { const select=document.querySelector('[name="engine-handicap"]'); select.value='rook'; select.dispatchEvent(new Event('change',{bubbles:true})); })()`,
+    await button("Éditer le camp");
+    await waitFor(
+      `document.querySelector('.army-squares')`,
+      "éditeur du camp adverse",
     );
+    assert(
+      await evaluate(
+        `document.querySelector('.army-squares [data-square="a1"]').disabled`,
+      ),
+      "camp humain verrouillé",
+    );
+    await click('.army-squares [data-square="a8"]');
+    await button("Appliquer");
+    assert(
+      await evaluate(
+        `document.querySelector('.army-summary').textContent.includes('Position personnalisée')`,
+      ),
+      "armée personnalisée enregistrée",
+    );
+    await button("Éditer le camp");
+    await button("Déplacer");
+    await click('.army-squares [data-square="b8"]');
+    await click('.army-squares [data-square="c6"]');
+    await click('[aria-label="Placer : Dame"]');
+    await click('.army-squares [data-square="a7"]');
+    await screenshot("01c-army-editor");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
+    assert(
+      await evaluate(
+        `document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth`,
+      ),
+      "éditeur sans débordement sur mobile",
+    );
+    await screenshot("01d-army-editor-mobile");
+    assert(
+      await evaluate(
+        `document.querySelector('.army-squares [data-square="c6"]').getAttribute('aria-label').includes('Cavalier') && document.querySelector('.army-squares [data-square="a7"]').getAttribute('aria-label').includes('Dame')`,
+      ),
+      "déplacement et remplacement dans la palette",
+    );
+    await click('[aria-label="Placer : Cavalier"]');
+    await click('.army-squares [data-square="c6"]');
+    await button("Déplacer");
+    await click('.army-squares [data-square="c6"]');
+    await click('.army-squares [data-square="f3"]');
+    assert(
+      await evaluate(
+        `[...document.querySelectorAll('dialog button')].find(b => b.textContent==='Appliquer').disabled`,
+      ),
+      "impossible d’appliquer une position avec roi attaqué",
+    );
+    await button("Réinitialiser");
+    assert(
+      await evaluate(
+        `document.querySelector('.army-squares [data-square="a8"]').getAttribute('aria-label').includes('Tour') && ![...document.querySelectorAll('dialog button')].find(b => b.textContent==='Appliquer').disabled`,
+      ),
+      "restauration de l’armée classique",
+    );
+    await button("Annuler");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
     await button("10 min");
     await click('input[name="separate-clock"]');
     await setupNumber("engine-minutes", 1);
@@ -381,7 +448,7 @@ try {
     );
     assert(
       await evaluate(
-        `document.querySelector('[name="engine-handicap"]').value === 'rook'`,
+        `document.querySelector('.army-summary').textContent.includes('Position personnalisée')`,
       ),
       "handicap conservé pour la prochaine partie",
     );
