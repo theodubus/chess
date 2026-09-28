@@ -3376,8 +3376,11 @@ dans `reseaux/` (commit `5d0e5d7`, de Théo) :
 
 **Décision utilisateur** — Théo, 28 sept. : « *Si plus tard pour vraiment
 pousser la perf on a besoin de faire tourner plus on pourra (si c'est
-vraiment pertinent de le faire)* ». D'autres entraînements sur sa carte
-restent ouverts, sur une raison mesurée.
+vraiment pertinent de le faire)* », précisé le même soir : « *entrainement
+plus long ou sur plus de données, je voulais surtout dire s'il faut
+ressolliciter mon GPU, c'est possible* ». **Sa carte peut être sollicitée à
+nouveau** — un entraînement plus long ou sur plus de données —, sur une
+raison mesurée.
 
 **L'échelle, mesurée avant de mesurer l'Elo** — sur les douze positions de
 la confrontation, réseau et faite main parlent la même langue quand la
