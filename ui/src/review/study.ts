@@ -1,5 +1,5 @@
-import { advantage, type Annotation } from "./annotations";
-import type { ReviewResult, ReviewPosition } from "./model";
+import { type Annotation } from "./annotations";
+import type { ReviewPosition } from "./model";
 import type { Side } from "../engine/analysis";
 
 export const badMove = (annotation: Annotation | null | undefined) =>
@@ -8,9 +8,11 @@ export const badMove = (annotation: Annotation | null | undefined) =>
 export function notablePositions(
   annotations: (Annotation | null)[],
   positions: ReviewPosition[] = [],
+  side: Side | "both" = "both",
 ) {
   return annotations.flatMap((annotation, index) =>
-    (annotation &&
+    (side === "both" || positions[index]?.turn === side) &&
+    ((annotation &&
       [
         "brilliant",
         "great",
@@ -19,34 +21,25 @@ export function notablePositions(
         "blunder",
         "miss",
       ].includes(annotation.category)) ||
-    (positions[index]?.played &&
-      positions[index + 1]?.terminal?.kind === "mate")
+      (positions[index]?.played &&
+        positions[index + 1]?.terminal?.kind === "mate"))
       ? [index + 1]
       : [],
   );
 }
-export function retryFeedback(
-  uci: string,
-  target: ReviewResult | null,
-  after: ReviewResult | null,
-  side: Side,
-) {
-  if (uci === target?.bestMove)
-    return { kind: "success", text: "Vous avez trouvé le choix du moteur !" };
-  const before = advantage(target?.score, side),
-    result = advantage(after?.score, side);
-  if (before === null || result === null || result - before > 0.1)
-    return {
-      kind: "unknown",
-      text: "Les évaluations ne permettent pas encore de départager cette tentative.",
-    };
-  if (before - result < 0.02)
-    return {
-      kind: "success",
-      text: "Bonne alternative : cette recherche juge aussi votre coup satisfaisant.",
-    };
+/** Une phrase de lecture rapide ; les critères complets restent dans les détails. */
+export function moveSummary(annotation: Annotation) {
   return {
-    kind: "try",
-    text: "Le moteur préfère une autre possibilité. Vous pouvez retenter ou explorer cette suite.",
-  };
+    best: "Le premier choix du moteur dans cette position.",
+    great: "Ce coup saisit une occasion décisive.",
+    excellent: "Ce coup préserve presque toutes les possibilités.",
+    good: "Une bonne continuation, avec une petite concession.",
+    inaccuracy: "Une suite plus précise était disponible.",
+    mistake: "Ce coup dégrade la position. Essayez une autre idée.",
+    blunder: "Ce coup perd une part importante des possibilités.",
+    miss: "Une occasion de prendre l’avantage a été manquée.",
+    brilliant: "Un sacrifice compensé, confirmé par le moteur.",
+    forced: "C’était le seul coup légal.",
+    book: "Un coup connu de la théorie des ouvertures.",
+  }[annotation.category];
 }

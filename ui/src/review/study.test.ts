@@ -1,9 +1,9 @@
 import { Chess } from "chess.js";
 import { expect, it, vi } from "vitest";
-import { gamePositions, type ReviewResult } from "./model";
+import { gamePositions } from "./model";
 import { StudyTree, boardFromCommand } from "./StudyTree";
 import { LiveStudy } from "./LiveStudy";
-import { notablePositions, retryFeedback } from "./study";
+import { notablePositions } from "./study";
 import type { Engine } from "../engine/Engine";
 
 function game(moves: string[]) {
@@ -48,7 +48,7 @@ it("préserve répétitions, roque, prise en passant et sous-promotion", () => {
   const promoted = tree.play(0, "a7", "a8", "n");
   expect(tree.board(promoted).get("a8")?.type).toBe("n");
 });
-it("retient les vrais moments clés et accepte les alternatives sans prétendre à un coup unique", () => {
+it("retient les vrais moments clés", () => {
   expect(
     notablePositions([
       { category: "book", loss: null, reason: "" },
@@ -57,31 +57,6 @@ it("retient les vrais moments clés et accepte les alternatives sans prétendre 
       { category: "brilliant", loss: 0, reason: "" },
     ]),
   ).toEqual([3, 4]);
-  const root: ReviewResult = {
-    bestMove: "e2e4",
-    score: { kind: "cp", value: 10 },
-    depth: 5,
-    bestSan: "e4",
-    variation: [],
-  };
-  expect(retryFeedback("e2e4", root, null, "w").kind).toBe("success");
-  expect(
-    retryFeedback(
-      "d2d4",
-      root,
-      { ...root, score: { kind: "cp", value: 5 } },
-      "w",
-    ).kind,
-  ).toBe("success");
-  expect(
-    retryFeedback(
-      "d2d4",
-      root,
-      { ...root, score: { kind: "cp", value: -500 } },
-      "w",
-    ).kind,
-  ).toBe("try");
-  expect(retryFeedback("d2d4", root, null, "w").kind).toBe("unknown");
 });
 class StudyEngine implements Engine {
   listener: (line: string) => void = () => {};

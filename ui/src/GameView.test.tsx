@@ -106,3 +106,64 @@ it("ne présente pas une absence de score comme une égalité", () => {
   expect(bar).toContain("Évaluation indisponible");
   expect(bar).toContain("unavailable");
 });
+
+it("écrit le score dans la barre et indique le mat du bon camp après retournement", () => {
+  for (const orientation of ["white", "black"] as const) {
+    const cp = renderToStaticMarkup(
+      <EvaluationBar
+        score={{ kind: "cp", value: -230 }}
+        orientation={orientation}
+      />,
+    );
+    expect(cp).toContain('class="evaluation-score for-black"');
+    expect(cp).toContain(">-2,30</span>");
+    const mate = renderToStaticMarkup(
+      <EvaluationBar
+        score={{ kind: "mate", value: -3, winner: "b" }}
+        orientation={orientation}
+      />,
+    );
+    expect(mate).toContain(">M3</span>");
+    expect(mate).toContain("Mat en 3 · Noirs");
+    expect(mate).toContain(`${orientation === "white" ? "top" : "bottom"}:5px`);
+  }
+  const mated = renderToStaticMarkup(
+    <EvaluationBar
+      score={{ kind: "mate", value: 0, winner: "w" }}
+      orientation="white"
+    />,
+  );
+  expect(mated).toContain(">Mat</span>");
+  const bound = renderToStaticMarkup(
+    <EvaluationBar
+      score={{ kind: "cp", value: 150, bound: "lower" }}
+      orientation="white"
+    />,
+  );
+  expect(bound).toContain(">≥ +1,50</span>");
+});
+
+it("affiche les prises pendant le jeu même quand l’évaluation moteur est masquée", () => {
+  const controller = new GameController();
+  for (const [from, to] of [
+    ["e2", "e4"],
+    ["d7", "d5"],
+    ["e4", "d5"],
+  ] as const)
+    expect(controller.move(from, to)).toBe(true);
+  const html = renderToStaticMarkup(
+    <GameView
+      controller={controller}
+      showEvaluation={false}
+      onEvaluation={() => {}}
+      onNew={() => {}}
+      onRematch={() => {}}
+      onReview={() => {}}
+    />,
+  );
+  expect(html).toContain(
+    "Prises des Blancs : 1 pion ; avantage en prises de 1 point",
+  );
+  expect(html).toContain(">+1</strong>");
+  expect(html).not.toContain('class="evaluation-bar');
+});

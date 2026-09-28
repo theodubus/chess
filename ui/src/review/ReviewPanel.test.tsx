@@ -51,3 +51,22 @@ it("interrompt la courbe entre scores inconnus et expose les positions au clavie
   expect(html).toContain("Position initiale : +1,00");
   expect(html).not.toContain("Après 1. e4 :");
 });
+
+it("réunit navigation et jeu direct, avec les moments du camp humain seulement", () => {
+  const board = new Chess();
+  board.move("e4");
+  const html = renderToStaticMarkup(
+    <ReviewPanel
+      pgn={board.pgn()}
+      active
+      showEvaluation={false}
+      onToggle={() => {}}
+      learnerSide="b"
+    />,
+  );
+  expect(html).toContain('aria-label="Analyse interactive"');
+  expect(html).toContain("sélectionner une pièce puis sa destination");
+  expect(html).toContain("vos coups avec les Noirs");
+  expect(html).not.toContain("Analyse détaillée");
+  expect(html).not.toContain("Revue guidée &amp; exploration");
+});

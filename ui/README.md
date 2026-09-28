@@ -5,29 +5,38 @@ L’interface pilote le moteur exclusivement par l’adaptateur `Engine` et UCI.
 
 ## Démarrer
 
-Depuis `ui/`, dans un terminal :
+Une seule commande, depuis la **racine du dépôt** :
 
 ```sh
-npm install
-npm run dev -- --host 127.0.0.1
+npm --prefix ui run dev
 ```
 
-Pour jouer contre le moteur ou analyser une partie, dans un second terminal :
+Depuis `ui/`, `npm run dev` fait la même chose. Installer les dépendances avec
+`npm --prefix ui ci` au premier lancement. `npm start` dans `ui/` est un alias.
+
+Ouvrir l’adresse affichée dans le terminal, par défaut `http://127.0.0.1:5173`.
+Le lancement vérifie ShallowRed (protocole UCI et recherches légales), puis
+ouvre le front et son pont privé ensemble. Le binaire par défaut est
+`target/release/shallowred`, résolu depuis le dépôt, indépendamment du terminal.
+S’il manque, compiler une fois depuis la racine :
+`cargo build --release --bin shallowred`.
+
+`Ctrl+C` ferme les deux services et leurs connexions moteur. Si le port est
+occupé, le lancement échoue clairement au lieu de basculer sur 5174 en silence.
+Fermer l’ancien terminal ou choisir explicitement un autre port :
 
 ```sh
-npm run engine:bridge -- ../target/release/shallowred
+npm --prefix ui run dev -- --port 5180
+npm --prefix ui run dev -- --engine /chemin/absolu/vers/un/moteur
 ```
 
-Ouvrir `http://127.0.0.1:5173`. Le bouton « Jouer » connecte automatiquement
-le moteur choisi ; aucun panneau de connexion n’est à activer pendant la partie.
-Le navigateur ne lance pas lui-même le pont. Le chemin du binaire peut être
-remplacé par celui d’un autre moteur UCI, ou défini avec `CHESS_ENGINE`.
-
-Le pont écoute sur `127.0.0.1:8787` et accepte les origines Vite
-`http://localhost:5173` et `http://127.0.0.1:5173`. Il lance un processus par
-connexion, envoie `quit` à la fermeture et force l’arrêt si nécessaire.
-Il reste réservé au développement, hors du build Vite. Le transport de
-production n’est pas choisi par cette interface.
+Le navigateur utilise `/engine/` sur la même adresse que le front pour HTTP
+et WebSocket ; il ne dépend plus d’un port moteur 8787. Le pont reçoit un port
+local libre et refuse les origines étrangères. Un autre moteur peut aussi être
+défini par `CHESS_ENGINE`. Ne pas lancer `engine:bridge` en plus : cette ancienne
+commande reste disponible uniquement pour les diagnostics du pont isolé.
+Le transport reste réservé au développement local ; le déploiement de production
+n’est pas choisi par cette interface.
 
 ### Choisir un moteur d’analyse, notamment Stockfish
 
@@ -56,10 +65,10 @@ copie du binaire n’est nécessaire. Exemple pour le Stockfish installé sur Li
 ]
 ```
 
-Enregistrer ce tableau dans `moteurs.json`, puis démarrer le pont :
+Enregistrer ce tableau dans `moteurs.json`, puis démarrer depuis `ui/` :
 
 ```sh
-npm run engine:bridge -- ../target/release/shallowred --engines moteurs.json
+npm run dev -- --engines moteurs.json
 ```
 
 Le fichier peut contenir plusieurs moteurs avec des identifiants uniques et
@@ -69,7 +78,7 @@ rapport au fichier JSON ; un simple nom de commande est cherché dans le PATH.
 les noms et identifiants pour les connexions UCI. L’ajout explicite transmet
 un chemin absolu au formulaire de validation. Les requêtes d’ajout sont réservées
 aux origines locales autorisées, en JSON, et le programme est lancé sans shell.
-Après modification du fichier, relancer le pont puis « Actualiser les moteurs »
+Après modification du fichier, relancer l’application puis « Actualiser les moteurs »
 dans les options. Un moteur absent provoque une erreur explicite, sans substitution.
 
 Le changement de moteur propose « Relancer l’analyse » et recalcule toute la
@@ -130,6 +139,64 @@ dans l’analyse, sauf dans les dialogues et les champs de saisie.
 On peut le masquer pour revoir la position ; le bouton « Résultat » le réaffiche.
 Parcourir les coups masque aussi cet encart.
 
+## Gestes sur le plateau
+
+Pendant la partie comme en analyse, `←` / `→` et `<` / `>` parcourent les coups.
+Ces raccourcis restent actifs quand le plateau ou un bouton a le focus ; ils
+ne s’appliquent pas dans un formulaire ou un dialogue. Revoir une position ne
+modifie pas la partie et ne suspend pas la pendule.
+
+Contre le bot, sélectionner une pièce et sa destination pendant son tour prépare
+un prémouvement. Un seul coup peut être en attente : une nouvelle sélection le
+remplace. Il est joué après la réponse du moteur seulement s’il reste légal.
+La promotion d’un prémouvement se fait en dame ; les autres promotions restent
+accessibles en jouant normalement. Échap, un clic droit, le bouton « Annuler le
+prémouvement » ou la navigation dans l’historique annulent le coup prévu.
+Reconnexion, nouvelle partie, abandon et fin au temps l’effacent également.
+
+Glisser avec le bouton droit dessine une flèche ; un clic droit sur une case
+trace un cercle. Refaire le même dessin l’efface, et un clic gauche efface les
+repères. Les dessins fonctionnent en partie, en relecture et en analyse. Ils
+sont conservés pendant les mises à jour du moteur, puis effacés au changement
+de position. Ils ne changent ni les coups ni le PGN.
+
+## Cadences et options du moteur
+
+« Éditer le camp » ouvre un échiquier de préparation : retirer plusieurs pièces,
+les déplacer en deux clics, ou les remplacer depuis la palette. Le camp humain
+est verrouillé. La configuration suit la couleur du moteur, y compris après
+un tirage aléatoire. Annuler conserve la configuration précédente ; Réinitialiser
+restaure l’armée classique. Un roi par camp, au plus 16 pièces et 8 pions côté
+moteur, aucun pion en dernière rangée et aucun roi en échec au départ sont requis.
+La position et les droits de roque sont conservés dans le jeu, le ponder, le PGN
+et l’analyse. Les pièces retirées ne sont pas comptées comme des captures.
+
+Dans la préparation d’une partie contre le bot, « Donner une cadence différente
+au bot » permet de choisir son temps initial et son incrément indépendamment des
+vôtres. Ces temps suivent les joueurs, même avec les Noirs ou un camp aléatoire.
+Les parties à deux joueurs gardent une cadence commune. Les réglages sont
+mémorisés pour la prochaine partie et pour « Rejouer ».
+
+« Options du moteur » interroge le moteur connecté et propose les fonctions qu’il
+annonce par UCI :
+
+- « Réfléchir pendant mon tour » active `Ponder`, désactivé par défaut. Après
+  son coup, le moteur peut préparer une réponse au coup qu’il anticipe. Si le
+  joueur le choisit, `ponderhit` poursuit cette recherche ; sinon, `stop` et
+  l’attente de son `bestmove` précèdent la recherche de la position réelle.
+  Cette anticipation ne joue aucun coup et ne débite pas la pendule du moteur.
+  Abandon, temps écoulé et nouvelle partie l’arrêtent également. L’évaluation
+  anticipée n’est pas affichée sur la position réelle.
+- « Cœurs de calcul » règle `Threads`, à 1 par défaut. La saisie est bornée par
+  les capacités UCI et les cœurs logiques annoncés par le navigateur. Cette
+  option sollicite davantage le processeur ; elle s’applique au moteur de jeu.
+
+La connexion de début de partie vérifie de nouveau ces options avant de lancer
+les pendules. Un réglage non pris en charge produit une erreur explicite.
+Les cadences asymétriques sont exportées avec `TimeControl "?"` et les en-têtes
+complémentaires `WhiteTimeControl` / `BlackTimeControl`, en secondes, afin de ne
+pas annoncer à tort une cadence commune.
+
 ## Analyse et affichage
 
 « Importer un PGN », depuis l’accueil ou la revue, accepte du texte collé ou un
@@ -165,8 +232,8 @@ visuellement à ±5 pions ; les scores absents restent inconnus. Les différence
 avant/après sont des estimations dépendantes du temps de recherche, pas des
 jugements définitifs ni des probabilités. La perte numérique n’est pas calculée
 pour les mats ou les bornes. Les positions terminales connues ne sont pas
-recherchées. Pendant une variante, la barre est indisponible : cette position
-intermédiaire n’a pas été analysée séparément.
+recherchées. Pendant une variante, la barre attend le calcul de la position
+explorée puis affiche son évaluation propre.
 
 L’évaluation est masquée par défaut en jeu et visible en analyse. Les deux
 préférences sont indépendantes. Une ancienne préférence commune est conservée
@@ -174,39 +241,35 @@ comme valeur initiale des deux vues. La profondeur pendant le jeu est optionnell
 masquée par défaut, avec une préférence indépendante mémorisée. Elle reste visible
 dans l’analyse. À deux joueurs, aucune fausse évaluation n’est affichée.
 
-## Revue guidée et exploration
+## Analyse interactive
 
-« Revue guidée & exploration » propose les mêmes flèches `←` / `→`, `<` / `>`
-pour parcourir chaque coup. « Prochain moment clé » déroule les coups jusqu’à
-une imprécision, erreur, gaffe, occasion manquée, coup décisif, brillant ou mat.
-Le défilement peut être arrêté et le moment précédent reste accessible. Les
-moments dépendent des annotations déjà calculées ; ils sont provisoires tant
-que l’analyse continue.
+Un seul écran réunit revue, exercices et variantes. Les flèches `←` / `→`,
+`<` / `>` parcourent chaque coup. « Prochain moment clé » déroule la partie
+jusqu’au prochain coup notable du camp humain contre le bot, des deux camps
+à deux joueurs. Pour un PGN importé, les deux camps sont retenus par défaut ;
+« Options d’analyse » permet de choisir son camp. Les coups adverses restent
+accessibles individuellement et peuvent toujours être retentés.
 
-« Réessayer ce coup » est disponible sur tous les coups, y compris adverses,
-et revient à la position avant le coup sélectionné (au départ, avant le premier
-coup). La solution et l’évaluation sont masquées jusqu’à la tentative. Le choix
-exact du moteur est reconnu ; une autre décision est aussi acceptée lorsque
-les évaluations comparables indiquent une perte d’indice inférieure à 0,02.
-Une contradiction ou un score absent ne fait pas passer une tentative pour
-fausse. On peut retenter, consulter la solution ou continuer en exploration.
-Le camp humain est prérempli après une partie contre le moteur ; l’import et
-les parties locales permettent de choisir Blancs, Noirs ou les deux camps.
-L’invitation à retenter est renforcée après un mauvais coup du camp choisi.
+Jouer directement sur le plateau ouvre une variante, sans changer de mode.
+Les deux camps sont jouables ; les flèches remontent la variante et permettent
+de créer d’autres branches. « Revenir à la partie » retrouve le coup sélectionné.
+Les variantes restent accessibles depuis leur point de départ, en mémoire,
+sans modifier le PGN original.
 
-« Explorer cette position » crée un arbre distinct de la partie : jouer les
-deux camps, revenir en arrière, choisir une sous-promotion et créer des
-branches alternatives. Les suites restent disponibles depuis leur point de
-bifurcation, même après un passage dans l’analyse détaillée. Elles restent
-locales à la revue en mémoire, sans modifier ni enrichir le PGN original.
+« Réessayer ce coup » revient avant le coup visible et masque solution et
+évaluation jusqu’à la tentative. Il est mis en avant après une erreur du camp
+choisi. Après la tentative, on peut continuer à jouer, retenter ou consulter
+la solution. Les badges sont affichés sur le plateau et dans le panneau,
+avec les mêmes règles que pour les coups de la partie.
 
-L’évaluation de la variante utilise une session UCI séparée du même moteur,
-avec l’historique complet (répétitions comprises), un délai de saisie de 180 ms
-et un budget de 1,5 seconde. Elle se met à jour pendant la recherche. Un
-changement de position annule l’ancienne recherche ; ses réponses tardives
-sont ignorées, et son score n’est jamais présenté comme celui de la nouvelle
-position. Mat et nulles sont reconnus sans recherche. La préférence d’affichage
-de l’évaluation continue de s’appliquer.
+L’évaluation utilise le moteur sélectionné et l’historique UCI complet,
+répétitions comprises. Chaque nouvelle position est calculée à 1,5 seconde,
+puis comparée à la position avant le coup. Les cas sensibles ou contradictoires
+sont vérifiés à 3 secondes par position, notamment avant d’attribuer « Brillant ».
+Les badges restent provisoires pendant ce calcul. Une incohérence persistante
+reste signalée plutôt que de recevoir une classification arbitraire.
+Les recherches abandonnées sont annulées ; leurs réponses tardives sont ignorées.
+Les résultats sont conservés par branche et invalidés à la relance de l’analyse.
 
 ## Annotations de la revue
 
@@ -347,8 +410,9 @@ annuler/refaire, choix du camp, abonnement/désabonnement, abandon, connexion
 tardive, reconnexion, export et analyse. Les tests de pont ouvrent des ports
 locaux. Les tests avec le vrai moteur sont ignorés sans `CHESS_ENGINE_BINARY`.
 
-Avec Vite et le pont déjà lancés avec un moteur `stockfish` configuré
-(`--engines dev/engines.example.json` sur cette installation), le parcours Chromium se vérifie ainsi :
+Avec `npm run dev -- --engines dev/engines.example.json` lancé depuis `ui/`,
+un moteur `stockfish` est configuré
+sur cette installation ; le parcours Chromium se vérifie ainsi :
 
 ```sh
 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs
@@ -378,3 +442,21 @@ Chessground est publié sous `@lichess-org/chessground` (GPL-3.0-or-later),
 chess.js sous BSD-2-Clause. Les pièces sont incluses localement. L’ensemble
 du code du dépôt est sous AGPL-3.0-or-later. Les données d’ouvertures Lichess
 conservent leur licence CC0-1.0, incluse dans `data/openings/COPYING.txt`.
+
+## Scores et prises
+
+La barre d’évaluation affiche le score en pions (`+1,25` favorise les Blancs,
+`−1,25` les Noirs), ou `M3` pour un mat annoncé en trois coups. Le chiffre se
+place du côté du camp favorisé et suit le retournement du plateau. `Mat`
+signale le mat atteint ; `?` une évaluation indisponible. Les bornes restent
+indiquées, avec le détail dans l’infobulle. L’affichage reste optionnel.
+
+Les pièces capturées sont regroupées par type, auprès du joueur qui les a prises.
+Le `+N` indique uniquement son excédent de points capturés sur l’adversaire :
+pion 1, cavalier/fou 3, tour 5, dame 9. Aucun chiffre en cas d’égalité.
+Ce bilan est indépendant de l’évaluation moteur et suit la position affichée,
+ainsi que les variantes et retentatives. Il inclut la prise en passant ; une
+promotion seule n’est pas une capture. Pour un PGN depuis une FEN, les captures
+antérieures à la position initiale sont inconnues et ne sont pas inventées.
+
+La ligne des captures conserve sa hauteur avant la première prise, afin de garder le plateau et les commandes à la même place.

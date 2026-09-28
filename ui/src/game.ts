@@ -1,10 +1,13 @@
-import { Chess } from 'chess.js';
+import { Chess, DEFAULT_POSITION } from 'chess.js';
 import type { Key } from '@lichess-org/chessground/types';
 
 export type Promotion = 'q' | 'r' | 'b' | 'n';
 
 export class LocalGame {
-  readonly chess = new Chess();
+  readonly chess: Chess;
+  constructor(readonly initialFen = DEFAULT_POSITION) {
+    this.chess = new Chess(initialFen);
+  }
   pending: { from: Key; to: Key } | null = null;
 
   destinations(): Map<Key, Key[]> {
@@ -36,7 +39,7 @@ export class LocalGame {
 
   reset() {
     this.pending = null;
-    this.chess.reset();
+    this.chess.load(this.initialFen);
   }
 
   get status(): string {

@@ -1,7 +1,13 @@
-import { Chess } from "chess.js";
+import { Chess, DEFAULT_POSITION, type Square } from "chess.js";
 import type { Key } from "@lichess-org/chessground/types";
 import { LocalGame, type Promotion } from "./game";
-import { GameClock, type TimeControl, type ClockState } from "./GameClock";
+import {
+  GameClock,
+  type TimeControl,
+  type ClockState,
+  type ClockControls,
+} from "./GameClock";
+import { DEFAULT_ENGINE_OPTIONS, type EngineOptions } from "./engine/options";
 import type { Engine } from "./engine/Engine";
 import type { Side } from "./engine/analysis";
 import { UciSession, type SessionSnapshot } from "./engine/UciSession";
@@ -26,12 +32,13 @@ export type EngineFactory = (
 
 /** Coordonne la partie sans connaître le transport du moteur. */
 export class GameController {
-  readonly game = new LocalGame();
+  readonly game: LocalGame;
   readonly clock: GameClock;
   timeResult = "";
   snapshot: SessionSnapshot | null = null;
   mode: "local" | "fake" | null = null;
   readonly humanSide: Side;
+  premove: { from: Key; to: Key; promotion?: Promotion } | null = null;
   private startRequested = false;
   private disposed = false;
   private resigned: Side | null = null;
@@ -42,15 +49,21 @@ export class GameController {
   private factory?: EngineFactory;
   private generation = 0;
   private searching = false;
+  private predicted: string | null = null;
+  readonly engineOptions: EngineOptions;
   private listeners = new Set<() => void>();
 
   constructor(
     options: {
-      timeControl?: TimeControl;
+      timeControl?: TimeControl | ClockControls;
+      engineOptions?: EngineOptions;
       now?: () => number;
       humanSide?: Side;
+      initialFen?: string;
     } = {},
   ) {
+    this.game = new LocalGame(options.initialFen);
+    this.engineOptions = options.engineOptions ?? DEFAULT_ENGINE_OPTIONS;
     this.clock = new GameClock(options.timeControl, options.now);
     this.humanSide = options.humanSide ?? "w";
   }
@@ -113,6 +126,7 @@ export class GameController {
     this.resigned = this.mode ? this.humanSide : this.game.chess.turn();
     this.clock.pause();
     this.game.pending = null;
+    this.premove = null;
     ++this.generation;
     this.searching = false;
     const session = this.session;
@@ -123,6 +137,7 @@ export class GameController {
   }
   async dispose() {
     this.disposed = true;
+    this.premove = null;
     ++this.generation;
     this.clock.pause();
     const session = this.session;
@@ -147,6 +162,7 @@ export class GameController {
     if (!this.clock.flagged || this.timeResult) return;
     this.timeResult = `Temps écoulé · ${this.clock.flagged === "w" ? "Blancs" : "Noirs"}`;
     this.game.pending = null;
+    this.premove = null;
     ++this.generation;
     const session = this.session;
     this.session = undefined;
@@ -167,12 +183,70 @@ export class GameController {
     for (const listener of this.listeners) listener();
   }
 
+  get canPremove() {
+    return (
+      !this.disposed &&
+      !this.finished &&
+      !!this.mode &&
+      !this.game.pending &&
+      this.game.chess.turn() !== this.humanSide &&
+      ["ready", "thinking", "stopping"].includes(this.snapshot?.state ?? "")
+    );
+  }
+  setPremove(from: Key, to: Key) {
+    if (
+      !this.canPremove ||
+      from === to ||
+      !/^[a-h][1-8]$/.test(from) ||
+      !/^[a-h][1-8]$/.test(to) ||
+      this.game.chess.get(from as Square)?.color !== this.humanSide
+    )
+      return false;
+    this.premove = {
+      from,
+      to,
+      ...(this.game.chess.get(from as Square)?.type === "p" &&
+      ["1", "8"].includes(to[1])
+        ? { promotion: "q" as const }
+        : {}),
+    };
+    this.publish();
+    return true;
+  }
+  cancelPremove() {
+    if (!this.premove) return;
+    this.premove = null;
+    this.publish();
+  }
+  private playPremove() {
+    const queued = this.premove;
+    this.premove = null;
+    if (!queued) return false;
+    this.tick();
+    if (this.finished) return false;
+    const move = this.game.chess
+      .moves({ verbose: true })
+      .find(
+        (move) =>
+          move.from === queued.from &&
+          move.to === queued.to &&
+          (!move.promotion || move.promotion === "q"),
+      );
+    // Le coup adverse peut capturer la pièce, barrer son trajet ou donner échec.
+    if (!move) return false;
+    const before = this.clock.capture();
+    this.game.chess.move(move);
+    this.clock.completeMove(move.color, this.game.chess.isGameOver());
+    this.recordMove(before, "Joueur local");
+    return true;
+  }
+
   get canMove() {
     return (
       !this.disposed &&
       !this.finished &&
       (!this.mode ||
-        (this.snapshot?.state === "ready" &&
+        (["ready", "pondering"].includes(this.snapshot?.state ?? "") &&
           !this.searching &&
           this.game.chess.turn() === this.humanSide))
     );
@@ -214,10 +288,12 @@ export class GameController {
   async connect(mode: "local" | "fake", factory: EngineFactory) {
     this.tick();
     this.clock.pause();
+    this.premove = null;
     const generation = ++this.generation;
     const old = this.session;
     this.session = undefined;
     this.searching = false;
+    this.predicted = null;
     this.mode = mode;
     this.factory = factory;
     this.game.pending = null;
@@ -242,24 +318,30 @@ export class GameController {
         return;
       }
       let initialized = false;
-      this.session = new UciSession(engine, (snapshot) => {
-        if (generation !== this.generation) return;
-        this.snapshot = snapshot;
-        if (snapshot.state === "error") {
-          this.game.pending = null;
-          this.clock.pause();
-          this.tick();
-        }
-        this.publish();
-        if (!initialized && snapshot.state === "ready") {
-          initialized = true;
-          if (!this.finished) {
-            if (this.startRequested) this.clock.start(this.game.chess.turn());
-            this.clock.resume(this.game.chess.turn());
+      this.session = new UciSession(
+        engine,
+        (snapshot) => {
+          if (generation !== this.generation) return;
+          this.snapshot = snapshot;
+          if (snapshot.state === "error") {
+            this.premove = null;
+            this.game.pending = null;
+            this.clock.pause();
+            this.tick();
           }
-          void this.requestEngineMove();
-        }
-      });
+          this.publish();
+          if (!initialized && snapshot.state === "ready") {
+            initialized = true;
+            if (!this.finished) {
+              if (this.startRequested) this.clock.start(this.game.chess.turn());
+              this.clock.resume(this.game.chess.turn());
+            }
+            void this.requestEngineMove();
+          }
+        },
+        5000,
+        this.engineOptions,
+      );
       this.session.start();
     } catch (error) {
       if (generation === this.generation)
@@ -270,6 +352,7 @@ export class GameController {
   }
 
   private connectionError(message: string) {
+    this.premove = null;
     this.game.pending = null;
     this.clock.pause();
     this.tick();
@@ -284,10 +367,19 @@ export class GameController {
   }
 
   private async requestEngineMove() {
+    if (this.finished && this.predicted) {
+      this.predicted = null;
+      const session = this.session;
+      this.session = undefined;
+      if (this.snapshot)
+        this.snapshot = { ...this.snapshot, state: "closed", analysis: null };
+      await session?.dispose();
+      return;
+    }
     if (
       !this.mode ||
       !this.session ||
-      this.snapshot?.state !== "ready" ||
+      !["ready", "pondering"].includes(this.snapshot?.state ?? "") ||
       this.searching ||
       this.game.pending ||
       this.game.chess.turn() === this.humanSide ||
@@ -301,16 +393,27 @@ export class GameController {
       .history({ verbose: true })
       .map((move) => move.from + move.to + (move.promotion ?? ""));
     this.searching = true;
+    let playedPremove = false;
     try {
-      const uci = await session.search(
-        `position startpos${moves.length ? ` moves ${moves.join(" ")}` : ""}`,
-        () => {
-          this.tick();
-          if (this.finished) throw new Error("Partie terminée.");
-          return this.clock.budget();
-        },
-        this.game.chess.turn(),
-      );
+      const prediction = this.predicted;
+      this.predicted = null;
+      let uci: string;
+      if (prediction && moves.at(-1) === prediction)
+        uci = await session.ponderHit();
+      else {
+        if (prediction) await session.cancelPonder();
+        if (generation !== this.generation || this.game.chess.fen() !== fen)
+          return;
+        uci = await session.search(
+          this.positionCommand(moves),
+          () => {
+            this.tick();
+            if (this.finished) throw new Error("Partie terminée.");
+            return this.clock.budget();
+          },
+          this.game.chess.turn(),
+        );
+      }
       this.tick();
       // Les réponses d'une connexion remplacée ne doivent jamais toucher la nouvelle partie.
       if (generation !== this.generation || this.game.chess.fen() !== fen)
@@ -330,6 +433,8 @@ export class GameController {
       });
       this.clock.completeMove(move.color, this.game.chess.isGameOver());
       this.recordMove(before, this.snapshot?.name || "Moteur UCI");
+      playedPremove = this.playPremove();
+      if (!playedPremove) this.startPonder(session);
     } catch (error) {
       if (generation === this.generation)
         session.fail(
@@ -341,8 +446,50 @@ export class GameController {
       if (generation === this.generation) {
         this.searching = false;
         this.publish();
+        if (playedPremove) void this.requestEngineMove();
       }
     }
+  }
+
+  private positionCommand(moves: string[]) {
+    const start =
+      this.game.initialFen === DEFAULT_POSITION
+        ? "startpos"
+        : `fen ${this.game.initialFen}`;
+    return `position ${start}${moves.length ? ` moves ${moves.join(" ")}` : ""}`;
+  }
+
+  private startPonder(session: UciSession) {
+    const predicted = session.ponderMove;
+    if (!this.engineOptions.ponder || !predicted || this.finished) return;
+    const future = new Chess(this.game.chess.fen());
+    const move = future
+      .moves({ verbose: true })
+      .find(
+        (move) => move.from + move.to + (move.promotion ?? "") === predicted,
+      );
+    if (!move) return;
+    future.move(move);
+    if (future.isGameOver()) return;
+    this.predicted = predicted;
+    const moves = this.game.chess
+      .history({ verbose: true })
+      .map((move) => move.from + move.to + (move.promotion ?? ""));
+    session.ponder(
+      this.positionCommand([...moves, predicted]),
+      () => {
+        this.tick();
+        if (this.finished) throw new Error("Partie terminée.");
+        const budget = this.clock.budget();
+        // La position anticipée inclut le coup humain, donc aussi son incrément.
+        if (this.game.chess.turn() === this.humanSide) {
+          if (this.humanSide === "w") budget.wtime += budget.winc;
+          else budget.btime += budget.binc;
+        }
+        return budget;
+      },
+      future.turn(),
+    );
   }
 
   private recordMove(before: ClockState, player: string) {
@@ -412,7 +559,7 @@ export class GameController {
   exportPgn(): string {
     this.tick();
     // Construire une copie évite de modifier les en-têtes ou l'état de la partie jouée.
-    const exported = new Chess();
+    const exported = new Chess(this.game.initialFen);
     for (const move of this.game.chess.history({ verbose: true }))
       exported.move({
         from: move.from,
@@ -443,7 +590,15 @@ export class GameController {
       White: playerName("w"),
       Black: playerName("b"),
       Result: result,
-      TimeControl: `${this.clock.control.initialMs / 1000}+${this.clock.control.incrementMs / 1000}`,
+      TimeControl: this.clock.balanced
+        ? `${this.clock.control.initialMs / 1000}+${this.clock.control.incrementMs / 1000}`
+        : "?",
+      ...(!this.clock.balanced
+        ? {
+            WhiteTimeControl: `${this.clock.controls.w.initialMs / 1000}+${this.clock.controls.w.incrementMs / 1000}`,
+            BlackTimeControl: `${this.clock.controls.b.initialMs / 1000}+${this.clock.controls.b.incrementMs / 1000}`,
+          }
+        : {}),
       Termination: this.clock.flagged
         ? "time forfeit"
         : this.finished
@@ -462,6 +617,7 @@ export class GameController {
   }
 
   reset() {
+    this.premove = null;
     this.played = [];
     this.redos = [];
     this.date = new Date();
@@ -478,6 +634,7 @@ export class GameController {
   async disconnect() {
     this.tick();
     this.clock.pause();
+    this.premove = null;
     ++this.generation;
     const session = this.session;
     this.session = undefined;

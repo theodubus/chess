@@ -1,3 +1,4 @@
+import { handicapPosition } from "./handicap";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { GameController } from "./GameController";
 import GameSetup from "./GameSetup";
@@ -7,6 +8,7 @@ import ImportPgnDialog from "./ImportPgnDialog";
 import { connectDevelopmentEngine } from "./engine/DevelopmentEngine";
 import {
   evaluationPreference,
+  gameTimeControls,
   readSetup,
   resolveSide,
   savePreference,
@@ -71,9 +73,15 @@ export default function App() {
     setError("");
     setBusy(true);
     setScreen("setup");
+    const humanSide = resolveSide(next.side);
     const fresh = new GameController({
-      timeControl: next.timeControl,
-      humanSide: resolveSide(next.side),
+      timeControl: gameTimeControls(next, humanSide),
+      humanSide,
+      initialFen:
+        next.opponent === "engine"
+          ? handicapPosition(next.handicap, humanSide)
+          : undefined,
+      engineOptions: next.engineOptions,
     });
     const activate = () => {
       if (candidate.current?.controller !== fresh) return;
