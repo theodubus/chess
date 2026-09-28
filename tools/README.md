@@ -3146,9 +3146,10 @@ d'artefacts visent les dépôts privés.
    sur un réseau aléatoire contre un calcul complet de référence —
    **écrite le 26 sept.**, son crible de mutation relevé le 28, voir
    ci-dessous ;
-3. l'entraînement, sur la carte de Théo — **préparé le 26 sept.**, voir
-   ci-dessous : le programme et la procédure attendent sa machine ;
-4. le SPRT, à `8+0,08`.
+3. l'entraînement, sur la carte de Théo — **préparé le 26 sept., fait le
+   28** : 11 min 53 s, le critère tenu (écart médian 7, maximal 23) ;
+4. le réseau embarqué et sa mesure à `8+0,08` — attendu et critère écrits
+   avant, voir ci-dessous.
 
 #### Étape 2 — l'inférence dans le moteur, écrite le 26 sept. 2026
 
@@ -3347,6 +3348,82 @@ que coûte l'option ne se voient pas.
 laisse aucun ; le compteur de ses tests en laissait un, tué avant la fusion
 par une borne haute (`.github/mutation-baseline.txt`, ligne de `search.rs`
 du 26 sept.).
+
+#### Étape 3 — RELEVÉE le 28 sept. 2026 : le réseau est celui qu'a entraîné bullet
+
+Sur la carte de Théo — RTX 3050 pour portable, 4 Go, pilote 595.91.07 qui
+plafonne à CUDA 13.2, un toolkit 13.2 installé à côté du 13.4 (paragraphe
+Ubuntu ci-dessus). Le réseau, sa courbe de perte et la sortie complète sont
+dans `reseaux/` (commit `5d0e5d7`, de Théo) :
+
+- **les données, enfin relues** : seize fichiers jusqu'au dernier octet,
+  **1 098 403 parties et 125 098 300 positions — exactement les résumés des
+  jobs** ; la relecture promise depuis le 26 sept. est faite ;
+- **l'entraînement** : 40 superlots de 100 007 936 positions en **11 min 53 s**,
+  9 à 10 millions de positions par seconde ; 714 s en tout, relecture et
+  confrontation comprises ;
+- **la courbe** (perte moyenne par superlot) : 0,0486 au premier, 0,0462 au
+  dixième, **0,0460 du vingtième au quarantième — elle plafonne à
+  mi-parcours**. <span>Inférence, confiance faible</span> : ce sont désormais
+  les 128 unités ou les données qui limitent, pas le nombre de superlots ;
+  les séparer demanderait un second entraînement ;
+- **la confrontation** : écart médian **7**, maximal **23** — critère écrit
+  avant, 15 et 50 : `RÉSEAU PRÊT`. Rechargé ici par le moteur de `main`
+  (`EvalFile`), il rend les mêmes valeurs à l'unité : +26 en position
+  initiale, −92 après 1.e4.
+
+**Décision utilisateur** — Théo, 28 sept. : « *Si plus tard pour vraiment
+pousser la perf on a besoin de faire tourner plus on pourra (si c'est
+vraiment pertinent de le faire)* ». D'autres entraînements sur sa carte
+restent ouverts, sur une raison mesurée.
+
+**L'échelle, mesurée avant de mesurer l'Elo** — sur les douze positions de
+la confrontation, réseau et faite main parlent la même langue quand la
+position est équilibrée (quelques dizaines de centièmes, de signe parfois
+contraire), et **le réseau dit 2,6 à 5,8 fois plus quand elle est décidée** :
+−1 726 contre −598 (une tour de moins), −3 004 contre −1 173 (une dame de
+plus), +521 contre +90 (roi et pion contre roi). C'est l'échelle d'une
+probabilité de gain étirée par l'échelle 400, pas celle du matériel. Or les
+marges de la recherche ont été réglées sur la faite main : la futilité
+inverse (`RFP_MARGIN`, 100 par pli), la fenêtre d'aspiration (25), et
+surtout l'**élagage delta**, qui ajoute à un stand pat du réseau le gain
+d'une capture estimé par les valeurs de la faite main.
+
+#### Étape 4 — le réseau embarqué, et sa mesure : ce qui est écrit AVANT de mesurer
+
+**Le changement** : le réseau entre dans le binaire (`include_bytes!`) et
+devient l'évaluation par défaut **de la couche UCI** — `EvalFile` vaut
+`<embedded>` par défaut, `<none>` rend la faite main, un chemin charge un
+fichier. `Search::new` garde la faite main : le banc et sa référence, et les
+tests de recherche, n'en dépendent pas. Un test rejoue à chaque build la
+confrontation de l'étape 3 — les douze valeurs de l'entraîneur relevées dans
+`reseaux/`, le même critère, et les valeurs du moteur à l'unité.
+
+**Attendu** — <span>Inférence, confiance faible</span> : **+30 à +150 Elo à
+`8+0,08`** contre `main`. Pour : un réseau appris sur ses propres parties
+remplace des termes aux valeurs conventionnelles, jamais réglés ; son nœud
+coûte 0,73 à 0,87 fois celui de la faite main. Contre : des étiquettes
+données par sa propre recherche à 5 000 nœuds, et des marges réglées sur une
+autre échelle (ci-dessus). **Un effet sous l'attendu, ou négatif, se
+diagnostique d'abord par l'échelle**, mesurée avant de toucher au réseau :
+combien de coupes de l'élagage delta et de la futilité inverse le réseau
+déplace, en partie.
+
+**Critère, écrit avant** : deux jobs de **1 000 parties** à `8+0,08`,
+fastchess, graine « auto » chacun, le candidat — son commit, révoqué aussitôt
+— contre son parent ; mis en commun par `tools/mettre-en-commun.sh`, qui
+refuse deux matchs contradictoires. Zéro perte au temps, zéro coup illégal,
+sinon le match ne compte pas.
+- **borne basse de l'intervalle à 95 % au-dessus de zéro** : gain démontré,
+  le réseau devient l'évaluation par défaut ;
+- **intervalle contenant zéro** : pas de fusion sur cette mesure — c'est
+  l'évaluation entière qu'on remplace, pas un correctif de règle ; le
+  diagnostic par l'échelle, puis un second tour ;
+- **borne haute sous zéro** : régression, pas de fusion ; le même diagnostic.
+
+**Puissance, dite d'avance** : 2 000 parties donnent environ ± 11 Elo à 95 %
+(5 760 en donnaient ± 6,2 pour C24). Un effet de moins d'une dizaine d'Elo
+ne se distinguera pas de zéro, et c'est accepté : l'attendu est au-dessus.
 
 ### C27 — une borne de mat hors plage stockée dans la table — VERDICT, 25 sept. 2026 : −3,56 ± 5,97 Elo à `8+0,08`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
 
