@@ -3236,21 +3236,40 @@ compile, rien de plus n'est vérifiable ici. Trois temps, chacun bloquant :
    réseau mal indexé s'écarte de l'ordre de l'évaluation elle-même. Un
    échec interdit de mesurer le réseau.
 
-**La procédure, sur la machine de Théo** :
+**La procédure, sur la machine de Théo** — précisée le 28 sept. 2026, au
+moment de la lui donner, par ce qui se lit au source :
 
-1. installer Rust (`rustup`), le pilote NVIDIA et le CUDA Toolkit le plus
-   récent possible ; `CUDA_PATH` doit désigner l'installation (elle contient
-   `bin`, `lib` et `include`) — `docs/2-getting-started.md` de bullet ;
-2. récupérer les quatre artefacts de la première vague — runs 36179538497,
-   36179541822, 36179544454 et 36179547648, page du run, section
-   *Artifacts*, ou `gh run download <run>` — **avant le 24 déc. 2026**, et
-   les décompresser dans un même dossier : seize fichiers `.vf` ;
-3. `cd tools/nnue-train && cargo run --release --features cuda --
-   --attendu 1098403:125098300 <dossier>` ;
-4. si le programme finit sur `RÉSEAU PRÊT`, le fichier
-   `checkpoints/shallowred-768x128-40/quantised.bin` — 197 440 octets — est
-   le réseau : le pousser sur une branche, ou le transmettre. L'étape 4 —
-   l'embarquer et le mesurer — se fait ensuite ici.
+1. installer le pilote NVIDIA, le CUDA Toolkit le plus récent possible et
+   Rust (`rustup`) ; `CUDA_PATH` doit désigner l'installation du toolkit —
+   `docs/2-getting-started.md` de bullet. **Lu dans `crates/gpu/build.rs`** :
+   le build ne compile aucun noyau, il n'appelle pas `nvcc` ; il lie `cuda`,
+   `cudart`, `nvrtc` et `cublas` depuis `CUDA_PATH`, sous `lib/x64` sous
+   Windows et `lib64` ailleurs, et WSL est prévu (`/usr/lib/wsl/lib`). La
+   toolchain que le dépôt épingle s'installe seule au premier `cargo` ;
+2. récupérer les quatre artefacts de la première vague — `nnue-36179538497`,
+   `nnue-36179541822`, `nnue-36179544454`, `nnue-36179547648`, section
+   *Artifacts* de chaque run — **avant le 24 déc. 2026**. Chacun porte un
+   fichier par fil de génération, `nnue-<graine>-<fil>.vf`, la graine étant
+   le numéro du run : les décompresser tous dans UN dossier ne peut rien
+   écraser, et il doit y avoir seize fichiers. **Le programme ne lit que les
+   `.vf` posés directement dans le dossier qu'on lui donne**, pas ceux d'un
+   sous-dossier (`data_files`) ;
+3. **un essai court d'abord** : `cd tools/nnue-train && cargo run --release
+   --features cuda -- --attendu 1098403:125098300 --superlots 1 --sortie
+   essai <dossier>`. bullet sauvegarde toujours le dernier superlot, multiple
+   de `save_rate` ou non (`value.rs`, au commit épinglé) : l'essai traverse
+   donc les trois temps — CUDA, les comptes, la sauvegarde, la confrontation
+   — et doit finir sur `RÉSEAU PRÊT : essai/shallowred-768x128-1/quantised.bin`.
+   Son temps d'entraînement, multiplié par 40, annonce celui du vrai ; un
+   échec y coûte des minutes au lieu d'heures ;
+4. le vrai : la même commande sans `--superlots 1 --sortie essai` ; il finit
+   sur `RÉSEAU PRÊT : checkpoints/shallowred-768x128-40/quantised.bin`,
+   197 440 octets ;
+5. rapporter, sur une branche : `quantised.bin` et `log.txt` (la courbe de
+   perte de bullet) de ce dossier, copiés sous `reseaux/`, et la sortie du
+   temps 3 — les douze écarts, le médian, le maximal. L'étape 4 — embarquer
+   le réseau et le mesurer — se fait ensuite ici. Un `ÉCHEC — …` à n'importe
+   quel temps arrête tout : le message suffit à le diagnostiquer.
 
 **Le coût d'un nœud avec réseau — attendu écrit AVANT de mesurer.** Un réseau
 aléatoire aux évaluations de partie, les six positions du banc, profondeur
