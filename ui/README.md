@@ -139,6 +139,27 @@ dans l’analyse, sauf dans les dialogues et les champs de saisie.
 On peut le masquer pour revoir la position ; le bouton « Résultat » le réaffiche.
 Parcourir les coups masque aussi cet encart.
 
+## Gestes sur le plateau
+
+Pendant la partie comme en analyse, `←` / `→` et `<` / `>` parcourent les coups.
+Ces raccourcis restent actifs quand le plateau ou un bouton a le focus ; ils
+ne s’appliquent pas dans un formulaire ou un dialogue. Revoir une position ne
+modifie pas la partie et ne suspend pas la pendule.
+
+Contre le bot, sélectionner une pièce et sa destination pendant son tour prépare
+un prémouvement. Un seul coup peut être en attente : une nouvelle sélection le
+remplace. Il est joué après la réponse du moteur seulement s’il reste légal.
+La promotion d’un prémouvement se fait en dame ; les autres promotions restent
+accessibles en jouant normalement. Échap, un clic droit, le bouton « Annuler le
+prémouvement » ou la navigation dans l’historique annulent le coup prévu.
+Reconnexion, nouvelle partie, abandon et fin au temps l’effacent également.
+
+Glisser avec le bouton droit dessine une flèche ; un clic droit sur une case
+trace un cercle. Refaire le même dessin l’efface, et un clic gauche efface les
+repères. Les dessins fonctionnent en partie, en relecture et en analyse. Ils
+sont conservés pendant les mises à jour du moteur, puis effacés au changement
+de position. Ils ne changent ni les coups ni le PGN.
+
 ## Cadences et options du moteur
 
 Dans la préparation d’une partie contre le bot, « Donner une cadence différente

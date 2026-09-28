@@ -133,6 +133,40 @@ async function move(from, to, workspace = ".play-workspace") {
   }
   await delay(220);
 }
+async function drawArrow(from, to, workspace = ".play-workspace") {
+  await evaluate(
+    `document.querySelector(${JSON.stringify(workspace + " .cg-wrap")}).scrollIntoView({block:'center'})`,
+  );
+  await delay(100);
+  const points = await evaluate(
+    `(() => {const wrap=document.querySelector(${JSON.stringify(workspace + " .cg-wrap")}); const b=wrap.querySelector('cg-board').getBoundingClientRect(); const flipped=wrap.classList.contains('orientation-black'); return ${JSON.stringify([from, to])}.map(s=>{const f=s.charCodeAt(0)-97,r=Number(s[1])-1;return {x:b.x+((flipped?7-f:f)+.5)*b.width/8,y:b.y+((flipped?r:7-r)+.5)*b.height/8};});})()`,
+  );
+  await call("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    ...points[0],
+    button: "right",
+    buttons: 2,
+    clickCount: 1,
+  });
+  await call("Input.dispatchMouseEvent", {
+    type: "mouseMoved",
+    ...points[1],
+    button: "right",
+    buttons: 2,
+  });
+  await delay(100);
+  await call("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    ...points[1],
+    button: "right",
+    buttons: 0,
+    clickCount: 1,
+  });
+  await waitFor(
+    `document.querySelector(${JSON.stringify(workspace + " .cg-shapes line")})`,
+    "flèche dessinée au clic droit",
+  );
+}
 async function pressKey(key) {
   await call("Input.dispatchKeyEvent", { type: "keyDown", key });
   await call("Input.dispatchKeyEvent", { type: "keyUp", key });
@@ -257,10 +291,20 @@ try {
       deviceScaleFactor: 1,
       mobile: false,
     });
+    await evaluate(`window.originalPremoveSocket=window.WebSocket;window.WebSocket=class extends window.originalPremoveSocket {
+      addEventListener(type, listener, options) {
+        if(type==='message') return super.addEventListener(type, event => {
+          if(typeof event.data==='string' && event.data.startsWith('bestmove ')) setTimeout(()=>listener.call(this,event),1500);
+          else listener.call(this,event);
+        }, options);
+        return super.addEventListener(type,listener,options);
+      }
+    }`);
     await button("Jouer");
     await waitFor(
       `document.querySelector('.move-list tbody tr') && !document.querySelector('.status').textContent.includes('réfléchit')`,
       "premier coup du bot avec horloges différentes",
+      30000,
     );
     assert(
       await evaluate(
@@ -280,6 +324,22 @@ try {
       "nombre de fils appliqué",
     );
     await click('dialog [aria-label="Fermer"]');
+    await move("g8", "f6");
+    await move("f6", "g8");
+    await waitFor(
+      `document.querySelector('.play-workspace').textContent.includes('Prémouvement : f6')`,
+      "prémouvement en attente",
+    );
+    await waitFor(
+      `document.querySelector('.move-list').textContent.includes('Cg8')`,
+      "prémouvement joué après la réponse du bot",
+    );
+    assert(
+      await evaluate(
+        `!document.querySelector('.play-workspace').textContent.includes('Prémouvement :')`,
+      ),
+      "prémouvement consommé",
+    );
     await button("Abandonner");
     await button("Confirmer l’abandon");
     await button("Nouvelle partie");
@@ -407,6 +467,19 @@ try {
       90000,
     );
     await screenshot("00b-import-stockfish");
+    const reviewCursor = await evaluate(
+      `document.querySelector('.review-navigation span').textContent`,
+    );
+    await drawArrow("e2", "e4", ".learning-workspace");
+    await delay(300);
+    assert.equal(
+      await evaluate(
+        `document.querySelector('.review-navigation span').textContent`,
+      ),
+      reviewCursor,
+      "dessin sans changer la position analysée",
+    );
+    await screenshot("00b-analysis-arrow");
     await move("e7", "e5", ".learning-workspace");
     await move("g1", "f3", ".learning-workspace");
     await waitFor(
@@ -706,6 +779,9 @@ try {
         const played = await evaluate(
           `document.querySelector('.move-list').textContent`,
         );
+        await evaluate(
+          `document.querySelector('.play-workspace .cg-wrap').focus()`,
+        );
         await pressKey("<");
         assert(
           await evaluate(
@@ -725,11 +801,33 @@ try {
           played,
           "relecture sans modifier la partie",
         );
+        await drawArrow("e2", "e4");
+        await delay(300);
+        assert(
+          await evaluate(
+            `!!document.querySelector('.play-workspace .cg-shapes line')`,
+          ),
+          "dessin conservé en relecture pendant la partie",
+        );
+        assert.equal(
+          await evaluate(`document.querySelector('.move-list').textContent`),
+          played,
+          "le dessin ne joue aucun coup",
+        );
         assert(
           await evaluate(`!!document.querySelector('.clock.running')`),
           "la pendule continue",
         );
+        await evaluate(
+          `document.querySelector('.play-workspace [aria-label="Position suivante"]').focus()`,
+        );
         await pressKey(">");
+        assert(
+          await evaluate(
+            `!document.querySelector('.play-workspace .cg-shapes line')`,
+          ),
+          "dessins effacés au changement de position",
+        );
         await pressKey("ArrowRight");
         assert(
           await evaluate(`!document.querySelector('.replay-notice')`),

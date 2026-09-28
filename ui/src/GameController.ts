@@ -1,4 +1,4 @@
-import { Chess } from "chess.js";
+import { Chess, type Square } from "chess.js";
 import type { Key } from "@lichess-org/chessground/types";
 import { LocalGame, type Promotion } from "./game";
 import {
@@ -38,6 +38,7 @@ export class GameController {
   snapshot: SessionSnapshot | null = null;
   mode: "local" | "fake" | null = null;
   readonly humanSide: Side;
+  premove: { from: Key; to: Key; promotion?: Promotion } | null = null;
   private startRequested = false;
   private disposed = false;
   private resigned: Side | null = null;
@@ -123,6 +124,7 @@ export class GameController {
     this.resigned = this.mode ? this.humanSide : this.game.chess.turn();
     this.clock.pause();
     this.game.pending = null;
+    this.premove = null;
     ++this.generation;
     this.searching = false;
     const session = this.session;
@@ -133,6 +135,7 @@ export class GameController {
   }
   async dispose() {
     this.disposed = true;
+    this.premove = null;
     ++this.generation;
     this.clock.pause();
     const session = this.session;
@@ -157,6 +160,7 @@ export class GameController {
     if (!this.clock.flagged || this.timeResult) return;
     this.timeResult = `Temps écoulé · ${this.clock.flagged === "w" ? "Blancs" : "Noirs"}`;
     this.game.pending = null;
+    this.premove = null;
     ++this.generation;
     const session = this.session;
     this.session = undefined;
@@ -175,6 +179,64 @@ export class GameController {
   }
   private publish() {
     for (const listener of this.listeners) listener();
+  }
+
+  get canPremove() {
+    return (
+      !this.disposed &&
+      !this.finished &&
+      !!this.mode &&
+      !this.game.pending &&
+      this.game.chess.turn() !== this.humanSide &&
+      ["ready", "thinking", "stopping"].includes(this.snapshot?.state ?? "")
+    );
+  }
+  setPremove(from: Key, to: Key) {
+    if (
+      !this.canPremove ||
+      from === to ||
+      !/^[a-h][1-8]$/.test(from) ||
+      !/^[a-h][1-8]$/.test(to) ||
+      this.game.chess.get(from as Square)?.color !== this.humanSide
+    )
+      return false;
+    this.premove = {
+      from,
+      to,
+      ...(this.game.chess.get(from as Square)?.type === "p" &&
+      ["1", "8"].includes(to[1])
+        ? { promotion: "q" as const }
+        : {}),
+    };
+    this.publish();
+    return true;
+  }
+  cancelPremove() {
+    if (!this.premove) return;
+    this.premove = null;
+    this.publish();
+  }
+  private playPremove() {
+    const queued = this.premove;
+    this.premove = null;
+    if (!queued) return false;
+    this.tick();
+    if (this.finished) return false;
+    const move = this.game.chess
+      .moves({ verbose: true })
+      .find(
+        (move) =>
+          move.from === queued.from &&
+          move.to === queued.to &&
+          (!move.promotion || move.promotion === "q"),
+      );
+    // Le coup adverse peut capturer la pièce, barrer son trajet ou donner échec.
+    if (!move) return false;
+    const before = this.clock.capture();
+    this.game.chess.move(move);
+    this.clock.completeMove(move.color, this.game.chess.isGameOver());
+    this.recordMove(before, "Joueur local");
+    return true;
   }
 
   get canMove() {
@@ -224,6 +286,7 @@ export class GameController {
   async connect(mode: "local" | "fake", factory: EngineFactory) {
     this.tick();
     this.clock.pause();
+    this.premove = null;
     const generation = ++this.generation;
     const old = this.session;
     this.session = undefined;
@@ -259,6 +322,7 @@ export class GameController {
           if (generation !== this.generation) return;
           this.snapshot = snapshot;
           if (snapshot.state === "error") {
+            this.premove = null;
             this.game.pending = null;
             this.clock.pause();
             this.tick();
@@ -286,6 +350,7 @@ export class GameController {
   }
 
   private connectionError(message: string) {
+    this.premove = null;
     this.game.pending = null;
     this.clock.pause();
     this.tick();
@@ -326,6 +391,7 @@ export class GameController {
       .history({ verbose: true })
       .map((move) => move.from + move.to + (move.promotion ?? ""));
     this.searching = true;
+    let playedPremove = false;
     try {
       const prediction = this.predicted;
       this.predicted = null;
@@ -365,7 +431,8 @@ export class GameController {
       });
       this.clock.completeMove(move.color, this.game.chess.isGameOver());
       this.recordMove(before, this.snapshot?.name || "Moteur UCI");
-      this.startPonder(session);
+      playedPremove = this.playPremove();
+      if (!playedPremove) this.startPonder(session);
     } catch (error) {
       if (generation === this.generation)
         session.fail(
@@ -377,6 +444,7 @@ export class GameController {
       if (generation === this.generation) {
         this.searching = false;
         this.publish();
+        if (playedPremove) void this.requestEngineMove();
       }
     }
   }
@@ -539,6 +607,7 @@ export class GameController {
   }
 
   reset() {
+    this.premove = null;
     this.played = [];
     this.redos = [];
     this.date = new Date();
@@ -555,6 +624,7 @@ export class GameController {
   async disconnect() {
     this.tick();
     this.clock.pause();
+    this.premove = null;
     ++this.generation;
     const session = this.session;
     this.session = undefined;

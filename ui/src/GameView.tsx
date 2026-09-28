@@ -112,10 +112,25 @@ export default function GameView({
     ? new Chess(last?.after ?? moves[0].before)
     : game.chess;
   function navigate(index: number) {
+    controller.cancelPremove();
     if (controller.finished) setResultDismissed(true);
     setCursor(index >= moves.length ? null : Math.max(0, index));
   }
   useMoveKeys(!game.pending, selected, moves.length, navigate);
+  useEffect(() => {
+    const cancel = (event: KeyboardEvent) => {
+      if (
+        event.key === "Escape" &&
+        !document.querySelector("dialog[open]") &&
+        controller.premove
+      ) {
+        event.preventDefault();
+        controller.cancelPremove();
+      }
+    };
+    window.addEventListener("keydown", cancel);
+    return () => window.removeEventListener("keydown", cancel);
+  }, [controller]);
   const score = controller.snapshot?.analysis?.score ?? null;
   const evaluation = Boolean(controller.mode && showEvaluation && !browsing);
   const status = controller.finished
@@ -170,6 +185,17 @@ export default function GameView({
             destinations={
               !browsing && controller.canMove ? game.destinations() : new Map()
             }
+            movableColor={
+              controller.mode
+                ? controller.humanSide === "w"
+                  ? "white"
+                  : "black"
+                : undefined
+            }
+            premoveEnabled={!browsing && controller.canPremove}
+            premove={controller.premove}
+            onPremove={(from, to) => controller.setPremove(from, to)}
+            onCancelPremove={() => controller.cancelPremove()}
             onMove={
               browsing
                 ? undefined
@@ -221,6 +247,20 @@ export default function GameView({
           showDepth={showDepth && !browsing}
           color={orientation === "white" ? "w" : "b"}
         />
+        {controller.premove && !browsing && (
+          <div className="replay-notice" role="status">
+            <span>
+              Prémouvement : {controller.premove.from} → {controller.premove.to}
+              {controller.premove.promotion && " · promotion en dame"}
+            </span>
+            <button
+              className="text-button"
+              onClick={() => controller.cancelPremove()}
+            >
+              Annuler le prémouvement
+            </button>
+          </div>
+        )}
         {browsing && (
           <div className="replay-notice" role="status">
             <span>

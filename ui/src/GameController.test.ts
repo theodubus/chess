@@ -447,3 +447,97 @@ it("ne permet plus de jouer dans un contrôleur fermé", async () => {
   expect(controller.move("e2", "e4")).toBe(false);
   expect(controller.clock.runningColor).toBeNull();
 });
+
+it("joue un prémouvement légal après le bot et lance la recherche suivante", async () => {
+  const { controller, engine } = await setup();
+  controller.move("e2", "e4");
+  expect(controller.setPremove("g1", "f3")).toBe(true);
+  expect(controller.game.chess.history()).toEqual(["e4"]);
+  await vi.waitFor(() => expect(engine.commands.at(-1)).toMatch(/^go /));
+  expect(controller.game.chess.moves()).toContain("e5");
+  engine.emit("bestmove e7e5");
+  await vi.waitFor(() =>
+    expect(controller.game.chess.history()).toEqual(["e4", "e5", "Nf3"]),
+  );
+  expect(controller.premove).toBeNull();
+  expect(engine.commands).toContain("position startpos moves e2e4 e7e5 g1f3");
+  expect(controller.clock.budget()).toEqual({
+    wtime: 306000,
+    btime: 303000,
+    winc: 3000,
+    binc: 3000,
+  });
+});
+
+it("abandonne un prémouvement devenu illégal après un échec adverse", async () => {
+  const { controller, engine } = await setup();
+  controller.move("d2", "d4");
+  await reply(controller, engine, "e5");
+  controller.move("d4", "e5");
+  controller.setPremove("g1", "f3");
+  await vi.waitFor(() => expect(engine.commands.at(-1)).toMatch(/^go /));
+  expect(controller.game.chess.moves()).toContain("Bb4+");
+  engine.emit("bestmove f8b4");
+  await vi.waitFor(() =>
+    expect(controller.game.chess.history()).toHaveLength(4),
+  );
+  expect(controller.game.chess.isCheck()).toBe(true);
+  expect(controller.game.chess.moves()).not.toContain("Nf3");
+  expect(controller.premove).toBeNull();
+  expect(controller.canMove).toBe(true);
+});
+
+it("remplace ou annule un prémouvement sans reprendre un coup joué", async () => {
+  const { controller, engine } = await setup();
+  expect(controller.setPremove("g1", "f3")).toBe(false);
+  controller.move("e2", "e4");
+  expect(controller.setPremove("e7", "e5")).toBe(false);
+  controller.setPremove("g1", "f3");
+  controller.setPremove("d2", "d4");
+  expect(controller.premove).toEqual({ from: "d2", to: "d4" });
+  controller.cancelPremove();
+  await reply(controller, engine, "e5");
+  expect(controller.game.chess.history()).toEqual(["e4", "e5"]);
+});
+
+it.each(["resign", "reset", "disconnect"] as const)(
+  "efface le prémouvement lors de %s",
+  async (action) => {
+    const { controller } = await setup();
+    controller.move("e2", "e4");
+    controller.setPremove("g1", "f3");
+    await controller[action]();
+    expect(controller.premove).toBeNull();
+  },
+);
+
+it("refuse les prémouvements à deux joueurs", () => {
+  const controller = new GameController();
+  controller.move("e2", "e4");
+  expect(controller.setPremove("g1", "f3")).toBe(false);
+});
+
+it("promeut en dame un prémouvement légal sans bloquer sur un dialogue", async () => {
+  const { controller, engine } = await setup();
+  for (const san of ["a4", "h5", "a5", "h4", "a6", "h3"])
+    controller.game.chess.move(san);
+  controller.move("a6", "b7");
+  expect(controller.setPremove("b7", "a8")).toBe(true);
+  await vi.waitFor(() => expect(engine.commands.at(-1)).toMatch(/^go /));
+  expect(controller.game.chess.moves()).toContain("hxg2");
+  engine.emit("bestmove h3g2");
+  await vi.waitFor(() =>
+    expect(controller.game.chess.history()).toHaveLength(9),
+  );
+  expect(controller.game.chess.get("a8")).toEqual({ color: "w", type: "q" });
+  expect(controller.game.pending).toBeNull();
+});
+
+it("efface le prémouvement dès qu’une erreur moteur suspend la partie", async () => {
+  const { controller, engine } = await setup();
+  controller.move("e2", "e4");
+  controller.setPremove("g1", "f3");
+  engine.emit("info string invalid position");
+  expect(controller.snapshot?.state).toBe("error");
+  expect(controller.premove).toBeNull();
+});
