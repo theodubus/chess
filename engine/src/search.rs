@@ -5510,6 +5510,7 @@ mod nnue_tests {
             ..Limits::default()
         };
         let mut s = verifiee_par_un_reseau(21);
+        let mut noeuds = 0;
         for fen in [
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
             "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3",
@@ -5522,9 +5523,19 @@ mod nnue_tests {
             let position = Position::from_fen(fen).unwrap();
             let coup = s.go(&position, &limites, |_| {});
             assert!(coup.is_some_and(|mv| position.board().is_legal(mv)));
+            noeuds += s.nodes();
         }
+        // Deux bornes. Assez de vérifications pour que le test dise quelque
+        // chose — et pas plus que de nœuds, un nœud évaluant au plus une fois
+        // (stand pat ou futilité inverse). La seconde garde le compteur
+        // lui-même : décrémenté au lieu d'incrémenté, il déborde sans
+        // paniquer en profil release et passait « ≥ 1 000 » (crible du
+        // 26 sept. 2026, run 36210591242).
         let verifiees = s.checked_accumulators.as_ref().unwrap().get();
-        assert!(verifiees >= 1_000, "évaluations vérifiées : {verifiees}");
+        assert!(
+            (1_000..=noeuds).contains(&verifiees),
+            "évaluations vérifiées : {verifiees} pour {noeuds} nœuds"
+        );
     }
 
     #[test]
@@ -5543,7 +5554,8 @@ mod nnue_tests {
         s.accumulators[2] = Accumulators::default();
         let score = s.negamax(&b, 3, 1, -100, 100, &mut ardoise());
         assert!(score.abs() < MATE_THRESHOLD);
-        assert!(s.checked_accumulators.as_ref().unwrap().get() > 0);
+        let verifiees = s.checked_accumulators.as_ref().unwrap().get();
+        assert!((1..=s.nodes()).contains(&verifiees), "{verifiees}");
     }
 
     #[test]

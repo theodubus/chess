@@ -674,6 +674,12 @@ une mesure, pas une préférence.
   partout — zéro coup nul sur 54 nœuds candidats. *Ce sont les paramètres
   d'un test qui décident des chemins qu'il emprunte* ; seule une faute
   injectée par chemin l'a montré.
+  <br>**Et le compteur lui-même est du code, que son test doit borner des
+  DEUX côtés.** Le crible du même jour : décrémenté au lieu d'incrémenté, il
+  passait « au moins mille », parce que le profil de mutation hérite de
+  release — un `u64` y déborde vers 2^64 sans paniquer. Une borne basse
+  seule ne voit pas un compteur faux ; la borne haute vient d'une grandeur
+  indépendante — ici les nœuds, une évaluation au plus par nœud.
 - **Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué ne garde
   rien.** La première version de `engine/tests/bench_reference.rs` ne lisait
   que `CLAUDE.md`. Elle a été écrite alors que `README.md` portait déjà
