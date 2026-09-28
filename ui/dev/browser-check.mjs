@@ -558,7 +558,7 @@ try {
     await fillPgn(promotionGame.pgn());
     await button("Importer et analyser");
     await waitFor(
-      `document.querySelector('.review-progress')?.textContent.includes('Analyse terminée')`,
+      `document.querySelector('.review-navigation span')?.textContent === '0 / 1' && document.querySelector('.review-progress')?.textContent.includes('Analyse terminée')`,
       "analyse PGN de promotion",
       90000,
     );
