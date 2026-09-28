@@ -32,15 +32,31 @@ const options = {
 beforeEach(async () => {
   // Les serveurs temporaires ne doivent pas invalider le cache du front ouvert.
   options.cacheDir = await mkdtemp(join(tmpdir(), "chess-vite-test-"));
-  const reservation = createServer();
-  reservation.listen(0, "127.0.0.1");
-  await once(reservation, "listening");
-  options.port = reservation.address().port;
-  await new Promise((resolve) => reservation.close(resolve));
 });
 
+async function startOnAvailablePort() {
+  // Entre la réservation et Vite, le système peut réattribuer ce port à un
+  // autre serveur du test. Seule cette collision autorise une nouvelle tentative.
+  for (let attempt = 0; ; attempt++) {
+    const reservation = createServer();
+    reservation.listen(0, "127.0.0.1");
+    await once(reservation, "listening");
+    const port = reservation.address().port;
+    await new Promise((resolve) => reservation.close(resolve));
+    try {
+      return await startApplication({ ...options, port });
+    } catch (error) {
+      if (
+        attempt >= 4 ||
+        !error.message.includes(`Le port ${port} est déjà occupé`)
+      )
+        throw error;
+    }
+  }
+}
+
 it("sert le front et le moteur sur la même adresse, sur un port différent de 5173", async () => {
-  app = await startApplication(options);
+  app = await startOnAvailablePort();
   expect(await (await fetch(app.url)).text()).toContain('<div id="root">');
   vi.stubGlobal("window", { location: { href: app.url } });
   vi.stubGlobal(
@@ -113,6 +129,6 @@ it("signale un port occupé et nettoie le pont au lieu de changer silencieusemen
     await new Promise((resolve) => occupied.close(resolve));
   }
   // Une tentative ratée n'empêche pas le lancement suivant.
-  app = await startApplication(options);
+  app = await startOnAvailablePort();
   expect((await fetch(`${app.url}/engine/engines`)).status).toBe(200);
 }, 20000);
