@@ -3271,6 +3271,30 @@ moment de la lui donner, par ce qui se lit au source :
    le réseau et le mesurer — se fait ensuite ici. Un `ÉCHEC — …` à n'importe
    quel temps arrête tout : le message suffit à le diagnostiquer.
 
+**Sur Ubuntu — la machine de Théo, dit-il le 28 sept. : vérifier avant
+d'installer.** Un bloc à coller, dont chaque ligne répond à une question :
+
+```sh
+nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader
+nvidia-smi | grep -o "CUDA Version: [0-9.]*"
+command -v nvcc && nvcc --version | tail -n 2
+ls -d /usr/local/cuda* ; echo "CUDA_PATH=${CUDA_PATH:-(vide)}"
+ls ${CUDA_PATH:-/usr/local/cuda}/lib64/lib{cudart,nvrtc,cublas}.so
+command -v cargo rustup cc git unzip ; cargo --version
+```
+
+Trois pièges, chacun vu dans ce qu'on a lu : **un Rust installé par `apt`**
+(`cargo` sous `/usr/bin`) ignore `rust-toolchain.toml` — seul `rustup` le
+lit — et il est plus ancien que l'édition 2024 du dépôt : passer par
+`rustup`, puis `rustup toolchain install 1.98.1`. **`CUDA_PATH`** vaut
+`/usr/local/cuda` pour le toolkit des dépôts de NVIDIA (paquet
+`cuda-toolkit`), et doit contenir `lib64/libcudart.so`, `libnvrtc.so` et
+`libcublas.so` ; un toolkit du paquet Ubuntu `nvidia-cuda-toolkit` range
+ailleurs, cas non vérifié ici. **La version du toolkit** (`nvcc`) ne doit pas
+dépasser la « CUDA Version » que `nvidia-smi` prête au pilote — règle sûre,
+sans en éprouver une plus lâche. Et `unzip` n'ouvre qu'une archive par appel
+quand le shell en développe plusieurs : une boucle.
+
 **Le coût d'un nœud avec réseau — attendu écrit AVANT de mesurer.** Un réseau
 aléatoire aux évaluations de partie, les six positions du banc, profondeur
 fixe, un processus par mesure, cinq paires alternées ; on compare les
