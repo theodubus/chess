@@ -1,0 +1,48 @@
+name: Entraînement NNUE — compilation
+
+# Le programme d'entraînement (`tools/nnue-train`) a son propre espace de
+# travail : la CI du moteur ne le compile pas, et il ne tourne que sur la
+# machine d'entraînement, la seule qui ait un GPU. Sans ce contrôle, un
+# changement de l'API de `engine/src/nnue.rs` le casserait en silence, et on
+# ne l'apprendrait que là-bas — le jour de l'entraînement. Il compile ici sans
+# CUDA, contre le runtime factice de bullet : c'est tout ce qu'un runner sans
+# GPU peut vérifier, et c'est ce qui casse quand le moteur bouge.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "engine/src/nnue.rs"
+      - "engine/Cargo.toml"
+      - "tools/nnue-train/**"
+      - "rust-toolchain.toml"
+      - ".github/workflows/nnue-train.yml"
+  pull_request:
+    paths:
+      - "engine/src/nnue.rs"
+      - "engine/Cargo.toml"
+      - "tools/nnue-train/**"
+      - "rust-toolchain.toml"
+      - ".github/workflows/nnue-train.yml"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  compilation:
+    name: Compilation sans GPU
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: rustup show active-toolchain
+
+      # `--locked` : le Cargo.lock versionné fait foi, bullet compris — une
+      # dépendance qui bougerait sans qu'on le décide changerait
+      # l'entraînement sans laisser de trace.
+      - name: Compilation
+        working-directory: tools/nnue-train
+        run: cargo build --release --locked

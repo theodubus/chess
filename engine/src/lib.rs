@@ -23,6 +23,7 @@
 
 pub mod bench;
 pub mod eval;
+pub mod nnue;
 pub mod perft;
 pub mod position;
 pub mod search;

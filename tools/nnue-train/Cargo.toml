@@ -1,0 +1,32 @@
+[package]
+name        = "shallowred-nnue-train"
+description = "Entraînement du réseau NNUE de ShallowRed, par bullet (B4, A21)"
+version     = "0.1.0"
+edition     = "2024"
+license     = "AGPL-3.0-or-later"
+publish     = false
+
+# SON PROPRE espace de travail, et c'est délibéré. bullet est lourd à
+# compiler, n'entraîne que sur GPU, et la CI du dépôt n'a rien à en faire :
+# ce programme ne tourne que sur la machine d'entraînement. Dans l'espace de
+# travail de la racine, chaque push le recompilerait pour rien.
+[workspace]
+
+[features]
+# Le moteur de calcul de bullet. Sans aucune de ces trois fonctionnalités, il
+# compile contre un runtime factice qui refuse toute exécution — utile pour
+# vérifier que ce programme compile, rien d'autre.
+cuda  = ["bullet_lib/cuda"]
+rocm  = ["bullet_lib/rocm"]
+metal = ["bullet_lib/metal"]
+
+[dependencies]
+# L'entraîneur, au commit dont le moteur a lu le source : les entrées,
+# le format du fichier et l'inférence de `engine/src/nnue.rs` sont ceux de
+# ce commit-là. En changer demande de relire le source, pas de monter la
+# version.
+bullet_lib = { git = "https://github.com/jw1912/bullet", rev = "10e7e82ee2f853c13a96962a209e1ac9e3855c7e" }
+# Le moteur lui-même : l'architecture vient de SES constantes, et le réseau
+# entraîné est rechargé par SON chargeur, puis confronté à l'entraîneur.
+shallowred = { path = "../../engine" }
+cozy-chess = "0.3.4"

@@ -110,7 +110,9 @@ commandes** : ce qui n'est pas listé n'existe pas.
 
 *Revérifié le 24 sept. 2026 : le ponder (23 sept.) et `Threads` (24 sept.)
 sont arrivés depuis la première version de cette section, qui disait « une
-seule option » et « ni `ponder` ».*
+seule option » et « ni `ponder` ». Revérifié le 26 sept. 2026 : `EvalFile`
+est arrivé (NNUE, A21) — et le titre ne compte plus les options, un compteur
+en prose naissant périmé.*
 
 **Commandes acceptées** — `uci`, `isready`, `ucinewgame`, `setoption`,
 `position`, `go`, `stop`, `ponderhit`, `quit`. Une commande inconnue est
@@ -119,12 +121,13 @@ ignorée sans casser la session.
 **`go` accepte** — `wtime`, `btime`, `winc`, `binc`, `movestogo`, `movetime`,
 `depth`, `nodes`, `infinite`, `ponder`, et `perft <n>` pour le diagnostic.
 
-**Trois options** :
+**Les options** :
 
 ```
 option name Hash type spin default <n> min 1 max 4096
 option name Ponder type check default false
 option name Threads type spin default 1 min 1 max 1024
+option name EvalFile type string default <empty>
 ```
 
 - `Hash` : la table de transposition, en mégaoctets.
@@ -134,6 +137,11 @@ option name Threads type spin default 1 min 1 max 1024
   jamais `bestmove` avant `ponderhit` ou `stop`**, même s'il a fini.
 - `Threads` : le nombre de fils de recherche (Lazy SMP). Un par défaut ;
   c'est l'interface qui sait combien de cœurs elle peut donner.
+- `EvalFile` : le chemin d'un réseau NNUE, au format qu'écrit l'entraîneur
+  bullet. Vide par défaut (`<empty>`) : l'évaluation faite main. Un fichier
+  refusé laisse l'évaluation telle qu'elle était et le dit par une ligne
+  `info string` ; un fichier accepté aussi. **Aucun réseau entraîné n'est
+  encore livré** — l'option existe pour le jour où il le sera.
 
 **Il n'y a PAS de `MultiPV`.** Ne pas construire d'interface qui le suppose.
 Si l'analyse en a besoin un jour, c'est une demande à formuler au moteur, pas

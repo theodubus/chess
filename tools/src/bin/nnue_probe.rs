@@ -11,7 +11,6 @@
 //! n'a rien à voir avec celle d'une vraie recherche.
 #![expect(
     clippy::unwrap_used,
-    clippy::expect_used,
     reason = "outil de mesure : une entrée fausse doit échouer bruyamment"
 )]
 
@@ -19,166 +18,26 @@ use std::hint::black_box;
 use std::time::Instant;
 
 use cozy_chess::{Board, Color, Move, Piece, Square};
+use shallowred::nnue::{BLANK, Change, changes};
 
-/// Une modification élémentaire de l'accumulateur : une pièce apparaît ou
-/// disparaît d'une case. NNUE n'a besoin de rien d'autre — l'accumulateur est
-/// une somme de contributions par (pièce, couleur, case).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Change {
-    /// `true` si la pièce apparaît, `false` si elle disparaît.
-    pub added: bool,
-    /// Le type de pièce concerné — après promotion le cas échéant.
-    pub piece: Piece,
-    /// Le camp propriétaire de la pièce.
-    pub color: Color,
-    /// La case où la pièce apparaît ou disparaît.
-    pub square: Square,
+/// La dérivation vit dans le moteur depuis l'inférence NNUE (A21) —
+/// `shallowred::nnue::changes`, seule copie : ce binaire la confronte à la
+/// vérité terrain et en mesure le coût, sur le code même que le moteur joue.
+/// Recopiée ici, elle aurait pu diverger sans que rien ne le signale.
+fn accumulator_delta(board: &Board, mv: Move, out: &mut [Change; 4]) -> usize {
+    changes(board, mv, out)
 }
 
-impl Change {
-    /// Clé de tri : les types de cozy-chess n'implémentent pas `Ord`, et l'on
-    /// ne compare que pour rendre deux listes comparables.
-    fn key(self) -> (bool, usize, usize, usize) {
-        (
-            self.added,
-            self.piece as usize,
-            self.color as usize,
-            self.square as usize,
-        )
-    }
+/// Clé de tri : les types de cozy-chess n'implémentent pas `Ord`, et l'on ne
+/// compare que pour rendre deux listes comparables.
+fn key(change: &Change) -> (bool, usize, usize, usize) {
+    (
+        change.added,
+        change.piece as usize,
+        change.color as usize,
+        change.square as usize,
+    )
 }
-
-/// Dérive du plateau parent et du coup les modifications de l'accumulateur,
-/// SANS jouer le coup et sans rien demander à `play_unchecked`.
-///
-/// C'est le point que B4 devait trancher : tout est dérivable de l'extérieur.
-/// Au plus quatre modifications — le roque en fait quatre, la promotion avec
-/// capture trois.
-pub fn accumulator_delta(board: &Board, mv: Move, out: &mut [Change; 4]) -> usize {
-    let us = board.side_to_move();
-    let them = !us;
-    let mut n = 0usize;
-    let mut push = |c: Change, n: &mut usize| {
-        out[*n] = c;
-        *n += 1;
-    };
-
-    let moving = board.piece_on(mv.from).expect("case de départ vide");
-
-    // Roque : cozy-chess emploie la notation roi-prend-tour, donc la case
-    // d'arrivée porte NOTRE tour. Roi et tour se déplacent tous les deux, vers
-    // des cases fixées par le côté du roque et non par le coup.
-    if moving == Piece::King && board.colors(us).has(mv.to) {
-        let rank = mv.from.rank();
-        let short = mv.to.file() > mv.from.file();
-        let (king_to, rook_to) = if short {
-            (
-                Square::new(cozy_chess::File::G, rank),
-                Square::new(cozy_chess::File::F, rank),
-            )
-        } else {
-            (
-                Square::new(cozy_chess::File::C, rank),
-                Square::new(cozy_chess::File::D, rank),
-            )
-        };
-        push(
-            Change {
-                added: false,
-                piece: Piece::King,
-                color: us,
-                square: mv.from,
-            },
-            &mut n,
-        );
-        push(
-            Change {
-                added: false,
-                piece: Piece::Rook,
-                color: us,
-                square: mv.to,
-            },
-            &mut n,
-        );
-        push(
-            Change {
-                added: true,
-                piece: Piece::King,
-                color: us,
-                square: king_to,
-            },
-            &mut n,
-        );
-        push(
-            Change {
-                added: true,
-                piece: Piece::Rook,
-                color: us,
-                square: rook_to,
-            },
-            &mut n,
-        );
-        return n;
-    }
-
-    // La pièce quitte sa case de départ.
-    push(
-        Change {
-            added: false,
-            piece: moving,
-            color: us,
-            square: mv.from,
-        },
-        &mut n,
-    );
-
-    // Capture ordinaire : la case d'arrivée porte une pièce adverse.
-    if let Some(taken) = board.piece_on(mv.to) {
-        push(
-            Change {
-                added: false,
-                piece: taken,
-                color: them,
-                square: mv.to,
-            },
-            &mut n,
-        );
-    } else if moving == Piece::Pawn && mv.from.file() != mv.to.file() {
-        // Prise en passant : la case d'arrivée est vide, le pion capturé se
-        // trouve sur la rangée de départ du pion qui capture.
-        let captured = Square::new(mv.to.file(), mv.from.rank());
-        push(
-            Change {
-                added: false,
-                piece: Piece::Pawn,
-                color: them,
-                square: captured,
-            },
-            &mut n,
-        );
-    }
-
-    // La pièce arrive — promue le cas échéant.
-    push(
-        Change {
-            added: true,
-            piece: mv.promotion.unwrap_or(moving),
-            color: us,
-            square: mv.to,
-        },
-        &mut n,
-    );
-
-    n
-}
-
-/// Valeur de remplissage : jamais lue au-delà du compte rendu.
-const BLANK: Change = Change {
-    added: false,
-    piece: Piece::Pawn,
-    color: Color::White,
-    square: Square::A1,
-};
 
 /// Vérité terrain : la différence réelle entre deux plateaux, lue case par case.
 fn true_delta(before: &Board, after: &Board) -> Vec<Change> {
@@ -378,8 +237,8 @@ fn verify(
         let n = accumulator_delta(board, mv, &mut buf);
         let mut derived = buf[..n].to_vec();
         let mut truth = true_delta(board, &child);
-        derived.sort_by_key(|c| c.key());
-        truth.sort_by_key(|c| c.key());
+        derived.sort_by_key(key);
+        truth.sort_by_key(key);
         assert_eq!(derived, truth, "delta faux sur {} depuis {board}", mv);
         *checked += 1;
 
