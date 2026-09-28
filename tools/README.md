@@ -742,6 +742,7 @@ dernière relève est faite.
 | **A21 — le débit de génération sur runner** | 36166785450 | le générateur de `main` à `0eb1e9b`, 5 000 nœuds, graine « auto », un fil par processeur logique | un job court, 20 minutes | **RELEVÉ** — fini à 17 h 43 | **1 713 positions par seconde, dans l'attendu** (1 200 à 1 800, écrit avant) : 17 976 parties, 2 055 456 positions, 62,2 % gardées par le filtre par défaut ; artefact de 7,4 Mo, expire le 24 déc. **Il ne se relit pas d'ici** : le proxy de sortie refuse le stockage des artefacts. Décide quatre jobs (section A21) |
 | **balayage de mutation après la PR #89** — l'inférence NNUE fusionnée | 36380392695 | `main` à `24fb6ab` | un job par fichier, puis `Verdict` | **RELEVÉ à 07 h 15, VERT** — fini à 06 h 59, `search.rs` le plus long, 113 min : 611 mutants, 497 attrapés, 46 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants du crible un pour un, aux mêmes lignes, moins le compteur des tests — **attrapé sur runner aussi** : il ne figure ni parmi les lignes `MISSED` ni parmi les `TIMEOUT` du journal. `nnue.rs` **1**, le même, et ses comptes identiques au crible (88 attrapés, 2 expirés, 7 inviables) ; `uci.rs` **0** ; tous les fichiers à leur plafond, total **140**, aucune issue. Les expirés de `search.rs`, 46 contre 45 au crible pour les mêmes 497 attrapés : un mutant attrapé au crible expire ici — la charge du runner, non prédite, comme écrit. — *Prédiction, écrite avant* : `search.rs` **39** — les 39 d'avant l'inférence, un pour un, aux lignes où le crible les a trouvés ; le compteur des tests tué par sa borne haute, comme re-mesuré localement ; aucun survivant dans l'inférence. `nnue.rs` **1**, le même survivant équivalent ; `uci.rs` **0** ; les autres fichiers à leur plafond. Total **140**. Le code moteur de `main` est celui du candidat criblé plus le seul module de tests touché (`git diff cc8e105 24fb6ab -- engine/` ne montre que `nnue_tests`). Les expirés ne se prédisent pas : ils suivent la charge du runner. Un écart dirait que la borne haute ne tient pas sur runner, ou qu'un mutant expiré au crible survit ici |
 | **A21, étape 2 — le crible de mutation du candidat** | 36210591242 | `cc8e105` : `nnue.rs` neuf, `search.rs` et `uci.rs` touchés — et les autres fichiers | un job par fichier, puis `Verdict` ; entrée `commit`, donc aucune issue | **RELEVÉ le 28 sept. — verdict ROUGE, d'un survivant** : fini le 26 à 04 h 01, `search.rs` le plus long, 115 min — 611 mutants, 497 attrapés, 29 inviables, 45 expirés | **La prédiction tient, sauf sur une ligne.** `nnue.rs` **1** sur 98, le survivant prédit, et c'est le plafond mesuré ; `uci.rs` **0** ; les autres fichiers à leur plafond. `search.rs` **40** : les 39 de `main` un pour un, vérifiés sur le texte des lignes, et un de plus, **hors de l'inférence** — le compteur `#[cfg(test)]` de `static_eval`, `+ 1` en `- 1`. Le profil `mutants` hérite de release, sans contrôle de débordement : décrémenté, le compteur déborde vers 2^64 et passait « au moins 1 000 vérifications ». **Corrigé par le test, pas par le plafond** : borné aussi par le haut, au plus une évaluation vérifiée par nœud. Re-mesuré localement sur les cinq mutants de `static_eval` : quatre attrapés, un expiré, aucun survivant — le compteur décrémenté s'y lit « 2^64 − 5 292 évaluations vérifiées pour 6 000 nœuds ». Total 141 contre 140 prédits ; le balayage qui suit la fusion doit rendre `search.rs` **39**. — *Prédiction, écrite avant* : `nnue.rs` **1** sur 98 mutants — le `>` du côté du roque en `>=`, équivalent, roi et tour n'étant jamais sur la même colonne ; `search.rs` **39**, les mêmes survivants, aucun dans le code neuf ; `uci.rs` **0** ; les autres à leur plafond ; total **140**. Les expirés ne se prédisent pas : ils suivent la charge du runner. |
+| **A21, étape 4 — le réseau embarqué contre la faite main** | **36485510245, 36485513513** | `e944248` → `bfebbd8`, `8+0,08`, graine « auto » | 2 × 1 000, fastchess | **EN VOL** — lancés le 28 sept. à 21 h 21 ; ~2 h chacun au débit de C27 (7,25 s par partie), fin vers 23 h 30 | *Critère, écrit avant* (section A21, étape 4) : borne basse commune au-dessus de zéro → le réseau devient l'évaluation par défaut, révocation de la révocation ; intervalle contenant zéro → pas de fusion, diagnostic par l'échelle, second tour ; borne haute sous zéro → régression, même diagnostic. Zéro perte au temps et zéro coup illégal, sinon le match ne compte pas. *Attendu, écrit avant* : +30 à +150, confiance faible |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
 | **balayage de mutation après la PR #83** — A20 fusionné | **36145534414** | `main` à `d23d1b5` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 40, VERT** — `search.rs` le plus long, 71 min : 461 attrapés, 42 expirés | **La prédiction tient, exactement — jusqu'aux expirés** : `search.rs` **39**, les mêmes survivants que le crible au candidat, un pour un, aux mêmes lignes ; et le tableau entier du verdict est celui du crible, colonne par colonne — survivants, attrapés ET expirés, pour les neuf fichiers. Total **139**, aucune issue. *Le crible par l'entrée `commit` et le balayage de `main` voient donc la même chose.* — *Prédiction, écrite avant* : `search.rs` **39**, au plafond, et les MÊMES survivants que le crible au candidat (36114952595), un pour un, aux mêmes lignes — le code moteur de `main` est celui du candidat octet pour octet (`git diff 54e6c60 d23d1b5 -- engine/` est vide) et le crible a balayé tous les fichiers ; seul le compte d'expirés peut bouger avec la charge du runner, et il ne peut que faire baisser celui des survivants. Tous les autres fichiers à leur plafond, total **139**. Un écart, quel qu'il soit, dirait que le crible et le balayage ne voient pas la même chose |
 | **balayage de mutation après la PR #81** — C25 fusionné | 36073858328 | `main` à `04bf6f8` | un job par fichier, puis `Verdict` | **RELEVÉ à 01 h 10, VERT** — `search.rs` le plus long, 90 min : 526 mutants, 410 attrapés, 28 inviables, 49 expirés | **La prédiction tient, exactement** : `search.rs` **39**, les deux survivants d'`iterate` que le crible au candidat avait trouvés parmi eux, et tous les autres fichiers à leur plafond, total **139**. Aucune issue. — *Prédiction, écrite avant* : `search.rs` **39**, au plafond — le crible au candidat ne trouvait que les deux survivants anciens, et C25 ne déplace aucun arbre à profondeur fixe, donc aucun test de nœuds ne voit autrement le reste du fichier ; des expirés en plus, `set_deadlines` vidé et `deadlines_ms` à `None`. Tous les autres fichiers à leur plafond, total 139 |
@@ -3146,9 +3147,10 @@ d'artefacts visent les dépôts privés.
    sur un réseau aléatoire contre un calcul complet de référence —
    **écrite le 26 sept.**, son crible de mutation relevé le 28, voir
    ci-dessous ;
-3. l'entraînement, sur la carte de Théo — **préparé le 26 sept.**, voir
-   ci-dessous : le programme et la procédure attendent sa machine ;
-4. le SPRT, à `8+0,08`.
+3. l'entraînement, sur la carte de Théo — **préparé le 26 sept., fait le
+   28** : 11 min 53 s, le critère tenu (écart médian 7, maximal 23) ;
+4. le réseau embarqué et sa mesure à `8+0,08` — attendu et critère écrits
+   avant, voir ci-dessous.
 
 #### Étape 2 — l'inférence dans le moteur, écrite le 26 sept. 2026
 
@@ -3347,6 +3349,90 @@ que coûte l'option ne se voient pas.
 laisse aucun ; le compteur de ses tests en laissait un, tué avant la fusion
 par une borne haute (`.github/mutation-baseline.txt`, ligne de `search.rs`
 du 26 sept.).
+
+#### Étape 3 — RELEVÉE le 28 sept. 2026 : le réseau est celui qu'a entraîné bullet
+
+Sur la carte de Théo — RTX 3050 pour portable, 4 Go, pilote 595.91.07 qui
+plafonne à CUDA 13.2, un toolkit 13.2 installé à côté du 13.4 (paragraphe
+Ubuntu ci-dessus). Le réseau, sa courbe de perte et la sortie complète sont
+dans `reseaux/` (commit `5d0e5d7`, de Théo) :
+
+- **les données, enfin relues** : seize fichiers jusqu'au dernier octet,
+  **1 098 403 parties et 125 098 300 positions — exactement les résumés des
+  jobs** ; la relecture promise depuis le 26 sept. est faite ;
+- **l'entraînement** : 40 superlots de 100 007 936 positions en **11 min 53 s**,
+  9 à 10 millions de positions par seconde ; 714 s en tout, relecture et
+  confrontation comprises ;
+- **la courbe** (perte moyenne par superlot) : 0,0486 au premier, 0,0462 au
+  dixième, **0,0460 du vingtième au quarantième — elle plafonne à
+  mi-parcours**. <span>Inférence, confiance faible</span> : ce sont désormais
+  les 128 unités ou les données qui limitent, pas le nombre de superlots ;
+  les séparer demanderait un second entraînement ;
+- **la confrontation** : écart médian **7**, maximal **23** — critère écrit
+  avant, 15 et 50 : `RÉSEAU PRÊT`. Rechargé ici par le moteur de `main`
+  (`EvalFile`), il rend les mêmes valeurs à l'unité : +26 en position
+  initiale, −92 après 1.e4.
+
+**Décision utilisateur** — Théo, 28 sept. : « *Si plus tard pour vraiment
+pousser la perf on a besoin de faire tourner plus on pourra (si c'est
+vraiment pertinent de le faire)* ». D'autres entraînements sur sa carte
+restent ouverts, sur une raison mesurée.
+
+**L'échelle, mesurée avant de mesurer l'Elo** — sur les douze positions de
+la confrontation, réseau et faite main parlent la même langue quand la
+position est équilibrée (quelques dizaines de centièmes, de signe parfois
+contraire), et **le réseau dit 2,6 à 5,8 fois plus quand elle est décidée** :
+−1 726 contre −598 (une tour de moins), −3 004 contre −1 173 (une dame de
+plus), +521 contre +90 (roi et pion contre roi). C'est l'échelle d'une
+probabilité de gain étirée par l'échelle 400, pas celle du matériel. Or les
+marges de la recherche ont été réglées sur la faite main : la futilité
+inverse (`RFP_MARGIN`, 100 par pli), la fenêtre d'aspiration (25), et
+surtout l'**élagage delta**, qui ajoute à un stand pat du réseau le gain
+d'une capture estimé par les valeurs de la faite main.
+
+#### Étape 4 — le réseau embarqué, et sa mesure : ce qui est écrit AVANT de mesurer
+
+**Le changement** : le réseau entre dans le binaire (`include_bytes!`) et
+devient l'évaluation par défaut **de la couche UCI** — `EvalFile` vaut
+`<embedded>` par défaut, `<none>` rend la faite main, un chemin charge un
+fichier. `Search::new` garde la faite main : le banc et sa référence, et les
+tests de recherche, n'en dépendent pas. Un test rejoue à chaque build la
+confrontation de l'étape 3 — les douze valeurs de l'entraîneur relevées dans
+`reseaux/`, le même critère, et les valeurs du moteur à l'unité.
+
+**Attendu** — <span>Inférence, confiance faible</span> : **+30 à +150 Elo à
+`8+0,08`** contre `main`. Pour : un réseau appris sur ses propres parties
+remplace des termes aux valeurs conventionnelles, jamais réglés ; son nœud
+coûte 0,73 à 0,87 fois celui de la faite main. Contre : des étiquettes
+données par sa propre recherche à 5 000 nœuds, et des marges réglées sur une
+autre échelle (ci-dessus). **Un effet sous l'attendu, ou négatif, se
+diagnostique d'abord par l'échelle**, mesurée avant de toucher au réseau :
+combien de coupes de l'élagage delta et de la futilité inverse le réseau
+déplace, en partie.
+
+**Critère, écrit avant** : deux jobs de **1 000 parties** à `8+0,08`,
+fastchess, graine « auto » chacun, le candidat — son commit, révoqué aussitôt
+— contre son parent ; mis en commun par `tools/mettre-en-commun.sh`, qui
+refuse deux matchs contradictoires. Zéro perte au temps, zéro coup illégal,
+sinon le match ne compte pas.
+- **borne basse de l'intervalle à 95 % au-dessus de zéro** : gain démontré,
+  le réseau devient l'évaluation par défaut ;
+- **intervalle contenant zéro** : pas de fusion sur cette mesure — c'est
+  l'évaluation entière qu'on remplace, pas un correctif de règle ; le
+  diagnostic par l'échelle, puis un second tour ;
+- **borne haute sous zéro** : régression, pas de fusion ; le même diagnostic.
+
+**Puissance, dite d'avance** : 2 000 parties donnent environ ± 11 Elo à 95 %
+(5 760 en donnaient ± 6,2 pour C24). Un effet de moins d'une dizaine d'Elo
+ne se distinguera pas de zéro, et c'est accepté : l'attendu est au-dessus.
+
+**Lancé le 28 sept. 2026 à 21 h 21 UTC** : runs **36485510245** et
+**36485513513**, le candidat `e944248` — révoqué aussitôt par `1a6c912`, sa
+copie dans `tools/attic/a21-reseau-embarque.patch` — contre son parent
+`bfebbd8`, dont l'`EvalFile` vaut `<empty>` : l'évaluation faite main.
+`match.yml` ne règle aucune `EvalFile`, donc chaque moteur joue avec son
+défaut, et c'est exactement la comparaison visée. Le banc n'a pas bougé :
+`Search::new` évalue toujours à la main.
 
 ### C27 — une borne de mat hors plage stockée dans la table — VERDICT, 25 sept. 2026 : −3,56 ± 5,97 Elo à `8+0,08`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
 
