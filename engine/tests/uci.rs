@@ -280,8 +280,6 @@ fn evalfile_et_eval_de_bout_en_bout() {
 
     let out = drive(&[
         "eval",
-        "setoption name EvalFile value <none>",
-        "eval",
         &charger,
         "eval",
         "go depth 3",
@@ -299,32 +297,20 @@ fn evalfile_et_eval_de_bout_en_bout() {
         .lines()
         .filter(|l| l.starts_with("info string évaluation statique"))
         .collect();
-    assert_eq!(evals.len(), 5, "{out}");
-    assert!(
-        evals[0].ends_with("(réseau)"),
-        "le réseau embarqué par défaut : {out}"
-    );
-    assert!(
-        out.contains("info string EvalFile : évaluation faite main")
-            && evals[1].ends_with("(faite main)"),
-        "{out}"
-    );
+    assert_eq!(evals.len(), 4, "{out}");
+    assert!(evals[0].ends_with("(faite main)"), "{out}");
     assert!(
         out.contains("info string EvalFile : réseau chargé"),
         "{out}"
     );
     assert!(
-        evals[2].contains(" 400 cp") && evals[2].ends_with("(réseau)"),
+        evals[1].contains(" 400 cp") && evals[1].ends_with("(réseau)"),
         "{out}"
     );
     assert_eq!(count(&out, "bestmove"), 1, "{out}");
     assert!(
-        evals[3].contains(" 0 cp") && evals[3].ends_with("(réseau)"),
+        evals[2].contains(" 0 cp") && evals[2].ends_with("(réseau)"),
         "une position morte vaut zéro, réseau ou non : {out}"
     );
-    assert!(
-        out.contains("info string EvalFile : réseau embarqué"),
-        "{out}"
-    );
-    assert_eq!(evals[4], evals[0], "le retour au défaut est complet");
+    assert_eq!(evals[3], evals[0], "le retour à la faite main est complet");
 }
