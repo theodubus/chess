@@ -1,4 +1,4 @@
-import { Chess, type Square } from "chess.js";
+import { Chess, DEFAULT_POSITION, type Square } from "chess.js";
 import type { Key } from "@lichess-org/chessground/types";
 import { LocalGame, type Promotion } from "./game";
 import {
@@ -32,7 +32,7 @@ export type EngineFactory = (
 
 /** Coordonne la partie sans connaître le transport du moteur. */
 export class GameController {
-  readonly game = new LocalGame();
+  readonly game: LocalGame;
   readonly clock: GameClock;
   timeResult = "";
   snapshot: SessionSnapshot | null = null;
@@ -59,8 +59,10 @@ export class GameController {
       engineOptions?: EngineOptions;
       now?: () => number;
       humanSide?: Side;
+      initialFen?: string;
     } = {},
   ) {
+    this.game = new LocalGame(options.initialFen);
     this.engineOptions = options.engineOptions ?? DEFAULT_ENGINE_OPTIONS;
     this.clock = new GameClock(options.timeControl, options.now);
     this.humanSide = options.humanSide ?? "w";
@@ -403,7 +405,7 @@ export class GameController {
         if (generation !== this.generation || this.game.chess.fen() !== fen)
           return;
         uci = await session.search(
-          `position startpos${moves.length ? ` moves ${moves.join(" ")}` : ""}`,
+          this.positionCommand(moves),
           () => {
             this.tick();
             if (this.finished) throw new Error("Partie terminée.");
@@ -449,6 +451,14 @@ export class GameController {
     }
   }
 
+  private positionCommand(moves: string[]) {
+    const start =
+      this.game.initialFen === DEFAULT_POSITION
+        ? "startpos"
+        : `fen ${this.game.initialFen}`;
+    return `position ${start}${moves.length ? ` moves ${moves.join(" ")}` : ""}`;
+  }
+
   private startPonder(session: UciSession) {
     const predicted = session.ponderMove;
     if (!this.engineOptions.ponder || !predicted || this.finished) return;
@@ -466,7 +476,7 @@ export class GameController {
       .history({ verbose: true })
       .map((move) => move.from + move.to + (move.promotion ?? ""));
     session.ponder(
-      `position startpos moves ${[...moves, predicted].join(" ")}`,
+      this.positionCommand([...moves, predicted]),
       () => {
         this.tick();
         if (this.finished) throw new Error("Partie terminée.");
@@ -549,7 +559,7 @@ export class GameController {
   exportPgn(): string {
     this.tick();
     // Construire une copie évite de modifier les en-têtes ou l'état de la partie jouée.
-    const exported = new Chess();
+    const exported = new Chess(this.game.initialFen);
     for (const move of this.game.chess.history({ verbose: true }))
       exported.move({
         from: move.from,

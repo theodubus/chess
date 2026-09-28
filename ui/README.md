@@ -162,6 +162,13 @@ de position. Ils ne changent ni les coups ni le PGN.
 
 ## Cadences et options du moteur
 
+Le menu « Handicap du moteur » retire une pièce du bot au départ : pion f,
+cavalier b, fou c, tour a ou dame, quelle que soit sa couleur. Aucun handicap
+n’est appliqué par défaut ni en mode deux joueurs. La force de calcul reste
+inchangée. La position initiale et les droits de roque sont conservés dans les
+commandes UCI, la réflexion anticipée, la relecture et le PGN (`SetUp` / `FEN`).
+Les pièces retirées au départ ne sont pas comptées comme des captures.
+
 Dans la préparation d’une partie contre le bot, « Donner une cadence différente
 au bot » permet de choisir son temps initial et son incrément indépendamment des
 vôtres. Ces temps suivent les joueurs, même avec les Noirs ou un camp aléatoire.

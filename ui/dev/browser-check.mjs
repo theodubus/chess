@@ -267,7 +267,26 @@ try {
     const threads = await evaluate(
       `Math.min(2, Number(document.querySelector('input[name="engine-threads"]').max))`,
     );
+    if (threads > 1) {
+      await click('[aria-label="Utiliser un cœur de plus"]');
+      assert(
+        await evaluate(
+          `document.querySelector('[name="engine-threads"]').value === '2'`,
+        ),
+        "sélecteur de cœurs +",
+      );
+      await click('[aria-label="Utiliser un cœur de moins"]');
+      assert(
+        await evaluate(
+          `document.querySelector('[name="engine-threads"]').value === '1'`,
+        ),
+        "sélecteur de cœurs −",
+      );
+    }
     await setupNumber("engine-threads", threads);
+    await evaluate(
+      `(() => { const select=document.querySelector('[name="engine-handicap"]'); select.value='rook'; select.dispatchEvent(new Event('change',{bubbles:true})); })()`,
+    );
     await button("10 min");
     await click('input[name="separate-clock"]');
     await setupNumber("engine-minutes", 1);
@@ -312,7 +331,19 @@ try {
       ),
       "le bot blanc reçoit une minute, le joueur noir dix minutes",
     );
+    assert(
+      await evaluate(
+        `document.querySelectorAll('piece.white.rook:not(.ghost)').length === 1 && document.querySelectorAll('piece.black.rook:not(.ghost)').length === 2`,
+      ),
+      "seul le bot blanc commence sans sa tour",
+    );
     await button("Options");
+    assert(
+      await evaluate(
+        `document.querySelector('dialog pre').textContent.includes('position fen ')`,
+      ),
+      "position de handicap transmise au moteur réel",
+    );
     await waitFor(
       `document.querySelector('dialog pre').textContent.includes('go ponder')`,
       "réflexion anticipée réellement lancée",
@@ -347,6 +378,12 @@ try {
     await waitFor(
       `document.querySelector('input[name="ponder"]')?.checked`,
       "options conservées pour la prochaine partie",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('[name="engine-handicap"]').value === 'rook'`,
+      ),
+      "handicap conservé pour la prochaine partie",
     );
     await evaluate(
       `localStorage.clear();window.browserCheckOptionsReload=true`,

@@ -47,7 +47,7 @@ export default function EngineSettings({
           </button>
         </div>
       )}
-      <label className="engine-ponder-toggle">
+      <label className="setting-switch">
         <input
           type="checkbox"
           name="ponder"
@@ -57,38 +57,79 @@ export default function EngineSettings({
             onChange({ ...options, ponder: event.target.checked })
           }
         />
-        Réfléchir pendant mon tour
+        <span className="switch-track" aria-hidden="true" />
+        <span className="setting-copy">
+          <strong>Réfléchir pendant mon tour</strong>
+          <span className="setting-help">
+            Le moteur prépare sa réponse pendant votre réflexion. Votre pendule
+            continue normalement.
+          </span>
+        </span>
       </label>
-      <p className="setting-help">
-        Le moteur prépare sa réponse pendant votre réflexion. Votre pendule
-        continue normalement.
-      </p>
       {capabilities && !capabilities.ponder && (
         <p className="setting-help">Ce moteur ne propose pas cette option.</p>
       )}
-      <label>
-        Cœurs de calcul
-        <input
-          type="number"
-          name="engine-threads"
-          min={capabilities?.threads?.min ?? 1}
-          max={max}
-          step="1"
-          required
-          disabled={
-            !capabilities || (!capabilities.threads && options.threads === 1)
-          }
-          value={options.threads}
-          onChange={(event) =>
-            onChange({ ...options, threads: Number(event.target.value) })
-          }
-        />
-      </label>
-      <p className="setting-help">
-        {capabilities?.threads
-          ? `De ${capabilities.threads.min} à ${max} cœurs logiques sur cet appareil. Plus de cœurs sollicite davantage le processeur.`
-          : "Un seul cœur tant que le moteur n’annonce pas cette option."}
-      </p>
+      <div className="thread-setting">
+        <div className="setting-copy">
+          <label htmlFor="engine-threads">Cœurs de calcul</label>
+          <p className="setting-help" id="threads-help">
+            {capabilities?.threads
+              ? `Jusqu’à ${max} cœurs logiques. Plus de cœurs sollicite davantage le processeur.`
+              : "Un seul cœur tant que le moteur n’annonce pas cette option."}
+          </p>
+        </div>
+        <div className="number-stepper">
+          <button
+            type="button"
+            aria-label="Utiliser un cœur de moins"
+            disabled={
+              !capabilities?.threads ||
+              options.threads <= (capabilities.threads.min ?? 1)
+            }
+            onClick={() =>
+              onChange({
+                ...options,
+                threads: Math.max(
+                  capabilities?.threads?.min ?? 1,
+                  options.threads - 1,
+                ),
+              })
+            }
+          >
+            −
+          </button>
+          <input
+            id="engine-threads"
+            type="number"
+            name="engine-threads"
+            aria-describedby="threads-help"
+            min={capabilities?.threads?.min ?? 1}
+            max={max}
+            step="1"
+            required
+            disabled={
+              !capabilities || (!capabilities.threads && options.threads === 1)
+            }
+            value={options.threads}
+            onChange={(event) =>
+              onChange({ ...options, threads: Number(event.target.value) })
+            }
+          />
+          <button
+            type="button"
+            aria-label="Utiliser un cœur de plus"
+            disabled={!capabilities?.threads || options.threads >= max}
+            onClick={() =>
+              onChange({
+                ...options,
+                threads: Math.min(max, options.threads + 1),
+              })
+            }
+          >
+            +
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

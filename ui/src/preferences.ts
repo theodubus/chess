@@ -1,3 +1,4 @@
+import { HANDICAPS, type Handicap } from "./handicap";
 import {
   DEFAULT_TIME_CONTROL,
   parseTimeControl,
@@ -12,6 +13,7 @@ export type GameSetup = {
   timeControl: TimeControl;
   engineTimeControl: TimeControl | null;
   engineOptions: EngineOptions;
+  handicap: Handicap;
 };
 export const DEFAULT_SETUP: GameSetup = {
   opponent: "engine",
@@ -19,6 +21,7 @@ export const DEFAULT_SETUP: GameSetup = {
   timeControl: DEFAULT_TIME_CONTROL,
   engineTimeControl: null,
   engineOptions: DEFAULT_ENGINE_OPTIONS,
+  handicap: "none",
 };
 export function readPreference(key: string): string | null {
   try {
@@ -55,6 +58,9 @@ export function readSetup(): GameSetup {
       ["w", "b", "random"].includes(value.side)
     )
       return {
+        handicap: HANDICAPS.some((entry) => entry.value === value.handicap)
+          ? value.handicap
+          : "none",
         opponent: value.opponent,
         side: value.side,
         timeControl,

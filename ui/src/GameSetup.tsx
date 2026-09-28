@@ -1,3 +1,4 @@
+import { HANDICAPS, type Handicap } from "./handicap";
 import EngineSettings from "./EngineSettings";
 import { useState } from "react";
 import { parseTimeControl, TIME_CONTROLS } from "./GameClock";
@@ -112,6 +113,39 @@ export default function GameSetup({
             </div>
           </fieldset>
         )}
+        {setup.opponent === "engine" && (
+          <fieldset disabled={busy}>
+            <legend>Handicap du moteur</legend>
+            <label htmlFor="engine-handicap" className="setting-help">
+              Matériel du bot au départ
+            </label>
+            <select
+              id="engine-handicap"
+              name="engine-handicap"
+              value={setup.handicap}
+              onChange={(event) =>
+                setSetup({ ...setup, handicap: event.target.value as Handicap })
+              }
+            >
+              {HANDICAPS.map((choice) => (
+                <option key={choice.value} value={choice.value}>
+                  {choice.label}
+                </option>
+              ))}
+            </select>
+            {setup.handicap !== "none" && (
+              <p className="setting-help handicap-help">
+                Vous commencez avec{" "}
+                {
+                  HANDICAPS.find((choice) => choice.value === setup.handicap)
+                    ?.points
+                }{" "}
+                {setup.handicap === "pawn" ? "point" : "points"} de matériel en
+                plus. Le moteur garde toute sa force de calcul.
+              </p>
+            )}
+          </fieldset>
+        )}
         <fieldset disabled={busy}>
           <legend>
             {separate && setup.opponent === "engine"
@@ -200,7 +234,7 @@ export default function GameSetup({
           <>
             <fieldset disabled={busy} className="asymmetric-controls">
               <legend>Temps du moteur</legend>
-              <label className="engine-ponder-toggle">
+              <label className="setting-switch">
                 <input
                   type="checkbox"
                   name="separate-clock"
@@ -213,7 +247,10 @@ export default function GameSetup({
                     }
                   }}
                 />
-                Donner une cadence différente au bot
+                <span className="switch-track" aria-hidden="true" />
+                <span className="setting-copy">
+                  <strong>Donner une cadence différente au bot</strong>
+                </span>
               </label>
               {separate && (
                 <div className="choice-row custom-controls">

@@ -1,3 +1,4 @@
+import { handicapPosition } from "./handicap";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { GameController } from "./GameController";
 import GameSetup from "./GameSetup";
@@ -76,6 +77,10 @@ export default function App() {
     const fresh = new GameController({
       timeControl: gameTimeControls(next, humanSide),
       humanSide,
+      initialFen:
+        next.opponent === "engine"
+          ? handicapPosition(next.handicap, humanSide)
+          : undefined,
       engineOptions: next.engineOptions,
     });
     const activate = () => {
