@@ -263,7 +263,7 @@ ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 | `datagen.rs` | produit le corpus `FEN;résultat` de l'ajustement Texel, étiqueté par le **résultat de la partie** et jamais par le score de l'évaluation. Sert aussi à tirer des positions de vraies parties pour toute sonde |
 | `tune.rs` | l'ajustement Texel lui-même. Son verdict a été **rejeté** (−9,96 Elo) ; l'outil reste parce qu'il resservira avec un corpus plus grand |
 | `nnue_probe.rs` | le benchmark obligatoire de B4 : ce que coûtent le copy-make (7,2 %) et la dérivation du delta d'accumulateur NNUE (2,8 %) en part du temps d'un nœud |
-| `nnue_datagen.rs` | les données d'entraînement NNUE (A21) : parties d'auto-jeu à nœuds fixes, au format `viriformat` que lit bullet, **écrit par la crate de référence** et jamais réimplémenté. Lancé sur runner par `.github/workflows/nnue-datagen.yml`, un artefact par job |
+| `nnue_datagen.rs` | les données d'entraînement NNUE (A21) : parties d'auto-jeu à nœuds fixes, au format `viriformat` que lit bullet, **écrit par la crate de référence** et jamais réimplémenté. Lancé sur runner par `.github/workflows/nnue-datagen.yml`, un artefact par job. **Étiquette par le réseau embarqué depuis le 29 sept.** (`--eval`, n° 7) ; `--eval '<none>'` regénère les données d'A21 |
 | `see_check.rs` | confronte l'échange statique à un oracle par force brute. Il a trouvé un **bug du manuel** au premier passage — 27 valeurs fausses sur 771 |
 | `attack_dump.rs` | confronte la géométrie d'attaque de `see::least_valuable_attacker` à `python-chess`, case par case |
 
@@ -3013,7 +3013,9 @@ jamais du moteur.
   au-delà de 400. **Pas d'adjudication de nulle** : ce qu'elle économiserait se
   mesure sur les données avant de se décider ;
 - chaque partie est une fonction pure de (graine, numéro, nœuds) : table vidée
-  à chaque partie, un fil par recherche ;
+  à chaque partie, un fil par recherche ; **et de l'évaluation depuis le
+  29 sept.** — `--eval`, défaut le réseau embarqué ; les données d'A21, faites
+  à la main, se regénèrent par `--eval '<none>'` (chantier n° 7, plus bas) ;
 - le format est écrit **par la crate `viriformat` elle-même**, jamais
   réimplémenté.
 
@@ -3492,6 +3494,40 @@ changement de recherche : un SPRT chacun.
   joue** (« Ce qu'il faut surveiller ») ;
 - le crible au candidat (36486347518) rend sa prédiction exacte : total 140,
   les mêmes survivants que `main`, un pour un.
+
+### N° 7 — un meilleur réseau : le plan, écrit le 29 sept. avant de mesurer
+
+**Décidé par Théo le 29 sept.** (« Ce qui reste à faire »). Trois leviers, qui
+se mesurent séparément, dans cet ordre — chacun contre le réseau qui joue,
+critère écrit avant son match :
+
+1. **les étiquettes du réseau** — le générateur étiquetait par la faite main,
+   il étiquette désormais par l'évaluation qui joue (`--eval`, défaut
+   `<embedded>`). Un réseau de même taille, 768 → 128, entraîné sur ces
+   seules données isole l'effet des étiquettes ;
+2. **plus de positions** — 125 M aujourd'hui, et la perte plafonnait dès le
+   20ᵉ superlot sur 40 ;
+3. **une couche cachée plus large** — `HIDDEN` est une seule constante,
+   partagée par le moteur et `tools/nnue-train`. La doubler double le coût
+   d'une mise à jour d'accumulateur : le match le paie avec le reste.
+
+**Le générateur au réseau, écrit** : `--eval` prend les valeurs de l'option
+UCI `EvalFile` — `<embedded>`, `<none>`, ou le chemin d'un réseau pas encore
+embarqué. Le réseau se charge une fois, avant les fils, et un fichier refusé
+arrête tout avant d'écrire. Le résumé imprime `evaluation=`, et le commit du
+générateur fixe le réseau embarqué. `run_etiquette_avec_l_evaluation_demandee`
+compare ce que `run` écrit à ce que joue une recherche au réseau — et à ce
+que joue la faite main, dont il doit différer ; **débrancher le réseau du fil
+de génération le fait tomber**, vérifié. `<none>` rend les parties de la
+faite main à l'octet près.
+
+**Le débit, attendu écrit avant de le mesurer** — <span>Inférence, confiance
+faible</span> : le nœud au réseau coûte 0,873 fois le nœud fait main sur le
+binaire de base, celui que construisent les runners ; à 5 000 nœuds par coup,
+**1 500 à 2 100 positions par seconde et par runner**, contre 1 509 à 1 727
+pour la première vague. Les parties changent aussi — un autre joueur,
+d'autres longueurs —, d'où la largeur de la fourchette. Une mesure hors
+fourchette se diagnostique avant de lancer la vague.
 
 ### C27 — une borne de mat hors plage stockée dans la table — VERDICT, 25 sept. 2026 : −3,56 ± 5,97 Elo à `8+0,08`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
 

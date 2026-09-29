@@ -46,6 +46,10 @@ on:
         description: "Fils de génération (auto : un par processeur logique)"
         type: string
         default: "auto"
+      evaluation:
+        description: "Évaluation qui joue et étiquette — les valeurs de l'option UCI EvalFile : <embedded> (le réseau embarqué, défaut), <none> (la faite main : regénère les données d'A21 à l'identique), ou le chemin d'un réseau dans le dépôt"
+        type: string
+        default: "<embedded>"
 
 permissions:
   contents: read
@@ -76,6 +80,7 @@ jobs:
           NOEUDS: ${{ inputs.noeuds }}
           GRAINE: ${{ inputs.graine }}
           FILS: ${{ inputs.fils }}
+          EVALUATION: ${{ inputs.evaluation }}
         run: |
           # `bash -e` n'active PAS pipefail : sans lui, le code de retour serait
           # celui de `tee`, et une génération interrompue passerait pour finie.
@@ -89,7 +94,8 @@ jobs:
           modele=$(lscpu | awk -F: '/^Model name/ {sub(/^ +/, "", $2); print $2; exit}')
 
           ./target/release/nnue-datagen --out donnees --threads "$fils" \
-            --nodes "$NOEUDS" --seed "$graine" --minutes "$MINUTES" | tee stats.txt
+            --nodes "$NOEUDS" --seed "$graine" --minutes "$MINUTES" \
+            --eval "$EVALUATION" | tee stats.txt
 
           {
             echo "### NNUE — génération, run ${{ github.run_id }}"
