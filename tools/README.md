@@ -746,7 +746,7 @@ dernière relève est faite.
 | **A21, étape 4 — le crible de mutation du candidat** | **36486347518** | `e944248` : `nnue.rs` et `uci.rs` touchés — et les autres fichiers | un job par fichier, puis `Verdict` ; entrée `commit`, donc aucune issue | **RELEVÉ à 23 h 45, VERT** — fini à 23 h 19, `search.rs` le plus long, 110 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, et les mêmes survivants que le balayage de `main` après la PR #89 (36380392695), un pour un — `search.rs` aux mêmes lignes, `nnue.rs` le même `>` décalé de quatre lignes par le code neuf, `eval.rs` les mêmes 89 : **la réserve ne s'est pas matérialisée**. `uci.rs` 0, 71 attrapés. Les attrapés et les expirés de `search.rs` et de `nnue.rs` sont ceux du balayage précédent. — *Prédiction, écrite avant* : `nnue.rs` **1** — le même survivant équivalent, le `>` du côté du roque ; `embedded` est tenu par la confrontation rejouée et par les tests de la couche UCI. `uci.rs` **0** — les bras neufs de `load_network` et le choix du message sont assertés, en test unitaire et de bout en bout, des deux côtés de chaque garde. `search.rs` **39**, les mêmes survivants : son code est intouché, et `Search::new` évalue toujours à la main. `eval.rs` **89** — *réserve* : les tests d'intégration lancent désormais un binaire qui évalue par le réseau, donc un mutant d'`eval.rs` qu'eux seuls attrapaient survivrait ; je n'en connais aucun. Les autres fichiers à leur plafond, total **140**. Les expirés ne se prédisent pas : ils suivent la charge du runner |
 | **N° 7 — le débit du générateur au réseau** | 36528844912 | le générateur de `main` à `c78921d`, `<embedded>`, 5 000 nœuds, graine « auto », un fil par processeur logique | un job court, 20 minutes | **RELEVÉ à 06 h 40** — fini à 06 h 20 | **1 774 positions/s, dans l'attendu** (1 500 à 2 100, écrit avant) : 18 141 parties, 2 129 279 positions, 63,7 % gardées par le filtre ; **7,4 % écartées contre 2,0 %** — l'échelle du réseau, lue au code (section n° 7). Décide huit jobs |
 | **N° 7 — la vague au réseau** | levier 1 : **36532340223, 36532342642, 36532345161, 36532347434** ; levier 2 : ces quatre et 36532349576, 36532352502, 36532354771, 36532357681 | le générateur de `main` à `81e2753` — celui de `c78921d` au bit près —, `<embedded>`, 5 000 nœuds, graine « auto » | 8 jobs de 330 minutes | lancée à 06 h 41, fin vers 12 h 15 | les quatre premiers lancés servent le levier 1, les huit le levier 2. — *Attendu, écrit avant* : 238 à 301 M positions, 119 à 150 M pour les quatre premiers (section n° 7) |
-| **N° 7 — la sonde d'adjudication, dans le conteneur** | — | les mêmes parties avec et sans adjudication, au réseau et à la faite main pour témoin : `main` à `81e2753` sondé, 3 000 parties par passe, graine 20260929 | quatre passes | lancée à 06 h 43 | **Critère, écrit avant** : la vague est annulée si plus de 2 % des parties adjugées au réseau finissent autrement ET que le témoin fait au moins un point de moins |
+| **N° 7 — la sonde d'adjudication, dans le conteneur** | — | les mêmes parties avec et sans adjudication, au réseau et à la faite main pour témoin : `main` à `81e2753` sondé, 3 000 parties par passe, graine 20260929 | quatre passes | **RELEVÉE à 06 h 53** — lancée à 06 h 42 | **0,50 % au réseau** (8 nulles sur 1 603 adjugées, aucun renversement), **0 au témoin** : sous les 2 %, **la vague continue**. L'adjudication au réseau coupe 24 demi-coups par partie adjugée, contre 3,7 (section n° 7) | **Critère, écrit avant** : la vague est annulée si plus de 2 % des parties adjugées au réseau finissent autrement ET que le témoin fait au moins un point de moins |
 | **C13 — la force absolue, trois séries à 60+0,6** | 36529779756, 36529782211, 36529784491 | le réseau (`main` à `81e2753`) contre Stockfish 16 bridé à 2850 ; la faite main (`bfebbd8`) contre 2850 ; le réseau contre 3100 | 3 × 300, fastchess | lancées à 06 h 11, fin vers 10 h 50 | une estimation par série, et l'écart réseau − faite main contre le même adversaire. — *Attendu, écrit avant* : faite main 2 600 à 2 800, réseau 2 800 à 3 100, écart +100 à +300 (section C13) |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | lancées à 06 h 13, fin vers 07 h 05 | son point, rejoué à trois fois l'effectif. — *Attendu, écrit avant* : faite main 2 630 à 2 770, réseau 2 800 à 3 100 (section C13) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
@@ -3597,6 +3597,33 @@ moins un point de moins** — un gain que le moteur ne sait pas convertir sans
 table de finales n'est pas une fausse adjudication, et le témoin le compte.
 Sinon elle continue. *Attendu* — <span>inférence, confiance faible</span> :
 sous 2 %, huit demi-coups de suite à 99,3 % chacun.
+
+**La sonde, RELEVÉE à 06 h 53 — la vague continue.** `main` à `81e2753`
+sondé, 3 000 parties par passe, graine 20260929 ; rustine et lecteur à
+l'attic, `n7-sonde-adjudication.patch` :
+
+| | au réseau | à la faite main (témoin) |
+|---|---|---|
+| parties jouées, écartées | 2 794, 206 | 2 953, 47 |
+| adjugées | 1 603 (57,4 %) | 1 189 (40,3 %) |
+| **finies autrement, jouées jusqu'au bout** | **8, soit 0,50 %** — huit nulles, aucun renversement, aucune au plafond de 400 demi-coups | **0** |
+| demi-coups des adjugées, avec puis sans | 101,7 puis 125,8 | 113,0 puis 116,7 |
+
+- **0,50 %, sous les 2 % du critère : la vague continue** — l'attendu tient.
+  L'écart au témoin est réel mais petit : huit parties sur 2 794 portent
+  un gain au lieu d'une nulle, et la cible n'y pèse le résultat qu'à 0,75 ;
+- **la sonde a son propre témoin, et il tient** : les parties non adjugées
+  sont identiques, coups et résultat, avec et sans adjudication — 1 191 sur
+  1 191 au réseau, 1 764 sur 1 764 à la faite main. Les deux passes jouent
+  bien les mêmes parties ;
+- **ce que la sonde montre en plus, et qui n'était pas demandé** : la faite
+  main n'atteint 2 000 qu'à quelques coups du mat — l'adjudication ne lui
+  épargne que 3,7 demi-coups —, le réseau **24 demi-coups plus tôt**. Les
+  données au réseau portent donc moins de finales de conversion, où tout
+  est décidé : 13,8 demi-coups par partie en moyenne, pour 120,7
+  enregistrés dans la même passe. Un changement de distribution que le levier 1 mesure avec
+  le reste — le générateur au réseau est un tout —, écrit ici plutôt que
+  découvert après.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 

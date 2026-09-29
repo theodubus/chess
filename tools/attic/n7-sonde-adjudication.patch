@@ -1,0 +1,137 @@
+diff --git a/tools/sonde-n7/lire.py b/tools/sonde-n7/lire.py
+new file mode 100644
+index 0000000..8e05e68
+--- /dev/null
++++ b/tools/sonde-n7/lire.py
+@@ -0,0 +1,36 @@
++# Lecteur de la sonde n° 7 : lire.py <dossier> <évaluation>... — voir rejouer.sh.
++import sys, collections
++OUT = sys.argv[1]
++def lire(ev, mode):
++    parties, ecartees = {}, set()
++    for l in open(f"{OUT}/parties-{ev}-{mode}.txt"):
++        f = l.split()
++        if f and f[0] == "PARTIE":
++            parties[int(f[1])] = (f[2], int(f[3]), f[4] == "1")
++        elif f and f[0] == "ECARTEE":
++            ecartees.add(int(f[1]))
++    return parties, ecartees
++for ev in sys.argv[2:]:
++    A, eA = lire(ev, "avec"); B, eB = lire(ev, "sans")
++    assert eA == eB, "écartées différentes"
++    communs = sorted(set(A) & set(B))
++    temoin_ko = [i for i in communs if not A[i][2] and A[i] != (B[i][0], B[i][1], False)]
++    adj = [i for i in communs if A[i][2]]
++    c = collections.Counter()
++    plafond = 0
++    plus_court = 0
++    for i in adj:
++        ra, la, _ = A[i]; rb, lb, _ = B[i]
++        if lb < la: plus_court += 1
++        if rb == ra: c["confirmé"] += 1
++        elif rb == "1/2":
++            c["nulle"] += 1
++            if lb >= 400: plafond += 1
++        else: c["renversé"] += 1
++    n = len(communs); na = len(adj)
++    autre = c["nulle"] + c["renversé"]
++    print(f"== {ev} : {n} parties jouées, {len(eA)} écartées ; adjugées {na} ({100*na/max(n,1):.1f} %)")
++    print(f"   finies autrement : {autre} ({100*autre/max(na,1):.2f} % des adjugées) — nulles {c['nulle']} (dont plafond de 400 demi-coups : {plafond}), renversées {c['renversé']}")
++    print(f"   témoin de la sonde (non adjugées identiques avec et sans) : {len(communs)-na-len(temoin_ko)} identiques, {len(temoin_ko)} différentes ; adjugées plus longues sans adjudication : {na-plus_court}/{na}")
++    la_moy = sum(A[i][1] for i in adj)/max(na,1); lb_moy = sum(B[i][1] for i in adj)/max(na,1)
++    print(f"   longueur moyenne des adjugées : {la_moy:.1f} demi-coups avec, {lb_moy:.1f} sans")
+diff --git a/tools/sonde-n7/rejouer.sh b/tools/sonde-n7/rejouer.sh
+new file mode 100755
+index 0000000..dabb757
+--- /dev/null
++++ b/tools/sonde-n7/rejouer.sh
+@@ -0,0 +1,22 @@
++#!/bin/bash
++# Sonde n° 7 — l'adjudication de gain à l'échelle du réseau (tools/README.md,
++# section « N° 7 — un meilleur réseau »). Les mêmes parties jouées deux fois,
++# avec l'adjudication puis sans (SONDE_ADJ hors d'atteinte), au réseau puis à
++# la faite main pour témoin. Chaque partie étant une fonction pure de (graine,
++# numéro, nœuds), les deux passes jouent les mêmes coups jusqu'à l'adjudication.
++# À lancer depuis la racine du dépôt, la rustine appliquée.
++set -euo pipefail
++N=${N:-3000}
++GRAINE=${GRAINE:-20260929}
++OUT=${1:-/tmp/sonde-n7}
++cargo build --release -q -p shallowred-tools --bin nnue-datagen
++for ev in embedded none; do
++  for mode in avec sans; do
++    rm -rf "$OUT/d-$ev-$mode"; mkdir -p "$OUT/d-$ev-$mode"
++    if [ "$mode" = sans ]; then export SONDE_ADJ=1000000; else unset SONDE_ADJ; fi
++    ./target/release/nnue-datagen --out "$OUT/d-$ev-$mode" --threads 4 --nodes 5000 \
++      --seed "$GRAINE" --games "$N" --eval "<$ev>" \
++      > "$OUT/stats-$ev-$mode.txt" 2> "$OUT/parties-$ev-$mode.txt"
++  done
++done
++python3 tools/sonde-n7/lire.py "$OUT" embedded none
+diff --git a/tools/src/bin/nnue_datagen.rs b/tools/src/bin/nnue_datagen.rs
+index 8c0bc93..8853c9e 100644
+--- a/tools/src/bin/nnue_datagen.rs
++++ b/tools/src/bin/nnue_datagen.rs
+@@ -97,6 +97,21 @@ const OPENING_MAX_SCORE: i32 = 1_000;
+ /// Pas d'adjudication de nulle : la part des positions qu'elle économiserait se
+ /// MESURE sur les données avant de se décider.
+ const WIN_ADJ_SCORE: i32 = 2_000;
++
++// SONDE (jetable) : le seuil d'adjudication se lit dans SONDE_ADJ, et chaque
++// partie imprime son numéro, son résultat, sa longueur et si elle a été adjugée.
++fn sonde_adj_score() -> i32 {
++    static SEUIL: std::sync::OnceLock<i32> = std::sync::OnceLock::new();
++    *SEUIL.get_or_init(|| {
++        std::env::var("SONDE_ADJ")
++            .ok()
++            .and_then(|v| v.parse().ok())
++            .unwrap_or(WIN_ADJ_SCORE)
++    })
++}
++thread_local! {
++    static ADJUGEE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
++}
+ const WIN_ADJ_PLIES: u32 = 8;
+ 
+ /// Au-delà, la partie est déclarée nulle. La règle des cinquante coups arrête
+@@ -294,7 +309,7 @@ fn play_game(
+             vf_move(&board, mv).ok_or_else(|| format!("coup {mv} intraduisible dans {board}"))?;
+         record.add_move(encoded, white);
+ 
+-        if i32::from(white).abs() >= WIN_ADJ_SCORE {
++        if i32::from(white).abs() >= sonde_adj_score() {
+             let side = if white > 0 {
+                 Color::White
+             } else {
+@@ -308,6 +323,7 @@ fn play_game(
+                 } else {
+                     GameOutcome::BlackWin(WinType::Adjudication)
+                 });
++                ADJUGEE.with(|a| a.set(true));
+                 return Ok(Some(record));
+             }
+         } else {
+@@ -460,11 +476,22 @@ fn worker(
+         }
+         match play_indexed_game(config.seed, index, config.nodes, &mut search)? {
+             Some(game) => {
++                let adjugee = ADJUGEE.with(|a| a.replace(false));
++                let resultat = match game.outcome() {
++                    WDL::Win => "1-0",
++                    WDL::Loss => "0-1",
++                    WDL::Draw => "1/2",
++                };
++                eprintln!("PARTIE {index} {resultat} {} {}", game.len(), u8::from(adjugee));
+                 stats.record(&game);
+                 game.serialise_into(&mut writer)
+                     .map_err(|error| format!("{}: {error}", path.display()))?;
+             }
+-            None => stats.discarded += 1,
++            None => {
++                ADJUGEE.with(|a| a.set(false));
++                eprintln!("ECARTEE {index}");
++                stats.discarded += 1;
++            }
+         }
+     }
+     writer
