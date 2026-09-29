@@ -70,7 +70,7 @@ use crate::eval::MATE_THRESHOLD;
 pub const INPUTS: usize = 768;
 
 /// Taille de la couche cachée, pour chacune des deux perspectives.
-pub const HIDDEN: usize = 256;
+pub const HIDDEN: usize = 128;
 
 /// Quantification de la couche cachée, poids et biais.
 pub const QA: i32 = 255;
