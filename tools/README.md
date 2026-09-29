@@ -3529,6 +3529,48 @@ pour la première vague. Les parties changent aussi — un autre joueur,
 d'autres longueurs —, d'où la largeur de la fourchette. Une mesure hors
 fourchette se diagnostique avant de lancer la vague.
 
+### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
+
+**Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
+relatifs ; celui-ci situe le moteur sur une échelle extérieure. **L'outil** :
+`.github/workflows/force.yml`, une série contre Stockfish bridé
+(`UCI_LimitStrength`, `UCI_Elo`) sur un runner.
+
+**Ce que vaut l'échelle, lu au source.** Les runners installent Stockfish 16
+(paquet `16-1build1`, Ubuntu 24.04 — `apt-cache policy`, vérifié le 29 sept.,
+et le workflow imprime la version qui joue). Son `src/search.cpp` au tag
+`sf_16` (commit `68e1e9b`) : `UCI_Elo` va de 1320 à 3190, converti en niveau
+« par ancrage à l'Elo CCRL (goldfish 1.13 = 2000) et un ajustement sur des
+matchs à 60+0,6 ». Bridé, il ne cherche pas moins : il force MultiPV à 4 et
+joue par moments un coup sous-optimal tiré au hasard, graine prise à
+l'horloge. Trois conséquences :
+- la cadence du workflow est **60+0,6** par défaut, celle de l'étalonnage ;
+- un tel match ne se rejoue pas coup pour coup — la graine fixe les
+  ouvertures, pas les tirages ;
+- le chiffre est une **estimation sur une échelle CCRL approchée**, pas un
+  classement : un adversaire qui se trompe exprès n'est pas un moteur
+  ordinaire.
+
+**Le protocole** — trois jobs de 300 parties à 60+0,6, environ 4 h 40
+chacun :
+- le moteur au réseau (`main`) contre Stockfish à **2850** ;
+- le moteur d'avant le réseau (`bfebbd8`, la faite main), contre **le même
+  adversaire** : l'écart des deux estimations mesure ce que le réseau vaut
+  contre un autre joueur que son jumeau ;
+- le moteur au réseau contre Stockfish à **3100**, pour encadrer.
+
+**Attendu, écrit avant** — <span>Inférence, confiance faible</span> : la
+faite main entre 2 600 et 2 800 sur cette échelle — le point de Théo, le
+28 sept., était « vers 2 700 » contre Stockfish à 2 600, cadence et effectif
+non consignés ; le réseau entre 2 800 et 3 100 ; **leur écart entre +100 et
++300, sous les +330 mesurés contre le jumeau** — <span>inférence, confiance
+moyenne sur le sens seulement</span> : l'auto-jeu grossit les écarts.
+
+**Règle de lecture** : un score hors de 10 à 90 % ne se lit pas ; 300
+parties donnent environ ± 30 à 40 Elo près de 50 %. Le runner s'étalonne et
+l'écrit en tête du résumé, comme `match.yml` : deux jobs ne se comparent
+qu'à étalonnages voisins.
+
 ### C27 — une borne de mat hors plage stockée dans la table — VERDICT, 25 sept. 2026 : −3,56 ± 5,97 Elo à `8+0,08`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
 
 **Trouvé par les tests du générateur NNUE**, qui jouent des parties entières
@@ -3678,7 +3720,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **D5 — revérifier les acquis** | — | **CLOS le 23 sept.** Six lignes examinées : trois remesurées en match — aspiration × 2,7, trois termes d'évaluation × 2,5, élagage delta **érodé** — et trois écrantées en nœuds sans signal d'érosion (futilité inverse, mobilité ; LMR, coup nul et table ont des marges qui l'absorbent). Les écrans datent du 22 ; rien de fusionné depuis ne coupe au même endroit. **L'élagage delta reste dans `main`** : un acquis se retire par un verdict, et un effet de −1,5 Elo en demanderait ~40 000 parties — une quinzaine de jobs pour quelques Elo au plus, quand la calibration et B6 en achètent davantage. *À rouvrir quand la quiescence ou l'échelle de l'évaluation change* (NNUE), l'écran en nœuds d'abord : trois minutes, sans hasard |
 | **B8 — régler les constantes de recherche** — **DÉCIDÉ n° 8** (Théo, 29 sept.), après le meilleur réseau : les marges dépendent de son échelle | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau). **Une raison neuve le 28 sept.** : les marges — futilité inverse 100 par pli, fenêtre d'aspiration 25, élagage delta 200 plus les valeurs de pièces faites main — ont été réglées sur l'échelle de la faite main, que le réseau dépasse de 2,6 à 5,8 fois en position décidée. Méthode à décider : un SPRT par marge, ou un réglage SPSA de plusieurs constantes à la fois — outillage à écrire : exposer les constantes, un pilote de parties sur runners |
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
-| **C13 — mesurer la force absolue** — **DÉCIDÉ, en parallèle** (Théo, 29 sept.) | — | <s>**reporté**</s> : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread. **Un premier point, de Théo, le 28 sept.** : le moteur d'avant le réseau, contre un Stockfish bridé à 2 600 sur sa machine, estimé vers 2 700 — cadence et effectif non consignés. **Rouvrable sans liste de classement** — proposé le 29 sept. : Stockfish s'installe sur les runners (`ui.yml` le fait déjà), donc une série contre Stockfish bridé à plusieurs niveaux se joue sur runner. Deux réserves, écrites avant : l'échelle d'`UCI_Elo` appartient à la cadence et aux adversaires sur lesquels Stockfish l'a étalonnée — à lire dans son source avant de s'y fier ; et un gain mesuré contre notre jumeau ne s'ajoute pas à ce point. <span>Inférence, confiance moyenne</span> : l'auto-jeu grossit les écarts qu'on retrouve contre d'autres adversaires |
+| **C13 — mesurer la force absolue** — **DÉCIDÉ, en parallèle** (Théo, 29 sept.) | — | <s>**reporté**</s> : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread. **Un premier point, de Théo, le 28 sept.** : le moteur d'avant le réseau, contre un Stockfish bridé à 2 600 sur sa machine, estimé vers 2 700 — cadence et effectif non consignés. **Rouvert sans liste de classement** — le protocole, écrit avant de mesurer : section « C13 — la force absolue » ; proposé le 29 sept. : Stockfish s'installe sur les runners (`ui.yml` le fait déjà), donc une série contre Stockfish bridé à plusieurs niveaux se joue sur runner. Deux réserves, écrites avant : l'échelle d'`UCI_Elo` appartient à la cadence et aux adversaires sur lesquels Stockfish l'a étalonnée — à lire dans son source avant de s'y fier ; et un gain mesuré contre notre jumeau ne s'ajoute pas à ce point. <span>Inférence, confiance moyenne</span> : l'auto-jeu grossit les écarts qu'on retrouve contre d'autres adversaires |
 | **B4 — évaluation NNUE** | — | <s>**reporté.**</s> <s>**EN COURS depuis le 25 sept.**</s> **FAIT le 28 sept. 2026 — A21, la fin de cette ligne.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —<s>, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation.</s> <em>tranchée le 25 sept. (A21).</em> **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 ; **première vague relevée le 26 sept. : 125 M positions, 77,7 M gardées par le filtre** — la cible de 100 M est atteinte ; **l'inférence dans le moteur écrite le 26 sept. et FUSIONNÉE le 28** (PR #89), derrière `EvalFile` — un nœud avec réseau coûte 0,73 à 0,87 fois un nœud fait main ; **l'entraînement fait le 28 sept.** sur la carte de Théo, 11 min 53 s, le critère tenu — section A21, étape 3 ; **l'étape 4 FAITE le même soir : le réseau embarqué est l'évaluation par défaut, +330,61 ± 19,21 Elo à `8+0,08` contre la faite main** (section « Étape 4 — VERDICT »). Restent ouverts : les marges de la recherche, réglées sur l'échelle de la faite main ; un réseau plus large ou plus de données — la carte de Théo peut être resollicitée ; et un banc qui évalue par le réseau |
 | **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.) | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`) |
 | **un banc qui emploie le réseau** — proposé le 29 sept. | — de l'outillage, sans Elo | Le banc et `tools/timing.sh` évaluent à la main, le moteur joue avec le réseau (« Ce qu'il faut surveiller »). **Préalable** à toute mesure de vitesse de l'inférence et à tout écran en nœuds sur l'arbre qu'on joue ; il déplace la référence du banc, ses tests et le crible d'`eval.rs`, donc il se conçoit, il ne se bricole pas |
