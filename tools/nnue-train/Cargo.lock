@@ -497,8 +497,10 @@ dependencies = [
 name = "shallowred-nnue-train"
 version = "0.1.0"
 dependencies = [
+ "bullet-trainer",
  "bullet_lib",
  "cozy-chess",
+ "sfbinpack",
  "shallowred",
 ]
 

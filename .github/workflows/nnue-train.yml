@@ -46,3 +46,10 @@ jobs:
       - name: Compilation
         working-directory: tools/nnue-train
         run: cargo build --release --locked
+
+      # Ce qui ne demande pas de GPU se vérifie ici : la lecture des binpacks
+      # de Leela — le filtre, l'échelle ajustée, un fichier tronqué refusé —
+      # et le chargeur de bullet qui les lit. L'entraînement lui-même, non.
+      - name: Tests sans GPU
+        working-directory: tools/nnue-train
+        run: cargo test --release --locked
