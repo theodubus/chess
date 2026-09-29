@@ -744,6 +744,12 @@ dernière relève est faite.
 | **A21, étape 2 — le crible de mutation du candidat** | 36210591242 | `cc8e105` : `nnue.rs` neuf, `search.rs` et `uci.rs` touchés — et les autres fichiers | un job par fichier, puis `Verdict` ; entrée `commit`, donc aucune issue | **RELEVÉ le 28 sept. — verdict ROUGE, d'un survivant** : fini le 26 à 04 h 01, `search.rs` le plus long, 115 min — 611 mutants, 497 attrapés, 29 inviables, 45 expirés | **La prédiction tient, sauf sur une ligne.** `nnue.rs` **1** sur 98, le survivant prédit, et c'est le plafond mesuré ; `uci.rs` **0** ; les autres fichiers à leur plafond. `search.rs` **40** : les 39 de `main` un pour un, vérifiés sur le texte des lignes, et un de plus, **hors de l'inférence** — le compteur `#[cfg(test)]` de `static_eval`, `+ 1` en `- 1`. Le profil `mutants` hérite de release, sans contrôle de débordement : décrémenté, le compteur déborde vers 2^64 et passait « au moins 1 000 vérifications ». **Corrigé par le test, pas par le plafond** : borné aussi par le haut, au plus une évaluation vérifiée par nœud. Re-mesuré localement sur les cinq mutants de `static_eval` : quatre attrapés, un expiré, aucun survivant — le compteur décrémenté s'y lit « 2^64 − 5 292 évaluations vérifiées pour 6 000 nœuds ». Total 141 contre 140 prédits ; le balayage qui suit la fusion doit rendre `search.rs` **39**. — *Prédiction, écrite avant* : `nnue.rs` **1** sur 98 mutants — le `>` du côté du roque en `>=`, équivalent, roi et tour n'étant jamais sur la même colonne ; `search.rs` **39**, les mêmes survivants, aucun dans le code neuf ; `uci.rs` **0** ; les autres à leur plafond ; total **140**. Les expirés ne se prédisent pas : ils suivent la charge du runner. |
 | **A21, étape 4 — le réseau embarqué contre la faite main** | **36485510245, 36485513513** | `e944248` → `bfebbd8`, `8+0,08`, graine « auto » | 2 × 1 000, fastchess | **RELEVÉ** — lancés à 21 h 21, finis entiers à 23 h 11 et 23 h 12 : 6,54 et 6,62 s par partie | **+330,61 ± 19,21 en commun, homogènes (z = −1,21), zéro perte au temps, zéro coup illégal : gain démontré, FUSIONNÉ — le réseau est l'évaluation par défaut** (section « Étape 4 — VERDICT »). 2,2 fois le haut de l'attendu. — *Critère, écrit avant* (section A21, étape 4) : borne basse commune au-dessus de zéro → le réseau devient l'évaluation par défaut, révocation de la révocation ; intervalle contenant zéro → pas de fusion, diagnostic par l'échelle, second tour ; borne haute sous zéro → régression, même diagnostic. Zéro perte au temps et zéro coup illégal, sinon le match ne compte pas. *Attendu, écrit avant* : +30 à +150, confiance faible |
 | **A21, étape 4 — le crible de mutation du candidat** | **36486347518** | `e944248` : `nnue.rs` et `uci.rs` touchés — et les autres fichiers | un job par fichier, puis `Verdict` ; entrée `commit`, donc aucune issue | **RELEVÉ à 23 h 45, VERT** — fini à 23 h 19, `search.rs` le plus long, 110 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, et les mêmes survivants que le balayage de `main` après la PR #89 (36380392695), un pour un — `search.rs` aux mêmes lignes, `nnue.rs` le même `>` décalé de quatre lignes par le code neuf, `eval.rs` les mêmes 89 : **la réserve ne s'est pas matérialisée**. `uci.rs` 0, 71 attrapés. Les attrapés et les expirés de `search.rs` et de `nnue.rs` sont ceux du balayage précédent. — *Prédiction, écrite avant* : `nnue.rs` **1** — le même survivant équivalent, le `>` du côté du roque ; `embedded` est tenu par la confrontation rejouée et par les tests de la couche UCI. `uci.rs` **0** — les bras neufs de `load_network` et le choix du message sont assertés, en test unitaire et de bout en bout, des deux côtés de chaque garde. `search.rs` **39**, les mêmes survivants : son code est intouché, et `Search::new` évalue toujours à la main. `eval.rs` **89** — *réserve* : les tests d'intégration lancent désormais un binaire qui évalue par le réseau, donc un mutant d'`eval.rs` qu'eux seuls attrapaient survivrait ; je n'en connais aucun. Les autres fichiers à leur plafond, total **140**. Les expirés ne se prédisent pas : ils suivent la charge du runner |
+| **N° 7 — le débit du générateur au réseau** | 36528844912 | le générateur de `main` à `c78921d`, `<embedded>`, 5 000 nœuds, graine « auto », un fil par processeur logique | un job court, 20 minutes | **RELEVÉ à 06 h 40** — fini à 06 h 20 | **1 774 positions/s, dans l'attendu** (1 500 à 2 100, écrit avant) : 18 141 parties, 2 129 279 positions, 63,7 % gardées par le filtre ; **7,4 % écartées contre 2,0 %** — l'échelle du réseau, lue au code (section n° 7). Décide huit jobs |
+| **N° 7 — la vague au réseau** | à lancer | le générateur de `main` à `81e2753` — celui de `c78921d` au bit près —, `<embedded>`, 5 000 nœuds, graine « auto » | 8 jobs de 330 minutes | — | les quatre premiers lancés servent le levier 1, les huit le levier 2. — *Attendu, écrit avant* : 238 à 301 M positions, 119 à 150 M pour les quatre premiers (section n° 7) |
+| **N° 7 — la sonde d'adjudication, dans le conteneur** | — | les mêmes parties avec et sans adjudication, au réseau et à la faite main pour témoin | — | pendant la vague | **Critère, écrit avant** : la vague est annulée si plus de 2 % des parties adjugées au réseau finissent autrement ET que le témoin fait au moins un point de moins |
+| **C13 — la force absolue, trois séries à 60+0,6** | 36529779756, 36529782211, 36529784491 | le réseau (`main` à `81e2753`) contre Stockfish 16 bridé à 2850 ; la faite main (`bfebbd8`) contre 2850 ; le réseau contre 3100 | 3 × 300, fastchess | lancées à 06 h 11, fin vers 10 h 50 | une estimation par série, et l'écart réseau − faite main contre le même adversaire. — *Attendu, écrit avant* : faite main 2 600 à 2 800, réseau 2 800 à 3 100, écart +100 à +300 (section C13) |
+| **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | lancées à 06 h 13, fin vers 07 h 05 | son point, rejoué à trois fois l'effectif. — *Attendu, écrit avant* : faite main 2 630 à 2 770, réseau 2 800 à 3 100 (section C13) |
+| **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | en cours | *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un — le code est le même |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
 | **balayage de mutation après la PR #83** — A20 fusionné | **36145534414** | `main` à `d23d1b5` | un job par fichier, puis `Verdict` | **RELEVÉ à 15 h 40, VERT** — `search.rs` le plus long, 71 min : 461 attrapés, 42 expirés | **La prédiction tient, exactement — jusqu'aux expirés** : `search.rs` **39**, les mêmes survivants que le crible au candidat, un pour un, aux mêmes lignes ; et le tableau entier du verdict est celui du crible, colonne par colonne — survivants, attrapés ET expirés, pour les neuf fichiers. Total **139**, aucune issue. *Le crible par l'entrée `commit` et le balayage de `main` voient donc la même chose.* — *Prédiction, écrite avant* : `search.rs` **39**, au plafond, et les MÊMES survivants que le crible au candidat (36114952595), un pour un, aux mêmes lignes — le code moteur de `main` est celui du candidat octet pour octet (`git diff 54e6c60 d23d1b5 -- engine/` est vide) et le crible a balayé tous les fichiers ; seul le compte d'expirés peut bouger avec la charge du runner, et il ne peut que faire baisser celui des survivants. Tous les autres fichiers à leur plafond, total **139**. Un écart, quel qu'il soit, dirait que le crible et le balayage ne voient pas la même chose |
 | **balayage de mutation après la PR #81** — C25 fusionné | 36073858328 | `main` à `04bf6f8` | un job par fichier, puis `Verdict` | **RELEVÉ à 01 h 10, VERT** — `search.rs` le plus long, 90 min : 526 mutants, 410 attrapés, 28 inviables, 49 expirés | **La prédiction tient, exactement** : `search.rs` **39**, les deux survivants d'`iterate` que le crible au candidat avait trouvés parmi eux, et tous les autres fichiers à leur plafond, total **139**. Aucune issue. — *Prédiction, écrite avant* : `search.rs` **39**, au plafond — le crible au candidat ne trouvait que les deux survivants anciens, et C25 ne déplace aucun arbre à profondeur fixe, donc aucun test de nœuds ne voit autrement le reste du fichier ; des expirés en plus, `set_deadlines` vidé et `deadlines_ms` à `None`. Tous les autres fichiers à leur plafond, total 139 |
@@ -3528,6 +3534,65 @@ binaire de base, celui que construisent les runners ; à 5 000 nœuds par coup,
 pour la première vague. Les parties changent aussi — un autre joueur,
 d'autres longueurs —, d'où la largeur de la fourchette. Une mesure hors
 fourchette se diagnostique avant de lancer la vague.
+
+**Le débit, RELEVÉ le 29 sept. à 06 h 40 — dans l'attendu.** Run
+36528844912, le générateur de `main` à `c78921d`, 20 minutes sur un Xeon
+Platinum 8573C, `evaluation=reseau-embarque`, face à la première vague :
+
+| | au réseau | à la faite main (première vague) |
+|---|---|---|
+| positions par seconde | **1 774** | 1 509 à 1 727 ; 1 568 et 1 727 sur ce modèle |
+| demi-coups par partie | 117,4 | 113,9 |
+| parties écartées | **7,4 %** | 2,0 % |
+| positions gardées par le filtre par défaut | 63,7 % | 62,1 % |
+| gains blancs, gains noirs, nulles | 36,8 %, 37,4 %, **25,8 %** | 39,8 %, 41,3 %, 18,9 % |
+
+- **le débit** : × 1,03 à × 1,13 sur le même modèle de processeur, pour
+  × 1,15 attendu du seul coût du nœud — les parties ont changé aussi ;
+- **les parties écartées triplent, et c'est l'échelle, pas les ouvertures.**
+  Lu au code : l'ouverture se tire de (graine, numéro) seuls, avant toute
+  recherche, donc les deux évaluations voient les mêmes ouvertures ; seul le
+  score de la première position décide, au-delà de `OPENING_MAX_SCORE`
+  (1 000). Pour la faite main, 1 000 centièmes valent une dame ; le réseau
+  est entraîné à l'échelle 400, où 1 000 correspond à une espérance de 92 %
+  — <span>inférence, confiance moyenne : la perte mêle le résultat (`wdl`
+  0,75) et l'étiquette, les deux par la même sigmoïde</span>. Le filtre
+  devient plus strict, et plus proche de ce que son commentaire annonce
+  (« a déjà donné une pièce ») ;
+- **la même échelle déplace l'adjudication, et dans le sens qui coûte** :
+  `WIN_ADJ_SCORE`, 2 000, vaut quinze à vingt pions pour la faite main, une
+  espérance de 99,3 % pour le réseau. Moins prudente — sa sonde, plus bas ;
+- plus de nulles, 25,8 % contre 18,9 % : des ouvertures plus équilibrées et
+  un joueur plus fort — <span>inférence, confiance moyenne</span>, les deux
+  causes ne sont pas séparées.
+
+**La vague, décidée avant de la lancer : huit jobs de 330 minutes**,
+`<embedded>`, 5 000 nœuds, graine « auto ». Huit et non quatre, parce qu'une
+seule vague sert les deux premiers leviers, et une seule séance sur la carte
+de Théo les deux entraînements :
+- **levier 1, le générateur au réseau** : les quatre PREMIERS runs lancés —
+  les numéros les plus bas, choisis avant d'en voir les comptes —, la taille
+  de la première vague ;
+- **levier 2, plus de positions** : les huit, la même recette, 40 superlots.
+  Seule la diversité change : les positions vues restent 4 milliards.
+
+La charge reste celle que le workflow s'impose — quelques jobs, pas des
+dizaines. *Attendu, écrit avant* — <span>inférence, confiance moyenne</span> :
+1 500 à 1 900 positions par seconde et par runner, soit 29,7 à 37,6 M par
+job ; **238 à 301 M au total**, 119 à 150 M pour les quatre premiers. Contre
+125 M à la faite main, ces −5 % à +20 % sont le confondant qu'on accepte au
+levier 1 — écrit ici plutôt que découvert après.
+
+**La sonde d'adjudication, pendant la vague — critère écrit avant.** Dans le
+conteneur, les mêmes parties jouées deux fois — avec l'adjudication, puis
+sans, jusqu'au bout —, par le réseau et par la faite main pour témoin ; la
+sonde marque les parties adjugées, et compte celles dont la fin jouée
+diffère : renversement, ou nulle. **La vague est annulée si, au réseau, plus
+de 2 % des parties adjugées finissent autrement ET que le témoin fait au
+moins un point de moins** — un gain que le moteur ne sait pas convertir sans
+table de finales n'est pas une fausse adjudication, et le témoin le compte.
+Sinon elle continue. *Attendu* — <span>inférence, confiance faible</span> :
+sous 2 %, huit demi-coups de suite à 99,3 % chacun.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
