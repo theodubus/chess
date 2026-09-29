@@ -3625,6 +3625,33 @@ l'attic, `n7-sonde-adjudication.patch` :
   le reste — le générateur au réseau est un tout —, écrit ici plutôt que
   découvert après.
 
+**Une source extérieure : les données de Leela Chess Zero — question de
+Théo le 29 sept., à décider par lui.** Ce qui est vérifié :
+- **Stockfish s'entraîne dessus** — son `README.md` (commit `e8d2ba1`,
+  PR #5705 de Stockfish) : « *Stockfish uses neural networks trained on
+  data provided by the Leela Chess Zero project, which is made available
+  under the Open Database License (ODbL).* » ;
+- **et pas seulement dessus** — le wiki de son entraîneur
+  (`official-stockfish/nnue-pytorch`, « Training datasets ») : entraîner
+  d'abord sur des données de Stockfish (profondeur 9, 5 000 nœuds — notre
+  budget), puis ré-entraîner sur les données tirées de Leela, « *of higher
+  quality than the ones generated with Stockfish* » ; mais « *training
+  solely on the Lc0-derived datasets doesn't produce as good results* ». Le
+  dernier jeu généré par Stockfish lui-même : **16 milliards de positions**,
+  soixante fois notre vague ;
+- **notre entraîneur sait les lire** : bullet, au commit épinglé `10e7e82`,
+  porte `SfBinpackLoader` (`crates/bullet_lib/src/value/loader/sfbinpack.rs`)
+  — le format des jeux de Stockfish. Restent l'échelle de leurs scores, la
+  taille des fichiers et leur téléchargement, non vérifiés d'ici :
+  `lczero.org` est bloqué par le proxy du conteneur.
+
+Ce qui ne se tranche pas ici : **la licence** — l'ODbL demande l'attribution
+et le partage à l'identique des bases dérivées ; Stockfish s'en acquitte par
+une mention au `README.md` ; lecture, pas un avis juridique — et **ce que le
+projet veut être** : un réseau qui apprend du savoir de Leela n'est plus
+appris seul. Mesurable, s'il est décidé, comme un levier de plus :
+ré-entraîner notre meilleur réseau sur ces données, contre lui.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
