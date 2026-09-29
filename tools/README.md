@@ -746,7 +746,10 @@ dernière relève est faite.
 | **A21, étape 4 — le crible de mutation du candidat** | **36486347518** | `e944248` : `nnue.rs` et `uci.rs` touchés — et les autres fichiers | un job par fichier, puis `Verdict` ; entrée `commit`, donc aucune issue | **RELEVÉ à 23 h 45, VERT** — fini à 23 h 19, `search.rs` le plus long, 110 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, et les mêmes survivants que le balayage de `main` après la PR #89 (36380392695), un pour un — `search.rs` aux mêmes lignes, `nnue.rs` le même `>` décalé de quatre lignes par le code neuf, `eval.rs` les mêmes 89 : **la réserve ne s'est pas matérialisée**. `uci.rs` 0, 71 attrapés. Les attrapés et les expirés de `search.rs` et de `nnue.rs` sont ceux du balayage précédent. — *Prédiction, écrite avant* : `nnue.rs` **1** — le même survivant équivalent, le `>` du côté du roque ; `embedded` est tenu par la confrontation rejouée et par les tests de la couche UCI. `uci.rs` **0** — les bras neufs de `load_network` et le choix du message sont assertés, en test unitaire et de bout en bout, des deux côtés de chaque garde. `search.rs` **39**, les mêmes survivants : son code est intouché, et `Search::new` évalue toujours à la main. `eval.rs` **89** — *réserve* : les tests d'intégration lancent désormais un binaire qui évalue par le réseau, donc un mutant d'`eval.rs` qu'eux seuls attrapaient survivrait ; je n'en connais aucun. Les autres fichiers à leur plafond, total **140**. Les expirés ne se prédisent pas : ils suivent la charge du runner |
 | **N° 7 — le débit du générateur au réseau** | 36528844912 | le générateur de `main` à `c78921d`, `<embedded>`, 5 000 nœuds, graine « auto », un fil par processeur logique | un job court, 20 minutes | **RELEVÉ à 06 h 40** — fini à 06 h 20 | **1 774 positions/s, dans l'attendu** (1 500 à 2 100, écrit avant) : 18 141 parties, 2 129 279 positions, 63,7 % gardées par le filtre ; **7,4 % écartées contre 2,0 %** — l'échelle du réseau, lue au code (section n° 7). Décide huit jobs |
 | **N° 7 — la vague au réseau** | levier 1 : **36532340223, 36532342642, 36532345161, 36532347434** ; levier 2 : ces quatre et 36532349576, 36532352502, 36532354771, 36532357681 | le générateur de `main` à `81e2753` — celui de `c78921d` au bit près —, `<embedded>`, 5 000 nœuds, graine « auto » | 8 jobs de 330 minutes | **RELEVÉE à 12 h 30** — lancée à 06 h 41, huit succès finis à 12 h 11 | **249,5 M positions, 120,9 M pour les quatre premiers — dans l'attendu** (238 à 301 M, 119 à 150 M, écrit avant), à son plancher : 2 121 130 et 1 027 603 parties, les `--attendu` de la séance. Par job, cinq sous le plancher et un au-dessus ; au réseau, le débit vaut × 0,986 celui de la première vague sur les mêmes processeurs, pas × 1,15 — le résidu est nommé (section n° 7). **La séance des trois entraînements est écrite** |
-| **N° 7 — les trois entraînements, sur la carte de Théo** | — | N1 : 128 unités, les quatre premiers runs ; N2 : 128, les huit ; N3 : 256 unités au commit `87c3d27`, les huit — tous depuis le même programme d'entraînement | une séance d'une heure environ, téléchargement compris | **attend Théo** — les artefacts expirent le 28 déc. 2026 | la confrontation de chacun à son entraîneur ; puis les trois matchs du plan (section n° 7) |
+| **N° 7 — les trois entraînements, sur la carte de Théo** | — | N1 : 128 unités, les quatre premiers runs ; N2 : 128, les huit ; N3 : 256 unités au commit `87c3d27`, les huit — tous depuis le même programme d'entraînement | une séance, 34 minutes d'entraînement en tout | **RELEVÉS à 20 h 40** — poussés par Théo sur `reseau/n7` (`c2d5564`), intégrés par `be9f65e` | **les trois tiennent leurs deux contrôles** : les données relues exactement, les confrontations à 6/16, 4/8 et 7/19 (admis 15/50) ; N3 descend 2 % sous N2 à données égales. Candidats `c430fe5`, `af62e48`, `eddab38` (section n° 7) |
+| **N° 7 — N1 contre N0, les étiquettes du réseau** | **36628657607, 36628667415** | `c430fe5` → `be9f65e`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 20 h 46, fin au plafond vers 02 h 40 | mise en commun ; **gain démontré si la borne basse commune est au-dessus de zéro**, et alors N1 remplace N0 dans la chaîne. — *Attendu, écrit avant* : 0 à +40 |
+| **N° 7 — N2 contre N1, deux fois plus de positions** | **36628702088, 36628711771** | `af62e48` → `c430fe5`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 20 h 46, fin au plafond vers 02 h 40 | le même critère. — *Attendu, écrit avant* : 0 à +25 |
+| **N° 7 — N3 contre N2, la couche cachée à 256** | **36628744444, 36628753327** | `eddab38` → `af62e48`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 20 h 46, fin au plafond vers 02 h 40 | le même critère — la capacité contre la vitesse, un nœud à 256 coûtant plus cher. — *Attendu, écrit avant* : −10 à +40 |
 | **N° 7 — la sonde d'adjudication, dans le conteneur** | — | les mêmes parties avec et sans adjudication, au réseau et à la faite main pour témoin : `main` à `81e2753` sondé, 3 000 parties par passe, graine 20260929 | quatre passes | **RELEVÉE à 06 h 53** — lancée à 06 h 42 | **0,50 % au réseau** (8 nulles sur 1 603 adjugées, aucun renversement), **0 au témoin** : sous les 2 %, **la vague continue**. L'adjudication au réseau coupe 24 demi-coups par partie adjugée, contre 3,7 (section n° 7) | **Critère, écrit avant** : la vague est annulée si plus de 2 % des parties adjugées au réseau finissent autrement ET que le témoin fait au moins un point de moins |
 | **C13 — la force absolue, trois séries à 60+0,6** | 36529779756, 36529782211, 36529784491 | le réseau (`main` à `81e2753`) contre Stockfish 16 bridé à 2850 ; la faite main (`bfebbd8`) contre 2850 ; le réseau contre 3100 | 3 × 300, fastchess | **RELEVÉES à 11 h 10** — finies entre 10 h 58 et 11 h 06 | **le réseau 2 830 ± 30 contre 2850 et 2 882 ± 37 contre 3100, 2 851 ± 23 ensemble ; la faite main 2 632 ± 40 ; l'écart +198 ± 50**, zéro anomalie. Six fois plus de temps ne rapporte au réseau que +40 ± 42 contre ce Stockfish (section C13). — *Attendu, écrit avant* : faite main 2 600 à 2 800, réseau 2 800 à 3 100, écart +100 à +300 — **les trois tenus** |
 | **C28 — la table sous pression, l'Elo** | **36603407632, 36603411624** — les deux premiers déclenchés | `cdd5ba4` (2 Mio) → `068ee1a` (16 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 17 h 13, fin au plafond vers 23 h 05 | mise en commun, puis le critère de la section C28 : coût démontré si la borne haute commune est sous zéro. — *Attendu, écrit avant* : −30 à +5 Elo |
@@ -3778,6 +3781,53 @@ marge pour les poids de sortie de N3 : le réseau qui joue en totalise 7 003
 en valeur absolue, pour un plafond de 33 025, et le double d'unités à poids
 égaux ferait ~14 000 — <span>inférence, confiance moyenne</span> : un
 réseau plus large porte plutôt des poids de sortie plus petits.
+
+**La séance, RELEVÉE le 29 sept. à 20 h 40 — les trois réseaux tiennent
+leurs deux contrôles.** Poussés par Théo sur `reseau/n7` (`c2d5564`),
+intégrés par `be9f65e` :
+
+| | relus, parties : positions | confrontation, médian / maximal (admis 15 / 50) | entraînement | perte au 1ᵉʳ, 10ᵉ, 20ᵉ, 40ᵉ superlot |
+|---|---|---|---|---|
+| N0, le réseau qui joue | 1 098 403 : 125 098 300 | 7 / 23 | 11 min 53 s | 0,0486 · 0,0462 · 0,0461 · 0,0460 |
+| **N1**, 128, quatre jobs | 1 027 603 : 120 917 119 — **l'attendu exact** | **6 / 16** | 10 min 53 s | 0,0462 · 0,0435 · 0,0433 · 0,0432 |
+| **N2**, 128, huit jobs | 2 121 130 : 249 458 187 — **l'attendu exact** | **4 / 8** | 11 min 05 s | 0,0463 · 0,0436 · 0,0436 · 0,0435 |
+| **N3**, 256, huit jobs | la même chose | **7 / 19** | 12 min 16 s | 0,0456 · 0,0427 · 0,0427 · 0,0426 |
+
+- **les données relues sont exactement celles des résumés**, les trois
+  fois ; les trois confrontations tiennent le critère écrit avant le
+  premier entraînement ;
+- **un attendu réfuté** — « le double environ pour N3 » : **+11 %** de
+  temps seulement, 5,46 M de positions par seconde contre 5,98. Le calcul
+  de la couche cachée n'est pas ce qui borne la séance — <span>inférence,
+  confiance moyenne</span> : le chargement des données l'est ;
+- **les pertes ne se comparent qu'à données égales** : N0 et N1 n'ont pas
+  les mêmes cibles, N1 et N2 pas les mêmes positions. **N3 descend 2 % sous
+  N2 sur les mêmes données** — la largeur ajuste mieux. Ce sont des pertes
+  d'entraînement, sans jeu de validation : <span>inférence, confiance
+  faible</span> — N1 voit chaque position gardée ~52 fois en 40 superlots,
+  N2 ~25 fois, et c'est N1 qui descend encore au 40ᵉ, N2 qui plafonne dès le
+  15ᵉ ; le surapprentissage d'un petit jeu ressemblerait à cela, et seuls
+  les matchs trancheront ;
+- **trois tests supposaient 128 unités** et tombaient avec N3 sans qu'aucun
+  réseau ne soit en faute — la taille de fichier, les poids de sortie de
+  ±129 d'un test de borne, la borne d'un réseau aléatoire : rendus
+  indépendants de la largeur par `56ced07`, **neutre à 128**, chaque test y
+  construisant exactement les mêmes valeurs qu'avant.
+
+**Les trois candidats, révoqués aussitôt** — chacun ne change que le réseau
+embarqué et la confrontation recopiée de sa sortie, et N3 la largeur ; suite
+rapide verte pour chacun, et le banc inchangé, 107 548 à la profondeur 7 :
+il évalue à la main.
+
+| match | candidat | révoqué par | référence |
+|---|---|---|---|
+| N1 contre N0 | `c430fe5` | `d9a24a2` | `be9f65e`, le parent : N0 embarqué |
+| N2 contre N1 | `af62e48` | `c0dd8b9` | `c430fe5` |
+| N3 contre N2 | `eddab38` | `56c9aa1` | `af62e48` |
+
+Pas de rustine à l'attic : chaque diff tient en un chemin, douze valeurs et,
+pour N3, une constante ; les réseaux sont dans `reseaux/`, et les trois SHA
+dans l'histoire de `main` par la fusion.
 
 **Les matchs des trois leviers — plan et critères écrits le 29 sept. à
 11 h 30, avant que le premier réseau existe.**
