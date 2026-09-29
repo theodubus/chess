@@ -70,7 +70,7 @@ use crate::eval::MATE_THRESHOLD;
 pub const INPUTS: usize = 768;
 
 /// Taille de la couche cachée, pour chacune des deux perspectives.
-pub const HIDDEN: usize = 256;
+pub const HIDDEN: usize = 128;
 
 /// Quantification de la couche cachée, poids et biais.
 pub const QA: i32 = 255;
@@ -411,12 +411,11 @@ impl Network {
     }
 }
 
-/// Le réseau que le binaire embarque : N3, le levier 3 du n° 7 —
-/// `(768 → 256) × 2 → 1`, 40 superlots, entraîné le 29 sept. 2026 sur les
-/// huit jobs de la vague au réseau (249,5 M positions).
-/// Sa courbe de perte et la sortie complète de l'entraînement sont à côté de
-/// lui, dans `reseaux/`.
-const EMBEDDED: &[u8] = include_bytes!("../../reseaux/n3-768x256-40.bin");
+/// Le réseau que le binaire embarque : le premier entraînement d'A21 —
+/// `(768 → 128) × 2 → 1`, 40 superlots, par bullet sur la carte de Théo le
+/// 28 sept. 2026. Sa courbe de perte et la sortie complète de l'entraînement
+/// sont à côté de lui, dans `reseaux/`.
+const EMBEDDED: &[u8] = include_bytes!("../../reseaux/shallowred-768x128-40.bin");
 
 /// Le réseau embarqué, lu une seule fois et partagé.
 ///
@@ -1025,12 +1024,12 @@ mod tests {
 
     #[test]
     fn le_reseau_embarque_evalue_comme_son_entraineur() {
-        // La confrontation de l'entraînement du réseau embarqué, rejouée à
-        // chaque build : les douze positions, ce qu'en disait le moteur et ce
-        // qu'en disait bullet (`trainer.eval(fen) × 400`) au bout de
-        // l'entraînement — relevés dans `reseaux/n3-768x256-40.sortie.txt`.
-        // Le seul test qui confronte l'inférence à l'entraîneur sur un VRAI
-        // réseau ; ceux d'au-dessus tiennent des réseaux aléatoires.
+        // La confrontation de l'étape 3 d'A21, rejouée à chaque build : les
+        // douze positions, ce qu'en disait le moteur et ce qu'en disait
+        // bullet (`trainer.eval(fen) × 400`) au bout de l'entraînement —
+        // relevés dans `reseaux/shallowred-768x128-40.sortie.txt`. Le seul
+        // test qui confronte l'inférence à l'entraîneur sur un VRAI réseau ;
+        // ceux d'au-dessus tiennent des réseaux aléatoires.
         //
         // La valeur du moteur est tenue à l'unité : l'inférence est
         // entière, et rien de ce qui la réécrirait — un produit vectorisé, un
@@ -1040,48 +1039,48 @@ mod tests {
         const CONFRONTATION: [(&str, i32, i32); 12] = [
             (
                 "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                47,
-                45,
+                26,
+                32,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-                -131,
-                -138,
+                -1,
+                8,
             ),
-            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 116, 121),
+            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 203, 198),
             (
                 "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-                -80,
-                -87,
+                685,
+                690,
             ),
             (
                 "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-                -113,
-                -106,
+                -24,
+                -33,
             ),
             (
                 "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
-                3,
-                9,
+                -12,
+                -1,
             ),
             (
                 "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
-                -31,
-                -32,
+                -92,
+                -85,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1",
-                179,
-                182,
+                0,
+                23,
             ),
             (
                 "r2q1rk1/pp2bppp/2n1bn2/3p4/3P4/2NBBN2/PP3PPP/R2Q1RK1 b - - 0 1",
-                22,
                 12,
+                17,
             ),
-            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -2223, -2242),
-            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 342, 347),
-            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -3565, -3580),
+            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -1726, -1708),
+            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 521, 525),
+            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -3004, -3003),
         ];
         let network = embedded().unwrap();
         let mut gaps = Vec::new();
