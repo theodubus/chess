@@ -61,6 +61,13 @@ une mesure, pas une préférence.
   parties. La faite main reste — `EvalFile <none>` —, et c'est elle
   qu'évaluent le banc (`Search::new`) et les tests de recherche, **pas celle
   qui joue** : voir « c'est plus rapide ».
+- **Les données de Leela Chess Zero sont admises** pour entraîner le réseau.
+  Théo, 29 sept. 2026 : « *ok pour license et le fait qu'on utilise leurs
+  données, mon but est d'avoir le meilleur moteur possible* » — nos données
+  seules, les leurs seules ou les nôtres puis les leurs, **selon ce qui mesure
+  le mieux**. Licence ODbL : **le jour où un réseau entraîné sur elles est
+  embarqué, `README.md` porte la mention d'attribution**, comme celui de
+  Stockfish. Plan et faits vérifiés : `tools/README.md`, section n° 7.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Licence AGPL-3.0-or-later** sur tout le dépôt.
 
