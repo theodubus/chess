@@ -3779,6 +3779,53 @@ en valeur absolue, pour un plafond de 33 025, et le double d'unités à poids
 égaux ferait ~14 000 — <span>inférence, confiance moyenne</span> : un
 réseau plus large porte plutôt des poids de sortie plus petits.
 
+**La séance, RELEVÉE le 29 sept. à 20 h 40 — les trois réseaux tiennent
+leurs deux contrôles.** Poussés par Théo sur `reseau/n7` (`c2d5564`),
+intégrés par `be9f65e` :
+
+| | relus, parties : positions | confrontation, médian / maximal (admis 15 / 50) | entraînement | perte au 1ᵉʳ, 10ᵉ, 20ᵉ, 40ᵉ superlot |
+|---|---|---|---|---|
+| N0, le réseau qui joue | 1 098 403 : 125 098 300 | 7 / 23 | 11 min 53 s | 0,0486 · 0,0462 · 0,0461 · 0,0460 |
+| **N1**, 128, quatre jobs | 1 027 603 : 120 917 119 — **l'attendu exact** | **6 / 16** | 10 min 53 s | 0,0462 · 0,0435 · 0,0433 · 0,0432 |
+| **N2**, 128, huit jobs | 2 121 130 : 249 458 187 — **l'attendu exact** | **4 / 8** | 11 min 05 s | 0,0463 · 0,0436 · 0,0436 · 0,0435 |
+| **N3**, 256, huit jobs | la même chose | **7 / 19** | 12 min 16 s | 0,0456 · 0,0427 · 0,0427 · 0,0426 |
+
+- **les données relues sont exactement celles des résumés**, les trois
+  fois ; les trois confrontations tiennent le critère écrit avant le
+  premier entraînement ;
+- **un attendu réfuté** — « le double environ pour N3 » : **+11 %** de
+  temps seulement, 5,46 M de positions par seconde contre 5,98. Le calcul
+  de la couche cachée n'est pas ce qui borne la séance — <span>inférence,
+  confiance moyenne</span> : le chargement des données l'est ;
+- **les pertes ne se comparent qu'à données égales** : N0 et N1 n'ont pas
+  les mêmes cibles, N1 et N2 pas les mêmes positions. **N3 descend 2 % sous
+  N2 sur les mêmes données** — la largeur ajuste mieux. Ce sont des pertes
+  d'entraînement, sans jeu de validation : <span>inférence, confiance
+  faible</span> — N1 voit chaque position gardée ~52 fois en 40 superlots,
+  N2 ~25 fois, et c'est N1 qui descend encore au 40ᵉ, N2 qui plafonne dès le
+  15ᵉ ; le surapprentissage d'un petit jeu ressemblerait à cela, et seuls
+  les matchs trancheront ;
+- **trois tests supposaient 128 unités** et tombaient avec N3 sans qu'aucun
+  réseau ne soit en faute — la taille de fichier, les poids de sortie de
+  ±129 d'un test de borne, la borne d'un réseau aléatoire : rendus
+  indépendants de la largeur par `56ced07`, **neutre à 128**, chaque test y
+  construisant exactement les mêmes valeurs qu'avant.
+
+**Les trois candidats, révoqués aussitôt** — chacun ne change que le réseau
+embarqué et la confrontation recopiée de sa sortie, et N3 la largeur ; suite
+rapide verte pour chacun, et le banc inchangé, 107 548 à la profondeur 7 :
+il évalue à la main.
+
+| match | candidat | révoqué par | référence |
+|---|---|---|---|
+| N1 contre N0 | `c430fe5` | `d9a24a2` | `be9f65e`, le parent : N0 embarqué |
+| N2 contre N1 | `af62e48` | `c0dd8b9` | `c430fe5` |
+| N3 contre N2 | `eddab38` | `56c9aa1` | `af62e48` |
+
+Pas de rustine à l'attic : chaque diff tient en un chemin, douze valeurs et,
+pour N3, une constante ; les réseaux sont dans `reseaux/`, et les trois SHA
+dans l'histoire de `main` par la fusion.
+
 **Les matchs des trois leviers — plan et critères écrits le 29 sept. à
 11 h 30, avant que le premier réseau existe.**
 - **en parallèle, chacun contre son prédécesseur** : N1 contre le réseau
