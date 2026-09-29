@@ -3587,6 +3587,33 @@ levier 1 — écrit ici plutôt que découvert après.
 36532342642, 36532345161 et 36532347434**, servent le levier 1 ; les huit,
 avec 36532349576, 36532352502, 36532354771 et 36532357681, le levier 2.
 
+**Les matchs des trois leviers — plan et critères écrits le 29 sept. à
+11 h 30, avant que le premier réseau existe.**
+- **en parallèle, chacun contre son prédécesseur** : N1 contre le réseau
+  qui joue (N0, `main`), N2 contre N1, N3 contre N2. Chaque paire ne diffère
+  que d'un levier, et les trois tiennent ensemble dans le temps d'un seul —
+  cinq heures au lieu de quinze. Si un maillon échoue, le match qui manque
+  — un candidat contre le réseau qui joue alors — se joue ensuite ;
+- **avant tout match**, la confrontation de `nnue-train` doit passer (écart
+  médian ≤ 15, maximal ≤ 50) : sinon le réseau ne se mesure pas ;
+- **chaque candidat est un commit révoqué aussitôt** : le réseau sous
+  `reseaux/`, `EMBEDDED` pointé sur lui, la confrontation recopiée dans
+  `le_reseau_embarque_evalue_comme_son_entraineur` — et `HIDDEN` à 256 pour
+  N3 ;
+- **à `8+0,08`, deux jobs de 3 000 parties par paire** — ~2 880 chacun sous
+  le plafond —, mis en commun ; **gain démontré si la borne basse commune
+  est au-dessus de zéro**, et alors seulement le candidat remplace son
+  prédécesseur dans la chaîne. Sinon le prédécesseur reste : un levier qui
+  ne se démontre pas ne s'adopte pas ;
+- **attendus** — <span>inférence, confiance faible pour les trois</span> :
+  N1 contre N0, **0 à +40** — de meilleures étiquettes, et le reste égal ;
+  N2 contre N1, **0 à +25** — le double de données, à calendrier égal ;
+  N3 contre N2, **−10 à +40** — la capacité contre la vitesse, un nœud à
+  256 unités coûtant plus cher ;
+- **puis le levier 4** — ré-entraîner le meilleur sur les données de Leela,
+  `--depuis` son dossier — et la série de C13 contre 2850 à 60+0,6 pour le
+  réseau adopté.
+
 **La sonde d'adjudication, pendant la vague — critère écrit avant.** Dans le
 conteneur, les mêmes parties jouées deux fois — avec l'adjudication, puis
 sans, jusqu'au bout —, par le réseau et par la faite main pour témoin ; la
