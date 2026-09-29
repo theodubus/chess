@@ -29,16 +29,28 @@
 //!
 //! # Déterminisme
 //!
-//! Chaque partie est une fonction pure de (graine, numéro, budget de nœuds) :
+//! Chaque partie est une fonction pure de (graine, numéro, budget de nœuds,
+//! évaluation) :
 //! ouverture tirée par un générateur seedé, table vidée au début de chaque
 //! partie, un seul fil par recherche. Le nombre de fils de génération ne
 //! change que l'ordre d'écriture, jamais une partie.
+//!
+//! # L'évaluation qui étiquette
+//!
+//! **Le réseau embarqué, par défaut** (chantier n° 7, 29 sept. 2026) : les
+//! étiquettes sont les scores de la recherche, et la recherche qui joue évalue
+//! par le réseau depuis le 28 sept. — des données étiquetées par la faite main
+//! apprendraient au réseau suivant ce que dit l'évaluation qu'il remplace.
+//! `--eval` prend les valeurs de l'option UCI `EvalFile` : `<embedded>`, le
+//! défaut ; `<none>`, la faite main — c'est ainsi que les données d'A21 se
+//! regénèrent à l'identique ; ou le chemin d'un réseau, pour étiqueter avec un
+//! réseau qui n'est pas encore embarqué.
 //!
 //! # Usage
 //!
 //! ```text
 //! nnue-datagen --out DOSSIER [--threads 4] [--nodes 5000] [--seed 1]
-//!              [--games N] [--minutes M]
+//!              [--games N] [--minutes M] [--eval <embedded>|<none>|FICHIER]
 //! ```
 //!
 //! S'arrête au premier des deux : `N` parties entamées, ou `M` minutes
@@ -53,6 +65,7 @@ use std::time::{Duration, Instant};
 
 use cozy_chess::{Board, Color, Move, Piece};
 use shallowred::eval::is_insufficient_material;
+use shallowred::nnue::{self, Network};
 use shallowred::position::Position;
 use shallowred::search::{Limits, Score, Search};
 use viriformat::chess::board::{Board as VfBoard, DrawType, GameOutcome, WinType};
@@ -359,6 +372,59 @@ impl Stats {
     }
 }
 
+/// L'évaluation que la recherche emploie pour jouer et étiqueter.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum Evaluation {
+    /// Le réseau embarqué dans le binaire — le défaut, celui qui joue.
+    Embedded,
+    /// L'évaluation faite main : les données d'A21 se regénèrent ainsi.
+    HandCrafted,
+    /// Un réseau au format de bullet, pas encore embarqué.
+    File(PathBuf),
+}
+
+impl Evaluation {
+    /// Les valeurs de l'option UCI `EvalFile`, pour qu'une seule convention
+    /// désigne une évaluation dans tout le dépôt.
+    fn parse(value: &str) -> Self {
+        match value {
+            "<embedded>" => Self::Embedded,
+            "<none>" => Self::HandCrafted,
+            path => Self::File(PathBuf::from(path)),
+        }
+    }
+
+    /// Le réseau à brancher sur chaque recherche ; `None` pour la faite main.
+    /// Chargé une fois, avant les fils : un fichier refusé arrête la
+    /// génération avant qu'elle n'écrive quoi que ce soit.
+    ///
+    /// # Errors
+    /// Un fichier illisible, ou refusé par [`Network::from_bytes`].
+    fn load(&self) -> Result<Option<Arc<Network>>, String> {
+        match self {
+            Self::Embedded => nnue::embedded().map(Some),
+            Self::HandCrafted => Ok(None),
+            Self::File(path) => {
+                let bytes =
+                    std::fs::read(path).map_err(|error| format!("{} : {error}", path.display()))?;
+                let network = Network::from_bytes(&bytes)
+                    .map_err(|error| format!("{} : {error}", path.display()))?;
+                Ok(Some(Arc::new(network)))
+            }
+        }
+    }
+
+    /// Ce que le résumé imprime : une clé par évaluation, lisible d'un run à
+    /// l'autre.
+    fn label(&self) -> String {
+        match self {
+            Self::Embedded => "reseau-embarque".to_string(),
+            Self::HandCrafted => "faite-main".to_string(),
+            Self::File(path) => format!("fichier:{}", path.display()),
+        }
+    }
+}
+
 struct Config {
     out: PathBuf,
     threads: usize,
@@ -366,6 +432,7 @@ struct Config {
     seed: u64,
     games: u64,
     minutes: Option<u64>,
+    evaluation: Evaluation,
 }
 
 /// Un fil de génération : réclame des numéros de partie jusqu'à l'échéance,
@@ -373,6 +440,7 @@ struct Config {
 fn worker(
     thread: usize,
     config: &Config,
+    network: Option<Arc<Network>>,
     next: &AtomicU64,
     deadline: Option<Instant>,
 ) -> Result<Stats, String> {
@@ -380,6 +448,7 @@ fn worker(
     let file = File::create(&path).map_err(|error| format!("{}: {error}", path.display()))?;
     let mut writer = BufWriter::new(file);
     let mut search = Search::new(Arc::new(AtomicBool::new(false)));
+    search.set_network(network);
     let mut stats = Stats::default();
     loop {
         if deadline.is_some_and(|deadline| Instant::now() >= deadline) {
@@ -412,6 +481,7 @@ fn parse_args(args: &[String]) -> Result<Config, String> {
         seed: 1,
         games: u64::MAX,
         minutes: None,
+        evaluation: Evaluation::Embedded,
     };
     let mut iter = args.iter();
     while let Some(flag) = iter.next() {
@@ -432,6 +502,7 @@ fn parse_args(args: &[String]) -> Result<Config, String> {
             "--seed" => config.seed = number()?,
             "--games" => config.games = number()?,
             "--minutes" => config.minutes = Some(number()?),
+            "--eval" => config.evaluation = Evaluation::parse(value),
             _ => return Err(format!("option inconnue : {flag}")),
         }
     }
@@ -454,12 +525,14 @@ fn run(config: &Config) -> Result<(Stats, Duration), String> {
     let deadline = config
         .minutes
         .map(|minutes| started + Duration::from_secs(minutes * 60));
+    let network = config.evaluation.load()?;
     let next = AtomicU64::new(0);
     let results: Vec<Result<Stats, String>> = std::thread::scope(|scope| {
         let handles: Vec<_> = (0..config.threads)
             .map(|thread| {
                 let next = &next;
-                scope.spawn(move || worker(thread, config, next, deadline))
+                let network = network.clone();
+                scope.spawn(move || worker(thread, config, network, next, deadline))
             })
             .collect();
         handles
@@ -486,7 +559,7 @@ fn main() {
             eprintln!("{message}");
             eprintln!(
                 "usage : nnue-datagen --out DOSSIER [--threads 1] [--nodes {DEFAULT_NODES}] \
-                 [--seed 1] [--games N] [--minutes M]"
+                 [--seed 1] [--games N] [--minutes M] [--eval <embedded>|<none>|FICHIER]"
             );
             std::process::exit(2);
         }
@@ -497,6 +570,7 @@ fn main() {
             // Une clé par ligne : le workflow les recopie telles quelles dans
             // son résumé, et un lecteur les compare d'un run à l'autre.
             println!("graine={}", config.seed);
+            println!("evaluation={}", config.evaluation.label());
             println!("noeuds_par_coup={}", config.nodes);
             println!("fils={}", config.threads);
             println!("parties={}", stats.games);
@@ -838,5 +912,82 @@ mod tests {
         assert!(parse_args(&args(&["--out", "d", "--games", "x"])).is_err());
         assert!(parse_args(&args(&["--out", "d", "--games", "1", "--nodes", "0"])).is_err());
         assert!(parse_args(&args(&["--out", "d", "--bruit", "1"])).is_err());
+
+        // L'évaluation : le réseau embarqué par défaut, les valeurs de
+        // l'option UCI `EvalFile` sinon.
+        assert_eq!(config.evaluation, Evaluation::Embedded);
+        let evaluation = |value: &str| {
+            parse_args(&args(&["--out", "d", "--games", "1", "--eval", value]))
+                .unwrap()
+                .evaluation
+        };
+        assert_eq!(evaluation("<embedded>"), Evaluation::Embedded);
+        assert_eq!(evaluation("<none>"), Evaluation::HandCrafted);
+        assert_eq!(
+            evaluation("reseaux/candidat.bin"),
+            Evaluation::File(PathBuf::from("reseaux/candidat.bin"))
+        );
+        assert!(parse_args(&args(&["--out", "d", "--games", "1", "--eval"])).is_err());
+    }
+
+    #[test]
+    fn chaque_evaluation_se_charge_ou_se_refuse() {
+        let embarque = nnue::embedded().unwrap();
+        assert!(
+            Evaluation::Embedded
+                .load()
+                .unwrap()
+                .is_some_and(|reseau| Arc::ptr_eq(&reseau, &embarque))
+        );
+        assert!(Evaluation::HandCrafted.load().unwrap().is_none());
+        let absent = Evaluation::File(PathBuf::from("/nulle/part/reseau.bin"));
+        assert!(absent.load().is_err(), "un fichier absent arrête tout");
+        assert_eq!(Evaluation::Embedded.label(), "reseau-embarque");
+        assert_eq!(Evaluation::HandCrafted.label(), "faite-main");
+    }
+
+    /// Le branchement de bout en bout : ce que `run` écrit est ce que joue
+    /// une recherche qui évalue par le réseau embarqué — et PAS ce que joue la
+    /// faite main, sans quoi l'option ne changerait rien. `<none>` rend, lui,
+    /// les parties de la faite main à l'octet près : les données d'A21 se
+    /// regénèrent à l'identique.
+    #[test]
+    fn run_etiquette_avec_l_evaluation_demandee() {
+        let (seed, games, nodes) = (5, 2, 300);
+        let attendu = |network: Option<Arc<Network>>| {
+            let mut search = search();
+            search.set_network(network);
+            let mut out = Vec::new();
+            for index in 0..games {
+                if let Some(game) = play_indexed_game(seed, index, nodes, &mut search).unwrap() {
+                    game.serialise_into(&mut out).unwrap();
+                }
+            }
+            out
+        };
+        let ecrit = |nom: &str, evaluation: Evaluation| {
+            let out =
+                std::env::temp_dir().join(format!("nnue-datagen-{nom}-{}", std::process::id()));
+            let config = Config {
+                out: out.clone(),
+                threads: 1,
+                nodes,
+                seed,
+                games,
+                minutes: None,
+                evaluation,
+            };
+            let (stats, _) = run(&config).unwrap();
+            let bytes = std::fs::read(out.join(format!("nnue-{seed}-0.vf"))).unwrap();
+            let _ = std::fs::remove_dir_all(&out);
+            assert_eq!(stats.games + stats.discarded, games);
+            bytes
+        };
+        let reseau = attendu(nnue::embedded().ok());
+        let faite_main = attendu(None);
+        assert!(!reseau.is_empty() && !faite_main.is_empty());
+        assert_ne!(reseau, faite_main, "l'évaluation doit changer les parties");
+        assert_eq!(ecrit("defaut", Evaluation::Embedded), reseau);
+        assert_eq!(ecrit("faite-main", Evaluation::HandCrafted), faite_main);
     }
 }
