@@ -1,0 +1,272 @@
+# Mesure la force ABSOLUE du moteur (C13) : une série contre Stockfish bridé
+# par `UCI_LimitStrength`, sur un runner GitHub.
+#
+# # Pourquoi ce workflow
+#
+# Tous les verdicts du dépôt sont RELATIFS : le candidat contre son parent, un
+# jumeau contre l'autre. Ils disent si un changement aide, jamais où le moteur
+# se situe. C13 était reporté faute de liste de classement joignable ; un
+# adversaire étalonné qui s'installe sur le runner en tient lieu.
+#
+# # Ce que vaut l'échelle, lu au source
+#
+# Stockfish 16 — la version qu'installe `apt` sur les runners (Ubuntu 24.04,
+# paquet 16-1build1, vérifié le 29 sept. 2026) — convertit `UCI_Elo` (1320 à
+# 3190) en niveau de jeu « par ancrage à l'Elo CCRL (goldfish 1.13 = 2000) et
+# un ajustement sur des matchs à 60+0,6 » (`src/search.cpp`, tag `sf_16`,
+# commit 68e1e9b). D'où :
+# - la cadence par défaut, 60+0.6 : à une autre, l'échelle n'est plus celle
+#   de l'étalonnage ;
+# - bridé, Stockfish ne cherche pas moins : il force MultiPV à 4 et joue par
+#   moments un coup sous-optimal tiré au hasard, graine prise à l'horloge.
+#   Le match n'est donc pas rejouable coup pour coup — la graine fixe les
+#   ouvertures, pas ses tirages. Et c'est un adversaire d'un genre à part :
+#   le chiffre rendu est une estimation sur une échelle CCRL approchée, pas
+#   un classement.
+#
+# # Ce que le résumé rend
+#
+# Le score contre Stockfish à `UCI_Elo` = E, et l'estimation E + écart avec
+# son intervalle. Un score proche de 50 % se lit le mieux : au-delà de 90 %
+# ou en deçà de 10 %, l'intervalle s'ouvre — changer de niveau plutôt que de
+# jouer plus.
+name: Force absolue
+
+on:
+  workflow_dispatch:
+    inputs:
+      moteur:
+        description: "Commit, branche ou tag du moteur mesuré"
+        type: string
+        default: "main"
+      elo:
+        description: "UCI_Elo de Stockfish, de 1320 à 3190"
+        type: string
+        default: "2800"
+      cadence:
+        description: "Cadence des deux camps — 60+0.6 est celle de l'étalonnage de Stockfish"
+        type: string
+        default: "60+0.6"
+      parties:
+        description: "Nombre de parties. À 60+0.6, 300 tiennent sous le plafond de 350 minutes : au plus 168 s par partie (base et quarante incréments par camp), trois à la fois"
+        type: string
+        default: "300"
+      graine:
+        description: "Graine des ouvertures (auto : le numéro du run)"
+        type: string
+        default: "auto"
+
+permissions:
+  contents: read
+
+jobs:
+  mesurer:
+    name: Force absolue
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Toolchain
+        run: |
+          rustup show active-toolchain
+          rustc --version && cargo --version
+
+      # Valider AVANT de construire : une entrée fausse doit coûter cinq
+      # secondes et un message clair.
+      - name: Résoudre les entrées
+        id: entrees
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="${{ inputs.moteur }}"
+          sha=$(git rev-parse --verify --quiet "${ref}^{commit}" || true)
+          [ -n "$sha" ] || sha=$(git rev-parse --verify --quiet "origin/${ref}^{commit}" || true)
+          if [ -z "$sha" ]; then
+            echo "::error::moteur introuvable : « $ref » — essayé tel quel et sous origin/." >&2
+            exit 1
+          fi
+          elo="${{ inputs.elo }}"
+          if ! [[ "$elo" =~ ^[0-9]{4}$ ]] || [ "$elo" -lt 1320 ] || [ "$elo" -gt 3190 ]; then
+            echo "::error::UCI_Elo illisible ou hors de la plage de Stockfish 16 : « $elo » — de 1320 à 3190." >&2
+            exit 1
+          fi
+          parties="${{ inputs.parties }}"
+          if ! [[ "$parties" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::nombre de parties illisible : « $parties »." >&2
+            exit 1
+          fi
+          graine="${{ inputs.graine }}"
+          [ "$graine" = "auto" ] && graine="${{ github.run_id }}"
+          echo "moteur=$sha"      >> "$GITHUB_OUTPUT"
+          echo "elo=$elo"         >> "$GITHUB_OUTPUT"
+          echo "parties=$parties" >> "$GITHUB_OUTPUT"
+          echo "graine=$graine"   >> "$GITHUB_OUTPUT"
+
+      # En worktree détaché, comme `match.yml` : jamais par `git stash`.
+      - name: Construire le moteur
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach /tmp/wt-moteur "${{ steps.entrees.outputs.moteur }}"
+          ( cd /tmp/wt-moteur && cargo build --release --bin shallowred )
+          cp /tmp/wt-moteur/target/release/shallowred /tmp/moteur
+
+      # L'adversaire, et la preuve qu'il sait se brider : un Stockfish qui ne
+      # déclarerait pas `UCI_Elo` ignorerait l'option en silence et jouerait à
+      # pleine force — le match rendrait un chiffre faux et plausible.
+      - name: Installer Stockfish
+        id: stockfish
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install --yes --no-install-recommends stockfish
+          dpkg-query -W stockfish
+          uci=$(printf 'uci\nquit\n' | timeout 10 /usr/games/stockfish)
+          echo "$uci" | grep -q '^option name UCI_LimitStrength ' \
+            || { echo "::error::ce Stockfish ne déclare pas UCI_LimitStrength" >&2; exit 1; }
+          echo "$uci" | grep -q '^option name UCI_Elo ' \
+            || { echo "::error::ce Stockfish ne déclare pas UCI_Elo" >&2; exit 1; }
+          echo "version=$(echo "$uci" | head -1)"                    >> "$GITHUB_OUTPUT"
+          echo "paquet=$(dpkg-query -W -f='${Version}' stockfish)" >> "$GITHUB_OUTPUT"
+
+      - name: Arbitre
+        run: tools/setup-arbiters.sh
+
+      # Le point de fonctionnement du MOTEUR mesuré sur ce runner : les
+      # runners varient de 58 à 83 % en vitesse d'un job à l'autre.
+      - name: Étalonner le runner
+        id: etalon
+        shell: bash
+        run: |
+          set -euo pipefail
+          sortie=$(/tmp/moteur bench 10)
+          echo "$sortie"
+          nps=$(echo "$sortie" | awk '/Nodes\/second/ {print $NF}')
+          # Le `sleep` garde stdin ouvert : fermé tôt, le moteur lit EOF et
+          # interrompt sa recherche (piège du 13 sept. 2026).
+          prof=$( { printf 'uci\nisready\nposition startpos\ngo movetime 250\n'
+                    sleep 3
+                    printf 'quit\n'; } \
+                  | timeout 60 /tmp/moteur 2>/dev/null \
+                  | awk '/^info depth/ {d=$3} END {print d+0}')
+          physiques=$(lscpu -p=CORE,SOCKET | grep -v '^#' | sort -u | wc -l)
+          modele=$(lscpu | awk -F: '/^Model name/ {sub(/^ +/, "", $2); print $2; exit}')
+          echo "nps=$nps"         >> "$GITHUB_OUTPUT"
+          echo "profondeur=$prof" >> "$GITHUB_OUTPUT"
+          echo "topologie=$(nproc) processeurs logiques, $physiques cœurs physiques — $modele" >> "$GITHUB_OUTPUT"
+
+      - name: Jouer
+        id: jouer
+        shell: bash
+        run: |
+          # `bash -e` n'active PAS pipefail : sans lui, le code de retour
+          # serait celui de `tee`.
+          set -euo pipefail
+          # Un fil par moteur, un seul réfléchit à la fois : un cœur par
+          # partie, le dernier pour l'arbitre — la règle de `match.yml`.
+          concurrence=$(( $(nproc) - 1 ))
+          [ "$concurrence" -ge 1 ] || concurrence=1
+          echo "concurrence=$concurrence" >> "$GITHUB_OUTPUT"
+          elo="${{ steps.entrees.outputs.elo }}"
+          rondes=$(( (${{ steps.entrees.outputs.parties }} + 1) / 2 ))
+          tools/arbiters/fastchess \
+            -engine cmd=/tmp/moteur name=shallowred \
+            -engine cmd=/usr/games/stockfish name="stockfish-$elo" \
+                    option.UCI_LimitStrength=true option.UCI_Elo="$elo" \
+                    option.Threads=1 option.Hash=16 \
+            -each proto=uci tc="${{ inputs.cadence }}" \
+            -openings file=tools/book.epd format=epd order=random \
+            -srand "${{ steps.entrees.outputs.graine }}" \
+            -games 2 -repeat -rounds "$rondes" \
+            -concurrency "$concurrence" \
+            -draw movenumber=40 movecount=8 score=10 \
+            -resign movecount=4 score=600 twosided=true \
+            | tee /tmp/match.log
+
+      - name: Résumé
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          elo="${{ steps.entrees.outputs.elo }}"
+          {
+            echo "## Force absolue — contre Stockfish bridé à $elo"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| moteur | \`${{ inputs.moteur }}\` → \`${{ steps.entrees.outputs.moteur }}\` |"
+            echo "| adversaire | ${{ steps.stockfish.outputs.version }} — paquet \`${{ steps.stockfish.outputs.paquet }}\`, \`UCI_LimitStrength\`, \`UCI_Elo = $elo\` |"
+            echo "| cadence | \`${{ inputs.cadence }}\` |"
+            echo "| graine des ouvertures | \`${{ steps.entrees.outputs.graine }}\` — pas les tirages de Stockfish, pris à l'horloge |"
+            echo "| parties à la fois | ${{ steps.jouer.outputs.concurrence }} |"
+            echo "| topologie du runner | ${{ steps.etalon.outputs.topologie }} |"
+            echo "| **nœuds/s au bench** | **${{ steps.etalon.outputs.nps }}** |"
+            echo "| profondeur en 250 ms | ${{ steps.etalon.outputs.profondeur }} |"
+            echo
+            echo '### Score'
+            echo
+            echo '```'
+            # La DERNIÈRE ligne de résultats : l'arbitre imprime un score
+            # courant après chaque partie.
+            grep -E "^(Elo|LOS|Games|Ptnml|Results)" /tmp/match.log | tail -5 \
+              || echo "aucun résultat lisible — voir le journal"
+            echo '```'
+            ligne=$(grep -E '^Elo: ' /tmp/match.log | tail -1 || true)
+            if [ -n "$ligne" ]; then
+              ecart=$(echo "$ligne" | awk '{print $2}')
+              marge=$(echo "$ligne" | awk '{print $4}' | tr -d ',')
+              echo
+              echo "**Estimation, sur l'échelle de Stockfish** : $elo + ($ecart ± $marge)" \
+                   "= **$(awk -v e="$elo" -v d="$ecart" 'BEGIN { printf "%.0f", e + d }')" \
+                   "± $marge**."
+              echo
+              echo "> Une échelle CCRL approchée, étalonnée par Stockfish à 60+0,6"
+              echo "> contre un adversaire qui se trompe exprès : une estimation,"
+              echo "> pas un classement. Au-delà de 90 % ou en deçà de 10 % de"
+              echo "> score, changer de niveau."
+            fi
+            echo
+            echo '### Fins de partie — journal complet'
+            echo
+            echo '```'
+            grep -oE '\{[^}]+\}' /tmp/match.log | sort | uniq -c | sort -rn \
+              || echo "aucune fin de partie lisible"
+            echo '```'
+            # Les motifs du source de fastchess, comme dans `match.yml`.
+            anomalies=$(grep -cE 'loses on time|makes an illegal move|disconnects|connection stalls' \
+              /tmp/match.log || true)
+            echo
+            if [ "$anomalies" -gt 0 ]; then
+              echo "> **$anomalies ANOMALIE(S)** — perte au temps, coup illégal ou moteur"
+              echo "> perdu : chercher \`loses on time\` dans l'artefact \`force-log\`."
+            else
+              echo "> Aucune perte au temps, aucun coup illégal, aucun moteur perdu —"
+              echo "> sur la totalité du journal."
+            fi
+            # LES AVERTISSEMENTS, par nature et par moteur. Côté Stockfish,
+            # « Bestmove does not match beginning of last PV » est le bridage
+            # lui-même — le coup tiré au hasard n'ouvre pas sa variante
+            # principale, vérifié en local le 29 sept. Côté ShallowRed, le
+            # même avertissement serait une faute : d'où la séparation.
+            echo
+            echo '### Avertissements de l’arbitre — par nature et par moteur'
+            echo
+            echo '```'
+            grep -E '^Warning;' /tmp/match.log \
+              | sed -E 's/ - move [^ ]+ from / | /' | sort | uniq -c | sort -rn \
+              || echo "aucun avertissement"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Journal complet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: force-log
+          path: /tmp/match.log
+          retention-days: 30
