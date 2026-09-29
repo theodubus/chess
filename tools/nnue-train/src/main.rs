@@ -43,8 +43,12 @@ use bullet_lib::value::loader::{ViriBinpackLoader, ViriFilter};
 use cozy_chess::Board;
 use shallowred::nnue::{HIDDEN, Network, QA, QB, SCALE};
 
-/// Identifiant des points de sauvegarde : `<sortie>/<NET_ID>-<superlot>/`.
-const NET_ID: &str = "shallowred-768x128";
+/// Identifiant des points de sauvegarde : `<sortie>/<identifiant>-<superlot>/`.
+/// Tiré de la largeur du MOTEUR, comme l'architecture : un réseau plus large
+/// ne peut pas porter le nom de celui qu'il doit battre.
+fn net_id() -> String {
+    format!("shallowred-768x{HIDDEN}")
+}
 
 /// Les positions de la confrontation : celles du banc, puis d'autres au trait
 /// noir — le cas où bullet retourne l'échiquier —, des finales et des
@@ -237,7 +241,7 @@ fn run(args: &[String]) -> Result<(), String> {
 
     let initial_lr = 0.001;
     let schedule = TrainingSchedule {
-        net_id: NET_ID.to_owned(),
+        net_id: net_id(),
         eval_scale: SCALE as f32,
         steps: TrainingSteps {
             batch_size: 16_384,
@@ -275,8 +279,10 @@ fn run(args: &[String]) -> Result<(), String> {
     // ---- 3. Confronter le moteur à l'entraîneur.
     println!("== 3. Le moteur contre l'entraîneur ==");
     let quantised = format!(
-        "{}/{NET_ID}-{}/quantised.bin",
-        options.output, options.superbatches
+        "{}/{}-{}/quantised.bin",
+        options.output,
+        net_id(),
+        options.superbatches
     );
     let bytes = std::fs::read(&quantised).map_err(|e| format!("{quantised} : {e}"))?;
     let network =
