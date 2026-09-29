@@ -3643,41 +3643,93 @@ plancher.** Huit succès, tous finis à 12 h 11 ; chaque résumé nomme
   268 761, 270 621, 267 598, 270 895 et 367 675.
 
 **La séance d'entraînement, sur la carte de Théo — trois réseaux, écrite à
-la relève.** La machine est prête depuis le 28 sept. (toolkit 13.2,
-`CUDA_PATH` et `LD_LIBRARY_PATH` pointés sur lui) : rien à réinstaller.
-Depuis `main` à jour — `git checkout main && git pull` :
+la relève ; la procédure complète précisée le même jour, à sa demande** :
+le dépôt dans `~/chess`, Ubuntu, `main` pas forcément à jour. La machine est
+prête depuis le 28 sept. — toolkit 13.2, rien à réinstaller. Chaque bloc se
+colle dans le MÊME terminal, dans l'ordre :
 
-1. **les données** — les huit artefacts, **avant le 28 déc. 2026**, chacun
-   dans son propre dossier, hors du dépôt : N1 n'en prend que quatre, et le
-   programme ne lit que les `.vf` posés directement dans les dossiers qu'on
-   lui donne. Avec `gh` :
+0. **le dépôt à jour** :
    ```sh
+   cd ~/chess
+   git status
+   ```
+   Des fichiers « non suivis » ne gênent pas — `tools/nnue-train/checkpoints/`
+   porte le point de sauvegarde de N0 : le garder. Des fichiers « modifiés »,
+   si : s'arrêter et le dire. Puis :
+   ```sh
+   git fetch origin
+   git switch main
+   git pull --ff-only
+   git log --oneline -1
+   ```
+   — `58242bf` ou plus récent. Un `--ff-only` qui refuse dit que le `main`
+   local a divergé : s'arrêter et le dire ;
+1. **CUDA dans ce terminal** — `CUDA_PATH` et `LD_LIBRARY_PATH` doivent
+   désigner le toolkit 13.2, celui qu'accepte le pilote (paragraphe « Sur
+   Ubuntu ») :
+   ```sh
+   echo "CUDA_PATH=${CUDA_PATH:-(vide)}  LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-(vide)}"
+   ```
+   Vides, ou sur un autre toolkit :
+   ```sh
+   export CUDA_PATH=/usr/local/cuda-13.2
+   export LD_LIBRARY_PATH=$CUDA_PATH/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+   ls $CUDA_PATH/lib64/lib{cudart,nvrtc,cublas}.so
+   ```
+   — les trois bibliothèques doivent s'afficher. `/usr/local/cuda-13.2` est
+   l'emplacement du paquet `cuda-toolkit-13-2` de NVIDIA, <span>non vérifié
+   sur la machine</span> : `ls -d /usr/local/cuda*` le montre ;
+2. **les données** — huit archives, **avant le 28 déc. 2026, 06 h 40 UTC**
+   (lu à l'API : `expires_at`), depuis un navigateur connecté à GitHub — un
+   artefact ne se télécharge pas anonymement. Chacune s'enregistre sous
+   `nnue-<run>.zip`, 907 Mo en tout :
+   - [nnue-36532340223](https://github.com/theodubus/chess/actions/runs/36532340223/artifacts/11031852356), 108,0 Mo
+   - [nnue-36532342642](https://github.com/theodubus/chess/actions/runs/36532342642/artifacts/11032002356), 107,8 Mo
+   - [nnue-36532345161](https://github.com/theodubus/chess/actions/runs/36532345161/artifacts/11031604733), 116,8 Mo
+   - [nnue-36532347434](https://github.com/theodubus/chess/actions/runs/36532347434/artifacts/11031689282), 106,7 Mo
+   - [nnue-36532349576](https://github.com/theodubus/chess/actions/runs/36532349576/artifacts/11031194981), 107,3 Mo
+   - [nnue-36532352502](https://github.com/theodubus/chess/actions/runs/36532352502/artifacts/11031379818), 106,3 Mo
+   - [nnue-36532354771](https://github.com/theodubus/chess/actions/runs/36532354771/artifacts/11032251145), 107,5 Mo
+   - [nnue-36532357681](https://github.com/theodubus/chess/actions/runs/36532357681/artifacts/11031314872), 146,1 Mo
+
+   Puis chacune dans son propre dossier, hors du dépôt : N1 n'en prend que
+   quatre, et le programme ne lit que les `.vf` posés directement dans les
+   dossiers qu'on lui donne. `unzip` n'ouvre qu'une archive par appel, d'où
+   la boucle, et ne crée qu'UN niveau de dossier, d'où le `mkdir` — éprouvé
+   sur de fausses archives, sans lui les huit extractions échouent :
+   ```sh
+   DL=$(xdg-user-dir DOWNLOAD); echo "$DL"
+   mkdir -p ~/nnue-vague2
    for r in 36532340223 36532342642 36532345161 36532347434 \
             36532349576 36532352502 36532354771 36532357681; do
-     gh run download $r -R theodubus/chess -n nnue-$r -D ~/nnue-vague2/$r
+     unzip -o "$DL/nnue-$r.zip" -d ~/nnue-vague2/$r
    done
+   ls ~/nnue-vague2/*/*.vf | wc -l
    ```
-   — sans `gh`, la section *Artifacts* de chaque run, décompressée dans
-   `~/nnue-vague2/<run>`. Quatre `.vf` par dossier ; 907 Mo à télécharger,
-   1 030 Mio décompressés ;
-2. **N1, le levier 1** — les quatre premiers, 128 unités, depuis `main` :
+   — **32** : quatre `.vf` par dossier, 1 030 Mio. Avec `gh` connecté
+   (`gh auth login`), téléchargement et décompression en une ligne dans la
+   même boucle : `gh run download $r -R theodubus/chess -n nnue-$r -D ~/nnue-vague2/$r` ;
+3. **N1, le levier 1** — les quatre premiers, 128 unités, depuis `main`.
+   Le premier `cargo run` recompile — le moteur a changé depuis le 28, et
+   `nnue-train` a une dépendance de plus :
    ```sh
-   cd tools/nnue-train
+   cd ~/chess/tools/nnue-train
    cargo run --release --features cuda -- --attendu 1027603:120917119 --sortie n1 \
      ~/nnue-vague2/36532340223 ~/nnue-vague2/36532342642 \
      ~/nnue-vague2/36532345161 ~/nnue-vague2/36532347434 2>&1 | tee n1.sortie.txt
    ```
    il finit sur `RÉSEAU PRÊT : n1/shallowred-768x128-40/quantised.bin` ;
-3. **N2, le levier 2** — les huit, 128 unités :
+4. **N2, le levier 2** — les huit, 128 unités :
    ```sh
    cargo run --release --features cuda -- --attendu 2121130:249458187 --sortie n2 \
      ~/nnue-vague2/* 2>&1 | tee n2.sortie.txt
    ```
    → `RÉSEAU PRÊT : n2/shallowred-768x128-40/quantised.bin` ;
-4. **N3, le levier 3** — les huit, **256 unités**, au commit `87c3d27`, qui
+5. **N3, le levier 3** — les huit, **256 unités**, au commit `87c3d27`, qui
    ne change que cette largeur : le programme d'entraînement est celui de
    N2 au caractère près, et il sait repartir d'un point de sauvegarde si N3
-   sert au levier 4. Un essai court d'abord, l'architecture étant neuve :
+   sert au levier 4. Git annonce une « HEAD détachée » : c'est voulu. Un
+   essai court d'abord, l'architecture étant neuve :
    ```sh
    git checkout 87c3d27
    cargo run --release --features cuda -- --attendu 2121130:249458187 --superlots 1 \
@@ -3688,21 +3740,35 @@ Depuis `main` à jour — `git checkout main && git pull` :
    ```sh
    cargo run --release --features cuda -- --attendu 2121130:249458187 --sortie n3 \
      ~/nnue-vague2/* 2>&1 | tee n3.sortie.txt
-   git checkout main
+   git switch main
    ```
    → `RÉSEAU PRÊT : n3/shallowred-768x256-40/quantised.bin` ;
-5. **rapporter**, sur une branche `reseau/n7` comme la première fois : pour
-   chacun, `quantised.bin`, le `log.txt` de bullet — la courbe de perte — et
-   la sortie, sous `reseaux/` : `n1-768x128-40`, `n2-768x128-40`,
-   `n3-768x256-40`, chacun en `.bin`, `.log.txt` et `.sortie.txt`. **Garder
-   les dossiers `n1/`, `n2/` et `n3/`** : le levier 4 repartira de l'un
-   d'eux (`--depuis`), et le réseau quantifié seul ne le permet pas.
+6. **rapporter**, sur une branche `reseau/n7` comme la première fois : le
+   `quantised.bin`, le `log.txt` de bullet — la courbe de perte, écrite par
+   bullet dans le même dossier de point de sauvegarde (`value.rs`, au commit
+   épinglé) — et la sortie de chacun, sous `reseaux/` :
+   ```sh
+   cd ~/chess && git switch -c reseau/n7
+   for c in n1:128 n2:128 n3:256; do
+     n=${c%:*}; w=${c#*:}; d=tools/nnue-train/$n/shallowred-768x$w-40
+     cp $d/quantised.bin reseaux/$n-768x$w-40.bin
+     cp $d/log.txt reseaux/$n-768x$w-40.log.txt
+     cp tools/nnue-train/$n.sortie.txt reseaux/$n-768x$w-40.sortie.txt
+   done
+   git add reseaux/n[123]-*
+   git commit -m "Réseaux NNUE du n° 7 : N1, N2 et N3, 40 superlots"
+   git push -u origin reseau/n7
+   ```
+   **Garder les dossiers `checkpoints/`, `n1/`, `n2/` et `n3/`** de
+   `tools/nnue-train` : le levier 4 repartira de l'un d'eux (`--depuis`), et
+   le réseau quantifié seul ne le permet pas.
 
 *Durée* — <span>inférence, confiance moyenne</span> : ~12 minutes pour N1
 et autant pour N2 — le calendrier du premier entraînement, 11 min 53 s ; les
 positions vues ne dépendent pas du volume des données —, le double environ
-pour N3 ; une heure en tout, téléchargement compris. Un `ÉCHEC — …` à
-n'importe quel temps arrête tout, et son message suffit à le diagnostiquer.
+pour N3 ; une heure et demie en tout, téléchargement et compilations
+compris. Un `ÉCHEC — …` à n'importe quel temps arrête tout, et son message
+suffit à le diagnostiquer.
 **Vérifié ici avant de l'écrire** : à `87c3d27`, `tools/nnue-train` compile
 et passe ses six tests — contre le runtime factice de bullet, donc sans rien
 dire de CUDA, que l'essai court éprouve. Et le chargeur du moteur a de la
