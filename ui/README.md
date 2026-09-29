@@ -429,6 +429,11 @@ La galerie de contrôle `/dev/annotations.html` utilise les vrais composants
 avec des annotations simulées. Pour ne vérifier que les pictogrammes et leurs
 ancrages : `CHESS_ANNOTATIONS_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
 
+Pour vérifier les déplacements après un décalage du plateau (clics, glisser-déposer
+et tactile, y compris en échec), ainsi que l'absence de chevauchement des commandes
+aux différentes tailles de fenêtre :
+`CHESS_PLAY_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
+
 Le workflow dédié [UI](../.github/workflows/ui.yml) exécute lint, TypeScript,
 tests unitaires et build, puis les tests du pont avec ShallowRed compilé depuis
 le dépôt et Stockfish. Il utilise Node.js 22 et `npm ci`. Il se déclenche sur

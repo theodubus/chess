@@ -108,11 +108,20 @@ export default function Board({
   useEffect(() => {
     if (!premoveEnabled || !premove) api.current?.cancelPremove();
   }, [premoveEnabled, premove]);
+  function refreshBounds() {
+    // Un bandeau ou des prises peuvent déplacer le plateau sans le redimensionner.
+    // Chessground garde sinon les anciennes coordonnées pour interpréter le geste.
+    api.current?.state.dom.bounds.clear();
+  }
   return (
     <div className="board-frame">
       <div className="board-surface">
         <div
           ref={element}
+          onMouseDownCapture={refreshBounds}
+          onMouseUpCapture={refreshBounds}
+          onTouchStartCapture={refreshBounds}
+          onTouchEndCapture={refreshBounds}
           tabIndex={0}
           title="Clic droit glissé : dessiner une flèche. Clic droit sur une case : cercle."
           className="cg-wrap"

@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { WebSocket } from "ws";
 import { Chess } from "chess.js";
+import { checkPlay } from "./check-play.mjs";
 
 // Ce contrôle utilise un profil temporaire, sans toucher au navigateur personnel.
 const binary = process.env.CHESS_BROWSER_BINARY;
@@ -219,8 +220,12 @@ try {
         m.params.exceptionDetails.exception?.description ||
           m.params.exceptionDetails.text,
       );
-    if (m.method === "Log.entryAdded" && m.params.entry.level === "error")
-      errors.push(m.params.entry.text);
+    if (m.method === "Log.entryAdded" && m.params.entry.level === "error") {
+      const entry = m.params.entry;
+      // Chrome demande cette icône facultative même sans lien dans la page.
+      if (!(entry.url?.endsWith("/favicon.ico") && entry.text.includes("404")))
+        errors.push(`${entry.text}${entry.url ? ` (${entry.url})` : ""}`);
+    }
   });
   await once(socket, "open");
   const target = await call("Target.createTarget", { url: "about:blank" });
@@ -236,7 +241,9 @@ try {
     deviceScaleFactor: 1,
     mobile: false,
   });
-  if (!process.env.CHESS_ANNOTATIONS_ONLY) {
+  if (process.env.CHESS_PLAY_ONLY) {
+    await checkPlay({ call, evaluate, waitFor, button, clickAt, screenshot });
+  } else if (!process.env.CHESS_ANNOTATIONS_ONLY) {
     await call("Page.navigate", {
       url: process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
     });
@@ -1548,7 +1555,7 @@ try {
   await screenshot("10-annotation-gallery");
   assert.deepEqual(errors, [], "Aucune erreur JavaScript ou réseau");
   console.log(
-    `${process.env.CHESS_ANNOTATIONS_ONLY ? "Contrôle des pictogrammes réussi" : "Contrôle navigateur réussi : import PGN (texte, fichier, FEN), Stockfish, partie complète, analyse réelle, navigation, préférences, bureau, mobile, tablette et pictogrammes"}. Captures : ${output}`,
+    `${process.env.CHESS_PLAY_ONLY ? "Contrôle du jeu, des commandes et des pictogrammes réussi" : process.env.CHESS_ANNOTATIONS_ONLY ? "Contrôle des pictogrammes réussi" : "Contrôle navigateur réussi : import PGN (texte, fichier, FEN), Stockfish, partie complète, analyse réelle, navigation, préférences, bureau, mobile, tablette et pictogrammes"}. Captures : ${output}`,
   );
 } finally {
   if (socket?.readyState === WebSocket.OPEN) {

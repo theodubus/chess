@@ -1139,21 +1139,26 @@ dialog p {
   font-size: 12px;
 }
 .play-controls {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 12px;
   align-items: center;
 }
 .play-controls .review-navigation {
+  /* La largeur du plateau dépend aussi de la hauteur de la fenêtre. */
+  flex: 1 0 auto;
   gap: 4px;
 }
 .play-controls .review-navigation button {
   padding: 7px;
 }
 .play-controls .board-toolbar {
+  flex: 1 1 auto;
+  flex-wrap: wrap;
   padding: 0;
 }
 .play-controls .board-toolbar button {
+  flex-shrink: 0;
   padding: 7px 8px;
   font-size: 11px;
 }
@@ -1193,10 +1198,6 @@ dialog p {
   .workspace.play-workspace.with-history {
     grid-template-columns: minmax(0, 1fr);
   }
-  .play-controls {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
-  }
   .play-controls .board-toolbar {
     padding: 6px 0;
   }
@@ -1208,12 +1209,6 @@ dialog p {
   .workspace.play-workspace.with-history {
     grid-template-columns: minmax(0, 1fr);
     max-width: var(--board-size);
-  }
-}
-@media (max-height: 550px) {
-  .play-controls {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0;
   }
 }
 
