@@ -29,4 +29,12 @@ bullet_lib = { git = "https://github.com/jw1912/bullet", rev = "10e7e82ee2f853c1
 # Le moteur lui-même : l'architecture vient de SES constantes, et le réseau
 # entraîné est rechargé par SON chargeur, puis confronté à l'entraîneur.
 shallowred = { path = "../../engine" }
+# Le lecteur de binpacks de Stockfish, celui que bullet emploie : la
+# relecture d'un binpack de Leela passe par le même code que l'entraînement.
+sfbinpack = "0.6.4"
 cozy-chess = "0.3.4"
+
+[dev-dependencies]
+# Pour éprouver, dans les tests, le chargeur de binpacks de bullet lui-même :
+# son trait `DataReader` n'est pas réexporté par `bullet_lib`.
+bullet-trainer = { git = "https://github.com/jw1912/bullet", rev = "10e7e82ee2f853c13a96962a209e1ac9e3855c7e" }

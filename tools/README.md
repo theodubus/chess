@@ -3679,6 +3679,38 @@ leurs comme stockfish en fonction de ce qui est mieux* ». D'où :
   entraînement ne voit que 4 milliards de positions : un fichier suffit, pas
   la collection.
 
+**L'outillage du levier 4, écrit le 29 sept.** — `tools/nnue-train` :
+- **il lit les `.binpack`** de Stockfish, par le chargeur de bullet
+  (`SfBinpackLoader`), filtrés comme dans `examples/simple.rs` du commit
+  épinglé : ni échec, ni coup tactique, rien avant le seizième demi-coup,
+  pas de score de mat ; **un format par entraînement**, jamais `.vf` et
+  `.binpack` mêlés ;
+- **leur échelle, lue au source** — `LeelaChessZero/lc0`,
+  `src/trainingdata/rescorer.cc`, `AsNnueString` au commit `1227b4c` : le
+  score écrit vaut `660,6 q / (1 − 0,9751875 q¹⁰)`, `q` l'espérance de Leela
+  ramenée à [−1, 1]. Près de zéro, cela fait **330,3 unités par unité de
+  logit**, contre 400 pour nos données ; la cible d'un binpack s'entraîne à
+  330,3. **Et vérifiée sur le fichier même** : la relecture ajuste l'échelle
+  qui prédit le mieux le résultat par le score, sur deux millions de
+  positions, et **refuse au-delà d'un facteur deux** — un binpack généré par
+  Stockfish, ou d'une autre unité, ne ferait rien planter : il fausserait la
+  cible ;
+- **un binpack se relit bloc par bloc jusqu'au dernier octet**, et un
+  fichier tronqué se refuse, comme un `.vf` ; il n'a pas de `--attendu` ;
+- **`--depuis DOSSIER`** repart d'un point de sauvegarde de bullet — celui
+  qui porte `optimiser_state/` : **garder les dossiers de points de
+  sauvegarde des entraînements**, le réseau quantifié seul ne permet pas de
+  repartir ;
+- **six tests sans GPU**, dans la CI de `nnue-train.yml` depuis : le filtre,
+  l'ajustement retrouvant trois échelles connues, les bornes, la relecture
+  d'un binpack écrit par `sfbinpack` — tronqué ou suivi d'octets en trop,
+  refusé —, et **le chargeur de bullet lui-même** lisant ce fichier à
+  travers notre filtre. Six fautes injectées, six attrapées ; une septième
+  — le contrôle de fin de fichier retiré — ne l'est pas, parce que
+  `has_next_chunk` de sfbinpack ne rend « fin » qu'à la fin exacte, **sauf
+  sur une erreur de `seek`** : le contrôle reste pour ce cas-là, qu'aucun
+  test n'atteint, et c'est écrit à côté de lui.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
