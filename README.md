@@ -25,6 +25,14 @@ d'un aveu sur la profondeur de recherche.
 > techniques que tous les manuels recommandent. Il gagne toutes ses parties
 > contre un adversaire jouant au hasard.
 >
+> **Force absolue, estimée le 29 sept. 2026 : ~2 850 ± 25** sur l'échelle
+> `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
+> 600 parties à cette cadence contre Stockfish bridé à 2850 et à 3100 ;
+> **~2 630 ± 40 pour l'évaluation faite main**. Une estimation, pas un
+> classement : l'adversaire se trompe exprès, et le moteur jouait sur un
+> runner à deux cœurs physiques, trois parties à la fois. Protocole et
+> réserves : `tools/README.md`, section C13.
+>
 > **Réserve, mesurée le 16 sept. 2026 :** les premiers verdicts du projet ont
 > tous été rendus à la cadence `1+0,01`, où le moteur atteint la profondeur
 > médiane 8,5. **Un verdict appartient à sa cadence**, et la revalidation à
