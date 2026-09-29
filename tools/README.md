@@ -750,7 +750,7 @@ dernière relève est faite.
 | **N° 7 — la sonde d'adjudication, dans le conteneur** | — | les mêmes parties avec et sans adjudication, au réseau et à la faite main pour témoin : `main` à `81e2753` sondé, 3 000 parties par passe, graine 20260929 | quatre passes | **RELEVÉE à 06 h 53** — lancée à 06 h 42 | **0,50 % au réseau** (8 nulles sur 1 603 adjugées, aucun renversement), **0 au témoin** : sous les 2 %, **la vague continue**. L'adjudication au réseau coupe 24 demi-coups par partie adjugée, contre 3,7 (section n° 7) | **Critère, écrit avant** : la vague est annulée si plus de 2 % des parties adjugées au réseau finissent autrement ET que le témoin fait au moins un point de moins |
 | **C13 — la force absolue, trois séries à 60+0,6** | 36529779756, 36529782211, 36529784491 | le réseau (`main` à `81e2753`) contre Stockfish 16 bridé à 2850 ; la faite main (`bfebbd8`) contre 2850 ; le réseau contre 3100 | 3 × 300, fastchess | **RELEVÉES à 11 h 10** — finies entre 10 h 58 et 11 h 06 | **le réseau 2 830 ± 30 contre 2850 et 2 882 ± 37 contre 3100, 2 851 ± 23 ensemble ; la faite main 2 632 ± 40 ; l'écart +198 ± 50**, zéro anomalie. Six fois plus de temps ne rapporte au réseau que +40 ± 42 contre ce Stockfish (section C13). — *Attendu, écrit avant* : faite main 2 600 à 2 800, réseau 2 800 à 3 100, écart +100 à +300 — **les trois tenus** |
 | **C28 — la table sous pression, l'Elo** | **36603407632, 36603411624** — les deux premiers déclenchés | `cdd5ba4` (2 Mio) → `068ee1a` (16 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 17 h 13, fin au plafond vers 23 h 05 | mise en commun, puis le critère de la section C28 : coût démontré si la borne haute commune est sous zéro. — *Attendu, écrit avant* : −30 à +5 Elo |
-| **C28 — la sonde** | **36603415485** — la troisième déclenchée ; l'attribution se confirme à sa fin, la seule en moins d'une heure | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | lancée à 17 h 13, fin vers 18 h 10 | les n/s et les plis de chaque camp, qui chiffrent le confondant de vitesse. — *Attendus, écrits avant* : n/s × 1,00 à × 1,10, plis −0,5 à +0,1 |
+| **C28 — la sonde** | **36603415485** — la troisième déclenchée, confirmée : la seule finie en moins d'une heure, son résumé porte `plis.sh` | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉE à 18 h 25** — finie à 17 h 53, EPYC 9V74, zéro anomalie | **n/s × 1,063 pour le candidat, plis −0,44 ± 0,11 : les deux dans l'attendu** — plus rapide par nœud, moins profond ; prédiction du verdict par l'étalon, écrite avant lui : −20 à −58 Elo (section C28). — *Attendus, écrits avant* : n/s × 1,00 à × 1,10, plis −0,5 à +0,1 |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
@@ -4111,6 +4111,35 @@ candidat, lui, ne se fusionne jamais :
   sonde ;
 - **la puissance, dite d'avance** : ~5 800 parties, ± 6 à 7 Elo. Un coût de
   5 Elo peut passer inaperçu — accepté, parce que c'est écrit.
+
+**La sonde, RELEVÉE le 29 sept. à 18 h 25 — les deux attendus tiennent.**
+Run 36603415485, EPYC 9V74 (2 287 229 n/s au banc, profondeur 12 en
+250 ms), 100 parties une à une, zéro perte au temps, zéro coup illégal :
+
+| | candidat, 2 Mio | référence, 16 Mio |
+|---|---|---|
+| coups | 5 611 | 5 616 |
+| temps par coup | 194,8 ms | 191,8 ms |
+| n/s | **2 902 678** | 2 729 702 |
+| profondeur moyenne | **14,59** | 15,22 |
+
+- **le candidat va plus vite par nœud, × 1,063** — dans l'attendu, × 1,00 à
+  × 1,10 : le confondant existe, sur ce runner. Converti par l'étalon
+  (+107,7 ± 8,2 Elo et +1,38 ± 0,28 pli par doublement), il vaut **+9 à
+  +10 Elo** et **+0,10 à +0,15 pli** ;
+- **et il cherche moins profond : −0,44 ± 0,11 pli, apparié par partie** —
+  dans l'attendu, −0,5 à +0,1, à son bord bas. La pression seule coûte donc
+  ~**0,56 pli**, gain de vitesse retiré ;
+- **ce que ces plis prédisent du verdict, écrit AVANT lui** — <span>inférence,
+  confiance moyenne</span> : à 60 à 105 Elo par pli, **−20 à −58 Elo**,
+  ~−36 au centre ; plus bas que l'attendu du protocole (−30 à +5), qu'il ne
+  recouvre que par le bas. Réserve écrite : l'étalon est celui du TEMPS, et
+  C25 a montré que l'Elo d'un pli dépend de la règle qui l'achète. Le
+  verdict dira si un pli perdu par la table vaut un pli perdu par la
+  pendule ;
+- le score de la sonde, +13,9 ± 52,2 sur 100 parties, ne mesure rien ; et
+  le rapport des n/s appartient à ce runner — les jobs d'Elo tournent
+  peut-être sur d'autres caches, leurs étalonnages le diront.
 
 ### C27 — une borne de mat hors plage stockée dans la table — VERDICT, 25 sept. 2026 : −3,56 ± 5,97 Elo à `8+0,08`, aucune borne haute sous zéro — FUSIONNÉ au titre de la règle
 
