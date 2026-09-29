@@ -3566,6 +3566,24 @@ non consignés ; le réseau entre 2 800 et 3 100 ; **leur écart entre +100 et
 +300, sous les +330 mesurés contre le jumeau** — <span>inférence, confiance
 moyenne sur le sens seulement</span> : l'auto-jeu grossit les écarts.
 
+**Le point de Théo, précisé le 29 sept.** : **100 parties à 10+0,1**,
+contre Stockfish à 2 600, le moteur d'avant le réseau estimé vers 2 700.
+Cent parties donnent environ **± 70 Elo** à 95 % — calcul : autour de 64 %
+de score, l'écart type d'une partie vaut près de 0,48 point, soit ± 0,096
+sur la moyenne, et un point de score y vaut ~754 Elo. Et **10+0,1 est six
+fois plus court que l'étalonnage de Stockfish** : ce point ne se compare pas
+aux séries à 60+0,6.
+
+**D'où deux séries de plus, à SA cadence**, 300 parties chacune, ~50 min :
+- la faite main (`bfebbd8`) contre Stockfish à **2600**, à **10+0,1** — son
+  protocole, rejoué sur runner avec trois fois l'effectif. *Attendu, écrit
+  avant* — <span>inférence, confiance moyenne</span> : entre 2 630 et 2 770,
+  son intervalle ;
+- le moteur au réseau contre Stockfish à **2850**, à **10+0,1**. *Attendu* —
+  <span>inférence, confiance faible</span> : entre 2 800 et 3 100 ; l'écart
+  entre les deux séries dira, à la cadence de Théo, ce que le réseau vaut
+  contre un autre adversaire que son jumeau.
+
 **Règle de lecture** : un score hors de 10 à 90 % ne se lit pas ; 300
 parties donnent environ ± 30 à 40 Elo près de 50 %. Le runner s'étalonne et
 l'écrit en tête du résumé, comme `match.yml` : deux jobs ne se comparent
