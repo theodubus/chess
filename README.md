@@ -121,6 +121,32 @@ go wtime 300000 btime 300000 winc 2000 binc 2000
 Le binaire se charge tel quel dans n'importe quelle interface UCI — Cute Chess,
 Arena, BanksiaGUI.
 
+### Compiler pour sa machine — plus rapide, moins portable
+
+`cargo build --release` produit un binaire pour le jeu d'instructions de base
+du processeur (en x86-64 : SSE2). Il tourne partout, **sans carte graphique** :
+le réseau NNUE s'évalue en arithmétique entière sur le processeur, et la carte
+ne sert qu'à l'entraîner.
+
+```sh
+RUSTFLAGS="-C target-cpu=native" cargo build --release
+```
+
+demande au compilateur d'employer **toutes les instructions du processeur qui
+compile** — AVX2 et au-delà sur un processeur récent. Les boucles du réseau
+(mises à jour de l'accumulateur, produit de sortie) traitent alors deux fois
+plus de valeurs par instruction, sans une ligne de code : c'est le compilateur
+qui vectorise. **Mesuré le 26 sept.** (`tools/README.md`, A21, étape 2) : le
+nœud au réseau passe de 483 à 415 ns, soit environ 16 % de nœuds en plus par
+seconde ; le nœud fait main ne bouge pas. Une seule machine et un réseau
+aléatoire de même architecture : un ordre de grandeur, pas un verdict.
+
+**Le prix** : le binaire ne tourne plus que sur des processeurs qui ont ces
+instructions — copié sur une machine plus ancienne, il s'arrête au démarrage
+(« illegal instruction »). Le compiler sur la machine qui jouera, et ne pas le
+distribuer. Les mesures du dépôt comparent toujours deux binaires compilés de
+la même façon sur la même machine : ce drapeau ne fausse aucun verdict.
+
 ## Vérifier
 
 La correction de la génération de coups se prouve par perft : le décompte exact
