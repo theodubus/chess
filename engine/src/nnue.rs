@@ -488,8 +488,13 @@ pub(crate) mod testing {
 
     /// Un réseau aléatoire aux poids d'un réseau entraîné — bornés comme
     /// `AdamW` les borne, donc toujours admis par le chargeur.
+    ///
+    /// La borne de sortie suit la largeur : ±127 sur 2 × 128 unités
+    /// totalisent au plus 32 512, sous les 33 025 que le chargeur admet ; sur
+    /// 2 × 256, le même ±127 le dépasserait, et le réseau serait refusé.
     pub(crate) fn random_network(seed: u64) -> Network {
-        Network::from_bytes(&file_of(&random_values(seed, 300, 127))).unwrap()
+        let output = i16::try_from(127 * 128 / HIDDEN).unwrap_or(127);
+        Network::from_bytes(&file_of(&random_values(seed, 300, output))).unwrap()
     }
 
     /// Un réseau aléatoire aux évaluations de l'ordre de celles d'une vraie
@@ -520,6 +525,15 @@ mod tests {
     const BIAS_AT: usize = INPUTS * HIDDEN;
     const OUTPUT_AT: usize = BIAS_AT + HIDDEN;
     const OUTPUT_BIAS_AT: usize = OUTPUT_AT + 2 * HIDDEN;
+
+    /// La valeur absolue du poids de sortie `index` quand les 2 × `HIDDEN`
+    /// poids se partagent `total` au plus près : à 128 unités, 33 024 font
+    /// 129 partout ; à 256, 64 et 65. Les tests de la borne du produit
+    /// scalaire valent ainsi pour toute largeur.
+    fn share_of(total: usize, index: usize) -> i16 {
+        let (base, rest) = (total / (2 * HIDDEN), total % (2 * HIDDEN));
+        i16::try_from(base + usize::from(index < rest)).unwrap()
+    }
 
     fn board(fen: &str) -> Board {
         fen.parse().unwrap()
@@ -577,10 +591,20 @@ mod tests {
 
     #[test]
     fn le_fichier_a_la_taille_que_bullet_ecrit() {
-        // 2 × (768 × 128 + 128 + 256 + 1) = 197 378 octets, bourrés jusqu'au
-        // multiple de 64 suivant. Calculé à la main depuis `SavedFormat`.
-        assert_eq!(FILE_BYTES, 197_440);
-        assert!(Network::from_bytes(&file_of(&random_values(7, 300, 127))).is_ok());
+        // Calculé à la main depuis `SavedFormat`, bourré jusqu'au multiple de
+        // 64 suivant — et retrouvé sur les fichiers que bullet a écrits :
+        // 2 × (768 × 128 + 128 + 256 + 1) = 197 378 octets, 197 440 bourrés ;
+        // 2 × (768 × 256 + 256 + 512 + 1) = 394 754 octets, 394 816 bourrés.
+        // Une autre largeur demande son calcul à la main, pas une formule
+        // recopiée du code qu'elle vérifie.
+        let expected = match HIDDEN {
+            128 => 197_440,
+            256 => 394_816,
+            other => panic!("taille à calculer à la main pour {other} unités"),
+        };
+        assert_eq!(FILE_BYTES, expected);
+        let output = i16::try_from(127 * 128 / HIDDEN).unwrap();
+        assert!(Network::from_bytes(&file_of(&random_values(7, 300, output))).is_ok());
     }
 
     #[test]
@@ -623,14 +647,16 @@ mod tests {
 
     #[test]
     fn un_produit_scalaire_qui_pourrait_deborder_est_refuse() {
-        // 256 poids totalisant exactement 33 025 : le pire produit scalaire,
-        // 65 025 × 33 025 = 2 147 450 625, tient dans un i32. Un de plus, non.
+        // Les poids de sortie totalisant exactement 33 025 : le pire produit
+        // scalaire, 65 025 × 33 025 = 2 147 450 625, tient dans un i32. Un de
+        // plus, non.
         let total = |extra: i16| {
             let mut values = vec![0; VALUES];
             for index in 0..2 * HIDDEN {
-                values[OUTPUT_AT + index] = if index % 3 == 0 { -129 } else { 129 };
+                let weight = share_of(33_024, index);
+                values[OUTPUT_AT + index] = if index % 3 == 0 { -weight } else { weight };
             }
-            // 256 × 129 = 33 024.
+            // Le premier poids est négatif : l'éloigner de zéro ajoute `extra`.
             values[OUTPUT_AT] -= extra;
             Network::from_bytes(&file_of(&values))
         };
@@ -649,7 +675,7 @@ mod tests {
                     values[BIAS_AT + unit] = 1_000;
                 }
                 for index in 0..2 * HIDDEN {
-                    values[OUTPUT_AT + index] = sign * 129;
+                    values[OUTPUT_AT + index] = sign * share_of(33_024, index);
                 }
                 values[OUTPUT_BIAS_AT] = sign * i16::MAX;
             });
