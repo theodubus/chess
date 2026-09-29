@@ -9,7 +9,7 @@ import { analysisEngineFactory } from "../engine/DevelopmentEngine";
 import { scoreLabel } from "../engine/analysis";
 import Board from "../Board";
 import CapturedPieces from "../CapturedPieces";
-import { capturedMaterial } from "../material";
+import { capturedMaterial, materialBalance } from "../material";
 import EvaluationBar from "../EvaluationBar";
 import EvaluationChart from "./EvaluationChart";
 import MoveNavigation from "../MoveNavigation";
@@ -100,6 +100,7 @@ export default function InteractiveReview({
   const displayedTree = branch?.tree ?? new StudyTree(position);
   const board = displayedTree.board(branch?.node ?? 0);
   const captures = capturedMaterial(board.history({ verbose: true }));
+  const balance = materialBalance(board);
   const path = branch?.tree.path(branch.node) ?? [];
   const matching =
     !!branch && live.tree === branch.tree && live.node === branch.node;
@@ -277,6 +278,7 @@ export default function InteractiveReview({
         </p>
         <CapturedPieces
           captures={captures}
+          balance={balance}
           side={orientation === "white" ? "b" : "w"}
           label
         />
@@ -324,6 +326,7 @@ export default function InteractiveReview({
         </div>
         <CapturedPieces
           captures={captures}
+          balance={balance}
           side={orientation === "white" ? "w" : "b"}
           label
         />

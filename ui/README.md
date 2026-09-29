@@ -457,11 +457,12 @@ signale le mat atteint ; `?` une évaluation indisponible. Les bornes restent
 indiquées, avec le détail dans l’infobulle. L’affichage reste optionnel.
 
 Les pièces capturées sont regroupées par type, auprès du joueur qui les a prises.
-Le `+N` indique uniquement son excédent de points capturés sur l’adversaire :
-pion 1, cavalier/fou 3, tour 5, dame 9. Aucun chiffre en cas d’égalité.
-Ce bilan est indépendant de l’évaluation moteur et suit la position affichée,
-ainsi que les variantes et retentatives. Il inclut la prise en passant ; une
-promotion seule n’est pas une capture. Pour un PGN depuis une FEN, les captures
-antérieures à la position initiale sont inconnues et ne sont pas inventées.
+Le `+N` indique l’avantage de matériel restant sur le plateau : pion 1,
+cavalier/fou 3, tour 5, dame 9. Aucun chiffre en cas d’égalité. Une promotion en
+dame ajoute donc 8 points nets (9 − 1), puis la capture de cette dame enlève 9.
+Le calcul suit la position affichée, y compris en relecture, variante, retentative
+ou depuis une FEN avec handicap. Il est indépendant de l’évaluation du moteur.
+Les miniatures représentent uniquement les captures connues : ni une promotion
+ni une pièce absente au départ ne sont présentées comme une prise.
 
 La ligne des captures conserve sa hauteur avant la première prise, afin de garder le plateau et les commandes à la même place.
