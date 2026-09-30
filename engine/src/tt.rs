@@ -197,8 +197,14 @@ impl Entry {
     }
 }
 
-/// Taille par défaut, en mébioctets.
-pub const DEFAULT_SIZE_MB: usize = 16;
+/// Taille par défaut, en mébioctets — celle des parties où personne ne
+/// règle `Hash`, l'interface et nos matchs.
+///
+/// **64 depuis C30, mesuré le 30 sept. 2026** : +2,90 ± 5,72 Elo contre 16
+/// à `8+0,08`, où la table n'est pas pressée — aucun coût démontré, pour
+/// 2,1 % de vitesse en moins. Et elle sert là où 16 Mio ne suffisent plus :
+/// à 60+0,6, une recherche en range 8 à 16 % au lieu de 30 à 65 % (C28).
+pub const DEFAULT_SIZE_MB: usize = 64;
 
 /// Entrées par seau : quatre entrées de seize octets remplissent exactement
 /// une ligne de cache de 64 octets.
