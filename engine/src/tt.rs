@@ -188,7 +188,7 @@ impl Entry {
 }
 
 /// Taille par défaut, en mébioctets.
-pub const DEFAULT_SIZE_MB: usize = 64;
+pub const DEFAULT_SIZE_MB: usize = 16;
 
 /// La table.
 ///
