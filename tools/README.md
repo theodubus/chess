@@ -547,6 +547,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-30 | **C29 — les seaux, sous pression** : quatre entrées par ligne de cache, la moins utile cède, contre la case unique — 2 Mio des deux côtés (`2d44626` contre `cdd5ba4`) | **+30,13 Elo ± 5,60** sur 6 000 parties à `8+0,08`, gain démontré dans chaque job (+36,62 et +23,66, z = 2,27, même runner). **FUSIONNÉ** (`fc2c9cf`) ; la sonde : +0,54 ± 0,10 pli à vitesse égale — 38 à 81 Elo par pli regagné par la table |
 | 2026-09-30 | **C29 — les seaux, au défaut** : 16 Mio, où la table n'est pas pressée (`90ac6e3` contre `d78b422`) | **+1,85 Elo ± 5,51** sur 6 000 parties à `8+0,08`, homogènes (z = −0,87) : aucune régression démontrée — la condition de la fusion ; la sonde : n/s × 0,990, +0,03 ± 0,13 pli |
 | 2026-09-30 | **C30 — la table par défaut à 64 Mio au lieu de 16**, là où elle n'est pas pressée (`94c07ad` contre `4699e63`) | **+2,90 Elo ± 5,72** sur 6 000 parties à `8+0,08`, homogènes (z = −1,11), zéro perte au temps. **Aucun coût démontré : le défaut passe à 64 Mio** (`428a1e5`) ; la sonde : n/s × 0,979, −0,08 ± 0,10 pli |
+| 2026-09-30 | **C31 — la nulle par règle testée après une parade tranquille, dans la quiescence** (`5d8c68c` contre `1638d26`) | **−2,43 Elo ± 5,36** sur 6 000 parties à `8+0,08`, homogènes de justesse (z = −1,99) ; **le match 1 seul, −7,88 ± 7,61, borne haute −0,27**. **ARRÊTÉ PAR SON CRITÈRE** — correctif de règle, « fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match » : une lecture la met sous zéro. Zéro perte au temps ; avertissements de nulle : 0 pour le candidat, 5 pour la référence |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -772,7 +773,7 @@ dernière relève est faite.
 | **C13 — N2 contre Stockfish bridé à 2850** | **36663095071** | `main` à `dee985d` (N2 embarqué, sans les seaux, 16 Mio), 60+0,6, graine « auto » | 300, fastchess | **RELEVÉE à 08 h 55** — finie à 08 h 10, EPYC 7763, 2 424 062 n/s | **N2 2 942 ± 29** — 157 − 79 − 64, 63,0 % : dans l'attendu, au centre (2 880 à 3 020, ~2 950, écrit avant). **N2 − N0 contre le même adversaire : +112 ± 42**, 0,68 des +165,8 mesurés contre le jumeau — l'écrasement du premier réseau (0,60) se reproduit. Deux avertissements côté ShallowRed, « PV continues after fifty-move rule » : **C31** (section C13) |
 | **balayage de mutation après la fusion de C29** — les seaux et leur test d'emplacement | 36681481247 | `main` à `b28fa3c` | un job par fichier, puis `Verdict` | **RELEVÉ à 09 h 00, VERT** — fini à 08 h 57, `search.rs` le plus long, 115 min : 497 attrapés, 46 expirés, 29 inviables | **La prédiction tient** : tous les fichiers à leur plafond, total **140**, aucune issue ; **`tt.rs` 6**, les six `\|` en `^` connus — 130 attrapés, dont le départage du seau, `<` en `<=`, que le test d'emplacement attrape désormais. — *Prédiction, écrite avant* (section C29) : le plafond de `tt.rs` reste à 6 |
 | **C31 — la sonde, dans le conteneur** | — | le candidat `5d8c68c` sondé, contre lui-même, `8+0,08`, 40 parties, `-srand 20260930` | fastchess, `engine=true` ; `tools/sonde-c31/sommer.py` | **RELEVÉE à 09 h 20** — 4 686 recherches | **97 918 nulles par répétition et 37 991 par les cinquante coups** après une parade tranquille : 0,02 % des nœuds de quiescence, dans **61,4 % des recherches** — le match se lance (section C31) |
-| **C31 — l'Elo** | **36697316384, 36697321243** — identifiés par leur nom de run | `5d8c68c` → `1638d26`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 09 h 38, coupés par le plafond vers 15 h 30 | *Attendu, écrit avant* : 0 à +5, ~+1. **Critère, écrit avant** : fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match (section C31) |
+| **C31 — l'Elo** | **36697316384, 36697321243** — identifiés par leur nom de run | `5d8c68c` → `1638d26`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 15 h 45** — finis ENTIERS à 15 h 17, 3 000 parties chacun, 6,8 s par partie, deux Xeon Platinum 8573C | **−7,88 ± 7,61 et +3,01 ± 7,54 ; −2,43 ± 5,36 en commun, homogènes de justesse (z = −1,99)** ; zéro perte au temps. **ARRÊTÉ PAR SON CRITÈRE** : la borne haute du match 1 est sous zéro, −0,27 — **non fusionné**, la rustine reste à l'attic (section C31). Avertissements de nulle : **0 pour le candidat, 5 pour la référence** — le correctif fait ce qu'il dit. — *Attendu, écrit avant* : 0 à +5 |
 | **C31 — le crible de mutation au candidat** | **36697324833** | `5d8c68c`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | **RELEVÉ à 11 h 50, VERT** — fini à 11 h 16, `search.rs` le plus long, 98 min : 506 attrapés, 43 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants de `main` un pour un — décalés de 2 lignes par le commentaire de `negamax`, de 21 au-delà du bloc neuf —, aucun dans le code neuf ; 506 attrapés contre 497 sur `main`, les mutants du correctif tous tués. Tous les fichiers à leur plafond, total **140**. — *Prédiction, écrite avant* : `search.rs` **39**, aucun survivant dans le code neuf (section C31) |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
@@ -4297,7 +4298,7 @@ illégal, aucun moteur perdu :
   quiescence ne testait aucune nulle après une parade tranquille** —
   section C31.
 
-### C31 — la nulle après une parade tranquille, dans la quiescence : le protocole, écrit le 30 sept. avant de mesurer
+### C31 — la nulle après une parade tranquille, dans la quiescence — VERDICT, 30 sept. 2026 : −2,43 ± 5,36 Elo à `8+0,08`, la borne haute d'un match sous zéro — ARRÊTÉ PAR SON CRITÈRE
 
 **Ouvert par l'arbitre** — section C13 : « PV continues after threefold
 repetition » dans deux séries du 29 sept., « PV continues after fifty-move
@@ -4382,6 +4383,42 @@ lignes par le commentaire de `negamax` puis de vingt et une au-delà du bloc
 neuf ; **aucun dans le code neuf**, et 506 mutants attrapés contre 497 sur
 `main` — ceux du correctif, tous tués, comme les sept défauts injectés à la
 main l'annonçaient. Tous les fichiers à leur plafond, total **140**.
+
+**Le VERDICT, relevé le 30 sept. à 15 h 45 — ARRÊTÉ PAR SON CRITÈRE.** Deux
+matchs de 3 000 parties, finis entiers à 15 h 17, graines distinctes, zéro
+perte au temps, zéro coup illégal :
+
+| match | runner — bench, profondeur en 250 ms | Elo | intervalle | pentanomial |
+|---|---|---|---|---|
+| 36697316384 | Xeon Platinum 8573C — 1 991 098 n/s, 12 | **−7,88 ± 7,61** | `[−15,49 ; −0,27]` | 77, 310, 773, 284, 56 |
+| 36697321243 | Xeon Platinum 8573C — 2 044 540 n/s, 13 | +3,01 ± 7,54 | `[−4,53 ; +10,55]` | 60, 295, 768, 313, 64 |
+| **en commun** (`tools/mettre-en-commun.sh`) | | **−2,43 ± 5,36** | `[−7,79 ; +2,93]` | homogènes, **z = −1,99** |
+
+- **Par le critère écrit avant : non fusionné.** « Fusion sauf si la borne
+  haute est sous zéro, en commun comme sur chaque match » — et le match 1,
+  lu seul, la met à −0,27. C'est la lecture que C22 sur C23 a fixée : *la
+  branche « ne pas fusionner » est prise dès qu'une lecture l'impose*. Le
+  commun, lui, ne démontre rien — son intervalle contient zéro ;
+- **ce que cela ne dit pas** : que le correctif coûte. <span>Inférence,
+  confiance moyenne</span> : à effet nul, deux matchs lus chacun à 95 %
+  donnent une telle lecture environ une fois sur vingt, et une fois sur six
+  à −2,4, l'estimation commune. La règle est conservatrice pour un
+  correctif, et c'est écrit dans sa puissance : ± 5,7 à 6 000 parties ne
+  sépare pas −2 de 0 ;
+- **le correctif fait ce qu'il dit** : les avertissements de nulle se
+  séparent — **aucun pour le candidat en 6 000 parties, cinq pour la
+  référence** (quatre « … after fifty-move rule », un « … after threefold
+  repetition », tous dans le match 2) ;
+- **dans l'attendu ?** Non : 0 à +5 était écrit, l'estimation commune est
+  −2,43 et son intervalle déborde des deux côtés — sous la puissance, aucun
+  signe n'est établi ;
+- **la suite** : la rustine `c31-nulle-quiescence.patch` reste à l'attic,
+  applicable sur `main`. **Remesurer demande un fait technique neuf** —
+  comme C22, remesuré sur C23 parce qu'une cause avait été trouvée —, pas
+  une seconde chance : rejouer jusqu'à ce qu'un match passe ferait de la
+  taille de l'échantillon une fonction des données. Les avertissements
+  « PV continues after … » côté ShallowRed restent donc sur `main` : ce sont
+  la signature connue de C31 (« Ce qu'il faut surveiller »).
 
 ### C30 — la taille par défaut — VERDICT, 30 sept. 2026 : +2,90 ± 5,72 Elo à `8+0,08` — aucun coût démontré, le défaut passe à 64 Mio
 
@@ -4928,7 +4965,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
-| **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | **EN VOL** : trois tests qui échouent sur `main`, le mécanisme mesuré en partie — **61,4 % des recherches** rencontrent une telle nulle, 0,02 % des nœuds de quiescence —, candidat `5d8c68c` révoqué le temps de sa mesure ; deux jobs de 3 000 parties à `8+0,08`, **fusion sauf si la borne haute est sous zéro** — section C31 |
+| **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : FUSIONNÉ le 24 sept., +44,64 ± 6,24 Elo à `8+0,08`** (section C24) — profondeur moyenne inchangée, le gain est dans la répartition, et la lecture par l'accord a tenu. <s>C25 — la répartition par la stabilité : ÉCRIT le 24 sept.</s> **C25 — la répartition par la stabilité : FUSIONNÉ au verdict du 24 sept., +7,87 ± 6,08 Elo à `8+0,08`** (section C25) — sous l'attendu de +12 à +25 : l'Elo d'un pli d'accord dépend de la règle, 22 à 46 ici contre ~69 pour C24. **Le chantier est au bout de ce que l'écran désignait** — l'effort à la racine n'ajoute rien, le score en chute est rare (écran, « Ce qui en sort »). <s>Prochaine action : C26, le risque que C24 et C25 ont aggravé ; ensuite, la question se repose à Théo.</s> **C26 est FUSIONNÉ le 25 sept.** (ligne C26) : **l'allocation inégale est close, et la suite se repose à Théo.** *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
@@ -5792,6 +5829,7 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 | **le banc et `tools/timing.sh` évaluent À LA MAIN, le moteur joue avec le réseau** | depuis le 28 sept. 2026 — au premier changement dont on voudra mesurer la vitesse, ou l'arbre qu'on joue | `Search::new` évalue à la main, et c'est voulu : la référence du banc, ses tests et le crible d'`eval.rs` en dépendent. Mais un changement de l'inférence NNUE ne s'y voit pas, et un rapport de nœuds s'y lit sur l'arbre de la faite main, pas sur celui qu'on joue. Tout reste vert, et la mesure porte sur un autre moteur |
 | **les artefacts des données NNUE expirent** | la première vague le **24 déc. 2026**, la vague au réseau le **28 déc. 2026** — les télécharger avant, là où elles serviront | GitHub les supprime sans prévenir. Les regénérer reste possible — le générateur au même commit et les K de chaque run (sections A21 et n° 7) — mais coûte leurs heures de runner : 22 h pour la première vague, 44 h pour la seconde |
 | le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
+| **les avertissements « PV continues after fifty-move rule / threefold repetition » côté ShallowRed** | à chaque relève de `match.yml` ou de `force.yml` : ils sont la **signature connue de C31**, non fusionné — ~1 pour 1 000 parties à `8+0,08` (5 en 6 000 côté référence), 2 en 300 à 60+0,6. Une hausse nette serait un fait neuf ; d'AUTRES natures d'avertissement, un défaut neuf | la relève les lit, rien d'autre : ils ne font échouer aucun job, et le 29 sept. ils ont été relevés sans être lus (`CLAUDE.md`) |
 
 ### B9 — écrit et mesuré le 23 sept. 2026 — état d'AVANT la fusion, gardé pour ses chiffres
 
