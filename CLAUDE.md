@@ -811,6 +811,13 @@ une mesure, pas une préférence.
   f(x))`. Le test des killers affirmait « pas à un autre ply » en comparant
   une note à elle-même — vrai quoi que fasse le code, donc aucun mutant ne
   pouvait le faire tomber, et rien ne le signalait.
+  <br>**Et sa forme la plus retorse, trouvée le 30 sept. 2026 (C29)** : un
+  mutant qui change TOUT de façon cohérente ne change rien d'observable.
+  `<` en `<=` dans le départage du seau faisait céder la DERNIÈRE entrée de
+  même valeur — donc remplissait aussi le seau à l'envers, et cette image
+  miroir rendait les mêmes réponses. Le test ne lisait que les réponses ;
+  la règle, elle, s'écrit sur les PLACES, et c'est là qu'il fallait la
+  lire.
 - **Ne pas recopier un compteur en prose.** Le 15 sept. 2026, j'ai écrit
   « ces cinq dispositifs » au-dessus d'un tableau qui en listait six, et
   « dix cas » pour un auto-test qui en comptait onze — **les deux étaient faux
