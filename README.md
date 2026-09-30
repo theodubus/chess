@@ -93,10 +93,14 @@ d'un aveu sur la profondeur de recherche.
 > (estimation, mesurée le 23 sept.).
 >
 > **Il évalue par un réseau NNUE depuis le 28 sept. 2026** — `(768 → 128) × 2
-> → 1`, entraîné par bullet sur 125 millions de positions de ses propres
-> parties et embarqué dans le binaire : **+330,6 ± 19,2 Elo** à `8+0,08`
-> contre l'évaluation faite main (2 000 parties, zéro perte au temps).
-> Celle-ci reste disponible par `setoption name EvalFile value <none>`.
+> → 1`, entraîné par bullet sur des positions de ses propres parties et
+> embarqué dans le binaire. Le premier valait **+330,6 ± 19,2 Elo** à
+> `8+0,08` contre l'évaluation faite main (2 000 parties, zéro perte au
+> temps). **Celui qui joue depuis le 30 sept.**, entraîné sur 249,5 millions
+> de positions étiquetées par le moteur au réseau, l'a dépassé en deux
+> marches, chacune mesurée contre la précédente sur 6 000 parties :
+> **+115,7 ± 7,0**, puis **+50,1 ± 6,1**. L'évaluation faite main reste
+> disponible par `setoption name EvalFile value <none>`.
 
 ## Structure
 
