@@ -93,7 +93,9 @@ contrainte d'outillage prise pour une préférence**.
 
 `.github/workflows/match.yml` lève la contrainte : `workflow_dispatch`, deux
 commits en entrée, la cadence en entrée, six heures de plafond, et un résumé
-lisible dans l'onglet Actions sans ouvrir le journal.
+lisible dans l'onglet Actions sans ouvrir le journal. **Le nom de chaque run
+porte ses entrées** depuis le 30 sept. 2026 : l'API ne les rend pas, et deux
+runs déclenchés ensemble ne se distinguaient qu'une fois finis.
 
 **Lire d'abord l'étalonnage.** À cadence horloge, une machine plus lente
 atteint une profondeur plus faible — donc un autre point de fonctionnement,
