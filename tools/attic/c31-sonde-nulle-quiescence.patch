@@ -1,0 +1,234 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 53953d0..d2c3cf7 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -32,6 +32,14 @@ use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
+ use crate::eval::{self, DRAW, INFINITY, MATE, MATE_THRESHOLD};
+ use crate::nnue::{Accumulators, Network};
+ use crate::position::{Position, repetitions};
++// SONDE jetable (C31) — ne jamais fusionner. Remises à zéro à chaque bestmove.
++// 0 nœuds de quiescence, 1 dont en échec, 2 enfants réversibles dans la
++// quiescence (parades tranquilles), 3 dont nulles par répétition, 4 dont nulles
++// par la règle des cinquante coups, 5 dont matériel insuffisant.
++pub static SONDES: [std::sync::atomic::AtomicU64; 6] = [const { std::sync::atomic::AtomicU64::new(0) }; 6];
++fn sonde(i: usize) {
++    SONDES[i].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++}
+ use crate::see;
+ use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
+ 
+@@ -1267,10 +1275,12 @@ impl Search {
+         // continues after threefold repetition » — et la variante le montrait :
+         // à la profondeur 1, `f8e8 e6f6` pour un coup qui termine la partie.
+         //
+-        // La quiescence elle-même n'a pas à le refaire : ses coups sont des
+-        // captures et des promotions, qui remettent la pendule des cinquante
+-        // coups à zéro et interdisent toute répétition en aval. Seul son nœud
+-        // d'ENTRÉE, atteint par un coup tranquille, pouvait être une nulle.
++        // La quiescence ne refait pas ce test à son entrée : il vient d'être
++        // fait ici. Plus bas, ses coups sont des captures et des promotions,
++        // qui remettent la pendule des cinquante coups à zéro et interdisent
++        // toute répétition en aval — SAUF en échec, où elle cherche toutes les
++        // parades, tranquilles comprises. Celles-là, elle les teste elle-même
++        // (C31).
+         //
+         // Le matériel insuffisant est déjà rendu à zéro par `evaluate` ; le
+         // tester **aussi** ici n'est pas une redondance mais une coupure. Sans
+@@ -1588,6 +1598,10 @@ impl Search {
+         let (buffer, rest) = scratch.split_at_mut(MAX_MOVES);
+ 
+         let in_check = !board.checkers().is_empty();
++        sonde(0);
++        if in_check {
++            sonde(1);
++        }
+         let mut stand_pat = -INFINITY;
+ 
+         if !in_check {
+@@ -1632,7 +1646,36 @@ impl Search {
+             let mut child = board.clone();
+             child.play_unchecked(mv);
+ 
+-            let score = -self.quiescence(&child, -beta, -alpha, ply + 1, rest);
++            // Une parade tranquille ne remet pas la pendule à zéro : elle peut
++            // atteindre le centième demi-coup ou recréer une position du
++            // chemin, et l'enfant serait évalué comme si la partie continuait.
++            // Hors échec, aucun coup de la quiescence ne l'est, et la pendule
++            // à zéro le dit sans rien tester. L'arbitre le signalait — « PV
++            // continues after fifty-move rule », « … after threefold
++            // repetition » — dans les séries de C13 (C31, 30 sept. 2026).
++            //
++            // Le chemin porte chaque position, comme dans negamax : sans
++            // elle, une parade plus bas ne verrait pas celle-ci.
++            self.path.push(child.hash());
++            if child.halfmove_clock() != 0 {
++                sonde(2);
++                if self.is_repetition(&child) {
++                    sonde(3);
++                } else if child.halfmove_clock() >= 100 && !is_checkmate(&child) {
++                    sonde(4);
++                } else if eval::is_insufficient_material(&child) {
++                    sonde(5);
++                }
++            }
++            let score = if child.halfmove_clock() != 0 && self.is_rule_draw(&child) {
++                // Nulle pour les deux camps : rien à retourner.
++                self.nodes += 1;
++                self.pv.clear(ply + 1);
++                DRAW
++            } else {
++                -self.quiescence(&child, -beta, -alpha, ply + 1, rest)
++            };
++            self.path.pop();
+ 
+             if self.aborted {
+                 return 0;
+@@ -4742,6 +4785,87 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn une_parade_tranquille_de_la_quiescence_peut_atteindre_le_centieme_demi_coup() {
++        // En échec, la quiescence cherche TOUTES les parades, et une parade
++        // tranquille ne remet pas la pendule à zéro. Ici les trois parades —
++        // Rh2, Dg1, Df1 — sont tranquilles : chacune atteint le centième
++        // demi-coup, et la position vaut nulle. L'arbitre le signalait,
++        // « PV continues after fifty-move rule », deux fois dans les 300
++        // parties de C13 pour N2 (30 sept. 2026) — C31.
++        let mut a = ardoise();
++        let temoin = board("7k/8/8/8/8/8/6Q1/r6K w - - 98 80");
++        assert!(
++            search().negamax(&temoin, 0, 1, -INFINITY, INFINITY, &mut a) > 200,
++            "témoin : à 98 demi-coups, la parade laisse la partie continuer"
++        );
++        let b = board("7k/8/8/8/8/8/6Q1/r6K w - - 99 80");
++        let mut s = search();
++        assert_eq!(
++            s.negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a),
++            DRAW,
++            "à 99 demi-coups, chaque parade atteint le centième : nulle"
++        );
++        // Le nœud d'entrée et ses trois nulles : une nulle compte un nœud,
++        // comme dans negamax.
++        assert_eq!(s.nodes, 4, "chaque nulle compte un nœud");
++    }
++
++    #[test]
++    fn une_nulle_de_la_quiescence_arrete_la_variante() {
++        // Le cavalier peut prendre la tour qui fait échec, mais le fou le
++        // reprend — et le pion a7 garde assez de matériel pour que la reprise
++        // gagne : sans lui, roi et fou contre roi vaudrait zéro, les noirs ne
++        // reprendraient pas, et la ligne restée derrière serait vide. La
++        // prise, cherchée d'abord, laisse donc sa suite — Fxa1 — dans la
++        // ligne du ply suivant. Les parades tranquilles atteignent le
++        // centième demi-coup : nulles, donc meilleures que la prise. La
++        // variante doit s'arrêter à la parade ; recopier la ligne restée
++        // derrière la ferait continuer APRÈS la nulle — l'avertissement même
++        // de l'arbitre (C31).
++        let mut a = ardoise();
++        let temoin = board("7k/p7/8/8/3b4/1N6/8/r6K w - - 98 80");
++        assert!(
++            search().negamax(&temoin, 0, 1, -INFINITY, INFINITY, &mut a) < -200,
++            "témoin : sans la nulle, la prise est le moindre mal, et elle perd"
++        );
++        let b = board("7k/p7/8/8/3b4/1N6/8/r6K w - - 99 80");
++        let mut s = search();
++        assert_eq!(s.negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a), DRAW);
++        assert_eq!(s.pv.lengths[1], 1, "la variante s'arrête à la parade");
++    }
++
++    #[test]
++    fn une_parade_tranquille_de_la_quiescence_peut_repeter_la_position() {
++        // Échec perpétuel à l'horizon : la dame noire va et vient entre e5 et
++        // e1, le roi blanc entre h1 et h2. Dans `entree`, Rh1 est la seule
++        // parade — g1 est tenu par le fou, g2 et h3 sont occupés, rien ne
++        // s'interpose — et elle recrée `z`. Les blancs ont une tour et un
++        // pion de plus : sans la répétition, la quiescence rend un avantage
++        // net. L'arbitre le signalait, « PV continues after threefold
++        // repetition », dans deux des séries de C13 du 29 sept. 2026 — C31.
++        let z = board("7k/1R6/8/2b1q3/8/7P/Q5B1/7K b - - 10 60");
++        let apres_de1 = board("7k/1R6/8/2b5/8/7P/Q5B1/4q2K w - - 11 61");
++        let apres_rh2 = board("7k/1R6/8/2b5/8/7P/Q5BK/4q3 b - - 12 61");
++        let entree = board("7k/1R6/8/2b1q3/8/7P/Q5BK/8 w - - 13 62");
++        let mut a = ardoise();
++
++        let mut temoin = search();
++        temoin.path = vec![entree.hash()];
++        assert!(
++            temoin.negamax(&entree, 0, 1, -INFINITY, INFINITY, &mut a) > 300,
++            "témoin : sans la répétition, la position ne vaut pas zéro"
++        );
++
++        let mut s = search();
++        s.path = vec![z.hash(), apres_de1.hash(), apres_rh2.hash(), entree.hash()];
++        assert_eq!(
++            s.negamax(&entree, 0, 1, -INFINITY, INFINITY, &mut a),
++            DRAW,
++            "la seule parade répète la position : nulle"
++        );
++    }
++
+     #[test]
+     fn jamais_de_nulle_a_la_racine_meme_au_centieme_demi_coup() {
+         // Au centième demi-coup la position est nulle PAR RÈGLE — pour qui la
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index 522d061..abe2374 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -485,6 +485,13 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            {
++                let v: Vec<String> = crate::search::SONDES
++                    .iter()
++                    .map(|c| c.swap(0, std::sync::atomic::Ordering::Relaxed).to_string())
++                    .collect();
++                send(&format!("info string sonde {} {}", search.nodes(), v.join(" ")));
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
+diff --git a/tools/sonde-c31/sommer.py b/tools/sonde-c31/sommer.py
+new file mode 100644
+index 0000000..7d24630
+--- /dev/null
++++ b/tools/sonde-c31/sommer.py
+@@ -0,0 +1,37 @@
++#!/usr/bin/env python3
++"""Lecteur de la sonde C31 — somme les compteurs d'un match joué par le binaire sondé.
++
++  fastchess -engine cmd=<sondé> … -engine cmd=<sondé> … -each tc=8+0.08 proto=uci \\
++            -log file=journal.log level=info engine=true …
++  python3 tools/sonde-c31/sommer.py journal.log
++
++Le binaire sondé imprime, juste avant chaque bestmove, « info string sonde »
++suivi des nœuds de la recherche puis de ses six compteurs, REMIS À ZÉRO à
++chaque impression : chaque ligne vaut pour une recherche, et la somme de
++toutes les lignes vaut pour le match, quelle que soit la vie des processus.
++Compteurs, dans l'ordre de `SONDES` : nœuds de quiescence, dont en échec,
++enfants réversibles de la quiescence (parades tranquilles), dont nulles par
++répétition, par la règle des cinquante coups, par matériel insuffisant.
++"""
++import sys
++
++t = [0] * 7
++n = touchees = rep_s = cinquante_s = 0
++for ligne in open(sys.argv[1], encoding="utf-8", errors="replace"):
++    i = ligne.find("info string sonde")
++    if i < 0:
++        continue
++    v = list(map(int, ligne[i:].split()[3:10]))
++    t = [a + b for a, b in zip(t, v)]
++    n += 1
++    touchees += v[4] + v[5] > 0
++    rep_s += v[4] > 0
++    cinquante_s += v[5] > 0
++noeuds, q, echec, rev, rep, cinquante, insuffisant = t
++print(f"recherches {n}, nœuds {noeuds:,}, quiescence {q:,} ({q / noeuds:.1%}), "
++      f"en échec {echec:,} ({echec / q:.2%} de la quiescence)")
++print(f"parades tranquilles {rev:,} — {rev / echec:.2f} par nœud en échec")
++print(f"nulles : répétition {rep:,} ({rep / rev:.3%} des parades), cinquante coups "
++      f"{cinquante:,} ({cinquante / rev:.4%}), matériel insuffisant {insuffisant:,}")
++print(f"recherches touchées : {touchees} sur {n} ({touchees / n:.1%}) — "
++      f"répétition {rep_s}, cinquante coups {cinquante_s}")
