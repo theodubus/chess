@@ -759,7 +759,7 @@ dernière relève est faite.
 | **C28 — la sonde** | **36603415485** — la troisième déclenchée, confirmée : la seule finie en moins d'une heure, son résumé porte `plis.sh` | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉE à 18 h 25** — finie à 17 h 53, EPYC 9V74, zéro anomalie | **n/s × 1,063 pour le candidat, plis −0,44 ± 0,11 : les deux dans l'attendu** — plus rapide par nœud, moins profond ; prédiction du verdict par l'étalon, écrite avant lui : −20 à −58 Elo (section C28). — *Attendus, écrits avant* : n/s × 1,00 à × 1,10, plis −0,5 à +0,1 |
 | **C29 — les seaux, A : sous pression** | **36651565341, 36651567495** — par ordre de déclenchement, à confirmer par leurs résumés | `2d44626` (seaux, 2 Mio) → `cdd5ba4` (case unique, 2 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 00 h 41, fin vers 06 h 30 | mise en commun ; critère de la section C29 — **fusion si la borne basse commune est au-dessus de zéro** et que B ne démontre pas de régression. *Attendu, écrit avant* : +3 à +25 |
 | **C29 — les seaux, B : au défaut** | **36651570193, 36651572367** — idem | `90ac6e3` (seaux, 16 Mio) → `d78b422` (`main`), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 00 h 41, fin vers 06 h 30 | la borne haute commune ne doit pas être sous zéro. *Attendu* : −3 à +5 |
-| **C29 — les deux sondes** | **36651578044** (A), **36651580375** (B) — idem | les mêmes binaires, `sonde: oui`, 100 parties une à une chacune | cutechess `-debug all`, `tools/plis.sh` | lancées à 00 h 41, fin vers 01 h 45 | n/s et plis appariés par partie. *Attendus* : A, plis +0,1 à +0,35 et n/s × 0,96 à × 1,00 ; B, n/s × 0,96 à × 1,00 |
+| **C29 — les deux sondes** | **36651578044** (A), **36651580375** (B) — idem | les mêmes binaires, `sonde: oui`, 100 parties une à une chacune | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉES à 01 h 25** — finies à 01 h 18 et 01 h 20, attribution confirmée | **A : +0,54 ± 0,10 pli, n/s × 1,003** — au-dessus de l'attendu (+0,1 à +0,35), presque tout le coût de la pression ; **B : +0,03 ± 0,13, n/s × 0,990**, dans l'attendu. Prédiction du verdict, écrite avant : A +11 à +49, B −8 à +12 (section C29) |
 | **C29 — le crible de mutation au candidat** | **36651736903** | `90ac6e3`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | lancé à 00 h 43 ; une partie de sa matrice attend des runners libres | `tt.rs` ≤ 6 — les six `\|` contre `^` connus —, aucun survivant dans le code neuf, chaque fichier sous son plafond |
 | **C30 — la taille par défaut, l'Elo** | **36654642929, 36654645557** — identifiés par leur nom de run | `94c07ad` (64 Mio) → `4699e63` (16 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 01 h 20, fin vers 07 h 05 | mise en commun ; critère de la section C30 — **le défaut passe à 64 Mio sauf coût démontré** (borne haute commune sous zéro). *Attendu, écrit avant* : −6 à +3 |
 | **C30 — la sonde** | **36654648060** | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | lancée à 01 h 20, fin vers 02 h 20 | n/s et plis appariés. *Attendus* : n/s × 0,95 à × 1,02, plis −0,1 à +0,05 |
@@ -4360,6 +4360,40 @@ partie :
   sous le sien — un changement d'arbre déplace ce que les tests de nœuds
   voient ailleurs (`CLAUDE.md`). Un survivant se tue par un test, ce qui ne
   touche pas le binaire mesuré.
+
+**Les deux sondes, RELEVÉES le 30 sept. à 01 h 25** — finies à 01 h 18 et
+01 h 20, 100 parties une à une chacune, zéro perte au temps, zéro coup
+illégal ; attribution confirmée par leurs résumés, dans l'ordre de
+déclenchement :
+
+| sonde | runner — bench, profondeur en 250 ms | n/s, candidat ÷ référence | plis appariés, IC à 95 % |
+|---|---|---|---|
+| **A, sous pression** — 36651578044 | Xeon 6973P-C — 3 065 809 n/s, 13 | **× 1,003** | **+0,54 ± 0,10** |
+| **B, au défaut** — 36651580375 | Xeon Platinum 8573C — 2 307 240 n/s, 12 | **× 0,990** | **+0,03 ± 0,13** |
+
+- **B tient ses deux attendus** — n/s × 0,96 à × 1,00, plis −0,05 à +0,1 :
+  le sondage de quatre entrées coûte 1 % de vitesse, au bord du bruit, et
+  là où la table n'est pas pressée les seaux ne changent rien de visible ;
+- **A dépasse le sien par le haut** — +0,1 à +0,35 attendus, l'intervalle
+  entier au-dessus —, à vitesse égale. **+0,54 pli, c'est presque tout ce
+  que la pression coûtait** : ~0,56 pli selon C28, gain de vitesse retiré.
+  Sous cette pression, des seaux à 2 Mio cherchent donc à peu près aussi
+  profond que la case unique à 16 Mio, moins sa vitesse ;
+- **réfuté, dans le raisonnement de l'attendu** : « *des seaux qui vaudraient
+  une table deux à quatre fois plus grande* ». Ils en valent environ huit.
+  <span>Inférence, confiance moyenne</span> : la case unique ne perdait pas
+  de la capacité, elle perdait les BONNES entrées — une entrée de 18 plis
+  chassée par une de 1 pli, ce que C28 lisait au code. Garder les profondes
+  n'est pas une affaire de taille, et le cadrage « taille équivalente »
+  sous-estimait d'autant ;
+- **ce que ces plis prédisent du verdict, écrit AVANT lui** —
+  <span>inférence, confiance moyenne</span> : au taux de C28 pour un pli
+  perdu par la table, 25 à 76 Elo, **A vaudrait +11 à +49 Elo, ~+24 au
+  centre** — au-dessus de l'attendu du protocole (+3 à +25), qu'il ne
+  recouvre que par le haut ; **B, −8 à +12, ~+1** — moins le 1 % de
+  vitesse, ~1,5 Elo par l'étalon. Réserve, la même qu'à C28 : l'Elo d'un
+  pli appartient à ce qui le fait gagner ou perdre, et un pli REGAGNÉ par
+  la table n'a pas été mesuré.
 
 ### C28 — la table sous pression : 2 Mio contre 16 à `8+0,08` — VERDICT, 29 sept. 2026 : −19,42 ± 5,78 Elo, la pression de 60+0,6 coûte
 
