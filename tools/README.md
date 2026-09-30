@@ -4421,6 +4421,71 @@ illégal, aucun moteur perdu :
   quiescence ne testait aucune nulle après une parade tranquille** —
   section C31.
 
+### B8 — les marges à l'échelle du réseau : la sonde, écrite le 30 sept. avant de mesurer
+
+**Lancé par Théo le 30 sept.** (« *Ok go pour reco 8* »), sur la
+recommandation d'une sonde d'abord, qui peut le fermer sans match.
+
+**La question.** Trois constantes de `search.rs` s'expriment en unités
+d'évaluation : `RFP_MARGIN` — la futilité inverse, 100 par pli jusqu'à la
+profondeur 8 —, `ASPIRATION_DELTA` — 25 — et `DELTA_MARGIN` — 200, plus la
+valeur faite main de la pièce prise. Elles ont été posées et mesurées quand
+l'évaluation était la faite main ; le réseau joue depuis le 28 sept. Le coup
+nul, l'élagage par compte de coups et les réductions n'en dépendent pas — lu
+au code. **Ce qu'une marge doit couvrir, c'est l'erreur de l'évaluation
+statique là où elle tranche**, pas l'échelle en général : un réseau plus juste
+peut porter de plus grands nombres et de plus petites erreurs relatives. D'où
+la même mesure au réseau et à la faite main — le régime où les marges ont été
+réglées —, en partie.
+
+**La sonde** — rustine `b8-sonde-marges.patch`, son lecteur compris :
+- **deux séries de 40 parties à `8+0,08`**, chaque évaluation contre
+  elle-même, livre du dépôt, `-srand 20260930`, dans le conteneur : le réseau
+  (`main`), puis la faite main (`EvalFile <none>`) ;
+- **futilité inverse** : un nœud candidat sur N — hors racine, hors échec,
+  profondeur 8 au plus, `beta` hors mat —, choisi par un compteur, pas par le
+  hasard ; journalisés : la position, la profondeur, `beta`, l'évaluation du
+  moteur et celle de l'autre, coupé ou non. **Puis rejoué hors partie** :
+  `go depth d` depuis la position, table de 1 Mio, même évaluation ;
+  `E = statique − score`, et la marge est fautive là où `E` la dépasse. Les
+  deux évaluations au même nœud donnent aussi leur pente : l'échelle là où
+  la marge tranche ;
+- **élagage delta** : une capture candidate de la quiescence sur M,
+  journalisée avec `stand_pat`, le gain compté, `alpha` et la décision ;
+  rejouée hors partie par `go depth 1` après la capture — élaguée à tort si
+  sa valeur dépasse `alpha`. <span>Approximation écrite : `go depth 1`
+  cherche un peu plus que la quiescence.</span> ;
+- **aspiration** : compteurs par itération à fenêtre — échecs par le bas,
+  par le haut, et la part des nœuds dépensée en recherches échouées.
+
+**Ce qu'elle rend** : par profondeur, les centiles 50, 90 et 99 de `E` au
+réseau et à la faite main, et leur rapport ; la pente du réseau contre la
+faite main ; le taux d'élagage delta fautif des deux ; le taux d'échec
+d'aspiration et son coût. Chaque rapport avec son intervalle à 95 % par
+rééchantillonnage.
+
+**Attendu, écrit avant** — <span>inférence, confiance faible</span> : au
+réseau, les erreurs à couvrir valent **1,5 à 3 fois** celles de la faite
+main aux mêmes profondeurs — des nombres 2,6 à 5,8 fois plus grands en
+position décidée, en partie compensés par une évaluation plus juste ;
+l'aspiration échoue **1,3 à 2,5 fois** plus souvent ; l'élagage delta se
+trompe plus souvent au réseau, la valeur faite main de la pièce y comptant
+moins que ce qu'elle vaut en unités du réseau.
+
+**Règle, écrite avant**, marge par marge, sur le rapport réseau / faite
+main — le centile 90 de `E` pour la futilité inverse, le taux d'échec pour
+l'aspiration, le taux d'élagage fautif pour l'élagage delta :
+- **intervalle dans [0,8 ; 1,25]** : la marge tient à l'échelle du réseau ;
+  si les trois tiennent, **B8 se ferme sans match** ;
+- **intervalle entièrement hors de [0,8 ; 1,25]** : un candidat, la
+  constante multipliée par le rapport mesuré — un seul pour les marges dont
+  les rapports concordent à ± 25 % : une hypothèse, une échelle —, contre
+  `main`, deux jobs de 3 000 parties à `8+0,08`, **gain si la borne basse
+  commune est au-dessus de zéro**. SPSA seulement si un facteur paie et
+  qu'il reste à affiner ;
+- **intervalle à cheval** : la sonde s'allonge avant de trancher, jamais un
+  match sur un rapport qu'elle ne sépare pas de 1.
+
 ### C31 — la nulle après une parade tranquille, dans la quiescence — VERDICT, 30 sept. 2026 : −2,43 ± 5,36 Elo à `8+0,08`, la borne haute d'un match sous zéro — ARRÊTÉ PAR SON CRITÈRE
 
 **Ouvert par l'arbitre** — section C13 : « PV continues after threefold
