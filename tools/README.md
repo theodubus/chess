@@ -4207,13 +4207,72 @@ l'étalonnage de Stockfish ; lancées à 06 h 11, finies entre 10 h 58 et
   La suite : re-mesurer après chaque changement de réseau, une série contre
   2850 à 60+0,6, pas davantage.
 
+### C30 — la taille par défaut : le protocole, écrit le 30 sept. avant de mesurer
+
+**Ouvert par le critère de C28** — « *avant d'élever le défaut, mesurer ce
+qu'une table plus grande coûte là où elle n'est PAS sous pression, à
+`8+0,08`* » — et par Théo, qui demande de clore les sujets en cours.
+
+**Où le défaut compte** : là seulement où personne ne règle `Hash` —
+l'interface, qui ne le règle pas (lu dans `ui/src` le 29 sept.), et nos
+matchs, `match.yml` non plus ; les listes le règlent elles-mêmes. À
+`8+0,08` comme à la cadence de Théo, 10+0,1, la table de 16 Mio range 4 à
+9 % de sa capacité par recherche (C28) : aucune pression. À 60+0,6, 30 à
+65 % — la pression que C28 a chiffrée. **Le défaut sert donc les parties
+longues de l'interface ; ce qu'il peut coûter, c'est de la vitesse aux
+parties courtes**, où une table plus grande ne sert à rien.
+
+**Pourquoi sans attendre C29** — dont la section écrivait que la taille se
+mesurerait sur le schéma qui en sortirait. Relu : ce que C30 mesure est le
+coût de la MÉMOIRE là où la table n'est pas pressée, et le schéma ne le
+change pas — chaque sondage touche une ligne de cache au hasard, avec ou
+sans seaux, et l'écriture relit la même ligne. <span>Inférence, confiance
+moyenne à élevée.</span> Six heures gagnées ; si C29 est fusionné et que
+C30 élève le défaut, banc et plafond se revérifient sur le schéma fusionné.
+
+**Pourquoi 64 Mio** : à 60+0,6, une recherche y rangerait 8 à 16 % de la
+capacité — le régime de 16 Mio à `8+0,08`, où B9 a doublé la table sans
+effet décelable. 40/15 resterait sous pression, une à deux fois la
+capacité : hors de portée d'un défaut raisonnable.
+
+**Le candidat** : `94c07ad`, `DEFAULT_SIZE_MB` à 64, révoqué aussitôt par
+`d88c48f` ; **la référence** : `4699e63`, `main` — le moteur de `d78b422`
+au bit près. Banc identique à la profondeur 7, 107 548 nœuds ; 594 562
+contre 594 679 à la profondeur 10. **Les runs** : deux jobs de 3 000
+parties à `8+0,08`, graine « auto » chacun, fastchess, mis en commun ; une
+sonde de 100 parties.
+
+**Mesuré dans le conteneur avant de lancer** — six positions du livre, 2 s
+chacune, deux passes alternées, même binaire : n/s **× 1,026** pour 64 Mio,
+de × 0,92 à × 1,16 selon la position. Au bord du bruit, et sur des caches
+qui ne sont pas ceux des runners — la sonde le dira sur eux.
+
+**Attendus** — <span>inférence, confiance faible</span> : Elo **−6 à +3** ;
+n/s **× 0,95 à × 1,02** ; plis **−0,1 à +0,05**.
+
+**Le critère, écrit avant** :
+- **coût démontré**, la borne haute commune sous zéro : le défaut reste à
+  16 Mio, et la taille devient l'affaire de l'interface — régler `Hash`
+  selon la cadence —, proposée à Théo pour `ui/` ;
+- **pas de coût démontré** : **le défaut passe à 64 Mio**, la révocation
+  révoquée. Le coût aux parties courtes est alors sous la résolution, et le
+  gain aux parties longues est établi par C28 dans son sens, sinon dans sa
+  taille — une table plus grande n'y est jamais plus pressée ;
+- **la puissance, dite d'avance** : ~6 000 parties, ± 6 Elo. Un coût de
+  moins de ~6 Elo aux parties courtes peut passer inaperçu — accepté,
+  parce qu'écrit, et parce qu'il s'échangerait contre la pression des
+  parties longues, que C28 chiffre à ~19 Elo.
+
 ### C29 — les seaux : le protocole, écrit le 30 sept. avant de mesurer
 
 **Ouvert par le critère de C28** — coût démontré, donc « les deux leviers se
 mesurent ensuite » — **et par Théo, le 29 sept. au soir** : « *D'abord
 cloturont les sujets en cours (…) table plus grande (…) finissons ces sujets
 et j'arbitrerais après* ». Des deux leviers, les seaux d'abord : c'est du
-code, et la taille (C30) se mesurera sur le schéma qui en sortira.
+code<s>, et la taille (C30) se mesurera sur le schéma qui en sortira</s>.
+**Relu le même jour** : ce que la taille coûte là où la table n'est pas
+pressée ne dépend pas du schéma — C30 se mesure en parallèle, sa section
+dit pourquoi.
 
 **Le code — le candidat `90ac6e3`**, révoqué aussitôt par `0ce32fc` ; copie
 dans `tools/attic/c29-seaux.patch` :
@@ -4576,7 +4635,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **EN COURS** : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`) |
 | **un banc qui emploie le réseau** — proposé le 29 sept. | — de l'outillage, sans Elo | Le banc et `tools/timing.sh` évaluent à la main, le moteur joue avec le réseau (« Ce qu'il faut surveiller »). **Préalable** à toute mesure de vitesse de l'inférence et à tout écran en nœuds sur l'arbre qu'on joue ; il déplace la référence du banc, ses tests et le crible d'`eval.rs`, donc il se conçoit, il ne se bricole pas |
 | **la vitesse de l'inférence** — proposé le 29 sept. | se convertit en plis par l'étalon, une fois mesurée | Le nœud au réseau coûte 0,873 fois le nœud fait main sur le binaire de base, **0,731 compilé pour AVX2** (26 sept.). Leviers : compiler pour le processeur de la machine qui joue, des mises à jour paresseuses de l'accumulateur. **Sans `unsafe`** — la lint l'interdit —, donc pas d'intrinsèques : la vectorisation passe par le compilateur. Exige le banc au réseau |
-| **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : EN MESURE**, deux matchs, sous pression et au défaut ; la taille ensuite (C30) | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |
+| **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : EN MESURE**, deux matchs, sous pression et au défaut ; **C30, la taille par défaut à 64 Mio : EN MESURE**, son coût là où la table n'est pas pressée | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |
 | **un livre d'ouvertures, pour les parties depuis la position initiale** — proposé le 29 sept., sur une question de Théo | — **zéro dans toutes nos mesures, par construction** | **Nos matchs partent tous de positions de livre** (`tools/book.epd`), contre notre jumeau comme contre Stockfish bridé ; **les listes imposent le leur** — CCRL, lu par le moteur de recherche seulement, le site est bloqué d'ici : un livre générique commun, celui du moteur désactivé, l'apprentissage de livre et de positions interdit ; <span>confiance moyenne à élevée</span>. **Ce qu'il vaudrait depuis la position initiale — les parties de l'interface —, non mesuré** : du **temps**, le budget valant `restant / 12 + inc / 2` — par l'arithmétique de la formule, les huit premiers coups consomment **47 à 55 % de la base** à 80 – 100 % du budget dépensé, et le premier reçoit trois à six fois le temps du vingtième ; un livre rendrait ce temps aux premiers coups hors théorie. De la **variété** : à un fil et table vidée par `ucinewgame`, le moteur rejoue presque toujours la même ouverture. **Sa place est l'interface, pas le moteur** : dans le modèle UCI, c'est elle qui joue les coups de livre ; Stockfish n'en embarque pas ; et un livre qui APPREND des parties heurterait une décision tranchée — « pas de persistance » (`CLAUDE.md`). Donc un chantier de `ui/`. **Sa source** : un livre bâti par notre auto-jeu est le plus cher et le plus faible — il recopie nos opinions à cadence courte ; mieux, une base de parties fortes (celle de Lichess se dit dans le domaine public, à vérifier avant usage) ou des recherches profondes sur un petit arbre, sur runners. L'angle mort côté moteur — le réseau n'a jamais vu d'ouverture — est dans la section n° 7 : **sondé le 30 sept., rien de décelable** — rapporté à la faite main, le réseau perd même relativement moins en ouverture qu'en milieu de partie. Reste le temps et la variété, côté interface |
 | **techniques de recherche absentes** — proposé le 29 sept., **DÉCIDÉ n° 9** (Théo, 29 sept.) | non chiffrées | **Aucune n'est dans `search.rs`** (recherche du 29 sept.) : extensions singulières, drapeau « *improving* », historique de correction de l'évaluation statique, réduction itérative interne, réduction du coup nul adaptée à la profondeur (`NULL_MOVE_REDUCTION` vaut 2, fixe), futilité aux nœuds frontières, élagage par l'échange statique hors quiescence, historique des captures, ProbCut. **Chacune un SPRT, séparément** : être standard ne prouve rien, PVS et l'extension d'échec en sont les démentis (`CLAUDE.md`). Mesurer le mécanisme d'abord, comme pour les autres |
 | **tablebases de finale** (reste de B6) | — | **reporté**, non chiffré |
