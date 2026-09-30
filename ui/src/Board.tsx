@@ -1,3 +1,4 @@
+import type { DrawShape } from "@lichess-org/chessground/draw";
 import { useEffect, useRef, type ReactNode } from "react";
 import { Chessground } from "@lichess-org/chessground";
 import type { Api } from "@lichess-org/chessground/api";
@@ -19,6 +20,7 @@ type Props = {
   premove?: { from: Key; to: Key } | null;
   onPremove?: (from: Key, to: Key) => boolean;
   onCancelPremove?: () => void;
+  autoShapes?: DrawShape[];
   children?: ReactNode;
 };
 export default function Board({
@@ -35,6 +37,7 @@ export default function Board({
   onPremove,
   onCancelPremove,
   children,
+  autoShapes,
 }: Props) {
   const element = useRef<HTMLDivElement>(null);
   const api = useRef<Api | null>(null);
@@ -108,6 +111,9 @@ export default function Board({
   useEffect(() => {
     if (!premoveEnabled || !premove) api.current?.cancelPremove();
   }, [premoveEnabled, premove]);
+  useEffect(() => {
+    api.current?.setAutoShapes(autoShapes ?? []);
+  }, [autoShapes]);
   function refreshBounds() {
     // Un bandeau ou des prises peuvent déplacer le plateau sans le redimensionner.
     // Chessground garde sinon les anciennes coordonnées pour interpréter le geste.

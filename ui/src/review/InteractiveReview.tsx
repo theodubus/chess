@@ -1,7 +1,8 @@
+import { explainMove, type ExplanationLine } from "./explanations";
 import { useEffect, useState } from "react";
 import type { Color, Key } from "@lichess-org/chessground/types";
 import type { GameReview } from "./GameReview";
-import { StudyTree } from "./StudyTree";
+import { boardFromCommand, StudyTree } from "./StudyTree";
 import { BranchAnalysis } from "./BranchAnalysis";
 import { badMove, notablePositions, moveSummary } from "./study";
 import { estimatedLoss } from "./model";
@@ -51,6 +52,11 @@ export default function InteractiveReview({
   side: "w" | "b" | "both";
   treeCache: Map<number, StudyTree>;
 }) {
+  const [demo, setDemo] = useState<{
+    source: string;
+    line: ExplanationLine;
+    step: number;
+  } | null>(null);
   const [branch, setBranch] = useState<Branch | null>(null);
   const [live] = useState(() => new BranchAnalysis());
   const [, render] = useState(0);
@@ -99,8 +105,6 @@ export default function InteractiveReview({
   const previousMoment = moments.filter((index) => index < selected).at(-1);
   const displayedTree = branch?.tree ?? new StudyTree(position);
   const board = displayedTree.board(branch?.node ?? 0);
-  const captures = capturedMaterial(board.history({ verbose: true }));
-  const balance = materialBalance(board);
   const path = branch?.tree.path(branch.node) ?? [];
   const matching =
     !!branch && live.tree === branch.tree && live.node === branch.node;
@@ -156,7 +160,39 @@ export default function InteractiveReview({
       )
     : null;
 
+  const explanationPosition = branch
+    ? branch.node > 0
+      ? branch.tree.position(
+          branch.tree.nodes[branch.node].parent!,
+          uci ?? null,
+        )
+      : null
+    : playedPosition;
+  const explanation =
+    explanationPosition && !blind && showAnnotations
+      ? explainMove(
+          explanationPosition,
+          before ?? null,
+          branch ? liveResult : review.results[selected],
+          annotation,
+        )
+      : null;
+  const demoSource = `${engineId}:${selected}:${explanationPosition?.command}:${uci}:${branch?.node ?? "game"}`;
+  const demonstration =
+    demo?.source === demoSource && active && !blind && showAnnotations
+      ? demo
+      : null;
+  const demoStep = demonstration?.line.steps[demonstration.step];
+  const displayBoard = demoStep ? boardFromCommand(demoStep.command) : board;
+  const captures = capturedMaterial(displayBoard.history({ verbose: true }));
+  const balance = materialBalance(displayBoard);
+  function demonstrate(line: ExplanationLine) {
+    setWalkTarget(null);
+    setPane("details");
+    setDemo({ source: demoSource, line, step: 0 });
+  }
   function navigate(index: number) {
+    setDemo(null);
     setWalkTarget(null);
     setBranch(null);
     setPromotion(null);
@@ -171,6 +207,7 @@ export default function InteractiveReview({
     return tree;
   }
   function jumpBranch(direction: number) {
+    setDemo(null);
     if (!branch || !direction || (blind && direction > 0)) return;
     const current = branch.tree.nodes[branch.node];
     const next = direction < 0 ? current.parent : current.children[0];
@@ -180,14 +217,21 @@ export default function InteractiveReview({
     }
   }
   useMoveKeys(
-    active && walkTarget === null && !promotion,
+    active && walkTarget === null && !promotion && !demonstration,
     branch ? path.length : selected,
     branch
       ? path.length + (branch.tree.nodes[branch.node].children.length ? 1 : 0)
       : review.positions.length - 1,
     (index) => (branch ? jumpBranch(index - path.length) : navigate(index)),
   );
+  useMoveKeys(
+    !!demonstration,
+    demonstration?.step ?? 0,
+    (demonstration?.line.steps.length ?? 1) - 1,
+    (step) => setDemo((value) => (value ? { ...value, step } : null)),
+  );
   function retry() {
+    setDemo(null);
     setWalkTarget(null);
     setPromotion(null);
     setPane("details");
@@ -270,11 +314,13 @@ export default function InteractiveReview({
     >
       <div className="board-column">
         <p className="review-position">
-          {branch
-            ? blind
-              ? "À vous de trouver le meilleur coup"
-              : `${branch.retry && path.length === 1 ? "Votre tentative" : "Variante"} · ${branch.node ? branch.tree.nodes[branch.node].label : branch.tree.root.label}`
-            : position.label}
+          {demonstration
+            ? `Explication · ${demonstration.line.title}`
+            : branch
+              ? blind
+                ? "À vous de trouver le meilleur coup"
+                : `${branch.retry && path.length === 1 ? "Votre tentative" : "Variante"} · ${branch.node ? branch.tree.nodes[branch.node].label : branch.tree.root.label}`
+              : position.label}
         </p>
         <CapturedPieces
           captures={captures}
@@ -287,42 +333,68 @@ export default function InteractiveReview({
         >
           {showEvaluation && (
             <EvaluationBar
-              score={blind ? null : score}
+              score={blind || demonstration ? null : score}
               orientation={orientation}
             />
           )}
-          <Board
-            fen={board.fen()}
-            orientation={orientation}
-            turn={board.turn() === "w" ? "white" : "black"}
-            check={board.isCheck()}
-            destinations={
-              canPlay
-                ? displayedTree.destinations(branch?.node ?? 0)
-                : new Map()
-            }
-            onMove={canPlay ? (from, to) => play(from, to) : undefined}
-            lastMove={
-              uci ? [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key] : []
-            }
-          >
-            {!blind && showAnnotations && annotation && placement && (
-              <span
-                className="board-annotation"
-                data-corner={placement.corner}
-                style={{
-                  left: `${placement.column * 12.5}%`,
-                  top: `${placement.row * 12.5}%`,
-                }}
+          <div className="review-board-stage">
+            <div
+              className={`source-board ${demonstration ? "is-hidden" : ""}`}
+              aria-hidden={!!demonstration}
+              inert={!!demonstration}
+            >
+              <Board
+                fen={board.fen()}
+                orientation={orientation}
+                turn={board.turn() === "w" ? "white" : "black"}
+                check={board.isCheck()}
+                destinations={
+                  canPlay
+                    ? displayedTree.destinations(branch?.node ?? 0)
+                    : new Map()
+                }
+                onMove={canPlay ? (from, to) => play(from, to) : undefined}
+                lastMove={
+                  uci ? [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key] : []
+                }
               >
-                <AnnotationBadge
-                  annotation={annotation}
-                  provisional={provisional}
-                  compact
-                />
-              </span>
+                {!blind && showAnnotations && annotation && placement && (
+                  <span
+                    className="board-annotation"
+                    data-corner={placement.corner}
+                    style={{
+                      left: `${placement.column * 12.5}%`,
+                      top: `${placement.row * 12.5}%`,
+                    }}
+                  >
+                    <AnnotationBadge
+                      annotation={annotation}
+                      provisional={provisional}
+                      compact
+                    />
+                  </span>
+                )}
+              </Board>
+            </div>
+            {demonstration && demoStep && (
+              <Board
+                fen={displayBoard.fen()}
+                orientation={orientation}
+                turn={displayBoard.turn() === "w" ? "white" : "black"}
+                check={displayBoard.isCheck()}
+                lastMove={
+                  demoStep.move ? [demoStep.move.from, demoStep.move.to] : []
+                }
+                autoShapes={(() => {
+                  const next =
+                    demonstration.line.steps[demonstration.step + 1]?.move;
+                  return next
+                    ? [{ orig: next.from, dest: next.to, brush: "blue" }]
+                    : [];
+                })()}
+              />
             )}
-          </Board>
+          </div>
         </div>
         <CapturedPieces
           captures={captures}
@@ -330,7 +402,22 @@ export default function InteractiveReview({
           side={orientation === "white" ? "w" : "b"}
           label
         />
-        {branch ? (
+        {demonstration ? (
+          <div className="explanation-navigation">
+            <p role="status">
+              Étape {demonstration.step} / {demonstration.line.steps.length - 1}{" "}
+              · {demoStep?.label}
+            </p>
+            <MoveNavigation
+              selected={demonstration.step}
+              total={demonstration.line.steps.length - 1}
+              onSelect={(step) => setDemo({ ...demonstration, step })}
+            />
+            <button className="secondary wide" onClick={() => setDemo(null)}>
+              Retour au coup examiné
+            </button>
+          </div>
+        ) : branch ? (
           <>
             <div className="study-navigation">
               <button
@@ -397,7 +484,7 @@ export default function InteractiveReview({
             </div>
           </>
         )}
-        {!blind && showEvaluation && (
+        {!blind && !demonstration && showEvaluation && (
           <div className="desktop-chart">
             <EvaluationChart
               positions={review.positions}
@@ -413,19 +500,68 @@ export default function InteractiveReview({
           <button
             className="text-button"
             aria-pressed={pane === "details"}
-            onClick={() => setPane("details")}
+            onClick={() => {
+              setDemo(null);
+              setPane("details");
+            }}
           >
             Analyse
           </button>
           <button
             className="text-button"
             aria-pressed={pane === "moves"}
-            onClick={() => setPane("moves")}
+            onClick={() => {
+              setDemo(null);
+              setPane("moves");
+            }}
           >
             Coups
           </button>
         </nav>
-        {pane === "moves" ? (
+        {demonstration ? (
+          <div className="review-details explanation-demo">
+            <h2>{demonstration.line.title}</h2>
+            <p className="explanation-caption" role="status">
+              {demoStep?.text}
+            </p>
+            <p className="hint">
+              La flèche indique le prochain coup de cette suite. Elle illustre
+              une continuation trouvée par le moteur, pas une obligation pour
+              l’adversaire.
+            </p>
+            {demonstration.line.truncated && (
+              <p className="hint">
+                La démonstration est limitée aux huit premiers demi-coups.
+              </p>
+            )}
+            {explanation?.played &&
+              demonstration.line.title !== explanation.played.title && (
+                <button
+                  className="secondary"
+                  onClick={() => demonstrate(explanation.played!)}
+                >
+                  Après le coup joué
+                </button>
+              )}
+            {explanation?.alternative &&
+              demonstration.line.title !== explanation.alternative.title && (
+                <button
+                  className="secondary"
+                  onClick={() => demonstrate(explanation.alternative!)}
+                >
+                  Voir la meilleure idée
+                </button>
+              )}
+            <button
+              onClick={() => {
+                setDemo(null);
+                retry();
+              }}
+            >
+              Réessayer ce coup
+            </button>
+          </div>
+        ) : pane === "moves" ? (
           <div className="review-moves" aria-label="Positions de la partie">
             {review.positions.map((item, index) => (
               <button
@@ -473,7 +609,44 @@ export default function InteractiveReview({
                       annotation={annotation}
                       provisional={provisional}
                     />
-                    <p>{moveSummary(annotation)}</p>
+                    <p>
+                      {explanation?.concrete
+                        ? explanation.summary
+                        : moveSummary(annotation)}
+                    </p>
+                  </div>
+                )}
+                {explanation && (
+                  <div
+                    className="move-explanation"
+                    aria-label="Comprendre le coup"
+                  >
+                    {!explanation.concrete && (
+                      <p className="hint">{explanation.summary}</p>
+                    )}
+                    {explanation.concrete && !annotation && (
+                      <p>{explanation.summary}</p>
+                    )}
+                    <div className="explanation-actions">
+                      {explanation.played && (
+                        <button
+                          className="secondary"
+                          onClick={() => demonstrate(explanation.played!)}
+                        >
+                          {explanation.concrete
+                            ? "Montrer pourquoi"
+                            : "Voir la suite"}
+                        </button>
+                      )}
+                      {explanation.alternative && (
+                        <button
+                          className="secondary"
+                          onClick={() => demonstrate(explanation.alternative!)}
+                        >
+                          Voir la meilleure idée
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
                 {branch && (
@@ -766,7 +939,7 @@ export default function InteractiveReview({
           </div>
         )}
       </aside>
-      {!blind && showEvaluation && (
+      {!blind && !demonstration && showEvaluation && (
         <div className="mobile-chart">
           <EvaluationChart
             positions={review.positions}

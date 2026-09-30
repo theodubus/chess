@@ -271,6 +271,32 @@ reste signalée plutôt que de recevoir une classification arbitraire.
 Les recherches abandonnées sont annulées ; leurs réponses tardives sont ignorées.
 Les résultats sont conservés par branche et invalidés à la relance de l’analyse.
 
+## Comprendre un coup
+
+Le premier lot d’explications pédagogiques décrit les faits vérifiés dans la
+position et la suite du moteur : mat, promotion et évolution du matériel. Une
+suite légale peut illustrer une conséquence, sans prouver qu’elle est forcée.
+Quand la cause du verdict n’est pas identifiée, l’interface le précise.
+
+« Montrer pourquoi » ouvre une courte démonstration sur le même échiquier.
+Les flèches de navigation et le clavier parcourent ses étapes ; une flèche
+bleue indique le prochain coup et une phrase décrit chaque étape. « Voir la
+meilleure idée » part de la position avant le coup joué. « Retour au coup
+examiné » restaure la partie ou la variante et ses dessins personnels.
+La démonstration ne crée aucune branche dans les variantes utilisateur.
+
+Ces explications utilisent uniquement les analyses déjà disponibles, sans
+recherche supplémentaire. Les variantes incohérentes ou illégales sont
+refusées, et la démonstration est limitée à huit demi-coups. Une suite tronquée
+ou terminée par une prise immédiatement reprenable ne sert pas à annoncer un
+gain matériel. Les scores intermédiaires de la démonstration ne sont pas
+inventés : la barre affiche « ? ». Les annotations masquées et les retentatives
+sans solution masquent aussi les explications.
+
+La [backlog d’analyse pédagogique](BACKLOG_ANALYSE_PEDAGOGIQUE.md) conserve le
+périmètre validé, l’état livré et les étapes suivantes : motifs tactiques,
+indices graduels, vérifications ciblées et observations positionnelles.
+
 ## Annotations de la revue
 
 Les annotations sont visibles par défaut et désactivables dans « Options
@@ -428,6 +454,11 @@ sans dépendance supplémentaire, et nécessite l’accès aux ports locaux.
 La galerie de contrôle `/dev/annotations.html` utilise les vrais composants
 avec des annotations simulées. Pour ne vérifier que les pictogrammes et leurs
 ancrages : `CHESS_ANNOTATIONS_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
+
+Le scénario `/dev/explanations.html` utilise des suites déterministes pour
+contrôler les explications, le retour au coup examiné, la conservation des
+dessins, les variantes et le retry caché sur bureau et mobile :
+`CHESS_EXPLANATIONS_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
 
 Pour vérifier les déplacements après un décalage du plateau (clics, glisser-déposer
 et tactile, y compris en échec), ainsi que l'absence de chevauchement des commandes

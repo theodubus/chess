@@ -1,0 +1,193 @@
+import { Chess } from "chess.js";
+import { expect, it } from "vitest";
+import { explainMove } from "./explanations";
+import { gamePositions, type ReviewResult, type ReviewPosition } from "./model";
+
+function position(prefix: string[], san: string, fen?: string) {
+  const game = new Chess(fen);
+  for (const move of prefix) game.move(move);
+  const index = game.history().length;
+  game.move(san);
+  return gamePositions(game.pgn())[index];
+}
+function result(fen: string, sans: string[], cp = 0): ReviewResult {
+  const board = new Chess(fen);
+  const moves = sans.map((san) => board.move(san));
+  return {
+    score: { kind: "cp", value: cp },
+    depth: 14,
+    bestMove: moves[0]
+      ? moves[0].from + moves[0].to + (moves[0].promotion ?? "")
+      : null,
+    bestSan: sans[0] ?? null,
+    variation: moves.map((move) => ({
+      from: move.from,
+      to: move.to,
+      fen: move.after,
+      label: move.san,
+    })),
+  };
+}
+function afterFen(position: ReviewPosition) {
+  const board = new Chess(position.fen),
+    move = position.played!;
+  board.move({
+    from: move.slice(0, 2),
+    to: move.slice(2, 4),
+    promotion: move[4],
+  });
+  return board.fen();
+}
+const bad = { category: "blunder", reason: "", loss: 0.4 } as const;
+const good = { category: "best", reason: "", loss: 0 } as const;
+
+it("explique le mat effectivement joué sans avoir besoin d’une autre recherche", () => {
+  const p = position(["f3", "e5", "g4"], "Qh4#");
+  const explanation = explainMove(p, null, null, null);
+  expect(explanation.summary).toBe("Ce coup donne échec et mat.");
+  expect(explanation.played?.steps).toHaveLength(2);
+  expect(explanation.played?.steps[1].text).toContain(
+    "Noirs font échec et mat",
+  );
+});
+it("montre une suite de mat sans la présenter comme une séquence forcée", () => {
+  const p = position(["f3", "e5"], "g4");
+  const explanation = explainMove(
+    p,
+    result(p.fen, ["Nc3"]),
+    result(afterFen(p), ["Qh4#"]),
+    bad,
+  );
+  expect(explanation.summary).toContain("mat pour les Noirs");
+  expect(explanation.summary).not.toContain("forcé");
+  expect(explanation.alternative?.steps[0].fen).toBe(p.fen);
+});
+it("compare les conséquences matérielles des deux suites depuis la même position", () => {
+  const p = position([], "Kh2", "r6k/8/8/8/8/8/8/R6K w - - 0 1");
+  const explanation = explainMove(
+    p,
+    result(p.fen, ["Rxa8+", "Kh7"], 500),
+    result(afterFen(p), ["Rxa1", "Kh3"], -500),
+    bad,
+  );
+  expect(explanation.concrete).toBe(true);
+  expect(explanation.summary).toContain("les Noirs gagnent 5 points");
+  expect(explanation.played?.steps[2].text).toContain("capturent la tour");
+  expect(explanation.alternative?.steps[0].fen).toBe(p.fen);
+  expect(explanation.played?.steps[0].fen).toBe(p.fen);
+});
+it("ne transforme pas une prise suivie d’une reprise disponible en pièce gagnée", () => {
+  const p = position([], "Kb1", "r6k/8/8/8/8/8/1K6/R7 w - - 0 1");
+  const explanation = explainMove(
+    p,
+    result(p.fen, ["Rxa8+", "Kh7"], 500),
+    result(afterFen(p), ["Rxa1+"], -500),
+    bad,
+  );
+  expect(new Chess(explanation.played!.steps.at(-1)!.fen).moves()).toContain(
+    "Kxa1",
+  );
+  expect(explanation.concrete).toBe(false);
+});
+it("garde une limite honnête pour un échange équilibré ou une cause inconnue", () => {
+  const p = position(["e4", "d5"], "exd5");
+  const explanation = explainMove(
+    p,
+    result(p.fen, ["exd5"]),
+    result(afterFen(p), ["Qxd5", "Nc3"]),
+    good,
+  );
+  expect(explanation.concrete).toBe(false);
+  expect(explanation.summary).toContain("pas encore identifiée");
+});
+for (const side of ["w", "b"] as const) {
+  it(`explique la promotion pour ${side}`, () => {
+    const p = position(
+      [],
+      side === "w" ? "a8=Q+" : "a1=Q+",
+      side === "w"
+        ? "7k/P7/8/8/8/8/8/7K w - - 0 1"
+        : "7k/8/8/8/8/8/p7/7K b - - 0 1",
+    );
+    expect(explainMove(p, null, null, good).summary).toContain("8 points");
+  });
+}
+it("refuse une PV illégale, venue d’ailleurs ou incohérente avec bestmove", () => {
+  const p = position([], "e4");
+  const valid = result(afterFen(p), ["e5", "Nf3"]);
+  expect(
+    explainMove(p, null, { ...valid, bestMove: "d7d5" }, good).played,
+  ).toBeNull();
+  expect(explainMove(p, null, result(p.fen, ["d4"]), good).played).toBeNull();
+  const broken = {
+    ...valid,
+    variation: [...valid.variation, { ...valid.variation[0] }],
+  };
+  expect(explainMove(p, null, broken, good).played).toBeNull();
+  expect(
+    explainMove(
+      { ...p, command: "position startpos moves d2d4" },
+      null,
+      valid,
+      good,
+    ).played,
+  ).toBeNull();
+});
+it("borne la démonstration sans tirer de conclusion matérielle d’une PV coupée", () => {
+  const p = position([], "e4");
+  const explanation = explainMove(
+    p,
+    null,
+    result(afterFen(p), [
+      "e5",
+      "Nf3",
+      "Nc6",
+      "Bb5",
+      "a6",
+      "Ba4",
+      "Nf6",
+      "O-O",
+      "Be7",
+    ]),
+    good,
+  );
+  expect(explanation.played?.truncated).toBe(true);
+  expect(explanation.played?.steps).toHaveLength(9);
+  expect(explanation.concrete).toBe(false);
+});
+
+it("n’attribue pas de conséquence matérielle à un score seulement borné", () => {
+  const p = position([], "Kh2", "r6k/8/8/8/8/8/8/R6K w - - 0 1");
+  const before = result(p.fen, ["Rxa8+", "Kh7"], 500);
+  const after = result(afterFen(p), ["Rxa1", "Kh3"], -500);
+  expect(
+    explainMove(
+      p,
+      before,
+      {
+        ...after,
+        score: { kind: "cp", value: -500, bound: "upper" },
+      },
+      bad,
+    ).concrete,
+  ).toBe(false);
+});
+it("ne décrit pas un sacrifice approuvé par le moteur comme une erreur matérielle", () => {
+  const p = position([], "Kh2", "r6k/8/8/8/8/8/8/R6K w - - 0 1");
+  const explanation = explainMove(
+    p,
+    result(p.fen, ["Kh2"], 100),
+    result(afterFen(p), ["Rxa1", "Kh3"], 100),
+    { category: "brilliant", reason: "", loss: 0 },
+  );
+  expect(explanation.concrete).toBe(false);
+  expect(explanation.played?.steps[2].text).toContain("capturent la tour");
+});
+it("décrit une sous-promotion avec capture et conserve l’historique UCI", () => {
+  const p = position([], "axb8=N", "1r5k/P7/8/8/8/8/8/7K w - - 0 1");
+  const explanation = explainMove(p, null, null, good);
+  expect(explanation.summary).toContain("cavalier : 2 points");
+  expect(explanation.summary).toContain("en plus de la capture");
+  expect(explanation.played?.steps[1].text).toContain("capture aussi la tour");
+  expect(explanation.played?.steps[1].command).toBe(`${p.command} moves a7b8n`);
+});

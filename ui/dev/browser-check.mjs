@@ -243,7 +243,10 @@ try {
   });
   if (process.env.CHESS_PLAY_ONLY) {
     await checkPlay({ call, evaluate, waitFor, button, clickAt, screenshot });
-  } else if (!process.env.CHESS_ANNOTATIONS_ONLY) {
+  } else if (
+    !process.env.CHESS_ANNOTATIONS_ONLY &&
+    !process.env.CHESS_EXPLANATIONS_ONLY
+  ) {
     await call("Page.navigate", {
       url: process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
     });
@@ -552,7 +555,7 @@ try {
     );
     // Ce refus HTTP est volontaire ; toutes les autres erreurs restent bloquantes.
     const expectedRefusal = errors.indexOf(
-      "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+      `Failed to load resource: the server responded with a status of 400 (Bad Request) (${new URL("/engine/engines", process.env.CHESS_UI_URL || "http://127.0.0.1:5173").href})`,
     );
     if (expectedRefusal >= 0) errors.splice(expectedRefusal, 1);
     await enginePath("/usr/games/stockfish");
@@ -1553,9 +1556,118 @@ try {
     "tous les pictogrammes partagent les mêmes ancrages",
   );
   await screenshot("10-annotation-gallery");
+  if (!process.env.CHESS_ANNOTATIONS_ONLY && !process.env.CHESS_PLAY_ONLY) {
+    await call("Page.navigate", {
+      url: new URL(
+        "/dev/explanations.html",
+        process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+      ).href,
+    });
+    await waitFor(
+      `document.querySelector('.move-explanation')`,
+      "explication pédagogique",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.move-assessment').textContent.includes('mat pour les Noirs')`,
+      ),
+      "phrase concrète issue de la suite",
+    );
+    await drawArrow("a2", "a3", ".learning-workspace");
+    await button("Montrer pourquoi");
+    await waitFor(
+      `document.querySelector('.explanation-navigation')`,
+      "démonstration ouverte",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.source-board[aria-hidden="true"] .cg-shapes line') && document.querySelector('[data-testid="source-position"]').textContent==='3'`,
+      ),
+      "dessins et position source conservés",
+    );
+    await pressKey(">");
+    await pressKey(">");
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-caption').textContent.includes('Noirs font échec et mat') && window.explanationFixture.countBranches()===0`,
+      ),
+      "navigation clavier sans créer de variante utilisateur",
+    );
+    await screenshot("11-explanation-desktop");
+    await button("Retour au coup examiné");
+    assert(
+      await evaluate(
+        `!document.querySelector('.explanation-navigation') && document.querySelector('.learning-workspace .cg-shapes line') && document.querySelector('[data-testid="source-position"]').textContent==='3'`,
+      ),
+      "retour exact avec dessin conservé",
+    );
+    await button("Voir la meilleure idée");
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-navigation').textContent.includes('Avant le coup')`,
+      ),
+      "comparaison depuis la position avant le coup",
+    );
+    await pressKey(">");
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-caption').textContent.includes('Cc3')`,
+      ),
+      "bonne suite alternative",
+    );
+    await button("Retourner");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
+    await screenshot("12-explanation-mobile");
+    await waitFor(
+      `document.documentElement.scrollWidth <= 390`,
+      "explication adaptée au mobile",
+    );
+    await button("Réessayer ce coup");
+    await waitFor(
+      `document.querySelector('.review-details h2').textContent==='À vous de jouer'`,
+      "retentative masquée",
+    );
+    assert(
+      await evaluate(
+        `!document.querySelector('.move-explanation') && !document.querySelector('.explanation-demo') && !document.querySelector('.variation-moves')`,
+      ),
+      "aucune explication ni meilleure suite révélée pendant le retry",
+    );
+    await button("Revenir à la partie");
+    await button("Annotations");
+    assert(
+      await evaluate(`!document.querySelector('.move-explanation')`),
+      "préférence d’annotations respectée",
+    );
+    await button("Annotations");
+    await move("d8", "h4", ".learning-workspace");
+    await waitFor(
+      `document.querySelector('.move-explanation')?.textContent.includes('Montrer pourquoi') && document.querySelector('.review-details h2')?.textContent==='Votre variante'`,
+      "explication du mat dans une variante utilisateur",
+    );
+    const branchLabel = await evaluate(
+      `document.querySelector('.review-position').textContent`,
+    );
+    await drawArrow("a2", "a3", ".learning-workspace");
+    await button("Montrer pourquoi");
+    await pressKey(">");
+    await button("Retour au coup examiné");
+    assert.deepEqual(
+      await evaluate(
+        `({ label: document.querySelector('.review-position').textContent, drawing: !!document.querySelector('.source-board .cg-shapes line'), branches: window.explanationFixture.countBranches(), position: document.querySelector('[data-testid="source-position"]').textContent })`,
+      ),
+      { label: branchLabel, drawing: true, branches: 1, position: "3" },
+      "retour exact à la variante avec ses dessins, sans ajout de branche",
+    );
+  }
   assert.deepEqual(errors, [], "Aucune erreur JavaScript ou réseau");
   console.log(
-    `${process.env.CHESS_PLAY_ONLY ? "Contrôle du jeu, des commandes et des pictogrammes réussi" : process.env.CHESS_ANNOTATIONS_ONLY ? "Contrôle des pictogrammes réussi" : "Contrôle navigateur réussi : import PGN (texte, fichier, FEN), Stockfish, partie complète, analyse réelle, navigation, préférences, bureau, mobile, tablette et pictogrammes"}. Captures : ${output}`,
+    `${process.env.CHESS_EXPLANATIONS_ONLY ? "Contrôle des explications, de la navigation et du retry réussi" : process.env.CHESS_PLAY_ONLY ? "Contrôle du jeu, des commandes et des pictogrammes réussi" : process.env.CHESS_ANNOTATIONS_ONLY ? "Contrôle des pictogrammes réussi" : "Contrôle navigateur réussi : import PGN (texte, fichier, FEN), Stockfish, partie complète, analyse réelle, navigation, préférences, bureau, mobile, tablette et pictogrammes"}. Captures : ${output}`,
   );
 } finally {
   if (socket?.readyState === WebSocket.OPEN) {
