@@ -49,7 +49,18 @@
 # comparaison ENTRE deux runs est menacée — et c'est précisément ce que la
 # ligne d'étalonnage permet de vérifier. Elle vient de servir : c'est elle qui
 # a démenti le « ±10 % ».
+#
+# **Le nom de chaque run porte ses entrées** (30 sept. 2026). Sans lui, la
+# liste des runs n'affiche que « Match », l'API ne rend pas les entrées d'un
+# `workflow_dispatch`, et le journal d'un job en cours ne se télécharge pas :
+# deux runs déclenchés ensemble ne se distinguaient qu'une fois finis, par
+# leurs résumés — deux fois, pour C28 puis C29.
 name: Match
+run-name: >-
+  Match ${{ inputs.candidat }} contre ${{ inputs.reference }} —
+  ${{ inputs.cadence }}${{ inputs.cadence_candidat && format(' (candidat {0})', inputs.cadence_candidat) || '' }},
+  ${{ inputs.parties }} parties, graine ${{ inputs.graine }}, sonde ${{ inputs.sonde }},
+  ponder ${{ inputs.ponder }}, fils ${{ inputs.fils_candidat }}/${{ inputs.fils_reference }}
 
 on:
   workflow_dispatch:

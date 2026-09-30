@@ -1,0 +1,282 @@
+diff --git a/tools/sonde-angle-mort/sonde.py b/tools/sonde-angle-mort/sonde.py
+new file mode 100644
+index 0000000..2e7e9b5
+--- /dev/null
++++ b/tools/sonde-angle-mort/sonde.py
+@@ -0,0 +1,276 @@
++"""Sonde de l'angle mort en ouverture (n° 7) — protocole et relevé dans
++tools/README.md, section n° 7, « La sonde de l'angle mort ».
++
++Le réseau n'a vu aucune position d'avant le seizième demi-coup (min_ply 16).
++Décide-t-il moins bien là, à difficulté égale ? Pertes du réseau et de la
++faite main jugées par Stockfish 16 ; le rapport des deux, par tranche.
++
++Mode d'emploi, depuis la racine du dépôt :
++
++    PYCHESS=<sources de python-chess 1.11.2> \
++    MOTEUR=target/release/shallowred \
++    python3 tools/sonde-angle-mort/sonde.py livre|ouvertures|mesurer|analyser
++
++python-chess se lit depuis ses sources (le paquet ne se construit pas dans
++le conteneur ; « pip download chess==1.11.2 » puis tar suffit). Stockfish 16
++est celui d'apt, /usr/games/stockfish. Les fichiers s'écrivent dans le
++répertoire courant. Relevé du 30 sept. 2026 : 16 minutes sur trois cœurs.
++
++Étapes, chacune écrite sur disque et reprenable :
++  livre       300 parties du réseau contre lui-même depuis tools/book.epd
++  ouvertures  150 lignes de 16 demi-coups depuis la position initiale
++  mesurer     coups du réseau et de la faite main, pertes jugées par Stockfish
++  analyser    rapports par tranche, intervalles par rééchantillonnage
++"""
++
++import json
++import os
++import random
++import sys
++from multiprocessing import Pool
++
++sys.path.insert(0, os.environ["PYCHESS"])
++import chess  # noqa: E402
++import chess.engine  # noqa: E402
++
++ICI = os.getcwd()
++MOTEUR = os.environ["MOTEUR"]
++STOCKFISH = "/usr/games/stockfish"
++LIVRE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "book.epd")
++GRAINE = 20260930
++TRAVAILLEURS = 3
++
++PLI_LIVRE = 8  # tools/book.epd tire 8 demi-coups
++FIN_PARTIE = 80
++NOEUDS_PARTIE = 100_000
++NOEUDS_MESURE = 200_000
++PROFONDEUR_JUGE = 16
++PERTE_MAX = 300
++TRANCHES_LIVRE = {"livre 8-15": (8, 15), "livre 16-39": (16, 39), "livre 40-79": (40, 79)}
++TRANCHES_OUVERTURE = {"ouverture 0-7": (0, 7), "ouverture 8-15": (8, 15)}
++PAR_TRANCHE = 300
++
++
++def fichier(nom):
++    return os.path.join(ICI, nom)
++
++
++def lire_jsonl(nom):
++    if not os.path.exists(fichier(nom)):
++        return []
++    with open(fichier(nom)) as f:
++        return [json.loads(l) for l in f if l.strip()]
++
++
++# --- livre -----------------------------------------------------------------
++
++
++def jouer_partie(tache):
++    index, fen = tache
++    moteur = chess.engine.SimpleEngine.popen_uci(MOTEUR)
++    partie = object()
++    board = chess.Board(fen)
++    positions = []
++    pli = PLI_LIVRE
++    while pli < FIN_PARTIE and not board.is_game_over(claim_draw=True):
++        positions.append({"pli": pli, "fen": board.fen()})
++        coup = moteur.play(board, chess.engine.Limit(nodes=NOEUDS_PARTIE), game=partie).move
++        board.push(coup)
++        pli += 1
++    moteur.quit()
++    return {"partie": index, "depart": fen, "positions": positions}
++
++
++def etape_livre():
++    fens = [l.strip() + " 0 5" for l in open(LIVRE) if l.strip()]
++    rng = random.Random(GRAINE)
++    choisies = rng.sample(range(len(fens)), 300)
++    faites = {p["partie"] for p in lire_jsonl("parties-livre.jsonl")}
++    taches = [(i, fens[i]) for i in choisies if i not in faites]
++    with Pool(TRAVAILLEURS) as pool, open(fichier("parties-livre.jsonl"), "a") as out:
++        for n, resultat in enumerate(pool.imap_unordered(jouer_partie, taches), 1):
++            out.write(json.dumps(resultat) + "\n")
++            out.flush()
++            if n % 20 == 0:
++                print(f"livre : {n}/{len(taches)}", flush=True)
++
++
++# --- ouvertures -------------------------------------------------------------
++
++
++def tirer_ligne(index):
++    rng = random.Random(GRAINE * 1000 + index)
++    sf = chess.engine.SimpleEngine.popen_uci(STOCKFISH)
++    sf.configure({"Threads": 1, "Hash": 64})
++    board = chess.Board()
++    positions = []
++    for pli in range(16):
++        positions.append({"pli": pli, "fen": board.fen()})
++        infos = sf.analyse(board, chess.engine.Limit(depth=12), multipv=4)
++        meilleur = infos[0]["score"].relative.score(mate_score=100_000)
++        proches = [
++            i["pv"][0]
++            for i in infos
++            if "pv" in i and meilleur - i["score"].relative.score(mate_score=100_000) <= 20
++        ]
++        board.push(rng.choice(proches))
++        if board.is_game_over():
++            break
++    sf.quit()
++    return {"ligne": index, "positions": positions}
++
++
++def etape_ouvertures():
++    faites = {p["ligne"] for p in lire_jsonl("lignes-ouverture.jsonl")}
++    taches = [i for i in range(150) if i not in faites]
++    with Pool(TRAVAILLEURS) as pool, open(fichier("lignes-ouverture.jsonl"), "a") as out:
++        for n, resultat in enumerate(pool.imap_unordered(tirer_ligne, taches), 1):
++            out.write(json.dumps(resultat) + "\n")
++            out.flush()
++            if n % 25 == 0:
++                print(f"ouvertures : {n}/{len(taches)}", flush=True)
++
++
++# --- échantillon ------------------------------------------------------------
++
++
++def decision_possible(fen):
++    board = chess.Board(fen)
++    # Un coup forcé ne décide rien : les deux évaluations le jouent.
++    return board.legal_moves.count() > 1
++
++
++def echantillon():
++    rng = random.Random(GRAINE + 1)
++    retenues = []
++    parties = sorted(lire_jsonl("parties-livre.jsonl"), key=lambda p: p["partie"])
++    for nom, (bas, haut) in TRANCHES_LIVRE.items():
++        candidates = []
++        for p in parties:
++            dedans = [x for x in p["positions"] if bas <= x["pli"] <= haut and decision_possible(x["fen"])]
++            if dedans:
++                candidates.append(rng.choice(dedans))
++        rng.shuffle(candidates)
++        retenues += [{"tranche": nom, **x} for x in candidates[:PAR_TRANCHE]]
++    lignes = sorted(lire_jsonl("lignes-ouverture.jsonl"), key=lambda l: l["ligne"])
++    for nom, (bas, haut) in TRANCHES_OUVERTURE.items():
++        vues, candidates = set(), []
++        for l in lignes:
++            for x in l["positions"]:
++                cle = " ".join(x["fen"].split()[:4])
++                if bas <= x["pli"] <= haut and cle not in vues and decision_possible(x["fen"]):
++                    vues.add(cle)
++                    candidates.append(x)
++        rng.shuffle(candidates)
++        retenues += [{"tranche": nom, **x} for x in candidates[:PAR_TRANCHE]]
++    return retenues
++
++
++# --- mesurer ----------------------------------------------------------------
++
++_moteurs = {}
++
++
++def moteurs():
++    if not _moteurs:
++        _moteurs["reseau"] = chess.engine.SimpleEngine.popen_uci(MOTEUR)
++        faite_main = chess.engine.SimpleEngine.popen_uci(MOTEUR)
++        faite_main.configure({"EvalFile": "<none>"})
++        _moteurs["faite main"] = faite_main
++        sf = chess.engine.SimpleEngine.popen_uci(STOCKFISH)
++        sf.configure({"Threads": 1, "Hash": 64})
++        _moteurs["juge"] = sf
++    return _moteurs
++
++
++def cp(info):
++    return info["score"].relative.score(mate_score=100_000)
++
++
++def mesurer_position(position):
++    m = moteurs()
++    board = chess.Board(position["fen"])
++    coups = {}
++    for nom in ("reseau", "faite main"):
++        # Un objet neuf à chaque appel : `ucinewgame`, la table vidée.
++        coups[nom] = m[nom].play(board, chess.engine.Limit(nodes=NOEUDS_MESURE), game=object()).move
++    juge = m["juge"]
++    partie = object()
++    limite = chess.engine.Limit(depth=PROFONDEUR_JUGE)
++    meilleur = juge.analyse(board, limite, game=partie)
++    score_meilleur = cp(meilleur)
++    coup_meilleur = meilleur["pv"][0]
++    resultat = {**position, "juge": coup_meilleur.uci(), "score_juge": score_meilleur}
++    scores = {}
++    for nom, coup in coups.items():
++        if coup == coup_meilleur:
++            scores[coup] = score_meilleur
++        elif coup not in scores:
++            scores[coup] = cp(juge.analyse(board, limite, root_moves=[coup], game=partie))
++        perte = min(max(score_meilleur - scores[coup], 0), PERTE_MAX)
++        resultat[nom] = {"coup": coup.uci(), "score": scores[coup], "perte": perte}
++    return resultat
++
++
++def etape_mesurer():
++    faites = {(r["tranche"], r["fen"]) for r in lire_jsonl("mesures.jsonl")}
++    taches = [p for p in echantillon() if (p["tranche"], p["fen"]) not in faites]
++    print(f"mesurer : {len(taches)} positions à faire", flush=True)
++    with Pool(TRAVAILLEURS) as pool, open(fichier("mesures.jsonl"), "a") as out:
++        for n, resultat in enumerate(pool.imap_unordered(mesurer_position, taches, chunksize=4), 1):
++            out.write(json.dumps(resultat) + "\n")
++            out.flush()
++            if n % 50 == 0:
++                print(f"mesurer : {n}/{len(taches)}", flush=True)
++
++
++# --- analyser ---------------------------------------------------------------
++
++
++def moyenne(xs):
++    return sum(xs) / len(xs)
++
++
++def etape_analyser():
++    mesures = lire_jsonl("mesures.jsonl")
++    tranches = {}
++    for r in mesures:
++        tranches.setdefault(r["tranche"], []).append((r["reseau"]["perte"], r["faite main"]["perte"]))
++    reference = "livre 16-39"
++    rng = random.Random(GRAINE + 2)
++
++    def rapport(paires):
++        n, f = moyenne([p[0] for p in paires]), moyenne([p[1] for p in paires])
++        return n / f if f else float("inf")
++
++    ordre = list(TRANCHES_OUVERTURE) + list(TRANCHES_LIVRE)
++    ref = tranches[reference]
++    print(f"{'tranche':<16} {'n':>4} {'réseau':>8} {'faite main':>10} {'> 50 r/f':>10} {'rapport':>8} {'/ 16-39':>8}  IC 95 %")
++    for nom in ordre:
++        if nom not in tranches:
++            continue
++        paires = tranches[nom]
++        r = rapport(paires)
++        relatifs = []
++        for _ in range(2000):
++            a = [paires[rng.randrange(len(paires))] for _ in paires]
++            b = [ref[rng.randrange(len(ref))] for _ in ref]
++            relatifs.append(rapport(a) / rapport(b))
++        relatifs.sort()
++        bas, haut = relatifs[49], relatifs[1949]
++        gros_r = sum(p[0] > 50 for p in paires) / len(paires)
++        gros_f = sum(p[1] > 50 for p in paires) / len(paires)
++        print(
++            f"{nom:<16} {len(paires):>4} {moyenne([p[0] for p in paires]):>8.1f} "
++            f"{moyenne([p[1] for p in paires]):>10.1f} {gros_r:>4.0%}/{gros_f:<4.0%} "
++            f"{r:>8.3f} {r / rapport(ref):>8.3f}  [{bas:.3f} ; {haut:.3f}]"
++        )
++
++
++if __name__ == "__main__":
++    {
++        "livre": etape_livre,
++        "ouvertures": etape_ouvertures,
++        "mesurer": etape_mesurer,
++        "analyser": etape_analyser,
++    }[sys.argv[1]]()
