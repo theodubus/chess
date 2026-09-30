@@ -56,9 +56,12 @@ une mesure, pas une préférence.
   un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
   la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
   plus qu'à dégrossir, jamais à trancher.
-- **L'évaluation qui joue est le réseau NNUE embarqué** (A21, 28 sept.
-  2026) : **+330,61 ± 19,21 Elo** à `8+0,08` contre la faite main, 2 000
-  parties. La faite main reste — `EvalFile <none>` —, et c'est elle
+- **L'évaluation qui joue est le réseau NNUE embarqué** — **N2 depuis le
+  30 sept. 2026** (n° 7) : deux marches à `8+0,08`, chacune mesurée contre
+  la précédente sur 6 000 parties — **+115,74 ± 6,98** pour des étiquettes
+  du moteur au réseau, **+50,09 ± 6,12** pour deux fois plus de positions.
+  Le premier réseau (A21, 28 sept.) valait **+330,61 ± 19,21** contre la
+  faite main. La faite main reste — `EvalFile <none>` —, et c'est elle
   qu'évaluent le banc (`Search::new`) et les tests de recherche, **pas celle
   qui joue** : voir « c'est plus rapide ».
 - **Les données de Leela Chess Zero sont admises** pour entraîner le réseau.
@@ -808,6 +811,13 @@ une mesure, pas une préférence.
   f(x))`. Le test des killers affirmait « pas à un autre ply » en comparant
   une note à elle-même — vrai quoi que fasse le code, donc aucun mutant ne
   pouvait le faire tomber, et rien ne le signalait.
+  <br>**Et sa forme la plus retorse, trouvée le 30 sept. 2026 (C29)** : un
+  mutant qui change TOUT de façon cohérente ne change rien d'observable.
+  `<` en `<=` dans le départage du seau faisait céder la DERNIÈRE entrée de
+  même valeur — donc remplissait aussi le seau à l'envers, et cette image
+  miroir rendait les mêmes réponses. Le test ne lisait que les réponses ;
+  la règle, elle, s'écrit sur les PLACES, et c'est là qu'il fallait la
+  lire.
 - **Ne pas recopier un compteur en prose.** Le 15 sept. 2026, j'ai écrit
   « ces cinq dispositifs » au-dessus d'un tableau qui en listait six, et
   « dix cas » pour un auto-test qui en comptait onze — **les deux étaient faux

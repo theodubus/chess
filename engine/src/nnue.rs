@@ -411,11 +411,12 @@ impl Network {
     }
 }
 
-/// Le réseau que le binaire embarque : le premier entraînement d'A21 —
-/// `(768 → 128) × 2 → 1`, 40 superlots, par bullet sur la carte de Théo le
-/// 28 sept. 2026. Sa courbe de perte et la sortie complète de l'entraînement
-/// sont à côté de lui, dans `reseaux/`.
-const EMBEDDED: &[u8] = include_bytes!("../../reseaux/shallowred-768x128-40.bin");
+/// Le réseau que le binaire embarque : N2, le levier 2 du n° 7 —
+/// `(768 → 128) × 2 → 1`, 40 superlots, entraîné le 29 sept. 2026 sur les
+/// huit jobs de la vague au réseau (249,5 M positions).
+/// Sa courbe de perte et la sortie complète de l'entraînement sont à côté de
+/// lui, dans `reseaux/`.
+const EMBEDDED: &[u8] = include_bytes!("../../reseaux/n2-768x128-40.bin");
 
 /// Le réseau embarqué, lu une seule fois et partagé.
 ///
@@ -488,8 +489,13 @@ pub(crate) mod testing {
 
     /// Un réseau aléatoire aux poids d'un réseau entraîné — bornés comme
     /// `AdamW` les borne, donc toujours admis par le chargeur.
+    ///
+    /// La borne de sortie suit la largeur : ±127 sur 2 × 128 unités
+    /// totalisent au plus 32 512, sous les 33 025 que le chargeur admet ; sur
+    /// 2 × 256, le même ±127 le dépasserait, et le réseau serait refusé.
     pub(crate) fn random_network(seed: u64) -> Network {
-        Network::from_bytes(&file_of(&random_values(seed, 300, 127))).unwrap()
+        let output = i16::try_from(127 * 128 / HIDDEN).unwrap_or(127);
+        Network::from_bytes(&file_of(&random_values(seed, 300, output))).unwrap()
     }
 
     /// Un réseau aléatoire aux évaluations de l'ordre de celles d'une vraie
@@ -520,6 +526,15 @@ mod tests {
     const BIAS_AT: usize = INPUTS * HIDDEN;
     const OUTPUT_AT: usize = BIAS_AT + HIDDEN;
     const OUTPUT_BIAS_AT: usize = OUTPUT_AT + 2 * HIDDEN;
+
+    /// La valeur absolue du poids de sortie `index` quand les 2 × `HIDDEN`
+    /// poids se partagent `total` au plus près : à 128 unités, 33 024 font
+    /// 129 partout ; à 256, 64 et 65. Les tests de la borne du produit
+    /// scalaire valent ainsi pour toute largeur.
+    fn share_of(total: usize, index: usize) -> i16 {
+        let (base, rest) = (total / (2 * HIDDEN), total % (2 * HIDDEN));
+        i16::try_from(base + usize::from(index < rest)).unwrap()
+    }
 
     fn board(fen: &str) -> Board {
         fen.parse().unwrap()
@@ -577,10 +592,20 @@ mod tests {
 
     #[test]
     fn le_fichier_a_la_taille_que_bullet_ecrit() {
-        // 2 × (768 × 128 + 128 + 256 + 1) = 197 378 octets, bourrés jusqu'au
-        // multiple de 64 suivant. Calculé à la main depuis `SavedFormat`.
-        assert_eq!(FILE_BYTES, 197_440);
-        assert!(Network::from_bytes(&file_of(&random_values(7, 300, 127))).is_ok());
+        // Calculé à la main depuis `SavedFormat`, bourré jusqu'au multiple de
+        // 64 suivant — et retrouvé sur les fichiers que bullet a écrits :
+        // 2 × (768 × 128 + 128 + 256 + 1) = 197 378 octets, 197 440 bourrés ;
+        // 2 × (768 × 256 + 256 + 512 + 1) = 394 754 octets, 394 816 bourrés.
+        // Une autre largeur demande son calcul à la main, pas une formule
+        // recopiée du code qu'elle vérifie.
+        let expected = match HIDDEN {
+            128 => 197_440,
+            256 => 394_816,
+            other => panic!("taille à calculer à la main pour {other} unités"),
+        };
+        assert_eq!(FILE_BYTES, expected);
+        let output = i16::try_from(127 * 128 / HIDDEN).unwrap();
+        assert!(Network::from_bytes(&file_of(&random_values(7, 300, output))).is_ok());
     }
 
     #[test]
@@ -623,14 +648,16 @@ mod tests {
 
     #[test]
     fn un_produit_scalaire_qui_pourrait_deborder_est_refuse() {
-        // 256 poids totalisant exactement 33 025 : le pire produit scalaire,
-        // 65 025 × 33 025 = 2 147 450 625, tient dans un i32. Un de plus, non.
+        // Les poids de sortie totalisant exactement 33 025 : le pire produit
+        // scalaire, 65 025 × 33 025 = 2 147 450 625, tient dans un i32. Un de
+        // plus, non.
         let total = |extra: i16| {
             let mut values = vec![0; VALUES];
             for index in 0..2 * HIDDEN {
-                values[OUTPUT_AT + index] = if index % 3 == 0 { -129 } else { 129 };
+                let weight = share_of(33_024, index);
+                values[OUTPUT_AT + index] = if index % 3 == 0 { -weight } else { weight };
             }
-            // 256 × 129 = 33 024.
+            // Le premier poids est négatif : l'éloigner de zéro ajoute `extra`.
             values[OUTPUT_AT] -= extra;
             Network::from_bytes(&file_of(&values))
         };
@@ -649,7 +676,7 @@ mod tests {
                     values[BIAS_AT + unit] = 1_000;
                 }
                 for index in 0..2 * HIDDEN {
-                    values[OUTPUT_AT + index] = sign * 129;
+                    values[OUTPUT_AT + index] = sign * share_of(33_024, index);
                 }
                 values[OUTPUT_BIAS_AT] = sign * i16::MAX;
             });
@@ -998,12 +1025,12 @@ mod tests {
 
     #[test]
     fn le_reseau_embarque_evalue_comme_son_entraineur() {
-        // La confrontation de l'étape 3 d'A21, rejouée à chaque build : les
-        // douze positions, ce qu'en disait le moteur et ce qu'en disait
-        // bullet (`trainer.eval(fen) × 400`) au bout de l'entraînement —
-        // relevés dans `reseaux/shallowred-768x128-40.sortie.txt`. Le seul
-        // test qui confronte l'inférence à l'entraîneur sur un VRAI réseau ;
-        // ceux d'au-dessus tiennent des réseaux aléatoires.
+        // La confrontation de l'entraînement du réseau embarqué, rejouée à
+        // chaque build : les douze positions, ce qu'en disait le moteur et ce
+        // qu'en disait bullet (`trainer.eval(fen) × 400`) au bout de
+        // l'entraînement — relevés dans `reseaux/n2-768x128-40.sortie.txt`.
+        // Le seul test qui confronte l'inférence à l'entraîneur sur un VRAI
+        // réseau ; ceux d'au-dessus tiennent des réseaux aléatoires.
         //
         // La valeur du moteur est tenue à l'unité : l'inférence est
         // entière, et rien de ce qui la réécrirait — un produit vectorisé, un
@@ -1013,48 +1040,48 @@ mod tests {
         const CONFRONTATION: [(&str, i32, i32); 12] = [
             (
                 "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                26,
-                32,
+                41,
+                39,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-                -1,
-                8,
+                -200,
+                -196,
             ),
-            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 203, 198),
+            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 73, 73),
             (
                 "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-                685,
-                690,
+                515,
+                508,
             ),
             (
                 "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-                -24,
-                -33,
+                -252,
+                -245,
             ),
             (
                 "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
-                -12,
-                -1,
+                10,
+                12,
             ),
             (
                 "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
-                -92,
-                -85,
+                -83,
+                -86,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1",
-                0,
-                23,
+                252,
+                244,
             ),
             (
                 "r2q1rk1/pp2bppp/2n1bn2/3p4/3P4/2NBBN2/PP3PPP/R2Q1RK1 b - - 0 1",
-                12,
-                17,
+                2,
+                9,
             ),
-            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -1726, -1708),
-            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 521, 525),
-            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -3004, -3003),
+            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -2433, -2432),
+            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 312, 308),
+            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -3783, -3787),
         ];
         let network = embedded().unwrap();
         let mut gaps = Vec::new();
