@@ -21,6 +21,16 @@
 //!   répétition peut être relue comme gagnante. Tous les moteurs acceptent
 //!   cette imprécision ; elle est rare et son coût est inférieur à celui de la
 //!   table elle-même.
+//!
+//! # Les seaux
+//!
+//! Une clé ne désigne pas une entrée mais un **seau de quatre**, une ligne de
+//! cache. Une position qui arrive dans un seau plein y prend la place de
+//! l'entrée qui vaut le moins — sa profondeur, moins huit par recherche
+//! écoulée —, et non celle de l'unique entrée qu'une case lui aurait laissée.
+//! La raison est mesurée (C28, 29 sept. 2026) : sous la pression que subit la
+//! table à cadence longue, la case unique coûtait −19,42 ± 5,78 Elo.
+//!
 //! # Le stockage sans verrou
 //!
 //! Chaque entrée tient en **deux mots de 64 bits** : le premier porte
@@ -190,13 +200,65 @@ impl Entry {
 /// Taille par défaut, en mébioctets.
 pub const DEFAULT_SIZE_MB: usize = 16;
 
+/// Entrées par seau : quatre entrées de seize octets remplissent exactement
+/// une ligne de cache de 64 octets.
+const BUCKET_ENTRIES: usize = 4;
+
+/// Ce que coûte une recherche d'ancienneté, en plis de profondeur, quand un
+/// seau plein doit céder une place : une entrée vaut sa profondeur moins huit
+/// par recherche écoulée. Une entrée de la recherche courante à 3 plis vaut
+/// donc plus qu'une entrée à 10 plis de la recherche précédente.
+///
+/// **C'est la règle de Stockfish, lue dans son source et non de mémoire** :
+/// tag `sf_16` (68e1e9b), `src/tt.cpp`, `TranspositionTable::probe` — « *the
+/// replace value of an entry is calculated as its depth minus 8 times its
+/// relative age* ». Ses groupes ont trois entrées de dix octets dans 32 ; les
+/// nôtres, quatre de seize dans 64.
+const AGE_WEIGHT: i32 = 8;
+
+/// Un seau : les places qu'une clé peut occuper.
+///
+/// **Pourquoi des seaux** — C28, mesuré le 29 sept. 2026 : une entrée par
+/// case, qu'une AUTRE position écrasait toujours, coûtait −19,42 ± 5,78 Elo
+/// sous la pression que subit la table à cadence longue. Une entrée cherchée
+/// à 18 plis y cédait à une de 1 pli. Quatre places par seau laissent chaque
+/// nouvelle position en prendre une sans chasser la plus utile.
+///
+/// Aligné sur 64 octets, un seau tient dans UNE ligne de cache : lire ses
+/// quatre entrées coûte le même accès mémoire que n'en lire qu'une, et la
+/// capacité ne change pas à mébioctets égaux.
+#[repr(align(64))]
+struct Bucket {
+    entries: [Entry; BUCKET_ENTRIES],
+}
+
+impl Bucket {
+    fn empty() -> Self {
+        Self {
+            entries: std::array::from_fn(|_| Entry::empty()),
+        }
+    }
+}
+
+/// Ce que vaut une entrée qu'un seau plein pourrait céder : sa profondeur,
+/// moins [`AGE_WEIGHT`] par recherche écoulée depuis son écriture. Une entrée
+/// vierge porte la profondeur −1 et la génération zéro : elle cède la
+/// première — tant que la génération, sur huit bits, n'a pas fait le tour,
+/// soit 256 recherches sans `ucinewgame`. Au-delà, l'âge se lit modulo 256
+/// et une entrée très ancienne passe pour récente. Stockfish vit avec le même
+/// tour toutes les 32 recherches : sa génération tient sur cinq bits (même
+/// source que [`AGE_WEIGHT`]).
+fn worth(depth: i8, written: u8, generation: u8) -> i32 {
+    i32::from(depth) - AGE_WEIGHT * i32::from(generation.wrapping_sub(written))
+}
+
 /// La table.
 ///
 /// Toutes ses méthodes prennent `&self`, écriture comprise : c'est ce qui la
 /// rend partageable entre plusieurs fils de recherche sans verrou.
 pub struct TranspositionTable {
-    entries: Vec<Entry>,
-    /// `entries.len() - 1`. La longueur est une puissance de deux, donc un
+    buckets: Vec<Bucket>,
+    /// `buckets.len() - 1`. La longueur est une puissance de deux, donc un
     /// `AND` remplace le modulo dans la boucle la plus chaude.
     mask: usize,
     generation: AtomicU8,
@@ -216,8 +278,7 @@ impl TranspositionTable {
     /// l'assertion de `pack_data` n'existe pas (C27).
     #[cfg(test)]
     pub(crate) fn max_abs_stored_score(&self) -> i32 {
-        self.entries
-            .iter()
+        self.entries()
             .map(|entry| unpack_data(entry.load().1))
             .filter(|&(_, _, depth, _, _)| depth >= 0)
             .map(|(score, _, _, _, _)| score.abs())
@@ -226,7 +287,7 @@ impl TranspositionTable {
     }
 
     /// Crée une table d'environ `megabytes` mébioctets, arrondie à la puissance
-    /// de deux inférieure. Au moins une entrée.
+    /// de deux inférieure. Au moins un seau.
     #[must_use]
     pub fn new(megabytes: usize) -> Self {
         let bytes = megabytes.clamp(1, 4_096) * 1024 * 1024;
@@ -242,6 +303,11 @@ impl TranspositionTable {
         Self::with_entry_count(count)
     }
 
+    /// Toutes les entrées, seau après seau.
+    fn entries(&self) -> impl Iterator<Item = &Entry> {
+        self.buckets.iter().flat_map(|bucket| bucket.entries.iter())
+    }
+
     /// Crée une table d'un nombre d'entrées imposé.
     ///
     /// **Existe pour la mesure, et c'est sa seule raison d'être.** L'entrée
@@ -251,12 +317,15 @@ impl TranspositionTable {
     /// là, le nombre de nœuds est identique au bit près et `tools/timing.sh`
     /// s'applique. Mélanger les deux effets rendrait un chiffre qui répond à
     /// une autre question.
+    ///
+    /// Arrondie vers le haut, à un nombre de seaux puissance de deux : une
+    /// table a au moins un seau.
     #[must_use]
     pub fn with_entry_count(count: usize) -> Self {
-        let count = count.next_power_of_two().max(1);
+        let buckets = count.div_ceil(BUCKET_ENTRIES).next_power_of_two();
         Self {
-            entries: (0..count).map(|_| Entry::empty()).collect(),
-            mask: count - 1,
+            buckets: (0..buckets).map(|_| Bucket::empty()).collect(),
+            mask: buckets - 1,
             generation: AtomicU8::new(0),
         }
     }
@@ -265,7 +334,7 @@ impl TranspositionTable {
     /// précédente n'ont rien à dire sur la suivante.
     pub fn clear(&self) {
         let data = empty_data();
-        for entry in &self.entries {
+        for entry in self.entries() {
             entry.store(0, data);
         }
         self.generation.store(0, Ordering::Relaxed);
@@ -283,19 +352,17 @@ impl TranspositionTable {
     /// Nombre d'entrées de la table.
     #[must_use]
     pub fn capacity(&self) -> usize {
-        self.entries.len()
+        self.buckets.len() * BUCKET_ENTRIES
     }
 
     /// Taux de remplissage en pour mille, estimé sur les mille premières
     /// entrées — c'est ce qu'attend le champ `hashfull` du protocole UCI.
     #[must_use]
     pub fn permille_used(&self) -> u32 {
-        let sample = self.entries.len().min(1_000);
-        if sample == 0 {
-            return 0;
-        }
-        let used = self.entries[..sample]
-            .iter()
+        let sample = self.capacity().min(1_000);
+        let used = self
+            .entries()
+            .take(sample)
             .filter(|entry| {
                 let (_, data) = entry.load();
                 unpack_data(data).2 >= 0
@@ -308,30 +375,39 @@ impl TranspositionTable {
     /// profondeur courante.
     #[must_use]
     pub fn probe(&self, key: u64, ply: i32) -> Option<Hit> {
-        let (stored_key, data) = self.entries[key as usize & self.mask].load();
-        // Une entrée déchirée rend une clé qui ne correspond à rien : elle se
-        // rejette ici, par le même test qu'une collision ordinaire.
-        if stored_key != key {
-            return None;
+        for entry in &self.buckets[key as usize & self.mask].entries {
+            let (stored_key, data) = entry.load();
+            // Une entrée déchirée rend une clé qui ne correspond à rien : elle
+            // se passe ici, par le même test qu'une autre position.
+            if stored_key != key {
+                continue;
+            }
+            let (score, mv, depth, bound, _) = unpack_data(data);
+            if depth < 0 {
+                continue;
+            }
+            return Some(Hit {
+                mv: unpack_move(mv),
+                score: score_from_tt(score, ply),
+                depth,
+                bound,
+            });
         }
-        let (score, mv, depth, bound, _) = unpack_data(data);
-        if depth < 0 {
-            return None;
-        }
-        Some(Hit {
-            mv: unpack_move(mv),
-            score: score_from_tt(score, ply),
-            depth,
-            bound,
-        })
+        None
     }
 
     /// Enregistre ce que la recherche vient d'établir.
     ///
-    /// Remplace l'entrée existante si elle concerne une autre position, si elle
-    /// vient d'une recherche antérieure, ou si le nouveau résultat est au moins
-    /// aussi profond. Une entrée profonde de la recherche courante n'est jamais
-    /// écrasée par un résultat superficiel.
+    /// **La même position** garde sa place : son entrée est remplacée si elle
+    /// vient d'une recherche antérieure ou si le nouveau résultat est au moins
+    /// aussi profond — une entrée profonde de la recherche courante n'est
+    /// jamais écrasée par un résultat superficiel de la même position.
+    ///
+    /// **Une autre position** prend toujours une place — ne pas l'écrire la
+    /// condamnerait à ne rien mémoriser tant que le seau est plein —, celle
+    /// qui vaut le moins au sens de [`worth`] : une entrée vierge d'abord, puis
+    /// la moins profonde, l'ancienneté comptant contre elle. À valeur égale,
+    /// la première du seau cède : la table reste déterministe à un fil.
     pub fn store(
         &self,
         key: u64,
@@ -341,34 +417,38 @@ impl TranspositionTable {
         bound: Bound,
         ply: i32,
     ) {
-        let slot = &self.entries[key as usize & self.mask];
-        let (existing_key, existing_data) = slot.load();
-        let (_, existing_mv, existing_depth, _, existing_gen) = unpack_data(existing_data);
+        let bucket = &self.buckets[key as usize & self.mask];
         let generation = self.generation.load(Ordering::Relaxed);
         let depth = i8::try_from(depth.clamp(0, i32::from(i8::MAX))).unwrap_or(i8::MAX);
+        let data = |packed| pack_data(score_to_tt(score, ply), packed, depth, bound, generation);
 
-        // Pas de test d'entrée vierge ici, contrairement à `probe` : `depth` est
-        // borné à `[0, 127]` et une entrée vierge porte `-1`, donc
-        // `depth >= existing_depth` couvre déjà ce cas. Le tester en plus
-        // donnerait une branche que rien ne peut distinguer — et qu'aucun test
-        // ne pourrait donc protéger.
-        let replace = existing_key != key || existing_gen != generation || depth >= existing_depth;
-        if !replace {
-            return;
+        let mut victim = &bucket.entries[0];
+        let mut victim_worth = i32::MAX;
+        for entry in &bucket.entries {
+            let (existing_key, existing_data) = entry.load();
+            let (_, existing_mv, existing_depth, _, existing_gen) = unpack_data(existing_data);
+            if existing_key == key {
+                // Pas de test d'entrée vierge ici, contrairement à `probe` :
+                // une clé nulle qui tomberait sur une entrée vierge l'écrirait
+                // — ce qu'aurait fait le choix d'une place, vierge d'abord.
+                // Le tester en plus donnerait une branche que rien ne peut
+                // distinguer, et qu'aucun test ne pourrait donc protéger.
+                if existing_gen == generation && depth < existing_depth {
+                    return;
+                }
+                // Ne pas effacer un coup connu quand la nouvelle entrée n'en a
+                // pas : même sans score exploitable, un coup à essayer en
+                // premier vaut cher.
+                entry.store(key, data(mv.map_or(existing_mv, pack_move)));
+                return;
+            }
+            let value = worth(existing_depth, existing_gen, generation);
+            if value < victim_worth {
+                victim = entry;
+                victim_worth = value;
+            }
         }
-
-        // Ne pas effacer un coup connu quand la nouvelle entrée n'en a pas :
-        // même sans score exploitable, un coup à essayer en premier vaut cher.
-        let packed = match mv {
-            Some(mv) => pack_move(mv),
-            None if existing_key == key => existing_mv,
-            None => 0,
-        };
-
-        slot.store(
-            key,
-            pack_data(score_to_tt(score, ply), packed, depth, bound, generation),
-        );
+        victim.store(key, data(mv.map_or(0, pack_move)));
     }
 }
 
@@ -545,11 +625,24 @@ mod tests {
         assert_eq!(tt.permille_used(), 0, "une table vide est vide");
 
         // Remplir l'échantillon que la fonction observe — les mille premières
-        // entrées, ou toute la table si elle est plus petite.
-        let echantillon = tt.capacity().min(1_000);
-        for index in 0..echantillon as u64 {
-            tt.store(index, None, 0, 1, Bound::Exact, 0);
-        }
+        // entrées, ou toute la table si elle est plus petite. Elles se suivent
+        // seau par seau : quatre clés par seau, distantes du nombre de seaux.
+        let echantillon = tt.capacity().min(1_000) as u64;
+        let seaux = (tt.capacity() / BUCKET_ENTRIES) as u64;
+        let par_seau = BUCKET_ENTRIES as u64;
+        let remplir = |debut: u64, fin: u64| {
+            for index in debut..fin {
+                let cle = index / par_seau + index % par_seau * seaux;
+                tt.store(cle, None, 0, 1, Bound::Exact, 0);
+            }
+        };
+        remplir(0, echantillon / 2);
+        assert_eq!(
+            tt.permille_used(),
+            500,
+            "un échantillon à moitié plein vaut cinq cents pour mille"
+        );
+        remplir(echantillon / 2, echantillon);
         assert_eq!(
             tt.permille_used(),
             1_000,
@@ -573,8 +666,8 @@ mod tests {
 
     #[test]
     fn une_collision_dindex_ne_rend_pas_lentree_de_lautre_cle() {
-        // Deux clés distantes de la capacité tombent sur le même index. Si le
-        // `||` du filtre devenait `&&`, la table rendrait le score d'une AUTRE
+        // Deux clés distantes de la capacité tombent dans le même seau. Si le
+        // contrôle de clé s'inversait, la table rendrait le score d'une AUTRE
         // position — le pire défaut qu'une table de transposition puisse avoir.
         let tt = TranspositionTable::new(1);
         let capacite = tt.capacity() as u64;
@@ -607,8 +700,8 @@ mod tests {
     #[test]
     fn une_entree_superficielle_est_ecrasee_par_une_profonde() {
         // Le pendant du test existant, qui ne couvrait que le refus. Sans ce
-        // sens-ci, remplacer le `||` du critère de remplacement par `&&`
-        // passait inaperçu : la table n'aurait presque plus jamais rien écrit.
+        // sens-ci, remplacer le `&&` du refus par `||` passait inaperçu : une
+        // position n'aurait plus jamais été réécrite dans la même recherche.
         let tt = TranspositionTable::new(1);
         tt.store(9, Some(mv("a2a3")), 10, 1, Bound::Exact, 0);
         tt.store(9, Some(mv("h2h4")), 99, 5, Bound::Lower, 0);
@@ -619,42 +712,157 @@ mod tests {
         assert_eq!(hit.mv, Some(mv("h2h4")));
     }
 
-    #[test]
-    fn une_autre_position_deloge_toujours_lentree_meme_moins_profonde() {
-        // Le critère de remplacement ne protège la profondeur QUE pour la même
-        // position. Une clé différente au même index prend la place quoi qu'il
-        // arrive, même avec une profondeur moindre : garder l'ancienne
-        // condamnerait la nouvelle position à ne jamais rien mémoriser tant que
-        // l'ancienne occupe le créneau.
-        //
-        // Sans ce test, faire de l'un des `||` du critère un `&&` survivait.
-        let tt = TranspositionTable::new(1);
+    /// Cinq clés qui tombent dans le même seau : distantes de la capacité,
+    /// qui est un multiple du nombre de seaux.
+    fn same_bucket(tt: &TranspositionTable) -> [u64; 5] {
         let capacite = tt.capacity() as u64;
-        let (occupant, nouveau) = (0xFEED, 0xFEED + capacite);
+        std::array::from_fn(|i| 0xFEED + i as u64 * capacite)
+    }
 
-        tt.store(occupant, Some(mv("e2e4")), 100, 9, Bound::Exact, 0);
-        tt.store(nouveau, Some(mv("d2d4")), -30, 2, Bound::Upper, 0);
+    /// Qui, parmi les clés données, la table rend encore.
+    fn kept(tt: &TranspositionTable, keys: &[u64]) -> Vec<bool> {
+        keys.iter().map(|&key| tt.probe(key, 0).is_some()).collect()
+    }
 
-        assert!(
-            tt.probe(occupant, 0).is_none(),
-            "l'ancienne position a cédé la place"
+    #[test]
+    fn un_seau_garde_quatre_positions_qui_se_disputent_la_meme_case() {
+        // Avant les seaux, chacune chassait la précédente : une seule sur
+        // quatre survivait. C'est le défaut que C28 a chiffré.
+        let tt = TranspositionTable::new(1);
+        tt.new_search();
+        let cles = same_bucket(&tt);
+        assert_eq!(cles[0] as usize & tt.mask, cles[4] as usize & tt.mask);
+        for (profondeur, &cle) in cles[..4].iter().enumerate() {
+            tt.store(
+                cle,
+                Some(mv("e2e4")),
+                10,
+                profondeur as i32,
+                Bound::Exact,
+                0,
+            );
+        }
+        assert_eq!(kept(&tt, &cles[..4]), [true; 4]);
+    }
+
+    #[test]
+    fn un_seau_plein_cede_la_moins_profonde_meme_a_une_plus_superficielle() {
+        // Une autre position prend TOUJOURS une place : garder les quatre
+        // condamnerait la cinquième à ne rien mémoriser. Mais c'est la moins
+        // profonde qui cède — jamais celle de 9 plis, comme le faisait la
+        // case unique.
+        let tt = TranspositionTable::new(1);
+        tt.new_search();
+        let cles = same_bucket(&tt);
+        for (&cle, profondeur) in cles[..4].iter().zip([9, 2, 7, 8]) {
+            tt.store(cle, Some(mv("e2e4")), 10, profondeur, Bound::Exact, 0);
+        }
+        tt.store(cles[4], Some(mv("d2d4")), -30, 1, Bound::Upper, 0);
+        assert_eq!(kept(&tt, &cles), [true, false, true, true, true]);
+        let hit = tt.probe(cles[4], 0).unwrap();
+        assert_eq!((hit.depth, hit.score, hit.mv), (1, -30, Some(mv("d2d4"))));
+    }
+
+    /// Les clés rangées dans le seau de `key`, place par place.
+    fn slots(tt: &TranspositionTable, key: u64) -> Vec<u64> {
+        tt.buckets[key as usize & tt.mask]
+            .entries
+            .iter()
+            .map(|entry| entry.load().0)
+            .collect()
+    }
+
+    #[test]
+    fn a_valeur_egale_la_premiere_place_du_seau_cede() {
+        // Le départage est arbitraire, mais il doit être fixe : à un fil, la
+        // recherche reste déterministe au nœud près (`CLAUDE.md`). Il se lit
+        // sur les PLACES, pas sur ce que la table rend : `<=` au lieu de `<`
+        // ferait céder la dernière, remplirait donc le seau à l'envers, et
+        // cette image miroir rendrait les mêmes réponses. Le crible de C29
+        // l'a montré sur la première version de ce test, qui ne regardait
+        // que les réponses.
+        let tt = TranspositionTable::new(1);
+        tt.new_search();
+        let cles = same_bucket(&tt);
+        for (&cle, profondeur) in cles[..4].iter().zip([4, 4, 9, 9]) {
+            tt.store(cle, Some(mv("e2e4")), 10, profondeur, Bound::Exact, 0);
+        }
+        assert_eq!(
+            slots(&tt, cles[0]),
+            cles[..4],
+            "les vierges se prennent dans l'ordre"
         );
-        let hit = tt.probe(nouveau, 0).unwrap();
-        assert_eq!(hit.depth, 2);
-        assert_eq!(hit.score, -30);
-        assert_eq!(hit.mv, Some(mv("d2d4")));
+        tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0);
+        assert_eq!(slots(&tt, cles[0]), [cles[4], cles[1], cles[2], cles[3]]);
+        assert_eq!(kept(&tt, &cles), [false, true, true, true, true]);
+    }
+
+    #[test]
+    fn une_entree_ancienne_cede_avant_des_courantes_moins_profondes() {
+        // Trois recherches d'ancienneté pèsent 24 plis : l'entrée à 20 plis
+        // vaut −4, sous les courantes à 5, 6 et 7. Une pondération additive,
+        // divisée ou de signe contraire la garderait.
+        let tt = TranspositionTable::new(1);
+        let cles = same_bucket(&tt);
+        tt.new_search();
+        tt.store(cles[0], Some(mv("e2e4")), 10, 20, Bound::Exact, 0);
+        for _ in 0..3 {
+            tt.new_search();
+        }
+        for (&cle, profondeur) in cles[1..4].iter().zip([5, 6, 7]) {
+            tt.store(cle, Some(mv("e2e4")), 10, profondeur, Bound::Exact, 0);
+        }
+        tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0);
+        assert_eq!(kept(&tt, &cles), [false, true, true, true, true]);
+    }
+
+    #[test]
+    fn une_entree_recente_assez_profonde_survit_a_une_courante_superficielle() {
+        // Une seule recherche d'ancienneté : l'entrée à 12 plis vaut 4, au-
+        // dessus de la courante à 3, qui cède. Un âge pesant neuf plis ou
+        // plus — ou compté avant la profondeur, l'ancienne cédant toujours la
+        // première — la ferait céder. Le test précédent borne le poids par le
+        // bas — il tombe à quatre plis ou moins —, celui-ci par le haut.
+        let tt = TranspositionTable::new(1);
+        let cles = same_bucket(&tt);
+        tt.new_search();
+        tt.store(cles[0], Some(mv("e2e4")), 10, 12, Bound::Exact, 0);
+        tt.new_search();
+        for (&cle, profondeur) in cles[1..4].iter().zip([3, 9, 10]) {
+            tt.store(cle, Some(mv("e2e4")), 10, profondeur, Bound::Exact, 0);
+        }
+        tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0);
+        assert_eq!(kept(&tt, &cles), [true, false, true, true, true]);
+    }
+
+    #[test]
+    fn la_meme_position_a_egale_profondeur_est_remplacee() {
+        // « Au moins aussi profond » : l'égalité remplace. Un `<=` à la place
+        // du `<` qui refuse garderait le résultat périmé.
+        let tt = TranspositionTable::new(1);
+        tt.new_search();
+        tt.store(7, Some(mv("e2e4")), 10, 5, Bound::Upper, 0);
+        tt.store(7, Some(mv("d2d4")), 20, 5, Bound::Exact, 0);
+        let hit = tt.probe(7, 0).unwrap();
+        assert_eq!(
+            (hit.score, hit.mv, hit.bound),
+            (20, Some(mv("d2d4")), Bound::Exact)
+        );
     }
 
     #[test]
     fn un_coup_nest_herite_que_de_la_meme_position() {
         // `store` conserve le coup existant quand le nouveau n'en porte pas —
         // mais SEULEMENT si c'est la même clé. Sans cette garde, une position
-        // hériterait du coup d'une autre.
+        // hériterait du coup d'une autre. Le seau est plein, sans quoi l'autre
+        // position prendrait une place vierge, qui n'a aucun coup à léguer, et
+        // le test passerait quoi que fasse le code.
         let tt = TranspositionTable::new(1);
-        let capacite = tt.capacity() as u64;
-        let (une, autre) = (0x1234, 0x1234 + capacite);
-
-        tt.store(une, Some(mv("e2e4")), 50, 3, Bound::Exact, 0);
+        let cles = same_bucket(&tt);
+        for (&cle, profondeur) in cles[..4].iter().zip([3, 5, 6, 7]) {
+            tt.store(cle, Some(mv("e2e4")), 50, profondeur, Bound::Exact, 0);
+        }
+        let autre = cles[4];
         tt.store(autre, None, 20, 4, Bound::Exact, 0);
 
         let hit = tt.probe(autre, 0).unwrap();
@@ -699,11 +907,23 @@ mod tests {
     }
 
     #[test]
+    fn un_seau_est_une_ligne_de_cache() {
+        // Quatre entrées de seize octets, alignées sur 64 : lire le seau
+        // entier coûte un seul accès mémoire. Sans l'alignement, chaque seau
+        // chevaucherait deux lignes dès que l'allocateur rendrait une adresse
+        // qui n'est pas multiple de 64.
+        assert_eq!(size_of::<Bucket>(), 64);
+        assert_eq!(align_of::<Bucket>(), 64);
+    }
+
+    #[test]
     fn la_taille_est_une_puissance_de_deux_sous_la_demande() {
         for mb in [1, 2, 7, 16, 64] {
             let tt = TranspositionTable::new(mb);
             assert!(tt.capacity().is_power_of_two(), "{mb} Mio");
-            let octets = tt.capacity() * size_of::<Entry>();
+            // La mémoire réellement allouée — celle des seaux, alignement
+            // compris —, pas une capacité multipliée par une taille d'entrée.
+            let octets = tt.buckets.len() * size_of::<Bucket>();
             assert!(octets <= mb * 1024 * 1024, "{mb} Mio dépassé");
             // La borne haute seule laissait passer une capacité de UN : une
             // puissance de deux qui tient sous la limite. Un test de mutation
