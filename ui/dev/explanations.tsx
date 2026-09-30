@@ -9,6 +9,47 @@ import "../src/index.css";
 
 // Scénario déterministe de contrôle UI ; aucune analyse simulée dans l’application.
 const tacticalCases = {
+  "position-development": {
+    fen: new Chess().fen(),
+    played: ["Nf3", "d5"],
+    best: ["Nc3", "d5"],
+  },
+  "position-file": {
+    fen: "7k/ppp1pppp/8/8/8/8/PPP2PPP/R5K1 w - - 0 1",
+    played: ["Rd1", "a6"],
+    best: ["Rd1", "a6"],
+  },
+  "position-castle": {
+    fen: "r3k2r/ppp2ppp/8/8/8/8/PPP2PPP/R3K2R w KQkq - 0 1",
+    played: ["O-O", "O-O"],
+    best: ["O-O", "O-O"],
+  },
+  "position-shield": {
+    fen: "3q3k/8/8/8/8/8/5PPP/5RK1 w - - 0 1",
+    played: ["f4", "Qg8"],
+    best: ["f4", "Qg8"],
+  },
+  "position-pawns": {
+    fen: "7k/8/8/3n4/4P3/3P4/8/7K w - - 0 1",
+    played: ["exd5", "Kh7"],
+    best: ["exd5", "Kh7"],
+  },
+  "position-passed": {
+    fen: "7k/8/1p6/P7/8/8/8/7K w - - 0 1",
+    played: ["axb6", "Kh7"],
+    best: ["axb6", "Kh7"],
+  },
+  "position-activity": {
+    fen: "7k/8/8/8/8/1P6/P1P5/1B5K w - - 0 1",
+    played: ["c4", "Kg7"],
+    best: ["c4", "Kg7"],
+  },
+  "position-center": {
+    fen: "7k/7p/8/8/8/8/P7/1N5K w - - 0 1",
+    played: ["Nc3", "h6"],
+    best: ["Nc3", "h6"],
+  },
+
   quiet: {
     fen: new Chess().fen(),
     played: ["e4", "e5"],

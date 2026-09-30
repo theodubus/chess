@@ -64,12 +64,12 @@ entre le coup joué et une meilleure idée, pas seulement répéter la catégori
 - [x] Afficher la vérification en cours sans bloquer la lecture de la partie.
 - [x] Tester les changements de moteur et résultats tardifs/incohérents.
 
-### 4. Observations positionnelles
+### 4. Observations positionnelles — TERMINÉ (30 septembre 2026)
 
-- [ ] Développement, colonnes ouvertes, structure de pions, sécurité du roi,
+- [x] Développement, colonnes ouvertes, structure de pions, sécurité du roi,
   activité et contrôle de cases utiles.
-- [ ] Distinguer observation descriptive et cause confirmée du verdict moteur.
-- [ ] Comparaisons ciblées et formulation prudente ; aucun remplissage automatique.
+- [x] Distinguer observation descriptive et cause confirmée du verdict moteur.
+- [x] Comparaisons ciblées et formulation prudente ; aucun remplissage automatique.
 
 ## État de reprise
 
@@ -192,3 +192,42 @@ entre le coup joué et une meilleure idée, pas seulement répéter la catégori
   concernaient la documentation et les protocoles d’essai, sans diff du moteur.
 - Prochaine reprise : lot 4, observations positionnelles prudentes. Le lot 3
   n’ajoute pas de diagnostic générique d’activité/sécurité du roi sans preuve.
+
+## Notes de livraison du lot 4 — 30 septembre 2026
+
+- `positional.ts` reconstruit et vérifie le coup et son historique avec chess.js,
+  puis compare les propriétés avant/après. Il ne dépend d’aucun détail interne
+  du moteur et n’ajoute aucune recherche UCI.
+- Familles couvertes : premier développement d’un fou/cavalier depuis la position
+  standard (quinze premiers coups, aucun départ/retour antérieur) ; tour sur colonne
+  ouverte/semi-ouverte ; pions nouvellement doublés/isolés/passés ; roque et
+  diminution de couverture proche du roi ; mobilité légale accrue et accès/occupation
+  du centre. Les captures en passant, les deux couleurs et les pièces clouées sont
+  prises en compte. Les promotions et positions terminales gardent leur explication
+  spécifique, sans ajout positionnel.
+- Une propriété déjà présente n’est pas répétée. Une seule observation est retenue,
+  par priorité : roi, colonnes, structure, développement, centre, mobilité.
+  Cache local borné à 128 situations, avec historique et positions avant/après ;
+  indépendant des scores et du moteur, pour éviter le recalcul à chaque info UCI.
+- `PositionalPanel` sépare « Observation positionnelle » de la classification.
+  Les repères complètent une cause tactique/matérielle dans un volet replié.
+  « Voir le repère » ouvre deux étapes sur le plateau existant, avec des cercles
+  bleus. « Comparer avec le coup proposé » est facultatif et repart du même
+  historique ; scores exacts/finis, verdict exploitable et suites légales requis.
+- `ExplanationLine.kind = "observation"` distingue ces démonstrations d’une PV.
+  Le texte et la légende ne prétendent pas expliquer le raisonnement interne du
+  moteur. Aucun de ces constats ne passe `MoveExplanation.concrete` à vrai.
+  Les explications tactiques conservent leur priorité et leur fonctionnement.
+- Limites explicites : des possibilités de mouvement ne sont pas des cases sûres ;
+  elles sont calculées comme si le camp rejouait et omises pendant un échec. La
+  couverture du roi ne compte que ses pions sur trois colonnes et deux rangées,
+  sur une aile et avec une dame adverse ; ce n’est pas un diagnostic global de
+  sécurité. La structure de pions ne mesure pas les compensations. Une FEN ne
+  permet pas d’inventer un historique de développement.
+- Validation : 27 nouveaux tests dans `positional.test.tsx`, 303 tests unitaires,
+  322 tests avec ShallowRed/Stockfish, lint, TypeScript et build réussis. Chromium
+  ciblé puis parcours complet validés : huit fixtures positionnelles, bureau/mobile,
+  comparaison, orientation, préférences, retry caché, variante et dessins conservés.
+- Branche synchronisée avec `main` à `8519c52` ; binaire release local vérifié.
+- Les quatre lots validés sont terminés. Les limites ci-dessus sont des limites
+  volontaires du modèle descriptif, pas des tâches laissées en cours.

@@ -1,3 +1,4 @@
+import { positionObservation, type PositionalNotes } from "./positional";
 import { Chess, type Move } from "chess.js";
 import { materialBalance } from "../material";
 import { boardFromCommand } from "./StudyTree";
@@ -25,6 +26,7 @@ export type ExplanationStep = {
   marks?: TacticalMark[];
 };
 export type ExplanationLine = {
+  kind?: "observation";
   title: string;
   steps: ExplanationStep[];
   truncated: boolean;
@@ -34,6 +36,7 @@ export type MoveExplanation = {
   summary: string;
   concrete: boolean;
   primary?: "alternative";
+  observations?: PositionalNotes;
   played: ExplanationLine | null;
   alternative: ExplanationLine | null;
 };
@@ -346,6 +349,22 @@ export function explainMove(
 ): MoveExplanation {
   const base = baseExplanation(position, before, after, annotation);
   if (!base.played) return base;
+  const compare =
+    !!annotation &&
+    !!before?.score &&
+    !!after?.score &&
+    !before.score.bound &&
+    !after.score.bound &&
+    Number.isFinite(before.score.value) &&
+    Number.isFinite(after.score.value) &&
+    advantage(before.score, position.turn) !== null &&
+    advantage(after.score, position.turn) !== null;
+  const observations = {
+    played: positionObservation(base.played),
+    alternative: compare ? positionObservation(base.alternative, true) : null,
+  };
+  if (observations.played || observations.alternative)
+    base.observations = observations;
   const tactic = tacticalExplanation(
     position,
     before,

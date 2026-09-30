@@ -2,6 +2,7 @@ import { explainMove, type ExplanationLine } from "./explanations";
 import { useCallback, useEffect, useState } from "react";
 import type { Square } from "chess.js";
 import RetryCoach from "./RetryCoach";
+import PositionalPanel from "./PositionalPanel";
 import { FocusedAnalysis, type FocusRequest } from "./FocusedAnalysis";
 import { usableResult } from "./FocusedAnalysis";
 import type { Color, Key } from "@lichess-org/chessground/types";
@@ -479,7 +480,12 @@ export default function InteractiveReview({
                     return demoStep.marks.map((mark) => ({
                       orig: mark.from,
                       dest: mark.to,
-                      brush: mark.tone === "idea" ? "green" : "red",
+                      brush:
+                        mark.tone === "observation"
+                          ? "blue"
+                          : mark.tone === "idea"
+                            ? "green"
+                            : "red",
                     }));
                   const next =
                     demonstration.line.steps[demonstration.step + 1]?.move;
@@ -623,18 +629,53 @@ export default function InteractiveReview({
               {demoStep?.text}
             </p>
             <p className="hint">
-              {demoStep?.marks?.length
-                ? "Les repères rouges montrent les menaces ; les verts montrent la défense ou l’idée du coup."
-                : "La flèche bleue indique le prochain coup de cette suite."}{" "}
-              La suite illustre une continuation trouvée par le moteur, sans
-              imposer les réponses adverses.
+              {demonstration.line.kind === "observation" ? (
+                "Les repères bleus montrent les cases concernées. Ce constat décrit le changement du plateau ; il ne prouve pas la raison du verdict moteur."
+              ) : (
+                <>
+                  {demoStep?.marks?.length
+                    ? "Les repères rouges montrent les menaces ; les verts montrent la défense ou l’idée du coup."
+                    : "La flèche bleue indique le prochain coup de cette suite."}{" "}
+                  La suite illustre une continuation trouvée par le moteur, sans
+                  imposer les réponses adverses.
+                </>
+              )}
             </p>
             {demonstration.line.truncated && (
               <p className="hint">
                 La démonstration est limitée aux huit premiers demi-coups.
               </p>
             )}
-            {explanation?.played &&
+            {demonstration.line.kind === "observation" && (
+              <>
+                {explanation?.observations?.played &&
+                  demonstration.line.title !==
+                    explanation.observations.played.line.title && (
+                    <button
+                      className="secondary"
+                      onClick={() =>
+                        demonstrate(explanation.observations!.played!.line)
+                      }
+                    >
+                      Voir le repère joué
+                    </button>
+                  )}
+                {explanation?.observations?.alternative &&
+                  demonstration.line.title !==
+                    explanation.observations.alternative.line.title && (
+                    <button
+                      className="secondary"
+                      onClick={() =>
+                        demonstrate(explanation.observations!.alternative!.line)
+                      }
+                    >
+                      Voir le repère proposé
+                    </button>
+                  )}
+              </>
+            )}
+            {demonstration.line.kind !== "observation" &&
+              explanation?.played &&
               demonstration.line.title !== explanation.played.title && (
                 <button
                   className="secondary"
@@ -643,7 +684,8 @@ export default function InteractiveReview({
                   Après le coup joué
                 </button>
               )}
-            {explanation?.alternative &&
+            {demonstration.line.kind !== "observation" &&
+              explanation?.alternative &&
               demonstration.line.title !== explanation.alternative.title && (
                 <button
                   className="secondary"
@@ -721,11 +763,18 @@ export default function InteractiveReview({
                     className="move-explanation"
                     aria-label="Comprendre le coup"
                   >
-                    {!explanation.concrete && (
+                    {!explanation.concrete && !explanation.observations && (
                       <p className="hint">{explanation.summary}</p>
                     )}
                     {explanation.concrete && !annotation && (
                       <p>{explanation.summary}</p>
+                    )}
+                    {explanation.observations && (
+                      <PositionalPanel
+                        notes={explanation.observations}
+                        compact={explanation.concrete}
+                        onShow={demonstrate}
+                      />
                     )}
                     <div className="explanation-actions">
                       {explanation.played && (

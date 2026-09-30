@@ -10,7 +10,7 @@ import type { ExplanationLine } from "./explanations";
 export type TacticalMark = {
   from: Square;
   to?: Square;
-  tone: "threat" | "idea";
+  tone: "threat" | "idea" | "observation";
 };
 export type TacticalIdea = {
   kind:

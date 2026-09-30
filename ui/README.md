@@ -346,9 +346,48 @@ Une vérification ne garantit pas une meilleure explication : si elle reste
 incomplète ou contradictoire, l’interface le dit et conserve le verdict inconnu.
 Relancer l’analyse depuis les options renouvelle les caches.
 
-La [backlog d’analyse pédagogique](BACKLOG_ANALYSE_PEDAGOGIQUE.md) conserve le
-périmètre validé. Les lots 1 à 3 sont livrés ; les observations positionnelles
-restent au lot 4.
+### Repères positionnels
+
+Une « Observation positionnelle » peut compléter la lecture d’un coup. Elle décrit
+un changement vérifié sur le plateau, séparément de la classification. Une seule
+observation principale est retenue :
+
+- Premier développement d’un fou ou cavalier, si l’historique depuis la position
+  standard le prouve et que l’on est dans les quinze premiers coups.
+- Tour placée sur une colonne ouverte ou semi-ouverte ; une colonne ouverte n’a
+  aucun pion, mais elle peut encore contenir d’autres pièces.
+- Pions nouvellement doublés, isolés ou passés, pour l’un ou l’autre camp.
+- Déplacement du roi et de la tour au roque, ou diminution des pions proches
+  devant un roi sur une aile en présence d’une dame adverse.
+- Mobilité légale accrue d’une pièce, accès à plusieurs cases centrales ou
+  occupation du centre par un pion.
+
+« Voir le repère » montre le changement avant/après, avec des cercles bleus.
+« Comparer avec le coup proposé » reste facultatif et utilise le même point de
+départ. Cette comparaison n’apparaît que si les scores sont exacts, le verdict
+exploitable et les suites légales. Si une explication tactique ou matérielle existe,
+les repères positionnels se trouvent dans un complément replié. Ils respectent
+l’orientation, les variantes, la préférence d’annotations et le retry caché.
+Le retour au coup examiné conserve les dessins et ne crée aucune branche.
+
+Ces observations **ne prouvent pas la cause du verdict moteur** : le développement
+peut laisser une pièce en prise, des pions doublés peuvent être compensés, un roi
+roqué peut subir une attaque et un pion passé peut être bloqué. La mobilité est
+comptée sans prise, comme si le même camp rejouait, avec les règles de légalité ;
+les cases montrées ne sont pas promises sûres après la réponse adverse. Ce calcul
+est omis pendant un échec. La couverture du roi compte seulement ses pions amis
+sur trois colonnes et les deux rangées devant lui ; ce n’est pas une évaluation
+globale de sa sécurité.
+
+Les détecteurs comparent le coup joué à la position précédente. Ils ne répètent
+pas une propriété inchangée et ne remplissent pas systématiquement le panneau.
+L’historique d’une pièce n’est pas deviné à partir d’une FEN personnalisée. Une
+observation n’ajoute aucune recherche moteur ; les calculs locaux sont conservés
+dans un cache borné à 128 situations, avec leur historique. L’approfondissement
+facultatif du lot 3 reste disponible lorsqu’une cause précise manque.
+
+La [backlog d’analyse pédagogique](BACKLOG_ANALYSE_PEDAGOGIQUE.md) conserve les
+décisions, les limites et les notes de livraison des quatre lots.
 
 ## Annotations de la revue
 
@@ -513,7 +552,10 @@ contrôler les explications, le retour au coup examiné, la conservation des
 dessins, les variantes et le retry caché sur bureau et mobile. Il couvre aussi
 les indices progressifs, leur orientation, leur remise à zéro, les recherches
 ciblées réelles, leur arrêt et leur réutilisation. Les cas `?case=uncertain` et
-`?case=quiet` complètent les fixtures tactiques pour ces calculs :
+`?case=quiet` complètent les fixtures tactiques pour ces calculs. Les scénarios
+`?case=position-development`, `position-file`, `position-castle`, `position-shield`,
+`position-pawns`, `position-passed`, `position-activity` et `position-center` couvrent
+les observations et leur comparaison, y compris dans une variante utilisateur :
 `CHESS_EXPLANATIONS_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
 
 Pour vérifier les déplacements après un décalage du plateau (clics, glisser-déposer
