@@ -198,7 +198,7 @@ impl Entry {
 }
 
 /// Taille par défaut, en mébioctets.
-pub const DEFAULT_SIZE_MB: usize = 16;
+pub const DEFAULT_SIZE_MB: usize = 2;
 
 /// Entrées par seau : quatre entrées de seize octets remplissent exactement
 /// une ligne de cache de 64 octets.
