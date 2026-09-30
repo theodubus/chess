@@ -763,17 +763,37 @@ mod tests {
         assert_eq!((hit.depth, hit.score, hit.mv), (1, -30, Some(mv("d2d4"))));
     }
 
+    /// Les clés rangées dans le seau de `key`, place par place.
+    fn slots(tt: &TranspositionTable, key: u64) -> Vec<u64> {
+        tt.buckets[key as usize & tt.mask]
+            .entries
+            .iter()
+            .map(|entry| entry.load().0)
+            .collect()
+    }
+
     #[test]
     fn a_valeur_egale_la_premiere_place_du_seau_cede() {
         // Le départage est arbitraire, mais il doit être fixe : à un fil, la
-        // recherche reste déterministe au nœud près (`CLAUDE.md`).
+        // recherche reste déterministe au nœud près (`CLAUDE.md`). Il se lit
+        // sur les PLACES, pas sur ce que la table rend : `<=` au lieu de `<`
+        // ferait céder la dernière, remplirait donc le seau à l'envers, et
+        // cette image miroir rendrait les mêmes réponses. Le crible de C29
+        // l'a montré sur la première version de ce test, qui ne regardait
+        // que les réponses.
         let tt = TranspositionTable::new(1);
         tt.new_search();
         let cles = same_bucket(&tt);
         for (&cle, profondeur) in cles[..4].iter().zip([4, 4, 9, 9]) {
             tt.store(cle, Some(mv("e2e4")), 10, profondeur, Bound::Exact, 0);
         }
+        assert_eq!(
+            slots(&tt, cles[0]),
+            cles[..4],
+            "les vierges se prennent dans l'ordre"
+        );
         tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0);
+        assert_eq!(slots(&tt, cles[0]), [cles[4], cles[1], cles[2], cles[3]]);
         assert_eq!(kept(&tt, &cles), [false, true, true, true, true]);
     }
 
