@@ -4499,6 +4499,70 @@ d'échec pour l'aspiration, le taux d'élagage fautif pour l'élagage delta :
 - **intervalle à cheval** : la sonde s'allonge avant de trancher, jamais un
   match sur un rapport qu'elle ne sépare pas de 1.
 
+**La sonde, RELEVÉE le 30 sept. à 17 h 55** — 2 × 40 parties à `8+0,08`,
+zéro perte au temps ; journalisés, 40 631 nœuds de futilité au réseau et
+33 162 à la faite main, rejoués un sur trois dans l'ordre des fichiers — le
+rejeu tient ainsi dans la vie du conteneur, et cela revient à un N trois
+fois plus grand — ; 3 779 et 5 623 captures de l'élagage delta, toutes
+rejouées ; 50 593 et 45 861 itérations à fenêtre :
+
+| marge | réseau | faite main | rapport, IC 95 % | par la règle |
+|---|---|---|---|---|
+| futilité inverse — coupures fautives | 3 sur 8 120 (0,04 %) | 5 sur 5 586 (0,09 %) | 0,41 `[0,00 ; 2,06]` | **à cheval** |
+| élagage delta — élagages fautifs | 125 sur 1 780 (7,0 %) | 4 sur 1 351 (0,30 %) | **23,7** `[11,3 ; 105]` | **candidat** |
+| aspiration — échecs par itération | 0,33 | 0,12 | **2,66** `[2,54 ; 2,80]` | **candidat** |
+
+- **l'échelle, là où la futilité tranche** : pente du réseau contre la faite
+  main **2,40** sur 24 007 nœuds, rapport médian **2,16** — dans l'attendu
+  du 2,6 à 5,8 « en position décidée », plus bas, comme prévu ;
+- **l'aspiration** dépense au réseau **34,4 % de ses nœuds en recherches
+  échouées**, contre 12,4 % à la faite main : dans l'attendu (1,3 à 2,5
+  fois plus d'échecs), un peu au-dessus ;
+- **l'élagage delta se trompe 24 fois plus souvent au réseau**, et élague
+  deux fois plus (47,6 % des captures candidates, contre 24,0 %) : le gain
+  compté est la valeur faite main de la pièce, en unités deux fois trop
+  petites. Dans le sens de l'attendu, bien au-delà de ce qu'il laissait
+  croire ;
+- **la futilité inverse n'est PAS trop serrée au réseau** : il y coupe plus
+  (60,8 % des candidats, contre 51,4 %) et se trompe moins, et le facteur
+  qui égalise son taux fautif vaut × 0,7. **À cheval pourtant**, faute
+  d'événements : trois et cinq coupures fautives. Séparer ce rapport de 1
+  demanderait une soixantaine de fois l'échantillon — la règle voudrait une
+  sonde plus longue, ce n'est pas raisonnable ici : **la futilité reste en
+  l'état**, et sa marge se réglerait par match si un réglage d'ensemble est
+  ouvert. *Attendu réfuté pour elle* : l'erreur à couvrir n'a pas grandi
+  avec l'échelle — le réseau est plus juste en proportion.
+
+**Le facteur de chaque candidat — précisé avant de le calculer** : un
+rapport de TAUX n'est pas une échelle — multiplier `DELTA_MARGIN` par 23,7
+n'aurait pas de sens. La définition de l'amendement vaut pour les deux :
+**le plus petit facteur qui ramène le taux du réseau sur celui de la faite
+main**, recalculé sur les données journalisées (lecteur `facteurs.py`) :
+- **élagage delta : × 2,5** — élaguer si `stand_pat + m × (gain + 200) ≤
+  alpha` : 0,27 % fautifs au réseau, contre 0,30 % ; il élague alors 19,8 %
+  des captures (× 2,4 : 0,39 %) ;
+- **aspiration : × 2,0** — une demi-fenêtre de 50 : 4,5 % des itérations
+  hors de la première fenêtre au réseau, contre 5,0 % à la faite main à 25.
+
+Leur rapport, 2,5 / 2,0 = 1,25, tombe à la limite de la concordance à
+± 25 % : **un seul candidat, une seule échelle** — la règle. **Le facteur
+commun : 2,24**, leur moyenne géométrique, entre la pente (2,40) et le
+rapport médian (2,16) mesurés aux mêmes nœuds.
+
+**Le candidat** : `ASPIRATION_DELTA` et l'élagage delta — gain et marge —
+multipliés par 2,24 **quand le réseau joue, et seulement alors** ; la faite
+main garde ses marges au bit près, donc le banc, les tests de recherche et
+leurs nœuds ne bougent pas. Deux jobs de 3 000 parties à `8+0,08` contre
+`main`, graine « auto » chacun, mis en commun. **Critère, écrit avant** :
+**gain si la borne basse de l'intervalle commun est au-dessus de zéro** —
+un réglage, pas un correctif de règle. **Puissance** : ± 5,7 environ ; +10
+serait démontré ~93 fois sur 100. *Attendu* — <span>inférence, confiance
+faible</span> : **0 à +25, ~+10**. L'aspiration rend des nœuds — une part
+seulement des 22 points de recherches échouées, une recherche en échec
+remplissant la table pour la suivante ; l'élagage delta devient juste mais
+élague moitié moins, et sa valeur d'ensemble était déjà indistinguable de
+zéro (D5). Si le candidat échoue : bissecter les deux marges.
+
 ### C31 — la nulle après une parade tranquille, dans la quiescence — VERDICT, 30 sept. 2026 : −2,43 ± 5,36 Elo à `8+0,08`, la borne haute d'un match sous zéro — ARRÊTÉ PAR SON CRITÈRE
 
 **Ouvert par l'arbitre** — section C13 : « PV continues after threefold
