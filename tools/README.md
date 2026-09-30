@@ -759,7 +759,7 @@ dernière relève est faite.
 | **C28 — la sonde** | **36603415485** — la troisième déclenchée, confirmée : la seule finie en moins d'une heure, son résumé porte `plis.sh` | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉE à 18 h 25** — finie à 17 h 53, EPYC 9V74, zéro anomalie | **n/s × 1,063 pour le candidat, plis −0,44 ± 0,11 : les deux dans l'attendu** — plus rapide par nœud, moins profond ; prédiction du verdict par l'étalon, écrite avant lui : −20 à −58 Elo (section C28). — *Attendus, écrits avant* : n/s × 1,00 à × 1,10, plis −0,5 à +0,1 |
 | **C29 — les seaux, A : sous pression** | **36651565341, 36651567495** — par ordre de déclenchement, à confirmer par leurs résumés | `2d44626` (seaux, 2 Mio) → `cdd5ba4` (case unique, 2 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 00 h 41, fin vers 06 h 30 | mise en commun ; critère de la section C29 — **fusion si la borne basse commune est au-dessus de zéro** et que B ne démontre pas de régression. *Attendu, écrit avant* : +3 à +25 |
 | **C29 — les seaux, B : au défaut** | **36651570193, 36651572367** — idem | `90ac6e3` (seaux, 16 Mio) → `d78b422` (`main`), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 00 h 41, fin vers 06 h 30 | la borne haute commune ne doit pas être sous zéro. *Attendu* : −3 à +5 |
-| **C29 — les deux sondes** | **36651578044** (A), **36651580375** (B) — idem | les mêmes binaires, `sonde: oui`, 100 parties une à une chacune | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉES à 01 h 25** — finies à 01 h 18 et 01 h 20, attribution confirmée | **A : +0,54 ± 0,10 pli, n/s × 1,003** — au-dessus de l'attendu (+0,1 à +0,35), presque tout le coût de la pression ; **B : +0,03 ± 0,13, n/s × 0,990**, dans l'attendu. Prédiction du verdict, écrite avant : A +11 à +49, B −8 à +12 (section C29) |
+| **C29 — les deux sondes** | **36651578044** (A), **36651580375** (B) — idem | les mêmes binaires, `sonde: oui`, 100 parties une à une chacune | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉES à 01 h 23** — finies à 01 h 18 et 01 h 20, attribution confirmée | **A : +0,54 ± 0,10 pli, n/s × 1,003** — au-dessus de l'attendu (+0,1 à +0,35), presque tout le coût de la pression ; **B : +0,03 ± 0,13, n/s × 0,990**, dans l'attendu. Prédiction du verdict, écrite avant : A +11 à +49, B −8 à +12 (section C29) |
 | **C29 — le crible de mutation au candidat** | **36651736903** | `90ac6e3`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | lancé à 00 h 43 ; une partie de sa matrice attend des runners libres | `tt.rs` ≤ 6 — les six `\|` contre `^` connus —, aucun survivant dans le code neuf, chaque fichier sous son plafond |
 | **C30 — la taille par défaut, l'Elo** | **36654642929, 36654645557** — identifiés par leur nom de run | `94c07ad` (64 Mio) → `4699e63` (16 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 01 h 20, fin vers 07 h 05 | mise en commun ; critère de la section C30 — **le défaut passe à 64 Mio sauf coût démontré** (borne haute commune sous zéro). *Attendu, écrit avant* : −6 à +3 |
 | **C30 — la sonde** | **36654648060** | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | lancée à 01 h 20, fin vers 02 h 20 | n/s et plis appariés. *Attendus* : n/s × 0,95 à × 1,02, plis −0,1 à +0,05 |
@@ -4361,7 +4361,7 @@ partie :
   voient ailleurs (`CLAUDE.md`). Un survivant se tue par un test, ce qui ne
   touche pas le binaire mesuré.
 
-**Les deux sondes, RELEVÉES le 30 sept. à 01 h 25** — finies à 01 h 18 et
+**Les deux sondes, RELEVÉES le 30 sept. à 01 h 23** — finies à 01 h 18 et
 01 h 20, 100 parties une à une chacune, zéro perte au temps, zéro coup
 illégal ; attribution confirmée par leurs résumés, dans l'ordre de
 déclenchement :
@@ -4395,7 +4395,7 @@ déclenchement :
   pli appartient à ce qui le fait gagner ou perdre, et un pli REGAGNÉ par
   la table n'a pas été mesuré.
 
-**Le crible de mutation, `tt.rs` RELEVÉ le 30 sept. à 01 h 30** (run
+**Le crible de mutation, `tt.rs` RELEVÉ le 30 sept. à 01 h 25** (run
 36651736903, job fini à 01 h 11 ; `search.rs` et `eval.rs` tournent
 encore) : **7 survivants contre un plafond de 6** — les six `|` contre `^`
 connus, et **un neuf : `value < victim_worth` en `<=`**, le départage du
