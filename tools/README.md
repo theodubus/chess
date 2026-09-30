@@ -759,8 +759,10 @@ dernière relève est faite.
 | **C28 — la sonde** | **36603415485** — la troisième déclenchée, confirmée : la seule finie en moins d'une heure, son résumé porte `plis.sh` | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉE à 18 h 25** — finie à 17 h 53, EPYC 9V74, zéro anomalie | **n/s × 1,063 pour le candidat, plis −0,44 ± 0,11 : les deux dans l'attendu** — plus rapide par nœud, moins profond ; prédiction du verdict par l'étalon, écrite avant lui : −20 à −58 Elo (section C28). — *Attendus, écrits avant* : n/s × 1,00 à × 1,10, plis −0,5 à +0,1 |
 | **C29 — les seaux, A : sous pression** | **36651565341, 36651567495** — par ordre de déclenchement, à confirmer par leurs résumés | `2d44626` (seaux, 2 Mio) → `cdd5ba4` (case unique, 2 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 00 h 41, fin vers 06 h 30 | mise en commun ; critère de la section C29 — **fusion si la borne basse commune est au-dessus de zéro** et que B ne démontre pas de régression. *Attendu, écrit avant* : +3 à +25 |
 | **C29 — les seaux, B : au défaut** | **36651570193, 36651572367** — idem | `90ac6e3` (seaux, 16 Mio) → `d78b422` (`main`), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 00 h 41, fin vers 06 h 30 | la borne haute commune ne doit pas être sous zéro. *Attendu* : −3 à +5 |
-| **C29 — les deux sondes** | **36651578044** (A), **36651580375** (B) — idem | les mêmes binaires, `sonde: oui`, 100 parties une à une chacune | cutechess `-debug all`, `tools/plis.sh` | lancées à 00 h 41, fin vers 01 h 45 | n/s et plis appariés par partie. *Attendus* : A, plis +0,1 à +0,35 et n/s × 0,96 à × 1,00 ; B, n/s × 0,96 à × 1,00 |
+| **C29 — les deux sondes** | **36651578044** (A), **36651580375** (B) — idem | les mêmes binaires, `sonde: oui`, 100 parties une à une chacune | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉES à 01 h 23** — finies à 01 h 18 et 01 h 20, attribution confirmée | **A : +0,54 ± 0,10 pli, n/s × 1,003** — au-dessus de l'attendu (+0,1 à +0,35), presque tout le coût de la pression ; **B : +0,03 ± 0,13, n/s × 0,990**, dans l'attendu. Prédiction du verdict, écrite avant : A +11 à +49, B −8 à +12 (section C29) |
 | **C29 — le crible de mutation au candidat** | **36651736903** | `90ac6e3`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | lancé à 00 h 43 ; une partie de sa matrice attend des runners libres | `tt.rs` ≤ 6 — les six `\|` contre `^` connus —, aucun survivant dans le code neuf, chaque fichier sous son plafond |
+| **C30 — la taille par défaut, l'Elo** | **36654642929, 36654645557** — identifiés par leur nom de run | `94c07ad` (64 Mio) → `4699e63` (16 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 01 h 20, fin vers 07 h 05 | mise en commun ; critère de la section C30 — **le défaut passe à 64 Mio sauf coût démontré** (borne haute commune sous zéro). *Attendu, écrit avant* : −6 à +3 |
+| **C30 — la sonde** | **36654648060** | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | lancée à 01 h 20, fin vers 02 h 20 | n/s et plis appariés. *Attendus* : n/s × 0,95 à × 1,02, plis −0,1 à +0,05 |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
@@ -4207,13 +4209,72 @@ l'étalonnage de Stockfish ; lancées à 06 h 11, finies entre 10 h 58 et
   La suite : re-mesurer après chaque changement de réseau, une série contre
   2850 à 60+0,6, pas davantage.
 
+### C30 — la taille par défaut : le protocole, écrit le 30 sept. avant de mesurer
+
+**Ouvert par le critère de C28** — « *avant d'élever le défaut, mesurer ce
+qu'une table plus grande coûte là où elle n'est PAS sous pression, à
+`8+0,08`* » — et par Théo, qui demande de clore les sujets en cours.
+
+**Où le défaut compte** : là seulement où personne ne règle `Hash` —
+l'interface, qui ne le règle pas (lu dans `ui/src` le 29 sept.), et nos
+matchs, `match.yml` non plus ; les listes le règlent elles-mêmes. À
+`8+0,08` comme à la cadence de Théo, 10+0,1, la table de 16 Mio range 4 à
+9 % de sa capacité par recherche (C28) : aucune pression. À 60+0,6, 30 à
+65 % — la pression que C28 a chiffrée. **Le défaut sert donc les parties
+longues de l'interface ; ce qu'il peut coûter, c'est de la vitesse aux
+parties courtes**, où une table plus grande ne sert à rien.
+
+**Pourquoi sans attendre C29** — dont la section écrivait que la taille se
+mesurerait sur le schéma qui en sortirait. Relu : ce que C30 mesure est le
+coût de la MÉMOIRE là où la table n'est pas pressée, et le schéma ne le
+change pas — chaque sondage touche une ligne de cache au hasard, avec ou
+sans seaux, et l'écriture relit la même ligne. <span>Inférence, confiance
+moyenne à élevée.</span> Six heures gagnées ; si C29 est fusionné et que
+C30 élève le défaut, banc et plafond se revérifient sur le schéma fusionné.
+
+**Pourquoi 64 Mio** : à 60+0,6, une recherche y rangerait 8 à 16 % de la
+capacité — le régime de 16 Mio à `8+0,08`, où B9 a doublé la table sans
+effet décelable. 40/15 resterait sous pression, une à deux fois la
+capacité : hors de portée d'un défaut raisonnable.
+
+**Le candidat** : `94c07ad`, `DEFAULT_SIZE_MB` à 64, révoqué aussitôt par
+`d88c48f` ; **la référence** : `4699e63`, `main` — le moteur de `d78b422`
+au bit près. Banc identique à la profondeur 7, 107 548 nœuds ; 594 562
+contre 594 679 à la profondeur 10. **Les runs** : deux jobs de 3 000
+parties à `8+0,08`, graine « auto » chacun, fastchess, mis en commun ; une
+sonde de 100 parties.
+
+**Mesuré dans le conteneur avant de lancer** — six positions du livre, 2 s
+chacune, deux passes alternées, même binaire : n/s **× 1,026** pour 64 Mio,
+de × 0,92 à × 1,16 selon la position. Au bord du bruit, et sur des caches
+qui ne sont pas ceux des runners — la sonde le dira sur eux.
+
+**Attendus** — <span>inférence, confiance faible</span> : Elo **−6 à +3** ;
+n/s **× 0,95 à × 1,02** ; plis **−0,1 à +0,05**.
+
+**Le critère, écrit avant** :
+- **coût démontré**, la borne haute commune sous zéro : le défaut reste à
+  16 Mio, et la taille devient l'affaire de l'interface — régler `Hash`
+  selon la cadence —, proposée à Théo pour `ui/` ;
+- **pas de coût démontré** : **le défaut passe à 64 Mio**, la révocation
+  révoquée. Le coût aux parties courtes est alors sous la résolution, et le
+  gain aux parties longues est établi par C28 dans son sens, sinon dans sa
+  taille — une table plus grande n'y est jamais plus pressée ;
+- **la puissance, dite d'avance** : ~6 000 parties, ± 6 Elo. Un coût de
+  moins de ~6 Elo aux parties courtes peut passer inaperçu — accepté,
+  parce qu'écrit, et parce qu'il s'échangerait contre la pression des
+  parties longues, que C28 chiffre à ~19 Elo.
+
 ### C29 — les seaux : le protocole, écrit le 30 sept. avant de mesurer
 
 **Ouvert par le critère de C28** — coût démontré, donc « les deux leviers se
 mesurent ensuite » — **et par Théo, le 29 sept. au soir** : « *D'abord
 cloturont les sujets en cours (…) table plus grande (…) finissons ces sujets
 et j'arbitrerais après* ». Des deux leviers, les seaux d'abord : c'est du
-code, et la taille (C30) se mesurera sur le schéma qui en sortira.
+code<s>, et la taille (C30) se mesurera sur le schéma qui en sortira</s>.
+**Relu le même jour** : ce que la taille coûte là où la table n'est pas
+pressée ne dépend pas du schéma — C30 se mesure en parallèle, sa section
+dit pourquoi.
 
 **Le code — le candidat `90ac6e3`**, révoqué aussitôt par `0ce32fc` ; copie
 dans `tools/attic/c29-seaux.patch` :
@@ -4299,6 +4360,58 @@ partie :
   sous le sien — un changement d'arbre déplace ce que les tests de nœuds
   voient ailleurs (`CLAUDE.md`). Un survivant se tue par un test, ce qui ne
   touche pas le binaire mesuré.
+
+**Les deux sondes, RELEVÉES le 30 sept. à 01 h 23** — finies à 01 h 18 et
+01 h 20, 100 parties une à une chacune, zéro perte au temps, zéro coup
+illégal ; attribution confirmée par leurs résumés, dans l'ordre de
+déclenchement :
+
+| sonde | runner — bench, profondeur en 250 ms | n/s, candidat ÷ référence | plis appariés, IC à 95 % |
+|---|---|---|---|
+| **A, sous pression** — 36651578044 | Xeon 6973P-C — 3 065 809 n/s, 13 | **× 1,003** | **+0,54 ± 0,10** |
+| **B, au défaut** — 36651580375 | Xeon Platinum 8573C — 2 307 240 n/s, 12 | **× 0,990** | **+0,03 ± 0,13** |
+
+- **B tient ses deux attendus** — n/s × 0,96 à × 1,00, plis −0,05 à +0,1 :
+  le sondage de quatre entrées coûte 1 % de vitesse, au bord du bruit, et
+  là où la table n'est pas pressée les seaux ne changent rien de visible ;
+- **A dépasse le sien par le haut** — +0,1 à +0,35 attendus, l'intervalle
+  entier au-dessus —, à vitesse égale. **+0,54 pli, c'est presque tout ce
+  que la pression coûtait** : ~0,56 pli selon C28, gain de vitesse retiré.
+  Sous cette pression, des seaux à 2 Mio cherchent donc à peu près aussi
+  profond que la case unique à 16 Mio, moins sa vitesse ;
+- **réfuté, dans le raisonnement de l'attendu** : « *des seaux qui vaudraient
+  une table deux à quatre fois plus grande* ». Ils en valent environ huit.
+  <span>Inférence, confiance moyenne</span> : la case unique ne perdait pas
+  de la capacité, elle perdait les BONNES entrées — une entrée de 18 plis
+  chassée par une de 1 pli, ce que C28 lisait au code. Garder les profondes
+  n'est pas une affaire de taille, et le cadrage « taille équivalente »
+  sous-estimait d'autant ;
+- **ce que ces plis prédisent du verdict, écrit AVANT lui** —
+  <span>inférence, confiance moyenne</span> : au taux de C28 pour un pli
+  perdu par la table, 25 à 76 Elo, **A vaudrait +11 à +49 Elo, ~+24 au
+  centre** — au-dessus de l'attendu du protocole (+3 à +25), qu'il ne
+  recouvre que par le haut ; **B, −8 à +12, ~+1** — moins le 1 % de
+  vitesse, ~1,5 Elo par l'étalon. Réserve, la même qu'à C28 : l'Elo d'un
+  pli appartient à ce qui le fait gagner ou perdre, et un pli REGAGNÉ par
+  la table n'a pas été mesuré.
+
+**Le crible de mutation, `tt.rs` RELEVÉ le 30 sept. à 01 h 25** (run
+36651736903, job fini à 01 h 11 ; `search.rs` et `eval.rs` tournent
+encore) : **7 survivants contre un plafond de 6** — les six `|` contre `^`
+connus, et **un neuf : `value < victim_worth` en `<=`**, le départage du
+seau.
+- **Pourquoi mon test ne le voyait pas** : `<=` fait céder la DERNIÈRE des
+  entrées de même valeur — et donc remplit aussi le seau à l'envers, la
+  dernière place vierge d'abord. Tout se déroule alors en image miroir,
+  l'entrée écrite le plus tôt cédant toujours, et le test de départage ne
+  regardait que ce que la table rend, identique dans les deux. Pas tout à
+  fait équivalent pourtant : la clé zéro, qui coïncide avec les places
+  vierges, brise le miroir. **La règle écrite dans `store` — « à valeur
+  égale, la première du seau cède » — se lit sur les PLACES** ;
+- **le test qui la lit est écrit et éprouvé** : il vérifie l'emplacement de
+  chaque clé, et tombe sur le mutant injecté à la main. Il entre avec la
+  fusion, si fusion il y a — un test ne touche pas le binaire mesuré. Le
+  plafond de `tt.rs` reste à 6.
 
 ### C28 — la table sous pression : 2 Mio contre 16 à `8+0,08` — VERDICT, 29 sept. 2026 : −19,42 ± 5,78 Elo, la pression de 60+0,6 coûte
 
@@ -4576,7 +4689,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **EN COURS** : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`) |
 | **un banc qui emploie le réseau** — proposé le 29 sept. | — de l'outillage, sans Elo | Le banc et `tools/timing.sh` évaluent à la main, le moteur joue avec le réseau (« Ce qu'il faut surveiller »). **Préalable** à toute mesure de vitesse de l'inférence et à tout écran en nœuds sur l'arbre qu'on joue ; il déplace la référence du banc, ses tests et le crible d'`eval.rs`, donc il se conçoit, il ne se bricole pas |
 | **la vitesse de l'inférence** — proposé le 29 sept. | se convertit en plis par l'étalon, une fois mesurée | Le nœud au réseau coûte 0,873 fois le nœud fait main sur le binaire de base, **0,731 compilé pour AVX2** (26 sept.). Leviers : compiler pour le processeur de la machine qui joue, des mises à jour paresseuses de l'accumulateur. **Sans `unsafe`** — la lint l'interdit —, donc pas d'intrinsèques : la vectorisation passe par le compilateur. Exige le banc au réseau |
-| **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : EN MESURE**, deux matchs, sous pression et au défaut ; la taille ensuite (C30) | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |
+| **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : EN MESURE**, deux matchs, sous pression et au défaut ; **C30, la taille par défaut à 64 Mio : EN MESURE**, son coût là où la table n'est pas pressée | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |
 | **un livre d'ouvertures, pour les parties depuis la position initiale** — proposé le 29 sept., sur une question de Théo | — **zéro dans toutes nos mesures, par construction** | **Nos matchs partent tous de positions de livre** (`tools/book.epd`), contre notre jumeau comme contre Stockfish bridé ; **les listes imposent le leur** — CCRL, lu par le moteur de recherche seulement, le site est bloqué d'ici : un livre générique commun, celui du moteur désactivé, l'apprentissage de livre et de positions interdit ; <span>confiance moyenne à élevée</span>. **Ce qu'il vaudrait depuis la position initiale — les parties de l'interface —, non mesuré** : du **temps**, le budget valant `restant / 12 + inc / 2` — par l'arithmétique de la formule, les huit premiers coups consomment **47 à 55 % de la base** à 80 – 100 % du budget dépensé, et le premier reçoit trois à six fois le temps du vingtième ; un livre rendrait ce temps aux premiers coups hors théorie. De la **variété** : à un fil et table vidée par `ucinewgame`, le moteur rejoue presque toujours la même ouverture. **Sa place est l'interface, pas le moteur** : dans le modèle UCI, c'est elle qui joue les coups de livre ; Stockfish n'en embarque pas ; et un livre qui APPREND des parties heurterait une décision tranchée — « pas de persistance » (`CLAUDE.md`). Donc un chantier de `ui/`. **Sa source** : un livre bâti par notre auto-jeu est le plus cher et le plus faible — il recopie nos opinions à cadence courte ; mieux, une base de parties fortes (celle de Lichess se dit dans le domaine public, à vérifier avant usage) ou des recherches profondes sur un petit arbre, sur runners. L'angle mort côté moteur — le réseau n'a jamais vu d'ouverture — est dans la section n° 7 : **sondé le 30 sept., rien de décelable** — rapporté à la faite main, le réseau perd même relativement moins en ouverture qu'en milieu de partie. Reste le temps et la variété, côté interface |
 | **techniques de recherche absentes** — proposé le 29 sept., **DÉCIDÉ n° 9** (Théo, 29 sept.) | non chiffrées | **Aucune n'est dans `search.rs`** (recherche du 29 sept.) : extensions singulières, drapeau « *improving* », historique de correction de l'évaluation statique, réduction itérative interne, réduction du coup nul adaptée à la profondeur (`NULL_MOVE_REDUCTION` vaut 2, fixe), futilité aux nœuds frontières, élagage par l'échange statique hors quiescence, historique des captures, ProbCut. **Chacune un SPRT, séparément** : être standard ne prouve rien, PVS et l'extension d'échec en sont les démentis (`CLAUDE.md`). Mesurer le mécanisme d'abord, comme pour les autres |
 | **tablebases de finale** (reste de B6) | — | **reporté**, non chiffré |
