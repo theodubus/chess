@@ -25,10 +25,11 @@ d'un aveu sur la profondeur de recherche.
 > techniques que tous les manuels recommandent. Il gagne toutes ses parties
 > contre un adversaire jouant au hasard.
 >
-> **Force absolue, estimée le 29 sept. 2026 : ~2 850 ± 25** sur l'échelle
+> **Force absolue, estimée le 30 sept. 2026 : ~2 940 ± 30** sur l'échelle
 > `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
-> 600 parties à cette cadence contre Stockfish bridé à 2850 et à 3100 ;
-> **~2 630 ± 40 pour l'évaluation faite main**. Une estimation, pas un
+> 300 parties à cette cadence contre Stockfish bridé à 2850, avec le réseau
+> N2. Le premier réseau y valait **~2 850 ± 25** (600 parties, 29 sept.),
+> **l'évaluation faite main ~2 630 ± 40**. Une estimation, pas un
 > classement : l'adversaire se trompe exprès, et le moteur jouait sur un
 > runner à deux cœurs physiques, trois parties à la fois. Protocole et
 > réserves : `tools/README.md`, section C13.
