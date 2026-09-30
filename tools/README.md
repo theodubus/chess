@@ -4251,6 +4251,14 @@ l'étalonnage de Stockfish ; lancées à 06 h 11, finies entre 10 h 58 et
   La suite : re-mesurer après chaque changement de réseau, une série contre
   2850 à 60+0,6, pas davantage.
 
+**N2, le réseau du n° 7 — la série lancée le 30 sept., attendu écrit
+avant.** `main` à `dee985d`, qui embarque N2, contre Stockfish 16 bridé à
+2850, 60+0,6, 300 parties, graine « auto ». *Attendu* — <span>inférence,
+confiance faible</span> : N2 bat N0 de ~+166 en deux marches contre notre
+jumeau ; contre Stockfish bridé l'écart se comprime — 198 sur 330 pour le
+premier réseau, un facteur ~0,6 — d'où **~+100, 2 880 à 3 020, ~2 950 au
+centre**, score attendu ~64 % : dans la plage où ce niveau mesure bien.
+
 ### C30 — la taille par défaut : le protocole, écrit le 30 sept. avant de mesurer
 
 **Ouvert par le critère de C28** — « *avant d'élever le défaut, mesurer ce
