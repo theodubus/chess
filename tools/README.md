@@ -4175,10 +4175,23 @@ réseaux par défaut, de `adfb23c0` à `b939c805` (juin et juillet 2021),
 citent **ce fichier-ci, au même identifiant**, parmi leurs données. La
 source des données brutes est celle du projet Leela,
 <https://storage.lczero.org/files/training_data> — le lien que porte la
-mention d'attribution de Stockfish (`e8d2ba19`) —, mais dans le format
-d'entraînement de Leela, qu'il faudrait convertir. Aucune somme de contrôle
-n'est publiée : la relecture complète du programme refuse un fichier
-tronqué, et le critère d'échelle des scores d'une autre unité.
+mention d'attribution de Stockfish (`e8d2ba19`) —, dans le format
+d'entraînement de Leela, que notre programme ne lit pas. **Le fichier de
+Drive en est la conversion**, et le même wiki la documente, section « Lc0
+data converter » : le script de borg télécharge les archives `test60` et
+`test74` de `storage.lczero.org`, les rescore par le `rescorer` de lc0
+(branche `rescore_tb` de Tilps) en `.plain`, puis les convertit en
+`.binpack` par `stockfish convert` — les deux runs et l'auteur que nomme
+`f8c779db`. Question de Théo le 30 sept., sur la foi de la mention de
+Stockfish : ce sont bien les mêmes données, sous la forme que lit
+l'entraîneur. **La mention d'attribution, le jour venu, cite l'origine** —
+`storage.lczero.org`, comme Stockfish —, pas le fichier téléchargé.
+Refaire la conversion depuis la source demanderait deux outils à
+construire et des centaines d'archives, pour les mêmes données ; les runs
+plus récents de Leela n'y sont un levier qu'après un verdict sur celles-ci.
+Aucune somme de contrôle n'est publiée : la relecture complète du programme
+refuse un fichier tronqué, et le critère d'échelle des scores d'une autre
+unité.
 
 **Leur taille n'est pas vérifiée** : Google Drive, Kaggle et la page des
 jeux de linrock (`robotmoon.com/nnue-training-data`, les jeux plus récents)
