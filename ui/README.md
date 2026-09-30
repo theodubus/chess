@@ -284,7 +284,7 @@ matérielles, puis les motifs tactiques suivants :
 - Défenses immédiates : mat en un paré, échec bloqué, pièce mise à l’abri ou défendue.
 
 Une seule idée principale est retenue. Les motifs offensifs doivent avoir une
-conséquence légale visible dans les huit premiers demi-coups et être cohérents
+conséquence légale visible dans la démonstration et être cohérents
 avec la classification et la comparaison des suites. Une simple attaque ou un
 alignement ne suffit pas. Les occasions manquées peuvent être expliquées par
 la meilleure suite proposée ; « Montrer pourquoi » ouvre alors cette alternative,
@@ -299,10 +299,12 @@ par la démonstration. Les repères suivent l’orientation et restent masqués 
 un retry sans solution, comme lorsque les annotations sont désactivées.
 
 Les explications réutilisent les résultats disponibles. Les PV entières sont
-validées avec chess.js, même si seuls huit demi-coups sont montrés. Le résumé
-matériel simple refuse une suite affichée tronquée ; les motifs peuvent utiliser
-le bilan final de la PV complète, à condition que leur propre conséquence soit
-visible et que la fin ne laisse pas de reprise immédiate. Les défenseurs sont
+validées avec chess.js. Huit demi-coups sont montrés par défaut ; une explication
+matérielle prolonge l’affichage jusqu’aux captures/promotions nécessaires, même
+si elles arrivent plus tard. Le bilan est calculé sur toute la PV, et comparé à
+l’alternative depuis la même position pour les erreurs et gains manqués. Une
+occasion secondaire ne remplace pas une perte déjà identifiée dans le coup joué.
+La fin de la suite ne doit pas laisser de reprise immédiate. Les défenseurs sont
 filtrés par la légalité des reprises. Les défenses vérifient des menaces à un
 coup, sans garantir la sécurité à plus long terme. Les scores bornés, absents ou
 les verdicts non classés ne servent pas à attribuer une cause tactique.
@@ -348,8 +350,9 @@ Relancer l’analyse depuis les options renouvelle les caches.
 
 ### Repères positionnels
 
-Une « Observation positionnelle » peut compléter la lecture d’un coup. Elle décrit
-un changement vérifié sur le plateau, séparément de la classification. Une seule
+Le volet replié « Observations complémentaires » décrit des changements vérifiés
+sur le plateau. Il vient après l’explication et ses actions, même quand aucune
+cause du verdict n’est identifiée ; il ne remplace jamais cette explication. Une seule
 observation principale est retenue :
 
 - Premier développement d’un fou ou cavalier, si l’historique depuis la position
@@ -362,13 +365,19 @@ observation principale est retenue :
 - Mobilité légale accrue d’une pièce, accès à plusieurs cases centrales ou
   occupation du centre par un pion.
 
-« Voir le repère » montre le changement avant/après, avec des cercles bleus.
+« Voir les cases concernées » affiche directement les cercles bleus après le
+coup, sans revenir avant ni ouvrir une démonstration à parcourir. Aucun bouton
+n’est proposé pour un simple développement ou une observation qui ne fait que
+montrer une case déjà visible. Toutes les nouvelles destinations d’un repère de
+mobilité sont montrées. Le panneau d’analyse et le coup étudié restent en place.
+« Masquer les repères » retrouve les dessins personnels ; les flèches/clavier
+continuent de parcourir la partie (ou la variante en cours).
 « Comparer avec le coup proposé » reste facultatif et utilise le même point de
-départ. Cette comparaison n’apparaît que si les scores sont exacts, le verdict
-exploitable et les suites légales. Si une explication tactique ou matérielle existe,
-les repères positionnels se trouvent dans un complément replié. Ils respectent
-l’orientation, les variantes, la préférence d’annotations et le retry caché.
-Le retour au coup examiné conserve les dessins et ne crée aucune branche.
+départ. Scores exacts, verdict exploitable et suites légales sont requis. Les
+repères de l’alternative montrent directement sa position après le coup, clairement
+étiquetée. Le score du coup joué n’est pas réutilisé sur cette autre position.
+Les repères respectent l’orientation, les variantes, la préférence d’annotations
+et le retry caché. Ils ne créent aucune branche utilisateur.
 
 Ces observations **ne prouvent pas la cause du verdict moteur** : le développement
 peut laisser une pièce en prise, des pions doublés peuvent être compensés, un roi

@@ -11,7 +11,7 @@ export type PositionalFact = {
 };
 export type PositionalObservation = {
   fact: PositionalFact;
-  line: ExplanationLine;
+  line: ExplanationLine | null;
 };
 export type PositionalNotes = {
   played: PositionalObservation | null;
@@ -287,10 +287,10 @@ function computePositionFacts(line: ExplanationLine): PositionalFact[] {
           facts.push({
             kind: "activity",
             title: "Mobilité",
-            text: `Le ${names[piece.type]} en ${piece.square} dispose maintenant de ${next.size} déplacements légaux sans prise, contre ${prior.size} avant le coup, si son camp rejouait. Ce sont des possibilités de mouvement, pas des destinations garanties sûres.`,
+            text: `${piece.type === "q" || piece.type === "r" ? "La" : "Le"} ${names[piece.type]} en ${piece.square} dispose maintenant de ${next.size} déplacements légaux sans prise, contre ${prior.size} avant le coup, si son camp rejouait. Ce sont des possibilités de mouvement, pas des destinations garanties sûres.`,
             squares: [
               piece.square,
-              ...[...next].filter((square) => !prior.has(square)).slice(0, 4),
+              ...[...next].filter((square) => !prior.has(square)),
             ],
           });
         const gained = center.filter(
@@ -372,23 +372,22 @@ export function positionObservation(
     from,
     tone: "observation",
   }));
+  // Rejouer un déplacement ou entourer seulement sa case d’arrivée n’apporte
+  // rien. Une aide visuelle doit situer une relation entre plusieurs cases.
+  const useful = fact.kind !== "development" && marks.length > 1;
   return {
     fact,
-    line: {
-      title: alternative
-        ? "Repère dans le coup proposé"
-        : "Repère dans le coup joué",
-      kind: "observation",
-      truncated: false,
-      steps: [
-        {
-          ...line.steps[0],
-          motif: undefined,
-          marks: [],
-          text: "Position avant le coup. Avancez pour voir le changement observé.",
-        },
-        { ...line.steps[1], motif: fact.title, marks, text: fact.text },
-      ],
-    },
+    line: useful
+      ? {
+          title: alternative
+            ? "Repères du coup proposé"
+            : "Repères du coup joué",
+          kind: "observation",
+          truncated: false,
+          steps: [
+            { ...line.steps[1], motif: fact.title, marks, text: fact.text },
+          ],
+        }
+      : null,
   };
 }

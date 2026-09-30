@@ -191,3 +191,84 @@ it("décrit une sous-promotion avec capture et conserve l’historique UCI", () 
   expect(explanation.played?.steps[1].text).toContain("capture aussi la tour");
   expect(explanation.played?.steps[1].command).toBe(`${p.command} moves a7b8n`);
 });
+
+const longMaterialFen = "r6k/7p/8/8/8/3P4/6P1/R6K w - - 0 1";
+const longAlternative = [
+  "Rxa8+",
+  "Kg7",
+  "Kh2",
+  "Kg6",
+  "Kh3",
+  "Kf5",
+  "Kh2",
+  "Ke6",
+  "Kh3",
+  "Kd5",
+];
+const longLoss = [
+  "Kg8",
+  "Kh2",
+  "Kf8",
+  "Kh3",
+  "Ke8",
+  "Kh2",
+  "Kd8",
+  "Kh3",
+  "Rxa1",
+  "Kh2",
+];
+it("explique une perte après huit demi-coups plutôt que l’occupation du centre", () => {
+  const p = position([], "d4", longMaterialFen);
+  const explanation = explainMove(
+    p,
+    result(p.fen, longAlternative, 500),
+    result(afterFen(p), longLoss, -500),
+    bad,
+  );
+  expect(explanation.concrete).toBe(true);
+  expect(explanation.summary).toContain("les Noirs gagnent 5 points");
+  expect(explanation.summary).toContain("Avec Txa8+");
+  expect(explanation.summary).not.toContain("centre");
+  expect(explanation.observations?.played?.fact.title).toBe(
+    "Occupation du centre",
+  );
+  expect(explanation.observations?.played?.line).toBeNull();
+  expect(
+    explanation.played?.steps.some((step) => step.move?.san === "Rxa1"),
+  ).toBe(true);
+  expect(explanation.played?.steps).toHaveLength(12);
+});
+it("ne confond pas bilan après huit demi-coups et bilan complet", () => {
+  const p = position([], "d4", longMaterialFen);
+  const explanation = explainMove(
+    p,
+    result(p.fen, longAlternative, 500),
+    result(afterFen(p), longLoss, -500),
+    good,
+  );
+  expect(explanation.concrete).toBe(false);
+});
+it("explique aussi un gain matériel manqué sans perte dans la suite jouée", () => {
+  const p = position([], "d4", longMaterialFen);
+  const explanation = explainMove(
+    p,
+    result(p.fen, longAlternative, 500),
+    result(afterFen(p), longLoss.slice(0, 8), 0),
+    bad,
+  );
+  expect(explanation.concrete).toBe(true);
+  expect(explanation.primary).toBe("alternative");
+  expect(explanation.summary).toContain("gain de matériel");
+  expect(explanation.summary).toContain("5 points");
+});
+it("refuse une fin de longue PV corrompue et les scores non finis", () => {
+  const p = position([], "d4", longMaterialFen);
+  const before = result(p.fen, longAlternative, 500);
+  const after = result(afterFen(p), longLoss, -500);
+  expect(
+    explainMove(p, { ...before, score: { kind: "cp", value: NaN } }, after, bad)
+      .concrete,
+  ).toBe(false);
+  after.variation.at(-1)!.fen = p.fen;
+  expect(explainMove(p, before, after, bad).concrete).toBe(false);
+});

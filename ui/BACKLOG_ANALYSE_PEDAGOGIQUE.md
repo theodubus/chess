@@ -71,6 +71,43 @@ entre le coup joué et une meilleure idée, pas seulement répéter la catégori
 - [x] Distinguer observation descriptive et cause confirmée du verdict moteur.
 - [x] Comparaisons ciblées et formulation prudente ; aucun remplissage automatique.
 
+### 5. Recentrage sur la décision et simplification du parcours — EN COURS
+
+Retour utilisateur après le lot 4 : les observations décrivent parfois le coup
+sans expliquer son verdict, et les changements de contexte rendent la navigation
+confuse. Les lots précédents ont livré un socle ; l’objectif pédagogique n’est
+pas encore suffisamment atteint. Les corrections ciblées ci-dessous sont livrées ;
+les cases non cochées restent à traiter et ne sont pas couvertes par cette livraison.
+
+- [ ] Carte principale : conséquence du coup, réponse adverse qui l’exploite,
+  différence avec une meilleure décision. Un bon coup doit aussi être expliqué
+  par ce qu’il préserve, évite ou obtient, pas par son seul nom de motif.
+- [x] Retirer les observations génériques du parcours principal du verdict.
+  Une sortie de pièce ne justifie ni « bon » ni « imprécision ». Les faits
+  positionnels servent de composants d’une explication comparative vérifiée.
+- [ ] Comparer depuis la même position les suites après le coup joué et après
+  l’alternative, avec des réponses adverses analysées et un budget cohérent.
+  Réutiliser l’UCI et les recherches annulables ; ne pas modifier le moteur.
+- [ ] Formuler une conséquence liée au verdict lorsque la comparaison l’étaye.
+  Si la cause reste inconnue, le dire brièvement sans remplacer l’explication
+  par un constat hors sujet ; ne pas présenter une PV comme une preuve forcée.
+- [ ] Conserver un coup étudié clairement identifié pendant toute l’explication.
+  Montrer explicitement la ligne visualisée (coup joué / meilleure option) et
+  l’étape (décision / réponse adverse / conséquence).
+- [ ] Unifier les actions et supprimer les retours concurrents, sous-parcours
+  « repère » et bascules de contexte implicites. Fermer une explication restaure
+  exactement son origine ; continuer la partie est une action distincte.
+- [ ] Définir puis tester une règle stable pour les flèches/clavier : ne plus
+  changer silencieusement entre chronologie de partie, démonstration et variante.
+- [ ] Retry et exploration partagent le même point de départ ; masquer les
+  solutions pendant la tentative, conserver les variantes et dessins personnels.
+- [ ] Valider avec des exemples où le même motif (développement, roque, etc.)
+  reçoit des verdicts différents, et faire un contrôle de parcours complet.
+
+Critère de réussite : l’utilisateur peut répondre à « qu’est-ce que mon coup a
+permis ou raté, qu’aurait changé l’autre coup, et où suis-je dans la partie ? ».
+Renommer les boutons ou masquer les observations ne suffit pas à remplir ce critère.
+
 ## État de reprise
 
 - Branche : `codex/ui-polish`, PR existante #111 (correctif matériel et interactions).
@@ -231,3 +268,28 @@ entre le coup joué et une meilleure idée, pas seulement répéter la catégori
 - Branche synchronisée avec `main` à `8519c52` ; binaire release local vérifié.
 - Les quatre lots validés sont terminés. Les limites ci-dessus sont des limites
   volontaires du modèle descriptif, pas des tâches laissées en cours.
+
+
+## Corrections après retours sur les repères — 30 septembre 2026
+
+- Aucun bouton pour illustrer seulement un développement ou une case d’arrivée.
+  Les repères utiles comportent une seule position, après le coup, sans rewind.
+  Le panneau reste visible ; le bouton active/masque les cercles. Les flèches
+  gardent la navigation dans la partie/variante, et la fermeture conserve les dessins.
+- Les observations sont toujours dans un complément replié après les actions.
+  L’absence de cause identifiée reste explicite. La mobilité montre toutes les
+  nouvelles destinations légales, sans les annoncer comme sûres.
+- La perte ou le gain matériel est maintenant calculé sur la PV entière validée,
+  et non sur les huit demi-coups d’affichage. La démonstration s’étend jusqu’aux
+  changements matériels utiles. L’alternative est comparée depuis la même origine,
+  y compris pour un gain manqué sans perte. Une occasion secondaire ne supplante
+  pas une perte matérielle déjà identifiée. Les promotions jugées mauvaises ne sont
+  plus justifiées par le seul gain immédiat de la promotion.
+- Scores non finis/bornés, PV incohérentes, reprise immédiate en fin de suite et
+  sacrifices approuvés gardent leurs protections. Pas de modification du moteur,
+  ni de recherche UCI supplémentaire. Comparer les PV existantes ne résout pas
+  toutes les causes positionnelles ; les recherches comparatives de la checklist
+  et la refonte complète des commandes de démonstration restent à faire.
+- Validation : 327 tests avec ShallowRed/Stockfish, lint, TypeScript et build ;
+  contrôle navigateur ciblé réussi (repères directs, absence de boutons inutiles,
+  orientation, clavier, dessins, retry, gain/perte au-delà de huit demi-coups).

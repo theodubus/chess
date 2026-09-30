@@ -47,9 +47,37 @@ const tacticalCases = {
   "position-center": {
     fen: "7k/7p/8/8/8/8/P7/1N5K w - - 0 1",
     played: ["Nc3", "h6"],
-    best: ["Nc3", "h6"],
+    best: ["Nd2", "h6"],
   },
 
+  "material-center": {
+    fen: "r6k/7p/8/8/8/3P4/6P1/R6K w - - 0 1",
+    played: [
+      "d4",
+      "Kg8",
+      "Kh2",
+      "Kf8",
+      "Kh3",
+      "Ke8",
+      "Kh2",
+      "Kd8",
+      "Kh3",
+      "Rxa1",
+      "Kh2",
+    ],
+    best: [
+      "Rxa8+",
+      "Kg7",
+      "Kh2",
+      "Kg6",
+      "Kh3",
+      "Kf5",
+      "Kh2",
+      "Ke6",
+      "Kh3",
+      "Kd5",
+    ],
+  },
   quiet: {
     fen: new Chess().fen(),
     played: ["e4", "e5"],
@@ -144,7 +172,10 @@ if (tactical) {
   review.results[1] = simulated(
     game.fen(),
     tactical.played.slice(1),
-    tactical === tacticalCases.miss ? -500 : 800,
+    tactical === tacticalCases.miss ||
+      tactical === tacticalCases["material-center"]
+      ? -500
+      : 800,
   );
 }
 if (tactical === tacticalCases.uncertain) review.results[0] = null;

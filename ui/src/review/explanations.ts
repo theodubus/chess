@@ -31,6 +31,7 @@ export type ExplanationLine = {
   steps: ExplanationStep[];
   truncated: boolean;
   verifiedEnding?: { fen: string; capture: string | null };
+  verifiedSteps?: ExplanationStep[];
 };
 export type MoveExplanation = {
   summary: string;
@@ -124,6 +125,7 @@ function buildLine(
       title: includePlayed ? "Après le coup joué" : "La meilleure idée trouvée",
       steps: steps.slice(0, limit + 1),
       truncated: steps.length > limit + 1,
+      verifiedSteps: steps,
       verifiedEnding: {
         fen: board.fen(),
         capture: steps.at(-1)!.move?.captured ? steps.at(-1)!.move!.to : null,
@@ -133,14 +135,35 @@ function buildLine(
     return null;
   }
 }
-function settled(line: ExplanationLine) {
-  if (line.truncated) return false;
-  const last = line.steps.at(-1)!;
-  if (!last.move?.captured) return true;
-  // Ne pas présenter une prise comme un gain si une reprise légale existe.
-  return !new Chess(last.fen)
-    .moves({ verbose: true })
-    .some((move) => move.captured && move.to === last.move!.to);
+/** Conserver la conséquence matérielle à l’écran, même après le huitième demi-coup. */
+function showMaterialOutcome(line: ExplanationLine): ExplanationLine {
+  const steps = line.verifiedSteps ?? line.steps;
+  let lastChange = 0;
+  steps.forEach((step, index) => {
+    if (step.move?.captured || step.move?.promotion) lastChange = index;
+  });
+  const count = Math.max(line.steps.length, lastChange + 2);
+  return {
+    ...line,
+    steps: steps.slice(0, count),
+    truncated: steps.length > count,
+  };
+}
+function exactComparison(
+  before: ReviewResult | null,
+  after: ReviewResult | null,
+  turn: ReviewPosition["turn"],
+) {
+  return (
+    !!before?.score &&
+    !!after?.score &&
+    !before.score.bound &&
+    !after.score.bound &&
+    Number.isFinite(before.score.value) &&
+    Number.isFinite(after.score.value) &&
+    advantage(before.score, turn) !== null &&
+    advantage(after.score, turn) !== null
+  );
 }
 function outcome(line: ExplanationLine, position: ReviewPosition) {
   const ending = line.verifiedEnding;
@@ -290,7 +313,52 @@ function baseExplanation(
           : `La suite trouvée se termine par un mat pour ${camp(end.turn() === "w" ? "b" : "w")}.`,
     };
   const first = played.steps[1].move!;
-  if (first.promotion) {
+  const bad =
+    annotation &&
+    ["inaccuracy", "mistake", "blunder", "miss"].includes(annotation.category);
+  if (annotation && exactComparison(before, after, position.turn)) {
+    const result = outcome(played, position);
+    const better = alternative ? outcome(alternative, position) : null;
+    // La PV entière sert de preuve. Une capture encore reprenable à sa fin,
+    // un mat adverse ou un sacrifice approuvé ne devient pas un gain matériel.
+    if (result && !result.winner) {
+      const delta = result.delta;
+      const points = (value: number) => `${value} point${value > 1 ? "s" : ""}`;
+      const compared = better && !better.winner && better.delta > delta;
+      if (bad && compared && alternative) {
+        const alternativeFirst = alternative.steps[1].move!;
+        const comparison = `Avec ${frenchSan(alternativeFirst.san)}, la suite proposée ${
+          better.delta < 0
+            ? `limite la perte à ${points(-better.delta)}`
+            : better.delta === 0
+              ? "conserve le matériel"
+              : `gagne ${points(better.delta)} de matériel`
+        }.`;
+        const summary =
+          delta < 0
+            ? `Dans la suite analysée après ${frenchSan(first.san)}, ${camp(position.turn === "w" ? "b" : "w")} gagnent ${points(-delta)} de matériel. ${comparison}`
+            : `Ce coup manque un gain de matériel : ${comparison}${delta > 0 ? ` La suite après ${frenchSan(first.san)} ne gagne que ${points(delta)}.` : " La suite après le coup joué ne gagne pas de matériel."}`;
+        return {
+          ...fallback,
+          concrete: true,
+          primary: delta < 0 ? undefined : "alternative",
+          summary,
+          played: showMaterialOutcome(played),
+          alternative: showMaterialOutcome(alternative),
+        };
+      }
+      if (!bad && delta > 0)
+        return {
+          ...fallback,
+          concrete: true,
+          summary: `Dans la suite analysée, ${camp(position.turn)} gagnent ${points(delta)} de matériel.`,
+          played: showMaterialOutcome(played),
+        };
+    }
+  }
+  // Une promotion peut être une erreur : le gain immédiat ne justifie alors
+  // pas le verdict et ne doit pas masquer la réponse adverse.
+  if (first.promotion && !bad) {
     const values = { q: 9, r: 5, b: 3, n: 3 };
     const gain = values[first.promotion as keyof typeof values] - 1;
     return {
@@ -298,45 +366,6 @@ function baseExplanation(
       concrete: true,
       summary: `Ce coup transforme le pion en ${names[first.promotion]} : ${gain} points de matériel supplémentaires${first.captured ? ", en plus de la capture" : ""}.${played.steps.length > 2 ? " La suite montre la réponse adverse." : ""}`,
     };
-  }
-  const bad =
-    annotation &&
-    ["inaccuracy", "mistake", "blunder", "miss"].includes(annotation.category);
-  if (
-    annotation &&
-    before?.score &&
-    after?.score &&
-    !before.score.bound &&
-    !after.score.bound &&
-    settled(played) &&
-    played.steps.length > 2
-  ) {
-    const sign = position.turn === "w" ? 1 : -1;
-    const delta =
-      (materialBalance(end) - materialBalance(new Chess(position.fen))) * sign;
-    const alternativeDelta =
-      alternative && settled(alternative)
-        ? (materialBalance(new Chess(alternative.steps.at(-1)!.fen)) -
-            materialBalance(new Chess(position.fen))) *
-          sign
-        : null;
-    if (
-      bad &&
-      delta < 0 &&
-      alternativeDelta !== null &&
-      alternativeDelta > delta
-    )
-      return {
-        ...fallback,
-        concrete: true,
-        summary: `Dans la suite analysée, ${camp(position.turn === "w" ? "b" : "w")} gagnent ${-delta} point${delta < -1 ? "s" : ""} de matériel. La suite proposée en conserve davantage.`,
-      };
-    if (!bad && delta > 0)
-      return {
-        ...fallback,
-        concrete: true,
-        summary: `Dans la suite analysée, ${camp(position.turn)} gagnent ${delta} point${delta > 1 ? "s" : ""} de matériel.`,
-      };
   }
   return fallback;
 }
@@ -349,16 +378,7 @@ export function explainMove(
 ): MoveExplanation {
   const base = baseExplanation(position, before, after, annotation);
   if (!base.played) return base;
-  const compare =
-    !!annotation &&
-    !!before?.score &&
-    !!after?.score &&
-    !before.score.bound &&
-    !after.score.bound &&
-    Number.isFinite(before.score.value) &&
-    Number.isFinite(after.score.value) &&
-    advantage(before.score, position.turn) !== null &&
-    advantage(after.score, position.turn) !== null;
+  const compare = !!annotation && exactComparison(before, after, position.turn);
   const observations = {
     played: positionObservation(base.played),
     alternative: compare ? positionObservation(base.alternative, true) : null,
@@ -373,14 +393,17 @@ export function explainMove(
     base.played,
     base.alternative,
   );
-  if (!tactic) return base;
+  // Une occasion secondaire ne doit pas remplacer la perte concrète du coup joué.
+  if (
+    !tactic ||
+    (tactic.primary && base.concrete && base.primary !== "alternative")
+  )
+    return base;
   return {
     ...base,
     ...tactic,
     concrete: true,
-    summary:
-      tactic.summary +
-      (base.concrete && !tactic.primary ? ` ${base.summary}` : ""),
+    summary: tactic.summary + (base.concrete ? ` ${base.summary}` : ""),
   };
 }
 

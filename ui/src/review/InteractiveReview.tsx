@@ -266,6 +266,8 @@ export default function InteractiveReview({
     demo?.source === demoSource && active && !blind && showAnnotations
       ? demo
       : null;
+  const observationVisible = demonstration?.line.kind === "observation";
+  const sequenceVisible = !!demonstration && !observationVisible;
   const demoStep = demonstration?.line.steps[demonstration.step];
   const displayBoard = demoStep ? boardFromCommand(demoStep.command) : board;
   const captures = capturedMaterial(displayBoard.history({ verbose: true }));
@@ -273,7 +275,11 @@ export default function InteractiveReview({
   function demonstrate(line: ExplanationLine) {
     setWalkTarget(null);
     setPane("details");
-    setDemo({ source: demoSource, line, step: 0 });
+    setDemo(
+      observationVisible && demonstration.line.title === line.title
+        ? null
+        : { source: demoSource, line, step: 0 },
+    );
   }
   function navigate(index: number) {
     setDemo(null);
@@ -301,7 +307,7 @@ export default function InteractiveReview({
     }
   }
   useMoveKeys(
-    active && walkTarget === null && !promotion && !demonstration,
+    active && walkTarget === null && !promotion && !sequenceVisible,
     branch ? path.length : selected,
     branch
       ? path.length + (branch.tree.nodes[branch.node].children.length ? 1 : 0)
@@ -309,7 +315,7 @@ export default function InteractiveReview({
     (index) => (branch ? jumpBranch(index - path.length) : navigate(index)),
   );
   useMoveKeys(
-    !!demonstration,
+    sequenceVisible,
     demonstration?.step ?? 0,
     (demonstration?.line.steps.length ?? 1) - 1,
     (step) => setDemo((value) => (value ? { ...value, step } : null)),
@@ -399,8 +405,8 @@ export default function InteractiveReview({
     >
       <div className="board-column">
         <p className="review-position">
-          {demonstration
-            ? `Explication · ${demonstration.line.title}`
+          {sequenceVisible
+            ? `Coup étudié : ${branch ? branch.tree.nodes[branch.node].label : position.label} · ${demonstration.line.title}`
             : branch
               ? blind
                 ? "À vous de trouver le meilleur coup"
@@ -418,7 +424,13 @@ export default function InteractiveReview({
         >
           {showEvaluation && (
             <EvaluationBar
-              score={blind || demonstration ? null : score}
+              score={
+                blind ||
+                sequenceVisible ||
+                (demoStep && demoStep.fen !== board.fen())
+                  ? null
+                  : score
+              }
               orientation={orientation}
             />
           )}
@@ -503,7 +515,17 @@ export default function InteractiveReview({
           side={orientation === "white" ? "w" : "b"}
           label
         />
-        {demonstration ? (
+        {observationVisible && (
+          <div className="position-overlay-caption" role="status">
+            <span>
+              {demonstration.line.title} · {demoStep?.label}
+            </span>
+            <button className="text-button" onClick={() => setDemo(null)}>
+              Masquer les repères
+            </button>
+          </div>
+        )}
+        {sequenceVisible ? (
           <div className="explanation-navigation">
             <p role="status">
               Étape {demonstration.step} / {demonstration.line.steps.length - 1}{" "}
@@ -585,7 +607,7 @@ export default function InteractiveReview({
             </div>
           </>
         )}
-        {!blind && !demonstration && showEvaluation && (
+        {!blind && !sequenceVisible && showEvaluation && (
           <div className="desktop-chart">
             <EvaluationChart
               positions={review.positions}
@@ -619,7 +641,7 @@ export default function InteractiveReview({
             Coups
           </button>
         </nav>
-        {demonstration ? (
+        {sequenceVisible ? (
           <div className="review-details explanation-demo">
             <h2>{demonstration.line.title}</h2>
             {demoStep?.motif && (
@@ -629,53 +651,16 @@ export default function InteractiveReview({
               {demoStep?.text}
             </p>
             <p className="hint">
-              {demonstration.line.kind === "observation" ? (
-                "Les repères bleus montrent les cases concernées. Ce constat décrit le changement du plateau ; il ne prouve pas la raison du verdict moteur."
-              ) : (
-                <>
-                  {demoStep?.marks?.length
-                    ? "Les repères rouges montrent les menaces ; les verts montrent la défense ou l’idée du coup."
-                    : "La flèche bleue indique le prochain coup de cette suite."}{" "}
-                  La suite illustre une continuation trouvée par le moteur, sans
-                  imposer les réponses adverses.
-                </>
-              )}
+              {demoStep?.marks?.length
+                ? "Les repères rouges montrent les menaces ; les verts montrent la défense ou l’idée du coup."
+                : "La flèche bleue indique le prochain coup de cette suite."}{" "}
+              La suite illustre une continuation trouvée par le moteur, sans
+              imposer les réponses adverses.
             </p>
             {demonstration.line.truncated && (
-              <p className="hint">
-                La démonstration est limitée aux huit premiers demi-coups.
-              </p>
+              <p className="hint">Seul le début de la suite est affiché.</p>
             )}
-            {demonstration.line.kind === "observation" && (
-              <>
-                {explanation?.observations?.played &&
-                  demonstration.line.title !==
-                    explanation.observations.played.line.title && (
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        demonstrate(explanation.observations!.played!.line)
-                      }
-                    >
-                      Voir le repère joué
-                    </button>
-                  )}
-                {explanation?.observations?.alternative &&
-                  demonstration.line.title !==
-                    explanation.observations.alternative.line.title && (
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        demonstrate(explanation.observations!.alternative!.line)
-                      }
-                    >
-                      Voir le repère proposé
-                    </button>
-                  )}
-              </>
-            )}
-            {demonstration.line.kind !== "observation" &&
-              explanation?.played &&
+            {explanation?.played &&
               demonstration.line.title !== explanation.played.title && (
                 <button
                   className="secondary"
@@ -684,8 +669,7 @@ export default function InteractiveReview({
                   Après le coup joué
                 </button>
               )}
-            {demonstration.line.kind !== "observation" &&
-              explanation?.alternative &&
+            {explanation?.alternative &&
               demonstration.line.title !== explanation.alternative.title && (
                 <button
                   className="secondary"
@@ -763,18 +747,11 @@ export default function InteractiveReview({
                     className="move-explanation"
                     aria-label="Comprendre le coup"
                   >
-                    {!explanation.concrete && !explanation.observations && (
+                    {!explanation.concrete && (
                       <p className="hint">{explanation.summary}</p>
                     )}
                     {explanation.concrete && !annotation && (
                       <p>{explanation.summary}</p>
-                    )}
-                    {explanation.observations && (
-                      <PositionalPanel
-                        notes={explanation.observations}
-                        compact={explanation.concrete}
-                        onShow={demonstrate}
-                      />
                     )}
                     <div className="explanation-actions">
                       {explanation.played && (
@@ -810,6 +787,17 @@ export default function InteractiveReview({
                         </button>
                       )}
                     </div>
+                    {explanation.observations && (
+                      <PositionalPanel
+                        notes={explanation.observations}
+                        activeTitle={
+                          observationVisible
+                            ? demonstration.line.title
+                            : undefined
+                        }
+                        onShow={demonstrate}
+                      />
+                    )}
                   </div>
                 )}
                 {showAnnotations &&
@@ -1180,7 +1168,7 @@ export default function InteractiveReview({
           </div>
         )}
       </aside>
-      {!blind && !demonstration && showEvaluation && (
+      {!blind && !sequenceVisible && showEvaluation && (
         <div className="mobile-chart">
           <EvaluationChart
             positions={review.positions}

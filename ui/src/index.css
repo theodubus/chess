@@ -1572,3 +1572,7 @@ dialog:has(.army-editor) { width:min(600px,calc(100vw - 24px)); }
 .position-notes summary { color:#a8c8db; cursor:pointer; }
 .position-comparison { margin-top:12px; padding-left:10px; border-left:2px solid #a8c8db55; }
 .position-limit { margin-top:12px; }
+
+.position-overlay-caption { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0; color:#a8c8db; font-size:13px; }
+.position-overlay-caption button { flex-shrink:0; }
+.move-explanation > .position-notes { margin:14px 0 0; border-top:1px solid #ffffff12; padding-top:12px; }

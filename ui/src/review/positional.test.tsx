@@ -178,26 +178,35 @@ it("les observations restent descriptives même si le moteur classe le développ
   );
   expect(explanation.summary).toContain("pas encore identifiée");
 });
-it("compare les deux choix depuis le même historique, sans modifier les suites sources", () => {
-  const { position, line } = scenario("Nf3"),
-    before = result(position.fen, ["Nc3", "d5"]),
-    after = result(line.steps[1].fen, ["d5"]);
+it("affiche directement les cases après le coup sans rejouer le déplacement", () => {
+  const { position, line } = scenario("Nc3", "7k/7p/8/8/8/8/P7/1N5K w - - 0 1"),
+    before = result(position.fen, ["Nd2"]),
+    after = result(line.steps[1].fen, ["h6"]);
   const frozen = JSON.stringify([before, after]);
   const explanation = explainMove(position, before, after, {
     category: "excellent",
     loss: 0,
     reason: "",
   });
-  const played = explanation.observations!.played!.line,
-    alternative = explanation.observations!.alternative!.line;
-  expect(played.steps[0].command).toBe(alternative.steps[0].command);
-  expect(played.steps[1].command).toContain("g1f3");
-  expect(alternative.steps[1].command).toContain("b1c3");
-  expect(played.steps).toHaveLength(2);
-  expect(
-    played.steps[1].marks?.every((mark) => mark.tone === "observation"),
-  ).toBe(true);
+  const played = explanation.observations!.played!.line!,
+    alternative = explanation.observations!.alternative!.line!;
+  expect(played.steps).toHaveLength(1);
+  expect(alternative.steps).toHaveLength(1);
+  expect(played.steps[0].command).toBe(`${position.command} moves b1c3`);
+  expect(alternative.steps[0].command).toBe(`${position.command} moves b1d2`);
+  expect(played.steps[0].fen).toBe(line.steps[1].fen);
+  expect(played.steps[0].marks).toContainEqual({
+    from: "d5",
+    tone: "observation",
+  });
   expect(JSON.stringify([before, after])).toBe(frozen);
+});
+it("n’offre pas de repère pour rejouer un développement ou entourer le pion tout juste déplacé", () => {
+  for (const san of ["Nf3", "e4"]) {
+    const { line } = scenario(san);
+    expect(positionObservation(line)).not.toBeNull();
+    expect(positionObservation(line)?.line).toBeNull();
+  }
 });
 it("masque la comparaison si les scores ou le verdict ne sont pas exploitables", () => {
   const { position, line } = scenario("Nf3"),
@@ -252,7 +261,7 @@ it("refuse un repère venu d’un autre historique ou d’un coup incohérent", 
     }),
   ).toBeNull();
 });
-it("sépare visuellement le constat du verdict et rend la comparaison facultative", () => {
+it("garde les observations repliées et n’affiche aucun bouton de repère sans information visuelle utile", () => {
   const { position, line } = scenario("Nf3");
   const notes = explainMove(
     position,
@@ -261,16 +270,14 @@ it("sépare visuellement le constat du verdict et rend la comparaison facultativ
     { category: "best", loss: 0, reason: "" },
   ).observations!;
   const html = renderToStaticMarkup(
-    <PositionalPanel notes={notes} compact={false} onShow={() => {}} />,
+    <PositionalPanel notes={notes} onShow={() => {}} />,
   );
-  expect(html).toContain("Observation positionnelle");
-  expect(html).toContain("reste à confirmer");
+  expect(html).toContain('<details class="position-notes"');
+  expect(html).toContain("Observations complémentaires");
+  expect(html).toContain("n’expliquent pas à eux seuls le verdict");
   expect(html).toContain("Comparer avec le coup proposé");
   expect(html).not.toContain("<details open");
-  const compact = renderToStaticMarkup(
-    <PositionalPanel notes={notes} compact onShow={() => {}} />,
-  );
-  expect(compact).toContain('<details class="position-notes"');
+  expect(html).not.toContain("<button");
 });
 
 it("inclut une case centrale occupée par un adversaire seulement si la prise est légale", () => {
