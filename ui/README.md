@@ -298,7 +298,7 @@ la partie ou la variante et ses dessins personnels. Aucune branche n’est ajout
 par la démonstration. Les repères suivent l’orientation et restent masqués pendant
 un retry sans solution, comme lorsque les annotations sont désactivées.
 
-Aucune recherche moteur supplémentaire n’est lancée. Les PV entières sont
+Les explications réutilisent les résultats disponibles. Les PV entières sont
 validées avec chess.js, même si seuls huit demi-coups sont montrés. Le résumé
 matériel simple refuse une suite affichée tronquée ; les motifs peuvent utiliser
 le bilan final de la PV complète, à condition que leur propre conséquence soit
@@ -312,9 +312,43 @@ volontairement conservatrice et ne couvre pas toutes les combinaisons. Quand
 aucune cause fiable n’est trouvée, l’interface le précise. Les évaluations des
 positions intermédiaires ne sont pas inventées : la barre affiche « ? ».
 
+### Indices et approfondissement à la demande
+
+Pendant « Réessayer », « Un indice » donne une idée générale sans nommer de case
+ni dévoiler le coup. « Quelle pièce ? » nomme et encercle uniquement la pièce à
+jouer. La destination, les variantes, le verdict et l’évaluation restent masqués.
+« Voir la solution » joue le coup explicitement demandé. Le plan d’indices est
+conservé pendant l’exercice ; retenter ou changer de moteur réinitialise son
+niveau. Les repères suivent le retournement du plateau et disparaissent dès que
+l’on joue ou quitte l’exercice. Ces aides demandées restent accessibles même
+si les annotations automatiques sont masquées.
+
+Les indices s’appuient sur une PV légale associée au meilleur coup et à un score
+exact. Sans motif confirmé, ils donnent un conseil général. « Préciser cet indice »
+propose alors une recherche ciblée ; un indice indisponible peut aussi être vérifié
+sur demande. La solution n’est jamais affichée à la fin de ce calcul sauf si
+l’utilisateur a expressément demandé « Voir la solution ».
+
+Sur un coup sans explication concrète ou non classé, « Approfondir ce coup »
+recalcule les positions avant et après. Chaque recherche dispose de 3 secondes,
+avec un délai total de 10 secondes, connexion comprise. L’état du calcul et un
+bouton d’arrêt sont visibles ; le plateau et la navigation restent utilisables.
+La navigation, la fermeture ou le changement de moteur annulent la demande.
+La paire de résultats n’est appliquée qu’une fois complète, à la courbe, aux
+scores et au verdict de la partie ou de la variante concernée.
+
+Le cache distingue la revue, sa révision, le moteur et l’historique UCI complet,
+pas seulement la FEN. Un résultat déjà vérifié sert aussi aux indices suivants.
+Les recherches supplémentaires attendent la fin de l’analyse principale ou de
+la variante ; elles ne sont jamais lancées en boucle. Les caches sont bornés
+à 64 demandes et 128 positions par revue. Les résultats tardifs sont ignorés.
+Une vérification ne garantit pas une meilleure explication : si elle reste
+incomplète ou contradictoire, l’interface le dit et conserve le verdict inconnu.
+Relancer l’analyse depuis les options renouvelle les caches.
+
 La [backlog d’analyse pédagogique](BACKLOG_ANALYSE_PEDAGOGIQUE.md) conserve le
-périmètre validé et les étapes restantes : indices graduels, vérifications ciblées
-et observations positionnelles.
+périmètre validé. Les lots 1 à 3 sont livrés ; les observations positionnelles
+restent au lot 4.
 
 ## Annotations de la revue
 
@@ -476,7 +510,10 @@ ancrages : `CHESS_ANNOTATIONS_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium 
 
 Le scénario `/dev/explanations.html` utilise des suites déterministes pour
 contrôler les explications, le retour au coup examiné, la conservation des
-dessins, les variantes et le retry caché sur bureau et mobile :
+dessins, les variantes et le retry caché sur bureau et mobile. Il couvre aussi
+les indices progressifs, leur orientation, leur remise à zéro, les recherches
+ciblées réelles, leur arrêt et leur réutilisation. Les cas `?case=uncertain` et
+`?case=quiet` complètent les fixtures tactiques pour ces calculs :
 `CHESS_EXPLANATIONS_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
 
 Pour vérifier les déplacements après un décalage du plateau (clics, glisser-déposer

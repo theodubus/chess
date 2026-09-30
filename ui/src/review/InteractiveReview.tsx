@@ -1,5 +1,9 @@
 import { explainMove, type ExplanationLine } from "./explanations";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { Square } from "chess.js";
+import RetryCoach from "./RetryCoach";
+import { FocusedAnalysis, type FocusRequest } from "./FocusedAnalysis";
+import { usableResult } from "./FocusedAnalysis";
 import type { Color, Key } from "@lichess-org/chessground/types";
 import type { GameReview } from "./GameReview";
 import { boardFromCommand, StudyTree } from "./StudyTree";
@@ -59,6 +63,12 @@ export default function InteractiveReview({
   } | null>(null);
   const [branch, setBranch] = useState<Branch | null>(null);
   const [live] = useState(() => new BranchAnalysis());
+  const [focused] = useState(() => new FocusedAnalysis());
+  const [attempt, setAttempt] = useState(0);
+  const [highlight, setHighlight] = useState<{
+    source: string;
+    square: Square;
+  } | null>(null);
   const [, render] = useState(0);
   const [pane, setPane] = useState<"details" | "moves">("details");
   const [walkTarget, setWalkTarget] = useState<number | null>(null);
@@ -67,6 +77,25 @@ export default function InteractiveReview({
   );
   const [retrySearch, setRetrySearch] = useState(0);
   useEffect(() => live.subscribe(() => render((value) => value + 1)), [live]);
+  useEffect(
+    () => focused.subscribe(() => render((value) => value + 1)),
+    [focused],
+  );
+  const reviewRevision = review.revision;
+  const branchCommand = branch?.tree.command(branch.node);
+  useEffect(
+    () => () => focused.stop(),
+    [
+      focused,
+      review,
+      reviewRevision,
+      engineId,
+      selected,
+      branchCommand,
+      demo,
+      active,
+    ],
+  );
   const tree = branch?.tree,
     node = branch?.node,
     origin = branch?.origin;
@@ -150,6 +179,28 @@ export default function InteractiveReview({
     ? (live.resultFor(branch.tree, branch.retryNode ?? 0) ??
       (branch.retryNode === 0 ? review.results[branch.origin] : null))
     : null;
+  const retryPosition = branch?.retry
+    ? branch.tree.position(branch.retryNode ?? 0)
+    : null;
+  const hintSource = `${engineId}:${reviewRevision}:${retryPosition?.command}:${attempt}`;
+  const hintRequest: FocusRequest | null = retryPosition
+    ? { review, revision: reviewRevision, engineId, positions: [retryPosition] }
+    : null;
+  const showHintSquare = useCallback(
+    (square: Square | null) =>
+      setHighlight(square ? { source: hintSource, square } : null),
+    [hintSource],
+  );
+  function revealSolution(move: string) {
+    if (!branch?.retry) return;
+    const node = branch.tree.play(
+      branch.retryNode ?? 0,
+      move.slice(0, 2),
+      move.slice(2, 4),
+      move[4],
+    );
+    setBranch({ ...branch, node, revealed: true });
+  }
   const loss = hasPlayed
     ? estimatedLoss(
         before?.score ?? null,
@@ -177,6 +228,38 @@ export default function InteractiveReview({
           annotation,
         )
       : null;
+  const focusRequest: FocusRequest | null = explanationPosition
+    ? {
+        review,
+        revision: reviewRevision,
+        engineId,
+        positions: [
+          explanationPosition,
+          displayedTree.position(branch?.node ?? 0),
+        ],
+      }
+    : null;
+  const focusMatches = !!focusRequest && focused.matches(focusRequest);
+  const focusPending = focusMatches && focused.state === "running";
+  const focusBlocked =
+    review.state === "running" ||
+    (!!branch && liveState !== "complete" && liveState !== "error");
+  async function deepen() {
+    if (!focusRequest || focusBlocked || focusPending) return;
+    const results = await focused.analyse(
+      focusRequest,
+      analysisEngineFactory(engineId),
+    );
+    if (!results) return;
+    if (branch) {
+      const parent = branch.tree.nodes[branch.node].parent;
+      if (parent === null) return;
+      focused.stop();
+      live.remember(branch.tree, parent, results[0], true);
+      live.remember(branch.tree, branch.node, results[1], true);
+      setRetrySearch((value) => value + 1);
+    } else review.applyRefinement(reviewRevision, selected - 1, results);
+  }
   const demoSource = `${engineId}:${selected}:${explanationPosition?.command}:${uci}:${branch?.node ?? "game"}`;
   const demonstration =
     demo?.source === demoSource && active && !blind && showAnnotations
@@ -231,6 +314,7 @@ export default function InteractiveReview({
     (step) => setDemo((value) => (value ? { ...value, step } : null)),
   );
   function retry() {
+    setAttempt((value) => value + 1);
     setDemo(null);
     setWalkTarget(null);
     setPromotion(null);
@@ -354,6 +438,11 @@ export default function InteractiveReview({
                     : new Map()
                 }
                 onMove={canPlay ? (from, to) => play(from, to) : undefined}
+                autoShapes={
+                  blind && highlight?.source === hintSource
+                    ? [{ orig: highlight.square, brush: "green" }]
+                    : []
+                }
                 lastMove={
                   uci ? [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key] : []
                 }
@@ -674,6 +763,67 @@ export default function InteractiveReview({
                     </div>
                   </div>
                 )}
+                {showAnnotations &&
+                  focusRequest &&
+                  (!explanation?.concrete ||
+                    !annotation ||
+                    focusPending ||
+                    focused.has(focusRequest)) && (
+                    <div
+                      className="focused-analysis"
+                      aria-label="Vérification ciblée"
+                    >
+                      {focusPending ? (
+                        <div className="focused-progress" role="status">
+                          <span
+                            className="analysis-spinner"
+                            aria-hidden="true"
+                          />{" "}
+                          Le moteur vérifie ce coup… {focused.completed} /{" "}
+                          {focused.total} positions. La navigation reste
+                          disponible.
+                          <button
+                            className="text-button"
+                            onClick={() => focused.stop()}
+                          >
+                            Arrêter la vérification
+                          </button>
+                        </div>
+                      ) : focused.has(focusRequest) ? (
+                        <p className="hint" role="status">
+                          {focused.isUnavailable(focusRequest)
+                            ? "La vérification n’a pas fourni de résultats exploitables."
+                            : explanation?.concrete
+                              ? "Explication vérifiée sur ce coup."
+                              : "Vérification terminée ; aucune cause plus précise n’a pu être confirmée."}
+                        </p>
+                      ) : (
+                        <>
+                          <button
+                            className="secondary"
+                            disabled={!active || focusBlocked}
+                            onClick={() => void deepen()}
+                          >
+                            Approfondir ce coup
+                          </button>
+                          <p className="hint">
+                            Vérifier uniquement les positions avant et après ce
+                            coup, jusqu’à 3 secondes chacune.
+                          </p>
+                          {focusMatches && focused.state === "error" && (
+                            <p className="connection-error" role="alert">
+                              La vérification a échoué. Vous pouvez réessayer.
+                            </p>
+                          )}
+                          {focusMatches && focused.state === "stopped" && (
+                            <p className="hint" role="status">
+                              Vérification interrompue.
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                 {branch && (
                   <div className="study-evaluation" role="status">
                     {showEvaluation && (
@@ -776,33 +926,50 @@ export default function InteractiveReview({
                   {branch.node !== branch.retryNode && (
                     <button
                       className="secondary wide"
-                      onClick={() =>
+                      onClick={() => {
+                        setAttempt((value) => value + 1);
                         setBranch({
                           ...branch,
                           node: branch.retryNode ?? 0,
                           revealed: false,
-                        })
-                      }
+                        });
+                      }}
                     >
                       Retenter sans la solution
                     </button>
                   )}
-                  <button
-                    className="secondary wide"
-                    disabled={!target?.bestMove}
-                    onClick={() => {
-                      const move = target!.bestMove!;
-                      const node = branch.tree.play(
-                        branch.retryNode ?? 0,
-                        move.slice(0, 2),
-                        move.slice(2, 4),
-                        move[4],
-                      );
-                      setBranch({ ...branch, node, revealed: true });
-                    }}
-                  >
-                    Voir la solution
-                  </button>
+                  {blind && retryPosition && hintRequest ? (
+                    <RetryCoach
+                      key={hintSource}
+                      position={retryPosition}
+                      result={target}
+                      request={hintRequest}
+                      analysis={focused}
+                      factory={analysisEngineFactory(engineId)}
+                      blocked={!active || focusBlocked}
+                      onHighlight={showHintSquare}
+                      onRefined={(result) =>
+                        live.remember(
+                          branch.tree,
+                          branch.retryNode ?? 0,
+                          result,
+                        )
+                      }
+                      onReveal={revealSolution}
+                    />
+                  ) : (
+                    <button
+                      className="secondary wide"
+                      disabled={
+                        !retryPosition || !usableResult(retryPosition, target)
+                      }
+                      onClick={() =>
+                        target?.bestMove && revealSolution(target.bestMove)
+                      }
+                    >
+                      Voir la solution
+                    </button>
+                  )}
                 </>
               )}
             {branch && (

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Chess } from "chess.js";
 import { GameReview } from "../src/review/GameReview";
@@ -9,6 +9,16 @@ import "../src/index.css";
 
 // Scénario déterministe de contrôle UI ; aucune analyse simulée dans l’application.
 const tacticalCases = {
+  quiet: {
+    fen: new Chess().fen(),
+    played: ["e4", "e5"],
+    best: ["d4", "d5"],
+  },
+  uncertain: {
+    fen: new Chess().fen(),
+    played: ["e4", "e5"],
+    best: ["d4", "d5"],
+  },
   fork: {
     fen: "r3k3/8/8/3N4/8/8/8/7K w - - 0 1",
     played: ["Nc7+", "Kd7", "Nxa8", "Ke6"],
@@ -96,6 +106,7 @@ if (tactical) {
     tactical === tacticalCases.miss ? -500 : 800,
   );
 }
+if (tactical === tacticalCases.uncertain) review.results[0] = null;
 const trees = new Map<number, StudyTree>();
 // Lire les arbres au moment du contrôle : leur mutation ne rend pas ce parent.
 Object.assign(window, {
@@ -105,7 +116,11 @@ Object.assign(window, {
   },
 });
 export function Fixture() {
+  const [, render] = useState(0);
+  useEffect(() => review.subscribe(() => render((value) => value + 1)), []);
   const [selected, select] = useState(tactical ? 1 : 3);
+  const [engineId, setEngineId] = useState("default");
+  const [revision, setRevision] = useState(0);
   const [annotations, showAnnotations] = useState(true);
   const [orientation, setOrientation] = useState<"white" | "black">("white");
   return (
@@ -124,13 +139,30 @@ export function Fixture() {
         >
           Retourner
         </button>
+        <button
+          onClick={() => {
+            setEngineId(engineId === "default" ? "stockfish" : "default");
+            setRevision((value) => value + 1);
+          }}
+        >
+          Changer de moteur
+        </button>
+        <button
+          onClick={() => {
+            review.results[selected - 1] = null;
+            render((value) => value + 1);
+          }}
+        >
+          Effacer le résultat source
+        </button>
         <output data-testid="source-position">{selected}</output>
       </div>
       <InteractiveReview
+        key={revision}
         review={review}
         selected={selected}
         onSelect={select}
-        engineId="default"
+        engineId={engineId}
         orientation={orientation}
         showEvaluation
         showAnnotations={annotations}

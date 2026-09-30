@@ -364,3 +364,16 @@ export function explainMove(
       (base.concrete && !tactic.primary ? ` ${base.summary}` : ""),
   };
 }
+
+/** Variante candidate complète validée, commune aux explications et aux indices. */
+export function candidateLine(
+  position: ReviewPosition,
+  result: ReviewResult,
+): ExplanationLine | null {
+  const line = buildLine(position, result.variation, false);
+  const first = line?.steps[1]?.move;
+  return first &&
+    `${first.from}${first.to}${first.promotion ?? ""}` === result.bestMove
+    ? line
+    : null;
+}

@@ -1558,3 +1558,10 @@ dialog:has(.army-editor) { width:min(600px,calc(100vw - 24px)); }
 .source-board.is-hidden { position:absolute; inset:0; visibility:hidden; pointer-events:none; }
 
 .explanation-motif { color:#d8bd80; font-weight:700; margin-bottom:0; }
+
+.retry-coach { display:grid; gap:10px; }
+.hint-card { border-left:3px solid #d8bd80; padding:10px 14px; background:#d8bd800a; }
+.hint-card p:last-child { margin-bottom:0; }
+.hint-piece { font-weight:600; }
+.focused-analysis { border-top:1px solid #ffffff12; padding-top:12px; }
+.focused-progress { display:flex; align-items:center; flex-wrap:wrap; gap:8px; color:#d8bd80; }

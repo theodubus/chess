@@ -56,13 +56,13 @@ entre le coup joué et une meilleure idée, pas seulement répéter la catégori
 - [x] Bons coups défensifs : menace évitée ; bons coups offensifs : occasion exploitée.
 - [x] Une seule explication prioritaire, sélectionner la plus utile et vérifiable.
 
-### 3. Apprentissage et recherches ciblées
+### 3. Apprentissage et recherches ciblées — TERMINÉ (30 septembre 2026)
 
-- [ ] Indices graduels intégrés à Réessayer, sans divulgation anticipée.
-- [ ] Réutiliser les résultats existants ; approfondissement seulement si nécessaire.
-- [ ] Budgets bornés, annulation à la navigation, cache par moteur/revue/position.
-- [ ] Afficher la vérification en cours sans bloquer la lecture de la partie.
-- [ ] Tester les changements de moteur et résultats tardifs/incohérents.
+- [x] Indices graduels intégrés à Réessayer, sans divulgation anticipée.
+- [x] Réutiliser les résultats existants ; approfondissement seulement si nécessaire.
+- [x] Budgets bornés, annulation à la navigation, cache par moteur/revue/position.
+- [x] Afficher la vérification en cours sans bloquer la lecture de la partie.
+- [x] Tester les changements de moteur et résultats tardifs/incohérents.
 
 ### 4. Observations positionnelles
 
@@ -151,3 +151,44 @@ entre le coup joué et une meilleure idée, pas seulement répéter la catégori
   le choix de l’alternative manquée et l’absence de fuite pendant le retry.
 - Prochaine reprise : lot 3 (indices graduels du retry, puis vérifications
   ciblées bornées et cachées), sans divulguer les motifs avant demande d’indice.
+
+## Notes de livraison du lot 3 — 30 septembre 2026
+
+- `hints.ts` réutilise la PV validée et les faits tactiques/défensifs du lot 2.
+  Le premier indice donne une idée sans case ni SAN, le second nomme uniquement
+  la pièce source et l’encercle. Sans motif confirmé, conseil général explicite.
+- `RetryCoach` conserve le plan choisi pendant l’exercice. « Voir la solution »
+  est une action séparée ; aucune recherche d’indice ne la révèle implicitement.
+  Retenter remet les indices à zéro. Les dessins personnels restent indépendants.
+- `FocusedAnalysis` reçoit une ou deux positions : 3 s chacune, délai global
+  10 s incluant la connexion. Arrêt explicite, navigation, sortie, relance ou
+  changement de moteur interrompent la recherche et invalident ses réponses.
+  L’indicateur de calcul n’empêche ni de jouer ni de parcourir la partie.
+- Cache par objet revue/révision/moteur/historique UCI ; 64 demandes et 128
+  positions maximum par revue. Une paire abandonnée ne publie pas son premier
+  résultat. Une racine déjà approfondie peut servir à une paire ou à un indice.
+  Un échec technique reste réessayable ; une réponse inexploitable est mémorisée
+  jusqu’à la relance globale, sans boucle de calcul. Aucune commande MultiPV ou
+  searchmoves, aucune modification du moteur.
+- « Préciser cet indice » vérifie une seule position sur demande. « Approfondir
+  ce coup » recalcule avant/après si l’explication reste générique ou le coup
+  non classé. L’analyse principale ou de variante passe en premier. Une paire
+  complète met à jour `GameReview` (scores/courbe/annotations) ou le cache de
+  `BranchAnalysis`. Un indice seul reste dans le cache de la variante.
+- Limites : ce budget supplémentaire n’assure pas une profondeur supérieure aux
+  longues passes de résolution antérieures. Une contradiction persistante ne
+  reçoit pas de classification inventée. La précision des motifs reste celle
+  des lots 1/2 ; les observations positionnelles appartiennent au lot 4.
+- Tests ajoutés : `FocusedAnalysis.test.ts` et `hints.test.tsx`, 25 cas couvrant
+  cache, répétitions/historiques, deux camps, score borné/PV incohérente, terminal,
+  connexion bloquée, annulation, réponse tardive, changement de moteur, publication
+  cohérente et verdict contradictoire. Le HTML initial ne contient aucun indice.
+- Contrôles locaux : lint, TypeScript, 276 tests unitaires, 295 tests avec
+  ShallowRed/Stockfish et build réussis. Chromium ciblé puis parcours complet
+  réussis : import PGN, jeu, variantes, navigation, annotations, indices graduels,
+  recherche ciblée Stockfish, arrêt/reprise et cache, sur bureau/mobile/tablette.
+- Branche synchronisée avec `main` à `4fa0da3` ; binaire local à jour via
+  `cargo build --release --bin shallowred`. Les nouveautés distantes de ce lot
+  concernaient la documentation et les protocoles d’essai, sans diff du moteur.
+- Prochaine reprise : lot 4, observations positionnelles prudentes. Le lot 3
+  n’ajoute pas de diagnostic générique d’activité/sécurité du roi sans preuve.

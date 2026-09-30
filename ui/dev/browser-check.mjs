@@ -1741,7 +1741,207 @@ try {
         ),
         "retry sans fuite des motifs ni des flèches",
       );
+      await button("Un indice");
+      await waitFor(
+        `document.querySelector('.hint-card')?.textContent.includes('Indice 1 / 2')`,
+        "premier indice affiché",
+      );
+      assert(
+        await evaluate(
+          `!/[a-h][1-8]/.test(document.querySelector('.hint-card').textContent) && !document.querySelector('.source-board .cg-shapes circle') && !document.querySelector('.source-board .cg-shapes line')`,
+        ),
+        "idée sans case ni flèche de solution",
+      );
+      if (scenario === "fork") {
+        assert(
+          await evaluate(
+            `document.querySelector('.hint-card').textContent.includes('double attaque')`,
+          ),
+          "indice tactique réutilisé",
+        );
+        await button("Effacer le résultat source");
+        assert(
+          await evaluate(
+            `document.querySelector('.hint-card').textContent.includes('double attaque')`,
+          ),
+          "indice conservé malgré la disparition du résultat source",
+        );
+        await screenshot("15-hint-idea-mobile");
+      }
+      await button("Quelle pièce ?");
+      await waitFor(
+        `document.querySelector('.hint-piece') && document.querySelector('.source-board .cg-shapes circle')`,
+        "pièce source encerclée",
+      );
+      assert(
+        await evaluate(
+          `!document.querySelector('.source-board .cg-shapes line') && !document.querySelector('.variation-moves') && !document.querySelector('.board-annotation') && !document.querySelector('.desktop-chart') && document.querySelector('.evaluation-bar').textContent.includes('?')`,
+        ),
+        "second indice sans destination, score ni meilleure suite",
+      );
+      assert(
+        await evaluate(`document.documentElement.scrollWidth<=390`),
+        "indices lisibles sans débordement mobile",
+      );
+      if (scenario === "fork") {
+        const circle = await evaluate(
+          `document.querySelector('.source-board .cg-shapes circle').getAttribute('cx')`,
+        );
+        await button("Retourner");
+        await waitFor(
+          `document.querySelector('.source-board .cg-shapes circle').getAttribute('cx')!==${JSON.stringify(circle)}`,
+          "l’indice suit l’orientation",
+        );
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 1280,
+          height: 900,
+          deviceScaleFactor: 1,
+          mobile: false,
+        });
+        await screenshot("16-hint-piece-desktop");
+        await button("Voir la solution");
+        await waitFor(
+          `document.querySelector('.retry-feedback')?.textContent.includes('Solution du moteur affichée')`,
+          "solution sur demande explicite",
+        );
+        assert(
+          await evaluate(
+            `document.querySelector('.review-position').textContent.includes('Cc7') && !document.querySelector('.hint-card') && !document.querySelector('.source-board .cg-shapes circle')`,
+          ),
+          "la solution correspond au plan d’indices et retire le repère",
+        );
+        await button("Retenter sans la solution");
+        assert(
+          await evaluate(
+            `!document.querySelector('.hint-card') && !document.querySelector('.source-board .cg-shapes circle') && [...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Un indice')`,
+          ),
+          "nouvel exercice sans indice précédent",
+        );
+        await button("Changer de moteur");
+        assert(
+          await evaluate(
+            `!document.querySelector('.retry-coach') && !document.querySelector('.hint-card') && !document.querySelector('.source-board .cg-shapes circle')`,
+          ),
+          "changement de moteur réinitialisant l’exercice",
+        );
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 390,
+          height: 844,
+          deviceScaleFactor: 1,
+          mobile: true,
+        });
+      }
     }
+  }
+  if (!process.env.CHESS_ANNOTATIONS_ONLY && !process.env.CHESS_PLAY_ONLY) {
+    await call("Page.navigate", {
+      url: new URL(
+        "/dev/explanations.html?case=uncertain",
+        process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+      ).href,
+    });
+    await waitFor(
+      `document.querySelector('.focused-analysis button')`,
+      "approfondissement disponible sans résultat fiable",
+    );
+    await button("Changer de moteur");
+    await button("Approfondir ce coup");
+    await waitFor(
+      `document.querySelector('.focused-progress .analysis-spinner')`,
+      "calcul ciblé visible",
+    );
+    await screenshot("17-focused-progress-mobile");
+    await pressKey("<");
+    await waitFor(
+      `document.querySelector('[data-testid="source-position"]').textContent==='0' && !document.querySelector('.focused-progress')`,
+      "navigation disponible pendant le calcul",
+    );
+    await pressKey(">");
+    await waitFor(
+      `document.querySelector('.focused-analysis')?.textContent.includes('Vérification interrompue')`,
+      "recherche annulée au changement de position",
+    );
+    await button("Approfondir ce coup");
+    await waitFor(
+      `document.querySelector('.focused-analysis')?.textContent.includes('Vérification terminée') || document.querySelector('.focused-analysis')?.textContent.includes('Explication vérifiée')`,
+      "paire recalculée par Stockfish",
+      15000,
+    );
+    const verified = await evaluate(
+      `document.querySelector('.focused-analysis').textContent`,
+    );
+    await pressKey("<");
+    await pressKey(">");
+    assert.equal(
+      await evaluate(`document.querySelector('.focused-analysis').textContent`),
+      verified,
+      "résultat approfondi conservé dans le cache",
+    );
+    await button("Réessayer ce coup");
+    await waitFor(
+      `![...document.querySelectorAll('.retry-coach button')].find(b=>b.textContent.trim()==='Un indice').disabled`,
+      "indice disponible après vérification",
+    );
+    await button("Un indice");
+    await waitFor(
+      `document.querySelector('.hint-card')`,
+      "résultat approfondi réutilisé pour l’indice",
+    );
+    assert(
+      await evaluate(`!document.querySelector('.focused-progress')`),
+      "pas de nouveau calcul pour le même indice",
+    );
+    await call("Page.navigate", {
+      url: new URL(
+        "/dev/explanations.html?case=quiet",
+        process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+      ).href,
+    });
+    await waitFor(
+      `document.querySelector('.move-explanation')`,
+      "cas d’indice général chargé",
+    );
+    await button("Changer de moteur");
+    await button("Réessayer ce coup");
+    await button("Un indice");
+    await waitFor(
+      `[...document.querySelectorAll('.retry-coach button')].some(b=>b.textContent.trim()==='Préciser cet indice' && !b.disabled)`,
+      "précision proposée pour un indice général",
+    );
+    await button("Préciser cet indice");
+    await waitFor(
+      `document.querySelector('.focused-progress')?.textContent.includes('Préparation de l’indice')`,
+      "préparation d’indice visible",
+    );
+    assert(
+      await evaluate(
+        `!document.querySelector('.variation-moves') && !document.querySelector('.cg-shapes line') && document.querySelector('.study-details h2').textContent==='À vous de jouer'`,
+      ),
+      "calcul d’indice sans révéler ni jouer la solution",
+    );
+    await button("Arrêter la vérification");
+    await waitFor(
+      `document.querySelector('.retry-coach')?.textContent.includes('Vérification interrompue')`,
+      "indice interrompu explicitement",
+    );
+    await button("Préciser cet indice");
+    await waitFor(
+      `!document.querySelector('.focused-progress') && document.querySelector('.hint-card') && ![...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Préciser cet indice')`,
+      "indice recalculé et mis en cache",
+      15000,
+    );
+    await button("Quelle pièce ?");
+    await waitFor(
+      `document.querySelector('.hint-piece') && document.querySelector('.source-board .cg-shapes circle')`,
+      "second indice issu de la vérification",
+    );
+    await button("Revenir à la partie");
+    assert(
+      await evaluate(
+        `!document.querySelector('.hint-card') && !document.querySelector('.source-board .cg-shapes circle')`,
+      ),
+      "retour à la partie effaçant les repères d’indice",
+    );
   }
   assert.deepEqual(errors, [], "Aucune erreur JavaScript ou réseau");
   console.log(
