@@ -4395,6 +4395,24 @@ déclenchement :
   pli appartient à ce qui le fait gagner ou perdre, et un pli REGAGNÉ par
   la table n'a pas été mesuré.
 
+**Le crible de mutation, `tt.rs` RELEVÉ le 30 sept. à 01 h 30** (run
+36651736903, job fini à 01 h 11 ; `search.rs` et `eval.rs` tournent
+encore) : **7 survivants contre un plafond de 6** — les six `|` contre `^`
+connus, et **un neuf : `value < victim_worth` en `<=`**, le départage du
+seau.
+- **Pourquoi mon test ne le voyait pas** : `<=` fait céder la DERNIÈRE des
+  entrées de même valeur — et donc remplit aussi le seau à l'envers, la
+  dernière place vierge d'abord. Tout se déroule alors en image miroir,
+  l'entrée écrite le plus tôt cédant toujours, et le test de départage ne
+  regardait que ce que la table rend, identique dans les deux. Pas tout à
+  fait équivalent pourtant : la clé zéro, qui coïncide avec les places
+  vierges, brise le miroir. **La règle écrite dans `store` — « à valeur
+  égale, la première du seau cède » — se lit sur les PLACES** ;
+- **le test qui la lit est écrit et éprouvé** : il vérifie l'emplacement de
+  chaque clé, et tombe sur le mutant injecté à la main. Il entre avec la
+  fusion, si fusion il y a — un test ne touche pas le binaire mesuré. Le
+  plafond de `tt.rs` reste à 6.
+
 ### C28 — la table sous pression : 2 Mio contre 16 à `8+0,08` — VERDICT, 29 sept. 2026 : −19,42 ± 5,78 Elo, la pression de 60+0,6 coûte
 
 **Décidé par Théo le 29 sept.** — « *oui lance le test 2 Mio contre 16 en
