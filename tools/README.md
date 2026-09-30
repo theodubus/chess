@@ -4160,6 +4160,25 @@ mesurés chacun contre N2 :
   lui-même : ses scores peuvent ne pas partager une échelle, et le
   programme peut le refuser, ce qui est son rôle :
   <https://drive.google.com/file/d/1_sQoWBl31WAxNXma2v45004CIVltytP8/view>.
+  **Ce lien ne répond plus** (Théo, 30 sept.), le premier si. Ce n'est pas
+  une faute de copie : l'identifiant est celui du wiki, relu au même
+  commit — le fichier a quitté Drive ou n'y est plus ouvert, la cause
+  ne se voit pas d'ici.
+
+**D'où viennent ces fichiers, lu aux sources primaires le 30 sept.** — Drive
+est le canal du projet Stockfish lui-même, pas un miroir de fortune : le
+commit `f8c779db` de Stockfish (13 juin 2021 — le premier réseau par défaut
+que son historique dise entraîné sur des données de Leela) les décrit comme
+des parties de Leela contre elle-même, T60 et T74, « *available at
+vondele's google drive* » — un mainteneur de Stockfish ; et cinq commits de
+réseaux par défaut, de `adfb23c0` à `b939c805` (juin et juillet 2021),
+citent **ce fichier-ci, au même identifiant**, parmi leurs données. La
+source des données brutes est celle du projet Leela,
+<https://storage.lczero.org/files/training_data> — le lien que porte la
+mention d'attribution de Stockfish (`e8d2ba19`) —, mais dans le format
+d'entraînement de Leela, qu'il faudrait convertir. Aucune somme de contrôle
+n'est publiée : la relecture complète du programme refuse un fichier
+tronqué, et le critère d'échelle des scores d'une autre unité.
 
 **Leur taille n'est pas vérifiée** : Google Drive, Kaggle et la page des
 jeux de linrock (`robotmoon.com/nnue-training-data`, les jeux plus récents)
@@ -4170,6 +4189,20 @@ quelques Go de points de sauvegarde. Pour ordre de grandeur, les fichiers
 des derniers étages de Stockfish pèsent 141 et 223 Go (PR #257 de
 `nnue-pytorch`) ; un entraînement n'en voit que 4 milliards de positions,
 **un fichier suffit**.
+
+**La taille de `training_data.binpack`, lue par Théo sur Drive le 30 sept. :
+11 Go.** Ce qu'elle porte, par le format — `docs/binpack.md` de la branche
+`tools` de Stockfish : une position coûte « ~2 octets » dans une suite de
+coups, plus 32 octets par début de suite — : **de l'ordre de 4 à 7
+milliards de positions**, avant le filtre. <span>Inférence, confiance
+moyenne</span> : l'essai court imprime les octets, les blocs et la part
+gardée par le filtre. **Un fichier plus petit que l'entraînement ne le
+casse pas** — lu au commit épinglé : le chargeur de bullet
+(`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit ses
+fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
+chacune de ce fichier passera **une à trois fois** selon la part que garde
+le filtre ; N2 revoyait les siennes **au moins seize fois** (4 milliards
+tirés de 249,5 M).
 
 **Vérifié ici avant de l'écrire** : à `main` (`8b2c122`), `tools/nnue-train`
 compile avec `--locked` et passe ses six tests — contre le runtime factice
