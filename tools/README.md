@@ -3913,6 +3913,54 @@ du n° 7 — partir de vraies ouvertures, ou filtrer moins —, **non mesurée, 
 pas évidente** : écarter les premiers coups est le réglage par défaut de
 l'entraîneur, et chez nous ce sont des coups au hasard, du bruit.
 
+**Précisé au source le 30 sept.** : `viriformat` compte le ply depuis le
+numéro de coup du plateau (`Board::ply`, posé par la FEN), et notre
+générateur ouvre chaque partie APRÈS ses coups au hasard, par la FEN de la
+position atteinte. Le filtre retire donc, de chaque partie, ses demi-coups
+8 à 15 — les premiers coups JOUÉS, pas le hasard. Ce sont exactement les
+positions dont partent nos matchs : `tools/book.epd` tire 8 demi-coups.
+**Les écarter coûte donc aussi dans notre régime de mesure**, pas seulement
+depuis la position initiale ; et les rendre ne coûte rien en données — elles
+sont dans les fichiers, seul le filtre les tait.
+
+**La sonde de l'angle mort — protocole écrit le 30 sept. avant de mesurer**,
+dans le conteneur, déterministe :
+- **la question** : le réseau décide-t-il moins bien là où il n'a rien
+  appris, à difficulté égale ?
+- **deux ensembles de positions**, graines fixées : *le livre* — 300 parties
+  du réseau contre lui-même depuis `tools/book.epd`, 100 000 nœuds par coup,
+  jouées jusqu'au 80e demi-coup ; une position par partie et par tranche,
+  **8–15** (l'angle mort), **16–39**, **40–79** ; *les vraies ouvertures* —
+  150 lignes de 16 demi-coups depuis la position initiale, chaque coup tiré
+  parmi ceux que Stockfish 16 juge à 20 centièmes du meilleur au plus
+  (MultiPV 4, profondeur 12) ; positions distinctes, tranches **0–7** et
+  **8–15** ; au plus 300 par tranche ;
+- **la mesure** : dans chaque position, le coup du réseau et celui de la
+  faite main (`EvalFile <none>`), chacun à 200 000 nœuds ; la perte de
+  chacun jugée par Stockfish 16 à la profondeur 16 — le score de son
+  meilleur coup moins celui du coup joué (`searchmoves`), en centièmes,
+  bornée à 0 et 300 ;
+- **le témoin** : la faite main n'a appris sur rien, donc n'a pas d'angle
+  mort ; elle dit la difficulté propre de chaque tranche. **Le signal** : le
+  rapport des pertes moyennes, réseau sur faite main, de chaque tranche,
+  divisé par celui de la tranche 16–39 du livre — intervalle à 95 % par
+  rééchantillonnage des positions ;
+- **attendu** — <span>inférence, confiance faible</span> : **pas d'angle
+  mort décelable**, le rapport des tranches 8–15 et des vraies ouvertures
+  dans × 1,3 de celui de 16–39 : les entrées du réseau sont des cases
+  occupées, qu'une ouverture partage avec les premiers coups qu'il a vus, et
+  la recherche porte ;
+- **ce que cela décide** : au-delà de × 1,5, intervalle au-dessus de 1, en
+  **8–15 du livre** ⇒ le prochain entraînement abaisse `min_ply`, et un
+  match tranche ; dans les **seules vraies ouvertures** ⇒ la question relève
+  de données d'ouverture (Leela, levier 4) ou du livre de l'interface ;
+  **rien de décelable** ⇒ la question se classe, sans séance sur la carte ;
+- **limites, dites d'avance** : la table est vidée à chaque position, et un
+  moteur qui démarre froid n'est pas un moteur en partie (`CLAUDE.md`) —
+  toutes les tranches le subissent ; 200 000 nœuds, pas une cadence ;
+  Stockfish à la profondeur 16 est un juge, pas un oracle ; un effet de
+  × 1,3 peut passer inaperçu.
+
 **Une source extérieure : les données de Leela Chess Zero — question de
 Théo le 29 sept., DÉCIDÉE par lui le même jour** (plus bas). Ce qui est
 vérifié :
