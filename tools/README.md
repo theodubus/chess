@@ -4472,9 +4472,22 @@ l'aspiration échoue **1,3 à 2,5 fois** plus souvent ; l'élagage delta se
 trompe plus souvent au réseau, la valeur faite main de la pièce y comptant
 moins que ce qu'elle vaut en unités du réseau.
 
+**Amendement, écrit avant de lire les données de la sonde** — pendant ses
+parties, sur l'essai du lecteur à une position (Kiwipete, rien de mesuré) :
+**`E` est presque toujours négatif**. Au trait, la recherche trouve plus que
+l'évaluation statique — on peut encore prendre —, donc son centile 90 tombe
+près de zéro, et le rapport de deux tels centiles n'est pas une échelle :
+l'essai rendait −1,91. Ce qu'une marge de futilité doit empêcher, c'est la
+coupure fautive — `score < beta` parmi les nœuds coupés —, qui est la queue
+haute de `E` au-delà de la marge. D'où, **pour la futilité inverse, le taux
+de coupures fautives à la marge actuelle**, de même forme que celui de
+l'élagage delta ; et, s'il faut un candidat, **le facteur de marge qui
+égalise le taux fautif du réseau sur celui de la faite main**, recalculé sur
+les nœuds journalisés. Les centiles de `E` restent imprimés, pour décrire.
+
 **Règle, écrite avant**, marge par marge, sur le rapport réseau / faite
-main — le centile 90 de `E` pour la futilité inverse, le taux d'échec pour
-l'aspiration, le taux d'élagage fautif pour l'élagage delta :
+main — le taux de coupures fautives pour la futilité inverse, le taux
+d'échec pour l'aspiration, le taux d'élagage fautif pour l'élagage delta :
 - **intervalle dans [0,8 ; 1,25]** : la marge tient à l'échelle du réseau ;
   si les trois tiennent, **B8 se ferme sans match** ;
 - **intervalle entièrement hors de [0,8 ; 1,25]** : un candidat, la
