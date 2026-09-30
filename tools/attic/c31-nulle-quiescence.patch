@@ -1,0 +1,137 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 53953d0..9f5e66b 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -1267,10 +1267,12 @@ impl Search {
+         // continues after threefold repetition » — et la variante le montrait :
+         // à la profondeur 1, `f8e8 e6f6` pour un coup qui termine la partie.
+         //
+-        // La quiescence elle-même n'a pas à le refaire : ses coups sont des
+-        // captures et des promotions, qui remettent la pendule des cinquante
+-        // coups à zéro et interdisent toute répétition en aval. Seul son nœud
+-        // d'ENTRÉE, atteint par un coup tranquille, pouvait être une nulle.
++        // La quiescence ne refait pas ce test à son entrée : il vient d'être
++        // fait ici. Plus bas, ses coups sont des captures et des promotions,
++        // qui remettent la pendule des cinquante coups à zéro et interdisent
++        // toute répétition en aval — SAUF en échec, où elle cherche toutes les
++        // parades, tranquilles comprises. Celles-là, elle les teste elle-même
++        // (C31).
+         //
+         // Le matériel insuffisant est déjà rendu à zéro par `evaluate` ; le
+         // tester **aussi** ici n'est pas une redondance mais une coupure. Sans
+@@ -1632,7 +1634,26 @@ impl Search {
+             let mut child = board.clone();
+             child.play_unchecked(mv);
+ 
+-            let score = -self.quiescence(&child, -beta, -alpha, ply + 1, rest);
++            // Une parade tranquille ne remet pas la pendule à zéro : elle peut
++            // atteindre le centième demi-coup ou recréer une position du
++            // chemin, et l'enfant serait évalué comme si la partie continuait.
++            // Hors échec, aucun coup de la quiescence ne l'est, et la pendule
++            // à zéro le dit sans rien tester. L'arbitre le signalait — « PV
++            // continues after fifty-move rule », « … after threefold
++            // repetition » — dans les séries de C13 (C31, 30 sept. 2026).
++            //
++            // Le chemin porte chaque position, comme dans negamax : sans
++            // elle, une parade plus bas ne verrait pas celle-ci.
++            self.path.push(child.hash());
++            let score = if child.halfmove_clock() != 0 && self.is_rule_draw(&child) {
++                // Nulle pour les deux camps : rien à retourner.
++                self.nodes += 1;
++                self.pv.clear(ply + 1);
++                DRAW
++            } else {
++                -self.quiescence(&child, -beta, -alpha, ply + 1, rest)
++            };
++            self.path.pop();
+ 
+             if self.aborted {
+                 return 0;
+@@ -4742,6 +4763,87 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn une_parade_tranquille_de_la_quiescence_peut_atteindre_le_centieme_demi_coup() {
++        // En échec, la quiescence cherche TOUTES les parades, et une parade
++        // tranquille ne remet pas la pendule à zéro. Ici les trois parades —
++        // Rh2, Dg1, Df1 — sont tranquilles : chacune atteint le centième
++        // demi-coup, et la position vaut nulle. L'arbitre le signalait,
++        // « PV continues after fifty-move rule », deux fois dans les 300
++        // parties de C13 pour N2 (30 sept. 2026) — C31.
++        let mut a = ardoise();
++        let temoin = board("7k/8/8/8/8/8/6Q1/r6K w - - 98 80");
++        assert!(
++            search().negamax(&temoin, 0, 1, -INFINITY, INFINITY, &mut a) > 200,
++            "témoin : à 98 demi-coups, la parade laisse la partie continuer"
++        );
++        let b = board("7k/8/8/8/8/8/6Q1/r6K w - - 99 80");
++        let mut s = search();
++        assert_eq!(
++            s.negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a),
++            DRAW,
++            "à 99 demi-coups, chaque parade atteint le centième : nulle"
++        );
++        // Le nœud d'entrée et ses trois nulles : une nulle compte un nœud,
++        // comme dans negamax.
++        assert_eq!(s.nodes, 4, "chaque nulle compte un nœud");
++    }
++
++    #[test]
++    fn une_nulle_de_la_quiescence_arrete_la_variante() {
++        // Le cavalier peut prendre la tour qui fait échec, mais le fou le
++        // reprend — et le pion a7 garde assez de matériel pour que la reprise
++        // gagne : sans lui, roi et fou contre roi vaudrait zéro, les noirs ne
++        // reprendraient pas, et la ligne restée derrière serait vide. La
++        // prise, cherchée d'abord, laisse donc sa suite — Fxa1 — dans la
++        // ligne du ply suivant. Les parades tranquilles atteignent le
++        // centième demi-coup : nulles, donc meilleures que la prise. La
++        // variante doit s'arrêter à la parade ; recopier la ligne restée
++        // derrière la ferait continuer APRÈS la nulle — l'avertissement même
++        // de l'arbitre (C31).
++        let mut a = ardoise();
++        let temoin = board("7k/p7/8/8/3b4/1N6/8/r6K w - - 98 80");
++        assert!(
++            search().negamax(&temoin, 0, 1, -INFINITY, INFINITY, &mut a) < -200,
++            "témoin : sans la nulle, la prise est le moindre mal, et elle perd"
++        );
++        let b = board("7k/p7/8/8/3b4/1N6/8/r6K w - - 99 80");
++        let mut s = search();
++        assert_eq!(s.negamax(&b, 0, 1, -INFINITY, INFINITY, &mut a), DRAW);
++        assert_eq!(s.pv.lengths[1], 1, "la variante s'arrête à la parade");
++    }
++
++    #[test]
++    fn une_parade_tranquille_de_la_quiescence_peut_repeter_la_position() {
++        // Échec perpétuel à l'horizon : la dame noire va et vient entre e5 et
++        // e1, le roi blanc entre h1 et h2. Dans `entree`, Rh1 est la seule
++        // parade — g1 est tenu par le fou, g2 et h3 sont occupés, rien ne
++        // s'interpose — et elle recrée `z`. Les blancs ont une tour et un
++        // pion de plus : sans la répétition, la quiescence rend un avantage
++        // net. L'arbitre le signalait, « PV continues after threefold
++        // repetition », dans deux des séries de C13 du 29 sept. 2026 — C31.
++        let z = board("7k/1R6/8/2b1q3/8/7P/Q5B1/7K b - - 10 60");
++        let apres_de1 = board("7k/1R6/8/2b5/8/7P/Q5B1/4q2K w - - 11 61");
++        let apres_rh2 = board("7k/1R6/8/2b5/8/7P/Q5BK/4q3 b - - 12 61");
++        let entree = board("7k/1R6/8/2b1q3/8/7P/Q5BK/8 w - - 13 62");
++        let mut a = ardoise();
++
++        let mut temoin = search();
++        temoin.path = vec![entree.hash()];
++        assert!(
++            temoin.negamax(&entree, 0, 1, -INFINITY, INFINITY, &mut a) > 300,
++            "témoin : sans la répétition, la position ne vaut pas zéro"
++        );
++
++        let mut s = search();
++        s.path = vec![z.hash(), apres_de1.hash(), apres_rh2.hash(), entree.hash()];
++        assert_eq!(
++            s.negamax(&entree, 0, 1, -INFINITY, INFINITY, &mut a),
++            DRAW,
++            "la seule parade répète la position : nulle"
++        );
++    }
++
+     #[test]
+     fn jamais_de_nulle_a_la_racine_meme_au_centieme_demi_coup() {
+         // Au centième demi-coup la position est nulle PAR RÈGLE — pour qui la
