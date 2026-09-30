@@ -760,9 +760,9 @@ dernière relève est faite.
 | **C29 — les seaux, A : sous pression** | **36651565341, 36651567495** — par ordre de déclenchement, à confirmer par leurs résumés | `2d44626` (seaux, 2 Mio) → `cdd5ba4` (case unique, 2 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 00 h 41, fin vers 06 h 30 | mise en commun ; critère de la section C29 — **fusion si la borne basse commune est au-dessus de zéro** et que B ne démontre pas de régression. *Attendu, écrit avant* : +3 à +25 |
 | **C29 — les seaux, B : au défaut** | **36651570193, 36651572367** — idem | `90ac6e3` (seaux, 16 Mio) → `d78b422` (`main`), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 00 h 41, fin vers 06 h 30 | la borne haute commune ne doit pas être sous zéro. *Attendu* : −3 à +5 |
 | **C29 — les deux sondes** | **36651578044** (A), **36651580375** (B) — idem | les mêmes binaires, `sonde: oui`, 100 parties une à une chacune | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉES à 01 h 23** — finies à 01 h 18 et 01 h 20, attribution confirmée | **A : +0,54 ± 0,10 pli, n/s × 1,003** — au-dessus de l'attendu (+0,1 à +0,35), presque tout le coût de la pression ; **B : +0,03 ± 0,13, n/s × 0,990**, dans l'attendu. Prédiction du verdict, écrite avant : A +11 à +49, B −8 à +12 (section C29) |
-| **C29 — le crible de mutation au candidat** | **36651736903** | `90ac6e3`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | lancé à 00 h 43 ; une partie de sa matrice attend des runners libres | `tt.rs` ≤ 6 — les six `\|` contre `^` connus —, aucun survivant dans le code neuf, chaque fichier sous son plafond |
+| **C29 — le crible de mutation au candidat** | **36651736903** | `90ac6e3`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | **RELEVÉ** — fini à 02 h 10, verdict rouge du seul fait de `tt.rs` | **tous les fichiers à leur plafond sauf `tt.rs`, 7 contre 6** : le départage du seau, `<` en `<=`, invisible au test qui ne lisait que les réponses. Le test qui lit les places est écrit, éprouvé contre le mutant, et entre avec la fusion (section C29) |
 | **C30 — la taille par défaut, l'Elo** | **36654642929, 36654645557** — identifiés par leur nom de run | `94c07ad` (64 Mio) → `4699e63` (16 Mio), `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 01 h 20, fin vers 07 h 05 | mise en commun ; critère de la section C30 — **le défaut passe à 64 Mio sauf coût démontré** (borne haute commune sous zéro). *Attendu, écrit avant* : −6 à +3 |
-| **C30 — la sonde** | **36654648060** | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | lancée à 01 h 20, fin vers 02 h 20 | n/s et plis appariés. *Attendus* : n/s × 0,95 à × 1,02, plis −0,1 à +0,05 |
+| **C30 — la sonde** | **36654648060** | les mêmes binaires, `sonde: oui`, 100 parties une à une | cutechess `-debug all`, `tools/plis.sh` | **RELEVÉE à 02 h 15** — finie à 01 h 58, EPYC 7763, zéro perte au temps | **n/s × 0,979, plis −0,08 ± 0,10** : les deux dans l'attendu. Prédiction du verdict, écrite avant : ~−3 Elo par la vitesse, −19 à +2 par les plis (section C30) |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
@@ -4265,6 +4265,31 @@ n/s **× 0,95 à × 1,02** ; plis **−0,1 à +0,05**.
   parce qu'écrit, et parce qu'il s'échangerait contre la pression des
   parties longues, que C28 chiffre à ~19 Elo.
 
+**La sonde, RELEVÉE le 30 sept. à 02 h 15 — les deux attendus tiennent.**
+Run 36654648060, EPYC 7763 (2 326 629 n/s au banc, profondeur 12 en
+250 ms), 100 parties une à une, zéro perte au temps, zéro coup illégal :
+
+| | candidat, 64 Mio | référence, 16 Mio |
+|---|---|---|
+| coups | 5 348 | 5 353 |
+| temps par coup | 191,6 ms | 191,3 ms |
+| n/s | 2 842 017 | **2 901 010** |
+| profondeur moyenne | 15,11 | 15,14 |
+
+- **la grande table va 2,1 % moins vite** — × 0,979, dans l'attendu (× 0,95
+  à × 1,02) ; le conteneur disait × 1,026, au bruit près : ses caches ne
+  sont pas ceux des runners, ce que le protocole réservait ;
+- **et cherche −0,08 ± 0,10 pli moins profond**, apparié par partie — dans
+  l'attendu (−0,1 à +0,05), et cohérent avec la vitesse seule : 2,1 %
+  valent −0,04 pli par l'étalon (1,38 pli par doublement). Là où la table
+  n'est pas pressée, la place de plus ne rend rien de visible ;
+- **ce que cela prédit du verdict, écrit AVANT lui** — <span>inférence,
+  confiance moyenne</span> : par la vitesse, **~−3 Elo** (log₂ 0,979 ×
+  107,7) ; par les plis, à 60 à 105 Elo par pli — un effet de vitesse, donc
+  l'étalon du temps —, −19 à +2. Un coût de ~3 Elo est sous la résolution :
+  **le critère conclurait vraisemblablement « pas de coût démontré »**, et
+  c'est l'échange que le protocole acceptait par écrit.
+
 ### C29 — les seaux : le protocole, écrit le 30 sept. avant de mesurer
 
 **Ouvert par le critère de C28** — coût démontré, donc « les deux leviers se
@@ -4395,11 +4420,13 @@ déclenchement :
   pli appartient à ce qui le fait gagner ou perdre, et un pli REGAGNÉ par
   la table n'a pas été mesuré.
 
-**Le crible de mutation, `tt.rs` RELEVÉ le 30 sept. à 01 h 25** (run
-36651736903, job fini à 01 h 11 ; `search.rs` et `eval.rs` tournent
-encore) : **7 survivants contre un plafond de 6** — les six `|` contre `^`
-connus, et **un neuf : `value < victim_worth` en `<=`**, le départage du
-seau.
+**Le crible de mutation, RELEVÉ le 30 sept.** — `tt.rs` à 01 h 25, le
+reste à 02 h 15 (run 36651736903, fini à 02 h 10, verdict rouge du seul
+fait de `tt.rs`). **Tous les autres fichiers sont à leur plafond**, et
+`search.rs` (39) comme `eval.rs` (89) montrent que l'arbre changé des
+tests n'y a rien déplacé. **`tt.rs` : 7 survivants contre un plafond de
+6** — les six `|` contre `^` connus, et **un neuf : `value < victim_worth`
+en `<=`**, le départage du seau.
 - **Pourquoi mon test ne le voyait pas** : `<=` fait céder la DERNIÈRE des
   entrées de même valeur — et donc remplit aussi le seau à l'envers, la
   dernière place vierge d'abord. Tout se déroule alors en image miroir,
