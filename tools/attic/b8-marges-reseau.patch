@@ -1,0 +1,133 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 53953d0..97e0ebc 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -188,6 +188,20 @@ const NO_MOVE: Move = Move {
+ /// de l'écrire.
+ const DELTA_MARGIN: i32 = 200;
+ 
++/// Le facteur, en centièmes, des marges d'aspiration et d'élagage delta quand
++/// le réseau joue.
++///
++/// Ces deux marges ont été posées et mesurées en unités de l'évaluation faite
++/// main. Le réseau porte des nombres ~2,2 fois plus grands là où elles
++/// tranchent, et **mesuré en partie le 30 sept. 2026** (B8) : l'élagage delta
++/// s'y trompait 24 fois plus souvent — la valeur faite main de la pièce prise
++/// y compte deux fois trop peu —, l'aspiration y échouait 2,7 fois plus, et
++/// dépensait 34 % des nœuds en recherches échouées contre 12 %. Les facteurs
++/// qui ramènent ces taux sur ceux de la faite main valent 2,5 et 2,0 ; celui-ci
++/// est leur moyenne géométrique. **La futilité inverse n'en prend pas** : au
++/// réseau, elle coupait plus et se trompait moins.
++const NETWORK_MARGIN_PERCENT: i32 = 224;
++
+ /// Nombre de nœuds entre deux consultations de l'horloge et du drapeau d'arrêt.
+ ///
+ /// Interroger `Instant::now()` à chaque nœud coûte plus cher que la recherche
+@@ -576,6 +590,17 @@ impl Search {
+         }
+     }
+ 
++    /// Une marge écrite en unités de la faite main, dans celles de
++    /// l'évaluation qui joue : portée à l'échelle du réseau quand il y en a
++    /// un, intacte sinon — voir [`NETWORK_MARGIN_PERCENT`].
++    fn scaled_margin(&self, margin: i32) -> i32 {
++        if self.network.is_some() {
++            margin.saturating_mul(NETWORK_MARGIN_PERCENT) / 100
++        } else {
++            margin
++        }
++    }
++
+     /// L'évaluation statique de `board`, cherché au ply `ply` : celle du
+     /// réseau sur les accumulateurs de ce ply quand il y en a un, sinon la
+     /// faite main. Le seul point d'entrée de l'évaluation dans la recherche.
+@@ -909,7 +934,7 @@ impl Search {
+             return self.negamax(board, depth, 0, -INFINITY, INFINITY, scratch);
+         }
+ 
+-        let mut delta = ASPIRATION_DELTA;
++        let mut delta = self.scaled_margin(ASPIRATION_DELTA);
+         let mut alpha = previous.saturating_sub(delta).max(-INFINITY);
+         let mut beta = previous.saturating_add(delta).min(INFINITY);
+ 
+@@ -1790,7 +1815,7 @@ impl Search {
+             return false;
+         };
+         let gain = self.params.mg_value[victim as usize].max(self.params.eg_value[victim as usize]);
+-        stand_pat.saturating_add(gain).saturating_add(DELTA_MARGIN) <= alpha
++        stand_pat.saturating_add(self.scaled_margin(gain.saturating_add(DELTA_MARGIN))) <= alpha
+     }
+ }
+ 
+@@ -4742,6 +4767,71 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn les_marges_suivent_l_echelle_de_l_evaluation_qui_joue() {
++        // B8 : l'aspiration et l'élagage delta ont été posés en unités de la
++        // faite main ; au réseau, ils prennent le facteur de
++        // `NETWORK_MARGIN_PERCENT`, et la faite main garde les siennes au bit
++        // près — le banc et les tests de recherche n'en bougent pas.
++        let mut s = search();
++        assert_eq!(
++            s.scaled_margin(ASPIRATION_DELTA),
++            25,
++            "faite main : intacte"
++        );
++        assert_eq!(s.scaled_margin(1_000), 1_000, "faite main : intacte");
++        s.set_network(Some(Arc::new(crate::nnue::testing::random_network(1))));
++        assert_eq!(s.scaled_margin(ASPIRATION_DELTA), 56, "réseau : 25 × 2,24");
++        assert_eq!(s.scaled_margin(1_000), 2_240, "réseau : 1 000 × 2,24");
++        s.set_network(None);
++        assert_eq!(
++            s.scaled_margin(ASPIRATION_DELTA),
++            25,
++            "retour à la faite main"
++        );
++    }
++
++    #[test]
++    fn l_elagage_delta_compte_la_piece_prise_a_l_echelle_du_reseau() {
++        // Le cavalier prend le pion d5. À la faite main, `alpha` au ras de
++        // `stand_pat + gain + DELTA_MARGIN` : la prise ne peut pas le
++        // rejoindre, elle s'élague. Au réseau, le même pion vaut 2,24 fois
++        // plus : elle ne s'élague plus.
++        let b = board("4k3/8/8/3p4/8/4N3/8/4K3 w - - 0 1");
++        let mv = Move {
++            from: Square::E3,
++            to: Square::D5,
++            promotion: None,
++        };
++        let mut s = search();
++        let gain =
++            s.params.mg_value[Piece::Pawn as usize].max(s.params.eg_value[Piece::Pawn as usize]);
++        let stand_pat = -1_000;
++        let alpha = stand_pat + gain + DELTA_MARGIN;
++        assert!(
++            s.delta_prunable(&b, mv, false, stand_pat, alpha),
++            "faite main : élaguée"
++        );
++        assert!(
++            !s.delta_prunable(&b, mv, false, stand_pat, alpha - 1),
++            "témoin : sous le seuil, elle ne s'élague pas"
++        );
++        s.set_network(Some(Arc::new(crate::nnue::testing::random_network(1))));
++        assert!(
++            !s.delta_prunable(&b, mv, false, stand_pat, alpha),
++            "réseau : le pion compte 2,24 fois, la prise reste"
++        );
++        let seuil = stand_pat + (gain + DELTA_MARGIN) * NETWORK_MARGIN_PERCENT / 100;
++        assert!(
++            s.delta_prunable(&b, mv, false, stand_pat, seuil),
++            "réseau : au ras du seuil mis à l'échelle"
++        );
++        assert!(
++            !s.delta_prunable(&b, mv, false, stand_pat, seuil - 1),
++            "réseau : juste sous lui"
++        );
++    }
++
+     #[test]
+     fn jamais_de_nulle_a_la_racine_meme_au_centieme_demi_coup() {
+         // Au centième demi-coup la position est nulle PAR RÈGLE — pour qui la
