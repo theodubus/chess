@@ -386,6 +386,12 @@ export default function InteractiveReview({
                   demoStep.move ? [demoStep.move.from, demoStep.move.to] : []
                 }
                 autoShapes={(() => {
+                  if (demoStep.marks?.length)
+                    return demoStep.marks.map((mark) => ({
+                      orig: mark.from,
+                      dest: mark.to,
+                      brush: mark.tone === "idea" ? "green" : "red",
+                    }));
                   const next =
                     demonstration.line.steps[demonstration.step + 1]?.move;
                   return next
@@ -521,13 +527,18 @@ export default function InteractiveReview({
         {demonstration ? (
           <div className="review-details explanation-demo">
             <h2>{demonstration.line.title}</h2>
+            {demoStep?.motif && (
+              <p className="explanation-motif">{demoStep.motif}</p>
+            )}
             <p className="explanation-caption" role="status">
               {demoStep?.text}
             </p>
             <p className="hint">
-              La flèche indique le prochain coup de cette suite. Elle illustre
-              une continuation trouvée par le moteur, pas une obligation pour
-              l’adversaire.
+              {demoStep?.marks?.length
+                ? "Les repères rouges montrent les menaces ; les verts montrent la défense ou l’idée du coup."
+                : "La flèche bleue indique le prochain coup de cette suite."}{" "}
+              La suite illustre une continuation trouvée par le moteur, sans
+              imposer les réponses adverses.
             </p>
             {demonstration.line.truncated && (
               <p className="hint">
@@ -631,7 +642,13 @@ export default function InteractiveReview({
                       {explanation.played && (
                         <button
                           className="secondary"
-                          onClick={() => demonstrate(explanation.played!)}
+                          onClick={() =>
+                            demonstrate(
+                              explanation.primary === "alternative"
+                                ? explanation.alternative!
+                                : explanation.played!,
+                            )
+                          }
                         >
                           {explanation.concrete
                             ? "Montrer pourquoi"
@@ -641,9 +658,17 @@ export default function InteractiveReview({
                       {explanation.alternative && (
                         <button
                           className="secondary"
-                          onClick={() => demonstrate(explanation.alternative!)}
+                          onClick={() =>
+                            demonstrate(
+                              explanation.primary === "alternative"
+                                ? explanation.played!
+                                : explanation.alternative!,
+                            )
+                          }
                         >
-                          Voir la meilleure idée
+                          {explanation.primary === "alternative"
+                            ? "Voir la suite jouée"
+                            : "Voir la meilleure idée"}
                         </button>
                       )}
                     </div>

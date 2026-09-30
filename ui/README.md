@@ -273,29 +273,48 @@ Les résultats sont conservés par branche et invalidés à la relance de l’an
 
 ## Comprendre un coup
 
-Le premier lot d’explications pédagogiques décrit les faits vérifiés dans la
-position et la suite du moteur : mat, promotion et évolution du matériel. Une
-suite légale peut illustrer une conséquence, sans prouver qu’elle est forcée.
-Quand la cause du verdict n’est pas identifiée, l’interface le précise.
+Les explications pédagogiques décrivent des faits vérifiés dans la position et
+les suites du moteur. Elles couvrent les mats, promotions et conséquences
+matérielles, puis les motifs tactiques suivants :
 
-« Montrer pourquoi » ouvre une courte démonstration sur le même échiquier.
-Les flèches de navigation et le clavier parcourent ses étapes ; une flèche
-bleue indique le prochain coup et une phrase décrit chaque étape. « Voir la
-meilleure idée » part de la position avant le coup joué. « Retour au coup
-examiné » restaure la partie ou la variante et ses dessins personnels.
-La démonstration ne crée aucune branche dans les variantes utilisateur.
+- Fourchette : deux cibles attaquées, déplacement de l’une puis capture de l’autre.
+- Clouage au roi ou à une pièce plus précieuse, exploité dans la suite.
+- Attaque à la découverte, défenseur supprimé/déplacé et pièce sans défense.
+- Menace de mat réalisée dans la suite et progression du même pion jusqu’à sa promotion.
+- Défenses immédiates : mat en un paré, échec bloqué, pièce mise à l’abri ou défendue.
 
-Ces explications utilisent uniquement les analyses déjà disponibles, sans
-recherche supplémentaire. Les variantes incohérentes ou illégales sont
-refusées, et la démonstration est limitée à huit demi-coups. Une suite tronquée
-ou terminée par une prise immédiatement reprenable ne sert pas à annoncer un
-gain matériel. Les scores intermédiaires de la démonstration ne sont pas
-inventés : la barre affiche « ? ». Les annotations masquées et les retentatives
-sans solution masquent aussi les explications.
+Une seule idée principale est retenue. Les motifs offensifs doivent avoir une
+conséquence légale visible dans les huit premiers demi-coups et être cohérents
+avec la classification et la comparaison des suites. Une simple attaque ou un
+alignement ne suffit pas. Les occasions manquées peuvent être expliquées par
+la meilleure suite proposée ; « Montrer pourquoi » ouvre alors cette alternative,
+et « Voir la suite jouée » permet de comparer avec la décision réelle.
+
+La démonstration utilise le même échiquier et se parcourt avec les boutons ou le
+clavier. Une flèche bleue annonce le prochain coup. À l’étape du motif, les repères
+rouges montrent les menaces, les verts la défense ou l’idée du coup, avec les
+noms des pièces et leurs cases dans le texte. « Retour au coup examiné » restaure
+la partie ou la variante et ses dessins personnels. Aucune branche n’est ajoutée
+par la démonstration. Les repères suivent l’orientation et restent masqués pendant
+un retry sans solution, comme lorsque les annotations sont désactivées.
+
+Aucune recherche moteur supplémentaire n’est lancée. Les PV entières sont
+validées avec chess.js, même si seuls huit demi-coups sont montrés. Le résumé
+matériel simple refuse une suite affichée tronquée ; les motifs peuvent utiliser
+le bilan final de la PV complète, à condition que leur propre conséquence soit
+visible et que la fin ne laisse pas de reprise immédiate. Les défenseurs sont
+filtrés par la légalité des reprises. Les défenses vérifient des menaces à un
+coup, sans garantir la sécurité à plus long terme. Les scores bornés, absents ou
+les verdicts non classés ne servent pas à attribuer une cause tactique.
+
+Une PV reste une continuation, pas une preuve de gain forcé. La détection est
+volontairement conservatrice et ne couvre pas toutes les combinaisons. Quand
+aucune cause fiable n’est trouvée, l’interface le précise. Les évaluations des
+positions intermédiaires ne sont pas inventées : la barre affiche « ? ».
 
 La [backlog d’analyse pédagogique](BACKLOG_ANALYSE_PEDAGOGIQUE.md) conserve le
-périmètre validé, l’état livré et les étapes suivantes : motifs tactiques,
-indices graduels, vérifications ciblées et observations positionnelles.
+périmètre validé et les étapes restantes : indices graduels, vérifications ciblées
+et observations positionnelles.
 
 ## Annotations de la revue
 

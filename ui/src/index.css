@@ -1556,3 +1556,5 @@ dialog:has(.army-editor) { width:min(600px,calc(100vw - 24px)); }
 
 .review-board-stage { position:relative; min-width:0; }
 .source-board.is-hidden { position:absolute; inset:0; visibility:hidden; pointer-events:none; }
+
+.explanation-motif { color:#d8bd80; font-weight:700; margin-bottom:0; }

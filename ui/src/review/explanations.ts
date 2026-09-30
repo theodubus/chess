@@ -7,7 +7,13 @@ import {
   type ReviewResult,
   type VariationMove,
 } from "./model";
-import type { Annotation } from "./annotations";
+import { advantage, type Annotation } from "./annotations";
+import {
+  defensiveIdea,
+  tacticalIdeas,
+  type TacticalIdea,
+  type TacticalMark,
+} from "./tactics";
 
 export type ExplanationStep = {
   fen: string;
@@ -15,15 +21,19 @@ export type ExplanationStep = {
   label: string;
   text: string;
   move: Move | null;
+  motif?: string;
+  marks?: TacticalMark[];
 };
 export type ExplanationLine = {
   title: string;
   steps: ExplanationStep[];
   truncated: boolean;
+  verifiedEnding?: { fen: string; capture: string | null };
 };
 export type MoveExplanation = {
   summary: string;
   concrete: boolean;
+  primary?: "alternative";
   played: ExplanationLine | null;
   alternative: ExplanationLine | null;
 };
@@ -111,6 +121,10 @@ function buildLine(
       title: includePlayed ? "Après le coup joué" : "La meilleure idée trouvée",
       steps: steps.slice(0, limit + 1),
       truncated: steps.length > limit + 1,
+      verifiedEnding: {
+        fen: board.fen(),
+        capture: steps.at(-1)!.move?.captured ? steps.at(-1)!.move!.to : null,
+      },
     };
   } catch {
     return null;
@@ -125,7 +139,112 @@ function settled(line: ExplanationLine) {
     .moves({ verbose: true })
     .some((move) => move.captured && move.to === last.move!.to);
 }
-export function explainMove(
+function outcome(line: ExplanationLine, position: ReviewPosition) {
+  const ending = line.verifiedEnding;
+  if (!ending) return null;
+  const board = new Chess(ending.fen);
+  if (
+    ending.capture &&
+    board
+      .moves({ verbose: true })
+      .some((move) => move.captured && move.to === ending.capture)
+  )
+    return null;
+  return {
+    delta:
+      (materialBalance(board) - materialBalance(new Chess(position.fen))) *
+      (position.turn === "w" ? 1 : -1),
+    winner: board.isCheckmate() ? (board.turn() === "w" ? "b" : "w") : null,
+  };
+}
+function illustrate(line: ExplanationLine, idea: TacticalIdea) {
+  const step = line.steps[idea.step];
+  step.motif = idea.title;
+  step.text = idea.text[0].toLocaleUpperCase("fr") + idea.text.slice(1);
+  step.marks = idea.marks;
+  if (idea.step !== 0)
+    line.steps[0].text = `À repérer : ${idea.title.toLocaleLowerCase("fr")}. Avancez pour voir les pièces concernées, puis la conséquence dans la suite.`;
+}
+function tacticalExplanation(
+  position: ReviewPosition,
+  before: ReviewResult | null,
+  after: ReviewResult | null,
+  annotation: Annotation | null,
+  played: ExplanationLine,
+  alternative: ExplanationLine | null,
+): { summary: string; primary?: "alternative" } | null {
+  if (
+    !annotation ||
+    !before?.score ||
+    !after?.score ||
+    before.score.bound ||
+    after.score.bound
+  )
+    return null;
+  const prior = advantage(before.score, position.turn),
+    next = advantage(after.score, position.turn);
+  if (prior === null || next === null) return null;
+  const bad = ["inaccuracy", "mistake", "blunder", "miss"].includes(
+    annotation.category,
+  );
+  const result = outcome(played, position);
+  const better = alternative ? outcome(alternative, position) : null;
+  const enemy = position.turn === "w" ? "b" : "w";
+  const lost =
+    !!result &&
+    (result.winner === enemy || (!result.winner && result.delta < 0));
+  const safer =
+    !!better &&
+    better.winner !== enemy &&
+    (result?.winner === enemy || better.delta > (result?.delta ?? 0));
+  const opportunity =
+    !!better &&
+    !!result &&
+    (better.winner === position.turn ||
+      (better.delta > 0 && better.delta > result.delta)) &&
+    result.winner !== position.turn;
+  let idea: TacticalIdea | undefined;
+  let line = played;
+  let primary: "alternative" | undefined;
+  if (
+    bad &&
+    opportunity &&
+    alternative &&
+    (annotation.category === "miss" || !lost)
+  ) {
+    idea = tacticalIdeas(alternative, position.turn, 1)[0];
+    if (idea) {
+      line = alternative;
+      primary = "alternative";
+    }
+  }
+  if (!idea && bad && lost && safer) idea = tacticalIdeas(played, enemy, 2)[0];
+  if (!idea && bad && opportunity && alternative) {
+    idea = tacticalIdeas(alternative, position.turn, 1)[0];
+    if (idea) {
+      line = alternative;
+      primary = "alternative";
+    }
+  }
+  if (!bad && prior - next < 0.05) {
+    if (
+      result &&
+      (result.winner === position.turn || (!result.winner && result.delta > 0))
+    )
+      idea = tacticalIdeas(played, position.turn, 1)[0];
+    idea ??= defensiveIdea(played) ?? undefined;
+  }
+  if (!idea) return null;
+  illustrate(line, idea);
+  const text = idea.text[0].toLocaleUpperCase("fr") + idea.text.slice(1);
+  return {
+    summary: primary
+      ? `Occasion manquée dans la meilleure suite trouvée : ${text}`
+      : text,
+    primary,
+  };
+}
+function baseExplanation(
   position: ReviewPosition,
   before: ReviewResult | null,
   after: ReviewResult | null,
@@ -217,4 +336,31 @@ export function explainMove(
       };
   }
   return fallback;
+}
+
+export function explainMove(
+  position: ReviewPosition,
+  before: ReviewResult | null,
+  after: ReviewResult | null,
+  annotation: Annotation | null,
+): MoveExplanation {
+  const base = baseExplanation(position, before, after, annotation);
+  if (!base.played) return base;
+  const tactic = tacticalExplanation(
+    position,
+    before,
+    after,
+    annotation,
+    base.played,
+    base.alternative,
+  );
+  if (!tactic) return base;
+  return {
+    ...base,
+    ...tactic,
+    concrete: true,
+    summary:
+      tactic.summary +
+      (base.concrete && !tactic.primary ? ` ${base.summary}` : ""),
+  };
 }

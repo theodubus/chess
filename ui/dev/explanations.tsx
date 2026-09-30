@@ -2,15 +2,66 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Chess } from "chess.js";
 import { GameReview } from "../src/review/GameReview";
-import { legalVariation } from "../src/review/model";
+import { legalVariation, type ReviewResult } from "../src/review/model";
 import InteractiveReview from "../src/review/InteractiveReview";
 import type { StudyTree } from "../src/review/StudyTree";
 import "../src/index.css";
 
 // Scénario déterministe de contrôle UI ; aucune analyse simulée dans l’application.
+const tacticalCases = {
+  fork: {
+    fen: "r3k3/8/8/3N4/8/8/8/7K w - - 0 1",
+    played: ["Nc7+", "Kd7", "Nxa8", "Ke6"],
+    best: ["Nc7+", "Kd7", "Nxa8", "Ke6"],
+  },
+  pin: {
+    fen: "8/3kp3/2n5/3P4/8/8/8/5B1K w - - 0 1",
+    played: ["Bb5", "e6", "Bxc6+", "Kc7"],
+    best: ["Bb5", "e6", "Bxc6+", "Kc7"],
+  },
+  defender: {
+    fen: "7k/8/5r2/3n4/2B5/2B5/8/7K w - - 0 1",
+    played: ["Bxd5", "Kh7", "Bxf6", "Kg6"],
+    best: ["Bxd5", "Kh7", "Bxf6", "Kg6"],
+  },
+  defence: {
+    fen: "3r3k/8/8/3B4/8/8/2N5/7K w - - 0 1",
+    played: ["Ne3", "Ra8"],
+    best: ["Ne3", "Ra8"],
+  },
+  miss: {
+    fen: "r3k3/8/8/3N4/8/8/8/7K w - - 0 1",
+    played: ["Kh2", "Kf7"],
+    best: ["Nc7+", "Kd7", "Nxa8", "Ke6"],
+  },
+};
+const tactical =
+  tacticalCases[
+    new URLSearchParams(location.search).get(
+      "case",
+    ) as keyof typeof tacticalCases
+  ];
+function simulated(fen: string, sans: string[], cp: number): ReviewResult {
+  const board = new Chess(fen);
+  const moves = sans.map((san) => board.move(san));
+  return {
+    score: { kind: "cp", value: cp },
+    depth: 16,
+    bestMove: moves[0]
+      ? moves[0].from + moves[0].to + (moves[0].promotion ?? "")
+      : null,
+    bestSan: moves[0]?.san ?? null,
+    variation: moves.map((move) => ({
+      from: move.from,
+      to: move.to,
+      fen: move.after,
+      label: move.san,
+    })),
+  };
+}
 const game = new Chess();
 for (const san of ["f3", "e5", "g4", "Qh4#"]) game.move(san);
-const review = new GameReview(game.pgn());
+let review = new GameReview(game.pgn());
 review.state = "complete";
 review.results[2] = {
   score: { kind: "cp", value: 0 },
@@ -33,6 +84,18 @@ review.results[4] = {
   bestSan: null,
   variation: [],
 };
+if (tactical) {
+  const game = new Chess(tactical.fen);
+  game.move(tactical.played[0]);
+  review = new GameReview(game.pgn());
+  review.state = "complete";
+  review.results[0] = simulated(tactical.fen, tactical.best, 800);
+  review.results[1] = simulated(
+    game.fen(),
+    tactical.played.slice(1),
+    tactical === tacticalCases.miss ? -500 : 800,
+  );
+}
 const trees = new Map<number, StudyTree>();
 // Lire les arbres au moment du contrôle : leur mutation ne rend pas ce parent.
 Object.assign(window, {
@@ -42,7 +105,7 @@ Object.assign(window, {
   },
 });
 export function Fixture() {
-  const [selected, select] = useState(3);
+  const [selected, select] = useState(tactical ? 1 : 3);
   const [annotations, showAnnotations] = useState(true);
   const [orientation, setOrientation] = useState<"white" | "black">("white");
   return (

@@ -1665,6 +1665,84 @@ try {
       "retour exact à la variante avec ses dessins, sans ajout de branche",
     );
   }
+  if (!process.env.CHESS_ANNOTATIONS_ONLY && !process.env.CHESS_PLAY_ONLY) {
+    for (const [scenario, title, step, arrows] of [
+      ["fork", "Fourchette", 1, 2],
+      ["pin", "Clouage au roi", 1, 2],
+      ["defender", "Défenseur supprimé", 0, 2],
+      ["defence", "Pièce défendue", 1, 2],
+      ["miss", "Fourchette", 1, 2],
+    ]) {
+      await call("Page.navigate", {
+        url: new URL(
+          `/dev/explanations.html?case=${scenario}`,
+          process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+        ).href,
+      });
+      await waitFor(
+        `document.querySelector('.move-explanation')`,
+        "cas tactique chargé",
+      );
+      await button("Montrer pourquoi");
+      if (scenario === "miss")
+        assert(
+          await evaluate(
+            `document.querySelector('.explanation-demo h2').textContent==='La meilleure idée trouvée'`,
+          ),
+          "l’occasion manquée ouvre la bonne suite",
+        );
+      for (let index = 0; index < step; index++) await pressKey(">");
+      await waitFor(
+        `document.querySelector('.explanation-motif')?.textContent===${JSON.stringify(title)}`,
+        "repère tactique associé à la bonne étape",
+      );
+      await waitFor(
+        `document.querySelectorAll('.review-board-stage > .board-frame .cg-shapes line').length===${arrows}`,
+        "flèches du motif sur le plateau",
+      );
+      const geometry = await evaluate(
+        `[...document.querySelectorAll('.cg-shapes line')].map(line=>[line.getAttribute('x1'),line.getAttribute('y1'),line.getAttribute('x2'),line.getAttribute('y2')])`,
+      );
+      await screenshot(`13-tactic-${scenario}-mobile`);
+      if (scenario === "fork") {
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 1280,
+          height: 900,
+          deviceScaleFactor: 1,
+          mobile: false,
+        });
+        await screenshot("14-tactic-fork-desktop");
+        assert(
+          await evaluate(
+            `document.documentElement.scrollWidth<=1280 && document.querySelector('.explanation-caption').getBoundingClientRect().right<=1280`,
+          ),
+          "repère tactique lisible sur bureau",
+        );
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 390,
+          height: 844,
+          deviceScaleFactor: 1,
+          mobile: true,
+        });
+      }
+      await button("Retourner");
+      await waitFor(
+        `JSON.stringify([...document.querySelectorAll('.cg-shapes line')].map(line=>[line.getAttribute('x1'),line.getAttribute('y1'),line.getAttribute('x2'),line.getAttribute('y2')]))!==${JSON.stringify(JSON.stringify(geometry))}`,
+        "les repères suivent l’orientation",
+      );
+      assert(
+        await evaluate(`document.documentElement.scrollWidth<=390`),
+        "motif sans débordement mobile",
+      );
+      await button("Réessayer ce coup");
+      assert(
+        await evaluate(
+          `!document.querySelector('.explanation-motif') && !document.querySelector('.cg-shapes line') && !document.querySelector('.move-explanation')`,
+        ),
+        "retry sans fuite des motifs ni des flèches",
+      );
+    }
+  }
   assert.deepEqual(errors, [], "Aucune erreur JavaScript ou réseau");
   console.log(
     `${process.env.CHESS_EXPLANATIONS_ONLY ? "Contrôle des explications, de la navigation et du retry réussi" : process.env.CHESS_PLAY_ONLY ? "Contrôle du jeu, des commandes et des pictogrammes réussi" : process.env.CHESS_ANNOTATIONS_ONLY ? "Contrôle des pictogrammes réussi" : "Contrôle navigateur réussi : import PGN (texte, fichier, FEN), Stockfish, partie complète, analyse réelle, navigation, préférences, bureau, mobile, tablette et pictogrammes"}. Captures : ${output}`,

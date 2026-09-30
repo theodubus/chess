@@ -47,14 +47,14 @@ entre le coup joué et une meilleure idée, pas seulement répéter la catégori
   promotions/reprises, variantes, préférence d’annotations, retry caché.
 - [x] Vérification navigateur desktop/mobile et mise à jour de cette backlog.
 
-### 2. Motifs tactiques et lien causal
+### 2. Motifs tactiques et lien causal — TERMINÉ (30 septembre 2026)
 
-- [ ] Fourchettes/doubles attaques et gain réellement illustré par la suite.
-- [ ] Clouages absolus/relatifs : pièce, attaquant, cible et conséquences.
-- [ ] Défenseur déplacé/supprimé, pièce non défendue, attaque à la découverte.
-- [ ] Menaces de mat/progression du pion et occasions manquées.
-- [ ] Bons coups défensifs : menace évitée ; bons coups offensifs : occasion exploitée.
-- [ ] Une seule explication prioritaire, sélectionner la plus utile et vérifiable.
+- [x] Fourchettes/doubles attaques et gain réellement illustré par la suite.
+- [x] Clouages absolus/relatifs : pièce, attaquant, cible et conséquences.
+- [x] Défenseur déplacé/supprimé, pièce non défendue, attaque à la découverte.
+- [x] Menaces de mat/progression du pion et occasions manquées.
+- [x] Bons coups défensifs : menace évitée ; bons coups offensifs : occasion exploitée.
+- [x] Une seule explication prioritaire, sélectionner la plus utile et vérifiable.
 
 ### 3. Apprentissage et recherches ciblées
 
@@ -114,3 +114,40 @@ entre le coup joué et une meilleure idée, pas seulement répéter la catégori
 - Prochaine reprise : lot 2, d’abord un motif tactique vérifiable de bout en
   bout (faits, lien avec la suite, explication et repères visuels), sans déduire
   le verdict de la simple présence d’un motif.
+
+## Notes de livraison du lot 2 — 30 septembre 2026
+
+- `src/review/tactics.ts` détecte des motifs liés à une conséquence dans la PV :
+  fourchette suivie de la fuite d’une cible et de la capture de l’autre ; clouage
+  absolu/relatif exploité ; ligne ouverte puis capture/mat ; défense perdue puis
+  prise ; cible non défendue ; mat immédiat/menace réalisée ; même pion promu.
+- Le lien au verdict se fait dans `explanations.ts::tacticalExplanation` : scores
+  exacts et annotation disponibles ; gain/mat dans la suite pour le camp concerné,
+  comparaison avec l’alternative pour les erreurs et occasions manquées. Le bilan
+  de la PV entière est conservé dans `verifiedEnding`, même quand l’affichage
+  s’arrête à huit demi-coups. La conséquence du motif doit rester visible.
+- Les bons coups défensifs vérifient localement un mat en un supprimé, une
+  interposition, une fuite vers une case non capturable ou un défenseur permettant
+  une reprise légale. Ces essais chess.js ne sont pas des recherches moteur et
+  ne prédisent pas les menaces profondes. Les captures/reprises filtrent les
+  défenseurs cloués et les rois qui ne peuvent pas reprendre légalement.
+- Une idée prioritaire par coup. `ExplanationStep.motif/marks` associent le texte
+  aux pièces concernées ; rouge = menace, vert = défense/idée. Le prochain coup
+  reste bleu aux étapes sans motif. Les annotations personnelles sont séparées.
+- `MoveExplanation.primary = "alternative"` dirige « Montrer pourquoi » vers
+  l’occasion manquée. Le retour, les variantes, l’orientation, les préférences et
+  la dissimulation de la solution restent gérés par le socle du lot 1.
+- Couverture volontairement prudente : fourchettes de pièces/roi, motifs proches
+  du coup examiné, défenseurs effectivement perdus, menaces réalisées dans la
+  suite. Un motif géométrique isolé, une suite incohérente, un score borné ou une
+  compensation inexpliquée ne suffit pas. Une menace déjà présente n’est pas
+  attribuée au dernier coup. Aucune promesse de gain forcé.
+- Tests de motifs et contre-exemples : `tactics.test.ts`. Scénarios visuels :
+  `/dev/explanations.html?case=fork` (ou `pin`, `defender`, `defence`, `miss`),
+  tous vérifiés dans le contrôle `CHESS_EXPLANATIONS_ONLY=1`.
+- Validation : 25 nouveaux tests de motifs et contre-exemples ; 251 tests unitaires,
+  270 tests avec ShallowRed/Stockfish, lint, TypeScript et build réussis. Parcours
+  Chromium complet réussi, y compris les motifs sur bureau/mobile, le retournement,
+  le choix de l’alternative manquée et l’absence de fuite pendant le retry.
+- Prochaine reprise : lot 3 (indices graduels du retry, puis vérifications
+  ciblées bornées et cachées), sans divulguer les motifs avant demande d’indice.
