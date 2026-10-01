@@ -144,6 +144,18 @@ une mesure, pas une préférence.
   chaque build** (`le_reseau_embarque_evalue_comme_son_entraineur`) :
   remplacer le réseau demande d'y recopier la confrontation que
   `tools/nnue-train` imprime pour le nouveau, jamais d'assouplir le test.
+- **Une marge écrite en unités d'évaluation se mesure à l'échelle de
+  l'évaluation qui joue.** Les marges de la recherche ont été réglées sur la
+  faite main ; le réseau porte d'autres nombres — pente 2,40 contre la faite
+  main, mesurée là où la futilité tranche. B8, 30 sept. 2026 : l'aspiration
+  et l'élagage delta passent par `scaled_margin`, × 2,24 quand un réseau
+  joue — **+50,50 ± 5,37 Elo** à `8+0,08` ; la futilité inverse, sondée,
+  tient telle quelle. L'échelle ne se transpose donc pas en bloc : **elle se
+  mesure, marge par marge** (`tools/attic/b8-sonde-marges.patch`). **Le
+  facteur appartient au réseau** : en embarquer un autre demande de relancer
+  la sonde, et une marge nouvelle en unités d'évaluation passe par elle. La
+  faite main garde ses marges au bit près — le banc et les tests de
+  recherche n'en voient rien.
 - **Pas de coupure par la table à la racine.** Il y faut un coup à jouer, pas
   seulement un score.
 - **Une itération d'approfondissement interrompue est jetée**, jamais acceptée :
@@ -916,12 +928,23 @@ une mesure, pas une préférence.
   le moteur étant déterministe, sans livre toutes les parties d'un match sont
   la même partie.
   <br>**Et la GRAINE l'est tout autant, entre deux matchs qu'on veut mettre en
-  commun.** Mêmes binaires plus même graine donnent **les mêmes parties, coup
-  pour coup** — c'est la même propriété, d'un cran plus haut. Rejouer un match
-  expiré avec sa graine d'origine n'apporte donc *rien*, et donner la même
-  graine à deux jobs qu'on additionne produit deux copies l'une de l'autre :
-  l'effectif double sur le papier et l'information ne bouge pas. *Vérifier que
-  les graines diffèrent avant de lancer, jamais après avoir additionné.*
+  commun.** <s>Mêmes binaires plus même graine donnent **les mêmes parties,
+  coup pour coup** — c'est la même propriété, d'un cran plus haut. Rejouer un
+  match expiré avec sa graine d'origine n'apporte donc *rien*, et donner la
+  même graine à deux jobs qu'on additionne produit deux copies l'une de
+  l'autre : l'effectif double sur le papier et l'information ne bouge
+  pas.</s> **Remesuré le 1er oct. 2026 sur les journaux de B8 — à la
+  pendule, c'était faux, et le vrai partage était ailleurs.** Une même
+  ouverture rejouée, mêmes binaires, même machine, ne recopie pas sa partie :
+  même paire d'issues 22 à 25 % des fois, contre 10 à 12 % entre ouvertures
+  différentes, et des scores de paire presque pas corrélés (r ≈ 0,03). **Ce
+  que les matchs partagent, c'est le LIVRE** : 500 ouvertures, que fastchess
+  mélange une fois puis parcourt en boucle — deux matchs de 3 000 parties
+  jouent les mêmes, trois fois chacune, **quelle que soit la graine**. Le
+  coût, ~7 % sur un intervalle mis en commun, ne compte qu'au ras d'une
+  borne (`tools/README.md`, « Le livre, réutilisé »). *Des graines distinctes
+  restent la règle — rien ne dit que la pendule brouille autant à une autre
+  cadence —, mais une graine permute le livre, elle ne l'agrandit pas.*
 - **Des pièges de ce fichier sont partis dans `tools/pieges-fermes.md`.**
   Chacun est désormais tenu par un dispositif qui le rend inexprimable —
   `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,

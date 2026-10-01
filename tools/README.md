@@ -548,6 +548,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-30 | **C29 — les seaux, au défaut** : 16 Mio, où la table n'est pas pressée (`90ac6e3` contre `d78b422`) | **+1,85 Elo ± 5,51** sur 6 000 parties à `8+0,08`, homogènes (z = −0,87) : aucune régression démontrée — la condition de la fusion ; la sonde : n/s × 0,990, +0,03 ± 0,13 pli |
 | 2026-09-30 | **C30 — la table par défaut à 64 Mio au lieu de 16**, là où elle n'est pas pressée (`94c07ad` contre `4699e63`) | **+2,90 Elo ± 5,72** sur 6 000 parties à `8+0,08`, homogènes (z = −1,11), zéro perte au temps. **Aucun coût démontré : le défaut passe à 64 Mio** (`428a1e5`) ; la sonde : n/s × 0,979, −0,08 ± 0,10 pli |
 | 2026-09-30 | **C31 — la nulle par règle testée après une parade tranquille, dans la quiescence** (`5d8c68c` contre `1638d26`) | **−2,43 Elo ± 5,36** sur 6 000 parties à `8+0,08`, homogènes de justesse (z = −1,99) ; **le match 1 seul, −7,88 ± 7,61, borne haute −0,27**. **ARRÊTÉ PAR SON CRITÈRE** — correctif de règle, « fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match » : une lecture la met sous zéro. Zéro perte au temps ; avertissements de nulle : 0 pour le candidat, 5 pour la référence |
+| 2026-09-30 | **B8 — l'aspiration et l'élagage delta à l'échelle du réseau** : leurs marges × 2,24 quand un réseau joue, la faite main inchangée (`791e6e4` contre `7305c8a`) | **+50,50 Elo ± 5,37** sur 6 000 parties à `8+0,08`, homogènes (z = −0,13), zéro perte au temps. **Gain démontré, FUSIONNÉ** — l'attendu, 0 à +25, réfuté par le haut. Banc inchangé : la faite main garde ses marges |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -776,8 +777,9 @@ dernière relève est faite.
 | **C31 — l'Elo** | **36697316384, 36697321243** — identifiés par leur nom de run | `5d8c68c` → `1638d26`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 15 h 45** — finis ENTIERS à 15 h 17, 3 000 parties chacun, 6,8 s par partie, deux Xeon Platinum 8573C | **−7,88 ± 7,61 et +3,01 ± 7,54 ; −2,43 ± 5,36 en commun, homogènes de justesse (z = −1,99)** ; zéro perte au temps. **ARRÊTÉ PAR SON CRITÈRE** : la borne haute du match 1 est sous zéro, −0,27 — **non fusionné**, la rustine reste à l'attic (section C31). Avertissements de nulle : **0 pour le candidat, 5 pour la référence** — le correctif fait ce qu'il dit. — *Attendu, écrit avant* : 0 à +5 |
 | **C31 — le crible de mutation au candidat** | **36697324833** | `5d8c68c`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | **RELEVÉ à 11 h 50, VERT** — fini à 11 h 16, `search.rs` le plus long, 98 min : 506 attrapés, 43 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants de `main` un pour un — décalés de 2 lignes par le commentaire de `negamax`, de 21 au-delà du bloc neuf —, aucun dans le code neuf ; 506 attrapés contre 497 sur `main`, les mutants du correctif tous tués. Tous les fichiers à leur plafond, total **140**. — *Prédiction, écrite avant* : `search.rs` **39**, aucun survivant dans le code neuf (section C31) |
 | **B8 — la sonde des marges, dans le conteneur** | — | le binaire sondé (`b8-sonde-marges.patch`), réseau puis faite main, chacun contre lui-même, `8+0,08`, 2 × 40 parties, `-srand 20260930` ; rejoué hors partie | fastchess ; `tools/sonde-b8/lire.py`, `facteurs.py` | **RELEVÉE à 17 h 55** | **l'élagage delta se trompe 24 fois plus au réseau, l'aspiration y échoue 2,66 fois plus** — deux candidats par la règle, un seul par la concordance de leurs facteurs (× 2,5, × 2,0) ; la futilité inverse tient (section B8) |
-| **B8 — l'Elo des marges à l'échelle du réseau** | **36755257365, 36755260973** — identifiés par leur nom de run | `791e6e4` → `7305c8a`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 17 h 58, fin vers 23 h 40 | *Attendu, écrit avant* : 0 à +25, ~+10. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro (section B8) |
+| **B8 — l'Elo des marges à l'échelle du réseau** | **36755257365, 36755260973** — identifiés par leur nom de run | `791e6e4` → `7305c8a`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 23 h 55** — finis ENTIERS à 23 h 33, 6,68 s par partie, deux AMD EPYC 9V45 | **+50,14 ± 7,60 et +50,85 ± 7,61 ; +50,50 ± 5,37 en commun, homogènes (z = −0,13)** ; zéro perte au temps. **GAIN DÉMONTRÉ, FUSIONNÉ** (`b711a54`, section B8). — *Attendu, écrit avant* : 0 à +25, ~+10 — **réfuté par le haut**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro |
 | **B8 — le crible de mutation au candidat** | **36755264744** | `791e6e4`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | **RELEVÉ à 20 h 30, VERT** — fini à 20 h 02, `search.rs` le plus long, 123 min : 499 attrapés, 49 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants de `main` un pour un — décalés de 14 lignes par les constantes, de 25 au-delà de `scaled_margin`, le texte de chaque ligne identique —, aucun dans le code neuf : ses cinq mutants, tous dans `scaled_margin`, sont attrapés ou expirés. Tous les fichiers à leur plafond, total **140**. — *Prédiction, écrite avant* : `search.rs` **39** — les survivants de `main` aux lignes décalées, aucun dans le code neuf : les deux tests couvrent `scaled_margin` des deux côtés et l'élagage delta au ras de ses deux seuils ; les autres fichiers à leur plafond, total 140 |
+| **balayage de mutation après la fusion de B8** | à lancer à la fusion | `main` après la PR de B8 | un job par fichier, puis `Verdict` | — | *Prédiction, écrite avant* : **les survivants du crible au candidat, un pour un** — `search.rs` **39**, tous les fichiers à leur plafond, total **140** : le code est celui de `791e6e4` au bit près |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
@@ -4306,6 +4308,17 @@ confiance faible</span> : **N2L, 0 à +60, ~+25** — la recette de Stockfish,
 sur un réseau et des données bien plus faibles que les siens ; **L0, −40 à
 +40** — deux effets de signes contraires, dont aucun n'est chiffré ici.
 
+**Ajouté le 1er oct., avant toute mesure** : B8 a mis les marges de la
+recherche à l'échelle de N2 — × 2,24, **+50,50 ± 5,37** —, et ce facteur
+appartient à N2. **Avant les matchs de N2L et L0, la sonde de B8 se relance
+sur le réseau à mesurer** (`tools/attic/b8-sonde-marges.patch`, rebasée sur
+le code fusionné). Si son facteur s'écarte de 2,24 de plus de ± 25 %, il se
+règle d'abord — un changement de code, mesuré comme tel —, sans quoi le
+match mêlerait la valeur du réseau à celle de ses marges. <span>Inférence,
+confiance faible</span> : un réseau appris sur des cibles d'une autre
+échelle — 330,3 par unité de logit, et non 400 — peut porter une autre
+pente.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -4470,7 +4483,7 @@ illégal, aucun moteur perdu :
   quiescence ne testait aucune nulle après une parade tranquille** —
   section C31.
 
-### B8 — les marges à l'échelle du réseau : la sonde, écrite le 30 sept. avant de mesurer
+### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
 **Lancé par Théo le 30 sept.** (« *Ok go pour reco 8* »), sur la
 recommandation d'une sonde d'abord, qui peut le fermer sans match.
@@ -4635,6 +4648,41 @@ ou expirés — 616 mutants contre 611, 499 attrapés contre 497, 49 expirés
 contre 46. Le mutant de l'élagage delta, `<=` en `>`, existait déjà sur
 `main` et ne survit d'aucun côté. Tous les fichiers à leur plafond, total
 **140**.
+
+**Le VERDICT, relevé le 30 sept. à 23 h 55 — GAIN DÉMONTRÉ, FUSIONNÉ le
+1er oct.** Deux matchs de 3 000 parties, finis entiers à 23 h 33, graines
+distinctes, zéro perte au temps, zéro coup illégal :
+
+| match | runner — bench, profondeur en 250 ms | Elo | pentanomial |
+|---|---|---|---|
+| 36755257365 | AMD EPYC 9V45 — 3 192 177 n/s, 13 | +50,14 ± 7,60 | 27, 184, 740, 430, 119 |
+| 36755260973 | AMD EPYC 9V45 — 3 618 281 n/s, 13 | +50,85 ± 7,61 | 26, 184, 739, 430, 121 |
+| **en commun** | homogènes, z = −0,13 | **+50,50 ± 5,37** | 53, 368, 1 479, 860, 240 |
+
+- **Par le critère, écrit avant** : la borne basse commune vaut **+45,1**,
+  au-dessus de zéro. `b711a54` révoque la révocation `6835c55` : `main`
+  porte le code de `791e6e4` au bit près, banc inchangé — 107 548 nœuds à la
+  profondeur 7, la faite main gardant ses marges.
+- **L'attendu, réfuté par le haut** : 0 à +25, ~+10, écrit avant — le point
+  mesuré en vaut cinq fois le centre. <span>Inférence, confiance
+  moyenne</span> : l'attendu ne comptait pour l'élagage delta que sa valeur
+  d'ensemble, indistinguable de zéro (D5) ; mais un élagage qui se trompe
+  sur 7 % de ses captures ne coûte pas qu'une économie manquée, il fait
+  manquer des tactiques à l'horizon. **Qui des deux marges porte le gain
+  n'est pas mesuré** — la bissection n'était prévue qu'à l'échec.
+- **Les avertissements de l'arbitre** : « PV continues after… » 3 et 3 côté
+  candidat, 6 et 5 côté référence — la signature connue de C31, des deux
+  côtés, à son taux. Rien de neuf.
+- **Les deux pentanomiaux presque identiques** — à une ou deux paires près
+  par cellule — ont été suspectés et **examinés avant de conclure** : voir
+  « Le livre, réutilisé », section « Ce qu'il faut surveiller ». Les deux
+  matchs rejouent les mêmes 500 ouvertures, mais les issues d'une même
+  ouverture n'y sont presque pas corrélées : la ressemblance est une
+  coïncidence des totaux, pas une copie.
+- **Le facteur appartient à N2.** Un réseau d'une autre pente le déplace :
+  **la sonde, rebasée sur le code fusionné, se relance avant de mesurer
+  N2L et L0 contre N2** (section n° 7) — sans quoi leur match mêlerait la
+  valeur du réseau à celle de ses marges.
 
 ### C31 — la nulle après une parade tranquille, dans la quiescence — VERDICT, 30 sept. 2026 : −2,43 ± 5,36 Elo à `8+0,08`, la borne haute d'un match sous zéro — ARRÊTÉ PAR SON CRITÈRE
 
@@ -5319,7 +5367,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
 | **interdire deux coups nuls consécutifs** | — changement d'arbre | **débloqué le 24 sept., et ÉCRANTÉ en nœuds le même jour : ce n'est pas du travail retiré.** L'interdire fait grossir l'arbre : banc **+1,80 %** à la profondeur 10 (653 982 contre 642 442), **+0,52 %** à 12, −0,42 % à 7. Le second coup nul cherchait la position d'origine à profondeur réduite, et coupait tôt le nœud intermédiaire quand elle tenait — une coupure bon marché, pas un gaspillage. <s>Avec C23, un double coup nul ne rend plus de fausse nulle, il re-cherche la position à profondeur réduite : du travail qu'aucune partie ne demande.</s> **10,1 %** des recherches de coup nul partent juste après un coup nul (sonde de C23). Stockfish l'interdit — ce qui, ici, ne prouve rien. **Effet sur la décision de signe inconnu, de quelques Elo au plus : ~12 000 parties pour le voir.** Pas prioritaire devant B6 ; la garde tient en une condition, `null_marks.last() != Some(&(path.len() - 1))` |
 | **D5 — revérifier les acquis** | — | **CLOS le 23 sept.** Six lignes examinées : trois remesurées en match — aspiration × 2,7, trois termes d'évaluation × 2,5, élagage delta **érodé** — et trois écrantées en nœuds sans signal d'érosion (futilité inverse, mobilité ; LMR, coup nul et table ont des marges qui l'absorbent). Les écrans datent du 22 ; rien de fusionné depuis ne coupe au même endroit. **L'élagage delta reste dans `main`** : un acquis se retire par un verdict, et un effet de −1,5 Elo en demanderait ~40 000 parties — une quinzaine de jobs pour quelques Elo au plus, quand la calibration et B6 en achètent davantage. *À rouvrir quand la quiescence ou l'échelle de l'évaluation change* (NNUE), l'écran en nœuds d'abord : trois minutes, sans hasard |
-| **B8 — régler les constantes de recherche** — **DÉCIDÉ n° 8** (Théo, 29 sept.), après le meilleur réseau : les marges dépendent de son échelle — **LANCÉ le 30 sept.** (Théo : « *Ok go pour reco 8* ») : **la sonde d'abord**, qui peut le fermer sans match — **relevée le même jour : l'élagage delta et l'aspiration hors d'échelle au réseau, la futilité tient** ; **le candidat en vol**, les deux marges × 2,24 quand le réseau joue — section B8 | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau). **Une raison neuve le 28 sept.** : les marges — futilité inverse 100 par pli, fenêtre d'aspiration 25, élagage delta 200 plus les valeurs de pièces faites main — ont été réglées sur l'échelle de la faite main, que le réseau dépasse de 2,6 à 5,8 fois en position décidée. Méthode à décider : un SPRT par marge, ou un réglage SPSA de plusieurs constantes à la fois — outillage à écrire : exposer les constantes, un pilote de parties sur runners |
+| **B8 — régler les constantes de recherche** — **DÉCIDÉ n° 8** (Théo, 29 sept.), après le meilleur réseau : les marges dépendent de son échelle — **LANCÉ le 30 sept.** (Théo : « *Ok go pour reco 8* ») : **la sonde d'abord**, qui peut le fermer sans match — **relevée le même jour : l'élagage delta et l'aspiration hors d'échelle au réseau, la futilité tient** ; <s>le candidat en vol</s> **FAIT : les deux marges × 2,24 quand le réseau joue, +50,50 ± 5,37 à `8+0,08`, FUSIONNÉ le 1er oct.** ; restent, s'ils se rouvrent : qui des deux marges porte le gain, le facteur à affiner, la futilité par match — section B8 | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau). **Une raison neuve le 28 sept.** : les marges — futilité inverse 100 par pli, fenêtre d'aspiration 25, élagage delta 200 plus les valeurs de pièces faites main — ont été réglées sur l'échelle de la faite main, que le réseau dépasse de 2,6 à 5,8 fois en position décidée. Méthode à décider : un SPRT par marge, ou un réglage SPSA de plusieurs constantes à la fois — outillage à écrire : exposer les constantes, un pilote de parties sur runners |
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
 | **C13 — mesurer la force absolue** — **DÉCIDÉ, en parallèle** (Théo, 29 sept.), **FAIT le 29 sept.** : le réseau **~2 850 ± 25**, la faite main ~2 630 ± 40, sur l'échelle de Stockfish 16 à 60+0,6 — section « C13 — la force absolue » ; à re-mesurer après chaque changement de réseau — **N2 le 30 sept. : 2 942 ± 29**, +112 ± 42 sur N0 contre le même adversaire | — | <s>**reporté**</s> : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread. **Un premier point, de Théo, le 28 sept.** : le moteur d'avant le réseau, contre un Stockfish bridé à 2 600 sur sa machine, estimé vers 2 700 — <s>cadence et effectif non consignés</s> **100 parties à 10+0,1**, précisé le 29 sept. **Rouvert sans liste de classement** — le protocole, écrit avant de mesurer : section « C13 — la force absolue » ; proposé le 29 sept. : Stockfish s'installe sur les runners (`ui.yml` le fait déjà), donc une série contre Stockfish bridé à plusieurs niveaux se joue sur runner. Deux réserves, écrites avant : l'échelle d'`UCI_Elo` appartient à la cadence et aux adversaires sur lesquels Stockfish l'a étalonnée — à lire dans son source avant de s'y fier — **lu le 29 sept.** : ancrée à l'Elo CCRL, ajustée à 60+0,6 ; et un gain mesuré contre notre jumeau ne s'ajoute pas à ce point. <span>Inférence, confiance moyenne</span> : l'auto-jeu grossit les écarts qu'on retrouve contre d'autres adversaires |
 | **B4 — évaluation NNUE** | — | <s>**reporté.**</s> <s>**EN COURS depuis le 25 sept.**</s> **FAIT le 28 sept. 2026 — A21, la fin de cette ligne.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —<s>, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation.</s> <em>tranchée le 25 sept. (A21).</em> **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 ; **première vague relevée le 26 sept. : 125 M positions, 77,7 M gardées par le filtre** — la cible de 100 M est atteinte ; **l'inférence dans le moteur écrite le 26 sept. et FUSIONNÉE le 28** (PR #89), derrière `EvalFile` — un nœud avec réseau coûte 0,73 à 0,87 fois un nœud fait main ; **l'entraînement fait le 28 sept.** sur la carte de Théo, 11 min 53 s, le critère tenu — section A21, étape 3 ; **l'étape 4 FAITE le même soir : le réseau embarqué est l'évaluation par défaut, +330,61 ± 19,21 Elo à `8+0,08` contre la faite main** (section « Étape 4 — VERDICT »). Restent ouverts : les marges de la recherche, réglées sur l'échelle de la faite main ; un réseau plus large ou plus de données — la carte de Théo peut être resollicitée ; et un banc qui évalue par le réseau |
@@ -6155,6 +6203,30 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
   en interne ; deux runs ne se comparent qu'après lecture de leurs
   étalonnages, et un chiffre de vitesse ne se recopie jamais d'un run à
   l'autre.
+- **Le livre, réutilisé** — mesuré le 1er oct. 2026, sur les deux matchs de
+  B8, dont les pentanomiaux sortaient presque identiques. `tools/book.epd`
+  porte **500 ouvertures** ; fastchess (`60d7a7a`, `opening_book.cpp` et
+  `base_scheduler.hpp`, lus) le mélange UNE fois à la graine, puis le
+  parcourt en boucle, une ouverture par paire. Un match de 3 000 parties joue
+  donc chaque ouverture **trois fois**, et deux matchs « à graines
+  distinctes » jouent **les mêmes 500**, dans un autre ordre. Ce que cela
+  coûte, mesuré sur les deux tiers de chaque journal que l'API sert
+  (rondes 511 à 1 500) : les scores de paire d'une même ouverture sont
+  **presque indépendants** — r = 0,070 et −0,034 dans un match (490 et 489
+  couples), r = 0,035 entre les deux (1 958 couples ; l'ordre reproduit au
+  source, et vérifié contre un vrai run de fastchess à la même graine) ;
+  témoins, ouvertures différentes : 0,005, 0,012, −0,022. Les parties ne se
+  recopient pas — même paire d'issues 22 à 25 % des fois, contre 10 à 12 %.
+  La ressemblance des deux totaux de B8 est une coïncidence : sur la fenêtre
+  lue, leurs pentanomiaux diffèrent normalement (499 et 483 paires à un point).
+  <span>Inférence, confiance moyenne</span> : à ρ ≈ 0,03, l'effet de grappe
+  élargit un intervalle mis en commun de **~7 %** (variance × 1,14), de ~18 %
+  au plus plausible (ρ = 0,08) ; le ± de fastchess le suppose nul. **Ça ne
+  compte qu'au ras d'une borne — et une lecture y est tombée** : la borne
+  haute du match 1 de C31, −0,27, passe au-dessus de zéro à ρ = 0,07, pas à
+  ρ = 0,02 ; ρ n'est pas assez connu pour trancher, et C31 reste tel que son
+  critère l'a lu. **Le remède est un livre plus grand** — `bookgen` le tire
+  —, ce qui change une condition de mesure : proposé, pas fait.
 
 | quoi | quand ça devient actionnable | pourquoi aucun test ne le dira |
 |---|---|---|

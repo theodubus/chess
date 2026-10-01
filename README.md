@@ -16,7 +16,9 @@ d'un aveu sur la profondeur de recherche.
 > d'aspiration, élagage delta en quiescence, futilité inverse, l'élagage par
 > **échange statique** en quiescence et l'**élagage par compte de coups**.
 > L'évaluation
-> est un **réseau NNUE** depuis le 28 sept. 2026 (plus bas) ; celle faite main
+> est un **réseau NNUE** depuis le 28 sept. 2026 (plus bas), et les marges de
+> la recherche suivent son échelle depuis le 1er oct. — **+50 ± 5 Elo** à
+> `8+0,08` ; celle faite main
 > couvre matériel, tables piece-square, paire de fous, mobilité, sécurité du
 > roi, structure de pions et colonnes de tours.
 > Chaque changement de recherche passe par un **SPRT** ; les verdicts, leurs
