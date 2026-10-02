@@ -4219,8 +4219,8 @@ position coûte « ~2 octets » dans une suite de coups, plus 32 octets par
 début de suite — : de l'ordre de 0,4 à 0,6 milliard de positions par Go
 de binpack, avant le filtre ; <s>4 à 7 milliards pour 11 Go</s> — un
 minimum, désormais. <span>Inférence, confiance moyenne</span> : l'essai
-court imprime les octets, les blocs et la part gardée par le filtre. **Un fichier plus petit que l'entraînement ne le
-casse pas** — lu au commit épinglé : le chargeur de bullet
+court imprime les octets, les blocs et la part gardée par le filtre. **Un
+fichier plus petit que l'entraînement ne le casse pas** — lu au commit épinglé : le chargeur de bullet
 (`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit ses
 fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
 chacune de ce fichier passera **une à trois fois** selon la part que garde
@@ -4327,8 +4327,9 @@ référence est ce même `main`. Les optimisations faites entre-temps — B8
 compris — sont des deux côtés, et le match ne mesure que le réseau : c'est
 ainsi que N1 et N2 ont été mesurés (`c430fe5` et `af62e48` ne touchent que
 `nnue.rs`). La seule chose qui ne se transporte pas avec le réseau, ce sont
-les marges réglées sur N2 — d'où la sonde, plus bas. **Critère de gain** : borne basse de l'intervalle
-mis en commun au-dessus de zéro — le meilleur des réseaux qui le passent
+les marges réglées sur N2 — d'où la sonde de B8, au paragraphe « Ajouté
+le 1er oct. ». **Critère de gain** : borne basse de l'intervalle mis en
+commun au-dessus de zéro — le meilleur des réseaux qui le passent
 remplace N2, sa confrontation recopiée dans le test du moteur, et
 **`README.md` porte la mention d'attribution de l'ODbL** le jour même
 (`CLAUDE.md`, décisions structurantes). *Attendus* — <span>inférence,
