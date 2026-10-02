@@ -613,7 +613,9 @@ export class GameController {
       );
     if (this.timeResult)
       exported.setComment(`${this.timeResult}. Résultat non arbitré.`);
-    return exported.pgn({ maxWidth: 80 });
+    // Le wrapping de commentaires de chess.js 1.4 peut coller un numéro de
+    // coup au SAN précédent. Garder le movetext sans césure assure son réimport.
+    return exported.pgn();
   }
 
   reset() {
