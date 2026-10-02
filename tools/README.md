@@ -780,7 +780,9 @@ dernière relève est faite.
 | **B8 — l'Elo des marges à l'échelle du réseau** | **36755257365, 36755260973** — identifiés par leur nom de run | `791e6e4` → `7305c8a`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 23 h 55** — finis ENTIERS à 23 h 33, 6,68 s par partie, deux AMD EPYC 9V45 | **+50,14 ± 7,60 et +50,85 ± 7,61 ; +50,50 ± 5,37 en commun, homogènes (z = −0,13)** ; zéro perte au temps. **GAIN DÉMONTRÉ, FUSIONNÉ** (`b711a54`, section B8). — *Attendu, écrit avant* : 0 à +25, ~+10 — **réfuté par le haut**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro |
 | **B8 — le crible de mutation au candidat** | **36755264744** | `791e6e4`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | **RELEVÉ à 20 h 30, VERT** — fini à 20 h 02, `search.rs` le plus long, 123 min : 499 attrapés, 49 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants de `main` un pour un — décalés de 14 lignes par les constantes, de 25 au-delà de `scaled_margin`, le texte de chaque ligne identique —, aucun dans le code neuf : ses cinq mutants, tous dans `scaled_margin`, sont attrapés ou expirés. Tous les fichiers à leur plafond, total **140**. — *Prédiction, écrite avant* : `search.rs` **39** — les survivants de `main` aux lignes décalées, aucun dans le code neuf : les deux tests couvrent `scaled_margin` des deux côtés et l'élagage delta au ras de ses deux seuils ; les autres fichiers à leur plafond, total 140 |
 | **balayage de mutation après la fusion de B8** | **36794803462** | `main` à `bf4e504`, la PR #127 | un job par fichier, puis `Verdict` | **RELEVÉ à 02 h 25, VERT** — fini à 01 h 47, `search.rs` le plus long, 97 min : 501 attrapés, 47 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants du crible au candidat un pour un, aux mêmes lignes et colonnes ; tous les fichiers à leur plafond, total **140**, aucune issue. Deux mutants expirés au crible sont attrapés ici : la charge du runner, 616 mutants des deux côtés. — *Prédiction, écrite avant* : **les survivants du crible au candidat, un pour un** — `search.rs` **39**, tous les fichiers à leur plafond, total **140** : le code est celui de `791e6e4` au bit près |
-| **N° 7, levier 4 — N2L et L0, sur la carte de Théo** | — | `main` à `7441d45` ; `training_data.binpack`, extrait de l'archive de Drive | la séance du levier 4, section n° 7 | **essai court passé le 2 oct.** — échelle ajustée **282,1** | *Critère, écrit avant* : 250 à 450 — **tenu**. Restent, chez Théo : N2L puis L0, 40 superlots chacun, poussés sur `reseau/levier4` ; puis, ici : la confrontation, la sonde de B8 sur chaque réseau, deux matchs de 3 000 parties contre N2 |
+| **N° 7, levier 4 — N2L et L0, sur la carte de Théo** | — | `main` à `7441d45` ; `training_data.binpack`, extrait de l'archive de Drive | la séance du levier 4, section n° 7 | **RELEVÉS le 2 oct.** — essai court passé (échelle ajustée 282,1), puis les deux entraînements, poussés sur `reseau/levier4` (`180ba84`), intégrés par `0a0ed70` | **Confrontations dans le critère** : N2L 4 et 9, L0 4 et 21 (admis 15 et 50). **Sonde de B8** : facteurs 2,60 et 2,61, dans la plage 1,68 à 2,80 — chacun se mesure au facteur de `main`, 2,24 (section n° 7) |
+| **N° 7, levier 4 — l'Elo de N2L contre N2** | **36995335076, 36995337871** — identifiés par leur nom de run | `5764f2b` → `4526a2c`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés le 2 oct. à 10 h 25, fin vers 16 h 00 | *Attendu, écrit avant* : 0 à +60, ~+25. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; le meilleur des réseaux qui le passent remplace N2 (section n° 7) |
+| **N° 7, levier 4 — l'Elo de L0 contre N2** | **36995340993, 36995343981** — identifiés par leur nom de run | `3349f53` → `4526a2c`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés le 2 oct. à 10 h 25, fin vers 16 h 00 | *Attendu, écrit avant* : −40 à +40. **Critère, écrit avant** : le même |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
@@ -4355,6 +4357,66 @@ moyenne</span> : 15 % sous l'échelle de la conversion, 330,3 — sur ces
 parties, un score annonce un résultat un peu plus tranché que la formule de
 lc0 ne le dit. L'entraînement reste à 330,3, comme écrit. Si N2L déçoit, cet
 écart est une piste à mesurer, pas une explication.
+
+**Les deux entraînements, relevés le 2 oct.** — branche `reseau/levier4` de
+Théo (`180ba84`), intégrée par `0a0ed70` : binpack de **14 366 468 016
+octets**, 14 905 blocs, 58,9 % des positions décodées gardées par le filtre ;
+**N2L en 11 min 34 s, L0 en 11 min 36 s**, sur la RTX 3050 de Théo. Les
+deux confrontations passent le critère écrit avant (médian ≤ 15, maximal ≤
+50) : **N2L 4 et 9, L0 4 et 21**. Perte finale sur les données de Leela :
+0,05815 et 0,05821 — N2L part plus bas (0,0598 contre 0,0628 au premier
+superlot) et arrive au même point. *Une perte ne dit pas la force* : les
+matchs le diront.
+
+**La sonde de B8 sur N2L et L0 — écrite le 2 oct., avant de la lancer.**
+Le protocole du 30 sept., réduit à ce qui règle le facteur : 40 parties du
+réseau contre lui-même à `8+0,08` (livre du dépôt, `-srand 20260930`), le
+binaire sondé construit sur `main` — marges à × 2,24, le régime où le réseau
+jouera ; l'élagage delta rejoué, l'aspiration comptée. La faite main est
+reprise de la sonde du 30 sept. : son chemin est le même au bit près, B8 ne
+touchant que celui du réseau. La futilité inverse n'est pas rejouée — elle
+n'a pas de facteur. **Règle, écrite avant** (l'amendement du 1er oct.) : la
+moyenne géométrique des deux facteurs égalisants, delta et aspiration,
+comme pour N2 ; **dans ± 25 % de 2,24 — 1,68 à 2,80 —, le réseau se mesure
+au facteur de `main`** ; hors de cette plage, le facteur se règle d'abord
+et le candidat porte le réseau ET son facteur. *Attendu* — <span>inférence,
+confiance faible</span> : dans la plage pour les deux, rien n'annonçant une
+autre échelle — la conversion de lc0 et nos données s'expriment en
+probabilité de gain, et le moteur lit les deux réseaux à la même échelle de
+sortie.
+
+**La sonde, RELEVÉE le 2 oct.** — 40 parties par réseau, zéro perte au
+temps, zéro anomalie ; la faite main, celle du 30 sept. ; lecteur
+`facteurs.py`, le rejeu du réseau par `SONDE_B8_EVALFILE` (ajouté au
+lecteur de la rustine) :
+
+| réseau | facteur delta | facteur aspiration | moyenne géométrique | pente, rapport médian |
+|---|---|---|---|---|
+| N2 (30 sept., référence) | × 2,5 | × 2,0 | 2,24 | 2,30 ; 2,02 |
+| **N2L** | × 2,6 | × 2,60 | **2,60** | 2,69 ; 2,52 |
+| **L0** | × 3,1 | × 2,20 | **2,61** | 2,55 ; 2,40 |
+
+**Par la règle, les deux dans la plage** — 2,60 et 2,61 contre 1,68 à
+2,80 : **chaque réseau se mesure au facteur de `main`, 2,24**, et son
+candidat ne change que le réseau. Dans l'attendu. Les pentes de N2 sont
+recalculées ici sur tous les nœuds journalisés, non sur le tiers rejoué —
+2,30 et 2,02 au lieu de 2,40 et 2,16 ; c'est cette ligne-ci qui se compare.
+Les deux réseaux de Leela portent des nombres **12 à 25 % plus grands** que
+N2 ; à 2,24, leur élagage delta reste ~2 fois plus fautif que la faite main
+(0,72 et 0,94 % à × 2,2, contre 0,30 %) — une marge à affiner plus tard,
+si l'un d'eux est retenu, par sa propre mesure.
+
+**Les candidats et leurs matchs, lancés le 2 oct.** — `5764f2b` (N2L) et
+`3349f53` (L0), révoqués aussitôt par `f7a84b5` et `448fed3` ; chacun ne
+change que `engine/src/nnue.rs` — le chemin d'`include_bytes!` et la
+confrontation de son entraînement recopiée dans le test —, contre la
+référence `4526a2c`, le code de leur parent au bit près. Le test de
+confrontation passe sur chacun, `verify.sh --rapide` vert. Deux matchs de
+3 000 parties à `8+0,08` par réseau, graine « auto » chacun : N2L
+36995335076 et 36995337871, L0 36995340993 et 36995343981. Le critère et
+les attendus sont ceux de « Ce qui suit, écrit avant ». **À la fusion d'un
+gagnant** : révoquer sa révocation, `README.md` porte la mention
+d'attribution de l'ODbL, et `CLAUDE.md` dit le réseau qui joue.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
