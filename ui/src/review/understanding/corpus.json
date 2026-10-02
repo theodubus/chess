@@ -1,0 +1,436 @@
+[
+  {
+    "id": "queen-closes-retreat",
+    "family": "restricted-piece",
+    "origin": "user-screenshot",
+    "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
+    "prefix": [],
+    "played": "Qd2",
+    "line": [
+      "f4",
+      "d4",
+      "fxe3",
+      "fxe3"
+    ],
+    "expected": {
+      "hypothesis": "allows-restriction",
+      "victim": "e3",
+      "closed": "d2"
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "FEN reconstruite depuis les captures : Dd2 vient de e2. Historique antérieur inconnu, horloges FEN conventionnelles. La suite est un témoin légal, pas un PGN utilisateur."
+  },
+  {
+    "id": "pawn-exploits-restriction",
+    "family": "restricted-piece",
+    "origin": "user-screenshot",
+    "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
+    "prefix": [
+      "Qd2"
+    ],
+    "played": "f4",
+    "line": [
+      "d4",
+      "fxe3",
+      "fxe3"
+    ],
+    "expected": {
+      "hypothesis": "creates-restriction",
+      "victim": "e3",
+      "closed": "d2"
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "FEN reconstruite depuis les captures : Dd2 vient de e2. Historique antérieur inconnu, horloges FEN conventionnelles. La suite est un témoin légal, pas un PGN utilisateur."
+  },
+  {
+    "id": "bishop-can-retreat",
+    "family": "restricted-piece",
+    "origin": "constructed-counterexample",
+    "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 b - - 0 14",
+    "prefix": [],
+    "played": "f4",
+    "line": [
+      "Bd2"
+    ],
+    "expected": {
+      "hypothesis": null
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "restriction-without-threat",
+    "family": "restricted-piece",
+    "origin": "constructed-counterexample",
+    "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
+    "prefix": [],
+    "played": "Qd2",
+    "line": [
+      "h6"
+    ],
+    "expected": {
+      "hypothesis": null
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "threat-already-present",
+    "family": "restricted-piece",
+    "origin": "constructed-counterexample",
+    "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
+    "prefix": [
+      "Qd2",
+      "f4",
+      "Kh1"
+    ],
+    "played": "h6",
+    "line": [],
+    "expected": {
+      "hypothesis": null
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "losing-exchange-recapture",
+    "family": "exchange-context",
+    "origin": "constructed-from-user-description",
+    "fen": "3q3k/8/2n5/8/3B4/4P3/8/7K b - - 0 1",
+    "prefix": [
+      "Nxd4"
+    ],
+    "played": "exd4",
+    "line": [
+      "Qxd4"
+    ],
+    "expected": {
+      "exchange": {
+        "role": "recapture",
+        "total": -1,
+        "fromDecision": 2
+      }
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "same-exchange-final-capture",
+    "family": "exchange-context",
+    "origin": "constructed-from-user-description",
+    "fen": "3q3k/8/2n5/8/3B4/4P3/8/7K b - - 0 1",
+    "prefix": [
+      "Nxd4",
+      "exd4"
+    ],
+    "played": "Qxd4",
+    "line": [],
+    "expected": {
+      "exchange": {
+        "role": "recapture",
+        "total": 1,
+        "fromDecision": 1
+      }
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "ordinary-development",
+    "family": "positional",
+    "origin": "constructed-counterexample",
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "prefix": [],
+    "played": "Nf3",
+    "line": [
+      "d5"
+    ],
+    "expected": {
+      "hypothesis": null
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "fork",
+    "family": "double-threat",
+    "origin": "constructed",
+    "fen": "r3k3/8/8/3N4/8/8/8/7K w - - 0 1",
+    "prefix": [],
+    "played": "Nc7+",
+    "line": [
+      "Kd7",
+      "Nxa8"
+    ],
+    "expected": {
+      "hypothesis": "double-threat"
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "pin",
+    "family": "pin",
+    "origin": "constructed",
+    "fen": "8/3kp3/2n5/3P4/8/8/8/5B1K w - - 0 1",
+    "prefix": [],
+    "played": "Bb5",
+    "line": [
+      "e6",
+      "Bxc6+"
+    ],
+    "expected": {
+      "hypothesis": "pin",
+      "partialHypotheses": [
+        "creates-restriction"
+      ]
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence. Le cavalier attaqué n’a aucun déplacement légal à cause du clouage. Constater sa restriction est correct mais ne décrit pas le clouage au roi ; cela reste une réponse partielle, pas une reconnaissance du motif attendu."
+  },
+  {
+    "id": "defender-removed",
+    "family": "defender",
+    "origin": "constructed",
+    "fen": "7k/8/5r2/3n4/2B5/2B5/8/7K w - - 0 1",
+    "prefix": [],
+    "played": "Bxd5",
+    "line": [
+      "Kh7",
+      "Bxf6"
+    ],
+    "expected": {
+      "hypothesis": "defender-removal"
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "blocked-bishop-gains-queen",
+    "family": "restricted-piece",
+    "origin": "constructed-counterexample",
+    "fen": "1r5k/8/8/8/2q5/1P6/B7/KR6 b - - 0 1",
+    "prefix": [],
+    "played": "Qxb3",
+    "line": [
+      "Bxb3",
+      "Rxb3"
+    ],
+    "expected": {
+      "hypothesis": null
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "discovered-attack",
+    "family": "opened-line",
+    "origin": "constructed",
+    "fen": "3q3k/8/8/8/8/3B4/8/3R3K w - - 0 1",
+    "prefix": [],
+    "played": "Bh7",
+    "line": [
+      "Kg7",
+      "Rxd8",
+      "Kxh7"
+    ],
+    "expected": {
+      "hypothesis": "opened-line"
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "mate-threat",
+    "family": "king-safety",
+    "origin": "constructed",
+    "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    "prefix": [
+      "e4",
+      "e5",
+      "Bc4",
+      "Nc6"
+    ],
+    "played": "Qh5",
+    "line": [
+      "a6",
+      "Qxf7#"
+    ],
+    "expected": {
+      "hypothesis": "mate-threat"
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "pinned-capturer",
+    "family": "legal-capture",
+    "origin": "constructed-counterexample",
+    "fen": "4k3/4n3/8/3B4/8/8/8/K3R3 w - - 0 1",
+    "prefix": [],
+    "played": "Kb1",
+    "line": [],
+    "expected": {
+      "hypothesis": null
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "queen-closes-retreat-black",
+    "family": "restricted-piece",
+    "origin": "transformed-regression",
+    "fen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14",
+    "prefix": [],
+    "played": "Qd7",
+    "line": [
+      "f5",
+      "d5",
+      "fxe6",
+      "fxe6"
+    ],
+    "expected": {
+      "hypothesis": "allows-restriction",
+      "victim": "e6",
+      "closed": "d7"
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "pawn-exploits-restriction-black",
+    "family": "restricted-piece",
+    "origin": "transformed-regression",
+    "fen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14",
+    "prefix": [
+      "Qd7"
+    ],
+    "played": "f5",
+    "line": [
+      "d5",
+      "fxe6",
+      "fxe6"
+    ],
+    "expected": {
+      "hypothesis": "creates-restriction",
+      "victim": "e6",
+      "closed": "d7"
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "losing-exchange-recapture-black",
+    "family": "exchange-context",
+    "origin": "transformed-regression",
+    "fen": "7k/8/4p3/3b4/8/2N5/8/3Q3K w - - 0 1",
+    "prefix": [
+      "Nxd5"
+    ],
+    "played": "exd5",
+    "line": [
+      "Qxd5"
+    ],
+    "expected": {
+      "exchange": {
+        "role": "recapture",
+        "total": -1,
+        "fromDecision": 2
+      }
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  },
+  {
+    "id": "bishop-can-retreat-black",
+    "family": "restricted-piece",
+    "origin": "transformed-regression",
+    "fen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K w - - 0 14",
+    "prefix": [],
+    "played": "f5",
+    "line": [
+      "Bd7"
+    ],
+    "expected": {
+      "hypothesis": null
+    },
+    "forbiddenClaims": [
+      "forced-loss",
+      "best-move",
+      "winning-exchange-from-recapture"
+    ],
+    "notes": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence."
+  }
+]

@@ -273,6 +273,15 @@ Les résultats sont conservés par branche et invalidés à la relance de l’an
 
 ## Comprendre un coup
 
+**État du chantier (2 octobre 2026)** : les explications actives décrites ci-dessous
+restent limitées et leur pertinence pédagogique n’est pas validée globalement.
+Une refonte commence dans `src/review/understanding/`, séparément de l’UI. Elle
+modélise les changements de possibilités et le contexte avant de produire du texte.
+La [backlog active](BACKLOG_ANALYSE_PEDAGOGIQUE.md) remplace les anciens lots déclarés
+terminés ; le [rapport initial](src/review/understanding/README.md) compte aussi les
+familles non reconnues. `npm run test:understanding` reproduit le bilan du corpus.
+Le prototype ne publie encore aucune nouvelle explication dans la revue.
+
 Les explications pédagogiques décrivent des faits vérifiés dans la position et
 les suites du moteur. Elles couvrent les mats, promotions et conséquences
 matérielles, puis les motifs tactiques suivants :

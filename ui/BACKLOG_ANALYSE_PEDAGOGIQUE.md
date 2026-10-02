@@ -1,309 +1,183 @@
-# Analyse pédagogique — backlog et reprise
+# Analyse pédagogique — backlog active et plan de reprise
 
-Décision validée par Théo le 29 septembre 2026. Périmètre : `ui/**`, moteur inchangé.
+Plan révisé le 2 octobre 2026 après les retours de Théo. Périmètre : `ui/**`.
+**Chantier ouvert. L’objectif pédagogique n’est pas atteint.** Le moteur Rust
+reste inchangé ; l’UCI est l’unique interface moteur.
 
-## Objectif et parcours validés
+## Ce qui est réellement disponible
 
-Remplacer les formulations génériques par une explication courte et vérifiable du
-coup, puis une démonstration facultative sur le même échiquier. Expliquer le changement
-entre le coup joué et une meilleure idée, pas seulement répéter la catégorie du coup.
+- Une UI de revue, exploration, retry et démonstrations utilisable et testée.
+- Une première couche d’explications (`explanations.ts`, `tactics.ts`,
+  `decisionCause.ts`) à portée limitée, parfois trompeuse malgré ses vérifications.
+- Des recherches annulables et mises en cache (`FocusedAnalysis`, `LiveStudy`).
+- Des tests logiciels et un parcours navigateur. Ils ne constituent **pas** une
+  mesure de pertinence pédagogique. Les anciens lots « terminés » restent dans
+  `BACKLOG_ANALYSE_PEDAGOGIQUE_HISTORIQUE.md` comme historique de livraison.
 
-- Une phrase principale près de la classification, sans surcharger la revue.
-- « Montrer pourquoi » : cases/flèches ciblées, courte suite, précédent/suivant,
-  texte par étape ; pas de lecture automatique imposée.
-- « Voir la meilleure idée » : comparaison depuis la position AVANT le coup.
-- « Retour à la partie » : restituer exactement le coup/la variante de départ.
-- « Réessayer » : conserver le parcours actuel ; indices graduels (idée générale,
-  pièce concernée, solution). Aucune solution ni flèche révélée involontairement.
-- Ne pas créer un second mode d’analyse ; conserver navigation clavier, variantes,
-  relecture des deux camps, orientation et préférences d’affichage.
+Ne pas ajouter de nouvelles familles de phrases dans `decisionCause.ts` pour
+répondre à chaque capture utilisateur. Construire le prototype suivant séparément,
+sous `src/review/understanding/`, sans le connecter à l’UI tant que son contrat
+n’est pas validé. Un cas reconnu n’est pas une preuve de couverture générale.
 
-## Garde-fous
+## Objectif mesurable
 
-- L’UCI expose scores et variantes, pas les raisons internes du moteur. Les textes
-  sont construits à partir de faits échiquéens et de suites légales vérifiées.
-- Une attaque, un clouage ou davantage de cases contrôlées ne prouve pas à lui seul
-  qu’un coup est bon/mauvais : relier le motif à la suite et à la comparaison moteur.
-- Une PV n’est pas une preuve de gain forcé. Distinguer « dans cette suite » de
-  « forcé ». Ne pas conclure à une pièce gagnée avant sa reprise, ni ignorer les
-  promotions, sacrifices, compensations et positions initiales personnalisées.
-- Pas de fausse explication lorsqu’aucune cause fiable n’est trouvée. Garder le
-  verdict et une limite explicite ; permettre d’inspecter la suite trouvée.
-- Ne pas modifier la partie, les variantes explorées ou les dessins personnels
-  pour montrer une démonstration. Repères pédagogiques séparés et temporaires.
-- En retentative cachée : aucune meilleure suite, évaluation ou motif révélateur
-  avant demande explicite d’indice/solution.
+L’explication doit permettre de comprendre **ce que la décision change**, **comment
+ce changement est exploitable**, et **ce qu’aurait permis une autre décision**.
+Le texte et les repères doivent être issus des mêmes faits vérifiés.
 
-## Lots
+Distinguer explicitement :
 
-### 1. Socle et première démonstration — TERMINÉ (30 septembre 2026)
+1. faits légaux observés sur le plateau ;
+2. hypothèse de cause construite avec ces faits ;
+3. hypothèse soutenue ou contredite par les recherches moteur ;
+4. qualité de la décision par rapport aux autres coups ;
+5. bilan d’un événement, par exemple l’échange complet.
 
-- [x] Modèle d’explication avec faits, positions vérifiées, texte et repères visuels.
-- [x] Conséquences concrètes : mat, promotion, évolution matérielle dans la suite.
-- [x] Texte contextualisé à la place de la seule formule de classification.
-- [x] Démonstration sur le plateau courant, étapes et retour exact à l’origine.
-- [x] Comparaison avec la meilleure idée depuis la bonne position.
-- [x] Tests : coups légaux, PV absentes/tronquées/incohérentes, deux couleurs,
-  promotions/reprises, variantes, préférence d’annotations, retry caché.
-- [x] Vérification navigateur desktop/mobile et mise à jour de cette backlog.
+Une reprise peut être le meilleur coup disponible dans un échange perdant.
+Une pièce attaquée et sans retraite immédiate peut encore être sauvée par un
+coup intermédiaire, une défense, un échange ou une compensation : sa perte ne se
+prouve pas en comptant ses cases de sortie. Un meilleur score après une suite
+ne prouve pas à lui seul le motif choisi pour l’expliquer.
 
-### 2. Motifs tactiques et lien causal — TERMINÉ (30 septembre 2026)
+## Plan d’exécution et critères de passage
 
-- [x] Fourchettes/doubles attaques et gain réellement illustré par la suite.
-- [x] Clouages absolus/relatifs : pièce, attaquant, cible et conséquences.
-- [x] Défenseur déplacé/supprimé, pièce non défendue, attaque à la découverte.
-- [x] Menaces de mat/progression du pion et occasions manquées.
-- [x] Bons coups défensifs : menace évitée ; bons coups offensifs : occasion exploitée.
-- [x] Une seule explication prioritaire, sélectionner la plus utile et vérifiable.
+### A. Corpus et contrat d’évaluation — EN COURS
 
-### 3. Apprentissage et recherches ciblées — TERMINÉ (30 septembre 2026)
+- [x] Premier corpus de développement versionné (19 décisions) : position/historique, décision, suite légale, provenance,
+  faits attendus, idée attendue, affirmations interdites et limites connues.
+- [ ] Cas positifs **et** contre-exemples : retraites supprimées/créées, pièce
+  restreinte exploitée par un coup calme, menace préexistante, défense clouée,
+  échange déjà commencé, reprise forcée/utile, compensation, coup intermédiaire.
+- [ ] Cas de portée plus large présents dès le départ, même si non reconnus :
+  surcharge, déviation, double menace, lignes ouvertes, sécurité du roi,
+  activité réellement utile, concession de structure.
+- [x] Rapport séparant couverture des hypothèses, réponses partielles, explications confirmées,
+  abstentions, affirmations injustifiées et coût. Ventilation par famille et
+  provenance ; pas de pourcentage flatteur limité aux seuls motifs implémentés.
+- [x] Contrôle de référence sur Dd2/…f4 avec ShallowRed et Stockfish : le moteur
+  trouve la réponse, l’ancien explicateur reste sans cause ; le prototype expose
+  une hypothèse structurelle. Les autres exemples restent à enrichir.
+- [ ] Corpus indépendant de nouvelles parties pour juger la généralisation.
+  Les cas construits avec le code ne sont qu’un corpus de développement.
 
-- [x] Indices graduels intégrés à Réessayer, sans divulgation anticipée.
-- [x] Réutiliser les résultats existants ; approfondissement seulement si nécessaire.
-- [x] Budgets bornés, annulation à la navigation, cache par moteur/revue/position.
-- [x] Afficher la vérification en cours sans bloquer la lecture de la partie.
-- [x] Tester les changements de moteur et résultats tardifs/incohérents.
+**Passage A :** toutes les positions sont exécutables avec chess.js ; attentes
+échiquéennes explicites, échecs visibles, familles non couvertes comptées. Aucun
+texte généré automatiquement n’est utilisé comme vérité attendue.
 
-### 4. Observations positionnelles — TERMINÉ (30 septembre 2026)
+### B. Modèle du contexte et des possibilités — EN COURS
 
-- [x] Développement, colonnes ouvertes, structure de pions, sécurité du roi,
-  activité et contrôle de cases utiles.
-- [x] Distinguer observation descriptive et cause confirmée du verdict moteur.
-- [x] Comparaisons ciblées et formulation prudente ; aucun remplissage automatique.
+- [x] Positions avant/après et historique légal conservés ; identité des pièces
+  suivie au travers des déplacements/captures/promotions.
+- [x] Premières relations réutilisables : attaques géométriques, captures légales,
+  chemins de fou/tour/dame bloqués par des pièces amies, déplacements légaux et
+  réponses de capture avec leur meilleure reprise immédiate.
+- [x] Changements de sorties et d’attaquants, routes fermées par une pièce amie,
+  attachés aux identités des pièces et aux positions concernées.
+- [ ] Étendre aux défenses retirées, lignes ouvertes et contraintes combinées.
+- [x] Épisodes de reprises consécutives ancrés dans l’historique : début connu/inconnu, rôle du
+  coup (initiation/reprise/poursuite), bilan total et bilan depuis la décision.
+  Ne pas imputer la perte antérieure à la meilleure reprise suivante.
+- [x] Première hypothèse composée à partir des relations : une décision ferme
+  une issue puis l’adversaire attaque la pièce restreinte. Ce n’est pas encore
+  l’affirmation « cette pièce est perdue ».
+- [ ] Transpositions, camps inversés, pièces déplacées, promotions, prise en
+  passant, échecs et historiques incomplets : décrire l’incertitude au lieu
+  d’inventer des possibilités par un simple changement du trait.
 
-### 5. Causes locales et démonstrations courtes — TERMINÉ (2 octobre 2026)
+**Passage B :** les mêmes primitives décrivent plusieurs familles et leurs
+contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un badge.
 
-Le retour utilisateur invalide le choix précédent de prolonger « Montrer pourquoi »
-jusqu’à la dernière capture de la PV. La présente correction remplace cette méthode ;
-les notes historiques des lots précédents ne décrivent plus la sélection actuelle.
+### C. Vérification comparative des causes — À FAIRE
 
-- [x] Retirer les observations génériques du parcours principal du verdict.
-- [x] Séparer la continuation brute, dans « Variantes du moteur », de la cause
-  pédagogique et de sa comparaison. Une seule cause principale est retenue.
-- [x] Rechercher une conséquence locale : cible en prise, échange défavorable,
-  défense retirée, fourchette, clouage exploité, découverte, mat, promotion,
-  occasion manquée ; bons coups défensifs vérifiés avant/après.
-- [x] Vérifier l’hypothèse avec le moteur sélectionné après sa conséquence et,
-  pour une erreur/occasion manquée, après l’autre décision. Deux positions au
-  maximum, 1 200 ms chacune, six secondes au total ; aucune commande MultiPV.
-- [x] Vérifier les prises immédiates possibles quand la PV montre autre chose,
-  sans transformer une capture lointaine en justification du coup étudié.
-- [x] Terminer la démonstration à sa conséquence et aux reprises liées, au plus
-  six demi-coups depuis la décision. Commencer après le coup sauf besoin réel
-  de montrer l’état antérieur. Un suffixe de PV ne rallonge pas l’illustration.
-- [x] Garder le coup étudié visible ; comparaison avec l’autre décision, étapes
-  numérotées et fermeture unique. Pas de boutons de navigation pour une seule
-  position. Variante brute explicitement distincte de « Montrer pourquoi ».
-- [x] Calcul visible sur le coup consulté, délai de stabilité de 300 ms, annulation
-  à la navigation, cache par moteur/revue/révision/historique, pas de demi-paire
-  de résultats ni publication tardive. Retry masqué et dessins conservés.
-- [x] Régressions : scores bornés/incomplets, contre-capture ailleurs, compensation,
-  deux couleurs, défense déplacée, suffixe lointain ; exemple de dame perdue issu
-  d’une ouverture légale vérifié avec ShallowRed et Stockfish.
+- [ ] Questions moteur explicites : quelle réponse exploite la décision ?
+  Quelle défense pourrait invalider l’hypothèse ? L’alternative évite-t-elle
+  vraiment le même mécanisme ? Chaque résultat garde position et historique.
+- [ ] Réutiliser les recherches UCI existantes. Pas de MultiPV/searchmoves supposés,
+  pas de détail NNUE/Rust, pas de mini-moteur stratégique recodé dans l’UI.
+- [ ] Évaluer les défenses pertinentes, coups intermédiaires et compensations,
+  pas seulement la position après la capture attendue. Vérifier la stabilité
+  quand une conclusion dépend d’une recherche trop courte.
+- [ ] Statuts : hypothèse, soutenue, contredite, indéterminée. Une nouvelle
+  recherche ne transforme pas automatiquement une hypothèse en explication.
+- [ ] Budget global explicite et mesuré ; priorité à l’analyse demandée,
+  annulation, cache par moteur/révision/historique, aucun résultat tardif.
+- [ ] Essais avec ShallowRed et Stockfish ; désaccord du moteur enregistré,
+  pas masqué par un motif « évident » codé en dur.
 
-Validation du 2 octobre : 337 tests avec ShallowRed/Stockfish, lint, TypeScript
-et build réussis. Parcours Chromium complet : import, partie, analyse réelle,
-comparaison courte, annulation/cache, retry, dessins, orientation et trois tailles
-d’écran. Les promotions analysées sont contrôlées pour les deux couleurs.
+**Passage C :** une explication rejetée sur les contre-exemples reste rejetée
+même si une capture existe dans la PV. Publier le rapport du corpus et ses limites.
 
-Limites assumées : les contrôles moteur confortent une explication locale ; ils
-ne prouvent pas toutes les réponses intermédiaires ni une cause unique de chaque
-baisse d’évaluation. Une seule hypothèse est confirmée à la fois. Les longues
-combinaisons et raisons purement positionnelles restent parfois inexpliquées.
-L’UI le dit au lieu d’afficher un développement ou du contrôle de cases hors sujet.
-Il reste possible d’explorer la variante brute ou d’approfondir le coup.
+### D. Explication et démonstration à partir des preuves — À FAIRE
 
-Pistes ultérieures (hors correctif livré) : corpus de PGN utilisateur avec coups
-précis, recherche d’une autre hypothèse après rejet, contre-épreuves intermédiaires
-et raisons positionnelles comparatives. Ne pas annoncer ces pistes comme déjà
-couvertes, ni présenter la couverture actuelle comme équivalente à Chess.com.
+- [ ] Une idée principale structurée : décision → changement → exploitation →
+  différence avec l’alternative. Les raisons inconnues restent inconnues.
+- [ ] Motifs secondaires subordonnés ; distinguer cause initiale, meilleure
+  défense et fin d’échange. Une même séquence garde un récit cohérent entre coups.
+- [ ] Texte produit uniquement depuis les faits et leur statut ; pas de « commence
+  un échange gagnant » pour une reprise dans un échange antérieur perdant.
+- [ ] Plan visuel minimal : cases/flèches et positions nécessaires à cette idée ;
+  une suppression de retraite peut se montrer sans dérouler toute la PV.
+- [ ] Vérifier sur le corpus la pertinence de la phrase ET de l’illustration,
+  au-delà des seuls tests de légalité et de scores.
 
-## État de reprise
+### E. Intégration progressive dans la revue — À FAIRE
 
-- Branche : `codex/ui-polish`, PR existante #111 (correctif matériel et interactions).
-- Entrée principale : `src/review/InteractiveReview.tsx` ; texte générique dans
-  `study.ts::moveSummary` et `annotations.ts::reason`.
-- `GameReview.results[i]` analyse la position i AVANT son prochain coup ; le coup
-  affiché à la position i>0 est celui de i-1. La réfutation vient de results[i].
-- `BranchAnalysis.before/result` fournissent le même couple pour une variante.
-- `StudyTree` conserve les variantes utilisateur. Ne pas y insérer la démonstration.
-- `Board` utilise Chessground et conserve les dessins tant que la FEN ne change pas.
-- `decisionCause.ts` sélectionne une hypothèse et son fragment ; `useCauseCheck.ts`
-  utilise `FocusedAnalysis` à budget court. Aucun détail interne du moteur.
-- `dev/causes.test.mjs` valide la confirmation avec les deux vrais moteurs ; la
-  galerie `dev/explanations.tsx` simule seulement ses contrôles pédagogiques.
-- Reprise : consulter la checklist et les notes ajoutées à la livraison du lot.
+- [ ] Raccorder seulement les familles ayant passé les étapes précédentes.
+- [ ] Conserver le coup étudié, navigation, variantes, dessins, préférences,
+  retry sans fuite et signalement de calcul. Aucun nouveau menu concurrent.
+- [ ] Retirer les anciennes règles remplacées ; ne pas empiler deux explications
+  contradictoires pour une même décision.
+- [ ] Tester des parties complètes (humain/bot, deux humains, import PGN) et le
+  parcours bureau/mobile. Mesurer latence et couverture avant/après.
+- [ ] Faire relire les exemples par Théo : une CI verte n’est pas cette validation.
 
-## Notes de livraison du lot 1 — 30 septembre 2026
+## Critères de qualité et limites
 
-- `src/review/explanations.ts` construit deux démonstrations indépendantes :
-  coup joué puis réponse du moteur, et meilleure idée depuis la position avant
-  le coup. Chaque mouvement et chaque FEN de la PV sont vérifiés avec chess.js.
-- Les faits couverts sont le mat atteint dans la suite, la promotion jouée et
-  le bilan matériel comparé. La promotion compte son gain net (valeur − pion),
-  et les promotions avec prise sont décrites. Pas encore de diagnostic de
-  fourchette, clouage ou compensation positionnelle : ces points restent au lot 2/4.
-- Au plus huit demi-coups visibles. Pas de conclusion matérielle sur une suite
-  tronquée, un score borné ou une prise finale immédiatement reprenable ; un
-  sacrifice approuvé n’est pas requalifié en erreur du seul fait du matériel.
-  Une PV n’est jamais annoncée comme une séquence forcée.
-- `InteractiveReview` conserve un instantané de démonstration séparé de
-  `StudyTree`. Le plateau source reste monté et masqué pour garder ses dessins,
-  ses dimensions et son curseur. `Board.autoShapes` porte les flèches pédagogiques.
-- Le retour restaure le coup ou la branche exacts. Les flèches clavier parcourent
-  la démonstration ouverte. Orientation, préférence d’annotations et retry caché
-  sont respectés. Les scores intermédiaires inconnus restent « ? ».
-- Aucune recherche moteur ajoutée par les explications. Les indices graduels,
-  l’approfondissement ciblé et son cache restent au lot 3. Le moteur est inchangé.
-- Contrôles locaux acquis : lint sans avertissement, TypeScript, 226 tests
-  unitaires, 245 tests avec ShallowRed/Stockfish et build. Contrôle Chromium
-  des démonstrations bureau/mobile, navigation clavier, comparaison, dessins,
-  retour exact à la partie/variante, préférences et retry caché réussi.
-  Scénario ciblé : `CHESS_EXPLANATIONS_ONLY=1` (voir README).
-- Prochaine reprise : lot 2, d’abord un motif tactique vérifiable de bout en
-  bout (faits, lien avec la suite, explication et repères visuels), sans déduire
-  le verdict de la simple présence d’un motif.
+- Zéro affirmation interdite sur le corpus de régression avant activation UI.
+- Chaque famille a des positifs et des négatifs ; les cas inexpliqués figurent
+  au rapport. Une hypothèse trouvée n’est pas comptée comme explication confirmée.
+- La promotion d’un prototype vers l’UI dépend de cette validation, pas du nombre
+  de tests, du nombre de détecteurs ou d’un pourcentage choisi après mesure.
+- Les raisons purement positionnelles restent un objectif du chantier ; elles
+  ne sont pas déclarées terminées parce que développement/centre sont décrits.
+- Aucun engagement de couverture identique à Chess.com. Ni un moteur plus fort,
+  ni davantage de temps, ni une reformulation textuelle ne fournissent seuls
+  le modèle de contexte manquant.
 
-## Notes de livraison du lot 2 — 30 septembre 2026
+## Point de reprise
 
-- `src/review/tactics.ts` détecte des motifs liés à une conséquence dans la PV :
-  fourchette suivie de la fuite d’une cible et de la capture de l’autre ; clouage
-  absolu/relatif exploité ; ligne ouverte puis capture/mat ; défense perdue puis
-  prise ; cible non défendue ; mat immédiat/menace réalisée ; même pion promu.
-- Le lien au verdict se fait dans `explanations.ts::tacticalExplanation` : scores
-  exacts et annotation disponibles ; gain/mat dans la suite pour le camp concerné,
-  comparaison avec l’alternative pour les erreurs et occasions manquées. Le bilan
-  de la PV entière est conservé dans `verifiedEnding`, même quand l’affichage
-  s’arrête à huit demi-coups. La conséquence du motif doit rester visible.
-- Les bons coups défensifs vérifient localement un mat en un supprimé, une
-  interposition, une fuite vers une case non capturable ou un défenseur permettant
-  une reprise légale. Ces essais chess.js ne sont pas des recherches moteur et
-  ne prédisent pas les menaces profondes. Les captures/reprises filtrent les
-  défenseurs cloués et les rois qui ne peuvent pas reprendre légalement.
-- Une idée prioritaire par coup. `ExplanationStep.motif/marks` associent le texte
-  aux pièces concernées ; rouge = menace, vert = défense/idée. Le prochain coup
-  reste bleu aux étapes sans motif. Les annotations personnelles sont séparées.
-- `MoveExplanation.primary = "alternative"` dirige « Montrer pourquoi » vers
-  l’occasion manquée. Le retour, les variantes, l’orientation, les préférences et
-  la dissimulation de la solution restent gérés par le socle du lot 1.
-- Couverture volontairement prudente : fourchettes de pièces/roi, motifs proches
-  du coup examiné, défenseurs effectivement perdus, menaces réalisées dans la
-  suite. Un motif géométrique isolé, une suite incohérente, un score borné ou une
-  compensation inexpliquée ne suffit pas. Une menace déjà présente n’est pas
-  attribuée au dernier coup. Aucune promesse de gain forcé.
-- Tests de motifs et contre-exemples : `tactics.test.ts`. Scénarios visuels :
-  `/dev/explanations.html?case=fork` (ou `pin`, `defender`, `defence`, `miss`),
-  tous vérifiés dans le contrôle `CHESS_EXPLANATIONS_ONLY=1`.
-- Validation : 25 nouveaux tests de motifs et contre-exemples ; 251 tests unitaires,
-  270 tests avec ShallowRed/Stockfish, lint, TypeScript et build réussis. Parcours
-  Chromium complet réussi, y compris les motifs sur bureau/mobile, le retournement,
-  le choix de l’alternative manquée et l’absence de fuite pendant le retry.
-- Prochaine reprise : lot 3 (indices graduels du retry, puis vérifications
-  ciblées bornées et cachées), sans divulguer les motifs avant demande d’indice.
+- Branche actuelle : `codex/ui-polish`, PR #111 ouverte au début de cette reprise.
+- Démarrage autorisé : A, puis les primitives de B avec un rapport exécutable.
+  L’UI conserve provisoirement le prototype historique, dont les limites restent
+  connues. Ne pas annoncer que l’analyse utilisateur est déjà corrigée.
+- Exemple réel central : `Dd2` occupe une retraite du fou e3, puis `…f4` attaque
+  ce fou. Source : captures utilisateur du 2 octobre. FEN reconstruite, sans
+  inventer le PGN antérieur ; trait, horloges FEN et dernier déplacement documentés.
+- Autre régression : C×F, P×C, D×P ; distinguer échange global à −1 pion et
+  reprise utile. La position concrète construite doit être annoncée comme telle.
+- Les prochaines notes doivent préciser fichiers, commandes, résultats et ce
+  qui reste non implémenté ; cocher uniquement les livrables effectivement validés.
 
-## Notes de livraison du lot 3 — 30 septembre 2026
+## Livraison de démarrage — 2 octobre 2026
 
-- `hints.ts` réutilise la PV validée et les faits tactiques/défensifs du lot 2.
-  Le premier indice donne une idée sans case ni SAN, le second nomme uniquement
-  la pièce source et l’encercle. Sans motif confirmé, conseil général explicite.
-- `RetryCoach` conserve le plan choisi pendant l’exercice. « Voir la solution »
-  est une action séparée ; aucune recherche d’indice ne la révèle implicitement.
-  Retenter remet les indices à zéro. Les dessins personnels restent indépendants.
-- `FocusedAnalysis` reçoit une ou deux positions : 3 s chacune, délai global
-  10 s incluant la connexion. Arrêt explicite, navigation, sortie, relance ou
-  changement de moteur interrompent la recherche et invalident ses réponses.
-  L’indicateur de calcul n’empêche ni de jouer ni de parcourir la partie.
-- Cache par objet revue/révision/moteur/historique UCI ; 64 demandes et 128
-  positions maximum par revue. Une paire abandonnée ne publie pas son premier
-  résultat. Une racine déjà approfondie peut servir à une paire ou à un indice.
-  Un échec technique reste réessayable ; une réponse inexploitable est mémorisée
-  jusqu’à la relance globale, sans boucle de calcul. Aucune commande MultiPV ou
-  searchmoves, aucune modification du moteur.
-- « Préciser cet indice » vérifie une seule position sur demande. « Approfondir
-  ce coup » recalcule avant/après si l’explication reste générique ou le coup
-  non classé. L’analyse principale ou de variante passe en premier. Une paire
-  complète met à jour `GameReview` (scores/courbe/annotations) ou le cache de
-  `BranchAnalysis`. Un indice seul reste dans le cache de la variante.
-- Limites : ce budget supplémentaire n’assure pas une profondeur supérieure aux
-  longues passes de résolution antérieures. Une contradiction persistante ne
-  reçoit pas de classification inventée. La précision des motifs reste celle
-  des lots 1/2 ; les observations positionnelles appartiennent au lot 4.
-- Tests ajoutés : `FocusedAnalysis.test.ts` et `hints.test.tsx`, 25 cas couvrant
-  cache, répétitions/historiques, deux camps, score borné/PV incohérente, terminal,
-  connexion bloquée, annulation, réponse tardive, changement de moteur, publication
-  cohérente et verdict contradictoire. Le HTML initial ne contient aucun indice.
-- Contrôles locaux : lint, TypeScript, 276 tests unitaires, 295 tests avec
-  ShallowRed/Stockfish et build réussis. Chromium ciblé puis parcours complet
-  réussis : import PGN, jeu, variantes, navigation, annotations, indices graduels,
-  recherche ciblée Stockfish, arrêt/reprise et cache, sur bureau/mobile/tablette.
-- Branche synchronisée avec `main` à `4fa0da3` ; binaire local à jour via
-  `cargo build --release --bin shallowred`. Les nouveautés distantes de ce lot
-  concernaient la documentation et les protocoles d’essai, sans diff du moteur.
-- Prochaine reprise : lot 4, observations positionnelles prudentes. Le lot 3
-  n’ajoute pas de diagnostic générique d’activité/sécurité du roi sans preuve.
-
-## Notes de livraison du lot 4 — 30 septembre 2026
-
-- `positional.ts` reconstruit et vérifie le coup et son historique avec chess.js,
-  puis compare les propriétés avant/après. Il ne dépend d’aucun détail interne
-  du moteur et n’ajoute aucune recherche UCI.
-- Familles couvertes : premier développement d’un fou/cavalier depuis la position
-  standard (quinze premiers coups, aucun départ/retour antérieur) ; tour sur colonne
-  ouverte/semi-ouverte ; pions nouvellement doublés/isolés/passés ; roque et
-  diminution de couverture proche du roi ; mobilité légale accrue et accès/occupation
-  du centre. Les captures en passant, les deux couleurs et les pièces clouées sont
-  prises en compte. Les promotions et positions terminales gardent leur explication
-  spécifique, sans ajout positionnel.
-- Une propriété déjà présente n’est pas répétée. Une seule observation est retenue,
-  par priorité : roi, colonnes, structure, développement, centre, mobilité.
-  Cache local borné à 128 situations, avec historique et positions avant/après ;
-  indépendant des scores et du moteur, pour éviter le recalcul à chaque info UCI.
-- `PositionalPanel` sépare « Observation positionnelle » de la classification.
-  Les repères complètent une cause tactique/matérielle dans un volet replié.
-  « Voir le repère » ouvre deux étapes sur le plateau existant, avec des cercles
-  bleus. « Comparer avec le coup proposé » est facultatif et repart du même
-  historique ; scores exacts/finis, verdict exploitable et suites légales requis.
-- `ExplanationLine.kind = "observation"` distingue ces démonstrations d’une PV.
-  Le texte et la légende ne prétendent pas expliquer le raisonnement interne du
-  moteur. Aucun de ces constats ne passe `MoveExplanation.concrete` à vrai.
-  Les explications tactiques conservent leur priorité et leur fonctionnement.
-- Limites explicites : des possibilités de mouvement ne sont pas des cases sûres ;
-  elles sont calculées comme si le camp rejouait et omises pendant un échec. La
-  couverture du roi ne compte que ses pions sur trois colonnes et deux rangées,
-  sur une aile et avec une dame adverse ; ce n’est pas un diagnostic global de
-  sécurité. La structure de pions ne mesure pas les compensations. Une FEN ne
-  permet pas d’inventer un historique de développement.
-- Validation : 27 nouveaux tests dans `positional.test.tsx`, 303 tests unitaires,
-  322 tests avec ShallowRed/Stockfish, lint, TypeScript et build réussis. Chromium
-  ciblé puis parcours complet validés : huit fixtures positionnelles, bureau/mobile,
-  comparaison, orientation, préférences, retry caché, variante et dessins conservés.
-- Branche synchronisée avec `main` à `8519c52` ; binaire release local vérifié.
-- Les quatre lots validés sont terminés. Les limites ci-dessus sont des limites
-  volontaires du modèle descriptif, pas des tâches laissées en cours.
-
-
-## Corrections après retours sur les repères — 30 septembre 2026 (historique)
-
-La sélection par bilan final de PV décrite ici est remplacée par le lot 5.
-
-- Aucun bouton pour illustrer seulement un développement ou une case d’arrivée.
-  Les repères utiles comportent une seule position, après le coup, sans rewind.
-  Le panneau reste visible ; le bouton active/masque les cercles. Les flèches
-  gardent la navigation dans la partie/variante, et la fermeture conserve les dessins.
-- Les observations sont toujours dans un complément replié après les actions.
-  L’absence de cause identifiée reste explicite. La mobilité montre toutes les
-  nouvelles destinations légales, sans les annoncer comme sûres.
-- La perte ou le gain matériel est maintenant calculé sur la PV entière validée,
-  et non sur les huit demi-coups d’affichage. La démonstration s’étend jusqu’aux
-  changements matériels utiles. L’alternative est comparée depuis la même origine,
-  y compris pour un gain manqué sans perte. Une occasion secondaire ne supplante
-  pas une perte matérielle déjà identifiée. Les promotions jugées mauvaises ne sont
-  plus justifiées par le seul gain immédiat de la promotion.
-- Scores non finis/bornés, PV incohérentes, reprise immédiate en fin de suite et
-  sacrifices approuvés gardent leurs protections. Pas de modification du moteur,
-  ni de recherche UCI supplémentaire. Comparer les PV existantes ne résout pas
-  toutes les causes positionnelles ; les recherches comparatives de la checklist
-  et la refonte complète des commandes de démonstration restent à faire.
-- Validation : 327 tests avec ShallowRed/Stockfish, lint, TypeScript et build ;
-  contrôle navigateur ciblé réussi (repères directs, absence de boutons inutiles,
-  orientation, clavier, dessins, retry, gain/perte au-delà de huit demi-coups).
+- Nouvelle backlog active ; anciennes annonces de lots terminés archivées à part.
+- Fichiers du prototype : `src/review/understanding/{context,possibilities,exchanges,prototype}.ts`.
+- Corpus versionné et rapport : `src/review/understanding/corpus.json`, `corpus.ts`,
+  `corpus.test.ts`, `README.md`. Commande : `npm run test:understanding` depuis `ui/`.
+- Première mesure : 19 décisions, 12 faits/mécanismes attendus, 7 reconnus,
+  5 manquants, 7 contre-exemples respectés, 1 réponse partielle (clouage),
+  **0 explication publiable**. Les transformations ne sont pas des cas indépendants.
+- Les 25 contrôles du prototype incluent l’historique, l’illégalité, les camps,
+  les frontières inconnues, le roque, la promotion et la prise en passant.
+- `dev/understanding.test.mjs` confronte Dd2/…f4 aux deux moteurs réels :
+  aucune sortie du prototype n’est encore traitée comme une cause confirmée.
+- Validation logicielle de cette livraison : lint, TypeScript, 364 tests avec
+  les deux moteurs et build réussis. Le bundle applicatif est inchangé : aucun
+  import du prototype dans les composants actifs.
+- Coût actuel de l’extraction exhaustive : environ six secondes pour le corpus
+  local. Pas d’intégration synchrone de ce code dans le rendu React.
+- **Prochain travail concret** : enrichir les contre-exemples (défense par une
+  autre pièce, coup intermédiaire, sacrifice), puis définir les requêtes et critères
+  de réfutation/comparaison de C. Étendre les relations sur ce socle. Les cinq
+  familles manquantes doivent rester visibles ; ne pas les masquer avec l’ancien
+  explicateur ou une formule générique. D et E ne sont pas commencés.

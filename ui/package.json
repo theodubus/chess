@@ -12,7 +12,8 @@
     "engine:bridge": "node dev/bridge.mjs",
     "test:unit": "vitest run src",
     "test:bridge": "vitest run dev",
-    "start": "node dev/start.mjs"
+    "start": "node dev/start.mjs",
+    "test:understanding": "vitest run src/review/understanding --reporter=verbose"
   },
   "dependencies": {
     "@lichess-org/chessground": "^10.1.1",
