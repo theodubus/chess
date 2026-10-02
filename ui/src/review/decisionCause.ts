@@ -186,7 +186,7 @@ function localIdeas(line: ExplanationLine, actor: Color, first: number) {
   if (capture?.captured && !ideas.some((idea) => idea.consequence === first))
     ideas.push({
       kind: "hanging",
-      title: "Échange défavorable",
+      title: first === 1 ? "Échange favorable" : "Échange défavorable",
       step: Math.max(1, first - 1),
       consequence: first,
       text: `La prise ${frenchSan(capture.san)} commence un échange sur ${capture.to}. Les reprises de cette séquence laissent un gain matériel aux ${actor === "w" ? "Blancs" : "Noirs"}.`,

@@ -337,3 +337,16 @@ it("ne prétend pas qu’un coup crée une menace de mat qui existait déjà", (
   );
   expect(motif(explanation)?.motif).not.toBe("Menace de mat");
 });
+
+it("présente comme favorable un échange qui gagne du matériel pour le joueur", () => {
+  const explanation = explain(
+    scenario("2b4k/8/8/5r2/8/3B4/8/7K w - - 0 1", ["Bxf5", "Bxf5"]),
+  );
+  expect(explanation.concrete).toBe(true);
+  expect(explanation.proof?.title).toBe("Échange favorable");
+  expect(explanation.proof?.steps.map((step) => step.move?.san)).toEqual([
+    "Bxf5",
+    "Bxf5",
+  ]);
+  expect(explanation.summary).toContain("gain matériel aux Blancs");
+});

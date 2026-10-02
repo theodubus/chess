@@ -101,7 +101,7 @@ les notes historiques des lots précédents ne décrivent plus la sélection act
   deux couleurs, défense déplacée, suffixe lointain ; exemple de dame perdue issu
   d’une ouverture légale vérifié avec ShallowRed et Stockfish.
 
-Validation du 2 octobre : 336 tests avec ShallowRed/Stockfish, lint, TypeScript
+Validation du 2 octobre : 337 tests avec ShallowRed/Stockfish, lint, TypeScript
 et build réussis. Parcours Chromium complet : import, partie, analyse réelle,
 comparaison courte, annulation/cache, retry, dessins, orientation et trois tailles
 d’écran. Les promotions analysées sont contrôlées pour les deux couleurs.
