@@ -1,0 +1,485 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 97e0ebc..0b7fc27 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -35,6 +35,71 @@ use crate::position::{Position, repetitions};
+ use crate::see;
+ use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
+ 
++// SONDE jetable (B8, les marges à l'échelle du réseau) — ne jamais fusionner.
++// Active seulement si la variable d'environnement SONDE_B8 désigne un dossier :
++// chaque processus y écrit rfp.<pid>.tsv, delta.<pid>.tsv et asp.<pid>.tsv.
++// Échantillonnage par compteur, jamais par le hasard.
++pub mod sonde_b8 {
++    use std::io::Write;
++    use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
++    use std::sync::{Mutex, OnceLock};
++
++    pub const RFP_EVERY: u64 = 20_000;
++    pub const DELTA_EVERY: u64 = 150_000;
++    pub static RFP_SEEN: AtomicU64 = AtomicU64::new(0);
++    pub static DELTA_SEEN: AtomicU64 = AtomicU64::new(0);
++
++    struct Files {
++        rfp: std::fs::File,
++        delta: std::fs::File,
++        asp: std::fs::File,
++    }
++
++    fn files() -> Option<&'static Mutex<Files>> {
++        static FILES: OnceLock<Option<Mutex<Files>>> = OnceLock::new();
++        FILES
++            .get_or_init(|| {
++                let dir = std::env::var("SONDE_B8").ok()?;
++                let pid = std::process::id();
++                let open = |name: &str| {
++                    std::fs::OpenOptions::new()
++                        .create(true)
++                        .append(true)
++                        .open(format!("{dir}/{name}.{pid}.tsv"))
++                        .ok()
++                };
++                Some(Mutex::new(Files { rfp: open("rfp")?, delta: open("delta")?, asp: open("asp")? }))
++            })
++            .as_ref()
++    }
++
++    pub fn active() -> bool {
++        files().is_some()
++    }
++
++    pub fn rfp(line: &str) {
++        if let Some(f) = files() && let Ok(mut f) = f.lock() {
++            let _ = writeln!(f.rfp, "{line}");
++        }
++    }
++
++    pub fn delta(line: &str) {
++        if let Some(f) = files() && let Ok(mut f) = f.lock() {
++            let _ = writeln!(f.delta, "{line}");
++        }
++    }
++
++    pub fn asp(line: &str) {
++        if let Some(f) = files() && let Ok(mut f) = f.lock() {
++            let _ = writeln!(f.asp, "{line}");
++        }
++    }
++
++    pub fn tick(counter: &AtomicU64, every: u64) -> bool {
++        counter.fetch_add(1, Relaxed) % every == every - 1
++    }
++}
++
+ /// Profondeur maximale de la recherche principale.
+ pub const MAX_DEPTH: u32 = 64;
+ 
+@@ -937,12 +1002,30 @@ impl Search {
+         let mut delta = self.scaled_margin(ASPIRATION_DELTA);
+         let mut alpha = previous.saturating_sub(delta).max(-INFINITY);
+         let mut beta = previous.saturating_add(delta).min(INFINITY);
++        let (mut fails_low, mut fails_high, mut nodes_failed) = (0u32, 0u32, 0u64);
++        let nodes_start = self.nodes;
+ 
+         loop {
++            let before = self.nodes;
+             let score = self.negamax(board, depth, 0, alpha, beta, scratch);
+             if self.aborted {
+                 return score;
+             }
++            if sonde_b8::active() && (score <= alpha || score >= beta) {
++                nodes_failed += self.nodes - before;
++                if score <= alpha {
++                    fails_low += 1;
++                } else {
++                    fails_high += 1;
++                }
++            }
++            if sonde_b8::active() && score > alpha && score < beta {
++                let kind = if self.network.is_some() { "net" } else { "hc" };
++                sonde_b8::asp(&format!(
++                    "{iteration}\t{fails_low}\t{fails_high}\t{nodes_failed}\t{}\t{previous}\t{score}\t{kind}",
++                    self.nodes - nodes_start
++                ));
++            }
+ 
+             if score <= alpha {
+                 // Échec par le bas : la position est pire que prévu. On abaisse
+@@ -1701,7 +1784,23 @@ impl Search {
+         }
+ 
+         let static_eval = self.static_eval(board, ply);
+-        (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
++        let cut = static_eval - RFP_MARGIN * depth >= beta;
++        if sonde_b8::active() && sonde_b8::tick(&sonde_b8::RFP_SEEN, sonde_b8::RFP_EVERY) {
++            let (kind, other) = match &self.network {
++                Some(_) => ("net", eval::evaluate(board, &self.params)),
++                None => (
++                    "hc",
++                    crate::nnue::embedded()
++                        .map(|n| n.evaluate(&n.refresh(board), board.side_to_move()))
++                        .unwrap_or(i32::MIN),
++                ),
++            };
++            sonde_b8::rfp(&format!(
++                "{board}\t{depth}\t{beta}\t{static_eval}\t{other}\t{}\t{kind}",
++                u8::from(cut)
++            ));
++        }
++        cut.then_some(static_eval)
+     }
+ 
+     /// Vrai si les coups tranquilles restants doivent être abandonnés.
+@@ -1815,7 +1914,17 @@ impl Search {
+             return false;
+         };
+         let gain = self.params.mg_value[victim as usize].max(self.params.eg_value[victim as usize]);
+-        stand_pat.saturating_add(self.scaled_margin(gain.saturating_add(DELTA_MARGIN))) <= alpha
++        let pruned =
++            stand_pat.saturating_add(self.scaled_margin(gain.saturating_add(DELTA_MARGIN))) <= alpha;
++        if sonde_b8::active() && sonde_b8::tick(&sonde_b8::DELTA_SEEN, sonde_b8::DELTA_EVERY) {
++            let kind = if self.network.is_some() { "net" } else { "hc" };
++            sonde_b8::delta(&format!(
++                "{board}\t{}\t{stand_pat}\t{gain}\t{alpha}\t{}\t{kind}",
++                cozy_chess::util::display_uci_move(board, mv),
++                u8::from(pruned)
++            ));
++        }
++        pruned
+     }
+ }
+ 
+diff --git a/tools/sonde-b8/facteurs.py b/tools/sonde-b8/facteurs.py
+new file mode 100644
+index 0000000..9475e5d
+--- /dev/null
++++ b/tools/sonde-b8/facteurs.py
+@@ -0,0 +1,68 @@
++#!/usr/bin/env python3
++"""Facteurs qui égalisent, marge par marge, le taux du réseau sur celui de la faite main (B8).
++
++  python3 facteurs.py <binaire> <dossier réseau> <dossier faite main>
++
++- élagage delta : élaguer si stand_pat + m × (gain + 200) ≤ alpha — le gain et
++  la marge sont en unités de la faite main, le facteur m les porte en unités du
++  réseau ; élagage fautif si la valeur rejouée après la capture dépasse alpha ;
++- aspiration : première fenêtre de demi-largeur δ, en échec si le score de
++  l'itération s'écarte du précédent d'au moins δ ; facteur δ / 25.
++Le plus petit facteur dont le taux du réseau ne dépasse pas celui de la faite
++main à 1,00, sur une grille de 0,1.
++"""
++import sys
++from multiprocessing import Pool
++
++sys.argv = sys.argv  # lire.py lit ses arguments à l'import
++import lire  # noqa: E402
++
++DELTA_MARGIN = 200
++
++
++def main():
++    delta = {k: lire.lines(d, "delta") for k, d in lire.DIRS.items()}
++    with Pool(lire.WORKERS) as pool:
++        rows = pool.map(lire.rejouer_delta, delta["net"] + delta["hc"], chunksize=16)
++    data = {"net": [], "hc": []}
++    for kind, stand_pat, gain, alpha, pruned, v in rows:
++        if v is not None and abs(v) < lire.MATE:
++            data[kind].append((stand_pat, gain, alpha, v))
++
++    def taux(points, m):
++        el = [v > alpha for sp, g, alpha, v in points if sp + m * (g + DELTA_MARGIN) <= alpha]
++        return (sum(el) / len(el) if el else 0.0), len(el) / max(len(points), 1)
++
++    cible, part_hc = taux(data["hc"], 1.0)
++    print(f"élagage delta — faite main à × 1,0 : {cible:.2%} fautifs, {part_hc:.1%} élaguées")
++    egal = None
++    for m10 in range(5, 61):
++        m = m10 / 10
++        r, part = taux(data["net"], m)
++        if egal is None and r <= cible:
++            egal = m
++        if m10 in (5, 10, 15, 20, 22, 24, 25, 30, 40, 50, 60):
++            print(f"  réseau × {m:.1f} : {r:.2%} fautifs, {part:.1%} élaguées")
++    print(f"  facteur qui égalise : {'aucun jusqu à × 6' if egal is None else f'× {egal:.1f}'}")
++
++    asp = {k: lire.lines(d, "asp") for k, d in lire.DIRS.items()}
++    ecarts = {k: [abs(int(r[6]) - int(r[5])) for r in v if abs(int(r[5])) < lire.MATE and abs(int(r[6])) < lire.MATE]
++              for k, v in asp.items()}
++
++    def echec(xs, delta):
++        return sum(x >= delta for x in xs) / len(xs)
++
++    cible = echec(ecarts["hc"], 25)
++    print(f"\naspiration — faite main à δ = 25 : {cible:.1%} des itérations hors de la première fenêtre")
++    egal = None
++    for d in range(10, 201, 5):
++        r = echec(ecarts["net"], d)
++        if egal is None and r <= cible:
++            egal = d
++        if d in (15, 25, 35, 50, 60, 75, 100, 150, 200):
++            print(f"  réseau δ = {d} : {r:.1%}")
++    print(f"  δ qui égalise : {egal} — facteur × {egal / 25:.2f}" if egal else "  aucun jusqu à 200")
++
++
++if __name__ == "__main__":
++    main()
+diff --git a/tools/sonde-b8/lire.py b/tools/sonde-b8/lire.py
+new file mode 100644
+index 0000000..861e5bb
+--- /dev/null
++++ b/tools/sonde-b8/lire.py
+@@ -0,0 +1,254 @@
++#!/usr/bin/env python3
++"""Lecteur de la sonde B8 — rejoue hors partie les nœuds échantillonnés et rend les rapports.
++
++  python3 lire.py <binaire> <dossier réseau> <dossier faite main>
++
++Chaque dossier porte les rfp.<pid>.tsv, delta.<pid>.tsv et asp.<pid>.tsv qu'a
++écrits le binaire sondé pendant ses parties (SONDE_B8=<dossier>). Le rejeu se
++fait SANS SONDE_B8 : le binaire se comporte alors comme `main`.
++
++- futilité inverse : `go depth d` depuis la position du nœud, table de 1 Mio,
++  même évaluation ; E = statique − score. Les scores de mat sont écartés
++  (comptés). Centiles de E par profondeur, et la faute de la marge actuelle :
++  parmi les nœuds coupés, la part dont le score rejoué est sous beta.
++- élagage delta : `go depth 1` après la capture ; valeur V = −score ; élaguée à
++  tort si V > alpha.
++- aspiration : taux d'échec par itération à fenêtre, et la part des nœuds
++  dépensée en recherches échouées.
++Intervalles à 95 % par rééchantillonnage (2 000 tirages, graine fixe).
++"""
++import glob
++import os
++import random
++import subprocess
++import sys
++from multiprocessing import Pool
++
++BIN = sys.argv[1]
++DIRS = {"net": sys.argv[2], "hc": sys.argv[3]}
++WORKERS = 3
++MATE = 20000
++
++
++def lines(d, prefix):
++    out = []
++    for f in sorted(glob.glob(os.path.join(d, f"{prefix}.*.tsv"))):
++        with open(f) as fh:
++            out += [l.rstrip("\n").split("\t") for l in fh if l.strip()]
++    return out
++
++
++_eng = {}
++
++
++def engine(kind):
++    if kind not in _eng:
++        env = {k: v for k, v in os.environ.items() if k != "SONDE_B8"}
++        p = subprocess.Popen([BIN], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1, env=env)
++        send(p, "uci", "uciok")
++        send(p, "setoption name Hash value 1")
++        if kind == "hc":
++            send(p, "setoption name EvalFile value <none>")
++        send(p, "isready", "readyok")
++        _eng[kind] = p
++    return _eng[kind]
++
++
++def send(p, cmd, until=None):
++    p.stdin.write(cmd + "\n")
++    p.stdin.flush()
++    if until:
++        while True:
++            l = p.stdout.readline()
++            if not l or l.strip() == until:
++                return
++
++
++def search(kind, position, depth):
++    """Score au dernier `info depth <depth>` complet, du côté du trait ; None si mat."""
++    p = engine(kind)
++    send(p, "ucinewgame")
++    send(p, "isready", "readyok")
++    send(p, position)
++    send(p, f"go depth {depth}")
++    score = None
++    while True:
++        l = p.stdout.readline()
++        if not l:
++            return None
++        t = l.split()
++        if t[:1] == ["info"] and "score" in t and "depth" in t:
++            i = t.index("score")
++            d = int(t[t.index("depth") + 1])
++            if d == depth and "upperbound" not in t and "lowerbound" not in t:
++                score = int(t[i + 2]) if t[i + 1] == "cp" else None
++                if t[i + 1] == "mate":
++                    score = None
++        if t[:1] == ["bestmove"]:
++            return score
++
++
++def rejouer_rfp(row):
++    fen, depth, beta, static, other, cut, kind = row
++    s = search(kind, f"position fen {fen}", int(depth))
++    return (kind, int(depth), int(beta), int(static), int(other), int(cut), s)
++
++
++def rejouer_delta(row):
++    fen, mv, stand_pat, gain, alpha, pruned, kind = row
++    s = search(kind, f"position fen {fen} moves {mv}", 1)
++    return (kind, int(stand_pat), int(gain), int(alpha), int(pruned), None if s is None else -s)
++
++
++def centile(xs, q):
++    xs = sorted(xs)
++    return xs[min(len(xs) - 1, int(q * len(xs)))]
++
++
++def bootstrap(a, b, stat, n=2000, seed=20260930):
++    rng = random.Random(seed)
++    rs = []
++    for _ in range(n):
++        sa = [a[rng.randrange(len(a))] for _ in a]
++        sb = [b[rng.randrange(len(b))] for _ in b]
++        vb = stat(sb)
++        rs.append(stat(sa) / vb if vb else float("inf"))
++    rs.sort()
++    return rs[int(0.025 * n)], rs[int(0.975 * n)]
++
++
++def main():
++    # Un nœud sur PAS, dans l'ordre des fichiers : le rejeu tient dans la durée
++    # de vie du conteneur. Équivaut à un N plus grand dans la sonde.
++    PAS = int(os.environ.get("PAS_RFP", "1"))
++    rfp = {k: lines(d, "rfp")[PAS - 1::PAS] for k, d in DIRS.items()}
++    delta = {k: lines(d, "delta") for k, d in DIRS.items()}
++    asp = {k: lines(d, "asp") for k, d in DIRS.items()}
++    print("échantillons — futilité :", {k: len(v) for k, v in rfp.items()},
++          " delta :", {k: len(v) for k, v in delta.items()},
++          " aspiration :", {k: len(v) for k, v in asp.items()}, flush=True)
++
++    with Pool(WORKERS) as pool:
++        r_rfp = pool.map(rejouer_rfp, rfp["net"] + rfp["hc"], chunksize=16)
++        r_delta = pool.map(rejouer_delta, delta["net"] + delta["hc"], chunksize=16)
++
++    print("\n== futilité inverse : E = statique − score rejoué à la profondeur du nœud ==")
++    E = {"net": {}, "hc": {}}
++    fautes = {"net": [0, 0], "hc": [0, 0]}
++    mats = {"net": 0, "hc": 0}
++    pente = {"net": [], "hc": []}
++    for kind, depth, beta, static, other, cut, s in r_rfp:
++        if s is None or abs(s) >= MATE:
++            mats[kind] += 1
++            continue
++        E[kind].setdefault(depth, []).append(static - s)
++        E[kind].setdefault(0, []).append(static - s)
++        if cut:
++            fautes[kind][0] += 1
++            fautes[kind][1] += s < beta
++        if other != -2147483648:
++            pente[kind].append((static, other))
++    print(f"  scores de mat écartés : {mats}")
++    print(f"  {'prof.':>5} {'n net':>6} {'n hc':>6}  {'c50 net':>8} {'c90 net':>8} {'c99 net':>8}  {'c50 hc':>7} {'c90 hc':>7} {'c99 hc':>7}  {'c90 net/hc':>10}  IC 95 %")
++    for d in sorted(set(E["net"]) | set(E["hc"])):
++        a, b = E["net"].get(d, []), E["hc"].get(d, [])
++        if len(a) < 30 or len(b) < 30:
++            continue
++        q = lambda xs: centile(xs, 0.9)
++        lo, hi = bootstrap(a, b, q)
++        print(f"  {('tous' if d == 0 else d):>5} {len(a):>6} {len(b):>6}  "
++              f"{centile(a, .5):>8} {centile(a, .9):>8} {centile(a, .99):>8}  "
++              f"{centile(b, .5):>7} {centile(b, .9):>7} {centile(b, .99):>7}  "
++              f"{q(a) / q(b) if q(b) else float('inf'):>10.2f}  [{lo:.2f} ; {hi:.2f}]")
++    for k in ("net", "hc"):
++        n, f = fautes[k]
++        print(f"  coupures fautives, marge actuelle — {k} : {f} sur {n} ({f / max(n, 1):.2%})")
++    # Le rapport des taux de coupures fautives, et le facteur de marge qui les égalise.
++    noeuds = {"net": [], "hc": []}
++    for kind, depth, beta, static, other, cut, s in r_rfp:
++        if s is not None and abs(s) < MATE:
++            noeuds[kind].append((depth, beta, static, s))
++
++    def fautes_a(nodes, m):
++        coupes = [(beta, s) for depth, beta, static, s in nodes if static - m * 100 * depth >= beta]
++        return [1 if s < beta else 0 for beta, s in coupes], len(coupes)
++
++    fa, _ = fautes_a(noeuds["net"], 1.0)
++    fb, _ = fautes_a(noeuds["hc"], 1.0)
++    if fa and fb:
++        rate = lambda xs: sum(xs) / len(xs)
++        lo, hi = bootstrap(fa, fb, rate)
++        print(f"  RAPPORT des taux de coupures fautives réseau / faite main : "
++              f"{rate(fa) / max(rate(fb), 1e-9):.2f}  [{lo:.2f} ; {hi:.2f}]")
++        cible = rate(fb)
++        print(f"  facteur de marge : taux fautif et part des candidats coupés, réseau (faite main à 1,00 : "
++              f"{cible:.2%} fautives, {len(fb) / max(len(noeuds['hc']), 1):.1%} coupés)")
++        m_egal = None
++        for m10 in range(5, 51, 1):
++            m = m10 / 10
++            f, n = fautes_a(noeuds["net"], m)
++            r = rate(f) if f else 0.0
++            if m_egal is None and r <= cible:
++                m_egal = m
++            if m10 in (5, 8, 10, 12, 15, 20, 25, 30, 40, 50):
++                print(f"    × {m:.1f} : {r:.2%} fautives, {n / max(len(noeuds['net']), 1):.1%} coupés")
++        print(f"  facteur qui égalise le taux fautif du réseau sur celui de la faite main : "
++              f"{'aucun jusqu à × 5' if m_egal is None else f'× {m_egal:.1f}'}")
++    # Pente : l'échelle du réseau contre la faite main aux mêmes nœuds.
++    pts = [(o, s) for s, o in pente["net"]] + [(s, o) for s, o in pente["hc"]]  # (hc, net)
++    pts = [(h, n) for h, n in pts if abs(h) <= 1500]
++    if pts:
++        num = sum(h * n for h, n in pts)
++        den = sum(h * h for h, n in pts)
++        ratios = sorted(abs(n) / abs(h) for h, n in pts if abs(h) >= 50)
++        print(f"  échelle réseau / faite main aux nœuds de la futilité : pente {num / den:.2f} (|hc| ≤ 1500, n = {len(pts)}), "
++              f"rapport médian {ratios[len(ratios) // 2]:.2f} (|hc| ≥ 50)")
++
++    print("\n== élagage delta : élaguée à tort si la valeur rejouée après la capture dépasse alpha ==")
++    stats = {}
++    for kind, stand_pat, gain, alpha, pruned, v in r_delta:
++        st = stats.setdefault(kind, {"cand": 0, "pr": 0, "faute": [], "mat": 0})
++        st["cand"] += 1
++        if v is None:
++            st["mat"] += 1
++            continue
++        if pruned:
++            st["pr"] += 1
++            st["faute"].append(1 if v > alpha else 0)
++    for k in ("net", "hc"):
++        st = stats.get(k)
++        if not st:
++            continue
++        f = st["faute"]
++        print(f"  {k} : {st['cand']} candidates, {st['pr']} élaguées ({st['pr'] / max(st['cand'], 1):.1%}), "
++              f"fautives {sum(f)} ({sum(f) / max(len(f), 1):.2%}), mats écartés {st['mat']}")
++    if stats.get("net") and stats.get("hc") and stats["net"]["faute"] and stats["hc"]["faute"]:
++        rate = lambda xs: sum(xs) / len(xs)
++        a, b = stats["net"]["faute"], stats["hc"]["faute"]
++        lo, hi = bootstrap(a, b, rate)
++        print(f"  rapport des taux fautifs réseau / faite main : {rate(a) / max(rate(b), 1e-9):.2f}  [{lo:.2f} ; {hi:.2f}]")
++
++    print("\n== aspiration : échecs par itération à fenêtre ==")
++    per = {}
++    for row in asp["net"] + asp["hc"]:
++        it, fl, fh, nf, nt, prev, score, kind = row
++        per.setdefault(kind, []).append((int(fl) + int(fh), int(nf), int(nt)))
++    for k in ("net", "hc"):
++        xs = per.get(k, [])
++        if not xs:
++            continue
++        fails = sum(x[0] for x in xs)
++        with_fail = sum(1 for x in xs if x[0])
++        print(f"  {k} : {len(xs)} itérations, {fails / len(xs):.2f} échec par itération, "
++              f"{with_fail / len(xs):.1%} en échec au moins une fois, "
++              f"{sum(x[1] for x in xs) / max(sum(x[2] for x in xs), 1):.1%} des nœuds en recherches échouées")
++    if per.get("net") and per.get("hc"):
++        a = [x[0] for x in per["net"]]
++        b = [x[0] for x in per["hc"]]
++        mean = lambda xs: sum(xs) / len(xs)
++        lo, hi = bootstrap(a, b, mean)
++        print(f"  rapport des échecs par itération réseau / faite main : {mean(a) / mean(b):.2f}  [{lo:.2f} ; {hi:.2f}]")
++
++
++if __name__ == "__main__":
++    main()

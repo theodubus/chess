@@ -547,6 +547,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-30 | **C29 — les seaux, sous pression** : quatre entrées par ligne de cache, la moins utile cède, contre la case unique — 2 Mio des deux côtés (`2d44626` contre `cdd5ba4`) | **+30,13 Elo ± 5,60** sur 6 000 parties à `8+0,08`, gain démontré dans chaque job (+36,62 et +23,66, z = 2,27, même runner). **FUSIONNÉ** (`fc2c9cf`) ; la sonde : +0,54 ± 0,10 pli à vitesse égale — 38 à 81 Elo par pli regagné par la table |
 | 2026-09-30 | **C29 — les seaux, au défaut** : 16 Mio, où la table n'est pas pressée (`90ac6e3` contre `d78b422`) | **+1,85 Elo ± 5,51** sur 6 000 parties à `8+0,08`, homogènes (z = −0,87) : aucune régression démontrée — la condition de la fusion ; la sonde : n/s × 0,990, +0,03 ± 0,13 pli |
 | 2026-09-30 | **C30 — la table par défaut à 64 Mio au lieu de 16**, là où elle n'est pas pressée (`94c07ad` contre `4699e63`) | **+2,90 Elo ± 5,72** sur 6 000 parties à `8+0,08`, homogènes (z = −1,11), zéro perte au temps. **Aucun coût démontré : le défaut passe à 64 Mio** (`428a1e5`) ; la sonde : n/s × 0,979, −0,08 ± 0,10 pli |
+| 2026-09-30 | **C31 — la nulle par règle testée après une parade tranquille, dans la quiescence** (`5d8c68c` contre `1638d26`) | **−2,43 Elo ± 5,36** sur 6 000 parties à `8+0,08`, homogènes de justesse (z = −1,99) ; **le match 1 seul, −7,88 ± 7,61, borne haute −0,27**. **ARRÊTÉ PAR SON CRITÈRE** — correctif de règle, « fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match » : une lecture la met sous zéro. Zéro perte au temps ; avertissements de nulle : 0 pour le candidat, 5 pour la référence |
+| 2026-09-30 | **B8 — l'aspiration et l'élagage delta à l'échelle du réseau** : leurs marges × 2,24 quand un réseau joue, la faite main inchangée (`791e6e4` contre `7305c8a`) | **+50,50 Elo ± 5,37** sur 6 000 parties à `8+0,08`, homogènes (z = −0,13), zéro perte au temps. **Gain démontré, FUSIONNÉ** — l'attendu, 0 à +25, réfuté par le haut. Banc inchangé : la faite main garde ses marges |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -772,8 +774,12 @@ dernière relève est faite.
 | **C13 — N2 contre Stockfish bridé à 2850** | **36663095071** | `main` à `dee985d` (N2 embarqué, sans les seaux, 16 Mio), 60+0,6, graine « auto » | 300, fastchess | **RELEVÉE à 08 h 55** — finie à 08 h 10, EPYC 7763, 2 424 062 n/s | **N2 2 942 ± 29** — 157 − 79 − 64, 63,0 % : dans l'attendu, au centre (2 880 à 3 020, ~2 950, écrit avant). **N2 − N0 contre le même adversaire : +112 ± 42**, 0,68 des +165,8 mesurés contre le jumeau — l'écrasement du premier réseau (0,60) se reproduit. Deux avertissements côté ShallowRed, « PV continues after fifty-move rule » : **C31** (section C13) |
 | **balayage de mutation après la fusion de C29** — les seaux et leur test d'emplacement | 36681481247 | `main` à `b28fa3c` | un job par fichier, puis `Verdict` | **RELEVÉ à 09 h 00, VERT** — fini à 08 h 57, `search.rs` le plus long, 115 min : 497 attrapés, 46 expirés, 29 inviables | **La prédiction tient** : tous les fichiers à leur plafond, total **140**, aucune issue ; **`tt.rs` 6**, les six `\|` en `^` connus — 130 attrapés, dont le départage du seau, `<` en `<=`, que le test d'emplacement attrape désormais. — *Prédiction, écrite avant* (section C29) : le plafond de `tt.rs` reste à 6 |
 | **C31 — la sonde, dans le conteneur** | — | le candidat `5d8c68c` sondé, contre lui-même, `8+0,08`, 40 parties, `-srand 20260930` | fastchess, `engine=true` ; `tools/sonde-c31/sommer.py` | **RELEVÉE à 09 h 20** — 4 686 recherches | **97 918 nulles par répétition et 37 991 par les cinquante coups** après une parade tranquille : 0,02 % des nœuds de quiescence, dans **61,4 % des recherches** — le match se lance (section C31) |
-| **C31 — l'Elo** | **36697316384, 36697321243** — identifiés par leur nom de run | `5d8c68c` → `1638d26`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | lancés à 09 h 38, coupés par le plafond vers 15 h 30 | *Attendu, écrit avant* : 0 à +5, ~+1. **Critère, écrit avant** : fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match (section C31) |
+| **C31 — l'Elo** | **36697316384, 36697321243** — identifiés par leur nom de run | `5d8c68c` → `1638d26`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 15 h 45** — finis ENTIERS à 15 h 17, 3 000 parties chacun, 6,8 s par partie, deux Xeon Platinum 8573C | **−7,88 ± 7,61 et +3,01 ± 7,54 ; −2,43 ± 5,36 en commun, homogènes de justesse (z = −1,99)** ; zéro perte au temps. **ARRÊTÉ PAR SON CRITÈRE** : la borne haute du match 1 est sous zéro, −0,27 — **non fusionné**, la rustine reste à l'attic (section C31). Avertissements de nulle : **0 pour le candidat, 5 pour la référence** — le correctif fait ce qu'il dit. — *Attendu, écrit avant* : 0 à +5 |
 | **C31 — le crible de mutation au candidat** | **36697324833** | `5d8c68c`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | **RELEVÉ à 11 h 50, VERT** — fini à 11 h 16, `search.rs` le plus long, 98 min : 506 attrapés, 43 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants de `main` un pour un — décalés de 2 lignes par le commentaire de `negamax`, de 21 au-delà du bloc neuf —, aucun dans le code neuf ; 506 attrapés contre 497 sur `main`, les mutants du correctif tous tués. Tous les fichiers à leur plafond, total **140**. — *Prédiction, écrite avant* : `search.rs` **39**, aucun survivant dans le code neuf (section C31) |
+| **B8 — la sonde des marges, dans le conteneur** | — | le binaire sondé (`b8-sonde-marges.patch`), réseau puis faite main, chacun contre lui-même, `8+0,08`, 2 × 40 parties, `-srand 20260930` ; rejoué hors partie | fastchess ; `tools/sonde-b8/lire.py`, `facteurs.py` | **RELEVÉE à 17 h 55** | **l'élagage delta se trompe 24 fois plus au réseau, l'aspiration y échoue 2,66 fois plus** — deux candidats par la règle, un seul par la concordance de leurs facteurs (× 2,5, × 2,0) ; la futilité inverse tient (section B8) |
+| **B8 — l'Elo des marges à l'échelle du réseau** | **36755257365, 36755260973** — identifiés par leur nom de run | `791e6e4` → `7305c8a`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 23 h 55** — finis ENTIERS à 23 h 33, 6,68 s par partie, deux AMD EPYC 9V45 | **+50,14 ± 7,60 et +50,85 ± 7,61 ; +50,50 ± 5,37 en commun, homogènes (z = −0,13)** ; zéro perte au temps. **GAIN DÉMONTRÉ, FUSIONNÉ** (`b711a54`, section B8). — *Attendu, écrit avant* : 0 à +25, ~+10 — **réfuté par le haut**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro |
+| **B8 — le crible de mutation au candidat** | **36755264744** | `791e6e4`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | **RELEVÉ à 20 h 30, VERT** — fini à 20 h 02, `search.rs` le plus long, 123 min : 499 attrapés, 49 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants de `main` un pour un — décalés de 14 lignes par les constantes, de 25 au-delà de `scaled_margin`, le texte de chaque ligne identique —, aucun dans le code neuf : ses cinq mutants, tous dans `scaled_margin`, sont attrapés ou expirés. Tous les fichiers à leur plafond, total **140**. — *Prédiction, écrite avant* : `search.rs` **39** — les survivants de `main` aux lignes décalées, aucun dans le code neuf : les deux tests couvrent `scaled_margin` des deux côtés et l'élagage delta au ras de ses deux seuils ; les autres fichiers à leur plafond, total 140 |
+| **balayage de mutation après la fusion de B8** | **36794803462** | `main` à `bf4e504`, la PR #127 | un job par fichier, puis `Verdict` | **RELEVÉ à 02 h 25, VERT** — fini à 01 h 47, `search.rs` le plus long, 97 min : 501 attrapés, 47 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants du crible au candidat un pour un, aux mêmes lignes et colonnes ; tous les fichiers à leur plafond, total **140**, aucune issue. Deux mutants expirés au crible sont attrapés ici : la charge du runner, 616 mutants des deux côtés. — *Prédiction, écrite avant* : **les survivants du crible au candidat, un pour un** — `search.rs` **39**, tous les fichiers à leur plafond, total **140** : le code est celui de `791e6e4` au bit près |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
@@ -4133,6 +4139,186 @@ leurs comme stockfish en fonction de ce qui est mieux* ». D'où :
   sur une erreur de `seek`** : le contrôle reste pour ce cas-là, qu'aucun
   test n'atteint, et c'est écrit à côté de lui.
 
+**La séance du levier 4, sur la carte de Théo — écrite le 30 sept., à sa
+demande** (« *ok pour leela, donne moi le protocole* »). **Deux réseaux**,
+mesurés chacun contre N2 :
+- **N2L — N2 puis Leela**, la recette de Stockfish : repartir du point de
+  sauvegarde de N2 et ré-entraîner sur les données de Leela ;
+- **L0 — Leela seul**, depuis zéro. Stockfish le trouve moins bon que ses
+  données puis celles de Leela ; mais nos données sont bien plus faibles que
+  les siennes — profondeur 9 contre nos 5 000 nœuds —, donc son verdict ne
+  se transfère pas : il se mesure, pour le prix de quelques minutes de
+  carte.
+
+**Le fichier** — le wiki de l'entraîneur de Stockfish
+(`official-stockfish/nnue-pytorch`, page « Training datasets », commit
+`cc50d9e` du 28 sept. 2026) en nomme deux, sur Google Drive :
+- **d'abord `training_data.binpack`**, « *the first good dataset derived
+  from Lc0* » — Leela pur, donc une seule échelle de scores, celle que
+  notre programme vérifie :
+  <https://drive.google.com/file/d/1RFkQES3DpsiJqsOtUshENtzPfFgUmEff/view> ;
+- **à défaut, `T60T70wIsRightFarseer.binpack`**, « *currently one of the
+  best* » — mais un MÉLANGE, où entrent des parties de Stockfish contre
+  lui-même : ses scores peuvent ne pas partager une échelle, et le
+  programme peut le refuser, ce qui est son rôle :
+  <https://drive.google.com/file/d/1_sQoWBl31WAxNXma2v45004CIVltytP8/view>.
+  **Ce lien ne répond plus** (Théo, 30 sept.), le premier si. Ce n'est pas
+  une faute de copie : l'identifiant est celui du wiki, relu au même
+  commit — le fichier a quitté Drive ou n'y est plus ouvert, la cause
+  ne se voit pas d'ici.
+
+**D'où viennent ces fichiers, lu aux sources primaires le 30 sept.** — Drive
+est le canal du projet Stockfish lui-même, pas un miroir de fortune : le
+commit `f8c779db` de Stockfish (13 juin 2021 — le premier réseau par défaut
+que son historique dise entraîné sur des données de Leela) les décrit comme
+des parties de Leela contre elle-même, T60 et T74, « *available at
+vondele's google drive* » — un mainteneur de Stockfish ; et cinq commits de
+réseaux par défaut, de `adfb23c0` à `b939c805` (juin et juillet 2021),
+citent **ce fichier-ci, au même identifiant**, parmi leurs données. La
+source des données brutes est celle du projet Leela,
+<https://storage.lczero.org/files/training_data> — le lien que porte la
+mention d'attribution de Stockfish (`e8d2ba19`) —, dans le format
+d'entraînement de Leela, que notre programme ne lit pas. **Le fichier de
+Drive en est la conversion**, et le même wiki la documente, section « Lc0
+data converter » : le script de borg télécharge les archives `test60` et
+`test74` de `storage.lczero.org`, les rescore par le `rescorer` de lc0
+(branche `rescore_tb` de Tilps) en `.plain`, puis les convertit en
+`.binpack` par `stockfish convert` — les deux runs et l'auteur que nomme
+`f8c779db`. Question de Théo le 30 sept., sur la foi de la mention de
+Stockfish : ce sont bien les mêmes données, sous la forme que lit
+l'entraîneur. **La mention d'attribution, le jour venu, cite l'origine** —
+`storage.lczero.org`, comme Stockfish —, pas le fichier téléchargé.
+Refaire la conversion depuis la source demanderait deux outils à
+construire et des centaines d'archives, pour les mêmes données ; les runs
+plus récents de Leela n'y sont un levier qu'après un verdict sur celles-ci.
+Aucune somme de contrôle n'est publiée : la relecture complète du programme
+refuse un fichier tronqué, et le critère d'échelle des scores d'une autre
+unité.
+
+**Leur taille n'est pas vérifiée** : Google Drive, Kaggle et la page des
+jeux de linrock (`robotmoon.com/nnue-training-data`, les jeux plus récents)
+sont refusés par le proxy du conteneur (403, relevé le 30 sept.). Drive
+affiche la taille avant le téléchargement : **la lire d'abord**. Un binpack
+s'entraîne tel quel, sans décompression — il faut sa taille libre, plus
+quelques Go de points de sauvegarde. Pour ordre de grandeur, les fichiers
+des derniers étages de Stockfish pèsent 141 et 223 Go (PR #257 de
+`nnue-pytorch`) ; un entraînement n'en voit que 4 milliards de positions,
+**un fichier suffit**.
+
+**La taille de `training_data.binpack`, lue par Théo sur Drive le 30 sept. :
+11 Go.** Ce qu'elle porte, par le format — `docs/binpack.md` de la branche
+`tools` de Stockfish : une position coûte « ~2 octets » dans une suite de
+coups, plus 32 octets par début de suite — : **de l'ordre de 4 à 7
+milliards de positions**, avant le filtre. <span>Inférence, confiance
+moyenne</span> : l'essai court imprime les octets, les blocs et la part
+gardée par le filtre. **Un fichier plus petit que l'entraînement ne le
+casse pas** — lu au commit épinglé : le chargeur de bullet
+(`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit ses
+fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
+chacune de ce fichier passera **une à trois fois** selon la part que garde
+le filtre ; N2 revoyait les siennes **au moins seize fois** (4 milliards
+tirés de 249,5 M).
+
+**Vérifié ici avant de l'écrire** : à `main` (`8b2c122`), `tools/nnue-train`
+compile avec `--locked` et passe ses six tests — contre le runtime factice
+de bullet, donc sans rien dire de CUDA ni de ce fichier, que l'essai court
+éprouve. Chaque bloc se colle dans le MÊME terminal, dans l'ordre :
+
+0. **le dépôt à jour, et le point de sauvegarde de N2** :
+   ```sh
+   cd ~/chess && git status
+   git fetch origin && git switch main && git pull --ff-only
+   git log --oneline -1
+   ls -d tools/nnue-train/n2/shallowred-768x128-40/optimiser_state
+   ```
+   — `8b2c122` ou plus récent, et le dernier `ls` doit afficher le chemin.
+   Des fichiers « modifiés », un `--ff-only` qui refuse ou un `ls` qui ne
+   trouve rien : s'arrêter et le dire — sans ce dossier, N2L ne peut pas
+   repartir de N2 ;
+1. **CUDA dans ce terminal** — le bloc « CUDA dans ce terminal » de la
+   séance d'entraînement du n° 7, tel quel : les trois bibliothèques du
+   toolkit 13.2 doivent s'afficher ;
+2. **le fichier** — sa taille lue sur la page de Drive, comparée à la place
+   libre (`mkdir -p ~/leela && df -h ~/leela`), puis téléchargé depuis un
+   navigateur dans `~/leela/`, et relu :
+   ```sh
+   ls -l ~/leela/*.binpack
+   ```
+   Avec le second fichier, remplacer `training_data.binpack` par son nom
+   dans les commandes qui suivent ;
+3. **un essai court**, qui éprouve la chaîne entière — CUDA, le chargeur de
+   binpacks, la reprise depuis N2, la confrontation — et imprime l'échelle
+   des scores :
+   ```sh
+   cd ~/chess/tools/nnue-train
+   cargo run --release --features cuda -- --depuis n2/shallowred-768x128-40 \
+     --superlots 1 --sortie essai-leela ~/leela/training_data.binpack \
+     2>&1 | tee essai-leela.sortie.txt
+   ```
+   Il doit finir sur `RÉSEAU PRÊT : essai-leela/shallowred-768x128-1/quantised.bin`.
+   **Critère, écrit avant** : la ligne `échantillon : … échelle ajustée X`
+   doit donner **X entre 250 et 450**. Le programme ne refuse qu'au-delà
+   d'un facteur deux (165 à 660) ; entre les deux, il entraînerait à 330,3
+   des scores d'une autre unité, sans rien faire planter. **Hors de 250 à
+   450 : s'arrêter et m'envoyer la ligne.** La durée de l'essai, par
+   superlot, donne celle des vrais ;
+4. **N2L** :
+   ```sh
+   cargo run --release --features cuda -- --depuis n2/shallowred-768x128-40 \
+     --sortie n2l ~/leela/training_data.binpack 2>&1 | tee n2l.sortie.txt
+   ```
+   → `RÉSEAU PRÊT : n2l/shallowred-768x128-40/quantised.bin` ;
+5. **L0** :
+   ```sh
+   cargo run --release --features cuda -- --sortie l0 \
+     ~/leela/training_data.binpack 2>&1 | tee l0.sortie.txt
+   ```
+   → `RÉSEAU PRÊT : l0/shallowred-768x128-40/quantised.bin` ;
+6. **rapporter**, sur une branche `reseau/levier4` :
+   ```sh
+   cd ~/chess && git switch -c reseau/levier4
+   for n in n2l l0; do
+     d=tools/nnue-train/$n/shallowred-768x128-40
+     cp $d/quantised.bin reseaux/$n-768x128-40.bin
+     cp $d/log.txt reseaux/$n-768x128-40.log.txt
+     cp tools/nnue-train/$n.sortie.txt reseaux/$n-768x128-40.sortie.txt
+   done
+   cp tools/nnue-train/essai-leela.sortie.txt reseaux/
+   git add reseaux/n2l-* reseaux/l0-* reseaux/essai-leela.sortie.txt
+   git commit -m "Réseaux NNUE du levier 4 : N2L et L0, données de Leela"
+   git push -u origin reseau/levier4
+   ```
+   **Garder les dossiers `n2l/` et `l0/`**, et le fichier de données : un
+   ré-entraînement de plus en repartirait.
+
+*Durée* — **inconnue** : les 12 minutes de N2 lisaient du viriformat ; un
+binpack se décode sur le processeur, et le décodage peut devenir le goulot.
+L'essai court la dit. Un `ÉCHEC — …` à n'importe quel temps arrête tout, et
+son message suffit à le diagnostiquer.
+
+**Ce qui suit, écrit avant** : chaque réseau passe d'abord le contrôle de
+confrontation que le programme imprime (écart médian ≤ 15, maximal ≤ 50),
+puis **deux matchs de 3 000 parties à `8+0,08` contre N2**, graine « auto »
+chacun, comme N1 et N2. **Critère de gain** : borne basse de l'intervalle
+mis en commun au-dessus de zéro — le meilleur des réseaux qui le passent
+remplace N2, sa confrontation recopiée dans le test du moteur, et
+**`README.md` porte la mention d'attribution de l'ODbL** le jour même
+(`CLAUDE.md`, décisions structurantes). *Attendus* — <span>inférence,
+confiance faible</span> : **N2L, 0 à +60, ~+25** — la recette de Stockfish,
+sur un réseau et des données bien plus faibles que les siens ; **L0, −40 à
++40** — deux effets de signes contraires, dont aucun n'est chiffré ici.
+
+**Ajouté le 1er oct., avant toute mesure** : B8 a mis les marges de la
+recherche à l'échelle de N2 — × 2,24, **+50,50 ± 5,37** —, et ce facteur
+appartient à N2. **Avant les matchs de N2L et L0, la sonde de B8 se relance
+sur le réseau à mesurer** (`tools/attic/b8-sonde-marges.patch`, rebasée sur
+le code fusionné). Si son facteur s'écarte de 2,24 de plus de ± 25 %, il se
+règle d'abord — un changement de code, mesuré comme tel —, sans quoi le
+match mêlerait la valeur du réseau à celle de ses marges. <span>Inférence,
+confiance faible</span> : un réseau appris sur des cibles d'une autre
+échelle — 330,3 par unité de logit, et non 400 — peut porter une autre
+pente.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -4297,7 +4483,208 @@ illégal, aucun moteur perdu :
   quiescence ne testait aucune nulle après une parade tranquille** —
   section C31.
 
-### C31 — la nulle après une parade tranquille, dans la quiescence : le protocole, écrit le 30 sept. avant de mesurer
+### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
+
+**Lancé par Théo le 30 sept.** (« *Ok go pour reco 8* »), sur la
+recommandation d'une sonde d'abord, qui peut le fermer sans match.
+
+**La question.** Trois constantes de `search.rs` s'expriment en unités
+d'évaluation : `RFP_MARGIN` — la futilité inverse, 100 par pli jusqu'à la
+profondeur 8 —, `ASPIRATION_DELTA` — 25 — et `DELTA_MARGIN` — 200, plus la
+valeur faite main de la pièce prise. Elles ont été posées et mesurées quand
+l'évaluation était la faite main ; le réseau joue depuis le 28 sept. Le coup
+nul, l'élagage par compte de coups et les réductions n'en dépendent pas — lu
+au code. **Ce qu'une marge doit couvrir, c'est l'erreur de l'évaluation
+statique là où elle tranche**, pas l'échelle en général : un réseau plus juste
+peut porter de plus grands nombres et de plus petites erreurs relatives. D'où
+la même mesure au réseau et à la faite main — le régime où les marges ont été
+réglées —, en partie.
+
+**La sonde** — rustine `b8-sonde-marges.patch`, son lecteur compris :
+- **deux séries de 40 parties à `8+0,08`**, chaque évaluation contre
+  elle-même, livre du dépôt, `-srand 20260930`, dans le conteneur : le réseau
+  (`main`), puis la faite main (`EvalFile <none>`) ;
+- **futilité inverse** : un nœud candidat sur N — hors racine, hors échec,
+  profondeur 8 au plus, `beta` hors mat —, choisi par un compteur, pas par le
+  hasard ; journalisés : la position, la profondeur, `beta`, l'évaluation du
+  moteur et celle de l'autre, coupé ou non. **Puis rejoué hors partie** :
+  `go depth d` depuis la position, table de 1 Mio, même évaluation ;
+  `E = statique − score`, et la marge est fautive là où `E` la dépasse. Les
+  deux évaluations au même nœud donnent aussi leur pente : l'échelle là où
+  la marge tranche ;
+- **élagage delta** : une capture candidate de la quiescence sur M,
+  journalisée avec `stand_pat`, le gain compté, `alpha` et la décision ;
+  rejouée hors partie par `go depth 1` après la capture — élaguée à tort si
+  sa valeur dépasse `alpha`. <span>Approximation écrite : `go depth 1`
+  cherche un peu plus que la quiescence.</span> ;
+- **aspiration** : compteurs par itération à fenêtre — échecs par le bas,
+  par le haut, et la part des nœuds dépensée en recherches échouées.
+
+**Ce qu'elle rend** : par profondeur, les centiles 50, 90 et 99 de `E` au
+réseau et à la faite main, et leur rapport ; la pente du réseau contre la
+faite main ; le taux d'élagage delta fautif des deux ; le taux d'échec
+d'aspiration et son coût. Chaque rapport avec son intervalle à 95 % par
+rééchantillonnage.
+
+**Attendu, écrit avant** — <span>inférence, confiance faible</span> : au
+réseau, les erreurs à couvrir valent **1,5 à 3 fois** celles de la faite
+main aux mêmes profondeurs — des nombres 2,6 à 5,8 fois plus grands en
+position décidée, en partie compensés par une évaluation plus juste ;
+l'aspiration échoue **1,3 à 2,5 fois** plus souvent ; l'élagage delta se
+trompe plus souvent au réseau, la valeur faite main de la pièce y comptant
+moins que ce qu'elle vaut en unités du réseau.
+
+**Amendement, écrit avant de lire les données de la sonde** — pendant ses
+parties, sur l'essai du lecteur à une position (Kiwipete, rien de mesuré) :
+**`E` est presque toujours négatif**. Au trait, la recherche trouve plus que
+l'évaluation statique — on peut encore prendre —, donc son centile 90 tombe
+près de zéro, et le rapport de deux tels centiles n'est pas une échelle :
+l'essai rendait −1,91. Ce qu'une marge de futilité doit empêcher, c'est la
+coupure fautive — `score < beta` parmi les nœuds coupés —, qui est la queue
+haute de `E` au-delà de la marge. D'où, **pour la futilité inverse, le taux
+de coupures fautives à la marge actuelle**, de même forme que celui de
+l'élagage delta ; et, s'il faut un candidat, **le facteur de marge qui
+égalise le taux fautif du réseau sur celui de la faite main**, recalculé sur
+les nœuds journalisés. Les centiles de `E` restent imprimés, pour décrire.
+
+**Règle, écrite avant**, marge par marge, sur le rapport réseau / faite
+main — le taux de coupures fautives pour la futilité inverse, le taux
+d'échec pour l'aspiration, le taux d'élagage fautif pour l'élagage delta :
+- **intervalle dans [0,8 ; 1,25]** : la marge tient à l'échelle du réseau ;
+  si les trois tiennent, **B8 se ferme sans match** ;
+- **intervalle entièrement hors de [0,8 ; 1,25]** : un candidat, la
+  constante multipliée par le rapport mesuré — un seul pour les marges dont
+  les rapports concordent à ± 25 % : une hypothèse, une échelle —, contre
+  `main`, deux jobs de 3 000 parties à `8+0,08`, **gain si la borne basse
+  commune est au-dessus de zéro**. SPSA seulement si un facteur paie et
+  qu'il reste à affiner ;
+- **intervalle à cheval** : la sonde s'allonge avant de trancher, jamais un
+  match sur un rapport qu'elle ne sépare pas de 1.
+
+**La sonde, RELEVÉE le 30 sept. à 17 h 55** — 2 × 40 parties à `8+0,08`,
+zéro perte au temps ; journalisés, 40 631 nœuds de futilité au réseau et
+33 162 à la faite main, rejoués un sur trois dans l'ordre des fichiers — le
+rejeu tient ainsi dans la vie du conteneur, et cela revient à un N trois
+fois plus grand — ; 3 779 et 5 623 captures de l'élagage delta, toutes
+rejouées ; 50 593 et 45 861 itérations à fenêtre :
+
+| marge | réseau | faite main | rapport, IC 95 % | par la règle |
+|---|---|---|---|---|
+| futilité inverse — coupures fautives | 3 sur 8 120 (0,04 %) | 5 sur 5 586 (0,09 %) | 0,41 `[0,00 ; 2,06]` | **à cheval** |
+| élagage delta — élagages fautifs | 125 sur 1 780 (7,0 %) | 4 sur 1 351 (0,30 %) | **23,7** `[11,3 ; 105]` | **candidat** |
+| aspiration — échecs par itération | 0,33 | 0,12 | **2,66** `[2,54 ; 2,80]` | **candidat** |
+
+- **l'échelle, là où la futilité tranche** : pente du réseau contre la faite
+  main **2,40** sur 24 007 nœuds, rapport médian **2,16** — dans l'attendu
+  du 2,6 à 5,8 « en position décidée », plus bas, comme prévu ;
+- **l'aspiration** dépense au réseau **34,4 % de ses nœuds en recherches
+  échouées**, contre 12,4 % à la faite main : dans l'attendu (1,3 à 2,5
+  fois plus d'échecs), un peu au-dessus ;
+- **l'élagage delta se trompe 24 fois plus souvent au réseau**, et élague
+  deux fois plus (47,6 % des captures candidates, contre 24,0 %) : le gain
+  compté est la valeur faite main de la pièce, en unités deux fois trop
+  petites. Dans le sens de l'attendu, bien au-delà de ce qu'il laissait
+  croire ;
+- **la futilité inverse n'est PAS trop serrée au réseau** : il y coupe plus
+  (60,8 % des candidats, contre 51,4 %) et se trompe moins, et le facteur
+  qui égalise son taux fautif vaut × 0,7. **À cheval pourtant**, faute
+  d'événements : trois et cinq coupures fautives. Séparer ce rapport de 1
+  demanderait une soixantaine de fois l'échantillon — la règle voudrait une
+  sonde plus longue, ce n'est pas raisonnable ici : **la futilité reste en
+  l'état**, et sa marge se réglerait par match si un réglage d'ensemble est
+  ouvert. *Attendu réfuté pour elle* : l'erreur à couvrir n'a pas grandi
+  avec l'échelle — le réseau est plus juste en proportion.
+
+**Le facteur de chaque candidat — précisé avant de le calculer** : un
+rapport de TAUX n'est pas une échelle — multiplier `DELTA_MARGIN` par 23,7
+n'aurait pas de sens. La définition de l'amendement vaut pour les deux :
+**le plus petit facteur qui ramène le taux du réseau sur celui de la faite
+main**, recalculé sur les données journalisées (lecteur `facteurs.py`) :
+- **élagage delta : × 2,5** — élaguer si `stand_pat + m × (gain + 200) ≤
+  alpha` : 0,27 % fautifs au réseau, contre 0,30 % ; il élague alors 19,8 %
+  des captures (× 2,4 : 0,39 %) ;
+- **aspiration : × 2,0** — une demi-fenêtre de 50 : 4,5 % des itérations
+  hors de la première fenêtre au réseau, contre 5,0 % à la faite main à 25.
+
+Leur rapport, 2,5 / 2,0 = 1,25, tombe à la limite de la concordance à
+± 25 % : **un seul candidat, une seule échelle** — la règle. **Le facteur
+commun : 2,24**, leur moyenne géométrique, entre la pente (2,40) et le
+rapport médian (2,16) mesurés aux mêmes nœuds.
+
+**Le candidat** : `ASPIRATION_DELTA` et l'élagage delta — gain et marge —
+multipliés par 2,24 **quand le réseau joue, et seulement alors** ; la faite
+main garde ses marges au bit près, donc le banc, les tests de recherche et
+leurs nœuds ne bougent pas. Deux jobs de 3 000 parties à `8+0,08` contre
+`main`, graine « auto » chacun, mis en commun. **Critère, écrit avant** :
+**gain si la borne basse de l'intervalle commun est au-dessus de zéro** —
+un réglage, pas un correctif de règle. **Puissance** : ± 5,7 environ ; +10
+serait démontré ~93 fois sur 100. *Attendu* — <span>inférence, confiance
+faible</span> : **0 à +25, ~+10**. L'aspiration rend des nœuds — une part
+seulement des 22 points de recherches échouées, une recherche en échec
+remplissant la table pour la suivante ; l'élagage delta devient juste mais
+élague moitié moins, et sa valeur d'ensemble était déjà indistinguable de
+zéro (D5). Si le candidat échoue : bissecter les deux marges.
+
+**Le candidat, écrit et lancé le 30 sept.** : `791e6e4`, révoqué aussitôt
+par `6835c55` ; sa référence, son parent `7305c8a` — le moteur de `main`.
+Une fonction, `scaled_margin`, et ses deux usages ; deux tests. **Banc
+inchangé** — 107 548 nœuds à la profondeur 7, 594 561 à 10 —, la faite main
+gardant ses marges. **Un test du générateur NNUE est tombé**, et ce n'était
+pas un défaut : `run_etiquette_avec_l_evaluation_demandee` jouait deux
+parties, et une partie dont l'ouverture tirée au hasard dépasse ±1 000 au
+premier coup s'écarte ; avec le candidat, les deux l'étaient au réseau — sur
+`main`, déjà une sur deux. Six parties au lieu de deux, commit à part
+(`7305c8a`), donc hors de la révocation : la propriété testée ne change pas,
+la garde de non-vacuité reste. Rustine : `b8-marges-reseau.patch`.
+
+**Le crible de mutation au candidat, RELEVÉ le 30 sept. à 20 h 30 — vert,
+la prédiction tient exactement** (run 36755264744, fini à 20 h 02) :
+`search.rs` **39**, les survivants de `main` un pour un — décalés de
+quatorze lignes par les constantes, de vingt-cinq au-delà de
+`scaled_margin`, et le texte de chaque ligne identique à celui de `main`
+(`b28fa3c`, dont `search.rs` est celui du parent `7305c8a`) ; **aucun dans
+le code neuf** : ses cinq mutants, tous dans `scaled_margin`, sont attrapés
+ou expirés — 616 mutants contre 611, 499 attrapés contre 497, 49 expirés
+contre 46. Le mutant de l'élagage delta, `<=` en `>`, existait déjà sur
+`main` et ne survit d'aucun côté. Tous les fichiers à leur plafond, total
+**140**.
+
+**Le VERDICT, relevé le 30 sept. à 23 h 55 — GAIN DÉMONTRÉ, FUSIONNÉ le
+1er oct.** Deux matchs de 3 000 parties, finis entiers à 23 h 33, graines
+distinctes, zéro perte au temps, zéro coup illégal :
+
+| match | runner — bench, profondeur en 250 ms | Elo | pentanomial |
+|---|---|---|---|
+| 36755257365 | AMD EPYC 9V45 — 3 192 177 n/s, 13 | +50,14 ± 7,60 | 27, 184, 740, 430, 119 |
+| 36755260973 | AMD EPYC 9V45 — 3 618 281 n/s, 13 | +50,85 ± 7,61 | 26, 184, 739, 430, 121 |
+| **en commun** | homogènes, z = −0,13 | **+50,50 ± 5,37** | 53, 368, 1 479, 860, 240 |
+
+- **Par le critère, écrit avant** : la borne basse commune vaut **+45,1**,
+  au-dessus de zéro. `b711a54` révoque la révocation `6835c55` : `main`
+  porte le code de `791e6e4` au bit près, banc inchangé — 107 548 nœuds à la
+  profondeur 7, la faite main gardant ses marges.
+- **L'attendu, réfuté par le haut** : 0 à +25, ~+10, écrit avant — le point
+  mesuré en vaut cinq fois le centre. <span>Inférence, confiance
+  moyenne</span> : l'attendu ne comptait pour l'élagage delta que sa valeur
+  d'ensemble, indistinguable de zéro (D5) ; mais un élagage qui se trompe
+  sur 7 % de ses captures ne coûte pas qu'une économie manquée, il fait
+  manquer des tactiques à l'horizon. **Qui des deux marges porte le gain
+  n'est pas mesuré** — la bissection n'était prévue qu'à l'échec.
+- **Les avertissements de l'arbitre** : « PV continues after… » 3 et 3 côté
+  candidat, 6 et 5 côté référence — la signature connue de C31, des deux
+  côtés, à son taux. Rien de neuf.
+- **Les deux pentanomiaux presque identiques** — à une ou deux paires près
+  par cellule — ont été suspectés et **examinés avant de conclure** : voir
+  « Le livre, réutilisé », section « Ce qu'il faut surveiller ». Les deux
+  matchs rejouent les mêmes 500 ouvertures, mais les issues d'une même
+  ouverture n'y sont presque pas corrélées : la ressemblance est une
+  coïncidence des totaux, pas une copie.
+- **Le facteur appartient à N2.** Un réseau d'une autre pente le déplace :
+  **la sonde, rebasée sur le code fusionné, se relance avant de mesurer
+  N2L et L0 contre N2** (section n° 7) — sans quoi leur match mêlerait la
+  valeur du réseau à celle de ses marges.
+
+### C31 — la nulle après une parade tranquille, dans la quiescence — VERDICT, 30 sept. 2026 : −2,43 ± 5,36 Elo à `8+0,08`, la borne haute d'un match sous zéro — ARRÊTÉ PAR SON CRITÈRE
 
 **Ouvert par l'arbitre** — section C13 : « PV continues after threefold
 repetition » dans deux séries du 29 sept., « PV continues after fifty-move
@@ -4382,6 +4769,42 @@ lignes par le commentaire de `negamax` puis de vingt et une au-delà du bloc
 neuf ; **aucun dans le code neuf**, et 506 mutants attrapés contre 497 sur
 `main` — ceux du correctif, tous tués, comme les sept défauts injectés à la
 main l'annonçaient. Tous les fichiers à leur plafond, total **140**.
+
+**Le VERDICT, relevé le 30 sept. à 15 h 45 — ARRÊTÉ PAR SON CRITÈRE.** Deux
+matchs de 3 000 parties, finis entiers à 15 h 17, graines distinctes, zéro
+perte au temps, zéro coup illégal :
+
+| match | runner — bench, profondeur en 250 ms | Elo | intervalle | pentanomial |
+|---|---|---|---|---|
+| 36697316384 | Xeon Platinum 8573C — 1 991 098 n/s, 12 | **−7,88 ± 7,61** | `[−15,49 ; −0,27]` | 77, 310, 773, 284, 56 |
+| 36697321243 | Xeon Platinum 8573C — 2 044 540 n/s, 13 | +3,01 ± 7,54 | `[−4,53 ; +10,55]` | 60, 295, 768, 313, 64 |
+| **en commun** (`tools/mettre-en-commun.sh`) | | **−2,43 ± 5,36** | `[−7,79 ; +2,93]` | homogènes, **z = −1,99** |
+
+- **Par le critère écrit avant : non fusionné.** « Fusion sauf si la borne
+  haute est sous zéro, en commun comme sur chaque match » — et le match 1,
+  lu seul, la met à −0,27. C'est la lecture que C22 sur C23 a fixée : *la
+  branche « ne pas fusionner » est prise dès qu'une lecture l'impose*. Le
+  commun, lui, ne démontre rien — son intervalle contient zéro ;
+- **ce que cela ne dit pas** : que le correctif coûte. <span>Inférence,
+  confiance moyenne</span> : à effet nul, deux matchs lus chacun à 95 %
+  donnent une telle lecture environ une fois sur vingt, et une fois sur six
+  à −2,4, l'estimation commune. La règle est conservatrice pour un
+  correctif, et c'est écrit dans sa puissance : ± 5,7 à 6 000 parties ne
+  sépare pas −2 de 0 ;
+- **le correctif fait ce qu'il dit** : les avertissements de nulle se
+  séparent — **aucun pour le candidat en 6 000 parties, cinq pour la
+  référence** (quatre « … after fifty-move rule », un « … after threefold
+  repetition », tous dans le match 2) ;
+- **dans l'attendu ?** Non : 0 à +5 était écrit, l'estimation commune est
+  −2,43 et son intervalle déborde des deux côtés — sous la puissance, aucun
+  signe n'est établi ;
+- **la suite** : la rustine `c31-nulle-quiescence.patch` reste à l'attic,
+  applicable sur `main`. **Remesurer demande un fait technique neuf** —
+  comme C22, remesuré sur C23 parce qu'une cause avait été trouvée —, pas
+  une seconde chance : rejouer jusqu'à ce qu'un match passe ferait de la
+  taille de l'échantillon une fonction des données. Les avertissements
+  « PV continues after … » côté ShallowRed restent donc sur `main` : ce sont
+  la signature connue de C31 (« Ce qu'il faut surveiller »).
 
 ### C30 — la taille par défaut — VERDICT, 30 sept. 2026 : +2,90 ± 5,72 Elo à `8+0,08` — aucun coût démontré, le défaut passe à 64 Mio
 
@@ -4928,7 +5351,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
-| **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | **EN VOL** : trois tests qui échouent sur `main`, le mécanisme mesuré en partie — **61,4 % des recherches** rencontrent une telle nulle, 0,02 % des nœuds de quiescence —, candidat `5d8c68c` révoqué le temps de sa mesure ; deux jobs de 3 000 parties à `8+0,08`, **fusion sauf si la borne haute est sous zéro** — section C31 |
+| **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : FUSIONNÉ le 24 sept., +44,64 ± 6,24 Elo à `8+0,08`** (section C24) — profondeur moyenne inchangée, le gain est dans la répartition, et la lecture par l'accord a tenu. <s>C25 — la répartition par la stabilité : ÉCRIT le 24 sept.</s> **C25 — la répartition par la stabilité : FUSIONNÉ au verdict du 24 sept., +7,87 ± 6,08 Elo à `8+0,08`** (section C25) — sous l'attendu de +12 à +25 : l'Elo d'un pli d'accord dépend de la règle, 22 à 46 ici contre ~69 pour C24. **Le chantier est au bout de ce que l'écran désignait** — l'effort à la racine n'ajoute rien, le score en chute est rare (écran, « Ce qui en sort »). <s>Prochaine action : C26, le risque que C24 et C25 ont aggravé ; ensuite, la question se repose à Théo.</s> **C26 est FUSIONNÉ le 25 sept.** (ligne C26) : **l'allocation inégale est close, et la suite se repose à Théo.** *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
@@ -4944,15 +5367,15 @@ qu'en partie dans le dépôt n'existe pas.*
 | **C23 — la fenêtre de répétition traversait le coup nul** | — correctif de règle | **FUSIONNÉ le 23 sept.** : +2,65 ± 6,40 Elo à `8+0,08` sur 5 760 parties, pas d'effet décelable — fusionné au titre de la règle, comme le critère écrit avant le disait. Voir son verdict. Ensuite, et seul : interdire deux coups nuls consécutifs |
 | **interdire deux coups nuls consécutifs** | — changement d'arbre | **débloqué le 24 sept., et ÉCRANTÉ en nœuds le même jour : ce n'est pas du travail retiré.** L'interdire fait grossir l'arbre : banc **+1,80 %** à la profondeur 10 (653 982 contre 642 442), **+0,52 %** à 12, −0,42 % à 7. Le second coup nul cherchait la position d'origine à profondeur réduite, et coupait tôt le nœud intermédiaire quand elle tenait — une coupure bon marché, pas un gaspillage. <s>Avec C23, un double coup nul ne rend plus de fausse nulle, il re-cherche la position à profondeur réduite : du travail qu'aucune partie ne demande.</s> **10,1 %** des recherches de coup nul partent juste après un coup nul (sonde de C23). Stockfish l'interdit — ce qui, ici, ne prouve rien. **Effet sur la décision de signe inconnu, de quelques Elo au plus : ~12 000 parties pour le voir.** Pas prioritaire devant B6 ; la garde tient en une condition, `null_marks.last() != Some(&(path.len() - 1))` |
 | **D5 — revérifier les acquis** | — | **CLOS le 23 sept.** Six lignes examinées : trois remesurées en match — aspiration × 2,7, trois termes d'évaluation × 2,5, élagage delta **érodé** — et trois écrantées en nœuds sans signal d'érosion (futilité inverse, mobilité ; LMR, coup nul et table ont des marges qui l'absorbent). Les écrans datent du 22 ; rien de fusionné depuis ne coupe au même endroit. **L'élagage delta reste dans `main`** : un acquis se retire par un verdict, et un effet de −1,5 Elo en demanderait ~40 000 parties — une quinzaine de jobs pour quelques Elo au plus, quand la calibration et B6 en achètent davantage. *À rouvrir quand la quiescence ou l'échelle de l'évaluation change* (NNUE), l'écran en nœuds d'abord : trois minutes, sans hasard |
-| **B8 — régler les constantes de recherche** — **DÉCIDÉ n° 8** (Théo, 29 sept.), après le meilleur réseau : les marges dépendent de son échelle | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau). **Une raison neuve le 28 sept.** : les marges — futilité inverse 100 par pli, fenêtre d'aspiration 25, élagage delta 200 plus les valeurs de pièces faites main — ont été réglées sur l'échelle de la faite main, que le réseau dépasse de 2,6 à 5,8 fois en position décidée. Méthode à décider : un SPRT par marge, ou un réglage SPSA de plusieurs constantes à la fois — outillage à écrire : exposer les constantes, un pilote de parties sur runners |
+| **B8 — régler les constantes de recherche** — **DÉCIDÉ n° 8** (Théo, 29 sept.), après le meilleur réseau : les marges dépendent de son échelle — **LANCÉ le 30 sept.** (Théo : « *Ok go pour reco 8* ») : **la sonde d'abord**, qui peut le fermer sans match — **relevée le même jour : l'élagage delta et l'aspiration hors d'échelle au réseau, la futilité tient** ; <s>le candidat en vol</s> **FAIT : les deux marges × 2,24 quand le réseau joue, +50,50 ± 5,37 à `8+0,08`, FUSIONNÉ le 1er oct.** ; restent, s'ils se rouvrent : qui des deux marges porte le gain, le facteur à affiner, la futilité par match — section B8 | — | **déclencheur atteint en lettre, pas en esprit** — à re-spécifier avant toute mesure (note sous le tableau). **Une raison neuve le 28 sept.** : les marges — futilité inverse 100 par pli, fenêtre d'aspiration 25, élagage delta 200 plus les valeurs de pièces faites main — ont été réglées sur l'échelle de la faite main, que le réseau dépasse de 2,6 à 5,8 fois en position décidée. Méthode à décider : un SPRT par marge, ou un réglage SPSA de plusieurs constantes à la fois — outillage à écrire : exposer les constantes, un pilote de parties sur runners |
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
 | **C13 — mesurer la force absolue** — **DÉCIDÉ, en parallèle** (Théo, 29 sept.), **FAIT le 29 sept.** : le réseau **~2 850 ± 25**, la faite main ~2 630 ± 40, sur l'échelle de Stockfish 16 à 60+0,6 — section « C13 — la force absolue » ; à re-mesurer après chaque changement de réseau — **N2 le 30 sept. : 2 942 ± 29**, +112 ± 42 sur N0 contre le même adversaire | — | <s>**reporté**</s> : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread. **Un premier point, de Théo, le 28 sept.** : le moteur d'avant le réseau, contre un Stockfish bridé à 2 600 sur sa machine, estimé vers 2 700 — <s>cadence et effectif non consignés</s> **100 parties à 10+0,1**, précisé le 29 sept. **Rouvert sans liste de classement** — le protocole, écrit avant de mesurer : section « C13 — la force absolue » ; proposé le 29 sept. : Stockfish s'installe sur les runners (`ui.yml` le fait déjà), donc une série contre Stockfish bridé à plusieurs niveaux se joue sur runner. Deux réserves, écrites avant : l'échelle d'`UCI_Elo` appartient à la cadence et aux adversaires sur lesquels Stockfish l'a étalonnée — à lire dans son source avant de s'y fier — **lu le 29 sept.** : ancrée à l'Elo CCRL, ajustée à 60+0,6 ; et un gain mesuré contre notre jumeau ne s'ajoute pas à ce point. <span>Inférence, confiance moyenne</span> : l'auto-jeu grossit les écarts qu'on retrouve contre d'autres adversaires |
 | **B4 — évaluation NNUE** | — | <s>**reporté.**</s> <s>**EN COURS depuis le 25 sept.**</s> **FAIT le 28 sept. 2026 — A21, la fin de cette ligne.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —<s>, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation.</s> <em>tranchée le 25 sept. (A21).</em> **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 ; **première vague relevée le 26 sept. : 125 M positions, 77,7 M gardées par le filtre** — la cible de 100 M est atteinte ; **l'inférence dans le moteur écrite le 26 sept. et FUSIONNÉE le 28** (PR #89), derrière `EvalFile` — un nœud avec réseau coûte 0,73 à 0,87 fois un nœud fait main ; **l'entraînement fait le 28 sept.** sur la carte de Théo, 11 min 53 s, le critère tenu — section A21, étape 3 ; **l'étape 4 FAITE le même soir : le réseau embarqué est l'évaluation par défaut, +330,61 ± 19,21 Elo à `8+0,08` contre la faite main** (section « Étape 4 — VERDICT »). Restent ouverts : les marges de la recherche, réglées sur l'échelle de la faite main ; un réseau plus large ou plus de données — la carte de Théo peut être resollicitée ; et un banc qui évalue par le réseau |
-| **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **N2 ADOPTÉ le 30 sept.** — N1 contre N0 **+115,74 ± 6,98**, N2 contre N1 **+50,09 ± 6,12**, N3 contre N2 **−28,79 ± 5,99**, écarté : trop lent ; <s>restent la série de C13 pour N2 et</s> **la série de C13 pour N2 relevée le 30 sept. : 2 942 ± 29** ; reste le levier 4, les données de Leela — section « N° 7 » ; <s>EN COURS</s> : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`) |
+| **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **N2 ADOPTÉ le 30 sept.** — N1 contre N0 **+115,74 ± 6,98**, N2 contre N1 **+50,09 ± 6,12**, N3 contre N2 **−28,79 ± 5,99**, écarté : trop lent ; <s>restent la série de C13 pour N2 et</s> **la série de C13 pour N2 relevée le 30 sept. : 2 942 ± 29** ; reste le levier 4, les données de Leela — section « N° 7 » — **accordé par Théo le 30 sept., sa séance écrite le même jour** (« La séance du levier 4 ») : elle attend sa carte ; <s>EN COURS</s> : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`) |
 | **un banc qui emploie le réseau** — proposé le 29 sept. | — de l'outillage, sans Elo | Le banc et `tools/timing.sh` évaluent à la main, le moteur joue avec le réseau (« Ce qu'il faut surveiller »). **Préalable** à toute mesure de vitesse de l'inférence et à tout écran en nœuds sur l'arbre qu'on joue ; il déplace la référence du banc, ses tests et le crible d'`eval.rs`, donc il se conçoit, il ne se bricole pas |
 | **la vitesse de l'inférence** — proposé le 29 sept. | se convertit en plis par l'étalon, une fois mesurée | Le nœud au réseau coûte 0,873 fois le nœud fait main sur le binaire de base, **0,731 compilé pour AVX2** (26 sept.). Leviers : compiler pour le processeur de la machine qui joue, des mises à jour paresseuses de l'accumulateur. **Sans `unsafe`** — la lint l'interdit —, donc pas d'intrinsèques : la vectorisation passe par le compilateur. Exige le banc au réseau |
 | **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : FUSIONNÉS le 30 sept.** — +30,13 ± 5,60 Elo sous pression, +1,85 ± 5,51 au défaut ; **C30, la taille par défaut : FAIT le 30 sept.** — +2,90 ± 5,72, aucun coût démontré, **le défaut est à 64 Mio**. La question de la table à cadence longue est close ; au-delà de 60+0,6 — 40/15 —, c'est à l'interface de régler `Hash` | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |
-| **un livre d'ouvertures, pour les parties depuis la position initiale** — proposé le 29 sept., sur une question de Théo | — **zéro dans toutes nos mesures, par construction** | **Nos matchs partent tous de positions de livre** (`tools/book.epd`), contre notre jumeau comme contre Stockfish bridé ; **les listes imposent le leur** — CCRL, lu par le moteur de recherche seulement, le site est bloqué d'ici : un livre générique commun, celui du moteur désactivé, l'apprentissage de livre et de positions interdit ; <span>confiance moyenne à élevée</span>. **Ce qu'il vaudrait depuis la position initiale — les parties de l'interface —, non mesuré** : du **temps**, le budget valant `restant / 12 + inc / 2` — par l'arithmétique de la formule, les huit premiers coups consomment **47 à 55 % de la base** à 80 – 100 % du budget dépensé, et le premier reçoit trois à six fois le temps du vingtième ; un livre rendrait ce temps aux premiers coups hors théorie. De la **variété** : à un fil et table vidée par `ucinewgame`, le moteur rejoue presque toujours la même ouverture. **Sa place est l'interface, pas le moteur** : dans le modèle UCI, c'est elle qui joue les coups de livre ; Stockfish n'en embarque pas ; et un livre qui APPREND des parties heurterait une décision tranchée — « pas de persistance » (`CLAUDE.md`). Donc un chantier de `ui/`. **Sa source** : un livre bâti par notre auto-jeu est le plus cher et le plus faible — il recopie nos opinions à cadence courte ; mieux, une base de parties fortes (celle de Lichess se dit dans le domaine public, à vérifier avant usage) ou des recherches profondes sur un petit arbre, sur runners. L'angle mort côté moteur — le réseau n'a jamais vu d'ouverture — est dans la section n° 7 : **sondé le 30 sept., rien de décelable** — rapporté à la faite main, le réseau perd même relativement moins en ouverture qu'en milieu de partie. Reste le temps et la variété, côté interface |
+| **un livre d'ouvertures, pour les parties depuis la position initiale** — proposé le 29 sept., sur une question de Théo ; **l'issue pour Codex — le livre et `Hash` réglé selon la cadence, dans l'interface — : plus tard** (Théo, 30 sept.) | — **zéro dans toutes nos mesures, par construction** | **Nos matchs partent tous de positions de livre** (`tools/book.epd`), contre notre jumeau comme contre Stockfish bridé ; **les listes imposent le leur** — CCRL, lu par le moteur de recherche seulement, le site est bloqué d'ici : un livre générique commun, celui du moteur désactivé, l'apprentissage de livre et de positions interdit ; <span>confiance moyenne à élevée</span>. **Ce qu'il vaudrait depuis la position initiale — les parties de l'interface —, non mesuré** : du **temps**, le budget valant `restant / 12 + inc / 2` — par l'arithmétique de la formule, les huit premiers coups consomment **47 à 55 % de la base** à 80 – 100 % du budget dépensé, et le premier reçoit trois à six fois le temps du vingtième ; un livre rendrait ce temps aux premiers coups hors théorie. De la **variété** : à un fil et table vidée par `ucinewgame`, le moteur rejoue presque toujours la même ouverture. **Sa place est l'interface, pas le moteur** : dans le modèle UCI, c'est elle qui joue les coups de livre ; Stockfish n'en embarque pas ; et un livre qui APPREND des parties heurterait une décision tranchée — « pas de persistance » (`CLAUDE.md`). Donc un chantier de `ui/`. **Sa source** : un livre bâti par notre auto-jeu est le plus cher et le plus faible — il recopie nos opinions à cadence courte ; mieux, une base de parties fortes (celle de Lichess se dit dans le domaine public, à vérifier avant usage) ou des recherches profondes sur un petit arbre, sur runners. L'angle mort côté moteur — le réseau n'a jamais vu d'ouverture — est dans la section n° 7 : **sondé le 30 sept., rien de décelable** — rapporté à la faite main, le réseau perd même relativement moins en ouverture qu'en milieu de partie. Reste le temps et la variété, côté interface |
 | **techniques de recherche absentes** — proposé le 29 sept., **DÉCIDÉ n° 9** (Théo, 29 sept.) | non chiffrées | **Aucune n'est dans `search.rs`** (recherche du 29 sept.) : extensions singulières, drapeau « *improving* », historique de correction de l'évaluation statique, réduction itérative interne, réduction du coup nul adaptée à la profondeur (`NULL_MOVE_REDUCTION` vaut 2, fixe), futilité aux nœuds frontières, élagage par l'échange statique hors quiescence, historique des captures, ProbCut. **Chacune un SPRT, séparément** : être standard ne prouve rien, PVS et l'extension d'échec en sont les démentis (`CLAUDE.md`). Mesurer le mécanisme d'abord, comme pour les autres |
 | **tablebases de finale** (reste de B6) | — | **reporté**, non chiffré |
 | **B5 — analyse dans l'interface ; A8 — transport interface ↔ moteur** | — | **côté `ui/`**, chantier mené séparément sous son propre `ui/CLAUDE.md` : listés ici pour que le tableau soit complet, pas pour être ordonnés avec le moteur |
@@ -5780,6 +6203,30 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
   en interne ; deux runs ne se comparent qu'après lecture de leurs
   étalonnages, et un chiffre de vitesse ne se recopie jamais d'un run à
   l'autre.
+- **Le livre, réutilisé** — mesuré le 1er oct. 2026, sur les deux matchs de
+  B8, dont les pentanomiaux sortaient presque identiques. `tools/book.epd`
+  porte **500 ouvertures** ; fastchess (`60d7a7a`, `opening_book.cpp` et
+  `base_scheduler.hpp`, lus) le mélange UNE fois à la graine, puis le
+  parcourt en boucle, une ouverture par paire. Un match de 3 000 parties joue
+  donc chaque ouverture **trois fois**, et deux matchs « à graines
+  distinctes » jouent **les mêmes 500**, dans un autre ordre. Ce que cela
+  coûte, mesuré sur les deux tiers de chaque journal que l'API sert
+  (rondes 511 à 1 500) : les scores de paire d'une même ouverture sont
+  **presque indépendants** — r = 0,070 et −0,034 dans un match (490 et 489
+  couples), r = 0,035 entre les deux (1 958 couples ; l'ordre reproduit au
+  source, et vérifié contre un vrai run de fastchess à la même graine) ;
+  témoins, ouvertures différentes : 0,005, 0,012, −0,022. Les parties ne se
+  recopient pas — même paire d'issues 22 à 25 % des fois, contre 10 à 12 %.
+  La ressemblance des deux totaux de B8 est une coïncidence : sur la fenêtre
+  lue, leurs pentanomiaux diffèrent normalement (499 et 483 paires à un point).
+  <span>Inférence, confiance moyenne</span> : à ρ ≈ 0,03, l'effet de grappe
+  élargit un intervalle mis en commun de **~7 %** (variance × 1,14), de ~18 %
+  au plus plausible (ρ = 0,08) ; le ± de fastchess le suppose nul. **Ça ne
+  compte qu'au ras d'une borne — et une lecture y est tombée** : la borne
+  haute du match 1 de C31, −0,27, passe au-dessus de zéro à ρ = 0,07, pas à
+  ρ = 0,02 ; ρ n'est pas assez connu pour trancher, et C31 reste tel que son
+  critère l'a lu. **Le remède est un livre plus grand** — `bookgen` le tire
+  —, ce qui change une condition de mesure : proposé, pas fait.
 
 | quoi | quand ça devient actionnable | pourquoi aucun test ne le dira |
 |---|---|---|
@@ -5792,6 +6239,7 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 | **le banc et `tools/timing.sh` évaluent À LA MAIN, le moteur joue avec le réseau** | depuis le 28 sept. 2026 — au premier changement dont on voudra mesurer la vitesse, ou l'arbre qu'on joue | `Search::new` évalue à la main, et c'est voulu : la référence du banc, ses tests et le crible d'`eval.rs` en dépendent. Mais un changement de l'inférence NNUE ne s'y voit pas, et un rapport de nœuds s'y lit sur l'arbre de la faite main, pas sur celui qu'on joue. Tout reste vert, et la mesure porte sur un autre moteur |
 | **les artefacts des données NNUE expirent** | la première vague le **24 déc. 2026**, la vague au réseau le **28 déc. 2026** — les télécharger avant, là où elles serviront | GitHub les supprime sans prévenir. Les regénérer reste possible — le générateur au même commit et les K de chaque run (sections A21 et n° 7) — mais coûte leurs heures de runner : 22 h pour la première vague, 44 h pour la seconde |
 | le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
+| **les avertissements « PV continues after fifty-move rule / threefold repetition » côté ShallowRed** | à chaque relève de `match.yml` ou de `force.yml` : ils sont la **signature connue de C31**, non fusionné — ~1 pour 1 000 parties à `8+0,08` (5 en 6 000 côté référence), 2 en 300 à 60+0,6. Une hausse nette serait un fait neuf ; d'AUTRES natures d'avertissement, un défaut neuf | la relève les lit, rien d'autre : ils ne font échouer aucun job, et le 29 sept. ils ont été relevés sans être lus (`CLAUDE.md`) |
 
 ### B9 — écrit et mesuré le 23 sept. 2026 — état d'AVANT la fusion, gardé pour ses chiffres
 
