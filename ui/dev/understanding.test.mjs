@@ -7,6 +7,8 @@ import { FocusedAnalysis } from "../src/review/FocusedAnalysis";
 import { StudyTree } from "../src/review/StudyTree";
 import { explainMove } from "../src/review/explanations";
 import { corpus, corpusInput } from "../src/review/understanding/corpus";
+import { Verification } from "../src/review/understanding/Verification";
+import verificationCases from "../src/review/understanding/verificationCases.json";
 import { understandDecision } from "../src/review/understanding/prototype";
 
 for (const [name, command] of [
@@ -88,4 +90,91 @@ for (const [name, command] of [
     },
     20000,
   );
+}
+
+for (const [name, command] of [
+  ["ShallowRed", process.env.CHESS_ENGINE_BINARY],
+  ["Stockfish", process.env.CHESS_STOCKFISH_BINARY],
+]) {
+  for (const test of [
+    corpus.find((c) => c.id === "queen-closes-retreat"),
+    ...verificationCases,
+  ]) {
+    it.skipIf(!command)(
+      `${name} : vérification comparative ${test.id}`,
+      async () => {
+        const { position, result } = corpusInput({ prefix: [], ...test });
+        const understanding = understandDecision(position, result),
+          check = new Verification([200, 600], 12000),
+          bridge = startBridge({ command, port: 0 });
+        try {
+          await once(bridge.server, "listening");
+          vi.stubGlobal(
+            "WebSocket",
+            class extends WebSocket {
+              constructor(address) {
+                super(address, { origin: "http://127.0.0.1:5173" });
+              }
+            },
+          );
+          const report = await check.verify(
+            {
+              review: {},
+              revision: 0,
+              engineId: name,
+              understanding,
+              hypothesisIndex: 0,
+            },
+            (failure) =>
+              connectDevelopmentEngine(
+                failure,
+                `ws://127.0.0.1:${bridge.server.address().port}`,
+              ),
+          );
+          expect(report, check.error).not.toBeNull();
+          expect(report.explanation).toBeNull();
+          expect(report.searches).toBeLessThanOrEqual(8);
+          if (test.id !== "queen-closes-retreat")
+            expect(report.status).not.toBe("supported");
+          if (test.id === "other-piece-captures-attacker")
+            expect(
+              report.passes.some((p) => p.evidence?.outcome === "preserved"),
+            ).toBe(true);
+          if (
+            ["mate-outweighs-restriction", "sacrifice-before-mate"].includes(
+              test.id,
+            )
+          )
+            expect(
+              report.passes.every(
+                (p) => p.evidence?.outcome === "mate-for-victim",
+              ),
+            ).toBe(true);
+          console.info(
+            JSON.stringify({
+              engine: name,
+              case: test.id,
+              status: report.status,
+              reason: report.reason,
+              comparison: report.comparison,
+              searches: report.searches,
+              elapsedMs: report.elapsedMs,
+              passes: report.passes.map((p) => ({
+                depth: p.questions.find((q) => q.purpose === "defence").result
+                  .depth,
+                score: p.questions.find((q) => q.purpose === "defence").result
+                  .score,
+                evidence: p.evidence,
+              })),
+            }),
+          );
+        } finally {
+          check.stop();
+          await bridge.close();
+          vi.unstubAllGlobals();
+        }
+      },
+      20000,
+    );
+  }
 }

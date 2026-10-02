@@ -1,4 +1,4 @@
-# Prototype de compréhension — première étape, 2 octobre 2026
+# Prototype de compréhension — contexte et vérification, 2 octobre 2026
 
 Ce dossier est indépendant de l’interface et de l’ancien détecteur de motifs.
 Il produit des faits et des hypothèses structurés ; `explanation` reste `null`.
@@ -6,7 +6,7 @@ Lancer depuis `ui/` :
 
 ```bash
 npm run test:understanding
-CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/games/stockfish npm exec -- vitest run dev/understanding.test.mjs
+CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/games/stockfish npm exec -- vitest run dev/understanding.test.mjs --reporter=verbose --silent=false --disableConsoleIntercept
 ```
 
 ## Ce qui est implémenté
@@ -32,9 +32,9 @@ CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/gam
   n’est codée dans le détecteur. Une capture avantageuse sur une case attaquée
   n’est pas assimilée automatiquement à une sortie perdante.
 
-Les défenses autres qu’un déplacement de la victime, les coups intermédiaires,
-les compensations et la meilleure décision restent **à vérifier**. Une PV légale
-qui contient le gain attendu ne lève pas à elle seule ces inconnues.
+La recherche de défense et sa vérification courte sont maintenant implémentées
+ci-dessous. La couverture stratégique et l'attribution de la cause à la décision
+restent **à vérifier**. Une PV légale contenant le gain ne lève pas ces inconnues.
 
 ## Premier bilan du corpus de développement
 
@@ -84,3 +84,75 @@ les moteurs, examiner les contre-exemples tactiques (en particulier intermédiai
 et sacrifices), puis seulement produire les textes et plans visuels. Les familles
 positionnelles, la surcharge et la déviation doivent entrer dans le corpus avant
 d’être annoncées comme prises en charge. Voir la backlog active à la racine de `ui/`.
+
+
+## Vérification comparative isolée
+
+`Verification.verify` reçoit la revue, sa révision, l'identifiant/configuration du
+moteur, le contexte et l'hypothèse choisie. Un changement de configuration moteur
+doit changer la révision ou l'identifiant, comme pour `FocusedAnalysis`.
+
+1. Rechercher depuis la position avant la décision, puis après le coup joué.
+2. Chercher la meilleure défense avec le vrai trait et l'historique complet,
+   sans imposer un déplacement de la pièce menacée.
+3. Analyser une alternative légale fournie ou le premier choix à la racine s'il
+   diffère du coup joué. Aucun second choix inventé quand les coups coïncident.
+4. Refaire ces questions avec un budget supérieur et un cache distinct.
+
+Par défaut : 300 puis 900 ms par position, au plus huit recherches / 4 800 ms
+nominaux et 10 secondes au total, connexions incluses. Cache borné par revue,
+moteur, révision, historique, hypothèse et alternative. Annuler empêche la
+publication tardive. Un rapport réutilisé indique `cached: true` et coût courant
+nul. Les rapports rendus ne permettent pas de modifier les caches internes.
+
+`evidence.ts` suit l'identité de la victime dans la PV. Il conserve les reprises,
+repère un sauvetage visible ou le mat du défenseur, et ne s'arrête pas à une perte
+juste avant une capture, promotion ou un échec compensateur. Il borne la lecture à
+huit demi-coups et abandonne après plusieurs coups calmes sans mécanisme résolu.
+Une compensation au-delà de cette fenêtre reste inconnue.
+
+Le statut `supported` signifie seulement que deux recherches stables montrent
+une perte matérielle courte de la victime avec un score défavorable à son camp.
+`contradicted` signifie qu'elles montrent un témoin contraire ; ce n'est pas
+l'affirmation que la position entière est bonne. `indeterminate` garde les PV
+incomplètes, la menace modifiée et les recherches divergentes. La comparaison de
+scores donne un champ séparé : elle **n'établit pas la causalité** du motif.
+
+Seuils provisoires : variation maximale de 100 centipions entre recherches,
+score inférieur à −75 centipions du point de vue du défenseur pour soutenir la
+perte, écart d'au moins 100 centipions pour distinguer les alternatives. Ils ne
+sont ni des règles de classement ni des probabilités de victoire ; ils restent
+à étalonner. Les scores de mat ne sont pas convertis en faux centipions.
+
+### Contre-épreuves et observations réelles
+
+`verificationCases.json` contient cinq cas construits distincts du corpus des
+19 décisions. L'inventaire géométrique propose une restriction dans chacun ; les
+témoins légaux montrent pourquoi cela ne suffit pas à conclure à un gain.
+
+- Capture de l'attaquant par une autre pièce.
+- Capture en passant qui retire l'attaquant de sa véritable case.
+- Échec, échange forcé de tours et retraite libérée pour le fou.
+- Mat immédiatement disponible malgré la menace sur le fou.
+- Fou capturé puis mat : témoin volontairement non optimal, destiné à vérifier
+  la priorité de la compensation. Les moteurs trouvent ici le mat immédiat.
+
+Les tests réels utilisent 200/600 ms et enregistrent les deux budgets, scores,
+profondeurs, témoins, comparaisons et coûts. Exemple d'une exécution locale :
+
+| Cas | ShallowRed | Stockfish |
+|---|---|---|
+| Dd2/…f4 | Perte courte soutenue, comparaison instable | Indéterminé : échange non clôturé dans le témoin |
+| Autre pièce prend l'attaquant | Hypothèse contredite | Hypothèse contredite |
+| Prise en passant | Indéterminé : score instable, défense trouvée | Hypothèse contredite |
+| Échec qui libère une retraite | Indéterminé : autre défense choisie | Indéterminé : autre défense choisie |
+| Mat prioritaire / sacrifice | Hypothèse contredite par le mat | Hypothèse contredite par le mat |
+
+Ces observations peuvent varier avec le binaire et le temps de recherche. Elles
+ne sont pas des attentes figées de profondeur ou de score. Durée observée par
+vérification : environ 0,2 à 7,2 secondes, connexions comprises ; extraction
+synchrone des hypothèses en supplément. Les deux moteurs ne doivent pas être
+appelés ensemble dans l'UI : ils servent ici à confronter le prototype.
+
+La causalité comparative, les sacrifices positionnels et les cinq familles
+manquantes restent ouverts. **Toujours zéro explication publiable.**

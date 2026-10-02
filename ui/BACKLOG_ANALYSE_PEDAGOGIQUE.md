@@ -48,6 +48,10 @@ ne prouve pas à lui seul le motif choisi pour l’expliquer.
 - [ ] Cas positifs **et** contre-exemples : retraites supprimées/créées, pièce
   restreinte exploitée par un coup calme, menace préexistante, défense clouée,
   échange déjà commencé, reprise forcée/utile, compensation, coup intermédiaire.
+- [x] Cinq contre-épreuves exécutables supplémentaires : prise de l'attaquant par
+  une autre pièce, prise en passant, échec qui libère une retraite, mat prioritaire,
+  sacrifice suivi de mat. Témoins construits, dont un volontairement non optimal ;
+  ne pas les compter comme validation indépendante ou nouveaux motifs reconnus.
 - [ ] Cas de portée plus large présents dès le départ, même si non reconnus :
   surcharge, déviation, double menace, lignes ouvertes, sécurité du roi,
   activité réellement utile, concession de structure.
@@ -87,22 +91,33 @@ texte généré automatiquement n’est utilisé comme vérité attendue.
 **Passage B :** les mêmes primitives décrivent plusieurs familles et leurs
 contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un badge.
 
-### C. Vérification comparative des causes — À FAIRE
+### C. Vérification comparative des causes — EN COURS
 
-- [ ] Questions moteur explicites : quelle réponse exploite la décision ?
-  Quelle défense pourrait invalider l’hypothèse ? L’alternative évite-t-elle
-  vraiment le même mécanisme ? Chaque résultat garde position et historique.
-- [ ] Réutiliser les recherches UCI existantes. Pas de MultiPV/searchmoves supposés,
-  pas de détail NNUE/Rust, pas de mini-moteur stratégique recodé dans l’UI.
-- [ ] Évaluer les défenses pertinentes, coups intermédiaires et compensations,
-  pas seulement la position après la capture attendue. Vérifier la stabilité
-  quand une conclusion dépend d’une recherche trop courte.
-- [ ] Statuts : hypothèse, soutenue, contredite, indéterminée. Une nouvelle
-  recherche ne transforme pas automatiquement une hypothèse en explication.
-- [ ] Budget global explicite et mesuré ; priorité à l’analyse demandée,
-  annulation, cache par moteur/révision/historique, aucun résultat tardif.
-- [ ] Essais avec ShallowRed et Stockfish ; désaccord du moteur enregistré,
-  pas masqué par un motif « évident » codé en dur.
+- [x] Questions explicites avant la décision, après le coup, au moment de la
+  défense et après une alternative légale. Chaque réponse garde commande UCI,
+  score, profondeur et variante. L'exploitation fraîche doit correspondre à
+  la menace de l'hypothèse ; sinon résultat indéterminé.
+- [ ] Relier causalement l'alternative au même mécanisme : un meilleur score ne
+  prouve pas encore que cette décision évite la restriction. L'alternative est
+  donnée explicitement ou trouvée à la racine ; si le moteur choisit déjà le coup
+  joué, aucune fausse « deuxième meilleure solution » n'est fabriquée.
+- [x] Recherches via `FocusedAnalysis` et `Engine`, sans MultiPV/searchmoves,
+  détail NNUE/Rust ni recherche stratégique recodée dans l'UI.
+- [x] Le moteur cherche librement la défense. Vérification à deux budgets séparés,
+  témoins bornés à huit demi-coups, reprises incluses, mat/compensation immédiate
+  prioritaires. Plusieurs coups calmes font abandonner le témoin court.
+- [ ] Compensations différées/positionnelles et défenses multiples : les témoins
+  courts ne les couvrent pas. La comparaison actuelle de stabilité des scores
+  reste un seuil de développement, pas un étalonnage pédagogique.
+- [x] Rapports « soutenue / contredite / indéterminée » séparés de l'hypothèse.
+  Portée explicite : mécanisme court dans les lignes du moteur. Toujours aucune
+  explication publiable ni preuve que toutes les défenses perdent.
+- [x] Au plus huit recherches, budgets par défaut 300/900 ms, plafond global
+  10 secondes incluant les connexions ; arrêt, cache moteur/révision/historique,
+  rejet des réponses tardives, coûts et réutilisation du cache mesurés.
+- [x] Essais réels ShallowRed/Stockfish, avec différences conservées dans le
+  rapport de test. Les abstentions ne sont pas comptées comme explications justes.
+- [ ] Priorité et déclenchement depuis la revue : à traiter avec l'intégration E.
 
 **Passage C :** une explication rejetée sur les contre-exemples reste rejetée
 même si une capture existe dans la PV. Publier le rapport du corpus et ses limites.
@@ -176,8 +191,36 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   import du prototype dans les composants actifs.
 - Coût actuel de l’extraction exhaustive : environ six secondes pour le corpus
   local. Pas d’intégration synchrone de ce code dans le rendu React.
-- **Prochain travail concret** : enrichir les contre-exemples (défense par une
-  autre pièce, coup intermédiaire, sacrifice), puis définir les requêtes et critères
-  de réfutation/comparaison de C. Étendre les relations sur ce socle. Les cinq
-  familles manquantes doivent rester visibles ; ne pas les masquer avec l’ancien
-  explicateur ou une formule générique. D et E ne sont pas commencés.
+- Suite de ce démarrage : voir la livraison suivante et son point de reprise.
+
+
+## Livraison suivante — vérification des hypothèses, 2 octobre 2026
+
+- `src/review/understanding/Verification.ts` orchestre les questions et leur
+  stabilité ; `evidence.ts` extrait le témoin court. Tests unitaires associés.
+- `verificationCases.json` ajoute cinq contre-épreuves aux 19 décisions du
+  corpus initial. Les rapports restent séparés : on n'améliore pas artificiellement
+  le taux de reconnaissance en ajoutant des cas construits pour le vérificateur.
+- `dev/understanding.test.mjs` contient désormais 14 tests réels facultatifs :
+  deux références initiales et six cas par moteur. Avec les variables binaires,
+  les 14 passent. Les budgets du contrôle sont 200/600 ms, plafond 12 secondes.
+- Observation locale : sur Dd2/…f4, ShallowRed soutient une perte de deux points
+  dans une ligne courte ; Stockfish reste indéterminé, sa meilleure défense
+  conduisant à une suite dont la clôture dépasse le contrat du témoin. Les deux
+  réfutent la perte annoncée quand une autre pièce prend l'attaquant ou qu'un mat
+  immédiat est disponible. Le cas de l'échec intermédiaire reste indéterminé
+  dans leurs PV, malgré le témoin construit légal. Ce sont des limites visibles.
+- Régression annexe trouvée par la partie réelle : le wrapping de commentaires
+  de chess.js pouvait coller SAN et numéro du coup suivant. `exportPgn()` garde
+  désormais le movetext sans césure ; réimport testé avec un commentaire de fin
+  au temps. Aucun changement des règles ou du moteur.
+- Cinq familles du corpus initial restent manquantes ; **0 explication publiable**.
+  Aucun raccordement à l'UI et aucun changement du moteur.
+- Validation locale : **400 tests / 41 fichiers**, avec ShallowRed et Stockfish ;
+  lint, TypeScript et build réussis. Les tests ne valident pas la pertinence
+  pédagogique générale et le nouveau prototype reste isolé.
+- **Prochain travail concret** : comparer les relations et les possibilités dans
+  l'alternative (et pas seulement son score), puis étendre B aux lignes ouvertes,
+  défenses retirées et contraintes combinées. Ajouter des cas indépendants et
+  des sacrifices compensés sans mat. Réviser les seuils sur ce corpus, et définir
+  la preuve minimale permettant D. Ne pas activer E à partir des seuls tests verts.
