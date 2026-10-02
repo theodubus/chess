@@ -4383,6 +4383,27 @@ autre échelle — la conversion de lc0 et nos données s'expriment en
 probabilité de gain, et le moteur lit les deux réseaux à la même échelle de
 sortie.
 
+**La sonde, RELEVÉE le 2 oct.** — 40 parties par réseau, zéro perte au
+temps, zéro anomalie ; la faite main, celle du 30 sept. ; lecteur
+`facteurs.py`, le rejeu du réseau par `SONDE_B8_EVALFILE` (ajouté au
+lecteur de la rustine) :
+
+| réseau | facteur delta | facteur aspiration | moyenne géométrique | pente, rapport médian |
+|---|---|---|---|---|
+| N2 (30 sept., référence) | × 2,5 | × 2,0 | 2,24 | 2,30 ; 2,02 |
+| **N2L** | × 2,6 | × 2,60 | **2,60** | 2,69 ; 2,52 |
+| **L0** | × 3,1 | × 2,20 | **2,61** | 2,55 ; 2,40 |
+
+**Par la règle, les deux dans la plage** — 2,60 et 2,61 contre 1,68 à
+2,80 : **chaque réseau se mesure au facteur de `main`, 2,24**, et son
+candidat ne change que le réseau. Dans l'attendu. Les pentes de N2 sont
+recalculées ici sur tous les nœuds journalisés, non sur le tiers rejoué —
+2,30 et 2,02 au lieu de 2,40 et 2,16 ; c'est cette ligne-ci qui se compare.
+Les deux réseaux de Leela portent des nombres **12 à 25 % plus grands** que
+N2 ; à 2,24, leur élagage delta reste ~2 fois plus fautif que la faite main
+(0,72 et 0,94 % à × 2,2, contre 0,30 %) — une marge à affiner plus tard,
+si l'un d'eux est retenu, par sa propre mesure.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
