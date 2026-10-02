@@ -4200,24 +4200,32 @@ jeux de linrock (`robotmoon.com/nnue-training-data`, les jeux plus récents)
 sont refusés par le proxy du conteneur (403, relevé le 30 sept.). Drive
 affiche la taille avant le téléchargement : **la lire d'abord**. Un binpack
 s'entraîne tel quel, sans décompression — il faut sa taille libre, plus
-quelques Go de points de sauvegarde. Pour ordre de grandeur, les fichiers
+quelques Go de points de sauvegarde. <s>Le fichier de Drive est donc prêt à
+servir.</s> **Faux pour celui-ci, relevé par Théo le 2 oct.** : Drive
+livre une ARCHIVE, `training_data.7z`, et le binpack est dedans — le
+programme refuse, à raison, un fichier qu'il ne trouve pas. Je ne pouvais
+pas voir la page (403) et je l'ai supposée ; l'étape 2 de la séance
+l'extrait. Pour ordre de grandeur, les fichiers
 des derniers étages de Stockfish pèsent 141 et 223 Go (PR #257 de
 `nnue-pytorch`) ; un entraînement n'en voit que 4 milliards de positions,
 **un fichier suffit**.
 
-**La taille de `training_data.binpack`, lue par Théo sur Drive le 30 sept. :
-11 Go.** Ce qu'elle porte, par le format — `docs/binpack.md` de la branche
-`tools` de Stockfish : une position coûte « ~2 octets » dans une suite de
-coups, plus 32 octets par début de suite — : **de l'ordre de 4 à 7
-milliards de positions**, avant le filtre. <span>Inférence, confiance
-moyenne</span> : l'essai court imprime les octets, les blocs et la part
-gardée par le filtre. **Un fichier plus petit que l'entraînement ne le
-casse pas** — lu au commit épinglé : le chargeur de bullet
-(`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit ses
-fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
-chacune de ce fichier passera **une à trois fois** selon la part que garde
-le filtre ; N2 revoyait les siennes **au moins seize fois** (4 milliards
-tirés de 249,5 M).
+**La taille lue par Théo sur Drive le 30 sept. : 11 Go — celle de l'ARCHIVE
+`training_data.7z`** (corrigé le 2 oct.), pas du binpack, qui est plus gros
+: la compression de 7-Zip s'ajoute à celle du format. `7z l` imprime sa
+vraie taille avant d'extraire. Ce qu'un binpack porte, par le format —
+`docs/binpack.md` de la branche `tools` de Stockfish : une position coûte «
+~2 octets » dans une suite de coups, plus 32 octets par début de suite — :
+de l'ordre de 0,4 à 0,6 milliard de positions par Go de binpack, avant le
+filtre ; <s>4 à 7 milliards pour 11 Go</s> — un minimum, désormais.
+<span>Inférence, confiance moyenne</span> : l'essai court imprime les
+octets, les blocs et la part gardée par le filtre. **Un fichier plus petit
+que l'entraînement ne le casse pas** — lu au commit épinglé : le chargeur de
+bullet (`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit
+ses fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
+chacune de ce fichier passera **une à trois fois au plus** selon la part que
+garde le filtre ; N2 revoyait les siennes **au moins seize fois** (4
+milliards tirés de 249,5 M).
 
 **Vérifié ici avant de l'écrire** : à `main` (`8b2c122`), `tools/nnue-train`
 compile avec `--locked` et passe ses six tests — contre le runtime factice
@@ -4238,21 +4246,33 @@ de bullet, donc sans rien dire de CUDA ni de ce fichier, que l'essai court
 1. **CUDA dans ce terminal** — le bloc « CUDA dans ce terminal » de la
    séance d'entraînement du n° 7, tel quel : les trois bibliothèques du
    toolkit 13.2 doivent s'afficher ;
-2. **le fichier** — sa taille lue sur la page de Drive, comparée à la place
-   libre (`mkdir -p ~/leela && df -h ~/leela`), puis téléchargé depuis un
-   navigateur dans `~/leela/`, et relu :
+2. **le fichier** — téléchargé depuis un navigateur dans `~/leela/` : c'est
+   une archive 7-Zip, `training_data.7z` (corrigé le 2 oct.), qu'il faut
+   extraire. D'abord son contenu et sa taille décompressée, puis la place
+   libre, qui doit la dépasser de quelques Go :
    ```sh
-   ls -l ~/leela/*.binpack
+   command -v 7z || sudo apt install p7zip-full
+   cd ~/leela && 7z l training_data.7z
+   df -h ~/leela
+   7z x training_data.7z
+   find ~/leela -name '*.binpack' -exec ls -l {} +
    ```
-   Avec le second fichier, remplacer `training_data.binpack` par son nom
-   dans les commandes qui suivent ;
+   Le programme prend un fichier ou un dossier — d'un dossier, il lit les
+   `.binpack` posés directement dedans, et ignore l'archive. Désigner
+   celui qui les contient, une fois pour toute la séance :
+   ```sh
+   DONNEES=~/leela
+   ```
+   — ou le sous-dossier qu'a créé l'extraction, si `find` en montre un.
+   Si seul le paquet `7zip` est installé, la commande s'appelle `7zz`.
+   L'archive se supprime une fois l'essai court passé, pas avant ;
 3. **un essai court**, qui éprouve la chaîne entière — CUDA, le chargeur de
    binpacks, la reprise depuis N2, la confrontation — et imprime l'échelle
    des scores :
    ```sh
    cd ~/chess/tools/nnue-train
    cargo run --release --features cuda -- --depuis n2/shallowred-768x128-40 \
-     --superlots 1 --sortie essai-leela ~/leela/training_data.binpack \
+     --superlots 1 --sortie essai-leela "$DONNEES" \
      2>&1 | tee essai-leela.sortie.txt
    ```
    Il doit finir sur `RÉSEAU PRÊT : essai-leela/shallowred-768x128-1/quantised.bin`.
@@ -4265,13 +4285,13 @@ de bullet, donc sans rien dire de CUDA ni de ce fichier, que l'essai court
 4. **N2L** :
    ```sh
    cargo run --release --features cuda -- --depuis n2/shallowred-768x128-40 \
-     --sortie n2l ~/leela/training_data.binpack 2>&1 | tee n2l.sortie.txt
+     --sortie n2l "$DONNEES" 2>&1 | tee n2l.sortie.txt
    ```
    → `RÉSEAU PRÊT : n2l/shallowred-768x128-40/quantised.bin` ;
 5. **L0** :
    ```sh
    cargo run --release --features cuda -- --sortie l0 \
-     ~/leela/training_data.binpack 2>&1 | tee l0.sortie.txt
+     "$DONNEES" 2>&1 | tee l0.sortie.txt
    ```
    → `RÉSEAU PRÊT : l0/shallowred-768x128-40/quantised.bin` ;
 6. **rapporter**, sur une branche `reseau/levier4` :
@@ -4299,8 +4319,17 @@ son message suffit à le diagnostiquer.
 **Ce qui suit, écrit avant** : chaque réseau passe d'abord le contrôle de
 confrontation que le programme imprime (écart médian ≤ 15, maximal ≤ 50),
 puis **deux matchs de 3 000 parties à `8+0,08` contre N2**, graine « auto »
-chacun, comme N1 et N2. **Critère de gain** : borne basse de l'intervalle
-mis en commun au-dessus de zéro — le meilleur des réseaux qui le passent
+chacun, comme N1 et N2. **Ce que le match compare** — question de Théo le
+2 oct. : le candidat est le `main` du jour où il se mesure, plus UN commit
+qui ne change que le réseau embarqué (le chemin d'`include_bytes!` et la
+confrontation recopiée dans le test, dans `engine/src/nnue.rs`) ; la
+référence est ce même `main`. Les optimisations faites entre-temps — B8
+compris — sont des deux côtés, et le match ne mesure que le réseau : c'est
+ainsi que N1 et N2 ont été mesurés (`c430fe5` et `af62e48` ne touchent que
+`nnue.rs`). La seule chose qui ne se transporte pas avec le réseau, ce sont
+les marges réglées sur N2 — d'où la sonde de B8, au paragraphe « Ajouté
+le 1er oct. ». **Critère de gain** : borne basse de l'intervalle mis en
+commun au-dessus de zéro — le meilleur des réseaux qui le passent
 remplace N2, sa confrontation recopiée dans le test du moteur, et
 **`README.md` porte la mention d'attribution de l'ODbL** le jour même
 (`CLAUDE.md`, décisions structurantes). *Attendus* — <span>inférence,
