@@ -4223,9 +4223,9 @@ octets, les blocs et la part gardée par le filtre. **Un fichier plus petit
 que l'entraînement ne le casse pas** — lu au commit épinglé : le chargeur de
 bullet (`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit
 ses fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
-chacune de ce fichier passera **une à trois fois au plus** selon la part
-que garde le filtre ; N2 revoyait les siennes **au moins seize fois** (4 milliards
-tirés de 249,5 M).
+chacune de ce fichier passera **une à trois fois au plus** selon la part que
+garde le filtre ; N2 revoyait les siennes **au moins seize fois** (4
+milliards tirés de 249,5 M).
 
 **Vérifié ici avant de l'écrire** : à `main` (`8b2c122`), `tools/nnue-train`
 compile avec `--locked` et passe ses six tests — contre le runtime factice
