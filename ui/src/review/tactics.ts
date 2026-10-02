@@ -81,7 +81,11 @@ function defenders(board: Chess, target: Square): Square[] {
   const probe = withTurn(board, victim.color);
   // Une pièce amie ne peut pas être capturée. La remplacer pour cet essai permet
   // de filtrer les défenseurs cloués et les reprises illégales du roi.
-  probe.put({ color: opposite(victim.color), type: "p" }, target);
+  // Un pion fictif sur la dernière rangée produit une position invalide dans chess.js.
+  probe.put(
+    { color: opposite(victim.color), type: /[18]$/.test(target) ? "n" : "p" },
+    target,
+  );
   return probe
     .moves({ verbose: true })
     .filter((move) => move.to === target && candidates.includes(move.from))

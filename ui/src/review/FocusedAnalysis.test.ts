@@ -294,3 +294,21 @@ it("conserve un verdict inconnu si le calcul ciblé reste contradictoire, dans l
   expect(live.annotation).toBeNull();
   expect(factory).not.toHaveBeenCalled();
 });
+
+it("applique le budget court et le délai de la vérification pédagogique", async () => {
+  vi.useFakeTimers();
+  const focused = new FocusedAnalysis(1200, 6000),
+    req = request([]),
+    engine = new TestEngine();
+  engine.hold = true;
+  const pending = focused.analyse(req, async () => engine);
+  await vi.advanceTimersByTimeAsync(0);
+  expect(engine.commands).toContain("go movetime 1200");
+  await vi.advanceTimersByTimeAsync(5999);
+  expect(focused.state).toBe("running");
+  await vi.advanceTimersByTimeAsync(1);
+  expect(await pending).toBeNull();
+  expect(focused.state).toBe("error");
+  expect(engine.disposed).toBe(true);
+  expect(focused.has(req)).toBe(false);
+});

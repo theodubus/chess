@@ -288,7 +288,7 @@ conséquence légale visible dans la démonstration et être cohérents
 avec la classification et la comparaison des suites. Une simple attaque ou un
 alignement ne suffit pas. Les occasions manquées peuvent être expliquées par
 la meilleure suite proposée ; « Montrer pourquoi » ouvre alors cette alternative,
-et « Voir la suite jouée » permet de comparer avec la décision réelle.
+et « Comparer les décisions » montre la décision réelle.
 
 La démonstration utilise le même échiquier et se parcourt avec les boutons ou le
 clavier. Une flèche bleue annonce le prochain coup. À l’étape du motif, les repères
@@ -298,21 +298,43 @@ la partie ou la variante et ses dessins personnels. Aucune branche n’est ajout
 par la démonstration. Les repères suivent l’orientation et restent masqués pendant
 un retry sans solution, comme lorsque les annotations sont désactivées.
 
-Les explications réutilisent les résultats disponibles. Les PV entières sont
-validées avec chess.js. Huit demi-coups sont montrés par défaut ; une explication
-matérielle prolonge l’affichage jusqu’aux captures/promotions nécessaires, même
-si elles arrivent plus tard. Le bilan est calculé sur toute la PV, et comparé à
-l’alternative depuis la même position pour les erreurs et gains manqués. Une
-occasion secondaire ne remplace pas une perte déjà identifiée dans le coup joué.
-La fin de la suite ne doit pas laisser de reprise immédiate. Les défenseurs sont
-filtrés par la légalité des reprises. Les défenses vérifient des menaces à un
-coup, sans garantir la sécurité à plus long terme. Les scores bornés, absents ou
-les verdicts non classés ne servent pas à attribuer une cause tactique.
+« Montrer pourquoi » est séparé des **Variantes du moteur**, repliées par défaut.
+La démonstration commence après la décision, sauf lorsqu’il faut montrer une
+menace ou une défense avant le coup. Elle s’arrête à sa conséquence locale et
+aux reprises nécessaires, dans une limite de six demi-coups depuis la décision.
+Une capture ultérieure sans rapport n’allonge pas cette démonstration. Les
+variantes brutes restent accessibles avec un aperçu de huit demi-coups.
 
-Une PV reste une continuation, pas une preuve de gain forcé. La détection est
-volontairement conservatrice et ne couvre pas toutes les combinaisons. Quand
-aucune cause fiable n’est trouvée, l’interface le précise. Les évaluations des
-positions intermédiaires ne sont pas inventées : la barre affiche « ? ».
+L’UI identifie un motif local dans la suite légale du moteur. Pour une erreur,
+elle examine aussi les prises immédiates même si la PV part ailleurs (au plus
+quatre candidats, une hypothèse retenue). Avant d’afficher cette cause, le moteur
+sélectionné vérifie la position après sa conséquence et, pour une erreur ou une
+occasion manquée, celle après l’autre décision. Ces recherches disposent chacune
+de 1 200 ms, avec un délai global de six secondes. L’historique UCI est conservé.
+Les mats joués et défenses immédiates géométriquement vérifiables ne nécessitent
+pas cette recherche supplémentaire.
+
+La vérification démarre seulement sur le coup consulté, après 300 ms de stabilité.
+Un indicateur de calcul reste visible ; naviguer, masquer les annotations, ouvrir
+les coups ou réessayer annule la recherche. Le cache distingue moteur, revue,
+révision et historique. Aucune confirmation partielle ou tardive n’est publiée.
+Une paire de scores comparables doit confirmer l’avantage de l’autre décision ;
+les reprises disponibles, contre-captures immédiates qui annulent le gain,
+compensations détectées par les scores, réponses illégales et scores bornés/non
+finis empêchent la confirmation. Un résultat contradictoire garde une limite
+explicite, sans inventer une autre raison.
+
+« Comparer les décisions » montre l’autre décision vérifiée, avec une explication
+concrète lorsque la prise montrée est empêchée ou que son attaquant est éliminé.
+Le coup étudié reste indiqué, une illustration d’une seule position ne montre
+pas de navigation vide, et fermer restaure exactement la partie ou la variante.
+
+Une PV reste une continuation, pas une preuve de gain forcé. Ces recherches
+ne démontrent pas que chaque réponse intermédiaire est forcée et ne couvrent
+pas toutes les combinaisons, compensations ni causes positionnelles d’une baisse
+de score. Un motif géométrique seul ne justifie jamais un mauvais coup. Lorsque
+aucune cause courte fiable n’est reconnue, l’interface le précise. Les scores
+intermédiaires des démonstrations ne sont pas inventés : la barre affiche « ? ».
 
 ### Indices et approfondissement à la demande
 

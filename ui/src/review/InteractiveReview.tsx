@@ -1,5 +1,8 @@
 import { explainMove, type ExplanationLine } from "./explanations";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { confirmCause } from "./decisionCause";
+import { useCauseCheck } from "./useCauseCheck";
+import type { EngineFactory } from "../GameController";
 import type { Square } from "chess.js";
 import RetryCoach from "./RetryCoach";
 import PositionalPanel from "./PositionalPanel";
@@ -45,6 +48,7 @@ export default function InteractiveReview({
   active,
   side,
   treeCache: trees,
+  explanationEngineFactory,
 }: {
   review: GameReview;
   selected: number;
@@ -56,6 +60,7 @@ export default function InteractiveReview({
   active: boolean;
   side: "w" | "b" | "both";
   treeCache: Map<number, StudyTree>;
+  explanationEngineFactory?: EngineFactory;
 }) {
   const [demo, setDemo] = useState<{
     source: string;
@@ -220,7 +225,7 @@ export default function InteractiveReview({
         )
       : null
     : playedPosition;
-  const explanation =
+  const draftExplanation =
     explanationPosition && !blind && showAnnotations
       ? explainMove(
           explanationPosition,
@@ -229,6 +234,28 @@ export default function InteractiveReview({
           annotation,
         )
       : null;
+  const causeFactory = useMemo(
+    () => explanationEngineFactory ?? analysisEngineFactory(engineId),
+    [explanationEngineFactory, engineId],
+  );
+  const causeCheck = useCauseCheck(
+    draftExplanation?.candidate,
+    review,
+    reviewRevision,
+    engineId,
+    causeFactory,
+    active &&
+      showAnnotations &&
+      !blind &&
+      pane === "details" &&
+      walkTarget === null &&
+      review.state !== "running" &&
+      (!branch || liveState === "complete") &&
+      focused.state !== "running",
+  );
+  const explanation = draftExplanation
+    ? confirmCause(draftExplanation, causeCheck.results)
+    : null;
   const focusRequest: FocusRequest | null = explanationPosition
     ? {
         review,
@@ -528,14 +555,42 @@ export default function InteractiveReview({
         {sequenceVisible ? (
           <div className="explanation-navigation">
             <p role="status">
-              Étape {demonstration.step} / {demonstration.line.steps.length - 1}{" "}
+              {demonstration.line.steps.length > 1
+                ? `Étape ${demonstration.step + 1} / ${demonstration.line.steps.length}`
+                : "Position expliquée"}{" "}
               · {demoStep?.label}
             </p>
-            <MoveNavigation
-              selected={demonstration.step}
-              total={demonstration.line.steps.length - 1}
-              onSelect={(step) => setDemo({ ...demonstration, step })}
-            />
+            {demonstration.line.steps.length > 1 && (
+              <div
+                className="review-navigation"
+                aria-label="Parcourir l’explication"
+              >
+                <button
+                  className="secondary"
+                  aria-label="Étape précédente"
+                  title="Étape précédente (← ou <)"
+                  disabled={demonstration.step === 0}
+                  onClick={() =>
+                    setDemo({ ...demonstration, step: demonstration.step - 1 })
+                  }
+                >
+                  ←
+                </button>
+                <button
+                  className="secondary"
+                  aria-label="Étape suivante"
+                  title="Étape suivante (→ ou >)"
+                  disabled={
+                    demonstration.step === demonstration.line.steps.length - 1
+                  }
+                  onClick={() =>
+                    setDemo({ ...demonstration, step: demonstration.step + 1 })
+                  }
+                >
+                  →
+                </button>
+              </div>
+            )}
             <button className="secondary wide" onClick={() => setDemo(null)}>
               Retour au coup examiné
             </button>
@@ -654,13 +709,36 @@ export default function InteractiveReview({
               {demoStep?.marks?.length
                 ? "Les repères rouges montrent les menaces ; les verts montrent la défense ou l’idée du coup."
                 : "La flèche bleue indique le prochain coup de cette suite."}{" "}
-              La suite illustre une continuation trouvée par le moteur, sans
-              imposer les réponses adverses.
+              {demonstration.line.kind === "cause"
+                ? "Cette illustration montre la conséquence vérifiée, sans garantir que toutes les réponses adverses sont forcées."
+                : "La suite illustre une continuation trouvée par le moteur, sans imposer les réponses adverses."}
             </p>
             {demonstration.line.truncated && (
               <p className="hint">Seul le début de la suite est affiché.</p>
             )}
-            {explanation?.played &&
+            {demonstration.line.kind === "cause" &&
+              explanation?.proof &&
+              demonstration.line !== explanation.proof &&
+              demonstration.line.title !== explanation.proof.title && (
+                <button
+                  className="secondary"
+                  onClick={() => demonstrate(explanation.proof!)}
+                >
+                  Revoir la conséquence
+                </button>
+              )}
+            {demonstration.line.kind === "cause" &&
+              explanation?.comparison &&
+              demonstration.line.title !== explanation.comparison.title && (
+                <button
+                  className="secondary"
+                  onClick={() => demonstrate(explanation.comparison!)}
+                >
+                  Comparer les décisions
+                </button>
+              )}
+            {demonstration.line.kind !== "cause" &&
+              explanation?.played &&
               demonstration.line.title !== explanation.played.title && (
                 <button
                   className="secondary"
@@ -669,7 +747,8 @@ export default function InteractiveReview({
                   Après le coup joué
                 </button>
               )}
-            {explanation?.alternative &&
+            {demonstration.line.kind !== "cause" &&
+              explanation?.alternative &&
               demonstration.line.title !== explanation.alternative.title && (
                 <button
                   className="secondary"
@@ -747,46 +826,71 @@ export default function InteractiveReview({
                     className="move-explanation"
                     aria-label="Comprendre le coup"
                   >
-                    {!explanation.concrete && (
-                      <p className="hint">{explanation.summary}</p>
+                    {causeCheck.pending && !explanation.concrete ? (
+                      <p className="cause-progress" role="status">
+                        <span className="analysis-spinner" aria-hidden="true" />{" "}
+                        Le moteur vérifie la conséquence et les compensations…
+                      </p>
+                    ) : (
+                      !explanation.concrete && (
+                        <p className="hint">
+                          {causeCheck.failed
+                            ? "La vérification n’a pas abouti. Vous pouvez approfondir ce coup."
+                            : causeCheck.checked && explanation.candidate
+                              ? "La vérification ne confirme pas cette cause. Aucune explication courte fiable pour ce coup."
+                              : explanation.summary}
+                        </p>
+                      )
                     )}
                     {explanation.concrete && !annotation && (
                       <p>{explanation.summary}</p>
                     )}
-                    <div className="explanation-actions">
-                      {explanation.played && (
+                    {explanation.proof && (
+                      <div className="explanation-actions">
                         <button
                           className="secondary"
-                          onClick={() =>
-                            demonstrate(
-                              explanation.primary === "alternative"
-                                ? explanation.alternative!
-                                : explanation.played!,
-                            )
-                          }
+                          onClick={() => demonstrate(explanation.proof!)}
                         >
-                          {explanation.concrete
-                            ? "Montrer pourquoi"
-                            : "Voir la suite"}
+                          Montrer pourquoi
                         </button>
-                      )}
-                      {explanation.alternative && (
-                        <button
-                          className="secondary"
-                          onClick={() =>
-                            demonstrate(
-                              explanation.primary === "alternative"
-                                ? explanation.played!
-                                : explanation.alternative!,
-                            )
-                          }
-                        >
-                          {explanation.primary === "alternative"
-                            ? "Voir la suite jouée"
-                            : "Voir la meilleure idée"}
-                        </button>
-                      )}
-                    </div>
+                        {explanation.comparison && (
+                          <button
+                            className="secondary"
+                            onClick={() => demonstrate(explanation.comparison!)}
+                          >
+                            Comparer les décisions
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    <details className="engine-lines">
+                      <summary>Variantes du moteur</summary>
+                      <p className="hint">
+                        Ces continuations permettent d’explorer la position.
+                        Elles ne constituent pas à elles seules une explication
+                        du coup.
+                      </p>
+                      <div className="explanation-actions">
+                        {explanation.played && (
+                          <button
+                            className="secondary"
+                            onClick={() => demonstrate(explanation.played!)}
+                          >
+                            Voir la suite jouée
+                          </button>
+                        )}
+                        {explanation.alternative && (
+                          <button
+                            className="secondary"
+                            onClick={() =>
+                              demonstrate(explanation.alternative!)
+                            }
+                          >
+                            Voir la meilleure idée
+                          </button>
+                        )}
+                      </div>
+                    </details>
                     {explanation.observations && (
                       <PositionalPanel
                         notes={explanation.observations}

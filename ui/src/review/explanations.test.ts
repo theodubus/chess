@@ -1,6 +1,8 @@
 import { Chess } from "chess.js";
 import { expect, it } from "vitest";
 import { explainMove } from "./explanations";
+import { confirmForTest } from "./causeTestHelpers";
+import { confirmCause } from "./decisionCause";
 import { gamePositions, type ReviewResult, type ReviewPosition } from "./model";
 
 function position(prefix: string[], san: string, fen?: string) {
@@ -55,23 +57,30 @@ it("montre une suite de mat sans la présenter comme une séquence forcée", () 
   const explanation = explainMove(
     p,
     result(p.fen, ["Nc3"]),
-    result(afterFen(p), ["Qh4#"]),
+    {
+      ...result(afterFen(p), ["Qh4#"]),
+      score: { kind: "mate", value: -1, winner: "b" },
+    },
     bad,
   );
-  expect(explanation.summary).toContain("mat pour les Noirs");
+  expect(explanation.summary).toContain("échec et mat");
+  expect(explanation.proof?.steps).toHaveLength(2);
   expect(explanation.summary).not.toContain("forcé");
   expect(explanation.alternative?.steps[0].fen).toBe(p.fen);
 });
 it("compare les conséquences matérielles des deux suites depuis la même position", () => {
   const p = position([], "Kh2", "r6k/8/8/8/8/8/8/R6K w - - 0 1");
-  const explanation = explainMove(
+  const draft = explainMove(
     p,
     result(p.fen, ["Rxa8+", "Kh7"], 500),
     result(afterFen(p), ["Rxa1", "Kh3"], -500),
     bad,
   );
+  expect(draft.concrete).toBe(false);
+  const explanation = confirmForTest(draft);
   expect(explanation.concrete).toBe(true);
-  expect(explanation.summary).toContain("les Noirs gagnent 5 points");
+  expect(explanation.summary).toContain("tour en a1");
+  expect(explanation.proof?.steps).toHaveLength(2);
   expect(explanation.played?.steps[2].text).toContain("capturent la tour");
   expect(explanation.alternative?.steps[0].fen).toBe(p.fen);
   expect(explanation.played?.steps[0].fen).toBe(p.fen);
@@ -217,26 +226,26 @@ const longLoss = [
   "Rxa1",
   "Kh2",
 ];
-it("explique une perte après huit demi-coups plutôt que l’occupation du centre", () => {
+it("montre une prise immédiate vérifiée sans dérouler les coups sans rapport de la PV", () => {
   const p = position([], "d4", longMaterialFen);
-  const explanation = explainMove(
+  const draft = explainMove(
     p,
     result(p.fen, longAlternative, 500),
     result(afterFen(p), longLoss, -500),
     bad,
   );
+  const explanation = confirmForTest(draft);
   expect(explanation.concrete).toBe(true);
-  expect(explanation.summary).toContain("les Noirs gagnent 5 points");
-  expect(explanation.summary).toContain("Avec Txa8+");
+  expect(explanation.summary).toContain("tour en a1");
+  expect(explanation.comparison?.steps[0].text).toContain("Txa8+");
   expect(explanation.summary).not.toContain("centre");
   expect(explanation.observations?.played?.fact.title).toBe(
     "Occupation du centre",
   );
   expect(explanation.observations?.played?.line).toBeNull();
-  expect(
-    explanation.played?.steps.some((step) => step.move?.san === "Rxa1"),
-  ).toBe(true);
-  expect(explanation.played?.steps).toHaveLength(12);
+  expect(explanation.proof?.steps.at(-1)?.move?.san).toBe("Rxa1+");
+  expect(explanation.proof?.steps).toHaveLength(2);
+  expect(explanation.played?.steps).toHaveLength(9);
 });
 it("ne confond pas bilan après huit demi-coups et bilan complet", () => {
   const p = position([], "d4", longMaterialFen);
@@ -248,7 +257,7 @@ it("ne confond pas bilan après huit demi-coups et bilan complet", () => {
   );
   expect(explanation.concrete).toBe(false);
 });
-it("explique aussi un gain matériel manqué sans perte dans la suite jouée", () => {
+it("une capture hypothétique n’est pas une explication avant confirmation", () => {
   const p = position([], "d4", longMaterialFen);
   const explanation = explainMove(
     p,
@@ -256,10 +265,10 @@ it("explique aussi un gain matériel manqué sans perte dans la suite jouée", (
     result(afterFen(p), longLoss.slice(0, 8), 0),
     bad,
   );
-  expect(explanation.concrete).toBe(true);
-  expect(explanation.primary).toBe("alternative");
-  expect(explanation.summary).toContain("gain de matériel");
-  expect(explanation.summary).toContain("5 points");
+  expect(explanation.candidate).toBeDefined();
+  expect(explanation.concrete).toBe(false);
+  expect(explanation.proof).toBeUndefined();
+  expect(confirmForTest(explanation, [0, 0]).concrete).toBe(false);
 });
 it("refuse une fin de longue PV corrompue et les scores non finis", () => {
   const p = position([], "d4", longMaterialFen);
@@ -272,3 +281,101 @@ it("refuse une fin de longue PV corrompue et les scores non finis", () => {
   after.variation.at(-1)!.fen = p.fen;
   expect(explainMove(p, before, after, bad).concrete).toBe(false);
 });
+
+it("vérifie aussi la faute des Noirs sans inverser la perte matérielle", () => {
+  const p = position([], "Kh7", "r6k/8/8/8/8/8/8/R6K b - - 0 1");
+  const draft = explainMove(
+    p,
+    result(p.fen, ["Rxa1+", "Kh2"], -500),
+    result(afterFen(p), ["Rxa8"], 500),
+    bad,
+  );
+  expect(draft.candidate?.actor).toBe("b");
+  expect(draft.concrete).toBe(false);
+  const explanation = confirmForTest(draft);
+  expect(explanation.concrete).toBe(true);
+  expect(explanation.summary).toContain("tour en a8");
+  expect(explanation.proof?.steps.map((step) => step.move?.san)).toEqual([
+    "Kh7",
+    "Rxa8",
+  ]);
+});
+
+it("garde la même démonstration quand le moteur prolonge sa PV après la conséquence", () => {
+  const p = position([], "d4", longMaterialFen);
+  const before = result(p.fen, longAlternative, 500);
+  const short = confirmForTest(
+    explainMove(p, before, result(afterFen(p), ["Rxa1+"], -500), bad),
+  );
+  const long = confirmForTest(
+    explainMove(p, before, result(afterFen(p), longLoss, -500), bad),
+  );
+  expect(short.concrete).toBe(true);
+  expect(long.proof?.steps.map((step) => step.fen)).toEqual(
+    short.proof?.steps.map((step) => step.fen),
+  );
+  expect(long.summary).toBe(short.summary);
+});
+
+it("refuse un gain apparent si la recherche ciblée rend aussitôt davantage de matériel ailleurs", () => {
+  const p = position([], "Bxb5", "3r3k/8/8/1n6/8/8/4B3/3Q3K w - - 0 1");
+  const draft = explainMove(
+    p,
+    result(p.fen, ["Bxb5"], 0),
+    result(afterFen(p), ["Rxd1+", "Kh2"], 0),
+    good,
+  );
+  expect(draft.candidate).toBeDefined();
+  expect(
+    confirmCause(draft, [result(afterFen(p), ["Rxd1+"], 0)]).concrete,
+  ).toBe(false);
+});
+
+it("refuse une comparaison incomplète ou seulement bornée après la vérification", () => {
+  const p = position([], "d4", longMaterialFen);
+  const draft = explainMove(
+    p,
+    result(p.fen, longAlternative, 500),
+    result(afterFen(p), longLoss, -500),
+    bad,
+  );
+  const results = draft.candidate!.positions.map((p, index) => {
+    const move = new Chess(p.fen)
+      .moves({ verbose: true })
+      .find((move) => !move.captured)!;
+    return result(p.fen, [move.san], index === 0 ? -500 : 500);
+  });
+  expect(confirmCause(draft, results).concrete).toBe(true);
+  expect(confirmCause(draft, results.slice(0, 1)).concrete).toBe(false);
+  results[0].score = { kind: "cp", value: -500, bound: "upper" };
+  expect(confirmCause(draft, results).concrete).toBe(false);
+});
+
+for (const side of ["w", "b"] as const) {
+  it(`confirme la promotion analysée pour ${side} sans ajouter de coups inutiles`, () => {
+    const p = position(
+      [],
+      side === "w" ? "a8=Q+" : "a1=Q+",
+      side === "w"
+        ? "7k/P7/8/8/8/8/8/7K w - - 0 1"
+        : "7k/8/8/8/8/8/p7/7K b - - 0 1",
+    );
+    const sign = side === "w" ? 1 : -1;
+    const before = result(
+      p.fen,
+      [side === "w" ? "a8=Q+" : "a1=Q+"],
+      500 * sign,
+    );
+    const after = result(
+      afterFen(p),
+      [side === "w" ? "Kh7" : "Kh2"],
+      500 * sign,
+    );
+    const draft = explainMove(p, before, after, good);
+    expect(draft.concrete).toBe(false);
+    const explanation = confirmForTest(draft, [500]);
+    expect(explanation.summary).toContain("8 points");
+    expect(explanation.proof?.steps).toHaveLength(1);
+    expect(explanation.proof?.steps[0].fen).toBe(afterFen(p));
+  });
+}

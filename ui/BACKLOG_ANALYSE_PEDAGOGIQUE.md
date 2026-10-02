@@ -71,42 +71,52 @@ entre le coup joué et une meilleure idée, pas seulement répéter la catégori
 - [x] Distinguer observation descriptive et cause confirmée du verdict moteur.
 - [x] Comparaisons ciblées et formulation prudente ; aucun remplissage automatique.
 
-### 5. Recentrage sur la décision et simplification du parcours — EN COURS
+### 5. Causes locales et démonstrations courtes — TERMINÉ (2 octobre 2026)
 
-Retour utilisateur après le lot 4 : les observations décrivent parfois le coup
-sans expliquer son verdict, et les changements de contexte rendent la navigation
-confuse. Les lots précédents ont livré un socle ; l’objectif pédagogique n’est
-pas encore suffisamment atteint. Les corrections ciblées ci-dessous sont livrées ;
-les cases non cochées restent à traiter et ne sont pas couvertes par cette livraison.
+Le retour utilisateur invalide le choix précédent de prolonger « Montrer pourquoi »
+jusqu’à la dernière capture de la PV. La présente correction remplace cette méthode ;
+les notes historiques des lots précédents ne décrivent plus la sélection actuelle.
 
-- [ ] Carte principale : conséquence du coup, réponse adverse qui l’exploite,
-  différence avec une meilleure décision. Un bon coup doit aussi être expliqué
-  par ce qu’il préserve, évite ou obtient, pas par son seul nom de motif.
 - [x] Retirer les observations génériques du parcours principal du verdict.
-  Une sortie de pièce ne justifie ni « bon » ni « imprécision ». Les faits
-  positionnels servent de composants d’une explication comparative vérifiée.
-- [ ] Comparer depuis la même position les suites après le coup joué et après
-  l’alternative, avec des réponses adverses analysées et un budget cohérent.
-  Réutiliser l’UCI et les recherches annulables ; ne pas modifier le moteur.
-- [ ] Formuler une conséquence liée au verdict lorsque la comparaison l’étaye.
-  Si la cause reste inconnue, le dire brièvement sans remplacer l’explication
-  par un constat hors sujet ; ne pas présenter une PV comme une preuve forcée.
-- [ ] Conserver un coup étudié clairement identifié pendant toute l’explication.
-  Montrer explicitement la ligne visualisée (coup joué / meilleure option) et
-  l’étape (décision / réponse adverse / conséquence).
-- [ ] Unifier les actions et supprimer les retours concurrents, sous-parcours
-  « repère » et bascules de contexte implicites. Fermer une explication restaure
-  exactement son origine ; continuer la partie est une action distincte.
-- [ ] Définir puis tester une règle stable pour les flèches/clavier : ne plus
-  changer silencieusement entre chronologie de partie, démonstration et variante.
-- [ ] Retry et exploration partagent le même point de départ ; masquer les
-  solutions pendant la tentative, conserver les variantes et dessins personnels.
-- [ ] Valider avec des exemples où le même motif (développement, roque, etc.)
-  reçoit des verdicts différents, et faire un contrôle de parcours complet.
+- [x] Séparer la continuation brute, dans « Variantes du moteur », de la cause
+  pédagogique et de sa comparaison. Une seule cause principale est retenue.
+- [x] Rechercher une conséquence locale : cible en prise, échange défavorable,
+  défense retirée, fourchette, clouage exploité, découverte, mat, promotion,
+  occasion manquée ; bons coups défensifs vérifiés avant/après.
+- [x] Vérifier l’hypothèse avec le moteur sélectionné après sa conséquence et,
+  pour une erreur/occasion manquée, après l’autre décision. Deux positions au
+  maximum, 1 200 ms chacune, six secondes au total ; aucune commande MultiPV.
+- [x] Vérifier les prises immédiates possibles quand la PV montre autre chose,
+  sans transformer une capture lointaine en justification du coup étudié.
+- [x] Terminer la démonstration à sa conséquence et aux reprises liées, au plus
+  six demi-coups depuis la décision. Commencer après le coup sauf besoin réel
+  de montrer l’état antérieur. Un suffixe de PV ne rallonge pas l’illustration.
+- [x] Garder le coup étudié visible ; comparaison avec l’autre décision, étapes
+  numérotées et fermeture unique. Pas de boutons de navigation pour une seule
+  position. Variante brute explicitement distincte de « Montrer pourquoi ».
+- [x] Calcul visible sur le coup consulté, délai de stabilité de 300 ms, annulation
+  à la navigation, cache par moteur/revue/révision/historique, pas de demi-paire
+  de résultats ni publication tardive. Retry masqué et dessins conservés.
+- [x] Régressions : scores bornés/incomplets, contre-capture ailleurs, compensation,
+  deux couleurs, défense déplacée, suffixe lointain ; exemple de dame perdue issu
+  d’une ouverture légale vérifié avec ShallowRed et Stockfish.
 
-Critère de réussite : l’utilisateur peut répondre à « qu’est-ce que mon coup a
-permis ou raté, qu’aurait changé l’autre coup, et où suis-je dans la partie ? ».
-Renommer les boutons ou masquer les observations ne suffit pas à remplir ce critère.
+Validation du 2 octobre : 336 tests avec ShallowRed/Stockfish, lint, TypeScript
+et build réussis. Parcours Chromium complet : import, partie, analyse réelle,
+comparaison courte, annulation/cache, retry, dessins, orientation et trois tailles
+d’écran. Les promotions analysées sont contrôlées pour les deux couleurs.
+
+Limites assumées : les contrôles moteur confortent une explication locale ; ils
+ne prouvent pas toutes les réponses intermédiaires ni une cause unique de chaque
+baisse d’évaluation. Une seule hypothèse est confirmée à la fois. Les longues
+combinaisons et raisons purement positionnelles restent parfois inexpliquées.
+L’UI le dit au lieu d’afficher un développement ou du contrôle de cases hors sujet.
+Il reste possible d’explorer la variante brute ou d’approfondir le coup.
+
+Pistes ultérieures (hors correctif livré) : corpus de PGN utilisateur avec coups
+précis, recherche d’une autre hypothèse après rejet, contre-épreuves intermédiaires
+et raisons positionnelles comparatives. Ne pas annoncer ces pistes comme déjà
+couvertes, ni présenter la couverture actuelle comme équivalente à Chess.com.
 
 ## État de reprise
 
@@ -118,8 +128,10 @@ Renommer les boutons ou masquer les observations ne suffit pas à remplir ce cri
 - `BranchAnalysis.before/result` fournissent le même couple pour une variante.
 - `StudyTree` conserve les variantes utilisateur. Ne pas y insérer la démonstration.
 - `Board` utilise Chessground et conserve les dessins tant que la FEN ne change pas.
-- Pas de MultiPV/searchmoves dans ShallowRed. Une vérification ciblée future peut
-  analyser une position après le coup candidat, via l’adaptateur existant.
+- `decisionCause.ts` sélectionne une hypothèse et son fragment ; `useCauseCheck.ts`
+  utilise `FocusedAnalysis` à budget court. Aucun détail interne du moteur.
+- `dev/causes.test.mjs` valide la confirmation avec les deux vrais moteurs ; la
+  galerie `dev/explanations.tsx` simule seulement ses contrôles pédagogiques.
 - Reprise : consulter la checklist et les notes ajoutées à la livraison du lot.
 
 ## Notes de livraison du lot 1 — 30 septembre 2026
@@ -270,7 +282,9 @@ Renommer les boutons ou masquer les observations ne suffit pas à remplir ce cri
   volontaires du modèle descriptif, pas des tâches laissées en cours.
 
 
-## Corrections après retours sur les repères — 30 septembre 2026
+## Corrections après retours sur les repères — 30 septembre 2026 (historique)
+
+La sélection par bilan final de PV décrite ici est remplacée par le lot 5.
 
 - Aucun bouton pour illustrer seulement un développement ou une case d’arrivée.
   Les repères utiles comportent une seule position, après le coup, sans rewind.

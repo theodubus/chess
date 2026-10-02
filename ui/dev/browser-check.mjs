@@ -1569,7 +1569,7 @@ try {
     );
     assert(
       await evaluate(
-        `document.querySelector('.move-assessment').textContent.includes('mat pour les Noirs')`,
+        `document.querySelector('.move-assessment').textContent.includes('échec et mat')`,
       ),
       "phrase concrète issue de la suite",
     );
@@ -1601,6 +1601,7 @@ try {
       ),
       "retour exact avec dessin conservé",
     );
+    await evaluate(`document.querySelector(".engine-lines").open=true`);
     await button("Voir la meilleure idée");
     assert(
       await evaluate(
@@ -1667,11 +1668,11 @@ try {
   }
   if (!process.env.CHESS_ANNOTATIONS_ONLY && !process.env.CHESS_PLAY_ONLY) {
     for (const [scenario, title, step, arrows] of [
-      ["fork", "Fourchette", 1, 2],
-      ["pin", "Clouage au roi", 1, 2],
+      ["fork", "Fourchette", 0, 2],
+      ["pin", "Clouage au roi", 0, 2],
       ["defender", "Défenseur supprimé", 0, 2],
-      ["defence", "Pièce défendue", 1, 2],
-      ["miss", "Fourchette", 1, 2],
+      ["defence", "Pièce défendue", 0, 2],
+      ["miss", "Fourchette", 0, 2],
     ]) {
       await call("Page.navigate", {
         url: new URL(
@@ -1679,15 +1680,48 @@ try {
           process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
         ).href,
       });
+      if (scenario === "pin") {
+        await waitFor(
+          `!!document.querySelector('.cause-progress') && window.explanationFixture.causeStats.searches > 0`,
+          "vérification visible en cours",
+        );
+        await pressKey("<");
+        await waitFor(
+          `document.querySelector('[data-testid="source-position"]').textContent==='0' && window.explanationFixture.causeStats.disposed > 0`,
+          "navigation libre et recherche annulée",
+        );
+        assert(
+          await evaluate(`!document.querySelector('.move-explanation')`),
+          "aucune cause tardive publiée sur une autre position",
+        );
+        await pressKey(">");
+      }
       await waitFor(
-        `document.querySelector('.move-explanation')`,
-        "cas tactique chargé",
+        `document.querySelector('.move-explanation')?.textContent.includes("Montrer pourquoi")`,
+        "cause tactique vérifiée",
       );
+      assert(
+        await evaluate(`!document.querySelector('.engine-lines').open`),
+        "variante brute repliée hors de la démonstration",
+      );
+      if (scenario === "pin") {
+        const searches = await evaluate(
+          `window.explanationFixture.causeStats.searches`,
+        );
+        await button("Annotations");
+        await button("Annotations");
+        await evaluate(`new Promise(resolve => setTimeout(resolve, 650))`);
+        assert.equal(
+          await evaluate(`window.explanationFixture.causeStats.searches`),
+          searches,
+          "confirmation mise en cache sans nouveau moteur",
+        );
+      }
       await button("Montrer pourquoi");
       if (scenario === "miss")
         assert(
           await evaluate(
-            `document.querySelector('.explanation-demo h2').textContent==='La meilleure idée trouvée'`,
+            `document.querySelector('.explanation-demo h2').textContent==='Fourchette'`,
           ),
           "l’occasion manquée ouvre la bonne suite",
         );
@@ -2109,7 +2143,7 @@ try {
       ).href,
     });
     await waitFor(
-      `document.querySelector('.move-assessment')?.textContent.includes('les Noirs gagnent 5 points')`,
+      `document.querySelector('.move-assessment')?.textContent.includes('tour en a1')`,
       "la perte de matériel explique le verdict",
     );
     assert(
@@ -2120,12 +2154,25 @@ try {
     );
     await screenshot("21-material-loss-mobile");
     await button("Montrer pourquoi");
-    for (let step = 0; step < 10; step++) await pressKey(">");
+    await pressKey(">");
     assert(
       await evaluate(
         `document.querySelector('.explanation-caption').textContent.includes('capturent la tour')`,
       ),
-      "la capture reste accessible au-delà de huit demi-coups",
+      "la prise immédiate explique la faute sans dérouler les coups lointains",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-navigation').textContent.includes('Étape 2 / 2') && document.querySelector('button[aria-label="Étape suivante"]').disabled`,
+      ),
+      "démonstration terminée dès la conséquence",
+    );
+    await button("Comparer les décisions");
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-caption').textContent.includes('élimine la tour en a8') && !document.querySelector('.explanation-navigation .review-navigation')`,
+      ),
+      "alternative liée à la menace, sans navigation vide",
     );
     await button("Retour au coup examiné");
     assert(

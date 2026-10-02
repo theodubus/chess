@@ -5,6 +5,9 @@ import { GameReview } from "../src/review/GameReview";
 import { legalVariation, type ReviewResult } from "../src/review/model";
 import InteractiveReview from "../src/review/InteractiveReview";
 import type { StudyTree } from "../src/review/StudyTree";
+import { explainMove } from "../src/review/explanations";
+import { boardFromCommand } from "../src/review/StudyTree";
+import type { Engine } from "../src/engine/Engine";
 import "../src/index.css";
 
 // Scénario déterministe de contrôle UI ; aucune analyse simulée dans l’application.
@@ -168,21 +171,90 @@ if (tactical) {
   game.move(tactical.played[0]);
   review = new GameReview(game.pgn());
   review.state = "complete";
-  review.results[0] = simulated(tactical.fen, tactical.best, 800);
+  review.results[0] = simulated(
+    tactical.fen,
+    tactical.best,
+    tactical === tacticalCases.fork || tactical === tacticalCases.miss
+      ? 0
+      : 800,
+  );
   review.results[1] = simulated(
     game.fen(),
     tactical.played.slice(1),
     tactical === tacticalCases.miss ||
       tactical === tacticalCases["material-center"]
       ? -500
-      : 800,
+      : tactical === tacticalCases.fork
+        ? 0
+        : 800,
   );
 }
 if (tactical === tacticalCases.uncertain) review.results[0] = null;
+// La confirmation pédagogique est simulée seulement dans cette galerie. Les
+// tests d’intégration utilisent séparément les deux vrais moteurs UCI.
+const candidate = tactical
+  ? explainMove(
+      review.positions[0],
+      review.results[0],
+      review.results[1],
+      review.annotations[0],
+    ).candidate
+  : undefined;
+const causeStats = { searches: 0, disposed: 0 };
+const causeFactory = async (): Promise<Engine> => {
+  let listener: (line: string) => void = () => {};
+  let command = "";
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return {
+    onLine(next) {
+      listener = next;
+      return () => {
+        listener = () => {};
+      };
+    },
+    async dispose() {
+      clearTimeout(timer);
+      causeStats.disposed++;
+    },
+    send(line) {
+      if (line === "uci") listener("uciok");
+      if (line === "isready") listener("readyok");
+      if (line.startsWith("position ")) command = line;
+      if (!line.startsWith("go ")) return;
+      causeStats.searches++;
+      const index =
+        candidate?.positions.findIndex(
+          (position) => position.command === command,
+        ) ?? -1;
+      const board = boardFromCommand(command);
+      const move = board
+        .moves({ verbose: true })
+        .find((move) => !move.captured && !move.promotion)!;
+      const uci = move.from + move.to + (move.promotion ?? "");
+      const score =
+        candidate?.mode === "loss"
+          ? index === 0
+            ? -500
+            : 500
+          : candidate?.mode === "miss"
+            ? index === 0
+              ? 0
+              : -500
+            : 800;
+      timer = setTimeout(() => {
+        listener(
+          `info depth 16 score cp ${score * (board.turn() === "w" ? 1 : -1)} pv ${uci}`,
+        );
+        listener(`bestmove ${uci}`);
+      }, 250);
+    },
+  };
+};
 const trees = new Map<number, StudyTree>();
 // Lire les arbres au moment du contrôle : leur mutation ne rend pas ce parent.
 Object.assign(window, {
   explanationFixture: {
+    causeStats,
     countBranches: () =>
       [...trees.values()].reduce((sum, tree) => sum + tree.nodes.length - 1, 0),
   },
@@ -232,6 +304,7 @@ export function Fixture() {
       <InteractiveReview
         key={revision}
         review={review}
+        explanationEngineFactory={causeFactory}
         selected={selected}
         onSelect={select}
         engineId={engineId}

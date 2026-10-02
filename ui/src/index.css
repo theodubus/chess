@@ -1576,3 +1576,7 @@ dialog:has(.army-editor) { width:min(600px,calc(100vw - 24px)); }
 .position-overlay-caption { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:8px 0; color:#a8c8db; font-size:13px; }
 .position-overlay-caption button { flex-shrink:0; }
 .move-explanation > .position-notes { margin:14px 0 0; border-top:1px solid #ffffff12; padding-top:12px; }
+
+.engine-lines { margin-top:14px; }
+.engine-lines > summary { cursor:pointer; color:var(--muted,#a8b8ac); }
+.cause-progress { display:flex; gap:8px; align-items:center; font-size:13px; color:#d8bd80; }

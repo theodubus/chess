@@ -37,6 +37,10 @@ export function usableResult(
 
 /** Une vérification à la demande, au plus deux positions, sans modifier la partie. */
 export class FocusedAnalysis {
+  constructor(
+    private budget = focusedBudget,
+    private deadline = focusedDeadline,
+  ) {}
   private cache = new WeakMap<object, Map<string, Entry>>();
   private positions = new WeakMap<object, Map<string, ReviewResult>>();
   private generation = 0;
@@ -146,7 +150,7 @@ export class FocusedAnalysis {
               "Le moteur n’a pas terminé la vérification dans le délai prévu.",
             ),
           ),
-        focusedDeadline,
+        this.deadline,
       );
     });
     // Une paire peut être entièrement en cache : l’annulation reste alors
@@ -162,7 +166,7 @@ export class FocusedAnalysis {
           positions.get(this.positionKey(request, position.command)) ?? null;
         if (!result) {
           await Promise.race([
-            search.analyse(position.command, factory, focusedBudget),
+            search.analyse(position.command, factory, this.budget),
             interrupted,
           ]);
           if (!current()) return null;

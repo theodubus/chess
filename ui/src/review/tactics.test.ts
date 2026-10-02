@@ -1,6 +1,7 @@
 import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
 import { explainMove } from "./explanations";
+import { confirmForTest } from "./causeTestHelpers";
 import { gamePositions, type ReviewResult } from "./model";
 import type { Category } from "./annotations";
 
@@ -42,18 +43,21 @@ function explain(
   test: ReturnType<typeof scenario>,
   category: Category = "best",
 ) {
-  return explainMove(test.position, test.before, test.after, {
-    category,
-    reason: "",
-    loss: category === "best" ? 0 : 0.3,
-  });
+  return confirmForTest(
+    explainMove(test.position, test.before, test.after, {
+      category,
+      reason: "",
+      loss: category === "best" ? 0 : 0.3,
+    }),
+  );
 }
 const fork = "r3k3/8/8/3N4/8/8/8/7K w - - 0 1";
 const forkLine = ["Nc7+", "Kd7", "Nxa8", "Ke6"];
 const motif = (explanation: ReturnType<typeof explain>, alternative = false) =>
-  (alternative ? explanation.alternative : explanation.played)?.steps.find(
-    (step) => step.motif,
-  );
+  (alternative === (explanation.primary === "alternative")
+    ? explanation.proof
+    : null
+  )?.steps.find((step) => step.motif);
 
 describe("tactiques reliées à une conséquence dans la suite", () => {
   it.each([
@@ -87,7 +91,9 @@ describe("tactiques reliées à une conséquence dans la suite", () => {
       "blunder",
     );
     expect(motif(explanation)?.motif).toBe("Fourchette");
-    expect(explanation.played?.steps[2].marks?.[0].from).toBe("c2");
+    expect(
+      explanation.proof?.steps.find((step) => step.motif)?.marks?.[0].from,
+    ).toBe("c2");
     expect(explanation.primary).toBeUndefined();
   });
   it("montre l’occasion manquée dans l’alternative, pas dans la suite jouée", () => {
@@ -280,26 +286,19 @@ describe("garde-fous des explications tactiques", () => {
     expect(explanation.played?.truncated).toBe(true);
     expect(motif(explanation)?.motif).toBe("Fourchette");
     expect(explanation.played?.steps).toHaveLength(9);
+    expect(explanation.proof?.steps).toHaveLength(3);
   });
 });
 
-it("ne conserve pas la fourchette comme explication d’un gain annulé dans la fin de la PV", () => {
-  const explanation = explain(
-    scenario("rr2k3/8/8/3N4/8/8/8/Q5K1 w - - 0 1", [
-      "Nc7+",
-      "Kd7",
-      "Nxa8",
-      "Rxa8",
-      "Qb1",
-      "Ra1",
-      "Qd1+",
-      "Rxd1+",
-      "Kf2",
-      "Ke6",
-    ]),
-  );
-  expect(explanation.played?.truncated).toBe(true);
-  expect(motif(explanation)?.motif).not.toBe("Fourchette");
+it("refuse une fourchette si la vérification de sa conséquence trouve une compensation", () => {
+  const data = scenario(fork, forkLine);
+  const draft = explainMove(data.position, data.before, data.after, {
+    category: "best",
+    reason: "",
+    loss: 0,
+  });
+  expect(draft.candidate?.line.title).toBe("Fourchette");
+  expect(confirmForTest(draft, [-900]).proof).toBeUndefined();
 });
 it("ne confond pas un défenseur déplacé et une défense réellement supprimée", () => {
   const explanation = explain(
@@ -310,7 +309,9 @@ it("ne confond pas un défenseur déplacé et une défense réellement supprimé
     ),
     "mistake",
   );
-  expect(motif(explanation)).toBeUndefined();
+  expect(motif(explanation)?.motif).toBe("Échange défavorable");
+  expect(explanation.summary).not.toContain("retire cette défense");
+  expect(explanation.proof?.steps.at(-1)?.move?.san).toBe("Bxf5");
 });
 it("n’attribue pas au pion sacrifié la promotion d’un autre pion", () => {
   const explanation = explain(

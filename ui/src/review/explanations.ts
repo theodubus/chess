@@ -1,6 +1,5 @@
 import { positionObservation, type PositionalNotes } from "./positional";
 import { Chess, type Move } from "chess.js";
-import { materialBalance } from "../material";
 import { boardFromCommand } from "./StudyTree";
 import {
   frenchSan,
@@ -9,12 +8,8 @@ import {
   type VariationMove,
 } from "./model";
 import { advantage, type Annotation } from "./annotations";
-import {
-  defensiveIdea,
-  tacticalIdeas,
-  type TacticalIdea,
-  type TacticalMark,
-} from "./tactics";
+import type { TacticalMark } from "./tactics";
+import { decisionCause, type CauseCandidate } from "./decisionCause";
 
 export type ExplanationStep = {
   fen: string;
@@ -26,7 +21,7 @@ export type ExplanationStep = {
   marks?: TacticalMark[];
 };
 export type ExplanationLine = {
-  kind?: "observation";
+  kind?: "observation" | "cause";
   title: string;
   steps: ExplanationStep[];
   truncated: boolean;
@@ -38,6 +33,9 @@ export type MoveExplanation = {
   concrete: boolean;
   primary?: "alternative";
   observations?: PositionalNotes;
+  proof?: ExplanationLine;
+  comparison?: ExplanationLine;
+  candidate?: CauseCandidate;
   played: ExplanationLine | null;
   alternative: ExplanationLine | null;
 };
@@ -49,7 +47,6 @@ const names = {
   q: "dame",
   k: "roi",
 };
-const camp = (color: string) => (color === "w" ? "les Blancs" : "les Noirs");
 const limit = 8;
 function stepText(board: Chess, move: Move) {
   const subject = move.color === "w" ? "Les Blancs" : "Les Noirs";
@@ -135,20 +132,6 @@ function buildLine(
     return null;
   }
 }
-/** Conserver la conséquence matérielle à l’écran, même après le huitième demi-coup. */
-function showMaterialOutcome(line: ExplanationLine): ExplanationLine {
-  const steps = line.verifiedSteps ?? line.steps;
-  let lastChange = 0;
-  steps.forEach((step, index) => {
-    if (step.move?.captured || step.move?.promotion) lastChange = index;
-  });
-  const count = Math.max(line.steps.length, lastChange + 2);
-  return {
-    ...line,
-    steps: steps.slice(0, count),
-    truncated: steps.length > count,
-  };
-}
 function exactComparison(
   before: ReviewResult | null,
   after: ReviewResult | null,
@@ -164,111 +147,6 @@ function exactComparison(
     advantage(before.score, turn) !== null &&
     advantage(after.score, turn) !== null
   );
-}
-function outcome(line: ExplanationLine, position: ReviewPosition) {
-  const ending = line.verifiedEnding;
-  if (!ending) return null;
-  const board = new Chess(ending.fen);
-  if (
-    ending.capture &&
-    board
-      .moves({ verbose: true })
-      .some((move) => move.captured && move.to === ending.capture)
-  )
-    return null;
-  return {
-    delta:
-      (materialBalance(board) - materialBalance(new Chess(position.fen))) *
-      (position.turn === "w" ? 1 : -1),
-    winner: board.isCheckmate() ? (board.turn() === "w" ? "b" : "w") : null,
-  };
-}
-function illustrate(line: ExplanationLine, idea: TacticalIdea) {
-  const step = line.steps[idea.step];
-  step.motif = idea.title;
-  step.text = idea.text[0].toLocaleUpperCase("fr") + idea.text.slice(1);
-  step.marks = idea.marks;
-  if (idea.step !== 0)
-    line.steps[0].text = `À repérer : ${idea.title.toLocaleLowerCase("fr")}. Avancez pour voir les pièces concernées, puis la conséquence dans la suite.`;
-}
-function tacticalExplanation(
-  position: ReviewPosition,
-  before: ReviewResult | null,
-  after: ReviewResult | null,
-  annotation: Annotation | null,
-  played: ExplanationLine,
-  alternative: ExplanationLine | null,
-): { summary: string; primary?: "alternative" } | null {
-  if (
-    !annotation ||
-    !before?.score ||
-    !after?.score ||
-    before.score.bound ||
-    after.score.bound
-  )
-    return null;
-  const prior = advantage(before.score, position.turn),
-    next = advantage(after.score, position.turn);
-  if (prior === null || next === null) return null;
-  const bad = ["inaccuracy", "mistake", "blunder", "miss"].includes(
-    annotation.category,
-  );
-  const result = outcome(played, position);
-  const better = alternative ? outcome(alternative, position) : null;
-  const enemy = position.turn === "w" ? "b" : "w";
-  const lost =
-    !!result &&
-    (result.winner === enemy || (!result.winner && result.delta < 0));
-  const safer =
-    !!better &&
-    better.winner !== enemy &&
-    (result?.winner === enemy || better.delta > (result?.delta ?? 0));
-  const opportunity =
-    !!better &&
-    !!result &&
-    (better.winner === position.turn ||
-      (better.delta > 0 && better.delta > result.delta)) &&
-    result.winner !== position.turn;
-  let idea: TacticalIdea | undefined;
-  let line = played;
-  let primary: "alternative" | undefined;
-  if (
-    bad &&
-    opportunity &&
-    alternative &&
-    (annotation.category === "miss" || !lost)
-  ) {
-    idea = tacticalIdeas(alternative, position.turn, 1)[0];
-    if (idea) {
-      line = alternative;
-      primary = "alternative";
-    }
-  }
-  if (!idea && bad && lost && safer) idea = tacticalIdeas(played, enemy, 2)[0];
-  if (!idea && bad && opportunity && alternative) {
-    idea = tacticalIdeas(alternative, position.turn, 1)[0];
-    if (idea) {
-      line = alternative;
-      primary = "alternative";
-    }
-  }
-  if (!bad && prior - next < 0.05) {
-    if (
-      result &&
-      (result.winner === position.turn || (!result.winner && result.delta > 0))
-    )
-      idea = tacticalIdeas(played, position.turn, 1)[0];
-    idea ??= defensiveIdea(played) ?? undefined;
-  }
-  if (!idea) return null;
-  illustrate(line, idea);
-  const text = idea.text[0].toLocaleUpperCase("fr") + idea.text.slice(1);
-  return {
-    summary: primary
-      ? `Occasion manquée dans la meilleure suite trouvée : ${text}`
-      : text,
-    primary,
-  };
 }
 function baseExplanation(
   position: ReviewPosition,
@@ -302,72 +180,7 @@ function baseExplanation(
     alternative,
   };
   if (!played) return fallback;
-  const end = new Chess(played.steps.at(-1)!.fen);
-  if (end.isCheckmate())
-    return {
-      ...fallback,
-      concrete: true,
-      summary:
-        played.steps.length === 2
-          ? "Ce coup donne échec et mat."
-          : `La suite trouvée se termine par un mat pour ${camp(end.turn() === "w" ? "b" : "w")}.`,
-    };
-  const first = played.steps[1].move!;
-  const bad =
-    annotation &&
-    ["inaccuracy", "mistake", "blunder", "miss"].includes(annotation.category);
-  if (annotation && exactComparison(before, after, position.turn)) {
-    const result = outcome(played, position);
-    const better = alternative ? outcome(alternative, position) : null;
-    // La PV entière sert de preuve. Une capture encore reprenable à sa fin,
-    // un mat adverse ou un sacrifice approuvé ne devient pas un gain matériel.
-    if (result && !result.winner) {
-      const delta = result.delta;
-      const points = (value: number) => `${value} point${value > 1 ? "s" : ""}`;
-      const compared = better && !better.winner && better.delta > delta;
-      if (bad && compared && alternative) {
-        const alternativeFirst = alternative.steps[1].move!;
-        const comparison = `Avec ${frenchSan(alternativeFirst.san)}, la suite proposée ${
-          better.delta < 0
-            ? `limite la perte à ${points(-better.delta)}`
-            : better.delta === 0
-              ? "conserve le matériel"
-              : `gagne ${points(better.delta)} de matériel`
-        }.`;
-        const summary =
-          delta < 0
-            ? `Dans la suite analysée après ${frenchSan(first.san)}, ${camp(position.turn === "w" ? "b" : "w")} gagnent ${points(-delta)} de matériel. ${comparison}`
-            : `Ce coup manque un gain de matériel : ${comparison}${delta > 0 ? ` La suite après ${frenchSan(first.san)} ne gagne que ${points(delta)}.` : " La suite après le coup joué ne gagne pas de matériel."}`;
-        return {
-          ...fallback,
-          concrete: true,
-          primary: delta < 0 ? undefined : "alternative",
-          summary,
-          played: showMaterialOutcome(played),
-          alternative: showMaterialOutcome(alternative),
-        };
-      }
-      if (!bad && delta > 0)
-        return {
-          ...fallback,
-          concrete: true,
-          summary: `Dans la suite analysée, ${camp(position.turn)} gagnent ${points(delta)} de matériel.`,
-          played: showMaterialOutcome(played),
-        };
-    }
-  }
-  // Une promotion peut être une erreur : le gain immédiat ne justifie alors
-  // pas le verdict et ne doit pas masquer la réponse adverse.
-  if (first.promotion && !bad) {
-    const values = { q: 9, r: 5, b: 3, n: 3 };
-    const gain = values[first.promotion as keyof typeof values] - 1;
-    return {
-      ...fallback,
-      concrete: true,
-      summary: `Ce coup transforme le pion en ${names[first.promotion]} : ${gain} points de matériel supplémentaires${first.captured ? ", en plus de la capture" : ""}.${played.steps.length > 2 ? " La suite montre la réponse adverse." : ""}`,
-    };
-  }
-  return fallback;
+  return decisionCause(position, before, after, annotation, fallback);
 }
 
 export function explainMove(
@@ -385,26 +198,7 @@ export function explainMove(
   };
   if (observations.played || observations.alternative)
     base.observations = observations;
-  const tactic = tacticalExplanation(
-    position,
-    before,
-    after,
-    annotation,
-    base.played,
-    base.alternative,
-  );
-  // Une occasion secondaire ne doit pas remplacer la perte concrète du coup joué.
-  if (
-    !tactic ||
-    (tactic.primary && base.concrete && base.primary !== "alternative")
-  )
-    return base;
-  return {
-    ...base,
-    ...tactic,
-    concrete: true,
-    summary: tactic.summary + (base.concrete ? ` ${base.summary}` : ""),
-  };
+  return base;
 }
 
 /** Variante candidate complète validée, commune aux explications et aux indices. */
