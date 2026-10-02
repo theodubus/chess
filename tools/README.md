@@ -4210,21 +4210,21 @@ des derniers étages de Stockfish pèsent 141 et 223 Go (PR #257 de
 `nnue-pytorch`) ; un entraînement n'en voit que 4 milliards de positions,
 **un fichier suffit**.
 
-**La taille lue par Théo sur Drive le 30 sept. : 11 Go — celle de
-l'ARCHIVE `training_data.7z`** (corrigé le 2 oct.), pas du binpack, qui
-est plus gros : la compression de 7-Zip s'ajoute à celle du format.
-`7z l` imprime sa vraie taille avant d'extraire. Ce qu'un binpack porte,
-par le format — `docs/binpack.md` de la branche `tools` de Stockfish : une
-position coûte « ~2 octets » dans une suite de coups, plus 32 octets par
-début de suite — : de l'ordre de 0,4 à 0,6 milliard de positions par Go
-de binpack, avant le filtre ; <s>4 à 7 milliards pour 11 Go</s> — un
-minimum, désormais. <span>Inférence, confiance moyenne</span> : l'essai
-court imprime les octets, les blocs et la part gardée par le filtre. **Un
-fichier plus petit que l'entraînement ne le casse pas** — lu au commit épinglé : le chargeur de bullet
-(`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit ses
-fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
-chacune de ce fichier passera **une à trois fois** selon la part que garde
-le filtre ; N2 revoyait les siennes **au moins seize fois** (4 milliards
+**La taille lue par Théo sur Drive le 30 sept. : 11 Go — celle de l'ARCHIVE
+`training_data.7z`** (corrigé le 2 oct.), pas du binpack, qui est plus gros
+: la compression de 7-Zip s'ajoute à celle du format. `7z l` imprime sa
+vraie taille avant d'extraire. Ce qu'un binpack porte, par le format —
+`docs/binpack.md` de la branche `tools` de Stockfish : une position coûte «
+~2 octets » dans une suite de coups, plus 32 octets par début de suite — :
+de l'ordre de 0,4 à 0,6 milliard de positions par Go de binpack, avant le
+filtre ; <s>4 à 7 milliards pour 11 Go</s> — un minimum, désormais.
+<span>Inférence, confiance moyenne</span> : l'essai court imprime les
+octets, les blocs et la part gardée par le filtre. **Un fichier plus petit
+que l'entraînement ne le casse pas** — lu au commit épinglé : le chargeur de
+bullet (`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit
+ses fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
+chacune de ce fichier passera **une à trois fois au plus** selon la part
+que garde le filtre ; N2 revoyait les siennes **au moins seize fois** (4 milliards
 tirés de 249,5 M).
 
 **Vérifié ici avant de l'écrire** : à `main` (`8b2c122`), `tools/nnue-train`
