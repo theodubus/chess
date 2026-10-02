@@ -4356,6 +4356,33 @@ parties, un score annonce un résultat un peu plus tranché que la formule de
 lc0 ne le dit. L'entraînement reste à 330,3, comme écrit. Si N2L déçoit, cet
 écart est une piste à mesurer, pas une explication.
 
+**Les deux entraînements, relevés le 2 oct.** — branche `reseau/levier4` de
+Théo (`180ba84`), intégrée par `0a0ed70` : binpack de **14 366 468 016
+octets**, 14 905 blocs, 58,9 % des positions décodées gardées par le filtre ;
+**N2L en 11 min 34 s, L0 en 11 min 36 s**, sur la RTX 3050 de Théo. Les
+deux confrontations passent le critère écrit avant (médian ≤ 15, maximal ≤
+50) : **N2L 4 et 9, L0 4 et 21**. Perte finale sur les données de Leela :
+0,05815 et 0,05821 — N2L part plus bas (0,0598 contre 0,0628 au premier
+superlot) et arrive au même point. *Une perte ne dit pas la force* : les
+matchs le diront.
+
+**La sonde de B8 sur N2L et L0 — écrite le 2 oct., avant de la lancer.**
+Le protocole du 30 sept., réduit à ce qui règle le facteur : 40 parties du
+réseau contre lui-même à `8+0,08` (livre du dépôt, `-srand 20260930`), le
+binaire sondé construit sur `main` — marges à × 2,24, le régime où le réseau
+jouera ; l'élagage delta rejoué, l'aspiration comptée. La faite main est
+reprise de la sonde du 30 sept. : son chemin est le même au bit près, B8 ne
+touchant que celui du réseau. La futilité inverse n'est pas rejouée — elle
+n'a pas de facteur. **Règle, écrite avant** (l'amendement du 1er oct.) : la
+moyenne géométrique des deux facteurs égalisants, delta et aspiration,
+comme pour N2 ; **dans ± 25 % de 2,24 — 1,68 à 2,80 —, le réseau se mesure
+au facteur de `main`** ; hors de cette plage, le facteur se règle d'abord
+et le candidat porte le réseau ET son facteur. *Attendu* — <span>inférence,
+confiance faible</span> : dans la plage pour les deux, rien n'annonçant une
+autre échelle — la conversion de lc0 et nos données s'expriment en
+probabilité de gain, et le moteur lit les deux réseaux à la même échelle de
+sortie.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
