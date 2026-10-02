@@ -97,10 +97,16 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
   défense et après une alternative légale. Chaque réponse garde commande UCI,
   score, profondeur et variante. L'exploitation fraîche doit correspondre à
   la menace de l'hypothèse ; sinon résultat indéterminé.
-- [ ] Relier causalement l'alternative au même mécanisme : un meilleur score ne
-  prouve pas encore que cette décision évite la restriction. L'alternative est
-  donnée explicitement ou trouvée à la racine ; si le moteur choisit déjà le coup
-  joué, aucune fausse « deuxième meilleure solution » n'est fabriquée.
+- [x] Premier contraste causal pour une **retraite fermée** : rejouer la même
+  menace légale après l'alternative, retrouver la même victime et le même
+  attaquant, puis vérifier que le moteur emprunte la retraite restaurée et
+  améliore son évaluation. Les deux budgets doivent confirmer la même alternative,
+  la perte initiale et le gain comparatif. Statut séparé `attribution`, limité
+  à une contribution conditionnelle au verdict, sans texte publiable.
+- [ ] Généraliser le contraste aux autres mécanismes : attaquant capturé,
+  victime déplacée, défense retirée, attaque créée et contraintes combinées.
+  Une alternative qui empêche la menace n'est pas encore expliquée par le
+  modèle de retraite fermée. Aucun second choix du moteur n'est inventé.
 - [x] Recherches via `FocusedAnalysis` et `Engine`, sans MultiPV/searchmoves,
   détail NNUE/Rust ni recherche stratégique recodée dans l'UI.
 - [x] Le moteur cherche librement la défense. Vérification à deux budgets séparés,
@@ -112,8 +118,8 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
 - [x] Rapports « soutenue / contredite / indéterminée » séparés de l'hypothèse.
   Portée explicite : mécanisme court dans les lignes du moteur. Toujours aucune
   explication publiable ni preuve que toutes les défenses perdent.
-- [x] Au plus huit recherches, budgets par défaut 300/900 ms, plafond global
-  10 secondes incluant les connexions ; arrêt, cache moteur/révision/historique,
+- [x] Au plus dix recherches, budgets par défaut 300/900 ms, plafond global
+  12 secondes incluant les connexions ; arrêt, cache moteur/révision/historique,
   rejet des réponses tardives, coûts et réutilisation du cache mesurés.
 - [x] Essais réels ShallowRed/Stockfish, avec différences conservées dans le
   rapport de test. Les abstentions ne sont pas comptées comme explications justes.
@@ -219,8 +225,52 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - Validation locale : **400 tests / 41 fichiers**, avec ShallowRed et Stockfish ;
   lint, TypeScript et build réussis. Les tests ne valident pas la pertinence
   pédagogique générale et le nouveau prototype reste isolé.
-- **Prochain travail concret** : comparer les relations et les possibilités dans
-  l'alternative (et pas seulement son score), puis étendre B aux lignes ouvertes,
-  défenses retirées et contraintes combinées. Ajouter des cas indépendants et
-  des sacrifices compensés sans mat. Réviser les seuils sur ce corpus, et définir
-  la preuve minimale permettant D. Ne pas activer E à partir des seuls tests verts.
+- Suite de cette étape : voir la livraison du contraste ci-dessous. Les familles
+  manquantes, les cas indépendants et D/E restent ouverts.
+
+
+## Livraison — contraste causal d'une retraite, 2 octobre 2026
+
+- `contrast.ts` reconstruit la branche de l'alternative avec l'historique et
+  les identités d'origine. Aucune modification fictive du trait ou du plateau.
+  Une retraite doit redevenir légale sans capture immédiatement perdante ; le
+  bloqueur doit réellement avoir été déplacé par le coup examiné.
+- La question UCI `same-threat` n'est lancée que si la comparaison est pertinente.
+  Refus explicites : autre rôle, victime déplacée, attaquant différent, menace
+  illégale, capture/échec différent pour un même UCI, retraite toujours bloquée
+  ou matériellement coûteuse. Ce refus n'est pas une absence de raison échiquéenne.
+- `Verification` conserve trois niveaux : perte dans la PV, comparaison des
+  scores, puis attribution conditionnelle au mécanisme. Un meilleur score seul
+  ne valide aucune cause. Cache, annulation et coût couvrent la nouvelle question.
+- `possibilities` permet de cibler une seule identité pour ne pas recalculer
+  toutes les possibilités lors de chaque contraste. L'extraction initiale reste
+  synchrone et doit être optimisée avant E.
+- `contrastCases.json` ajoute neuf comparaisons de développement : quatre
+  retraites restaurées, cinq situations refusées, dont les camps inversés et un
+  échiquier distinct avec une attaque de tour. Elles ne constituent pas un
+  corpus indépendant. Les cinq familles manquantes du corpus initial restent
+  visibles ; **aucune explication n'est encore activée dans l'UI**.
+- Les tests réels passent à 16 (huit par moteur), budgets 200/600 ms. Le plafond
+  des intégrations est 25 secondes pour inclure les démarrages sous charge ;
+  le plafond applicatif reste 12 secondes, testé séparément avec une horloge simulée.
+  L'horloge est également relue après les calculs synchrones pour empêcher une
+  publication hors délai avant que le callback du timer puisse s'exécuter.
+- Observation : sur Dd2, l'alternative explicite Rh1 conserve Fd2 contre …f4.
+  Les deux moteurs trouvent Fd2. ShallowRed soutient la contribution de la
+  retraite fermée ; Stockfish garde l'attribution non établie, car sa perte
+  initiale reste hors du témoin court. Rh1 est ici une alternative explicite,
+  **pas le meilleur coup annoncé**. Leur alternative automatique peut être
+  exf5, qui retire l'attaquant et exige un autre modèle causal.
+- Coût observé de la comparaison explicite : environ 4,5 s avec ShallowRed,
+  13,3 s avec Stockfish sur une machine chargée, hors extraction initiale.
+  La borne applicative peut donc interrompre cette vérification : conserver cette
+  abstention, et réduire le coût de connexion/recherche avant l'intégration.
+- Validation finale : **418 tests / 42 fichiers**, dont les 16 intégrations
+  ShallowRed/Stockfish ; lint, TypeScript et build réussis. Le bundle applicatif
+  est inchangé : le nouveau modèle reste isolé des composants de revue.
+- **Prochain travail concret** : étendre les relations de B aux défenses
+  retirées et aux lignes ouvertes, avec positifs et négatifs distincts ; couvrir
+  l'alternative qui supprime l'attaquant plutôt que forcer la comparaison d'une
+  menace devenue illégale. Revoir ensuite la clôture d'un échange quand le moteur
+  renonce à une reprise immédiate. D/E restent à faire, ainsi que les sacrifices
+  positionnels et la validation sur des parties indépendantes.

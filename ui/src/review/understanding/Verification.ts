@@ -10,6 +10,13 @@ import {
   type DefenceEvidence,
 } from "./evidence";
 import type { Understanding } from "./prototype";
+import {
+  attributeRestriction,
+  observeContrast,
+  planContrast,
+  type Attribution,
+  type ContrastObservation,
+} from "./contrast";
 
 export type VerificationRequest = {
   review: object;
@@ -22,7 +29,7 @@ export type VerificationRequest = {
   alternative?: string;
 };
 export type Question = {
-  purpose: "decision" | "played" | "defence" | "alternative";
+  purpose: "decision" | "played" | "defence" | "alternative" | "same-threat";
   position: ReviewPosition;
   result: ReviewResult;
 };
@@ -32,6 +39,7 @@ export type VerificationPass = {
   evidence: DefenceEvidence | null;
   threatMatches: boolean;
   alternative: string | null;
+  contrast: ContrastObservation;
 };
 export type VerificationReport = {
   /** Porte sur le mécanisme court dans les variantes calculées, pas sur une
@@ -51,6 +59,7 @@ export type VerificationReport = {
     | "similar"
     | "unavailable"
     | "unstable";
+  attribution: Attribution;
   passes: VerificationPass[];
   cached: boolean;
   elapsedMs: number;
@@ -105,7 +114,7 @@ export class Verification {
   error = "";
   constructor(
     private budgets: [number, number] = [300, 900],
-    private deadline = 10000,
+    private deadline = 12000,
   ) {
     if (
       !budgets.every((n) => Number.isFinite(n) && n > 0) ||
@@ -179,6 +188,17 @@ export class Verification {
       this.stop();
       this.state = "timed-out";
     }, this.deadline);
+    // Le timer attend la fin des calculs synchrones : vérifier aussi l'horloge
+    // avant de poursuivre ou de publier, même si sa callback n'a pas encore tourné.
+    const current = () => {
+      if (generation !== this.generation) return false;
+      if (performance.now() - start >= this.deadline) {
+        this.stop();
+        this.state = "timed-out";
+        return false;
+      }
+      return true;
+    };
     const passes: VerificationPass[] = [];
     let searches = 0,
       requestedSearchMs = 0;
@@ -191,11 +211,16 @@ export class Verification {
           evidence: null,
           threatMatches: false,
           alternative: null,
+          contrast: observeContrast(
+            { reason: "no-alternative", routes: [] },
+            null,
+          ),
         };
         const ask = async (
           purpose: Question["purpose"],
           position: ReviewPosition,
         ) => {
+          if (!current()) return null;
           const query = {
             review: request.review,
             revision: request.revision,
@@ -207,7 +232,7 @@ export class Verification {
             requestedSearchMs += budgetMs;
           }
           const results = await focus.analyse(query, factory);
-          if (generation !== this.generation) return null;
+          if (!current()) return null;
           if (!results)
             throw new Error(
               focus.error ||
@@ -234,6 +259,13 @@ export class Verification {
           !(await ask("alternative", alternativePosition(pass.alternative)))
         )
           return null;
+        const plan = planContrast(understanding, hypothesis, pass.alternative);
+        const answer =
+          plan.position && pass.threatMatches
+            ? await ask("same-threat", plan.position)
+            : null;
+        if (!current()) return null;
+        pass.contrast = observeContrast(plan, answer);
         passes.push(pass);
       }
       const results = passes.map(
@@ -270,11 +302,18 @@ export class Verification {
         status = "supported";
         reason = "stable-loss";
       }
+      const comparison = compare(passes, context.before.turn === "w" ? 1 : -1);
       const report: VerificationReport = {
         status,
         reason,
         passes,
-        comparison: compare(passes, context.before.turn === "w" ? 1 : -1),
+        comparison,
+        attribution: attributeRestriction(passes, {
+          lossSupported: status === "supported",
+          alternativeBetter: comparison === "alternative-better",
+          originalScores: results.map((result) => result.score),
+          victimSide: victim.color,
+        }),
         cached: false,
         elapsedMs: Math.round(performance.now() - start),
         searches,
@@ -282,6 +321,7 @@ export class Verification {
         scope: "bounded-engine-check",
         explanation: null,
       };
+      if (!current()) return null;
       cache.set(key, structuredClone(report));
       while (cache.size > 32) cache.delete(cache.keys().next().value!);
       this.state = "complete";

@@ -4,6 +4,7 @@ import type { Engine } from "../../engine/Engine";
 import { boardFromCommand } from "../StudyTree";
 import { corpus, corpusInput, type CorpusCase } from "./corpus";
 import { uci } from "./context";
+import { planContrast } from "./contrast";
 import { understandDecision } from "./prototype";
 import { Verification, type VerificationRequest } from "./Verification";
 import cases from "./verificationCases.json";
@@ -259,4 +260,136 @@ it("une même FEN avec un historique différent ne partage pas ses recherches", 
   expect((await check.verify(req, factory))?.status).toBe("contradicted");
   expect((await check.verify(truncated, factory))?.status).toBe("contradicted");
   expect(factory).toHaveBeenCalledTimes(8);
+});
+
+function comparativeRequest(alternative = "g1h1") {
+  const input = corpusInput(
+    corpus.find((c) => c.id === "queen-closes-retreat")!,
+  );
+  return {
+    ...request(understandDecision(input.position, input.result)),
+    alternative,
+  };
+}
+function comparativeEngine(req: VerificationRequest) {
+  const engine = new TestEngine(req, () => -300),
+    plan = planContrast(
+      req.understanding,
+      req.understanding.hypotheses[0],
+      req.alternative!,
+    ),
+    original = engine.onLine.bind(engine);
+  engine.onLine = (listener) =>
+    original((line) => {
+      if (plan.position?.fen === engine.board.fen()) {
+        if (line.startsWith("info "))
+          return listener(`info depth 15 score cp 0 pv ${plan.routes[0].move}`);
+        if (line.startsWith("bestmove "))
+          return listener(`bestmove ${plan.routes[0].move}`);
+      }
+      listener(line);
+    });
+  return engine;
+}
+it("relie la perte et l'écart de score à la retraite restaurée, avec dix recherches au maximum", async () => {
+  const req = comparativeRequest(),
+    check = new Verification([10, 20]),
+    factory = vi.fn(async () => comparativeEngine(req));
+  const report = await check.verify(req, factory);
+  expect(report, check.error).toMatchObject({
+    status: "supported",
+    comparison: "alternative-better",
+    searches: 10,
+    requestedSearchMs: 150,
+    attribution: {
+      status: "supported",
+      reason: "closed-retreat",
+      victimId: "w:b:e3",
+      blockerId: "w:q:e2",
+    },
+    explanation: null,
+  });
+  expect(report!.passes.every((p) => p.contrast.usedRoute?.to === "d2")).toBe(
+    true,
+  );
+  const cached = await check.verify(req, factory);
+  expect(cached).toMatchObject({
+    cached: true,
+    searches: 0,
+    attribution: report!.attribution,
+  });
+  expect(factory).toHaveBeenCalledTimes(10);
+});
+it("un meilleur score ne suffit pas si l'alternative bloque encore la même retraite", async () => {
+  const req = comparativeRequest("f3d2"),
+    check = new Verification([10, 20]),
+    report = await check.verify(req, async () => comparativeEngine(req));
+  expect(report, check.error).toMatchObject({
+    comparison: "alternative-better",
+    attribution: { status: "not-established", reason: "no-comparable-branch" },
+    searches: 8,
+  });
+  expect(
+    report!.passes.every((p) => p.contrast.reason === "same-restriction"),
+  ).toBe(true);
+  expect(
+    report!.passes.every(
+      (p) => !p.questions.some((q) => q.purpose === "same-threat"),
+    ),
+  ).toBe(true);
+});
+it("l'annulation couvre aussi la recherche supplémentaire dans l'alternative", async () => {
+  const req = comparativeRequest(),
+    check = new Verification([10, 20]),
+    engines: TestEngine[] = [];
+  const plan = planContrast(
+    req.understanding,
+    req.understanding.hypotheses[0],
+    req.alternative,
+  );
+  const pending = check.verify(req, async () => {
+    const engine = comparativeEngine(req),
+      send = engine.send.bind(engine);
+    engine.send = (command) => {
+      if (
+        command.startsWith("go ") &&
+        engine.board.fen() === plan.position!.fen
+      )
+        engine.hold = true;
+      send(command);
+    };
+    engines.push(engine);
+    return engine;
+  });
+  await vi.waitFor(() =>
+    expect(
+      engines.some((e) => e.hold && e.commands.includes("go movetime 10")),
+    ).toBe(true),
+  );
+  check.stop();
+  expect(await pending).toBeNull();
+  expect(check.state).toBe("stopped");
+  expect(engines.every((e) => e.disposed)).toBe(true);
+});
+
+it("ne publie pas hors délai quand le timer n'a pas encore reçu la main", async () => {
+  const req = request(),
+    check = new Verification([10, 20], 50);
+  let now = 0;
+  const time = vi.spyOn(performance, "now").mockImplementation(() => now);
+  try {
+    const report = await check.verify(req, async () => {
+      const engine = new TestEngine(req),
+        send = engine.send.bind(engine);
+      engine.send = (command) => {
+        send(command);
+        if (command.startsWith("go ")) now = 60;
+      };
+      return engine;
+    });
+    expect(report).toBeNull();
+    expect(check.state).toBe("timed-out");
+  } finally {
+    time.mockRestore();
+  }
 });

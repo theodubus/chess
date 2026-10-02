@@ -38,8 +38,8 @@ export type DefenceEvidence = {
 /** S'arrêter dès le mécanisme visible, sans aller chercher une prise éloignée
  * dans la PV. Une reprise disponible ou un échec non résolu garde le témoin ouvert. */
 export function defenceEvidence(
-  understanding: Understanding,
-  hypothesis: RestrictionHypothesis,
+  understanding: Pick<Understanding, "context">,
+  hypothesis: Pick<RestrictionHypothesis, "victimId" | "threatPly">,
   result: ReviewResult,
   maxPlies = 8,
 ): DefenceEvidence {

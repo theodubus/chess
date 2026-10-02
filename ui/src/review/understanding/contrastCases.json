@@ -1,0 +1,76 @@
+[
+  {
+    "id": "king-keeps-retreat",
+    "source": "queen-closes-retreat",
+    "alternative": "g1h1",
+    "expected": "restored-route",
+    "defence": "e3d2",
+    "origin": "constructed-comparison"
+  },
+  {
+    "id": "queen-keeps-retreat",
+    "source": "queen-closes-retreat",
+    "alternative": "e2d1",
+    "expected": "restored-route",
+    "defence": "e3c1",
+    "origin": "constructed-comparison"
+  },
+  {
+    "id": "another-piece-blocks-retreat",
+    "source": "queen-closes-retreat",
+    "alternative": "f3d2",
+    "expected": "same-restriction",
+    "origin": "constructed-counterexample"
+  },
+  {
+    "id": "victim-moved-before-threat",
+    "source": "queen-closes-retreat",
+    "alternative": "e3c1",
+    "expected": "different-victim",
+    "origin": "constructed-counterexample"
+  },
+  {
+    "id": "attacker-captured",
+    "source": "queen-closes-retreat",
+    "alternative": "e4f5",
+    "expected": "illegal-threat",
+    "origin": "constructed-counterexample"
+  },
+  {
+    "id": "open-but-costly-retreats",
+    "source": "queen-closes-retreat",
+    "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1BpPBN2/1p2QPPP/R4RK1 w - - 0 14",
+    "alternative": "g1h1",
+    "expected": "same-restriction",
+    "origin": "constructed-counterexample"
+  },
+  {
+    "id": "black-keeps-retreat",
+    "source": "queen-closes-retreat-black",
+    "alternative": "g8h8",
+    "expected": "restored-route",
+    "defence": "e6d7",
+    "origin": "transformed-regression"
+  },
+  {
+    "source": "queen-closes-retreat",
+    "fen": "8/1N5k/8/7r/8/8/BQp5/6K1 w - - 0 1",
+    "played": "Qb3",
+    "line": ["Ra5", "Bb1", "cxb1=Q+", "Qxb1+"],
+    "origin": "constructed-comparison",
+    "id": "rook-attack-retreat",
+    "alternative": "g1f1",
+    "expected": "restored-route",
+    "defence": "a2b3"
+  },
+  {
+    "source": "queen-closes-retreat",
+    "fen": "8/1N5k/8/7r/8/8/BQp5/6K1 w - - 0 1",
+    "played": "Qb3",
+    "line": ["Ra5", "Bb1", "cxb1=Q+", "Qxb1+"],
+    "origin": "constructed-counterexample",
+    "id": "same-uci-different-capture",
+    "alternative": "b7a5",
+    "expected": "different-threat"
+  }
+]

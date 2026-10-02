@@ -97,10 +97,12 @@ doit changer la révision ou l'identifiant, comme pour `FocusedAnalysis`.
    sans imposer un déplacement de la pièce menacée.
 3. Analyser une alternative légale fournie ou le premier choix à la racine s'il
    diffère du coup joué. Aucun second choix inventé quand les coups coïncident.
-4. Refaire ces questions avec un budget supérieur et un cache distinct.
+4. Si une retraite fermée redevient disponible, rejouer la même menace légale
+   après l'alternative et demander la meilleure défense (`same-threat`).
+5. Refaire ces questions avec un budget supérieur et un cache distinct.
 
-Par défaut : 300 puis 900 ms par position, au plus huit recherches / 4 800 ms
-nominaux et 10 secondes au total, connexions incluses. Cache borné par revue,
+Par défaut : 300 puis 900 ms par position, au plus dix recherches / 6 000 ms
+nominaux et 12 secondes au total, connexions incluses. Cache borné par revue,
 moteur, révision, historique, hypothèse et alternative. Annuler empêche la
 publication tardive. Un rapport réutilisé indique `cached: true` et coût courant
 nul. Les rapports rendus ne permettent pas de modifier les caches internes.
@@ -154,5 +156,52 @@ vérification : environ 0,2 à 7,2 secondes, connexions comprises ; extraction
 synchrone des hypothèses en supplément. Les deux moteurs ne doivent pas être
 appelés ensemble dans l'UI : ils servent ici à confronter le prototype.
 
-La causalité comparative, les sacrifices positionnels et les cinq familles
+La causalité comparative générale, les sacrifices positionnels et les cinq familles
 manquantes restent ouverts. **Toujours zéro explication publiable.**
+
+
+## Contraste causal : retraite fermée
+
+`contrast.ts` compare une même menace dans deux branches **légales**, sans
+permuter le trait ni effacer des pièces. Il vérifie les identités de la victime,
+de l'attaquant et du bloqueur, ainsi que le déplacement réel de ce dernier.
+Il écarte une menace dont la capture ou l'échec change, même si son UCI est
+identique. Une case accessible mais matériellement perdante n'est pas qualifiée
+de retraite restaurée.
+
+La comparaison ne prétend pas que l'adversaire choisirait cette menace dans
+l'alternative : la question est « contre cette même idée, cette décision
+conserve-t-elle une défense ? ». Le moteur reste libre de choisir sa défense.
+
+Le rapport `attribution` peut soutenir `closed-retreat` seulement si :
+
+- la perte initiale est soutenue par les deux recherches ;
+- la même alternative est meilleure dans les deux recherches ;
+- le moteur emprunte dans chaque branche comparative une retraite précisément
+  bloquée par le coup joué, avec un témoin de préservation de la pièce ;
+- l'évaluation contre cette menace s'améliore aussi d'au moins 100 centipions
+  pour le défenseur et reste stable. Les scores de mat ne sont pas convertis.
+
+Ce statut décrit une **contribution conditionnelle**, sans prétendre épuiser les
+raisons du verdict ni prouver une perte contre toutes les défenses. Les positions,
+trajets, bloqueur et réponses restent accessibles dans les deux passes ;
+`explanation` reste `null` et les composants de revue n'importent pas ce code.
+
+`contrastCases.json` couvre neuf comparaisons de développement (quatre retraites
+restaurées et cinq refus), avec camps inversés et un autre échiquier comportant
+une attaque de tour. Les refus comprennent une autre pièce occupant la retraite,
+une victime déjà déplacée, la prise de l'attaquant, des cases encore perdantes et
+un même déplacement UCI qui devient une capture différente. Le corpus initial de
+19 décisions et ses cinq familles manquantes reste inchangé.
+
+Les 16 tests UCI réels ajoutent notamment une alternative explicitement choisie,
+Rh1 au lieu de Dd2. Les deux moteurs utilisent Fd2 contre …f4 ; ShallowRed soutient
+l'attribution tandis que Stockfish peut rester indéterminé sur la perte initiale.
+Cela ne transforme pas Rh1 en « meilleur coup ». Le choix automatique peut être
+exf5 : la menace …f4 devient alors illégale, cas encore non expliqué par ce modèle.
+
+Lors d'une exécution chargée, la comparaison explicite a pris environ 4,5 s avec
+ShallowRed et 13,3 s avec Stockfish (démarrages inclus, extraction préalable exclue).
+Les tests d'intégration accordent 25 s au moteur, mais le plafond applicatif
+reste 12 s et peut donc interrompre le calcul sans publier de résultat partiel.
+Le coût des connexions et de l'extraction initiale doit diminuer avant l'UI.

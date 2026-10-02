@@ -92,6 +92,7 @@ function captureWitnesses(move: Move, balance: number): CaptureWitness[] {
 export function possibilities(
   frame: PositionFrame,
   side: Color,
+  pieceId?: string,
 ): Possibilities {
   const scope = frame.turn === side ? "actual-turn" : "geometric-turn-probe";
   if (frame.terminal)
@@ -114,7 +115,9 @@ export function possibilities(
     status: "available",
     scope,
     pieces: frame.pieces
-      .filter((piece) => piece.color === side)
+      .filter(
+        (piece) => piece.color === side && (!pieceId || piece.id === pieceId),
+      )
       .map((piece) => ({
         piece,
         geometricAttackers: board.attackers(piece.square, opposite(side)),
