@@ -30,7 +30,8 @@ d'un aveu sur la profondeur de recherche.
 > **Force absolue, estimée le 30 sept. 2026 : ~2 940 ± 30** sur l'échelle
 > `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
 > 300 parties à cette cadence contre Stockfish bridé à 2850, avec le réseau
-> N2. Le premier réseau y valait **~2 850 ± 25** (600 parties, 29 sept.),
+> N2 — celui qui joue depuis le 2 oct., +16 contre N2, n'y est pas encore
+> situé. Le premier réseau y valait **~2 850 ± 25** (600 parties, 29 sept.),
 > **l'évaluation faite main ~2 630 ± 40**. Une estimation, pas un
 > classement : l'adversaire se trompe exprès, et le moteur jouait sur un
 > runner à deux cœurs physiques, trois parties à la fois. Protocole et
@@ -99,11 +100,13 @@ d'un aveu sur la profondeur de recherche.
 > → 1`, entraîné par bullet sur des positions de ses propres parties et
 > embarqué dans le binaire. Le premier valait **+330,6 ± 19,2 Elo** à
 > `8+0,08` contre l'évaluation faite main (2 000 parties, zéro perte au
-> temps). **Celui qui joue depuis le 30 sept.**, entraîné sur 249,5 millions
-> de positions étiquetées par le moteur au réseau, l'a dépassé en deux
-> marches, chacune mesurée contre la précédente sur 6 000 parties :
-> **+115,7 ± 7,0**, puis **+50,1 ± 6,1**. L'évaluation faite main reste
-> disponible par `setoption name EvalFile value <none>`.
+> temps). Le suivant, N2, entraîné sur 249,5 millions de positions
+> étiquetées par le moteur au réseau, l'a dépassé en deux marches, chacune
+> mesurée contre la précédente sur 6 000 parties : **+115,7 ± 7,0**, puis
+> **+50,1 ± 6,1**. **Celui qui joue depuis le 2 oct.** est N2 ré-entraîné
+> sur des données de Leela Chess Zero (voir « Remerciements ») :
+> **+16,4 ± 6,2** contre N2. L'évaluation faite main reste disponible par
+> `setoption name EvalFile value <none>`.
 
 ## Structure
 
@@ -249,6 +252,15 @@ nœud de recherche, donc en écrire un n'achèterait pas de performance mesurabl
 ⚠️ `cozy-chess` emploie la notation roi-prend-tour pour le roque (`e1h1`) afin de
 supporter le Chess960, alors qu'UCI attend `e1g1`. La conversion est faite à la
 frontière UCI ; ne jamais afficher un `Move` brut.
+
+## Remerciements
+
+Le réseau NNUE embarqué est entraîné sur des [données fournies par le projet
+Leela Chess Zero](https://storage.lczero.org/files/training_data), mises à
+disposition sous l'[Open Database
+License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
+converties au format `.binpack` par des contributeurs de Stockfish (voir
+`tools/README.md`, section n° 7).
 
 ## Licence
 
