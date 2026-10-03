@@ -6,6 +6,7 @@ import {
   type DecisionContext,
   type PositionFrame,
 } from "./context";
+import { relationHypotheses, type RelationHypothesis } from "./mechanisms";
 import { relationChanges, type RelationChanges } from "./relations";
 import { exchangeContext } from "./exchanges";
 import {
@@ -39,6 +40,7 @@ export type Understanding = {
   relations: RelationChanges;
   exchange: ReturnType<typeof exchangeContext>;
   hypotheses: RestrictionHypothesis[];
+  mechanisms: RelationHypothesis[];
   explanation: null;
 };
 /** Prototype de faits et d'hypothèses. Il ne produit volontairement aucune
@@ -123,13 +125,15 @@ export function understandDecision(
       });
     }
   }
+  const relations = relationChanges(context);
   return {
     context,
     changes: {
       w: changes(context.before, context.after, "w"),
       b: changes(context.before, context.after, "b"),
     },
-    relations: relationChanges(context),
+    relations,
+    mechanisms: relationHypotheses(context, relations),
     exchange: exchangeContext(context),
     hypotheses,
     explanation: null,

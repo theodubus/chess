@@ -1,7 +1,7 @@
 import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
 import { corpus, corpusInput, type CorpusCase } from "./corpus";
-import { defenceEvidence } from "./evidence";
+import { boundedContinuation, defenceEvidence } from "./evidence";
 import { understandDecision } from "./prototype";
 import cases from "./verificationCases.json";
 import { legalVariation, type ReviewResult } from "../model";
@@ -122,4 +122,24 @@ describe("limites du témoin", () => {
     expect(evidence.outcome).toBe("unresolved");
     expect(evidence.moves).toHaveLength(2);
   });
+});
+
+it("arrête la PV reçue à la première nulle sans interpréter la suite du moteur", () => {
+  const fen = "7k/8/8/8/8/8/2r5/1B5K w - - 0 1";
+  const result = {
+    score: { kind: "cp" as const, value: 0 },
+    depth: 15,
+    bestMove: "b1c2",
+    bestSan: null,
+    variation: legalVariation(fen, ["b1c2", "h8g8"]),
+  };
+  const bounded = boundedContinuation(
+    { command: `position fen ${fen}`, fen },
+    result,
+  );
+  expect(bounded.variation).toHaveLength(1);
+  expect(result.variation).toHaveLength(2);
+  expect(new Chess(bounded.variation[0].fen).isInsufficientMaterial()).toBe(
+    true,
+  );
 });

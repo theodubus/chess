@@ -1,6 +1,9 @@
 import type { EngineFactory } from "../../GameController";
 import type { Score } from "../../engine/analysis";
-import { FocusedAnalysis } from "../FocusedAnalysis";
+import {
+  BoundedVerification,
+  type VerificationCost,
+} from "./BoundedVerification";
 import { boardFromCommand, StudyTree } from "../StudyTree";
 import type { ReviewPosition, ReviewResult } from "../model";
 import { uci } from "./context";
@@ -105,42 +108,17 @@ function compare(
 
 /** Questions distinctes et deux budgets indépendants : une passe longue ne
  * réutilise jamais le résultat court. Aucune commande MultiPV/searchmoves. */
-export class Verification {
-  private generation = 0;
-  private focuses: FocusedAnalysis[];
-  private cache = new WeakMap<object, Map<string, VerificationReport>>();
-  state: "idle" | "running" | "complete" | "stopped" | "timed-out" | "error" =
-    "idle";
-  error = "";
-  constructor(
-    private budgets: [number, number] = [300, 900],
-    private deadline = 12000,
-  ) {
-    if (
-      !budgets.every((n) => Number.isFinite(n) && n > 0) ||
-      budgets[1] <= budgets[0] ||
-      !Number.isFinite(deadline) ||
-      deadline <= 0
-    )
-      throw new Error("Budgets invalides.");
-    this.budgets = [...budgets];
-    this.focuses = budgets.map(
-      (budget) => new FocusedAnalysis(budget, deadline),
-    );
-  }
-  stop() {
-    this.generation++;
-    this.focuses.forEach((focus) => focus.stop());
-    if (this.state === "running") this.state = "stopped";
-  }
+export class Verification extends BoundedVerification<
+  VerificationPass,
+  Omit<VerificationReport, keyof VerificationCost>,
+  Question["purpose"]
+> {
   async verify(
     request: VerificationRequest,
     factory: EngineFactory,
   ): Promise<VerificationReport | null> {
     this.stop();
-    const generation = this.generation,
-      start = performance.now(),
-      { understanding, hypothesisIndex } = request,
+    const { understanding, hypothesisIndex } = request,
       hypothesis = understanding.hypotheses[hypothesisIndex];
     if (!hypothesis) throw new Error("Hypothèse absente.");
     const { context } = understanding,
@@ -167,47 +145,14 @@ export class Verification {
       hypothesis,
       request.alternative ?? null,
     ]);
-    const cache =
-      this.cache.get(request.review) ?? new Map<string, VerificationReport>();
-    this.cache.set(request.review, cache);
-    this.error = "";
-    const cached = cache.get(key);
-    if (cached) {
-      this.state = "complete";
-      return {
-        ...structuredClone(cached),
-        cached: true,
-        searches: 0,
-        requestedSearchMs: 0,
-        elapsedMs: 0,
-      };
-    }
-    this.state = "running";
-    const timer = setTimeout(() => {
-      if (generation !== this.generation) return;
-      this.stop();
-      this.state = "timed-out";
-    }, this.deadline);
-    // Le timer attend la fin des calculs synchrones : vérifier aussi l'horloge
-    // avant de poursuivre ou de publier, même si sa callback n'a pas encore tourné.
-    const current = () => {
-      if (generation !== this.generation) return false;
-      if (performance.now() - start >= this.deadline) {
-        this.stop();
-        this.state = "timed-out";
-        return false;
-      }
-      return true;
-    };
-    const passes: VerificationPass[] = [];
-    let searches = 0,
-      requestedSearchMs = 0;
-    try {
-      for (const [index, budgetMs] of this.budgets.entries()) {
-        const focus = this.focuses[index];
+    return this.run(
+      request,
+      key,
+      factory,
+      async ({ budgetMs, questions, ask }) => {
         const pass: VerificationPass = {
           budgetMs,
-          questions: [],
+          questions,
           evidence: null,
           threatMatches: false,
           alternative: null,
@@ -215,31 +160,6 @@ export class Verification {
             { reason: "no-alternative", routes: [] },
             null,
           ),
-        };
-        const ask = async (
-          purpose: Question["purpose"],
-          position: ReviewPosition,
-        ) => {
-          if (!current()) return null;
-          const query = {
-            review: request.review,
-            revision: request.revision,
-            engineId: request.engineId,
-            positions: [position],
-          };
-          if (!position.terminal && !focus.resultFor(query, position)) {
-            searches++;
-            requestedSearchMs += budgetMs;
-          }
-          const results = await focus.analyse(query, factory);
-          if (!current()) return null;
-          if (!results)
-            throw new Error(
-              focus.error ||
-                "Réponse moteur sans score exact ou variante exploitable.",
-            );
-          pass.questions.push({ purpose, position, result: results[0] });
-          return results[0];
         };
         const before = await ask("decision", decision);
         if (!before) return null;
@@ -263,80 +183,66 @@ export class Verification {
           plan.position && pass.threatMatches
             ? await ask("same-threat", plan.position)
             : null;
-        if (!current()) return null;
         pass.contrast = observeContrast(
           plan,
           plan.removedAttacker ? alternativeResult : answer,
         );
-        passes.push(pass);
-      }
-      const results = passes.map(
-          (p) => p.questions.find((q) => q.purpose === "defence")!.result,
-        ),
-        evidence = passes.map((p) => p.evidence!),
-        victim = context.frames[hypothesis.threatPly + 1].pieces.find(
-          (p) => p.id === hypothesis.victimId,
-        )!,
-        victimSign = victim.color === "w" ? 1 : -1;
-      let status: VerificationReport["status"] = "indeterminate",
-        reason: VerificationReport["reason"] = "incomplete-evidence";
-      if (passes.some((p) => !p.threatMatches)) reason = "threat-changed";
-      else if (
-        !stable(results[0].score, results[1].score) ||
-        evidence[0].outcome !== evidence[1].outcome
-      )
-        reason = "unstable-search";
-      else if (evidence.every((e) => e.outcome === "mate-for-victim")) {
-        status = "contradicted";
-        reason = "mate-found";
-      } else if (evidence.every((e) => e.outcome === "preserved")) {
-        status = "contradicted";
-        reason = "defence-found";
-      } else if (evidence.every((e) => e.outcome === "compensated")) {
-        status = "contradicted";
-        reason = "compensation-found";
-      } else if (
-        evidence.every((e) => e.outcome === "loss-in-line") &&
-        results.every(
-          (r) => cp(r.score) !== null && cp(r.score)! * victimSign < -75,
+        return pass;
+      },
+      (passes) => {
+        const results = passes.map(
+            (p) => p.questions.find((q) => q.purpose === "defence")!.result,
+          ),
+          evidence = passes.map((p) => p.evidence!),
+          victim = context.frames[hypothesis.threatPly + 1].pieces.find(
+            (p) => p.id === hypothesis.victimId,
+          )!,
+          victimSign = victim.color === "w" ? 1 : -1;
+        let status: VerificationReport["status"] = "indeterminate",
+          reason: VerificationReport["reason"] = "incomplete-evidence";
+        if (passes.some((p) => !p.threatMatches)) reason = "threat-changed";
+        else if (
+          !stable(results[0].score, results[1].score) ||
+          evidence[0].outcome !== evidence[1].outcome
         )
-      ) {
-        status = "supported";
-        reason = "stable-loss";
-      }
-      const comparison = compare(passes, context.before.turn === "w" ? 1 : -1);
-      const report: VerificationReport = {
-        status,
-        reason,
-        passes,
-        comparison,
-        attribution: attributeRestriction(passes, {
-          lossSupported: status === "supported",
-          alternativeBetter: comparison === "alternative-better",
-          originalScores: results.map((result) => result.score),
-          victimSide: victim.color,
-        }),
-        cached: false,
-        elapsedMs: Math.round(performance.now() - start),
-        searches,
-        requestedSearchMs,
-        scope: "bounded-engine-check",
-        explanation: null,
-      };
-      if (!current()) return null;
-      cache.set(key, structuredClone(report));
-      while (cache.size > 32) cache.delete(cache.keys().next().value!);
-      this.state = "complete";
-      return structuredClone(report);
-    } catch (error) {
-      if (generation === this.generation) {
-        this.error =
-          error instanceof Error ? error.message : "Vérification indisponible.";
-        this.state = "error";
-      }
-      return null;
-    } finally {
-      clearTimeout(timer);
-    }
+          reason = "unstable-search";
+        else if (evidence.every((e) => e.outcome === "mate-for-victim")) {
+          status = "contradicted";
+          reason = "mate-found";
+        } else if (evidence.every((e) => e.outcome === "preserved")) {
+          status = "contradicted";
+          reason = "defence-found";
+        } else if (evidence.every((e) => e.outcome === "compensated")) {
+          status = "contradicted";
+          reason = "compensation-found";
+        } else if (
+          evidence.every((e) => e.outcome === "loss-in-line") &&
+          results.every(
+            (r) => cp(r.score) !== null && cp(r.score)! * victimSign < -75,
+          )
+        ) {
+          status = "supported";
+          reason = "stable-loss";
+        }
+        const comparison = compare(
+          passes,
+          context.before.turn === "w" ? 1 : -1,
+        );
+        return {
+          status,
+          reason,
+          passes,
+          comparison,
+          attribution: attributeRestriction(passes, {
+            lossSupported: status === "supported",
+            alternativeBetter: comparison === "alternative-better",
+            originalScores: results.map((result) => result.score),
+            victimSide: victim.color,
+          }),
+          scope: "bounded-engine-check",
+          explanation: null,
+        };
+      },
+    );
   }
 }

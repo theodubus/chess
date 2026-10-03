@@ -240,7 +240,9 @@
       "Bxf6"
     ],
     "expected": {
-      "hypothesis": "defender-removal"
+      "hypothesis": "defender-removal",
+      "role": "creates-opportunity",
+      "capture": "c3f6"
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -283,7 +285,9 @@
       "Kxh7"
     ],
     "expected": {
-      "hypothesis": "opened-line"
+      "hypothesis": "opened-line",
+      "role": "creates-opportunity",
+      "capture": "d1d8"
     },
     "forbiddenClaims": [
       "forced-loss",

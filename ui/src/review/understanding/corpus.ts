@@ -16,6 +16,8 @@ export type CorpusCase = {
     partialHypotheses?: string[];
     hypothesis?: string | null;
     victim?: string;
+    role?: string;
+    capture?: string;
     closed?: string;
     exchange?: { role: string; total: number; fromDecision: number };
   };
@@ -55,6 +57,7 @@ export type CorpusRow = {
   matched: boolean;
   falseHypotheses: number;
   partialHypotheses: number;
+  unreviewedRelationCandidates: number;
   publishableExplanation: boolean;
   elapsedMs: number;
 };
@@ -63,7 +66,9 @@ export function evaluateCorpus(): CorpusRow[] {
     const { position, result } = corpusInput(test),
       start = performance.now();
     const analysis = understandDecision(position, result);
-    const observed = analysis.hypotheses.map((h) => h.kind) as string[];
+    const observed = [...analysis.hypotheses, ...analysis.mechanisms].map(
+      (h) => h.kind,
+    ) as string[];
     if (analysis.exchange) observed.push("exchange-context");
     const expected = test.expected.exchange
       ? "exchange-context"
@@ -73,6 +78,10 @@ export function evaluateCorpus(): CorpusRow[] {
       (!test.expected.victim || h.victimSquare === test.expected.victim) &&
       (!test.expected.closed ||
         h.closedRoutes.some((route) => route.to === test.expected.closed));
+    const matchesRelation = (h: (typeof analysis.mechanisms)[number]) =>
+      h.kind === expected &&
+      (!test.expected.role || h.role === test.expected.role) &&
+      (!test.expected.capture || h.capture === test.expected.capture);
     const matchesExchange =
       !!test.expected.exchange &&
       !!analysis.exchange &&
@@ -88,7 +97,8 @@ export function evaluateCorpus(): CorpusRow[] {
       observed,
       matched: test.expected.exchange
         ? matchesExchange
-        : analysis.hypotheses.some(matchesHypothesis),
+        : analysis.hypotheses.some(matchesHypothesis) ||
+          analysis.mechanisms.some(matchesRelation),
       falseHypotheses:
         analysis.hypotheses.filter(
           (h) =>
@@ -101,6 +111,11 @@ export function evaluateCorpus(): CorpusRow[] {
       partialHypotheses: analysis.hypotheses.filter((h) =>
         test.expected.partialHypotheses?.includes(h.kind),
       ).length,
+      // Les anciens exemples n'annotent pas encore tous les motifs secondaires
+      // des nouvelles familles. Les afficher comme non relus, jamais comme justes.
+      unreviewedRelationCandidates: analysis.mechanisms.filter(
+        (h) => !matchesRelation(h),
+      ).length,
       publishableExplanation: analysis.explanation !== null,
       elapsedMs: Math.round(performance.now() - start),
     };
@@ -110,7 +125,8 @@ export function corpusReport(rows: CorpusRow[]) {
   const positives = rows.filter((row) => row.expected !== null),
     negatives = rows.filter((row) => row.expected === null);
   return {
-    stage: "prototype-facts-only",
+    stage: "prototype-facts-and-hypotheses",
+    assessedFalseHypotheses: ["restriction", "exchange-context"],
     independentValidation: false,
     positions: rows.length,
     expectedInsights: positives.length,
@@ -122,6 +138,10 @@ export function corpusReport(rows: CorpusRow[]) {
     falseHypotheses: rows.reduce((sum, row) => sum + row.falseHypotheses, 0),
     partialHypotheses: rows.reduce(
       (sum, row) => sum + row.partialHypotheses,
+      0,
+    ),
+    unreviewedRelationCandidates: rows.reduce(
+      (sum, row) => sum + row.unreviewedRelationCandidates,
       0,
     ),
     publishableExplanations: rows.filter((row) => row.publishableExplanation)

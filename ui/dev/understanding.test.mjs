@@ -7,6 +7,12 @@ import { FocusedAnalysis } from "../src/review/FocusedAnalysis";
 import { StudyTree } from "../src/review/StudyTree";
 import { explainMove } from "../src/review/explanations";
 import { corpus, corpusInput } from "../src/review/understanding/corpus";
+import { RelationVerification } from "../src/review/understanding/RelationVerification";
+import { relationDraft } from "../src/review/understanding/relationDraft";
+import {
+  mechanismCases,
+  mechanismInput,
+} from "../src/review/understanding/mechanismCases";
 import { Verification } from "../src/review/understanding/Verification";
 import verificationCases from "../src/review/understanding/verificationCases.json";
 import { understandDecision } from "../src/review/understanding/prototype";
@@ -204,6 +210,100 @@ for (const [name, command] of [
                 score: p.questions.find((q) => q.purpose === "defence").result
                   .score,
                 evidence: p.evidence,
+                alternative: p.alternative,
+                contrast: p.contrast,
+              })),
+            }),
+          );
+        } finally {
+          check.stop();
+          await bridge.close();
+          vi.unstubAllGlobals();
+        }
+      },
+      30000,
+    );
+  }
+}
+
+for (const [name, command] of [
+  ["ShallowRed", process.env.CHESS_ENGINE_BINARY],
+  ["Stockfish", process.env.CHESS_STOCKFISH_BINARY],
+]) {
+  for (const test of mechanismCases.filter(
+    (c) =>
+      c.origin === "constructed" &&
+      (c.expected === "supported" || c.id === "target-can-leave"),
+  )) {
+    it.skipIf(!command)(
+      `${name} : relations causales ${test.id}`,
+      async () => {
+        const input = mechanismInput(test),
+          check = new RelationVerification([200, 600], 25000),
+          bridge = startBridge({ command, port: 0 });
+        try {
+          await once(bridge.server, "listening");
+          vi.stubGlobal(
+            "WebSocket",
+            class extends WebSocket {
+              constructor(address) {
+                super(address, { origin: "http://127.0.0.1:5173" });
+              }
+            },
+          );
+          const report = await check.verify(
+            {
+              ...input,
+              review: {},
+              revision: 0,
+              engineId: name,
+              alternative: test.alternativeUci,
+            },
+            (failure) =>
+              connectDevelopmentEngine(
+                failure,
+                `ws://127.0.0.1:${bridge.server.address().port}`,
+              ),
+          );
+          expect(report, check.error).not.toBeNull();
+          expect(report.explanation).toBeNull();
+          expect(report.searches).toBeLessThanOrEqual(10);
+          if (test.id === "target-can-leave")
+            expect(report.attribution.status).toBe("not-established");
+          const draft = relationDraft(input.understanding, report);
+          if (report.attribution.status === "supported") {
+            expect(
+              report.passes.every(
+                (p) => p.matched && p.evidence.outcome === "loss-in-line",
+              ),
+            ).toBe(true);
+            expect(draft.played[0].fen).toBe(
+              input.understanding.context.after.fen,
+            );
+            expect(draft.played.length).toBeLessThanOrEqual(9);
+          } else expect(draft).toBeNull();
+          console.info(
+            JSON.stringify({
+              engine: name,
+              case: test.id,
+              status: report.status,
+              reason: report.reason,
+              attribution: report.attribution,
+              searches: report.searches,
+              elapsedMs: report.elapsedMs,
+              draft: draft
+                ? {
+                    title: draft.title,
+                    summary: draft.summary,
+                    comparison: draft.comparisonText,
+                    played: draft.played.map((s) => s.label),
+                    alternative: draft.alternative.map((s) => s.label),
+                  }
+                : null,
+              passes: report.passes.map((p) => ({
+                matched: p.matched,
+                evidence: p.evidence,
+                score: p.score,
                 alternative: p.alternative,
                 contrast: p.contrast,
               })),

@@ -2,7 +2,11 @@ import { Chess, type Move, type Square } from "chess.js";
 import { materialBalance } from "../../material";
 import { usableResult } from "../FocusedAnalysis";
 import { boardFromCommand } from "../StudyTree";
-import type { ReviewPosition, ReviewResult } from "../model";
+import {
+  legalVariation,
+  type ReviewPosition,
+  type ReviewResult,
+} from "../model";
 import { capturedSquare, uci, type PositionFrame } from "./context";
 import type { RestrictionHypothesis, Understanding } from "./prototype";
 
@@ -20,6 +24,28 @@ export function framePosition(frame: PositionFrame): ReviewPosition {
         : null,
   };
 }
+/** Ne lire que le témoin court jusqu'à la première fin de partie. Certains
+ * moteurs prolongent une PV légale au-delà d'une nulle que chess.js termine. */
+export function boundedContinuation(
+  frame: Pick<PositionFrame, "fen" | "command">,
+  result: ReviewResult,
+): ReviewResult {
+  const board = boardFromCommand(frame.command);
+  const variation: ReviewResult["variation"] = [];
+  for (const item of result.variation.slice(0, 8)) {
+    if (board.isGameOver()) break;
+    const move = board
+      .moves({ verbose: true })
+      .find(
+        (m) => m.from === item.from && m.to === item.to && m.after === item.fen,
+      );
+    if (!move) throw new Error("Variante bornée incohérente.");
+    board.move(move);
+    variation.push(item);
+  }
+  return { ...result, variation };
+}
+
 export type DefenceEvidence = {
   outcome:
     | "loss-in-line"
@@ -32,7 +58,7 @@ export type DefenceEvidence = {
   victimSquare: Square | null;
   includesIntermediateCheck: boolean;
   /** Le témoin appartient à cette seule variante, jamais à toutes les défenses. */
-  scope: "engine-line";
+  scope: "engine-line" | "conditional-engine-line";
 };
 
 /** S'arrêter dès le mécanisme visible, sans aller chercher une prise éloignée
@@ -48,6 +74,8 @@ export function defenceEvidence(
     victim = frame.pieces.find((piece) => piece.id === hypothesis.victimId);
   if (!victim || frame.turn !== victim.color)
     throw new Error("La vérification doit rendre le trait au camp menacé.");
+  if (!usableResult(framePosition(frame), result))
+    throw new Error("Réponse moteur inutilisable pour cette position.");
   return pieceEvidence(before, frame, hypothesis.victimId, result, maxPlies);
 }
 
@@ -58,22 +86,68 @@ export function preventionEvidence(
   victimId: string,
   result: ReviewResult,
 ): DefenceEvidence {
+  if (!usableResult(framePosition(context.after), result))
+    throw new Error("Réponse moteur inutilisable pour cette position.");
   return pieceEvidence(context.before, context.after, victimId, result, 8);
+}
+
+/** La capture est une question conditionnelle légale, suivie de la réponse
+ * libre du moteur. Ce témoin n'est jamais présenté comme sa PV depuis la décision. */
+export function conditionalEvidence(
+  context: Pick<Understanding["context"], "before" | "after">,
+  victimId: string,
+  prefix: string[],
+  result: ReviewResult,
+): DefenceEvidence {
+  const board = boardFromCommand(context.after.command);
+  for (const move of prefix) board.move(move);
+  const command =
+    context.after.command +
+    (context.after.command.includes(" moves ") ? " " : " moves ") +
+    prefix.join(" ");
+  const position = {
+    ...framePosition(context.after),
+    command,
+    fen: board.fen(),
+    turn: board.turn(),
+  };
+  if (!usableResult(position, result))
+    throw new Error(
+      "Réponse moteur inutilisable pour la branche conditionnelle.",
+    );
+  const bounded = boundedContinuation(position, result);
+  const moves: string[] = [];
+  for (const item of bounded.variation.slice(
+    0,
+    Math.max(0, 8 - prefix.length),
+  )) {
+    const move = board
+      .moves({ verbose: true })
+      .find(
+        (m) => m.from === item.from && m.to === item.to && m.after === item.fen,
+      )!;
+    if (!move) throw new Error("Variante conditionnelle incohérente.");
+    board.move(move);
+    moves.push(uci(move));
+  }
+  const variation = legalVariation(context.after.fen, [...prefix, ...moves]);
+  return {
+    ...pieceEvidence(context.before, context.after, victimId, { variation }, 8),
+    scope: "conditional-engine-line",
+  };
 }
 
 function pieceEvidence(
   before: PositionFrame,
   frame: PositionFrame,
   victimId: string,
-  result: ReviewResult,
+  result: Pick<ReviewResult, "variation">,
   maxPlies: number,
 ): DefenceEvidence {
   if (!Number.isInteger(maxPlies) || maxPlies < 1 || maxPlies > 8)
     throw new Error("Témoin limité à huit demi-coups.");
   const victim = frame.pieces.find((piece) => piece.id === victimId);
   if (!victim) throw new Error("Victime absente de la branche.");
-  if (!usableResult(framePosition(frame), result))
-    throw new Error("Réponse moteur inutilisable pour cette position.");
   const board = boardFromCommand(frame.command),
     sign = victim.color === "w" ? 1 : -1,
     initial = materialBalance(new Chess(before.fen));

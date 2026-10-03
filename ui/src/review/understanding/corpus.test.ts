@@ -119,14 +119,10 @@ it("rapporte les familles non reconnues et distingue les faits des explications 
     JSON.stringify(rows.filter((row) => row.falseHypotheses)),
   ).toBe(0);
   expect(report.missingInsights).toEqual(
-    expect.arrayContaining([
-      "fork",
-      "pin",
-      "defender-removed",
-      "discovered-attack",
-      "mate-threat",
-    ]),
+    expect.arrayContaining(["fork", "pin", "mate-threat"]),
   );
+  expect(report.recognizedInsights).toBe(9);
+  expect(report.unreviewedRelationCandidates).toBeGreaterThan(0);
   expect(report.publishableExplanations).toBe(0);
   expect(report.partialHypotheses).toBe(1);
   expect(report.recognizedInsights).toBeLessThan(report.expectedInsights);
