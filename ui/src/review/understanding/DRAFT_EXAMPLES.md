@@ -95,5 +95,5 @@ CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/gam
 ```
 
 Chaque rapport imprime les deux passes, les commandes conditionnelles, les
-évidences, les refus, les coûts et les étapes du brouillon. Pour les seuls contrats
+témoins, les refus, les coûts et les étapes du brouillon. Pour les seuls contrats
 logiciels : `npm run test:understanding`.

@@ -3,8 +3,13 @@ import { expect, it, vi } from "vitest";
 import { WebSocket } from "ws";
 import { startBridge } from "./bridge.mjs";
 import { connectDevelopmentEngine } from "../src/engine/DevelopmentEngine";
-import { FocusedAnalysis } from "../src/review/FocusedAnalysis";
-import { StudyTree } from "../src/review/StudyTree";
+import { FocusedAnalysis, usableResult } from "../src/review/FocusedAnalysis";
+import {
+  parseSearchInfo,
+  parsePrincipalVariation,
+} from "../src/engine/analysis";
+import { legalVariation } from "../src/review/model";
+import { boardFromCommand, StudyTree } from "../src/review/StudyTree";
 import { explainMove } from "../src/review/explanations";
 import { corpus, corpusInput } from "../src/review/understanding/corpus";
 import { RelationVerification } from "../src/review/understanding/RelationVerification";
@@ -251,6 +256,29 @@ for (const [name, command] of [
               }
             },
           );
+          const trace = [];
+          const factory = async (failure) => {
+            const engine = await connectDevelopmentEngine(
+              failure,
+              `ws://127.0.0.1:${bridge.server.address().port}`,
+            );
+            let query;
+            const send = engine.send.bind(engine);
+            engine.send = (line) => {
+              if (line.startsWith("position ")) {
+                query = { command: line, answers: [] };
+                trace.push(query);
+              }
+              send(line);
+            };
+            engine.onLine((line) => {
+              if (query && /^(info depth |bestmove )/.test(line)) {
+                query.answers.push(line);
+                if (query.answers.length > 4) query.answers.shift();
+              }
+            });
+            return engine;
+          };
           const report = await check.verify(
             {
               ...input,
@@ -259,13 +287,65 @@ for (const [name, command] of [
               engineId: name,
               alternative: test.alternativeUci,
             },
-            (failure) =>
-              connectDevelopmentEngine(
-                failure,
-                `ws://127.0.0.1:${bridge.server.address().port}`,
-              ),
+            factory,
           );
-          expect(report, check.error).not.toBeNull();
+          if (!report) {
+            // Une vraie réponse UCI peut rester bornée après une itération
+            // interrompue. Vérifier ce refus précis, sans tolérer une panne.
+            expect(check.state).toBe("error");
+            expect(check.error).toContain(
+              "Réponse moteur sans score exact ou variante exploitable.",
+            );
+            const query = trace.at(-1);
+            const board = boardFromCommand(query.command);
+            const infoLine = query.answers.findLast((line) =>
+              line.includes(" score "),
+            );
+            const info = parseSearchInfo(infoLine ?? "", board.turn());
+            const bestMove = query.answers
+              .findLast((line) => line.startsWith("bestmove "))
+              ?.split(" ")[1];
+            const position = {
+              command: query.command,
+              fen: board.fen(),
+              turn: board.turn(),
+              label: "Contrôle du refus",
+              played: null,
+              playedSan: null,
+              terminal: null,
+            };
+            const response = {
+              score: info?.score ?? null,
+              depth: info?.depth ?? null,
+              bestMove,
+              bestSan: null,
+              variation: legalVariation(
+                board.fen(),
+                parsePrincipalVariation(infoLine ?? "") ?? [],
+              ),
+            };
+            expect(response.score?.bound, JSON.stringify(query)).toBeDefined();
+            expect(usableResult(position, response)).toBe(false);
+            // La même ligne avec un score exact serait recevable : cela
+            // distingue la borne d'une position ou d'un coup incohérents.
+            expect(
+              usableResult(position, {
+                ...response,
+                score: { ...response.score, bound: undefined },
+              }),
+            ).toBe(true);
+            console.info(
+              JSON.stringify({
+                engine: name,
+                case: test.id,
+                status: "unavailable",
+                reason: "bounded-final-iteration",
+                explanation: null,
+                query,
+              }),
+            );
+            return;
+          }
           expect(report.explanation).toBeNull();
           expect(report.searches).toBeLessThanOrEqual(10);
           if (test.id === "target-can-leave")

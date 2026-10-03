@@ -338,7 +338,21 @@ secondaires, la clôture lorsqu'une reprise est déclinée, les mats, les contra
 combinées et le corpus indépendant restent au point de reprise. **Le prototype
 n'est toujours pas importé dans la revue ; `explanation` reste `null`.**
 
-Validation logicielle finale de cette étape : lint, TypeScript, build et **489 tests
+Validation logicielle finale de cette étape : lint, TypeScript, build et **490 tests
 / 45 fichiers** avec les deux moteurs (`npm test -- --maxWorkers=2`). Le premier
 lancement non borné s'est arrêté sans bilan ; le contrôle à deux workers termine
 avec succès. Le bundle actif garde les mêmes assets.
+
+
+La CI Ubuntu emploie Stockfish 16, différent du 17.1 installé localement. Sa
+recherche a révélé une abstention légitime : dernière itération bornée, coup
+retenu différent de la dernière itération exacte. La réponse reste inutilisable
+et aucun rapport/texte n'est publié. Les intégrations acceptent **ce refus
+vérifié seulement** : borne réelle, PV et meilleur coup cohérents/légaux ; elles
+continuent à échouer pour une panne, un délai ou un coup incohérent. Une
+régression rejoue les lignes exactes reproduites. Le diagnostic garde la question
+refusée et une trace bornée des réponses UCI. Aucun score borné n'est transformé
+en score exact dans le code applicatif.
+
+La revalidation complète avec ShallowRed et ce même Stockfish 16 donne **490
+  tests / 45 fichiers** ; lint et TypeScript passent également.

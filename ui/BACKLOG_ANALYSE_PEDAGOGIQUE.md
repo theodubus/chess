@@ -389,8 +389,20 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   Lors du contrôle ciblé local, les deux cas plus riches prennent environ 3,1–4,0 s
   avec ShallowRed et 6,8–8,4 s avec Stockfish, connexions incluses, extraction exclue.
   Les intégrations autorisent 25 s ; le plafond applicatif reste 12 s.
-- Validation finale : lint, TypeScript et build réussis ; **489 tests / 45 fichiers**
+- Validation finale : lint, TypeScript et build réussis ; **490 tests / 45 fichiers**
   avec les deux binaires via `npm test -- --maxWorkers=2`. Le lancement par défaut
   s'est arrêté sans bilan ; le passage borné à deux workers a terminé avec succès.
   Le build actif garde les mêmes assets ; aucun fichier du moteur ni composant
   de revue modifié.
+
+- Vérification CI : le Stockfish 16 d'Ubuntu peut terminer une itération sur une
+  borne avec un coup différent de sa dernière itération exacte. Le refus du
+  vérificateur est alors correct. Les intégrations contrôlent explicitement ce
+  refus (score réellement borné, PV/coup légaux et cohérents, aucune explication),
+  sans accepter une panne ou désactiver `usableResult`. Une régression simule les
+  lignes UCI reproduites ; le diagnostic garde la question et quatre dernières
+  réponses. Reproduction locale avec le binaire Ubuntu extrait sous `/tmp`, sans
+  remplacer le moteur installé. Ce refus ne compte pas comme explication juste.
+- Revalidation après ce correctif CI : **490 tests / 45 fichiers** avec ShallowRed
+  et le Stockfish 16 exact d'Ubuntu, lint et TypeScript réussis. Aucun changement
+  du contrat de validité des réponses ni des seuils de confirmation.

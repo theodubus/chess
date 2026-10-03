@@ -123,8 +123,7 @@ export class BoundedVerification<
           if (!current()) return null;
           if (!results)
             throw new Error(
-              focus.error ||
-                "Réponse moteur sans score exact ou variante exploitable.",
+              `${purpose} : ${focus.error || "Réponse moteur sans score exact ou variante exploitable."}`,
             );
           questions.push({ purpose, position, result: results[0] });
           return results[0];

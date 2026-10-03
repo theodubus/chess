@@ -374,3 +374,33 @@ it("n'attribue pas la différence au défenseur si le moteur ne reprend pas avec
     attribution: { status: "not-established", reason: "mechanism-not-used" },
   });
 });
+
+it("refuse une borne finale si le dernier coup exact était différent", async () => {
+  const { req, results } = setup();
+  const check = new RelationVerification([10, 20]);
+  const alternativeCommand =
+    req.understanding.context.before.command + " moves " + req.alternative;
+  const report = await check.verify(req, async () => {
+    const engine = new ScriptEngine(results);
+    const send = engine.send.bind(engine);
+    engine.send = (command) => {
+      if (
+        command === "go movetime 20" &&
+        engine.command === alternativeCommand
+      ) {
+        engine.commands.push(command);
+        engine.listener("info depth 21 score cp -659 pv c3d2");
+        engine.listener("info depth 22 score cp -732 upperbound pv c3a5");
+        engine.listener("bestmove c3a5");
+        return;
+      }
+      send(command);
+    };
+    return engine;
+  });
+  expect(report).toBeNull();
+  expect(check.state).toBe("error");
+  expect(check.error).toContain(
+    "alternative : Réponse moteur sans score exact",
+  );
+});
