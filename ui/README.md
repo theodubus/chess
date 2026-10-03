@@ -280,6 +280,24 @@ modélise les changements de possibilités et le contexte avant de produire du t
 La [backlog active](BACKLOG_ANALYSE_PEDAGOGIQUE.md) remplace les anciens lots déclarés
 terminés ; le [rapport initial](src/review/understanding/README.md) compte aussi les
 familles non reconnues. `npm run test:understanding` reproduit le bilan du corpus.
+
+Pour relire les nouveaux textes et leurs repères sans modifier la revue active,
+ouvrez `/dev/pedagogy-review.html` sur le serveur de développement. L'instantané
+versionné vient de recherches réelles ShallowRed et Stockfish 16 ; les abstentions
+y figurent aussi. Il reste un échantillon de développement, sans validation
+pédagogique indépendante. Le bouton « Coup étudié » ramène directement à la
+position après la décision ; « Alternative » montre la comparaison séparément.
+
+Depuis `ui/`, pour refaire l'instantané avec vos binaires :
+
+```bash
+npm run pedagogy:review -- --engine ../target/release/shallowred --stockfish /chemin/vers/stockfish
+```
+
+Le paramètre `--stockfish` est facultatif. Cette commande remplace
+`dev/pedagogy-review-data.json` et conserve la date, le nom UCI et l'empreinte
+SHA-256 des binaires. Les budgets sont 200/600 ms ; ils servent au contrôle de
+développement, pas à promettre une couverture générale ou des raisons positionnelles.
 Le prototype ne publie encore aucune nouvelle explication dans la revue.
 
 Les explications pédagogiques décrivent des faits vérifiés dans la position et

@@ -500,3 +500,61 @@ seuils de développement et les résultats réels. Le clouage construit est sout
 par les deux moteurs ; les variantes compensées/incomplètes ou divergentes de
 Byrne–Fischer restent indéterminées. Aucun texte publiable ou raccordement à
 l'interface active. Les détecteurs/couvertures des corpus sont inchangés.
+
+## Brouillons et aperçu de relecture — 3 octobre 2026
+
+`draftModel`, `tacticalDraft` et `mateDraft` produisent une idée structurée
+depuis un contraste soutenu : décision, changement physique, exploitation et
+différence avec une alternative explicite. Aucun texte causal n'est généré si
+le vérificateur s'abstient. Les rapports moteur conservent `explanation: null`.
+
+Les quatre premières familles sont la fourchette, le défenseur échangé dans une
+double attaque, le clouage qui interdit une retraite et la déviation vers un mat
+immédiat. Le motif favorable d'une erreur reste secondaire : `draftPlacement`
+ne propose qu'un candidat cohérent avec le verdict, jamais une preuve de cause.
+Les références au contexte, à l'hypothèse et aux positions comparées sont
+contrôlées pour refuser un rapport réutilisé pour une autre décision.
+
+Les positions montrées partent après la décision. Le mat comporte seulement la
+réponse puis le mat. L'alternative qui garde le bloqueur est montrée en une seule
+position. Dans un échange, les reprises nécessaires sont conservées ; un choix
+calme qui atteste que le moteur ne reprend pas reste dans la preuve, mais est
+signalé par une note sans nouvelle position inutile. Les origines `engine-line`,
+`conditional-move` et `rules` restent distinctes. Une réponse hypothétique n'est
+pas présentée comme un choix libre du moteur.
+
+`draftExchange` rattache une reprise au même épisode antérieur. Le bilan global
+et le bilan à partir de la reprise sont séparés. Si le PGN commence après le
+début de l'échange, il ne fabrique pas un bilan historique complet. L'exemple
+construit exécuté depuis la position initiale finit par …Cxe3, fxe3, …Dxe3+ :
+−1 point pour les Blancs sur l'échange, +2 à partir de la reprise fxe3. Ces
+chiffres ne jugent pas la qualité du coup et ne valident pas les échanges avec
+des coups intermédiaires plus longs.
+
+L'aperçu `/dev/pedagogy-review.html` est un point d'entrée Vite isolé, sans import
+dans l'application. Il lit `dev/pedagogy-review-data.json`, produit par
+`npm run pedagogy:review`. Les données viennent des deux moteurs réels ; noms UCI,
+empreintes des binaires, date, coût et abstentions sont conservés. Elles ne sont
+ni des attentes de tests ni un corpus indépendant. Le texte et les positions
+sont à juger humainement avant activation. Aucun moteur simulé n'alimente cet
+instantané. Les doubles attaques de Byrne–Fischer restent sans texte causal
+dans l'instantané quand le contraste n'est pas soutenu.
+
+L'extraction des captures de `possibilities` et `relations` cible désormais les
+attaquants géométriques et laisse chess.js filtrer la légalité. L'en passant,
+les clouages et les quatre promotions gardent leurs captures et leur ordre.
+Les 31 décisions de développement ont des résultats JSON exactement identiques
+avant/après. Mesure locale, sans recherche UCI : 15,94 s avant, 3,13 s après.
+Ce n'est pas un engagement de latence ; le travail synchrone reste à déplacer
+hors du rendu avant une intégration interactive.
+
+`dev/understanding-benchmark.json` garde la mesure et les empreintes complètes.
+Pour mesurer de nouveau depuis `ui/` :
+
+```bash
+npm run bench:understanding -- --output /tmp/understanding-now.json
+npm run bench:understanding -- --compare /tmp/understanding-now.json
+```
+
+La comparaison refuse aussi un cas ajouté/retiré ou des faits différents ; une
+mesure plus rapide n'est pas acceptée comme conservation des résultats.

@@ -13,7 +13,9 @@
     "test:unit": "vitest run src",
     "test:bridge": "vitest run dev",
     "start": "node dev/start.mjs",
-    "test:understanding": "vitest run src/review/understanding --reporter=verbose"
+    "test:understanding": "vitest run src/review/understanding --reporter=verbose",
+    "pedagogy:review": "node dev/pedagogy-review.mjs",
+    "bench:understanding": "node dev/understanding-bench.mjs"
   },
   "dependencies": {
     "@lichess-org/chessground": "^10.1.1",

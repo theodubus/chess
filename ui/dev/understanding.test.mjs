@@ -31,12 +31,14 @@ import { tacticalConstraints } from "../src/review/understanding/constraints";
 import { MateVerification } from "../src/review/understanding/MateVerification";
 import { TacticalVerification } from "../src/review/understanding/TacticalVerification";
 import { tacticalInput } from "../src/review/understanding/tacticalCases";
+import { tacticalDraft } from "../src/review/understanding/tacticalDraft";
+import { mateDraft } from "../src/review/understanding/mateDraft";
 
 for (const [name, command] of [
   ["ShallowRed", process.env.CHESS_ENGINE_BINARY],
   ["Stockfish", process.env.CHESS_STOCKFISH_BINARY],
 ]) {
-  for (const id of ["pin-retreat", "byrne-22", "byrne-allows-fork"]) {
+  for (const id of ["fork-direct", "fork-black", "pin-retreat", "byrne-22", "byrne-allows-fork"]) {
     it.skipIf(!command)(`${name} : contraintes comparées ${id}`, async () => {
       const input = tacticalInput(id), check = new TacticalVerification([200, 600], 25000);
       const bridge = startBridge({ command, port: 0 });
@@ -84,6 +86,7 @@ for (const [name, command] of [
         expect(report, check.error).not.toBeNull();
         expect(report.explanation).toBeNull();
         expect(report.searches).toBeLessThanOrEqual(10);
+        const draft = tacticalDraft(input.understanding, report);
         // Pas d'attente figée sur une PV historique, un score ou la qualité du
         // coup. Les deux recherches doivent fournir le même mécanisme observé.
         if (report.attribution.status === "supported") {
@@ -93,9 +96,13 @@ for (const [name, command] of [
             expect(report.passes.every((p) => p.actual.exchange.balance === 0 && p.contrast.followUp.usedDefender === p.actual.followUp.defenderId)).toBe(true);
           if (report.attribution.reason === "blocked-retreat")
             expect(report.passes.every((p) => p.contrast.usedRetreat && p.actual.evidence.materialDelta < 0)).toBe(true);
-        }
+          expect(draft.played[0].command).toBe(input.understanding.context.after.command);
+          for (const step of [...draft.played, ...draft.alternative])
+            expect(boardFromCommand(step.command).fen()).toBe(step.fen);
+          expect(draft.played.length).toBeLessThanOrEqual(9);
+        } else expect(draft).toBeNull();
         console.info(JSON.stringify({ engine: name, case: id, status: report.status, reason: report.reason, attribution: report.attribution,
-          searches: report.searches, elapsedMs: report.elapsedMs, explanation: null,
+          searches: report.searches, elapsedMs: report.elapsedMs, explanation: null, draft,
           passes: report.passes.map((p) => ({ budgetMs: p.budgetMs, matched: p.actual.matched, observation: p.actual.reason,
             evidence: p.actual.evidence, exchange: p.actual.exchange, followUp: p.actual.followUp,
             contrast: { reason: p.contrast.reason, scope: p.contrast.scope, prefix: p.contrast.prefix, usedRetreat: p.contrast.usedRetreat,
@@ -219,6 +226,13 @@ for (const [name, command] of [
       }));
       expect(report, check.error).toMatchObject({ status: "supported", contrast: { status: "short-route-absent", retainedBlocker: true }, searches: 6, explanation: null });
       expect(report.passes.every((p) => p.illustration.join(" ") === "d7b8 d1d8")).toBe(true);
+      const draft = mateDraft({ context, constraints }, report);
+      expect(draft.played).toHaveLength(3);
+      expect(draft.alternative).toHaveLength(1);
+      expect(draft.played[0].fen).toBe(context.after.fen);
+      for (const step of [...draft.played, ...draft.alternative])
+        expect(boardFromCommand(step.command).fen()).toBe(step.fen);
+      console.info(JSON.stringify({ engine: name, case: "morphy-31-draft", draft }));
     } finally {
       check.stop(); await bridge.close(); vi.unstubAllGlobals();
     }

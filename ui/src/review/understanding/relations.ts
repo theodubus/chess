@@ -8,6 +8,7 @@ import {
   type TrackedPiece,
 } from "./context";
 import { boardFor, sliderRay } from "./possibilities";
+import { legalCapturesOf } from "./legalCaptures";
 
 export type CaptureRelation = {
   attackerId: string;
@@ -74,9 +75,7 @@ export function captureRelations(
     .filter((m) => m.captured)
     .map((move) => {
       const next = new Chess(move.after);
-      const replies = next
-        .moves({ verbose: true })
-        .filter((m) => capturedSquare(m) === move.to);
+      const replies = legalCapturesOf(next, move.to);
       return {
         attackerId: frame.pieces.find((p) => p.square === move.from)!.id,
         victimId: frame.pieces.find((p) => p.square === capturedSquare(move))!

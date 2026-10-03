@@ -175,14 +175,22 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   résolues conservées, aucun gain compensateur, échec ou promotion du témoin omis ; bilans distincts
   explicités lorsqu'une prise sur une autre pièce est retirée du repère.
 
-- [ ] Une idée principale structurée : décision → changement → exploitation →
-  différence avec l’alternative. Les raisons inconnues restent inconnues.
-- [ ] Motifs secondaires subordonnés ; distinguer cause initiale, meilleure
-  défense et fin d’échange. Une même séquence garde un récit cohérent entre coups.
-- [ ] Texte produit uniquement depuis les faits et leur statut ; pas de « commence
-  un échange gagnant » pour une reprise dans un échange antérieur perdant.
-- [ ] Plan visuel minimal : cases/flèches et positions nécessaires à cette idée ;
-  une suppression de retraite peut se montrer sans dérouler toute la PV.
+- [x] Première idée structurée pour fourchette, défenseur échangé, clouage et
+  déviation courte : décision → changement → exploitation → différence avec
+  l’alternative. Brouillons logiciels, sans activation ni validation pédagogique.
+- [x] Motif bénéfique routé comme secondaire quand le verdict est négatif ; une
+  candidature à la raison principale n'est pas une preuve. Reprises consécutives
+  situées dans l'épisode antérieur, bilan global séparé du bilan de la reprise.
+  Reste à généraliser aux séquences avec coups intermédiaires et compensations.
+- [x] Pour ces premières familles, texte issu des preuves soutenues ; aucun texte
+  causal après abstention. Si le début de l'échange manque, son bilan global n'est
+  pas inventé. Les échecs et compensations restent dans le témoin complet.
+- [x] Premier plan minimal pour ces familles : départ après la décision, mat en
+  deux demi-coups, alternative bloquée en une position. Un choix calme final peut
+  être indiqué sans nouvelle position ; capture/promotion/échec jamais retirés.
+- [x] Aperçu de relecture séparé : instantané UCI réel, navigation coup/alternative,
+  retour explicite au coup étudié et provenance de chaque étape. Aucun menu ajouté
+  à la partie. Les abstentions y restent visibles.
 - [ ] Vérifier sur le corpus la pertinence de la phrase ET de l’illustration,
   au-delà des seuls tests de légalité et de scores.
 
@@ -212,12 +220,17 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 
 ## Point de reprise
 
+- Reprise autonome autorisée le 3 octobre : poursuivre jusqu'à besoin d'arbitrage
+  humain, limite de session ou achèvement. Les premiers brouillons et l'aperçu
+  sont préparés ; la relecture pédagogique est demandée à Théo, avec des exemples
+  concrets. Ne pas interpréter l'attente ou une CI verte comme cette validation.
 - Branche actuelle : `codex/ui-polish`, PR #111 ouverte au début de cette reprise.
-- Dernier lot : comparaisons de fourchette et clouage, avec témoins des deux
-  cibles, échange entier et défense retirée par cet échange. Voir la livraison
-  ci-dessous et `src/review/understanding/TACTICAL_VERIFICATION.md`.
-- **Prochain travail concret** : produire des brouillons et repères minimaux
-  depuis les contrastes soutenus, puis les relire sur un échantillon neuf.
+- Dernier lot : brouillons/repères de quatre familles, contexte des reprises,
+  aperçu de relecture et extraction optimisée. Voir la livraison ci-dessous.
+- **Prochain travail concret** : relire clouage, fourchette et mat dans
+  `/dev/pedagogy-review.html`, puis adapter texte/repères aux retours. La question
+  porte sur la compréhension de la décision, pas sur l'autorisation de coder.
+  Ajouter ensuite un échantillon neuf, avant raccordement progressif E.
   Pour …Ca4, traiter la compensation et distinguer la pression tactique du
   gain matériel immédiat ; la cause du verdict reste inconnue quand le bilan
   matériel est compensé. Ne pas inventer une phrase pour augmenter la couverture.
@@ -232,8 +245,10 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   après …Fe6). Une vraie compensation positionnelle ne se prouve pas par un
   détecteur de capture supplémentaire. Optimiser le coût avant toute activation E.
 - Restent aussi les contraintes combinées plus longues, les mats plus longs,
-  compensations différées, extraction coûteuse et démarrages moteur par question. Ne pas contourner ces limites par
-  des textes génériques ou par une intégration prématurée.
+  compensations différées et démarrages moteur par question. L'extraction est
+  réduite (31 décisions : 15,94 → 3,13 s localement, faits identiques), mais reste
+  synchrone ; prévoir un calcul hors rendu avant E. Ne pas contourner ces limites
+  par des textes génériques ou par une intégration prématurée.
 - Démarrage autorisé : A, puis les primitives de B avec un rapport exécutable.
   L’UI conserve provisoirement le prototype historique, dont les limites restent
   connues. Ne pas annoncer que l’analyse utilisateur est déjà corrigée.
@@ -636,3 +651,48 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - Suite concrète : brouillons/repères minimaux depuis les causes soutenues,
   exemples neufs et relecture ; pour …Ca4, modéliser la compensation/pression
   durable avant tout texte causal. Optimiser l'extraction avant l'intégration E.
+
+## Brouillons à relire et extraction réduite — 3 octobre 2026
+
+- `draftModel.ts`, `tacticalDraft.ts`, `mateDraft.ts` : idée structurée pour quatre
+  premières familles, texte/repères issus du même contraste. Refus d'un rapport
+  d'une autre décision, hypothèse ou alternative. Motif bénéfique secondaire pour
+  un verdict négatif ; aucune prétention de meilleure décision automatique.
+- Origines moteur/hypothèse/règles conservées. Mat : réponse puis mat ; alternative
+  bloquée : une position. Pour le clouage, le choix calme après la dernière reprise
+  est attesté par une note ; sa nouvelle position est inutile et n'est pas montrée.
+  Le témoin complet reste intact. Aucune capture, compensation, promotion ou réponse
+  à l'échec n'est coupée pour simplifier le repère.
+- Contexte de reprise : échange antérieur et bilan depuis la décision distincts.
+  Le cas construit légal depuis le début a un échange à −1 pour les Blancs et une
+  reprise fxe3 à +2 depuis cette décision. Historique absent = bilan global inconnu.
+  Cette primitive ne comprend pas encore les épisodes avec coups intermédiaires.
+- `dev/pedagogy-review.html`, `preview.ts/.css`, `previewModel.ts` et générateur
+  `npm run pedagogy:review` : aperçu Vite séparé pour relecture. Instantané de douze
+  cas moteur, six brouillons et six abstentions lors de cette mesure ; 30 positions
+  démontrées vérifiées contre leurs commandes et bilans. Les scores/conclusions
+  simulés des tests ne l'alimentent pas. Nom UCI, SHA-256, coût et provenance gardés.
+  Le clouage construit est soutenu par les deux moteurs ; les fourchettes construites
+  sont soutenues dans cette mesure ShallowRed mais pas Stockfish, ses scores divergeant.
+  Byrne–Fischer reste sans texte causal ; les deux moteurs confirment le mat court.
+- Contrôle visuel navigateur non effectué : le connecteur CUA n'expose aucun
+  navigateur. Vite sert/transpile l'aperçu ; validation de légalité des positions,
+  origine et bilans faite. Relecture humaine de la clarté demandée le 3 octobre,
+  avant activation E ; pas de réponse présumée ni de jugement déduit des tests.
+- `legalCaptures.ts` cible les attaquants puis fait vérifier les captures par
+  chess.js, au lieu de générer tous les coups pour chaque reprise. 34 contrôles
+  comparent l'inventaire exhaustif/ciblé sur les 31 décisions et vérifient EP avec
+  un candidat cloué, quatre promotions et cavalier cloué. Toute l'extraction garde
+  les mêmes empreintes sur les 31 cas, ordre inclus. Mesure locale 15,94 → 3,13 s,
+  sans moteur UCI ; pas de promesse de latence. Script `bench:understanding` et
+  référence versionnés. Calcul hors rendu React toujours nécessaire avant E.
+- 13 tests des brouillons, plus quatre essais réels supplémentaires de fourchette
+  (48 UCI au total). Validation locale avant synchronisation : **657 tests / 53
+  fichiers**, dont 588 unitaires et 69 pont/moteurs, ShallowRed + Stockfish 16.
+  Lint, TypeScript et build réussis ; bundles actifs inchangés. Le moteur reste
+  hors du code de ce lot. La PR doit maintenant être synchronisée avec main et
+  la CI du commit envoyé relue.
+- Corpus inchangés : 12/12 hypothèses construites, 4/11 publiées, **zéro explication
+  publiable**. La pertinence générale, compensation/pression durable, nouveaux cas
+  indépendants et intégration restent ouvertes. Les brouillons ne corrigent pas
+  encore l'explicateur actif ; la prochaine décision porte sur leur lisibilité.

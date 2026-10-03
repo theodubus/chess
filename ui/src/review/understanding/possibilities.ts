@@ -6,6 +6,7 @@ import {
   type Square,
 } from "chess.js";
 import { materialBalance } from "../../material";
+import { legalCapturesOf } from "./legalCaptures";
 import {
   capturedSquare,
   opposite,
@@ -66,14 +67,10 @@ export function boardFor(frame: PositionFrame, side: Color) {
 function captureWitnesses(move: Move, balance: number): CaptureWitness[] {
   const board = new Chess(move.after),
     sign = move.color === "w" ? 1 : -1;
-  return board
-    .moves({ verbose: true })
-    .filter((reply) => capturedSquare(reply) === move.to)
+  return legalCapturesOf(board, move.to)
     .map((reply) => {
       const next = new Chess(reply.after);
-      const recaptures = next
-        .moves({ verbose: true })
-        .filter((recapture) => capturedSquare(recapture) === reply.to);
+      const recaptures = legalCapturesOf(next, reply.to);
       const balances = [
         materialBalance(next) * sign,
         ...recaptures.map(

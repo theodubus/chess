@@ -18,7 +18,7 @@ export type CaptureIllustration = {
 export function captureIllustration(
   context: { before: PositionFrame; after: PositionFrame },
   victimId: string,
-  evidence: DefenceEvidence,
+  evidence: Pick<DefenceEvidence, "moves" | "materialDelta" | "outcome">,
 ): CaptureIllustration {
   const line = witnessLine(
     context.after,
