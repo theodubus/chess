@@ -2,6 +2,10 @@ import { explainMove, type ExplanationLine } from "./explanations";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { confirmCause } from "./decisionCause";
 import { useCauseCheck } from "./useCauseCheck";
+import { usePedagogicalAnalysis } from "./usePedagogicalAnalysis";
+import { adverseCategory } from "./understanding/PedagogicalAnalysis";
+import { directExplanation } from "./directExplanation";
+import ConsequenceStatus from "./ConsequenceStatus";
 import type { EngineFactory } from "../GameController";
 import type { Square } from "chess.js";
 import RetryCoach from "./RetryCoach";
@@ -63,6 +67,7 @@ export default function InteractiveReview({
   explanationEngineFactory?: EngineFactory;
 }) {
   const [demo, setDemo] = useState<{
+    review: GameReview;
     source: string;
     line: ExplanationLine;
     step: number;
@@ -225,18 +230,32 @@ export default function InteractiveReview({
         )
       : null
     : playedPosition;
-  const draftExplanation =
+  const explanationSignature =
     explanationPosition && !blind && showAnnotations
-      ? explainMove(
+      ? JSON.stringify([
           explanationPosition,
           before ?? null,
-          branch ? liveResult : review.results[selected],
+          (branch ? liveResult : review.results[selected]) ?? null,
           annotation,
-        )
-      : null;
+          !adverseCategory(annotation?.category),
+        ])
+      : "";
+  const draftExplanation = useMemo(() => explanationSignature
+    ? explainMove(...JSON.parse(explanationSignature) as Parameters<typeof explainMove>)
+    : null, [explanationSignature]);
   const causeFactory = useMemo(
     () => explanationEngineFactory ?? analysisEngineFactory(engineId),
     [explanationEngineFactory, engineId],
+  );
+  const explanationEnabled = active && showAnnotations && !blind && pane === "details" &&
+    walkTarget === null && review.state !== "running" && (!branch || liveState === "complete") && focused.state !== "running";
+  const adverse = adverseCategory(annotation?.category);
+  const consequence = usePedagogicalAnalysis(
+    explanationPosition && annotation && adverse && !blind && showAnnotations
+      ? { review, revision: reviewRevision, engineId, position: explanationPosition,
+          result: (branch ? liveResult : review.results[selected]) ?? null, category: annotation.category }
+      : null,
+    causeFactory, explanationEnabled,
   );
   const causeCheck = useCauseCheck(
     draftExplanation?.candidate,
@@ -244,17 +263,15 @@ export default function InteractiveReview({
     reviewRevision,
     engineId,
     causeFactory,
-    active &&
-      showAnnotations &&
-      !blind &&
-      pane === "details" &&
-      walkTarget === null &&
-      review.state !== "running" &&
-      (!branch || liveState === "complete") &&
-      focused.state !== "running",
+    explanationEnabled && !adverse,
   );
+  const direct = useMemo(() => draftExplanation && adverse
+    ? directExplanation(draftExplanation, consequence.result?.consequence ?? null)
+    : null, [draftExplanation, adverse, consequence.result]);
   const explanation = draftExplanation
-    ? confirmCause(draftExplanation, causeCheck.results)
+    ? adverse
+      ? direct
+      : confirmCause(draftExplanation, causeCheck.results)
     : null;
   const focusRequest: FocusRequest | null = explanationPosition
     ? {
@@ -274,6 +291,7 @@ export default function InteractiveReview({
     (!!branch && liveState !== "complete" && liveState !== "error");
   async function deepen() {
     if (!focusRequest || focusBlocked || focusPending) return;
+    consequence.analysis.stop();
     const results = await focused.analyse(
       focusRequest,
       analysisEngineFactory(engineId),
@@ -288,9 +306,10 @@ export default function InteractiveReview({
       setRetrySearch((value) => value + 1);
     } else review.applyRefinement(reviewRevision, selected - 1, results);
   }
-  const demoSource = `${engineId}:${selected}:${explanationPosition?.command}:${uci}:${branch?.node ?? "game"}`;
+  const demoSource = JSON.stringify([engineId, reviewRevision, selected, explanationPosition, uci,
+    before, branch ? liveResult : review.results[selected], annotation?.category, branch?.node ?? "game"]);
   const demonstration =
-    demo?.source === demoSource && active && !blind && showAnnotations
+    demo?.review === review && demo.source === demoSource && active && !blind && showAnnotations
       ? demo
       : null;
   const observationVisible = demonstration?.line.kind === "observation";
@@ -305,7 +324,7 @@ export default function InteractiveReview({
     setDemo(
       observationVisible && demonstration.line.title === line.title
         ? null
-        : { source: demoSource, line, step: 0 },
+        : { review, source: demoSource, line, step: 0 },
     );
   }
   function navigate(index: number) {
@@ -754,7 +773,7 @@ export default function InteractiveReview({
                   className="secondary"
                   onClick={() => demonstrate(explanation.alternative!)}
                 >
-                  Voir la meilleure idée
+                  Voir le choix du moteur
                 </button>
               )}
             <button
@@ -826,7 +845,9 @@ export default function InteractiveReview({
                     className="move-explanation"
                     aria-label="Comprendre le coup"
                   >
-                    {causeCheck.pending && !explanation.concrete ? (
+                    {adverse ? (
+                      <ConsequenceStatus state={consequence.state} fallback={explanation.summary} />
+                    ) : causeCheck.pending && !explanation.concrete ? (
                       <p className="cause-progress" role="status">
                         <span className="analysis-spinner" aria-hidden="true" />{" "}
                         Le moteur vérifie la conséquence et les compensations…
@@ -845,6 +866,7 @@ export default function InteractiveReview({
                     {explanation.concrete && !annotation && (
                       <p>{explanation.summary}</p>
                     )}
+                    {explanation.context && <p className="hint">{explanation.context}</p>}
                     {explanation.proof && (
                       <div className="explanation-actions">
                         <button
@@ -862,6 +884,12 @@ export default function InteractiveReview({
                           </button>
                         )}
                       </div>
+                    )}
+                    {explanation.limitation && (
+                      <details className="engine-lines">
+                        <summary>Portée de cette explication</summary>
+                        <p className="hint">{explanation.limitation}</p>
+                      </details>
                     )}
                     <details className="engine-lines">
                       <summary>Variantes du moteur</summary>
@@ -886,7 +914,7 @@ export default function InteractiveReview({
                               demonstrate(explanation.alternative!)
                             }
                           >
-                            Voir la meilleure idée
+                            Voir le choix du moteur
                           </button>
                         )}
                       </div>

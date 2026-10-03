@@ -1,6 +1,6 @@
 # Analyse pédagogique — backlog active et plan de reprise
 
-Plan révisé le 2 octobre 2026 après les retours de Théo, suivi au 3 octobre.
+Plan révisé le 2 octobre 2026 après les retours de Théo, suivi au 4 octobre.
 Périmètre : `ui/**`.
 **Chantier ouvert. L’objectif pédagogique n’est pas atteint.** Le moteur Rust
 reste inchangé ; l’UCI est l’unique interface moteur.
@@ -11,14 +11,21 @@ reste inchangé ; l’UCI est l’unique interface moteur.
 - Une première couche d’explications (`explanations.ts`, `tactics.ts`,
   `decisionCause.ts`) à portée limitée, parfois trompeuse malgré ses vérifications.
 - Des recherches annulables et mises en cache (`FocusedAnalysis`, `LiveStudy`).
+- Premier raccordement des conséquences matérielles adverses confirmées :
+  fourchette/défenseur échangé, défense retirée et ligne ouverte. Texte et
+  illustration racontent le coup joué ; aucune alternative obligatoire. Les
+  causes historiques négatives sont écartées sur ce parcours. La couverture
+  positionnelle et la validation sur un échantillon neuf restent ouvertes.
 - Des tests logiciels et un parcours navigateur. Ils ne constituent **pas** une
   mesure de pertinence pédagogique. Les anciens lots « terminés » restent dans
   `BACKLOG_ANALYSE_PEDAGOGIQUE_HISTORIQUE.md` comme historique de livraison.
 
 Ne pas ajouter de nouvelles familles de phrases dans `decisionCause.ts` pour
 répondre à chaque capture utilisateur. Construire le prototype suivant séparément,
-sous `src/review/understanding/`, sans le connecter à l’UI tant que son contrat
-n’est pas validé. Un cas reconnu n’est pas une preuve de couverture générale.
+sous `src/review/understanding/`. Le premier contrat négatif est raccordé le
+4 octobre après les retours et la validation des textes par Théo ; les autres
+familles restent séparées jusqu'à validation. Un cas reconnu n’est pas une preuve
+de couverture générale.
 
 ## Objectif mesurable
 
@@ -220,18 +227,23 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - [ ] Vérifier sur le corpus la pertinence de la phrase ET de l’illustration,
   au-delà des seuls tests de légalité et de scores.
 
-### E. Intégration progressive dans la revue — À FAIRE
+### E. Intégration progressive dans la revue — EN COURS
 
 - [x] Préparer l'extraction coopérative, annulable, avec cache borné par revue,
   révision, moteur, historique et PV, progression par phase et délai. Même résultat
   que le synchrone sur 31 décisions ; méthodes chess.js conservées, cache immuable.
   Les primitives indivisibles peuvent dépasser la tranche cible ; ce n'est pas
   un Worker et aucune promesse de durée d'image n'est faite.
-- [ ] Raccorder seulement les familles ayant passé les étapes précédentes.
-- [ ] Conserver le coup étudié, navigation, variantes, dessins, préférences,
-  retry sans fuite et signalement de calcul. Aucun nouveau menu concurrent.
-- [ ] Retirer les anciennes règles remplacées ; ne pas empiler deux explications
-  contradictoires pour une même décision.
+- [x] Premier raccordement des conséquences adverses matérielles courtes :
+  fourchette (dont défense échangée), clouage absolu exploité, défense retirée,
+  ligne ouverte, seulement si les deux recherches confirment le mécanisme et le
+  bilan après reprises. Pas d'activation des brouillons favorables/comparatifs/mat.
+- [x] Coup consulté uniquement, signalement du calcul, cache/annulation et
+  préférences. Même navigation de démonstration et variantes ; retry masqué
+  ne transmet aucune demande. Un changement de PV/score, même sans changement de
+  révision, invalide résultat et démonstration.
+- [x] Anciennes causes négatives désactivées sur ce parcours ; les variantes
+  libres et observations restent secondaires. Pas de deuxième raison concurrente.
 - [ ] Tester des parties complètes (humain/bot, deux humains, import PGN) et le
   parcours bureau/mobile. Mesurer latence et couverture avant/après.
 - [ ] Faire relire les exemples par Théo : une CI verte n’est pas cette validation.
@@ -264,9 +276,16 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   deux bonnes défenses possibles sans choix unique, contrôle de l'alternative libre
   et extraction coopérative. Les textes et repères négatifs ne dépendent plus du
   succès d'une recherche d'autre coup. Voir la livraison ci-dessous.
-- **Prochain travail concret** : compléter l'échantillon de contrôle négatif,
-  contraintes combinées/coups intermédiaires et compensation, puis le raccordement
-  progressif E. Ne pas transformer ces régressions construites en validation
+- **Dernier raccordement le 4 octobre** : Théo demande de poursuivre sans
+  nouvel arbitrage. Premier raccordement des conséquences
+  matérielles négatives déjà vérifiées à la revue et aux variantes : calcul au
+  coup consulté, progression, cache/annulation, retry sans fuite, même navigation
+  de démonstration, aucune alternative obligatoire ni classement par le motif.
+  Les anciennes causes négatives ne sont plus calculées sur ce parcours.
+  Tests du contrôleur, de la conversion, du rendu statique et des deux moteurs.
+- **Ensuite** : compléter l'échantillon de contrôle négatif,
+  contraintes combinées/coups intermédiaires et compensation, puis les autres
+  raccordements E et le parcours visuel. Ne pas transformer ces régressions construites en validation
   indépendante. La clarté des exemples initiaux est validée ; garder les cas
   sans cause et les limites de couverture visibles.
   Pour …Ca4, traiter la compensation et distinguer la pression tactique du
@@ -275,21 +294,23 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - Corpus construit : 12 hypothèses principales reconnues sur 12 attentes connues.
   Corpus publié : 4 sur 11 (deux échanges, double attaque, déviation), sept idées
   manquantes. Les deux corpus restent à zéro explication publiable. Le second a
-  désormais servi au développement ; il faut un échantillon neuf et une relecture
+  désormais servi au développement ; l'activation logicielle limitée ne change
+  pas ces métriques pédagogiques. Il faut un échantillon neuf et une relecture
   indépendante pour mesurer la généralisation.
 - Le motif principal d'une combinaison doit rester distinct d'un échange local.
   Le mat de la déviation est à montrer en deux demi-coups après la décision ;
   la meilleure défense peut différer de la suite du PGN (Dxc3 plutôt que Fxb6
   après …Fe6). Une vraie compensation positionnelle ne se prouve pas par un
-  détecteur de capture supplémentaire. Optimiser le coût avant toute activation E.
+  détecteur de capture supplémentaire. La pression sans perte immédiate reste
+  inexpliquée dans le premier raccordement.
 - Restent aussi les contraintes combinées plus longues, les mats plus longs,
   compensations différées et démarrages moteur par question. L'extraction est
-  réduite (31 décisions : 15,94 → 3,13 s localement, faits identiques), mais reste
-  synchrone ; prévoir un calcul hors rendu avant E. Ne pas contourner ces limites
-  par des textes génériques ou par une intégration prématurée.
+  réduite (31 décisions : 15,94 → 3,13 s localement, faits identiques), puis rendue
+  coopérative et annulable hors rendu. Une primitive indivisible peut encore
+  dépasser une tranche cible ; aucun engagement de durée d'image.
 - Démarrage autorisé : A, puis les primitives de B avec un rapport exécutable.
-  L’UI conserve provisoirement le prototype historique, dont les limites restent
-  connues. Ne pas annoncer que l’analyse utilisateur est déjà corrigée.
+  L’UI conserve le détecteur historique pour les autres parcours. Ne pas annoncer
+  que l’analyse utilisateur générale est déjà corrigée.
 - Exemple réel central : `Dd2` occupe une retraite du fou e3, puis `…f4` attaque
   ce fou. Source : captures utilisateur du 2 octobre. FEN reconstruite, sans
   inventer le PGN antérieur ; trait, horloges FEN et dernier déplacement documentés.
@@ -783,3 +804,40 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   régressions ne changent pas ces chiffres. Compensation différée, contraintes
   combinées/longues, échantillon neuf et intégration E restent ouverts. L'UI active
   n'utilise pas encore ces nouvelles explications ; ne pas annoncer le chantier fini.
+
+## Premier raccordement des conséquences adverses — 4 octobre 2026
+
+- `PedagogicalAnalysis` pilote extraction coopérative puis au plus deux candidats
+  matériels négatifs, aux budgets 300/900 ms et dans un délai commun de 12 s.
+  Fourchette/défenseur échangé, clouage absolu exploité, défense retirée et ligne
+  ouverte : aucune recherche d'alternative pour produire le récit du coup joué.
+  Autres verdicts, score borné ou PV absente = aucune connexion pédagogique.
+- Cache extérieur borné/immuable par revue, révision, moteur, historique, score,
+  PV et verdict. Un contenu affiné sans nouvelle révision relance les contrôles.
+  Navigation et calcul concurrent annulent ; moteur connecté tardivement fermé
+  sans `go`. Un échec ou une divergence n'active pas une ancienne cause.
+- `directExplanation`, hook et état de progression raccordés à `InteractiveReview`.
+  Texte/repères suivent le témoin légal du coup joué ; première position après
+  celui-ci, pas de rewind ni alternative imposée. Bilan et contexte de reprise
+  conservés ; portée consultable. « Montrer pourquoi » utilise la démonstration
+  existante, ses flèches/clavier et son retour au coup examiné. Démonstration
+  invalidée aussi par une nouvelle revue ou des résultats raffinés. Retry masqué
+  et annotations désactivées n'exposent pas les raisons. Les rendus d'explication
+  sont mémorisés ; progression publiée aux changements de phase.
+- Les causes historiques négatives ne sont plus calculées sur ce parcours.
+  Variantes libres et observations complémentaires restent accessibles. Les
+  brouillons positifs/comparatifs et mats ne sont pas activés dans ce raccordement.
+- Quatre essais réels du raccordement complet : ShallowRed soutient fourchette et
+  ligne ouverte, Stockfish 16 soutient la ligne ouverte et s'abstient sur la
+  fourchette. Coût observé 1,8–5,1 s, extraction/démarrages compris, première
+  évaluation exclue ; pas de promesse de latence ni mesure de couverture générale.
+- Validation locale : **728 tests / 59 fichiers** avec les deux moteurs, puis
+  **21 tests du contrôleur**, dont le dernier ajouté pour une connexion tardive.
+  Lint, TypeScript et build réussis. Les bundles actifs changent : le prototype
+  est maintenant importé dans la revue. CI à relire sur le commit envoyé.
+- Aucun navigateur CUA disponible : contrôle visuel bureau/mobile et parcours
+  intégral humain/bot/import restent ouverts. Les tests de rendu sont statiques,
+  les scores unitaires simulés ; ils ne sont pas une relecture pédagogique.
+- Les corpus n'ont pas été élargis : métriques d'hypothèses inchangées et aucune
+  nouvelle validation indépendante. Prochaine étape : échantillon neuf et raisons
+  non matérielles/contraintes combinées, sans élargissement par simple reformulation.

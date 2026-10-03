@@ -1,7 +1,9 @@
-# Prototype de compréhension — suivi au 3 octobre 2026
+# Compréhension et première intégration — suivi au 4 octobre 2026
 
-Ce dossier est indépendant de l’interface et de l’ancien détecteur de motifs.
-Il produit des faits et des hypothèses structurés ; `explanation` reste `null`.
+Les extracteurs et vérificateurs restent indépendants du rendu et de l'ancien
+détecteur de motifs. Ils produisent des faits et hypothèses ; leur champ
+`explanation` reste `null`. `PedagogicalAnalysis` raccorde désormais les seules
+conséquences matérielles adverses confirmées à la revue, via `directExplanation`.
 Lancer depuis `ui/` :
 
 ```bash
@@ -44,7 +46,7 @@ CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/gam
   Cache borné par revue/moteur/révision/historique/PV, résultats immuables avec les
   méthodes des coups chess.js conservées. Les 31 extractions sont identiques en
   synchrone et coopératif. Une primitive chess.js indivisible peut dépasser la
-  tranche cible ; cette préparation n'est pas encore raccordée au rendu React.
+  tranche cible ; cette extraction est maintenant utilisée hors rendu React.
 
 `TacticalEffectVerification.verify` et `RelationVerification.verifyEffect`
 vérifient maintenant directement une perte permise par le coup joué, sans
@@ -54,6 +56,36 @@ négatif peut exister même si la comparaison est indisponible, mais aucune
 alternative n'est alors affichée. Comparer un seul autre choix ne démontre
 jamais un meilleur coup global ou une défense unique. Voir
 `TACTICAL_VERIFICATION.md` pour la portée et les limites.
+
+## Premier raccordement dans la revue — 4 octobre 2026
+
+`PedagogicalAnalysis` extrait les faits hors rendu puis teste au plus deux
+candidats adverses : double menace/clouage absolu, défense retirée ou ligne
+ouverte. Deux budgets 300/900 ms ; délai commun de 12 s, extraction et démarrages
+inclus. Un refus UCI, une compensation ou une instabilité conserve l'abstention.
+Aucun coup de remplacement n'est recherché pour produire ce premier texte.
+
+Le cache extérieur inclut revue, révision, moteur, historique, PV, score et
+verdict ; il est borné à 32 entrées par revue. Une amélioration de PV sans nouvelle
+révision invalide aussi la démonstration. Les contrôles UCI sont recréés pour ce
+nouveau contenu : un cache de questions ne peut pas masquer ce changement.
+Navigation, changement moteur, onglet, préférences, calcul principal et retry
+masqué annulent les recherches. Une connexion tardive est fermée sans `go`.
+
+`directExplanation` rejoue le témoin court et raccorde texte/repères au parcours
+existant « Montrer pourquoi / Retour au coup examiné ». Première position après
+le coup, neuf positions au maximum, reprises utiles conservées. Le bilan complet
+et celui du repère restent distingués quand des coups non pertinents sont omis.
+Les variantes libres et observations sont secondaires ; les anciennes causes
+négatives ne sont plus calculées sur ce parcours. Les brouillons favorables et
+comparatifs restent hors de la revue, sans prétention de meilleur choix global.
+
+Les essais réels de raccordement soutiennent fourchette et ligne ouverte avec
+ShallowRed, ligne ouverte avec Stockfish 16 ; Stockfish garde l'abstention sur la
+fourchette. Une mesure locale donne environ 1,8–5,1 s de calcul, hors première
+évaluation ; ce n'est pas un engagement de latence. Les fixtures unitaires et les
+rendus statiques ne valident pas l'UX visuelle ou la généralisation échiquéenne.
+La vérification bureau/mobile reste à faire : aucun navigateur CUA disponible.
 
 La recherche de défense et sa vérification courte sont maintenant implémentées
 ci-dessous. La couverture stratégique et l'attribution de la cause à la décision
@@ -342,7 +374,7 @@ cas, aucune attribution n'est publiée. Coût observé pour les deux positions p
 riches : 3,1–4,0 s avec ShallowRed, 6,8–8,4 s avec Stockfish, démarrages inclus et
 extraction exclue. Le démarrage d'un moteur par question reste à optimiser.
 
-`relationDraft` produit uniquement un **brouillon isolé** à partir d'une attribution
+À cette étape initiale, `relationDraft` produit un **brouillon isolé** à partir d'une attribution
 soutenue. Le texte, la commande de chaque position et les repères utilisent les
 mêmes pièces et témoins. Le premier écran est après la décision ; on ne la rejoue
 pas. Le contraste d'une ligne affiche directement l'obstacle conservé, sans
@@ -354,7 +386,7 @@ La révision suivante sépare désormais le témoin complet du repère court et
 observe explicitement la décision de ne pas reprendre. Les trois candidats
 secondaires sont annotés dans la révision de corpus ci-dessous. Les mats, les
 contraintes combinées et une validation pédagogique indépendante restent ouverts. **Le prototype
-n'est toujours pas importé dans la revue ; `explanation` reste `null`.**
+n'était pas encore importé dans la revue à cette étape ; `explanation` reste `null`.**
 
 Validation logicielle finale de cette étape : lint, TypeScript, build et **490 tests
 / 45 fichiers** avec les deux moteurs (`npm test -- --maxWorkers=2`). Le premier
@@ -513,8 +545,8 @@ gardées ; les variantes libres et les questions conditionnelles restent sépar�
 Voir [TACTICAL_VERIFICATION.md](TACTICAL_VERIFICATION.md) pour le contrat, les
 seuils de développement et les résultats réels. Le clouage construit est soutenu
 par les deux moteurs ; les variantes compensées/incomplètes ou divergentes de
-Byrne–Fischer restent indéterminées. Aucun texte publiable ou raccordement à
-l'interface active. Les détecteurs/couvertures des corpus sont inchangés.
+Byrne–Fischer restent indéterminées. Cette étape précédait le premier raccordement
+décrit ci-dessous. Les détecteurs/couvertures des corpus sont inchangés.
 
 ## Brouillons et aperçu de relecture — 3 octobre 2026
 

@@ -6,9 +6,10 @@ avec ShallowRed et Stockfish (200 puis 600 ms) soutient les deux contributions
 conditionnelles. Cela valide ces témoins, **pas** la pertinence générale des
 explications. Les résultats peuvent changer avec les recherches.
 
-Les brouillons restent hors de l'interface active. `relationDraft` les produit
-seulement si la perte et le contraste sont soutenus aux deux budgets ; aucune
-phrase n'est publiée si la confirmation manque. Les scores des fixtures unitaires
+Ces comparaisons restent hors de l'interface active. Depuis le 4 octobre,
+`relationDraft` peut aussi fournir la conséquence négative sans comparaison,
+confirmée aux deux budgets et raccordée à la revue. Aucune phrase causale n'est
+publiée si la confirmation manque. Les scores des fixtures unitaires
 sont simulés et ne servent pas de preuve échiquéenne pour cette page.
 
 ## Défenseur déplacé : Cb4

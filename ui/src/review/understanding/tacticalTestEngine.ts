@@ -33,7 +33,7 @@ export class ScriptEngine implements Engine {
     if (this.command === context.before.command) moves = [uci(context.moves[context.decision])];
     else if (this.command === context.after.command) {
       moves = example.test.line;
-      if (this.mode === "compensation") moves = ["Qa3", "Nxc3", "bxc3", "Nxe4", "Bxe7", "Qe8"];
+      if (this.mode === "compensation") moves = [...(h.role === "allows-loss" ? ["Na4"] : []), "Qa3", "Nxc3", "bxc3", "Nxe4", "Bxe7", "Qe8"];
       if (this.mode === "short") moves = moves.slice(0, 2);
       if (this.mode === "different-threat") moves = ["a5"];
       whiteScore = (context.before.turn === "w" ? 1 : -1) * (h.role === "allows-loss" ? -300 : 300);

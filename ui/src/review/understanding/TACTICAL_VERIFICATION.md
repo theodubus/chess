@@ -1,6 +1,9 @@
 # Vérification des doubles attaques et clouages
 
-Lot du 3 octobre 2026, isolé de l'interface active. `explanation: null`.
+Lot commencé le 3 octobre 2026. Les rapports gardent `explanation: null`.
+Depuis le 4 octobre, les seules conséquences matérielles adverses confirmées
+sont raccordées à la revue par `PedagogicalAnalysis` ; les comparaisons et motifs
+favorables restent dans l'aperçu de développement.
 Les cas sont des régressions de développement, sans relecture indépendante.
 
 ## Témoins et portée

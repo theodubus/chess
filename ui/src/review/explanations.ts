@@ -36,6 +36,8 @@ export type MoveExplanation = {
   proof?: ExplanationLine;
   comparison?: ExplanationLine;
   candidate?: CauseCandidate;
+  context?: string;
+  limitation?: string;
   played: ExplanationLine | null;
   alternative: ExplanationLine | null;
 };
@@ -48,7 +50,7 @@ const names = {
   k: "roi",
 };
 const limit = 8;
-function stepText(board: Chess, move: Move) {
+export function stepText(board: Chess, move: Move) {
   const subject = move.color === "w" ? "Les Blancs" : "Les Noirs";
   if (board.isCheckmate()) return `${subject} font échec et mat.`;
   let text = move.promotion
@@ -153,6 +155,7 @@ function baseExplanation(
   before: ReviewResult | null,
   after: ReviewResult | null,
   annotation: Annotation | null,
+  checkCause = true,
 ): MoveExplanation {
   let played = buildLine(position, after?.variation ?? [], true);
   const reply = played?.steps[2]?.move;
@@ -179,7 +182,7 @@ function baseExplanation(
     played,
     alternative,
   };
-  if (!played) return fallback;
+  if (!played || !checkCause) return fallback;
   return decisionCause(position, before, after, annotation, fallback);
 }
 
@@ -188,8 +191,9 @@ export function explainMove(
   before: ReviewResult | null,
   after: ReviewResult | null,
   annotation: Annotation | null,
+  checkCause = true,
 ): MoveExplanation {
-  const base = baseExplanation(position, before, after, annotation);
+  const base = baseExplanation(position, before, after, annotation, checkCause);
   if (!base.played) return base;
   const compare = !!annotation && exactComparison(before, after, position.turn);
   const observations = {
