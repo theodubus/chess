@@ -6,16 +6,12 @@
     "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
     "prefix": [],
     "played": "Qd2",
-    "line": [
-      "f4",
-      "d4",
-      "fxe3",
-      "fxe3"
-    ],
+    "line": ["f4", "d4", "fxe3", "fxe3"],
     "expected": {
       "hypothesis": "allows-restriction",
       "victim": "e3",
-      "closed": "d2"
+      "closed": "d2",
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -29,19 +25,14 @@
     "family": "restricted-piece",
     "origin": "user-screenshot",
     "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
-    "prefix": [
-      "Qd2"
-    ],
+    "prefix": ["Qd2"],
     "played": "f4",
-    "line": [
-      "d4",
-      "fxe3",
-      "fxe3"
-    ],
+    "line": ["d4", "fxe3", "fxe3"],
     "expected": {
       "hypothesis": "creates-restriction",
       "victim": "e3",
-      "closed": "d2"
+      "closed": "d2",
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -57,11 +48,10 @@
     "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 b - - 0 14",
     "prefix": [],
     "played": "f4",
-    "line": [
-      "Bd2"
-    ],
+    "line": ["Bd2"],
     "expected": {
-      "hypothesis": null
+      "hypothesis": null,
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -77,11 +67,10 @@
     "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
     "prefix": [],
     "played": "Qd2",
-    "line": [
-      "h6"
-    ],
+    "line": ["h6"],
     "expected": {
-      "hypothesis": null
+      "hypothesis": null,
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -95,15 +84,12 @@
     "family": "restricted-piece",
     "origin": "constructed-counterexample",
     "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
-    "prefix": [
-      "Qd2",
-      "f4",
-      "Kh1"
-    ],
+    "prefix": ["Qd2", "f4", "Kh1"],
     "played": "h6",
     "line": [],
     "expected": {
-      "hypothesis": null
+      "hypothesis": null,
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -117,19 +103,16 @@
     "family": "exchange-context",
     "origin": "constructed-from-user-description",
     "fen": "3q3k/8/2n5/8/3B4/4P3/8/7K b - - 0 1",
-    "prefix": [
-      "Nxd4"
-    ],
+    "prefix": ["Nxd4"],
     "played": "exd4",
-    "line": [
-      "Qxd4"
-    ],
+    "line": ["Qxd4"],
     "expected": {
       "exchange": {
         "role": "recapture",
         "total": -1,
         "fromDecision": 2
-      }
+      },
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -143,10 +126,7 @@
     "family": "exchange-context",
     "origin": "constructed-from-user-description",
     "fen": "3q3k/8/2n5/8/3B4/4P3/8/7K b - - 0 1",
-    "prefix": [
-      "Nxd4",
-      "exd4"
-    ],
+    "prefix": ["Nxd4", "exd4"],
     "played": "Qxd4",
     "line": [],
     "expected": {
@@ -154,7 +134,8 @@
         "role": "recapture",
         "total": 1,
         "fromDecision": 1
-      }
+      },
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -170,11 +151,10 @@
     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
     "prefix": [],
     "played": "Nf3",
-    "line": [
-      "d5"
-    ],
+    "line": ["d5"],
     "expected": {
-      "hypothesis": null
+      "hypothesis": null,
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -190,12 +170,10 @@
     "fen": "r3k3/8/8/3N4/8/8/8/7K w - - 0 1",
     "prefix": [],
     "played": "Nc7+",
-    "line": [
-      "Kd7",
-      "Nxa8"
-    ],
+    "line": ["Kd7", "Nxa8"],
     "expected": {
-      "hypothesis": "double-threat"
+      "hypothesis": "double-threat",
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -211,14 +189,20 @@
     "fen": "8/3kp3/2n5/3P4/8/8/8/5B1K w - - 0 1",
     "prefix": [],
     "played": "Bb5",
-    "line": [
-      "e6",
-      "Bxc6+"
-    ],
+    "line": ["e6", "Bxc6+"],
     "expected": {
       "hypothesis": "pin",
-      "partialHypotheses": [
-        "creates-restriction"
+      "partialHypotheses": ["creates-restriction"],
+      "relations": [
+        {
+          "kind": "defender-removal",
+          "role": "creates-opportunity",
+          "victimId": "b:n:c6",
+          "attackerId": "w:p:d5",
+          "capture": "d5c6",
+          "meaning": "secondary",
+          "reason": "Après Fb5, dxc6+ reste légal mais Rxc6 ne l’est plus : le fou contrôle c6. Ce fait de reprise ne reconnaît pas le clouage du cavalier au roi et ne juge pas le coup."
+        }
       ]
     },
     "forbiddenClaims": [
@@ -235,14 +219,27 @@
     "fen": "7k/8/5r2/3n4/2B5/2B5/8/7K w - - 0 1",
     "prefix": [],
     "played": "Bxd5",
-    "line": [
-      "Kh7",
-      "Bxf6"
-    ],
+    "line": ["Kh7", "Bxf6"],
     "expected": {
       "hypothesis": "defender-removal",
       "role": "creates-opportunity",
-      "capture": "c3f6"
+      "capture": "c3f6",
+      "relations": [
+        {
+          "kind": "defender-removal",
+          "role": "creates-opportunity",
+          "victimId": "b:r:f6",
+          "attackerId": "w:b:c3",
+          "capture": "c3f6",
+          "meaning": "primary",
+          "reason": "Fxd5 retire le cavalier qui pouvait reprendre en f6 après Fxf6. La capture et la reprise ont été exécutées ; gain et contribution au verdict restent à vérifier."
+        }
+      ],
+      "exchange": {
+        "role": "first-visible-capture",
+        "total": 3,
+        "fromDecision": 3
+      }
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -258,12 +255,15 @@
     "fen": "1r5k/8/8/8/2q5/1P6/B7/KR6 b - - 0 1",
     "prefix": [],
     "played": "Qxb3",
-    "line": [
-      "Bxb3",
-      "Rxb3"
-    ],
+    "line": ["Bxb3", "Rxb3"],
     "expected": {
-      "hypothesis": null
+      "hypothesis": null,
+      "relations": [],
+      "exchange": {
+        "role": "first-visible-capture",
+        "total": -5,
+        "fromDecision": -5
+      }
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -279,15 +279,31 @@
     "fen": "3q3k/8/8/8/8/3B4/8/3R3K w - - 0 1",
     "prefix": [],
     "played": "Bh7",
-    "line": [
-      "Kg7",
-      "Rxd8",
-      "Kxh7"
-    ],
+    "line": ["Kg7", "Rxd8", "Kxh7"],
     "expected": {
       "hypothesis": "opened-line",
       "role": "creates-opportunity",
-      "capture": "d1d8"
+      "capture": "d1d8",
+      "relations": [
+        {
+          "kind": "opened-line",
+          "role": "creates-opportunity",
+          "victimId": "b:q:d8",
+          "attackerId": "w:r:d1",
+          "capture": "d1d8",
+          "meaning": "primary",
+          "reason": "Fh7 libère la colonne d pour Txd8 ; cette capture reste conditionnelle au retour du trait aux Blancs."
+        },
+        {
+          "kind": "opened-line",
+          "role": "allows-loss",
+          "victimId": "w:r:d1",
+          "attackerId": "b:q:d8",
+          "capture": "d8d1",
+          "meaning": "secondary",
+          "reason": "La même colonne permet immédiatement Dxd1+ aux Noirs. Le témoin Kg7 est légal mais ignore cette prise ; il ne prouve pas que Fh7 est bon."
+        }
+      ]
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -301,19 +317,22 @@
     "family": "king-safety",
     "origin": "constructed",
     "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-    "prefix": [
-      "e4",
-      "e5",
-      "Bc4",
-      "Nc6"
-    ],
+    "prefix": ["e4", "e5", "Bc4", "Nc6"],
     "played": "Qh5",
-    "line": [
-      "a6",
-      "Qxf7#"
-    ],
+    "line": ["a6", "Qxf7#"],
     "expected": {
-      "hypothesis": "mate-threat"
+      "hypothesis": "mate-threat",
+      "relations": [
+        {
+          "kind": "defender-removal",
+          "role": "creates-opportunity",
+          "victimId": "b:p:f7",
+          "attackerId": "w:b:f1",
+          "capture": "c4f7",
+          "meaning": "secondary",
+          "reason": "Dh5 protège f7 : après Fxf7+, Rxf7 serait illégal. La prise du fou n’est pas Dxf7 mat, le motif principal attendu reste absent."
+        }
+      ]
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -331,7 +350,8 @@
     "played": "Kb1",
     "line": [],
     "expected": {
-      "hypothesis": null
+      "hypothesis": null,
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -347,16 +367,12 @@
     "fen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14",
     "prefix": [],
     "played": "Qd7",
-    "line": [
-      "f5",
-      "d5",
-      "fxe6",
-      "fxe6"
-    ],
+    "line": ["f5", "d5", "fxe6", "fxe6"],
     "expected": {
       "hypothesis": "allows-restriction",
       "victim": "e6",
-      "closed": "d7"
+      "closed": "d7",
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -370,19 +386,14 @@
     "family": "restricted-piece",
     "origin": "transformed-regression",
     "fen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14",
-    "prefix": [
-      "Qd7"
-    ],
+    "prefix": ["Qd7"],
     "played": "f5",
-    "line": [
-      "d5",
-      "fxe6",
-      "fxe6"
-    ],
+    "line": ["d5", "fxe6", "fxe6"],
     "expected": {
       "hypothesis": "creates-restriction",
       "victim": "e6",
-      "closed": "d7"
+      "closed": "d7",
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -396,19 +407,16 @@
     "family": "exchange-context",
     "origin": "transformed-regression",
     "fen": "7k/8/4p3/3b4/8/2N5/8/3Q3K w - - 0 1",
-    "prefix": [
-      "Nxd5"
-    ],
+    "prefix": ["Nxd5"],
     "played": "exd5",
-    "line": [
-      "Qxd5"
-    ],
+    "line": ["Qxd5"],
     "expected": {
       "exchange": {
         "role": "recapture",
         "total": -1,
         "fromDecision": 2
-      }
+      },
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",
@@ -424,11 +432,10 @@
     "fen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K w - - 0 14",
     "prefix": [],
     "played": "f5",
-    "line": [
-      "Bd7"
-    ],
+    "line": ["Bd7"],
     "expected": {
-      "hypothesis": null
+      "hypothesis": null,
+      "relations": []
     },
     "forbiddenClaims": [
       "forced-loss",

@@ -62,8 +62,12 @@ ne prouve pas à lui seul le motif choisi pour l’expliquer.
 - [x] Contrôle de référence sur Dd2/…f4 avec ShallowRed et Stockfish : le moteur
   trouve la réponse, l’ancien explicateur reste sans cause ; le prototype expose
   une hypothèse structurelle. Les autres exemples restent à enrichir.
-- [ ] Corpus indépendant de nouvelles parties pour juger la généralisation.
-  Les cas construits avec le code ne sont qu’un corpus de développement.
+- [x] Premier corpus séparé de parties publiées : trois PGN, douze décisions,
+  sélection figée avant mesure, historique complet et attentes explicites.
+  Sources indépendantes du détecteur, sans réglage des détecteurs dans ce lot.
+- [ ] Relecture indépendante, nouvelles parties amateurs et sélection plus large
+  pour juger la généralisation. Les annotations actuelles sont les nôtres ; ni les
+  exemples construits ni trois parties historiques ne valident la pertinence générale.
 
 **Passage A :** toutes les positions sont exécutables avec chess.js ; attentes
 échiquéennes explicites, échecs visibles, familles non couvertes comptées. Aucun
@@ -194,13 +198,17 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 ## Point de reprise
 
 - Branche actuelle : `codex/ui-polish`, PR #111 ouverte au début de cette reprise.
-- Dernier lot : clôture des reprises non choisies et séparation entre preuve
-  complète et repère court. Voir la livraison correspondante ci-dessous.
-- **Prochain travail concret** : enrichir les annotations des trois motifs
-  secondaires non relus, puis ajouter des décisions issues de nouvelles parties
-  avec attentes et affirmations interdites explicites. Les distinguer des
-  contre-épreuves construites pour le logiciel. Ne pas activer les brouillons
-  dans l'UI avant cette validation ; travailler ensuite le coût et l'intégration E.
+- Dernier lot : annotations complètes du corpus initial et premier corpus séparé
+  de parties publiées. Voir la livraison et `src/review/understanding/EXTERNAL_CORPUS.md`.
+- **Prochain travail concret** : étendre le modèle aux contraintes tactiques
+  combinées, en commençant par double attaque, clouage et menace de mat, avec
+  contre-épreuves et vérification comparative. Le nouveau corpus laisse neuf idées
+  sur onze manquantes ; les deux reconnues sont des contextes d'échange.
+- Le motif principal d'une combinaison doit rester distinct d'un échange local.
+  Le mat de la déviation est à montrer en deux demi-coups après la décision ;
+  la meilleure défense peut différer de la suite du PGN (Dxc3 plutôt que Fxb6
+  après …Fe6). Une vraie compensation positionnelle ne se prouve pas par un
+  détecteur de capture supplémentaire. Optimiser le coût avant toute activation E.
 - Restent aussi clouage/double menace/mat, compensations longues, extraction trop
   coûteuse et démarrages moteur par question. Ne pas contourner ces limites par
   des textes génériques ou par une intégration prématurée.
@@ -454,3 +462,50 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - Point de reprise : annotations des candidats secondaires, corpus indépendant,
   motifs manquants, optimisation puis intégration E. La relecture pédagogique
   ne doit pas être remplacée par les seuls tests logiciels.
+
+
+## Livraison — annotations et corpus de parties publiées, 3 octobre 2026
+
+- `corpus.ts` sépare motif principal, relation secondaire, sortie inattendue et
+  annotation absente. Le contrôle des hypothèses erronées couvre désormais aussi
+  défenses/lignes, avec rôle, identités et capture exacts. Un candidat inattendu
+  compte comme erreur ; un candidat non annoté reste explicitement non relu.
+- `corpus.json` annote les trois relations secondaires après captures/reprises
+  exécutées avec chess.js : reprise du roi empêchée après Fb5 ; ouverture de la
+  colonne aussi pour la dame ennemie après Fh7 ; reprise du roi en f7 interdite
+  après Dh5. Ces faits ne reconnaissent pas les idées principales clouage/mat.
+  Les deux autres épisodes de capture du corpus sont aussi annotés.
+- Le bilan initial reste 19 décisions, 12 idées attendues, 9 hypothèses principales,
+  3 manquantes et 1 réponse partielle. Trois relations secondaires correctes à part,
+  aucune relation/échange non relu, zéro explication déclarée publiable. Tests des
+  mauvais rôle/capture/identité et du contre-exemple avec échange secondaire.
+- `externalGames.json`, `externalCorpus.ts` et leurs tests ajoutent trois PGN
+  publiés et douze décisions fixées avant mesure. Sources conservées ; commentaires
+  et variantes d'auteur exclus. Import strict, SAN/index/longueur/position finale
+  vérifiés, historique startpos complet et suite jouée limitée à huit demi-coups.
+- Rapport séparé : 11 idées attendues, **2 contextes d'échange reconnus, 9 idées
+  manquantes**, 1 décision calme sans motif tactique attendu, 0 hypothèse inattendue,
+  0 explication publiable. Mat/déviation, double attaque, sacrifices avec compensation,
+  activité du roi et percée/pion passé restent sans explication. Cette mesure expose
+  l'étroitesse actuelle du modèle ; elle ne doit pas être annoncée comme une réussite
+  pédagogique. Voir `EXTERNAL_CORPUS.md` pour les attentes et sources.
+- Les quatre nouveaux essais UCI (deux cas par moteur) trouvent Qb8+ avec mat et
+  …Fe6, tandis que le prototype reste sans idée principale. Les deux moteurs
+  préfèrent Dxc3 à la prise Fxb6 du PGN après …Fe6. Les analyses moteur et les suites
+  historiques restent distinctes ; aucune défense artificielle n'est rejouée.
+- Les sources sont indépendantes du détecteur, les annotations restent internes.
+  L'échantillon historique n'est pas représentatif des joueurs amateurs et aucune
+  relecture pédagogique indépendante n'est déclarée. Aucun détecteur, texte actif,
+  moteur ou budget applicatif modifié. Les brouillons restent hors de l'UI.
+- Validation logicielle : **528 tests / 47 fichiers** avec ShallowRed et Stockfish
+  16 via `npm test -- --maxWorkers=2`, puis **40 tests ciblés** après le dernier
+  contrôle de bilan secondaire ajouté. Lint, TypeScript et build passent ; les
+  assets actifs restent inchangés. Les quatre nouveaux tests UCI passent, portant
+  leurs essais à 36. La CI du commit livré sera relue séparément.
+- Extraction du corpus externe : environ 8–14 secondes pour douze décisions lors
+  des contrôles locaux, selon la charge. Ce coût synchrone reste incompatible avec
+  un raccordement direct au rendu React. Aucune optimisation n'est revendiquée.
+- Le point de reprise est désormais double attaque/clouage/mat et contraintes
+  combinées, avec contre-épreuves puis contributions comparatives. Les exemples
+  publiés utilisés ensuite pour développer le code seront des régressions connues ;
+  garder un échantillon neuf et une relecture distincte avant activation UI.

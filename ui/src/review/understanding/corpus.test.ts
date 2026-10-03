@@ -1,7 +1,13 @@
 import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
 import { boardFromCommand } from "../StudyTree";
-import { corpus, corpusInput, corpusReport, evaluateCorpus } from "./corpus";
+import {
+  assessDecision,
+  corpus,
+  corpusInput,
+  corpusReport,
+  evaluateCorpus,
+} from "./corpus";
 import { understandDecision } from "./prototype";
 import { possibilities } from "./possibilities";
 import { decisionContext } from "./context";
@@ -122,7 +128,20 @@ it("rapporte les familles non reconnues et distingue les faits des explications 
     expect.arrayContaining(["fork", "pin", "mate-threat"]),
   );
   expect(report.recognizedInsights).toBe(9);
-  expect(report.unreviewedRelationCandidates).toBeGreaterThan(0);
+  expect(report.unreviewedRelationCandidates).toBe(0);
+  expect(report.matchedSecondaryRelations).toBe(3);
+  expect(report.missingExpectedRelations).toEqual([]);
+  expect(report.relationAnnotationCoverage).toEqual({
+    completeDecisions: 19,
+    incompleteDecisions: 0,
+    reviewedCandidates: 5,
+    unexpectedCandidates: 0,
+  });
+  expect(report.exchangeAnnotationCoverage).toEqual({
+    annotatedCandidates: 5,
+    unreviewedCandidates: 0,
+    missingExpected: [],
+  });
   expect(report.publishableExplanations).toBe(0);
   expect(report.partialHypotheses).toBe(1);
   expect(report.recognizedInsights).toBeLessThan(report.expectedInsights);
@@ -171,4 +190,93 @@ it("suit les pièces au roque et à la promotion, et retire le bon pion en passa
     false,
   );
   expect(enPassant.priorHistory).toBe("complete");
+});
+
+for (const id of ["pin", "discovered-attack", "mate-threat"])
+  it(`une relation secondaire ne remplace pas l'idée principale : ${id}`, () => {
+    const test = corpus.find((c) => c.id === id)!;
+    const { position, result } = corpusInput(test);
+    const analysis = understandDecision(position, result);
+    const row = assessDecision(test, analysis);
+    expect(row.matchedSecondaryRelations).toBe(1);
+    expect(row.matched).toBe(id === "discovered-attack");
+    expect(row.falseHypotheses).toBe(0);
+    expect(row.publishableExplanation).toBe(false);
+  });
+
+it("une relation inattendue est une erreur mesurée, pas un candidat ignoré", () => {
+  const test = corpus.find((c) => c.id === "discovered-attack")!;
+  const { position, result } = corpusInput(test);
+  const analysis = understandDecision(position, result);
+  const row = assessDecision(
+    {
+      ...test,
+      expected: {
+        ...test.expected,
+        relations: test.expected.relations!.filter(
+          (a) => a.meaning === "primary",
+        ),
+      },
+    },
+    analysis,
+  );
+  expect(row.matched).toBe(true);
+  expect(row.falseHypotheses).toBe(1);
+  expect(row.unreviewedRelationCandidates).toBe(0);
+  expect(
+    row.relationAssessments.find((h) => h.status === "unexpected"),
+  ).toMatchObject({
+    victimId: "w:r:d1",
+    attackerId: "b:q:d8",
+    capture: "d8d1",
+    role: "allows-loss",
+  });
+});
+it("une mauvaise capture ou identité ne satisfait pas une annotation du même libellé", () => {
+  const test = corpus.find((c) => c.id === "defender-removed")!;
+  const { position, result } = corpusInput(test);
+  const analysis = understandDecision(position, result);
+  // Injection d'une erreur de détecteur : aucune nouvelle position inventée.
+  for (const changed of [
+    { role: "allows-loss" },
+    { capture: "c3d5" },
+    { victimId: "b:n:d5" },
+    { attackerId: "w:b:c4" },
+  ]) {
+    const faulty = structuredClone(analysis);
+    Object.assign(faulty.mechanisms[0], changed);
+    const row = assessDecision(test, faulty);
+    expect(row.matched).toBe(false);
+    expect(row.falseHypotheses).toBe(1);
+    expect(row.missingExpectedRelations).toHaveLength(1);
+  }
+});
+it("une annotation absente reste non relue, contrairement à une liste vide", () => {
+  const test = corpus.find((c) => c.id === "pin")!;
+  const { position, result } = corpusInput(test);
+  const analysis = understandDecision(position, result);
+  const unreviewed = assessDecision(
+    { ...test, expected: { ...test.expected, relations: undefined } },
+    analysis,
+  );
+  const rejected = assessDecision(
+    { ...test, expected: { ...test.expected, relations: [] } },
+    analysis,
+  );
+  expect(unreviewed.unreviewedRelationCandidates).toBe(1);
+  expect(unreviewed.falseHypotheses).toBe(0);
+  expect(unreviewed.relationsAnnotated).toBe(false);
+  expect(rejected.falseHypotheses).toBe(1);
+  expect(rejected.unreviewedRelationCandidates).toBe(0);
+});
+
+it("un bilan secondaire d'échange ne remplace pas une annotation principale négative", () => {
+  const test = corpus.find((c) => c.id === "blocked-bishop-gains-queen")!;
+  const { position, result } = corpusInput(test);
+  const row = assessDecision(test, understandDecision(position, result));
+  expect(row.expected).toBeNull();
+  expect(row.matched).toBe(false);
+  expect(row.exchangeMatched).toBe(true);
+  expect(row.unreviewedExchangeCandidate).toBe(false);
+  expect(row.falseHypotheses).toBe(0);
 });

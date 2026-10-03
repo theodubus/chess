@@ -71,10 +71,13 @@ avec le roi manque encore. Double menace, clouage et mat sont les **trois famill
 manquantes**. Les deux nouvelles hypothèses correspondent aux captures et rôles
 annotés ; leurs exemples initiaux ne constituent pas des confirmations moteur.
 
-- Zéro hypothèse interdite dans le contrôle existant des restrictions/reprises.
-- Trois candidats secondaires de défense/ligne ouverte restent **non relus** dans
-  ce corpus : le rapport les expose, sans les compter comme corrects. Les nouvelles
-  familles ont aussi leurs contre-exemples dans le corpus dédié ci-dessous.
+- Zéro hypothèse inattendue dans le contrôle des restrictions, reprises et des
+  relations de défense/ligne du corpus original. La portée reste ces hypothèses,
+  pas tous les raisonnements échiquéens ni tous les textes de l'ancienne UI.
+- Les trois relations secondaires sont désormais annotées par identité, rôle et
+  capture. Elles sont correctes comme faits conditionnels ; elles **ne remplacent
+  pas** le clouage ou le mat attendus et ne constituent pas des causes confirmées.
+  Les cinq épisodes d'échange visibles sont également annotés, dont deux secondaires.
 - **Zéro explication publiable**, y compris pour les neuf hypothèses reconnues.
 - Les deux moteurs choisissent `…f4` sur la position utilisateur ; le prototype
   retrouve la retraite fermée dans leurs variantes réelles. L’ancien explicateur
@@ -333,9 +336,9 @@ conditionnelle, sans promettre que toutes les défenses perdent ni que l'alterna
 est le meilleur coup. Exemples à relire : [DRAFT_EXAMPLES.md](DRAFT_EXAMPLES.md).
 
 La révision suivante sépare désormais le témoin complet du repère court et
-observe explicitement la décision de ne pas reprendre. Les annotations des trois
-candidats secondaires, les mats, les contraintes combinées et le corpus indépendant
-restent au point de reprise. **Le prototype
+observe explicitement la décision de ne pas reprendre. Les trois candidats
+secondaires sont annotés dans la révision de corpus ci-dessous. Les mats, les
+contraintes combinées et une validation pédagogique indépendante restent ouverts. **Le prototype
 n'est toujours pas importé dans la revue ; `explanation` reste `null`.**
 
 Validation logicielle finale de cette étape : lint, TypeScript, build et **490 tests
@@ -404,3 +407,49 @@ restent identiques. Six essais UCI ciblés avec les deux binaires enregistrent l
 plans d'illustration et les preuves distincts. Sur la ligne d ouverte, tous deux
 omettent …Cxe4 du repère mais le gardent dans la preuve. Trois contrôles ciblés
 Stockfish 17.1 passent aussi, avec ses différences de variantes conservées.
+
+
+## Corpus publié et annotations complètes — 3 octobre 2026
+
+`assessDecision` compare les motifs principaux et secondaires séparément.
+`expected.relations` contient kind/rôle/identités/capture et la raison de
+l'annotation. Une liste vide signifie aucune relation attendue ; son absence
+signifie annotation incomplète. Une sortie inattendue compte comme erreur, au lieu
+de disparaître sous « non relu ». Les défauts de rôle, capture et identité sont
+injectés dans les tests pour vérifier ce contrôle. Le rapport indique aussi les
+échanges encore non annotés et les relations attendues absentes.
+
+Le corpus initial conserve **19 décisions, 12 idées attendues, 9 hypothèses
+principales reconnues, 3 manquantes et 1 réponse partielle**. Les trois relations
+secondaires sont comptées à part ; cinq relations au total et cinq épisodes de
+capture sont annotés, sans candidat non relu ni nouvelle reconnaissance principale.
+Un contre-exemple de restriction peut avoir un échange correct comme fait
+secondaire : cela ne lui invente pas une explication principale.
+
+`externalGames.json` conserve le PGN principal de trois parties publiées, sans
+commentaire ni variante d'auteur, leurs sources et les décisions sélectionnées.
+`externalCorpus.ts` vérifie le PGN strictement, l'arrivée, la longueur, les indices
+et les SAN attendus. Chaque décision conserve tout son passé depuis startpos.
+Les huit demi-coups suivants sont **des coups joués**, pas une PV moteur. Les
+attentes figurent avant la mesure ; aucun détecteur n'a été réglé dans ce lot.
+
+Voir [EXTERNAL_CORPUS.md](EXTERNAL_CORPUS.md) pour les sources, les attentes et le
+bilan séparé. Ce petit échantillon historique n'est pas représentatif des parties
+amateurs. Les sources sont indépendantes du détecteur ; les annotations restent
+les nôtres, sans relecture pédagogique indépendante. `independentValidation` reste
+false. Ne pas fusionner ses résultats avec le corpus construit ni annoncer une
+couverture générale sur ce seul échantillon.
+
+Les quatre nouveaux essais UCI chargent deux positions de ce corpus, avant/après
+la décision, avec leur historique complet. Sur l'exécution ciblée ShallowRed et
+Stockfish 16, les deux trouvent Qb8+ puis la seule réponse Cxb8 et le mat. Ils
+trouvent aussi …Fe6, mais préfèrent Dxc3 à Fxb6 en réponse. Le prototype ne reconnaît
+ni la déviation/mat ni la compensation. La force du moteur et la capacité à
+expliquer ses choix restent des questions distinctes.
+
+Validation de ce lot : **528 tests / 47 fichiers** avec les deux moteurs, puis
+**40 tests ciblés** après le dernier contrôle de bilan secondaire ajouté ; lint,
+TypeScript et build réussis. Les quatre nouveaux essais UCI passent (36 au total).
+Le coût local d'extraction du corpus externe reste de l'ordre de 8–14 s pour
+12 décisions selon la charge : aucune intégration synchrone dans React ni
+optimisation annoncée. Les assets applicatifs actifs sont inchangés.

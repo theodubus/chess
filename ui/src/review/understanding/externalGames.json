@@ -1,0 +1,165 @@
+[
+  {
+    "id": "morphy",
+    "source": "https://lichess.org/study/OqP6ZEZX/XOlpJYfH",
+    "retrievedAt": "2026-10-03",
+    "pgn": "[Event \"Opéra Hous: Morphy-Duke of Brunswick\"]\n[Site \"Paris\"]\n[Date \"1858.11.02\"]\n[Round \"?\"]\n[White \"Morphy, Paul\"]\n[Black \"Duke of Brunswick, Count\"]\n[Result \"1-0\"]\n\n1. e4 e5 2. Nf3 d6 3. d4 Bg4 4. dxe5 Bxf3 5. Qxf3 dxe5 6. Bc4 Nf6 7. Qb3 Qe7 8. Nc3 c6 9. Bg5 b5 10. Nxb5 cxb5 11. Bxb5+ Nbd7 12. O-O-O Rd8 13. Rxd7 Rxd7 14. Rd1 Qe6 15. Bxd7+ Nxd7 16. Qb8+ Nxb8 17. Rd8# 1-0\n",
+    "finalFen": "1n1Rkb1r/p4ppp/4q3/4p1B1/4P3/8/PPP2PPP/2K5 b k - 1 17",
+    "plies": 33,
+    "selection": [
+      {
+        "ply": 4,
+        "san": "d6",
+        "family": "quiet-opening",
+        "expected": {
+          "hypothesis": null,
+          "relations": []
+        },
+        "reason": "Coup calme de soutien à e5. Ne pas inventer une perte forcée ou une cause tactique ; cela ne constitue pas un verdict de qualité."
+      },
+      {
+        "ply": 18,
+        "san": "b5",
+        "family": "king-safety",
+        "expected": {
+          "hypothesis": "tactical-exposure",
+          "relations": []
+        },
+        "reason": "La poussée attaque le fou c4 mais permet la suite Nxb5 cxb5 Bxb5+ puis roque avec tempo. Le développement et la sécurité du roi central comptent, pas le seul bilan des deux premières prises. Aucune optimalité n’est déduite du PGN."
+      },
+      {
+        "ply": 25,
+        "san": "Rxd7",
+        "family": "sacrifice-compensation",
+        "expected": {
+          "hypothesis": "sacrifice-compensation",
+          "exchange": {
+            "role": "initial-capture",
+            "total": -2,
+            "fromDecision": -2
+          },
+          "relations": []
+        },
+        "reason": "La tour prend le cavalier et est reprise : cet épisode vaut −2 pour les Blancs. La combinaison se poursuit après le coup calme Rd1, avec pression sur le roi et mat ; ce bilan local ne juge pas le sacrifice."
+      },
+      {
+        "ply": 31,
+        "san": "Qb8+",
+        "family": "deflection-mate",
+        "expected": {
+          "hypothesis": "deflection-mate",
+          "relations": []
+        },
+        "reason": "Après Qb8+, Nxb8 est la seule réponse légale et Rd8 est mat. Le cavalier est dévié de d7 ; expliquer une simple perte de dame serait faux."
+      }
+    ]
+  },
+  {
+    "id": "byrne",
+    "source": "https://lichess.org/study/T2uBqZJH/vGAj5Ztx",
+    "retrievedAt": "2026-10-03",
+    "pgn": "[Event \"Third Rosenwald Trophy\"]\n[Site \"New York, NY USA\"]\n[Date \"1956.10.17.\"]\n[Round \"8\"]\n[White \"Donald Byrne\"]\n[Black \"Bobby Fischer\"]\n[Result \"0-1\"]\n\n1. Nf3 Nf6 2. c4 g6 3. Nc3 Bg7 4. d4 O-O 5. Bf4 d5 6. Qb3 dxc4 7. Qxc4 c6 8. e4 Nbd7 9. Rd1 Nb6 10. Qc5 Bg4 11. Bg5 Na4 12. Qa3 Nxc3 13. bxc3 Nxe4 14. Bxe7 Qb6 15. Bc4 Nxc3 16. Bc5 Rfe8+ 17. Kf1 Be6 18. Bxb6 Bxc4+ 19. Kg1 Ne2+ 20. Kf1 Nxd4+ 21. Kg1 Ne2+ 22. Kf1 Nc3+ 23. Kg1 axb6 24. Qb4 Ra4 25. Qxb6 Nxd1 26. h3 Rxa2 27. Kh2 Nxf2 28. Re1 Rxe1 29. Qd8+ Bf8 30. Nxe1 Bd5 31. Nf3 Ne4 32. Qb8 b5 33. h4 h5 34. Ne5 Kg7 35. Kg1 Bc5+ 36. Kf1 Ng3+ 37. Ke1 Bb4+ 38. Kd1 Bb3+ 39. Kc1 Ne2+ 40. Kb1 Nc3+ 41. Kc1 Rc2# 0-1\n",
+    "finalFen": "1Q6/5pk1/2p3p1/1p2N2p/1b5P/1bn5/2r3P1/2K5 w - - 16 42",
+    "plies": 82,
+    "selection": [
+      {
+        "ply": 12,
+        "san": "dxc4",
+        "family": "exchange-context",
+        "expected": {
+          "exchange": {
+            "role": "initial-capture",
+            "total": 0,
+            "fromDecision": 0
+          },
+          "relations": []
+        },
+        "reason": "dxc4 Qxc4 est un échange de pions égal. Le rôle et le bilan sont des faits, pas une explication de la valeur stratégique de dxc4."
+      },
+      {
+        "ply": 22,
+        "san": "Na4",
+        "family": "double-threat",
+        "expected": {
+          "hypothesis": "double-threat",
+          "relations": []
+        },
+        "reason": "Le cavalier a4 attaque la dame c5 et le cavalier c3. La suite publiée Qa3 Nxc3 bxc3 Nxe4 exploite les contraintes ; la double attaque ne prouve pas le gain contre tous les choix."
+      },
+      {
+        "ply": 34,
+        "san": "Be6",
+        "family": "sacrifice-compensation",
+        "expected": {
+          "hypothesis": "sacrifice-compensation",
+          "relations": []
+        },
+        "reason": "Le fou quitte g4 pour e6 alors que la dame b6 peut être prise. Après Bxb6, les échecs intermédiaires Bxc4+, Ne2+ et Nxd4+ donnent une compensation et maintiennent le roi exposé. Ne pas juger la décision d’après la seule prise de dame."
+      },
+      {
+        "ply": 50,
+        "san": "Nxd1",
+        "family": "exchange-context",
+        "expected": {
+          "exchange": {
+            "role": "initial-capture",
+            "total": 5,
+            "fromDecision": 5
+          },
+          "relations": []
+        },
+        "reason": "Le cavalier prend la tour d1 sans reprise immédiate disponible. Les autres prises ultérieures de la partie ne sont pas des reprises sur d1 et ne doivent pas être collées à cet épisode."
+      }
+    ]
+  },
+  {
+    "id": "capablanca",
+    "source": "https://lichess.org/study/M3mZMe8l/MshiKf1G",
+    "retrievedAt": "2026-10-03",
+    "pgn": "[Event \"New York\"]\n[Site \"New York, NY USA\"]\n[Date \"1924.03.23\"]\n[Round \"6\"]\n[White \"Jose Raul Capablanca\"]\n[Black \"Savielly Tartakower\"]\n[Result \"1-0\"]\n\n1. d4 e6 2. Nf3 f5 3. c4 Nf6 4. Bg5 Be7 5. Nc3 O-O 6. e3 b6 7. Bd3 Bb7 8. O-O Qe8 9. Qe2 Ne4 10. Bxe7 Nxc3 11. bxc3 Qxe7 12. a4 Bxf3 13. Qxf3 Nc6 14. Rfb1 Rae8 15. Qh3 Rf6 16. f4 Na5 17. Qf3 d6 18. Re1 Qd7 19. e4 fxe4 20. Qxe4 g6 21. g3 Kf8 22. Kg2 Rf7 23. h4 d5 24. cxd5 exd5 25. Qxe8+ Qxe8 26. Rxe8+ Kxe8 27. h5 Rf6 28. hxg6 hxg6 29. Rh1 Kf8 30. Rh7 Rc6 31. g4 Nc4 32. g5 Ne3+ 33. Kf3 Nf5 34. Bxf5 gxf5 35. Kg3 Rxc3+ 36. Kh4 Rf3 37. g6 Rxf4+ 38. Kg5 Re4 39. Kf6 Kg8 40. Rg7+ Kh8 41. Rxc7 Re8 42. Kxf5 Re4 43. Kf6 Rf4+ 44. Ke5 Rg4 45. g7+ Kg8 46. Rxa7 Rg1 47. Kxd5 Rc1 48. Kd6 Rc2 49. d5 Rc1 50. Rc7 Ra1 51. Kc6 Rxa4 52. d6 Rc4+ 53. Kb7 1-0\n",
+    "finalFen": "6k1/1KR3P1/1p1P4/8/2r5/8/8/8 b - - 2 53",
+    "plies": 105,
+    "selection": [
+      {
+        "ply": 43,
+        "san": "Kg2",
+        "family": "king-activity",
+        "expected": {
+          "hypothesis": "king-activity",
+          "relations": []
+        },
+        "reason": "Le roi participe au plan de finale à l’aile roi. La simple description du déplacement ne suffit pas à expliquer pourquoi ce choix améliore la position ; aucun verdict de qualité n’est fixé sans comparaison moteur."
+      },
+      {
+        "ply": 53,
+        "san": "h5",
+        "family": "pawn-breakthrough",
+        "expected": {
+          "hypothesis": "pawn-breakthrough",
+          "relations": []
+        },
+        "reason": "h5 prépare hxg6 puis hxg6, qui libèrent la colonne h pour Rh1 et Rh7. Le plan exige des coups futurs ; ne pas annoncer une colonne déjà ouverte après h5 ni un gain de matériel immédiat."
+      },
+      {
+        "ply": 69,
+        "san": "Kg3",
+        "family": "king-activity",
+        "expected": {
+          "hypothesis": "king-activity",
+          "relations": []
+        },
+        "reason": "Le roi avance malgré Rxc3+ : la partie montre Kh4, g6 puis Kg5 et Kf6. La pièce laissée en prise ne suffit pas à expliquer le plan ni à rendre le sacrifice mauvais."
+      },
+      {
+        "ply": 73,
+        "san": "g6",
+        "family": "passed-pawn",
+        "expected": {
+          "hypothesis": "passed-pawn",
+          "relations": []
+        },
+        "reason": "Le pion g6 est passé : aucun pion noir sur f, g ou h ne se trouve devant lui. Il est soutenu par l’activité du roi et de la tour. Le PGN ne prouve pas à lui seul que g6 est le meilleur coup."
+      }
+    ]
+  }
+]

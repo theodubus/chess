@@ -11,7 +11,12 @@ import {
 import { legalVariation } from "../src/review/model";
 import { boardFromCommand, StudyTree } from "../src/review/StudyTree";
 import { explainMove } from "../src/review/explanations";
-import { corpus, corpusInput } from "../src/review/understanding/corpus";
+import {
+  assessDecision,
+  corpus,
+  corpusInput,
+} from "../src/review/understanding/corpus";
+import { externalCorpus } from "../src/review/understanding/externalCorpus";
 import { RelationVerification } from "../src/review/understanding/RelationVerification";
 import { relationDraft } from "../src/review/understanding/relationDraft";
 import {
@@ -398,6 +403,92 @@ for (const [name, command] of [
         }
       },
       30000,
+    );
+  }
+}
+
+for (const [name, command] of [
+  ["ShallowRed", process.env.CHESS_ENGINE_BINARY],
+  ["Stockfish", process.env.CHESS_STOCKFISH_BINARY],
+]) {
+  for (const id of ["morphy-31", "byrne-34"]) {
+    it.skipIf(!command)(
+      `${name} : partie publiée ${id}, réponse moteur distincte du PGN`,
+      async () => {
+        const test = externalCorpus.find((c) => c.id === id);
+        const { position } = corpusInput(test);
+        const tree = new StudyTree(position);
+        const node = tree.play(
+          0,
+          position.played.slice(0, 2),
+          position.played.slice(2, 4),
+        );
+        const after = tree.position(node);
+        const focus = new FocusedAnalysis(600, 12000);
+        const bridge = startBridge({ command, port: 0 });
+        try {
+          await once(bridge.server, "listening");
+          vi.stubGlobal(
+            "WebSocket",
+            class extends WebSocket {
+              constructor(address) {
+                super(address, { origin: "http://127.0.0.1:5173" });
+              }
+            },
+          );
+          const factory = (failure) =>
+            connectDevelopmentEngine(
+              failure,
+              `ws://127.0.0.1:${bridge.server.address().port}`,
+            );
+          const results = await focus.analyse(
+            {
+              review: {},
+              revision: 0,
+              engineId: name,
+              positions: [position, after],
+            },
+            factory,
+          );
+          expect(results, focus.error).toHaveLength(2);
+          expect(usableResult(position, results[0])).toBe(true);
+          expect(usableResult(after, results[1])).toBe(true);
+          if (id === "morphy-31") {
+            // Ce coup est le seul légal, constaté avant d'ajouter le test. Le mat
+            // est proche, sans attente figée sur la profondeur ou sa distance UCI.
+            expect(results[1].bestMove).toBe("d7b8");
+            expect(results[1].score.kind).toBe("mate");
+          }
+          const understanding = understandDecision(position, results[1]);
+          const assessment = assessDecision(test, understanding);
+          expect(understanding.context.priorHistory).toBe("complete");
+          expect(understanding.explanation).toBeNull();
+          expect(assessment.matched).toBe(false);
+          console.info(
+            JSON.stringify({
+              engine: name,
+              case: id,
+              source: test.notes,
+              commands: [position.command, after.command],
+              historicalDecision: position.played,
+              results: results.map((r) => ({
+                score: r.score,
+                depth: r.depth,
+                bestMove: r.bestMove,
+                pv: r.variation.map((m) => m.label),
+              })),
+              mainIdeaRecognized: assessment.matched,
+              hypotheses: assessment.observed,
+              publishableExplanation: false,
+            }),
+          );
+        } finally {
+          focus.stop();
+          await bridge.close();
+          vi.unstubAllGlobals();
+        }
+      },
+      20000,
     );
   }
 }
