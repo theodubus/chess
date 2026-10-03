@@ -10,6 +10,7 @@ import {
 } from "./context";
 import {
   defenceEvidence,
+  preventionEvidence,
   framePosition,
   type DefenceEvidence,
 } from "./evidence";
@@ -20,6 +21,12 @@ export type RestoredRoute = ClosedRoute & {
   move: string;
   blockerAlternativeSquare: Square;
 };
+export type RemovedAttacker = {
+  attackerId: string;
+  victimId: string;
+  capture: string;
+  square: Square;
+};
 export type ContrastReason =
   | "different-role"
   | "no-alternative"
@@ -29,10 +36,12 @@ export type ContrastReason =
   | "different-threat"
   | "unavailable-options"
   | "same-restriction"
-  | "restored-route";
+  | "restored-route"
+  | "attacker-removed";
 export type ContrastPlan = {
   reason: ContrastReason;
   routes: RestoredRoute[];
+  removedAttacker?: RemovedAttacker;
   /** Branche légale conditionnelle, pas une affirmation du meilleur choix adverse. */
   branch?: DecisionContext;
   position?: ReviewPosition;
@@ -41,6 +50,7 @@ export type ContrastPlan = {
 export type ContrastObservation = {
   reason: ContrastReason;
   routes: RestoredRoute[];
+  removedAttacker?: RemovedAttacker;
   command: string | null;
   usedRoute: RestoredRoute | null;
   evidence: DefenceEvidence | null;
@@ -50,6 +60,7 @@ export type Attribution = {
   status: "supported" | "not-established";
   reason:
     | "closed-retreat"
+    | "attacker-removed"
     | "no-comparable-branch"
     | "unstable-alternative"
     | "loss-not-verified"
@@ -61,10 +72,11 @@ export type Attribution = {
   scope: "conditional-mechanism";
   victimId: string | null;
   blockerId: string | null;
+  attackerId: string | null;
 };
 
-/** Rejouer légalement la même menace après une autre décision. Changer le trait
- * ou déplacer fictivement une pièce ferait disparaître d'autres contraintes. */
+/** Comparer une menace conservée ou empêchée après une autre décision légale.
+ * Changer le trait ou effacer fictivement une pièce perdrait les contraintes. */
 export function planContrast(
   understanding: Understanding,
   hypothesis: RestrictionHypothesis,
@@ -85,6 +97,41 @@ export function planContrast(
   const setup = decisionContext(source);
   const threat = context.moves[hypothesis.threatPly],
     board = boardFromCommand(setup.after.command);
+  const removed = context.frames[hypothesis.threatPly].pieces.find(
+    (p) => p.square === threat.from,
+  );
+  const alternativeMove = setup.moves[setup.decision];
+  // La case réelle de prise compte aussi en passant. On ne rejoue aucune
+  // menace après la disparition de son auteur dans cette branche légale.
+  if (
+    removed &&
+    hypothesis.attack?.some((capture) => capture.attackerId === removed.id) &&
+    capturedSquare(alternativeMove) === removed.square &&
+    !setup.after.pieces.some((p) => p.id === removed.id)
+  ) {
+    const victim = setup.after.pieces.find((p) => p.id === hypothesis.victimId);
+    const previousVictim = context.before.pieces.find(
+      (p) => p.id === hypothesis.victimId,
+    );
+    if (
+      !victim ||
+      !previousVictim ||
+      victim.square !== previousVictim.square ||
+      victim.type !== previousVictim.type
+    )
+      return unavailable("different-victim");
+    return {
+      reason: "attacker-removed",
+      routes: [],
+      branch: setup,
+      removedAttacker: {
+        attackerId: removed.id,
+        victimId: victim.id,
+        capture: uci(alternativeMove),
+        square: removed.square,
+      },
+    };
+  }
   const reply =
     !board.isGameOver() &&
     board.moves({ verbose: true }).find((m) => uci(m) === uci(threat));
@@ -189,13 +236,20 @@ export function observeContrast(
   result: ReviewResult | null,
 ): ContrastObservation {
   const evidence =
-    plan.branch && plan.target && result
-      ? defenceEvidence({ context: plan.branch }, plan.target, result)
+    plan.branch && result
+      ? plan.removedAttacker
+        ? preventionEvidence(plan.branch, plan.removedAttacker.victimId, result)
+        : plan.target
+          ? defenceEvidence({ context: plan.branch }, plan.target, result)
+          : null
       : null;
   return {
     reason: plan.reason,
     routes: plan.routes,
-    command: plan.position?.command ?? null,
+    ...(plan.removedAttacker ? { removedAttacker: plan.removedAttacker } : {}),
+    command:
+      plan.position?.command ??
+      (plan.removedAttacker ? plan.branch!.after.command : null),
     usedRoute:
       plan.routes.find((route) => route.move === result?.bestMove) ?? null,
     evidence,
@@ -203,8 +257,8 @@ export function observeContrast(
   };
 }
 
-/** La comparaison des évaluations est nécessaire mais insuffisante : le moteur
- * doit aussi emprunter une retraite précisément fermée par le coup examiné. */
+/** Un meilleur score ne suffit pas : observer la retraite restaurée, ou la
+ * capture de l'attaquant suivie d'un témoin court de préservation de la victime. */
 export function attributeRestriction(
   passes: { alternative: string | null; contrast: ContrastObservation }[],
   conditions: {
@@ -220,10 +274,14 @@ export function attributeRestriction(
     scope: "conditional-mechanism",
     victimId: null,
     blockerId: null,
+    attackerId: null,
   });
+  const prevents =
+    passes.length === 2 &&
+    passes.every((p) => p.contrast.reason === "attacker-removed");
   if (
     passes.length !== 2 ||
-    passes.some((p) => p.contrast.reason !== "restored-route")
+    (!prevents && passes.some((p) => p.contrast.reason !== "restored-route"))
   )
     return no("no-comparable-branch");
   if (passes[0].alternative !== passes[1].alternative)
@@ -232,8 +290,8 @@ export function attributeRestriction(
   if (!conditions.alternativeBetter) return no("advantage-not-verified");
   const [a, b] = passes.map((p) => p.contrast);
   if (
-    !a.usedRoute ||
-    !b.usedRoute ||
+    (!prevents && (!a.usedRoute || !b.usedRoute)) ||
+    (prevents && (!a.removedAttacker || !b.removedAttacker)) ||
     a.evidence?.outcome !== "preserved" ||
     b.evidence?.outcome !== "preserved"
   )
@@ -248,8 +306,11 @@ export function attributeRestriction(
     !Number.isFinite(a.score.value) ||
     !Number.isFinite(b.score.value) ||
     Math.abs(a.score.value - b.score.value) > 100 ||
-    a.usedRoute.pieceId !== b.usedRoute.pieceId ||
-    a.usedRoute.blockerId !== b.usedRoute.blockerId
+    (prevents
+      ? a.removedAttacker!.victimId !== b.removedAttacker!.victimId ||
+        a.removedAttacker!.attackerId !== b.removedAttacker!.attackerId
+      : a.usedRoute!.pieceId !== b.usedRoute!.pieceId ||
+        a.usedRoute!.blockerId !== b.usedRoute!.blockerId)
   )
     return no("unstable-defence");
   const sign = conditions.victimSide === "w" ? 1 : -1;
@@ -267,9 +328,10 @@ export function attributeRestriction(
     return no("defence-not-improved");
   return {
     status: "supported",
-    reason: "closed-retreat",
+    reason: prevents ? "attacker-removed" : "closed-retreat",
     scope: "conditional-mechanism",
-    victimId: a.usedRoute.pieceId,
-    blockerId: a.usedRoute.blockerId,
+    victimId: prevents ? a.removedAttacker!.victimId : a.usedRoute!.pieceId,
+    blockerId: prevents ? null : a.usedRoute!.blockerId,
+    attackerId: prevents ? a.removedAttacker!.attackerId : null,
   };
 }

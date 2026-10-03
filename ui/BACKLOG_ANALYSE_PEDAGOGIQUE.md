@@ -77,7 +77,11 @@ texte généré automatiquement n’est utilisé comme vérité attendue.
   réponses de capture avec leur meilleure reprise immédiate.
 - [x] Changements de sorties et d’attaquants, routes fermées par une pièce amie,
   attachés aux identités des pièces et aux positions concernées.
-- [ ] Étendre aux défenses retirées, lignes ouvertes et contraintes combinées.
+- [x] Faits de défenses retirées et de lignes ouvertes : captures/reprises légales,
+  défenseur capturé/déplacé/contraint, chemins réellement dégagés, distinction
+  géométrie/légalité/indisponibilité. Corpus dédié positif et négatif.
+- [ ] Composer ces faits en hypothèses de cause et traiter les contraintes
+  combinées, puis les vérifier comparativement. Un fait seul n'est pas une raison.
 - [x] Épisodes de reprises consécutives ancrés dans l’historique : début connu/inconnu, rôle du
   coup (initiation/reprise/poursuite), bilan total et bilan depuis la décision.
   Ne pas imputer la perte antérieure à la meilleure reprise suivante.
@@ -103,10 +107,12 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
   améliore son évaluation. Les deux budgets doivent confirmer la même alternative,
   la perte initiale et le gain comparatif. Statut séparé `attribution`, limité
   à une contribution conditionnelle au verdict, sans texte publiable.
-- [ ] Généraliser le contraste aux autres mécanismes : attaquant capturé,
-  victime déplacée, défense retirée, attaque créée et contraintes combinées.
-  Une alternative qui empêche la menace n'est pas encore expliquée par le
-  modèle de retraite fermée. Aucun second choix du moteur n'est inventé.
+- [x] Alternative qui capture l'attaquant : identité exacte et case de prise
+  (y compris en passant), recherche libre après l'alternative, témoin court
+  de préservation de la victime, perte initiale et amélioration stables requises.
+  Réutilise la recherche d'alternative ; pas de menace illégale rejouée.
+- [ ] Généraliser aux autres mécanismes : victime déplacée, défense retirée,
+  attaque créée et contraintes combinées. Aucun second choix moteur n'est inventé.
 - [x] Recherches via `FocusedAnalysis` et `Engine`, sans MultiPV/searchmoves,
   détail NNUE/Rust ni recherche stratégique recodée dans l'UI.
 - [x] Le moteur cherche librement la défense. Vérification à deux budgets séparés,
@@ -268,9 +274,49 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - Validation finale : **418 tests / 42 fichiers**, dont les 16 intégrations
   ShallowRed/Stockfish ; lint, TypeScript et build réussis. Le bundle applicatif
   est inchangé : le nouveau modèle reste isolé des composants de revue.
-- **Prochain travail concret** : étendre les relations de B aux défenses
-  retirées et aux lignes ouvertes, avec positifs et négatifs distincts ; couvrir
-  l'alternative qui supprime l'attaquant plutôt que forcer la comparaison d'une
-  menace devenue illégale. Revoir ensuite la clôture d'un échange quand le moteur
-  renonce à une reprise immédiate. D/E restent à faire, ainsi que les sacrifices
-  positionnels et la validation sur des parties indépendantes.
+- Suite : voir la livraison suivante et son point de reprise.
+
+## Livraison — relations de défense et prévention, 3 octobre 2026
+
+- `relations.ts`, exposé par `Understanding.relations`, suit les reprises
+  réellement légales après une capture, et compare les mêmes attaquant/victime
+  restés sur les mêmes cases. Défenseur capturé, déplacé ou contraint sont
+  distincts ; les reprises par promotion conservent une seule identité.
+- Une ligne ouverte conserve son trajet et tous les obstacles retirés, dont les
+  deux cases libérées par une prise en passant. Une ligne géométrique ne promet
+  pas une capture légale : attaquant cloué, échec adverse et données indisponibles
+  sont distingués. Les sondes de trait sont explicitement conditionnelles.
+- `relationCases.json` : 15 cas de développement (13 construits, deux inversions
+  de couleurs), avec positifs et négatifs : défenseur déjà cloué, défense restante,
+  obstacle restant/remplacé, attaquant cloué, ligne de défense, prise en passant,
+  promotion. Ces primitives ne constituent pas encore deux causes validées ; les
+  cinq familles manquantes du rapport original restent affichées.
+- Le contraste traite désormais l'alternative qui capture l'auteur effectif de
+  la menace. `preventionEvidence` réutilise le témoin court, mais commence après
+  cette alternative avec le bilan depuis avant sa capture. Le moteur choisit
+  librement sa réponse ; une autre attaque sur la victime peut encore réfuter
+  le sauvetage. La prise seule et l'amélioration seule ne valident rien.
+- Contrôles : capture normale, prise en passant, couleurs inversées, capture
+  d'une autre pièce, variante qui perd quand même la victime, PV trop courte,
+  instabilité, scores de mat et cache. Pas de recherche supplémentaire : huit
+  maximum dans ce cas, contre dix pour le contraste d'une retraite.
+- L'ancien cas « attaquant capturé » des neuf comparaisons passe de refus à
+  prévention reconnue : quatre retraites restaurées, une prévention, quatre refus.
+- Aucun code moteur ni composant actif modifié ; `explanation` reste `null`.
+  Les tests UCI passent à 18, dont la comparaison explicite exf5 pour chaque moteur.
+- Observation UCI du 3 octobre, budgets 200/600 ms : après exf5, les deux moteurs
+  répondent Fxf5 puis conservent le fou e3 dans le témoin. ShallowRed soutient la
+  prévention ; Stockfish garde l'attribution non établie, faute de clôture de la
+  perte initiale. L'amélioration de score seule ne contourne pas cette limite.
+  Coût de vérification observé : 2,6 s / 6,7 s, hors extraction préalable.
+- Validation finale : **445 tests / 44 fichiers**, dont les 18 intégrations avec
+  ShallowRed et Stockfish ; lint, TypeScript et build réussis. Aucun changement
+  du bundle actif. Le rapport pédagogique original garde cinq mécanismes manquants
+  et zéro explication publiable ; les nouveaux tests valident les faits et les
+  conditions du prototype, pas sa pertinence générale.
+- **Prochain travail concret** : composer les relations de défense/lignes ouvertes
+  en hypothèses contextualisées et en contrastes vérifiables, avec refus si le
+  changement ne contribue pas au verdict. Ne pas ajouter simplement deux textes
+  de motifs à l'UI. Puis traiter la clôture d'échange lorsqu'une reprise possible
+  n'est pas choisie par le moteur. D/E, sacrifices positionnels, performance et
+  corpus indépendant restent ouverts.

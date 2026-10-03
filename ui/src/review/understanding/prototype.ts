@@ -6,6 +6,7 @@ import {
   type DecisionContext,
   type PositionFrame,
 } from "./context";
+import { relationChanges, type RelationChanges } from "./relations";
 import { exchangeContext } from "./exchanges";
 import {
   changedPossibilities,
@@ -35,6 +36,7 @@ export type RestrictionHypothesis = {
 export type Understanding = {
   context: DecisionContext;
   changes: Record<Color, PossibilityChange[]>;
+  relations: RelationChanges;
   exchange: ReturnType<typeof exchangeContext>;
   hypotheses: RestrictionHypothesis[];
   explanation: null;
@@ -127,6 +129,7 @@ export function understandDecision(
       w: changes(context.before, context.after, "w"),
       b: changes(context.before, context.after, "b"),
     },
+    relations: relationChanges(context),
     exchange: exchangeContext(context),
     hypotheses,
     explanation: null,

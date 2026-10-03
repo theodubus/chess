@@ -103,6 +103,11 @@ for (const [name, command] of [
       id: "explicit-retreat-comparison",
       alternative: "g1h1",
     },
+    {
+      ...corpus.find((c) => c.id === "queen-closes-retreat"),
+      id: "explicit-attacker-capture",
+      alternative: "e4f5",
+    },
     ...verificationCases,
   ]) {
     it.skipIf(!command)(
@@ -169,6 +174,19 @@ for (const [name, command] of [
                   p.contrast.evidence?.outcome === "preserved",
               ),
             ).toBe(true);
+          }
+          if (test.id === "explicit-attacker-capture") {
+            expect(
+              report.passes.every(
+                (p) => p.contrast.reason === "attacker-removed",
+              ),
+            ).toBe(true);
+            expect(
+              report.passes.every((p) =>
+                p.questions.every((q) => q.purpose !== "same-threat"),
+              ),
+            ).toBe(true);
+            expect(report.searches).toBeLessThanOrEqual(8);
           }
           console.info(
             JSON.stringify({

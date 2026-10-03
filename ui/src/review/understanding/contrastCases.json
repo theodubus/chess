@@ -33,7 +33,7 @@
     "id": "attacker-captured",
     "source": "queen-closes-retreat",
     "alternative": "e4f5",
-    "expected": "illegal-threat",
+    "expected": "attacker-removed",
     "origin": "constructed-counterexample"
   },
   {

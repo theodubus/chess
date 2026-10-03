@@ -1,0 +1,173 @@
+[
+  {
+    "id": "defender-captured",
+    "fen": "7k/8/5r2/3n4/2B5/2B5/8/7K w - - 0 1",
+    "played": "Bxd5",
+    "defence": {
+      "capture": "c3f6",
+      "removed": ["b:n:d5"],
+      "reason": "captured",
+      "remaining": 0
+    },
+    "origin": "constructed"
+  },
+  {
+    "id": "defender-leaves",
+    "fen": "7k/8/5r2/3n4/8/2B5/8/7K b - - 0 1",
+    "played": "Nb4",
+    "defence": {
+      "capture": "c3f6",
+      "removed": ["b:n:d5"],
+      "reason": "moved",
+      "remaining": 0
+    },
+    "origin": "constructed"
+  },
+  {
+    "id": "already-pinned-defender",
+    "fen": "3k4/8/5r2/3n4/2B5/2B5/8/3R3K w - - 0 1",
+    "played": "Bxd5",
+    "absentDefence": "c3f6",
+    "origin": "constructed"
+  },
+  {
+    "id": "defender-becomes-pinned",
+    "fen": "3k4/8/5r2/3n4/8/2B5/3B4/3R3K w - - 0 1",
+    "played": "Be3",
+    "defence": {
+      "capture": "c3f6",
+      "removed": ["b:n:d5"],
+      "reason": "constrained",
+      "remaining": 0
+    },
+    "origin": "constructed"
+  },
+  {
+    "id": "another-defender-remains",
+    "fen": "7k/6p1/5r2/3n4/2B5/2B5/8/7K w - - 0 1",
+    "played": "Bxd5",
+    "defence": {
+      "capture": "c3f6",
+      "removed": ["b:n:d5"],
+      "reason": "captured",
+      "remaining": 1
+    },
+    "origin": "constructed"
+  },
+  {
+    "id": "opened-attack",
+    "fen": "3q3k/8/8/8/8/3B4/8/3R3K w - - 0 1",
+    "played": "Bh7",
+    "line": {
+      "from": "d1",
+      "to": "d8",
+      "role": "attack",
+      "capture": "legal",
+      "vacated": ["d3"]
+    },
+    "origin": "constructed"
+  },
+  {
+    "id": "another-blocker-remains",
+    "fen": "3q3k/8/8/8/3P4/3B4/8/3R3K w - - 0 1",
+    "played": "Bh7",
+    "absentLine": "d1d8",
+    "origin": "constructed"
+  },
+  {
+    "id": "pinned-slider",
+    "fen": "7k/8/r2R3K/8/8/3B4/8/3q4 w - - 0 1",
+    "played": "Be4",
+    "line": {
+      "from": "d6",
+      "to": "d1",
+      "role": "attack",
+      "capture": "illegal",
+      "vacated": ["d3"]
+    },
+    "origin": "constructed"
+  },
+  {
+    "id": "opened-by-en-passant",
+    "fen": "7k/8/8/R2pP2q/8/8/8/6K1 w - d6 0 2",
+    "played": "exd6",
+    "line": {
+      "from": "a5",
+      "to": "h5",
+      "role": "attack",
+      "capture": "legal",
+      "vacated": ["d5", "e5"]
+    },
+    "origin": "constructed"
+  },
+  {
+    "id": "capturer-replaces-blocker",
+    "fen": "7k/8/3q4/8/3n4/2B5/8/3R3K w - - 0 1",
+    "played": "Bxd4+",
+    "absentLine": "d1d6",
+    "origin": "constructed"
+  },
+  {
+    "id": "opened-defence",
+    "fen": "3N3k/8/8/8/8/3B4/8/3R3K w - - 0 1",
+    "played": "Bh7",
+    "line": {
+      "from": "d1",
+      "to": "d8",
+      "role": "defence",
+      "capture": null,
+      "vacated": ["d3"]
+    },
+    "origin": "constructed"
+  },
+  {
+    "id": "opened-while-opponent-in-check",
+    "fen": "3q2k1/8/8/8/8/3B4/8/3R3K w - - 0 1",
+    "played": "Bh7+",
+    "line": {
+      "from": "d1",
+      "to": "d8",
+      "role": "attack",
+      "capture": "unavailable",
+      "vacated": ["d3"]
+    },
+    "origin": "constructed"
+  },
+  {
+    "id": "defender-captured-black",
+    "fen": "7k/8/2b5/2b5/3N4/5R2/8/7K b - - 0 1",
+    "played": "Bxd4",
+    "defence": {
+      "capture": "c6f3",
+      "removed": ["w:n:d4"],
+      "reason": "captured",
+      "remaining": 0
+    },
+    "origin": "color-transform"
+  },
+  {
+    "id": "opened-attack-black",
+    "fen": "3r3k/8/3b4/8/8/8/8/3Q3K b - - 0 1",
+    "played": "Bh2",
+    "line": {
+      "from": "d8",
+      "to": "d1",
+      "role": "attack",
+      "capture": "legal",
+      "vacated": ["d6"]
+    },
+    "origin": "color-transform"
+  },
+  {
+    "id": "one-defender-four-promotions",
+    "origin": "constructed",
+    "fen": "7k/8/8/8/8/7K/2p5/Rn6 b - - 0 1",
+    "played": "c1=N",
+    "defence": {
+      "capture": "a1b1",
+      "removed": ["b:p:c2"],
+      "reason": "moved",
+      "remaining": 0
+    }
+  }
+]

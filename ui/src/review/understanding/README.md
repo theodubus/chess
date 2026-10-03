@@ -22,6 +22,11 @@ CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/gam
 - Le bilan d’une réponse de capture inclut la meilleure reprise immédiate disponible.
   C’est un fait matériel borné, **pas** une évaluation du coup ou une recherche
   stratégique : il ne couvre pas les coups intermédiaires et compensations.
+- `relations.ts` compare les reprises légales (défenseur capturé, déplacé ou
+  contraint) et les lignes ouvertes entre pièces restées sur leurs cases. Les
+  trajets et obstacles retirés sont conservés ; une ligne géométrique ouverte
+  reste distincte d'une capture légale. Une sonde indisponible n'est pas une
+  absence de défense. Les quatre promotions d'une reprise gardent une identité.
 - `exchanges.ts` remonte les reprises consécutives à partir de l’historique connu.
   Le bilan de l’épisode visible est distinct du bilan depuis la décision consultée.
   Sa borne initiale et la possibilité de reprendre encore sont explicites. Un
@@ -59,7 +64,10 @@ attribués à l’utilisateur.
 
 Le clouage produit un fait partiel correct (la pièce attaquée est restreinte),
 mais le prototype n’explique pas encore son lien avec le roi. Il reste donc parmi
-les **cinq mécanismes manquants**, pas parmi les réussites. Cette réponse partielle
+les **cinq mécanismes manquants**, pas parmi les réussites. Les nouveaux faits
+sur les défenses et les lignes ouvertes sont également disponibles séparément,
+mais leur attribution au verdict n'est pas encore vérifiée : ce compteur de
+mécanismes reste inchangé. Cette réponse partielle
 est annotée dans le corpus et comptée séparément des hypothèses erronées.
 
 - Zéro hypothèse interdite sur ces contre-exemples de développement.
@@ -188,20 +196,74 @@ trajets, bloqueur et réponses restent accessibles dans les deux passes ;
 `explanation` reste `null` et les composants de revue n'importent pas ce code.
 
 `contrastCases.json` couvre neuf comparaisons de développement (quatre retraites
-restaurées et cinq refus), avec camps inversés et un autre échiquier comportant
-une attaque de tour. Les refus comprennent une autre pièce occupant la retraite,
-une victime déjà déplacée, la prise de l'attaquant, des cases encore perdantes et
-un même déplacement UCI qui devient une capture différente. Le corpus initial de
+restaurées, une capture préventive et quatre refus), avec camps inversés et un
+autre échiquier comportant une attaque de tour. Les refus comprennent une autre
+pièce occupant la retraite, une victime déjà déplacée, des cases encore perdantes
+et un même déplacement UCI qui devient une capture différente. Le corpus initial de
 19 décisions et ses cinq familles manquantes reste inchangé.
 
-Les 16 tests UCI réels ajoutent notamment une alternative explicitement choisie,
+Les 18 tests UCI réels ajoutent notamment une alternative explicitement choisie,
 Rh1 au lieu de Dd2. Les deux moteurs utilisent Fd2 contre …f4 ; ShallowRed soutient
 l'attribution tandis que Stockfish peut rester indéterminé sur la perte initiale.
 Cela ne transforme pas Rh1 en « meilleur coup ». Le choix automatique peut être
-exf5 : la menace …f4 devient alors illégale, cas encore non expliqué par ce modèle.
+exf5 : la menace …f4 devient alors illégale. La nouvelle comparaison ci-dessous
+traite précisément cette prévention, sans rejouer …f4.
 
 Lors d'une exécution chargée, la comparaison explicite a pris environ 4,5 s avec
 ShallowRed et 13,3 s avec Stockfish (démarrages inclus, extraction préalable exclue).
 Les tests d'intégration accordent 25 s au moteur, mais le plafond applicatif
 reste 12 s et peut donc interrompre le calcul sans publier de résultat partiel.
 Le coût des connexions et de l'extraction initiale doit diminuer avant l'UI.
+
+
+## Défenses et lignes ouvertes : faits supplémentaires
+
+`relationCases.json` contient 15 cas (13 construits et deux inversions de couleurs).
+Les tests rejouent chaque capture/reprise annoncée. Ils couvrent les changements
+utiles et leurs contre-exemples : un cavalier cloué protège géométriquement mais
+ne reprend pas ; retirer un défenseur peut en laisser un autre ; une pièce qui
+capture un obstacle peut occuper sa place et maintenir la ligne fermée ; une
+ligne dégagée peut appartenir à un attaquant cloué. La prise en passant retire
+deux obstacles et les promotions ne multiplient pas l'identité d'un défenseur.
+
+Ces faits sont attachés à la décision dans `Understanding.relations`. Les deux
+pièces comparées doivent garder identité, type et case ; leur déplacement ou
+promotion demande une autre relation. Les inventaires indiquent si le trait
+est réel ou sondé. Le bilan est limité à la capture et à la meilleure reprise
+immédiate, **sans jugement de qualité ni garantie sur un échange prolongé**.
+Ce corpus de primitives reste séparé des mécanismes et explications publiables.
+
+## Contraste causal : attaquant supprimé
+
+Une alternative légale qui capture l'identité responsable de la menace produit
+`attacker-removed`. La prise en passant utilise la case réelle de la victime de
+la capture, pas la destination du pion. La victime menacée doit être la même et
+rester sur sa case. Un déplacement de la victime reste un autre mécanisme.
+
+La recherche déjà effectuée après l'alternative fournit une réponse adverse
+libre. Le témoin commence à cette position, avec un bilan matériel depuis avant
+l'alternative, et s'arrête dès la préservation constatée, la perte ou l'incertitude
+(huit demi-coups maximum). Il peut donc réfuter le sauvetage même si l'attaquant
+initial a disparu. Aucune réponse forcée ni commande `searchmoves` n'est utilisée.
+
+L'attribution reste conditionnelle : même alternative aux deux budgets, perte
+initiale vérifiée, amélioration stable et victime préservée dans chaque témoin.
+Mat, divergence ou continuation trop courte empêchent la confirmation. Les tests
+couvrent notamment une capture préventive suivie malgré tout de la perte du fou.
+La comparaison réutilise les recherches existantes (au plus huit), le cache et
+l'annulation. Elle ne nécessite pas la cinquième question `same-threat`.
+
+Observation locale du 3 octobre avec 200/600 ms : après exf5, les deux moteurs
+choisissent Fxf5 et le témoin conserve le fou e3 (ShallowRed poursuit par Fd1,
+Stockfish par Cd2). ShallowRed soutient `attacker-removed` ; Stockfish conserve
+`loss-not-verified`, sa perte initiale restant hors du contrat du témoin court.
+Coûts de vérification observés : 2,6 s et 6,7 s, connexions incluses, extraction
+initiale exclue. Ces chiffres et choix décrivent cette exécution, sans figer les
+profondeurs, les scores ou les coups futurs du moteur.
+
+Validation logicielle de cette étape : lint, TypeScript, 445 tests / 44 fichiers
+avec les deux binaires, build réussis. Le bundle actif conserve les mêmes fichiers.
+
+Aucun de ces résultats n'est encore transformé en texte dans l'UI. La composition
+et la vérification causale des défenses/lignes ouvertes, les compensations longues,
+le corpus indépendant et le contrat de démonstration restent à construire.

@@ -254,18 +254,20 @@ export class Verification {
         pass.alternative =
           request.alternative ??
           (before.bestMove !== playedMove ? before.bestMove : null);
-        if (
-          pass.alternative &&
-          !(await ask("alternative", alternativePosition(pass.alternative)))
-        )
-          return null;
+        const alternativeResult = pass.alternative
+          ? await ask("alternative", alternativePosition(pass.alternative))
+          : null;
+        if (pass.alternative && !alternativeResult) return null;
         const plan = planContrast(understanding, hypothesis, pass.alternative);
         const answer =
           plan.position && pass.threatMatches
             ? await ask("same-threat", plan.position)
             : null;
         if (!current()) return null;
-        pass.contrast = observeContrast(plan, answer);
+        pass.contrast = observeContrast(
+          plan,
+          plan.removedAttacker ? alternativeResult : answer,
+        );
         passes.push(pass);
       }
       const results = passes.map(

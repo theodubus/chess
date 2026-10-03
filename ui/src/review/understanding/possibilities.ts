@@ -52,7 +52,7 @@ export type PossibilityChange = {
   closedRoutes: ClosedRoute[];
 };
 
-function boardFor(frame: PositionFrame, side: Color) {
+export function boardFor(frame: PositionFrame, side: Color) {
   const board = new Chess(frame.fen);
   if (board.turn() === side) return board;
   // Donner le trait à l'autre camp pendant un échec autoriserait des positions
@@ -136,7 +136,11 @@ export function possibilities(
       })),
   };
 }
-function ray(type: PieceSymbol, from: Square, to: Square): Square[] {
+export function sliderRay(
+  type: PieceSymbol,
+  from: Square,
+  to: Square,
+): Square[] {
   const dx = to.charCodeAt(0) - from.charCodeAt(0),
     dy = Number(to[1]) - Number(from[1]);
   const straight = dx === 0 || dy === 0,
@@ -184,7 +188,7 @@ export function changedPossibilities(
     const closedRoutes: ClosedRoute[] = [];
     if (previous.piece.square === current.piece.square)
       for (const option of removed) {
-        const squares = ray(
+        const squares = sliderRay(
           current.piece.type,
           current.piece.square,
           option.move.to,

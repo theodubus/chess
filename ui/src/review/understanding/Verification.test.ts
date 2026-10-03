@@ -393,3 +393,58 @@ it("ne publie pas hors délai quand le timer n'a pas encore reçu la main", asyn
     time.mockRestore();
   }
 });
+
+it("réutilise la recherche de l'alternative qui capture l'attaquant sans rejouer sa menace", async () => {
+  const req = comparativeRequest("e4f5"),
+    check = new Verification([10, 20]);
+  const factory = vi.fn(async () => {
+    const engine = new TestEngine(req, () => -400),
+      original = engine.onLine.bind(engine);
+    const plan = planContrast(
+      req.understanding,
+      req.understanding.hypotheses[0],
+      req.alternative,
+    );
+    engine.onLine = (listener) =>
+      original((line) => {
+        if (
+          engine.board.fen() === req.understanding.context.after.fen &&
+          line.startsWith("info ")
+        )
+          return listener("info depth 15 score cp 400 pv f5f4");
+        if (engine.board.fen() === plan.branch!.after.fen) {
+          if (line.startsWith("info "))
+            return listener("info depth 15 score cp 0 pv c8f5 f3d2");
+          if (line.startsWith("bestmove ")) return listener("bestmove c8f5");
+        }
+        listener(line);
+      });
+    return engine;
+  });
+  const report = await check.verify(req, factory);
+  expect(report, check.error).toMatchObject({
+    searches: 8,
+    requestedSearchMs: 120,
+    comparison: "alternative-better",
+    attribution: {
+      status: "supported",
+      reason: "attacker-removed",
+      attackerId: "b:p:f5",
+    },
+    explanation: null,
+  });
+  expect(
+    report!.passes.every((p) =>
+      p.questions.every((q) => q.purpose !== "same-threat"),
+    ),
+  ).toBe(true);
+  expect(
+    report!.passes.every((p) => p.contrast.evidence?.outcome === "preserved"),
+  ).toBe(true);
+  report!.passes[0].contrast.removedAttacker!.attackerId = "modified";
+  expect(
+    (await check.verify(req, factory))!.passes[0].contrast.removedAttacker!
+      .attackerId,
+  ).toBe("b:p:f5");
+  expect(factory).toHaveBeenCalledTimes(8);
+});

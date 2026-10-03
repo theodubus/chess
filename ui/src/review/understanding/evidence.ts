@@ -43,13 +43,35 @@ export function defenceEvidence(
   result: ReviewResult,
   maxPlies = 8,
 ): DefenceEvidence {
-  if (!Number.isInteger(maxPlies) || maxPlies < 1 || maxPlies > 8)
-    throw new Error("Témoin limité à huit demi-coups.");
   const before = understanding.context.frames[hypothesis.threatPly],
     frame = understanding.context.frames[hypothesis.threatPly + 1],
     victim = frame.pieces.find((piece) => piece.id === hypothesis.victimId);
   if (!victim || frame.turn !== victim.color)
     throw new Error("La vérification doit rendre le trait au camp menacé.");
+  return pieceEvidence(before, frame, hypothesis.victimId, result, maxPlies);
+}
+
+/** Le bilan inclut la capture préventive, pas seulement sa reprise.
+ * L'adversaire choisit librement sa réponse après l'alternative. */
+export function preventionEvidence(
+  context: Pick<Understanding["context"], "before" | "after">,
+  victimId: string,
+  result: ReviewResult,
+): DefenceEvidence {
+  return pieceEvidence(context.before, context.after, victimId, result, 8);
+}
+
+function pieceEvidence(
+  before: PositionFrame,
+  frame: PositionFrame,
+  victimId: string,
+  result: ReviewResult,
+  maxPlies: number,
+): DefenceEvidence {
+  if (!Number.isInteger(maxPlies) || maxPlies < 1 || maxPlies > 8)
+    throw new Error("Témoin limité à huit demi-coups.");
+  const victim = frame.pieces.find((piece) => piece.id === victimId);
+  if (!victim) throw new Error("Victime absente de la branche.");
   if (!usableResult(framePosition(frame), result))
     throw new Error("Réponse moteur inutilisable pour cette position.");
   const board = boardFromCommand(frame.command),
