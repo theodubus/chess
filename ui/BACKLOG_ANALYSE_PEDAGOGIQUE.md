@@ -132,8 +132,13 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
   preuve couvrant toutes les réponses dans cet horizon, avant/après et alternative
   explicite à deux budgets. Confirmation réelle ShallowRed/Stockfish ; portée
   limitée à cette route de mat, sans conversion de mat en centipions.
+- [x] Premiers contrastes de double attaque et clouage : deux cibles suivies
+  ensemble, échange complet séparé de la prise suivante et défenseur échangé
+  identifié ; retraite nouvellement légale réellement choisie sous une pression
+  inchangée. Comparaisons libres à deux budgets, compensations et divergences
+  conservées. Les parties publiées ne donnent pas encore une cause soutenue stable.
 - [ ] Généraliser aux autres mécanismes : victime déplacée, défenses/attaques
-  combinées, double menace, clouage et mats plus longs. Aucun second choix moteur
+  combinées plus longues, surcharge, compensation et mats plus longs. Aucun second choix moteur
   inventé ; comparer les défenses et compensations, pas une capture locale seule.
 - [x] Recherches via `FocusedAnalysis` et `Engine`, sans MultiPV/searchmoves,
   détail NNUE/Rust ni recherche stratégique recodée dans l'UI.
@@ -208,14 +213,14 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 ## Point de reprise
 
 - Branche actuelle : `codex/ui-polish`, PR #111 ouverte au début de cette reprise.
-- Dernier lot : contraintes tactiques courtes et vérification comparative du mat
-  de déviation. Voir la livraison ci-dessous et
-  `src/review/understanding/TACTICAL_CONSTRAINTS.md`.
-- **Prochain travail concret** : vérification comparative des doubles attaques et
-  clouages, à partir de …Ca4 et de positifs/contre-exemples. Laisser le moteur
-  choisir librement la défense, suivre les deux cibles et l'échange complet,
-  comparer une alternative qui enlève la contrainte, garder les compensations.
-  Ne pas déduire le gain d'une simple reprise ni du seul score amélioré.
+- Dernier lot : comparaisons de fourchette et clouage, avec témoins des deux
+  cibles, échange entier et défense retirée par cet échange. Voir la livraison
+  ci-dessous et `src/review/understanding/TACTICAL_VERIFICATION.md`.
+- **Prochain travail concret** : produire des brouillons et repères minimaux
+  depuis les contrastes soutenus, puis les relire sur un échantillon neuf.
+  Pour …Ca4, traiter la compensation et distinguer la pression tactique du
+  gain matériel immédiat ; la cause du verdict reste inconnue quand le bilan
+  matériel est compensé. Ne pas inventer une phrase pour augmenter la couverture.
 - Corpus construit : 12 hypothèses principales reconnues sur 12 attentes connues.
   Corpus publié : 4 sur 11 (deux échanges, double attaque, déviation), sept idées
   manquantes. Les deux corpus restent à zéro explication publiable. Le second a
@@ -226,7 +231,7 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   la meilleure défense peut différer de la suite du PGN (Dxc3 plutôt que Fxb6
   après …Fe6). Une vraie compensation positionnelle ne se prouve pas par un
   détecteur de capture supplémentaire. Optimiser le coût avant toute activation E.
-- Restent aussi la contribution des clouages/doubles menaces, les mats plus longs,
+- Restent aussi les contraintes combinées plus longues, les mats plus longs,
   compensations différées, extraction coûteuse et démarrages moteur par question. Ne pas contourner ces limites par
   des textes génériques ou par une intégration prématurée.
 - Démarrage autorisé : A, puis les primitives de B avec un rapport exécutable.
@@ -577,3 +582,57 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - Suite : comparer les causes de double attaque et clouage, garder la meilleure
   défense d'un échange perdant distincte de sa cause initiale, puis optimiser
   l'extraction et préparer des brouillons relus avant l'intégration E.
+
+## Doubles attaques et clouages comparés — 3 octobre 2026
+
+- `tacticalEvidence.ts` suit les cibles ensemble, le bilan complet du camp,
+  les reprises disponibles et le choix réel. `targetExchange` distingue le
+  premier échange de la prise suivante. Une compensation immédiate, une reprise
+  pendante, un mat/nulle ou la limite de huit demi-coups empêchent une fausse
+  conclusion matérielle. Le préfixe de menace adverse reste limité à un coup.
+- `tacticalObservation.ts` n'utilise que la première capture après la réponse
+  libre. Le cavalier de la fourchette doit capturer une cible originale ; une
+  autre prise ne suffit pas. Un échange égal peut enlever un défenseur et permettre
+  une autre capture, mais ce lien doit être retrouvé entre les mêmes pièces/cases.
+  Seule la première prise du camp après l'échange est examinée, sans scénario tardif.
+- `tacticalContrast.ts` vérifie une alternative gardant une seule menace sur les
+  cibles originales, puis leur préservation. Pour le défenseur échangé, la même
+  capture doit permettre une reprise réellement choisie par le défenseur conservé.
+  Pour le clouage, victime/roi/pression/reprises restent identiques et la retraite
+  nouvellement légale est choisie. Une reprise du roi également restaurée fait
+  refuser l'attribution au seul clouage.
+- `TacticalVerification.ts` garde effet et contribution séparés, recherches
+  libres avant/après/alternative explicite, questions conditionnelles distinctes,
+  deux budgets, au plus dix recherches, cache moteur/révision/historique/alternative,
+  arrêt et refus UCI partagés. Les questions de cause supplémentaires sont omises
+  quand la perte initiale n'est pas soutenue. Les seuils de stabilité/gain en
+  centipions restent des critères de développement, sans optimalité générale.
+- `tacticalCases.ts` et les deux nouveaux fichiers de tests donnent **32 tests
+  unitaires** : camps inversés, roi/tour ensemble, compensation ailleurs, reprise
+  manquante, gain sans lien avec la fourchette, autre attaquant, pression changée,
+  retraite/reprise non choisie, alternative illégale, scores divergents, cache et
+  annulation. Les fixtures ont été exécutées avec chess.js ; leurs scores simulés
+  ne valident pas la pédagogie.
+- Six nouveaux essais réels via le pont : clouage construit, …Ca4 et Fg5 de
+  Byrne–Fischer, chacun avec ShallowRed et Stockfish 16. Les deux soutiennent le
+  clouage avec …Rd7 dxc6+ bxc6 (−2 pour les Noirs) et …Cb4 après Fd3. Ils préfèrent
+  toutefois dxc6 dès la position initiale : Fb5 n'est pas annoncé meilleur coup.
+  Les recherches publiées peuvent montrer Cxa4 plutôt que Da3, compenser par
+  Fxe7 ou dépasser l'horizon avec une reprise encore disponible. Les premiers
+  rapports mesurés restent indéterminés ; une borne UCI finale est refusée et
+  contrôlée précisément. Ces abstentions ne sont pas des explications correctes.
+- Mesures des premières traces : environ 3–4,5 s sur le clouage, 6–9,5 s sur
+  les comparaisons historiques, hors extraction, selon moteur/branche. Ce ne sont
+  pas des garanties de latence ; les questions inutiles ont ensuite été omises.
+- Contrat : `TACTICAL_VERIFICATION.md`, README et point de reprise mis à jour.
+  Corpus/détecteurs inchangés : 12/12 hypothèses construites, 4/11 publiées,
+  **zéro explication publiable**. Compensation positionnelle, surcharge, motifs
+  plus longs et de finale, échantillon neuf et relecture restent nécessaires.
+  Aucun moteur ni composant actif modifié ; les assets de production sont identiques.
+- Validation : **606 tests / 51 fichiers**, dont 541 unitaires et 65 pont/moteurs,
+  via `npm test -- --maxWorkers=2` avec ShallowRed et le Stockfish 16 de CI.
+  Lint, TypeScript et build passent. Les derniers contrôles de cache sont relus
+  séparément avant livraison ; la CI du commit envoyé doit être consultée.
+- Suite concrète : brouillons/repères minimaux depuis les causes soutenues,
+  exemples neufs et relecture ; pour …Ca4, modéliser la compensation/pression
+  durable avant tout texte causal. Optimiser l'extraction avant l'intégration E.

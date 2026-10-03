@@ -29,6 +29,82 @@ import { understandDecision } from "../src/review/understanding/prototype";
 import { decisionContext } from "../src/review/understanding/context";
 import { tacticalConstraints } from "../src/review/understanding/constraints";
 import { MateVerification } from "../src/review/understanding/MateVerification";
+import { TacticalVerification } from "../src/review/understanding/TacticalVerification";
+import { tacticalInput } from "../src/review/understanding/tacticalCases";
+
+for (const [name, command] of [
+  ["ShallowRed", process.env.CHESS_ENGINE_BINARY],
+  ["Stockfish", process.env.CHESS_STOCKFISH_BINARY],
+]) {
+  for (const id of ["pin-retreat", "byrne-22", "byrne-allows-fork"]) {
+    it.skipIf(!command)(`${name} : contraintes comparées ${id}`, async () => {
+      const input = tacticalInput(id), check = new TacticalVerification([200, 600], 25000);
+      const bridge = startBridge({ command, port: 0 });
+      try {
+        await once(bridge.server, "listening");
+        vi.stubGlobal("WebSocket", class extends WebSocket {
+          constructor(address) { super(address, { origin: "http://127.0.0.1:5173" }); }
+        });
+        const trace = [];
+        const factory = async (failure) => {
+          const engine = await connectDevelopmentEngine(failure, `ws://127.0.0.1:${bridge.server.address().port}`);
+          let query;
+          const send = engine.send.bind(engine);
+          engine.send = (line) => {
+            if (line.startsWith("position ")) { query = { command: line, answers: [] }; trace.push(query); }
+            send(line);
+          };
+          engine.onLine((line) => {
+            if (query && /^(info depth |bestmove )/.test(line)) {
+              query.answers.push(line);
+              if (query.answers.length > 4) query.answers.shift();
+            }
+          });
+          return engine;
+        };
+        const report = await check.verify({ ...input, review: {}, revision: 0, engineId: name }, factory);
+        if (!report) {
+          // Une borne UCI finale doit être refusée. Elle ne tolère ni panne,
+          // ni PV illégale : seul le retrait de cette borne rend la réponse usable.
+          expect(check.state).toBe("error");
+          expect(check.error).toContain("Réponse moteur sans score exact ou variante exploitable.");
+          const query = trace.at(-1), board = boardFromCommand(query.command);
+          const infoLine = query.answers.findLast((line) => line.includes(" score ")) ?? "";
+          const info = parseSearchInfo(infoLine, board.turn());
+          const position = { command: query.command, fen: board.fen(), turn: board.turn(), label: "Refus contrôlé", played: null, playedSan: null, terminal: null };
+          const response = { score: info?.score ?? null, depth: info?.depth ?? null,
+            bestMove: query.answers.findLast((line) => line.startsWith("bestmove "))?.split(" ")[1], bestSan: null,
+            variation: legalVariation(board.fen(), parsePrincipalVariation(infoLine) ?? []) };
+          expect(response.score?.bound, JSON.stringify(query)).toBeDefined();
+          expect(usableResult(position, response)).toBe(false);
+          expect(usableResult(position, { ...response, score: { ...response.score, bound: undefined } })).toBe(true);
+          console.info(JSON.stringify({ engine: name, case: id, status: "unavailable", reason: "bounded-final-iteration", query, explanation: null }));
+          return;
+        }
+        expect(report, check.error).not.toBeNull();
+        expect(report.explanation).toBeNull();
+        expect(report.searches).toBeLessThanOrEqual(10);
+        // Pas d'attente figée sur une PV historique, un score ou la qualité du
+        // coup. Les deux recherches doivent fournir le même mécanisme observé.
+        if (report.attribution.status === "supported") {
+          expect(report.status).toBe("supported");
+          expect(report.passes.every((p) => p.actual.matched && p.actual.evidence.outcome === "loss-in-line" && p.contrast.evidence?.outcome === "preserved")).toBe(true);
+          if (report.attribution.reason === "exchanged-defender")
+            expect(report.passes.every((p) => p.actual.exchange.balance === 0 && p.contrast.followUp.usedDefender === p.actual.followUp.defenderId)).toBe(true);
+          if (report.attribution.reason === "blocked-retreat")
+            expect(report.passes.every((p) => p.contrast.usedRetreat && p.actual.evidence.materialDelta < 0)).toBe(true);
+        }
+        console.info(JSON.stringify({ engine: name, case: id, status: report.status, reason: report.reason, attribution: report.attribution,
+          searches: report.searches, elapsedMs: report.elapsedMs, explanation: null,
+          passes: report.passes.map((p) => ({ budgetMs: p.budgetMs, matched: p.actual.matched, observation: p.actual.reason,
+            evidence: p.actual.evidence, exchange: p.actual.exchange, followUp: p.actual.followUp,
+            contrast: { reason: p.contrast.reason, scope: p.contrast.scope, prefix: p.contrast.prefix, usedRetreat: p.contrast.usedRetreat,
+              evidence: p.contrast.evidence, followUp: p.contrast.followUp },
+            questions: p.questions.map((q) => ({ purpose: q.purpose, command: q.position.command, score: q.result.score, depth: q.result.depth, bestMove: q.result.bestMove, pv: q.result.variation.map((m) => m.label) })) })) }));
+      } finally { check.stop(); await bridge.close(); vi.unstubAllGlobals(); }
+    }, 30000);
+  }
+}
 
 for (const [name, command] of [
   ["ShallowRed", process.env.CHESS_ENGINE_BINARY],

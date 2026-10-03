@@ -94,10 +94,11 @@ secondaire ne peut pas combler une idée principale manquante.
   Ces cas ont désormais servi au développement : il faut un nouvel échantillon
   et une relecture indépendante pour mesurer la généralisation.
 
-La **vérification comparative des doubles attaques et des clouages reste à faire**.
-Il faut laisser le moteur choisir librement les défenses, suivre les deux cibles
-et le bilan de l'échange complet, puis comparer une alternative sans inventer un
-gain à partir d'une reprise locale. Surcharge, contraintes combinées plus longues,
+Un premier vérificateur des doubles attaques et clouages suit maintenant les
+deux cibles, l'échange entier et les défenses conservées dans une alternative.
+Voir [TACTICAL_VERIFICATION.md](TACTICAL_VERIFICATION.md) pour les contrats et
+abstentions réelles, distincts de cette extraction de faits.
+Surcharge, contraintes combinées plus longues,
 compensation positionnelle et plans de finale ne sont pas couverts. Une amélioration
 de score ne validera pas à elle seule la cause proposée.
 

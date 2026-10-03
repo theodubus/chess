@@ -483,6 +483,20 @@ ne prétend pas exclure un mat plus long. L'illustration reste réponse puis mat
 Les essais réels ShallowRed et Stockfish 16 confirment Db8+ dans la partie de
 Morphy ; Da3 garde le bloqueur et ne force pas ce mat court. ShallowRed émet Cxb8
 seulement avec le bon score de mat ; Stockfish émet aussi Td8. Les deux origines
-de continuation sont enregistrées. La vérification comparative des doubles
-attaques/clouages et les compensations restent le prochain lot, avec un suivi
-des échanges complets. Aucun fichier du moteur n'est modifié.
+de continuation sont enregistrées. Aucun fichier du moteur n'est modifié.
+
+## Doubles attaques et clouages comparés — 3 octobre 2026
+
+`TacticalVerification`, `tacticalEvidence`, `tacticalObservation` et
+`tacticalContrast` suivent les deux cibles et le bilan de l'échange entier.
+Le défenseur échangé peut être lié à la prise suivante ; un gain sans cette
+relation ne prouve pas la cause. Le clouage est comparé sous une pression
+inchangée, avec une retraite restaurée effectivement choisie. Les scores ne
+remplacent pas ces contraintes physiques. Les reprises et compensations sont
+gardées ; les variantes libres et les questions conditionnelles restent séparées.
+
+Voir [TACTICAL_VERIFICATION.md](TACTICAL_VERIFICATION.md) pour le contrat, les
+seuils de développement et les résultats réels. Le clouage construit est soutenu
+par les deux moteurs ; les variantes compensées/incomplètes ou divergentes de
+Byrne–Fischer restent indéterminées. Aucun texte publiable ou raccordement à
+l'interface active. Les détecteurs/couvertures des corpus sont inchangés.
