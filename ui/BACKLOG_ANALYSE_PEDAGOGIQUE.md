@@ -153,7 +153,7 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   l'alternative et son obstacle suffit ; aucun défilage des coups calmes de sa PV.
   Ces brouillons ne sont pas activés dans la revue et restent à relire.
 - [x] Pour ces brouillons, preuve complète séparée du préfixe illustré : reprises
-  résolues conservées, aucune compensation/échec/promotion du témoin caché, bilans distincts
+  résolues conservées, aucun gain compensateur, échec ou promotion du témoin omis ; bilans distincts
   explicités lorsqu'une prise sur une autre pièce est retirée du repère.
 
 - [ ] Une idée principale structurée : décision → changement → exploitation →

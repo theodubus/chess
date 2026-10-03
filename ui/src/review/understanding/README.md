@@ -1,459 +1,401 @@
-# Analyse pédagogique — backlog active et plan de reprise
+# Prototype de compréhension — suivi au 3 octobre 2026
 
-Plan révisé le 2 octobre 2026 après les retours de Théo, suivi au 3 octobre.
-Périmètre : `ui/**`.
-**Chantier ouvert. L’objectif pédagogique n’est pas atteint.** Le moteur Rust
-reste inchangé ; l’UCI est l’unique interface moteur.
+Ce dossier est indépendant de l’interface et de l’ancien détecteur de motifs.
+Il produit des faits et des hypothèses structurés ; `explanation` reste `null`.
+Lancer depuis `ui/` :
 
-## Ce qui est réellement disponible
+```bash
+npm run test:understanding
+CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/games/stockfish npm exec -- vitest run dev/understanding.test.mjs --reporter=verbose --silent=false --disableConsoleIntercept
+```
 
-- Une UI de revue, exploration, retry et démonstrations utilisable et testée.
-- Une première couche d’explications (`explanations.ts`, `tactics.ts`,
-  `decisionCause.ts`) à portée limitée, parfois trompeuse malgré ses vérifications.
-- Des recherches annulables et mises en cache (`FocusedAnalysis`, `LiveStudy`).
-- Des tests logiciels et un parcours navigateur. Ils ne constituent **pas** une
-  mesure de pertinence pédagogique. Les anciens lots « terminés » restent dans
-  `BACKLOG_ANALYSE_PEDAGOGIQUE_HISTORIQUE.md` comme historique de livraison.
+## Ce qui est implémenté
 
-Ne pas ajouter de nouvelles familles de phrases dans `decisionCause.ts` pour
-répondre à chaque capture utilisateur. Construire le prototype suivant séparément,
-sous `src/review/understanding/`, sans le connecter à l’UI tant que son contrat
-n’est pas validé. Un cas reconnu n’est pas une preuve de couverture générale.
+- `context.ts` reconstruit le passé connu et la continuation légale, garde les
+  commandes UCI et suit chaque pièce par une identité stable. Une promotion garde
+  l’identité de son pion ; le roque déplace aussi la tour, la prise en passant
+  retire la pièce de sa vraie case. L’histoire avant une FEN reste inconnue.
+- `possibilities.ts` sépare attaque géométrique et capture légale, inventorie
+  déplacements et réponses de capture, puis compare les possibilités. Une route
+  de fou/tour/dame fermée par une pièce amie cite cette pièce et sa case. Les
+  sondes avec un autre trait sont identifiées et refusées pendant un échec.
+- Le bilan d’une réponse de capture inclut la meilleure reprise immédiate disponible.
+  C’est un fait matériel borné, **pas** une évaluation du coup ou une recherche
+  stratégique : il ne couvre pas les coups intermédiaires et compensations.
+- `relations.ts` compare les reprises légales (défenseur capturé, déplacé ou
+  contraint) et les lignes ouvertes entre pièces restées sur leurs cases. Les
+  trajets et obstacles retirés sont conservés ; une ligne géométrique ouverte
+  reste distincte d'une capture légale. Une sonde indisponible n'est pas une
+  absence de défense. Les quatre promotions d'une reprise gardent une identité.
+- `mechanisms.ts` compose les faits de défense retirée et de ligne ouverte en
+  hypothèses avec rôle, victime, attaquant et capture précise. Un bilan local
+  favorable reste une hypothèse, à confronter à la réponse fraîche du moteur.
+- `exchanges.ts` remonte les reprises consécutives à partir de l’historique connu.
+  Le bilan de l’épisode visible est distinct du bilan depuis la décision consultée.
+  Sa borne initiale et la possibilité de reprendre encore sont explicites. Un
+  épisode entrecoupé de coups intermédiaires n’est pas reconstitué à ce stade.
+- `prototype.ts` compose ces relations pour construire l’hypothèse « retraite
+  fermée puis pièce attaquée » ou « nouvelle attaque sur une pièce restreinte ».
+  La victime et ses sorties sont explicites ; aucune case ou pièce d’un exemple
+  n’est codée dans le détecteur. Une capture avantageuse sur une case attaquée
+  n’est pas assimilée automatiquement à une sortie perdante.
 
-## Objectif mesurable
+La recherche de défense et sa vérification courte sont maintenant implémentées
+ci-dessous. La couverture stratégique et l'attribution de la cause à la décision
+restent **à vérifier**. Une PV légale contenant le gain ne lève pas ces inconnues.
 
-L’explication doit permettre de comprendre **ce que la décision change**, **comment
-ce changement est exploitable**, et **ce qu’aurait permis une autre décision**.
-Le texte et les repères doivent être issus des mêmes faits vérifiés.
+## Premier bilan du corpus de développement
 
-Distinguer explicitement :
+`corpus.json` contient 19 décisions : deux issues des captures utilisateur (un
+même exemple avant/après), quatre transformations avec camps inversés et treize
+cas construits. Ce n’est ni un échantillon représentatif de parties, ni une
+validation indépendante. Les positions ont été exécutées avec chess.js avant
+leur inscription. Les continuations sont des témoins légaux, pas des PGN inventés
+attribués à l’utilisateur.
 
-1. faits légaux observés sur le plateau ;
-2. hypothèse de cause construite avec ces faits ;
-3. hypothèse soutenue ou contredite par les recherches moteur ;
-4. qualité de la décision par rapport aux autres coups ;
-5. bilan d’un événement, par exemple l’échange complet.
+| Famille | Faits/mécanismes attendus | Reconnus | Contre-exemples |
+|---|---:|---:|---:|
+| Pièce restreinte / retraite fermée | 4 | 4 | 5 |
+| Contexte de reprise | 3 | 3 | 0 |
+| Double menace | 1 | 0 | 0 |
+| Clouage | 1 | 0 | 0 |
+| Défenseur supprimé | 1 | 1 | 0 |
+| Ligne ouverte | 1 | 1 | 0 |
+| Menace de mat | 1 | 0 | 0 |
+| Développement ordinaire / attaquant cloué | 0 | 0 | 2 |
+| **Total** | **12** | **9** | **7** |
 
-Une reprise peut être le meilleur coup disponible dans un échange perdant.
-Une pièce attaquée et sans retraite immédiate peut encore être sauvée par un
-coup intermédiaire, une défense, un échange ou une compensation : sa perte ne se
-prouve pas en comptant ses cases de sortie. Un meilleur score après une suite
-ne prouve pas à lui seul le motif choisi pour l’expliquer.
+Le tableau mesure les hypothèses attendues, **pas** des causes publiables. Le
+clouage donne un fait partiel correct (pièce attaquée restreinte), mais son lien
+avec le roi manque encore. Double menace, clouage et mat sont les **trois familles
+manquantes**. Les deux nouvelles hypothèses correspondent aux captures et rôles
+annotés ; leurs exemples initiaux ne constituent pas des confirmations moteur.
 
-## Plan d’exécution et critères de passage
+- Zéro hypothèse interdite dans le contrôle existant des restrictions/reprises.
+- Trois candidats secondaires de défense/ligne ouverte restent **non relus** dans
+  ce corpus : le rapport les expose, sans les compter comme corrects. Les nouvelles
+  familles ont aussi leurs contre-exemples dans le corpus dédié ci-dessous.
+- **Zéro explication publiable**, y compris pour les neuf hypothèses reconnues.
+- Les deux moteurs choisissent `…f4` sur la position utilisateur ; le prototype
+  retrouve la retraite fermée dans leurs variantes réelles. L’ancien explicateur
+  reste sans raison concrète sur cet exemple. Ce contrôle ne valide pas encore
+  les contre-épreuves nécessaires pour expliquer la décision.
+- Ordre de grandeur observé en local : environ six secondes pour le corpus seul,
+  avec une extraction exhaustive non optimisée. Le rapport recalcule les temps
+  à chaque exécution. Ce calcul synchrone ne doit pas être branché tel quel à l’UI.
 
-### A. Corpus et contrat d’évaluation — EN COURS
+Le rapport exige le mécanisme, la victime et la retraite attendus lorsqu’ils
+sont fournis ; une simple égalité de libellés ne suffit pas. Un bilan de reprise
+est également vérifié avec son rôle et ses deux valeurs. Les suites illégales,
+le mauvais historique et les frontières inconnues sont testés séparément.
 
-- [x] Premier corpus de développement versionné (19 décisions) : position/historique, décision, suite légale, provenance,
-  faits attendus, idée attendue, affirmations interdites et limites connues.
-- [ ] Cas positifs **et** contre-exemples : retraites supprimées/créées, pièce
-  restreinte exploitée par un coup calme, menace préexistante, défense clouée,
-  échange déjà commencé, reprise forcée/utile, compensation, coup intermédiaire.
-- [x] Cinq contre-épreuves exécutables supplémentaires : prise de l'attaquant par
-  une autre pièce, prise en passant, échec qui libère une retraite, mat prioritaire,
-  sacrifice suivi de mat. Témoins construits, dont un volontairement non optimal ;
-  ne pas les compter comme validation indépendante ou nouveaux motifs reconnus.
-- [ ] Cas de portée plus large présents dès le départ, même si non reconnus :
-  surcharge, déviation, double menace, lignes ouvertes, sécurité du roi,
-  activité réellement utile, concession de structure.
-- [x] Rapport séparant couverture des hypothèses, réponses partielles, explications confirmées,
-  abstentions, affirmations injustifiées et coût. Ventilation par famille et
-  provenance ; pas de pourcentage flatteur limité aux seuls motifs implémentés.
-- [x] Contrôle de référence sur Dd2/…f4 avec ShallowRed et Stockfish : le moteur
-  trouve la réponse, l’ancien explicateur reste sans cause ; le prototype expose
-  une hypothèse structurelle. Les autres exemples restent à enrichir.
-- [ ] Corpus indépendant de nouvelles parties pour juger la généralisation.
-  Les cas construits avec le code ne sont qu’un corpus de développement.
+## Ce qui reste avant une intégration UI
 
-**Passage A :** toutes les positions sont exécutables avec chess.js ; attentes
-échiquéennes explicites, échecs visibles, familles non couvertes comptées. Aucun
-texte généré automatiquement n’est utilisé comme vérité attendue.
-
-### B. Modèle du contexte et des possibilités — EN COURS
-
-- [x] Positions avant/après et historique légal conservés ; identité des pièces
-  suivie au travers des déplacements/captures/promotions.
-- [x] Premières relations réutilisables : attaques géométriques, captures légales,
-  chemins de fou/tour/dame bloqués par des pièces amies, déplacements légaux et
-  réponses de capture avec leur meilleure reprise immédiate.
-- [x] Changements de sorties et d’attaquants, routes fermées par une pièce amie,
-  attachés aux identités des pièces et aux positions concernées.
-- [x] Faits de défenses retirées et de lignes ouvertes : captures/reprises légales,
-  défenseur capturé/déplacé/contraint, chemins réellement dégagés, distinction
-  géométrie/légalité/indisponibilité. Corpus dédié positif et négatif.
-- [x] Composer défense retirée et ligne ouverte en hypothèses contextualisées :
-  même victime/attaquant, capture précise, rôle « perte permise » ou « occasion
-  créée ». Comparaison légale et conditionnelle à deux budgets, avec abstention.
-- [ ] Composer les contraintes combinées et élargir la validation de ces familles.
-  Les premiers cas construits ne prouvent pas leur pertinence générale.
-- [x] Épisodes de reprises consécutives ancrés dans l’historique : début connu/inconnu, rôle du
-  coup (initiation/reprise/poursuite), bilan total et bilan depuis la décision.
-  Ne pas imputer la perte antérieure à la meilleure reprise suivante.
-- [x] Première hypothèse composée à partir des relations : une décision ferme
-  une issue puis l’adversaire attaque la pièce restreinte. Ce n’est pas encore
-  l’affirmation « cette pièce est perdue ».
-- [ ] Transpositions, camps inversés, pièces déplacées, promotions, prise en
-  passant, échecs et historiques incomplets : décrire l’incertitude au lieu
-  d’inventer des possibilités par un simple changement du trait.
-
-**Passage B :** les mêmes primitives décrivent plusieurs familles et leurs
-contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un badge.
-
-### C. Vérification comparative des causes — EN COURS
-
-- [x] Questions explicites avant la décision, après le coup, au moment de la
-  défense et après une alternative légale. Chaque réponse garde commande UCI,
-  score, profondeur et variante. L'exploitation fraîche doit correspondre à
-  la menace de l'hypothèse ; sinon résultat indéterminé.
-- [x] Premier contraste causal pour une **retraite fermée** : rejouer la même
-  menace légale après l'alternative, retrouver la même victime et le même
-  attaquant, puis vérifier que le moteur emprunte la retraite restaurée et
-  améliore son évaluation. Les deux budgets doivent confirmer la même alternative,
-  la perte initiale et le gain comparatif. Statut séparé `attribution`, limité
-  à une contribution conditionnelle au verdict, sans texte publiable.
-- [x] Alternative qui capture l'attaquant : identité exacte et case de prise
-  (y compris en passant), recherche libre après l'alternative, témoin court
-  de préservation de la victime, perte initiale et amélioration stables requises.
-  Réutilise la recherche d'alternative ; pas de menace illégale rejouée.
-- [x] Premiers contrastes pour une défense retirée et une ligne ouverte :
-  alternative gardant le défenseur qui reprend réellement, ou l'obstacle qui
-  ferme la ligne ; perte visible et écarts de score relatifs stables requis.
-  Une perte compte aussi si son camp reste gagnant. Aucun trait artificiel.
-- [ ] Généraliser aux autres mécanismes : victime déplacée, défenses/attaques
-  combinées, double menace, clouage et mat. Aucun second choix moteur inventé.
-- [x] Recherches via `FocusedAnalysis` et `Engine`, sans MultiPV/searchmoves,
-  détail NNUE/Rust ni recherche stratégique recodée dans l'UI.
-- [x] Le moteur cherche librement la défense. Vérification à deux budgets séparés,
-  témoins bornés à huit demi-coups, reprises incluses, mat/compensation immédiate
-  prioritaires. Plusieurs coups calmes font abandonner le témoin court.
-- [x] Reprises disponibles avec décision observée, échecs intermédiaires et
-  clôture explicite dans la PV ; refus de conclure si la décision manque.
-  Le choix de ne pas reprendre ne prouve pas que la reprise est mauvaise.
-- [ ] Compensations différées/positionnelles et défenses multiples : les témoins
-  courts ne les couvrent pas. La comparaison actuelle de stabilité des scores
-  reste un seuil de développement, pas un étalonnage pédagogique.
-- [x] Rapports « soutenue / contredite / indéterminée » séparés de l'hypothèse.
-  Portée explicite : mécanisme court dans les lignes du moteur. Toujours aucune
-  explication publiable ni preuve que toutes les défenses perdent.
-- [x] Au plus dix recherches, budgets par défaut 300/900 ms, plafond global
-  12 secondes incluant les connexions ; arrêt, cache moteur/révision/historique,
-  rejet des réponses tardives, coûts et réutilisation du cache mesurés.
-- [x] Essais réels ShallowRed/Stockfish, avec différences conservées dans le
-  rapport de test. Les abstentions ne sont pas comptées comme explications justes.
-- [ ] Priorité et déclenchement depuis la revue : à traiter avec l'intégration E.
-
-**Passage C :** une explication rejetée sur les contre-exemples reste rejetée
-même si une capture existe dans la PV. Publier le rapport du corpus et ses limites.
-
-### D. Explication et démonstration à partir des preuves — EN COURS
-
-- [x] Premiers **brouillons isolés**, pour les deux nouvelles familles seulement :
-  texte issu du contraste soutenu, même témoin légal pour les positions et repères,
-  départ après la décision sans rewind. Pour une ligne gardée fermée, afficher
-  l'alternative et son obstacle suffit ; aucun défilage des coups calmes de sa PV.
-  Ces brouillons ne sont pas activés dans la revue et restent à relire.
-- [x] Pour ces brouillons, preuve complète séparée du préfixe illustré : reprises
-  résolues conservées, aucune compensation/échec/promotion du témoin caché, bilans distincts
-  explicités lorsqu'une prise sur une autre pièce est retirée du repère.
-
-- [ ] Une idée principale structurée : décision → changement → exploitation →
-  différence avec l’alternative. Les raisons inconnues restent inconnues.
-- [ ] Motifs secondaires subordonnés ; distinguer cause initiale, meilleure
-  défense et fin d’échange. Une même séquence garde un récit cohérent entre coups.
-- [ ] Texte produit uniquement depuis les faits et leur statut ; pas de « commence
-  un échange gagnant » pour une reprise dans un échange antérieur perdant.
-- [ ] Plan visuel minimal : cases/flèches et positions nécessaires à cette idée ;
-  une suppression de retraite peut se montrer sans dérouler toute la PV.
-- [ ] Vérifier sur le corpus la pertinence de la phrase ET de l’illustration,
-  au-delà des seuls tests de légalité et de scores.
-
-### E. Intégration progressive dans la revue — À FAIRE
-
-- [ ] Raccorder seulement les familles ayant passé les étapes précédentes.
-- [ ] Conserver le coup étudié, navigation, variantes, dessins, préférences,
-  retry sans fuite et signalement de calcul. Aucun nouveau menu concurrent.
-- [ ] Retirer les anciennes règles remplacées ; ne pas empiler deux explications
-  contradictoires pour une même décision.
-- [ ] Tester des parties complètes (humain/bot, deux humains, import PGN) et le
-  parcours bureau/mobile. Mesurer latence et couverture avant/après.
-- [ ] Faire relire les exemples par Théo : une CI verte n’est pas cette validation.
-
-## Critères de qualité et limites
-
-- Zéro affirmation interdite sur le corpus de régression avant activation UI.
-- Chaque famille a des positifs et des négatifs ; les cas inexpliqués figurent
-  au rapport. Une hypothèse trouvée n’est pas comptée comme explication confirmée.
-- La promotion d’un prototype vers l’UI dépend de cette validation, pas du nombre
-  de tests, du nombre de détecteurs ou d’un pourcentage choisi après mesure.
-- Les raisons purement positionnelles restent un objectif du chantier ; elles
-  ne sont pas déclarées terminées parce que développement/centre sont décrits.
-- Aucun engagement de couverture identique à Chess.com. Ni un moteur plus fort,
-  ni davantage de temps, ni une reformulation textuelle ne fournissent seuls
-  le modèle de contexte manquant.
-
-## Point de reprise
-
-- Branche actuelle : `codex/ui-polish`, PR #111 ouverte au début de cette reprise.
-- Dernier lot : clôture des reprises non choisies et séparation entre preuve
-  complète et repère court. Voir la livraison correspondante ci-dessous.
-- **Prochain travail concret** : enrichir les annotations des trois motifs
-  secondaires non relus, puis ajouter des décisions issues de nouvelles parties
-  avec attentes et affirmations interdites explicites. Les distinguer des
-  contre-épreuves construites pour le logiciel. Ne pas activer les brouillons
-  dans l'UI avant cette validation ; travailler ensuite le coût et l'intégration E.
-- Restent aussi clouage/double menace/mat, compensations longues, extraction trop
-  coûteuse et démarrages moteur par question. Ne pas contourner ces limites par
-  des textes génériques ou par une intégration prématurée.
-- Démarrage autorisé : A, puis les primitives de B avec un rapport exécutable.
-  L’UI conserve provisoirement le prototype historique, dont les limites restent
-  connues. Ne pas annoncer que l’analyse utilisateur est déjà corrigée.
-- Exemple réel central : `Dd2` occupe une retraite du fou e3, puis `…f4` attaque
-  ce fou. Source : captures utilisateur du 2 octobre. FEN reconstruite, sans
-  inventer le PGN antérieur ; trait, horloges FEN et dernier déplacement documentés.
-- Autre régression : C×F, P×C, D×P ; distinguer échange global à −1 pion et
-  reprise utile. La position concrète construite doit être annoncée comme telle.
-- Les prochaines notes doivent préciser fichiers, commandes, résultats et ce
-  qui reste non implémenté ; cocher uniquement les livrables effectivement validés.
-
-## Livraison de démarrage — 2 octobre 2026
-
-- Nouvelle backlog active ; anciennes annonces de lots terminés archivées à part.
-- Fichiers du prototype : `src/review/understanding/{context,possibilities,exchanges,prototype}.ts`.
-- Corpus versionné et rapport : `src/review/understanding/corpus.json`, `corpus.ts`,
-  `corpus.test.ts`, `README.md`. Commande : `npm run test:understanding` depuis `ui/`.
-- Première mesure : 19 décisions, 12 faits/mécanismes attendus, 7 reconnus,
-  5 manquants, 7 contre-exemples respectés, 1 réponse partielle (clouage),
-  **0 explication publiable**. Les transformations ne sont pas des cas indépendants.
-- Les 25 contrôles du prototype incluent l’historique, l’illégalité, les camps,
-  les frontières inconnues, le roque, la promotion et la prise en passant.
-- `dev/understanding.test.mjs` confronte Dd2/…f4 aux deux moteurs réels :
-  aucune sortie du prototype n’est encore traitée comme une cause confirmée.
-- Validation logicielle de cette livraison : lint, TypeScript, 364 tests avec
-  les deux moteurs et build réussis. Le bundle applicatif est inchangé : aucun
-  import du prototype dans les composants actifs.
-- Coût actuel de l’extraction exhaustive : environ six secondes pour le corpus
-  local. Pas d’intégration synchrone de ce code dans le rendu React.
-- Suite de ce démarrage : voir la livraison suivante et son point de reprise.
+Étendre les relations et le corpus, vérifier comparativement les hypothèses avec
+les moteurs, examiner les contre-exemples tactiques (en particulier intermédiaires
+et sacrifices), puis seulement produire les textes et plans visuels. Les familles
+positionnelles, la surcharge et la déviation doivent entrer dans le corpus avant
+d’être annoncées comme prises en charge. Voir la backlog active à la racine de `ui/`.
 
 
-## Livraison suivante — vérification des hypothèses, 2 octobre 2026
+## Vérification comparative isolée
 
-- `src/review/understanding/Verification.ts` orchestre les questions et leur
-  stabilité ; `evidence.ts` extrait le témoin court. Tests unitaires associés.
-- `verificationCases.json` ajoute cinq contre-épreuves aux 19 décisions du
-  corpus initial. Les rapports restent séparés : on n'améliore pas artificiellement
-  le taux de reconnaissance en ajoutant des cas construits pour le vérificateur.
-- `dev/understanding.test.mjs` contient désormais 14 tests réels facultatifs :
-  deux références initiales et six cas par moteur. Avec les variables binaires,
-  les 14 passent. Les budgets du contrôle sont 200/600 ms, plafond 12 secondes.
-- Observation locale : sur Dd2/…f4, ShallowRed soutient une perte de deux points
-  dans une ligne courte ; Stockfish reste indéterminé, sa meilleure défense
-  conduisant à une suite dont la clôture dépasse le contrat du témoin. Les deux
-  réfutent la perte annoncée quand une autre pièce prend l'attaquant ou qu'un mat
-  immédiat est disponible. Le cas de l'échec intermédiaire reste indéterminé
-  dans leurs PV, malgré le témoin construit légal. Ce sont des limites visibles.
-- Régression annexe trouvée par la partie réelle : le wrapping de commentaires
-  de chess.js pouvait coller SAN et numéro du coup suivant. `exportPgn()` garde
-  désormais le movetext sans césure ; réimport testé avec un commentaire de fin
-  au temps. Aucun changement des règles ou du moteur.
-- Cinq familles du corpus initial restent manquantes ; **0 explication publiable**.
-  Aucun raccordement à l'UI et aucun changement du moteur.
-- Validation locale : **400 tests / 41 fichiers**, avec ShallowRed et Stockfish ;
-  lint, TypeScript et build réussis. Les tests ne valident pas la pertinence
-  pédagogique générale et le nouveau prototype reste isolé.
-- Suite de cette étape : voir la livraison du contraste ci-dessous. Les familles
-  manquantes, les cas indépendants et D/E restent ouverts.
+`Verification.verify` reçoit la revue, sa révision, l'identifiant/configuration du
+moteur, le contexte et l'hypothèse choisie. Un changement de configuration moteur
+doit changer la révision ou l'identifiant, comme pour `FocusedAnalysis`.
 
+1. Rechercher depuis la position avant la décision, puis après le coup joué.
+2. Chercher la meilleure défense avec le vrai trait et l'historique complet,
+   sans imposer un déplacement de la pièce menacée.
+3. Analyser une alternative légale fournie ou le premier choix à la racine s'il
+   diffère du coup joué. Aucun second choix inventé quand les coups coïncident.
+4. Si une retraite fermée redevient disponible, rejouer la même menace légale
+   après l'alternative et demander la meilleure défense (`same-threat`).
+5. Refaire ces questions avec un budget supérieur et un cache distinct.
 
-## Livraison — contraste causal d'une retraite, 2 octobre 2026
+Par défaut : 300 puis 900 ms par position, au plus dix recherches / 6 000 ms
+nominaux et 12 secondes au total, connexions incluses. Cache borné par revue,
+moteur, révision, historique, hypothèse et alternative. Annuler empêche la
+publication tardive. Un rapport réutilisé indique `cached: true` et coût courant
+nul. Les rapports rendus ne permettent pas de modifier les caches internes.
 
-- `contrast.ts` reconstruit la branche de l'alternative avec l'historique et
-  les identités d'origine. Aucune modification fictive du trait ou du plateau.
-  Une retraite doit redevenir légale sans capture immédiatement perdante ; le
-  bloqueur doit réellement avoir été déplacé par le coup examiné.
-- La question UCI `same-threat` n'est lancée que si la comparaison est pertinente.
-  Refus explicites : autre rôle, victime déplacée, attaquant différent, menace
-  illégale, capture/échec différent pour un même UCI, retraite toujours bloquée
-  ou matériellement coûteuse. Ce refus n'est pas une absence de raison échiquéenne.
-- `Verification` conserve trois niveaux : perte dans la PV, comparaison des
-  scores, puis attribution conditionnelle au mécanisme. Un meilleur score seul
-  ne valide aucune cause. Cache, annulation et coût couvrent la nouvelle question.
-- `possibilities` permet de cibler une seule identité pour ne pas recalculer
-  toutes les possibilités lors de chaque contraste. L'extraction initiale reste
-  synchrone et doit être optimisée avant E.
-- `contrastCases.json` ajoute neuf comparaisons de développement : quatre
-  retraites restaurées, cinq situations refusées, dont les camps inversés et un
-  échiquier distinct avec une attaque de tour. Elles ne constituent pas un
-  corpus indépendant. Les cinq familles manquantes du corpus initial restent
-  visibles ; **aucune explication n'est encore activée dans l'UI**.
-- Les tests réels passent à 16 (huit par moteur), budgets 200/600 ms. Le plafond
-  des intégrations est 25 secondes pour inclure les démarrages sous charge ;
-  le plafond applicatif reste 12 secondes, testé séparément avec une horloge simulée.
-  L'horloge est également relue après les calculs synchrones pour empêcher une
-  publication hors délai avant que le callback du timer puisse s'exécuter.
-- Observation : sur Dd2, l'alternative explicite Rh1 conserve Fd2 contre …f4.
-  Les deux moteurs trouvent Fd2. ShallowRed soutient la contribution de la
-  retraite fermée ; Stockfish garde l'attribution non établie, car sa perte
-  initiale reste hors du témoin court. Rh1 est ici une alternative explicite,
-  **pas le meilleur coup annoncé**. Leur alternative automatique peut être
-  exf5, qui retire l'attaquant et exige un autre modèle causal.
-- Coût observé de la comparaison explicite : environ 4,5 s avec ShallowRed,
-  13,3 s avec Stockfish sur une machine chargée, hors extraction initiale.
-  La borne applicative peut donc interrompre cette vérification : conserver cette
-  abstention, et réduire le coût de connexion/recherche avant l'intégration.
-- Validation finale : **418 tests / 42 fichiers**, dont les 16 intégrations
-  ShallowRed/Stockfish ; lint, TypeScript et build réussis. Le bundle applicatif
-  est inchangé : le nouveau modèle reste isolé des composants de revue.
-- Suite : voir la livraison suivante et son point de reprise.
+`evidence.ts` suit l'identité de la victime dans la PV. Il conserve les reprises,
+repère un sauvetage visible ou le mat du défenseur, et ne s'arrête pas à une perte
+juste avant une capture, promotion ou un échec compensateur. Il borne la lecture à
+huit demi-coups et abandonne après plusieurs coups calmes sans mécanisme résolu.
+Une compensation au-delà de cette fenêtre reste inconnue.
 
-## Livraison — relations de défense et prévention, 3 octobre 2026
+Le statut `supported` signifie seulement que deux recherches stables montrent
+une perte matérielle courte de la victime avec un score défavorable à son camp.
+`contradicted` signifie qu'elles montrent un témoin contraire ; ce n'est pas
+l'affirmation que la position entière est bonne. `indeterminate` garde les PV
+incomplètes, la menace modifiée et les recherches divergentes. La comparaison de
+scores donne un champ séparé : elle **n'établit pas la causalité** du motif.
 
-- `relations.ts`, exposé par `Understanding.relations`, suit les reprises
-  réellement légales après une capture, et compare les mêmes attaquant/victime
-  restés sur les mêmes cases. Défenseur capturé, déplacé ou contraint sont
-  distincts ; les reprises par promotion conservent une seule identité.
-- Une ligne ouverte conserve son trajet et tous les obstacles retirés, dont les
-  deux cases libérées par une prise en passant. Une ligne géométrique ne promet
-  pas une capture légale : attaquant cloué, échec adverse et données indisponibles
-  sont distingués. Les sondes de trait sont explicitement conditionnelles.
-- `relationCases.json` : 15 cas de développement (13 construits, deux inversions
-  de couleurs), avec positifs et négatifs : défenseur déjà cloué, défense restante,
-  obstacle restant/remplacé, attaquant cloué, ligne de défense, prise en passant,
-  promotion. Ces primitives ne constituent pas encore deux causes validées ; les
-  cinq familles manquantes du rapport original restent affichées.
-- Le contraste traite désormais l'alternative qui capture l'auteur effectif de
-  la menace. `preventionEvidence` réutilise le témoin court, mais commence après
-  cette alternative avec le bilan depuis avant sa capture. Le moteur choisit
-  librement sa réponse ; une autre attaque sur la victime peut encore réfuter
-  le sauvetage. La prise seule et l'amélioration seule ne valident rien.
-- Contrôles : capture normale, prise en passant, couleurs inversées, capture
-  d'une autre pièce, variante qui perd quand même la victime, PV trop courte,
-  instabilité, scores de mat et cache. Pas de recherche supplémentaire : huit
-  maximum dans ce cas, contre dix pour le contraste d'une retraite.
-- L'ancien cas « attaquant capturé » des neuf comparaisons passe de refus à
-  prévention reconnue : quatre retraites restaurées, une prévention, quatre refus.
-- Aucun code moteur ni composant actif modifié ; `explanation` reste `null`.
-  Les tests UCI passent à 18, dont la comparaison explicite exf5 pour chaque moteur.
-- Observation UCI du 3 octobre, budgets 200/600 ms : après exf5, les deux moteurs
-  répondent Fxf5 puis conservent le fou e3 dans le témoin. ShallowRed soutient la
-  prévention ; Stockfish garde l'attribution non établie, faute de clôture de la
-  perte initiale. L'amélioration de score seule ne contourne pas cette limite.
-  Coût de vérification observé : 2,6 s / 6,7 s, hors extraction préalable.
-- Validation finale : **445 tests / 44 fichiers**, dont les 18 intégrations avec
-  ShallowRed et Stockfish ; lint, TypeScript et build réussis. Aucun changement
-  du bundle actif. Le rapport pédagogique original garde cinq mécanismes manquants
-  et zéro explication publiable ; les nouveaux tests valident les faits et les
-  conditions du prototype, pas sa pertinence générale.
-- **Prochain travail concret** : composer les relations de défense/lignes ouvertes
-  en hypothèses contextualisées et en contrastes vérifiables, avec refus si le
-  changement ne contribue pas au verdict. Ne pas ajouter simplement deux textes
-  de motifs à l'UI. Puis traiter la clôture d'échange lorsqu'une reprise possible
-  n'est pas choisie par le moteur. D/E, sacrifices positionnels, performance et
-  corpus indépendant restent ouverts.
+Seuils provisoires : variation maximale de 100 centipions entre recherches,
+score inférieur à −75 centipions du point de vue du défenseur pour soutenir la
+perte, écart d'au moins 100 centipions pour distinguer les alternatives. Ils ne
+sont ni des règles de classement ni des probabilités de victoire ; ils restent
+à étalonner. Les scores de mat ne sont pas convertis en faux centipions.
+
+### Contre-épreuves et observations réelles
+
+`verificationCases.json` contient cinq cas construits distincts du corpus des
+19 décisions. L'inventaire géométrique propose une restriction dans chacun ; les
+témoins légaux montrent pourquoi cela ne suffit pas à conclure à un gain.
+
+- Capture de l'attaquant par une autre pièce.
+- Capture en passant qui retire l'attaquant de sa véritable case.
+- Échec, échange forcé de tours et retraite libérée pour le fou.
+- Mat immédiatement disponible malgré la menace sur le fou.
+- Fou capturé puis mat : témoin volontairement non optimal, destiné à vérifier
+  la priorité de la compensation. Les moteurs trouvent ici le mat immédiat.
+
+Les tests réels utilisent 200/600 ms et enregistrent les deux budgets, scores,
+profondeurs, témoins, comparaisons et coûts. Historique d'une exécution locale
+avant la révision de clôture ci-dessous :
+
+| Cas | ShallowRed | Stockfish |
+|---|---|---|
+| Dd2/…f4 | Perte courte soutenue, comparaison instable | Indéterminé : échange non clôturé dans le témoin |
+| Autre pièce prend l'attaquant | Hypothèse contredite | Hypothèse contredite |
+| Prise en passant | Indéterminé : score instable, défense trouvée | Hypothèse contredite |
+| Échec qui libère une retraite | Indéterminé : autre défense choisie | Indéterminé : autre défense choisie |
+| Mat prioritaire / sacrifice | Hypothèse contredite par le mat | Hypothèse contredite par le mat |
+
+Ces observations peuvent varier avec le binaire et le temps de recherche. Elles
+ne sont pas des attentes figées de profondeur ou de score. Durée observée par
+vérification : environ 0,2 à 7,2 secondes, connexions comprises ; extraction
+synchrone des hypothèses en supplément. Les deux moteurs ne doivent pas être
+appelés ensemble dans l'UI : ils servent ici à confronter le prototype.
+
+La causalité comparative générale, les sacrifices positionnels et les trois familles
+manquantes restent ouverts. **Toujours zéro explication publiable.**
 
 
-## Livraison — défenses/lignes vérifiées et premiers brouillons, 3 octobre 2026
+## Contraste causal : retraite fermée
 
-- `mechanisms.ts` compose les relations légales en hypothèses de défense retirée
-  ou de ligne ouverte. La capture doit employer les mêmes pièces au prochain tour
-  de l'attaquant, avec au plus une réponse intermédiaire ; pas de prise cherchée
-  loin dans la variante pour justifier le coup. Une réponse réelle peut lever un
-  échec lorsque la sonde de trait était indisponible.
-- `RelationVerification.ts` et `relationContrast.ts` analysent avant/après la
-  décision, l'alternative et la branche après capture. Le contraste d'une défense
-  exige que le même défenseur reprenne effectivement et réduise la perte ; celui
-  d'une ligne exige l'obstacle conservé et un témoin qui préserve la victime.
-  Identités, captures et effets d'échec doivent rester cohérents.
-- `BoundedVerification.ts` partage les budgets, cache, annulation et délai avec
-  le vérificateur de restriction existant. Aucun changement de ses conclusions.
-  Au plus dix recherches, 300/900 ms et plafond de 12 s par défaut. Les scores
-  de mat ne sont pas convertis en centipions ; ils restent hors de cette attribution
-  matérielle. Le témoin court s'arrête aussi à la première fin de partie, même si
-  le moteur poursuit sa PV après une nulle selon chess.js.
-- `mechanismCases.json` : 13 cas de développement (11 construits, deux inversions
-  de couleurs), dont défense restante, attaquant cloué, cible qui quitte la ligne,
-  obstacle retiré dans les deux alternatives et compensation par une autre prise.
-  Les scores des tests unitaires sont **simulés**, pas des évaluations échiquéennes.
-- Deux cas construits avec davantage de matériel confirment le contraste auprès
-  des deux moteurs : Cb4 abandonne la reprise après Fxf6 ; dxe4 expose la dame d1
-  à la tour d8. Les cas dépouillés exposent aussi des limites : roi devenu défenseur,
-  autre menace exploitée, mat, score instable ou préservation encore indéterminée.
-  Ces refus sont conservés. Aucun seuil n'a été relâché pour obtenir une réussite.
-- `relationDraft.ts` génère seulement un **brouillon** lorsque perte et attribution
-  sont soutenues. Exemple de défense : après Cb4, montrer Fxf6 ; dans l'alternative
-  a6, montrer Fxf6 puis Cxf6. Exemple de ligne : départ après dxe4, capture et reprise
-  nécessaires au bilan ; dans l'alternative d4, montrer directement l'obstacle.
-  Voir `src/review/understanding/DRAFT_EXAMPLES.md` pour les exemples à relire.
-- Le rapport original conserve ses 19 décisions : 12 idées attendues, **9 hypothèses
-  reconnues, 3 familles manquantes** (double menace, clouage, mat), une réponse partielle.
-  Trois candidats secondaires des nouvelles familles ne sont pas encore annotés
-  complètement : ils sont affichés comme **non relus**, pas comptés comme justes.
-  Le contrôle des affirmations interdites existant porte sur restriction/reprises.
-  Toujours **zéro explication déclarée publiable** et aucun import dans la revue active.
-- Les intégrations UCI passent à 32 (18 existantes et 14 pour ces mécanismes), avec
-  observations des deux budgets, alternatives, témoins, abstentions et coûts.
-  Lors du contrôle ciblé local, les deux cas plus riches prennent environ 3,1–4,0 s
-  avec ShallowRed et 6,8–8,4 s avec Stockfish, connexions incluses, extraction exclue.
-  Les intégrations autorisent 25 s ; le plafond applicatif reste 12 s.
-- Validation finale : lint, TypeScript et build réussis ; **490 tests / 45 fichiers**
-  avec les deux binaires via `npm test -- --maxWorkers=2`. Le lancement par défaut
-  s'est arrêté sans bilan ; le passage borné à deux workers a terminé avec succès.
-  Le build actif garde les mêmes assets ; aucun fichier du moteur ni composant
-  de revue modifié.
+`contrast.ts` compare une même menace dans deux branches **légales**, sans
+permuter le trait ni effacer des pièces. Il vérifie les identités de la victime,
+de l'attaquant et du bloqueur, ainsi que le déplacement réel de ce dernier.
+Il écarte une menace dont la capture ou l'échec change, même si son UCI est
+identique. Une case accessible mais matériellement perdante n'est pas qualifiée
+de retraite restaurée.
 
-- Vérification CI : le Stockfish 16 d'Ubuntu peut terminer une itération sur une
-  borne avec un coup différent de sa dernière itération exacte. Le refus du
-  vérificateur est alors correct. Les intégrations contrôlent explicitement ce
-  refus (score réellement borné, PV/coup légaux et cohérents, aucune explication),
-  sans accepter une panne ou désactiver `usableResult`. Une régression simule les
-  lignes UCI reproduites ; le diagnostic garde la question et quatre dernières
-  réponses. Reproduction locale avec le binaire Ubuntu extrait sous `/tmp`, sans
-  remplacer le moteur installé. Ce refus ne compte pas comme explication juste.
-- Revalidation après ce correctif CI : **490 tests / 45 fichiers** avec ShallowRed
-  et le Stockfish 16 exact d'Ubuntu, lint et TypeScript réussis. Aucun changement
-  du contrat de validité des réponses ni des seuils de confirmation.
+La comparaison ne prétend pas que l'adversaire choisirait cette menace dans
+l'alternative : la question est « contre cette même idée, cette décision
+conserve-t-elle une défense ? ». Le moteur reste libre de choisir sa défense.
+
+Le rapport `attribution` peut soutenir `closed-retreat` seulement si :
+
+- la perte initiale est soutenue par les deux recherches ;
+- la même alternative est meilleure dans les deux recherches ;
+- le moteur emprunte dans chaque branche comparative une retraite précisément
+  bloquée par le coup joué, avec un témoin de préservation de la pièce ;
+- l'évaluation contre cette menace s'améliore aussi d'au moins 100 centipions
+  pour le défenseur et reste stable. Les scores de mat ne sont pas convertis.
+
+Ce statut décrit une **contribution conditionnelle**, sans prétendre épuiser les
+raisons du verdict ni prouver une perte contre toutes les défenses. Les positions,
+trajets, bloqueur et réponses restent accessibles dans les deux passes ;
+`explanation` reste `null` et les composants de revue n'importent pas ce code.
+
+`contrastCases.json` couvre neuf comparaisons de développement (quatre retraites
+restaurées, une capture préventive et quatre refus), avec camps inversés et un
+autre échiquier comportant une attaque de tour. Les refus comprennent une autre
+pièce occupant la retraite, une victime déjà déplacée, des cases encore perdantes
+et un même déplacement UCI qui devient une capture différente. Ce lot historique ne changeait pas le corpus initial de 19 décisions.
+Le suivi courant ci-dessus inclut les deux nouvelles hypothèses.
+
+Les 18 tests UCI réels ajoutent notamment une alternative explicitement choisie,
+Rh1 au lieu de Dd2. Les deux moteurs utilisent Fd2 contre …f4 ; ShallowRed soutient
+l'attribution tandis que Stockfish peut rester indéterminé sur la perte initiale.
+Cela ne transforme pas Rh1 en « meilleur coup ». Le choix automatique peut être
+exf5 : la menace …f4 devient alors illégale. La nouvelle comparaison ci-dessous
+traite précisément cette prévention, sans rejouer …f4.
+
+Lors d'une exécution chargée, la comparaison explicite a pris environ 4,5 s avec
+ShallowRed et 13,3 s avec Stockfish (démarrages inclus, extraction préalable exclue).
+Les tests d'intégration accordent 25 s au moteur, mais le plafond applicatif
+reste 12 s et peut donc interrompre le calcul sans publier de résultat partiel.
+Le coût des connexions et de l'extraction initiale doit diminuer avant l'UI.
 
 
-## Livraison — clôture d'échange et repère distinct, 3 octobre 2026
+## Défenses et lignes ouvertes : faits supplémentaires
 
-- `witness.ts` rejoue la continuation avec les identités et l'historique complets.
-  Chaque capture garde ses reprises légales, le choix réel et sa position. Un
-  échec intermédiaire peut différer la reprise ; une PV ou une borne qui s'arrête
-  avant la décision reste indéterminée. Aucun choix futur n'est publié.
-- `evidence.ts` donne une raison de clôture et compte les coups calmes consécutifs.
-  Le bilan est examiné avant la limite des coups calmes. La compensation, les
-  promotions et les échecs immédiats sont conservés ; nulle et mat adverse ne sont
-  pas décrits comme un simple échange matériel. La portée reste une ligne moteur.
-- `illustration.ts` sépare le préfixe utile de la preuve complète. Les reprises,
-  leurs échecs intermédiaires et le choix réel de ne pas reprendre restent visibles.
-  Une prise ultérieure adverse sur une autre pièce peut être omise ; toute prise
-  compensatrice du camp de la victime, promotion ou échec interdit cette coupe.
-- `relationDraft.ts` expose les deux bilans et les coups omis, et précise qu'une
-  reprise légale non choisie n'est pas pour autant une mauvaise reprise. Aucun
-  nouveau détecteur ou phrase générique ajouté à l'explicateur actif.
-- Exemple construit dxe4 : le repère …Txd1 Txd1 ferme le motif à −3 points ; une
-  autre prise …Cxe4 reste dans la preuve à −4. Le brouillon signale la différence.
-  Tests des deux couleurs, compensations partielles/complètes, promotion, échec,
-  reprise en attente, borne, nulle et mat. Les scores unitaires sont simulés ;
-  ces contrôles n'augmentent pas la couverture pédagogique du corpus original.
-- Contrôle réel Stockfish 17.1 sur Dd2/…f4 : la défense calculée se termine par
-  Tfe1 alors que Cxd4 et Dxd4 restent légaux. Le témoin observe désormais la clôture
-  à −3 dans cette ligne, avec le choix et les reprises conservés. Cela ne prouve
-  pas une perte forcée. Les résultats peuvent varier selon le budget et le binaire.
-- Aucun changement du moteur, des budgets UCI ou de l'interface active ; le
-  prototype reste isolé et aucune explication n'est déclarée publiable.
-- Validation : suite complète **509 tests / 46 fichiers** avec ShallowRed et le
-  Stockfish 16 exact d'Ubuntu ; après l'ajout d'un dernier contrôle du texte, les
-  **60 tests ciblés** de preuve/illustration/brouillon passent. Lint, TypeScript
-  et build passent ; les assets du build actif sont inchangés.
-- Nouveau contrôle ciblé des deux binaires : six essais réels réussis. Sur la
-  position de ligne, tous deux gardent …Cxe4 dans la preuve à −4, avec un repère
-  arrêté à −3. Coûts observés hors extraction : 3,9–4,8 s avec ShallowRed,
-  6,1–7,8 s avec Stockfish 16. Les trois contrôles ciblés Stockfish 17.1 passent
-  également. Ces durées ne sont pas des garanties de latence applicative.
-- Point de reprise : annotations des candidats secondaires, corpus indépendant,
-  motifs manquants, optimisation puis intégration E. La relecture pédagogique
-  ne doit pas être remplacée par les seuls tests logiciels.
+`relationCases.json` contient 15 cas (13 construits et deux inversions de couleurs).
+Les tests rejouent chaque capture/reprise annoncée. Ils couvrent les changements
+utiles et leurs contre-exemples : un cavalier cloué protège géométriquement mais
+ne reprend pas ; retirer un défenseur peut en laisser un autre ; une pièce qui
+capture un obstacle peut occuper sa place et maintenir la ligne fermée ; une
+ligne dégagée peut appartenir à un attaquant cloué. La prise en passant retire
+deux obstacles et les promotions ne multiplient pas l'identité d'un défenseur.
+
+Ces faits sont attachés à la décision dans `Understanding.relations`. Les deux
+pièces comparées doivent garder identité, type et case ; leur déplacement ou
+promotion demande une autre relation. Les inventaires indiquent si le trait
+est réel ou sondé. Le bilan est limité à la capture et à la meilleure reprise
+immédiate, **sans jugement de qualité ni garantie sur un échange prolongé**.
+Ce corpus de primitives reste séparé des mécanismes et explications publiables.
+
+## Contraste causal : attaquant supprimé
+
+Une alternative légale qui capture l'identité responsable de la menace produit
+`attacker-removed`. La prise en passant utilise la case réelle de la victime de
+la capture, pas la destination du pion. La victime menacée doit être la même et
+rester sur sa case. Un déplacement de la victime reste un autre mécanisme.
+
+La recherche déjà effectuée après l'alternative fournit une réponse adverse
+libre. Le témoin commence à cette position, avec un bilan matériel depuis avant
+l'alternative, et s'arrête dès la préservation constatée, la perte ou l'incertitude
+(huit demi-coups maximum). Il peut donc réfuter le sauvetage même si l'attaquant
+initial a disparu. Aucune réponse forcée ni commande `searchmoves` n'est utilisée.
+
+L'attribution reste conditionnelle : même alternative aux deux budgets, perte
+initiale vérifiée, amélioration stable et victime préservée dans chaque témoin.
+Mat, divergence ou continuation trop courte empêchent la confirmation. Les tests
+couvrent notamment une capture préventive suivie malgré tout de la perte du fou.
+La comparaison réutilise les recherches existantes (au plus huit), le cache et
+l'annulation. Elle ne nécessite pas la cinquième question `same-threat`.
+
+Observation locale du 3 octobre avec 200/600 ms : après exf5, les deux moteurs
+choisissent Fxf5 et le témoin conserve le fou e3 (ShallowRed poursuit par Fd1,
+Stockfish par Cd2). ShallowRed soutient `attacker-removed` ; Stockfish conserve
+`loss-not-verified`, sa perte initiale restant hors du contrat du témoin court.
+Coûts de vérification observés : 2,6 s et 6,7 s, connexions incluses, extraction
+initiale exclue. Ces chiffres et choix décrivent cette exécution, sans figer les
+profondeurs, les scores ou les coups futurs du moteur.
+
+Validation logicielle de cette étape : lint, TypeScript, 445 tests / 44 fichiers
+avec les deux binaires, build réussis. Le bundle actif conserve les mêmes fichiers.
+
+Aucun de ces résultats n'est encore transformé en texte dans l'UI. L'étape
+suivante ci-dessous compose et compare les défenses/lignes ; les compensations
+longues, le corpus indépendant et la validation du contrat de démonstration
+restent ouverts.
+
+
+## Défense retirée / ligne ouverte : hypothèses, contraste et brouillons
+
+`RelationVerification` utilise le même orchestrateur borné que `Verification`.
+Chaque budget interroge librement la position avant la décision, après le coup et
+après une alternative. La capture annoncée doit être observée avec les mêmes
+identités dans la réponse réelle, au premier ou deuxième demi-coup. Une requête
+conditionnelle après cette capture recherche sa suite avec le vrai trait.
+
+- **Défense retirée** : dans l'alternative, rejouer la même capture (et au plus
+  une réponse intermédiaire conservant ses identités/effet d'échec), puis vérifier
+  que le moteur reprend avec le défenseur effectivement conservé. Son existence
+  seule ne suffit pas. La perte matérielle et le score doivent s'améliorer.
+- **Ligne ouverte** : l'alternative doit conserver l'un des obstacles identifiés
+  sur le trajet. Sa réponse moteur reste libre et doit préserver la même victime.
+  Une attaque réciproque, un attaquant cloué ou une cible qui s'en va ne confirme
+  pas le récit de gain.
+
+La perte et l'attribution restent deux statuts distincts. Les scores exacts en
+centipions doivent être stables (100 cp maximum entre budgets). La comparaison
+relative doit différer d'au moins 100 cp dans le sens de l'hypothèse et rester
+stable : cela permet d'expliquer une perte même dans une position encore gagnante.
+Ce seuil de développement n'est pas une règle pédagogique étalonnée. Les scores
+de mat restent hors du contrat de cette attribution matérielle.
+
+Les réponses conditionnelles ont leur propre commande et un champ
+`scope: conditional-engine-line`. Elles ne sont pas présentées comme la PV libre
+initiale. Au plus dix recherches pour un défenseur, huit pour une ligne ; aucune
+commande MultiPV/searchmoves. Les deux caches restent séparés, l'historique complet
+et les identités moteur/révision sont conservés, l'annulation et le plafond global
+empêchent une publication tardive. `boundedContinuation` s'arrête à la première
+fin de partie et à huit demi-coups, sans relâcher le contrôle strict du contexte
+source.
+
+`mechanismCases.json` contient **13 cas de développement**, 11 construits et deux
+transformations de couleurs. Positifs, autre défense restante, attaquant cloué,
+ligne également ouverte dans l'alternative, cible qui s'en va et compensation
+ailleurs sont exécutables. Les tests unitaires rejouent des réponses et scores
+**simulés** : ils valident le contrat logiciel, pas le choix du moteur.
+
+Les 14 nouvelles intégrations réelles (sept décisions par moteur) ajoutent deux
+positions avec davantage de matériel. Lors du contrôle ciblé du 3 octobre,
+ShallowRed et Stockfish soutiennent la défense perdue après Cb4 et l'ouverture
+contre la dame après dxe4. Les positions dépouillées restent des contre-épreuves
+utiles : un roi peut remplacer le défenseur retiré, une autre attaque peut être
+plus forte, et la perte peut mener à un mat ou à un témoin trop court. Dans ces
+cas, aucune attribution n'est publiée. Coût observé pour les deux positions plus
+riches : 3,1–4,0 s avec ShallowRed, 6,8–8,4 s avec Stockfish, démarrages inclus et
+extraction exclue. Le démarrage d'un moteur par question reste à optimiser.
+
+`relationDraft` produit uniquement un **brouillon isolé** à partir d'une attribution
+soutenue. Le texte, la commande de chaque position et les repères utilisent les
+mêmes pièces et témoins. Le premier écran est après la décision ; on ne la rejoue
+pas. Le contraste d'une ligne affiche directement l'obstacle conservé, sans
+rejouer les coups sans rapport de sa PV. Les textes parlent d'une contribution
+conditionnelle, sans promettre que toutes les défenses perdent ni que l'alternative
+est le meilleur coup. Exemples à relire : [DRAFT_EXAMPLES.md](DRAFT_EXAMPLES.md).
+
+La révision suivante sépare désormais le témoin complet du repère court et
+observe explicitement la décision de ne pas reprendre. Les annotations des trois
+candidats secondaires, les mats, les contraintes combinées et le corpus indépendant
+restent au point de reprise. **Le prototype
+n'est toujours pas importé dans la revue ; `explanation` reste `null`.**
+
+Validation logicielle finale de cette étape : lint, TypeScript, build et **490 tests
+/ 45 fichiers** avec les deux moteurs (`npm test -- --maxWorkers=2`). Le premier
+lancement non borné s'est arrêté sans bilan ; le contrôle à deux workers termine
+avec succès. Le bundle actif garde les mêmes assets.
+
+
+La CI Ubuntu emploie Stockfish 16, différent du 17.1 installé localement. Sa
+recherche a révélé une abstention légitime : dernière itération bornée, coup
+retenu différent de la dernière itération exacte. La réponse reste inutilisable
+et aucun rapport/texte n'est publié. Les intégrations acceptent **ce refus
+vérifié seulement** : borne réelle, PV et meilleur coup cohérents/légaux ; elles
+continuent à échouer pour une panne, un délai ou un coup incohérent. Une
+régression rejoue les lignes exactes reproduites. Le diagnostic garde la question
+refusée et une trace bornée des réponses UCI. Aucun score borné n'est transformé
+en score exact dans le code applicatif.
+
+La revalidation complète avec ShallowRed et ce même Stockfish 16 donne **490
+  tests / 45 fichiers** ; lint et TypeScript passent également.
+
+
+## Clôture de reprise et illustration distincte — 3 octobre 2026
+
+`witness.ts` reconstruit les identités dans la continuation légale avec le même
+historique UCI. Pour chaque capture, `CaptureReply` garde la commande de position,
+les reprises légales, la décision observée et son indice. `not-chosen` constate
+seulement que le moteur a joué autre chose ; cela ne dit pas que reprendre serait
+mauvais, ni que toutes les défenses perdent. Un échec intermédiaire diffère la
+décision jusqu'au prochain tour du camp qui pouvait reprendre. Si le témoin se
+termine avant, elle reste `pending` ; aucun choix au-delà de la borne n'est publié.
+
+`DefenceEvidence.ending` distingue échange terminé, reprise non choisie, reprise
+encore en attente, échec non résolu, limite de coups calmes/longueur et fin de
+partie. Les coups calmes sont **consécutifs** ; une capture, un échec ou une
+promotion réinitialise leur compteur. La clôture d'un bilan visible est examinée
+avant d'abandonner à cette limite. Une nulle arrête le témoin sans conclusion de
+perte matérielle ; un mat adverse n'est pas réduit à une perte de pièce.
+
+`illustration.ts` produit un préfixe légal distinct de la preuve. Il suit la prise
+de la victime, les reprises successives et leurs échecs intermédiaires, et conserve
+la décision réelle de ne pas reprendre. Il peut omettre une capture ultérieure
+par l'adversaire sur une autre pièce. Il conserve toute prise compensatrice du
+camp de la victime, toute promotion et tout échec ; il ne tronque pas un témoin
+compensé ou indéterminé. C'est une règle conservatrice pour ces mécanismes courts,
+pas un résumé stratégique général d'une PV.
+
+`RelationDraft.illustration` indique les coups omis, le bilan illustré et le bilan
+de la preuve complète. `limitation` explique leur différence et les reprises
+légales non choisies. Exemple construit : après dxe4, …Txd1 Txd1 montre −3 points
+pour les Blancs ; …Cxe4 peut être gardé dans la preuve à −4, sans figurer dans le
+repère. L'alternative de ligne reste une position statique avec l'obstacle.
+
+Les nouvelles contre-épreuves logicielles couvrent les couleurs inversées,
+reprises partielles, échec avant reprise, compensation ailleurs y compris dans
+une ligne toujours perdante, promotion, nulle et mat adverse. Les scores exacts
+unitaires sont simulés. Ces contrôles ne sont pas de nouveaux cas indépendants
+ni de nouvelles idées reconnues dans le corpus original. Les recherches restent
+bornées à huit demi-coups et dix questions, sans nouveau coût UCI. Le prototype
+reste isolé, `explanation: null`, zéro explication déclarée publiable.
 
 Validation de cette révision : **509 tests / 46 fichiers** pour la suite complète
 avec ShallowRed et Stockfish 16 d'Ubuntu, puis **60 tests ciblés** après le dernier
