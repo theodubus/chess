@@ -59,8 +59,10 @@ export function tacticalContrast(
         ? board.attackers(target.square, attacker.color).includes(attacker.square)
         : captureRelations(frame, attacker.color).captures.some((c) => c.attackerId === attacker.id && c.victimId === id);
     }).length;
-    // Sauver les deux cibles en remplaçant tout le mécanisme n'est pas ce contraste.
-    return plan(threatCount === 1 ? "ready" : "constraint-retained");
+    // Le même attaquant ne menace plus les deux cibles ensemble. Les retirer
+    // toutes deux de son attaque reste un contraste de la double menace ;
+    // leur préservation doit aussi être vérifiée dans la réponse libre.
+    return plan(threatCount < 2 ? "ready" : "constraint-retained");
   }
   if (h.kind !== "pin" || !("shield" in h.fact) || !actual.capture) return plan("pressure-changed");
   const pin = h.fact;

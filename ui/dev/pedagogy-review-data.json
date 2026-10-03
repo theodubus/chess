@@ -1,9 +1,548 @@
 {
   "schema": 1,
-  "generatedAt": "2026-10-03T17:26:54.275Z",
+  "generatedAt": "2026-10-03T21:49:28.177Z",
   "publishable": false,
   "independentSample": false,
   "examples": [
+    {
+      "id": "allows-fork-direct",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "supported",
+      "reason": "material-loss",
+      "error": null,
+      "elapsedMs": 1186.3329789999998,
+      "searches": 4,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "allows-loss",
+        "title": "Une fourchette permise à l'adversaire",
+        "summary": "Ce coup permet cette menace. Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "d8e8",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8",
+            "fen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Après Re8",
+            "note": "Ce coup permet Cc7+, qui crée la menace.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 3 3",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 3",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "d5c7",
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "Cette conséquence apparaît dans les deux recherches après le coup joué. Elle n'établit ni une perte contre toutes les défenses, ni le meilleur coup de remplacement. "
+      }
+    },
+    {
+      "id": "allows-fork",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "supported",
+      "reason": "double-targets",
+      "error": null,
+      "elapsedMs": 2635.881142,
+      "searches": 8,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "allows-loss",
+        "title": "Une fourchette permise à l'adversaire",
+        "summary": "Ce coup permet cette menace. Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "Avec Tb8, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée.",
+        "story": {
+          "decision": "d8e8",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": "Avec Tb8, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée."
+        },
+        "played": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8",
+            "fen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Après Re8",
+            "note": "Ce coup permet Cc7+, qui crée la menace.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 3 3",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 3",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8b8",
+            "fen": "1r1k4/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Avec Tb8",
+            "note": "L'alternative Tb8 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
+            "marks": [
+              {
+                "from": "b8",
+                "tone": "idea"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8b8 d5c7",
+            "fen": "1r1k4/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7",
+            "note": "Pour comparer, si la même menace Cc7 est tentée…",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "conditional-move"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8b8 d5c7 d8c7",
+            "fen": "1r6/2k5/8/8/8/8/7P/7K w - - 0 3",
+            "label": "Rxc7",
+            "note": "Avec Tb8, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée.",
+            "marks": [
+              {
+                "from": "d8",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "d5c7",
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [
+            "d5c7",
+            "d8c7"
+          ],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "conditional-contribution"
+        },
+        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
+      }
+    },
+    {
+      "id": "allows-fork-other-defence",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "supported",
+      "reason": "double-targets",
+      "error": null,
+      "elapsedMs": 2621.6525250000004,
+      "searches": 8,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "allows-loss",
+        "title": "Une fourchette permise à l'adversaire",
+        "summary": "Ce coup permet cette menace. Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "Avec Ta7, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée.",
+        "story": {
+          "decision": "d8e8",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": "Avec Ta7, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée."
+        },
+        "played": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8",
+            "fen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Après Re8",
+            "note": "Ce coup permet Cc7+, qui crée la menace.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 3 3",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 3",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8a7",
+            "fen": "3k4/r7/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Avec Ta7",
+            "note": "L'alternative Ta7 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
+            "marks": [
+              {
+                "from": "a7",
+                "tone": "idea"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8a7 d5c7",
+            "fen": "3k4/r1N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7",
+            "note": "Pour comparer, si la même menace Cc7 est tentée…",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "conditional-move"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8a7 d5c7 d8c7",
+            "fen": "8/r1k5/8/8/8/8/7P/7K w - - 0 3",
+            "label": "Rxc7",
+            "note": "Avec Ta7, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée.",
+            "marks": [
+              {
+                "from": "d8",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "d5c7",
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [
+            "d5c7",
+            "d8c7"
+          ],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "conditional-contribution"
+        },
+        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
+      }
+    },
+    {
+      "id": "allows-fork-white",
+      "label": "1. Re1",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "7k/7p/8/8/3n4/8/8/R2K4 w - - 0 1",
+      "afterFen": "7k/7p/8/8/3n4/8/8/R3K3 b - - 1 1",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 2810.666908000001,
+      "searches": 8,
+      "draft": null
+    },
+    {
+      "id": "allows-fork-false-defence",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "supported",
+      "reason": "score-gap-missing",
+      "error": null,
+      "elapsedMs": 2594.996704000001,
+      "searches": 8,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "allows-loss",
+        "title": "Une fourchette permise à l'adversaire",
+        "summary": "Ce coup permet cette menace. Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "d8e8",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8",
+            "fen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Après Re8",
+            "note": "Ce coup permet Cc7+, qui crée la menace.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 3 3",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 3",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "d5c7",
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "Cette conséquence apparaît dans les deux recherches après le coup joué. Elle n'établit ni une perte contre toutes les défenses, ni le meilleur coup de remplacement. "
+      }
+    },
     {
       "id": "pin-retreat",
       "label": "1. Fb5",
@@ -17,7 +556,7 @@
       "state": "supported",
       "reason": "blocked-retreat",
       "error": null,
-      "elapsedMs": 2192.119285,
+      "elapsedMs": 1838.7042110000002,
       "searches": 6,
       "draft": {
         "status": "draft",
@@ -152,12 +691,118 @@
       "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
       "beforeFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 0 1",
       "afterFen": "r3k3/2N5/8/8/8/8/7P/7K b - - 1 1",
-      "state": "indeterminate",
-      "reason": "effect-not-verified",
+      "state": "supported",
+      "reason": "double-targets",
       "error": null,
-      "elapsedMs": 1995.9814029999998,
+      "elapsedMs": 1993.131632999999,
       "searches": 6,
-      "draft": null
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "creates-opportunity",
+        "title": "Menacer deux cibles à la fois",
+        "summary": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "Avec Cb6, les deux cibles ne sont plus menacées ensemble. La réponse Ta2 les préserve dans la variante calculée.",
+        "story": {
+          "decision": "d5c7",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": "Avec Cb6, les deux cibles ne sont plus menacées ensemble. La réponse Ta2 les préserve dans la variante calculée."
+        },
+        "played": [
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 1 1",
+            "label": "Après Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 2 2",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 2",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5b6",
+            "fen": "r3k3/8/1N6/8/8/8/7P/7K b - - 1 1",
+            "label": "Avec Cb6",
+            "note": "L'alternative Cb6 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
+            "marks": [
+              {
+                "from": "b6",
+                "tone": "idea"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5b6 a8a2",
+            "fen": "4k3/8/1N6/8/8/8/r6P/7K w - - 2 2",
+            "label": "Ta2",
+            "note": "Avec Cb6, les deux cibles ne sont plus menacées ensemble. La réponse Ta2 les préserve dans la variante calculée.",
+            "marks": [
+              {
+                "from": "a8",
+                "to": "a2",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [
+            "a8a2"
+          ],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "conditional-contribution"
+        },
+        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
+      }
     },
     {
       "id": "fork-black",
@@ -172,7 +817,7 @@
       "state": "supported",
       "reason": "double-targets",
       "error": null,
-      "elapsedMs": 2298.3668750000006,
+      "elapsedMs": 2253.0731099999994,
       "searches": 6,
       "draft": {
         "status": "draft",
@@ -295,7 +940,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 3600.774657,
+      "elapsedMs": 3540.141029000002,
       "searches": 6,
       "draft": null
     },
@@ -312,7 +957,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 3354.777607,
+      "elapsedMs": 3577.996403000001,
       "searches": 6,
       "draft": null
     },
@@ -329,7 +974,7 @@
       "state": "supported",
       "reason": "short-mate-confirmed",
       "error": null,
-      "elapsedMs": 922.6700470000014,
+      "elapsedMs": 912.2222980000006,
       "searches": 6,
       "draft": {
         "status": "draft",
@@ -423,6 +1068,91 @@
       }
     },
     {
+      "id": "allows-fork-direct",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "indeterminate",
+      "reason": "unstable-search",
+      "error": null,
+      "elapsedMs": 2384.1954430000005,
+      "searches": 4,
+      "draft": null
+    },
+    {
+      "id": "allows-fork",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 4781.697659000001,
+      "searches": 8,
+      "draft": null
+    },
+    {
+      "id": "allows-fork-other-defence",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 4750.662037000002,
+      "searches": 8,
+      "draft": null
+    },
+    {
+      "id": "allows-fork-white",
+      "label": "1. Re1",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "7k/7p/8/8/3n4/8/8/R2K4 w - - 0 1",
+      "afterFen": "7k/7p/8/8/3n4/8/8/R3K3 b - - 1 1",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 4697.1618610000005,
+      "searches": 8,
+      "draft": null
+    },
+    {
+      "id": "allows-fork-false-defence",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 4743.493049000004,
+      "searches": 8,
+      "draft": null
+    },
+    {
       "id": "pin-retreat",
       "label": "1. Fb5",
       "source": "Fixture logicielle, sans validation pédagogique indépendante.",
@@ -435,7 +1165,7 @@
       "state": "supported",
       "reason": "blocked-retreat",
       "error": null,
-      "elapsedMs": 3614.2967100000005,
+      "elapsedMs": 3535.2927009999985,
       "searches": 6,
       "draft": {
         "status": "draft",
@@ -573,7 +1303,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 3634.5109250000023,
+      "elapsedMs": 3585.698999,
       "searches": 6,
       "draft": null
     },
@@ -590,7 +1320,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 3586.676878000002,
+      "elapsedMs": 3497.383848999998,
       "searches": 6,
       "draft": null
     },
@@ -607,7 +1337,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 6535.978444,
+      "elapsedMs": 5998.472802000004,
       "searches": 7,
       "draft": null
     },
@@ -624,7 +1354,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 4877.543781999993,
+      "elapsedMs": 4769.504013000005,
       "searches": 6,
       "draft": null
     },
@@ -641,7 +1371,7 @@
       "state": "supported",
       "reason": "short-mate-confirmed",
       "error": null,
-      "elapsedMs": 1936.3211080000037,
+      "elapsedMs": 1843.058984000003,
       "searches": 6,
       "draft": {
         "status": "draft",

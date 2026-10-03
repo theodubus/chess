@@ -321,17 +321,52 @@ for (const test of cases.filter((c) => c.expected === "supported"))
     for (const line of [draft!.played, draft!.alternative])
       for (const step of line)
         expect(boardFromCommand(step.command).fen()).toBe(step.fen);
-    expect(
-      relationDraft(input.understanding, {
+    const noComparison = relationDraft(input.understanding, {
         ...report!,
         attribution: {
           status: "not-established",
           reason: "score-gap-missing",
           scope: "conditional-mechanism",
         },
-      }),
-    ).toBeNull();
+      });
+    if (test.role === "allows-loss") expect(noComparison).toMatchObject({ scope: "observed-consequence", alternative: [], comparisonText: "" });
+    else expect(noComparison).toBeNull();
   });
+
+it.each(["defence-left", "defence-left-mirror", "line-left", "line-left-mirror"])("explique directement la prise permise sans remplacement : %s", async (id) => {
+  const test = cases.find((c) => c.id === id)!;
+  const input = fixture(test), req = { ...input, review: {}, revision: 0, engineId: "script" };
+  const { results } = scripted(test, req), check = new RelationVerification([10, 20]);
+  const engines: ScriptEngine[] = [];
+  const report = await check.verifyEffect(req, async () => { const engine = new ScriptEngine(results); engines.push(engine); return engine; });
+  expect(report, check.error).toMatchObject({ status: "supported", attribution: { status: "not-established", reason: "no-comparison" }, searches: 6 });
+  expect(report!.passes.every((p) => p.alternative === null && p.questions.every((q) => !["alternative", "recapture"].includes(q.purpose)))).toBe(true);
+  const draft = relationDraft(input.understanding, report!)!;
+  expect(draft).toMatchObject({ role: "allows-loss", scope: "observed-consequence", alternative: [], comparisonText: "" });
+  expect(draft.summary).toContain(test.kind === "opened-line" ? "ligne" : "reprise");
+  expect(draft.summary).toContain("bilan depuis la décision");
+  expect(draft.summary).not.toMatch(/meilleur|seul bon|Avec /);
+  expect(draft.played[0].command).toBe(input.understanding.context.after.command);
+  for (const step of draft.played) expect(boardFromCommand(step.command).fen()).toBe(step.fen);
+  expect(engines.every((e) => e.disposed)).toBe(true);
+});
+it("une compensation immédiate garde la conséquence directe indéterminée", async () => {
+  const test = cases.find((c) => c.id === "compensation-elsewhere")!;
+  const req = { ...fixture(test), review: {}, revision: 0, engineId: "script" };
+  const { results } = scripted(test, req), check = new RelationVerification([10, 20]);
+  const report = await check.verifyEffect(req, async () => new ScriptEngine(results));
+  expect(report, check.error).not.toBeNull();
+  expect(report!.status).not.toBe("supported");
+  expect(relationDraft(req.understanding, report!)).toBeNull();
+});
+it("les preuves de relations ne peuvent pas expliquer une autre décision", async () => {
+  const test = cases.find((c) => c.id === "defence-left")!;
+  const req = { ...fixture(test), review: {}, revision: 0, engineId: "script" };
+  const { results } = scripted(test, req), check = new RelationVerification([10, 20]);
+  const report = await check.verifyEffect(req, async () => new ScriptEngine(results));
+  const other = fixture(cases.find((c) => c.id === "line-left")!);
+  expect(() => relationDraft(other.understanding, report!)).toThrow("autre décision");
+});
 
 it("explique une perte relative même quand le camp reste évalué gagnant", async () => {
   const test = cases.find((c) => c.id === "line-left")!,

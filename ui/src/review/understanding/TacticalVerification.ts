@@ -7,6 +7,7 @@ import { framePosition } from "./evidence";
 import type { Understanding } from "./prototype";
 import { defenderContrast, observeDefenderContrast, observeTacticalContrast, tacticalContrast, type TacticalContrast } from "./tacticalContrast";
 import { observeTactic, type TacticalObservation } from "./tacticalObservation";
+import { groupEvidence, type GroupEvidence } from "./tacticalEvidence";
 
 type Purpose = "decision" | "played" | "alternative" | "same-threat" | "restored-defender";
 export type TacticalRequest = VerificationIdentity & {
@@ -14,36 +15,44 @@ export type TacticalRequest = VerificationIdentity & {
   hypothesisIndex: number;
   alternative: string;
 };
-export type TacticalPass = {
+export type TacticalEffectRequest = Omit<TacticalRequest, "alternative">;
+export type TacticalEffectPass = {
   budgetMs: number;
   questions: Question<Purpose>[];
   actual: TacticalObservation;
+};
+export type TacticalPass = TacticalEffectPass & {
+  /** La même menace hypothétique ne remplace pas la meilleure réponse libre. */
+  freeAlternative: GroupEvidence | null;
   contrast: TacticalContrast & ReturnType<typeof observeTacticalContrast> & {
     followUp: (ReturnType<typeof observeDefenderContrast> & { prefix: string[]; score: Score | null }) | null;
   };
 };
-export type TacticalReport = {
+export type TacticalEffectReport = {
   status: "supported" | "indeterminate";
   reason: "material-loss" | "compensation" | "different-line" | "unstable-search" | "unresolved";
+  hypothesis: TacticalHypothesis;
+  passes: TacticalEffectPass[];
+  scope: "bounded-engine-lines";
+  explanation: null;
+} & VerificationCost;
+export type TacticalReport = Omit<TacticalEffectReport, "passes"> & {
   attribution: {
     status: "supported" | "not-established";
     reason: "double-targets" | "exchanged-defender" | "blocked-retreat" | "effect-not-verified" | "score-gap-missing" | "contrast-not-used";
     scope: "conditional-contribution";
   };
-  hypothesis: TacticalHypothesis;
   alternative: string;
   passes: TacticalPass[];
-  scope: "bounded-engine-lines";
-  explanation: null;
-} & VerificationCost;
+};
 const cp = (score: Score | null) => score?.kind === "cp" && !score.bound && Number.isFinite(score.value) ? score.value : null;
 const stable = (values: (number | null)[]) => values.length === 2 && values.every((v) => v !== null) && Math.abs(values[0]! - values[1]!) <= 100;
 
-function summarize(h: TacticalHypothesis, alternative: string, passes: TacticalPass[], sign: number): Omit<TacticalReport, keyof VerificationCost> {
-  const scores = (purpose: Purpose) => passes.map((p) => cp(p.questions.find((q) => q.purpose === purpose)!.result.score));
-  let reason: TacticalReport["reason"] = "unresolved", status: TacticalReport["status"] = "indeterminate";
+function summarizeEffect(h: TacticalHypothesis, passes: TacticalEffectPass[]): Omit<TacticalEffectReport, keyof VerificationCost> {
+  const playedScores = passes.map((p) => cp(p.questions.find((q) => q.purpose === "played")!.result.score));
+  let reason: TacticalEffectReport["reason"] = "unresolved", status: TacticalEffectReport["status"] = "indeterminate";
   if (passes.some((p) => !p.actual.matched)) reason = "different-line";
-  else if (!stable(scores("played")) || passes[0].actual.evidence.outcome !== passes[1].actual.evidence.outcome ||
+  else if (!stable(playedScores) || passes[0].actual.evidence.outcome !== passes[1].actual.evidence.outcome ||
       passes[0].actual.capture?.targetId !== passes[1].actual.capture?.targetId ||
       passes[0].actual.capture?.attackerId !== passes[1].actual.capture?.attackerId ||
       passes[0].actual.evidence.materialDelta !== passes[1].actual.evidence.materialDelta) reason = "unstable-search";
@@ -51,15 +60,22 @@ function summarize(h: TacticalHypothesis, alternative: string, passes: TacticalP
   else if (passes.every((p) => p.actual.evidence.outcome === "loss-in-line" && p.actual.evidence.materialDelta < 0 && p.actual.exchange?.complete)) {
     status = "supported"; reason = "material-loss";
   }
+  return { status, reason, hypothesis: h, passes, scope: "bounded-engine-lines", explanation: null };
+}
+
+function summarize(h: TacticalHypothesis, alternative: string, passes: TacticalPass[], sign: number): Omit<TacticalReport, keyof VerificationCost> {
+  const effect = summarizeEffect(h, passes);
+  const scores = (purpose: Purpose) => passes.map((p) => cp(p.questions.find((q) => q.purpose === purpose)!.result.score));
   let cause: TacticalReport["attribution"]["reason"] = "effect-not-verified";
   let attributed = false;
-  if (status === "supported") {
+  if (effect.status === "supported") {
     const played = scores("played"), alternatives = scores("alternative");
     const direction = h.role === "allows-loss" ? -sign : sign;
     const gaps = played.map((s, i) => s !== null && alternatives[i] !== null ? (s - alternatives[i]!) * direction : null);
     if (!stable(alternatives) || !stable(gaps) || gaps.some((g) => g === null || g < 100)) cause = "score-gap-missing";
     else {
-      const preserved = passes.every((p) => p.contrast.reason === "ready" && p.contrast.evidence?.outcome === "preserved");
+      const preserved = passes.every((p) => p.contrast.reason === "ready" && p.contrast.evidence?.outcome === "preserved" &&
+        (h.role !== "allows-loss" || p.freeAlternative?.outcome === "preserved"));
       if (h.kind === "pin") {
         attributed = preserved && passes.every((p) => !!p.contrast.usedRetreat);
         cause = attributed ? "blocked-retreat" : "contrast-not-used";
@@ -78,8 +94,26 @@ function summarize(h: TacticalHypothesis, alternative: string, passes: TacticalP
       }
     }
   }
-  return { status, reason, attribution: { status: attributed ? "supported" : "not-established", reason: cause, scope: "conditional-contribution" },
-    hypothesis: h, alternative, passes, scope: "bounded-engine-lines", explanation: null };
+  return { ...effect, attribution: { status: attributed ? "supported" : "not-established", reason: cause, scope: "conditional-contribution" },
+    alternative, passes };
+}
+
+/** La conséquence du coup joué ne dépend pas de la découverte d'un coup de
+ * remplacement. Deux recherches libres confirment la même perte courte ; cela
+ * n'affirme ni une perte forcée, ni l'optimalité d'un autre choix. */
+export class TacticalEffectVerification extends BoundedVerification<TacticalEffectPass, Omit<TacticalEffectReport, keyof VerificationCost>, Purpose> {
+  async verify(request: TacticalEffectRequest, factory: EngineFactory): Promise<TacticalEffectReport | null> {
+    this.stop();
+    const { context, constraints } = request.understanding;
+    const h = constraints.hypotheses[request.hypothesisIndex];
+    if (!h || !["double-threat", "pin"].includes(h.kind)) throw new Error("Fourchette ou clouage requis.");
+    return this.run(request, JSON.stringify([context.before.command, context.after.command, h]), factory,
+      async ({ ask, budgetMs, questions }) => {
+        if (!await ask("decision", framePosition(context.before))) return null;
+        const played = await ask("played", framePosition(context.after));
+        return played ? { budgetMs, questions, actual: observeTactic(context, h, played) } : null;
+      }, (passes) => summarizeEffect(h, passes));
+  }
 }
 
 /** Recherches libres séparées de la même menace conditionnelle et de la reprise
@@ -100,6 +134,7 @@ export class TacticalVerification extends BoundedVerification<TacticalPass, Omit
         const alternate = await ask("alternative", framePosition(alternative.after));
         if (!alternate) return null;
         const actual = observeTactic(context, h, played);
+        const freeAlternative = h.role === "allows-loss" ? groupEvidence(context.before, alternative.after, h.targetIds, alternate) : null;
         const plan = tacticalContrast(context, h, actual, alternative);
         const canTestCause = actual.matched && actual.evidence.outcome === "loss-in-line" && actual.exchange?.complete;
         let contrastResult = alternate;
@@ -116,7 +151,7 @@ export class TacticalVerification extends BoundedVerification<TacticalPass, Omit
           if (!answer) return null;
           followUp = { ...observeDefenderContrast(context.before, plan, actual, defence, answer), prefix: [...plan.prefix, ...defence.prefix], score: answer.score };
         }
-        return { budgetMs, questions, actual, contrast: { ...plan, ...contrast, followUp } };
+        return { budgetMs, questions, actual, freeAlternative, contrast: { ...plan, ...contrast, followUp } };
       }, (passes) => summarize(h, request.alternative, passes, context.before.turn === "w" ? 1 : -1));
   }
 }

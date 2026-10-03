@@ -43,6 +43,8 @@ export class ScriptEngine implements Engine {
       moves = example.alternativeLine;
       if (this.mode === "no-retreat") moves = ["Kd7", "dxc6+", "bxc6", "Be2"];
     } else if (this.id === "byrne-allows-fork" && this.command.endsWith(" b6a4")) moves = ["Qxa4"];
+    else if (this.id.startsWith("allows-fork") && this.command.endsWith(" d5c7")) moves = [this.id === "allows-fork-false-defence" ? "Rb8" : "Kc8"];
+    else if (this.id === "allows-fork-white" && this.command.endsWith(" d4c2")) moves = ["Kc1"];
     else if (this.command.endsWith(" c5a3 f6e4") || this.command.endsWith(" b4a4 f6e4")) moves = this.mode === "unused-defender" ? ["Bxe7"] : ["Nxe4"];
     else throw new Error(`Question inattendue : ${this.command}`);
     const board = new Chess(this.board.fen());

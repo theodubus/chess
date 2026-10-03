@@ -33,7 +33,7 @@ export type PedagogicalDraft = {
     exchange: ExchangeContext | null;
     contextText: string | null;
     origin: "engine-lines" | "engine-and-rules";
-    scope: "conditional-contribution" | "short-forcing-route";
+    scope: "observed-consequence" | "conditional-contribution" | "short-forcing-route";
   };
   limitation: string;
 };
@@ -49,11 +49,13 @@ export function describePiece(piece: TrackedPiece) {
 export function moveLabel(frame: Pick<PositionFrame, "command">, move: string) {
   return frenchSan(boardFromCommand(frame.command).move(move).san);
 }
-export function assertDraftQuestions(context: DecisionContext, alternative: PositionFrame,
+export function assertDraftQuestions(context: DecisionContext, alternative: PositionFrame | null,
   passes: { questions: { purpose: string; position: Pick<PositionFrame, "command" | "fen"> }[] }[]) {
   if (passes.length !== 2) throw new Error("Deux confirmations requises pour le brouillon.");
   for (const pass of passes) {
-    for (const [purpose, frame] of [["decision", context.before], ["played", context.after], ["alternative", alternative]] as const) {
+    const expected: [string, PositionFrame][] = [["decision", context.before], ["played", context.after]];
+    if (alternative) expected.push(["alternative", alternative]);
+    for (const [purpose, frame] of expected) {
       const question = pass.questions.find((q) => q.purpose === purpose);
       if (!question || question.position.command !== frame.command || question.position.fen !== frame.fen)
         throw new Error("Preuve d'une autre décision ou alternative.");

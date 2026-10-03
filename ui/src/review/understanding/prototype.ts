@@ -7,12 +7,13 @@ import {
   type PositionFrame,
 } from "./context";
 import { relationHypotheses, type RelationHypothesis } from "./mechanisms";
-import { relationChanges, type RelationChanges } from "./relations";
+import { relationChangesWork, type RelationChanges } from "./relations";
 import { exchangeContext } from "./exchanges";
-import { tacticalConstraints, type TacticalConstraints } from "./constraints";
+import { tacticalConstraintsWork, type TacticalConstraints } from "./constraints";
+import { finishWork, type Work } from "./work";
 import {
   changedPossibilities,
-  possibilities,
+  possibilitiesWork,
   type ClosedRoute,
   type PieceOptions,
   type Possibilities,
@@ -51,9 +52,13 @@ export function understandDecision(
   source: ReviewPosition,
   result: ReviewResult | null = null,
 ): Understanding {
+  return finishWork(understandingWork(source, result));
+}
+export function* understandingWork(source: ReviewPosition, result: ReviewResult | null = null): Work<Understanding> {
+  yield "context";
   const context = decisionContext(source, result),
     cache = new Map<PositionFrame, Map<Color, Possibilities>>();
-  const read = (frame: PositionFrame, side: Color) => {
+  function* read(frame: PositionFrame, side: Color): Work<Possibilities> {
     let sides = cache.get(frame);
     if (!sides) {
       sides = new Map();
@@ -61,13 +66,14 @@ export function understandDecision(
     }
     let value = sides.get(side);
     if (!value) {
-      value = possibilities(frame, side);
+      value = yield* possibilitiesWork(frame, side);
       sides.set(side, value);
     }
     return value;
-  };
-  const changes = (before: PositionFrame, after: PositionFrame, side: Color) =>
-    changedPossibilities(read(before, side), read(after, side), after);
+  }
+  function* changes(before: PositionFrame, after: PositionFrame, side: Color): Work<PossibilityChange[]> {
+    return changedPossibilities(yield* read(before, side), yield* read(after, side), after);
+  }
   const actor = context.moves[context.decision].color;
   const hypotheses: RestrictionHypothesis[] = [];
   // Les deux rôles réutilisent le même changement de relations : créer la menace
@@ -77,16 +83,16 @@ export function understandDecision(
     const before = context.frames[threatPly],
       after = context.frames[threatPly + 1];
     const victimSide = opposite(context.moves[threatPly].color);
-    const beforeOptions = read(before, victimSide),
-      afterOptions = read(after, victimSide);
+    const beforeOptions = yield* read(before, victimSide),
+      afterOptions = yield* read(after, victimSide);
     if (
       beforeOptions.status !== "available" ||
       afterOptions.status !== "available"
     )
       continue;
-    const delta = changes(before, after, victimSide);
+    const delta = yield* changes(before, after, victimSide);
     const prior = context.frames[threatPly - 1];
-    const setup = prior ? changes(prior, before, victimSide) : [];
+    const setup = prior ? yield* changes(prior, before, victimSide) : [];
     for (const victim of afterOptions.pieces) {
       if (!"bnrq".includes(victim.piece.type) || !victim.legalCapturers?.length)
         continue;
@@ -127,16 +133,16 @@ export function understandDecision(
       });
     }
   }
-  const relations = relationChanges(context);
+  const relations = yield* relationChangesWork(context);
   return {
     context,
     changes: {
-      w: changes(context.before, context.after, "w"),
-      b: changes(context.before, context.after, "b"),
+      w: yield* changes(context.before, context.after, "w"),
+      b: yield* changes(context.before, context.after, "b"),
     },
     relations,
     mechanisms: relationHypotheses(context, relations),
-    constraints: tacticalConstraints(context),
+    constraints: yield* tacticalConstraintsWork(context),
     exchange: exchangeContext(context),
     hypotheses,
     explanation: null,

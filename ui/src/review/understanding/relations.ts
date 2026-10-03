@@ -9,6 +9,7 @@ import {
 } from "./context";
 import { boardFor, sliderRay } from "./possibilities";
 import { legalCapturesOf } from "./legalCaptures";
+import { finishWork, type Work } from "./work";
 
 export type CaptureRelation = {
   attackerId: string;
@@ -65,18 +66,21 @@ export function captureRelations(
   frame: PositionFrame,
   side: Color,
 ): CaptureRelations {
+  return finishWork(captureRelationsWork(frame, side));
+}
+function* captureRelationsWork(frame: PositionFrame, side: Color): Work<CaptureRelations> {
   const scope = frame.turn === side ? "actual-turn" : "geometric-turn-probe";
   const board = !frame.terminal ? boardFor(frame, side) : null;
   if (!board) return { status: "unavailable", scope, captures: [] };
   const initial = materialBalance(board),
     sign = side === "w" ? 1 : -1;
-  const captures = board
-    .moves({ verbose: true })
-    .filter((m) => m.captured)
-    .map((move) => {
+  const captures: CaptureRelation[] = [];
+  const moves = board.moves({ verbose: true }).filter((m) => m.captured);
+  yield "relations";
+  for (const move of moves) {
       const next = new Chess(move.after);
       const replies = legalCapturesOf(next, move.to);
-      return {
+      captures.push({
         attackerId: frame.pieces.find((p) => p.square === move.from)!.id,
         victimId: frame.pieces.find((p) => p.square === capturedSquare(move))!
           .id,
@@ -96,8 +100,9 @@ export function captureRelations(
             ),
           ) -
           initial * sign,
-      };
-    });
+      });
+      yield "relations";
+  }
   return { status: "available", scope, captures };
 }
 const unchanged = (piece: TrackedPiece, frame: PositionFrame) =>
@@ -111,14 +116,17 @@ const unchanged = (piece: TrackedPiece, frame: PositionFrame) =>
 export function relationChanges(
   context: Pick<DecisionContext, "before" | "after">,
 ): RelationChanges {
+  return finishWork(relationChangesWork(context));
+}
+export function* relationChangesWork(context: Pick<DecisionContext, "before" | "after">): Work<RelationChanges> {
   const { before, after } = context;
   const old = {
-    w: captureRelations(before, "w"),
-    b: captureRelations(before, "b"),
+    w: yield* captureRelationsWork(before, "w"),
+    b: yield* captureRelationsWork(before, "b"),
   };
   const next = {
-    w: captureRelations(after, "w"),
-    b: captureRelations(after, "b"),
+    w: yield* captureRelationsWork(after, "w"),
+    b: yield* captureRelationsWork(after, "b"),
   };
   const defences: DefenceChange[] = [];
   for (const side of ["w", "b"] as const) {
@@ -178,6 +186,7 @@ export function relationChanges(
   for (const source of before.pieces.filter(
     (p) => "brq".includes(p.type) && unchanged(p, after),
   )) {
+    yield "relations";
     for (const target of before.pieces.filter(
       (p) => p.id !== source.id && unchanged(p, after),
     )) {

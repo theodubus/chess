@@ -7,6 +7,7 @@ import {
 } from "chess.js";
 import { materialBalance } from "../../material";
 import { legalCapturesOf } from "./legalCaptures";
+import { finishWork, type Work } from "./work";
 import {
   capturedSquare,
   opposite,
@@ -91,6 +92,9 @@ export function possibilities(
   side: Color,
   pieceId?: string,
 ): Possibilities {
+  return finishWork(possibilitiesWork(frame, side, pieceId));
+}
+export function* possibilitiesWork(frame: PositionFrame, side: Color, pieceId?: string): Work<Possibilities> {
   const scope = frame.turn === side ? "actual-turn" : "geometric-turn-probe";
   if (frame.terminal)
     return { status: "unavailable", reason: "terminal", scope, pieces: [] };
@@ -108,14 +112,15 @@ export function possibilities(
     ?.moves({ verbose: true })
     .filter((move) => move.captured);
   const balance = materialBalance(board);
-  return {
-    status: "available",
-    scope,
-    pieces: frame.pieces
-      .filter(
-        (piece) => piece.color === side && (!pieceId || piece.id === pieceId),
-      )
-      .map((piece) => ({
+  yield "possibilities";
+  const pieces: PieceOptions[] = [];
+  for (const piece of frame.pieces.filter((p) => p.color === side && (!pieceId || p.id === pieceId))) {
+    const options: MoveOption[] = [];
+    for (const move of moves.filter((m) => m.from === piece.square)) {
+      options.push({ move, captures: captureWitnesses(move, balance) });
+      yield "possibilities";
+    }
+    pieces.push({
         piece,
         geometricAttackers: board.attackers(piece.square, opposite(side)),
         legalCapturers:
@@ -127,11 +132,11 @@ export function possibilities(
                 (piece) => piece.square === move.from,
               )!.id,
             })) ?? null,
-        moves: moves
-          .filter((move) => move.from === piece.square)
-          .map((move) => ({ move, captures: captureWitnesses(move, balance) })),
-      })),
-  };
+        moves: options,
+    });
+    yield "possibilities";
+  }
+  return { status: "available", scope, pieces };
 }
 export function sliderRay(
   type: PieceSymbol,

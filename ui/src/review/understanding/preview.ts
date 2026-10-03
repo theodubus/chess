@@ -25,19 +25,20 @@ root.innerHTML = `
       <div class="board-heading"><strong id="position-label"></strong><span id="origin"></span></div>
       <div id="board" class="board"></div>
       <div class="branches" role="group" aria-label="Position à examiner">
-        <button id="played" type="button">Coup étudié</button><button id="alternative" type="button">Alternative</button>
+        <button id="played" type="button">Coup joué</button><button id="alternative" type="button">Autre coup comparé</button>
       </div>
       <div class="steps"><button id="previous" type="button" aria-label="Étape précédente">←</button>
         <span id="step-count"></span><button id="next" type="button" aria-label="Étape suivante">→</button></div>
       <p id="step-note" class="step-note" aria-live="polite"></p>
-      <button id="return" type="button" class="return">Revenir au coup étudié</button>
+      <button id="return" type="button" class="return">Revenir au coup joué</button>
     </section>
     <section class="explanation" aria-label="Explication à relire">
       <p id="kind" class="eyebrow"></p><h2 id="title"></h2><p id="summary"></p>
+      <p class="comparison-note">Ce repère explique une conséquence du coup. Une seule comparaison ne prouve pas que le coup joué était le meilleur, ni qu'un autre choix était le seul bon coup.</p>
       <aside id="context" class="context" hidden></aside>
-      <div id="comparison"><h3>Ce que change l’alternative</h3><p id="comparison-text"></p></div>
+      <div id="comparison"><h3 id="comparison-heading"></h3><p id="comparison-text"></p><p class="comparison-note">Ce choix sert à comparer l’idée : ce n’est pas forcément le meilleur coup du moteur.</p></div>
       <details><summary>Portée de cette démonstration</summary><p id="limitation"></p><p id="provenance"></p></details>
-      <div class="review-question"><h3>À relire</h3><p>Est-ce qu’on comprend ce que le coup change, comment c’est exploité et pourquoi l’alternative évite ce mécanisme ? Les repères montrent-ils juste le nécessaire ?</p></div>
+      <div class="review-question"><h3>À relire</h3><p>Est-ce qu’on comprend la conséquence du coup joué, comment l’adversaire l’exploite et le bilan de l’échange ? S’il y a une comparaison, éclaire-t-elle ce mécanisme sans prétendre désigner le seul bon coup ?</p></div>
     </section>
   </div>
   <footer id="snapshot"></footer>`;
@@ -48,6 +49,10 @@ const caseSelect = node<HTMLSelectElement>("case"), engineSelect = node<HTMLSele
 const names: Record<string, string> = {
   "pin-retreat": "Clouage · retraite supprimée", "fork-direct": "Fourchette · roi et tour",
   "fork-black": "Fourchette · camp noir", "byrne-22": "Échange d’un défenseur · …Ca4",
+  "allows-fork": "Mauvais coup · fourchette permise", "allows-fork-other-defence": "Même mauvais coup · autre défense",
+  "allows-fork-white": "Mauvais coup blanc · fourchette permise",
+  "allows-fork-false-defence": "Mauvais coup · comparaison écartée",
+  "allows-fork-direct": "Mauvais coup · conséquence sans alternative",
   "byrne-allows-fork": "Menace permise · Fg5", "morphy-31": "Déviation · mat court",
 };
 const origins: Record<ExplanationStep["origin"], string> = {
@@ -65,7 +70,7 @@ function renderPosition() {
     check: new Chess(step?.fen ?? example.afterFen).isCheck(),
     drawable: { autoShapes: (step?.marks ?? []).map((m): DrawShape => ({ orig: m.from as Key, dest: m.to as Key | undefined, brush: brushes[m.tone] })) } });
   setText("position-label", step?.label ?? `Après ${example.label}`);
-  setText("origin", step ? origins[step.origin] : "Position de la partie");
+  setText("origin", step ? (branch === "alternative" && index === 0 ? "Autre choix légal" : origins[step.origin]) : "Position de la partie");
   node("origin").className = step?.origin === "conditional-move" ? "conditional" : "";
   setText("step-count", steps ? `${index + 1} / ${steps.length}` : "Position étudiée");
   setText("step-note", step?.note || (draft ? (index === 0 ? "Le repère part après la décision, sans la rejouer." : "Réponse intermédiaire de la variante calculée.") : "Aucun récit causal proposé pour cette recherche."));
@@ -73,7 +78,8 @@ function renderPosition() {
   button("next").disabled = !steps || index === steps.length - 1;
   button("played").setAttribute("aria-pressed", String(branch === "played"));
   button("alternative").setAttribute("aria-pressed", String(branch === "alternative"));
-  button("alternative").disabled = !draft;
+  button("alternative").hidden = !draft?.alternative.length;
+  button("alternative").disabled = !draft?.alternative.length;
   button("return").hidden = branch === "played" && index === 0;
 }
 function renderExample() {
@@ -83,12 +89,13 @@ function renderExample() {
   const draft = example.draft;
   setText("state", draft ? "Brouillon disponible · à relire" : "Cause non confirmée · abstention");
   setText("kind", `${example.label} · ${draft?.role === "allows-loss" ? "Ce coup permet une menace" : draft ? "Ce coup crée une occasion" : "Pas de raison inventée"}`);
-  setText("title", draft?.title ?? "La comparaison ne suffit pas à expliquer le coup");
+  setText("title", draft?.title ?? "La cause courte n’est pas confirmée");
   setText("summary", draft?.summary ?? "Le moteur peut évaluer ce coup sans que le prototype établisse une cause courte et cohérente. Ce résultat reste visible dans l’échantillon.");
   node("context").hidden = !draft?.evidence.contextText;
   setText("context", draft?.evidence.contextText ?? "");
-  node("comparison").hidden = !draft;
+  node("comparison").hidden = !draft?.alternative.length;
   setText("comparison-text", draft?.comparisonText ?? "");
+  setText("comparison-heading", draft?.role === "allows-loss" ? "Comment cet autre choix évite le problème" : "L’occasion que cet autre choix aurait manquée");
   setText("limitation", draft?.limitation ?? `Résultat : ${example.state} / ${example.reason}.${example.error ? ` ${example.error}` : ""}`);
   setText("provenance", `${example.origin === "constructed" ? "Position construite pour le développement" : "Partie publiée utilisée pour le développement"}. ${example.source} Moteur : ${example.engineName}. ${example.searches} recherches, ${(example.elapsedMs / 1000).toFixed(1)} s. SHA-256 du binaire : ${example.engineHash}.`);
   renderPosition();

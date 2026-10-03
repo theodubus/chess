@@ -285,8 +285,15 @@ Pour relire les nouveaux textes et leurs repères sans modifier la revue active,
 ouvrez `/dev/pedagogy-review.html` sur le serveur de développement. L'instantané
 versionné vient de recherches réelles ShallowRed et Stockfish 16 ; les abstentions
 y figurent aussi. Il reste un échantillon de développement, sans validation
-pédagogique indépendante. Le bouton « Coup étudié » ramène directement à la
-position après la décision ; « Alternative » montre la comparaison séparément.
+pédagogique indépendante. Le bouton « Coup joué » ramène directement à la
+position après la décision ; « Autre coup comparé » montre un choix légal de
+comparaison. Ce n'est ni toujours un mauvais coup ni forcément le meilleur coup
+du moteur : le titre précise si ce choix évite un problème ou manque une occasion.
+Les nouveaux exemples négatifs expliquent directement la menace adverse et le
+bilan après reprises. Une comparaison non confirmée est masquée ; expliquer le
+coup joué n'en dépend pas. Montrer un seul autre choix ne démontre jamais que le
+coup étudié était le meilleur ou le seul bon coup. Ces changements restent dans
+le prototype de relecture, sans modification des explications de la revue active.
 
 Depuis `ui/`, pour refaire l'instantané avec vos binaires :
 

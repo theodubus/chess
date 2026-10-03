@@ -29,7 +29,7 @@ import { understandDecision } from "../src/review/understanding/prototype";
 import { decisionContext } from "../src/review/understanding/context";
 import { tacticalConstraints } from "../src/review/understanding/constraints";
 import { MateVerification } from "../src/review/understanding/MateVerification";
-import { TacticalVerification } from "../src/review/understanding/TacticalVerification";
+import { TacticalEffectVerification, TacticalVerification } from "../src/review/understanding/TacticalVerification";
 import { tacticalInput } from "../src/review/understanding/tacticalCases";
 import { tacticalDraft } from "../src/review/understanding/tacticalDraft";
 import { mateDraft } from "../src/review/understanding/mateDraft";
@@ -38,9 +38,10 @@ for (const [name, command] of [
   ["ShallowRed", process.env.CHESS_ENGINE_BINARY],
   ["Stockfish", process.env.CHESS_STOCKFISH_BINARY],
 ]) {
-  for (const id of ["fork-direct", "fork-black", "pin-retreat", "byrne-22", "byrne-allows-fork"]) {
+  for (const id of ["allows-fork-direct", "allows-fork-white-direct", "allows-fork-false-defence", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "fork-direct", "fork-black", "pin-retreat", "byrne-22", "byrne-allows-fork"]) {
     it.skipIf(!command)(`${name} : contraintes comparées ${id}`, async () => {
-      const input = tacticalInput(id), check = new TacticalVerification([200, 600], 25000);
+      const direct = id.endsWith("-direct") && id.startsWith("allows-");
+      const input = tacticalInput(direct ? id.slice(0, -7) : id), check = direct ? new TacticalEffectVerification([200, 600], 25000) : new TacticalVerification([200, 600], 25000);
       const bridge = startBridge({ command, port: 0 });
       try {
         await once(bridge.server, "listening");
@@ -64,7 +65,9 @@ for (const [name, command] of [
           });
           return engine;
         };
-        const report = await check.verify({ ...input, review: {}, revision: 0, engineId: name }, factory);
+        const request = { ...input, review: {}, revision: 0, engineId: name };
+        if (direct) delete request.alternative;
+        const report = await check.verify(request, factory);
         if (!report) {
           // Une borne UCI finale doit être refusée. Elle ne tolère ni panne,
           // ni PV illégale : seul le retrait de cette borne rend la réponse usable.
@@ -89,7 +92,7 @@ for (const [name, command] of [
         const draft = tacticalDraft(input.understanding, report);
         // Pas d'attente figée sur une PV historique, un score ou la qualité du
         // coup. Les deux recherches doivent fournir le même mécanisme observé.
-        if (report.attribution.status === "supported") {
+        if (report.attribution?.status === "supported") {
           expect(report.status).toBe("supported");
           expect(report.passes.every((p) => p.actual.matched && p.actual.evidence.outcome === "loss-in-line" && p.contrast.evidence?.outcome === "preserved")).toBe(true);
           if (report.attribution.reason === "exchanged-defender")
@@ -100,13 +103,20 @@ for (const [name, command] of [
           for (const step of [...draft.played, ...draft.alternative])
             expect(boardFromCommand(step.command).fen()).toBe(step.fen);
           expect(draft.played.length).toBeLessThanOrEqual(9);
-        } else expect(draft).toBeNull();
+        } else if (draft) {
+          expect(report.status).toBe("supported");
+          expect(draft.role).toBe("allows-loss");
+          expect(draft.evidence.scope).toBe("observed-consequence");
+          expect(draft.alternative).toEqual([]);
+          expect(draft.comparisonText).toBe("");
+          for (const step of draft.played) expect(boardFromCommand(step.command).fen()).toBe(step.fen);
+        }
         console.info(JSON.stringify({ engine: name, case: id, status: report.status, reason: report.reason, attribution: report.attribution,
           searches: report.searches, elapsedMs: report.elapsedMs, explanation: null, draft,
           passes: report.passes.map((p) => ({ budgetMs: p.budgetMs, matched: p.actual.matched, observation: p.actual.reason,
             evidence: p.actual.evidence, exchange: p.actual.exchange, followUp: p.actual.followUp,
-            contrast: { reason: p.contrast.reason, scope: p.contrast.scope, prefix: p.contrast.prefix, usedRetreat: p.contrast.usedRetreat,
-              evidence: p.contrast.evidence, followUp: p.contrast.followUp },
+            contrast: p.contrast ? { reason: p.contrast.reason, scope: p.contrast.scope, prefix: p.contrast.prefix, usedRetreat: p.contrast.usedRetreat,
+              evidence: p.contrast.evidence, followUp: p.contrast.followUp } : null,
             questions: p.questions.map((q) => ({ purpose: q.purpose, command: q.position.command, score: q.result.score, depth: q.result.depth, bestMove: q.result.bestMove, pv: q.result.variation.map((m) => m.label) })) })) }));
       } finally { check.stop(); await bridge.close(); vi.unstubAllGlobals(); }
     }, 30000);
@@ -371,13 +381,14 @@ for (const [name, command] of [
   ["ShallowRed", process.env.CHESS_ENGINE_BINARY],
   ["Stockfish", process.env.CHESS_STOCKFISH_BINARY],
 ]) {
-  for (const test of mechanismCases.filter(
+  const comparisons = mechanismCases.filter(
     (c) =>
       c.origin === "constructed" &&
       (c.expected === "supported" || c.id === "target-can-leave"),
-  )) {
+  );
+  for (const test of [...comparisons, ...comparisons.filter((c) => ["defence-left", "line-left"].includes(c.id)).map((c) => ({ ...c, effectOnly: true }))]) {
     it.skipIf(!command)(
-      `${name} : relations causales ${test.id}`,
+      `${name} : relations causales ${test.id}${test.effectOnly ? " sans alternative" : ""}`,
       async () => {
         const input = mechanismInput(test),
           check = new RelationVerification([200, 600], 25000),
@@ -415,7 +426,8 @@ for (const [name, command] of [
             });
             return engine;
           };
-          const report = await check.verify(
+          const verify = test.effectOnly ? check.verifyEffect.bind(check) : check.verify.bind(check);
+          const report = await verify(
             {
               ...input,
               review: {},
@@ -497,7 +509,11 @@ for (const [name, command] of [
               input.understanding.context.after.fen,
             );
             expect(draft.played.length).toBeLessThanOrEqual(9);
-          } else expect(draft).toBeNull();
+          } else if (draft) {
+            expect(report.status).toBe("supported");
+            expect(draft).toMatchObject({ role: "allows-loss", scope: "observed-consequence", alternative: [], comparisonText: "" });
+            for (const step of draft.played) expect(boardFromCommand(step.command).fen()).toBe(step.fen);
+          }
           console.info(
             JSON.stringify({
               engine: name,

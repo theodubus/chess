@@ -4,7 +4,7 @@ import { decisionContext } from "./context";
 import { tacticalConstraints } from "./constraints";
 import { framePosition } from "./evidence";
 import { tacticalInput } from "./tacticalCases";
-import { TacticalVerification, type TacticalRequest } from "./TacticalVerification";
+import { TacticalEffectVerification, TacticalVerification, type TacticalRequest } from "./TacticalVerification";
 import { ScriptEngine, type Mode } from "./tacticalTestEngine";
 
 function request(id = "byrne-22"): TacticalRequest {
@@ -46,8 +46,11 @@ it("une défense du roi retirée ne devient pas une explication par la seule imm
 });
 it("sépare la réponse libre et la même menace après une autre décision humaine", async () => {
   const report = await verify("byrne-allows-fork");
-  expect(report).toMatchObject({ status: "supported", attribution: { status: "supported", reason: "exchanged-defender" }, searches: 10 });
+  expect(report).toMatchObject({ status: "supported", attribution: { status: "not-established", reason: "contrast-not-used" }, searches: 10 });
   expect(report.passes.every((p) => p.contrast.scope === "conditional-same-threat" && p.contrast.evidence?.outcome === "preserved")).toBe(true);
+  // La branche libre trop courte ne prouve pas que l'alternative évite la perte,
+  // même si la menace conditionnelle, elle, permet une reprise préservatrice.
+  expect(report.passes.every((p) => p.freeAlternative?.outcome === "unresolved")).toBe(true);
   expect(report.passes[0].questions.map((q) => q.purpose)).toEqual(["decision", "played", "alternative", "same-threat", "restored-defender"]);
 });
 it.each([
@@ -82,7 +85,7 @@ it("le cache reste lié au moteur, à la révision, à l'historique et à l'alte
   expect((await check.verify({ ...req, engineId: "other" }, factory))?.cached).toBe(false);
   const changed = { ...req, alternative: "d5b4" };
   const compared = await check.verify(changed, async () => new ScriptEngine(changed, "fork-direct"));
-  expect(compared).toMatchObject({ cached: false, attribution: { status: "not-established" } });
+  expect(compared).toMatchObject({ cached: false });
   const board = boardFromCommand(req.understanding.context.before.command);
   for (const move of ["Kg1", "Kf8", "Kh1", "Ke8"]) board.move(move);
   const context = decisionContext({ ...framePosition(req.understanding.context.before), fen: board.fen(),
@@ -95,6 +98,30 @@ it("annule aussi une question de cause en cours sans publier de résultat tardif
   const req = request("fork-direct"), check = new TacticalVerification([10, 20]);
   const engine = new ScriptEngine(req, "fork-direct"); engine.hold = true;
   const pending = check.verify(req, async () => engine);
+  await vi.waitFor(() => expect(engine.commands.some((c) => c.startsWith("go "))).toBe(true));
+  check.stop();
+  expect(await pending).toBeNull();
+  expect(check.state).toBe("stopped");
+  expect(engine.disposed).toBe(true);
+});
+it.each(["different-threat", "short", "drift"] as const)("l'observation directe garde les refus de preuve : %s", async (mode) => {
+  const req = request("byrne-allows-fork"), check = new TacticalEffectVerification([10, 20]);
+  const report = await check.verify(req, async () => new ScriptEngine(req, "byrne-allows-fork", mode));
+  expect(report, check.error).not.toBeNull();
+  expect(report!.status).toBe("indeterminate");
+  expect(report!.searches).toBe(4);
+});
+it("le contrôle direct ne recherche aucune alternative, cache les deux budgets et s'annule", async () => {
+  const req = request("allows-fork"), check = new TacticalEffectVerification([10, 20]);
+  const engines: ScriptEngine[] = [];
+  const factory = vi.fn(async () => { const engine = new ScriptEngine(req, "allows-fork"); engines.push(engine); return engine; });
+  expect(await check.verify(req, factory)).toMatchObject({ status: "supported", searches: 4, cached: false });
+  expect(await check.verify(req, factory)).toMatchObject({ searches: 0, cached: true });
+  expect(factory).toHaveBeenCalledTimes(4);
+  expect(engines.flatMap((e) => e.commands).filter((c) => c.startsWith("position ")).every((c) =>
+    [req.understanding.context.before.command, req.understanding.context.after.command].includes(c))).toBe(true);
+  const engine = new ScriptEngine(req, "allows-fork"); engine.hold = true;
+  const pending = check.verify({ ...req, revision: 1 }, async () => engine);
   await vi.waitFor(() => expect(engine.commands.some((c) => c.startsWith("go "))).toBe(true));
   check.stop();
   expect(await pending).toBeNull();

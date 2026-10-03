@@ -19,7 +19,7 @@ const load = (name) => vite.ssrLoadModule(`/src/review/understanding/${name}.ts`
 const originalWebSocket = globalThis.WebSocket;
 
 try {
-  const [{ tacticalInput }, { TacticalVerification }, { tacticalDraft }, { MateVerification }, { mateDraft },
+  const [{ tacticalInput }, { TacticalVerification, TacticalEffectVerification }, { tacticalDraft }, { MateVerification }, { mateDraft },
     { corpusInput }, { externalCorpus }, { decisionContext }, { tacticalConstraints }, { moveLabel }, { connectDevelopmentEngine }] = await Promise.all([
     load("tacticalCases"), load("TacticalVerification"), load("tacticalDraft"), load("MateVerification"), load("mateDraft"),
     load("corpus"), load("externalCorpus"), load("context"), load("constraints"), load("draftModel"), vite.ssrLoadModule("/src/engine/DevelopmentEngine.ts"),
@@ -42,7 +42,7 @@ try {
         adapter.onLine((line) => { if (line.startsWith("id name ")) engineName = line.slice(8); });
         return adapter;
       };
-      for (const id of ["pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31"]) {
+      for (const id of ["allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31"]) {
         let input, check, build, source, origin;
         if (id === "morphy-31") {
           const test = externalCorpus.find((c) => c.id === id);
@@ -50,12 +50,15 @@ try {
           input = { understanding: { context, constraints }, hypothesisIndex: constraints.hypotheses.findIndex((h) => h.kind === "deflection-mate"), alternative: "b3a3" };
           check = new MateVerification([200, 600], 25000); build = mateDraft; source = test.notes; origin = "published";
         } else {
-          input = tacticalInput(id); check = new TacticalVerification([200, 600], 25000); build = tacticalDraft;
+          input = tacticalInput(id === "allows-fork-direct" ? "allows-fork" : id);
+          check = id === "allows-fork-direct" ? new TacticalEffectVerification([200, 600], 25000) : new TacticalVerification([200, 600], 25000); build = tacticalDraft;
           source = input.example.test.notes; origin = input.example.test.origin;
         }
         const context = input.understanding.context;
         try {
-          const report = await check.verify({ ...input, review: {}, revision: 0, engineId: engine }, factory);
+          const request = { ...input, review: {}, revision: 0, engineId: engine };
+          if (id === "allows-fork-direct") delete request.alternative;
+          const report = await check.verify(request, factory);
           const draft = report ? build(input.understanding, report) : null;
           examples.push({ id, label: `${context.before.fen.split(" ")[5]}${context.before.turn === "b" ? "…" : "."} ${moveLabel(context.before, context.moves[context.decision].lan)}`, source, origin, engine, engineName, engineHash,
             beforeFen: context.before.fen, afterFen: context.after.fen, state: report?.status ?? "unavailable",

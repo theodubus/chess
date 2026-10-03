@@ -10,6 +10,7 @@ import { decisionContext, uci } from "./context";
 import {
   conditionalEvidence,
   framePosition,
+  preventionEvidence,
   type DefenceEvidence,
 } from "./evidence";
 import { observeMechanism, type RelationHypothesis } from "./mechanisms";
@@ -25,6 +26,7 @@ export type RelationRequest = VerificationIdentity & {
   understanding: Understanding;
   mechanismIndex: number;
   alternative?: string;
+  effectOnly?: boolean;
 };
 type Purpose =
   | "decision"
@@ -40,6 +42,7 @@ export type RelationPass = {
   prefix: string[];
   evidence: DefenceEvidence;
   score: Score | null;
+  freeAlternative: DefenceEvidence | null;
   contrast: {
     reason: RelationContrast["reason"];
     retained: string[];
@@ -147,6 +150,10 @@ function summarize(
         Math.abs(gaps[0] - gaps[1]) > 100
       )
         attribution = no("score-gap-missing");
+      else if (hypothesis.role === "allows-loss" && !passes.every((p) =>
+        p.freeAlternative && ["preserved", "compensated", "loss-in-line"].includes(p.freeAlternative.outcome) &&
+        p.freeAlternative.materialDelta > p.evidence.materialDelta))
+        attribution = no("effect-not-improved");
       else if (!stable(passes.map((p) => p.contrast.score)))
         attribution = no("effect-not-improved");
       else if (hypothesis.kind === "opened-line") {
@@ -206,6 +213,9 @@ export class RelationVerification extends BoundedVerification<
   Omit<RelationReport, keyof VerificationCost>,
   Purpose
 > {
+  verifyEffect(request: Omit<RelationRequest, "alternative" | "effectOnly">, factory: EngineFactory) {
+    return this.verify({ ...request, alternative: undefined, effectOnly: true }, factory);
+  }
   async verify(
     request: RelationRequest,
     factory: EngineFactory,
@@ -230,6 +240,7 @@ export class RelationVerification extends BoundedVerification<
         played.command,
         hypothesis,
         request.alternative ?? null,
+        request.effectOnly ?? false,
       ]),
       factory,
       async ({ budgetMs, questions, ask }) => {
@@ -238,10 +249,9 @@ export class RelationVerification extends BoundedVerification<
         const actual = await ask("played", played);
         if (!actual) return null;
         const observation = observeMechanism(context, hypothesis, actual);
-        const alternative =
-          request.alternative ??
+        const alternative = request.effectOnly ? null : request.alternative ??
           (before.bestMove !== playedMove ? before.bestMove : null);
-        let alternativeResult = null;
+        let alternativeResult = null, freeAlternative: DefenceEvidence | null = null;
         if (alternative) {
           const setup = decisionContext({ ...decision, played: alternative });
           alternativeResult = await ask(
@@ -249,6 +259,7 @@ export class RelationVerification extends BoundedVerification<
             framePosition(setup.after),
           );
           if (!alternativeResult) return null;
+          if (hypothesis.role === "allows-loss") freeAlternative = preventionEvidence(setup, hypothesis.victimId, alternativeResult);
         }
         let evidence = observation.evidence,
           score = actual.score;
@@ -291,6 +302,7 @@ export class RelationVerification extends BoundedVerification<
           prefix,
           evidence,
           score,
+          freeAlternative,
           contrast: {
             reason: plan.reason,
             retained: plan.retained,

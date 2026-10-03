@@ -45,7 +45,7 @@ et un plafond de test 25 s, sans changer les budgets de l'application.
 
 - **Double attaque directe** : la défense libre règle une cible, puis l'attaquant
   prend l'autre. L'échange entier doit perdre du matériel. L'alternative conserve
-  les mêmes identités/types, ne menace plus qu'une des cibles originales, et sa
+  les mêmes identités/types, ne menace plus simultanément les deux cibles originales, et sa
   défense libre préserve les deux dans un témoin court.
 - **Défenseur échangé** : si le premier échange est égal ou favorable au défenseur,
   le gain suivant doit retirer une défense identifiée. Dans l'alternative, après
@@ -65,6 +65,38 @@ La reprise du défenseur est également conditionnelle. Ces commandes, portées,
 scores et réponses restent dans le rapport ; aucune n'est présentée comme une
 variante que le moteur aurait entièrement choisie depuis la décision initiale.
 Les questions supplémentaires sont omises si la perte initiale n'est pas soutenue.
+La réponse libre de l'alternative doit aussi préserver les cibles originales :
+éviter Cc7+ tout en autorisant Nb6+ ne résout pas le problème. Un contraste
+conditionnel préservateur seul ne permet pas de présenter cette alternative
+comme une défense. Une autre défense valide n'est pas pour autant le seul bon coup.
+
+## Conséquence directe d'un mauvais coup
+
+`TacticalEffectVerification.verify` ne reçoit aucune alternative. Avant et après
+sont recherchés librement aux deux budgets, au plus quatre recherches (2 400 ms
+nominaux par défaut), même plafond global/arrêt/cache. La conséquence doit garder
+le même attaquant, la même victime, le même bilan complet et un échange terminé.
+Les scores exacts et leur stabilité restent exigés ; un moteur qui donne une
+autre menace ou un témoin incomplet laisse le résultat indéterminé.
+
+`tacticalDraft` peut alors montrer un coup permettant une fourchette ou un échange
+qui retire un défenseur, sans inventer de remplacement. Il exige aussi le lien
+physique : réponse à une cible puis prise de l'autre, ou échange suivi de la prise
+rendue possible par le défenseur disparu. Une capture lointaine ne suffit pas.
+La portée est `observed-consequence` : conséquence dans les lignes confirmées,
+pas preuve que toutes les défenses perdent. Un motif favorable sans contraste
+reste insuffisant à produire un brouillon de cette API.
+
+Pour `RelationVerification.verifyEffect`, la même séparation couvre défense
+retirée et ligne ouverte : avant/après puis défense après la capture déjà observée,
+au plus six recherches. Aucun coup de remplacement ou contraste n'est calculé.
+Le brouillon négatif garde le bilan des reprises et l'épisode d'échange antérieur.
+La comparaison éventuelle doit améliorer aussi le bilan de la réponse libre ;
+elle ne peut pas seulement rétablir une reprise dans une branche hypothétique.
+
+Comparer à un seul autre coup soutient une différence concrète, pas le classement
+global « meilleur », et encore moins « seul bon coup ». Les badges relèvent d'un
+autre contrat. Un motif favorable ne devient pas la raison principale d'une erreur.
 
 L'effet matériel et son attribution ont des statuts séparés. Les deux recherches
 doivent retrouver la même victime/attaquant, le même bilan et des scores exacts

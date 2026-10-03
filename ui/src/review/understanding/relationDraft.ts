@@ -13,6 +13,7 @@ import { framePosition, type DefenceEvidence } from "./evidence";
 import { captureIllustration, type CaptureIllustration } from "./illustration";
 import type { RelationReport } from "./RelationVerification";
 import type { DefenceChange, OpenedLine } from "./relations";
+import { assertDraftQuestions, draftExchange, points } from "./draftModel";
 
 export type DraftStep = {
   command: string;
@@ -22,7 +23,8 @@ export type DraftStep = {
 };
 export type RelationDraft = {
   status: "draft";
-  scope: "conditional-mechanism";
+  scope: "observed-consequence" | "conditional-mechanism";
+  role: "allows-loss" | "creates-opportunity";
   title: string;
   summary: string;
   comparisonText: string;
@@ -81,18 +83,21 @@ export function relationDraft(
   understanding: Understanding,
   report: RelationReport,
 ): RelationDraft | null {
-  if (
-    report.status !== "supported" ||
-    report.attribution.status !== "supported"
-  )
-    return null;
+  if (report.status !== "supported") return null;
+  const compared = report.attribution.status === "supported";
+  if (!compared && report.hypothesis.role !== "allows-loss") return null;
   const pass = report.passes.at(-1)!,
     h = report.hypothesis,
     context = understanding.context;
-  if (!pass.alternative || !pass.contrast.evidence) return null;
+  if (report.passes.length !== 2 || !understanding.mechanisms.some((candidate) => JSON.stringify(candidate) === JSON.stringify(h)) ||
+    report.passes.some((p) => !p.matched || p.evidence.outcome !== "loss-in-line"))
+    throw new Error("Preuve d'une autre décision ou hypothèse.");
+  const alternativeFrame = pass.alternative ? decisionContext({ ...framePosition(context.before), played: pass.alternative }).after : null;
+  assertDraftQuestions(context, alternativeFrame, report.passes);
+  if (compared && (!alternativeFrame || !pass.contrast.evidence)) return null;
   const playedMove = context.moves[context.decision],
     before = boardFromCommand(context.before.command);
-  const alternativeMove = before.move(pass.alternative),
+  const alternativeMove = compared ? before.move(pass.alternative!) : null,
     alternativeQuestion = pass.questions.find(
       (q) => q.purpose === "alternative",
     )!;
@@ -101,19 +106,15 @@ export function relationDraft(
   const actualBoard = boardFromCommand(context.after.command);
   for (const move of pass.prefix.slice(0, -1)) actualBoard.move(move);
   const capture = frenchSan(actualBoard.move(h.capture).san),
-    altLabel = frenchSan(alternativeMove.san);
+    altLabel = alternativeMove ? frenchSan(alternativeMove.san) : "";
   const playedPlan = captureIllustration(context, h.victimId, pass.evidence);
-  const alternativeFrame = decisionContext({
-    ...framePosition(context.before),
-    played: pass.alternative,
-  }).after;
   const alternativePlan =
-    h.kind === "opened-line"
+    !compared || h.kind === "opened-line"
       ? null
       : captureIllustration(
-          { before: context.before, after: alternativeFrame },
+          { before: context.before, after: alternativeFrame! },
           h.victimId,
-          pass.contrast.evidence,
+          pass.contrast.evidence!,
         );
   const played = steps(
     context.after,
@@ -121,40 +122,35 @@ export function relationDraft(
     `Après ${frenchSan(playedMove.san)}`,
     [{ from: attacker.square, to: victim.square, tone: "threat" }],
   );
-  const alternative = steps(
+  const alternative = compared ? steps(
     alternativeQuestion.position,
     alternativePlan?.moves ?? [],
     `Avec ${altLabel}`,
     [{ from: victim.square, tone: "idea" }],
-  );
-  let title: string, summary: string, comparisonText: string;
+  ) : [];
+  let title: string, summary: string, comparisonText = "";
   if (h.kind === "defender-removal") {
-    const id = pass.contrast.usedDefender!,
-      defender = context.before.pieces.find((p) => p.id === id)!;
-    const query = pass.questions.find((q) => q.purpose === "recapture")!;
-    const reply = frenchSan(
-      boardFromCommand(query.position.command).move(query.result.bestMove!).san,
-    );
+    const ids = compared ? [pass.contrast.usedDefender!] : (h.fact as DefenceChange).removed.map((d) => d.defenderId);
     title =
       h.role === "allows-loss"
         ? "Une défense abandonnée"
         : "Une reprise supprimée";
-    const remaining = context.after.pieces.find((p) => p.id === id);
-    const reason = (h.fact as DefenceChange).removed.find(
-      (d) => d.defenderId === id,
-    )!.reason;
-    const description = describe(defender)
-      .replace(/^le /, "Le ")
-      .replace(/^la /, "La ");
-    const changed =
-      reason === "captured"
-        ? `${description} a été capturé${"qr".includes(defender.type) ? "e" : ""}.`
-        : reason === "moved"
-          ? `${description} a quitté cette case pour ${remaining!.square}.`
+    const changed = ids.map((id) => {
+      const defender = context.before.pieces.find((p) => p.id === id)!;
+      const remaining = context.after.pieces.find((p) => p.id === id);
+      const reason = (h.fact as DefenceChange).removed.find((d) => d.defenderId === id)!.reason;
+      const description = describe(defender).replace(/^le /, "Le ").replace(/^la /, "La ");
+      played[0].marks.push({ from: defender.square, tone: "observation" });
+      return reason === "captured" ? `${description} a été capturé${"qr".includes(defender.type) ? "e" : ""}.`
+        : reason === "moved" ? `${description} a quitté cette case pour ${remaining!.square}.`
           : `${description} ne peut plus reprendre légalement.`;
-    summary = `${changed} Après ${capture}, la reprise par ce défenseur n'est plus disponible et la perte matérielle des ${victim.color === "w" ? "Blancs" : "Noirs"} augmente dans la variante vérifiée.`;
-    comparisonText = `Avec ${altLabel}, la reprise ${reply} restait possible : le moteur l'utilise et le bilan matériel est moins défavorable.`;
-    played[0].marks.push({ from: defender.square, tone: "observation" });
+    }).join(" ");
+    summary = `${changed} Après ${capture}, ${ids.length === 1 ? "la reprise par ce défenseur n'est" : "les reprises par ces défenseurs ne sont"} plus disponible${ids.length === 1 ? "" : "s"}.`;
+    if (compared) {
+      const query = pass.questions.find((q) => q.purpose === "recapture")!;
+      const reply = frenchSan(boardFromCommand(query.position.command).move(query.result.bestMove!).san);
+      comparisonText = `Avec ${altLabel}, la reprise ${reply} restait possible : le moteur l'utilise et le bilan matériel est moins défavorable.`;
+    }
   } else {
     const line = h.fact as OpenedLine;
     title =
@@ -162,15 +158,11 @@ export function relationDraft(
         ? "Une ligne laissée ouverte"
         : "Une attaque découverte";
     summary = `Ce coup dégage la ligne ${line.from}–${line.to}${h.role === "allows-loss" ? " pour l'adversaire" : " pour son camp"}. Le moteur l'exploite par ${capture}, qui prend ${describe(victim)}.`;
-    comparisonText = `Avec ${altLabel}, un obstacle restait sur cette ligne et la capture directe n'était pas disponible. La variante calculée conserve la pièce.`;
+    if (compared) comparisonText = `Avec ${altLabel}, un obstacle restait sur cette ligne et la capture directe n'était pas disponible. La variante calculée conserve la pièce.`;
     // La preuve conserve la réponse moteur ; l'illustration du blocage n'a pas
     // besoin de rejouer ces coups, qui ne décrivent pas le mécanisme principal.
-    const setup = decisionContext({
-      ...framePosition(context.before),
-      played: pass.alternative,
-    });
-    for (const id of pass.contrast.retained) {
-      const blocker = setup.after.pieces.find((p) => p.id === id)!;
+    for (const id of compared ? pass.contrast.retained : []) {
+      const blocker = alternativeFrame!.pieces.find((p) => p.id === id)!;
       alternative[0].marks.push(
         { from: blocker.square, tone: "idea" },
         { from: line.from, to: blocker.square, tone: "idea" },
@@ -183,9 +175,13 @@ export function relationDraft(
       })),
     );
   }
+  const exchange = draftExchange(context, pass.evidence.moves);
+  summary += ` Après les reprises de cette variante, le bilan depuis la décision est de ${points(pass.evidence.materialDelta)} pour les ${victim.color === "w" ? "Blancs" : "Noirs"}.`;
+  if (exchange.contextText) summary += ` ${exchange.contextText}`;
   return {
     status: "draft",
-    scope: "conditional-mechanism",
+    scope: compared ? "conditional-mechanism" : "observed-consequence",
+    role: h.role,
     title,
     summary,
     comparisonText,
@@ -193,11 +189,12 @@ export function relationDraft(
     alternative,
     illustration: { played: playedPlan, alternative: alternativePlan },
     limitation: [
-      "Cette comparaison soutient une contribution au verdict dans des variantes bornées ; elle ne prouve pas une perte contre toutes les défenses.",
+      compared ? "Cette comparaison soutient une contribution dans des variantes bornées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup."
+        : "Cette conséquence est observée après le coup joué dans deux recherches. Elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup de remplacement.",
       planNote(playedPlan, victim, "played"),
       alternativePlan ? planNote(alternativePlan, victim, "alternative") : "",
       replyNote(pass.evidence),
-      replyNote(pass.contrast.evidence),
+      compared ? replyNote(pass.contrast.evidence!) : "",
     ]
       .filter(Boolean)
       .join(" "),

@@ -6,7 +6,7 @@ import { categories } from "../annotations";
 import { corpus, corpusInput } from "./corpus";
 import { decisionContext } from "./context";
 import { draftExchange, draftPlacement, type PedagogicalDraft } from "./draftModel";
-import { TacticalVerification } from "./TacticalVerification";
+import { TacticalEffectVerification, TacticalVerification } from "./TacticalVerification";
 import { tacticalInput } from "./tacticalCases";
 import { ScriptEngine } from "./tacticalTestEngine";
 import { tacticalDraft } from "./tacticalDraft";
@@ -54,13 +54,73 @@ it("explique la perte de la défense e4 après un échange égal, avec la repris
   expect(draft!.played).toHaveLength(5);
   legal(draft!);
 });
-it("la comparaison adverse conserve son préfixe hypothétique, sans le confondre avec la PV libre", async () => {
-  const { understanding, draft } = await example("byrne-allows-fork");
+it("la menace adverse reste expliquée quand la branche libre ne valide pas l'alternative", async () => {
+  const { understanding, report, draft } = await example("byrne-allows-fork");
   expect(draft!.role).toBe("allows-loss");
   expect(draft!.played[0].fen).toBe(understanding.context.after.fen);
   expect(draft!.played[1].label).toBe("Ca4");
-  expect(draft!.alternative.filter((s) => s.origin === "conditional-move").map((s) => s.label)).toEqual(["Ca4", "Cxe4"]);
+  expect(report.passes[0].contrast.prefix).toEqual(["b6a4"]);
+  expect(draft!.alternative).toEqual([]);
+  expect(draft!.evidence.scope).toBe("observed-consequence");
   legal(draft!);
+});
+it.each(["allows-fork", "allows-fork-other-defence", "allows-fork-white"])("explique d'abord la menace et la perte du mauvais coup, indépendamment de l'alternative : %s", async (id) => {
+  const { draft } = await example(id);
+  expect(draft!.role).toBe("allows-loss");
+  expect(draft!.title).toBe("Une fourchette permise à l'adversaire");
+  expect(draft!.summary).toContain("Ce coup permet cette menace");
+  expect(draft!.summary).toContain("−5 points");
+  expect(draft!.summary).not.toContain("Avec ");
+  expect(draft!.played).toHaveLength(4);
+  expect(draft!.played[1].label).toBe(id === "allows-fork-white" ? "Cc2+" : "Cc7+");
+  expect(draft!.played.at(-1)!.label).toBe(id === "allows-fork-white" ? "Cxa1" : "Cxa8");
+  expect(draft!.alternative[1].origin).toBe("conditional-move");
+  legal(draft!);
+});
+it("deux défenses comparées donnent la même explication du mauvais coup sans inventer un choix unique", async () => {
+  const first = await example("allows-fork"), second = await example("allows-fork-other-defence");
+  expect(first.draft!.summary).toBe(second.draft!.summary);
+  expect(first.draft!.played).toEqual(second.draft!.played);
+  expect(first.draft!.comparisonText).not.toBe(second.draft!.comparisonText);
+  expect(`${first.draft!.summary} ${second.draft!.comparisonText}`).not.toMatch(/seul bon coup|unique défense|meilleur coup/);
+});
+it.each(["allows-fork", "allows-fork-white", "byrne-allows-fork"])("explique la perte directement, sans rechercher ni proposer un coup de remplacement : %s", async (id) => {
+  const { understanding, hypothesisIndex, alternative } = tacticalInput(id);
+  const request = { understanding, hypothesisIndex, review: {}, revision: 0, engineId: "script" };
+  const check = new TacticalEffectVerification([10, 20]);
+  const report = await check.verify(request, async () => new ScriptEngine({ ...request, alternative }, id));
+  expect(report, check.error).not.toBeNull();
+  expect(report!.passes.every((p) => p.questions.map((q) => q.purpose).join() === "decision,played")).toBe(true);
+  const draft = tacticalDraft(understanding, report!)!;
+  expect(draft).toMatchObject({ role: "allows-loss", evidence: { scope: "observed-consequence", alternativeMoves: [] }, alternative: [], comparisonText: "" });
+  expect(draft.summary).toContain("permet cette menace");
+  expect(draft.summary).not.toMatch(/Avec |meilleur|seul bon/);
+  expect(draft.played[0].fen).toBe(understanding.context.after.fen);
+  if (id === "byrne-allows-fork") {
+    expect(draft.family).toBe("exchanged-defender");
+    expect(draft.summary).toContain("vaut 0 points");
+    expect(draft.summary).toContain("défendait e4");
+    expect(draft.summary).toContain("−1 point");
+  } else expect(draft.played).toHaveLength(4);
+  legal(draft);
+});
+it("une alternative qui permet une autre fourchette est écartée, sans perdre l'explication du coup joué", async () => {
+  const { report, draft } = await example("allows-fork-false-defence");
+  expect(report.status).toBe("supported");
+  expect(report.attribution.status).toBe("not-established");
+  expect(report.passes.every((p) => p.contrast.evidence?.outcome === "preserved" && p.freeAlternative?.outcome === "loss-in-line")).toBe(true);
+  expect(draft).toMatchObject({ family: "double-targets", alternative: [], comparisonText: "", evidence: { scope: "observed-consequence" } });
+  expect(draft!.summary).toContain("−5 points");
+  expect(draft!.summary).not.toContain("Rc8");
+  legal(draft!);
+});
+it("une observation favorable seule n'est ni une justification du meilleur coup, ni une preuve de mauvais choix ailleurs", async () => {
+  const id = "fork-direct", { understanding, hypothesisIndex, alternative } = tacticalInput(id);
+  const request = { understanding, hypothesisIndex, review: {}, revision: 0, engineId: "script" };
+  const check = new TacticalEffectVerification([10, 20]);
+  const report = await check.verify(request, async () => new ScriptEngine({ ...request, alternative }, id));
+  expect(report?.status).toBe("supported");
+  expect(tacticalDraft(understanding, report!)).toBeNull();
 });
 it("le clouage explique une retraite interdite, pas seulement un alignement ou un développement", async () => {
   const { draft } = await example("pin-retreat");

@@ -8,6 +8,7 @@ import {
   type TrackedPiece,
 } from "./context";
 import { boardFor, sliderRay } from "./possibilities";
+import { finishWork, type Work } from "./work";
 
 type Scope = "actual-turn" | "geometric-turn-probe";
 export type AttackTarget = {
@@ -49,6 +50,9 @@ const value = { p: 1, n: 3, b: 3, r: 5, q: 9, k: Infinity };
 /** Inventaire peu profond : captures légales une fois par camp. Aucune reprise,
  * aucun score et aucune affirmation de gain forcé par une double attaque. */
 export function tacticalFrame(frame: PositionFrame): TacticalFrame {
+  return finishWork(tacticalFrameWork(frame));
+}
+function* tacticalFrameWork(frame: PositionFrame): Work<TacticalFrame> {
   const result: TacticalFrame = {
     frame,
     doubleAttacks: [],
@@ -62,6 +66,7 @@ export function tacticalFrame(frame: PositionFrame): TacticalFrame {
   const board = new Chess(frame.fen);
   const legal = new Map<Color, Move[] | null>();
   for (const side of ["w", "b"] as const) {
+    yield "tactics";
     const probe = frame.turn === side ? board : boardFor(frame, side);
     const moves = probe?.moves({ verbose: true }) ?? null;
     legal.set(side, moves);
@@ -83,6 +88,7 @@ export function tacticalFrame(frame: PositionFrame): TacticalFrame {
     }
   }
   for (const attacker of frame.pieces) {
+    yield "tactics";
     const moves = legal.get(attacker.color)!;
     const targets = frame.pieces
       .filter(
@@ -150,6 +156,9 @@ export type ShortMateProof = {
  * Chaque défense réelle doit permettre un mat immédiat. Une seule échappatoire,
  * une nulle ou le plafond suffisent à interdire la conclusion universelle. */
 export function shortMateProof(frame: PositionFrame, maxMoves = 1200): ShortMateProof {
+  return finishWork(shortMateProofWork(frame, maxMoves));
+}
+function* shortMateProofWork(frame: PositionFrame, maxMoves = 1200): Work<ShortMateProof> {
   if (!Number.isInteger(maxMoves) || maxMoves < 1)
     throw new Error("Plafond de coups invalide.");
   const proof: ShortMateProof = {
@@ -164,6 +173,7 @@ export function shortMateProof(frame: PositionFrame, maxMoves = 1200): ShortMate
   if (board.isGameOver()) return proof;
   const defences = board.moves({ verbose: true });
   for (const reply of defences) {
+    yield "mate";
     if (proof.examinedMoves >= maxMoves) {
       proof.status = "budget-exhausted";
       return proof;
@@ -222,9 +232,12 @@ const mateKey = (mate: MateMove) => `${mate.attackerId}/${mate.kingId}/${mate.mo
 const pinKey = (pin: Pin) => `${pin.kind}/${pin.attacker.id}/${pin.shield.id}/${pin.rear.id}`;
 
 export function tacticalConstraints(context: DecisionContext): TacticalConstraints {
-  const before = tacticalFrame(context.before), after = tacticalFrame(context.after);
+  return finishWork(tacticalConstraintsWork(context));
+}
+export function* tacticalConstraintsWork(context: DecisionContext): Work<TacticalConstraints> {
+  const before = yield* tacticalFrameWork(context.before), after = yield* tacticalFrameWork(context.after);
   const replyFrame = context.frames[context.decision + 2];
-  const reply = replyFrame ? tacticalFrame(replyFrame) : null;
+  const reply = replyFrame ? yield* tacticalFrameWork(replyFrame) : null;
   const hypotheses: TacticalHypothesis[] = [];
   const actor = context.before.turn;
   for (const [old, next, ply] of [
@@ -274,7 +287,7 @@ export function tacticalConstraints(context: DecisionContext): TacticalConstrain
   const checking = new Chess(context.after.fen).isCheck();
   const shortMate = !context.after.terminal && (checking || after.mates.some((m) =>
     context.after.pieces.find((p) => p.id === m.attackerId)!.color === actor))
-    ? shortMateProof(context.after) : null;
+    ? yield* shortMateProofWork(context.after) : null;
   // Déviation courte : réponse unique prenant la pièce sacrifiée, qui quitte
   // exactement le trajet du coup de mat. Un sacrifice générique ne suffit pas.
   if (shortMate?.status === "proved" && shortMate.replies.length === 1) {

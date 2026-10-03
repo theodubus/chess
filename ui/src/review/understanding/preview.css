@@ -34,6 +34,7 @@ button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px
 .explanation { padding: 24px; border: 1px solid #34483b; border-radius: 12px; background: #18241c; }
 #summary { font-size: 18px; }
 #comparison { border-top: 1px solid #34483b; padding-top: 22px; margin-top: 24px; }
+.comparison-note { color: #a6b7ad; font-size: 13px; }
 .context { padding: 14px; margin-top: 20px; border-left: 3px solid #dbc388; background: #223028; font-size: 14px; }
 details { margin-top: 28px; font-size: 13px; overflow-wrap: anywhere; }
 details summary { cursor: pointer; margin-bottom: 10px; }

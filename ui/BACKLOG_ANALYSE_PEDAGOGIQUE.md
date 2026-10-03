@@ -22,8 +22,11 @@ n’est pas validé. Un cas reconnu n’est pas une preuve de couverture génér
 
 ## Objectif mesurable
 
-L’explication doit permettre de comprendre **ce que la décision change**, **comment
-ce changement est exploitable**, et **ce qu’aurait permis une autre décision**.
+L’explication doit permettre de comprendre **ce que la décision change** et
+**comment ce changement est exploité**. Pour un mauvais coup : montrer directement
+la menace adverse et les reprises nécessaires au bilan, même sans coup de
+remplacement. Une autre décision est une comparaison facultative ; elle ne
+doit ni remplacer l'explication du coup joué ni être désignée comme seul bon choix.
 Le texte et les repères doivent être issus des mêmes faits vérifiés.
 
 Distinguer explicitement :
@@ -39,6 +42,13 @@ Une pièce attaquée et sans retraite immédiate peut encore être sauvée par u
 coup intermédiaire, une défense, un échange ou une compensation : sa perte ne se
 prouve pas en comptant ses cases de sortie. Un meilleur score après une suite
 ne prouve pas à lui seul le motif choisi pour l’expliquer.
+
+**Correction de contrat demandée le 3 octobre :** une alternative moins bonne
+ne prouve pas que le coup étudié était nécessaire ou optimal. Les premières
+illustrations favorables expliquent un mécanisme, pas un classement global.
+Plusieurs bonnes réponses peuvent coexister ; les explications de mauvais coups
+doivent pouvoir montrer fourchette, défense retirée et perte après reprises
+sans se contenter de proposer le premier choix du moteur.
 
 ## Plan d’exécution et critères de passage
 
@@ -109,6 +119,15 @@ texte généré automatiquement n’est utilisé comme vérité attendue.
 contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un badge.
 
 ### C. Vérification comparative des causes — EN COURS
+
+- [x] Séparer conséquence du coup joué et comparaison facultative : vérifications
+  directes de fourchette/clouage et défense retirée/ligne ouverte. Même menace,
+  bilan et clôture retrouvés aux deux budgets ; aucune obligation de proposer
+  un autre coup. Ce sont des conséquences dans les variantes, pas une preuve
+  d'optimalité ou de perte contre toutes les défenses.
+- [x] Pour une perte permise, ne pas valider l'alternative par la seule menace
+  conditionnelle : contrôler sa réponse libre. Une autre fourchette/perte ou un
+  témoin incomplet écarte la comparaison, sans effacer l'effet réel du coup joué.
 
 - [x] Questions explicites avant la décision, après le coup, au moment de la
   défense et après une alternative légale. Chaque réponse garde commande UCI,
@@ -191,11 +210,23 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - [x] Aperçu de relecture séparé : instantané UCI réel, navigation coup/alternative,
   retour explicite au coup étudié et provenance de chaque étape. Aucun menu ajouté
   à la partie. Les abstentions y restent visibles.
+- [x] Brouillons négatifs indépendants d'une comparaison, bilans après reprises,
+  contexte d'échange antérieur conservé, comparaison masquée si non confirmée.
+  Régressions de deux camps, deux défenses différentes du même mauvais coup,
+  fausse défense permettant une autre fourchette, compensation et preuve périmée.
+- [x] Théo valide la clarté des textes montrés le 3 octobre. Il corrige ensuite
+  leur portée : expliquer le mécanisme n'est pas démontrer le meilleur coup.
+  Cette relecture ne valide ni tous les nouveaux cas négatifs ni la couverture générale.
 - [ ] Vérifier sur le corpus la pertinence de la phrase ET de l’illustration,
   au-delà des seuls tests de légalité et de scores.
 
 ### E. Intégration progressive dans la revue — À FAIRE
 
+- [x] Préparer l'extraction coopérative, annulable, avec cache borné par revue,
+  révision, moteur, historique et PV, progression par phase et délai. Même résultat
+  que le synchrone sur 31 décisions ; méthodes chess.js conservées, cache immuable.
+  Les primitives indivisibles peuvent dépasser la tranche cible ; ce n'est pas
+  un Worker et aucune promesse de durée d'image n'est faite.
 - [ ] Raccorder seulement les familles ayant passé les étapes précédentes.
 - [ ] Conserver le coup étudié, navigation, variantes, dessins, préférences,
   retry sans fuite et signalement de calcul. Aucun nouveau menu concurrent.
@@ -221,16 +252,23 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 ## Point de reprise
 
 - Reprise autonome autorisée le 3 octobre : poursuivre jusqu'à besoin d'arbitrage
-  humain, limite de session ou achèvement. Les premiers brouillons et l'aperçu
-  sont préparés ; la relecture pédagogique est demandée à Théo, avec des exemples
-  concrets. Ne pas interpréter l'attente ou une CI verte comme cette validation.
+  humain, limite de session ou achèvement. Théo valide les textes des exemples le
+  3 octobre (« les textes sont bons »). Il demande si l'alternative est le mauvais
+  coup : clarification des libellés « Coup joué / Autre coup comparé », avec le
+  rôle de la comparaison explicité. Cette validation des exemples ne mesure pas
+  la généralisation et ne complète pas à elle seule les critères A/C/D.
 - Branche actuelle : `codex/ui-polish`, PR #111 ouverte au début de cette reprise.
 - Dernier lot : brouillons/repères de quatre familles, contexte des reprises,
   aperçu de relecture et extraction optimisée. Voir la livraison ci-dessous.
-- **Prochain travail concret** : relire clouage, fourchette et mat dans
-  `/dev/pedagogy-review.html`, puis adapter texte/repères aux retours. La question
-  porte sur la compréhension de la décision, pas sur l'autorisation de coder.
-  Ajouter ensuite un échantillon neuf, avant raccordement progressif E.
+- **Dernier travail concret** : conséquences négatives séparées de la comparaison,
+  deux bonnes défenses possibles sans choix unique, contrôle de l'alternative libre
+  et extraction coopérative. Les textes et repères négatifs ne dépendent plus du
+  succès d'une recherche d'autre coup. Voir la livraison ci-dessous.
+- **Prochain travail concret** : compléter l'échantillon de contrôle négatif,
+  contraintes combinées/coups intermédiaires et compensation, puis le raccordement
+  progressif E. Ne pas transformer ces régressions construites en validation
+  indépendante. La clarté des exemples initiaux est validée ; garder les cas
+  sans cause et les limites de couverture visibles.
   Pour …Ca4, traiter la compensation et distinguer la pression tactique du
   gain matériel immédiat ; la cause du verdict reste inconnue quand le bilan
   matériel est compensé. Ne pas inventer une phrase pour augmenter la couverture.
@@ -703,3 +741,45 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   publiable**. La pertinence générale, compensation/pression durable, nouveaux cas
   indépendants et intégration restent ouvertes. Les brouillons ne corrigent pas
   encore l'explicateur actif ; la prochaine décision porte sur leur lisibilité.
+
+## Conséquences négatives et calcul coopératif — 4 octobre 2026
+
+- Retour de Théo intégré au contrat : comparer une seule alternative ne démontre
+  pas le meilleur coup. La perte permise doit être expliquée directement, même
+  sans remplacement ; plusieurs défenses correctes peuvent exister.
+- `TacticalEffectVerification` recherche seulement avant/après aux deux budgets.
+  `RelationVerification.verifyEffect` ajoute la défense après la prise observée,
+  sans alternative. Les mêmes arrêt/cache/délai/refus UCI sont conservés ; aucun
+  changement moteur, MultiPV ou recherche stratégique réimplémentée.
+- Brouillons négatifs de fourchette, défense échangée, défense retirée et ligne
+  ouverte : menace, réponse et reprises utiles, bilan de la suite, contexte de
+  reprise antérieure. Portée `observed-consequence`, pas perte universelle forcée.
+  Un motif favorable sans comparaison ne justifie pas un meilleur coup global.
+- La réponse libre de l'alternative est aussi contrôlée : Kc8 évite Cc7+ mais
+  permet Cb6+ et perd encore la tour. La comparaison est écartée ; la perte après
+  Ke8 reste expliquée. Les défenses Tb8 et Ta7 donnent le même récit de ce mauvais
+  coup, sans choix unique. Deux camps et l'échange égal suivi de la perte d'un pion
+  sont couverts. Fixtures construites exécutées avec chess.js, scores unitaires
+  simulés ; ces tests ne sont pas une validation pédagogique indépendante.
+- Aperçu clarifié « Coup joué / Autre coup comparé », comparaison absente masquée,
+  retour direct au coup joué. Instantané régénéré : **22 essais réels, 10 brouillons,
+  12 abstentions, 52 positions légales vérifiées**. ShallowRed soutient un récit
+  négatif sans alternative et un avec comparaison refusée ; Stockfish 16 garde
+  l'abstention sur ces positions aux budgets 200/600 ms. Les divergences et noms/
+  empreintes des binaires sont conservés. Aucun contrôle visuel navigateur ajouté.
+- `UnderstandingAnalysis` et générateurs communs : mêmes faits et ordre JSON sur
+  les 31 décisions, étapes entre rendus, annulation lors d'une nouvelle demande,
+  cache borné et immuable conservant les méthodes chess.js, instantané des entrées,
+  progression et refus après dépassement du délai. Pas de Worker ni transport
+  choisi. Une primitive indivisible peut dépasser la tranche cible ; ne pas
+  revendiquer une durée d'image garantie. Mesure synchrone actuelle 3,51 s sous
+  charge, empreintes inchangées ; le temps ne démontre pas la fluidité du produit.
+- Validation : **699 tests / 54 fichiers** avec ShallowRed et Stockfish 16,
+  lint, TypeScript et build réussis. Les bundles actifs restent identiques.
+  La CI du commit envoyé sera relue avant livraison. Les textes validés le
+  3 octobre restent une relecture limitée, pas une approbation de couverture.
+- Toujours **zéro explication déclarée publiable** dans les corpus : 12/12
+  hypothèses construites et 4/11 publiées, sept idées manquantes. Les nouvelles
+  régressions ne changent pas ces chiffres. Compensation différée, contraintes
+  combinées/longues, échantillon neuf et intégration E restent ouverts. L'UI active
+  n'utilise pas encore ces nouvelles explications ; ne pas annoncer le chantier fini.

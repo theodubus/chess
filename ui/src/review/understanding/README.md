@@ -39,6 +39,21 @@ CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/gam
   La victime et ses sorties sont explicites ; aucune case ou pièce d’un exemple
   n’est codée dans le détecteur. Une capture avantageuse sur une case attaquée
   n’est pas assimilée automatiquement à une sortie perdante.
+- `UnderstandingAnalysis` exécute les mêmes générateurs en petites tranches,
+  publie une phase, permet l'annulation et refuse un résultat tardif ou hors délai.
+  Cache borné par revue/moteur/révision/historique/PV, résultats immuables avec les
+  méthodes des coups chess.js conservées. Les 31 extractions sont identiques en
+  synchrone et coopératif. Une primitive chess.js indivisible peut dépasser la
+  tranche cible ; cette préparation n'est pas encore raccordée au rendu React.
+
+`TacticalEffectVerification.verify` et `RelationVerification.verifyEffect`
+vérifient maintenant directement une perte permise par le coup joué, sans
+demander de remplacement. Fourchette, défense retirée et ligne ouverte gardent
+leur lien physique et le bilan après reprises aux deux budgets. Un brouillon
+négatif peut exister même si la comparaison est indisponible, mais aucune
+alternative n'est alors affichée. Comparer un seul autre choix ne démontre
+jamais un meilleur coup global ou une défense unique. Voir
+`TACTICAL_VERIFICATION.md` pour la portée et les limites.
 
 La recherche de défense et sa vérification courte sont maintenant implémentées
 ci-dessous. La couverture stratégique et l'attribution de la cause à la décision
@@ -503,10 +518,12 @@ l'interface active. Les détecteurs/couvertures des corpus sont inchangés.
 
 ## Brouillons et aperçu de relecture — 3 octobre 2026
 
-`draftModel`, `tacticalDraft` et `mateDraft` produisent une idée structurée
-depuis un contraste soutenu : décision, changement physique, exploitation et
-différence avec une alternative explicite. Aucun texte causal n'est généré si
-le vérificateur s'abstient. Les rapports moteur conservent `explanation: null`.
+`draftModel`, `tacticalDraft` et `mateDraft` produisent une idée structurée :
+décision, changement physique et exploitation. Une comparaison explicite peut
+éclairer le mécanisme ; elle n'est plus requise pour décrire une perte permise
+confirmée. Aucun texte causal n'est généré si la conséquence reste indéterminée.
+Les rapports moteur conservent `explanation: null`. Le brouillon ne démontre ni
+un classement global du meilleur coup ni une défense unique.
 
 Les quatre premières familles sont la fourchette, le défenseur échangé dans une
 double attaque, le clouage qui interdit une retraite et la déviation vers un mat
@@ -545,8 +562,10 @@ attaquants géométriques et laisse chess.js filtrer la légalité. L'en passant
 les clouages et les quatre promotions gardent leurs captures et leur ordre.
 Les 31 décisions de développement ont des résultats JSON exactement identiques
 avant/après. Mesure locale, sans recherche UCI : 15,94 s avant, 3,13 s après.
-Ce n'est pas un engagement de latence ; le travail synchrone reste à déplacer
-hors du rendu avant une intégration interactive.
+Ce n'est pas un engagement de latence. `UnderstandingAnalysis` prépare désormais
+une extraction coopérative, annulable et cachée ; son raccordement à la revue
+reste à faire. Les primitives indivisibles et le parcours complet sont encore
+à mesurer dans le navigateur.
 
 `dev/understanding-benchmark.json` garde la mesure et les empreintes complètes.
 Pour mesurer de nouveau depuis `ui/` :
