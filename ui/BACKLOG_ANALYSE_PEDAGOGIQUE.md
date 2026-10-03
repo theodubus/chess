@@ -126,6 +126,9 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
 - [x] Le moteur cherche librement la défense. Vérification à deux budgets séparés,
   témoins bornés à huit demi-coups, reprises incluses, mat/compensation immédiate
   prioritaires. Plusieurs coups calmes font abandonner le témoin court.
+- [x] Reprises disponibles avec décision observée, échecs intermédiaires et
+  clôture explicite dans la PV ; refus de conclure si la décision manque.
+  Le choix de ne pas reprendre ne prouve pas que la reprise est mauvaise.
 - [ ] Compensations différées/positionnelles et défenses multiples : les témoins
   courts ne les couvrent pas. La comparaison actuelle de stabilité des scores
   reste un seuil de développement, pas un étalonnage pédagogique.
@@ -149,6 +152,9 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   départ après la décision sans rewind. Pour une ligne gardée fermée, afficher
   l'alternative et son obstacle suffit ; aucun défilage des coups calmes de sa PV.
   Ces brouillons ne sont pas activés dans la revue et restent à relire.
+- [x] Pour ces brouillons, preuve complète séparée du préfixe illustré : reprises
+  résolues conservées, aucune compensation/échec/promotion du témoin caché, bilans distincts
+  explicités lorsqu'une prise sur une autre pièce est retirée du repère.
 
 - [ ] Une idée principale structurée : décision → changement → exploitation →
   différence avec l’alternative. Les raisons inconnues restent inconnues.
@@ -188,13 +194,13 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 ## Point de reprise
 
 - Branche actuelle : `codex/ui-polish`, PR #111 ouverte au début de cette reprise.
-- Dernier lot : hypothèses de défense retirée/ligne ouverte, comparaison causale
-  conditionnelle, brouillons courts. Voir la livraison du 3 octobre ci-dessous.
-- **Prochain travail concret** : traiter la clôture de l'échange quand une reprise
-  légale n'est pas choisie par le moteur, sans tronquer une compensation ; séparer
-  le témoin de vérification de l'illustration minimale lorsqu'une autre capture
-  suit l'échange initial. Ensuite enrichir les annotations des motifs secondaires
-  et tester des décisions issues de nouvelles parties avant l'activation UI.
+- Dernier lot : clôture des reprises non choisies et séparation entre preuve
+  complète et repère court. Voir la livraison correspondante ci-dessous.
+- **Prochain travail concret** : enrichir les annotations des trois motifs
+  secondaires non relus, puis ajouter des décisions issues de nouvelles parties
+  avec attentes et affirmations interdites explicites. Les distinguer des
+  contre-épreuves construites pour le logiciel. Ne pas activer les brouillons
+  dans l'UI avant cette validation ; travailler ensuite le coût et l'intégration E.
 - Restent aussi clouage/double menace/mat, compensations longues, extraction trop
   coûteuse et démarrages moteur par question. Ne pas contourner ces limites par
   des textes génériques ou par une intégration prématurée.
@@ -406,3 +412,45 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - Revalidation après ce correctif CI : **490 tests / 45 fichiers** avec ShallowRed
   et le Stockfish 16 exact d'Ubuntu, lint et TypeScript réussis. Aucun changement
   du contrat de validité des réponses ni des seuils de confirmation.
+
+
+## Livraison — clôture d'échange et repère distinct, 3 octobre 2026
+
+- `witness.ts` rejoue la continuation avec les identités et l'historique complets.
+  Chaque capture garde ses reprises légales, le choix réel et sa position. Un
+  échec intermédiaire peut différer la reprise ; une PV ou une borne qui s'arrête
+  avant la décision reste indéterminée. Aucun choix futur n'est publié.
+- `evidence.ts` donne une raison de clôture et compte les coups calmes consécutifs.
+  Le bilan est examiné avant la limite des coups calmes. La compensation, les
+  promotions et les échecs immédiats sont conservés ; nulle et mat adverse ne sont
+  pas décrits comme un simple échange matériel. La portée reste une ligne moteur.
+- `illustration.ts` sépare le préfixe utile de la preuve complète. Les reprises,
+  leurs échecs intermédiaires et le choix réel de ne pas reprendre restent visibles.
+  Une prise ultérieure adverse sur une autre pièce peut être omise ; toute prise
+  compensatrice du camp de la victime, promotion ou échec interdit cette coupe.
+- `relationDraft.ts` expose les deux bilans et les coups omis, et précise qu'une
+  reprise légale non choisie n'est pas pour autant une mauvaise reprise. Aucun
+  nouveau détecteur ou phrase générique ajouté à l'explicateur actif.
+- Exemple construit dxe4 : le repère …Txd1 Txd1 ferme le motif à −3 points ; une
+  autre prise …Cxe4 reste dans la preuve à −4. Le brouillon signale la différence.
+  Tests des deux couleurs, compensations partielles/complètes, promotion, échec,
+  reprise en attente, borne, nulle et mat. Les scores unitaires sont simulés ;
+  ces contrôles n'augmentent pas la couverture pédagogique du corpus original.
+- Contrôle réel Stockfish 17.1 sur Dd2/…f4 : la défense calculée se termine par
+  Tfe1 alors que Cxd4 et Dxd4 restent légaux. Le témoin observe désormais la clôture
+  à −3 dans cette ligne, avec le choix et les reprises conservés. Cela ne prouve
+  pas une perte forcée. Les résultats peuvent varier selon le budget et le binaire.
+- Aucun changement du moteur, des budgets UCI ou de l'interface active ; le
+  prototype reste isolé et aucune explication n'est déclarée publiable.
+- Validation : suite complète **509 tests / 46 fichiers** avec ShallowRed et le
+  Stockfish 16 exact d'Ubuntu ; après l'ajout d'un dernier contrôle du texte, les
+  **60 tests ciblés** de preuve/illustration/brouillon passent. Lint, TypeScript
+  et build passent ; les assets du build actif sont inchangés.
+- Nouveau contrôle ciblé des deux binaires : six essais réels réussis. Sur la
+  position de ligne, tous deux gardent …Cxe4 dans la preuve à −4, avec un repère
+  arrêté à −3. Coûts observés hors extraction : 3,9–4,8 s avec ShallowRed,
+  6,1–7,8 s avec Stockfish 16. Les trois contrôles ciblés Stockfish 17.1 passent
+  également. Ces durées ne sont pas des garanties de latence applicative.
+- Point de reprise : annotations des candidats secondaires, corpus indépendant,
+  motifs manquants, optimisation puis intégration E. La relecture pédagogique
+  ne doit pas être remplacée par les seuls tests logiciels.

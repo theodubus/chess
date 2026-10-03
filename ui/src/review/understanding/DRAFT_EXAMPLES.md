@@ -71,11 +71,15 @@ Illustration :
 - Comparaison : **une seule position après d4**, pion d4 repéré et ligne arrêtée
   sur cet obstacle. Les coups ultérieurs de la PV ne sont pas illustrés.
 
-Le témoin Stockfish du contrôle ciblé ferme ce bilan à −3 points pour les Blancs.
+Le contrôle initial Stockfish 17.1 fermait ce bilan à −3 points pour les Blancs.
 Le témoin ShallowRed gardait aussi …Cxe4, une autre capture immédiate, et atteignait
-−4. Cette différence reste dans les preuves. La séparation entre preuve de
-compensation et illustration strictement nécessaire reste à améliorer : le texte
-ne prétend pas que …Cxe4 constitue l'explication de l'ouverture de la colonne.
+−4. Cette différence reste dans les preuves. Le repère s'arrête désormais à
+…Txd1 Txd1 : …Cxe4 est une prise sur une autre pièce et n'explique pas l'ouverture
+de la colonne. Le brouillon indique séparément le bilan illustré (−3) et le bilan
+complet (−4), avec le nombre de demi-coups omis. Une prise compensatrice des Blancs,
+un échec ou une promotion dans cette suite empêcherait cette coupe.
+Au nouveau contrôle avec le Stockfish 16 de la CI, …Cxe4 figure aussi dans sa
+preuve à −4 ; le repère et la note de bilan fonctionnent de la même manière.
 
 ## Limites à vérifier avant activation
 
@@ -95,5 +99,21 @@ CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/gam
 ```
 
 Chaque rapport imprime les deux passes, les commandes conditionnelles, les
-témoins, les refus, les coûts et les étapes du brouillon. Pour les seuls contrats
+témoins, les refus, les coûts, les étapes du brouillon et les deux bilans
+du plan d'illustration. Pour les seuls contrats
 logiciels : `npm run test:understanding`.
+
+
+## Reprise disponible mais non choisie — observation de Dd2/…f4
+
+Ce cas vient de la capture utilisateur du 2 octobre, avec FEN reconstruite et
+historique antérieur inconnu ; ce n'est pas une nouvelle partie indépendante.
+Au contrôle Stockfish 17.1 du 3 octobre, les deux budgets montrent la défense
+`d4 cxd4 Fxd4 exd4 Tfe1`. Après …exd4, **Cxd4 et Dxd4 restent légaux** : Tfe1 est
+le choix observé du moteur, sans preuve que les reprises seraient mauvaises.
+
+Le bilan dans cette variante est −3 points pour les Blancs. L'ancien compteur
+de coups calmes abandonnait avant de constater ce choix. Le nouveau témoin garde
+Tfe1 et marque `recapture-not-chosen` ; une PV arrêtée avant Tfe1 reste indéterminée.
+Cette portée ne permet pas d'écrire « le fou est perdu contre toutes les défenses ».
+Le vérificateur de restriction n'émet toujours aucun brouillon ni texte utilisateur.

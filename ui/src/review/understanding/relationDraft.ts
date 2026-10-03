@@ -9,7 +9,8 @@ import {
   type TrackedPiece,
 } from "./context";
 import type { Understanding } from "./prototype";
-import { framePosition } from "./evidence";
+import { framePosition, type DefenceEvidence } from "./evidence";
+import { captureIllustration, type CaptureIllustration } from "./illustration";
 import type { RelationReport } from "./RelationVerification";
 import type { DefenceChange, OpenedLine } from "./relations";
 
@@ -27,6 +28,10 @@ export type RelationDraft = {
   comparisonText: string;
   played: DraftStep[];
   alternative: DraftStep[];
+  illustration: {
+    played: CaptureIllustration;
+    alternative: CaptureIllustration | null;
+  };
   limitation: string;
 };
 const names: Record<PieceSymbol, string> = {
@@ -97,15 +102,28 @@ export function relationDraft(
   for (const move of pass.prefix.slice(0, -1)) actualBoard.move(move);
   const capture = frenchSan(actualBoard.move(h.capture).san),
     altLabel = frenchSan(alternativeMove.san);
+  const playedPlan = captureIllustration(context, h.victimId, pass.evidence);
+  const alternativeFrame = decisionContext({
+    ...framePosition(context.before),
+    played: pass.alternative,
+  }).after;
+  const alternativePlan =
+    h.kind === "opened-line"
+      ? null
+      : captureIllustration(
+          { before: context.before, after: alternativeFrame },
+          h.victimId,
+          pass.contrast.evidence,
+        );
   const played = steps(
     context.after,
-    pass.evidence.moves,
+    playedPlan.moves,
     `Après ${frenchSan(playedMove.san)}`,
     [{ from: attacker.square, to: victim.square, tone: "threat" }],
   );
   const alternative = steps(
     alternativeQuestion.position,
-    h.kind === "opened-line" ? [] : pass.contrast.evidence.moves,
+    alternativePlan?.moves ?? [],
     `Avec ${altLabel}`,
     [{ from: victim.square, tone: "idea" }],
   );
@@ -173,7 +191,43 @@ export function relationDraft(
     comparisonText,
     played,
     alternative,
-    limitation:
+    illustration: { played: playedPlan, alternative: alternativePlan },
+    limitation: [
       "Cette comparaison soutient une contribution au verdict dans des variantes bornées ; elle ne prouve pas une perte contre toutes les défenses.",
+      planNote(playedPlan, victim, "played"),
+      alternativePlan ? planNote(alternativePlan, victim, "alternative") : "",
+      replyNote(pass.evidence),
+      replyNote(pass.contrast.evidence),
+    ]
+      .filter(Boolean)
+      .join(" "),
   };
+}
+
+function planNote(
+  plan: CaptureIllustration,
+  victim: TrackedPiece,
+  branch: "played" | "alternative",
+): string {
+  if (!plan.omittedMoves.length) return "";
+  const value = (n: number) =>
+    `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n)}`;
+  return `Pour le ${branch === "alternative" ? "repère de l'alternative" : "repère du coup joué"}, le bilan illustré est de ${value(plan.materialDelta)} points pour les ${victim.color === "w" ? "Blancs" : "Noirs"}. Le témoin complet conserve ${plan.omittedMoves.length} ${plan.omittedMoves.length === 1 ? "demi-coup supplémentaire" : "demi-coups supplémentaires"} et atteint ${value(plan.proofMaterialDelta)} points.`;
+}
+function replyNote(evidence: DefenceEvidence): string {
+  return evidence.replies
+    .filter((r) => r.state === "not-chosen" && r.choice)
+    .map((r) => {
+      const board = boardFromCommand(r.choice!.command);
+      const chosen = frenchSan(board.move(r.choice!.move).san);
+      const replies = r.choice!.available.map((move) =>
+        frenchSan(boardFromCommand(r.choice!.command).move(move).san),
+      );
+      const options =
+        replies.length === 1
+          ? `la reprise ${replies[0]} reste légale`
+          : `les reprises ${replies.join(" et ")} restent légales`;
+      return `Dans cette variante, le moteur choisit ${chosen} alors que ${options}. Ce choix ne prouve pas que la reprise est mauvaise.`;
+    })
+    .join(" ");
 }

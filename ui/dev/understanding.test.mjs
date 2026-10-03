@@ -373,6 +373,8 @@ for (const [name, command] of [
               elapsedMs: report.elapsedMs,
               draft: draft
                 ? {
+                    illustration: draft.illustration,
+                    limitation: draft.limitation,
                     title: draft.title,
                     summary: draft.summary,
                     comparison: draft.comparisonText,

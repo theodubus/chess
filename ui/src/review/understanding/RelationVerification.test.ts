@@ -404,3 +404,88 @@ it("refuse une borne finale si le dernier coup exact était différent", async (
     "alternative : Réponse moteur sans score exact",
   );
 });
+
+it("le brouillon s'arrête à l'échange expliqué et distingue le bilan de la preuve", async () => {
+  const base = cases.find((c) => c.id === "line-left-full")!;
+  // Suite construite, exécutée avec chess.js avant ajout : la prise du pion
+  // e4 est une perte supplémentaire, distincte de l'ouverture de la colonne d.
+  const test = {
+    ...base,
+    line: ["Rxd1", "Rxd1", "Nxe4"],
+    lineUci: ["d8d1", "f1d1", "f6e4"],
+  };
+  const input = fixture(test);
+  const req = {
+    ...input,
+    review: {},
+    revision: 0,
+    engineId: "script",
+    alternative: test.alternativeUci,
+  };
+  const { results } = scripted(test, req);
+  const report = await new RelationVerification([10, 20]).verify(
+    req,
+    async () => new ScriptEngine(results),
+  );
+  expect(report, "contraste construit avec scores simulés").toMatchObject({
+    status: "supported",
+    attribution: { status: "supported" },
+  });
+  const draft = relationDraft(input.understanding, report!)!;
+  expect(draft.played.map((s) => s.label)).toEqual([
+    "Après dxe4",
+    "Txd1",
+    "Txd1",
+  ]);
+  expect(draft.illustration.played).toEqual({
+    moves: ["d8d1", "f1d1"],
+    omittedMoves: ["f6e4"],
+    materialDelta: -3,
+    proofMaterialDelta: -4,
+  });
+  expect(draft.alternative).toHaveLength(1);
+  expect(draft.illustration.alternative).toBeNull();
+  expect(draft.limitation).toContain("−3 points");
+  expect(draft.limitation).toContain("−4 points");
+  expect(report!.passes.at(-1)!.evidence.moves).toEqual(test.lineUci);
+});
+
+it("le brouillon précise qu'une reprise légale non choisie n'est pas prouvée mauvaise", async () => {
+  const base = cases.find((c) => c.id === "line-left-full")!;
+  // Suite légale exécutée avant ajout ; scores simulés, sans optimalité revendiquée.
+  const test = {
+    ...base,
+    line: ["Rxd1", "Bd3", "Kg8"],
+    lineUci: ["d8d1", "e2d3", "h8g8"],
+  };
+  const input = fixture(test);
+  const req = {
+    ...input,
+    review: {},
+    revision: 0,
+    engineId: "script",
+    alternative: test.alternativeUci,
+  };
+  const { results } = scripted(test, req);
+  const report = await new RelationVerification([10, 20]).verify(
+    req,
+    async () => new ScriptEngine(results),
+  );
+  expect(report).toMatchObject({
+    status: "supported",
+    attribution: { status: "supported" },
+  });
+  const draft = relationDraft(input.understanding, report!)!;
+  expect(draft.played.map((s) => s.label)).toEqual([
+    "Après dxe4",
+    "Txd1",
+    "Fd3",
+  ]);
+  expect(draft.limitation).toContain("le moteur choisit Fd3");
+  expect(draft.limitation).toContain(
+    "les reprises Fxd1 et Txd1 restent légales",
+  );
+  expect(draft.limitation).toContain(
+    "Ce choix ne prouve pas que la reprise est mauvaise.",
+  );
+});

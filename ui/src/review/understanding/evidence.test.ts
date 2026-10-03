@@ -1,8 +1,13 @@
 import { Chess } from "chess.js";
 import { describe, expect, it } from "vitest";
 import { corpus, corpusInput, type CorpusCase } from "./corpus";
-import { boundedContinuation, defenceEvidence } from "./evidence";
+import {
+  boundedContinuation,
+  defenceEvidence,
+  preventionEvidence,
+} from "./evidence";
 import { understandDecision } from "./prototype";
+import { boardFromCommand } from "../StudyTree";
 import cases from "./verificationCases.json";
 import { legalVariation, type ReviewResult } from "../model";
 
@@ -142,4 +147,136 @@ it("arrête la PV reçue à la première nulle sans interpréter la suite du mot
   expect(new Chess(bounded.variation[0].fen).isInsufficientMaterial()).toBe(
     true,
   );
+});
+
+describe("réponse à une reprise disponible", () => {
+  const input = corpusInput(
+    corpus.find((c) => c.id === "queen-closes-retreat")!,
+  );
+  const understanding = understandDecision(input.position, input.result);
+  const hypothesis = understanding.hypotheses[0];
+  const frame = understanding.context.frames[hypothesis.threatPly + 1];
+  const prefix = ["d3d4", "c5d4", "e3d4", "e5d4"];
+  it("clôt l'épisode quand le moteur choisit une autre réponse calme", () => {
+    const evidence = defenceEvidence(
+      understanding,
+      hypothesis,
+      response(frame.fen, [...prefix, "f1e1", "h7h6"]),
+    );
+    expect(evidence).toMatchObject({
+      outcome: "loss-in-line",
+      materialDelta: -3,
+      ending: "recapture-not-chosen",
+    });
+    expect(evidence.moves).toHaveLength(5);
+    const reply = evidence.replies.at(-1)!;
+    expect(reply).toMatchObject({
+      state: "not-chosen",
+      capture: "e5d4",
+      available: ["f3d4", "d2d4"],
+      resolvedAt: 4,
+      choice: { move: "f1e1", available: ["f3d4", "d2d4"], inCheck: false },
+    });
+    expect(boardFromCommand(reply.choice!.command).move("d2d4").san).toBe(
+      "Qxd4",
+    );
+  });
+  it("ne ferme pas l'échange si la PV s'arrête avant cette décision", () => {
+    const evidence = defenceEvidence(
+      understanding,
+      hypothesis,
+      response(frame.fen, prefix),
+    );
+    expect(evidence).toMatchObject({
+      outcome: "unresolved",
+      ending: "pending-recapture",
+    });
+    expect(evidence.replies.at(-1)).toMatchObject({
+      state: "pending",
+      available: ["f3d4", "d2d4"],
+      choice: null,
+    });
+  });
+  it("conserve la reprise réellement jouée et son bilan", () => {
+    const evidence = defenceEvidence(
+      understanding,
+      hypothesis,
+      response(frame.fen, [...prefix, "d2d4"]),
+    );
+    expect(evidence).toMatchObject({
+      outcome: "loss-in-line",
+      materialDelta: -2,
+      ending: "exchange-ended",
+    });
+    expect(evidence.replies.find((r) => r.capture === "e5d4")).toMatchObject({
+      state: "recaptured",
+      choice: { move: "d2d4" },
+    });
+  });
+  it("ne lit pas la décision de reprise au-delà de la borne", () => {
+    const evidence = defenceEvidence(
+      understanding,
+      hypothesis,
+      response(frame.fen, [...prefix, "f1e1"]),
+      4,
+    );
+    expect(evidence).toMatchObject({
+      outcome: "unresolved",
+      ending: "pending-recapture",
+    });
+    expect(evidence.replies.at(-1)).toMatchObject({
+      state: "pending",
+      resolvedAt: null,
+      choice: null,
+    });
+  });
+});
+
+describe("échec intermédiaire avant une reprise", () => {
+  const fen = "6k1/p7/8/7Q/8/8/8/1Br1R2K w - - 0 1";
+  const { position } = corpusInput({
+    fen,
+    played: "Kh2",
+    prefix: [],
+    line: [],
+    expected: {},
+    forbiddenClaims: [],
+  } as unknown as CorpusCase);
+  const understanding = understandDecision(position);
+  const frame = understanding.context.after;
+  const moves = ["c1b1", "h5h7", "g8f8", "e1b1"];
+  it("attend la reprise après l'échec et sa réponse", () => {
+    const evidence = preventionEvidence(
+      understanding.context,
+      "w:b:b1",
+      response(frame.fen, moves),
+    );
+    expect(evidence).toMatchObject({
+      outcome: "compensated",
+      materialDelta: 2,
+    });
+    expect(evidence.moves).toEqual(moves);
+    expect(evidence.replies[0]).toMatchObject({
+      state: "recaptured",
+      resolvedAt: 3,
+      intermediateChecks: [{ ply: 1, move: "h5h7" }],
+      choice: { move: "e1b1" },
+    });
+  });
+  it("reste indéterminé avant la décision après l'échec", () => {
+    const evidence = preventionEvidence(
+      understanding.context,
+      "w:b:b1",
+      response(frame.fen, moves.slice(0, 3)),
+    );
+    expect(evidence).toMatchObject({
+      outcome: "unresolved",
+      ending: "pending-recapture",
+    });
+    expect(evidence.replies[0]).toMatchObject({
+      state: "pending",
+      choice: null,
+      intermediateChecks: [{ ply: 1, move: "h5h7" }],
+    });
+  });
 });

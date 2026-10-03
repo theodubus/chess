@@ -1,4 +1,4 @@
-import { Chess, type Move, type Square } from "chess.js";
+import { Chess, type Square } from "chess.js";
 import { materialBalance } from "../../material";
 import { usableResult } from "../FocusedAnalysis";
 import { boardFromCommand } from "../StudyTree";
@@ -9,6 +9,7 @@ import {
 } from "../model";
 import { capturedSquare, uci, type PositionFrame } from "./context";
 import type { RestrictionHypothesis, Understanding } from "./prototype";
+import { captureReplies, witnessLine, type CaptureReply } from "./witness";
 
 export function framePosition(frame: PositionFrame): ReviewPosition {
   const board = boardFromCommand(frame.command);
@@ -57,6 +58,18 @@ export type DefenceEvidence = {
   materialDelta: number;
   victimSquare: Square | null;
   includesIntermediateCheck: boolean;
+  replies: CaptureReply[];
+  ending:
+    | "continuation-missing"
+    | "pending-recapture"
+    | "check-unresolved"
+    | "quiet-limit"
+    | "ply-limit"
+    | "exchange-ended"
+    | "recapture-not-chosen"
+    | "piece-preserved"
+    | "mate"
+    | "draw";
   /** Le témoin appartient à cette seule variante, jamais à toutes les défenses. */
   scope: "engine-line" | "conditional-engine-line";
 };
@@ -144,22 +157,24 @@ function pieceEvidence(
   result: Pick<ReviewResult, "variation">,
   maxPlies: number,
 ): DefenceEvidence {
-  if (!Number.isInteger(maxPlies) || maxPlies < 1 || maxPlies > 8)
-    throw new Error("Témoin limité à huit demi-coups.");
-  const victim = frame.pieces.find((piece) => piece.id === victimId);
+  const line = witnessLine(frame, result.variation, maxPlies),
+    replies = captureReplies(line),
+    victim = frame.pieces.find((piece) => piece.id === victimId);
   if (!victim) throw new Error("Victime absente de la branche.");
   const board = boardFromCommand(frame.command),
     sign = victim.color === "w" ? 1 : -1,
     initial = materialBalance(new Chess(before.fen));
-  let square: Square | null = victim.square;
-  let lastCapture: Move | undefined;
-  let quietPlies = 0;
+  let square: Square | null = victim.square,
+    quietPlies = 0;
   const evidence: DefenceEvidence = {
     outcome: "unresolved",
     moves: [],
     materialDelta: 0,
     victimSquare: square,
     includesIntermediateCheck: false,
+    replies: [],
+    ending:
+      result.variation.length > maxPlies ? "ply-limit" : "continuation-missing",
     scope: "engine-line",
   };
   const capturable = () =>
@@ -167,56 +182,51 @@ function pieceEvidence(
     board
       .moves({ verbose: true })
       .some((move) => capturedSquare(move) === square);
-  const settled = () =>
+  const settled = (index: number) =>
     !board.isCheck() &&
-    (!lastCapture ||
-      !board
-        .moves({ verbose: true })
-        .some((move) => capturedSquare(move) === lastCapture!.to));
-  for (const [index, item] of result.variation.slice(0, maxPlies).entries()) {
-    if (board.isGameOver()) break;
-    const move = board
-      .moves({ verbose: true })
-      .find(
-        (m) => m.from === item.from && m.to === item.to && m.after === item.fen,
-      )!;
-    if (!move) throw new Error("Variante de défense incohérente.");
+    replies
+      .filter((reply) => reply.capturePly <= index)
+      .every((reply) => reply.resolvedAt !== null && reply.resolvedAt <= index);
+  for (const [index, move] of line.moves.entries()) {
     const movedVictim = move.from === square;
     if (capturedSquare(move) === square) square = null;
-    else if (move.from === square) square = move.to;
+    else if (movedVictim) square = move.to;
     board.move(move);
-    if (!move.captured && !board.isCheck()) quietPlies++;
+    quietPlies =
+      move.captured || move.promotion || board.isCheck() ? 0 : quietPlies + 1;
     evidence.moves.push(uci(move));
     evidence.victimSquare = square;
     evidence.materialDelta = (materialBalance(board) - initial) * sign;
     if (move.color === victim.color && board.isCheck() && !movedVictim)
       evidence.includesIntermediateCheck = true;
-    lastCapture = move.captured ? move : undefined;
-    if (board.isCheckmate() && move.color === victim.color) {
-      evidence.outcome = "mate-for-victim";
+    if (board.isCheckmate()) {
+      if (move.color === victim.color) evidence.outcome = "mate-for-victim";
+      evidence.ending = "mate";
       break;
     }
-    // Un témoin de sauvetage doit laisser le trait à l'adversaire : l'absence
-    // de capture pendant le tour du défenseur ne dit rien de sa sécurité.
+    if (board.isDraw()) {
+      evidence.ending = "draw";
+      break;
+    }
+    // La sécurité se constate au tour adverse, avec le bilan depuis la décision.
     if (
       square &&
       board.turn() !== victim.color &&
-      !board.isCheck() &&
       !capturable() &&
       evidence.materialDelta >= 0 &&
-      settled()
+      settled(index)
     ) {
       evidence.outcome = "preserved";
+      evidence.ending = "piece-preserved";
       break;
     }
-    if (quietPlies > 1) break;
-    if (!square && settled()) {
-      // Une capture ne doit pas cacher le mat ou la récupération matérielle
-      // au coup suivant. Continuer la séquence forcée ; au-delà de la borne,
-      // rester indéterminé plutôt que publier la moitié d'une combinaison.
+    if (!square && settled(index)) {
+      // Conserver la compensation tactique immédiate. La borne peut interrompre
+      // ce suivi, y compris si le prochain coup forçant est juste hors témoin.
       const next = result.variation[index + 1];
       const continuation =
         next &&
+        !board.isGameOver() &&
         board
           .moves({ verbose: true })
           .find(
@@ -232,8 +242,42 @@ function pieceEvidence(
         continue;
       evidence.outcome =
         evidence.materialDelta < 0 ? "loss-in-line" : "compensated";
+      evidence.ending = replies.some(
+        (reply) => reply.state === "not-chosen" && reply.resolvedAt === index,
+      )
+        ? "recapture-not-chosen"
+        : "exchange-ended";
       break;
     }
+    if (quietPlies > 1) {
+      evidence.ending = "quiet-limit";
+      break;
+    }
+  }
+  evidence.replies = replies
+    .filter((reply) => reply.capturePly < evidence.moves.length)
+    .map((reply) => {
+      const within =
+        reply.resolvedAt !== null && reply.resolvedAt < evidence.moves.length;
+      return {
+        ...reply,
+        state: within ? reply.state : "pending",
+        resolvedAt: within ? reply.resolvedAt : null,
+        choice: within ? reply.choice : null,
+        intermediateChecks: reply.intermediateChecks.filter(
+          (check) => check.ply < evidence.moves.length,
+        ),
+      };
+    });
+  if (
+    evidence.outcome === "unresolved" &&
+    evidence.ending !== "draw" &&
+    evidence.ending !== "mate" &&
+    evidence.ending !== "quiet-limit"
+  ) {
+    if (board.isCheck()) evidence.ending = "check-unresolved";
+    else if (evidence.replies.some((reply) => reply.state === "pending"))
+      evidence.ending = "pending-recapture";
   }
   return evidence;
 }
