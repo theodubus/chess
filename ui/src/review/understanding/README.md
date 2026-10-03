@@ -44,7 +44,7 @@ La recherche de défense et sa vérification courte sont maintenant implémenté
 ci-dessous. La couverture stratégique et l'attribution de la cause à la décision
 restent **à vérifier**. Une PV légale contenant le gain ne lève pas ces inconnues.
 
-## Premier bilan du corpus de développement
+## Bilan initial du corpus de développement, avant le lot de contraintes
 
 `corpus.json` contient 19 décisions : deux issues des captures utilisateur (un
 même exemple avant/après), quatre transformations avec camps inversés et treize
@@ -453,3 +453,36 @@ TypeScript et build réussis. Les quatre nouveaux essais UCI passent (36 au tota
 Le coût local d'extraction du corpus externe reste de l'ordre de 8–14 s pour
 12 décisions selon la charge : aucune intégration synchrone dans React ni
 optimisation annoncée. Les assets applicatifs actifs sont inchangés.
+
+
+## Contraintes tactiques et mat court — 3 octobre 2026
+
+`constraints.ts` ajoute des faits de double attaque, clouage absolu/alignement
+relatif et mat immédiat, comparés avant/après et au plus une réponse après la
+décision. Il distingue les captures légales, les sondes indisponibles et les
+menaces préexistantes. Un fait de fourchette ne constitue pas un gain forcé.
+Voir [TACTICAL_CONSTRAINTS.md](TACTICAL_CONSTRAINTS.md) pour le contrat, les
+contre-exemples, la preuve bornée et les inconnues.
+
+Le corpus construit passe à **12 hypothèses principales sur 12 attentes** connues,
+avec une restriction partielle et des faits secondaires séparés. Le corpus publié
+passe à **4 sur 11**, dont deux échanges déjà reconnus : double attaque et déviation
+vers le mat sont ajoutées, sept idées restent manquantes. Les annotations tactiques
+ont rôle/attaquant/cibles/coup, et les défauts de ces champs sont injectés dans les
+tests. Aucun candidat inattendu ou non relu sur ces positions, **toujours zéro
+explication publiable**. Le corpus publié a désormais servi au développement ;
+ces chiffres mesurent une régression connue, pas une validation indépendante.
+
+`MateVerification` ajoute la comparaison avant/après et alternative explicite,
+avec les deux budgets, le cache et l'arrêt partagés. Le mat doit être prouvé dans
+les deux demi-coups suivants, puis corroboré par les réponses UCI. Une PV courte
+peut être complétée uniquement par ce mat légal démontré, avec son origine
+`rules-completed`, jamais par une suite supposée. Le contraste de l'alternative
+ne prétend pas exclure un mat plus long. L'illustration reste réponse puis mat.
+
+Les essais réels ShallowRed et Stockfish 16 confirment Db8+ dans la partie de
+Morphy ; Da3 garde le bloqueur et ne force pas ce mat court. ShallowRed émet Cxb8
+seulement avec le bon score de mat ; Stockfish émet aussi Td8. Les deux origines
+de continuation sont enregistrées. La vérification comparative des doubles
+attaques/clouages et les compensations restent le prochain lot, avec un suivi
+des échanges complets. Aucun fichier du moteur n'est modifié.

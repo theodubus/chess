@@ -3,6 +3,17 @@ import entries from "./corpus.json";
 import { frenchSan, gamePositions, type ReviewResult } from "../model";
 import { understandDecision, type Understanding } from "./prototype";
 import type { RelationHypothesis } from "./mechanisms";
+import type { TacticalHypothesis } from "./constraints";
+
+export type ConstraintAnnotation = {
+  kind: TacticalHypothesis["kind"];
+  role: TacticalHypothesis["role"];
+  attackerId: string;
+  targetIds: string[];
+  move?: string;
+  meaning: "primary" | "secondary";
+  reason: string;
+};
 
 export type RelationAnnotation = {
   kind: RelationHypothesis["kind"];
@@ -32,6 +43,7 @@ export type CorpusCase = {
     exchange?: { role: string; total: number; fromDecision: number };
     /** Absence : annotation incomplète. [] : aucune relation attendue. */
     relations?: RelationAnnotation[];
+    constraints?: ConstraintAnnotation[];
   };
   forbiddenClaims: string[];
 };
@@ -83,6 +95,11 @@ export type CorpusRow = {
   unreviewedRelationCandidates: number;
   exchangeMatched: boolean | null;
   unreviewedExchangeCandidate: boolean;
+  constraintsAnnotated: boolean;
+  constraintAssessments: (Omit<ConstraintAnnotation, "meaning" | "reason"> & {
+    status: "primary" | "secondary" | "unexpected" | "unreviewed";
+  })[];
+  missingExpectedConstraints: ConstraintAnnotation[];
   publishableExplanation: boolean;
   elapsedMs: number;
 };
@@ -96,6 +113,13 @@ const matchesAnnotation = (
   h.attackerId === expected.attackerId &&
   h.capture === expected.capture;
 
+const constraintMove = (h: TacticalHypothesis) =>
+  "move" in h.fact ? h.fact.move : "mate" in h.fact ? h.fact.mate : undefined;
+const matchesConstraint = (h: TacticalHypothesis, a: ConstraintAnnotation) =>
+  h.kind === a.kind && h.role === a.role && h.attackerId === a.attackerId &&
+  JSON.stringify([...h.targetIds].sort()) === JSON.stringify([...a.targetIds].sort()) &&
+  (!a.move || constraintMove(h) === a.move);
+
 /** Annoter les sorties sans les transformer en vérité attendue. Une relation
  * secondaire correcte ne remplace jamais l'idée principale manquante. */
 export function assessDecision(
@@ -103,7 +127,7 @@ export function assessDecision(
   analysis: Understanding,
   elapsedMs = 0,
 ): CorpusRow {
-  const observed = [...analysis.hypotheses, ...analysis.mechanisms].map(
+  const observed = [...analysis.hypotheses, ...analysis.mechanisms, ...analysis.constraints.hypotheses].map(
     (h) => h.kind,
   ) as string[];
   if (analysis.exchange) observed.push("exchange-context");
@@ -148,6 +172,13 @@ export function assessDecision(
       analysis.exchange.balanceFromDecision ===
         test.expected.exchange.fromDecision
     : null;
+  const constraintAssessments: CorpusRow["constraintAssessments"] =
+    analysis.constraints.hypotheses.map((h) => ({
+      kind: h.kind, role: h.role, attackerId: h.attackerId, targetIds: h.targetIds,
+      move: constraintMove(h),
+      status: test.expected.constraints?.find((a) => matchesConstraint(h, a))?.meaning ??
+        (test.expected.constraints !== undefined ? "unexpected" : "unreviewed"),
+    }));
   return {
     id: test.id,
     family: test.family,
@@ -160,7 +191,7 @@ export function assessDecision(
         : analysis.hypotheses.some(matchesHypothesis) ||
           relationAssessments.some(
             (h) => h.status === "primary" && h.kind === expected,
-          ),
+          ) || constraintAssessments.some((h) => h.status === "primary" && h.kind === expected),
     falseHypotheses:
       analysis.hypotheses.filter(
         (h) =>
@@ -168,7 +199,8 @@ export function assessDecision(
           !test.expected.partialHypotheses?.includes(h.kind),
       ).length +
       (exchangeMatched === false && analysis.exchange ? 1 : 0) +
-      relationAssessments.filter((h) => h.status === "unexpected").length,
+      relationAssessments.filter((h) => h.status === "unexpected").length +
+      constraintAssessments.filter((h) => h.status === "unexpected").length,
     partialHypotheses: analysis.hypotheses.filter((h) =>
       test.expected.partialHypotheses?.includes(h.kind),
     ).length,
@@ -189,6 +221,10 @@ export function assessDecision(
     ).length,
     exchangeMatched,
     unreviewedExchangeCandidate: !!analysis.exchange && !test.expected.exchange,
+    constraintsAnnotated: test.expected.constraints !== undefined,
+    constraintAssessments,
+    missingExpectedConstraints: test.expected.constraints?.filter((a) =>
+      !analysis.constraints.hypotheses.some((h) => matchesConstraint(h, a))) ?? [],
     publishableExplanation: analysis.explanation !== null,
     elapsedMs: Math.round(elapsedMs),
   };
@@ -211,6 +247,7 @@ export function corpusReport(rows: CorpusRow[]) {
       "exchange-context",
       "defender-removal",
       "opened-line",
+      "double-threat", "pin", "mate-threat", "deflection-mate",
     ],
     independentValidation: false,
     positions: rows.length,
@@ -246,6 +283,15 @@ export function corpusReport(rows: CorpusRow[]) {
       (sum, row) => sum + row.unreviewedRelationCandidates,
       0,
     ),
+    constraintAnnotationCoverage: {
+      completeDecisions: rows.filter((r) => r.constraintsAnnotated).length,
+      incompleteDecisions: rows.filter((r) => !r.constraintsAnnotated).length,
+      reviewedCandidates: rows.flatMap((r) => r.constraintAssessments).filter((a) => a.status !== "unreviewed").length,
+      unexpectedCandidates: rows.flatMap((r) => r.constraintAssessments).filter((a) => a.status === "unexpected").length,
+      unreviewedCandidates: rows.flatMap((r) => r.constraintAssessments).filter((a) => a.status === "unreviewed").length,
+      matchedSecondary: rows.flatMap((r) => r.constraintAssessments).filter((a) => a.status === "secondary").length,
+    },
+    missingExpectedConstraints: rows.flatMap((r) => r.missingExpectedConstraints.map((a) => ({ id: r.id, ...a }))),
     exchangeAnnotationCoverage: {
       annotatedCandidates: rows.filter((row) => row.exchangeMatched !== null)
         .length,

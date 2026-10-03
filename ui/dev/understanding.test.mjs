@@ -26,6 +26,9 @@ import {
 import { Verification } from "../src/review/understanding/Verification";
 import verificationCases from "../src/review/understanding/verificationCases.json";
 import { understandDecision } from "../src/review/understanding/prototype";
+import { decisionContext } from "../src/review/understanding/context";
+import { tacticalConstraints } from "../src/review/understanding/constraints";
+import { MateVerification } from "../src/review/understanding/MateVerification";
 
 for (const [name, command] of [
   ["ShallowRed", process.env.CHESS_ENGINE_BINARY],
@@ -106,6 +109,44 @@ for (const [name, command] of [
     },
     20000,
   );
+}
+
+for (const [name, command] of [
+  ["ShallowRed", process.env.CHESS_ENGINE_BINARY],
+  ["Stockfish", process.env.CHESS_STOCKFISH_BINARY],
+]) {
+  it.skipIf(!command)(`${name} : déviation comparée sans dérouler une longue PV`, async () => {
+    const { position } = corpusInput(externalCorpus.find((c) => c.id === "morphy-31"));
+    const context = decisionContext(position);
+    const constraints = tacticalConstraints(context);
+    const bridge = startBridge({ command, port: 0 });
+    const check = new MateVerification([200, 600], 25000);
+    try {
+      await once(bridge.server, "listening");
+      vi.stubGlobal("WebSocket", class extends WebSocket {
+        constructor(address) { super(address, { origin: "http://127.0.0.1:5173" }); }
+      });
+      const factory = (failure) => connectDevelopmentEngine(failure, `ws://127.0.0.1:${bridge.server.address().port}`);
+      const report = await check.verify({
+        review: {}, revision: 0, engineId: name,
+        understanding: { context, constraints },
+        hypothesisIndex: constraints.hypotheses.findIndex((h) => h.kind === "deflection-mate"),
+        alternative: "b3a3",
+      }, factory);
+      expect(report, check.error).not.toBeNull();
+      console.info(JSON.stringify({
+        engine: name, case: "morphy-31-comparative", status: report.status,
+        quality: report.quality, contrast: report.contrast, elapsedMs: report.elapsedMs,
+        passes: report.passes.map((p) => ({ budgetMs: p.budgetMs, illustration: p.illustration, continuation: p.continuation,
+          questions: p.questions.map((q) => ({ purpose: q.purpose, command: q.position.command, score: q.result.score, depth: q.result.depth, bestMove: q.result.bestMove, pv: q.result.variation })) })),
+        explanation: null,
+      }));
+      expect(report, check.error).toMatchObject({ status: "supported", contrast: { status: "short-route-absent", retainedBlocker: true }, searches: 6, explanation: null });
+      expect(report.passes.every((p) => p.illustration.join(" ") === "d7b8 d1d8")).toBe(true);
+    } finally {
+      check.stop(); await bridge.close(); vi.unstubAllGlobals();
+    }
+  }, 30000);
 }
 
 for (const [name, command] of [
@@ -463,7 +504,7 @@ for (const [name, command] of [
           const assessment = assessDecision(test, understanding);
           expect(understanding.context.priorHistory).toBe("complete");
           expect(understanding.explanation).toBeNull();
-          expect(assessment.matched).toBe(false);
+          expect(assessment.matched).toBe(id === "morphy-31");
           console.info(
             JSON.stringify({
               engine: name,

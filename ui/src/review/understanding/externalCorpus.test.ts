@@ -62,10 +62,10 @@ it("mesure les idées manquantes séparément du corpus construit", () => {
   const report = externalCorpusReport();
   expect(report.positions).toBe(12);
   expect(report.expectedInsights).toBe(11);
-  expect(report.recognizedInsights).toBe(2);
-  expect(report.missingInsights).toHaveLength(9);
+  expect(report.recognizedInsights).toBe(4);
+  expect(report.missingInsights).toHaveLength(7);
   expect(report.missingInsights).toEqual(
-    expect.arrayContaining(["byrne-22", "morphy-31", "capablanca-69"]),
+    expect.arrayContaining(["morphy-25", "byrne-34", "capablanca-69"]),
   );
   expect(report.publishableExplanations).toBe(0);
   expect(report.independentValidation).toBe(false);
@@ -79,8 +79,10 @@ it("mesure les idées manquantes séparément du corpus construit", () => {
   expect(report.relationAnnotationCoverage.completeDecisions).toBe(12);
   expect(report.unreviewedRelationCandidates).toBe(0);
   expect(report.falseHypotheses).toBe(0);
+  expect(report.constraintAnnotationCoverage).toMatchObject({ completeDecisions: 12, unreviewedCandidates: 0, unexpectedCandidates: 0 });
+  expect(report.missingExpectedConstraints).toEqual([]);
   console.info(JSON.stringify(report, null, 2));
-}, 20000);
+}, 60000);
 
 it("la perte locale dans le sacrifice de tour ne devient pas la raison du sacrifice", () => {
   const test = externalCorpus.find((c) => c.id === "morphy-25")!;

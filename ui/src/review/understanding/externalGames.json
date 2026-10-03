@@ -13,7 +13,8 @@
         "family": "quiet-opening",
         "expected": {
           "hypothesis": null,
-          "relations": []
+          "relations": [],
+          "constraints": []
         },
         "reason": "Coup calme de soutien à e5. Ne pas inventer une perte forcée ou une cause tactique ; cela ne constitue pas un verdict de qualité."
       },
@@ -23,7 +24,8 @@
         "family": "king-safety",
         "expected": {
           "hypothesis": "tactical-exposure",
-          "relations": []
+          "relations": [],
+          "constraints": []
         },
         "reason": "La poussée attaque le fou c4 mais permet la suite Nxb5 cxb5 Bxb5+ puis roque avec tempo. Le développement et la sécurité du roi central comptent, pas le seul bilan des deux premières prises. Aucune optimalité n’est déduite du PGN."
       },
@@ -38,7 +40,20 @@
             "total": -2,
             "fromDecision": -2
           },
-          "relations": []
+          "relations": [],
+          "constraints": [
+            {
+              "kind": "double-threat",
+              "role": "creates-opportunity",
+              "attackerId": "w:r:a1",
+              "targetIds": [
+                "b:q:d8",
+                "b:r:a8"
+              ],
+              "meaning": "secondary",
+              "reason": "La tour d7 attaque la dame d8 et la tour a8 si elle pouvait rejouer. La réponse réelle Rxd7 capture cet attaquant : cela ne décrit pas la compensation du sacrifice."
+            }
+          ]
         },
         "reason": "La tour prend le cavalier et est reprise : cet épisode vaut −2 pour les Blancs. La combinaison se poursuit après le coup calme Rd1, avec pression sur le roi et mat ; ce bilan local ne juge pas le sacrifice."
       },
@@ -48,7 +63,32 @@
         "family": "deflection-mate",
         "expected": {
           "hypothesis": "deflection-mate",
-          "relations": []
+          "relations": [],
+          "constraints": [
+            {
+              "kind": "mate-threat",
+              "role": "creates-opportunity",
+              "attackerId": "w:r:h1",
+              "targetIds": [
+                "b:k:e8"
+              ],
+              "meaning": "secondary",
+              "reason": "Après la seule réponse Nxb8, Rd8 est un mat légal immédiat ; il est la conséquence de la déviation principale.",
+              "move": "d1d8"
+            },
+            {
+              "kind": "deflection-mate",
+              "role": "creates-opportunity",
+              "attackerId": "w:r:h1",
+              "targetIds": [
+                "b:k:e8",
+                "b:n:g8"
+              ],
+              "meaning": "primary",
+              "reason": "Qb8+ impose Nxb8. Le cavalier quitte d7, seul obstacle sur d1-d8, ce qui permet Rd8 mat dans les deux demi-coups suivants.",
+              "move": "d1d8"
+            }
+          ]
         },
         "reason": "Après Qb8+, Nxb8 est la seule réponse légale et Rd8 est mat. Le cavalier est dévié de d7 ; expliquer une simple perte de dame serait faux."
       }
@@ -72,7 +112,20 @@
             "total": 0,
             "fromDecision": 0
           },
-          "relations": []
+          "relations": [],
+          "constraints": [
+            {
+              "kind": "pin",
+              "role": "allows-loss",
+              "attackerId": "w:q:d1",
+              "targetIds": [
+                "b:k:e8",
+                "b:p:f7"
+              ],
+              "meaning": "secondary",
+              "reason": "Après Qxc4, la dame c4 aligne f7 et le roi e8. Ce clouage secondaire ne remplace pas le bilan de l’échange de pions."
+            }
+          ]
         },
         "reason": "dxc4 Qxc4 est un échange de pions égal. Le rôle et le bilan sont des faits, pas une explication de la valeur stratégique de dxc4."
       },
@@ -82,7 +135,20 @@
         "family": "double-threat",
         "expected": {
           "hypothesis": "double-threat",
-          "relations": []
+          "relations": [],
+          "constraints": [
+            {
+              "kind": "double-threat",
+              "role": "creates-opportunity",
+              "attackerId": "b:n:b8",
+              "targetIds": [
+                "w:n:b1",
+                "w:q:d1"
+              ],
+              "meaning": "primary",
+              "reason": "Le cavalier a4 attaque la dame c5 et le cavalier c3 ; deux captures conditionnelles légales, sans preuve que toutes les défenses perdent."
+            }
+          ]
         },
         "reason": "Le cavalier a4 attaque la dame c5 et le cavalier c3. La suite publiée Qa3 Nxc3 bxc3 Nxe4 exploite les contraintes ; la double attaque ne prouve pas le gain contre tous les choix."
       },
@@ -92,7 +158,8 @@
         "family": "sacrifice-compensation",
         "expected": {
           "hypothesis": "sacrifice-compensation",
-          "relations": []
+          "relations": [],
+          "constraints": []
         },
         "reason": "Le fou quitte g4 pour e6 alors que la dame b6 peut être prise. Après Bxb6, les échecs intermédiaires Bxc4+, Ne2+ et Nxd4+ donnent une compensation et maintiennent le roi exposé. Ne pas juger la décision d’après la seule prise de dame."
       },
@@ -106,7 +173,8 @@
             "total": 5,
             "fromDecision": 5
           },
-          "relations": []
+          "relations": [],
+          "constraints": []
         },
         "reason": "Le cavalier prend la tour d1 sans reprise immédiate disponible. Les autres prises ultérieures de la partie ne sont pas des reprises sur d1 et ne doivent pas être collées à cet épisode."
       }
@@ -126,7 +194,8 @@
         "family": "king-activity",
         "expected": {
           "hypothesis": "king-activity",
-          "relations": []
+          "relations": [],
+          "constraints": []
         },
         "reason": "Le roi participe au plan de finale à l’aile roi. La simple description du déplacement ne suffit pas à expliquer pourquoi ce choix améliore la position ; aucun verdict de qualité n’est fixé sans comparaison moteur."
       },
@@ -136,7 +205,8 @@
         "family": "pawn-breakthrough",
         "expected": {
           "hypothesis": "pawn-breakthrough",
-          "relations": []
+          "relations": [],
+          "constraints": []
         },
         "reason": "h5 prépare hxg6 puis hxg6, qui libèrent la colonne h pour Rh1 et Rh7. Le plan exige des coups futurs ; ne pas annoncer une colonne déjà ouverte après h5 ni un gain de matériel immédiat."
       },
@@ -146,7 +216,8 @@
         "family": "king-activity",
         "expected": {
           "hypothesis": "king-activity",
-          "relations": []
+          "relations": [],
+          "constraints": []
         },
         "reason": "Le roi avance malgré Rxc3+ : la partie montre Kh4, g6 puis Kg5 et Kf6. La pièce laissée en prise ne suffit pas à expliquer le plan ni à rendre le sacrifice mauvais."
       },
@@ -156,7 +227,8 @@
         "family": "passed-pawn",
         "expected": {
           "hypothesis": "passed-pawn",
-          "relations": []
+          "relations": [],
+          "constraints": []
         },
         "reason": "Le pion g6 est passé : aucun pion noir sur f, g ou h ne se trouve devant lui. Il est soutenu par l’activité du roi et de la tour. Le PGN ne prouve pas à lui seul que g6 est le meilleur coup."
       }

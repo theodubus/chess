@@ -88,8 +88,13 @@ texte généré automatiquement n’est utilisé comme vérité attendue.
 - [x] Composer défense retirée et ligne ouverte en hypothèses contextualisées :
   même victime/attaquant, capture précise, rôle « perte permise » ou « occasion
   créée ». Comparaison légale et conditionnelle à deux budgets, avec abstention.
-- [ ] Composer les contraintes combinées et élargir la validation de ces familles.
-  Les premiers cas construits ne prouvent pas leur pertinence générale.
+- [x] Première composition de contraintes tactiques : double attaque d'une même
+  pièce, clouage absolu/alignement relatif, mat immédiat et déviation courte.
+  Identités et avant/après conservés, captures illégales et menaces préexistantes
+  distinguées ; positifs et contre-exemples, couleurs et promotion testés.
+- [ ] Élargir les contraintes combinées et leur validation : plusieurs attaquants,
+  surcharge, interactions de défenses et horizons plus longs. Les premiers cas
+  connus ne prouvent pas leur pertinence générale.
 - [x] Épisodes de reprises consécutives ancrés dans l’historique : début connu/inconnu, rôle du
   coup (initiation/reprise/poursuite), bilan total et bilan depuis la décision.
   Ne pas imputer la perte antérieure à la meilleure reprise suivante.
@@ -123,8 +128,13 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
   alternative gardant le défenseur qui reprend réellement, ou l'obstacle qui
   ferme la ligne ; perte visible et écarts de score relatifs stables requis.
   Une perte compte aussi si son camp reste gagnant. Aucun trait artificiel.
+- [x] Premier mat court comparé : déviation avec réponse unique puis mat légal,
+  preuve couvrant toutes les réponses dans cet horizon, avant/après et alternative
+  explicite à deux budgets. Confirmation réelle ShallowRed/Stockfish ; portée
+  limitée à cette route de mat, sans conversion de mat en centipions.
 - [ ] Généraliser aux autres mécanismes : victime déplacée, défenses/attaques
-  combinées, double menace, clouage et mat. Aucun second choix moteur inventé.
+  combinées, double menace, clouage et mats plus longs. Aucun second choix moteur
+  inventé ; comparer les défenses et compensations, pas une capture locale seule.
 - [x] Recherches via `FocusedAnalysis` et `Engine`, sans MultiPV/searchmoves,
   détail NNUE/Rust ni recherche stratégique recodée dans l'UI.
 - [x] Le moteur cherche librement la défense. Vérification à deux budgets séparés,
@@ -198,19 +208,26 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 ## Point de reprise
 
 - Branche actuelle : `codex/ui-polish`, PR #111 ouverte au début de cette reprise.
-- Dernier lot : annotations complètes du corpus initial et premier corpus séparé
-  de parties publiées. Voir la livraison et `src/review/understanding/EXTERNAL_CORPUS.md`.
-- **Prochain travail concret** : étendre le modèle aux contraintes tactiques
-  combinées, en commençant par double attaque, clouage et menace de mat, avec
-  contre-épreuves et vérification comparative. Le nouveau corpus laisse neuf idées
-  sur onze manquantes ; les deux reconnues sont des contextes d'échange.
+- Dernier lot : contraintes tactiques courtes et vérification comparative du mat
+  de déviation. Voir la livraison ci-dessous et
+  `src/review/understanding/TACTICAL_CONSTRAINTS.md`.
+- **Prochain travail concret** : vérification comparative des doubles attaques et
+  clouages, à partir de …Ca4 et de positifs/contre-exemples. Laisser le moteur
+  choisir librement la défense, suivre les deux cibles et l'échange complet,
+  comparer une alternative qui enlève la contrainte, garder les compensations.
+  Ne pas déduire le gain d'une simple reprise ni du seul score amélioré.
+- Corpus construit : 12 hypothèses principales reconnues sur 12 attentes connues.
+  Corpus publié : 4 sur 11 (deux échanges, double attaque, déviation), sept idées
+  manquantes. Les deux corpus restent à zéro explication publiable. Le second a
+  désormais servi au développement ; il faut un échantillon neuf et une relecture
+  indépendante pour mesurer la généralisation.
 - Le motif principal d'une combinaison doit rester distinct d'un échange local.
   Le mat de la déviation est à montrer en deux demi-coups après la décision ;
   la meilleure défense peut différer de la suite du PGN (Dxc3 plutôt que Fxb6
   après …Fe6). Une vraie compensation positionnelle ne se prouve pas par un
   détecteur de capture supplémentaire. Optimiser le coût avant toute activation E.
-- Restent aussi clouage/double menace/mat, compensations longues, extraction trop
-  coûteuse et démarrages moteur par question. Ne pas contourner ces limites par
+- Restent aussi la contribution des clouages/doubles menaces, les mats plus longs,
+  compensations différées, extraction coûteuse et démarrages moteur par question. Ne pas contourner ces limites par
   des textes génériques ou par une intégration prématurée.
 - Démarrage autorisé : A, puis les primitives de B avec un rapport exécutable.
   L’UI conserve provisoirement le prototype historique, dont les limites restent
@@ -509,3 +526,54 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   combinées, avec contre-épreuves puis contributions comparatives. Les exemples
   publiés utilisés ensuite pour développer le code seront des régressions connues ;
   garder un échantillon neuf et une relecture distincte avant activation UI.
+
+
+## Contraintes tactiques courtes et mat comparé — 3 octobre 2026
+
+- `constraints.ts` ajoute les faits de double attaque, clouage absolu et alignement
+  relatif, mat immédiat et une déviation vers le mat. Avant/après et au plus la
+  réponse suivante, mêmes identités, sondes conditionnelles explicites. Un roi
+  n'est jamais une cible de capture ; une menace déjà présente n'est pas une
+  nouvelle raison. Aucun code du moteur ni composant actif n'est modifié.
+- `constraints.test.ts` contient 22 contrôles : camps inversés, capture illégale
+  d'un attaquant cloué, pièce clouée encore mobile sur son rayon, second obstacle,
+  alignement avec une dame, capture de l'attaquant d'une fourchette, mat défendu,
+  motif trop lointain, promotion, prise en passant, plafond et fin de partie.
+  Les positions ont été exécutées avec chess.js avant l'ajout des fixtures.
+- `shortMateProof` rejoue l'historique et couvre toutes les réponses légales dans
+  un horizon réponse + mat immédiat, plafond 1 200 coups examinés. Une échappatoire,
+  une nulle ou la limite empêche la preuve. Pour Db8+ de Morphy : Cxb8 est unique,
+  le cavalier quitte d7, Td8 est mat. Il n'y a pas de longue suite de développement.
+- `MateVerification` compare avant/après et une alternative explicite à deux
+  budgets, via le même cache/arrêt/plafond global que les autres familles, au plus
+  six recherches. Choix du moteur, preuve légale et contraste gardent des statuts
+  distincts ; l'alternative ne prouve pas l'absence de mat plus long.
+- Les deux moteurs réels confirment le mat après Db8+ et préfèrent ce coup dans
+  ces recherches. Da3 garde le cavalier d7 et ne force pas le même mat court.
+  ShallowRed omet Td8 dans sa PV ; seule la preuve légale complète ce mat immédiat,
+  avec `rules-completed`. Une variante différente, mauvais gagnant, distance
+  incohérente ou score en centipions ne reçoit pas ce complément.
+- Les 14 tests du vérificateur couvrent aussi annulation, cache moteur/révision/
+  historique, alternative illégale/identique, bloqueur retiré, attaquant déplacé
+  et Noirs gagnants.
+  Les scores unitaires sont simulés ; les essais UCI sont distingués.
+- Les rapports ont désormais des annotations de contraintes exactes : type,
+  rôle, attaquant, cibles et coup de mat. Absence et liste vide sont distinguées,
+  les défauts sont injectés dans les tests. Corpus construit : 12/12 hypothèses
+  attendues reconnues ; publié : 4/11, sept idées manquantes. Zéro candidat
+  inattendu/non relu sur ces cas, **zéro explication publiable**, pas de mesure
+  générale de pertinence. Les sacrifices et plans de finale restent manquants.
+- Contrat et limites : `TACTICAL_CONSTRAINTS.md`, rapports mis à jour dans
+  `README.md` et `EXTERNAL_CORPUS.md`. Le corpus publié devient aussi un jeu de
+  régression connu (`usedForDevelopment: true`), sans relecture indépendante.
+- Coût observé sous charge : environ 25 s pour les 12 décisions publiées, dont
+  0,48 s pour les nouvelles contraintes. Les rapports de corpus ont un délai
+  logiciel de 60 s ; les budgets moteur restent inchangés. Optimiser les reprises
+  et possibilités exhaustives avant tout raccordement synchrone à React.
+- Validation déjà obtenue : lint, TypeScript, build, **565 tests / 49 fichiers**
+  avec ShallowRed et le Stockfish 16 de CI, puis contrôles ciblés des derniers
+  garde-fous ajoutés, dont Stockfish 17.1. Les assets actifs sont inchangés. La CI de la livraison
+  finale est à lire après envoi ; ne pas déduire son état de ces tests locaux.
+- Suite : comparer les causes de double attaque et clouage, garder la meilleure
+  défense d'un échange perdant distincte de sa cause initiale, puis optimiser
+  l'extraction et préparer des brouillons relus avant l'intégration E.

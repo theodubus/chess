@@ -9,6 +9,7 @@ import {
 import { relationHypotheses, type RelationHypothesis } from "./mechanisms";
 import { relationChanges, type RelationChanges } from "./relations";
 import { exchangeContext } from "./exchanges";
+import { tacticalConstraints, type TacticalConstraints } from "./constraints";
 import {
   changedPossibilities,
   possibilities,
@@ -41,6 +42,7 @@ export type Understanding = {
   exchange: ReturnType<typeof exchangeContext>;
   hypotheses: RestrictionHypothesis[];
   mechanisms: RelationHypothesis[];
+  constraints: TacticalConstraints;
   explanation: null;
 };
 /** Prototype de faits et d'hypothèses. Il ne produit volontairement aucune
@@ -134,6 +136,7 @@ export function understandDecision(
     },
     relations,
     mechanisms: relationHypotheses(context, relations),
+    constraints: tacticalConstraints(context),
     exchange: exchangeContext(context),
     hypotheses,
     explanation: null,

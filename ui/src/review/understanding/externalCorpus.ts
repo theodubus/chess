@@ -67,6 +67,7 @@ export function externalCorpusReport() {
       independentPedagogicalReview: false,
       representativeSample: false,
       selection: "fixed-before-prototype-measurement",
+      usedForDevelopment: true,
       continuation: "played-game-moves",
       games: externalGames.map((game) => ({
         id: game.id,

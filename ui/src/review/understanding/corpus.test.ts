@@ -124,10 +124,8 @@ it("rapporte les familles non reconnues et distingue les faits des explications 
     report.falseHypotheses,
     JSON.stringify(rows.filter((row) => row.falseHypotheses)),
   ).toBe(0);
-  expect(report.missingInsights).toEqual(
-    expect.arrayContaining(["fork", "pin", "mate-threat"]),
-  );
-  expect(report.recognizedInsights).toBe(9);
+  expect(report.missingInsights).toEqual([]);
+  expect(report.recognizedInsights).toBe(12);
   expect(report.unreviewedRelationCandidates).toBe(0);
   expect(report.matchedSecondaryRelations).toBe(3);
   expect(report.missingExpectedRelations).toEqual([]);
@@ -144,9 +142,11 @@ it("rapporte les familles non reconnues et distingue les faits des explications 
   });
   expect(report.publishableExplanations).toBe(0);
   expect(report.partialHypotheses).toBe(1);
-  expect(report.recognizedInsights).toBeLessThan(report.expectedInsights);
+  expect(report.constraintAnnotationCoverage).toMatchObject({ completeDecisions: 19, incompleteDecisions: 0, unreviewedCandidates: 0, unexpectedCandidates: 0 });
+  expect(report.missingExpectedConstraints).toEqual([]);
+  expect(report.independentValidation).toBe(false);
   console.info(JSON.stringify(report, null, 2));
-}, 20000);
+}, 60000);
 
 it("suit les pièces au roque et à la promotion, et retire le bon pion en passant", () => {
   const make = (fen: string | undefined, prefix: string[], played: string) => {
@@ -191,13 +191,40 @@ it("suit les pièces au roque et à la promotion, et retire le bon pion en passa
   );
   expect(enPassant.priorHistory).toBe("complete");
 });
+it("les contraintes sont évaluées par rôle, identités, cibles et coup, pas par libellé seul", () => {
+  const test = corpus.find((c) => c.id === "fork")!;
+  const { position, result } = corpusInput(test);
+  const analysis = understandDecision(position, result);
+  for (const change of [
+    { role: "allows-loss" as const },
+    { attackerId: "w:n:c7" },
+    { targetIds: ["b:k:e8"] },
+    { targetIds: ["b:k:e8", "b:r:h8"] },
+    { move: "c7b5" },
+  ]) {
+    const annotation = { ...test.expected.constraints![0], ...change };
+    const row = assessDecision({ ...test, expected: { ...test.expected, constraints: [annotation] } }, analysis);
+    expect(row.matched).toBe(false);
+    expect(row.falseHypotheses).toBe(1);
+    expect(row.missingExpectedConstraints).toEqual([annotation]);
+  }
+  const missing = assessDecision({ ...test, expected: { ...test.expected, constraints: undefined } }, analysis);
+  expect(missing.constraintsAnnotated).toBe(false);
+  expect(missing.constraintAssessments[0].status).toBe("unreviewed");
+  expect(missing.matched).toBe(false);
+  const absent = assessDecision({ ...test, expected: { ...test.expected, constraints: [] } }, analysis);
+  expect(absent.falseHypotheses).toBe(1);
+});
 
 for (const id of ["pin", "discovered-attack", "mate-threat"])
   it(`une relation secondaire ne remplace pas l'idée principale : ${id}`, () => {
     const test = corpus.find((c) => c.id === id)!;
     const { position, result } = corpusInput(test);
     const analysis = understandDecision(position, result);
-    const row = assessDecision(test, analysis);
+    const row = assessDecision(test, {
+      ...analysis,
+      constraints: { ...analysis.constraints, hypotheses: [] },
+    });
     expect(row.matchedSecondaryRelations).toBe(1);
     expect(row.matched).toBe(id === "discovered-attack");
     expect(row.falseHypotheses).toBe(0);

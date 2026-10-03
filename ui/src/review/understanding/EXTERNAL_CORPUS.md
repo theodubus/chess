@@ -17,12 +17,13 @@ consultés le 3 octobre 2026. Les commentaires et variantes d'auteur sont exclus
 Les sources sont indépendantes du code ; les attentes et leurs justifications sont
 nos annotations. Elles n'ont pas encore été relues indépendamment. Trois parties
 historiques connues ne représentent pas les parties amateurs. Le champ
-`independentValidation` reste donc **false**. Aucun détecteur n'a été modifié pour
-améliorer les résultats de cette livraison. Si ces cas servent ensuite à développer
-les familles manquantes, ils deviennent aussi des régressions de développement :
-un autre échantillon neuf sera nécessaire pour mesurer la généralisation.
+`independentValidation` reste donc **false**. Aucun détecteur n'avait été modifié
+pour la première mesure ci-dessous. Le lot suivant utilise ces cas pour développer
+les contraintes : ils sont désormais aussi des régressions de développement,
+`usedForDevelopment: true`. Un échantillon neuf est nécessaire pour juger la
+généralisation ; la sélection et les idées principales attendues sont conservées.
 
-## Résultat séparé
+## Première mesure séparée, avant les contraintes
 
 | Décision | Idée ou fait attendu | Résultat du prototype |
 |---|---|---|
@@ -52,7 +53,27 @@ qu'un coup calme est optimal. Le PGN peut montrer une combinaison réussie sans
 prouver que toutes les défenses permettent cette réussite. Les bilans matériels
 ne justifient pas seuls un verdict sur un sacrifice.
 
-## Contrôles échiquéens et moteur
+## Mesure après le lot de contraintes
+
+**4 idées/faits sur 11 reconnus, 7 manquants, toujours 0 explication publiable.**
+La double attaque de …Ca4 et la déviation de Db8+ sont maintenant des hypothèses
+structurées. Pour Db8+, une preuve de règles couvre toutes les réponses légales
+avec Cxb8 puis Td8 mat. Les sacrifices Txd7 et …Fe6, les plans de finale, la
+percée et le pion passé ne sont pas expliqués. Les faits tactiques secondaires
+(clouage de f7, tour sacrifiée qui attaquait deux pièces) sont annotés à part.
+Aucune hypothèse inattendue et aucune annotation de contrainte manquante sur ces
+cas connus ; ce résultat n'est pas une mesure de généralisation.
+
+Deux essais comparatifs ajoutés analysent avant/après Db8+ et l'alternative Da3,
+à 200/600 ms, avec ShallowRed et Stockfish 16. Tous deux confirment le mat immédiat
+après Cxb8 et préfèrent Db8+ dans ces recherches. Da3 conserve le cavalier d7 et
+n'impose pas un mat dans le même horizon ; les moteurs répondent Fxa3. ShallowRed
+omet Td8 dans sa PV : la preuve légale le complète avec une origine explicite ;
+Stockfish fournit les deux demi-coups. Aucune longue PV n'est affichée comme repère.
+La meilleure décision générale et la cause des autres sacrifices restent ouvertes.
+Voir [TACTICAL_CONSTRAINTS.md](TACTICAL_CONSTRAINTS.md).
+
+## Contrôles échiquéens et moteur de la première mesure
 
 Les tests vérifient directement, sans utiliser la sortie du détecteur comme vérité :
 
@@ -87,6 +108,6 @@ CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/gam
 Le rapport imprime les cas manquants, erreurs, couverture des annotations,
 provenances et temps d'extraction. L'extraction exhaustive reste coûteuse et
 synchrone ; elle ne doit pas être placée telle quelle dans le rendu React.
-La suite est de modéliser double attaque, clouage et menace de mat comme contraintes
-combinées, puis de vérifier leurs contributions. Les plans de finale et compensations
+La suite est de vérifier comparativement doubles attaques et clouages, avec
+leurs défenses et compensations, puis d'élargir les contraintes combinées. Les plans de finale et compensations
 positionnelles restent un problème plus large qu'un motif de capture.
