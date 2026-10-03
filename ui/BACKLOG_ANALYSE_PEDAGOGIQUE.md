@@ -668,8 +668,8 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   reprise fxe3 à +2 depuis cette décision. Historique absent = bilan global inconnu.
   Cette primitive ne comprend pas encore les épisodes avec coups intermédiaires.
 - `dev/pedagogy-review.html`, `preview.ts/.css`, `previewModel.ts` et générateur
-  `npm run pedagogy:review` : aperçu Vite séparé pour relecture. Instantané de douze
-  cas moteur, six brouillons et six abstentions lors de cette mesure ; 30 positions
+  `npm run pedagogy:review` : aperçu Vite séparé pour relecture. Première mesure de douze
+  cas moteur, six brouillons et six abstentions avant synchronisation ; 30 positions
   démontrées vérifiées contre leurs commandes et bilans. Les scores/conclusions
   simulés des tests ne l'alimentent pas. Nom UCI, SHA-256, coût et provenance gardés.
   Le clouage construit est soutenu par les deux moteurs ; les fourchettes construites
@@ -690,8 +690,15 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   (48 UCI au total). Validation locale avant synchronisation : **657 tests / 53
   fichiers**, dont 588 unitaires et 69 pont/moteurs, ShallowRed + Stockfish 16.
   Lint, TypeScript et build réussis ; bundles actifs inchangés. Le moteur reste
-  hors du code de ce lot. La PR doit maintenant être synchronisée avec main et
-  la CI du commit envoyé relue.
+  hors du code de ce lot.
+- Synchronisation par fusion de main `510af69`, sans modification moteur propre
+  à la PR, puis `cargo build --release --bin shallowred` réussi : nouveau binaire
+  dans `target/release`. Suite complète relancée, **657 tests / 53 fichiers** passent.
+  L'instantané régénéré conserve cinq brouillons et sept abstentions : la fourchette
+  blanche reste aussi instable avec ce moteur, celle du camp noir a un brouillon.
+  La relecture porte donc sur clouage, fourchette noire et mat avec ShallowRed.
+  Les 25 positions de cet instantané sont contrôlées contre leurs commandes
+  légales après régénération ; la CI du commit envoyé doit être relue.
 - Corpus inchangés : 12/12 hypothèses construites, 4/11 publiées, **zéro explication
   publiable**. La pertinence générale, compensation/pression durable, nouveaux cas
   indépendants et intégration restent ouvertes. Les brouillons ne corrigent pas

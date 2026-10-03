@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-10-03T17:13:06.469Z",
+  "generatedAt": "2026-10-03T17:26:54.275Z",
   "publishable": false,
   "independentSample": false,
   "examples": [
@@ -11,13 +11,13 @@
       "origin": "constructed",
       "engine": "ShallowRed",
       "engineName": "ShallowRed 0.1.0",
-      "engineHash": "b9dfda9d3ee1daa1e4938390f912869fcfe649cc944ffff6d19c84f569123ff7",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
       "beforeFen": "4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1",
       "afterFen": "4k3/pp2pppp/2n5/1B1P4/8/8/PPP2PPP/7K b - - 1 1",
       "state": "supported",
       "reason": "blocked-retreat",
       "error": null,
-      "elapsedMs": 2094.028409,
+      "elapsedMs": 2192.119285,
       "searches": 6,
       "draft": {
         "status": "draft",
@@ -83,7 +83,7 @@
             "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1b5 e8d7 d5c6 b7c6",
             "fen": "8/p2kpppp/2p5/1B6/8/8/PPP2PPP/7K w - - 0 3",
             "label": "bxc6",
-            "note": "Cet échange vaut −2 points pour les Noirs. Le moteur choisit ensuite Fe2, alors qu'une reprise reste légale. Le bilan est celui de cette variante.",
+            "note": "Cet échange vaut −2 points pour les Noirs. Le moteur choisit ensuite Fd3, alors qu'une reprise reste légale. Le bilan est celui de cette variante.",
             "marks": [
               {
                 "from": "b7",
@@ -128,7 +128,7 @@
             "e8d7",
             "d5c6",
             "b7c6",
-            "b5e2"
+            "b5d3"
           ],
           "alternativeMoves": [
             "c6b4"
@@ -149,121 +149,15 @@
       "origin": "constructed",
       "engine": "ShallowRed",
       "engineName": "ShallowRed 0.1.0",
-      "engineHash": "b9dfda9d3ee1daa1e4938390f912869fcfe649cc944ffff6d19c84f569123ff7",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
       "beforeFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 0 1",
       "afterFen": "r3k3/2N5/8/8/8/8/7P/7K b - - 1 1",
-      "state": "supported",
-      "reason": "double-targets",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 2140.2476979999997,
+      "elapsedMs": 1995.9814029999998,
       "searches": 6,
-      "draft": {
-        "status": "draft",
-        "family": "double-targets",
-        "role": "creates-opportunity",
-        "title": "Menacer deux cibles à la fois",
-        "summary": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
-        "comparisonText": "Avec Cb6, les deux cibles ne sont plus menacées ensemble. La réponse Ta2 les préserve dans la variante calculée.",
-        "story": {
-          "decision": "d5c7",
-          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
-          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
-          "alternative": "Avec Cb6, les deux cibles ne sont plus menacées ensemble. La réponse Ta2 les préserve dans la variante calculée."
-        },
-        "played": [
-          {
-            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5c7",
-            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 1 1",
-            "label": "Après Cc7+",
-            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
-            "marks": [
-              {
-                "from": "c7",
-                "to": "e8",
-                "tone": "threat"
-              },
-              {
-                "from": "c7",
-                "to": "a8",
-                "tone": "threat"
-              }
-            ],
-            "origin": "position"
-          },
-          {
-            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5c7 e8d7",
-            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 2 2",
-            "label": "Rd7",
-            "note": "",
-            "marks": [
-              {
-                "from": "e8",
-                "to": "d7",
-                "tone": "threat"
-              }
-            ],
-            "origin": "engine-line"
-          },
-          {
-            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5c7 e8d7 c7a8",
-            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 2",
-            "label": "Cxa8",
-            "note": "Cxa8 prend la cible restée attaquée.",
-            "marks": [
-              {
-                "from": "c7",
-                "to": "a8",
-                "tone": "threat"
-              }
-            ],
-            "origin": "engine-line"
-          }
-        ],
-        "alternative": [
-          {
-            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5b6",
-            "fen": "r3k3/8/1N6/8/8/8/7P/7K b - - 1 1",
-            "label": "Avec Cb6",
-            "note": "L'alternative Cb6 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
-            "marks": [
-              {
-                "from": "b6",
-                "tone": "idea"
-              }
-            ],
-            "origin": "position"
-          },
-          {
-            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5b6 a8a2",
-            "fen": "4k3/8/1N6/8/8/8/r6P/7K w - - 2 2",
-            "label": "Ta2",
-            "note": "Avec Cb6, les deux cibles ne sont plus menacées ensemble. La réponse Ta2 les préserve dans la variante calculée.",
-            "marks": [
-              {
-                "from": "a8",
-                "to": "a2",
-                "tone": "threat"
-              }
-            ],
-            "origin": "engine-line"
-          }
-        ],
-        "evidence": {
-          "playedMoves": [
-            "e8d7",
-            "c7a8"
-          ],
-          "alternativeMoves": [
-            "a8a2"
-          ],
-          "materialDelta": -5,
-          "exchange": null,
-          "contextText": null,
-          "origin": "engine-lines",
-          "scope": "conditional-contribution"
-        },
-        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
-      }
+      "draft": null
     },
     {
       "id": "fork-black",
@@ -272,13 +166,13 @@
       "origin": "constructed",
       "engine": "ShallowRed",
       "engineName": "ShallowRed 0.1.0",
-      "engineHash": "b9dfda9d3ee1daa1e4938390f912869fcfe649cc944ffff6d19c84f569123ff7",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
       "beforeFen": "7k/7p/8/8/3n4/8/8/R3K3 b - - 0 1",
       "afterFen": "7k/7p/8/8/8/8/2n5/R3K3 w - - 1 2",
       "state": "supported",
       "reason": "double-targets",
       "error": null,
-      "elapsedMs": 2099.826252,
+      "elapsedMs": 2298.3668750000006,
       "searches": 6,
       "draft": {
         "status": "draft",
@@ -395,13 +289,13 @@
       "origin": "published-game",
       "engine": "ShallowRed",
       "engineName": "ShallowRed 0.1.0",
-      "engineHash": "b9dfda9d3ee1daa1e4938390f912869fcfe649cc944ffff6d19c84f569123ff7",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
       "beforeFen": "r2q1rk1/pp2ppbp/1np2np1/2Q3B1/3PP1b1/2N2N2/PP3PPP/3RKB1R b K - 6 11",
       "afterFen": "r2q1rk1/pp2ppbp/2p2np1/2Q3B1/n2PP1b1/2N2N2/PP3PPP/3RKB1R w K - 7 12",
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 3227.9050429999998,
+      "elapsedMs": 3600.774657,
       "searches": 6,
       "draft": null
     },
@@ -412,13 +306,13 @@
       "origin": "published-game",
       "engine": "ShallowRed",
       "engineName": "ShallowRed 0.1.0",
-      "engineHash": "b9dfda9d3ee1daa1e4938390f912869fcfe649cc944ffff6d19c84f569123ff7",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
       "beforeFen": "r2q1rk1/pp2ppbp/1np2np1/2Q5/3PPBb1/2N2N2/PP3PPP/3RKB1R w K - 5 11",
       "afterFen": "r2q1rk1/pp2ppbp/1np2np1/2Q3B1/3PP1b1/2N2N2/PP3PPP/3RKB1R b K - 6 11",
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 3410.784227,
+      "elapsedMs": 3354.777607,
       "searches": 6,
       "draft": null
     },
@@ -429,13 +323,13 @@
       "origin": "published",
       "engine": "ShallowRed",
       "engineName": "ShallowRed 0.1.0",
-      "engineHash": "b9dfda9d3ee1daa1e4938390f912869fcfe649cc944ffff6d19c84f569123ff7",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
       "beforeFen": "4kb1r/p2n1ppp/4q3/4p1B1/4P3/1Q6/PPP2PPP/2KR4 w k - 0 16",
       "afterFen": "1Q2kb1r/p2n1ppp/4q3/4p1B1/4P3/8/PPP2PPP/2KR4 b k - 1 16",
       "state": "supported",
       "reason": "short-mate-confirmed",
       "error": null,
-      "elapsedMs": 883.6710700000003,
+      "elapsedMs": 922.6700470000014,
       "searches": 6,
       "draft": {
         "status": "draft",
@@ -541,7 +435,7 @@
       "state": "supported",
       "reason": "blocked-retreat",
       "error": null,
-      "elapsedMs": 3437.7323979999983,
+      "elapsedMs": 3614.2967100000005,
       "searches": 6,
       "draft": {
         "status": "draft",
@@ -679,7 +573,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 3506.6972669999996,
+      "elapsedMs": 3634.5109250000023,
       "searches": 6,
       "draft": null
     },
@@ -696,7 +590,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 3451.2906710000025,
+      "elapsedMs": 3586.676878000002,
       "searches": 6,
       "draft": null
     },
@@ -713,7 +607,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 5890.014095000002,
+      "elapsedMs": 6535.978444,
       "searches": 7,
       "draft": null
     },
@@ -730,7 +624,7 @@
       "state": "indeterminate",
       "reason": "effect-not-verified",
       "error": null,
-      "elapsedMs": 4507.41318,
+      "elapsedMs": 4877.543781999993,
       "searches": 6,
       "draft": null
     },
@@ -747,7 +641,7 @@
       "state": "supported",
       "reason": "short-mate-confirmed",
       "error": null,
-      "elapsedMs": 1840.0693150000006,
+      "elapsedMs": 1936.3211080000037,
       "searches": 6,
       "draft": {
         "status": "draft",
