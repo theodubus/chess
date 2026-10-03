@@ -549,6 +549,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-09-30 | **C30 — la table par défaut à 64 Mio au lieu de 16**, là où elle n'est pas pressée (`94c07ad` contre `4699e63`) | **+2,90 Elo ± 5,72** sur 6 000 parties à `8+0,08`, homogènes (z = −1,11), zéro perte au temps. **Aucun coût démontré : le défaut passe à 64 Mio** (`428a1e5`) ; la sonde : n/s × 0,979, −0,08 ± 0,10 pli |
 | 2026-09-30 | **C31 — la nulle par règle testée après une parade tranquille, dans la quiescence** (`5d8c68c` contre `1638d26`) | **−2,43 Elo ± 5,36** sur 6 000 parties à `8+0,08`, homogènes de justesse (z = −1,99) ; **le match 1 seul, −7,88 ± 7,61, borne haute −0,27**. **ARRÊTÉ PAR SON CRITÈRE** — correctif de règle, « fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match » : une lecture la met sous zéro. Zéro perte au temps ; avertissements de nulle : 0 pour le candidat, 5 pour la référence |
 | 2026-09-30 | **B8 — l'aspiration et l'élagage delta à l'échelle du réseau** : leurs marges × 2,24 quand un réseau joue, la faite main inchangée (`791e6e4` contre `7305c8a`) | **+50,50 Elo ± 5,37** sur 6 000 parties à `8+0,08`, homogènes (z = −0,13), zéro perte au temps. **Gain démontré, FUSIONNÉ** — l'attendu, 0 à +25, réfuté par le haut. Banc inchangé : la faite main garde ses marges |
+| 2026-10-02 | **N2L — N2 ré-entraîné sur les données de Leela**, levier 4 du n° 7 (`5764f2b` contre `4526a2c`) | **+16,40 Elo ± 6,20** sur 6 000 parties à `8+0,08`, homogènes (z = −0,20), zéro perte au temps. **Gain démontré, EMBARQUÉ** — le meilleur des deux réseaux du levier ; attendu 0 à +60 |
+| 2026-10-02 | **L0 — les données de Leela seules, depuis zéro**, levier 4 du n° 7 (`3349f53` contre `4526a2c`) | **+10,02 Elo ± 6,19** sur 6 000 parties à `8+0,08`, homogènes (z = 0,46), zéro perte au temps. Gain démontré, sous N2L : non embarqué ; attendu −40 à +40 |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -780,6 +782,11 @@ dernière relève est faite.
 | **B8 — l'Elo des marges à l'échelle du réseau** | **36755257365, 36755260973** — identifiés par leur nom de run | `791e6e4` → `7305c8a`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 23 h 55** — finis ENTIERS à 23 h 33, 6,68 s par partie, deux AMD EPYC 9V45 | **+50,14 ± 7,60 et +50,85 ± 7,61 ; +50,50 ± 5,37 en commun, homogènes (z = −0,13)** ; zéro perte au temps. **GAIN DÉMONTRÉ, FUSIONNÉ** (`b711a54`, section B8). — *Attendu, écrit avant* : 0 à +25, ~+10 — **réfuté par le haut**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro |
 | **B8 — le crible de mutation au candidat** | **36755264744** | `791e6e4`, tous les fichiers | `Mutation`, entrée `commit`, donc aucune issue | **RELEVÉ à 20 h 30, VERT** — fini à 20 h 02, `search.rs` le plus long, 123 min : 499 attrapés, 49 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants de `main` un pour un — décalés de 14 lignes par les constantes, de 25 au-delà de `scaled_margin`, le texte de chaque ligne identique —, aucun dans le code neuf : ses cinq mutants, tous dans `scaled_margin`, sont attrapés ou expirés. Tous les fichiers à leur plafond, total **140**. — *Prédiction, écrite avant* : `search.rs` **39** — les survivants de `main` aux lignes décalées, aucun dans le code neuf : les deux tests couvrent `scaled_margin` des deux côtés et l'élagage delta au ras de ses deux seuils ; les autres fichiers à leur plafond, total 140 |
 | **balayage de mutation après la fusion de B8** | **36794803462** | `main` à `bf4e504`, la PR #127 | un job par fichier, puis `Verdict` | **RELEVÉ à 02 h 25, VERT** — fini à 01 h 47, `search.rs` le plus long, 97 min : 501 attrapés, 47 expirés, 29 inviables | **La prédiction tient, exactement** : `search.rs` **39**, les survivants du crible au candidat un pour un, aux mêmes lignes et colonnes ; tous les fichiers à leur plafond, total **140**, aucune issue. Deux mutants expirés au crible sont attrapés ici : la charge du runner, 616 mutants des deux côtés. — *Prédiction, écrite avant* : **les survivants du crible au candidat, un pour un** — `search.rs` **39**, tous les fichiers à leur plafond, total **140** : le code est celui de `791e6e4` au bit près |
+| **N° 7, levier 4 — N2L et L0, sur la carte de Théo** | — | `main` à `7441d45` ; `training_data.binpack`, extrait de l'archive de Drive | la séance du levier 4, section n° 7 | **RELEVÉS le 2 oct.** — essai court passé (échelle ajustée 282,1), puis les deux entraînements, poussés sur `reseau/levier4` (`180ba84`), intégrés par `0a0ed70` | **Confrontations dans le critère** : N2L 4 et 9, L0 4 et 21 (admis 15 et 50). **Sonde de B8** : facteurs 2,60 et 2,61, dans la plage 1,68 à 2,80 — chacun se mesure au facteur de `main`, 2,24 (section n° 7) |
+| **N° 7, levier 4 — l'Elo de N2L contre N2** | **36995335076, 36995337871** — identifiés par leur nom de run | `5764f2b` → `4526a2c`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 16 h 15** — finis ENTIERS entre 15 h 50 et 15 h 54, 6,5 s par partie | **+15,76 ± 8,67 et +17,04 ± 8,87 ; +16,40 ± 6,20 en commun, homogènes (z = −0,20)** ; zéro perte au temps. **GAIN DÉMONTRÉ — le meilleur des deux : EMBARQUÉ** (`d3edeb6`, section n° 7, « Levier 4 — VERDICT »). — *Attendu, écrit avant* : 0 à +60, ~+25. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; le meilleur des réseaux qui le passent remplace N2 |
+| **N° 7, levier 4 — l'Elo de L0 contre N2** | **36995340993, 36995343981** — identifiés par leur nom de run | `3349f53` → `4526a2c`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 16 h 15** — finis ENTIERS entre 15 h 50 et 15 h 54, 6,5 s par partie | **+11,47 ± 8,81 et +8,57 ± 8,70 ; +10,02 ± 6,19 en commun, homogènes (z = 0,46)** ; zéro perte au temps. **Gain démontré, mais sous N2L** : non embarqué, son candidat `3349f53` reste mesuré. — *Attendu, écrit avant* : −40 à +40. **Critère, écrit avant** : le même |
+| **balayage de mutation après la fusion de N2L** | **37034305729** | `main` à `5f59449`, la PR #134 | un job par fichier, puis `Verdict` | **EN VOL** — lancé à 16 h 29, fin vers 18 h 15 | — *Prédiction, écrite avant* : **les survivants du balayage après la fusion de B8, un pour un** — tous les fichiers à leur plafond, total **140**. Le code de production est celui de `main` à une constante près, le chemin du réseau ; seuls changent les tests qui chargent le réseau embarqué — la confrontation de `nnue.rs`, les tests de `uci.rs` qui cherchent avec lui. <span>Confiance moyenne</span> : un autre réseau, c'est un autre arbre pour ces derniers (`CLAUDE.md`, « un changement d'ARBRE déplace ce que les tests de nœuds voient ») |
+| **C13 — N2L contre Stockfish bridé à 2850** | **37034309570** | `main` à `5f59449` (N2L, B8, les seaux, 64 Mio), 60+0,6, graine « auto » | 300, fastchess | **EN VOL** — lancée à 16 h 29, son attendu poussé avant (`10eeffc`) ; fin vers 21 h 30 | — *Attendu, écrit avant* : **~2 990, 2 940 à 3 050** ; l'écart à N2 contre le même adversaire ~+48, séparé de zéro au-delà de ~+42 — section C13, « N2L » |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
 | **A21 — la génération, première vague** | 36179538497, 36179541822, 36179544454, 36179547648 | le générateur au candidat C27 `bb6e4c0` — le moteur corrigé, le générateur de `main` au bit près —, 5 000 nœuds, graine « auto », un fil par processeur logique | 4 jobs de 330 minutes | **RELEVÉE le 26 sept. à 01 h 20** — finis à 00 h 55, quatre succès, chaque résumé nomme `bb6e4c0` | **125,1 millions de positions, 77,7 millions gardées par le filtre** (62,1 %) : 92 % de l'attendu central, dans sa fourchette, **au-dessus de la cible de 100 millions — pas de vague de complément**. 29,9 à 34,2 M par job, débits 1 509 à 1 727 positions/s (section A21). — *Attendu, écrit avant* : 34 M par job au débit relevé, 21 à 54 aux extrêmes ; 136 M pour les quatre ; 62 % gardées ; complément sous 100 M |
@@ -4200,24 +4207,32 @@ jeux de linrock (`robotmoon.com/nnue-training-data`, les jeux plus récents)
 sont refusés par le proxy du conteneur (403, relevé le 30 sept.). Drive
 affiche la taille avant le téléchargement : **la lire d'abord**. Un binpack
 s'entraîne tel quel, sans décompression — il faut sa taille libre, plus
-quelques Go de points de sauvegarde. Pour ordre de grandeur, les fichiers
+quelques Go de points de sauvegarde. <s>Le fichier de Drive est donc prêt à
+servir.</s> **Faux pour celui-ci, relevé par Théo le 2 oct.** : Drive
+livre une ARCHIVE, `training_data.7z`, et le binpack est dedans — le
+programme refuse, à raison, un fichier qu'il ne trouve pas. Je ne pouvais
+pas voir la page (403) et je l'ai supposée ; l'étape 2 de la séance
+l'extrait. Pour ordre de grandeur, les fichiers
 des derniers étages de Stockfish pèsent 141 et 223 Go (PR #257 de
 `nnue-pytorch`) ; un entraînement n'en voit que 4 milliards de positions,
 **un fichier suffit**.
 
-**La taille de `training_data.binpack`, lue par Théo sur Drive le 30 sept. :
-11 Go.** Ce qu'elle porte, par le format — `docs/binpack.md` de la branche
-`tools` de Stockfish : une position coûte « ~2 octets » dans une suite de
-coups, plus 32 octets par début de suite — : **de l'ordre de 4 à 7
-milliards de positions**, avant le filtre. <span>Inférence, confiance
-moyenne</span> : l'essai court imprime les octets, les blocs et la part
-gardée par le filtre. **Un fichier plus petit que l'entraînement ne le
-casse pas** — lu au commit épinglé : le chargeur de bullet
-(`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit ses
-fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
-chacune de ce fichier passera **une à trois fois** selon la part que garde
-le filtre ; N2 revoyait les siennes **au moins seize fois** (4 milliards
-tirés de 249,5 M).
+**La taille lue par Théo sur Drive le 30 sept. : 11 Go — celle de l'ARCHIVE
+`training_data.7z`** (corrigé le 2 oct.), pas du binpack, qui est plus gros
+: la compression de 7-Zip s'ajoute à celle du format. `7z l` imprime sa
+vraie taille avant d'extraire. Ce qu'un binpack porte, par le format —
+`docs/binpack.md` de la branche `tools` de Stockfish : une position coûte «
+~2 octets » dans une suite de coups, plus 32 octets par début de suite — :
+de l'ordre de 0,4 à 0,6 milliard de positions par Go de binpack, avant le
+filtre ; <s>4 à 7 milliards pour 11 Go</s> — un minimum, désormais.
+<span>Inférence, confiance moyenne</span> : l'essai court imprime les
+octets, les blocs et la part gardée par le filtre. **Un fichier plus petit
+que l'entraînement ne le casse pas** — lu au commit épinglé : le chargeur de
+bullet (`crates/bullet_lib/src/value/loader/sfbinpack.rs`, `10e7e82`) relit
+ses fichiers en boucle. Nos 40 superlots tirent 4 milliards de positions :
+chacune de ce fichier passera **une à trois fois au plus** selon la part que
+garde le filtre ; N2 revoyait les siennes **au moins seize fois** (4
+milliards tirés de 249,5 M).
 
 **Vérifié ici avant de l'écrire** : à `main` (`8b2c122`), `tools/nnue-train`
 compile avec `--locked` et passe ses six tests — contre le runtime factice
@@ -4238,21 +4253,33 @@ de bullet, donc sans rien dire de CUDA ni de ce fichier, que l'essai court
 1. **CUDA dans ce terminal** — le bloc « CUDA dans ce terminal » de la
    séance d'entraînement du n° 7, tel quel : les trois bibliothèques du
    toolkit 13.2 doivent s'afficher ;
-2. **le fichier** — sa taille lue sur la page de Drive, comparée à la place
-   libre (`mkdir -p ~/leela && df -h ~/leela`), puis téléchargé depuis un
-   navigateur dans `~/leela/`, et relu :
+2. **le fichier** — téléchargé depuis un navigateur dans `~/leela/` : c'est
+   une archive 7-Zip, `training_data.7z` (corrigé le 2 oct.), qu'il faut
+   extraire. D'abord son contenu et sa taille décompressée, puis la place
+   libre, qui doit la dépasser de quelques Go :
    ```sh
-   ls -l ~/leela/*.binpack
+   command -v 7z || sudo apt install p7zip-full
+   cd ~/leela && 7z l training_data.7z
+   df -h ~/leela
+   7z x training_data.7z
+   find ~/leela -name '*.binpack' -exec ls -l {} +
    ```
-   Avec le second fichier, remplacer `training_data.binpack` par son nom
-   dans les commandes qui suivent ;
+   Le programme prend un fichier ou un dossier — d'un dossier, il lit les
+   `.binpack` posés directement dedans, et ignore l'archive. Désigner
+   celui qui les contient, une fois pour toute la séance :
+   ```sh
+   DONNEES=~/leela
+   ```
+   — ou le sous-dossier qu'a créé l'extraction, si `find` en montre un.
+   Si seul le paquet `7zip` est installé, la commande s'appelle `7zz`.
+   L'archive se supprime une fois l'essai court passé, pas avant ;
 3. **un essai court**, qui éprouve la chaîne entière — CUDA, le chargeur de
    binpacks, la reprise depuis N2, la confrontation — et imprime l'échelle
    des scores :
    ```sh
    cd ~/chess/tools/nnue-train
    cargo run --release --features cuda -- --depuis n2/shallowred-768x128-40 \
-     --superlots 1 --sortie essai-leela ~/leela/training_data.binpack \
+     --superlots 1 --sortie essai-leela "$DONNEES" \
      2>&1 | tee essai-leela.sortie.txt
    ```
    Il doit finir sur `RÉSEAU PRÊT : essai-leela/shallowred-768x128-1/quantised.bin`.
@@ -4265,13 +4292,13 @@ de bullet, donc sans rien dire de CUDA ni de ce fichier, que l'essai court
 4. **N2L** :
    ```sh
    cargo run --release --features cuda -- --depuis n2/shallowred-768x128-40 \
-     --sortie n2l ~/leela/training_data.binpack 2>&1 | tee n2l.sortie.txt
+     --sortie n2l "$DONNEES" 2>&1 | tee n2l.sortie.txt
    ```
    → `RÉSEAU PRÊT : n2l/shallowred-768x128-40/quantised.bin` ;
 5. **L0** :
    ```sh
    cargo run --release --features cuda -- --sortie l0 \
-     ~/leela/training_data.binpack 2>&1 | tee l0.sortie.txt
+     "$DONNEES" 2>&1 | tee l0.sortie.txt
    ```
    → `RÉSEAU PRÊT : l0/shallowred-768x128-40/quantised.bin` ;
 6. **rapporter**, sur une branche `reseau/levier4` :
@@ -4299,8 +4326,17 @@ son message suffit à le diagnostiquer.
 **Ce qui suit, écrit avant** : chaque réseau passe d'abord le contrôle de
 confrontation que le programme imprime (écart médian ≤ 15, maximal ≤ 50),
 puis **deux matchs de 3 000 parties à `8+0,08` contre N2**, graine « auto »
-chacun, comme N1 et N2. **Critère de gain** : borne basse de l'intervalle
-mis en commun au-dessus de zéro — le meilleur des réseaux qui le passent
+chacun, comme N1 et N2. **Ce que le match compare** — question de Théo le
+2 oct. : le candidat est le `main` du jour où il se mesure, plus UN commit
+qui ne change que le réseau embarqué (le chemin d'`include_bytes!` et la
+confrontation recopiée dans le test, dans `engine/src/nnue.rs`) ; la
+référence est ce même `main`. Les optimisations faites entre-temps — B8
+compris — sont des deux côtés, et le match ne mesure que le réseau : c'est
+ainsi que N1 et N2 ont été mesurés (`c430fe5` et `af62e48` ne touchent que
+`nnue.rs`). La seule chose qui ne se transporte pas avec le réseau, ce sont
+les marges réglées sur N2 — d'où la sonde de B8, au paragraphe « Ajouté
+le 1er oct. ». **Critère de gain** : borne basse de l'intervalle mis en
+commun au-dessus de zéro — le meilleur des réseaux qui le passent
 remplace N2, sa confrontation recopiée dans le test du moteur, et
 **`README.md` porte la mention d'attribution de l'ODbL** le jour même
 (`CLAUDE.md`, décisions structurantes). *Attendus* — <span>inférence,
@@ -4318,6 +4354,114 @@ match mêlerait la valeur du réseau à celle de ses marges. <span>Inférence,
 confiance faible</span> : un réseau appris sur des cibles d'une autre
 échelle — 330,3 par unité de logit, et non 400 — peut porter une autre
 pente.
+
+**L'essai court, passé le 2 oct.** (Théo) : échelle ajustée **282,1**, dans
+le critère écrit avant — 250 à 450. <span>Inférence, confiance
+moyenne</span> : 15 % sous l'échelle de la conversion, 330,3 — sur ces
+parties, un score annonce un résultat un peu plus tranché que la formule de
+lc0 ne le dit. L'entraînement reste à 330,3, comme écrit. Si N2L déçoit, cet
+écart est une piste à mesurer, pas une explication.
+
+**Les deux entraînements, relevés le 2 oct.** — branche `reseau/levier4` de
+Théo (`180ba84`), intégrée par `0a0ed70` : binpack de **14 366 468 016
+octets**, 14 905 blocs, 58,9 % des positions décodées gardées par le filtre ;
+**N2L en 11 min 34 s, L0 en 11 min 36 s**, sur la RTX 3050 de Théo. Les
+deux confrontations passent le critère écrit avant (médian ≤ 15, maximal ≤
+50) : **N2L 4 et 9, L0 4 et 21**. Perte finale sur les données de Leela :
+0,05815 et 0,05821 — N2L part plus bas (0,0598 contre 0,0628 au premier
+superlot) et arrive au même point. *Une perte ne dit pas la force* : les
+matchs le diront.
+
+**La sonde de B8 sur N2L et L0 — écrite le 2 oct., avant de la lancer.**
+Le protocole du 30 sept., réduit à ce qui règle le facteur : 40 parties du
+réseau contre lui-même à `8+0,08` (livre du dépôt, `-srand 20260930`), le
+binaire sondé construit sur `main` — marges à × 2,24, le régime où le réseau
+jouera ; l'élagage delta rejoué, l'aspiration comptée. La faite main est
+reprise de la sonde du 30 sept. : son chemin est le même au bit près, B8 ne
+touchant que celui du réseau. La futilité inverse n'est pas rejouée — elle
+n'a pas de facteur. **Règle, écrite avant** (l'amendement du 1er oct.) : la
+moyenne géométrique des deux facteurs égalisants, delta et aspiration,
+comme pour N2 ; **dans ± 25 % de 2,24 — 1,68 à 2,80 —, le réseau se mesure
+au facteur de `main`** ; hors de cette plage, le facteur se règle d'abord
+et le candidat porte le réseau ET son facteur. *Attendu* — <span>inférence,
+confiance faible</span> : dans la plage pour les deux, rien n'annonçant une
+autre échelle — la conversion de lc0 et nos données s'expriment en
+probabilité de gain, et le moteur lit les deux réseaux à la même échelle de
+sortie.
+
+**La sonde, RELEVÉE le 2 oct.** — 40 parties par réseau, zéro perte au
+temps, zéro anomalie ; la faite main, celle du 30 sept. ; lecteur
+`facteurs.py`, le rejeu du réseau par `SONDE_B8_EVALFILE` (ajouté au
+lecteur de la rustine) :
+
+| réseau | facteur delta | facteur aspiration | moyenne géométrique | pente, rapport médian |
+|---|---|---|---|---|
+| N2 (30 sept., référence) | × 2,5 | × 2,0 | 2,24 | 2,30 ; 2,02 |
+| **N2L** | × 2,6 | × 2,60 | **2,60** | 2,69 ; 2,52 |
+| **L0** | × 3,1 | × 2,20 | **2,61** | 2,55 ; 2,40 |
+
+**Par la règle, les deux dans la plage** — 2,60 et 2,61 contre 1,68 à
+2,80 : **chaque réseau se mesure au facteur de `main`, 2,24**, et son
+candidat ne change que le réseau. Dans l'attendu. Les pentes de N2 sont
+recalculées ici sur tous les nœuds journalisés, non sur le tiers rejoué —
+2,30 et 2,02 au lieu de 2,40 et 2,16 ; c'est cette ligne-ci qui se compare.
+Les deux réseaux de Leela portent des nombres **12 à 25 % plus grands** que
+N2 ; à 2,24, leur élagage delta reste ~2 fois plus fautif que la faite main
+(0,72 et 0,94 % à × 2,2, contre 0,30 %) — une marge à affiner plus tard,
+si l'un d'eux est retenu, par sa propre mesure.
+
+**Les candidats et leurs matchs, lancés le 2 oct.** — `5764f2b` (N2L) et
+`3349f53` (L0), révoqués aussitôt par `f7a84b5` et `448fed3` ; chacun ne
+change que `engine/src/nnue.rs` — le chemin d'`include_bytes!` et la
+confrontation de son entraînement recopiée dans le test —, contre la
+référence `4526a2c`, le code de leur parent au bit près. Le test de
+confrontation passe sur chacun, `verify.sh --rapide` vert. Deux matchs de
+3 000 parties à `8+0,08` par réseau, graine « auto » chacun : N2L
+36995335076 et 36995337871, L0 36995340993 et 36995343981. Le critère et
+les attendus sont ceux de « Ce qui suit, écrit avant ». **À la fusion d'un
+gagnant** : révoquer sa révocation, `README.md` porte la mention
+d'attribution de l'ODbL, et `CLAUDE.md` dit le réseau qui joue.
+
+#### Levier 4 — VERDICT, 2 oct. 2026 : N2L +16,40 ± 6,20 Elo à `8+0,08` contre N2 — EMBARQUÉ ; L0 +10,02 ± 6,19
+
+Quatre matchs de 3 000 parties, finis entiers entre 15 h 50 et 15 h 54, graines
+distinctes, zéro perte au temps, zéro coup illégal :
+
+| réseau | match | runner — bench, profondeur en 250 ms | Elo | pentanomial |
+|---|---|---|---|---|
+| N2L | 36995335076 | Xeon 8573C — 2 544 827 n/s, 12 | +15,76 ± 8,67 | 94, 238, 750, 274, 144 |
+| N2L | 36995337871 | EPYC 7763 — 2 139 930 n/s, 12 | +17,04 ± 8,87 | 108, 228, 715, 307, 142 |
+| **N2L** | **en commun** | homogènes, z = −0,20 | **+16,40 ± 6,20** | 202, 466, 1 465, 581, 286 |
+| L0 | 36995340993 | Xeon 8573C — 2 499 051 n/s, 12 | +11,47 ± 8,81 | 103, 252, 733, 267, 145 |
+| L0 | 36995343981 | EPYC 9V74 — 2 083 278 n/s, 12 | +8,57 ± 8,70 | 106, 258, 714, 300, 122 |
+| **L0** | **en commun** | homogènes, z = 0,46 | **+10,02 ± 6,19** | 209, 510, 1 447, 567, 267 |
+
+- **Par le critère, écrit avant** : les deux bornes basses sont au-dessus de
+  zéro — +10,2 et +3,8 — ; **le meilleur des deux, N2L, remplace N2**.
+  `d3edeb6` révoque la révocation `f7a84b5` : `main` embarque
+  `reseaux/n2l-768x128-40.bin`, la confrontation de son entraînement dans le
+  test du moteur, banc inchangé — la faite main n'a pas bougé.
+- **Les attendus tiennent** : N2L 0 à +60, ~+25 — mesuré dans la
+  fourchette, sous le centre ; L0 −40 à +40 — dans la fourchette, et
+  positif : sur ce moteur, les données de Leela seules valent déjà mieux que
+  nos étiquettes. **L'écart N2L − L0, +6,4, n'est pas séparé** (± 8,8) :
+  « le meilleur » se lit au point, comme le critère l'écrivait. La recette
+  de Stockfish — nos données puis les leurs — tient ici aussi, sans être
+  démontrée meilleure.
+- **Les avertissements** : « PV continues after… », 0 à 4 par moteur et par
+  match — 10 côté N2, 7 côté candidats sur 12 000 parties : la signature
+  connue de C31, à son taux (~1 pour 1 000).
+- **Les pentanomiaux** des deux matchs d'un même réseau diffèrent
+  normalement — rien de la ressemblance de B8. Les paires à 0 ou 2 points
+  y sont plus nombreuses : 228 à 250 sur 1 500, contre 146 et 147 pour B8,
+  qui ne changeait que des marges au même réseau. <span>Inférence,
+  confiance moyenne : deux réseaux d'apprentissages différents ne se
+  trompent pas dans les mêmes positions.</span>
+- **`README.md` porte la mention d'attribution de l'ODbL** (section
+  « Remerciements ») et `CLAUDE.md` dit le réseau qui joue.
+- **Ce qui reste, à mesurer** : le facteur des marges de N2L — 2,60 mesuré,
+  2,24 en place — et une série de C13 pour situer N2L sur l'échelle de
+  Stockfish.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
@@ -4482,6 +4626,23 @@ illégal, aucun moteur perdu :
   occurrence. Lus cette fois, ils disaient un défaut de règle : **la
   quiescence ne testait aucune nulle après une parade tranquille** —
   section C31.
+
+**N2L — la série lancée le 2 oct., attendu écrit avant.** `main` à
+`5f59449`, qui embarque N2L, contre Stockfish 16 bridé à 2850, 60+0,6, 300
+parties, graine « auto » — **le même adversaire que N2**, pour que l'écart
+se lise directement. **Ce que la série mesure : tout ce qui a changé depuis
+`dee985d`, pas N2L seul** — contre notre jumeau, à `8+0,08` : les marges à
+l'échelle du réseau (B8) +50,50 ± 5,37, N2L +16,40 ± 6,20 ; la table, +1,85
+et +2,90 au défaut de `8+0,08` (C29, C30), mais davantage à 60+0,6, où
+16 Mio sans seaux étaient sous pression — jusqu'à ~+19, ce que la pression
+coûtait (C28). *Attendu* — <span>inférence, confiance faible</span> : +67 à
++87 contre le jumeau, comprimés par 0,60 à 0,68 comme les deux réseaux
+précédents → **~+48 sur N2, ~2 990** ; l'intervalle du rapport (0,42 à
+0,93) et les ± 29 du point de N2 → **2 940 à 3 050**. Score attendu ~69 %,
+dans la plage où ce niveau mesure. **L'écart à N2 n'est séparé de zéro que
+s'il dépasse ~+42** — l'incertitude d'une différence entre deux séries :
+la série situe le moteur, elle ne tranche rien ; un changement se mesure
+contre notre jumeau (`CLAUDE.md`).
 
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
@@ -5371,7 +5532,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
 | **C13 — mesurer la force absolue** — **DÉCIDÉ, en parallèle** (Théo, 29 sept.), **FAIT le 29 sept.** : le réseau **~2 850 ± 25**, la faite main ~2 630 ± 40, sur l'échelle de Stockfish 16 à 60+0,6 — section « C13 — la force absolue » ; à re-mesurer après chaque changement de réseau — **N2 le 30 sept. : 2 942 ± 29**, +112 ± 42 sur N0 contre le même adversaire | — | <s>**reporté**</s> : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread. **Un premier point, de Théo, le 28 sept.** : le moteur d'avant le réseau, contre un Stockfish bridé à 2 600 sur sa machine, estimé vers 2 700 — <s>cadence et effectif non consignés</s> **100 parties à 10+0,1**, précisé le 29 sept. **Rouvert sans liste de classement** — le protocole, écrit avant de mesurer : section « C13 — la force absolue » ; proposé le 29 sept. : Stockfish s'installe sur les runners (`ui.yml` le fait déjà), donc une série contre Stockfish bridé à plusieurs niveaux se joue sur runner. Deux réserves, écrites avant : l'échelle d'`UCI_Elo` appartient à la cadence et aux adversaires sur lesquels Stockfish l'a étalonnée — à lire dans son source avant de s'y fier — **lu le 29 sept.** : ancrée à l'Elo CCRL, ajustée à 60+0,6 ; et un gain mesuré contre notre jumeau ne s'ajoute pas à ce point. <span>Inférence, confiance moyenne</span> : l'auto-jeu grossit les écarts qu'on retrouve contre d'autres adversaires |
 | **B4 — évaluation NNUE** | — | <s>**reporté.**</s> <s>**EN COURS depuis le 25 sept.**</s> **FAIT le 28 sept. 2026 — A21, la fin de cette ligne.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —<s>, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation.</s> <em>tranchée le 25 sept. (A21).</em> **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 ; **première vague relevée le 26 sept. : 125 M positions, 77,7 M gardées par le filtre** — la cible de 100 M est atteinte ; **l'inférence dans le moteur écrite le 26 sept. et FUSIONNÉE le 28** (PR #89), derrière `EvalFile` — un nœud avec réseau coûte 0,73 à 0,87 fois un nœud fait main ; **l'entraînement fait le 28 sept.** sur la carte de Théo, 11 min 53 s, le critère tenu — section A21, étape 3 ; **l'étape 4 FAITE le même soir : le réseau embarqué est l'évaluation par défaut, +330,61 ± 19,21 Elo à `8+0,08` contre la faite main** (section « Étape 4 — VERDICT »). Restent ouverts : les marges de la recherche, réglées sur l'échelle de la faite main ; un réseau plus large ou plus de données — la carte de Théo peut être resollicitée ; et un banc qui évalue par le réseau |
-| **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **N2 ADOPTÉ le 30 sept.** — N1 contre N0 **+115,74 ± 6,98**, N2 contre N1 **+50,09 ± 6,12**, N3 contre N2 **−28,79 ± 5,99**, écarté : trop lent ; <s>restent la série de C13 pour N2 et</s> **la série de C13 pour N2 relevée le 30 sept. : 2 942 ± 29** ; reste le levier 4, les données de Leela — section « N° 7 » — **accordé par Théo le 30 sept., sa séance écrite le même jour** (« La séance du levier 4 ») : elle attend sa carte ; <s>EN COURS</s> : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`) |
+| **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **N2 ADOPTÉ le 30 sept.**, **N2L le 2 oct. — levier 4, +16,40 ± 6,20 contre N2** (L0 +10,02 ± 6,19) ; restent le facteur des marges de N2L (2,60 mesuré, 2,24 en place) et sa série de C13 — N1 contre N0 **+115,74 ± 6,98**, N2 contre N1 **+50,09 ± 6,12**, N3 contre N2 **−28,79 ± 5,99**, écarté : trop lent ; <s>restent la série de C13 pour N2 et</s> **la série de C13 pour N2 relevée le 30 sept. : 2 942 ± 29** ; <s>reste le levier 4, les données de Leela — section « N° 7 » — **accordé par Théo le 30 sept., sa séance écrite le même jour** (« La séance du levier 4 ») : elle attend sa carte</s> **le levier 4 relevé le 2 oct.** (« Levier 4 — VERDICT ») ; <s>EN COURS</s> : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`) |
 | **un banc qui emploie le réseau** — proposé le 29 sept. | — de l'outillage, sans Elo | Le banc et `tools/timing.sh` évaluent à la main, le moteur joue avec le réseau (« Ce qu'il faut surveiller »). **Préalable** à toute mesure de vitesse de l'inférence et à tout écran en nœuds sur l'arbre qu'on joue ; il déplace la référence du banc, ses tests et le crible d'`eval.rs`, donc il se conçoit, il ne se bricole pas |
 | **la vitesse de l'inférence** — proposé le 29 sept. | se convertit en plis par l'étalon, une fois mesurée | Le nœud au réseau coûte 0,873 fois le nœud fait main sur le binaire de base, **0,731 compilé pour AVX2** (26 sept.). Leviers : compiler pour le processeur de la machine qui joue, des mises à jour paresseuses de l'accumulateur. **Sans `unsafe`** — la lint l'interdit —, donc pas d'intrinsèques : la vectorisation passe par le compilateur. Exige le banc au réseau |
 | **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : FUSIONNÉS le 30 sept.** — +30,13 ± 5,60 Elo sous pression, +1,85 ± 5,51 au défaut ; **C30, la taille par défaut : FAIT le 30 sept.** — +2,90 ± 5,72, aucun coût démontré, **le défaut est à 64 Mio**. La question de la table à cadence longue est close ; au-delà de 60+0,6 — 40/15 —, c'est à l'interface de régler `Hash` | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |
@@ -5379,6 +5540,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **techniques de recherche absentes** — proposé le 29 sept., **DÉCIDÉ n° 9** (Théo, 29 sept.) | non chiffrées | **Aucune n'est dans `search.rs`** (recherche du 29 sept.) : extensions singulières, drapeau « *improving* », historique de correction de l'évaluation statique, réduction itérative interne, réduction du coup nul adaptée à la profondeur (`NULL_MOVE_REDUCTION` vaut 2, fixe), futilité aux nœuds frontières, élagage par l'échange statique hors quiescence, historique des captures, ProbCut. **Chacune un SPRT, séparément** : être standard ne prouve rien, PVS et l'extension d'échec en sont les démentis (`CLAUDE.md`). Mesurer le mécanisme d'abord, comme pour les autres |
 | **tablebases de finale** (reste de B6) | — | **reporté**, non chiffré |
 | **B5 — analyse dans l'interface ; A8 — transport interface ↔ moteur** | — | **côté `ui/`**, chantier mené séparément sous son propre `ui/CLAUDE.md` : listés ici pour que le tableau soit complet, pas pour être ordonnés avec le moteur |
+| **l'option `MultiPV`** — proposée par Théo le 2 oct. (« *possible / long une option pour exposer multi pv (…) sans pénaliser la perf du moteur ?* »), **mise au backlog le même jour** (« *pas tout de suite* ») | — une option d'analyse, sans Elo : à `MultiPV 1`, l'arbre est le même au nœud près | **Ce qui est dit, écrit avant d'écrire une ligne** : en UCI une option entière, défaut 1 — le comportement actuel. La racine boucle sur k lignes, chacune sa fenêtre d'aspiration centrée sur son score précédent, les coups des lignes déjà trouvées exclus ; **k plafonné au nombre de coups légaux** — sans quoi l'exclusion de tous les coups ferait annoncer un faux mat ou un faux pat ; les lignes 2 et suivantes n'écrivent pas l'entrée de la table à la racine, qui garde le vrai meilleur coup ; coup joué, ponder et pendule sur la ligne 1 ; fils auxiliaires inchangés ; le champ `multipv` des `info` seulement à partir de 2, la sortie par défaut identique à l'octet. **La preuve de « sans coût »** : banc identique (107 548 nœuds) et `tools/timing.sh` — un arbre inchangé ne passe pas par un SPRT. À `MultiPV k`, environ k fois le temps par profondeur : une option d'analyse, pas de jeu. Estimée à une demi-journée, crible de mutation compris — <span>confiance moyenne</span>. L'interface devra lire le champ `multipv` : à transmettre à Codex le jour venu |
 
 > **B8 (réglage des constantes de recherche) : son déclencheur écrit est
 > ATTEINT et personne ne l'a relevé.** Sa fiche dit « quand le jeu de

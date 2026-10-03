@@ -225,10 +225,10 @@ index 0000000..9475e5d
 +    main()
 diff --git a/tools/sonde-b8/lire.py b/tools/sonde-b8/lire.py
 new file mode 100644
-index 0000000..861e5bb
+index 0000000..17dd685
 --- /dev/null
 +++ b/tools/sonde-b8/lire.py
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,260 @@
 +#!/usr/bin/env python3
 +"""Lecteur de la sonde B8 — rejoue hors partie les nœuds échantillonnés et rend les rapports.
 +
@@ -236,7 +236,9 @@ index 0000000..861e5bb
 +
 +Chaque dossier porte les rfp.<pid>.tsv, delta.<pid>.tsv et asp.<pid>.tsv qu'a
 +écrits le binaire sondé pendant ses parties (SONDE_B8=<dossier>). Le rejeu se
-+fait SANS SONDE_B8 : le binaire se comporte alors comme `main`.
++fait SANS SONDE_B8 : le binaire se comporte alors comme `main`. Un réseau autre
++que l'embarqué se rejoue avec SONDE_B8_EVALFILE=<fichier .bin>, le même que
++celui passé aux parties par `option.EvalFile`.
 +
 +- futilité inverse : `go depth d` depuis la position du nœud, table de 1 Mio,
 +  même évaluation ; E = statique − score. Les scores de mat sont écartés
@@ -280,6 +282,10 @@ index 0000000..861e5bb
 +        send(p, "setoption name Hash value 1")
 +        if kind == "hc":
 +            send(p, "setoption name EvalFile value <none>")
++        elif os.environ.get("SONDE_B8_EVALFILE"):
++            # Le réseau sondé, s'il n'est pas celui que le binaire embarque —
++            # le même que celui des parties (`option.EvalFile` de fastchess).
++            send(p, "setoption name EvalFile value " + os.environ["SONDE_B8_EVALFILE"])
 +        send(p, "isready", "readyok")
 +        _eng[kind] = p
 +    return _eng[kind]

@@ -56,10 +56,12 @@ une mesure, pas une préférence.
   un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
   la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
   plus qu'à dégrossir, jamais à trancher.
-- **L'évaluation qui joue est le réseau NNUE embarqué** — **N2 depuis le
-  30 sept. 2026** (n° 7) : deux marches à `8+0,08`, chacune mesurée contre
-  la précédente sur 6 000 parties — **+115,74 ± 6,98** pour des étiquettes
-  du moteur au réseau, **+50,09 ± 6,12** pour deux fois plus de positions.
+- **L'évaluation qui joue est le réseau NNUE embarqué** — **N2L depuis le
+  2 oct. 2026** (n° 7, levier 4) : trois marches à `8+0,08`, chacune
+  mesurée contre la précédente sur 6 000 parties — **+115,74 ± 6,98** pour
+  des étiquettes du moteur au réseau, **+50,09 ± 6,12** pour deux fois plus
+  de positions, **+16,40 ± 6,20** pour N2 ré-entraîné sur les données de
+  Leela (L0, ces données seules depuis zéro : +10,02 ± 6,19).
   Le premier réseau (A21, 28 sept.) valait **+330,61 ± 19,21** contre la
   faite main. La faite main reste — `EvalFile <none>` —, et c'est elle
   qu'évaluent le banc (`Search::new`) et les tests de recherche, **pas celle
@@ -70,7 +72,8 @@ une mesure, pas une préférence.
   seules, les leurs seules ou les nôtres puis les leurs, **selon ce qui mesure
   le mieux**. Licence ODbL : **le jour où un réseau entraîné sur elles est
   embarqué, `README.md` porte la mention d'attribution**, comme celui de
-  Stockfish. Plan et faits vérifiés : `tools/README.md`, section n° 7.
+  Stockfish — **fait le 2 oct. 2026 avec N2L**, section « Remerciements ».
+  Plan et faits vérifiés : `tools/README.md`, section n° 7.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Licence AGPL-3.0-or-later** sur tout le dépôt.
 
