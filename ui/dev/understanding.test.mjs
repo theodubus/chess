@@ -105,7 +105,7 @@ for (const [name, command] of [
           expect(draft.played.length).toBeLessThanOrEqual(9);
         } else if (draft) {
           expect(report.status).toBe("supported");
-          expect(draft.role).toBe("allows-loss");
+          expect(draft.role).toBe(report.hypothesis.role);
           expect(draft.evidence.scope).toBe("observed-consequence");
           expect(draft.alternative).toEqual([]);
           expect(draft.comparisonText).toBe("");

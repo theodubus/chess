@@ -43,28 +43,44 @@ Le calcul porte sur le coup consulté : extraction coopérative, progression, ca
 par revue/révision/moteur/historique/PV/score, annulation et délai partagé de 12 s.
 Deux candidats maximum, quatorze recherches maximum, budgets 300/900 ms. Retry
 masqué et annotations désactivées ne déclenchent pas la recherche pédagogique.
-Les anciennes causes négatives sont écartées ; la navigation existante est conservée.
+Les anciennes causes concurrentes sont écartées dans la revue ; la navigation
+existante est conservée. Le mat déjà joué conserve une preuve des règles, sans
+recherche supplémentaire et avec un seul repère après la décision.
 
-**Lot actuel, implémenté localement : pièce déplacée puis capturée.**
+**Lot publié : pièce déplacée puis capturée.**
 `CaptureLossVerification` et `captureLossDraft` partagent les contrôles de la menace
 ignorée et de la pièce exposée : identité, premier échange clôturé négatif, bilan
 total négatif et réponse libre comparée. Promotion capturée et en passant sont
 traités. Les issues de mat restent qualitatives ; un mat adverse long n'empêche
 pas de décrire un échange court, sans prétendre expliquer ou prouver tout le mat.
 Une alternative déjà terminale est vérifiée par les règles et ne lance pas de moteur.
-Questions, preuves altérées, cache, arrêt et délais sont contrôlés. Validation finale
-et publication en cours ; ne pas le déclarer livré avant lecture de sa CI.
-Reprise du 4 octobre : **816 tests unitaires / 66 fichiers** passent en exécution
-sérielle ; lint, TypeScript et build passent. Les tests réels et la CI du nouveau
-commit restent à terminer/lire. Le bundle de revue dépasse encore 500 ko ; aucune
-validation visuelle annoncée, navigateur intégré indisponible après tentative.
+Questions, preuves altérées, cache, arrêt et délais sont contrôlés.
+Commit publié : `234e7e7`. CI réellement lue et réussie :
+[UI 37227789810](https://github.com/theodubus/chess/actions/runs/37227789810),
+[Rust PR 37227789819](https://github.com/theodubus/chess/actions/runs/37227789819),
+[Rust push 37227787086](https://github.com/theodubus/chess/actions/runs/37227787086).
+Ce lot vérifie **816 tests unitaires / 66 fichiers et 127 tests pont/moteurs**,
+lint, TypeScript et build. Stockfish 16 est la référence des instantanés et de
+la CI. Un passage local avec Stockfish 17 a conservé un refus de réponse finale
+et deux dépassements du délai pédagogique ; aucune explication n'a été publiée
+dans ces cas. Main de référence : `510af69`.
 
-Dernier commit publié : `e833699`. CI réellement lue et réussie :
-[UI 37200202913](https://github.com/theodubus/chess/actions/runs/37200202913),
-[Rust PR 37200202663](https://github.com/theodubus/chess/actions/runs/37200202663),
-[Rust push 37200199750](https://github.com/theodubus/chess/actions/runs/37200199750).
-Ce lot vérifiait 787 tests unitaires et 117 tests pont/moteurs. Ce n'est pas le
-compteur final du lot actuel. Main de référence : `510af69`.
+**Travail actuel : migration favorable et clôture du raccordement.** Fourchettes,
+clouages et défenseur échangé utilisent leur propre conséquence revalidée. Une
+occasion bénéfique ne prouve pas le meilleur coup, ni son unicité ; la capture,
+les reprises et le bilan doivent rester stables, sans imposer une alternative.
+La distance entre scores CP n'est pas attribuée à cette conséquence. Une reprise
+connue garde son contexte et ne relance pas un récit d'échange gagnant.
+Le clouage est refusé comme cause isolée si la pression ou les reprises changent
+aussi. Le premier échange neutre est séparé d'une contre-prise adverse ailleurs ;
+la contre-prise compensatrice du camp étudié reste comptée.
+
+Deux instantanés favorables conservent les dix essais réels de développement :
+deux premiers textes, puis six après séparation de la stabilité physique et du
+score CP. Les quatre abstentions finales restent visibles. Contrôles logiciels
+et publication du raccordement en cours ; aucune validation humaine ou visuelle
+présumée. Le bundle de revue dépasse encore 500 ko ; navigateur intégré
+indisponible après tentative.
 
 ## Prochain jalon fini : conséquences tactiques courtes
 
@@ -73,17 +89,19 @@ une promesse d'équivalence avec Chess.com. Les familles négatives restent fig�
 La migration favorable utilise fourchettes/clouages déjà modélisés ; elle n'ouvre
 pas une série de détecteurs pour remplir chaque trou du corpus.
 
-1. [ ] Terminer les contrôles du lot actuel, publier et lire sa CI. Conserver
+1. [x] Terminer les contrôles du lot de pièce exposée, publier et lire sa CI. Conserver
    les mesures précédentes et les abstentions ; vérifier les deux moteurs.
-2. [ ] Migrer les occasions favorables des mécanismes existants vers leur propre
+2. [x] Migrer les occasions favorables des mécanismes existants vers leur propre
    conséquence vérifiée. Contrat : [FAVOURABLE_CONSEQUENCE.md](src/review/understanding/FAVOURABLE_CONSEQUENCE.md).
    Deux recherches libres, même motif et bilan après reprises. Pas d'alternative
    obligatoire, pas de preuve du meilleur choix global. Une reprise connue garde
    sa note d'échange ; aucun récit favorable ne justifie une erreur.
-3. [ ] Finir le raccordement UX de ces deux parcours : mêmes faits pour texte,
+3. [x] Finir le raccordement UX de ces deux parcours : mêmes faits pour texte,
    bilan et repères, progression/annulation/préférences, retour explicite au coup
    étudié. Écarter leurs anciennes raisons concurrentes et toute observation
    positionnelle utilisée pour remplacer une explication inconnue.
+   Raccordement logiciel testé, dont annulation pendant la rédaction. La
+   relecture pédagogique et le contrôle visuel restent les points 4 et 5.
 4. [ ] Faire relire les exemples positifs et négatifs : raison pertinente,
    illustration courte compréhensible, compensation/reprise correctement située.
    Théo a validé les premiers textes le 3 octobre ; cela ne valide pas tous les

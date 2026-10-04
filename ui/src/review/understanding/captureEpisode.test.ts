@@ -13,6 +13,16 @@ it("n'attribue pas une perte ultérieure à la première capture équilibrée", 
   const { source } = divertedDefenceInput(), context = decisionContext(source.position, source.result);
   expect(captureEpisode(context)).toMatchObject({ complete: true, balanceSinceDecision: 0, moves: ["f7d5", "d1d5"] });
 });
+it.each([
+  ["3rk3/5q2/1b6/RR6/8/3Q4/7P/3K4 w - - 0 1", "Qd5", ["Qxd5+", "Rxd5", "Bxa5", "Rxd8+", "Kxd8", "Kc2"], ["f7d5", "b5d5"]],
+  ["3k4/7p/3q4/8/rr6/1B6/5Q2/3RK3 b - - 0 1", "Qd4", ["Qxd4+", "Rxd4", "Bxa4", "Rxd1+", "Kxd1", "Kc7"], ["f2d4", "b4d4"]],
+])("sépare la contre-prise adverse d'une autre pièce, même si une reprise restait légale : %s", (fen, played, line, moves) => {
+  expect(episode(fen, played, line)).toMatchObject({ complete: true, balanceSinceDecision: 0, moves });
+});
+it("inclut une contre-prise qui compense la perte du camp étudié", () => {
+  expect(episode("1r5k/7p/8/5q2/8/7P/2Q4K/R7 w - - 0 1", "Rb1", ["Rxb1", "Qxf5", "Kg8", "Kg2"]))
+    .toMatchObject({ complete: true, balanceSinceDecision: 4, moves: ["b8b1", "c2f5"] });
+});
 it("inclut la prise faite par la décision avant de compter la perte de sa dame", () => {
   expect(episode("7k/7p/8/4p3/3r4/8/7P/3Q3K w - - 0 1", "Qxd4", ["exd4", "Kg1"])).toMatchObject({ complete: true, balanceSinceDecision: -4 });
   expect(episode("7k/7p/8/4p3/3q4/8/7P/3Q3K w - - 0 1", "Qxd4", ["exd4", "Kg1"])).toMatchObject({ complete: true, balanceSinceDecision: 0 });

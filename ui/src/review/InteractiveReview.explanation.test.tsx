@@ -76,6 +76,33 @@ it("présente la reprise dans l'échange existant sans nouveau gain ni calcul de
   expect(html).not.toContain("Montrer pourquoi");
   expect(hook.request).toHaveBeenLastCalledWith(null, true);
 });
+it.each(["fork-direct", "fork-black", "pin-retreat"])("raccorde l'occasion du joueur au même parcours et respecte les préférences : %s", async id => {
+  const input = tacticalInput(id), source = corpusInput(input.example.test);
+  const board = boardFromCommand(source.position.command); board.move(source.position.played!);
+  const review = new GameReview(board.pgn());
+  const score = { kind: "cp" as const, value: source.position.turn === "w" ? 300 : -300 };
+  review.results[0] = { score, depth: 15, bestMove: source.position.played, bestSan: source.position.playedSan,
+    variation: legalVariation(source.position.fen, [source.position.played!]) };
+  review.results[1] = { ...source.result!, score }; review.state = "complete";
+  const category = review.annotations[0]!.category;
+  expect(category).toBe("best");
+  const props = { review, selected: 1, onSelect: () => {}, engineId: "script", orientation: "white" as const,
+    showEvaluation: false, showAnnotations: true, active: true, side: "both" as const, treeCache: new Map() };
+  const loading = renderToStaticMarkup(<InteractiveReview {...props} />);
+  expect(loading).toContain("Recherche de l’occasion créée par ce coup"); expect(loading).not.toContain("Montrer pourquoi");
+  const request = { review, revision: review.revision, engineId: "script", position: review.positions[0], result: review.results[1], category };
+  hook.result = await new PedagogicalAnalysis([10, 20]).analyse(request, async () => new ScriptEngine({ ...input, ...request }, id));
+  expect(hook.result?.status).toBe("supported"); hook.state = "supported";
+  const ready = renderToStaticMarkup(<InteractiveReview {...props} />);
+  expect(ready).toContain("Montrer pourquoi"); expect(ready).toMatch(/\+\d+ points? pour les (Blancs|Noirs)/);
+  expect(ready).not.toContain("Comparer les décisions"); expect(ready).toContain("Réessayer ce coup");
+  expect(ready).toContain("Portée de cette explication"); expect(hook.request).toHaveBeenLastCalledWith(request, true);
+  const hidden = renderToStaticMarkup(<InteractiveReview {...props} showAnnotations={false} />);
+  expect(hidden).not.toContain("Montrer pourquoi"); expect(hook.request).toHaveBeenLastCalledWith(null, false);
+  hook.result = null; hook.state = "unconfirmed";
+  const unknown = renderToStaticMarkup(<InteractiveReview {...props} />);
+  expect(unknown).not.toContain("Montrer pourquoi"); expect(unknown).toContain("Aucune conséquence courte suffisamment confirmée");
+});
 function fixture() {
   const input = tacticalInput("allows-fork"), source = corpusInput(input.example.test);
   const board = boardFromCommand(source.position.command); board.move(source.position.played!);

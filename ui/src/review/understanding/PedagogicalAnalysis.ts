@@ -1,12 +1,12 @@
 import type { EngineFactory } from "../../GameController";
 import type { Category } from "../annotations";
-import { confirmedConsequence, type ConfirmedConsequence } from "../directExplanation";
+import { confirmedConsequence, confirmedOpportunity, type ConfirmedConsequence } from "../directExplanation";
 import type { ReviewPosition, ReviewResult } from "../model";
 import type { VerificationIdentity } from "./BoundedVerification";
 import { UnderstandingAnalysis } from "./UnderstandingAnalysis";
 import { TacticalEffectVerification } from "./TacticalVerification";
 import { RelationVerification } from "./RelationVerification";
-import { tacticalDraft } from "./tacticalDraft";
+import { tacticalDraftWork } from "./tacticalDraft";
 import { relationDraft } from "./relationDraft";
 import { closedRetreats, RestrictionEffectVerification } from "./RestrictionEffectVerification";
 import { restrictionDraft } from "./restrictionDraft";
@@ -19,6 +19,7 @@ import { ignoredThreat } from "./ignoredThreat";
 import { IgnoredThreatVerification } from "./IgnoredThreatVerification";
 import { ignoredThreatDraftWork } from "./ignoredThreatDraft";
 import { movedPieceExposure } from "./movedPieceExposure";
+import { captureEpisode } from "./captureEpisode";
 import { MovedPieceVerification } from "./MovedPieceVerification";
 import { captureLossDraftWork } from "./captureLossDraft";
 import { decisionContext, opposite } from "./context";
@@ -26,6 +27,7 @@ import { boundedContinuation } from "./evidence";
 import type { PedagogicalDraft } from "./draftModel";
 import type { RelationDraft } from "./relationDraft";
 import { completeWork, type WorkPhase } from "./work";
+import { recaptureObservation } from "./recaptureObservation";
 
 export type PedagogicalRequest = VerificationIdentity & {
   position: ReviewPosition;
@@ -43,6 +45,8 @@ export type PedagogicalResult = {
 };
 export const adverseCategory = (category: Category | undefined) =>
   !!category && ["inaccuracy", "mistake", "blunder", "miss"].includes(category);
+export const favourableCategory = (category: Category | undefined) =>
+  !!category && ["brilliant", "great", "best", "excellent", "good"].includes(category);
 export function pedagogicalSignature(request: Omit<PedagogicalRequest, "review">) {
   // Une amélioration ciblée ne change pas toujours la révision de GameReview.
   // Sa PV et son score doivent néanmoins invalider résultat et démonstration.
@@ -52,7 +56,9 @@ export function eligibleConsequence(request: PedagogicalRequest) {
   const score = request.result?.score;
   const useful = score?.kind === "cp" || score?.kind === "mate" && score.winner === opposite(request.position.turn) &&
     Number.isSafeInteger(score.value) && Math.abs(score.value) >= 1;
-  return adverseCategory(request.category) && !!request.position.played && !request.position.terminal && useful &&
+  const adverse = adverseCategory(request.category), favourable = favourableCategory(request.category);
+  return (adverse || favourable && score?.kind === "cp" && !recaptureObservation(request.position, request.result)) &&
+    !!request.position.played && !request.position.terminal && useful &&
     !!score && !score.bound && Number.isFinite(score.value) &&
     !!request.result?.bestMove && request.result.variation.length > 0;
 }
@@ -130,7 +136,7 @@ export class PedagogicalAnalysis {
       this.state = "complete"; this.publish();
       return generation === this.generation ? result : null;
     };
-    // Les coups forcés, théoriques, positifs ou sans PV exacte n'ouvrent jamais
+    // Les coups forcés, théoriques ou sans PV exacte n'ouvrent jamais
     // de connexion. Un retry masqué est filtré encore plus tôt par la revue.
     if (!eligibleConsequence(request)) return finish("unconfirmed", null, 0, 0);
     const timer = setTimeout(expire, this.deadlineMs);
@@ -174,20 +180,27 @@ export class PedagogicalAnalysis {
         if (this.extraction.state === "timed-out") { expire(); return null; }
         return finish("unavailable", null, 0, 0);
       }
+      const favourable = favourableCategory(request.category);
       const tactics = understanding.constraints.hypotheses.flatMap((h, index) =>
-        h.role === "allows-loss" && ["double-threat", "pin"].includes(h.kind) ? [{ family: "tactic" as const, index, rank: h.kind === "double-threat" ? 0 : 2 }] : []);
+        h.role === (favourable ? "creates-opportunity" : "allows-loss") && ["double-threat", "pin"].includes(h.kind)
+          ? [{ family: "tactic" as const, index, rank: h.kind === "double-threat" ? 0 : 2 }] : []);
       const restrictions = understanding.hypotheses.flatMap((h, index) =>
         h.kind === "allows-restriction" && closedRetreats(understanding, h).length ? [{ family: "restriction" as const, index, rank: 1 }] : []);
       const relations = understanding.mechanisms.flatMap((h, index) =>
         h.role === "allows-loss" ? [{ family: "relation" as const, index, rank: h.kind === "defender-removal" ? 3 : 4 }] : []);
       const diversions = divertedDefenceSeed(understanding.context) ? [{ family: "diversion" as const, index: 0, rank: -1 }] : [];
       const ignored = ignoredThreat(understanding);
-      const omissions = ignored ? [{ family: "ignored-threat" as const, index: 0, rank: 5 }] : [];
+      const episode = captureEpisode(understanding.context);
+      // Un premier échange déjà équilibré ne justifie pas une recherche sur
+      // la simple exposition de sa cible. Les mécanismes complexes restent
+      // candidats : ils peuvent expliquer la perte d'une autre pièce.
+      const captureLoss = !episode?.complete || episode.balanceSinceDecision < 0;
+      const omissions = ignored && captureLoss ? [{ family: "ignored-threat" as const, index: 0, rank: 5 }] : [];
       const moved = movedPieceExposure(understanding);
-      const exposures = moved ? [{ family: "exposure" as const, index: 0, rank: 6 }] : [];
+      const exposures = moved && captureLoss ? [{ family: "exposure" as const, index: 0, rank: 6 }] : [];
       // Au-delà de l'horizon de preuve légale du mat, un échange court peut
       // rester explicable. Les autres vérificateurs ne comparent que des CP.
-      const candidates = (mateScore ? [...omissions, ...exposures] : [...diversions, ...tactics, ...restrictions, ...relations, ...omissions, ...exposures]).sort((a, b) => a.rank - b.rank).slice(0, 2);
+      const candidates = (favourable ? tactics : mateScore ? [...omissions, ...exposures] : [...diversions, ...tactics, ...restrictions, ...relations, ...omissions, ...exposures]).sort((a, b) => a.rank - b.rank).slice(0, 2);
       for (const candidate of candidates) {
         if (!current()) return null;
         this.candidate = candidate.family; this.state = "verifying"; this.publish();
@@ -257,7 +270,10 @@ export class PedagogicalAnalysis {
           }
           searches += report.searches;
           checks.push({ family: candidate.family, status: report.status, reason: report.reason, searches: report.searches });
-          draft = tacticalDraft(understanding, report);
+          const drafting = new AbortController();
+          this.cancelVerification = () => { checker.stop(); drafting.abort(); };
+          draft = await completeWork(tacticalDraftWork(understanding, report), drafting.signal);
+          if (!current()) return null;
         } else if (candidate.family === "restriction") {
           const checker = new RestrictionEffectVerification(this.budgets, remaining);
           this.cancelVerification = () => checker.stop();
@@ -285,7 +301,13 @@ export class PedagogicalAnalysis {
           checks.push({ family: candidate.family, status: report.status, reason: report.reason, searches: report.searches });
           draft = relationDraft(understanding, report);
         }
-        if (draft) return finish("supported", confirmedConsequence(draft, request.position), attempts, searches);
+        if (draft) {
+          if (favourable) {
+            if (!("family" in draft)) throw new Error("Occasion tactique requise.");
+            return finish("supported", confirmedOpportunity(draft, request.position), attempts, searches);
+          }
+          return finish("supported", confirmedConsequence(draft, request.position), attempts, searches);
+        }
       }
       return finish("unconfirmed", null, attempts, searches);
     } catch (error) {

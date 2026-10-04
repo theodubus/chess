@@ -56,10 +56,13 @@ it("sépare la réponse libre et la même menace après une autre décision huma
 it.each([
   ["byrne-22", "compensation", "compensation"],
   ["byrne-22", "short", "unresolved"],
-  ["byrne-22", "drift", "unstable-search"],
   ["byrne-allows-fork", "different-threat", "different-line"],
 ] as const)("refuse de soutenir le gain matériel ou la cause : %s / %s", async (id, mode, reason) => {
   expect(await verify(id, mode)).toMatchObject({ status: "indeterminate", reason, attribution: { status: "not-established" } });
+});
+it("sépare la conséquence favorable stable de l'attribution comparée dont les scores divergent", async () => {
+  const report = await verify("byrne-22", "drift");
+  expect(report).toMatchObject({ status: "supported", reason: "material-loss", attribution: { status: "not-established", reason: "score-gap-missing" } });
 });
 it.each([
   ["byrne-22", "no-gap", "score-gap-missing"],

@@ -14,6 +14,7 @@ const { values } = parseArgs({ options: {
   stockfish: { type: "string", default: process.env.CHESS_STOCKFISH_BINARY },
   output: { type: "string", default: "dev/pedagogy-review-data.json" },
   cases: { type: "string" },
+  direct: { type: "boolean", default: false },
 } });
 const vite = await createServer({ root, server: { middlewareMode: true }, appType: "custom" });
 const load = (name) => vite.ssrLoadModule(`/src/review/understanding/${name}.ts`);
@@ -32,7 +33,7 @@ try {
     load("ignoredThreatTestEngine"), load("ignoredThreat"), load("IgnoredThreatVerification"), load("ignoredThreatDraft"),
     load("movedPieceTestEngine"), load("movedPieceExposure"), load("MovedPieceVerification"), load("captureLossDraft"),
   ]);
-  const allCases = ["queen-closes-retreat", "queen-closes-retreat-black", "allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black", "diverted-unconstrained", "diverted-relative"];
+  const allCases = ["queen-closes-retreat", "queen-closes-retreat-black", "allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "pin-defence-changed", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black", "diverted-unconstrained", "diverted-relative"];
   allCases.push("diverted-pin-queen-white", "diverted-pin-queen-black");
   allCases.push("ignored-white", "ignored-black", "ignored-history", "ignored-compensation");
   allCases.push(...movedPieceCases.map(c => "moved-" + c.id));
@@ -85,20 +86,21 @@ try {
           check = new MateVerification([200, 600], 25000); build = mateDraft; source = test.notes; origin = "published";
         } else {
           input = tacticalInput(id === "allows-fork-direct" ? "allows-fork" : id);
-          check = id === "allows-fork-direct" ? new TacticalEffectVerification([200, 600], 25000) : new TacticalVerification([200, 600], 25000); build = tacticalDraft;
+          check = values.direct ? new TacticalEffectVerification() : id === "allows-fork-direct"
+            ? new TacticalEffectVerification([200, 600], 25000) : new TacticalVerification([200, 600], 25000); build = tacticalDraft;
           source = input.example.test.notes; origin = input.example.test.origin;
         }
         const context = input.understanding.context;
         try {
           const request = { ...input, review: {}, revision: 0, engineId: engine };
-          if (id === "allows-fork-direct") delete request.alternative;
+          if (check instanceof TacticalEffectVerification) delete request.alternative;
           const report = await check.verify(request, factory);
           const draft = report ? build(input.understanding, report) : null;
           examples.push({ id, capturedAt: new Date().toISOString(), label: `${context.before.fen.split(" ")[5]}${context.before.turn === "b" ? "…" : "."} ${moveLabel(context.before, context.moves[context.decision].lan)}`, source, origin, engine, engineName, engineHash,
             beforeFen: context.before.fen, afterFen: context.after.fen, state: report?.status ?? "unavailable",
             reason: report?.attribution?.reason ?? report?.reason ?? "engine-unavailable", error: check.error || null,
             elapsedMs: report?.elapsedMs ?? 0, searches: report?.searches ?? 0, draft,
-            ...(/^(diverted|ignored|moved)-/.test(id) ? { verification: report } : {}) });
+            ...(values.direct || /^(diverted|ignored|moved)-/.test(id) ? { verification: report } : {}) });
           console.log(`${engineName} • ${id} : ${draft ? "brouillon à relire" : "abstention"} (${report?.reason ?? check.error})`);
         } finally { check.stop(); }
       }

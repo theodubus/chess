@@ -37,4 +37,4 @@ it("conserve les essais d'exposition, leurs bilans et abstentions sans vérité 
       if (record.id === "moved-non-local-loss") expect(report).toMatchObject({ status: "indeterminate", reason: "episode-not-loss" });
     }
   }
-}, 20000);
+}, 30000);

@@ -48,13 +48,18 @@ export type TacticalReport = Omit<TacticalEffectReport, "passes"> & {
 const cp = (score: Score | null) => score?.kind === "cp" && !score.bound && Number.isFinite(score.value) ? score.value : null;
 const stable = (values: (number | null)[]) => values.length === 2 && values.every((v) => v !== null) && Math.abs(values[0]! - values[1]!) <= 100;
 
-function summarizeEffect(h: TacticalHypothesis, passes: TacticalEffectPass[]): Omit<TacticalEffectReport, keyof VerificationCost> {
+export function tacticalEffectConclusion(h: TacticalHypothesis, passes: TacticalEffectPass[]): Omit<TacticalEffectReport, keyof VerificationCost> {
   const playedScores = passes.map((p) => cp(p.questions.find((q) => q.purpose === "played")!.result.score));
   let reason: TacticalEffectReport["reason"] = "unresolved", status: TacticalEffectReport["status"] = "indeterminate";
   if (passes.some((p) => !p.actual.matched)) reason = "different-line";
-  else if (!stable(playedScores) || passes[0].actual.evidence.outcome !== passes[1].actual.evidence.outcome ||
+  // Une occasion décrite pour elle-même ne prétend pas expliquer la variation
+  // du score. Sa valeur peut croître vers un gain théorique sans changer la
+  // capture. Une attribution comparée garde ses contrôles de score séparés.
+  else if (passes.length !== 2 || (h.role === "creates-opportunity" ? playedScores.some(s => s === null) : !stable(playedScores)) ||
+      passes[0].actual.evidence.outcome !== passes[1].actual.evidence.outcome ||
       passes[0].actual.capture?.targetId !== passes[1].actual.capture?.targetId ||
       passes[0].actual.capture?.attackerId !== passes[1].actual.capture?.attackerId ||
+      passes[0].actual.exchange?.balance !== passes[1].actual.exchange?.balance ||
       passes[0].actual.evidence.materialDelta !== passes[1].actual.evidence.materialDelta) reason = "unstable-search";
   else if (passes.every((p) => p.actual.evidence.outcome === "compensated")) reason = "compensation";
   else if (passes.every((p) => p.actual.evidence.outcome === "loss-in-line" && p.actual.evidence.materialDelta < 0 && p.actual.exchange?.complete)) {
@@ -64,7 +69,7 @@ function summarizeEffect(h: TacticalHypothesis, passes: TacticalEffectPass[]): O
 }
 
 function summarize(h: TacticalHypothesis, alternative: string, passes: TacticalPass[], sign: number): Omit<TacticalReport, keyof VerificationCost> {
-  const effect = summarizeEffect(h, passes);
+  const effect = tacticalEffectConclusion(h, passes);
   const scores = (purpose: Purpose) => passes.map((p) => cp(p.questions.find((q) => q.purpose === purpose)!.result.score));
   let cause: TacticalReport["attribution"]["reason"] = "effect-not-verified";
   let attributed = false;
@@ -112,7 +117,7 @@ export class TacticalEffectVerification extends BoundedVerification<TacticalEffe
         if (!await ask("decision", framePosition(context.before))) return null;
         const played = await ask("played", framePosition(context.after));
         return played ? { budgetMs, questions, actual: observeTactic(context, h, played) } : null;
-      }, (passes) => summarizeEffect(h, passes));
+      }, (passes) => tacticalEffectConclusion(h, passes));
   }
 }
 

@@ -14,13 +14,13 @@ export type ConfirmedConsequence = {
 };
 const append = (command: string, move: string) => command + (command.includes(" moves ") ? " " : " moves ") + move;
 
-/** La revue n'active pour l'instant que les conséquences adverses directes.
+/** La revue active uniquement une conséquence du rôle demandé.
  * Rejouer toutes les étapes empêche un repère périmé ou raccourci illégal de
  * devenir une explication ; le premier écran est déjà après le coup examiné. */
-export function confirmedConsequence(draft: PedagogicalDraft | RelationDraft, position: ReviewPosition): ConfirmedConsequence {
+export function confirmedConsequence(draft: PedagogicalDraft | RelationDraft, position: ReviewPosition, role: "allows-loss" | "creates-opportunity" = "allows-loss"): ConfirmedConsequence {
   const scope = "evidence" in draft ? draft.evidence.scope : draft.scope;
   const forcedMate = "family" in draft && draft.family === "forced-mate" && scope === "short-forcing-route";
-  if (draft.role !== "allows-loss" || (scope !== "observed-consequence" && !forcedMate) || draft.alternative.length || !position.played)
+  if (draft.role !== role || (scope !== "observed-consequence" && !forcedMate) || draft.alternative.length || !position.played)
     throw new Error("Conséquence adverse directe requise.");
   const board = boardFromCommand(position.command);
   if (board.fen() !== position.fen) throw new Error("Explication d'une autre position.");
@@ -54,9 +54,20 @@ export function confirmedConsequence(draft: PedagogicalDraft | RelationDraft, po
   };
 }
 
+export function confirmedOpportunity(draft: PedagogicalDraft, position: ReviewPosition): ConfirmedConsequence {
+  if (!["double-targets", "exchanged-defender", "blocked-retreat"].includes(draft.family) ||
+      draft.evidence.materialDelta === null || draft.evidence.materialDelta >= 0)
+    throw new Error("Occasion tactique vérifiée requise.");
+  return confirmedConsequence(draft, position, "creates-opportunity");
+}
+
 /** Les variantes libres restent explorables, mais une ancienne heuristique ne
  * prend pas la place d'une conséquence que les nouvelles vérifications refusent. */
 export function directExplanation(base: MoveExplanation, consequence: ConfirmedConsequence | null): MoveExplanation {
+  // Le mat déjà joué est un résultat des règles, pas une ancienne heuristique
+  // sauvée parce que les recherches n'ont pas trouvé de conséquence matérielle.
+  if (base.rulesProof === "played-mate" && base.proof?.steps.length === 1 &&
+      boardFromCommand(base.proof.steps[0].command).isCheckmate()) return base;
   const fallback: MoveExplanation = {
     summary: "Aucune conséquence courte suffisamment confirmée pour expliquer ce verdict. Vous pouvez examiner les variantes du moteur.",
     concrete: false, played: base.played, alternative: base.alternative, observations: base.observations, context: base.context,

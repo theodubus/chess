@@ -14,3 +14,8 @@ it("annonce le calcul utile et permet de continuer à naviguer, sans confondre a
   expect(renderToStaticMarkup(<ConsequenceStatus state="supported" fallback="Sans raison confirmée." />)).toBe("");
   expect(renderToStaticMarkup(<ConsequenceStatus state="idle" fallback="Sans raison confirmée." />)).toBe("");
 });
+it("annonce une occasion du joueur pour un coup favorable", () => {
+  const html = renderToStaticMarkup(<ConsequenceStatus state="extracting" fallback="Inconnue." adverse={false} />);
+  expect(html).toContain("Recherche de l’occasion créée par ce coup");
+  expect(html).not.toContain("permet à l’adversaire");
+});

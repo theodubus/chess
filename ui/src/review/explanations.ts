@@ -39,6 +39,8 @@ export type MoveExplanation = {
   candidate?: CauseCandidate;
   context?: string;
   limitation?: string;
+  rulesProof?: "played-mate";
+  recapture?: true;
   played: ExplanationLine | null;
   alternative: ExplanationLine | null;
 };
@@ -198,8 +200,14 @@ export function explainMove(
   // Le gain depuis une reprise ne prouve pas un échange globalement gagnant,
   // ni que cette décision est la meilleure. Le mat joué garde sa preuve légale.
   const base = baseExplanation(position, before, after, annotation, checkCause && !recapture);
-  if (recapture) base.context = recapture.text;
+  if (recapture) { base.context = recapture.text; base.recapture = true; }
   if (!base.played) return base;
+  const played = base.played.steps[1];
+  if (played && boardFromCommand(played.command).isCheckmate()) {
+    return { ...base, concrete: true, summary: "Ce coup donne échec et mat.", rulesProof: "played-mate",
+      proof: { kind: "cause", title: "Échec et mat", truncated: false,
+        steps: [{ ...played, move: null, text: "Le roi est en échec et aucune réponse légale ne le sauve." }] } };
+  }
   const compare = !!annotation && exactComparison(before, after, position.turn);
   const observations = {
     played: positionObservation(base.played),

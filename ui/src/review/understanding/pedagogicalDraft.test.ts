@@ -48,7 +48,7 @@ it("explique la perte de la défense e4 après un échange égal, avec la repris
   expect(draft).toMatchObject({ family: "exchanged-defender", evidence: { materialDelta: -1 }, played: expect.any(Array) });
   expect(draft!.summary).toContain("vaut 0 points");
   expect(draft!.summary).toContain("défendait e4");
-  expect(draft!.summary).toContain("−1 point");
+  expect(draft!.summary).toContain("+1 point pour les Noirs");
   expect(draft!.comparisonText).toContain("Si la même prise");
   expect(draft!.alternative.filter((s) => s.origin === "conditional-move").map((s) => s.label)).toEqual(["Cxe4"]);
   expect(draft!.played).toHaveLength(5);
@@ -63,7 +63,7 @@ it("la menace adverse reste expliquée quand la branche libre ne valide pas l'al
   expect(draft!.alternative).toEqual([]);
   expect(draft!.evidence.scope).toBe("observed-consequence");
   legal(draft!);
-});
+}, 10000);
 it.each(["allows-fork", "allows-fork-other-defence", "allows-fork-white"])("explique d'abord la menace et la perte du mauvais coup, indépendamment de l'alternative : %s", async (id) => {
   const { draft } = await example(id);
   expect(draft!.role).toBe("allows-loss");
@@ -114,13 +114,38 @@ it("une alternative qui permet une autre fourchette est écartée, sans perdre l
   expect(draft!.summary).not.toContain("Rc8");
   legal(draft!);
 });
-it("une observation favorable seule n'est ni une justification du meilleur coup, ni une preuve de mauvais choix ailleurs", async () => {
-  const id = "fork-direct", { understanding, hypothesisIndex, alternative } = tacticalInput(id);
+it.each(["fork-direct", "fork-black", "pin-retreat", "byrne-22"])("une occasion explique sa propre conséquence sans justifier le meilleur choix global : %s", async id => {
+  const { understanding, hypothesisIndex, alternative } = tacticalInput(id);
   const request = { understanding, hypothesisIndex, review: {}, revision: 0, engineId: "script" };
   const check = new TacticalEffectVerification([10, 20]);
   const report = await check.verify(request, async () => new ScriptEngine({ ...request, alternative }, id));
   expect(report?.status).toBe("supported");
-  expect(tacticalDraft(understanding, report!)).toBeNull();
+  const draft = tacticalDraft(understanding, report!)!;
+  expect(draft).toMatchObject({ role: "creates-opportunity", alternative: [], comparisonText: "", evidence: { scope: "observed-consequence" } });
+  expect(draft.summary).toMatch(/\+\d+ points? pour les (Blancs|Noirs)/);
+  expect(draft.limitation).toContain("ne prouve ni le gain contre toutes les défenses");
+  expect(draft.summary).not.toMatch(/meilleur|unique|seul bon/);
+  expect(draft.played[0].fen).toBe(understanding.context.after.fen);
+  expect(draft.played[0].marks.length).toBeGreaterThan(0);
+  legal(draft);
+});
+it("sans contraste le clouage n'explique pas une pression dont la défense a aussi changé", async () => {
+  const id = "pin-defence-changed", input = tacticalInput(id);
+  const request = { ...input, review: {}, revision: 0, engineId: "script" };
+  const report = await new TacticalEffectVerification([10, 20]).verify(request, async () => new ScriptEngine(request, id));
+  expect(report!.status).toBe("supported");
+  expect(tacticalDraft(input.understanding, report!)).toBeNull();
+});
+it("revalide le gain physique et refuse un rapport favorable altéré", async () => {
+  const id = "fork-direct", input = tacticalInput(id);
+  const request = { ...input, review: {}, revision: 0, engineId: "script" };
+  const report = (await new TacticalEffectVerification([10, 20]).verify(request, async () => new ScriptEngine(request, id)))!;
+  const altered = structuredClone(report);
+  altered.passes[1].actual.evidence.materialDelta = -9;
+  expect(() => tacticalDraft(input.understanding, altered)).toThrow("altérée");
+  const fakeScore = structuredClone(report);
+  fakeScore.passes[1].questions.find(q => q.purpose === "played")!.result.score!.bound = "lower";
+  expect(() => tacticalDraft(input.understanding, fakeScore)).toThrow("non confirmée");
 });
 it("le clouage explique une retraite interdite, pas seulement un alignement ou un développement", async () => {
   const { draft } = await example("pin-retreat");

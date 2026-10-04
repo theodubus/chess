@@ -1,7 +1,5 @@
 import { explainMove, type ExplanationLine } from "./explanations";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { confirmCause } from "./decisionCause";
-import { useCauseCheck } from "./useCauseCheck";
 import { usePedagogicalAnalysis } from "./usePedagogicalAnalysis";
 import { adverseCategory } from "./understanding/PedagogicalAnalysis";
 import { directExplanation } from "./directExplanation";
@@ -237,7 +235,7 @@ export default function InteractiveReview({
           before ?? null,
           (branch ? liveResult : review.results[selected]) ?? null,
           annotation,
-          !adverseCategory(annotation?.category),
+          false,
         ])
       : "";
   const draftExplanation = useMemo(() => explanationSignature
@@ -251,28 +249,15 @@ export default function InteractiveReview({
     walkTarget === null && review.state !== "running" && (!branch || liveState === "complete") && focused.state !== "running";
   const adverse = adverseCategory(annotation?.category);
   const consequence = usePedagogicalAnalysis(
-    explanationPosition && annotation && adverse && !blind && showAnnotations
+    explanationPosition && annotation && !blind && showAnnotations && !(!adverse && draftExplanation?.recapture)
       ? { review, revision: reviewRevision, engineId, position: explanationPosition,
           result: (branch ? liveResult : review.results[selected]) ?? null, category: annotation.category }
       : null,
     causeFactory, explanationEnabled,
   );
-  const causeCheck = useCauseCheck(
-    draftExplanation?.candidate,
-    review,
-    reviewRevision,
-    engineId,
-    causeFactory,
-    explanationEnabled && !adverse,
-  );
-  const direct = useMemo(() => draftExplanation && adverse
+  const explanation = useMemo(() => draftExplanation
     ? directExplanation(draftExplanation, consequence.result?.consequence ?? null)
-    : null, [draftExplanation, adverse, consequence.result]);
-  const explanation = draftExplanation
-    ? adverse
-      ? direct
-      : confirmCause(draftExplanation, causeCheck.results)
-    : null;
+    : null, [draftExplanation, consequence.result]);
   const focusRequest: FocusRequest | null = explanationPosition
     ? {
         review,
@@ -845,24 +830,7 @@ export default function InteractiveReview({
                     className="move-explanation"
                     aria-label="Comprendre le coup"
                   >
-                    {adverse ? (
-                      <ConsequenceStatus state={consequence.state} fallback={explanation.summary} />
-                    ) : causeCheck.pending && !explanation.concrete ? (
-                      <p className="cause-progress" role="status">
-                        <span className="analysis-spinner" aria-hidden="true" />{" "}
-                        Le moteur vérifie la conséquence et les compensations…
-                      </p>
-                    ) : (
-                      !explanation.concrete && (
-                        <p className="hint">
-                          {causeCheck.failed
-                            ? "La vérification n’a pas abouti. Vous pouvez approfondir ce coup."
-                            : causeCheck.checked && explanation.candidate
-                              ? "La vérification ne confirme pas cette cause. Aucune explication courte fiable pour ce coup."
-                              : explanation.summary}
-                        </p>
-                      )
-                    )}
+                    {!explanation.rulesProof && <ConsequenceStatus state={consequence.state} fallback={explanation.summary} adverse={adverse} />}
                     {explanation.concrete && !annotation && (
                       <p>{explanation.summary}</p>
                     )}

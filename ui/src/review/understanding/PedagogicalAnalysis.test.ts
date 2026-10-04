@@ -12,6 +12,7 @@ import type { Category } from "../annotations";
 import type { Engine } from "../../engine/Engine";
 import { ignoredThreatInput, IgnoredThreatTestEngine } from "./ignoredThreatTestEngine";
 import { movedPieceInput, MovedPieceTestEngine } from "./movedPieceTestEngine";
+import { divertedDefenceInput, DivertedDefenceTestEngine } from "./divertedDefenceTestEngine";
 
 afterEach(() => vi.restoreAllMocks());
 it.each(["white", "black"])("un mat adverse plus long n'interdit pas d'expliquer l'échange court : %s", async id => {
@@ -121,6 +122,90 @@ it.each(["good", "best", "forced", "book"] as Category[])("le verdict %s n'ouvre
   const { request, factory } = tacticalRequest(), connect = factory(), check = new PedagogicalAnalysis([10, 20]);
   expect(await check.analyse({ ...request, category }, connect)).toMatchObject({ attempts: 0, searches: 0, consequence: null });
   expect(connect).not.toHaveBeenCalled();
+});
+function favourableRequest(id: string) {
+  const input = tacticalInput(id), source = corpusInput(input.example.test);
+  const request: PedagogicalRequest = { review: {}, revision: 0, engineId: "script", ...source, category: "best",
+    result: { ...source.result!, score: { kind: "cp", value: source.position.turn === "w" ? 300 : -300 } } };
+  const engines: TacticalEngine[] = [];
+  const factory = (mode: Mode = "normal") => vi.fn(async () => {
+    const engine = new TacticalEngine({ ...input, ...request }, id, mode); engines.push(engine); return engine;
+  });
+  return { request, engines, factory };
+}
+it.each(["fork-direct", "fork-black", "pin-retreat", "byrne-22"])("explique l'occasion du joueur sans comparer à un mauvais choix : %s", async id => {
+  const { request, engines, factory } = favourableRequest(id), check = new PedagogicalAnalysis([10, 20]);
+  const connect = factory(), result = await check.analyse(request, connect);
+  expect(result, check.error).toMatchObject({ status: "supported", attempts: 1, searches: 4 });
+  expect(result!.consequence!.summary).toMatch(/\+\d+ points? pour les (Blancs|Noirs)/);
+  expect(result!.consequence!.summary).not.toMatch(/meilleur|unique|seul bon/);
+  expect(result!.consequence!.limitation).toContain("deux recherches");
+  const view = directExplanation(explainMove(request.position, null, request.result, null, false), result!.consequence);
+  expect(view.proof!.steps[0].move).toBeNull();
+  expect(view.proof!.steps.length).toBeLessThanOrEqual(id === "byrne-22" ? 5 : 4);
+  expect(view.comparison).toBeUndefined(); expect(view.candidate).toBeUndefined();
+  for (const step of view.proof!.steps) expect(boardFromCommand(step.command).fen()).toBe(step.fen);
+  expect(engines.every(e => e.disposed)).toBe(true);
+  expect(new Set(engines.flatMap(e => e.commands).filter(c => c.startsWith("position "))))
+    .toEqual(new Set([request.position.command, view.proof!.steps[0].command]));
+  expect(await check.analyse(request, connect)).toBe(result); expect(connect).toHaveBeenCalledTimes(4);
+  check.stop();
+});
+it.each(["short", "compensation"] as const)("une occasion non confirmée n'est pas remplacée par l'ancienne cause : %s", async mode => {
+  const { request, factory } = favourableRequest("byrne-22"), check = new PedagogicalAnalysis([10, 20]);
+  const result = await check.analyse(request, factory(mode));
+  expect(result, check.error).toMatchObject({ status: "unconfirmed", consequence: null });
+  expect(directExplanation({ ...explainMove(request.position, null, request.result, null), summary: "cause ancienne", concrete: true }, null))
+    .toMatchObject({ concrete: false });
+});
+it("la distance entre deux scores CP ne masque pas une même conséquence favorable", async () => {
+  const { request, factory } = favourableRequest("fork-direct"), check = new PedagogicalAnalysis([10, 20]);
+  expect(await check.analyse(request, factory("drift")), check.error).toMatchObject({ status: "supported", searches: 4 });
+});
+it("une navigation pendant la rédaction favorable annule aussi le repère après les deux recherches", async () => {
+  const { request, factory, engines } = favourableRequest("fork-direct"), check = new PedagogicalAnalysis([10, 20]);
+  const connect = factory(); let scheduled = false;
+  const result = await check.analyse(request, async () => {
+    const engine = await connect(), send = engine.send.bind(engine);
+    if (engines.length === 4) engine.send = command => {
+      send(command);
+      if (command.startsWith("go ")) { scheduled = true; setTimeout(() => check.stop(), 0); }
+    };
+    return engine;
+  });
+  expect(scheduled).toBe(true); expect(result).toBeNull(); expect(check.state).toBe("stopped");
+  expect(check.resultFor(request)).toBeNull(); expect(engines.every(e => e.disposed)).toBe(true);
+});
+it("ne justifie pas un mauvais coup avec sa fourchette favorable", async () => {
+  const { request, factory } = favourableRequest("fork-direct"), connect = factory();
+  const result = await new PedagogicalAnalysis([10, 20]).analyse({ ...request, category: "mistake" }, connect);
+  expect(result).toMatchObject({ status: "unconfirmed", consequence: null, searches: 0 });
+  expect(connect).not.toHaveBeenCalled();
+});
+it("une double attaque préexistante n'est pas attribuée au coup calme", async () => {
+  const source = corpusInput({ id: "preexisting-opportunity", family: "double-threat", origin: "constructed", notes: "Contrat de préexistence.", expected: {}, forbiddenClaims: [],
+    prefix: [], fen: "7k/7p/1r3q2/3N4/8/8/7P/7K w - - 0 1", played: "Kg1", line: ["Rb8", "Nxf6"] } satisfies CorpusCase);
+  const connect = vi.fn(async () => new TacticalEngine({ ...tacticalInput("fork-direct"), ...source, review: {}, revision: 0, engineId: "script" }, "fork-direct"));
+  const result = await new PedagogicalAnalysis([10, 20]).analyse({ ...source, review: {}, revision: 0, engineId: "script", category: "good",
+    result: { ...source.result!, score: { kind: "cp", value: 300 } } }, connect);
+  expect(result).toMatchObject({ searches: 0, consequence: null }); expect(connect).not.toHaveBeenCalled();
+});
+it("garde l'abstention quand le clouage favorable change aussi la pression", async () => {
+  const { request, factory } = favourableRequest("pin-defence-changed");
+  const check = new PedagogicalAnalysis([10, 20]), result = await check.analyse(request, factory());
+  expect(result, check.error).toMatchObject({ status: "unconfirmed", consequence: null, searches: 4 });
+});
+it.each(["pin-white", "pin-black"])("ne relance pas une explication par la dame exposée après un premier échange neutre : %s", async id => {
+  const { source, request } = divertedDefenceInput(id), engines: DivertedDefenceTestEngine[] = [];
+  const check = new PedagogicalAnalysis([10, 20]);
+  const result = await check.analyse({ ...request, ...source, category: "mistake", result: { ...source.result!, score: { kind: "cp", value: 200 } } }, async () => {
+    const engine = new DivertedDefenceTestEngine(source, "drift"); engines.push(engine); return engine;
+  });
+  expect(result, check.error).toMatchObject({ status: "unconfirmed", consequence: null });
+  expect(result!.attempts).toBeLessThanOrEqual(2); expect(result!.searches).toBeLessThanOrEqual(12);
+  expect(result!.checks![0].family).toBe("diversion");
+  expect(result!.checks!.some(c => ["exposure", "ignored-threat"].includes(c.family))).toBe(false);
+  expect(engines.every(e => e.disposed)).toBe(true);
 });
 it("refuse l'entrée incohérente ou sans score/PV, sans connexion", async () => {
   const { request, factory } = tacticalRequest(), connect = factory(), check = new PedagogicalAnalysis([10, 20]);

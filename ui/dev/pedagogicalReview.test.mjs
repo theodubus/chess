@@ -6,7 +6,7 @@ import { connectDevelopmentEngine } from "../src/engine/DevelopmentEngine";
 import { FocusedAnalysis } from "../src/review/FocusedAnalysis";
 import { boardFromCommand } from "../src/review/StudyTree";
 import { corpus, corpusInput } from "../src/review/understanding/corpus";
-import { tacticalInput } from "../src/review/understanding/tacticalCases";
+import { tacticalCases } from "../src/review/understanding/tacticalCases";
 import { mechanismCases } from "../src/review/understanding/mechanismCases";
 import { PedagogicalAnalysis } from "../src/review/understanding/PedagogicalAnalysis";
 import { directExplanation } from "../src/review/directExplanation";
@@ -19,9 +19,9 @@ import { ignoredThreatCases } from "../src/review/understanding/ignoredThreatTes
 import { movedPieceCases } from "../src/review/understanding/movedPieceTestEngine";
 
 for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], ["Stockfish", process.env.CHESS_STOCKFISH_BINARY]]) {
-  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black", "fools-mate", "reverse-fools-mate", "legals-mate", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black", "ignored-white", "ignored-black", "ignored-history", "ignored-compensation", "moved-white", "moved-black", "moved-capture", "moved-non-local-loss", "moved-terminal-defence"]) {
+  for (const id of ["fork-direct", "fork-black", "pin-retreat", "pin-defence-changed", "byrne-22", "allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black", "fools-mate", "reverse-fools-mate", "legals-mate", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black", "ignored-white", "ignored-black", "ignored-history", "ignored-compensation", "moved-white", "moved-black", "moved-capture", "moved-non-local-loss", "moved-terminal-defence"]) {
     it.skipIf(!command)(`${name} : raccordement revue ${id}`, async () => {
-      const test = movedPieceCases.find(c => "moved-" + c.id === id) ?? ignoredThreatCases.find(c => "ignored-" + c.id === id) ?? divertedDefenceCases.find((c) => "diverted-" + c.id === id) ?? mateConsequenceCases.find((c) => c.id === id) ?? (id === "allows-fork" ? tacticalInput(id).example.test : id.startsWith("queen-closes-retreat")
+      const test = movedPieceCases.find(c => "moved-" + c.id === id) ?? ignoredThreatCases.find(c => "ignored-" + c.id === id) ?? divertedDefenceCases.find((c) => "diverted-" + c.id === id) ?? mateConsequenceCases.find((c) => c.id === id) ?? tacticalCases.find(c => c.test.id === id)?.test ?? (id.startsWith("queen-closes-retreat")
         ? corpus.find((c) => c.id === id) : { ...mechanismCases.find((c) => c.id === id), prefix: [] });
       const { position } = corpusInput(test), afterBoard = boardFromCommand(position.command);
       afterBoard.move(position.played);
@@ -45,7 +45,8 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
         const results = await initial.analyse({ ...identity, positions: [after] }, factory);
         // Le verdict négatif est fourni ici pour tester le raccordement, pas
         // pour mesurer la qualité du classificateur sur une position construite.
-        const request = { ...identity, position, result: results?.[0] ?? null, category: "blunder" };
+        const favourable = ["fork-direct", "fork-black", "pin-retreat", "pin-defence-changed", "byrne-22"].includes(id);
+        const request = { ...identity, position, result: results?.[0] ?? null, category: favourable ? "best" : "blunder" };
         const result = await analysis.analyse(request, factory);
         if (!result && id === "ignored-history") {
           // Deux candidats peuvent épuiser le délai partagé. Vérifier l'arrêt
@@ -72,6 +73,7 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
           expect(view.concrete).toBe(true); expect(view.proof.steps[0].command).toBe(after.command);
           expect(view.proof.steps[0].move).toBeNull(); expect(view.proof.steps.length).toBeLessThanOrEqual(9);
           for (const step of view.proof.steps) expect(boardFromCommand(step.command).fen()).toBe(step.fen);
+          if (favourable) { expect(view.summary).toMatch(/\+\d+ points? pour les (Blancs|Noirs)/); expect(view.summary).not.toMatch(/meilleur|unique|seul bon/); }
         } else { expect(view.proof).toBeUndefined(); expect(view.concrete).toBe(false); }
         console.info(JSON.stringify({ engine: name, case: id, status: result.status, title: result.consequence?.title ?? null,
           elapsedMs: result.elapsedMs, attempts: result.attempts, searches: result.searches, positions: result.consequence?.steps.length ?? 0,

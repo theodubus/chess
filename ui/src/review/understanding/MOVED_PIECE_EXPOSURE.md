@@ -14,6 +14,14 @@ faite et son éventuelle promotion. Une reprise ou un échec non résolu garde
 l'épisode ouvert. Une perte ultérieure d'une autre pièce ne rend pas ce premier
 épisode défavorable rétroactivement.
 
+La contre-prise adverse sur une autre cible est exclue, même si une reprise
+restait disponible : le clouage/détournement Qd5/Qxd5/Rxd5/Bxa5 ne rend pas la
+perte de la dame responsable du gain de la tour. La contre-prise du camp étudié
+qui compense sa perte reste incluse. Si l'arrêt laisse un échec ouvert, aucune
+perte locale clôturée n'est annoncée. La revue ne lance pas ce vérificateur
+simple quand sa PV montre déjà un premier échange neutre ou favorable ; les
+autres mécanismes restent examinables dans leurs limites.
+
 Exemples exécutés avant les tests : une tour déplacée et prise (deux camps), dame
 prenant une tour puis reprise par un pion (−4 points), même échange contre une
 dame (0), destination défendue (0), prise en passant (−1), promotion prise (−1,

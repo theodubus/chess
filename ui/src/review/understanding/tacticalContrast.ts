@@ -22,6 +22,18 @@ const samePiece = (actual: PositionFrame, alternative: PositionFrame, id: string
 const defenderKey = (capture: ReturnType<typeof captureRelations>["captures"][number]) =>
   JSON.stringify(capture.recaptures.map((r) => `${r.defenderId}/${r.move}`).sort());
 
+/** La pression physique reste la même quand seule la contrainte change.
+ * Comparer les défenseurs évite d'expliquer par le clouage un coup qui, en
+ * réalité, retire aussi une reprise du roi. Aucune recherche n'est imposée. */
+export function sameCapturePressure(actual: PositionFrame, reference: PositionFrame, capture: NonNullable<TacticalObservation["capture"]>) {
+  if (![capture.attackerId, capture.targetId].every(id => samePiece(actual, reference, id))) return false;
+  const side = actual.pieces.find(p => p.id === capture.attackerId)!.color;
+  const read = (frame: PositionFrame) => captureRelations(frame, side).captures.find(c =>
+    c.move === capture.move && c.victimId === capture.targetId && c.attackerId === capture.attackerId);
+  const old = read(actual), next = read(reference);
+  return !!old && !!next && old.balanceAfterBestRecapture === next.balanceAfterBestRecapture && defenderKey(old) === defenderKey(next);
+}
+
 /** Ne retirer qu'une contrainte identifiée, sans attribuer au clouage une
  * pression nouvelle ni à la fourchette une prise par une autre pièce. */
 export function tacticalContrast(
@@ -73,11 +85,7 @@ export function tacticalContrast(
   const capture = actual.capture;
   if (capture.attackerId === h.attackerId || !samePiece(actual.root, frame, capture.attackerId))
     return plan("pressure-changed");
-  const side = frame.pieces.find((p) => p.id === capture.attackerId)!.color;
-  const old = captureRelations(actual.root, side).captures.find((c) => c.move === capture.move && c.victimId === capture.targetId);
-  const next = captureRelations(frame, side).captures.find((c) => c.move === capture.move && c.victimId === capture.targetId && c.attackerId === capture.attackerId);
-  if (!old || !next || old.balanceAfterBestRecapture !== next.balanceAfterBestRecapture || defenderKey(old) !== defenderKey(next))
-    return plan("pressure-changed");
+  if (!sameCapturePressure(actual.root, frame, capture)) return plan("pressure-changed");
   const moves = boardFromCommand(frame.command).moves({ verbose: true })
     .filter((m) => m.from === pin.shield.square).map(uci);
   const restored = moves.filter((move) => !pin.legalMoves?.includes(move));

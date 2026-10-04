@@ -1,17 +1,25 @@
 import type { Understanding } from "./prototype";
-import type { TacticalEffectReport, TacticalReport } from "./TacticalVerification";
+import { tacticalEffectConclusion, type TacticalEffectReport, type TacticalReport } from "./TacticalVerification";
 import { boardFromCommand } from "../StudyTree";
 import { decisionContext, uci } from "./context";
 import { framePosition } from "./evidence";
 import { captureIllustration } from "./illustration";
+import { observeTactic } from "./tacticalObservation";
+import { sameCapturePressure } from "./tacticalContrast";
+import { finishWork, type Work } from "./work";
 import { assertDraftHypothesis, assertDraftQuestions, campName, capitalize, describePiece, draftExchange, explanationSteps, moveLabel, points, type PedagogicalDraft } from "./draftModel";
 
 /** Ce brouillon raconte le contraste physique confirmé, pas une raison inventée
  * à partir du seul badge. Les images et le texte lisent le même témoin. */
 export function tacticalDraft(understanding: Pick<Understanding, "context" | "constraints">, report: TacticalEffectReport | TacticalReport): PedagogicalDraft | null {
+  return finishWork(tacticalDraftWork(understanding, report));
+}
+/** La revalidation cède entre les deux témoins afin qu'une navigation puisse
+ * annuler la rédaction, pas seulement les recherches UCI qui la précèdent. */
+export function* tacticalDraftWork(understanding: Pick<Understanding, "context" | "constraints">, report: TacticalEffectReport | TacticalReport): Work<PedagogicalDraft | null> {
+  yield "context";
   if (report.status !== "supported") return null;
   const compared = "attribution" in report && report.attribution.status === "supported" ? report : null;
-  if (report.hypothesis.role !== "allows-loss" && !compared) return null;
   const { context } = understanding, h = report.hypothesis, pass = report.passes.at(-1)!;
   assertDraftHypothesis(understanding.constraints, h);
   if (report.passes.length !== 2 || report.passes.some((p) =>
@@ -21,6 +29,28 @@ export function tacticalDraft(understanding: Pick<Understanding, "context" | "co
   const alternative = "alternative" in report
     ? decisionContext({ ...framePosition(context.before), played: report.alternative }) : null;
   assertDraftQuestions(context, alternative?.after ?? null, report.passes);
+  // Un rapport sérialisé ne fait pas autorité sur son résultat physique.
+  // Les PV légales doivent reconstruire le même motif, capture et bilan.
+  for (const p of report.passes) {
+    yield "tactics";
+    const result = p.questions.find(q => q.purpose === "played")!.result;
+    if (JSON.stringify(observeTactic(context, h, result)) !== JSON.stringify(p.actual))
+      throw new Error("Conséquence tactique altérée.");
+  }
+  if (tacticalEffectConclusion(h, report.passes).status !== "supported")
+    throw new Error("Conséquence tactique non confirmée.");
+  const favourable = h.role === "creates-opportunity";
+  if (favourable && (h.threatPly !== context.decision ||
+      context.after.pieces.find(p => p.id === h.attackerId)?.color !== context.before.turn ||
+      pass.actual.root.pieces.find(p => p.id === pass.actual.capture!.targetId)?.color === context.before.turn))
+    throw new Error("Bénéficiaire tactique incohérent.");
+  // Sans alternative, expliquer uniquement la contrainte effectivement créée.
+  // Une pression changée en même temps ne permet pas d'isoler le clouage.
+  if (favourable && !compared && h.kind === "pin") for (const p of report.passes) {
+    yield "relations";
+    if (p.actual.capture!.attackerId === h.attackerId || !sameCapturePressure(p.actual.root, context.before, p.actual.capture!)) return null;
+  }
+  yield "tactics";
   // Une perte observée doit encore être reliée au mécanisme : pas de récit de
   // fourchette si la capture vient d'une autre menace ou d'une suite éloignée.
   const direct = report.passes.every((p) => p.actual.exchange!.balance! < 0 && p.actual.handledTargets.length === 1 &&
@@ -54,7 +84,7 @@ export function tacticalDraft(understanding: Pick<Understanding, "context" | "co
   const exchange = draftExchange(context, pass.actual.evidence.moves);
   const subject = exchange.exchange?.role === "recapture" ? "Cette reprise" : "Ce coup";
   const captureStep = played[pass.actual.capture!.ply + 1];
-  const material = `${points(pass.actual.evidence.materialDelta)} pour les ${campName(victim.color)}`;
+  const material = `${points(pass.actual.evidence.materialDelta * (favourable ? -1 : 1))} pour les ${campName(favourable ? context.before.turn : victim.color)}`;
   if (family === "blocked-retreat" && "shield" in h.fact) {
     const pin = h.fact;
     title = h.role === "allows-loss" ? "Une pièce clouée exposée à une prise" : "Clouer une pièce pour l'attaquer";
@@ -127,6 +157,8 @@ export function tacticalDraft(understanding: Pick<Understanding, "context" | "co
     evidence: { playedMoves: [...pass.actual.evidence.moves], alternativeMoves: altMoves, materialDelta: pass.actual.evidence.materialDelta,
       ...exchange, origin: "engine-lines", scope: compared ? "conditional-contribution" : "observed-consequence" },
     limitation: (compared ? `Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. `
-      : `Cette conséquence apparaît dans les deux recherches après le coup joué. Elle n'établit ni une perte contre toutes les défenses, ni le meilleur coup de remplacement. `) +
+      : favourable
+        ? `Cette occasion est exploitée dans les deux recherches après le coup joué. Elle ne prouve ni le gain contre toutes les défenses, ni que ce choix est unique ou le meilleur. `
+        : `Cette conséquence apparaît dans les deux recherches après le coup joué. Elle n'établit ni une perte contre toutes les défenses, ni le meilleur coup de remplacement. `) +
       (plan.omittedMoves.length ? `Le repère montre ${points(plan.materialDelta)} ; le témoin complet atteint ${points(plan.proofMaterialDelta)} pour les ${campName(victim.color)}.` : "") };
 }
