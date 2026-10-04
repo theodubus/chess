@@ -48,7 +48,7 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
         const favourable = ["fork-direct", "fork-black", "pin-retreat", "pin-defence-changed", "byrne-22"].includes(id);
         const request = { ...identity, position, result: results?.[0] ?? null, category: favourable ? "best" : "blunder" };
         const result = await analysis.analyse(request, factory);
-        if (!result && id === "ignored-history") {
+        if (!result && (id === "ignored-history" || id.startsWith("diverted-pin-"))) {
           // Deux candidats peuvent épuiser le délai partagé. Vérifier l'arrêt
           // réel et l'absence de publication, sans compter une explication.
           expect(analysis.state, JSON.stringify({ error: analysis.error, trace, protocol })).toBe("timed-out");

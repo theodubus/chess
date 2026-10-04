@@ -65,7 +65,7 @@ la CI. Un passage local avec Stockfish 17 a conservé un refus de réponse final
 et deux dépassements du délai pédagogique ; aucune explication n'a été publiée
 dans ces cas. Main de référence : `510af69`.
 
-**Travail actuel : migration favorable et clôture du raccordement.** Fourchettes,
+**Dernier lot fonctionnel publié : `99dacf4`, migration favorable et raccordement.** Fourchettes,
 clouages et défenseur échangé utilisent leur propre conséquence revalidée. Une
 occasion bénéfique ne prouve pas le meilleur coup, ni son unicité ; la capture,
 les reprises et le bilan doivent rester stables, sans imposer une alternative.
@@ -77,10 +77,22 @@ la contre-prise compensatrice du camp étudié reste comptée.
 
 Deux instantanés favorables conservent les dix essais réels de développement :
 deux premiers textes, puis six après séparation de la stabilité physique et du
-score CP. Les quatre abstentions finales restent visibles. Contrôles logiciels
-et publication du raccordement en cours ; aucune validation humaine ou visuelle
-présumée. Le bundle de revue dépasse encore 500 ko ; navigateur intégré
-indisponible après tentative.
+score CP. Les quatre abstentions finales restent visibles. CI réellement lue et
+réussie : [UI 37230972377](https://github.com/theodubus/chess/actions/runs/37230972377),
+[Rust PR 37230972404](https://github.com/theodubus/chess/actions/runs/37230972404),
+[Rust push 37230969890](https://github.com/theodubus/chess/actions/runs/37230969890).
+**844 tests unitaires / 67 fichiers et 137 tests pont/moteurs / 10 fichiers**
+passent dans cette CI ; lint, TypeScript et build passent. Les 14 essais locaux
+des parcours favorables/détournés passent avec les deux moteurs. Trois contrôles
+d'abstention Stockfish 17 passent : arrêt sans publication au délai partagé et
+refus explicite d'une réponse finale bornée. Cela ne valide pas l'ensemble des
+tests avec cette autre version ni la pertinence pédagogique des textes.
+
+Relecture humaine demandée sur les deux fourchettes, le clouage et Dxd4 : pas de
+réponse présumée. Aucune validation visuelle annoncée. Le bundle de revue dépasse
+encore 500 ko ; navigateur intégré indisponible après tentative. Les anciennes
+mesures restent datées ; l'audit adverse ci-dessous précède la garde complémentaire
+de clôture de l'échange, sans couverture supplémentaire revendiquée.
 
 ## Prochain jalon fini : conséquences tactiques courtes
 
@@ -171,6 +183,7 @@ npm run build
 ```
 
 Aperçus avec `npm run dev` : `/dev/pedagogy-review.html?sample=exposure` et
+`/dev/pedagogy-review.html?sample=opportunity`, ainsi que
 `/dev/pedagogy-audit.html?sample=exposure`. Les instantanés existent déjà : ne pas
 relancer les moteurs pour ouvrir l'aperçu. Les textes sauvegardés gardent la version
 mesurée ; les anciens rapports restent accessibles sans paramètre ou avec `?sample=ignored`.

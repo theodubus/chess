@@ -1,6 +1,6 @@
 # Expliquer une occasion sans prouver le meilleur coup
 
-Raccordement implémenté le 4 octobre 2026 ; validation finale en cours. Le même
+Raccordement implémenté et CI lue le 4 octobre 2026 (`99dacf4`). Le même
 parcours pédagogique traite les conséquences adverses et les occasions favorables
 des mécanismes existants. L'ancien explicateur ne reprend pas la place d'une
 cause refusée. Une reprise connue garde son contexte, et le mat déjà joué reste

@@ -284,6 +284,22 @@ for (const [name, command] of [
               }
             },
           );
+          const trace = [];
+          const factory = async failure => {
+            const engine = await connectDevelopmentEngine(failure, `ws://127.0.0.1:${bridge.server.address().port}`);
+            let query;
+            const send = engine.send.bind(engine);
+            engine.send = line => {
+              if (line.startsWith("position ")) { query = { command: line, answers: [] }; trace.push(query); }
+              send(line);
+            };
+            engine.onLine(line => {
+              if (query && /^(info depth |bestmove )/.test(line)) {
+                query.answers.push(line); if (query.answers.length > 4) query.answers.shift();
+              }
+            });
+            return engine;
+          };
           const report = await check.verify(
             {
               review: {},
@@ -293,12 +309,27 @@ for (const [name, command] of [
               hypothesisIndex: 0,
               alternative: test.alternative,
             },
-            (failure) =>
-              connectDevelopmentEngine(
-                failure,
-                `ws://127.0.0.1:${bridge.server.address().port}`,
-              ),
+            factory,
           );
+          if (!report && test.id === "check-frees-retreat") {
+            // Stockfish peut finir sur une borne. Vérifier exactement ce
+            // refus du protocole, sans accepter une panne ou une PV illégale.
+            expect(check.state).toBe("error");
+            expect(check.error).toContain("Réponse moteur sans score exact ou variante exploitable.");
+            const query = trace.at(-1), board = boardFromCommand(query.command);
+            const infoLine = query.answers.findLast(line => line.includes(" score ")) ?? "";
+            const info = parseSearchInfo(infoLine, board.turn());
+            const position = { command: query.command, fen: board.fen(), turn: board.turn(), label: "Refus contrôlé",
+              played: null, playedSan: null, terminal: null };
+            const response = { score: info?.score ?? null, depth: info?.depth ?? null,
+              bestMove: query.answers.findLast(line => line.startsWith("bestmove "))?.split(" ")[1], bestSan: null,
+              variation: legalVariation(board.fen(), parsePrincipalVariation(infoLine) ?? []) };
+            expect(response.score?.bound, JSON.stringify(query)).toBeDefined();
+            expect(usableResult(position, response)).toBe(false);
+            expect(usableResult(position, { ...response, score: { ...response.score, bound: undefined } })).toBe(true);
+            console.info(JSON.stringify({ engine: name, case: test.id, status: "unavailable", reason: "bounded-final-iteration", query, explanation: null }));
+            return;
+          }
           expect(report, check.error).not.toBeNull();
           expect(report.explanation).toBeNull();
           expect(report.searches).toBeLessThanOrEqual(10);
