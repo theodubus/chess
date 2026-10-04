@@ -15,11 +15,12 @@ import { mateConsequenceCases } from "../src/review/understanding/mateConsequenc
 import { divertedDefenceCases } from "../src/review/understanding/divertedDefenceTestEngine";
 import { DivertedDefenceVerification } from "../src/review/understanding/DivertedDefenceVerification";
 import { divertedDefenceDraft } from "../src/review/understanding/divertedDefenceDraft";
+import { ignoredThreatCases } from "../src/review/understanding/ignoredThreatTestEngine";
 
 for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], ["Stockfish", process.env.CHESS_STOCKFISH_BINARY]]) {
-  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black", "fools-mate", "reverse-fools-mate", "legals-mate", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black"]) {
+  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black", "fools-mate", "reverse-fools-mate", "legals-mate", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black", "ignored-white", "ignored-black", "ignored-history", "ignored-compensation"]) {
     it.skipIf(!command)(`${name} : raccordement revue ${id}`, async () => {
-      const test = divertedDefenceCases.find((c) => "diverted-" + c.id === id) ?? mateConsequenceCases.find((c) => c.id === id) ?? (id === "allows-fork" ? tacticalInput(id).example.test : id.startsWith("queen-closes-retreat")
+      const test = ignoredThreatCases.find(c => "ignored-" + c.id === id) ?? divertedDefenceCases.find((c) => "diverted-" + c.id === id) ?? mateConsequenceCases.find((c) => c.id === id) ?? (id === "allows-fork" ? tacticalInput(id).example.test : id.startsWith("queen-closes-retreat")
         ? corpus.find((c) => c.id === id) : { ...mechanismCases.find((c) => c.id === id), prefix: [] });
       const { position } = corpusInput(test), afterBoard = boardFromCommand(position.command);
       afterBoard.move(position.played);
@@ -45,6 +46,14 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
         // pour mesurer la qualité du classificateur sur une position construite.
         const request = { ...identity, position, result: results?.[0] ?? null, category: "blunder" };
         const result = await analysis.analyse(request, factory);
+        if (!result && id === "ignored-history") {
+          // Deux candidats peuvent épuiser le délai partagé. Vérifier l'arrêt
+          // réel et l'absence de publication, sans compter une explication.
+          expect(analysis.state, JSON.stringify({ error: analysis.error, trace, protocol })).toBe("timed-out");
+          expect(analysis.resultFor(request)).toBeNull();
+          console.info(JSON.stringify({ engine: name, case: id, status: "timed-out", title: null }));
+          return;
+        }
         expect(result, analysis.error).not.toBeNull();
         if (id.startsWith("diverted-pin-") && result.status === "unavailable") {
           expect(analysis.error).toMatch(/score exact|variante exploitable/);
@@ -52,7 +61,10 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
         } else expect(result.status, JSON.stringify({ error: analysis.error, checks: result.checks, trace, protocol })).not.toBe("unavailable");
         if (id === "fools-mate" || id === "reverse-fools-mate") expect(result.status).toBe("supported");
         expect(result.attempts).toBeLessThanOrEqual(2); expect(result.searches).toBeLessThanOrEqual(14);
-        expect(trace.every((c) => c === position.command || c === after.command || c.startsWith(after.command + " "))).toBe(true);
+        const alternativePrefix = position.command + (position.command.includes(" moves ") ? " " : " moves ");
+        expect(trace.every((c) => c === position.command || c === after.command || c.startsWith(after.command + " ") ||
+          analysis.candidate === "ignored-threat" && c.startsWith(alternativePrefix) && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(c.slice(alternativePrefix.length)))).toBe(true);
+        for (const c of trace) expect(() => boardFromCommand(c)).not.toThrow();
         const view = directExplanation(explainMove(position, null, request.result, null, false), result.consequence);
         expect(view.comparison).toBeUndefined(); expect(view.candidate).toBeUndefined();
         if (result.status === "supported") {

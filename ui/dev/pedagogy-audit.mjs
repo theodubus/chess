@@ -25,7 +25,10 @@ const document = { schema: 1, generatedAt: new Date().toISOString(), selection: 
 const previous = values["reuse-review"] ? JSON.parse(await readFile(resolve(root, values.output), "utf8")) : null;
 const sources = ["src/review/GameReview.ts", "src/review/understanding/PedagogicalAnalysis.ts", "src/review/understanding/forcedMate.ts",
   "src/review/understanding/MateConsequenceVerification.ts", "src/review/understanding/TacticalVerification.ts",
-  "src/review/understanding/RelationVerification.ts", "src/review/understanding/RestrictionEffectVerification.ts"];
+  "src/review/understanding/RelationVerification.ts", "src/review/understanding/RestrictionEffectVerification.ts",
+  "src/review/understanding/divertedDefence.ts", "src/review/understanding/DivertedDefenceVerification.ts", "src/review/understanding/divertedDefenceDraft.ts",
+  "src/review/understanding/ignoredThreat.ts", "src/review/understanding/IgnoredThreatVerification.ts", "src/review/understanding/ignoredThreatDraft.ts",
+  "src/review/understanding/recaptureObservation.ts"];
 document.implementationHashes = Object.fromEntries(await Promise.all(sources.map(async (path) => [path, hash(await readFile(resolve(root, path)))])));
 // Une ligne par position/décision garde le rapport lisible dans la PR sans
 // multiplier par les indentations les longues variantes et leurs historiques.

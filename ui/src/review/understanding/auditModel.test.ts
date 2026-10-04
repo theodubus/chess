@@ -1,11 +1,30 @@
 import { expect, it } from "vitest";
 import data from "../../../dev/pedagogy-audit-data.json";
+import updatedData from "../../../dev/pedagogy-audit-ignored-data.json";
 import sample from "./amateurGames.json";
 import { auditReview, type AuditDocument } from "./auditModel";
 import { notablePositions } from "../study";
 import { boardFromCommand } from "../StudyTree";
 
 const document = data as unknown as AuditDocument;
+it("le second audit réutilise les évaluations et conserve les inconnus et repères légaux", () => {
+  const updated = updatedData as unknown as AuditDocument;
+  expect(updated.independentSemanticValidation).toBe(false);
+  expect(updated.games).toHaveLength(document.games.length);
+  for (const game of updated.games) {
+    const previous = document.games.find(g => g.id === game.id && g.engine === game.engine)!;
+    expect(game).toMatchObject({ reusedReview: true, engineHash: previous.engineHash });
+    expect(game.results).toEqual(previous.results);
+    const source = sample.games.find(s => s.id === game.id)!;
+    const review = auditReview(game, source.pgn);
+    expect(review.positions).toHaveLength(game.plies + 1);
+    for (const decision of game.decisions) {
+      expect(decision.semanticAssessment).toBe("pending");
+      expect(!!decision.consequence).toBe(decision.status === "supported");
+      for (const step of decision.consequence?.steps ?? []) expect(boardFromCommand(step.command).fen()).toBe(step.fen);
+    }
+  }
+});
 it("rejoue les six revues réelles et leurs repères sans les compter comme attentes pédagogiques", () => {
   expect(document.independentSemanticValidation).toBe(false);
   for (const game of document.games) {

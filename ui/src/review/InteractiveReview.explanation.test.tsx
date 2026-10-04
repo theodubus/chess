@@ -11,6 +11,7 @@ import { PedagogicalAnalysis, type PedagogicalResult } from "./understanding/Ped
 import { ScriptEngine } from "./understanding/tacticalTestEngine";
 import { restrictionInput, RestrictionTestEngine } from "./understanding/restrictionTestEngine";
 import { mateConsequenceInput, MateConsequenceTestEngine } from "./understanding/mateConsequenceTestEngine";
+import { ignoredThreatInput, IgnoredThreatTestEngine } from "./understanding/ignoredThreatTestEngine";
 import type { ConsequenceState } from "./usePedagogicalAnalysis";
 
 // Le contrôleur asynchrone a ses propres tests. Ce rendu vérifie que la revue
@@ -23,6 +24,24 @@ vi.mock("./usePedagogicalAnalysis", () => ({
   },
 }));
 beforeEach(() => { hook.state = "pending"; hook.result = null; hook.request.mockClear(); });
+it("montre la perte après une menace ignorée, avec une défense citée sans comparaison imposée", async () => {
+  const input = ignoredThreatInput(), source = input.source;
+  const board = boardFromCommand(source.position.command); board.move(source.position.played!);
+  const review = new GameReview(board.pgn());
+  review.results[0] = { score: { kind: "cp", value: 0 }, depth: 15, bestMove: "a1b1", bestSan: "Tb1", variation: legalVariation(source.position.fen, ["a1b1"]) };
+  review.results[1] = { ...source.result!, score: { kind: "cp", value: -500 } };
+  review.state = "complete";
+  expect(review.annotations[0]?.category).toBe("blunder");
+  hook.result = await new PedagogicalAnalysis([10, 20]).analyse({ ...input.request, review, result: review.results[1], category: "blunder" }, async () => new IgnoredThreatTestEngine(input));
+  expect(hook.result?.status).toBe("supported"); hook.state = "supported";
+  const html = renderToStaticMarkup(<InteractiveReview review={review} selected={1} onSelect={() => {}} engineId="script"
+    orientation="white" showEvaluation={false} showAnnotations active side="both" treeCache={new Map()} />);
+  expect(html).toContain("tour blanche en a1 sous la menace");
+  expect(html).toContain("−5 points pour les Blancs");
+  expect(html).toContain("Tb1 conservait cette pièce dans la suite comparée");
+  expect(html).toContain("Montrer pourquoi");
+  expect(html).not.toContain("Comparer les décisions");
+});
 it("présente la reprise dans l'échange existant sans nouveau gain ni calcul de cause", () => {
   const board = new Chess();
   for (const move of ["e4", "e5", "d3", "Nc6", "Be3", "Nf6", "Nf3", "d5", "exd5", "Qxd5", "Nc3", "Qd4", "a3", "Ng4", "b3", "Nxe3", "fxe3"]) board.move(move);

@@ -412,8 +412,11 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   un raccordement SSR dans la vraie revue. Les 748 autres contrôles de la suite
   et les 19 tests ciblés finaux passent ; lint/types/build réussis. Un échec de
   lecture provenait d'une édition pendant le lancement des tests : relance ciblée
-  avec fichiers stabilisés. Pas de validation visuelle déclarée. Publier puis
-  lire la CI du SHA exact.
+  avec fichiers stabilisés. Pas de validation visuelle déclarée. Publié
+  `3222f76`, CI verte réellement lue : UI
+  [37198017888](https://github.com/theodubus/chess/actions/runs/37198017888), Rust PR
+  [37198017903](https://github.com/theodubus/chess/actions/runs/37198017903), Rust push
+  [37198014994](https://github.com/theodubus/chess/actions/runs/37198014994).
 - **Suite autonome** : vérifier le rendu de cette note dans la revue puis traiter
   les menaces déjà présentes auxquelles le mauvais coup ne répond pas. Le modèle
   actuel demande surtout un nouvel effet ; une menace ignorée mérite une autre
@@ -421,6 +424,51 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   peut montrer que la perte était évitable, jamais prouver son unicité ou que le
   moteur avait couvert toutes les alternatives. Coups favorables sans reprise,
   compensation longue et raisons positionnelles restent ouverts.
+- **Lot suivant en cours — menace ignorée** : modèle séparé `ignoredThreat`,
+  avec même attaquant/victime restés sur les mêmes cases et mêmes reprises légales
+  avant/après le coup. Trois recherches libres par budget : décision, coup joué,
+  défense. Perte courte identique, même défense préservant la pièce et préférence
+  dans le même sens nécessaires. Ni attaque nouvelle, ni retrait de défenseur,
+  ni mat converti en points. Revalidation coopérative du texte et des images ;
+  raccordement au seul coup consulté, après les autres candidats, deux maximum
+  et quatorze recherches maximum conservés. Dix-neuf tests de contrat, deux
+  contrôles du parent et un rendu SSR de la revue passent ; lint/types/build.
+  Premier essai réel : zéro sortie soutenue ; l'exigence de scores CP distants
+  d'au plus 100 rejetait pourtant le même échange et le même sens de préférence.
+  Le contrat compare désormais cette préférence aux deux budgets et la stabilité
+  des faits matériels, sans attribuer le nombre CP au mécanisme. Une inversion
+  de préférence est toujours refusée. Huit essais réels suivants : quatre
+  conséquences soutenues (captures de tours, deux camps × deux moteurs), quatre
+  abstentions (historique : défense non préservée/autre menace ; compensation).
+  Les deux rapports sont conservés, sans compter cette itération sur ses propres
+  exemples comme amélioration indépendante. Aperçu `?sample=ignored`.
+  Audit des trois PGN amateurs terminé avec leurs évaluations précédentes dans
+  `dev/pedagogy-audit-ignored-data.json`, baseline originale conservée et test du
+  second instantané après sa fin. Même 126
+  décisions : sept soutenues, 118 non confirmées, une indisponible ; 21 contrôles
+  de menace ignorée, zéro soutenu. Pas de gain de couverture indépendante affirmé.
+  Validation : 772 unitaires / 61 fichiers, test supplémentaire du second audit
+  et 14 tests des fondations suivants, soit 787 unitaires / 63 fichiers vérifiés.
+  Pont/moteurs : 115 contrôles passent dans la suite complète ; deux échecs de
+  raccordement corrigés et rejoués avec succès (branche comparée possible aussi
+  sur un ancien exemple ; délai partagé épuisable sur l'historique complexe, arrêt
+  et absence de publication explicitement vérifiés). 117 contrôles / 10 fichiers
+  au total, 904 tests vérifiés. Lint/types/build passent. Publication/CI à lire.
+- **Prochaine lacune à traiter** : la pièce qui vient elle-même d'être déplacée
+  vers une capture est exclue des relations avant/après actuelles. Factoriser la
+  vérification de perte directe pour une menace inchangée ou une pièce déplacée,
+  avec identité suivie, capture réellement utilisée, réponses libres, bilan de
+  l'épisode local ET bilan total. Ne pas expliquer une première capture neutre
+  par une perte distante d'une autre pièce. Réponses comparées avec victime
+  échangée mais compensée, mats et raisons positionnelles restent ouverts.
+  Fondations écrites séparément, pas encore raccordées à l'UI :
+  `movedPieceExposure` (identité de la pièce jouée/capturée, promotion et prise en
+  passant) et `captureEpisode` (premier échange, compensation choisie à la place
+  d'une reprise, échec non résolu, bilan depuis avant la décision). Huit tests de
+  faits et six tests d'épisode passent. La prise d'une tour par une dame puis
+  reprise coûte quatre points ; une promotion prise coûte un point ; Qd5/Qxd5/
+  Rxd5 reste neutre avant la perte ultérieure par Bxa1. Tous exécutés avant tests.
+  `MOVED_PIECE_EXPOSURE.md` fixe la suite de factorisation et les refus nécessaires.
 - **Audit terminé** : trois parties amateurs complètes avec
   `dev/pedagogy-audit.mjs`, revue réelle, verdicts réels, ancien affichage et
   nouvelles conséquences séparés. Les sorties ne sont pas des vérités attendues.

@@ -97,3 +97,28 @@ avec compensation, puis activité/structure/sécurité du roi. Les raisons purem
 positionnelles ne seront pas ajoutées comme phrases de remplacement sans modèle
 causal. La nouvelle sélection n'a pas encore servi à régler les détecteurs ; si
 cela arrive, marquer `usedForDevelopment` et constituer un autre contrôle neuf.
+
+## Second passage — menaces ignorées, 4 octobre
+
+Rapport séparé `dev/pedagogy-audit-ignored-data.json`, aperçu
+`/dev/pedagogy-audit.html?sample=ignored`. Les mêmes évaluations, classifications et
+binaires ont été réutilisés ; seules les explications et leurs contrôles sont
+recalculés. Le rapport original reste disponible. Empreintes des nouvelles
+sources (détournement, menace ignorée et note de reprise) également conservées.
+
+Sur les mêmes 126 décisions : **sept conséquences soutenues, 118 raisons non
+confirmées et une indisponible**. Le nouveau mécanisme a été interrogé sur 21
+sorties et n'en a soutenu aucune. Cela ne démontre pas un gain de couverture sur
+ces parties, malgré quatre sorties soutenues sur ses exemples construits. Le
+passage de deux indisponibilités à une reflète un nouveau calcul, pas une qualité
+pédagogique validée. Les chiffres CP de comparaison ne deviennent pas une cause
+matérielle ; une compensation ou une défense qui ne préserve pas la pièce garde
+l'abstention. Relecture sémantique toujours `pending`.
+
+Lacune suivante identifiée dans le code : les relations comparent surtout des
+pièces restées sur leur case. Un mauvais coup déplaçant lui-même une pièce vers
+une capture demande un autre fait. Le modèle devra distinguer la capture de la
+pièce déplacée, l'épisode matériel local et le bilan total. Un échange initial
+équilibré suivi de la perte d'une autre pièce ne doit pas être faussement décrit
+comme perte de matériel causée par cette première capture. Les meilleures
+réponses qui échangent la victime avec compensation restent également à traiter.

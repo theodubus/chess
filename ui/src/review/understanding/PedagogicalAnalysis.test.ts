@@ -10,8 +10,17 @@ import { directExplanation } from "../directExplanation";
 import { explainMove } from "../explanations";
 import type { Category } from "../annotations";
 import type { Engine } from "../../engine/Engine";
+import { ignoredThreatInput, IgnoredThreatTestEngine } from "./ignoredThreatTestEngine";
 
 afterEach(() => vi.restoreAllMocks());
+it.each(["white", "black"])("raccorde la menace ignorée au mauvais coup : %s", async id => {
+  const input = ignoredThreatInput(id), analysis = new PedagogicalAnalysis([10, 20]);
+  const result = await analysis.analyse({ ...input.request, result: { ...input.source.result!, score: { kind: "cp", value: id === "white" ? -500 : 500 } }, category: "blunder" }, async () => new IgnoredThreatTestEngine(input));
+  expect(result, analysis.error).toMatchObject({ status: "supported", attempts: 1, searches: 6 });
+  expect(result!.checks).toMatchObject([{ family: "ignored-threat", status: "supported" }]);
+  expect(result!.consequence!.summary).toContain("sous la menace");
+  expect(result!.consequence!.steps).toHaveLength(3);
+});
 function tacticalRequest(id = "allows-fork") {
   const input = tacticalInput(id), source = corpusInput(input.example.test);
   const request: PedagogicalRequest = { review: {}, revision: 0, engineId: "script", ...source, category: "blunder",
