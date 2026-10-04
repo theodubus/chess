@@ -1,5 +1,7 @@
 import { boardFromCommand } from "../StudyTree";
+import type { Square } from "chess.js";
 import { capturedSquare, opposite, uci, type DecisionContext } from "./context";
+import { tacticalFrameWork, type Pin } from "./constraints";
 import { captureRelationsWork, type CaptureRelation } from "./relations";
 import { finishWork, type Work } from "./work";
 
@@ -13,8 +15,11 @@ export type DivertedDefence = DivertedDefenceSeed & {
   status: "hypothesis";
   before: CaptureRelation;
   after: CaptureRelation;
-  defenderFrom: string;
-  defenderTo: string;
+  defenderFrom: Square;
+  defenderTo: Square;
+  /** Absent : reprise hors de portée. Présent : alignement conservé, mais
+   * déplacer ce défenseur pour reprendre exposerait son roi à cet attaquant. */
+  pin?: Pin;
   unverified: readonly ["engine-reply", "compensation", "total-balance", "quality"];
 };
 /** Amorçage peu coûteux : aucune phrase ni perte n'est déduite du simple motif
@@ -58,9 +63,20 @@ export function* divertedDefenceWork(context: DecisionContext): Work<DivertedDef
     victim = frame.pieces.find((p) => p.id === seed.victimId)!;
   if (!before || !after || !moved || moved.square === defender.square ||
     !before.recaptures.some((r) => r.defenderId === seed.defenderId) || after.recaptures.some((r) => r.defenderId === seed.defenderId) ||
-    after.balanceAfterBestRecapture <= before.balanceAfterBestRecapture ||
-    boardFromCommand(frame.command).attackers(victim.square, context.before.turn).includes(moved.square)) return null;
+    after.balanceAfterBestRecapture <= before.balanceAfterBestRecapture) return null;
+  let pin: Pin | undefined;
+  if (boardFromCommand(frame.command).attackers(victim.square, context.before.turn).includes(moved.square)) {
+    const taken = context.frames[context.decision + 4], constraints = yield* tacticalFrameWork(taken);
+    pin = constraints.pins.find((p) => p.kind === "absolute" && p.shield.id === moved.id && p.rear.color === context.before.turn);
+    if (!pin) return null;
+    // Un alignement ne suffit pas : la reprise géométrique doit réellement
+    // découvrir l'attaque de ce même adversaire sur le roi, après la seconde prise.
+    const probe = boardFromCommand(taken.command);
+    probe.remove(moved.square); probe.remove(victim.square);
+    probe.put({ type: moved.type, color: moved.color }, victim.square);
+    if (!probe.attackers(pin.rear.square, enemy).includes(pin.attacker.square)) return null;
+  }
   return { ...seed, kind: "recapture-diverts-defender", role: "allows-loss", status: "hypothesis", before, after,
-    defenderFrom: defender.square, defenderTo: moved.square, unverified: ["engine-reply", "compensation", "total-balance", "quality"] };
+    defenderFrom: defender.square, defenderTo: moved.square, ...(pin ? { pin } : {}), unverified: ["engine-reply", "compensation", "total-balance", "quality"] };
 }
 export const divertedDefence = (context: DecisionContext) => finishWork(divertedDefenceWork(context));

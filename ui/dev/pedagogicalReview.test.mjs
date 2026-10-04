@@ -17,7 +17,7 @@ import { DivertedDefenceVerification } from "../src/review/understanding/Diverte
 import { divertedDefenceDraft } from "../src/review/understanding/divertedDefenceDraft";
 
 for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], ["Stockfish", process.env.CHESS_STOCKFISH_BINARY]]) {
-  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black", "fools-mate", "reverse-fools-mate", "legals-mate", "diverted-white", "diverted-black", "diverted-compensation"]) {
+  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black", "fools-mate", "reverse-fools-mate", "legals-mate", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black"]) {
     it.skipIf(!command)(`${name} : raccordement revue ${id}`, async () => {
       const test = divertedDefenceCases.find((c) => "diverted-" + c.id === id) ?? mateConsequenceCases.find((c) => c.id === id) ?? (id === "allows-fork" ? tacticalInput(id).example.test : id.startsWith("queen-closes-retreat")
         ? corpus.find((c) => c.id === id) : { ...mechanismCases.find((c) => c.id === id), prefix: [] });
@@ -46,7 +46,10 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
         const request = { ...identity, position, result: results?.[0] ?? null, category: "blunder" };
         const result = await analysis.analyse(request, factory);
         expect(result, analysis.error).not.toBeNull();
-        expect(result.status, JSON.stringify({ error: analysis.error, checks: result.checks, trace, protocol })).not.toBe("unavailable");
+        if (id.startsWith("diverted-pin-") && result.status === "unavailable") {
+          expect(analysis.error).toMatch(/score exact|variante exploitable/);
+          expect(result.consequence).toBeNull();
+        } else expect(result.status, JSON.stringify({ error: analysis.error, checks: result.checks, trace, protocol })).not.toBe("unavailable");
         if (id === "fools-mate" || id === "reverse-fools-mate") expect(result.status).toBe("supported");
         expect(result.attempts).toBeLessThanOrEqual(2); expect(result.searches).toBeLessThanOrEqual(14);
         expect(trace.every((c) => c === position.command || c === after.command || c.startsWith(after.command + " "))).toBe(true);
@@ -62,6 +65,10 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
           error: analysis.error, initialError: initial.error }));
         if (id.startsWith("diverted-")) {
           const report = await diversion.verify({ ...identity, position }, factory);
+          if (!report && id.startsWith("diverted-pin-")) {
+            expect(diversion.state).toBe("error"); expect(diversion.error).toMatch(/score exact|variante exploitable/);
+            return;
+          }
           expect(report, diversion.error).not.toBeNull(); expect(report.searches).toBeLessThanOrEqual(8);
           const draft = divertedDefenceDraft(position, report);
           if (draft) {

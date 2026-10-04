@@ -28,7 +28,8 @@ try {
     load("prototype"), load("RestrictionEffectVerification"), load("restrictionDraft"),
     load("divertedDefenceTestEngine"), load("DivertedDefenceVerification"), load("divertedDefenceDraft"),
   ]);
-  const allCases = ["queen-closes-retreat", "queen-closes-retreat-black", "allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31", "diverted-white", "diverted-black", "diverted-compensation"];
+  const allCases = ["queen-closes-retreat", "queen-closes-retreat-black", "allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black", "diverted-unconstrained", "diverted-relative"];
+  allCases.push("diverted-pin-queen-white", "diverted-pin-queen-black");
   const selectedCases = values.cases ? values.cases.split(",") : allCases;
   if (!selectedCases.length || selectedCases.some((id) => !allCases.includes(id))) throw new Error("Exemples demandés inconnus.");
   // Adaptateur Node de cet outil local, comme celui des essais UCI. Aucun

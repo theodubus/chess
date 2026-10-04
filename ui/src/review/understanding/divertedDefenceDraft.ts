@@ -32,21 +32,25 @@ export function* divertedDefenceDraftWork(position: ReviewPosition, report: Dive
     firstDelta = (materialBalance(boardFromCommand(played[2].command)) - materialBalance(boardFromCommand(context.before.command))) * sign;
   const change = `${label} expose ${describePiece(exposed)} à ${played[1].label}.`;
   const diversion = `${played[2].label} poursuit cet échange et déplace ${describePiece(defender)} vers ${h.defenderTo}. ` +
-    `Depuis ${h.defenderFrom}, cette pièce pouvait reprendre après ${played[3].label} ; depuis ${h.defenderTo}, elle ne le peut plus.`;
+    (h.pin ? `Depuis cette case, cette pièce est clouée par ${describePiece(h.pin.attacker)} devant ${describePiece(h.pin.rear)}. ` +
+      `Reprendre après ${played[3].label} exposerait son roi.` :
+      `Depuis ${h.defenderFrom}, cette pièce pouvait reprendre après ${played[3].label} ; depuis ${h.defenderTo}, elle ne le peut plus.`);
   const consequence = `Dans la suite trouvée, ${played[3].label} prend ${describePiece(victim)}. Le bilan depuis ${label}, reprises comprises, est de ${points(evidence.materialDelta)} pour les ${campName(context.before.turn)}.`;
   played[0].note = change;
   played[0].marks = [{ from: attacker.square, to: exposed.square, tone: "threat" }, { from: defender.square, to: victim.square, tone: "observation" }];
   played[1].note = `${played[1].label} prend la pièce exposée ; le moteur choisit ensuite ${played[2].label} pour reprendre.`;
   played[1].marks.push({ from: defender.square, to: victim.square, tone: "observation" });
   played[2].note = `${diversion} Avant la seconde prise, le bilan depuis ${label} est de ${points(firstDelta)} pour les ${campName(context.before.turn)}.`;
-  played[2].marks = [{ from: defender.square, to: h.defenderTo as typeof defender.square, tone: "observation" },
+  played[2].marks = [{ from: defender.square, to: h.defenderTo, tone: "observation" },
     { from: victim.square, tone: "threat" }, { from: second.square, to: victim.square, tone: "threat" }];
+  if (h.pin) played[2].marks = [{ from: h.pin.attacker.square, to: h.pin.rear.square, tone: "observation" },
+    { from: h.defenderTo, tone: "observation" }, { from: second.square, to: victim.square, tone: "threat" }];
   played[3].note = `${capitalize(describePiece(second))} prend la seconde pièce, sans reprise possible par ce défenseur.`;
   for (const reply of evidence.replies.filter((r) => r.state === "not-chosen" && r.choice)) {
     const step = played[reply.choice!.ply + 1];
     if (step) step.note += `${step.note ? " " : ""}Le moteur choisit ${step.label} alors qu'une reprise reste légale ; le bilan concerne cette suite.`;
   }
-  return { status: "draft", family: "diverted-defender", role: "allows-loss", title: "Une reprise détourne un défenseur",
+  return { status: "draft", family: "diverted-defender", role: "allows-loss", title: h.pin ? "Un défenseur cloué après la reprise" : "Une reprise détourne un défenseur",
     summary: `${change} ${diversion} ${consequence}`, comparisonText: "", story: { decision, change: `${change} ${diversion}`, consequence, alternative: "" },
     played, alternative: [], evidence: { playedMoves: [...evidence.moves], alternativeMoves: [], materialDelta: evidence.materialDelta,
       ...draftExchange(context, evidence.moves), origin: "engine-and-rules", scope: "observed-consequence" },

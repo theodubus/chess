@@ -52,7 +52,7 @@ const value = { p: 1, n: 3, b: 3, r: 5, q: 9, k: Infinity };
 export function tacticalFrame(frame: PositionFrame): TacticalFrame {
   return finishWork(tacticalFrameWork(frame));
 }
-function* tacticalFrameWork(frame: PositionFrame): Work<TacticalFrame> {
+export function* tacticalFrameWork(frame: PositionFrame): Work<TacticalFrame> {
   const result: TacticalFrame = {
     frame,
     doubleAttacks: [],

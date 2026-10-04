@@ -26,7 +26,8 @@ export type DivertedDefenceReport = {
 } & VerificationCost;
 const cp = (q: Question | undefined) => q?.result.score?.kind === "cp" && !q.result.score.bound && Number.isFinite(q.result.score.value) ? q.result.score.value : null;
 const signature = (h: DivertedDefence | null) => h && JSON.stringify([h.exposedId, h.firstAttackerId, h.defenderId, h.victimId,
-  h.secondAttackerId, h.firstCapture, h.recapture, h.secondCapture, h.defenderFrom, h.defenderTo]);
+  h.secondAttackerId, h.firstCapture, h.recapture, h.secondCapture, h.defenderFrom, h.defenderTo,
+  h.pin && [h.pin.attacker.id, h.pin.shield.id, h.pin.rear.id, h.pin.ray]]);
 
 /** Relecture des questions effectives, utilisée aussi avant de rédiger. Le récit
  * ne fait jamais passer leur assemblage pour une unique PV depuis la décision. */

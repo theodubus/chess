@@ -124,6 +124,10 @@ texte généré automatiquement n’est utilisé comme vérité attendue.
   deux victimes et défenseur suivis ; reprise sur la seconde case auparavant
   légale, devenue hors de portée. Exposition préexistante et défense conservée
   refusées. Les autres formes de surcharge restent ouvertes.
+- [x] Reprise devenue illégale malgré l'alignement conservé : clouage absolu
+  du défenseur devant son roi, attaque réellement découverte par la reprise
+  géométrique, distinction avec les mouvements légaux sur le clouage et les
+  alignements relatifs. Faits et brouillons construits, pas couverture confirmée.
 - [x] Épisodes de reprises consécutives ancrés dans l’historique : début connu/inconnu, rôle du
   coup (initiation/reprise/poursuite), bilan total et bilan depuis la décision.
   Ne pas imputer la perte antérieure à la meilleure reprise suivante.
@@ -277,6 +281,9 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   révision, invalide résultat et démonstration.
 - [x] Anciennes causes négatives désactivées sur ce parcours ; les variantes
   libres et observations restent secondaires. Pas de deuxième raison concurrente.
+- [ ] Retirer le faux « nouvel échange gagnant » encore possible sur le parcours
+  favorable d'une reprise. Utiliser l'historique et le bilan de l'épisode, puis
+  raccorder les motifs favorables sans prétendre prouver l'unique meilleur coup.
 - [ ] Tester des parties complètes (humain/bot, deux humains, import PGN) et le
   parcours bureau/mobile. Mesurer latence et couverture avant/après.
 - [x] Premier audit logiciel de trois PGN amateurs complets avec les deux moteurs :
@@ -354,19 +361,41 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 
 ## Point de reprise
 
-- **Lot terminé localement, publication en cours** : détournement d'un défenseur par une reprise. Faits,
+- **Lot publié `6eb1630`, CI verte réellement lue** : UI
+  [37193922307](https://github.com/theodubus/chess/actions/runs/37193922307)
+  (unitaires/build et pont/deux moteurs), Rust PR
+  [37193922324](https://github.com/theodubus/chess/actions/runs/37193922324), Rust push
+  [37193920308](https://github.com/theodubus/chess/actions/runs/37193920308).
+  Détournement d'un défenseur par une reprise. Faits,
   questions libres aux deux budgets, bilan total, compensation et revalidation
   du brouillon raccordés au contrôleur de revue. Deux camps et historique, reprise
   refusée, autre capture, PV tronquée masquant une compensation, défense conservée,
   preuve altérée, arrêt/cache/délai testés. Six essais réels conservés ; pas
   d'affirmation de couverture nouvelle ni de relecture visuelle indépendante.
-- **Prochaine extension préexécutée, pas encore codée** : le défenseur reste
+- **Extension terminée localement, publication suivante** : le défenseur reste
   géométriquement en prise sur la seconde pièce mais la reprise le cloue devant
-  son roi. Réutiliser le même graphe de captures/reprises et le clouage absolu ;
+  son roi. Même graphe de captures/reprises et clouage absolu ;
   refuser l'alignement relatif et la reprise encore légale. Positions avec un
   pion h2/h7 exécutées dans les deux camps, échanges Rxd8+/Kxd8 et miroir inclus.
   FEN blanche : `3rk3/5q2/1b6/RR6/8/3Q4/7P/3K4 w - - 0 1`, Qd5,
   Qxd5+, Rxd5, Bxa5, Rxd8+, Kxd8, Kc2. Conserver les reprises après l'échec.
+  Défenseurs tour/dame, deux camps, alignement relatif/reprise conservée et
+  altération du cloueur : 14 tests dédiés. Une FEN relative plaçait déjà le roi
+  hors trait en échec ; corrigée, réexécutée et contrôle ajouté à tous les exemples.
+  Douze essais libres gardés dans `dev/pinned-defence-data.json`, **aucune nouvelle
+  conséquence soutenue** : les moteurs choisissent une autre première prise/suite,
+  la relation ne se confirme pas ou le score/PV est inutilisable. L'abstention est
+  affichée dans `/dev/pedagogy-review.html?sample=pin`. Ne pas forcer cette famille
+  en calibrant les attentes sur ses propres variantes.
+  Validation : 736 tests unitaires / 58 fichiers ; les 24 tests de raccordement
+  réels remplacent les 20 précédents et passent, portant le pont/moteurs à 109
+  tests / 10 fichiers. Total 845 tests, lint/types/build réussis. CI prochaine à lire.
+- **Prochaine priorité identifiée dans le code actif** : les coups favorables
+  passent encore par `decisionCause` et son texte « commence un échange ... gain ».
+  Une reprise peut y être faussement présentée comme un nouvel échange gagnant.
+  Corriger le routage, avec observation contextualisée de l'épisode et bilan
+  avant/depuis la reprise. Garder l'observation distincte d'une preuve du meilleur
+  coup ; ne pas rajouter une nouvelle famille de phrases dans l'ancien explicateur.
 - **Audit terminé** : trois parties amateurs complètes avec
   `dev/pedagogy-audit.mjs`, revue réelle, verdicts réels, ancien affichage et
   nouvelles conséquences séparés. Les sorties ne sont pas des vérités attendues.

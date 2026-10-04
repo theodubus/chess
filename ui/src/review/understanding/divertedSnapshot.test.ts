@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import data from "../../../dev/diverted-defence-data.json";
+import pinnedData from "../../../dev/pinned-defence-data.json";
 import { boardFromCommand } from "../StudyTree";
 import { usableResult } from "../FocusedAnalysis";
 import { corpusInput } from "./corpus";
@@ -8,10 +9,10 @@ import { divertedDefenceDraft } from "./divertedDefenceDraft";
 import type { DivertedDefenceReport } from "./DivertedDefenceVerification";
 import type { PreviewDocument, PreviewExample } from "./previewModel";
 
-const snapshot = data as unknown as PreviewDocument & { examples: (PreviewExample & { verification: DivertedDefenceReport | null })[] };
-it("l'instantané réel conserve provenance, questions et abstentions sans vérité pédagogique", () => {
+type VerifiedPreview = PreviewDocument & { examples: (PreviewExample & { verification: DivertedDefenceReport | null })[] };
+function checkSnapshot(snapshot: VerifiedPreview, count: number) {
   expect(snapshot).toMatchObject({ schema: 1, publishable: false, independentSample: false });
-  expect(snapshot.examples).toHaveLength(6);
+  expect(snapshot.examples).toHaveLength(count);
   expect(new Set(snapshot.examples.map((e) => e.engine))).toEqual(new Set(["ShallowRed", "Stockfish"]));
   for (const record of snapshot.examples) {
     expect(record.engineHash).toMatch(/^[a-f0-9]{64}$/);
@@ -33,4 +34,10 @@ it("l'instantané réel conserve provenance, questions et abstentions sans véri
       for (const step of record.draft!.played) expect(boardFromCommand(step.command).fen()).toBe(step.fen);
     }
   }
+}
+it("l'instantané réel conserve provenance, questions et abstentions sans vérité pédagogique", () => {
+  checkSnapshot(data as unknown as VerifiedPreview, 6);
+}, 15000);
+it("le modèle de clouage garde les cas réels non confirmés visibles dans l'aperçu", () => {
+  checkSnapshot(pinnedData as unknown as VerifiedPreview, 12);
 }, 15000);

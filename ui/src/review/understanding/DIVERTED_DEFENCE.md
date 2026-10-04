@@ -5,7 +5,11 @@ par un défenseur commun le déplace hors de portée d'une seconde pièce, prise
 par un autre attaquant. Les trois prises, les cinq identités et les positions
 avant/après sont suivies. Une exposition déjà présente, une reprise encore légale
 ou un défenseur restant géométriquement en prise sur la seconde case sont refusés.
-Ce premier modèle ne couvre pas les défenseurs encore alignés mais cloués.
+Le modèle inclut aussi le défenseur encore aligné mais cloué devant son roi.
+Après la seconde prise, sa reprise géométrique doit réellement découvrir
+l'attaque du même cloueur sur son roi ; le déplacement illégal est distingué
+des coups légaux le long du clouage. Un alignement relatif devant une dame ne
+rend pas une reprise illégale et n'est pas traité comme tel.
 
 Le motif ne produit pas une explication seul. Quatre questions libres par budget
 (300/900 ms) : avant la décision, après le coup, après la première prise, après
@@ -51,7 +55,17 @@ Les moteurs peuvent changer leur ligne. Le contrôle de la revue borne aussi la
 PV initiale à huit demi-coups et à la première fin de partie : une PV Stockfish
 réelle continuant après une nulle par matériel insuffisant a servi de régression.
 
-Restent ouverts : autres formes de surcharge, contraintes conservant un
-alignement, coups intermédiaires plus longs, compensations positionnelles et
+Restent ouverts : autres formes de surcharge, contraintes relatives,
+coups intermédiaires plus longs, compensations positionnelles et
 validation pédagogique indépendante. Les nouveaux tests ne changent pas les
 mesures de couverture de l'audit amateur précédent.
+
+Le lot du clouage ajoute défenseurs tour/dame, deux camps, contre-exemples sans
+cloueur et alignement relatif. Une position construite relative plaçait déjà le
+roi hors trait en échec ; corrigée et réexécutée avant inscription, puis contrôle
+de ce défaut ajouté à tous les exemples. Aucun changement moteur pour ces FEN.
+Les douze essais libres conservés dans `dev/pinned-defence-data.json` ne
+soutiennent aucune nouvelle explication : autre première prise/suite, relation
+non confirmée ou réponse sans score exact/PV exploitable. Cela conserve la lacune,
+sans ajuster les règles pour forcer le moteur à jouer le motif.
+Relecture : `/dev/pedagogy-review.html?sample=pin`, abstentions incluses.

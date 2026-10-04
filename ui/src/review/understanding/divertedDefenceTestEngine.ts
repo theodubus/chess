@@ -12,6 +12,12 @@ export const divertedDefenceCases: CorpusCase[] = [
   { id: "pre-existing", fen: "7k/5q2/8/8/2Q5/8/1b6/R2R3K w - - 0 1", prefix: [], played: "Qd5", line: ["Qxd5+", "Rxd5", "Bxa1", "Kh2"] },
   { id: "still-defends", fen: "7k/q7/8/4b3/2QR4/8/8/3Q3K w - - 0 1", prefix: [], played: "Qca4", line: ["Qxa4", "Qxa4", "Bxd4", "Qxd4+"] },
   { id: "history", fen: "7k/5q2/8/2Q5/8/8/1b6/R2R3K w - - 0 1", prefix: ["Kh2", "Kh7", "Kh1", "Kh8"], played: "Qd5", line: ["Qxd5+", "Rxd5", "Bxa1", "Kh2"] },
+  { id: "pin-white", fen: "3rk3/5q2/1b6/RR6/8/3Q4/7P/3K4 w - - 0 1", prefix: [], played: "Qd5", line: ["Qxd5+", "Rxd5", "Bxa5", "Rxd8+", "Kxd8", "Kc2"] },
+  { id: "pin-black", fen: "3k4/7p/3q4/8/rr6/1B6/5Q2/3RK3 b - - 0 1", prefix: [], played: "Qd4", line: ["Qxd4+", "Rxd4", "Bxa4", "Rxd1+", "Kxd1", "Kc7"] },
+  { id: "unconstrained", fen: "4k3/5q2/1b6/RR6/8/3Q4/7P/3K4 w - - 0 1", prefix: [], played: "Qd5", line: ["Qxd5+", "Rxd5", "Bxa5", "Rxa5"] },
+  { id: "relative", fen: "3r4/5qk1/1b6/RR6/8/3Q4/7P/K2Q4 w - - 0 1", prefix: [], played: "Qd5", line: ["Qxd5", "Rxd5", "Bxa5", "Rxa5"] },
+  { id: "pin-queen-white", fen: "3r4/4kq2/1b6/RQ6/8/3Q4/7P/3K4 w - - 0 1", prefix: [], played: "Qdd5", line: ["Qxd5+", "Qxd5", "Bxa5", "Qxd8+", "Kxd8", "Kc2"] },
+  { id: "pin-queen-black", fen: "3k4/7p/3q4/8/rq6/1B6/4KQ2/3R4 b - - 0 1", prefix: [], played: "Qdd4", line: ["Qxd4+", "Qxd4", "Bxa4", "Qxd1+", "Kxd1", "Kc7"] },
 ].map((c) => ({ family: "recapture-diverts-defender", origin: "constructed-regression", notes: "Faits légaux ; pas de classement indépendant.",
   expected: {}, forbiddenClaims: ["forced-recapture", "winning-recapture", "unique-best"], ...c }));
 export function divertedDefenceInput(id = "white") {
