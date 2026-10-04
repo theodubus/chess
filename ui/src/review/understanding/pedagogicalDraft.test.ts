@@ -53,7 +53,9 @@ it("explique la perte de la défense e4 après un échange égal, avec la repris
   expect(draft!.alternative.filter((s) => s.origin === "conditional-move").map((s) => s.label)).toEqual(["Cxe4"]);
   expect(draft!.played).toHaveLength(5);
   legal(draft!);
-});
+  // La fixture rejoue aussi l'historique publié et les contrefactuels. Sa
+  // durée sous charge CI ne définit pas le délai du parcours utilisateur.
+}, 10000);
 it("la menace adverse reste expliquée quand la branche libre ne valide pas l'alternative", async () => {
   const { understanding, report, draft } = await example("byrne-allows-fork");
   expect(draft!.role).toBe("allows-loss");

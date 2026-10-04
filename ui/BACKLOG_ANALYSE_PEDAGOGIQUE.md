@@ -87,6 +87,9 @@ des parcours favorables/détournés passent avec les deux moteurs. Trois contrô
 d'abstention Stockfish 17 passent : arrêt sans publication au délai partagé et
 refus explicite d'une réponse finale bornée. Cela ne valide pas l'ensemble des
 tests avec cette autre version ni la pertinence pédagogique des textes.
+Une exécution CI suivante a dépassé les 5 s d'une fixture publiée comparée de
+Byrne, sans assertion de résultat en échec. Sa limite de test passe à 10 s,
+comme l'autre fixture publiée ; le délai utilisateur de 12 s reste inchangé.
 
 Relecture humaine demandée sur les deux fourchettes, le clouage et Dxd4 : pas de
 réponse présumée. Aucune validation visuelle annoncée. Le bundle de revue dépasse
