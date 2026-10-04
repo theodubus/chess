@@ -12,10 +12,14 @@ import { closedRetreats, RestrictionEffectVerification } from "./RestrictionEffe
 import { restrictionDraft } from "./restrictionDraft";
 import { MateConsequenceVerification } from "./MateConsequenceVerification";
 import { mateConsequenceDraft } from "./mateConsequenceDraft";
-import { opposite } from "./context";
+import { divertedDefenceSeed } from "./divertedDefence";
+import { DivertedDefenceVerification } from "./DivertedDefenceVerification";
+import { divertedDefenceDraftWork } from "./divertedDefenceDraft";
+import { decisionContext, opposite } from "./context";
+import { boundedContinuation } from "./evidence";
 import type { PedagogicalDraft } from "./draftModel";
 import type { RelationDraft } from "./relationDraft";
-import type { WorkPhase } from "./work";
+import { completeWork, type WorkPhase } from "./work";
 
 export type PedagogicalRequest = VerificationIdentity & {
   position: ReviewPosition;
@@ -29,7 +33,7 @@ export type PedagogicalResult = {
   searches: number;
   elapsedMs: number;
   /** Diagnostic de développement, jamais utilisé comme explication utilisateur. */
-  checks?: { family: "tactic" | "relation" | "restriction" | "mate"; status: string; reason: string; searches: number }[];
+  checks?: { family: "tactic" | "relation" | "restriction" | "diversion" | "mate"; status: string; reason: string; searches: number }[];
 };
 export const adverseCategory = (category: Category | undefined) =>
   !!category && ["inaccuracy", "mistake", "blunder", "miss"].includes(category);
@@ -66,7 +70,7 @@ export class PedagogicalAnalysis {
   private listeners = new Set<() => void>();
   state: "idle" | "extracting" | "verifying" | "complete" | "stopped" | "timed-out" | "error" = "idle";
   phase: WorkPhase = "context";
-  candidate: "tactic" | "relation" | "restriction" | "mate" | null = null;
+  candidate: "tactic" | "relation" | "restriction" | "diversion" | "mate" | null = null;
   error = "";
   cached = false;
   constructor(private budgets: [number, number] = [300, 900], private deadlineMs = 12000, private cacheSize = 32) {
@@ -153,7 +157,10 @@ export class PedagogicalAnalysis {
         const draft = mateConsequenceDraft(request.position, report);
         return finish(draft ? "supported" : "unconfirmed", draft ? confirmedConsequence(draft, request.position) : null, attempts, searches);
       }
-      const understanding = await this.extraction.analyse(request);
+      // Une PV UCI peut continuer après une nulle légale. Seul son témoin court
+      // jusqu'à la première fin de partie alimente les hypothèses de la revue.
+      const context = decisionContext(request.position);
+      const understanding = await this.extraction.analyse({ ...request, result: boundedContinuation(context.after, request.result!) });
       if (!current()) return null;
       if (!understanding) {
         this.error = this.extraction.error;
@@ -166,7 +173,8 @@ export class PedagogicalAnalysis {
         h.kind === "allows-restriction" && closedRetreats(understanding, h).length ? [{ family: "restriction" as const, index, rank: 1 }] : []);
       const relations = understanding.mechanisms.flatMap((h, index) =>
         h.role === "allows-loss" ? [{ family: "relation" as const, index, rank: h.kind === "defender-removal" ? 3 : 4 }] : []);
-      const candidates = [...tactics, ...restrictions, ...relations].sort((a, b) => a.rank - b.rank).slice(0, 2);
+      const diversions = divertedDefenceSeed(understanding.context) ? [{ family: "diversion" as const, index: 0, rank: -1 }] : [];
+      const candidates = [...diversions, ...tactics, ...restrictions, ...relations].sort((a, b) => a.rank - b.rank).slice(0, 2);
       for (const candidate of candidates) {
         if (!current()) return null;
         this.candidate = candidate.family; this.state = "verifying"; this.publish();
@@ -176,7 +184,23 @@ export class PedagogicalAnalysis {
         // extérieur (historique + PV + score + verdict) peut sauter ce travail.
         const remaining = this.deadlineMs - (performance.now() - start);
         let draft: PedagogicalDraft | RelationDraft | null;
-        if (candidate.family === "tactic") {
+        if (candidate.family === "diversion") {
+          const checker = new DivertedDefenceVerification(this.budgets, remaining);
+          this.cancelVerification = () => checker.stop();
+          const report = await checker.verify(request, factory);
+          if (!current()) return null;
+          if (!report) {
+            this.error = checker.error;
+            if (checker.state === "timed-out") { expire(); return null; }
+            return finish("unavailable", null, attempts, searches);
+          }
+          searches += report.searches;
+          checks.push({ family: candidate.family, status: report.status, reason: report.reason, searches: report.searches });
+          const drafting = new AbortController();
+          this.cancelVerification = () => { checker.stop(); drafting.abort(); };
+          draft = await completeWork(divertedDefenceDraftWork(request.position, report), drafting.signal);
+          if (!current()) return null;
+        } else if (candidate.family === "tactic") {
           const checker = new TacticalEffectVerification(this.budgets, remaining);
           this.cancelVerification = () => checker.stop();
           const report = await checker.verify({ ...request, understanding, hypothesisIndex: candidate.index }, factory);

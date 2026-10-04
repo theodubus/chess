@@ -68,7 +68,7 @@ export function captureRelations(
 ): CaptureRelations {
   return finishWork(captureRelationsWork(frame, side));
 }
-function* captureRelationsWork(frame: PositionFrame, side: Color): Work<CaptureRelations> {
+export function* captureRelationsWork(frame: PositionFrame, side: Color): Work<CaptureRelations> {
   const scope = frame.turn === side ? "actual-turn" : "geometric-turn-probe";
   const board = !frame.terminal ? boardFor(frame, side) : null;
   if (!board) return { status: "unavailable", scope, captures: [] };

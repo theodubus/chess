@@ -1,7 +1,7 @@
 import type { Color, Move } from "chess.js";
 import { boardFromCommand } from "../StudyTree";
 import { uci } from "./context";
-import { finishWork, type Work } from "./work";
+import { completeWork, finishWork, type Work } from "./work";
 
 export type MateStrategy = {
   command: string;
@@ -95,24 +95,7 @@ export function validMateStrategy(proof: ForcedMateProof, command: string): bool
 /** La preuve cède au navigateur entre primitives, et se ferme sans résultat
  * lors d'une navigation ou d'un délai expiré dans le vérificateur appelant. */
 export async function proveMate(command: string, winner: Color, horizon: number, hint: string[], signal: AbortSignal, maxNodes = 1200) {
-  const work = forcedMateWork(command, winner, horizon, hint, maxNodes);
-  try {
-    while (!signal.aborted) {
-      const start = performance.now();
-      do {
-        const step = work.next();
-        if (signal.aborted) return null;
-        if (step.done) return step.value;
-      } while (performance.now() - start < 8);
-      await new Promise<void>((resolve) => {
-        const done = () => { clearTimeout(timer); signal.removeEventListener("abort", done); resolve(); };
-        const timer = setTimeout(done, 0);
-        signal.addEventListener("abort", done, { once: true });
-        if (signal.aborted) done();
-      });
-    }
-    return null;
-  } finally { work.return(undefined as never); }
+  return completeWork(forcedMateWork(command, winner, horizon, hint, maxNodes), signal);
 }
 /** Une défense de la PV peut choisir n'importe quelle branche légale couverte.
  * Un coup d'attaque absent de la stratégie ne devient pas un coup « moteur ». */

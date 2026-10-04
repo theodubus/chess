@@ -13,6 +13,7 @@ const { values } = parseArgs({ options: {
   engine: { type: "string", default: process.env.CHESS_ENGINE_BINARY ?? "../target/release/shallowred" },
   stockfish: { type: "string", default: process.env.CHESS_STOCKFISH_BINARY },
   output: { type: "string", default: "dev/pedagogy-review-data.json" },
+  cases: { type: "string" },
 } });
 const vite = await createServer({ root, server: { middlewareMode: true }, appType: "custom" });
 const load = (name) => vite.ssrLoadModule(`/src/review/understanding/${name}.ts`);
@@ -21,11 +22,15 @@ const originalWebSocket = globalThis.WebSocket;
 try {
   const [{ tacticalInput }, { TacticalVerification, TacticalEffectVerification }, { tacticalDraft }, { MateVerification }, { mateDraft },
     { corpus, corpusInput }, { externalCorpus }, { decisionContext }, { tacticalConstraints }, { moveLabel }, { connectDevelopmentEngine },
-    { understandDecision }, { RestrictionEffectVerification }, { restrictionDraft }] = await Promise.all([
+    { understandDecision }, { RestrictionEffectVerification }, { restrictionDraft }, { divertedDefenceCases }, { DivertedDefenceVerification }, { divertedDefenceDraft }] = await Promise.all([
     load("tacticalCases"), load("TacticalVerification"), load("tacticalDraft"), load("MateVerification"), load("mateDraft"),
     load("corpus"), load("externalCorpus"), load("context"), load("constraints"), load("draftModel"), vite.ssrLoadModule("/src/engine/DevelopmentEngine.ts"),
     load("prototype"), load("RestrictionEffectVerification"), load("restrictionDraft"),
+    load("divertedDefenceTestEngine"), load("DivertedDefenceVerification"), load("divertedDefenceDraft"),
   ]);
+  const allCases = ["queen-closes-retreat", "queen-closes-retreat-black", "allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31", "diverted-white", "diverted-black", "diverted-compensation"];
+  const selectedCases = values.cases ? values.cases.split(",") : allCases;
+  if (!selectedCases.length || selectedCases.some((id) => !allCases.includes(id))) throw new Error("Exemples demandés inconnus.");
   // Adaptateur Node de cet outil local, comme celui des essais UCI. Aucun
   // transport n'entre dans la vue, qui ne lit qu'un instantané de brouillons.
   globalThis.WebSocket = class extends WebSocket {
@@ -44,9 +49,14 @@ try {
         adapter.onLine((line) => { if (line.startsWith("id name ")) engineName = line.slice(8); });
         return adapter;
       };
-      for (const id of ["queen-closes-retreat", "queen-closes-retreat-black", "allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31"]) {
+      for (const id of selectedCases) {
         let input, check, build, source, origin;
-        if (id.startsWith("queen-closes-retreat")) {
+        if (id.startsWith("diverted-")) {
+          const test = divertedDefenceCases.find((c) => "diverted-" + c.id === id), { position, result } = corpusInput(test);
+          input = { position, understanding: { context: decisionContext(position, result) } };
+          check = new DivertedDefenceVerification(); build = (_understanding, report) => divertedDefenceDraft(position, report);
+          source = test.notes; origin = "constructed";
+        } else if (id.startsWith("queen-closes-retreat")) {
           const test = corpus.find((c) => c.id === id), { position, result } = corpusInput(test), understanding = understandDecision(position, result);
           input = { understanding, hypothesisIndex: understanding.hypotheses.findIndex((h) => h.kind === "allows-restriction") };
           check = new RestrictionEffectVerification([200, 600], 25000); build = restrictionDraft;
@@ -70,7 +80,8 @@ try {
           examples.push({ id, capturedAt: new Date().toISOString(), label: `${context.before.fen.split(" ")[5]}${context.before.turn === "b" ? "…" : "."} ${moveLabel(context.before, context.moves[context.decision].lan)}`, source, origin, engine, engineName, engineHash,
             beforeFen: context.before.fen, afterFen: context.after.fen, state: report?.status ?? "unavailable",
             reason: report?.attribution?.reason ?? report?.reason ?? "engine-unavailable", error: check.error || null,
-            elapsedMs: report?.elapsedMs ?? 0, searches: report?.searches ?? 0, draft });
+            elapsedMs: report?.elapsedMs ?? 0, searches: report?.searches ?? 0, draft,
+            ...(id.startsWith("diverted-") ? { verification: report } : {}) });
           console.log(`${engineName} • ${id} : ${draft ? "brouillon à relire" : "abstention"} (${report?.reason ?? check.error})`);
         } finally { check.stop(); }
       }

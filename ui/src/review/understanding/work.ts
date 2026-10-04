@@ -7,3 +7,24 @@ export function finishWork<T>(work: Work<T>): T {
   while (!step.done) step = work.next();
   return step.value;
 }
+/** Chaque famille cède entre primitives et abandonne son générateur lors d'une
+ * navigation. Une primitive reste indivisible ; la tranche n'est pas une garantie. */
+export async function completeWork<T>(work: Work<T>, signal: AbortSignal): Promise<T | null> {
+  try {
+    while (!signal.aborted) {
+      const start = performance.now();
+      do {
+        const step = work.next();
+        if (signal.aborted) return null;
+        if (step.done) return step.value;
+      } while (performance.now() - start < 8);
+      await new Promise<void>((resolve) => {
+        const done = () => { clearTimeout(timer); signal.removeEventListener("abort", done); resolve(); };
+        const timer = setTimeout(done, 0);
+        signal.addEventListener("abort", done, { once: true });
+        if (signal.aborted) done();
+      });
+    }
+    return null;
+  } finally { work.return(undefined as never); }
+}

@@ -12,7 +12,8 @@ reste inchangé ; l’UCI est l’unique interface moteur.
   `decisionCause.ts`) à portée limitée, parfois trompeuse malgré ses vérifications.
 - Des recherches annulables et mises en cache (`FocusedAnalysis`, `LiveStudy`).
 - Premier raccordement des conséquences matérielles adverses confirmées :
-  fourchette/défenseur échangé, retraite fermée puis attaque, défense retirée et ligne ouverte. Texte et
+  fourchette/défenseur échangé, retraite fermée puis attaque, défense retirée,
+  ligne ouverte et défenseur détourné par une reprise. Texte et
   illustration racontent le coup joué ; aucune alternative obligatoire. Les
   causes historiques négatives sont écartées sur ce parcours. La couverture
   positionnelle et la validation sur un échantillon neuf restent ouvertes.
@@ -119,6 +120,10 @@ texte généré automatiquement n’est utilisé comme vérité attendue.
 - [ ] Élargir les contraintes combinées et leur validation : plusieurs attaquants,
   surcharge, interactions de défenses et horizons plus longs. Les premiers cas
   connus ne prouvent pas leur pertinence générale.
+- [x] Premier détournement d'un défenseur par une reprise : deux attaquants,
+  deux victimes et défenseur suivis ; reprise sur la seconde case auparavant
+  légale, devenue hors de portée. Exposition préexistante et défense conservée
+  refusées. Les autres formes de surcharge restent ouvertes.
 - [x] Épisodes de reprises consécutives ancrés dans l’historique : début connu/inconnu, rôle du
   coup (initiation/reprise/poursuite), bilan total et bilan depuis la décision.
   Ne pas imputer la perte antérieure à la meilleure reprise suivante.
@@ -134,6 +139,10 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
 
 ### C. Vérification comparative des causes — EN COURS
 
+- [x] Détournement par reprise confirmé aux deux budgets : réponses libres
+  après la première prise et la reprise ; bilan depuis la décision et compensation
+  conservés. Le témoin assemblé doit aussi conserver le bilan de la PV initiale
+  fraîche. Huit recherches au plus pour cette famille, pas de reprise forcée.
 - [x] Mat adverse en un à trois coups : annonces libres avant/après à deux
   budgets et preuve légale de toutes les réponses dans l'horizon annoncé,
   au plus 1 200 nœuds. Borne, défense échappant au mat, annonce préexistante
@@ -196,7 +205,8 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
 - [x] Rapports « soutenue / contredite / indéterminée » séparés de l'hypothèse.
   Portée explicite : mécanisme court dans les lignes du moteur. Toujours aucune
   explication publiable ni preuve que toutes les défenses perdent.
-- [x] Au plus dix recherches, budgets par défaut 300/900 ms, plafond global
+- [x] Vérificateurs bornés (dix recherches au plus dans les comparaisons isolées,
+  quatorze pour les deux candidats de la revue), budgets par défaut 300/900 ms, plafond global
   12 secondes incluant les connexions ; arrêt, cache moteur/révision/historique,
   rejet des réponses tardives, coûts et réutilisation du cache mesurés.
 - [x] Essais réels ShallowRed/Stockfish, avec différences conservées dans le
@@ -258,6 +268,9 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - [x] Raccordement séparé des mats adverses courts : calcul annulable, origine
   moteur/règles, départ après la décision et repère du mat. Les autres mats
   restent inconnus ; ne pas lire cette case comme une couverture du roi en général.
+- [x] Reprise détournant un défenseur raccordée : deux réponses supplémentaires
+  libres, bilan de la première reprise et bilan final séparés, revalidation du
+  brouillon coopérative et annulable. La perte n'est pas dite forcée.
 - [x] Coup consulté uniquement, signalement du calcul, cache/annulation et
   préférences. Même navigation de démonstration et variantes ; retry masqué
   ne transmet aucune demande. Un changement de PV/score, même sans changement de
@@ -303,11 +316,57 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   concurrence ont été relancés sur l'instantané fini. Contrôles finaux ciblés,
   lint, TypeScript et build réussis. Vite compile et sert l'aperçu ; aucun contrôle
   visuel n'est annoncé sans navigateur. Avertissement de bundle >500 ko conservé.
-- CI du commit publié à lire ; ne pas la déduire des contrôles locaux. Continuer
-  ensuite les contraintes composées et les raisons hors gain matériel immédiat.
+- Commit `125d426` publié sur la PR #111. CI réellement lue : UI
+  [37191342827](https://github.com/theodubus/chess/actions/runs/37191342827),
+  Rust PR [37191342825](https://github.com/theodubus/chess/actions/runs/37191342825)
+  et Rust push [37191341038](https://github.com/theodubus/chess/actions/runs/37191341038)
+  réussis sur ce SHA. Continuer les contraintes composées et les raisons hors
+  gain matériel immédiat ; cette validation ne clôt pas la backlog.
+
+## Défenseur détourné par la reprise — 4 octobre 2026
+
+- Faits coopératifs, deux attaquants et défenseur commun suivis par identité,
+  questions libres à deux budgets, bilan depuis la décision et compensation.
+  Une PV de reprise tronquée ne masque pas la compensation de la PV initiale.
+  Le score avant le coup ne chiffre pas ce bilan : annonce de mat antérieure
+  conservée, aucune conversion en points ni attribution du classement global.
+- Texte et repère issus de la revalidation des réponses ; quatre positions dans
+  les exemples sans compensation. La reprise poursuit l'échange ; son gain
+  local ne devient pas un nouvel échange gagnant. Même navigation de revue,
+  aucune alternative obligatoire. Calcul du brouillon également coopératif.
+- Six essais réels, ShallowRed et Stockfish 16 : quatre brouillons soutenus
+  (blanc/noir), deux abstentions sur le cas construit avec compensation.
+  Questions, scores, variantes et empreintes conservés dans
+  `dev/diverted-defence-data.json` ; aperçu
+  `/dev/pedagogy-review.html?sample=diversion`. Coûts locaux 2,3–7,1 s ; ce n'est
+  ni une garantie de latence ni une mesure de pertinence ou de couverture.
+- PV Stockfish continuant après une nulle par matériel insuffisant : hypothèses
+  de revue désormais bornées à huit demi-coups et première fin de partie, cas réel
+  exécuté puis testé. Aucune règle modifiée dans le moteur.
+- Validation : **721 tests unitaires / 57 fichiers**, **105 tests pont/moteurs /
+  10 fichiers**. Lint, TypeScript et build réussis. Trois anciens tests ont
+  dépassé cinq secondes sous forte concurrence ; suite entière relancée à deux
+  workers et réussie, sans augmenter leurs délais. CI du prochain commit à relire.
+- Contraintes encore alignées mais devenues illégales (clouage du défenseur),
+  autres surcharges, compensations positionnelles et validation pédagogique
+  indépendante encore ouvertes. L'audit amateur n'est pas recalibré, ses chiffres
+  de faible couverture restent inchangés. Aucun contrôle visuel CUA ajouté.
 
 ## Point de reprise
 
+- **Lot terminé localement, publication en cours** : détournement d'un défenseur par une reprise. Faits,
+  questions libres aux deux budgets, bilan total, compensation et revalidation
+  du brouillon raccordés au contrôleur de revue. Deux camps et historique, reprise
+  refusée, autre capture, PV tronquée masquant une compensation, défense conservée,
+  preuve altérée, arrêt/cache/délai testés. Six essais réels conservés ; pas
+  d'affirmation de couverture nouvelle ni de relecture visuelle indépendante.
+- **Prochaine extension préexécutée, pas encore codée** : le défenseur reste
+  géométriquement en prise sur la seconde pièce mais la reprise le cloue devant
+  son roi. Réutiliser le même graphe de captures/reprises et le clouage absolu ;
+  refuser l'alignement relatif et la reprise encore légale. Positions avec un
+  pion h2/h7 exécutées dans les deux camps, échanges Rxd8+/Kxd8 et miroir inclus.
+  FEN blanche : `3rk3/5q2/1b6/RR6/8/3Q4/7P/3K4 w - - 0 1`, Qd5,
+  Qxd5+, Rxd5, Bxa5, Rxd8+, Kxd8, Kc2. Conserver les reprises après l'échec.
 - **Audit terminé** : trois parties amateurs complètes avec
   `dev/pedagogy-audit.mjs`, revue réelle, verdicts réels, ancien affichage et
   nouvelles conséquences séparés. Les sorties ne sont pas des vérités attendues.
@@ -316,9 +375,9 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   observées et préparer les exemples concrets à relire.
 - **Résultat et suite** : `AMATEUR_AUDIT.md` et aperçu
   `/dev/pedagogy-audit.html`. Couverture encore très faible : 103 cas CP sans
-  candidat. Prochain travail autonome : modéliser les contraintes combinées
-  d'un défenseur détourné par une reprise ; garder le bilan global et ne pas
-  prétendre que la reprise était forcée parce que le moteur la choisit.
+  candidat. Après validation du détournement par reprise, poursuivre les contraintes
+  de défense combinées puis les raisons sans gain matériel immédiat. Garder
+  le bilan global et ne pas prétendre qu'un choix moteur était forcé.
 - **Consigne reconfirmée le 4 octobre** : continuer sans arrêter à la fin d'un
   lot tant qu'il reste du travail autonome ; arrêt seulement à l'achèvement,
   un arbitrage humain concret ou une limite de session. Après les retraites

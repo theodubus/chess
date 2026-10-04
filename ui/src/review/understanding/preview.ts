@@ -122,7 +122,9 @@ document.addEventListener("keydown", (event) => {
 });
 
 try {
-  const response = await fetch("/dev/pedagogy-review-data.json");
+  const sample = new URLSearchParams(location.search).get("sample");
+  const path = sample === "diversion" ? "/dev/diverted-defence-data.json" : "/dev/pedagogy-review-data.json";
+  const response = await fetch(path);
   if (!response.ok) throw new Error("Instantané absent. Depuis ui/, lancez npm run pedagogy:review puis rechargez cette page.");
   data = await response.json() as PreviewDocument;
   if (data.schema !== 1 || data.publishable !== false || data.independentSample !== false || !data.examples.length)
