@@ -16,6 +16,9 @@ reste inchangé ; l’UCI est l’unique interface moteur.
   illustration racontent le coup joué ; aucune alternative obligatoire. Les
   causes historiques négatives sont écartées sur ce parcours. La couverture
   positionnelle et la validation sur un échantillon neuf restent ouvertes.
+- Mats adverses courts confirmés puis prouvés contre toutes les réponses légales
+  dans un horizon borné ; illustration sans remplacement obligatoire. Les mats
+  plus longs et une attribution positionnelle générale restent ouverts.
 - Des tests logiciels et un parcours navigateur. Ils ne constituent **pas** une
   mesure de pertinence pédagogique. Les anciens lots « terminés » restent dans
   `BACKLOG_ANALYSE_PEDAGOGIQUE_HISTORIQUE.md` comme historique de livraison.
@@ -85,6 +88,10 @@ sans se contenter de proposer le premier choix du moteur.
 - [ ] Relecture indépendante, nouvelles parties amateurs et sélection plus large
   pour juger la généralisation. Les annotations actuelles sont les nôtres ; ni les
   exemples construits ni trois parties historiques ne valident la pertinence générale.
+- [x] Nouvel échantillon amateur : trois parties / 202 demi-coups, sélection
+  fixée avant recherche moteur dans l'archive CC0 Lichess de janvier 2013,
+  empreinte d'archive et ordre conservés. Pas d'attente pédagogique générée
+  depuis les sorties du moteur ; relecture indépendante encore manquante.
 
 **Passage A :** toutes les positions sont exécutables avec chess.js ; attentes
 échiquéennes explicites, échecs visibles, familles non couvertes comptées. Aucun
@@ -127,6 +134,10 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
 
 ### C. Vérification comparative des causes — EN COURS
 
+- [x] Mat adverse en un à trois coups : annonces libres avant/après à deux
+  budgets et preuve légale de toutes les réponses dans l'horizon annoncé,
+  au plus 1 200 nœuds. Borne, défense échappant au mat, annonce préexistante
+  ou score incohérent empêchent le récit. Aucune alternative ni optimalité.
 - [x] Conséquence directe d'une retraite fermée : menace fraîche, défense libre,
   même victime, capture sur place/prise de l'attaquant/sortie déjà exposée, puis
   bilan depuis la décision. Deux lignes peuvent différer si chacune démontre le
@@ -243,7 +254,10 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
 - [x] Premier raccordement des conséquences adverses matérielles courtes :
   fourchette (dont défense échangée), retraite fermée puis attaque, clouage absolu exploité, défense retirée,
   ligne ouverte, seulement si les deux recherches confirment le mécanisme et le
-  bilan après reprises. Pas d'activation des brouillons favorables/comparatifs/mat.
+  bilan après reprises. Pas d'activation des brouillons favorables/comparatifs.
+- [x] Raccordement séparé des mats adverses courts : calcul annulable, origine
+  moteur/règles, départ après la décision et repère du mat. Les autres mats
+  restent inconnus ; ne pas lire cette case comme une couverture du roi en général.
 - [x] Coup consulté uniquement, signalement du calcul, cache/annulation et
   préférences. Même navigation de démonstration et variantes ; retry masqué
   ne transmet aucune demande. Un changement de PV/score, même sans changement de
@@ -252,6 +266,11 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   libres et observations restent secondaires. Pas de deuxième raison concurrente.
 - [ ] Tester des parties complètes (humain/bot, deux humains, import PGN) et le
   parcours bureau/mobile. Mesurer latence et couverture avant/après.
+- [x] Premier audit logiciel de trois PGN amateurs complets avec les deux moteurs :
+  202 demi-coups, 126 décisions moteur × partie défavorables, sept conséquences
+  soutenues, 117 raisons inconnues et deux calculs refusés. Filtres de moments
+  humain/bot et deux camps, histoire des repères et restitution du résultat testés.
+  Ce n'est pas un parcours visuel ni une mesure de pertinence indépendante.
 - [ ] Faire relire les exemples par Théo : une CI verte n’est pas cette validation.
 
 ## Critères de qualité et limites
@@ -267,8 +286,45 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   ni davantage de temps, ni une reformulation textuelle ne fournissent seuls
   le modèle de contexte manquant.
 
+## Livraison intermédiaire — mats courts et audit, 4 octobre 2026
+
+- Mat adverse borné en un à trois coups raccordé à la revue : confirmation UCI
+  aux deux budgets, toutes les réponses légales vérifiées, première étape après
+  le coup, repère du roi maté et camp explicitement nommé. Limite, préexistence,
+  score divergent, histoire tronquée et preuve altérée refusés. Moteur inchangé.
+- Audit réel des trois parties amateurs et diagnostics par contrôle, aperçu
+  de relecture conservant les cas inconnus. `AMATEUR_AUDIT.md` donne les résultats
+  et limites : sept conséquences soutenues sur 126 décisions moteur × partie,
+  aucune relecture indépendante. L'ancien affichage « concret » n'est pas une
+  mesure de vérité pédagogique. La backlog n'est pas terminée.
+- Validation locale : **693 tests unitaires / 54 fichiers**, **99 tests pont et
+  moteurs / 10 fichiers**, ShallowRed et Stockfish 16. Le rapport ne doit pas
+  être régénéré pendant ses tests de lecture ; les deux tests touchés par cette
+  concurrence ont été relancés sur l'instantané fini. Contrôles finaux ciblés,
+  lint, TypeScript et build réussis. Vite compile et sert l'aperçu ; aucun contrôle
+  visuel n'est annoncé sans navigateur. Avertissement de bundle >500 ko conservé.
+- CI du commit publié à lire ; ne pas la déduire des contrôles locaux. Continuer
+  ensuite les contraintes composées et les raisons hors gain matériel immédiat.
+
 ## Point de reprise
 
+- **Audit terminé** : trois parties amateurs complètes avec
+  `dev/pedagogy-audit.mjs`, revue réelle, verdicts réels, ancien affichage et
+  nouvelles conséquences séparés. Les sorties ne sont pas des vérités attendues.
+  Navigateur CUA revérifié : aucune surface disponible, donc aucune validation
+  visuelle bureau/mobile annoncée. Continuer après cet audit sur les lacunes
+  observées et préparer les exemples concrets à relire.
+- **Résultat et suite** : `AMATEUR_AUDIT.md` et aperçu
+  `/dev/pedagogy-audit.html`. Couverture encore très faible : 103 cas CP sans
+  candidat. Prochain travail autonome : modéliser les contraintes combinées
+  d'un défenseur détourné par une reprise ; garder le bilan global et ne pas
+  prétendre que la reprise était forcée parce que le moteur la choisit.
+- **Consigne reconfirmée le 4 octobre** : continuer sans arrêter à la fin d'un
+  lot tant qu'il reste du travail autonome ; arrêt seulement à l'achèvement,
+  un arbitrage humain concret ou une limite de session. Après les retraites
+  fermées : preuve bornée des mats permis par un mauvais coup, puis audit du
+  parcours sur des parties complètes et élargissement du corpus. Ne pas confondre
+  vérification logicielle, preuve légale courte et pertinence pédagogique générale.
 - Reprise autonome autorisée le 3 octobre : poursuivre jusqu'à besoin d'arbitrage
   humain, limite de session ou achèvement. Théo valide les textes des exemples le
   3 octobre (« les textes sont bons »). Il demande si l'alternative est le mauvais

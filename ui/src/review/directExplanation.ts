@@ -19,7 +19,8 @@ const append = (command: string, move: string) => command + (command.includes(" 
  * devenir une explication ; le premier écran est déjà après le coup examiné. */
 export function confirmedConsequence(draft: PedagogicalDraft | RelationDraft, position: ReviewPosition): ConfirmedConsequence {
   const scope = "evidence" in draft ? draft.evidence.scope : draft.scope;
-  if (draft.role !== "allows-loss" || scope !== "observed-consequence" || draft.alternative.length || !position.played)
+  const forcedMate = "family" in draft && draft.family === "forced-mate" && scope === "short-forcing-route";
+  if (draft.role !== "allows-loss" || (scope !== "observed-consequence" && !forcedMate) || draft.alternative.length || !position.played)
     throw new Error("Conséquence adverse directe requise.");
   const board = boardFromCommand(position.command);
   if (board.fen() !== position.fen) throw new Error("Explication d'une autre position.");
@@ -45,6 +46,8 @@ export function confirmedConsequence(draft: PedagogicalDraft | RelationDraft, po
       text += ` ${"story" in draft ? draft.story.consequence : draft.summary}`;
     return { command, fen: step.fen, label: step.label, text, marks: structuredClone(step.marks) };
   });
+  if (forcedMate && (!board.isCheckmate() || board.turn() !== position.turn))
+    throw new Error("Le repère doit montrer le mat du camp qui a joué.");
   return {
     title: draft.title, summary: draft.summary, steps, limitation: draft.limitation,
     context: "evidence" in draft ? draft.evidence.contextText : null,

@@ -11,12 +11,13 @@ import { mechanismCases } from "../src/review/understanding/mechanismCases";
 import { PedagogicalAnalysis } from "../src/review/understanding/PedagogicalAnalysis";
 import { directExplanation } from "../src/review/directExplanation";
 import { explainMove } from "../src/review/explanations";
+import { mateConsequenceCases } from "../src/review/understanding/mateConsequenceTestEngine";
 
 for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], ["Stockfish", process.env.CHESS_STOCKFISH_BINARY]]) {
-  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black"]) {
+  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black", "fools-mate", "reverse-fools-mate", "legals-mate"]) {
     it.skipIf(!command)(`${name} : raccordement revue ${id}`, async () => {
-      const test = id === "allows-fork" ? tacticalInput(id).example.test : id.startsWith("queen-closes-retreat")
-        ? corpus.find((c) => c.id === id) : { ...mechanismCases.find((c) => c.id === id), prefix: [] };
+      const test = mateConsequenceCases.find((c) => c.id === id) ?? (id === "allows-fork" ? tacticalInput(id).example.test : id.startsWith("queen-closes-retreat")
+        ? corpus.find((c) => c.id === id) : { ...mechanismCases.find((c) => c.id === id), prefix: [] });
       const { position } = corpusInput(test), afterBoard = boardFromCommand(position.command);
       afterBoard.move(position.played);
       const after = { ...position, command: position.command + (position.command.includes(" moves ") ? " " : " moves ") + position.played,
@@ -42,6 +43,7 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
         const result = await analysis.analyse(request, factory);
         expect(result, analysis.error).not.toBeNull();
         expect(result.status).not.toBe("unavailable");
+        if (id === "fools-mate" || id === "reverse-fools-mate") expect(result.status).toBe("supported");
         expect(result.attempts).toBeLessThanOrEqual(2); expect(result.searches).toBeLessThanOrEqual(12);
         expect(trace.every((c) => c === position.command || c === after.command || c.startsWith(after.command + " "))).toBe(true);
         const view = directExplanation(explainMove(position, null, request.result, null, false), result.consequence);

@@ -15,6 +15,7 @@
     "start": "node dev/start.mjs",
     "test:understanding": "vitest run src/review/understanding --reporter=verbose",
     "pedagogy:review": "node dev/pedagogy-review.mjs",
+    "pedagogy:audit": "node dev/pedagogy-audit.mjs",
     "bench:understanding": "node dev/understanding-bench.mjs"
   },
   "dependencies": {

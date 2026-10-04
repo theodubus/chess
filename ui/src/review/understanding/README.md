@@ -3,7 +3,9 @@
 Les extracteurs et vérificateurs restent indépendants du rendu et de l'ancien
 détecteur de motifs. Ils produisent des faits et hypothèses ; leur champ
 `explanation` reste `null`. `PedagogicalAnalysis` raccorde désormais les seules
-conséquences matérielles adverses confirmées à la revue, via `directExplanation`.
+conséquences matérielles adverses confirmées et les mats adverses courts à la
+revue, via `directExplanation`. Contrat : [MATE_CONSEQUENCE.md](MATE_CONSEQUENCE.md).
+Audit de parties complètes, résultats et relecture : [AMATEUR_AUDIT.md](AMATEUR_AUDIT.md).
 Lancer depuis `ui/` :
 
 ```bash

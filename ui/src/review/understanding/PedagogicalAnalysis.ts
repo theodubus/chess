@@ -10,6 +10,9 @@ import { tacticalDraft } from "./tacticalDraft";
 import { relationDraft } from "./relationDraft";
 import { closedRetreats, RestrictionEffectVerification } from "./RestrictionEffectVerification";
 import { restrictionDraft } from "./restrictionDraft";
+import { MateConsequenceVerification } from "./MateConsequenceVerification";
+import { mateConsequenceDraft } from "./mateConsequenceDraft";
+import { opposite } from "./context";
 import type { PedagogicalDraft } from "./draftModel";
 import type { RelationDraft } from "./relationDraft";
 import type { WorkPhase } from "./work";
@@ -25,6 +28,8 @@ export type PedagogicalResult = {
   attempts: number;
   searches: number;
   elapsedMs: number;
+  /** Diagnostic de développement, jamais utilisé comme explication utilisateur. */
+  checks?: { family: "tactic" | "relation" | "restriction" | "mate"; status: string; reason: string; searches: number }[];
 };
 export const adverseCategory = (category: Category | undefined) =>
   !!category && ["inaccuracy", "mistake", "blunder", "miss"].includes(category);
@@ -34,9 +39,12 @@ export function pedagogicalSignature(request: Omit<PedagogicalRequest, "review">
   return JSON.stringify([request.revision, request.engineId, request.position, request.result, request.category]);
 }
 export function eligibleConsequence(request: PedagogicalRequest) {
-  return adverseCategory(request.category) && !!request.position.played && !request.position.terminal &&
-    request.result?.score?.kind === "cp" && !request.result.score.bound && Number.isFinite(request.result.score.value) &&
-    !!request.result.bestMove && request.result.variation.length > 0;
+  const score = request.result?.score;
+  const useful = score?.kind === "cp" || score?.kind === "mate" && score.winner === opposite(request.position.turn) &&
+    Number.isInteger(score.value) && Math.abs(score.value) >= 1 && Math.abs(score.value) <= 3;
+  return adverseCategory(request.category) && !!request.position.played && !request.position.terminal && useful &&
+    !!score && !score.bound && Number.isFinite(score.value) &&
+    !!request.result?.bestMove && request.result.variation.length > 0;
 }
 function freeze<T>(value: T): T {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -58,7 +66,7 @@ export class PedagogicalAnalysis {
   private listeners = new Set<() => void>();
   state: "idle" | "extracting" | "verifying" | "complete" | "stopped" | "timed-out" | "error" = "idle";
   phase: WorkPhase = "context";
-  candidate: "tactic" | "relation" | "restriction" | null = null;
+  candidate: "tactic" | "relation" | "restriction" | "mate" | null = null;
   error = "";
   cached = false;
   constructor(private budgets: [number, number] = [300, 900], private deadlineMs = 12000, private cacheSize = 32) {
@@ -85,6 +93,7 @@ export class PedagogicalAnalysis {
     this.stop();
     const generation = this.generation, start = performance.now();
     const request = { ...input, position: structuredClone(input.position), result: structuredClone(input.result) };
+    const checks: NonNullable<PedagogicalResult["checks"]> = [];
     this.request = request;
     this.cached = false; this.error = ""; this.phase = "context"; this.candidate = null;
     const key = pedagogicalSignature(request), cache = this.cache.get(request.review) ?? new Map<string, PedagogicalResult>();
@@ -105,7 +114,7 @@ export class PedagogicalAnalysis {
     };
     const finish = (status: PedagogicalResult["status"], consequence: ConfirmedConsequence | null, attempts: number, searches: number) => {
       if (!current()) return null;
-      const result = freeze({ status, consequence, attempts, searches, elapsedMs: performance.now() - start });
+      const result = freeze({ status, consequence, attempts, searches, elapsedMs: performance.now() - start, checks });
       cache.set(key, result);
       while (cache.size > this.cacheSize) cache.delete(cache.keys().next().value!);
       this.state = "complete"; this.publish();
@@ -124,6 +133,26 @@ export class PedagogicalAnalysis {
     try {
       this.state = "extracting"; this.publish();
       if (!current()) return null;
+      if (request.result!.score!.kind === "mate") {
+        // Un score de mat ne se convertit pas en gain matériel. Vérifier sa
+        // courte route indépendamment des détecteurs de pièces capturables.
+        this.phase = "mate"; this.candidate = "mate"; this.state = "verifying"; this.publish();
+        if (!current()) return null;
+        const checker = new MateConsequenceVerification(this.budgets, this.deadlineMs - (performance.now() - start));
+        this.cancelVerification = () => checker.stop();
+        attempts = 1;
+        const report = await checker.verify(request, factory);
+        if (!current()) return null;
+        if (!report) {
+          this.error = checker.error;
+          if (checker.state === "timed-out") { expire(); return null; }
+          return finish("unavailable", null, attempts, searches);
+        }
+        searches = report.searches;
+        checks.push({ family: "mate", status: report.status, reason: report.reason, searches: report.searches });
+        const draft = mateConsequenceDraft(request.position, report);
+        return finish(draft ? "supported" : "unconfirmed", draft ? confirmedConsequence(draft, request.position) : null, attempts, searches);
+      }
       const understanding = await this.extraction.analyse(request);
       if (!current()) return null;
       if (!understanding) {
@@ -158,6 +187,7 @@ export class PedagogicalAnalysis {
             return finish("unavailable", null, attempts, searches);
           }
           searches += report.searches;
+          checks.push({ family: candidate.family, status: report.status, reason: report.reason, searches: report.searches });
           draft = tacticalDraft(understanding, report);
         } else if (candidate.family === "restriction") {
           const checker = new RestrictionEffectVerification(this.budgets, remaining);
@@ -170,6 +200,7 @@ export class PedagogicalAnalysis {
             return finish("unavailable", null, attempts, searches);
           }
           searches += report.searches;
+          checks.push({ family: candidate.family, status: report.status, reason: report.reason, searches: report.searches });
           draft = restrictionDraft(understanding, report);
         } else {
           const checker = new RelationVerification(this.budgets, remaining);
@@ -182,6 +213,7 @@ export class PedagogicalAnalysis {
             return finish("unavailable", null, attempts, searches);
           }
           searches += report.searches;
+          checks.push({ family: candidate.family, status: report.status, reason: report.reason, searches: report.searches });
           draft = relationDraft(understanding, report);
         }
         if (draft) return finish("supported", confirmedConsequence(draft, request.position), attempts, searches);

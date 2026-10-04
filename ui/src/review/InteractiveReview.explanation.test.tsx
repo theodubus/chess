@@ -9,6 +9,7 @@ import { tacticalInput } from "./understanding/tacticalCases";
 import { PedagogicalAnalysis, type PedagogicalResult } from "./understanding/PedagogicalAnalysis";
 import { ScriptEngine } from "./understanding/tacticalTestEngine";
 import { restrictionInput, RestrictionTestEngine } from "./understanding/restrictionTestEngine";
+import { mateConsequenceInput, MateConsequenceTestEngine } from "./understanding/mateConsequenceTestEngine";
 import type { ConsequenceState } from "./usePedagogicalAnalysis";
 
 // Le contrôleur asynchrone a ses propres tests. Ce rendu vérifie que la revue
@@ -83,4 +84,23 @@ it("raconte la sortie fermée, l'attaque et le bilan dans la revue du mauvais co
   expect(html).toContain("Après les reprises"); expect(html).toContain("−2 points pour les Blancs");
   expect(html).toContain("Montrer pourquoi"); expect(html).not.toContain("Comparer les décisions");
   expect(html).not.toContain("cette pièce est perdue dans toutes les variantes");
+});
+it("explique un mat permis dans la revue, sans proposer une perte matérielle ou une comparaison", async () => {
+  const { source, request } = mateConsequenceInput(), board = boardFromCommand(source.position.command);
+  board.move(source.position.played!);
+  const review = new GameReview(board.pgn()), index = review.positions.findIndex((p) => p.command === source.position.command),
+    alternative = boardFromCommand(source.position.command).moves({ verbose: true }).find((m) => m.lan !== source.position.played)!;
+  review.results[index] = { score: { kind: "cp", value: 0 }, depth: 15, bestMove: alternative.lan, bestSan: alternative.san,
+    variation: legalVariation(source.position.fen, [alternative.lan]) };
+  review.results[index + 1] = { ...source.result!, score: { kind: "mate", value: -1, winner: "b" } };
+  review.state = "complete";
+  expect(review.annotations[index]?.category).toBe("blunder");
+  hook.result = await new PedagogicalAnalysis([10, 20]).analyse({ ...request, review, position: review.positions[index],
+    result: review.results[index + 1], category: "blunder" }, async () => new MateConsequenceTestEngine(source));
+  expect(hook.result?.status).toBe("supported"); hook.state = "supported";
+  const html = renderToStaticMarkup(<InteractiveReview review={review} selected={index + 1} onSelect={() => {}} engineId="script"
+    orientation="white" showEvaluation={false} showAnnotations active side="both" treeCache={new Map()} />);
+  expect(html).toContain("Noirs peuvent forcer le mat");
+  expect(html).toContain("roi en e1"); expect(html).toContain("Montrer pourquoi");
+  expect(html).not.toContain("Comparer les décisions"); expect(html).not.toContain("−9 points");
 });

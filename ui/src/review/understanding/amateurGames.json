@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "source": "https://database.lichess.org/",
+  "archive": "lichess_db_standard_rated_2013-01.pgn.zst",
+  "archiveHash": "aa40b3671fa3cf1072eb182892cd90b0e1e003a4a5943492f64b77e7f3fd1635",
+  "license": "CC0-1.0",
+  "selectionFrozenAt": "2026-10-04",
+  "selection": "Premières 3 parties normales légales, 40–160 demi-coups, deux Elo 800–1800, temps initial 180–1200 s, joueurs distincts, ordre de l'archive.",
+  "independentSemanticValidation": false,
+  "usedForDevelopment": false,
+  "games": [
+    {
+      "id": "7b44wxzu",
+      "ordinal": 8,
+      "source": "https://lichess.org/7b44wxzu",
+      "rawGameHash": "18d9dca418cc23cd51110cbcf357d2162353cc5e30997345c85d471453251662",
+      "plies": 55,
+      "ratings": [
+        1765,
+        1752
+      ],
+      "pgn": "[Event \"Échantillon Lichess CC0\"]\n[Site \"https://lichess.org/7b44wxzu\"]\n[Date \"2012.12.31\"]\n[Round \"?\"]\n[White \"Blancs\"]\n[Black \"Noirs\"]\n[Result \"1-0\"]\n[WhiteElo \"1765\"]\n[BlackElo \"1752\"]\n[UTCDate \"2012.12.31\"]\n[TimeControl \"540+0\"]\n[Termination \"Normal\"]\n\n1. e4 e5 2. c4 Bc5 3. Nf3 d6 4. d3 a6 5. a3 Bg4 6. h3 Bxf3 7. Qxf3 Qf6 8. Be2 Nd7 9. Nc3 Ne7 10. O-O Bd4 11. Bd2 h6 12. Rab1 g5 13. Qg4 c6 14. Be3 Ba7 15. Bxa7 Rxa7 16. b4 Qg6 17. Na4 h5 18. Qg3 Nf6 19. Qe3 Ra8 20. Nb6 Rb8 21. c5 d5 22. exd5 Nfxd5 23. Qxe5 Rd8 24. Qxh8+ Ng8 25. Bxh5 Qh6 26. Rbe1+ Ne7 27. Rxe7+ Kxe7 28. Re1+ 1-0",
+      "semanticReview": "pending"
+    },
+    {
+      "id": "7rzcutsf",
+      "ordinal": 9,
+      "source": "https://lichess.org/7rzcutsf",
+      "rawGameHash": "3f4728ea136e3e3b614096f063cc78ea6867e3e61700b4074dfde18310e2bce0",
+      "plies": 73,
+      "ratings": [
+        1445,
+        1169
+      ],
+      "pgn": "[Event \"Échantillon Lichess CC0\"]\n[Site \"https://lichess.org/7rzcutsf\"]\n[Date \"2012.12.31\"]\n[Round \"?\"]\n[White \"Blancs\"]\n[Black \"Noirs\"]\n[Result \"1-0\"]\n[WhiteElo \"1445\"]\n[BlackElo \"1169\"]\n[UTCDate \"2012.12.31\"]\n[TimeControl \"900+0\"]\n[Termination \"Normal\"]\n\n1. d4 c5 2. c4 d6 3. Bf4 g6 4. Nf3 Bh6 5. Bxh6 Nxh6 6. Nc3 Nf5 7. d5 O-O 8. e4 Nd4 9. Bd3 Bd7 10. O-O a6 11. Ng5 h5 12. Re1 e6 13. dxe6 Nxe6 14. Nxe6 Bxe6 15. Nd5 h4 16. h3 Bxh3 17. gxh3 Qg5+ 18. Kf1 Nd7 19. Qa4 Nf6 20. Ne7+ Kh8 21. f3 Qg3 22. Ke2 Qxh3 23. Rh1 Qg2+ 24. Ke3 h3 25. Qd1 Rae8 26. Bf1 Ng4+ 27. Kd3 Ne5+ 28. Kc3 Qg3 29. Rxh3+ Qxh3 30. Bxh3 Rxe7 31. Qxd6 Nc6 32. Rh1 Rd8 33. Qxc5 a5 34. Bd7+ Kg7 35. Bxc6 Rc7 36. Qe5+ f6 37. Qxc7+ 1-0",
+      "semanticReview": "pending"
+    },
+    {
+      "id": "1hi3aveq",
+      "ordinal": 11,
+      "source": "https://lichess.org/1hi3aveq",
+      "rawGameHash": "cec033faf84894c18d36ff3ad78a0ab6f6bf92e4416fd558ee2c73b33ab0eb6e",
+      "plies": 74,
+      "ratings": [
+        1644,
+        1544
+      ],
+      "pgn": "[Event \"Échantillon Lichess CC0\"]\n[Site \"https://lichess.org/1hi3aveq\"]\n[Date \"2012.12.31\"]\n[Round \"?\"]\n[White \"Blancs\"]\n[Black \"Noirs\"]\n[Result \"0-1\"]\n[WhiteElo \"1644\"]\n[BlackElo \"1544\"]\n[UTCDate \"2012.12.31\"]\n[TimeControl \"600+8\"]\n[Termination \"Normal\"]\n\n1. e4 g6 2. d4 d6 3. Nf3 c6 4. h3 Nf6 5. Bg5 Nxe4 6. Qe2 Bf5 7. Nbd2 Qa5 8. c3 Nxd2 9. Bxd2 Nd7 10. b4 Qa3 11. Ng5 h5 12. Qc4 d5 13. Qe2 Qb2 14. Qd1 Bc2 15. Qc1 Qxc1+ 16. Rxc1 Ba4 17. Bd3 Nb6 18. O-O Nc4 19. Bxc4 dxc4 20. Bf4 Bh6 21. Rfe1 O-O 22. Rxe7 Rae8 23. Rxb7 f6 24. Ne6 Rxe6 25. Bxh6 Rf7 26. Rb8+ Kh7 27. Bf4 g5 28. Bd2 Re2 29. Be1 Rfe7 30. Kf1 Bc2 31. Rc8 Bd3 32. Rxc6 Rc2+ 33. Kg1 Rxc1 34. Rxf6 h4 35. g4 Rexe1+ 36. Kg2 Be4+ 37. f3 Rc2# 0-1",
+      "semanticReview": "pending"
+    }
+  ]
+}
