@@ -2,7 +2,13 @@
 
 Demande du 4 octobre : comprendre, par exemple, qu'un mauvais coup autorise une
 fourchette deux coups plus tard, sans programmer une liste de centaines de positions.
-Ce document décrit la proposition ; **elle n'est pas encore implémentée**.
+Expérience autorisée. Théo précise que l'analyse est une fonctionnalité annexe :
+améliorer la pertinence dans un budget court, sans des dizaines de sessions.
+**Les deux lots et leur bilan sont terminés. Aucun raccordement au produit :**
+la reconnaissance des motifs différés fonctionne, mais le gain d'explications
+acceptables est nul sur les deux prélèvements. L'expérience est close et n'ouvre
+pas une recherche pédagogique générale. Voir [le bilan](DELAYED_TACTICS_REPORT.md).
+L'architecture ci-dessous conserve le plan de l'essai, pas une suite à relancer.
 
 ## Ce que l'on peut raisonnablement viser
 

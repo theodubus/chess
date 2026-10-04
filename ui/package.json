@@ -16,6 +16,7 @@
     "test:understanding": "vitest run src/review/understanding --reporter=verbose",
     "pedagogy:review": "node dev/pedagogy-review.mjs",
     "pedagogy:audit": "node dev/pedagogy-audit.mjs",
+    "pedagogy:delayed": "node dev/delayed-tactics.mjs",
     "bench:understanding": "node dev/understanding-bench.mjs"
   },
   "dependencies": {

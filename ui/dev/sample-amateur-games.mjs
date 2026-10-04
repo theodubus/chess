@@ -6,11 +6,13 @@ import { parseArgs } from "node:util";
 import { resolve } from "node:path";
 import { Chess } from "chess.js";
 
-const { values } = parseArgs({ options: { archive: { type: "string" }, output: { type: "string", default: "src/review/understanding/amateurGames.json" } } });
+const { values } = parseArgs({ options: { archive: { type: "string" }, output: { type: "string", default: "src/review/understanding/amateurGames.json" }, skip: { type: "string", default: "0" } } });
+const skip = Number(values.skip);
+if (!Number.isSafeInteger(skip) || skip < 0 || skip > 100) throw new Error("Nombre de parties à exclure invalide.");
 if (!values.archive) throw new Error("Indiquer --archive <archive Lichess janvier 2013 .pgn.zst>.");
 const sha256 = (data) => createHash("sha256").update(data).digest("hex"), archiveHash = sha256(await readFile(values.archive));
 if (archiveHash !== "aa40b3671fa3cf1072eb182892cd90b0e1e003a4a5943492f64b77e7f3fd1635") throw new Error("L'archive diffère de l'empreinte publiée par Lichess.");
-// Sélection figée avant toute recherche moteur : les trois premières parties
+// Sélection figée avant toute recherche moteur : trois premières nouvelles parties
 // légales, normales, 40–160 demi-coups, deux classements 800–1800 inclus,
 // cadence initiale 180–1200 s, sans réutiliser un joueur déjà sélectionné.
 // Aucune sélection selon un motif, un score ou une sortie du détecteur.
@@ -49,14 +51,14 @@ try {
   for await (const line of lines) {
     if (line.startsWith("[Event ") && block.length) {
       consider(block); block = [];
-      if (selected.length === 3) break;
+      if (selected.length === skip + 3) break;
     }
     block.push(line);
   }
-  if (selected.length < 3) consider(block);
+  if (selected.length < skip + 3) consider(block);
 } finally { lines.close(); decoder.kill("SIGTERM"); await done; }
-if (selected.length !== 3) throw new Error("Trois parties attendues.");
+if (selected.length !== skip + 3) throw new Error("Trois nouvelles parties attendues après exclusion.");
 await writeFile(values.output, JSON.stringify({ schema: 1, source: "https://database.lichess.org/", archive: "lichess_db_standard_rated_2013-01.pgn.zst",
-  archiveHash, license: "CC0-1.0", selectionFrozenAt: "2026-10-04", selection: "Premières 3 parties normales légales, 40–160 demi-coups, deux Elo 800–1800, temps initial 180–1200 s, joueurs distincts, ordre de l'archive.",
-  independentSemanticValidation: false, usedForDevelopment: false, games: selected }, null, 2) + "\n");
-console.log(JSON.stringify(selected.map(({ id, ordinal, plies, ratings }) => ({ id, ordinal, plies, ratings }))));
+  archiveHash, license: "CC0-1.0", selectionFrozenAt: "2026-10-04", selection: `${skip ? `Après exclusion des ${skip} premières parties admissibles : p` : "P"}remières 3 parties normales légales, 40–160 demi-coups, deux Elo 800–1800, temps initial 180–1200 s, joueurs distincts, ordre de l'archive.`,
+  ...(skip ? { excludedFirstGames: skip } : {}), independentSemanticValidation: false, usedForDevelopment: false, games: selected.slice(skip) }, null, 2) + "\n");
+console.log(JSON.stringify(selected.slice(skip).map(({ id, ordinal, plies, ratings }) => ({ id, ordinal, plies, ratings }))));

@@ -13,15 +13,16 @@ const { values } = parseArgs({ options: {
   engine: { type: "string", default: process.env.CHESS_ENGINE_BINARY ?? "../target/release/shallowred" },
   stockfish: { type: "string", default: process.env.CHESS_STOCKFISH_BINARY },
   output: { type: "string", default: "dev/pedagogy-audit-data.json" },
+  manifest: { type: "string", default: "src/review/understanding/amateurGames.json" },
   "review-budget": { type: "string", default: "250" },
   "reuse-review": { type: "boolean", default: false },
 } });
 const budget = Number(values["review-budget"]);
 if (![100, 250, 500, 1000, 3000].includes(budget)) throw new Error("Budget de revue invalide.");
-const manifest = JSON.parse(await readFile(resolve(root, "src/review/understanding/amateurGames.json"), "utf8")),
-  vite = await createServer({ root, server: { middlewareMode: true }, appType: "custom" }), originalWebSocket = globalThis.WebSocket;
+const manifest = JSON.parse(await readFile(resolve(root, values.manifest), "utf8")),
+  vite = await createServer({ root, server: { middlewareMode: true, ws: false }, appType: "custom" }), originalWebSocket = globalThis.WebSocket;
 const document = { schema: 1, generatedAt: new Date().toISOString(), selection: manifest.selection, archiveHash: manifest.archiveHash,
-  independentSemanticValidation: false, reviewBudgetMs: budget, consequenceBudgetsMs: [300, 900], games: [] };
+  manifest: values.manifest, independentSemanticValidation: false, reviewBudgetMs: budget, consequenceBudgetsMs: [300, 900], games: [] };
 const previous = values["reuse-review"] ? JSON.parse(await readFile(resolve(root, values.output), "utf8")) : null;
 const sources = ["src/review/GameReview.ts", "src/review/understanding/PedagogicalAnalysis.ts", "src/review/understanding/forcedMate.ts",
   "src/review/understanding/MateConsequenceVerification.ts", "src/review/understanding/TacticalVerification.ts",

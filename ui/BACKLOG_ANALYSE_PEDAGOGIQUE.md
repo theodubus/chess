@@ -1,9 +1,15 @@
-# Analyse pédagogique — plan actif
+# Analyse pédagogique — état et limites
 
-Mis à jour le 4 octobre 2026. Périmètre : `ui/**`, moteur Rust inchangé,
+Mis à jour le 5 octobre 2026. Périmètre : `ui/**`, moteur Rust inchangé,
 UCI comme seule frontière. Branche `codex/ui-polish`, PR #111.
 
-**Le chantier général n'est pas terminé.** Le plan doit converger : un exemple
+**Priorité clarifiée par Théo le 4 octobre : l'analyse est une fonctionnalité
+annexe de l'UI.** Chercher la meilleure pertinence dans un budget court ; pas des
+dizaines de sessions ni une recherche générale pour égaler Chess.com. L'expérience
+des tactiques différées est close après deux lots et leur bilan, sans raccordement
+au produit faute de gain mesuré.
+Les ambitions plus larges sont différées, pas des tâches à poursuivre automatiquement.
+Le plan doit converger : un exemple
 supplémentaire est une régression, pas automatiquement une nouvelle fonctionnalité.
 Ne pas transformer les inconnus de l'audit en une liste de positions particulières
 à faire reconnaître. Le plan A–E et le journal détaillé sont conservés dans
@@ -31,7 +37,7 @@ exister ; une alternative moins bonne ne prouve ni le meilleur coup ni son unici
   des variantes UCI ne démontre pas une perte contre toutes les réponses légales.
 - Les tests logiciels et une CI verte ne constituent pas une relecture pédagogique.
 
-## État livré et travail en cours
+## État livré
 
 Familles adverses raccordées : fourchette/défenseur échangé, clouage absolu exploité,
 retraite fermée puis attaque, défense retirée, ligne ouverte, défenseur détourné par
@@ -104,7 +110,7 @@ mesures restent datées ; l'audit de clôture inclut la garde complémentaire
 de l'échange, sans gain net de couverture. Bilan :
 [TACTICAL_MILESTONE_REPORT.md](src/review/understanding/TACTICAL_MILESTONE_REPORT.md).
 
-## Prochain jalon fini : conséquences tactiques courtes
+## Jalon livré : conséquences tactiques courtes
 
 Ce jalon est un périmètre livrable, pas une redéfinition de l'objectif général ni
 une promesse d'équivalence avec Chess.com. Les familles négatives restent figées.
@@ -187,13 +193,45 @@ PV/évaluations UCI ne donnent pas ces raisons. Davantage de temps moteur peut
 stabiliser un score, sans fournir l'explication manquante.
 
 Nouvelle demande du 4 octobre : expliquer une menace telle qu'une fourchette deux
-coups plus tard, sans dresser une liste de centaines de positions. Proposition
-bornée, pas encore implémentée :
+coups plus tard, sans dresser une liste de centaines de positions. Expérience
+bornée autorisée, avec priorité à l'UI jouable et budget court :
 [DELAYED_TACTICS_PLAN.md](src/review/understanding/DELAYED_TACTICS_PLAN.md).
 Réutiliser les concepts à travers une suite courte, puis établir leur lien avec
 la décision ; ne pas confondre présence d'une fourchette dans la PV et cause du
 mauvais coup. Deux lots d'expérience puis bilan, sans extension automatique.
 La couverture positionnelle générale ne fait pas partie de ces deux lots.
+
+**Expérience close : les deux lots sont terminés.** Chronologie générique sur six
+demi-coups, provenance des placements/cases/échecs, bilan et contraste conditionnel,
+vérification libre à deux budgets, cache et arrêt. Les positions et suites des
+contre-épreuves ont été exécutées avec chess.js avant insertion.
+
+Sur les 126 décisions conservées : 43 avec un motif différé, vingt avec une
+dépendance à la décision, une avec perte observée et lien. Sur 91 nouvelles
+décisions (trois nouvelles parties sélectionnées avant recherche, deux moteurs) :
+32 motifs différés, dix-huit dépendances, une perte avec lien. **Zéro contraste
+accepté, zéro nouvelle explication confirmée.** Un contraste qui change le
+préfixe reste refusé ; une dépendance physique n'est pas une cause du verdict.
+La couche actuelle soutient six conséquences sur ces 91 décisions ; le prototype
+n'ajoute rien d'acceptable. Aucune validation sémantique indépendante revendiquée.
+
+Trois témoins construits ont été vérifiés par chaque moteur : un candidat
+corroboré avec ShallowRed, cinq refus, aucun texte publiable. Le prototype reste
+hors parcours de l'utilisateur et n'ajoute pas de recherches à l'UI. Aucun nouveau
+détecteur ni chantier général n'est prévu sous la consigne actuelle. Les relectures
+et contrôles visuels non cochés plus haut sont conservés comme limites ; ils
+n'entraînent pas une extension automatique de l'expérience.
+Bilan, coûts et reproduction :
+[DELAYED_TACTICS_REPORT.md](src/review/understanding/DELAYED_TACTICS_REPORT.md).
+
+Vérification locale de clôture : **869 tests unitaires / 70 fichiers**, lint,
+TypeScript et build passent. Le premier lancement de la suite complète a eu
+trois dépassements de temps pendant la mesure moteur concurrente ; une exécution
+sans mesure concurrente, avec deux workers, passe intégralement. Aucune assertion
+ni limite utilisateur n'a été assouplie pour obtenir ce résultat. La CI du
+dernier commit précédent `bd48bd6` a été réellement lue et passe ; celle du
+prototype se lit séparément sur le commit livré dans la PR. Les contrôles locaux
+ne permettent pas d'en déduire l'état.
 
 Décider séparément de ce périmètre et de son architecture après le bilan du jalon.
 Ne pas résoudre ce problème en ajoutant une phrase par symptôme ou en promettant
