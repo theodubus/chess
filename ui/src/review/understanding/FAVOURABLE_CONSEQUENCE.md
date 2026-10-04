@@ -44,7 +44,10 @@ une preuve des règles. Aucun détecteur stratégique supplémentaire n'est ajou
    Deux défenses peuvent illustrer la même occasion sans prouver un choix unique.
 4. Les mesures UCI réelles, la provenance et les abstentions sont conservées.
    Relecture indépendante et parcours visuel restent des validations distinctes
-   des tests logiciels, encore à réaliser.
+   des tests logiciels. Le 4 octobre, Théo juge correctes les explications
+   présentées (fourchettes des deux camps, clouage et exemple adverse Dxd4),
+   tout en les qualifiant de basiques. Cette validation limitée ne vaut pas
+   pour les compensations complexes, les parties amateurs ni le parcours visuel.
 
 ## Mesures réelles de développement
 

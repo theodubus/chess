@@ -92,11 +92,13 @@ et même binaire. Les contrôles pédagogiques sont toujours recalculés. Ne pas
 régénérer l'instantané pendant les tests qui le lisent. Les résultats peuvent
 changer avec les recherches ; conserver les divergences et les dates.
 
-Suite : contraintes de défense combinées et détournement par reprise, témoins
-avec compensation, puis activité/structure/sécurité du roi. Les raisons purement
-positionnelles ne seront pas ajoutées comme phrases de remplacement sans modèle
-causal. La nouvelle sélection n'a pas encore servi à régler les détecteurs ; si
-cela arrive, marquer `usedForDevelopment` et constituer un autre contrôle neuf.
+Cette section conserve le premier passage, pas un plan de nouveaux détecteurs.
+La backlog active et le bilan de clôture font autorité pour la suite. Les raisons
+purement positionnelles ne seront pas ajoutées comme phrases de remplacement sans
+modèle causal. La sélection n'a pas servi à régler un détecteur sur une décision
+particulière ; si cela arrive, marquer `usedForDevelopment` et constituer un autre
+contrôle neuf. Cet échantillon a été consulté plusieurs fois et n'est pas une
+validation de généralisation indépendante.
 
 ## Second passage — menaces ignorées, 4 octobre
 
@@ -152,3 +154,17 @@ et une réponse sans score exact/PV utilisable. Plus de candidats peut augmenter
 le coût ; aucune explication n'est publiée après l'arrêt. Ces échecs restent
 comptés. Les témoins soutenus ne sont pas des vérités pédagogiques indépendantes :
 toutes les relectures sémantiques restent `pending`.
+
+## Passage de clôture — 4 octobre
+
+`dev/pedagogy-audit-final-data.json`, aperçu
+`/dev/pedagogy-audit.html?sample=final`. Les mêmes évaluations, verdicts et binaires
+sont réutilisés avec le code fonctionnel `7408470`. Le résultat reste à onze
+conséquences soutenues sur 126 décisions : **112 non confirmées et trois
+indisponibles**. Il n'y a aucun gain net de couverture. Une explication ShallowRed
+apparaît et une autre disparaît ; trois réponses Stockfish sont refusées sans
+score exact/PV exploitable. Les refus et les mesures précédentes sont conservés.
+
+[TACTICAL_MILESTONE_REPORT.md](TACTICAL_MILESTONE_REPORT.md) détaille les variations,
+coûts, validation limitée des exemples construits et validations encore manquantes.
+La pertinence et les erreurs pédagogiques de cet audit restent non mesurées.

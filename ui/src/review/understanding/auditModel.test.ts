@@ -2,13 +2,14 @@ import { expect, it } from "vitest";
 import data from "../../../dev/pedagogy-audit-data.json";
 import updatedData from "../../../dev/pedagogy-audit-ignored-data.json";
 import exposureData from "../../../dev/pedagogy-audit-exposure-data.json";
+import finalData from "../../../dev/pedagogy-audit-final-data.json";
 import sample from "./amateurGames.json";
 import { auditReview, type AuditDocument } from "./auditModel";
 import { notablePositions } from "../study";
 import { boardFromCommand } from "../StudyTree";
 
 const document = data as unknown as AuditDocument;
-it.each([updatedData, exposureData])("les audits suivants réutilisent les évaluations et gardent inconnus et repères légaux", data => {
+it.each([updatedData, exposureData, finalData])("les audits suivants réutilisent les évaluations et gardent inconnus et repères légaux", data => {
   const updated = data as unknown as AuditDocument;
   expect(updated.independentSemanticValidation).toBe(false);
   expect(updated.games).toHaveLength(document.games.length);
@@ -16,6 +17,9 @@ it.each([updatedData, exposureData])("les audits suivants réutilisent les éval
     const previous = document.games.find(g => g.id === game.id && g.engine === game.engine)!;
     expect(game).toMatchObject({ reusedReview: true, engineHash: previous.engineHash });
     expect(game.results).toEqual(previous.results);
+    // Changer les décisions mesurées ferait croire à un gain de couverture
+    // alors que seuls les cas faciles auraient pu être conservés.
+    expect(game.decisions.map(d => [d.index, d.category])).toEqual(previous.decisions.map(d => [d.index, d.category]));
     const source = sample.games.find(s => s.id === game.id)!;
     const review = auditReview(game, source.pgn);
     expect(review.positions).toHaveLength(game.plies + 1);

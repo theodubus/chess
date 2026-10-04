@@ -90,12 +90,19 @@ tests avec cette autre version ni la pertinence pédagogique des textes.
 Une exécution CI suivante a dépassé les 5 s d'une fixture publiée comparée de
 Byrne, sans assertion de résultat en échec. Sa limite de test passe à 10 s,
 comme l'autre fixture publiée ; le délai utilisateur de 12 s reste inchangé.
+Sur `7408470`, la CI relue passe également :
+[UI 37232166982](https://github.com/theodubus/chess/actions/runs/37232166982),
+[Rust PR 37232167015](https://github.com/theodubus/chess/actions/runs/37232167015),
+[Rust push 37232164733](https://github.com/theodubus/chess/actions/runs/37232164733).
 
-Relecture humaine demandée sur les deux fourchettes, le clouage et Dxd4 : pas de
-réponse présumée. Aucune validation visuelle annoncée. Le bundle de revue dépasse
+Relecture du 4 octobre : Théo juge correctes les explications présentées, tout en
+soulignant que les exemples sont basiques. Cela concerne les deux fourchettes,
+le clouage et Dxd4, pas les décisions inconnues de l'audit ni une couverture générale.
+Aucune validation visuelle annoncée. Le bundle de revue dépasse
 encore 500 ko ; navigateur intégré indisponible après tentative. Les anciennes
-mesures restent datées ; l'audit adverse ci-dessous précède la garde complémentaire
-de clôture de l'échange, sans couverture supplémentaire revendiquée.
+mesures restent datées ; l'audit de clôture inclut la garde complémentaire
+de l'échange, sans gain net de couverture. Bilan :
+[TACTICAL_MILESTONE_REPORT.md](src/review/understanding/TACTICAL_MILESTONE_REPORT.md).
 
 ## Prochain jalon fini : conséquences tactiques courtes
 
@@ -120,14 +127,21 @@ pas une série de détecteurs pour remplir chaque trou du corpus.
 4. [ ] Faire relire les exemples positifs et négatifs : raison pertinente,
    illustration courte compréhensible, compensation/reprise correctement située.
    Théo a validé les premiers textes le 3 octobre ; cela ne valide pas tous les
-   nouveaux textes ni leur couverture. Aucun jugement humain présumé.
+   nouveaux textes ni leur couverture. Le 4 octobre, il valide les explications
+   des fourchettes des deux camps, du clouage et de Dxd4 présenté, en précisant
+   leur simplicité. La pertinence des cas de l'audit, des compensations et des
+   reprises complexes reste à relire séparément.
 5. [ ] Contrôler visuellement le parcours bureau/mobile, humain/bot, deux humains
    et import PGN. CUA n'exposait aucun navigateur lors du dernier contrôle : les
    rendus statiques, légalité et exécution PGN ne permettent pas de cocher ce point.
-6. [ ] Publier un bilan de ce périmètre stable : couverture, erreurs, abstentions,
+6. [x] Établir le bilan de ce périmètre stable : couverture, erreurs, abstentions,
    coût et limites. Garder le même dénominateur et ne pas compter la simple présence
    d'un texte comme une explication pertinente. Pas de nouvelle famille implicite
    à la fin de ce bilan.
+   Dernier passage réel : onze conséquences soutenues, 112 raisons non confirmées,
+   trois indisponibles sur les mêmes 126 décisions. Aucun gain net ; erreurs
+   pédagogiques et pertinence générale non mesurées faute de relecture indépendante.
+   Le détail, les coûts et les variations entre passages sont conservés dans le bilan.
 
 ## Mesures conservées et limites constatées
 
@@ -144,6 +158,7 @@ Les passages suivants réutilisent exactement ces évaluations et classification
 | Audit initial | 126 | 7 | 117 | 2 |
 | Menace ignorée | 126 | 7 | 118 | 1 |
 | Pièce exposée | 126 | 11 | 111 | 4 |
+| Clôture du jalon | 126 | 11 | 112 | 3 |
 
 Le dernier passage a trois sorties de la nouvelle famille, plus une ancienne
 famille confirmée cette fois-ci. Il conserve trois délais Stockfish épuisés et
@@ -151,6 +166,11 @@ une réponse sans score exact/PV utilisable. La majorité des raisons reste inco
 **Ces confirmations ne sont pas une validation humaine de pertinence.** Toutes
 les évaluations sémantiques restent `pending`. Les détails et empreintes sont dans
 [AMATEUR_AUDIT.md](src/review/understanding/AMATEUR_AUDIT.md).
+
+Le passage de clôture réutilise les mêmes revues avec le code fonctionnel `7408470`.
+Une sortie ShallowRed apparaît, une autre disparaît sur recherche instable ; aucun
+gain net n'est revendiqué. Les trois indisponibilités sont des réponses Stockfish
+sans score exact/PV exploitable. Les délais du passage précédent restent conservés.
 
 Essais construits de pièce exposée : 16 premiers, six soutenus ; 18 suivants,
 dix soutenus. Ce sont nos propres exemples de développement. Les deux rapports
@@ -165,6 +185,15 @@ restent des besoins réels. Pour expliquer en général la majorité des bons/ma
 coups, il faut un modèle causal et une évaluation supplémentaires ; les seules
 PV/évaluations UCI ne donnent pas ces raisons. Davantage de temps moteur peut
 stabiliser un score, sans fournir l'explication manquante.
+
+Nouvelle demande du 4 octobre : expliquer une menace telle qu'une fourchette deux
+coups plus tard, sans dresser une liste de centaines de positions. Proposition
+bornée, pas encore implémentée :
+[DELAYED_TACTICS_PLAN.md](src/review/understanding/DELAYED_TACTICS_PLAN.md).
+Réutiliser les concepts à travers une suite courte, puis établir leur lien avec
+la décision ; ne pas confondre présence d'une fourchette dans la PV et cause du
+mauvais coup. Deux lots d'expérience puis bilan, sans extension automatique.
+La couverture positionnelle générale ne fait pas partie de ces deux lots.
 
 Décider séparément de ce périmètre et de son architecture après le bilan du jalon.
 Ne pas résoudre ce problème en ajoutant une phrase par symptôme ou en promettant
@@ -190,6 +219,7 @@ Aperçus avec `npm run dev` : `/dev/pedagogy-review.html?sample=exposure` et
 `/dev/pedagogy-audit.html?sample=exposure`. Les instantanés existent déjà : ne pas
 relancer les moteurs pour ouvrir l'aperçu. Les textes sauvegardés gardent la version
 mesurée ; les anciens rapports restent accessibles sans paramètre ou avec `?sample=ignored`.
+Le passage de clôture est accessible avec `/dev/pedagogy-audit.html?sample=final`.
 
 Consigne utilisateur inchangée : poursuivre le travail autonome, sans arrêt à la
 fin de chaque lot ; arrêt à un arbitrage humain nécessaire, limite ou achèvement.
