@@ -1,0 +1,52 @@
+[
+  {
+    "id": "other-piece-captures-attacker",
+    "fen": "7k/8/2n5/8/8/PP6/B6K/2r5 b - - 0 1",
+    "played": "Nb4",
+    "line": ["axb4"],
+    "victim": "a2",
+    "expected": "preserved",
+    "origin": "constructed-counterexample",
+    "notes": "Le fou n'a aucune sortie bon marché, mais le pion a3 prend l'attaquant."
+  },
+  {
+    "id": "en-passant-removes-attacker",
+    "fen": "7k/5p2/6p1/3PP3/4B3/3P1P2/8/K7 b - - 0 1",
+    "played": "f5",
+    "line": ["exf6"],
+    "victim": "e4",
+    "expected": "preserved",
+    "origin": "constructed-counterexample",
+    "notes": "La capture en passant retire le pion attaquant d'une autre case que la destination."
+  },
+  {
+    "id": "check-frees-retreat",
+    "fen": "1k6/pp5R/2nP4/8/8/1P6/B6K/2r5 b - - 0 1",
+    "played": "Nb4",
+    "line": ["Rh8+", "Rc8", "Rxc8+", "Kxc8", "Bb1"],
+    "victim": "a2",
+    "expected": "preserved",
+    "origin": "constructed-counterexample",
+    "notes": "L'échec impose Rc8, puis l'échange des tours permet Bb1. Les deux réponses noires aux échecs sont uniques."
+  },
+  {
+    "id": "mate-outweighs-restriction",
+    "fen": "7k/4Npp1/6p1/3P4/4B3/3P1Q2/8/K7 b - - 0 1",
+    "played": "f5",
+    "line": ["Qh3#"],
+    "victim": "e4",
+    "expected": "mate-for-victim",
+    "origin": "constructed-counterexample",
+    "notes": "La menace sur le fou n'empêche pas les Blancs de mater ; elle ne justifie pas un gain noir."
+  },
+  {
+    "id": "sacrifice-before-mate",
+    "fen": "7k/4Npp1/6p1/3P4/4B3/3N1Q2/8/K7 b - - 0 1",
+    "played": "f5",
+    "line": ["Qg3", "fxe4", "Qh3#"],
+    "victim": "e4",
+    "expected": "mate-for-victim",
+    "origin": "constructed-counterexample",
+    "notes": "Témoin légal volontairement non optimal : accepter la prise du fou puis mater. Le moteur peut mater immédiatement ; cette suite vérifie qu'une capture isolée ne masque pas la compensation suivante."
+  }
+]

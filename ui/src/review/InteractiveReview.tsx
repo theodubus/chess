@@ -1,7 +1,20 @@
-import { useEffect, useState } from "react";
+import { explainMove, type ExplanationLine } from "./explanations";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { confirmCause } from "./decisionCause";
+import { useCauseCheck } from "./useCauseCheck";
+import { usePedagogicalAnalysis } from "./usePedagogicalAnalysis";
+import { adverseCategory } from "./understanding/PedagogicalAnalysis";
+import { directExplanation } from "./directExplanation";
+import ConsequenceStatus from "./ConsequenceStatus";
+import type { EngineFactory } from "../GameController";
+import type { Square } from "chess.js";
+import RetryCoach from "./RetryCoach";
+import PositionalPanel from "./PositionalPanel";
+import { FocusedAnalysis, type FocusRequest } from "./FocusedAnalysis";
+import { usableResult } from "./FocusedAnalysis";
 import type { Color, Key } from "@lichess-org/chessground/types";
 import type { GameReview } from "./GameReview";
-import { StudyTree } from "./StudyTree";
+import { boardFromCommand, StudyTree } from "./StudyTree";
 import { BranchAnalysis } from "./BranchAnalysis";
 import { badMove, notablePositions, moveSummary } from "./study";
 import { estimatedLoss } from "./model";
@@ -9,7 +22,7 @@ import { analysisEngineFactory } from "../engine/DevelopmentEngine";
 import { scoreLabel } from "../engine/analysis";
 import Board from "../Board";
 import CapturedPieces from "../CapturedPieces";
-import { capturedMaterial } from "../material";
+import { capturedMaterial, materialBalance } from "../material";
 import EvaluationBar from "../EvaluationBar";
 import EvaluationChart from "./EvaluationChart";
 import MoveNavigation from "../MoveNavigation";
@@ -39,6 +52,7 @@ export default function InteractiveReview({
   active,
   side,
   treeCache: trees,
+  explanationEngineFactory,
 }: {
   review: GameReview;
   selected: number;
@@ -50,9 +64,22 @@ export default function InteractiveReview({
   active: boolean;
   side: "w" | "b" | "both";
   treeCache: Map<number, StudyTree>;
+  explanationEngineFactory?: EngineFactory;
 }) {
+  const [demo, setDemo] = useState<{
+    review: GameReview;
+    source: string;
+    line: ExplanationLine;
+    step: number;
+  } | null>(null);
   const [branch, setBranch] = useState<Branch | null>(null);
   const [live] = useState(() => new BranchAnalysis());
+  const [focused] = useState(() => new FocusedAnalysis());
+  const [attempt, setAttempt] = useState(0);
+  const [highlight, setHighlight] = useState<{
+    source: string;
+    square: Square;
+  } | null>(null);
   const [, render] = useState(0);
   const [pane, setPane] = useState<"details" | "moves">("details");
   const [walkTarget, setWalkTarget] = useState<number | null>(null);
@@ -61,6 +88,25 @@ export default function InteractiveReview({
   );
   const [retrySearch, setRetrySearch] = useState(0);
   useEffect(() => live.subscribe(() => render((value) => value + 1)), [live]);
+  useEffect(
+    () => focused.subscribe(() => render((value) => value + 1)),
+    [focused],
+  );
+  const reviewRevision = review.revision;
+  const branchCommand = branch?.tree.command(branch.node);
+  useEffect(
+    () => () => focused.stop(),
+    [
+      focused,
+      review,
+      reviewRevision,
+      engineId,
+      selected,
+      branchCommand,
+      demo,
+      active,
+    ],
+  );
   const tree = branch?.tree,
     node = branch?.node,
     origin = branch?.origin;
@@ -99,7 +145,6 @@ export default function InteractiveReview({
   const previousMoment = moments.filter((index) => index < selected).at(-1);
   const displayedTree = branch?.tree ?? new StudyTree(position);
   const board = displayedTree.board(branch?.node ?? 0);
-  const captures = capturedMaterial(board.history({ verbose: true }));
   const path = branch?.tree.path(branch.node) ?? [];
   const matching =
     !!branch && live.tree === branch.tree && live.node === branch.node;
@@ -145,6 +190,28 @@ export default function InteractiveReview({
     ? (live.resultFor(branch.tree, branch.retryNode ?? 0) ??
       (branch.retryNode === 0 ? review.results[branch.origin] : null))
     : null;
+  const retryPosition = branch?.retry
+    ? branch.tree.position(branch.retryNode ?? 0)
+    : null;
+  const hintSource = `${engineId}:${reviewRevision}:${retryPosition?.command}:${attempt}`;
+  const hintRequest: FocusRequest | null = retryPosition
+    ? { review, revision: reviewRevision, engineId, positions: [retryPosition] }
+    : null;
+  const showHintSquare = useCallback(
+    (square: Square | null) =>
+      setHighlight(square ? { source: hintSource, square } : null),
+    [hintSource],
+  );
+  function revealSolution(move: string) {
+    if (!branch?.retry) return;
+    const node = branch.tree.play(
+      branch.retryNode ?? 0,
+      move.slice(0, 2),
+      move.slice(2, 4),
+      move[4],
+    );
+    setBranch({ ...branch, node, revealed: true });
+  }
   const loss = hasPlayed
     ? estimatedLoss(
         before?.score ?? null,
@@ -155,7 +222,113 @@ export default function InteractiveReview({
       )
     : null;
 
+  const explanationPosition = branch
+    ? branch.node > 0
+      ? branch.tree.position(
+          branch.tree.nodes[branch.node].parent!,
+          uci ?? null,
+        )
+      : null
+    : playedPosition;
+  const explanationSignature =
+    explanationPosition && !blind && showAnnotations
+      ? JSON.stringify([
+          explanationPosition,
+          before ?? null,
+          (branch ? liveResult : review.results[selected]) ?? null,
+          annotation,
+          !adverseCategory(annotation?.category),
+        ])
+      : "";
+  const draftExplanation = useMemo(() => explanationSignature
+    ? explainMove(...JSON.parse(explanationSignature) as Parameters<typeof explainMove>)
+    : null, [explanationSignature]);
+  const causeFactory = useMemo(
+    () => explanationEngineFactory ?? analysisEngineFactory(engineId),
+    [explanationEngineFactory, engineId],
+  );
+  const explanationEnabled = active && showAnnotations && !blind && pane === "details" &&
+    walkTarget === null && review.state !== "running" && (!branch || liveState === "complete") && focused.state !== "running";
+  const adverse = adverseCategory(annotation?.category);
+  const consequence = usePedagogicalAnalysis(
+    explanationPosition && annotation && adverse && !blind && showAnnotations
+      ? { review, revision: reviewRevision, engineId, position: explanationPosition,
+          result: (branch ? liveResult : review.results[selected]) ?? null, category: annotation.category }
+      : null,
+    causeFactory, explanationEnabled,
+  );
+  const causeCheck = useCauseCheck(
+    draftExplanation?.candidate,
+    review,
+    reviewRevision,
+    engineId,
+    causeFactory,
+    explanationEnabled && !adverse,
+  );
+  const direct = useMemo(() => draftExplanation && adverse
+    ? directExplanation(draftExplanation, consequence.result?.consequence ?? null)
+    : null, [draftExplanation, adverse, consequence.result]);
+  const explanation = draftExplanation
+    ? adverse
+      ? direct
+      : confirmCause(draftExplanation, causeCheck.results)
+    : null;
+  const focusRequest: FocusRequest | null = explanationPosition
+    ? {
+        review,
+        revision: reviewRevision,
+        engineId,
+        positions: [
+          explanationPosition,
+          displayedTree.position(branch?.node ?? 0),
+        ],
+      }
+    : null;
+  const focusMatches = !!focusRequest && focused.matches(focusRequest);
+  const focusPending = focusMatches && focused.state === "running";
+  const focusBlocked =
+    review.state === "running" ||
+    (!!branch && liveState !== "complete" && liveState !== "error");
+  async function deepen() {
+    if (!focusRequest || focusBlocked || focusPending) return;
+    consequence.analysis.stop();
+    const results = await focused.analyse(
+      focusRequest,
+      analysisEngineFactory(engineId),
+    );
+    if (!results) return;
+    if (branch) {
+      const parent = branch.tree.nodes[branch.node].parent;
+      if (parent === null) return;
+      focused.stop();
+      live.remember(branch.tree, parent, results[0], true);
+      live.remember(branch.tree, branch.node, results[1], true);
+      setRetrySearch((value) => value + 1);
+    } else review.applyRefinement(reviewRevision, selected - 1, results);
+  }
+  const demoSource = JSON.stringify([engineId, reviewRevision, selected, explanationPosition, uci,
+    before, branch ? liveResult : review.results[selected], annotation?.category, branch?.node ?? "game"]);
+  const demonstration =
+    demo?.review === review && demo.source === demoSource && active && !blind && showAnnotations
+      ? demo
+      : null;
+  const observationVisible = demonstration?.line.kind === "observation";
+  const sequenceVisible = !!demonstration && !observationVisible;
+  const demoStep = demonstration?.line.steps[demonstration.step];
+  const displayBoard = demoStep ? boardFromCommand(demoStep.command) : board;
+  const captures = capturedMaterial(displayBoard.history({ verbose: true }));
+  const balance = materialBalance(displayBoard);
+  function demonstrate(line: ExplanationLine) {
+    setWalkTarget(null);
+    setPane("details");
+    setDemo(
+      observationVisible && demonstration.line.title === line.title
+        ? null
+        : { review, source: demoSource, line, step: 0 },
+    );
+  }
   function navigate(index: number) {
+    setDemo(null);
     setWalkTarget(null);
     setBranch(null);
     setPromotion(null);
@@ -170,6 +343,7 @@ export default function InteractiveReview({
     return tree;
   }
   function jumpBranch(direction: number) {
+    setDemo(null);
     if (!branch || !direction || (blind && direction > 0)) return;
     const current = branch.tree.nodes[branch.node];
     const next = direction < 0 ? current.parent : current.children[0];
@@ -179,14 +353,22 @@ export default function InteractiveReview({
     }
   }
   useMoveKeys(
-    active && walkTarget === null && !promotion,
+    active && walkTarget === null && !promotion && !sequenceVisible,
     branch ? path.length : selected,
     branch
       ? path.length + (branch.tree.nodes[branch.node].children.length ? 1 : 0)
       : review.positions.length - 1,
     (index) => (branch ? jumpBranch(index - path.length) : navigate(index)),
   );
+  useMoveKeys(
+    sequenceVisible,
+    demonstration?.step ?? 0,
+    (demonstration?.line.steps.length ?? 1) - 1,
+    (step) => setDemo((value) => (value ? { ...value, step } : null)),
+  );
   function retry() {
+    setAttempt((value) => value + 1);
+    setDemo(null);
     setWalkTarget(null);
     setPromotion(null);
     setPane("details");
@@ -269,14 +451,17 @@ export default function InteractiveReview({
     >
       <div className="board-column">
         <p className="review-position">
-          {branch
-            ? blind
-              ? "À vous de trouver le meilleur coup"
-              : `${branch.retry && path.length === 1 ? "Votre tentative" : "Variante"} · ${branch.node ? branch.tree.nodes[branch.node].label : branch.tree.root.label}`
-            : position.label}
+          {sequenceVisible
+            ? `Coup étudié : ${branch ? branch.tree.nodes[branch.node].label : position.label} · ${demonstration.line.title}`
+            : branch
+              ? blind
+                ? "À vous de trouver le meilleur coup"
+                : `${branch.retry && path.length === 1 ? "Votre tentative" : "Variante"} · ${branch.node ? branch.tree.nodes[branch.node].label : branch.tree.root.label}`
+              : position.label}
         </p>
         <CapturedPieces
           captures={captures}
+          balance={balance}
           side={orientation === "white" ? "b" : "w"}
           label
         />
@@ -285,49 +470,151 @@ export default function InteractiveReview({
         >
           {showEvaluation && (
             <EvaluationBar
-              score={blind ? null : score}
+              score={
+                blind ||
+                sequenceVisible ||
+                (demoStep && demoStep.fen !== board.fen())
+                  ? null
+                  : score
+              }
               orientation={orientation}
             />
           )}
-          <Board
-            fen={board.fen()}
-            orientation={orientation}
-            turn={board.turn() === "w" ? "white" : "black"}
-            check={board.isCheck()}
-            destinations={
-              canPlay
-                ? displayedTree.destinations(branch?.node ?? 0)
-                : new Map()
-            }
-            onMove={canPlay ? (from, to) => play(from, to) : undefined}
-            lastMove={
-              uci ? [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key] : []
-            }
-          >
-            {!blind && showAnnotations && annotation && placement && (
-              <span
-                className="board-annotation"
-                data-corner={placement.corner}
-                style={{
-                  left: `${placement.column * 12.5}%`,
-                  top: `${placement.row * 12.5}%`,
-                }}
+          <div className="review-board-stage">
+            <div
+              className={`source-board ${demonstration ? "is-hidden" : ""}`}
+              aria-hidden={!!demonstration}
+              inert={!!demonstration}
+            >
+              <Board
+                fen={board.fen()}
+                orientation={orientation}
+                turn={board.turn() === "w" ? "white" : "black"}
+                check={board.isCheck()}
+                destinations={
+                  canPlay
+                    ? displayedTree.destinations(branch?.node ?? 0)
+                    : new Map()
+                }
+                onMove={canPlay ? (from, to) => play(from, to) : undefined}
+                autoShapes={
+                  blind && highlight?.source === hintSource
+                    ? [{ orig: highlight.square, brush: "green" }]
+                    : []
+                }
+                lastMove={
+                  uci ? [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key] : []
+                }
               >
-                <AnnotationBadge
-                  annotation={annotation}
-                  provisional={provisional}
-                  compact
-                />
-              </span>
+                {!blind && showAnnotations && annotation && placement && (
+                  <span
+                    className="board-annotation"
+                    data-corner={placement.corner}
+                    style={{
+                      left: `${placement.column * 12.5}%`,
+                      top: `${placement.row * 12.5}%`,
+                    }}
+                  >
+                    <AnnotationBadge
+                      annotation={annotation}
+                      provisional={provisional}
+                      compact
+                    />
+                  </span>
+                )}
+              </Board>
+            </div>
+            {demonstration && demoStep && (
+              <Board
+                fen={displayBoard.fen()}
+                orientation={orientation}
+                turn={displayBoard.turn() === "w" ? "white" : "black"}
+                check={displayBoard.isCheck()}
+                lastMove={
+                  demoStep.move ? [demoStep.move.from, demoStep.move.to] : []
+                }
+                autoShapes={(() => {
+                  if (demoStep.marks?.length)
+                    return demoStep.marks.map((mark) => ({
+                      orig: mark.from,
+                      dest: mark.to,
+                      brush:
+                        mark.tone === "observation"
+                          ? "blue"
+                          : mark.tone === "idea"
+                            ? "green"
+                            : "red",
+                    }));
+                  const next =
+                    demonstration.line.steps[demonstration.step + 1]?.move;
+                  return next
+                    ? [{ orig: next.from, dest: next.to, brush: "blue" }]
+                    : [];
+                })()}
+              />
             )}
-          </Board>
+          </div>
         </div>
         <CapturedPieces
           captures={captures}
+          balance={balance}
           side={orientation === "white" ? "w" : "b"}
           label
         />
-        {branch ? (
+        {observationVisible && (
+          <div className="position-overlay-caption" role="status">
+            <span>
+              {demonstration.line.title} · {demoStep?.label}
+            </span>
+            <button className="text-button" onClick={() => setDemo(null)}>
+              Masquer les repères
+            </button>
+          </div>
+        )}
+        {sequenceVisible ? (
+          <div className="explanation-navigation">
+            <p role="status">
+              {demonstration.line.steps.length > 1
+                ? `Étape ${demonstration.step + 1} / ${demonstration.line.steps.length}`
+                : "Position expliquée"}{" "}
+              · {demoStep?.label}
+            </p>
+            {demonstration.line.steps.length > 1 && (
+              <div
+                className="review-navigation"
+                aria-label="Parcourir l’explication"
+              >
+                <button
+                  className="secondary"
+                  aria-label="Étape précédente"
+                  title="Étape précédente (← ou <)"
+                  disabled={demonstration.step === 0}
+                  onClick={() =>
+                    setDemo({ ...demonstration, step: demonstration.step - 1 })
+                  }
+                >
+                  ←
+                </button>
+                <button
+                  className="secondary"
+                  aria-label="Étape suivante"
+                  title="Étape suivante (→ ou >)"
+                  disabled={
+                    demonstration.step === demonstration.line.steps.length - 1
+                  }
+                  onClick={() =>
+                    setDemo({ ...demonstration, step: demonstration.step + 1 })
+                  }
+                >
+                  →
+                </button>
+              </div>
+            )}
+            <button className="secondary wide" onClick={() => setDemo(null)}>
+              Retour au coup examiné
+            </button>
+          </div>
+        ) : branch ? (
           <>
             <div className="study-navigation">
               <button
@@ -394,7 +681,7 @@ export default function InteractiveReview({
             </div>
           </>
         )}
-        {!blind && showEvaluation && (
+        {!blind && !sequenceVisible && showEvaluation && (
           <div className="desktop-chart">
             <EvaluationChart
               positions={review.positions}
@@ -410,19 +697,95 @@ export default function InteractiveReview({
           <button
             className="text-button"
             aria-pressed={pane === "details"}
-            onClick={() => setPane("details")}
+            onClick={() => {
+              setDemo(null);
+              setPane("details");
+            }}
           >
             Analyse
           </button>
           <button
             className="text-button"
             aria-pressed={pane === "moves"}
-            onClick={() => setPane("moves")}
+            onClick={() => {
+              setDemo(null);
+              setPane("moves");
+            }}
           >
             Coups
           </button>
         </nav>
-        {pane === "moves" ? (
+        {sequenceVisible ? (
+          <div className="review-details explanation-demo">
+            <h2>{demonstration.line.title}</h2>
+            {demoStep?.motif && (
+              <p className="explanation-motif">{demoStep.motif}</p>
+            )}
+            <p className="explanation-caption" role="status">
+              {demoStep?.text}
+            </p>
+            <p className="hint">
+              {demoStep?.marks?.length
+                ? "Les repères rouges montrent les menaces ; les verts montrent la défense ou l’idée du coup."
+                : "La flèche bleue indique le prochain coup de cette suite."}{" "}
+              {demonstration.line.kind === "cause"
+                ? "Cette illustration montre la conséquence vérifiée, sans garantir que toutes les réponses adverses sont forcées."
+                : "La suite illustre une continuation trouvée par le moteur, sans imposer les réponses adverses."}
+            </p>
+            {demonstration.line.truncated && (
+              <p className="hint">Seul le début de la suite est affiché.</p>
+            )}
+            {demonstration.line.kind === "cause" &&
+              explanation?.proof &&
+              demonstration.line !== explanation.proof &&
+              demonstration.line.title !== explanation.proof.title && (
+                <button
+                  className="secondary"
+                  onClick={() => demonstrate(explanation.proof!)}
+                >
+                  Revoir la conséquence
+                </button>
+              )}
+            {demonstration.line.kind === "cause" &&
+              explanation?.comparison &&
+              demonstration.line.title !== explanation.comparison.title && (
+                <button
+                  className="secondary"
+                  onClick={() => demonstrate(explanation.comparison!)}
+                >
+                  Comparer les décisions
+                </button>
+              )}
+            {demonstration.line.kind !== "cause" &&
+              explanation?.played &&
+              demonstration.line.title !== explanation.played.title && (
+                <button
+                  className="secondary"
+                  onClick={() => demonstrate(explanation.played!)}
+                >
+                  Après le coup joué
+                </button>
+              )}
+            {demonstration.line.kind !== "cause" &&
+              explanation?.alternative &&
+              demonstration.line.title !== explanation.alternative.title && (
+                <button
+                  className="secondary"
+                  onClick={() => demonstrate(explanation.alternative!)}
+                >
+                  Voir le choix du moteur
+                </button>
+              )}
+            <button
+              onClick={() => {
+                setDemo(null);
+                retry();
+              }}
+            >
+              Réessayer ce coup
+            </button>
+          </div>
+        ) : pane === "moves" ? (
           <div className="review-moves" aria-label="Positions de la partie">
             {review.positions.map((item, index) => (
               <button
@@ -470,9 +833,166 @@ export default function InteractiveReview({
                       annotation={annotation}
                       provisional={provisional}
                     />
-                    <p>{moveSummary(annotation)}</p>
+                    <p>
+                      {explanation?.concrete
+                        ? explanation.summary
+                        : moveSummary(annotation)}
+                    </p>
                   </div>
                 )}
+                {explanation && (
+                  <div
+                    className="move-explanation"
+                    aria-label="Comprendre le coup"
+                  >
+                    {adverse ? (
+                      <ConsequenceStatus state={consequence.state} fallback={explanation.summary} />
+                    ) : causeCheck.pending && !explanation.concrete ? (
+                      <p className="cause-progress" role="status">
+                        <span className="analysis-spinner" aria-hidden="true" />{" "}
+                        Le moteur vérifie la conséquence et les compensations…
+                      </p>
+                    ) : (
+                      !explanation.concrete && (
+                        <p className="hint">
+                          {causeCheck.failed
+                            ? "La vérification n’a pas abouti. Vous pouvez approfondir ce coup."
+                            : causeCheck.checked && explanation.candidate
+                              ? "La vérification ne confirme pas cette cause. Aucune explication courte fiable pour ce coup."
+                              : explanation.summary}
+                        </p>
+                      )
+                    )}
+                    {explanation.concrete && !annotation && (
+                      <p>{explanation.summary}</p>
+                    )}
+                    {explanation.context && <p className="hint">{explanation.context}</p>}
+                    {explanation.proof && (
+                      <div className="explanation-actions">
+                        <button
+                          className="secondary"
+                          onClick={() => demonstrate(explanation.proof!)}
+                        >
+                          Montrer pourquoi
+                        </button>
+                        {explanation.comparison && (
+                          <button
+                            className="secondary"
+                            onClick={() => demonstrate(explanation.comparison!)}
+                          >
+                            Comparer les décisions
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {explanation.limitation && (
+                      <details className="engine-lines">
+                        <summary>Portée de cette explication</summary>
+                        <p className="hint">{explanation.limitation}</p>
+                      </details>
+                    )}
+                    <details className="engine-lines">
+                      <summary>Variantes du moteur</summary>
+                      <p className="hint">
+                        Ces continuations permettent d’explorer la position.
+                        Elles ne constituent pas à elles seules une explication
+                        du coup.
+                      </p>
+                      <div className="explanation-actions">
+                        {explanation.played && (
+                          <button
+                            className="secondary"
+                            onClick={() => demonstrate(explanation.played!)}
+                          >
+                            Voir la suite jouée
+                          </button>
+                        )}
+                        {explanation.alternative && (
+                          <button
+                            className="secondary"
+                            onClick={() =>
+                              demonstrate(explanation.alternative!)
+                            }
+                          >
+                            Voir le choix du moteur
+                          </button>
+                        )}
+                      </div>
+                    </details>
+                    {explanation.observations && (
+                      <PositionalPanel
+                        notes={explanation.observations}
+                        activeTitle={
+                          observationVisible
+                            ? demonstration.line.title
+                            : undefined
+                        }
+                        onShow={demonstrate}
+                      />
+                    )}
+                  </div>
+                )}
+                {showAnnotations &&
+                  focusRequest &&
+                  (!explanation?.concrete ||
+                    !annotation ||
+                    focusPending ||
+                    focused.has(focusRequest)) && (
+                    <div
+                      className="focused-analysis"
+                      aria-label="Vérification ciblée"
+                    >
+                      {focusPending ? (
+                        <div className="focused-progress" role="status">
+                          <span
+                            className="analysis-spinner"
+                            aria-hidden="true"
+                          />{" "}
+                          Le moteur vérifie ce coup… {focused.completed} /{" "}
+                          {focused.total} positions. La navigation reste
+                          disponible.
+                          <button
+                            className="text-button"
+                            onClick={() => focused.stop()}
+                          >
+                            Arrêter la vérification
+                          </button>
+                        </div>
+                      ) : focused.has(focusRequest) ? (
+                        <p className="hint" role="status">
+                          {focused.isUnavailable(focusRequest)
+                            ? "La vérification n’a pas fourni de résultats exploitables."
+                            : explanation?.concrete
+                              ? "Explication vérifiée sur ce coup."
+                              : "Vérification terminée ; aucune cause plus précise n’a pu être confirmée."}
+                        </p>
+                      ) : (
+                        <>
+                          <button
+                            className="secondary"
+                            disabled={!active || focusBlocked}
+                            onClick={() => void deepen()}
+                          >
+                            Approfondir ce coup
+                          </button>
+                          <p className="hint">
+                            Vérifier uniquement les positions avant et après ce
+                            coup, jusqu’à 3 secondes chacune.
+                          </p>
+                          {focusMatches && focused.state === "error" && (
+                            <p className="connection-error" role="alert">
+                              La vérification a échoué. Vous pouvez réessayer.
+                            </p>
+                          )}
+                          {focusMatches && focused.state === "stopped" && (
+                            <p className="hint" role="status">
+                              Vérification interrompue.
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                 {branch && (
                   <div className="study-evaluation" role="status">
                     {showEvaluation && (
@@ -575,33 +1095,50 @@ export default function InteractiveReview({
                   {branch.node !== branch.retryNode && (
                     <button
                       className="secondary wide"
-                      onClick={() =>
+                      onClick={() => {
+                        setAttempt((value) => value + 1);
                         setBranch({
                           ...branch,
                           node: branch.retryNode ?? 0,
                           revealed: false,
-                        })
-                      }
+                        });
+                      }}
                     >
                       Retenter sans la solution
                     </button>
                   )}
-                  <button
-                    className="secondary wide"
-                    disabled={!target?.bestMove}
-                    onClick={() => {
-                      const move = target!.bestMove!;
-                      const node = branch.tree.play(
-                        branch.retryNode ?? 0,
-                        move.slice(0, 2),
-                        move.slice(2, 4),
-                        move[4],
-                      );
-                      setBranch({ ...branch, node, revealed: true });
-                    }}
-                  >
-                    Voir la solution
-                  </button>
+                  {blind && retryPosition && hintRequest ? (
+                    <RetryCoach
+                      key={hintSource}
+                      position={retryPosition}
+                      result={target}
+                      request={hintRequest}
+                      analysis={focused}
+                      factory={analysisEngineFactory(engineId)}
+                      blocked={!active || focusBlocked}
+                      onHighlight={showHintSquare}
+                      onRefined={(result) =>
+                        live.remember(
+                          branch.tree,
+                          branch.retryNode ?? 0,
+                          result,
+                        )
+                      }
+                      onReveal={revealSolution}
+                    />
+                  ) : (
+                    <button
+                      className="secondary wide"
+                      disabled={
+                        !retryPosition || !usableResult(retryPosition, target)
+                      }
+                      onClick={() =>
+                        target?.bestMove && revealSolution(target.bestMove)
+                      }
+                    >
+                      Voir la solution
+                    </button>
+                  )}
                 </>
               )}
             {branch && (
@@ -763,7 +1300,7 @@ export default function InteractiveReview({
           </div>
         )}
       </aside>
-      {!blind && showEvaluation && (
+      {!blind && !sequenceVisible && showEvaluation && (
         <div className="mobile-chart">
           <EvaluationChart
             positions={review.positions}

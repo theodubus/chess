@@ -271,6 +271,189 @@ reste signalée plutôt que de recevoir une classification arbitraire.
 Les recherches abandonnées sont annulées ; leurs réponses tardives sont ignorées.
 Les résultats sont conservés par branche et invalidés à la relance de l’analyse.
 
+## Comprendre un coup
+
+**État du chantier (2 octobre 2026)** : les explications actives décrites ci-dessous
+restent limitées et leur pertinence pédagogique n’est pas validée globalement.
+Une refonte commence dans `src/review/understanding/`, séparément de l’UI. Elle
+modélise les changements de possibilités et le contexte avant de produire du texte.
+La [backlog active](BACKLOG_ANALYSE_PEDAGOGIQUE.md) remplace les anciens lots déclarés
+terminés ; le [rapport initial](src/review/understanding/README.md) compte aussi les
+familles non reconnues. `npm run test:understanding` reproduit le bilan du corpus.
+
+Pour relire les nouveaux textes et leurs repères sans modifier la revue active,
+ouvrez `/dev/pedagogy-review.html` sur le serveur de développement. L'instantané
+versionné vient de recherches réelles ShallowRed et Stockfish 16 ; les abstentions
+y figurent aussi. Il reste un échantillon de développement, sans validation
+pédagogique indépendante. Le bouton « Coup joué » ramène directement à la
+position après la décision ; « Autre coup comparé » montre un choix légal de
+comparaison. Ce n'est ni toujours un mauvais coup ni forcément le meilleur coup
+du moteur : le titre précise si ce choix évite un problème ou manque une occasion.
+Les nouveaux exemples négatifs expliquent directement la menace adverse et le
+bilan après reprises. Une comparaison non confirmée est masquée ; expliquer le
+coup joué n'en dépend pas. Montrer un seul autre choix ne démontre jamais que le
+coup étudié était le meilleur ou le seul bon coup. Ces changements restent dans
+le prototype de relecture, sans modification des explications de la revue active.
+
+Depuis `ui/`, pour refaire l'instantané avec vos binaires :
+
+```bash
+npm run pedagogy:review -- --engine ../target/release/shallowred --stockfish /chemin/vers/stockfish
+```
+
+Le paramètre `--stockfish` est facultatif. Cette commande remplace
+`dev/pedagogy-review-data.json` et conserve la date, le nom UCI et l'empreinte
+SHA-256 des binaires. Les budgets sont 200/600 ms ; ils servent au contrôle de
+développement, pas à promettre une couverture générale ou des raisons positionnelles.
+Le prototype ne publie encore aucune nouvelle explication dans la revue.
+
+Les explications pédagogiques décrivent des faits vérifiés dans la position et
+les suites du moteur. Elles couvrent les mats, promotions et conséquences
+matérielles, puis les motifs tactiques suivants :
+
+- Fourchette : deux cibles attaquées, déplacement de l’une puis capture de l’autre.
+- Clouage au roi ou à une pièce plus précieuse, exploité dans la suite.
+- Attaque à la découverte, défenseur supprimé/déplacé et pièce sans défense.
+- Menace de mat réalisée dans la suite et progression du même pion jusqu’à sa promotion.
+- Défenses immédiates : mat en un paré, échec bloqué, pièce mise à l’abri ou défendue.
+
+Une seule idée principale est retenue. Les motifs offensifs doivent avoir une
+conséquence légale visible dans la démonstration et être cohérents
+avec la classification et la comparaison des suites. Une simple attaque ou un
+alignement ne suffit pas. Les occasions manquées peuvent être expliquées par
+la meilleure suite proposée ; « Montrer pourquoi » ouvre alors cette alternative,
+et « Comparer les décisions » montre la décision réelle.
+
+La démonstration utilise le même échiquier et se parcourt avec les boutons ou le
+clavier. Une flèche bleue annonce le prochain coup. À l’étape du motif, les repères
+rouges montrent les menaces, les verts la défense ou l’idée du coup, avec les
+noms des pièces et leurs cases dans le texte. « Retour au coup examiné » restaure
+la partie ou la variante et ses dessins personnels. Aucune branche n’est ajoutée
+par la démonstration. Les repères suivent l’orientation et restent masqués pendant
+un retry sans solution, comme lorsque les annotations sont désactivées.
+
+« Montrer pourquoi » est séparé des **Variantes du moteur**, repliées par défaut.
+La démonstration commence après la décision, sauf lorsqu’il faut montrer une
+menace ou une défense avant le coup. Elle s’arrête à sa conséquence locale et
+aux reprises nécessaires, dans une limite de six demi-coups depuis la décision.
+Une capture ultérieure sans rapport n’allonge pas cette démonstration. Les
+variantes brutes restent accessibles avec un aperçu de huit demi-coups.
+
+L’UI identifie un motif local dans la suite légale du moteur. Pour une erreur,
+elle examine aussi les prises immédiates même si la PV part ailleurs (au plus
+quatre candidats, une hypothèse retenue). Avant d’afficher cette cause, le moteur
+sélectionné vérifie la position après sa conséquence et, pour une erreur ou une
+occasion manquée, celle après l’autre décision. Ces recherches disposent chacune
+de 1 200 ms, avec un délai global de six secondes. L’historique UCI est conservé.
+Les mats joués et défenses immédiates géométriquement vérifiables ne nécessitent
+pas cette recherche supplémentaire.
+
+La vérification démarre seulement sur le coup consulté, après 300 ms de stabilité.
+Un indicateur de calcul reste visible ; naviguer, masquer les annotations, ouvrir
+les coups ou réessayer annule la recherche. Le cache distingue moteur, revue,
+révision et historique. Aucune confirmation partielle ou tardive n’est publiée.
+Une paire de scores comparables doit confirmer l’avantage de l’autre décision ;
+les reprises disponibles, contre-captures immédiates qui annulent le gain,
+compensations détectées par les scores, réponses illégales et scores bornés/non
+finis empêchent la confirmation. Un résultat contradictoire garde une limite
+explicite, sans inventer une autre raison.
+
+« Comparer les décisions » montre l’autre décision vérifiée, avec une explication
+concrète lorsque la prise montrée est empêchée ou que son attaquant est éliminé.
+Le coup étudié reste indiqué, une illustration d’une seule position ne montre
+pas de navigation vide, et fermer restaure exactement la partie ou la variante.
+
+Une PV reste une continuation, pas une preuve de gain forcé. Ces recherches
+ne démontrent pas que chaque réponse intermédiaire est forcée et ne couvrent
+pas toutes les combinaisons, compensations ni causes positionnelles d’une baisse
+de score. Un motif géométrique seul ne justifie jamais un mauvais coup. Lorsque
+aucune cause courte fiable n’est reconnue, l’interface le précise. Les scores
+intermédiaires des démonstrations ne sont pas inventés : la barre affiche « ? ».
+
+### Indices et approfondissement à la demande
+
+Pendant « Réessayer », « Un indice » donne une idée générale sans nommer de case
+ni dévoiler le coup. « Quelle pièce ? » nomme et encercle uniquement la pièce à
+jouer. La destination, les variantes, le verdict et l’évaluation restent masqués.
+« Voir la solution » joue le coup explicitement demandé. Le plan d’indices est
+conservé pendant l’exercice ; retenter ou changer de moteur réinitialise son
+niveau. Les repères suivent le retournement du plateau et disparaissent dès que
+l’on joue ou quitte l’exercice. Ces aides demandées restent accessibles même
+si les annotations automatiques sont masquées.
+
+Les indices s’appuient sur une PV légale associée au meilleur coup et à un score
+exact. Sans motif confirmé, ils donnent un conseil général. « Préciser cet indice »
+propose alors une recherche ciblée ; un indice indisponible peut aussi être vérifié
+sur demande. La solution n’est jamais affichée à la fin de ce calcul sauf si
+l’utilisateur a expressément demandé « Voir la solution ».
+
+Sur un coup sans explication concrète ou non classé, « Approfondir ce coup »
+recalcule les positions avant et après. Chaque recherche dispose de 3 secondes,
+avec un délai total de 10 secondes, connexion comprise. L’état du calcul et un
+bouton d’arrêt sont visibles ; le plateau et la navigation restent utilisables.
+La navigation, la fermeture ou le changement de moteur annulent la demande.
+La paire de résultats n’est appliquée qu’une fois complète, à la courbe, aux
+scores et au verdict de la partie ou de la variante concernée.
+
+Le cache distingue la revue, sa révision, le moteur et l’historique UCI complet,
+pas seulement la FEN. Un résultat déjà vérifié sert aussi aux indices suivants.
+Les recherches supplémentaires attendent la fin de l’analyse principale ou de
+la variante ; elles ne sont jamais lancées en boucle. Les caches sont bornés
+à 64 demandes et 128 positions par revue. Les résultats tardifs sont ignorés.
+Une vérification ne garantit pas une meilleure explication : si elle reste
+incomplète ou contradictoire, l’interface le dit et conserve le verdict inconnu.
+Relancer l’analyse depuis les options renouvelle les caches.
+
+### Repères positionnels
+
+Le volet replié « Observations complémentaires » décrit des changements vérifiés
+sur le plateau. Il vient après l’explication et ses actions, même quand aucune
+cause du verdict n’est identifiée ; il ne remplace jamais cette explication. Une seule
+observation principale est retenue :
+
+- Premier développement d’un fou ou cavalier, si l’historique depuis la position
+  standard le prouve et que l’on est dans les quinze premiers coups.
+- Tour placée sur une colonne ouverte ou semi-ouverte ; une colonne ouverte n’a
+  aucun pion, mais elle peut encore contenir d’autres pièces.
+- Pions nouvellement doublés, isolés ou passés, pour l’un ou l’autre camp.
+- Déplacement du roi et de la tour au roque, ou diminution des pions proches
+  devant un roi sur une aile en présence d’une dame adverse.
+- Mobilité légale accrue d’une pièce, accès à plusieurs cases centrales ou
+  occupation du centre par un pion.
+
+« Voir les cases concernées » affiche directement les cercles bleus après le
+coup, sans revenir avant ni ouvrir une démonstration à parcourir. Aucun bouton
+n’est proposé pour un simple développement ou une observation qui ne fait que
+montrer une case déjà visible. Toutes les nouvelles destinations d’un repère de
+mobilité sont montrées. Le panneau d’analyse et le coup étudié restent en place.
+« Masquer les repères » retrouve les dessins personnels ; les flèches/clavier
+continuent de parcourir la partie (ou la variante en cours).
+« Comparer avec le coup proposé » reste facultatif et utilise le même point de
+départ. Scores exacts, verdict exploitable et suites légales sont requis. Les
+repères de l’alternative montrent directement sa position après le coup, clairement
+étiquetée. Le score du coup joué n’est pas réutilisé sur cette autre position.
+Les repères respectent l’orientation, les variantes, la préférence d’annotations
+et le retry caché. Ils ne créent aucune branche utilisateur.
+
+Ces observations **ne prouvent pas la cause du verdict moteur** : le développement
+peut laisser une pièce en prise, des pions doublés peuvent être compensés, un roi
+roqué peut subir une attaque et un pion passé peut être bloqué. La mobilité est
+comptée sans prise, comme si le même camp rejouait, avec les règles de légalité ;
+les cases montrées ne sont pas promises sûres après la réponse adverse. Ce calcul
+est omis pendant un échec. La couverture du roi compte seulement ses pions amis
+sur trois colonnes et les deux rangées devant lui ; ce n’est pas une évaluation
+globale de sa sécurité.
+
+Les détecteurs comparent le coup joué à la position précédente. Ils ne répètent
+pas une propriété inchangée et ne remplissent pas systématiquement le panneau.
+L’historique d’une pièce n’est pas deviné à partir d’une FEN personnalisée. Une
+observation n’ajoute aucune recherche moteur ; les calculs locaux sont conservés
+dans un cache borné à 128 situations, avec leur historique. L’approfondissement
+facultatif du lot 3 reste disponible lorsqu’une cause précise manque.
+
+La [backlog d’analyse pédagogique](BACKLOG_ANALYSE_PEDAGOGIQUE.md) conserve les
+décisions, les limites et les notes de livraison des quatre lots.
+
 ## Annotations de la revue
 
 Les annotations sont visibles par défaut et désactivables dans « Options
@@ -429,6 +612,22 @@ La galerie de contrôle `/dev/annotations.html` utilise les vrais composants
 avec des annotations simulées. Pour ne vérifier que les pictogrammes et leurs
 ancrages : `CHESS_ANNOTATIONS_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
 
+Le scénario `/dev/explanations.html` utilise des suites déterministes pour
+contrôler les explications, le retour au coup examiné, la conservation des
+dessins, les variantes et le retry caché sur bureau et mobile. Il couvre aussi
+les indices progressifs, leur orientation, leur remise à zéro, les recherches
+ciblées réelles, leur arrêt et leur réutilisation. Les cas `?case=uncertain` et
+`?case=quiet` complètent les fixtures tactiques pour ces calculs. Les scénarios
+`?case=position-development`, `position-file`, `position-castle`, `position-shield`,
+`position-pawns`, `position-passed`, `position-activity` et `position-center` couvrent
+les observations et leur comparaison, y compris dans une variante utilisateur :
+`CHESS_EXPLANATIONS_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
+
+Pour vérifier les déplacements après un décalage du plateau (clics, glisser-déposer
+et tactile, y compris en échec), ainsi que l'absence de chevauchement des commandes
+aux différentes tailles de fenêtre :
+`CHESS_PLAY_ONLY=1 CHESS_BROWSER_BINARY=/chemin/vers/chromium node dev/browser-check.mjs`.
+
 Le workflow dédié [UI](../.github/workflows/ui.yml) exécute lint, TypeScript,
 tests unitaires et build, puis les tests du pont avec ShallowRed compilé depuis
 le dépôt et Stockfish. Il utilise Node.js 22 et `npm ci`. Il se déclenche sur
@@ -452,11 +651,12 @@ signale le mat atteint ; `?` une évaluation indisponible. Les bornes restent
 indiquées, avec le détail dans l’infobulle. L’affichage reste optionnel.
 
 Les pièces capturées sont regroupées par type, auprès du joueur qui les a prises.
-Le `+N` indique uniquement son excédent de points capturés sur l’adversaire :
-pion 1, cavalier/fou 3, tour 5, dame 9. Aucun chiffre en cas d’égalité.
-Ce bilan est indépendant de l’évaluation moteur et suit la position affichée,
-ainsi que les variantes et retentatives. Il inclut la prise en passant ; une
-promotion seule n’est pas une capture. Pour un PGN depuis une FEN, les captures
-antérieures à la position initiale sont inconnues et ne sont pas inventées.
+Le `+N` indique l’avantage de matériel restant sur le plateau : pion 1,
+cavalier/fou 3, tour 5, dame 9. Aucun chiffre en cas d’égalité. Une promotion en
+dame ajoute donc 8 points nets (9 − 1), puis la capture de cette dame enlève 9.
+Le calcul suit la position affichée, y compris en relecture, variante, retentative
+ou depuis une FEN avec handicap. Il est indépendant de l’évaluation du moteur.
+Les miniatures représentent uniquement les captures connues : ni une promotion
+ni une pièce absente au départ ne sont présentées comme une prise.
 
 La ligne des captures conserve sa hauteur avant la première prise, afin de garder le plateau et les commandes à la même place.

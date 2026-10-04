@@ -1,4 +1,4 @@
-import type { Move, PieceSymbol } from "chess.js";
+import type { Chess, Move, PieceSymbol } from "chess.js";
 import type { Side } from "./engine/analysis";
 
 export const captureOrder = ["p", "n", "b", "r", "q"] as const;
@@ -34,4 +34,17 @@ export function capturedMaterial(
       (a, b) => captureOrder.indexOf(a) - captureOrder.indexOf(b),
     );
   return result;
+}
+
+/** Avantage matériel des blancs dans la position affichée, promotions comprises. */
+export function materialBalance(board: Pick<Chess, "board">): number {
+  return board
+    .board()
+    .flat()
+    .reduce(
+      (balance, piece) =>
+        balance +
+        (piece ? values[piece.type] * (piece.color === "w" ? 1 : -1) : 0),
+      0,
+    );
 }

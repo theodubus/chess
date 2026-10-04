@@ -60,6 +60,26 @@ export class GameReview {
     this.facts = this.positions.map(moveFacts);
     this.results = this.positions.map(() => null);
   }
+  get revision() {
+    return this.generation;
+  }
+  applyRefinement(revision: number, index: number, results: ReviewResult[]) {
+    if (
+      revision !== this.generation ||
+      this.state === "running" ||
+      results.length !== 2 ||
+      !Number.isInteger(index) ||
+      index < 0 ||
+      !this.positions[index + 1]
+    )
+      return false;
+    results.forEach((result, offset) => {
+      this.results[index + offset] = result;
+      this.verified.add(index + offset);
+    });
+    this.publish();
+    return true;
+  }
   get completed() {
     return this.results.filter(Boolean).length;
   }

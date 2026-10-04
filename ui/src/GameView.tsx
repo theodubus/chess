@@ -10,7 +10,7 @@ import { formatTime } from "./GameClock";
 import Board from "./Board";
 import EvaluationBar from "./EvaluationBar";
 import CapturedPieces from "./CapturedPieces";
-import { capturedMaterial, type Captures } from "./material";
+import { capturedMaterial, materialBalance, type Captures } from "./material";
 import GameHistory from "./GameHistory";
 import Dialog from "./Dialog";
 import { downloadPgn } from "./pgn";
@@ -22,11 +22,13 @@ function Player({
   color,
   showDepth,
   captures,
+  balance,
 }: {
   controller: GameController;
   color: Side;
   showDepth: boolean;
   captures: Captures;
+  balance: number;
 }) {
   const [, render] = useState(0);
   useEffect(() => {
@@ -63,7 +65,7 @@ function Player({
             ? ` · Profondeur ${controller.snapshot.analysis.depth}`
             : ""}
         </small>
-        <CapturedPieces captures={captures} side={color} />
+        <CapturedPieces captures={captures} balance={balance} side={color} />
       </div>
       <div
         className={`clock ${running ? "running" : ""} ${controller.clock.remaining[color] < 20000 ? "low-time" : ""}`}
@@ -111,6 +113,7 @@ export default function GameView({
   const board = browsing
     ? new Chess(last?.after ?? moves[0].before)
     : game.chess;
+  const balance = materialBalance(board);
   function navigate(index: number) {
     controller.cancelPremove();
     if (controller.finished) setResultDismissed(true);
@@ -167,6 +170,7 @@ export default function GameView({
         <Player
           controller={controller}
           captures={captures}
+          balance={balance}
           showDepth={showDepth && !browsing}
           color={orientation === "white" ? "b" : "w"}
         />
@@ -244,6 +248,7 @@ export default function GameView({
         <Player
           controller={controller}
           captures={captures}
+          balance={balance}
           showDepth={showDepth && !browsing}
           color={orientation === "white" ? "w" : "b"}
         />
