@@ -10,6 +10,7 @@ import {
 import { advantage, type Annotation } from "./annotations";
 import type { TacticalMark } from "./tactics";
 import { decisionCause, type CauseCandidate } from "./decisionCause";
+import { recaptureObservation } from "./understanding/recaptureObservation";
 
 export type ExplanationStep = {
   fen: string;
@@ -193,7 +194,11 @@ export function explainMove(
   annotation: Annotation | null,
   checkCause = true,
 ): MoveExplanation {
-  const base = baseExplanation(position, before, after, annotation, checkCause);
+  const recapture = recaptureObservation(position, after);
+  // Le gain depuis une reprise ne prouve pas un échange globalement gagnant,
+  // ni que cette décision est la meilleure. Le mat joué garde sa preuve légale.
+  const base = baseExplanation(position, before, after, annotation, checkCause && !recapture);
+  if (recapture) base.context = recapture.text;
   if (!base.played) return base;
   const compare = !!annotation && exactComparison(before, after, position.turn);
   const observations = {

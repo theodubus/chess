@@ -281,9 +281,11 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   révision, invalide résultat et démonstration.
 - [x] Anciennes causes négatives désactivées sur ce parcours ; les variantes
   libres et observations restent secondaires. Pas de deuxième raison concurrente.
-- [ ] Retirer le faux « nouvel échange gagnant » encore possible sur le parcours
-  favorable d'une reprise. Utiliser l'historique et le bilan de l'épisode, puis
-  raccorder les motifs favorables sans prétendre prouver l'unique meilleur coup.
+- [x] Retirer le faux « nouvel échange gagnant » du parcours d'une reprise connue.
+  Observation de l'historique et de la variante, bilans séparés et bilan ouvert
+  quand une reprise manque. Note raccordée au rendu de la revue ; mat légal gardé.
+- [ ] Raccorder les motifs favorables vérifiés sans prétendre prouver l'unique
+  meilleur coup. Les autres prises du parcours favorable restent à migrer.
 - [ ] Tester des parties complètes (humain/bot, deux humains, import PGN) et le
   parcours bureau/mobile. Mesurer latence et couverture avant/après.
 - [x] Premier audit logiciel de trois PGN amateurs complets avec les deux moteurs :
@@ -372,7 +374,11 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   refusée, autre capture, PV tronquée masquant une compensation, défense conservée,
   preuve altérée, arrêt/cache/délai testés. Six essais réels conservés ; pas
   d'affirmation de couverture nouvelle ni de relecture visuelle indépendante.
-- **Extension terminée localement, publication suivante** : le défenseur reste
+- **Extension publiée `65cf072`, CI verte réellement lue** : UI
+  [37196359861](https://github.com/theodubus/chess/actions/runs/37196359861), Rust PR
+  [37196359850](https://github.com/theodubus/chess/actions/runs/37196359850), Rust push
+  [37196356611](https://github.com/theodubus/chess/actions/runs/37196356611).
+  Le défenseur reste
   géométriquement en prise sur la seconde pièce mais la reprise le cloue devant
   son roi. Même graphe de captures/reprises et clouage absolu ;
   refuser l'alignement relatif et la reprise encore légale. Positions avec un
@@ -389,13 +395,32 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   en calibrant les attentes sur ses propres variantes.
   Validation : 736 tests unitaires / 58 fichiers ; les 24 tests de raccordement
   réels remplacent les 20 précédents et passent, portant le pont/moteurs à 109
-  tests / 10 fichiers. Total 845 tests, lint/types/build réussis. CI prochaine à lire.
-- **Prochaine priorité identifiée dans le code actif** : les coups favorables
+  tests / 10 fichiers. Total 845 tests, lint/types/build réussis.
+- **Lot terminé localement — contexte des reprises favorables** : les coups favorables
   passent encore par `decisionCause` et son texte « commence un échange ... gain ».
   Une reprise peut y être faussement présentée comme un nouvel échange gagnant.
   Corriger le routage, avec observation contextualisée de l'épisode et bilan
   avant/depuis la reprise. Garder l'observation distincte d'une preuve du meilleur
   coup ; ne pas rajouter une nouvelle famille de phrases dans l'ancien explicateur.
+  `recaptureObservation` réutilise le bilan d'épisode sans reconstruire les
+  identités tactiques. Une reprise connue coupe le routage vers l'ancien
+  explicateur ; elle conserve les variantes et une note de contexte, sans
+  candidat ni nouvelle recherche moteur. Début FEN inconnu, reprise encore
+  possible et PV incohérente ne produisent pas de bilan total inventé. Le mat
+  immédiatement joué conserve sa preuve légale. Promotion, prise en passant,
+  deux camps et historique complet exécutés avant les tests. Douze tests dédiés,
+  un raccordement SSR dans la vraie revue. Les 748 autres contrôles de la suite
+  et les 19 tests ciblés finaux passent ; lint/types/build réussis. Un échec de
+  lecture provenait d'une édition pendant le lancement des tests : relance ciblée
+  avec fichiers stabilisés. Pas de validation visuelle déclarée. Publier puis
+  lire la CI du SHA exact.
+- **Suite autonome** : vérifier le rendu de cette note dans la revue puis traiter
+  les menaces déjà présentes auxquelles le mauvais coup ne répond pas. Le modèle
+  actuel demande surtout un nouvel effet ; une menace ignorée mérite une autre
+  hypothèse, avec perte visible vérifiée et défense possible. Une défense comparée
+  peut montrer que la perte était évitable, jamais prouver son unicité ou que le
+  moteur avait couvert toutes les alternatives. Coups favorables sans reprise,
+  compensation longue et raisons positionnelles restent ouverts.
 - **Audit terminé** : trois parties amateurs complètes avec
   `dev/pedagogy-audit.mjs`, revue réelle, verdicts réels, ancien affichage et
   nouvelles conséquences séparés. Les sorties ne sont pas des vérités attendues.

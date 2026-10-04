@@ -7,6 +7,8 @@ import { uci, type DecisionContext, type PositionFrame, type TrackedPiece } from
 import { exchangeContext, type ExchangeContext } from "./exchanges";
 import { extendBranch } from "./relationContrast";
 import type { TacticalConstraints, TacticalHypothesis } from "./constraints";
+import { campName, points } from "./materialWording";
+export { campName, points } from "./materialWording";
 
 export type ExplanationStep = {
   command: string;
@@ -38,8 +40,6 @@ export type PedagogicalDraft = {
   limitation: string;
 };
 const names: Record<PieceSymbol, string> = { p: "le pion", n: "le cavalier", b: "le fou", r: "la tour", q: "la dame", k: "le roi" };
-export const campName = (color: "w" | "b") => color === "w" ? "Blancs" : "Noirs";
-export const points = (value: number) => `${value < 0 ? "−" : value > 0 ? "+" : ""}${Math.abs(value)} ${Math.abs(value) === 1 ? "point" : "points"}`;
 export const capitalize = (text: string) => text[0].toUpperCase() + text.slice(1);
 export function describePiece(piece: TrackedPiece) {
   const feminine = "qr".includes(piece.type);

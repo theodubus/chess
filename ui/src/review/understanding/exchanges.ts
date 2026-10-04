@@ -1,6 +1,6 @@
 import { Chess } from "chess.js";
 import { materialBalance } from "../../material";
-import { capturedSquare, uci, type DecisionContext } from "./context";
+import { capturedSquare, uci, type DecisionContext, type PositionFrame } from "./context";
 
 export type ExchangeContext = {
   scope: "consecutive-recaptures";
@@ -18,7 +18,9 @@ export type ExchangeContext = {
  * matériel après une perte antérieure ; ce n'est pas un nouvel échange gagnant.
  * Les coups intermédiaires ne sont pas rattachés arbitrairement à cet épisode. */
 export function exchangeContext(
-  context: DecisionContext,
+  context: Pick<DecisionContext, "moves" | "decision" | "priorHistory"> & {
+    frames: Pick<PositionFrame, "fen" | "terminal">[];
+  },
 ): ExchangeContext | null {
   const { moves, decision, frames } = context;
   if (!moves[decision].captured) return null;
@@ -48,11 +50,11 @@ export function exchangeContext(
     moves: moves.slice(from, to + 1).map(uci),
     totalBalance:
       (materialBalance(ending) - materialBalance(new Chess(frames[from].fen))) *
-      sign,
+      sign || 0,
     balanceFromDecision:
       (materialBalance(ending) -
         materialBalance(new Chess(frames[decision].fen))) *
-      sign,
+      sign || 0,
     recaptureStillPossible:
       !frames[to + 1].terminal &&
       ending

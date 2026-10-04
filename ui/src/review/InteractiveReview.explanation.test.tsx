@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
+import { Chess } from "chess.js";
 import { renderToStaticMarkup } from "react-dom/server";
 import InteractiveReview from "./InteractiveReview";
 import { GameReview } from "./GameReview";
@@ -22,6 +23,24 @@ vi.mock("./usePedagogicalAnalysis", () => ({
   },
 }));
 beforeEach(() => { hook.state = "pending"; hook.result = null; hook.request.mockClear(); });
+it("présente la reprise dans l'échange existant sans nouveau gain ni calcul de cause", () => {
+  const board = new Chess();
+  for (const move of ["e4", "e5", "d3", "Nc6", "Be3", "Nf6", "Nf3", "d5", "exd5", "Qxd5", "Nc3", "Qd4", "a3", "Ng4", "b3", "Nxe3", "fxe3"]) board.move(move);
+  const review = new GameReview(board.pgn()), index = 16;
+  review.results[index] = { score: { kind: "cp", value: 0 }, depth: 15, bestMove: "f2e3", bestSan: "fxe3", variation: legalVariation(review.positions[index].fen, ["f2e3"]) };
+  review.results[index + 1] = { score: { kind: "cp", value: 0 }, depth: 15, bestMove: "d4e3", bestSan: "Dxe3+", variation: legalVariation(review.positions[index + 1].fen, ["d4e3", "d1e2", "e3e2", "e1e2"]) };
+  review.state = "complete";
+  expect(review.annotations[index]?.category).toBe("best");
+  const html = renderToStaticMarkup(<InteractiveReview review={review} selected={index + 1} onSelect={() => {}} engineId="script"
+    orientation="white" showEvaluation={false} showAnnotations active side="both" treeCache={new Map()} />);
+  expect(html).toContain("reprise dans un échange déjà commencé");
+  expect(html).toContain("−1 point pour les Blancs depuis le début");
+  expect(html).toContain("+2 points pour les Blancs depuis cette reprise");
+  expect(html).not.toContain("commence un échange");
+  expect(html).not.toContain("vérifie la conséquence");
+  expect(html).not.toContain("Montrer pourquoi");
+  expect(hook.request).toHaveBeenLastCalledWith(null, true);
+});
 function fixture() {
   const input = tacticalInput("allows-fork"), source = corpusInput(input.example.test);
   const board = boardFromCommand(source.position.command); board.move(source.position.played!);

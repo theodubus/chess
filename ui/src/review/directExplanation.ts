@@ -59,7 +59,7 @@ export function confirmedConsequence(draft: PedagogicalDraft | RelationDraft, po
 export function directExplanation(base: MoveExplanation, consequence: ConfirmedConsequence | null): MoveExplanation {
   const fallback: MoveExplanation = {
     summary: "Aucune conséquence courte suffisamment confirmée pour expliquer ce verdict. Vous pouvez examiner les variantes du moteur.",
-    concrete: false, played: base.played, alternative: base.alternative, observations: base.observations,
+    concrete: false, played: base.played, alternative: base.alternative, observations: base.observations, context: base.context,
   };
   if (!consequence) return fallback;
   const proof: ExplanationLine = {
@@ -70,5 +70,5 @@ export function directExplanation(base: MoveExplanation, consequence: ConfirmedC
     })),
   };
   return { ...fallback, summary: consequence.summary, concrete: true, proof,
-    context: consequence.context ?? undefined, limitation: consequence.limitation };
+    context: consequence.context ?? base.context, limitation: consequence.limitation };
 }
