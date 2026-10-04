@@ -8,6 +8,8 @@ import { TacticalEffectVerification } from "./TacticalVerification";
 import { RelationVerification } from "./RelationVerification";
 import { tacticalDraft } from "./tacticalDraft";
 import { relationDraft } from "./relationDraft";
+import { closedRetreats, RestrictionEffectVerification } from "./RestrictionEffectVerification";
+import { restrictionDraft } from "./restrictionDraft";
 import type { PedagogicalDraft } from "./draftModel";
 import type { RelationDraft } from "./relationDraft";
 import type { WorkPhase } from "./work";
@@ -56,7 +58,7 @@ export class PedagogicalAnalysis {
   private listeners = new Set<() => void>();
   state: "idle" | "extracting" | "verifying" | "complete" | "stopped" | "timed-out" | "error" = "idle";
   phase: WorkPhase = "context";
-  candidate: "tactic" | "relation" | null = null;
+  candidate: "tactic" | "relation" | "restriction" | null = null;
   error = "";
   cached = false;
   constructor(private budgets: [number, number] = [300, 900], private deadlineMs = 12000, private cacheSize = 32) {
@@ -130,10 +132,12 @@ export class PedagogicalAnalysis {
         return finish("unavailable", null, 0, 0);
       }
       const tactics = understanding.constraints.hypotheses.flatMap((h, index) =>
-        h.role === "allows-loss" && ["double-threat", "pin"].includes(h.kind) ? [{ family: "tactic" as const, index, rank: h.kind === "double-threat" ? 0 : 1 }] : []);
+        h.role === "allows-loss" && ["double-threat", "pin"].includes(h.kind) ? [{ family: "tactic" as const, index, rank: h.kind === "double-threat" ? 0 : 2 }] : []);
+      const restrictions = understanding.hypotheses.flatMap((h, index) =>
+        h.kind === "allows-restriction" && closedRetreats(understanding, h).length ? [{ family: "restriction" as const, index, rank: 1 }] : []);
       const relations = understanding.mechanisms.flatMap((h, index) =>
-        h.role === "allows-loss" ? [{ family: "relation" as const, index, rank: h.kind === "defender-removal" ? 2 : 3 }] : []);
-      const candidates = [...tactics, ...relations].sort((a, b) => a.rank - b.rank).slice(0, 2);
+        h.role === "allows-loss" ? [{ family: "relation" as const, index, rank: h.kind === "defender-removal" ? 3 : 4 }] : []);
+      const candidates = [...tactics, ...restrictions, ...relations].sort((a, b) => a.rank - b.rank).slice(0, 2);
       for (const candidate of candidates) {
         if (!current()) return null;
         this.candidate = candidate.family; this.state = "verifying"; this.publish();
@@ -155,6 +159,18 @@ export class PedagogicalAnalysis {
           }
           searches += report.searches;
           draft = tacticalDraft(understanding, report);
+        } else if (candidate.family === "restriction") {
+          const checker = new RestrictionEffectVerification(this.budgets, remaining);
+          this.cancelVerification = () => checker.stop();
+          const report = await checker.verify({ ...request, understanding, hypothesisIndex: candidate.index }, factory);
+          if (!current()) return null;
+          if (!report) {
+            this.error = checker.error;
+            if (checker.state === "timed-out") { expire(); return null; }
+            return finish("unavailable", null, attempts, searches);
+          }
+          searches += report.searches;
+          draft = restrictionDraft(understanding, report);
         } else {
           const checker = new RelationVerification(this.budgets, remaining);
           this.cancelVerification = () => checker.stop();

@@ -48,7 +48,8 @@ CHESS_ENGINE_BINARY=../target/release/shallowred CHESS_STOCKFISH_BINARY=/usr/gam
   synchrone et coopératif. Une primitive chess.js indivisible peut dépasser la
   tranche cible ; cette extraction est maintenant utilisée hors rendu React.
 
-`TacticalEffectVerification.verify` et `RelationVerification.verifyEffect`
+`TacticalEffectVerification.verify`, `RelationVerification.verifyEffect` et
+`RestrictionEffectVerification.verify`
 vérifient maintenant directement une perte permise par le coup joué, sans
 demander de remplacement. Fourchette, défense retirée et ligne ouverte gardent
 leur lien physique et le bilan après reprises aux deux budgets. Un brouillon
@@ -56,11 +57,13 @@ négatif peut exister même si la comparaison est indisponible, mais aucune
 alternative n'est alors affichée. Comparer un seul autre choix ne démontre
 jamais un meilleur coup global ou une défense unique. Voir
 `TACTICAL_VERIFICATION.md` pour la portée et les limites.
+`RESTRICTION_VERIFICATION.md` détaille le contrat des retraites fermées : bloqueur
+réellement déplacé, menace fraîche, défense libre et suivi de la même victime.
 
 ## Premier raccordement dans la revue — 4 octobre 2026
 
 `PedagogicalAnalysis` extrait les faits hors rendu puis teste au plus deux
-candidats adverses : double menace/clouage absolu, défense retirée ou ligne
+candidats adverses : double menace, retraite fermée, clouage absolu, défense retirée ou ligne
 ouverte. Deux budgets 300/900 ms ; délai commun de 12 s, extraction et démarrages
 inclus. Un refus UCI, une compensation ou une instabilité conserve l'abstention.
 Aucun coup de remplacement n'est recherché pour produire ce premier texte.
@@ -86,6 +89,23 @@ fourchette. Une mesure locale donne environ 1,8–5,1 s de calcul, hors premièr
 évaluation ; ce n'est pas un engagement de latence. Les fixtures unitaires et les
 rendus statiques ne valident pas l'UX visuelle ou la généralisation échiquéenne.
 La vérification bureau/mobile reste à faire : aucun navigateur CUA disponible.
+
+La retraite fermée est également raccordée. Le moteur choisit librement la menace
+après le coup, puis une défense après cette menace, aux deux budgets. La pièce
+peut être prise sur place, prendre l'attaquant puis se faire reprendre, ou tenter
+une sortie déjà exposée à une capture identifiée. Deux suites différentes peuvent
+confirmer le même mécanisme et bilan ; chacune doit garder son propre lien physique.
+Le bilan inclut les gains du coup initial. Pièce sauvée, compensation, menace
+différente et témoin incomplet empêchent le récit de perte. Aucune alternative
+ni preuve d'unique bon coup n'est introduite.
+
+Sur les essais réels de raccordement 300/900 ms, ShallowRed et Stockfish 16
+soutiennent Dd2/…f4 et la transformation avec couleurs inversées, environ
+4–7 s localement hors première évaluation. À 200/600 ms, le nouvel instantané
+de relecture garde l'abstention Stockfish sur la transformation noire ; les
+budgets ne garantissent pas une confirmation. Les quatre nouveaux exemples
+complètent les 22 précédents, dont les mesures et dates restent conservées.
+Ils restent des cas de développement, sans validation indépendante.
 
 La recherche de défense et sa vérification courte sont maintenant implémentées
 ci-dessous. La couverture stratégique et l'attribution de la cause à la décision

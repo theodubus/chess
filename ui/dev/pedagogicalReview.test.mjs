@@ -5,7 +5,7 @@ import { startBridge } from "./bridge.mjs";
 import { connectDevelopmentEngine } from "../src/engine/DevelopmentEngine";
 import { FocusedAnalysis } from "../src/review/FocusedAnalysis";
 import { boardFromCommand } from "../src/review/StudyTree";
-import { corpusInput } from "../src/review/understanding/corpus";
+import { corpus, corpusInput } from "../src/review/understanding/corpus";
 import { tacticalInput } from "../src/review/understanding/tacticalCases";
 import { mechanismCases } from "../src/review/understanding/mechanismCases";
 import { PedagogicalAnalysis } from "../src/review/understanding/PedagogicalAnalysis";
@@ -13,9 +13,10 @@ import { directExplanation } from "../src/review/directExplanation";
 import { explainMove } from "../src/review/explanations";
 
 for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], ["Stockfish", process.env.CHESS_STOCKFISH_BINARY]]) {
-  for (const id of ["allows-fork", "line-left"]) {
+  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black"]) {
     it.skipIf(!command)(`${name} : raccordement revue ${id}`, async () => {
-      const test = id === "allows-fork" ? tacticalInput(id).example.test : { ...mechanismCases.find((c) => c.id === id), prefix: [] };
+      const test = id === "allows-fork" ? tacticalInput(id).example.test : id.startsWith("queen-closes-retreat")
+        ? corpus.find((c) => c.id === id) : { ...mechanismCases.find((c) => c.id === id), prefix: [] };
       const { position } = corpusInput(test), afterBoard = boardFromCommand(position.command);
       afterBoard.move(position.played);
       const after = { ...position, command: position.command + (position.command.includes(" moves ") ? " " : " moves ") + position.played,
@@ -40,6 +41,7 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
         const request = { ...identity, position, result: results?.[0] ?? null, category: "blunder" };
         const result = await analysis.analyse(request, factory);
         expect(result, analysis.error).not.toBeNull();
+        expect(result.status).not.toBe("unavailable");
         expect(result.attempts).toBeLessThanOrEqual(2); expect(result.searches).toBeLessThanOrEqual(12);
         expect(trace.every((c) => c === position.command || c === after.command || c.startsWith(after.command + " "))).toBe(true);
         const view = directExplanation(explainMove(position, null, request.result, null, false), result.consequence);

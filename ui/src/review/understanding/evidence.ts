@@ -104,6 +104,19 @@ export function preventionEvidence(
   return pieceEvidence(context.before, context.after, victimId, result, 8);
 }
 
+/** L'attaque initiale appartient au mécanisme à expliquer. Le seuil de coups
+ * calmes porte sur la défense qui suit : attaque, défense calme, prise est un
+ * témoin immédiat, pas une recherche de pertes éloignées dans la variante. */
+export function restrictionEvidence(
+  context: Pick<Understanding["context"], "before" | "after">,
+  victimId: string,
+  result: ReviewResult,
+): DefenceEvidence {
+  if (!usableResult(framePosition(context.after), result))
+    throw new Error("Réponse moteur inutilisable pour cette position.");
+  return pieceEvidence(context.before, context.after, victimId, result, 8, 1);
+}
+
 /** La capture est une question conditionnelle légale, suivie de la réponse
  * libre du moteur. Ce témoin n'est jamais présenté comme sa PV depuis la décision. */
 export function conditionalEvidence(
@@ -156,6 +169,7 @@ function pieceEvidence(
   victimId: string,
   result: Pick<ReviewResult, "variation">,
   maxPlies: number,
+  threatPlies = 0,
 ): DefenceEvidence {
   const line = witnessLine(frame, result.variation, maxPlies),
     replies = captureReplies(line),
@@ -193,7 +207,7 @@ function pieceEvidence(
     else if (movedVictim) square = move.to;
     board.move(move);
     quietPlies =
-      move.captured || move.promotion || board.isCheck() ? 0 : quietPlies + 1;
+      move.captured || move.promotion || board.isCheck() || index < threatPlies ? 0 : quietPlies + 1;
     evidence.moves.push(uci(move));
     evidence.victimSquare = square;
     evidence.materialDelta = (materialBalance(board) - initial) * sign;

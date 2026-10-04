@@ -8,6 +8,7 @@ import { corpusInput } from "./understanding/corpus";
 import { tacticalInput } from "./understanding/tacticalCases";
 import { PedagogicalAnalysis, type PedagogicalResult } from "./understanding/PedagogicalAnalysis";
 import { ScriptEngine } from "./understanding/tacticalTestEngine";
+import { restrictionInput, RestrictionTestEngine } from "./understanding/restrictionTestEngine";
 import type { ConsequenceState } from "./usePedagogicalAnalysis";
 
 // Le contrôleur asynchrone a ses propres tests. Ce rendu vérifie que la revue
@@ -61,4 +62,25 @@ it("l'abstention conserve les variantes et la navigation mais n'affiche pas une 
   expect(html).toContain("Aucune conséquence courte suffisamment confirmée");
   expect(html).toContain("Variantes du moteur"); expect(html).toContain("Approfondir ce coup");
   expect(html).not.toContain("Montrer pourquoi"); expect(html).not.toContain("analysis-spinner");
+});
+it("raconte la sortie fermée, l'attaque et le bilan dans la revue du mauvais coup", async () => {
+  const { source, request: input } = restrictionInput();
+  const board = boardFromCommand(source.position.command); board.move(source.position.played!);
+  const review = new GameReview(board.pgn());
+  const alternative = boardFromCommand(source.position.command).moves({ verbose: true }).find((m) => m.lan !== source.position.played)!;
+  review.results[0] = { score: { kind: "cp", value: 0 }, depth: 15, bestMove: alternative.lan,
+    bestSan: alternative.san, variation: legalVariation(review.positions[0].fen, [alternative.lan]) };
+  review.results[1] = { ...source.result!, score: { kind: "cp", value: -500 } };
+  review.state = "complete";
+  expect(review.annotations[0]?.category).toBe("blunder");
+  hook.result = await new PedagogicalAnalysis([10, 20]).analyse({ review, revision: review.revision, engineId: "script",
+    position: review.positions[0], result: review.results[1], category: "blunder" }, async () => new RestrictionTestEngine(input));
+  expect(hook.result?.status).toBe("supported"); hook.state = "supported";
+  const html = renderToStaticMarkup(<InteractiveReview review={review} selected={1} onSelect={() => {}} engineId="script"
+    orientation="white" showEvaluation={false} showAnnotations active side="both" treeCache={new Map()} />);
+  expect(html).toContain("ferme la sortie e3–d2 du fou blanc en e3");
+  expect(html).toContain("le pion noir en f4 attaque le fou blanc en e3");
+  expect(html).toContain("Après les reprises"); expect(html).toContain("−2 points pour les Blancs");
+  expect(html).toContain("Montrer pourquoi"); expect(html).not.toContain("Comparer les décisions");
+  expect(html).not.toContain("cette pièce est perdue dans toutes les variantes");
 });

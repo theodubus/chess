@@ -20,9 +20,11 @@ const originalWebSocket = globalThis.WebSocket;
 
 try {
   const [{ tacticalInput }, { TacticalVerification, TacticalEffectVerification }, { tacticalDraft }, { MateVerification }, { mateDraft },
-    { corpusInput }, { externalCorpus }, { decisionContext }, { tacticalConstraints }, { moveLabel }, { connectDevelopmentEngine }] = await Promise.all([
+    { corpus, corpusInput }, { externalCorpus }, { decisionContext }, { tacticalConstraints }, { moveLabel }, { connectDevelopmentEngine },
+    { understandDecision }, { RestrictionEffectVerification }, { restrictionDraft }] = await Promise.all([
     load("tacticalCases"), load("TacticalVerification"), load("tacticalDraft"), load("MateVerification"), load("mateDraft"),
     load("corpus"), load("externalCorpus"), load("context"), load("constraints"), load("draftModel"), vite.ssrLoadModule("/src/engine/DevelopmentEngine.ts"),
+    load("prototype"), load("RestrictionEffectVerification"), load("restrictionDraft"),
   ]);
   // Adaptateur Node de cet outil local, comme celui des essais UCI. Aucun
   // transport n'entre dans la vue, qui ne lit qu'un instantané de brouillons.
@@ -42,9 +44,14 @@ try {
         adapter.onLine((line) => { if (line.startsWith("id name ")) engineName = line.slice(8); });
         return adapter;
       };
-      for (const id of ["allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31"]) {
+      for (const id of ["queen-closes-retreat", "queen-closes-retreat-black", "allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31"]) {
         let input, check, build, source, origin;
-        if (id === "morphy-31") {
+        if (id.startsWith("queen-closes-retreat")) {
+          const test = corpus.find((c) => c.id === id), { position, result } = corpusInput(test), understanding = understandDecision(position, result);
+          input = { understanding, hypothesisIndex: understanding.hypotheses.findIndex((h) => h.kind === "allows-restriction") };
+          check = new RestrictionEffectVerification([200, 600], 25000); build = restrictionDraft;
+          source = test.notes; origin = test.origin;
+        } else if (id === "morphy-31") {
           const test = externalCorpus.find((c) => c.id === id);
           const { position, result } = corpusInput(test), context = decisionContext(position, result), constraints = tacticalConstraints(context);
           input = { understanding: { context, constraints }, hypothesisIndex: constraints.hypotheses.findIndex((h) => h.kind === "deflection-mate"), alternative: "b3a3" };
@@ -60,7 +67,7 @@ try {
           if (id === "allows-fork-direct") delete request.alternative;
           const report = await check.verify(request, factory);
           const draft = report ? build(input.understanding, report) : null;
-          examples.push({ id, label: `${context.before.fen.split(" ")[5]}${context.before.turn === "b" ? "…" : "."} ${moveLabel(context.before, context.moves[context.decision].lan)}`, source, origin, engine, engineName, engineHash,
+          examples.push({ id, capturedAt: new Date().toISOString(), label: `${context.before.fen.split(" ")[5]}${context.before.turn === "b" ? "…" : "."} ${moveLabel(context.before, context.moves[context.decision].lan)}`, source, origin, engine, engineName, engineHash,
             beforeFen: context.before.fen, afterFen: context.after.fen, state: report?.status ?? "unavailable",
             reason: report?.attribution?.reason ?? report?.reason ?? "engine-unavailable", error: check.error || null,
             elapsedMs: report?.elapsedMs ?? 0, searches: report?.searches ?? 0, draft });

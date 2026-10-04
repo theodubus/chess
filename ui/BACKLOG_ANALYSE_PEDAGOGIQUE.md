@@ -12,7 +12,7 @@ reste inchangé ; l’UCI est l’unique interface moteur.
   `decisionCause.ts`) à portée limitée, parfois trompeuse malgré ses vérifications.
 - Des recherches annulables et mises en cache (`FocusedAnalysis`, `LiveStudy`).
 - Premier raccordement des conséquences matérielles adverses confirmées :
-  fourchette/défenseur échangé, défense retirée et ligne ouverte. Texte et
+  fourchette/défenseur échangé, retraite fermée puis attaque, défense retirée et ligne ouverte. Texte et
   illustration racontent le coup joué ; aucune alternative obligatoire. Les
   causes historiques négatives sont écartées sur ce parcours. La couverture
   positionnelle et la validation sur un échantillon neuf restent ouvertes.
@@ -127,6 +127,11 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
 
 ### C. Vérification comparative des causes — EN COURS
 
+- [x] Conséquence directe d'une retraite fermée : menace fraîche, défense libre,
+  même victime, capture sur place/prise de l'attaquant/sortie déjà exposée, puis
+  bilan depuis la décision. Deux lignes peuvent différer si chacune démontre le
+  même mécanisme et bilan. Compensation, retraite rouverte ou lien absent refusés.
+  Aucune alternative ou affirmation de perte contre toutes les défenses.
 - [x] Séparer conséquence du coup joué et comparaison facultative : vérifications
   directes de fourchette/clouage et défense retirée/ligne ouverte. Même menace,
   bilan et clôture retrouvés aux deux budgets ; aucune obligation de proposer
@@ -185,7 +190,8 @@ contre-exemples. Les faits ne dépendent ni d’une phrase française ni d’un 
   rejet des réponses tardives, coûts et réutilisation du cache mesurés.
 - [x] Essais réels ShallowRed/Stockfish, avec différences conservées dans le
   rapport de test. Les abstentions ne sont pas comptées comme explications justes.
-- [ ] Priorité et déclenchement depuis la revue : à traiter avec l'intégration E.
+- [x] Premier ordre de candidats adverses et déclenchement au coup consulté dans E ;
+  au plus deux candidats. Restent les autres familles et la mesure de couverture.
 
 **Passage C :** une explication rejetée sur les contre-exemples reste rejetée
 même si une capture existe dans la PV. Publier le rapport du corpus et ses limites.
@@ -235,7 +241,7 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   Les primitives indivisibles peuvent dépasser la tranche cible ; ce n'est pas
   un Worker et aucune promesse de durée d'image n'est faite.
 - [x] Premier raccordement des conséquences adverses matérielles courtes :
-  fourchette (dont défense échangée), clouage absolu exploité, défense retirée,
+  fourchette (dont défense échangée), retraite fermée puis attaque, clouage absolu exploité, défense retirée,
   ligne ouverte, seulement si les deux recherches confirment le mécanisme et le
   bilan après reprises. Pas d'activation des brouillons favorables/comparatifs/mat.
 - [x] Coup consulté uniquement, signalement du calcul, cache/annulation et
@@ -291,6 +297,17 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   Pour …Ca4, traiter la compensation et distinguer la pression tactique du
   gain matériel immédiat ; la cause du verdict reste inconnue quand le bilan
   matériel est compensé. Ne pas inventer une phrase pour augmenter la couverture.
+- **Retraite fermée raccordée le 4 octobre** : `RestrictionEffectVerification`,
+  `restrictionDraft` et contrat `RESTRICTION_VERIFICATION.md`. Menace fraîche,
+  défense libre, bilan avant décision et capture liée à la même pièce ; texte
+  et repères dans la revue sans alternative obligatoire. Prise sur place,
+  prise de l'attaquant puis reprise et sortie déjà exposée (avec échanges
+  préparatoires) traitées. Deux lignes peuvent confirmer le mécanisme sans avoir
+  exactement la même prise. Contre-épreuves compensation, pièce sauvée, retraite
+  rouverte, perte éloignée et autre victime ; cache/annulation/périmés testés.
+  ShallowRed/Stockfish 16 soutiennent Dd2/…f4 et sa transformation noire à
+  300/900 ms ; l'aperçu à 200/600 ms garde l'abstention Stockfish noire.
+  Relecture visuelle et échantillon indépendant toujours manquants.
 - Corpus construit : 12 hypothèses principales reconnues sur 12 attentes connues.
   Corpus publié : 4 sur 11 (deux échanges, double attaque, déviation), sept idées
   manquantes. Les deux corpus restent à zéro explication publiable. Le second a
@@ -318,6 +335,39 @@ même si une capture existe dans la PV. Publier le rapport du corpus et ses limi
   reprise utile. La position concrète construite doit être annoncée comme telle.
 - Les prochaines notes doivent préciser fichiers, commandes, résultats et ce
   qui reste non implémenté ; cocher uniquement les livrables effectivement validés.
+
+## Retraite fermée : conséquence directe dans la revue — 4 octobre 2026
+
+- `RestrictionEffectVerification.ts`, `restrictionDraft.ts` et
+  `RESTRICTION_VERIFICATION.md` : fermeture par le bloqueur déplacé, menace fraîche,
+  défense libre, suivi de la même victime et bilan global après reprises.
+  Capture sur place, prise de l'attaquant/reprise et sortie déjà exposée peuvent
+  soutenir le même mécanisme. Chaque passe garde son lien physique, même si les
+  captures diffèrent. Aucune alternative obligatoire ou unicité du bon coup.
+- `PedagogicalAnalysis` raccorde cette famille au coup consulté, avant les
+  relations plus générales, dans la limite de deux candidats et 12 s. La menace
+  initiale ne consomme pas le seuil des coups calmes du témoin ; plusieurs coups
+  calmes suivants abandonnent toujours la démonstration. Le bilan commence avant
+  la décision pour inclure ses prises éventuelles, pas seulement après l'attaque.
+- Vingt régressions du nouveau vérificateur, dont couleurs inversées, compensations,
+  défense par une autre pièce, retraite rouverte, échange préparatoire, autre
+  victime, reprise pendante, score/menace instable, cache, arrêt, réponse bornée
+  et preuve falsifiée/périmée. Nouveau rendu statique dans la revue et quatre
+  raccordements UCI réels. Scores simulés dans les fixtures ; les tests ne
+  mesurent pas la qualité du classement des coups ni la couverture générale.
+- ShallowRed et Stockfish 16 soutiennent Dd2/…f4 et la transformation noire dans
+  les essais réels 300/900 ms (environ 4–7 s, première évaluation exclue).
+  L'instantané de relecture 200/600 ms confirme le cas blanc avec les deux et
+  le noir avec ShallowRed ; Stockfish noir reste indéterminé. Les quatre cas
+  complètent les 22 exemples antérieurs, conservés avec leur date de mesure.
+  Origine capture utilisateur/transformation explicitée dans l'aperçu.
+- Validation locale : **754 tests / 60 fichiers** avec les deux binaires, deux
+  workers ; lint, TypeScript et build réussis. Avertissement Vite >500 kB conservé
+  sur le module de revue. Aucun fichier moteur modifié.
+- Restent ouverts : échantillon neuf et relecture indépendante, parcours visuel
+  bureau/mobile (CUA indisponible), compensations positionnelles/différées,
+  contraintes plus longues et motifs de finale. Ce lot ne termine pas A–E et ne
+  transforme pas ces cas de développement en validation pédagogique générale.
 
 ## Livraison de démarrage — 2 octobre 2026
 

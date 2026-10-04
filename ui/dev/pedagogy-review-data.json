@@ -1,9 +1,439 @@
 {
   "schema": 1,
-  "generatedAt": "2026-10-03T21:49:28.177Z",
+  "generatedAt": "2026-10-04T00:05:43.198Z",
   "publishable": false,
   "independentSample": false,
   "examples": [
+    {
+      "id": "queen-closes-retreat",
+      "label": "14. Dd2",
+      "source": "FEN reconstruite depuis les captures : Dd2 vient de e2. Historique antérieur inconnu, horloges FEN conventionnelles. La suite est un témoin légal, pas un PGN utilisateur.",
+      "origin": "user-screenshot",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
+      "afterFen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P1Q1PPP/R4RK1 b - - 1 14",
+      "state": "supported",
+      "reason": "stable-loss",
+      "error": null,
+      "elapsedMs": 3381.3904970000003,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "closed-retreat",
+        "role": "allows-loss",
+        "title": "Une retraite fermée avant l'attaque",
+        "summary": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3. Après f4, le pion noir en f4 attaque le fou blanc en e3. Dans la suite trouvée, fxe3 prend cette pièce. Après les reprises, le bilan depuis Dd2 est de −2 points pour les Blancs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "e2d2",
+          "change": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3.",
+          "consequence": "Dans la suite trouvée, fxe3 prend cette pièce. Après les reprises, le bilan depuis Dd2 est de −2 points pour les Blancs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P1Q1PPP/R4RK1 b - - 1 14",
+            "label": "Après Dd2",
+            "note": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3.",
+            "marks": [
+              {
+                "from": "e3",
+                "to": "d2",
+                "tone": "observation"
+              },
+              {
+                "from": "d2",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1P1Pp2/1B1PBN2/1P1Q1PPP/R4RK1 w - - 0 15",
+            "label": "f4",
+            "note": "Après f4, le pion noir en f4 attaque le fou blanc en e3.",
+            "marks": [
+              {
+                "from": "f4",
+                "to": "e3",
+                "tone": "threat"
+              },
+              {
+                "from": "d2",
+                "tone": "observation"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPPp2/1B2BN2/1P1Q1PPP/R4RK1 b - - 0 15",
+            "label": "d4",
+            "note": "",
+            "marks": [
+              {
+                "from": "d3",
+                "to": "d4",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4 f4e3",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPP3/1B2pN2/1P1Q1PPP/R4RK1 w - - 0 16",
+            "label": "fxe3",
+            "note": "fxe3 prend la pièce attaquée.",
+            "marks": [
+              {
+                "from": "f4",
+                "to": "e3",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4 f4e3 f2e3",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPP3/1B2PN2/1P1Q2PP/R4RK1 b - - 0 16",
+            "label": "fxe3",
+            "note": "",
+            "marks": [
+              {
+                "from": "f2",
+                "to": "e3",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "f5f4",
+            "d3d4",
+            "f4e3",
+            "f2e3"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -2,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "La sortie fermée est un fait du plateau. La prise et le bilan apparaissent dans deux recherches après la menace ; cela ne prouve pas que toutes les défenses perdent ni que cette sortie était la seule bonne défense."
+      },
+      "capturedAt": "2026-10-04T00:05:43.198Z"
+    },
+    {
+      "id": "queen-closes-retreat-black",
+      "label": "14… Dd7",
+      "source": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence.",
+      "origin": "transformed-regression",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14",
+      "afterFen": "r4rk1/1p1q1ppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K w - - 1 15",
+      "state": "supported",
+      "reason": "stable-loss",
+      "error": null,
+      "elapsedMs": 3832.5512150000004,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "closed-retreat",
+        "role": "allows-loss",
+        "title": "Une retraite fermée avant l'attaque",
+        "summary": "La dame noire en d7 ferme la sortie e6–d7 du fou noir en e6. Après f5, le pion blanc en f5 attaque le fou noir en e6. Dans la suite trouvée, fxe6 prend cette pièce. Après les reprises, le bilan depuis Dd7 est de −2 points pour les Noirs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "e7d7",
+          "change": "La dame noire en d7 ferme la sortie e6–d7 du fou noir en e6.",
+          "consequence": "Dans la suite trouvée, fxe6 prend cette pièce. Après les reprises, le bilan depuis Dd7 est de −2 points pour les Noirs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7",
+            "fen": "r4rk1/1p1q1ppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K w - - 1 15",
+            "label": "Après Dd7",
+            "note": "La dame noire en d7 ferme la sortie e6–d7 du fou noir en e6.",
+            "marks": [
+              {
+                "from": "e6",
+                "to": "d7",
+                "tone": "observation"
+              },
+              {
+                "from": "d7",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5",
+            "fen": "r4rk1/1p1q1ppp/1b1pbn2/p1p1pP2/P1P1P3/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 15",
+            "label": "f5",
+            "note": "Après f5, le pion blanc en f5 attaque le fou noir en e6.",
+            "marks": [
+              {
+                "from": "f5",
+                "to": "e6",
+                "tone": "threat"
+              },
+              {
+                "from": "d7",
+                "tone": "observation"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5",
+            "fen": "r4rk1/1p1q1ppp/1b2bn2/p1pppP2/P1P1P3/1P1P4/2N1B1PP/R1BQ1R1K w - - 0 16",
+            "label": "d5",
+            "note": "",
+            "marks": [
+              {
+                "from": "d6",
+                "to": "d5",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5 f5e6",
+            "fen": "r4rk1/1p1q1ppp/1b2Pn2/p1ppp3/P1P1P3/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 16",
+            "label": "fxe6",
+            "note": "fxe6 prend la pièce attaquée.",
+            "marks": [
+              {
+                "from": "f5",
+                "to": "e6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5 f5e6 f7e6",
+            "fen": "r4rk1/1p1q2pp/1b2pn2/p1ppp3/P1P1P3/1P1P4/2N1B1PP/R1BQ1R1K w - - 0 17",
+            "label": "fxe6",
+            "note": "",
+            "marks": [
+              {
+                "from": "f7",
+                "to": "e6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5 f5e6 f7e6 c4d5",
+            "fen": "r4rk1/1p1q2pp/1b2pn2/p1pPp3/P3P3/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 17",
+            "label": "cxd5",
+            "note": "",
+            "marks": [
+              {
+                "from": "c4",
+                "to": "d5",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5 f5e6 f7e6 c4d5 e6d5",
+            "fen": "r4rk1/1p1q2pp/1b3n2/p1ppp3/P3P3/1P1P4/2N1B1PP/R1BQ1R1K w - - 0 18",
+            "label": "exd5",
+            "note": "Le moteur choisit ensuite Fg5, alors qu'une reprise reste légale. Le bilan concerne cette variante.",
+            "marks": [
+              {
+                "from": "e6",
+                "to": "d5",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "f4f5",
+            "d6d5",
+            "f5e6",
+            "f7e6",
+            "c4d5",
+            "e6d5",
+            "c1g5"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -2,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "La sortie fermée est un fait du plateau. La prise et le bilan apparaissent dans deux recherches après la menace ; cela ne prouve pas que toutes les défenses perdent ni que cette sortie était la seule bonne défense."
+      },
+      "capturedAt": "2026-10-04T00:05:43.198Z"
+    },
+    {
+      "id": "queen-closes-retreat",
+      "label": "14. Dd2",
+      "source": "FEN reconstruite depuis les captures : Dd2 vient de e2. Historique antérieur inconnu, horloges FEN conventionnelles. La suite est un témoin légal, pas un PGN utilisateur.",
+      "origin": "user-screenshot",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
+      "afterFen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P1Q1PPP/R4RK1 b - - 1 14",
+      "state": "supported",
+      "reason": "stable-loss",
+      "error": null,
+      "elapsedMs": 4945.131681999999,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "closed-retreat",
+        "role": "allows-loss",
+        "title": "Une retraite fermée avant l'attaque",
+        "summary": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3. Après f4, le pion noir en f4 attaque le fou blanc en e3. Dans la suite trouvée, fxe3 prend cette pièce. Après les reprises, le bilan depuis Dd2 est de −2 points pour les Blancs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "e2d2",
+          "change": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3.",
+          "consequence": "Dans la suite trouvée, fxe3 prend cette pièce. Après les reprises, le bilan depuis Dd2 est de −2 points pour les Blancs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P1Q1PPP/R4RK1 b - - 1 14",
+            "label": "Après Dd2",
+            "note": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3.",
+            "marks": [
+              {
+                "from": "e3",
+                "to": "d2",
+                "tone": "observation"
+              },
+              {
+                "from": "d2",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1P1Pp2/1B1PBN2/1P1Q1PPP/R4RK1 w - - 0 15",
+            "label": "f4",
+            "note": "Après f4, le pion noir en f4 attaque le fou blanc en e3.",
+            "marks": [
+              {
+                "from": "f4",
+                "to": "e3",
+                "tone": "threat"
+              },
+              {
+                "from": "d2",
+                "tone": "observation"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPPp2/1B2BN2/1P1Q1PPP/R4RK1 b - - 0 15",
+            "label": "d4",
+            "note": "",
+            "marks": [
+              {
+                "from": "d3",
+                "to": "d4",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4 f4e3",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPP3/1B2pN2/1P1Q1PPP/R4RK1 w - - 0 16",
+            "label": "fxe3",
+            "note": "fxe3 prend la pièce attaquée.",
+            "marks": [
+              {
+                "from": "f4",
+                "to": "e3",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4 f4e3 f2e3",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPP3/1B2PN2/1P1Q2PP/R4RK1 b - - 0 16",
+            "label": "fxe3",
+            "note": "",
+            "marks": [
+              {
+                "from": "f2",
+                "to": "e3",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "f5f4",
+            "d3d4",
+            "f4e3",
+            "f2e3"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -2,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "La sortie fermée est un fait du plateau. La prise et le bilan apparaissent dans deux recherches après la menace ; cela ne prouve pas que toutes les défenses perdent ni que cette sortie était la seule bonne défense."
+      },
+      "capturedAt": "2026-10-04T00:05:43.198Z"
+    },
+    {
+      "id": "queen-closes-retreat-black",
+      "label": "14… Dd7",
+      "source": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence.",
+      "origin": "transformed-regression",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14",
+      "afterFen": "r4rk1/1p1q1ppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K w - - 1 15",
+      "state": "indeterminate",
+      "reason": "unstable-search",
+      "error": null,
+      "elapsedMs": 5064.0161919999955,
+      "searches": 6,
+      "draft": null,
+      "capturedAt": "2026-10-04T00:05:43.198Z"
+    },
     {
       "id": "allows-fork-direct",
       "label": "1… Re8",
@@ -110,7 +540,8 @@
           "scope": "observed-consequence"
         },
         "limitation": "Cette conséquence apparaît dans les deux recherches après le coup joué. Elle n'établit ni une perte contre toutes les défenses, ni le meilleur coup de remplacement. "
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "allows-fork",
@@ -263,7 +694,8 @@
           "scope": "conditional-contribution"
         },
         "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "allows-fork-other-defence",
@@ -416,7 +848,8 @@
           "scope": "conditional-contribution"
         },
         "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "allows-fork-white",
@@ -433,7 +866,8 @@
       "error": null,
       "elapsedMs": 2810.666908000001,
       "searches": 8,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "allows-fork-false-defence",
@@ -541,7 +975,8 @@
           "scope": "observed-consequence"
         },
         "limitation": "Cette conséquence apparaît dans les deux recherches après le coup joué. Elle n'établit ni une perte contre toutes les défenses, ni le meilleur coup de remplacement. "
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "pin-retreat",
@@ -679,7 +1114,8 @@
           "scope": "conditional-contribution"
         },
         "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "fork-direct",
@@ -802,7 +1238,8 @@
           "scope": "conditional-contribution"
         },
         "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "fork-black",
@@ -925,7 +1362,8 @@
           "scope": "conditional-contribution"
         },
         "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "byrne-22",
@@ -942,7 +1380,8 @@
       "error": null,
       "elapsedMs": 3540.141029000002,
       "searches": 6,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "byrne-allows-fork",
@@ -959,7 +1398,8 @@
       "error": null,
       "elapsedMs": 3577.996403000001,
       "searches": 6,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "morphy-31",
@@ -1065,7 +1505,8 @@
           "scope": "short-forcing-route"
         },
         "limitation": "La preuve couvre toutes les réponses dans cet horizon de réponse puis mat immédiat. Elle ne prouve pas que l'alternative exclut un mat plus long. Le dernier coup de mat est complété par les règles, pas émis dans la variante du moteur."
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "allows-fork-direct",
@@ -1082,7 +1523,8 @@
       "error": null,
       "elapsedMs": 2384.1954430000005,
       "searches": 4,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "allows-fork",
@@ -1099,7 +1541,8 @@
       "error": null,
       "elapsedMs": 4781.697659000001,
       "searches": 8,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "allows-fork-other-defence",
@@ -1116,7 +1559,8 @@
       "error": null,
       "elapsedMs": 4750.662037000002,
       "searches": 8,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "allows-fork-white",
@@ -1133,7 +1577,8 @@
       "error": null,
       "elapsedMs": 4697.1618610000005,
       "searches": 8,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "allows-fork-false-defence",
@@ -1150,7 +1595,8 @@
       "error": null,
       "elapsedMs": 4743.493049000004,
       "searches": 8,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "pin-retreat",
@@ -1288,7 +1734,8 @@
           "scope": "conditional-contribution"
         },
         "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "fork-direct",
@@ -1305,7 +1752,8 @@
       "error": null,
       "elapsedMs": 3585.698999,
       "searches": 6,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "fork-black",
@@ -1322,7 +1770,8 @@
       "error": null,
       "elapsedMs": 3497.383848999998,
       "searches": 6,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "byrne-22",
@@ -1339,7 +1788,8 @@
       "error": null,
       "elapsedMs": 5998.472802000004,
       "searches": 7,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "byrne-allows-fork",
@@ -1356,7 +1806,8 @@
       "error": null,
       "elapsedMs": 4769.504013000005,
       "searches": 6,
-      "draft": null
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     },
     {
       "id": "morphy-31",
@@ -1462,7 +1913,8 @@
           "scope": "short-forcing-route"
         },
         "limitation": "La preuve couvre toutes les réponses dans cet horizon de réponse puis mat immédiat. Elle ne prouve pas que l'alternative exclut un mat plus long. Le moteur fournit les deux coups montrés."
-      }
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
     }
   ]
 }

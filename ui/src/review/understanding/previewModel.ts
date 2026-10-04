@@ -3,9 +3,10 @@ import type { PedagogicalDraft } from "./draftModel";
 /** Données de relecture seulement : le produit n'importe pas cet aperçu. */
 export type PreviewExample = {
   id: string;
+  capturedAt?: string;
   label: string;
   source: string;
-  origin: "constructed" | "published";
+  origin: "constructed" | "published" | "user-screenshot" | "transformed-regression";
   engine: string;
   engineName: string;
   engineHash: string;

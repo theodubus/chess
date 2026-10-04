@@ -97,7 +97,9 @@ function renderExample() {
   setText("comparison-text", draft?.comparisonText ?? "");
   setText("comparison-heading", draft?.role === "allows-loss" ? "Comment cet autre choix évite le problème" : "L’occasion que cet autre choix aurait manquée");
   setText("limitation", draft?.limitation ?? `Résultat : ${example.state} / ${example.reason}.${example.error ? ` ${example.error}` : ""}`);
-  setText("provenance", `${example.origin === "constructed" ? "Position construite pour le développement" : "Partie publiée utilisée pour le développement"}. ${example.source} Moteur : ${example.engineName}. ${example.searches} recherches, ${(example.elapsedMs / 1000).toFixed(1)} s. SHA-256 du binaire : ${example.engineHash}.`);
+  const origins = { constructed: "Position construite pour le développement", published: "Partie publiée utilisée pour le développement",
+    "user-screenshot": "Position reconstruite depuis une capture utilisateur", "transformed-regression": "Transformation d'une position de développement" };
+  setText("provenance", `${origins[example.origin]}. ${example.source} Mesure du ${new Date(example.capturedAt ?? data.generatedAt).toLocaleString("fr-FR")}. Moteur : ${example.engineName}. ${example.searches} recherches, ${(example.elapsedMs / 1000).toFixed(1)} s. SHA-256 du binaire : ${example.engineHash}.`);
   renderPosition();
 }
 function go(direction: number) {
