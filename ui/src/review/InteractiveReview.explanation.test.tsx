@@ -12,6 +12,7 @@ import { ScriptEngine } from "./understanding/tacticalTestEngine";
 import { restrictionInput, RestrictionTestEngine } from "./understanding/restrictionTestEngine";
 import { mateConsequenceInput, MateConsequenceTestEngine } from "./understanding/mateConsequenceTestEngine";
 import { ignoredThreatInput, IgnoredThreatTestEngine } from "./understanding/ignoredThreatTestEngine";
+import { movedPieceInput, MovedPieceTestEngine } from "./understanding/movedPieceTestEngine";
 import type { ConsequenceState } from "./usePedagogicalAnalysis";
 
 // Le contrôleur asynchrone a ses propres tests. Ce rendu vérifie que la revue
@@ -24,6 +25,21 @@ vi.mock("./usePedagogicalAnalysis", () => ({
   },
 }));
 beforeEach(() => { hook.state = "pending"; hook.result = null; hook.request.mockClear(); });
+it("explique l'échange défavorable de la pièce déplacée dans la vraie revue", async () => {
+  const input = movedPieceInput("capture"), source = input.source;
+  const board = boardFromCommand(source.position.command); board.move(source.position.played!);
+  const review = new GameReview(board.pgn());
+  review.results[0] = { score: { kind: "cp", value: 0 }, depth: 15, bestMove: "d1a1", bestSan: "Da1", variation: legalVariation(source.position.fen, ["d1a1"]) };
+  review.results[1] = { ...source.result!, score: { kind: "cp", value: -500 } }; review.state = "complete";
+  expect(review.annotations[0]?.category).toBe("blunder");
+  hook.result = await new PedagogicalAnalysis([10, 20]).analyse({ ...input.request, review, result: review.results[1], category: "blunder" }, async () => new MovedPieceTestEngine(input));
+  expect(hook.result?.status).toBe("supported"); hook.state = "supported";
+  const html = renderToStaticMarkup(<InteractiveReview review={review} selected={1} onSelect={() => {}} engineId="script"
+    orientation="white" showEvaluation={false} showAnnotations active side="both" treeCache={new Map()} />);
+  expect(html).toContain("tour noire en d4"); expect(html).toContain("pion noir en e5");
+  expect(html).toContain("−4 points pour les Blancs"); expect(html).toContain("Montrer pourquoi");
+  expect(html).not.toContain("Comparer les décisions");
+});
 it("montre la perte après une menace ignorée, avec une défense citée sans comparaison imposée", async () => {
   const input = ignoredThreatInput(), source = input.source;
   const board = boardFromCommand(source.position.command); board.move(source.position.played!);

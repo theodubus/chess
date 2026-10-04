@@ -20,7 +20,7 @@ export type ExplanationStep = {
 };
 export type PedagogicalDraft = {
   status: "draft";
-  family: "double-targets" | "exchanged-defender" | "blocked-retreat" | "closed-retreat" | "diverted-defender" | "deflection-mate" | "forced-mate" | "ignored-threat";
+  family: "double-targets" | "exchanged-defender" | "blocked-retreat" | "closed-retreat" | "diverted-defender" | "deflection-mate" | "forced-mate" | "ignored-threat" | "moved-piece-exposure";
   role: "creates-opportunity" | "allows-loss";
   title: string;
   summary: string;

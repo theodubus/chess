@@ -122,3 +122,33 @@ pièce déplacée, l'épisode matériel local et le bilan total. Un échange ini
 équilibré suivi de la perte d'une autre pièce ne doit pas être faussement décrit
 comme perte de matériel causée par cette première capture. Les meilleures
 réponses qui échangent la victime avec compensation restent également à traiter.
+
+## Troisième passage — pièce déplacée et échange local, 4 octobre
+
+`dev/pedagogy-audit-exposure-data.json`, aperçu
+`/dev/pedagogy-audit.html?sample=exposure`. Les six revues, évaluations et
+classifications initiales sont réutilisées ; les contrôles sont recalculés avec
+les deux mêmes binaires. Le rapport conserve les empreintes de la factorisation,
+de l'épisode de capture et de la comparaison séparant mats et CP. Il a été mesuré
+avant la dernière correction de contractions françaises dans les textes.
+
+| Moteur / partie | Conséquences soutenues | Inconnus | Indisponibles |
+|---|---:|---:|---:|
+| ShallowRed / 7b44wxzu | 0 | 17 | 0 |
+| ShallowRed / 7rzcutsf | 2 | 27 | 0 |
+| ShallowRed / 1hi3aveq | 2 | 14 | 0 |
+| Stockfish 16 / 7b44wxzu | 2 | 12 | 1 |
+| Stockfish 16 / 7rzcutsf | 3 | 30 | 3 |
+| Stockfish 16 / 1hi3aveq | 2 | 11 | 0 |
+
+**Onze soutenues, 111 non confirmées et quatre indisponibles**, sur les mêmes
+126 décisions. Trois nouvelles sorties concernent la pièce déplacée : 8… Cd4
+dans 7rzcutsf avec les deux moteurs et 27. Txe7+ dans 7b44wxzu avec Stockfish.
+Un ancien mécanisme, 26. Ff1 dans 7rzcutsf, est également confirmé par ShallowRed
+dans ce calcul. Les sept sorties déjà soutenues restent soutenues.
+
+Les quatre indisponibilités Stockfish comprennent trois délais partagés épuisés
+et une réponse sans score exact/PV utilisable. Plus de candidats peut augmenter
+le coût ; aucune explication n'est publiée après l'arrêt. Ces échecs restent
+comptés. Les témoins soutenus ne sont pas des vérités pédagogiques indépendantes :
+toutes les relectures sémantiques restent `pending`.

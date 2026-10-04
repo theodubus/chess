@@ -15,7 +15,7 @@ budgets : avant la décision, après le coup joué, après une défense trouvée
 le coup. Pas de MultiPV ni searchmoves. Les recherches doivent confirmer la même
 menace et le même bilan négatif court ; une même défense doit préserver la pièce
 dans ses réponses libres aux deux budgets. Une capture compensée, une suite
-tronquée, une autre menace, un mat ou une comparaison contradictoire n'est pas
+tronquée, une autre menace ou une comparaison contradictoire n'est pas
 transformé en raison.
 
 La comparaison vérifie le sens de préférence (marge minimale 100 CP aux deux
@@ -26,6 +26,14 @@ stabilité des faits matériels et stabilité de la préférence ; aucun nombre 
 n'est attribué au mécanisme. Une préférence inversée reste un refus. Les premiers
 rapports sont conservés dans `dev/ignored-threat-first-data.json` ; ce sont des
 essais de développement, pas un contrôle indépendant ni une preuve de progrès.
+
+La vérification partage maintenant `CaptureLossVerification` avec la pièce
+déplacée puis capturée. Le premier épisode doit être clôturé et négatif, ainsi
+que le bilan total. Une capture initiale neutre ne reçoit pas la perte ultérieure
+d'une autre pièce. Les issues de mat peuvent confirmer une préférence qualitative
+distincte des CP, mais ne produisent aucun gain matériel fictif ; voir
+`MOVED_PIECE_EXPOSURE.md`. Les deux mats du même camp restent sans préférence
+matérielle établie. Le brouillon revalide les mêmes faits avant chaque affichage.
 
 `ignoredThreatDraftWork` recalcule menace, questions, préservation et bilan avant
 de produire les mots et images. « Montrer pourquoi » commence après le coup joué

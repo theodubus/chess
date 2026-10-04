@@ -28,7 +28,9 @@ const sources = ["src/review/GameReview.ts", "src/review/understanding/Pedagogic
   "src/review/understanding/RelationVerification.ts", "src/review/understanding/RestrictionEffectVerification.ts",
   "src/review/understanding/divertedDefence.ts", "src/review/understanding/DivertedDefenceVerification.ts", "src/review/understanding/divertedDefenceDraft.ts",
   "src/review/understanding/ignoredThreat.ts", "src/review/understanding/IgnoredThreatVerification.ts", "src/review/understanding/ignoredThreatDraft.ts",
-  "src/review/understanding/recaptureObservation.ts"];
+  "src/review/understanding/recaptureObservation.ts", "src/review/understanding/movedPieceExposure.ts",
+  "src/review/understanding/captureEpisode.ts", "src/review/understanding/CaptureLossVerification.ts",
+  "src/review/understanding/captureLossDraft.ts", "src/review/understanding/scorePreference.ts", "src/review/understanding/MovedPieceVerification.ts"];
 document.implementationHashes = Object.fromEntries(await Promise.all(sources.map(async (path) => [path, hash(await readFile(resolve(root, path)))])));
 // Une ligne par position/décision garde le rapport lisible dans la PR sans
 // multiplier par les indentations les longues variantes et leurs historiques.

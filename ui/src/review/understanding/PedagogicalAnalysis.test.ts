@@ -11,8 +11,24 @@ import { explainMove } from "../explanations";
 import type { Category } from "../annotations";
 import type { Engine } from "../../engine/Engine";
 import { ignoredThreatInput, IgnoredThreatTestEngine } from "./ignoredThreatTestEngine";
+import { movedPieceInput, MovedPieceTestEngine } from "./movedPieceTestEngine";
 
 afterEach(() => vi.restoreAllMocks());
+it.each(["white", "black"])("un mat adverse plus long n'interdit pas d'expliquer l'échange court : %s", async id => {
+  const input = movedPieceInput(id), analysis = new PedagogicalAnalysis([10, 20]);
+  const result = await analysis.analyse({ ...input.request, result: { ...input.source.result!, score: { kind: "mate", value: id === "white" ? -8 : 8, winner: id === "white" ? "b" : "w" } }, category: "blunder" }, async () => new MovedPieceTestEngine(input, "mate-loss"));
+  expect(result, analysis.error).toMatchObject({ status: "supported", attempts: 1, searches: 6, checks: [{ family: "exposure", status: "supported" }] });
+  expect(result!.consequence!.summary).toContain("−5 points");
+  expect(result!.consequence!.summary).not.toMatch(/mat|forcé/i);
+});
+it.each(["white", "black"])("raccorde la pièce déplacée et perdue avec le vérificateur commun : %s", async id => {
+  const input = movedPieceInput(id), analysis = new PedagogicalAnalysis([10, 20]);
+  const result = await analysis.analyse({ ...input.request, result: { ...input.source.result!, score: { kind: "cp", value: id === "white" ? -500 : 500 } }, category: "blunder" }, async () => new MovedPieceTestEngine(input));
+  expect(result, analysis.error).toMatchObject({ status: "supported", searches: 6 });
+  expect(result!.checks).toMatchObject([{ family: "exposure", status: "supported" }]);
+  expect(result!.consequence!.title).toBe("Une pièce exposée à une capture");
+  expect(result!.consequence!.steps[0].fen).toBe(input.understanding.context.after.fen);
+});
 it.each(["white", "black"])("raccorde la menace ignorée au mauvais coup : %s", async id => {
   const input = ignoredThreatInput(id), analysis = new PedagogicalAnalysis([10, 20]);
   const result = await analysis.analyse({ ...input.request, result: { ...input.source.result!, score: { kind: "cp", value: id === "white" ? -500 : 500 } }, category: "blunder" }, async () => new IgnoredThreatTestEngine(input));

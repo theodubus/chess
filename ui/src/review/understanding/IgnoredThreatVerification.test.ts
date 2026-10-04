@@ -30,7 +30,7 @@ for (const id of ["white", "black", "history"]) {
     for (const step of view.steps) expect(boardFromCommand(step.command).fen()).toBe(step.fen);
   });
 }
-for (const [mode, reason] of [["different", "different-threat"], ["short", "unresolved"], ["reversal", "unstable-search"], ["no-defence", "no-defence"], ["same-decision", "no-defence"]] as const) {
+for (const [mode, reason] of [["different", "different-threat"], ["short", "episode-open"], ["reversal", "unstable-search"], ["no-defence", "no-defence"], ["same-decision", "no-defence"]] as const) {
   it(`s'abstient lorsque ${mode}`, async () => {
     const { report, input } = await verify("white", mode);
     expect(report).toMatchObject({ status: "indeterminate", reason });

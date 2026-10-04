@@ -84,7 +84,8 @@ it("raccorde seulement les mauvais coups avec mat adverse court, et réutilise l
   expect(eligibleConsequence(input)).toBe(true);
   expect(await analysis.analyse(input, factory), analysis.error).toMatchObject({ status: "supported", attempts: 1, searches: 4 });
   expect((await analysis.analyse(input, factory))?.status).toBe("supported"); expect(analysis.cached).toBe(true); expect(factory).toHaveBeenCalledTimes(4);
-  for (const score of [{ ...result.score, winner: source.position.turn }, { ...result.score, value: 4 }, { ...result.score, value: 0 }, { ...result.score, bound: "lower" as const }]) {
+  expect(eligibleConsequence({ ...input, result: { ...result, score: { ...result.score, value: -4 } } })).toBe(true);
+  for (const score of [{ ...result.score, winner: source.position.turn }, { ...result.score, value: 0 }, { ...result.score, bound: "lower" as const }]) {
     expect(eligibleConsequence({ ...input, result: { ...result, score } })).toBe(false);
     expect((await analysis.analyse({ ...input, result: { ...result, score } }, factory))?.attempts).toBe(0);
   }

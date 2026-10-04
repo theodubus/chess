@@ -18,6 +18,9 @@ import { divertedDefenceDraftWork } from "./divertedDefenceDraft";
 import { ignoredThreat } from "./ignoredThreat";
 import { IgnoredThreatVerification } from "./IgnoredThreatVerification";
 import { ignoredThreatDraftWork } from "./ignoredThreatDraft";
+import { movedPieceExposure } from "./movedPieceExposure";
+import { MovedPieceVerification } from "./MovedPieceVerification";
+import { captureLossDraftWork } from "./captureLossDraft";
 import { decisionContext, opposite } from "./context";
 import { boundedContinuation } from "./evidence";
 import type { PedagogicalDraft } from "./draftModel";
@@ -36,7 +39,7 @@ export type PedagogicalResult = {
   searches: number;
   elapsedMs: number;
   /** Diagnostic de développement, jamais utilisé comme explication utilisateur. */
-  checks?: { family: "tactic" | "relation" | "restriction" | "diversion" | "ignored-threat" | "mate"; status: string; reason: string; searches: number }[];
+  checks?: { family: "tactic" | "relation" | "restriction" | "diversion" | "ignored-threat" | "exposure" | "mate"; status: string; reason: string; searches: number }[];
 };
 export const adverseCategory = (category: Category | undefined) =>
   !!category && ["inaccuracy", "mistake", "blunder", "miss"].includes(category);
@@ -48,7 +51,7 @@ export function pedagogicalSignature(request: Omit<PedagogicalRequest, "review">
 export function eligibleConsequence(request: PedagogicalRequest) {
   const score = request.result?.score;
   const useful = score?.kind === "cp" || score?.kind === "mate" && score.winner === opposite(request.position.turn) &&
-    Number.isInteger(score.value) && Math.abs(score.value) >= 1 && Math.abs(score.value) <= 3;
+    Number.isSafeInteger(score.value) && Math.abs(score.value) >= 1;
   return adverseCategory(request.category) && !!request.position.played && !request.position.terminal && useful &&
     !!score && !score.bound && Number.isFinite(score.value) &&
     !!request.result?.bestMove && request.result.variation.length > 0;
@@ -73,7 +76,7 @@ export class PedagogicalAnalysis {
   private listeners = new Set<() => void>();
   state: "idle" | "extracting" | "verifying" | "complete" | "stopped" | "timed-out" | "error" = "idle";
   phase: WorkPhase = "context";
-  candidate: "tactic" | "relation" | "restriction" | "diversion" | "ignored-threat" | "mate" | null = null;
+  candidate: "tactic" | "relation" | "restriction" | "diversion" | "ignored-threat" | "exposure" | "mate" | null = null;
   error = "";
   cached = false;
   constructor(private budgets: [number, number] = [300, 900], private deadlineMs = 12000, private cacheSize = 32) {
@@ -140,7 +143,8 @@ export class PedagogicalAnalysis {
     try {
       this.state = "extracting"; this.publish();
       if (!current()) return null;
-      if (request.result!.score!.kind === "mate") {
+      const mateScore = request.result!.score!.kind === "mate";
+      if (mateScore && Math.abs(request.result!.score!.value) <= 3) {
         // Un score de mat ne se convertit pas en gain matériel. Vérifier sa
         // courte route indépendamment des détecteurs de pièces capturables.
         this.phase = "mate"; this.candidate = "mate"; this.state = "verifying"; this.publish();
@@ -179,7 +183,11 @@ export class PedagogicalAnalysis {
       const diversions = divertedDefenceSeed(understanding.context) ? [{ family: "diversion" as const, index: 0, rank: -1 }] : [];
       const ignored = ignoredThreat(understanding);
       const omissions = ignored ? [{ family: "ignored-threat" as const, index: 0, rank: 5 }] : [];
-      const candidates = [...diversions, ...tactics, ...restrictions, ...relations, ...omissions].sort((a, b) => a.rank - b.rank).slice(0, 2);
+      const moved = movedPieceExposure(understanding);
+      const exposures = moved ? [{ family: "exposure" as const, index: 0, rank: 6 }] : [];
+      // Au-delà de l'horizon de preuve légale du mat, un échange court peut
+      // rester explicable. Les autres vérificateurs ne comparent que des CP.
+      const candidates = (mateScore ? [...omissions, ...exposures] : [...diversions, ...tactics, ...restrictions, ...relations, ...omissions, ...exposures]).sort((a, b) => a.rank - b.rank).slice(0, 2);
       for (const candidate of candidates) {
         if (!current()) return null;
         this.candidate = candidate.family; this.state = "verifying"; this.publish();
@@ -189,7 +197,23 @@ export class PedagogicalAnalysis {
         // extérieur (historique + PV + score + verdict) peut sauter ce travail.
         const remaining = this.deadlineMs - (performance.now() - start);
         let draft: PedagogicalDraft | RelationDraft | null;
-        if (candidate.family === "ignored-threat") {
+        if (candidate.family === "exposure") {
+          const checker = new MovedPieceVerification(this.budgets, remaining);
+          this.cancelVerification = () => checker.stop();
+          const report = await checker.verify({ ...request, threat: moved! }, factory);
+          if (!current()) return null;
+          if (!report) {
+            this.error = checker.error;
+            if (checker.state === "timed-out") { expire(); return null; }
+            return finish("unavailable", null, attempts, searches);
+          }
+          searches += report.searches;
+          checks.push({ family: candidate.family, status: report.status, reason: report.reason, searches: report.searches });
+          const drafting = new AbortController();
+          this.cancelVerification = () => { checker.stop(); drafting.abort(); };
+          draft = await completeWork(captureLossDraftWork(request.position, report), drafting.signal);
+          if (!current()) return null;
+        } else if (candidate.family === "ignored-threat") {
           const checker = new IgnoredThreatVerification(this.budgets, remaining);
           this.cancelVerification = () => checker.stop();
           const report = await checker.verify({ ...request, threat: ignored! }, factory);

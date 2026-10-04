@@ -1,14 +1,15 @@
 import { expect, it } from "vitest";
 import data from "../../../dev/pedagogy-audit-data.json";
 import updatedData from "../../../dev/pedagogy-audit-ignored-data.json";
+import exposureData from "../../../dev/pedagogy-audit-exposure-data.json";
 import sample from "./amateurGames.json";
 import { auditReview, type AuditDocument } from "./auditModel";
 import { notablePositions } from "../study";
 import { boardFromCommand } from "../StudyTree";
 
 const document = data as unknown as AuditDocument;
-it("le second audit réutilise les évaluations et conserve les inconnus et repères légaux", () => {
-  const updated = updatedData as unknown as AuditDocument;
+it.each([updatedData, exposureData])("les audits suivants réutilisent les évaluations et gardent inconnus et repères légaux", data => {
+  const updated = data as unknown as AuditDocument;
   expect(updated.independentSemanticValidation).toBe(false);
   expect(updated.games).toHaveLength(document.games.length);
   for (const game of updated.games) {

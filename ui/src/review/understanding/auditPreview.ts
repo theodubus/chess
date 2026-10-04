@@ -78,8 +78,9 @@ document.addEventListener("keydown", (event) => {
   if (["ArrowLeft", "<", "ArrowRight", ">"].includes(event.key)) { event.preventDefault(); go(["ArrowLeft", "<"].includes(event.key) ? -1 : 1); }
 });
 try {
-  const updated = new URLSearchParams(location.search).get("sample") === "ignored";
-  const response = await fetch(updated ? "/dev/pedagogy-audit-ignored-data.json" : "/dev/pedagogy-audit-data.json");
+  const selectedSample = new URLSearchParams(location.search).get("sample");
+  const path = selectedSample === "exposure" ? "/dev/pedagogy-audit-exposure-data.json" : selectedSample === "ignored" ? "/dev/pedagogy-audit-ignored-data.json" : "/dev/pedagogy-audit-data.json";
+  const response = await fetch(path);
   if (!response.ok) throw new Error("Lancer npm run pedagogy:audit avant la relecture.");
   data = await response.json() as AuditDocument;
   if (data.schema !== 1 || data.independentSemanticValidation !== false || !data.games.length || data.games.some((g) => !g.complete)) throw new Error("Audit absent ou incomplet.");

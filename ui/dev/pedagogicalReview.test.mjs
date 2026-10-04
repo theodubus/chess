@@ -16,11 +16,12 @@ import { divertedDefenceCases } from "../src/review/understanding/divertedDefenc
 import { DivertedDefenceVerification } from "../src/review/understanding/DivertedDefenceVerification";
 import { divertedDefenceDraft } from "../src/review/understanding/divertedDefenceDraft";
 import { ignoredThreatCases } from "../src/review/understanding/ignoredThreatTestEngine";
+import { movedPieceCases } from "../src/review/understanding/movedPieceTestEngine";
 
 for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], ["Stockfish", process.env.CHESS_STOCKFISH_BINARY]]) {
-  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black", "fools-mate", "reverse-fools-mate", "legals-mate", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black", "ignored-white", "ignored-black", "ignored-history", "ignored-compensation"]) {
+  for (const id of ["allows-fork", "line-left", "queen-closes-retreat", "queen-closes-retreat-black", "fools-mate", "reverse-fools-mate", "legals-mate", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black", "ignored-white", "ignored-black", "ignored-history", "ignored-compensation", "moved-white", "moved-black", "moved-capture", "moved-non-local-loss", "moved-terminal-defence"]) {
     it.skipIf(!command)(`${name} : raccordement revue ${id}`, async () => {
-      const test = ignoredThreatCases.find(c => "ignored-" + c.id === id) ?? divertedDefenceCases.find((c) => "diverted-" + c.id === id) ?? mateConsequenceCases.find((c) => c.id === id) ?? (id === "allows-fork" ? tacticalInput(id).example.test : id.startsWith("queen-closes-retreat")
+      const test = movedPieceCases.find(c => "moved-" + c.id === id) ?? ignoredThreatCases.find(c => "ignored-" + c.id === id) ?? divertedDefenceCases.find((c) => "diverted-" + c.id === id) ?? mateConsequenceCases.find((c) => c.id === id) ?? (id === "allows-fork" ? tacticalInput(id).example.test : id.startsWith("queen-closes-retreat")
         ? corpus.find((c) => c.id === id) : { ...mechanismCases.find((c) => c.id === id), prefix: [] });
       const { position } = corpusInput(test), afterBoard = boardFromCommand(position.command);
       afterBoard.move(position.played);
@@ -63,7 +64,7 @@ for (const [name, command] of [["ShallowRed", process.env.CHESS_ENGINE_BINARY], 
         expect(result.attempts).toBeLessThanOrEqual(2); expect(result.searches).toBeLessThanOrEqual(14);
         const alternativePrefix = position.command + (position.command.includes(" moves ") ? " " : " moves ");
         expect(trace.every((c) => c === position.command || c === after.command || c.startsWith(after.command + " ") ||
-          analysis.candidate === "ignored-threat" && c.startsWith(alternativePrefix) && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(c.slice(alternativePrefix.length)))).toBe(true);
+          ["ignored-threat", "exposure"].includes(analysis.candidate) && c.startsWith(alternativePrefix) && /^[a-h][1-8][a-h][1-8][qrbn]?$/.test(c.slice(alternativePrefix.length)))).toBe(true);
         for (const c of trace) expect(() => boardFromCommand(c)).not.toThrow();
         const view = directExplanation(explainMove(position, null, request.result, null, false), result.consequence);
         expect(view.comparison).toBeUndefined(); expect(view.candidate).toBeUndefined();

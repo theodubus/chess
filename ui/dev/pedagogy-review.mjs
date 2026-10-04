@@ -23,16 +23,19 @@ try {
   const [{ tacticalInput }, { TacticalVerification, TacticalEffectVerification }, { tacticalDraft }, { MateVerification }, { mateDraft },
     { corpus, corpusInput }, { externalCorpus }, { decisionContext }, { tacticalConstraints }, { moveLabel }, { connectDevelopmentEngine },
     { understandDecision }, { RestrictionEffectVerification }, { restrictionDraft }, { divertedDefenceCases }, { DivertedDefenceVerification }, { divertedDefenceDraft },
-    { ignoredThreatCases }, { ignoredThreat }, { IgnoredThreatVerification }, { ignoredThreatDraft }] = await Promise.all([
+    { ignoredThreatCases }, { ignoredThreat }, { IgnoredThreatVerification }, { ignoredThreatDraft },
+    { movedPieceCases }, { movedPieceExposure }, { MovedPieceVerification }, { captureLossDraft }] = await Promise.all([
     load("tacticalCases"), load("TacticalVerification"), load("tacticalDraft"), load("MateVerification"), load("mateDraft"),
     load("corpus"), load("externalCorpus"), load("context"), load("constraints"), load("draftModel"), vite.ssrLoadModule("/src/engine/DevelopmentEngine.ts"),
     load("prototype"), load("RestrictionEffectVerification"), load("restrictionDraft"),
     load("divertedDefenceTestEngine"), load("DivertedDefenceVerification"), load("divertedDefenceDraft"),
     load("ignoredThreatTestEngine"), load("ignoredThreat"), load("IgnoredThreatVerification"), load("ignoredThreatDraft"),
+    load("movedPieceTestEngine"), load("movedPieceExposure"), load("MovedPieceVerification"), load("captureLossDraft"),
   ]);
   const allCases = ["queen-closes-retreat", "queen-closes-retreat-black", "allows-fork-direct", "allows-fork", "allows-fork-other-defence", "allows-fork-white", "allows-fork-false-defence", "pin-retreat", "fork-direct", "fork-black", "byrne-22", "byrne-allows-fork", "morphy-31", "diverted-white", "diverted-black", "diverted-compensation", "diverted-pin-white", "diverted-pin-black", "diverted-unconstrained", "diverted-relative"];
   allCases.push("diverted-pin-queen-white", "diverted-pin-queen-black");
   allCases.push("ignored-white", "ignored-black", "ignored-history", "ignored-compensation");
+  allCases.push(...movedPieceCases.map(c => "moved-" + c.id));
   const selectedCases = values.cases ? values.cases.split(",") : allCases;
   if (!selectedCases.length || selectedCases.some((id) => !allCases.includes(id))) throw new Error("Exemples demandés inconnus.");
   // Adaptateur Node de cet outil local, comme celui des essais UCI. Aucun
@@ -55,7 +58,12 @@ try {
       };
       for (const id of selectedCases) {
         let input, check, build, source, origin;
-        if (id.startsWith("ignored-")) {
+        if (id.startsWith("moved-")) {
+          const test = movedPieceCases.find(c => "moved-" + c.id === id), { position, result } = corpusInput(test), understanding = understandDecision(position, result);
+          input = { position, threat: movedPieceExposure(understanding), understanding };
+          check = new MovedPieceVerification(); build = (_understanding, report) => captureLossDraft(position, report);
+          source = test.notes; origin = "constructed";
+        } else if (id.startsWith("ignored-")) {
           const test = ignoredThreatCases.find(c => "ignored-" + c.id === id), { position, result } = corpusInput(test), understanding = understandDecision(position, result);
           input = { position, threat: ignoredThreat(understanding), understanding };
           check = new IgnoredThreatVerification(); build = (_understanding, report) => ignoredThreatDraft(position, report);
@@ -90,7 +98,7 @@ try {
             beforeFen: context.before.fen, afterFen: context.after.fen, state: report?.status ?? "unavailable",
             reason: report?.attribution?.reason ?? report?.reason ?? "engine-unavailable", error: check.error || null,
             elapsedMs: report?.elapsedMs ?? 0, searches: report?.searches ?? 0, draft,
-            ...(/^(diverted|ignored)-/.test(id) ? { verification: report } : {}) });
+            ...(/^(diverted|ignored|moved)-/.test(id) ? { verification: report } : {}) });
           console.log(`${engineName} • ${id} : ${draft ? "brouillon à relire" : "abstention"} (${report?.reason ?? check.error})`);
         } finally { check.stop(); }
       }
