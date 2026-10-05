@@ -559,6 +559,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-10-05 | **C36 — *improving* dans l'élagage par compte** : son seuil à moitié quand la position ne s'améliore pas, n° 9 (`fd501a8` contre `18a3805`) | **+5,65 Elo ± 3,75** sur 12 000 parties à `8+0,08`, homogènes (p = 0,18). Gain démontré, contre la base d'avant C32 : **au groupe de la composition** ; attendu −10 à +15 |
 | 2026-10-05 | **C37 — *improving* dans LMR** : un pli de réduction de plus quand la position ne s'améliore pas, n° 9 (`cefbcfb` contre `18a3805`) | **+0,75 Elo ± 3,69** sur 12 000 parties à `8+0,08` — aucun effet décelable, pour −16,6 % d'arbre : **non fusionné** ; attendu 0 à +20 |
 | 2026-10-05 | **C35 — *improving* dans la futilité inverse** : une profondeur de marge de moins quand la position s'améliore, n° 9 (`d0513da` contre `18a3805`) | **−8,51 Elo ± 3,76** sur 12 000 parties à `8+0,08`, borne haute −4,75 : **régression démontrée, non fusionné** — pour −16,9 % d'arbre, celui de C37 ; attendu −10 à +20 |
+| 2026-10-05 | **C39 — la futilité aux nœuds frontières** : à la profondeur ≤ 6, un coup tranquille qui ne donne pas échec se saute quand l'évaluation du nœud plus `140 + 20·d`, en unités du réseau, n'atteint pas `alpha`, n° 9 (`dfda892` contre `18a3805`) | **+23,72 Elo ± 3,75** sur 12 000 parties à `8+0,08` — l'amplitude hétérogène, de +16,2 à +31,4 selon le job (p = 0,029), le signe non : chaque job passe seul. Gain démontré, contre la base d'avant C32 : **au groupe de la composition** ; attendu 0 à +35 |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -802,9 +803,10 @@ dernière relève est faite.
 | **N° 9 — C37, *improving* dans LMR** | **37276974608, 37276979436** ; ajoutés **37280323583, 37280327267** | `cefbcfb` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **RELEVÉ à 14 h 25** — finis entre 12 h 24 et 13 h 04, 6,1 à 6,2 s par partie | **+0,35, +2,08, −0,23, +0,81 ; +0,75 ± 3,69 en commun**, homogènes. **Aucun effet décelable : non fusionné.** — *Attendu, écrit avant* : 0 à +20, ~+8. **Critère** : le même |
 | **N° 9 — C38, l'échange statique dans la recherche principale** | **37276982489, 37276986051** ; ajoutés **37280330067, 37280332840** | `5b5c13e` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **RELEVÉ à 14 h 25** — finis entre 12 h 24 et 13 h 04, 6,1 à 6,2 s par partie | **+3,13, +16,34, +10,54, +8,46 ; +9,61 ± 3,71 en commun** — homogènes à quatre matchs, p = 0,062 pour le plus grand écart. **Gain : au groupe de la composition.** — *Attendu, écrit avant* : 0 à +15, ~+7. **Critère** : le même |
 | **N° 9 — le crible de `search.rs` au test reformulé** | **37278951437** | `0c14b63`, entrée `commit` de `Mutation` | un job par fichier, puis `Verdict` | **RELEVÉ le 5 oct. à 10 h 35** — fini à 09 h 03, `search.rs` le plus long, 84 min | — **Prédiction, écrite pendant le vol, avant tout résultat** (le crible est parti à 07 h 39 sans elle) : `search.rs` à 39, les mêmes survivants — l'ancien test ne tuait rien que le banc figé ne tue déjà. **Fusion du test après le crible** — **la prédiction tient, exactement** : `search.rs` à 39, les survivants du balayage d'après N2L un pour un, aux mêmes lignes et colonnes ; tous les fichiers à leur plafond, total 140. Le test reformulé ne perd ni ne gagne un mutant : **fusion permise** |
-| **N° 9 — le balayage de mutation après la fusion de C32** | **37311609841** | `main` à `3cb9e99`, la PR #140 | un job par fichier, puis `Verdict` | **EN VOL** — lancé à 12 h 44, fin vers 14 h 10 | — **Prédiction, écrite avant** : chaque fichier à son plafond, `search.rs` à 39, total 140 — les survivants d'après le crible du test reformulé, décalés des lignes que C32 ajoute. Tout mutant de `null_move_reduction` change l'arbre, donc le banc figé, et son test en fixe les valeurs |
+| **N° 9 — le balayage de mutation après la fusion de C32** | **37311609841** | `main` à `3cb9e99`, la PR #140 | un job par fichier, puis `Verdict` | **RELEVÉ vers 16 h, ROUGE** — fini à 14 h 54, `search.rs` le plus long, 130 min ; issue **#142**, ouverte par le job `Verdict` | **La prédiction tombe d'UN mutant** : `search.rs` **40** contre 39 ; tous les autres fichiers à leur plafond, total **141**. Le survivant neuf : `ply + 1` en `ply * 1` dans l'appel du coup nul. C32 rend l'enfant du coup nul de profondeur ≤ 0 partout dans une recherche à la profondeur 6 ou 7 : le banc figé, à la 6, ne voit plus son `ply` — le banc à la 8, si (188 503 nœuds contre 188 566). C'est le mutant qu'A18 avait déjà caché le 24 sept. — *Prédiction, écrite avant* : chaque fichier à son plafond, `search.rs` à 39, total 140 ; <s>tout mutant de `null_move_reduction` change l'arbre, donc le banc figé</s> — vrai, mais elle ne regardait que le code que C32 écrit, pas celui dont il change l'exercice (`CLAUDE.md`, « un changement d'ARBRE déplace ce que les tests de nœuds voient ») |
 | **N° 9 — C36, *improving* dans l'élagage par compte** | **37280129729, 37280132506** ; ajoutés **37280318429, 37280320931** | `fd501a8` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **RELEVÉ à 14 h 25** — finis entre 13 h 01 et 13 h 05, 6,2 s par partie | **+11,82, +0,93, +6,37, +3,47 ; +5,65 ± 3,75 en commun** — homogènes, p = 0,18. **Gain : au groupe de la composition.** — *Attendu, écrit avant* : −10 à +15, ~+3. **Critère** : gain si la borne basse commune est au-dessus de zéro |
-| **N° 9 — C39, la futilité aux nœuds frontières** | **37297213900, 37297216607, 37297221303, 37297225434** | `dfda892` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 10 h 32, fin vers 16 h 20 | — *Attendu, écrit avant* : 0 à +35, ~+15 (majorant par l'arbre +41 à +71). **Critère** : gain si la borne basse commune est au-dessus de zéro |
+| **N° 9 — C39, la futilité aux nœuds frontières** | **37297213900, 37297216607, 37297221303, 37297225434** | `dfda892` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **RELEVÉ à 15 h 45** — finis entre 15 h 38 et 15 h 44, 6,1 à 6,2 s par partie | **+16,23, +19,13, +28,20, +31,35 ; +23,72 ± 3,75 en commun** — l'amplitude hétérogène, p = 0,029 pour le plus grand écart, le signe non : chaque job passe seul. **Gain : au groupe de la composition.** — *Attendu, écrit avant* : 0 à +35, ~+15 (majorant par l'arbre +41 à +71). **Critère** : gain si la borne basse commune est au-dessus de zéro |
+| **N° 9 — le groupe : C33, C34, C36, C38 et C39 composés sur C32** | *lancés juste après le commit qui écrit leur attendu* | `415f560` → `dec4672`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **À LANCER** | — *Attendu, écrit avant* : +20 à +55, ~+38 ; majorants, la somme des gains seuls +57,6 et l'arbre +80 à +140. **Critère, écrit le 5 oct. à 08 h 05** : fusion si la borne basse commune est au-dessus de zéro ; sinon, bissection par famille — coup nul (C33), *improving* (C36), le reste (C34, C38, C39). Puissance : un vrai +6 passe 88 fois sur cent (section n° 9, « la composition ») |
 | **C13 — N2L contre Stockfish bridé à 2850** | **37034309570** | `main` à `5f59449` (N2L, B8, les seaux, 64 Mio), 60+0,6, graine « auto » | 300, fastchess | **RELEVÉE le 5 oct.** — finie le 2 oct. à 21 h 20, EPYC 9V74, 2 095 287 n/s ; son attendu poussé avant le lancement (`10eeffc`) | **2 952 ± 30** — 169 − 83 − 48, 64,3 % : dans l'attendu, sous son centre ; **+10 ± 42 sur N2**, pas séparé de zéro. L'attendu appliquait le facteur des réseaux à des gains de recherche, qu'elle écrase davantage (section C13, « N2L »). Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : **~2 990, 2 940 à 3 050** ; l'écart à N2 contre le même adversaire ~+48, séparé de zéro au-delà de ~+42 — section C13, « N2L » |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
@@ -4993,6 +4995,207 @@ moteur perdu.
   passe par les familles écrites : coup nul (C33), *improving* (C36), le
   reste (C34, C38, et C39).
 
+### N° 9, troisième écran — VERDICT, 5 oct. 2026 : C39 +23,72 ± 3,75 Elo à `8+0,08` — au groupe ; l'amplitude hétérogène, le signe non
+
+Les quatre jobs relevés à 15 h 45, finis entre 15 h 38 et 15 h 44 : 3 000
+parties chacun, contre `18a3805`, **tous à la profondeur 13 en 250 ms**.
+Zéro perte au temps, zéro coup illégal, zéro moteur perdu.
+
+| run | runner | n/s au banc | Elo |
+|---|---|---|---|
+| 37297213900 | EPYC 7763 | 2 118 849 | +16,23 ± 7,57 |
+| 37297216607 | EPYC 9V45 | 3 379 394 | +19,13 ± 7,09 |
+| 37297221303 | EPYC 7763 | 2 108 305 | +28,20 ± 7,67 |
+| 37297225434 | EPYC 7763 | 2 138 804 | +31,35 ± 7,62 |
+| **en commun** | | | **+23,72 ± 3,75** |
+
+- **Par le critère écrit avant** — gain si la borne basse commune est
+  au-dessus de zéro : **C39 gagne**, `[+19,97 ; +27,47]`, et **rejoint le
+  groupe** de la composition avec C33, C34, C36 et C38.
+- **Dans son attendu, au-dessus de son centre** — 0 à +35, ~+15 —, et sous
+  son majorant par l'arbre, +41 à +71 : **33 à 58 %** du majorant, entre
+  C38 (44 à 80 %) et C36 (19 à 33 %). L'attendu tirait son escompte de LMP,
+  l'autre élagage aveugle réglé à 2 % des montées d'`alpha` détruites :
+  +17,24 pour −23 % d'arbre, soit 0,75 Elo par point d'arbre ; C39 en rend
+  0,82. Deux points, sur deux bases différentes, et C35 et C37 viennent de
+  montrer qu'un même arbre rend deux signes : une coïncidence jusqu'à
+  preuve du contraire, pas un taux.
+- **Hétérogène en AMPLITUDE, pas en signe — le cas de C33.**
+  `mettre-en-commun.sh` refuse la mise en commun : plus grand écart
+  z = 2,76, entre le premier et le dernier job, p = 0,029 sous un seul
+  effet, sous le seuil de 4,55 %. Les deux extrêmes ont joué sur le même
+  modèle de runner, EPYC 7763, à 2,12 et 2,14 M n/s et à la profondeur 13 :
+  le point de fonctionnement n'explique rien de visible. Chaque job passe
+  la borne seul — le plus faible a la sienne à +8,66 — : le verdict n'en
+  dépend pas. Rapporté tel quel.
+- **Deux refus sur les sept mesures à quatre jobs de la journée** — C33 et
+  C39. Sous un seul effet chacune, le seuil en refuse 4,55 % ; deux refus
+  ou plus sur sept arrivent alors **3,7 fois sur cent**. **Le livre ne
+  l'explique pas** — <span>raisonnement, confiance moyenne</span> : les
+  jobs d'un candidat jouent les MÊMES 500 ouvertures, trois fois chacune
+  (« Le livre, réutilisé ») ; la part de la variance qui tient aux
+  ouvertures leur est commune et s'annule dans leur différence — facteur
+  `1 − ρ` sur la variance de l'écart, à ρ ≈ 0,03 —, donc le partage rend
+  les écarts entre jobs un peu PLUS PETITS que leurs intervalles ne le
+  supposent, pas plus grands. Reste le hasard, à 4 %, ou un facteur qui
+  varie d'un runner à l'autre pendant le match et que l'étalonnage du
+  début ne voit pas — <span>inférence, confiance faible</span>. Aucun
+  verdict n'en dépend : le critère se lit sur la borne commune, et chaque
+  job refusé passe seul. **À surveiller** (« Ce qu'il faut surveiller »).
+- **Les avertissements de l'arbitre, lus** : 17 côté candidat, 19 côté
+  référence sur les quatre jobs, tous « PV continues after fifty-move rule »
+  ou « … threefold repetition », la nature connue depuis C31. Rien que le
+  candidat introduise.
+
+### N° 9, la composition — le groupe, attendu et critère écrits le 5 oct. avant de mesurer
+
+**Le candidat** : les cinq gagnants qui ne sont pas entrés seuls —
+C33, C34, C36, C38 et C39 —, composés sur `main` après C32 : `415f560`,
+révoqué par `7cba723` ; rustine `tools/attic/n9-groupe.patch`. **Mesuré
+contre `dec4672`**, le `main` de la composition : son parent, `f8babf0`,
+n'en diffère que par des tests et l'attic — le code de production est le
+même au bit près, `git diff` vide hors de `mod tests`.
+
+| membre | ce qu'il change | seul, contre `18a3805` |
+|---|---|---|
+| **C33** | le coup nul ne s'essaie qu'à partir de bêta | +11,12 ± 3,68 |
+| **C34** | réduction itérative interne, sans coup de la table | +7,50 ± 3,69 |
+| **C36** | *improving* dans l'élagage par compte | +5,65 ± 3,75 |
+| **C38** | une capture perdante se saute dans la recherche principale | +9,61 ± 3,71 |
+| **C39** | la futilité aux nœuds frontières | +23,72 ± 3,75 |
+
+**La composition n'a demandé aucun arbitrage de code** : les conflits ne
+portaient que sur le contexte — l'évaluation statique du nœud, calculée une
+fois et lue par la futilité inverse, la futilité aux nœuds frontières, la
+garde du coup nul et le drapeau *improving*. Banc : **48 497** nœuds à la
+profondeur 6 (69 304 sur `main`), **90 656** à la 7 (105 813).
+`verify.sh` entier vert.
+
+**Trois tests sont tombés en composant ; aucun n'a été assoupli.**
+
+1. **`la_futilite_inverse_retire_des_noeuds`** — sur le groupe sans C39, sa
+   position du banc, `BENCH_FENS[1]` à la profondeur 7, rend 74 947 nœuds
+   avec la futilité inverse, 63 074 sans. La règle de C36 dit quoi faire :
+   la sonde, avant toute reformulation. **Attendu et règle de décision
+   écrits à 14 h 40, avant de mesurer.** La sonde
+   (`tools/attic/n9-sonde-futilite-inverse.patch`) rejoue le protocole exact
+   du test — recherche froide, profondeur 7, faite main, avec et sans — sur
+   les 4 684 positions de parties de C36 :
+
+   | | positions que la futilité inverse grossit | Σ avec / Σ sans |
+   |---|---|---|
+   | `main` (`3cb9e99`) | 412, 8,8 % | 0,744 |
+   | le groupe sans C39 | 523, 11,2 % | 0,768 |
+
+   Dans l'attendu (0,60 à 0,95 ; 3 à 25 %). La propriété tient en général,
+   dans les deux arbres : le test ne tenait que par le choix de sa position.
+2. **`lelagage_par_compte_retire_des_noeuds`**, compté sur les six positions
+   du banc depuis `0c14b63` — sur le groupe avec C39, 90 656 avec, 74 629
+   sans. **Attendu et règle écrits à 15 h 05, avant de mesurer.** La sonde
+   de C36, sur les mêmes 4 684 positions : Σ avec / Σ sans **0,623**, et
+   l'élagage grossit l'arbre de **793 positions, 16,9 %** (`main` : 0,638
+   et 14,1 %). Dans l'attendu : la propriété tient, et le banc ne
+   l'échantillonne plus. **La règle écrite interdisait d'en tirer une
+   seconde reformulation** — un même test reformulé deux fois sur la foi de
+   l'arbre qui le fait tomber, c'est la définition de l'accommodement.
+3. **`le_fil_principal_publie_ses_noeuds_lui_aussi`** passe de la profondeur
+   7 à la 9 : il exige que la recherche franchisse plus de quatre intervalles
+   de publication — 8 192 nœuds — avant de vérifier ce qu'elle publie, et le
+   groupe n'en cherchait plus que 6 944 depuis la position initiale. C'est
+   la PRÉCONDITION du test qui bouge ; ses trois assertions de publication
+   restent les mêmes.
+
+**La décision pour les deux premiers, écrite à 15 h 55, avant de choisir
+l'échantillon**, sur une mesure obtenue SANS le groupe ni C39 : les données
+de `main` par position — la sonde de C36 à 07 h 30, avant que C39 existe ;
+celle de la futilité inverse à 14 h 45. La probabilité qu'une somme sur `k`
+positions tirées au hasard bascule — avec ≥ sans — y vaut, sur 200 000
+tirages seedés :
+
+| k | 6 | 12 | 18 | 24 | 36 |
+|---|---|---|---|---|---|
+| élagage par compte | 2,70 % | 0,57 % | 0,12 % | 0,026 % | 0,001 % |
+| futilité inverse | 3,08 % | 1,12 % | 0,41 % | 0,13 % | 0,015 % |
+
+**Une somme sur les six positions du banc est une loterie à ~3 % par
+changement d'arbre — sur `main` déjà, sans rien de neuf.** C'est cette
+mesure qui condamne la formulation, et elle ne doit rien au changement
+qu'on veut faire passer (`CLAUDE.md`, « Une reformulation justifiée par une
+mesure INDÉPENDANTE… »). La règle de choix, écrite avant : le plus petit `k`
+dont la bascule est ≤ 0,1 % pour les deux — **36** ; les positions
+d'indice ⌊i × 4 684 / 36⌋, prises sans regarder leurs résultats ;
+profondeur 7 et borne qualitative inchangées. Les deux tests se comptent
+désormais sur ces trente-six positions
+(`engine/tests/donnees/positions-de-partie.txt`, `556ecda`, sur `main`
+avant le groupe) ; sur elles, les données des sondes rendent avec / sans
+**0,675** et **0,786** sur `main`, **0,650** (élagage par compte, groupe
+avec C39) et **0,798** (futilité inverse, groupe sans C39). Les deux tests
+passent sur `main` comme sous le candidat.
+
+**Trois rustines de l'attic cessent de s'appliquer** sous le candidat —
+`b8-sonde-marges.patch`, `c12-pvs-2026-09-21.patch`,
+`n9-sonde-futilite-inverse.patch` : le contexte de `search.rs` a changé. Le
+candidat les déclare « non », avec le commit où elles se rejouent ; sa
+révocation les rend à « oui ».
+
+**L'arbre du groupe, mesuré avant le match** — le rejeu du n° 9, les 5 276
+recherches de parties, table conservée d'un coup à l'autre, contre `main`
+(l'arbre de C32, `r33` au nœud près) :
+
+| profondeur | `main` | le groupe | |
+|---|---|---|---|
+| 10 | 181 805 332 | 97 968 894 | **−46,1 %** |
+| 12 | 502 244 799 | 254 543 771 | **−49,3 %** |
+
+- **Les réductions se composent, elles ne se recouvrent pas — au total.**
+  Le produit des arbres de chaque membre seul, à la profondeur 12 contre
+  `18a3805`, vaut 0,510 ; le groupe rend 0,507 sur `main`. Ce que chacun
+  coupe, les autres le laissent en place.
+- **Sauf C33, et c'est mesuré** : sous C32, la garde du coup nul ne retire
+  plus que **0,8 %** de l'arbre à la profondeur 10 (`r33` contre
+  `gate+r33`, premier écran), contre 2,7 % à la même profondeur sur la base
+  d'avant — 3,8 % à la 12. C32 a rendu
+  les recherches de coup nul sous bêta presque toutes peu profondes : elles
+  pèsent 2,2 % de l'arbre au lieu de 8,4 %, et coupent dix fois moins —
+  20 623 coupures au lieu de 217 658 au rejeu à la profondeur 12.
+- **Majorant par l'arbre** : 1,33 pli au taux de 1,36 pli par doublement,
+  soit **+80 à +140** — moins serré que la somme des gains seuls.
+
+**Attendu, écrit avant le match** — <span>inférence, confiance
+faible</span> :
+- **Majorants** : la somme des gains seuls, **+57,6**, écrite au point 3 du
+  protocole ; l'arbre, +80 à +140.
+- **Par membre** : C33 **0 à +5** — son mécanisme a fondu, mesuré ; C36
+  **0 à +8** — il coupe des tranquilles là où C39 en saute déjà, même si
+  l'arbre n'en montre rien au total ; C34 **+3 à +11**, C38 **+5 à +13** et
+  C39 **+15 à +27**, qui touchent d'autres objets : leurs intervalles seuls,
+  à peine rognés. Somme : **+23 à +64**, centre ~+42.
+- **En tout : +20 à +55, ~+38.** Plus haut que l'escompte habituel, parce
+  que l'arbre se compose sans recouvrement ; plus bas que la somme des
+  centres, parce qu'un acquis a déjà fondu ici par empilement — l'élagage
+  delta sous l'échange statique — sans que les nœuds le disent d'avance.
+
+**Critère, écrit le 5 oct. à 08 h 05** (point 4 du protocole) : **le groupe
+se fusionne si sa borne basse commune est au-dessus de zéro.** Sinon,
+bissection par famille — coup nul (C33), *improving* (C36), le reste (C34,
+C38, C39) —, chaque moitié mesurée de la même façon. **Puissance** : quatre
+jobs de 3 000 parties contre `dec4672`, `8+0,08`, ± 3,75 environ — un vrai
++6 passe la borne 88 fois sur cent, un vrai +10 toujours.
+
+**Ce que le groupe ne dira pas : la part de chacun.** Un membre nul, ou
+légèrement négatif, passerait avec les autres : c'est le prix écrit de
+« grouper, puis bissecter à l'échec ». Les deux plus exposés sont C33, dont
+le mécanisme a fondu, et C36, que C39 recouvre. Ce que chacun retire encore
+de l'arbre du groupe se mesure en nœuds, sans match — le groupe privé d'un
+membre, rejoué : **à faire pendant le vol**, pour dire avant le verdict si
+un match de retrait vaudrait son coût.
+
+**Ce que la composition laisse à surveiller** : le test de C39,
+`la_futilite_aux_noeuds_frontieres_retire_des_noeuds`, se compte encore sur
+les six positions du banc — la forme dont la bascule vient d'être mesurée à
+~3 % pour ses deux voisins —, et `lelagage_delta_retire_des_noeuds`
+s'asserte encore sur une seule position (« Ce qu'il faut surveiller »).
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -6104,7 +6307,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **la vitesse de l'inférence** — proposé le 29 sept. | se convertit en plis par l'étalon, une fois mesurée | Le nœud au réseau coûte 0,873 fois le nœud fait main sur le binaire de base, **0,731 compilé pour AVX2** (26 sept.). Leviers : compiler pour le processeur de la machine qui joue, des mises à jour paresseuses de l'accumulateur. **Sans `unsafe`** — la lint l'interdit —, donc pas d'intrinsèques : la vectorisation passe par le compilateur. Exige le banc au réseau |
 | **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : FUSIONNÉS le 30 sept.** — +30,13 ± 5,60 Elo sous pression, +1,85 ± 5,51 au défaut ; **C30, la taille par défaut : FAIT le 30 sept.** — +2,90 ± 5,72, aucun coût démontré, **le défaut est à 64 Mio**. La question de la table à cadence longue est close ; au-delà de 60+0,6 — 40/15 —, c'est à l'interface de régler `Hash` | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |
 | **un livre d'ouvertures, pour les parties depuis la position initiale** — proposé le 29 sept., sur une question de Théo ; **l'issue pour Codex — le livre et `Hash` réglé selon la cadence, dans l'interface — : plus tard** (Théo, 30 sept.) | — **zéro dans toutes nos mesures, par construction** | **Nos matchs partent tous de positions de livre** (`tools/book.epd`), contre notre jumeau comme contre Stockfish bridé ; **les listes imposent le leur** — CCRL, lu par le moteur de recherche seulement, le site est bloqué d'ici : un livre générique commun, celui du moteur désactivé, l'apprentissage de livre et de positions interdit ; <span>confiance moyenne à élevée</span>. **Ce qu'il vaudrait depuis la position initiale — les parties de l'interface —, non mesuré** : du **temps**, le budget valant `restant / 12 + inc / 2` — par l'arithmétique de la formule, les huit premiers coups consomment **47 à 55 % de la base** à 80 – 100 % du budget dépensé, et le premier reçoit trois à six fois le temps du vingtième ; un livre rendrait ce temps aux premiers coups hors théorie. De la **variété** : à un fil et table vidée par `ucinewgame`, le moteur rejoue presque toujours la même ouverture. **Sa place est l'interface, pas le moteur** : dans le modèle UCI, c'est elle qui joue les coups de livre ; Stockfish n'en embarque pas ; et un livre qui APPREND des parties heurterait une décision tranchée — « pas de persistance » (`CLAUDE.md`). Donc un chantier de `ui/`. **Sa source** : un livre bâti par notre auto-jeu est le plus cher et le plus faible — il recopie nos opinions à cadence courte ; mieux, une base de parties fortes (celle de Lichess se dit dans le domaine public, à vérifier avant usage) ou des recherches profondes sur un petit arbre, sur runners. L'angle mort côté moteur — le réseau n'a jamais vu d'ouverture — est dans la section n° 7 : **sondé le 30 sept., rien de décelable** — rapporté à la faite main, le réseau perd même relativement moins en ouverture qu'en milieu de partie. Reste le temps et la variété, côté interface |
-| **techniques de recherche absentes** — proposé le 29 sept., **DÉCIDÉ n° 9** (Théo, 29 sept.) | non chiffrées | **EN COURS** — premier écran relevé le 5 oct. : **C32, la réduction du coup nul adaptée à la profondeur, +40,90 ± 5,34, FUSIONNÉ** ; la garde du coup nul +11,12 et l'IIR +7,50, au groupe de la composition ; <s>*improving*, l'échange statique hors quiescence et la futilité aux nœuds frontières en vol</s> **deuxième écran relevé le même jour** : l'échange statique hors quiescence +9,61 et *improving* dans l'élagage par compte +5,65, au groupe ; *improving* dans LMR +0,75, sans effet ; dans la futilité inverse −8,51, régression démontrée. **La PROCHAINE action** : relever la futilité aux nœuds frontières, puis composer le groupe et le mesurer contre `main` (section n° 9). <s>**Aucune n'est dans `search.rs`**</s> (recherche du 29 sept.) : extensions singulières, drapeau « *improving* », historique de correction de l'évaluation statique, réduction itérative interne, réduction du coup nul adaptée à la profondeur (`NULL_MOVE_REDUCTION` vaut 2, fixe), futilité aux nœuds frontières, élagage par l'échange statique hors quiescence, historique des captures, ProbCut. **Chacune un SPRT, séparément** : être standard ne prouve rien, PVS et l'extension d'échec en sont les démentis (`CLAUDE.md`). Mesurer le mécanisme d'abord, comme pour les autres |
+| **techniques de recherche absentes** — proposé le 29 sept., **DÉCIDÉ n° 9** (Théo, 29 sept.) | non chiffrées | **EN COURS** — premier écran relevé le 5 oct. : **C32, la réduction du coup nul adaptée à la profondeur, +40,90 ± 5,34, FUSIONNÉ** ; la garde du coup nul +11,12 et l'IIR +7,50, au groupe de la composition ; <s>*improving*, l'échange statique hors quiescence et la futilité aux nœuds frontières en vol</s> **deuxième écran relevé le même jour** : l'échange statique hors quiescence +9,61 et *improving* dans l'élagage par compte +5,65, au groupe ; *improving* dans LMR +0,75, sans effet ; dans la futilité inverse −8,51, régression démontrée. <s>**La PROCHAINE action** : relever la futilité aux nœuds frontières, puis composer le groupe et le mesurer contre `main`</s> **troisième écran relevé le même jour** : la futilité aux nœuds frontières +23,72, au groupe. **Le groupe** — C33, C34, C36, C38, C39 — **composé et mesuré contre `main`**, quatre jobs. **La PROCHAINE action** : le relever, et appliquer le critère écrit ; pendant le vol, l'arbre du groupe privé de chaque membre (section n° 9, « la composition »). <s>**Aucune n'est dans `search.rs`**</s> (recherche du 29 sept.) : extensions singulières, drapeau « *improving* », historique de correction de l'évaluation statique, réduction itérative interne, réduction du coup nul adaptée à la profondeur (`NULL_MOVE_REDUCTION` vaut 2, fixe), futilité aux nœuds frontières, élagage par l'échange statique hors quiescence, historique des captures, ProbCut. **Chacune un SPRT, séparément** : être standard ne prouve rien, PVS et l'extension d'échec en sont les démentis (`CLAUDE.md`). Mesurer le mécanisme d'abord, comme pour les autres |
 | **tablebases de finale** (reste de B6) | — | **reporté**, non chiffré |
 | **B5 — analyse dans l'interface ; A8 — transport interface ↔ moteur** | — | **côté `ui/`**, chantier mené séparément sous son propre `ui/CLAUDE.md` : listés ici pour que le tableau soit complet, pas pour être ordonnés avec le moteur |
 | **l'option `MultiPV`** — proposée par Théo le 2 oct. (« *possible / long une option pour exposer multi pv (…) sans pénaliser la perf du moteur ?* »), **mise au backlog le même jour** (« *pas tout de suite* ») | — une option d'analyse, sans Elo : à `MultiPV 1`, l'arbre est le même au nœud près | **Ce qui est dit, écrit avant d'écrire une ligne** : en UCI une option entière, défaut 1 — le comportement actuel. La racine boucle sur k lignes, chacune sa fenêtre d'aspiration centrée sur son score précédent, les coups des lignes déjà trouvées exclus ; **k plafonné au nombre de coups légaux** — sans quoi l'exclusion de tous les coups ferait annoncer un faux mat ou un faux pat ; les lignes 2 et suivantes n'écrivent pas l'entrée de la table à la racine, qui garde le vrai meilleur coup ; coup joué, ponder et pendule sur la ligne 1 ; fils auxiliaires inchangés ; le champ `multipv` des `info` seulement à partir de 2, la sortie par défaut identique à l'octet. **La preuve de « sans coût »** : banc identique (107 548 nœuds) et `tools/timing.sh` — un arbre inchangé ne passe pas par un SPRT. À `MultiPV k`, environ k fois le temps par profondeur : une option d'analyse, pas de jeu. Estimée à une demi-journée, crible de mutation compris — <span>confiance moyenne</span>. L'interface devra lire le champ `multipv` : à transmettre à Codex le jour venu |
@@ -6980,6 +7183,8 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 | **les artefacts des données NNUE expirent** | la première vague le **24 déc. 2026**, la vague au réseau le **28 déc. 2026** — les télécharger avant, là où elles serviront | GitHub les supprime sans prévenir. Les regénérer reste possible — le générateur au même commit et les K de chaque run (sections A21 et n° 7) — mais coûte leurs heures de runner : 22 h pour la première vague, 44 h pour la seconde |
 | le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
 | **les avertissements « PV continues after fifty-move rule / threefold repetition » côté ShallowRed** | à chaque relève de `match.yml` ou de `force.yml` : ils sont la **signature connue de C31**, non fusionné — ~1 pour 1 000 parties à `8+0,08` (5 en 6 000 côté référence), 2 en 300 à 60+0,6. Une hausse nette serait un fait neuf ; d'AUTRES natures d'avertissement, un défaut neuf | la relève les lit, rien d'autre : ils ne font échouer aucun job, et le 29 sept. ils ont été relevés sans être lus (`CLAUDE.md`) |
+| **les refus d'homogénéité à quatre jobs** | à chaque relève à quatre jobs : **deux sur sept le 5 oct.** (C33, C39), ce qui n'arrive que 3,7 fois sur cent sous un seul effet — et le livre partagé les rend plus rares, pas plus fréquents (section n° 9, troisième écran). Un troisième rendrait le hasard intenable : chercher alors ce qui varie d'un runner à l'autre PENDANT le match, que l'étalonnage du début ne voit pas | `mettre-en-commun.sh` refuse chaque mesure, mais rien ne compte les refus d'une mesure à l'autre ; et aucun verdict n'en dépend tant que chaque job passe seul |
+| **les tests « … retire des nœuds » encore comptés sur le banc, ou sur une position** | au prochain changement d'arbre qui en fait tomber un — ou avant, par la sonde sur `main` | `la_futilite_aux_noeuds_frontieres_retire_des_noeuds` (C39, qui entre avec le groupe) somme les six positions du banc, la forme dont la bascule vient d'être mesurée à ~3 % par changement d'arbre pour ses deux voisins ; `lelagage_delta_retire_des_noeuds` s'asserte sur une seule. Ni l'un ni l'autre n'est tombé — et le jour où l'un tombe, on accusera le changement plutôt que la formulation |
 
 ### B9 — écrit et mesuré le 23 sept. 2026 — état d'AVANT la fusion, gardé pour ses chiffres
 
