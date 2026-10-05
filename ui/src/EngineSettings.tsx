@@ -5,9 +5,15 @@ import type { EngineOptions, EngineCapabilities } from "./engine/options";
 export default function EngineSettings({
   options,
   onChange,
+  engineId = "default",
+  prefix = "engine",
+  match = false,
 }: {
   options: EngineOptions;
   onChange: (options: EngineOptions) => void;
+  engineId?: string;
+  prefix?: string;
+  match?: boolean;
 }) {
   const [capabilities, setCapabilities] = useState<EngineCapabilities | null>(
     null,
@@ -16,7 +22,9 @@ export default function EngineSettings({
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    void inspectDevelopmentEngine(controller.signal)
+    setCapabilities(null);
+    setError("");
+    void inspectDevelopmentEngine(controller.signal, engineId)
       .then((result) => {
         if (!controller.signal.aborted) setCapabilities(result.capabilities);
       })
@@ -24,7 +32,7 @@ export default function EngineSettings({
         if (!controller.signal.aborted) setError(error.message);
       });
     return () => controller.abort();
-  }, [attempt]);
+  }, [attempt, engineId]);
   const cores = Math.max(1, navigator.hardwareConcurrency || 1);
   const max = Math.min(cores, capabilities?.threads?.max ?? 1);
   return (
@@ -59,10 +67,9 @@ export default function EngineSettings({
         />
         <span className="switch-track" aria-hidden="true" />
         <span className="setting-copy">
-          <strong>Réfléchir pendant mon tour</strong>
+          <strong>{match ? "Réfléchir pendant le tour adverse" : "Réfléchir pendant mon tour"}</strong>
           <span className="setting-help">
-            Le moteur prépare sa réponse pendant votre réflexion. Votre pendule
-            continue normalement.
+            {match ? "Ce moteur prépare sa réponse pendant la recherche de l’autre moteur." : "Le moteur prépare sa réponse pendant votre réflexion. Votre pendule continue normalement."}
           </span>
         </span>
       </label>
@@ -71,8 +78,8 @@ export default function EngineSettings({
       )}
       <div className="thread-setting">
         <div className="setting-copy">
-          <label htmlFor="engine-threads">Cœurs de calcul</label>
-          <p className="setting-help" id="threads-help">
+          <label htmlFor={`${prefix}-threads`}>Cœurs de calcul</label>
+          <p className="setting-help" id={`${prefix}-threads-help`}>
             {capabilities?.threads
               ? `Jusqu’à ${max} cœurs logiques. Plus de cœurs sollicite davantage le processeur.`
               : "Un seul cœur tant que le moteur n’annonce pas cette option."}
@@ -99,10 +106,10 @@ export default function EngineSettings({
             −
           </button>
           <input
-            id="engine-threads"
+            id={`${prefix}-threads`}
             type="number"
             name="engine-threads"
-            aria-describedby="threads-help"
+            aria-describedby={`${prefix}-threads-help`}
             min={capabilities?.threads?.min ?? 1}
             max={max}
             step="1"

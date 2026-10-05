@@ -10,10 +10,12 @@ export default function AnalysisEngineSelect({
   value,
   disabled,
   onChange,
+  label = "Moteur d’analyse",
 }: {
   value: string;
   disabled: boolean;
   onChange: (id: string) => void;
+  label?: string;
 }) {
   const [choices, setChoices] = useState<AnalysisEngineChoice[]>([
     DEFAULT_ANALYSIS_ENGINE,
@@ -57,10 +59,10 @@ export default function AnalysisEngineSelect({
   return (
     <div className="analysis-engine-choice">
       <label>
-        Moteur d’analyse
+        {label}
         <select
           name="analysis-engine"
-          aria-label="Moteur d’analyse"
+          aria-label={label}
           value={value}
           disabled={disabled || loading}
           onChange={(event) => onChange(event.target.value)}
@@ -99,7 +101,7 @@ export default function AnalysisEngineSelect({
                 engine,
               ]);
               onChange(engine.id);
-              setAdded(`${engine.label} est prêt pour l’analyse.`);
+              setAdded(`${engine.label} est prêt à être utilisé.`);
               setPath("");
             } catch (error) {
               if (!mounted.current) return;

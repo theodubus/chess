@@ -11,9 +11,10 @@ import { DEFAULT_ENGINE_OPTIONS, type EngineOptions } from "./engine/options";
 import type { Engine } from "./engine/Engine";
 import type { Side } from "./engine/analysis";
 import { UciSession, type SessionSnapshot } from "./engine/UciSession";
+import { EngineMatch, type MatchPlayers } from "./engine/EngineMatch";
 
 export type GameOutcome = {
-  reason: "checkmate" | "draw" | "timeout" | "resignation";
+  reason: "checkmate" | "draw" | "timeout" | "resignation" | "stopped";
   winner: Side | null;
   result: "1-0" | "0-1" | "1/2-1/2" | "*";
 };
@@ -36,7 +37,11 @@ export class GameController {
   readonly clock: GameClock;
   timeResult = "";
   snapshot: SessionSnapshot | null = null;
-  mode: "local" | "fake" | null = null;
+  mode: "local" | "fake" | "match" | null = null;
+  paused = false;
+  private stopped = false;
+  private match?: EngineMatch;
+  private matchPlayers?: MatchPlayers;
   readonly humanSide: Side;
   premove: { from: Key; to: Key; promotion?: Promotion } | null = null;
   private startRequested = false;
@@ -71,11 +76,13 @@ export class GameController {
   get finished() {
     return (
       this.game.chess.isGameOver() ||
+      this.stopped ||
       this.clock.flagged !== null ||
       this.resigned !== null
     );
   }
   get outcome(): GameOutcome | null {
+    if (this.stopped) return { reason: "stopped", winner: null, result: "*" };
     const winner = this.resigned
       ? this.resigned === "w"
         ? "b"
@@ -104,7 +111,9 @@ export class GameController {
     return null;
   }
   get status() {
-    return this.resigned
+    return this.stopped ? "Match arrêté · Aucun résultat attribué"
+      : this.paused ? "Match en pause"
+      : this.resigned
       ? `Abandon · Les ${this.resigned === "w" ? "Noirs" : "Blancs"} gagnent`
       : this.timeResult || this.game.status;
   }
@@ -117,10 +126,111 @@ export class GameController {
     }
   }
   async reconnect() {
-    if (this.mode && this.factory && !this.finished)
+    if (this.isMatch && this.matchPlayers && !this.finished) {
+      await this.startMatch(this.matchPlayers);
+      return;
+    }
+    if (this.mode && this.mode !== "match" && this.factory && !this.finished)
       await this.connect(this.mode, this.factory);
   }
+  get isMatch() {
+    return this.mode === "match";
+  }
+  snapshotFor(color: Side) {
+    return this.isMatch
+      ? this.match?.snapshots[color] ?? null
+      : color !== this.humanSide ? this.snapshot : null;
+  }
+  isEnginePlayer(color: Side) {
+    return this.isMatch || !!this.mode && color !== this.humanSide;
+  }
+  async startMatch(players: MatchPlayers) {
+    this.startRequested = true;
+    this.clock.pause();
+    this.premove = null;
+    this.game.pending = null;
+    this.paused = false;
+    this.mode = "match";
+    this.matchPlayers = players;
+    const generation = ++this.generation;
+    const old = this.match;
+    const single = this.session;
+    this.session = undefined;
+    this.snapshot = { state: "connecting", name: "", error: "", log: [], analysis: null };
+    this.publish();
+    await Promise.allSettled([old?.dispose(), single?.dispose()]);
+    if (generation !== this.generation || this.disposed) return;
+    const match = new EngineMatch(players, {
+      board: () => this.game.chess,
+      position: () => this.positionCommand(
+        this.game.chess.history({ verbose: true }).map(move => move.lan),
+      ),
+      budget: () => {
+        this.tick();
+        if (this.finished) throw new Error("Partie terminée.");
+        return this.clock.budget();
+      },
+      ready: () => {
+        if (!this.finished) {
+          this.clock.start(this.game.chess.turn());
+          this.clock.resume(this.game.chess.turn());
+        }
+      },
+      update: snapshot => {
+        if (generation === this.generation) {
+          this.snapshot = snapshot;
+          this.publish();
+        }
+      },
+      failed: () => {
+        if (generation === this.generation) {
+          this.clock.pause();
+          this.tick();
+        }
+      },
+      play: (uci, name) => {
+        this.tick();
+        if (generation !== this.generation || this.finished) return;
+        const move = this.game.chess.moves({ verbose: true }).find(move => move.lan === uci);
+        if (!move) throw new Error(`Coup illégal : ${uci}. Match suspendu.`);
+        const before = this.clock.capture();
+        this.game.chess.move(move);
+        this.clock.completeMove(move.color, this.game.chess.isGameOver());
+        this.recordMove(before, name);
+        this.publish();
+      },
+    });
+    this.match = match;
+    await match.start();
+  }
+  pauseMatch() {
+    if (!this.isMatch || this.finished || this.paused) return;
+    this.clock.pause();
+    this.tick();
+    if (this.finished) return;
+    this.paused = true;
+    ++this.generation;
+    void this.match?.dispose();
+    if (this.snapshot) this.snapshot = { ...this.snapshot, state: "closed", analysis: null };
+    this.publish();
+  }
+  stopMatch() {
+    if (!this.isMatch || this.finished) return;
+    this.clock.pause();
+    this.tick();
+    if (this.finished) return;
+    this.stopped = true;
+    this.paused = false;
+    ++this.generation;
+    void this.match?.dispose();
+    if (this.snapshot) this.snapshot = { ...this.snapshot, state: "closed", analysis: null };
+    this.publish();
+  }
   resign() {
+    if (this.isMatch) {
+      this.stopMatch();
+      return;
+    }
     this.tick();
     if (this.finished) return;
     this.resigned = this.mode ? this.humanSide : this.game.chess.turn();
@@ -143,7 +253,7 @@ export class GameController {
     const session = this.session;
     this.session = undefined;
     this.searching = false;
-    await session?.dispose();
+    await Promise.allSettled([session?.dispose(), this.match?.dispose()]);
   }
 
   get canChangeTimeControl() {
@@ -167,6 +277,7 @@ export class GameController {
     const session = this.session;
     this.session = undefined;
     this.searching = false;
+    void this.match?.dispose();
     if (this.snapshot)
       this.snapshot = { ...this.snapshot, state: "closed", analysis: null };
     void session?.dispose();
@@ -188,6 +299,7 @@ export class GameController {
       !this.disposed &&
       !this.finished &&
       !!this.mode &&
+      !this.isMatch &&
       !this.game.pending &&
       this.game.chess.turn() !== this.humanSide &&
       ["ready", "thinking", "stopping"].includes(this.snapshot?.state ?? "")
@@ -244,6 +356,7 @@ export class GameController {
   get canMove() {
     return (
       !this.disposed &&
+      !this.isMatch &&
       !this.finished &&
       (!this.mode ||
         (["ready", "pondering"].includes(this.snapshot?.state ?? "") &&
@@ -505,6 +618,7 @@ export class GameController {
   }
 
   get canUndo() {
+    if (this.isMatch) return false;
     return (
       this.game.pending !== null ||
       (this.mode
@@ -513,7 +627,7 @@ export class GameController {
     );
   }
   get canRedo() {
-    return !this.game.pending && this.redos.length > 0;
+    return !this.isMatch && !this.game.pending && this.redos.length > 0;
   }
 
   undo() {
@@ -549,7 +663,7 @@ export class GameController {
     this.timeResult = "";
     this.resigned = null;
     // Remplacer la session annule la recherche et les évaluations de l'ancienne ligne.
-    if (this.mode && this.factory) void this.connect(this.mode, this.factory);
+    if (this.mode && this.mode !== "match" && this.factory) void this.connect(this.mode, this.factory);
     else {
       this.snapshot = null;
       this.publish();
@@ -576,14 +690,14 @@ export class GameController {
       ];
       return names.length
         ? names.join(" / ")
-        : this.mode && color !== this.humanSide
-          ? this.snapshot?.name || "Moteur UCI"
+        : this.isEnginePlayer(color)
+          ? this.snapshotFor(color)?.name || "Moteur UCI"
           : "Joueur local";
     };
     const result = this.outcome?.result ?? "*";
     const date = `${this.date.getFullYear()}.${String(this.date.getMonth() + 1).padStart(2, "0")}.${String(this.date.getDate()).padStart(2, "0")}`;
     const headers = {
-      Event: "Partie amicale",
+      Event: this.isMatch ? "Match de moteurs" : "Partie amicale",
       Site: "ShallowRed UI",
       Date: date,
       Round: "-",
@@ -601,7 +715,7 @@ export class GameController {
         : {}),
       Termination: this.clock.flagged
         ? "time forfeit"
-        : this.finished
+        : this.finished && !this.stopped
           ? "normal"
           : "unterminated",
     };
@@ -611,6 +725,7 @@ export class GameController {
       exported.setComment(
         `Abandon des ${this.resigned === "w" ? "Blancs" : "Noirs"}.`,
       );
+    if (this.stopped) exported.setComment("Match arrêté par l’utilisateur, sans résultat attribué.");
     if (this.timeResult)
       exported.setComment(`${this.timeResult}. Résultat non arbitré.`);
     // Le wrapping de commentaires de chess.js 1.4 peut coller un numéro de
@@ -627,13 +742,24 @@ export class GameController {
     this.clock.reset();
     this.timeResult = "";
     this.resigned = null;
+    this.stopped = false;
+    this.paused = false;
+    if (this.isMatch && this.matchPlayers) {
+      void this.startMatch(this.matchPlayers);
+      return;
+    }
     if (this.startRequested && !this.mode) this.clock.start("w");
     // Une nouvelle connexion isole la recherche annulée, sans ambiguïté de bestmove tardif.
-    if (this.mode && this.factory) void this.connect(this.mode, this.factory);
+    if (this.mode && this.mode !== "match" && this.factory) void this.connect(this.mode, this.factory);
     else this.publish();
   }
 
   async disconnect() {
+    if (this.isMatch) {
+      this.stopMatch();
+      await this.match?.dispose();
+      return;
+    }
     this.tick();
     this.clock.pause();
     this.premove = null;

@@ -158,6 +158,8 @@ summary:focus-visible,
   margin: 0 0 24px;
   min-width: 0;
 }
+.setup-card .match-engine-setup { border-top:1px solid #ffffff16; padding-top:16px; }
+.match-engine-setup .engine-settings { margin-top:12px; }
 .setup-card legend {
   font-size: 13px;
   font-weight: 600;

@@ -5,7 +5,7 @@ import GameSetup from "./GameSetup";
 import GameView from "./GameView";
 import Dialog from "./Dialog";
 import ImportPgnDialog from "./ImportPgnDialog";
-import { connectDevelopmentEngine } from "./engine/DevelopmentEngine";
+import { connectDevelopmentEngine, analysisEngineFactory } from "./engine/DevelopmentEngine";
 import {
   evaluationPreference,
   gameTimeControls,
@@ -25,6 +25,7 @@ export default function App() {
   const [problemOpened, setProblemOpened] = useState(false);
   const [setup, setSetup] = useState(readSetup);
   const [gameSetup, setGameSetup] = useState(readSetup);
+  const [gameVersion, setGameVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -75,7 +76,7 @@ export default function App() {
     setError("");
     setBusy(true);
     setScreen("setup");
-    const humanSide = resolveSide(next.side);
+    const humanSide = next.opponent === "match" ? "w" : resolveSide(next.side);
     const fresh = new GameController({
       timeControl: gameTimeControls(next, humanSide),
       humanSide,
@@ -92,6 +93,7 @@ export default function App() {
       void current.current?.dispose();
       current.current = fresh;
       setController(fresh);
+      setGameVersion(value => value + 1);
       setGameSetup(next);
       setReviewPgn("");
       setBusy(false);
@@ -109,7 +111,11 @@ export default function App() {
       }
     });
     candidate.current = { controller: fresh, unsubscribe };
-    await fresh.start(
+    if (next.opponent === "match") await fresh.startMatch({
+      w: { factory: analysisEngineFactory(next.matchEngines.w.id), options: next.matchEngines.w.options },
+      b: { factory: analysisEngineFactory(next.matchEngines.b.id), options: next.matchEngines.b.options },
+    });
+    else await fresh.start(
       next.opponent === "engine" ? connectDevelopmentEngine : undefined,
     );
     if (next.opponent === "human") activate();
@@ -124,7 +130,7 @@ export default function App() {
   function openReview() {
     if (!controller?.finished) return;
     setReviewPgn(controller.exportPgn());
-    setReviewSide(controller.mode ? controller.humanSide : "both");
+    setReviewSide(controller.mode && !controller.isMatch ? controller.humanSide : "both");
     setScreen("review");
   }
   function toggleEvaluation(view: "play" | "review", show: boolean) {
@@ -224,6 +230,7 @@ export default function App() {
       )}
       {screen === "game" && controller && (
         <GameView
+          key={gameVersion}
           controller={controller}
           showEvaluation={playEvaluation}
           onEvaluation={(show) => toggleEvaluation("play", show)}
@@ -264,8 +271,7 @@ export default function App() {
           onClose={() => setConfirmLeave(false)}
         >
           <p>
-            La partie sera terminée par abandon. La pendule continue tant que
-            vous n’avez pas confirmé.
+            {controller.isMatch ? "Le match sera arrêté sans attribuer de victoire. Vous pourrez exporter et analyser les coups joués." : "La partie sera terminée par abandon. La pendule continue tant que vous n’avez pas confirmé."}
           </p>
           <div className="dialog-actions">
             <button
@@ -276,7 +282,7 @@ export default function App() {
                 setScreen("setup");
               }}
             >
-              Abandonner et revenir à l’accueil
+              {controller.isMatch ? "Arrêter et revenir à l’accueil" : "Abandonner et revenir à l’accueil"}
             </button>
             <button
               className="secondary"

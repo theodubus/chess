@@ -8,12 +8,13 @@ import { DEFAULT_ENGINE_OPTIONS, type EngineOptions } from "./engine/options";
 import type { ClockControls } from "./GameClock";
 import type { Side } from "./engine/analysis";
 export type GameSetup = {
-  opponent: "engine" | "human";
+  opponent: "engine" | "human" | "match";
   side: Side | "random";
   timeControl: TimeControl;
   engineTimeControl: TimeControl | null;
   engineOptions: EngineOptions;
   handicap: Handicap;
+  matchEngines: Record<Side, { id: string; options: EngineOptions }>;
 };
 export const DEFAULT_SETUP: GameSetup = {
   opponent: "engine",
@@ -22,6 +23,10 @@ export const DEFAULT_SETUP: GameSetup = {
   engineTimeControl: null,
   engineOptions: DEFAULT_ENGINE_OPTIONS,
   handicap: null,
+  matchEngines: {
+    w: { id: "default", options: DEFAULT_ENGINE_OPTIONS },
+    b: { id: "default", options: DEFAULT_ENGINE_OPTIONS },
+  },
 };
 export function readPreference(key: string): string | null {
   try {
@@ -54,7 +59,7 @@ export function readSetup(): GameSetup {
       );
     if (
       timeControl &&
-      ["engine", "human"].includes(value.opponent) &&
+      ["engine", "human", "match"].includes(value.opponent) &&
       ["w", "b", "random"].includes(value.side)
     )
       return {
@@ -62,6 +67,10 @@ export function readSetup(): GameSetup {
         opponent: value.opponent,
         side: value.side,
         timeControl,
+        matchEngines: {
+          w: readMatchEngine(value.matchEngines?.w),
+          b: readMatchEngine(value.matchEngines?.b),
+        },
         engineTimeControl: value.engineTimeControl
           ? parseTimeControl(
               String(value.engineTimeControl.initialMs / 60000),
@@ -83,6 +92,20 @@ export function readSetup(): GameSetup {
   }
   return DEFAULT_SETUP;
 }
+function readMatchEngine(
+  value: { id?: string; options?: EngineOptions } | undefined,
+) {
+  const threads = value?.options?.threads;
+  return {
+    id: typeof value?.id === "string" && /^[a-zA-Z0-9_-]{1,64}$/.test(value.id)
+      ? value.id : "default",
+    options: {
+      ponder: value?.options?.ponder === true,
+      threads: threads !== undefined && Number.isSafeInteger(threads) && threads >= 1 && threads <= 1024
+        ? threads : 1,
+    },
+  };
+}
 export function resolveSide(
   side: GameSetup["side"],
   random = Math.random,
@@ -94,6 +117,7 @@ export function gameTimeControls(
   setup: GameSetup,
   humanSide: Side,
 ): ClockControls {
+  if (setup.opponent === "match") return { w: setup.timeControl, b: setup.engineTimeControl ?? setup.timeControl };
   const engine =
     setup.opponent === "engine"
       ? (setup.engineTimeControl ?? setup.timeControl)

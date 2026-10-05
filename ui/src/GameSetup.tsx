@@ -1,5 +1,7 @@
 import ArmyEditor from "./ArmyEditor";
 import EngineSettings from "./EngineSettings";
+import AnalysisEngineSelect from "./review/AnalysisEngineSelect";
+import { DEFAULT_ENGINE_OPTIONS } from "./engine/options";
 import { useState } from "react";
 import { parseTimeControl, TIME_CONTROLS } from "./GameClock";
 import type { GameSetup as Setup } from "./preferences";
@@ -39,11 +41,15 @@ export default function GameSetup({
   const [increment, setIncrement] = useState(
     String(initial.timeControl.incrementMs / 1000),
   );
-  const displayError = setup.opponent === "engine" ? error : "";
+  const displayError = setup.opponent !== "human" ? error : "";
   const valid = parseTimeControl(minutes, increment);
   const engineControl = parseTimeControl(engineMinutes, engineIncrement);
   const validClocks =
-    valid && (setup.opponent !== "engine" || !separate || engineControl);
+    valid && (setup.opponent === "human" || !separate || engineControl) &&
+    (setup.opponent !== "match" || Object.values(setup.matchEngines).every(player =>
+      Number.isSafeInteger(player.options.threads) &&
+      player.options.threads >= 1 && player.options.threads <= 1024,
+    ));
   const choose = (control: Setup["timeControl"]) => {
     setMinutes(String(control.initialMs / 60000));
     setIncrement(String(control.incrementMs / 1000));
@@ -53,22 +59,11 @@ export default function GameSetup({
       <div className="setup-intro">
         <p className="eyebrow">À votre rythme</p>
         <h1>Une nouvelle partie.</h1>
-        <p>Choisissez votre adversaire et prenez place.</p>
+        <p>{setup.opponent === "match" ? "Choisissez les deux moteurs et observez leur partie." : "Choisissez votre adversaire et prenez place."}</p>
       </div>
-      <form
-        className="setup-card"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (valid && validClocks && !busy)
-            onStart({
-              ...setup,
-              timeControl: valid,
-              engineTimeControl: separate ? engineControl : null,
-            });
-        }}
-      >
+      <div className="setup-card">
         <fieldset disabled={busy}>
-          <legend>Votre adversaire</legend>
+          <legend>Mode de jeu</legend>
           <div className="choice-row">
             <button
               type="button"
@@ -88,8 +83,32 @@ export default function GameSetup({
               <strong>♙ Deux joueurs</strong>
               <small>Sur cet appareil</small>
             </button>
+            <button
+              type="button" className="choice"
+              aria-pressed={setup.opponent === "match"}
+              onClick={() => setSetup({ ...setup, opponent: "match" })}
+            >
+              <strong>♞ Deux moteurs</strong>
+              <small>Moteur contre moteur</small>
+            </button>
           </div>
         </fieldset>
+        {setup.opponent === "match" && (["w", "b"] as const).map(color => (
+          <MatchEngineSetup key={color}
+            color={color} player={setup.matchEngines[color]} disabled={busy}
+            onChange={player => setSetup(current => ({
+              ...current,
+              matchEngines: { ...current.matchEngines, [color]: player },
+            }))}
+          />
+        ))}
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (valid && validClocks && !busy)
+              onStart({ ...setup, timeControl: valid, engineTimeControl: separate ? engineControl : null });
+          }}
+        >
         {setup.opponent === "engine" && (
           <fieldset disabled={busy}>
             <legend>Votre camp</legend>
@@ -151,9 +170,8 @@ export default function GameSetup({
         )}
         <fieldset disabled={busy}>
           <legend>
-            {separate && setup.opponent === "engine"
-              ? "Votre cadence"
-              : "Cadence"}{" "}
+            {setup.opponent === "match" ? separate ? "Cadence des Blancs" : "Cadence commune"
+              : separate && setup.opponent === "engine" ? "Votre cadence" : "Cadence"}{" "}
             <span>
               {minutes} min + {increment} s
             </span>
@@ -233,10 +251,10 @@ export default function GameSetup({
             </div>
           )}
         </fieldset>
-        {setup.opponent === "engine" && (
+        {setup.opponent !== "human" && (
           <>
             <fieldset disabled={busy} className="asymmetric-controls">
-              <legend>Temps du moteur</legend>
+              <legend>{setup.opponent === "match" ? "Temps des Noirs" : "Temps du moteur"}</legend>
               <label className="setting-switch">
                 <input
                   type="checkbox"
@@ -252,13 +270,13 @@ export default function GameSetup({
                 />
                 <span className="switch-track" aria-hidden="true" />
                 <span className="setting-copy">
-                  <strong>Donner une cadence différente au bot</strong>
+                  <strong>{setup.opponent === "match" ? "Cadence différente pour les Noirs" : "Donner une cadence différente au bot"}</strong>
                 </span>
               </label>
               {separate && (
                 <div className="choice-row custom-controls">
                   <label>
-                    Minutes du bot
+                    {setup.opponent === "match" ? "Minutes des Noirs" : "Minutes du bot"}
                     <input
                       name="engine-minutes"
                       type="number"
@@ -271,7 +289,7 @@ export default function GameSetup({
                     />
                   </label>
                   <label>
-                    Incrément du bot (secondes)
+                    {setup.opponent === "match" ? "Incrément des Noirs (secondes)" : "Incrément du bot (secondes)"}
                     <input
                       name="engine-increment"
                       type="number"
@@ -288,7 +306,7 @@ export default function GameSetup({
                 </div>
               )}
             </fieldset>
-            <fieldset disabled={busy}>
+            {setup.opponent === "engine" && <fieldset disabled={busy}>
               <details
                 className="engine-settings"
                 open={engineSettings}
@@ -306,7 +324,7 @@ export default function GameSetup({
                   />
                 )}
               </details>
-            </fieldset>
+            </fieldset>}
           </>
         )}
         {displayError && (
@@ -326,10 +344,10 @@ export default function GameSetup({
           type="submit"
         >
           {busy
-            ? "Préparation du moteur…"
+            ? setup.opponent === "match" ? "Préparation des moteurs…" : "Préparation du moteur…"
             : displayError
               ? "Réessayer"
-              : "Jouer"}
+              : setup.opponent === "match" ? "Lancer le match" : "Jouer"}
         </button>
         {busy && (
           <button type="button" className="secondary wide" onClick={onCancel}>
@@ -342,6 +360,7 @@ export default function GameSetup({
           </button>
         )}
       </form>
+      </div>
       {editingArmy && (
         <ArmyEditor
           initial={setup.handicap}
@@ -354,5 +373,32 @@ export default function GameSetup({
         />
       )}
     </section>
+  );
+}
+
+function MatchEngineSetup({ color, player, disabled, onChange }: {
+  color: "w" | "b";
+  player: Setup["matchEngines"]["w"];
+  disabled: boolean;
+  onChange: (player: Setup["matchEngines"]["w"]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const side = color === "w" ? "Blancs" : "Noirs";
+  return (
+    <fieldset disabled={disabled} className="match-engine-setup">
+      <AnalysisEngineSelect value={player.id} disabled={disabled} label={`Moteur des ${side}`}
+        onChange={id => onChange({
+          id, options: id === player.id ? player.options : DEFAULT_ENGINE_OPTIONS,
+        })}
+      />
+      <details className="engine-settings" open={open}
+        onToggle={event => setOpen(event.currentTarget.open)}>
+        <summary>Options des {side}</summary>
+        {open && <EngineSettings engineId={player.id} prefix={`match-${color}`} match
+          options={player.options}
+          onChange={options => onChange({ ...player, options })}
+        />}
+      </details>
+    </fieldset>
   );
 }

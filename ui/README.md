@@ -40,7 +40,7 @@ n’est pas choisi par cette interface.
 
 ### Choisir un moteur d’analyse, notamment Stockfish
 
-Le moteur de jeu reste celui passé au pont. Dans « Options d’analyse » →
+Contre un humain, le moteur de jeu reste celui passé au pont. Dans « Options d’analyse » →
 « Ajouter un moteur local », saisir le chemin absolu du binaire et cliquer
 « Vérifier et ajouter ». Le pont vérifie le fichier exécutable, le nom UCI,
 `uciok`, `readyok`, puis trois recherches (position initiale, camp noir,
@@ -91,8 +91,8 @@ pour obtenir un binaire adapté au système. Aucun binaire Stockfish n’est liv
 
 ## Préparer, jouer, revoir
 
-L’accueil ne montre pas de plateau. Choisir le moteur local ou deux joueurs
-sur cet appareil, puis la cadence. Contre le moteur, choisir Blancs, Noirs ou
+L’accueil ne montre pas de plateau. Choisir le moteur local, deux joueurs
+sur cet appareil ou deux moteurs, puis la cadence. Contre le moteur, choisir Blancs, Noirs ou
 Aléatoire. Le tirage au sort se fait une seule fois par nouvelle partie.
 Les réglages validés sont mémorisés localement ; valeurs initiales : moteur,
 Blancs, 5 minutes + 3 secondes. Tous les anciens préréglages et les cadences
@@ -138,6 +138,43 @@ dans l’analyse, sauf dans les dialogues et les champs de saisie.
 « Rejouer » et « Nouvelle partie » apparaissent dans un encart sur le plateau.
 On peut le masquer pour revoir la position ; le bouton « Résultat » le réaffiche.
 Parcourir les coups masque aussi cet encart.
+
+### Moteur contre moteur
+
+« Deux moteurs » permet de choisir un moteur UCI pour les Blancs et un autre
+pour les Noirs, dans la même liste que l’analyse et les problèmes. On peut
+ajouter un binaire via « Ajouter un moteur local », sans redémarrer. Choisir
+ShallowRed des deux côtés lance deux processus indépendants. La partie commence
+depuis la position classique, après que **les deux moteurs** ont terminé leur
+préparation UCI ; cette préparation ne consomme pas leurs pendules.
+
+Chaque camp possède ses propres options de cœurs et de réflexion pendant le
+tour adverse, vérifiées sur le moteur sélectionné. Valeurs initiales : un cœur
+et réflexion anticipée désactivée. « Cadence différente pour les Noirs » permet
+de déséquilibrer les pendules. Les réglages sont conservés pour la prochaine
+partie et pour « Rejouer ».
+
+Le plateau est en mode spectateur : les moteurs jouent automatiquement et les
+coups humains, prémouvements et reprises de coups sont bloqués. L’historique,
+les flèches au clavier, les dessins et le retournement restent disponibles.
+L’évaluation facultative est celle du moteur au trait, du point de vue des
+Blancs ; les deux moteurs peuvent donc avoir des évaluations différentes.
+La profondeur peut également être affichée, séparément pour chaque moteur.
+
+« Mettre en pause » fige les pendules et ferme les recherches des deux camps.
+« Reprendre le match » reconnecte les moteurs sur la même position et tout son
+historique, avec le temps restant. Une panne d’un seul moteur suspend tout le
+match ; « Reconnecter » reprend de la même façon. Une recherche interrompue
+repart à zéro : sa table de transposition n’est pas conservée lors d’une pause.
+
+« Arrêter le match » demande confirmation et conserve les coups avec le
+résultat PGN `*`, sans attribuer de victoire. Mat et nulles suivent les règles
+de chess.js ; comme dans les autres modes, un arrêt au temps reste explicitement
+« Résultat non arbitré » (`*`), avec `Termination "time forfeit"`.
+Le PGN contient les noms UCI des deux joueurs et leurs cadences. Après l’arrêt
+ou la fin, la partie peut être exportée et analysée avec le moteur choisi dans
+la revue ; les moments clés des deux camps sont pris en compte.
+Ce mode est un match ponctuel observable, sans tournoi ni mesure Elo.
 
 ## Gestes sur le plateau
 
@@ -615,6 +652,13 @@ Les tests couvrent règles, promotions, pendules, scores, transport UCI,
 annuler/refaire, choix du camp, abonnement/désabonnement, abandon, connexion
 tardive, reconnexion, export et analyse. Les tests de pont ouvrent des ports
 locaux. Les tests avec le vrai moteur sont ignorés sans `CHESS_ENGINE_BINARY`.
+
+`src/GameMatch.test.ts` couvre le match automatique : préparation des deux
+moteurs, pendules asymétriques, historique UCI, options distinctes, pause/reprise,
+arrêt, mat/nulle, erreurs, connexions tardives, temps écoulé et ponder.
+`dev/match.test.mjs` vérifie deux vrais processus ShallowRed jusqu’au mat, puis
+ShallowRed contre Stockfish avec ponder, pause/reprise, noms et export PGN.
+Ce second scénario nécessite aussi `CHESS_STOCKFISH_BINARY`.
 
 Avec `npm run dev -- --engines dev/engines.example.json` lancé depuis `ui/`,
 un moteur `stockfish` est configuré
