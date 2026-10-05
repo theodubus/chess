@@ -103,7 +103,10 @@ propose une aide pour lancer le pont. Le mode ne change jamais implicitement.
 
 En jeu, le plateau est centré, entouré des joueurs, des pendules et des commandes.
 L’historique est fermé par défaut : « Coups » l’ouvre à côté sur grand écran,
-ou en dessous sur téléphone. Les options regroupent retournement, évaluation,
+ou en dessous sur téléphone. Son bouton « Exporter PGN » télécharge toute la
+partie réelle, pendant le jeu ou après la fin, même quand une ancienne position
+est sélectionnée. Une partie en cours conserve le résultat `*` ; les noms,
+cadences et la position initiale personnalisée sont exportés. Les options regroupent retournement, évaluation,
 profondeur et export PGN. Le moteur factice est réservé
 aux tests ; les diagnostics UCI ne sont accessibles qu’en développement.
 
@@ -145,7 +148,7 @@ Parcourir les coups masque aussi cet encart.
 pour les Noirs, dans la même liste que l’analyse et les problèmes. On peut
 ajouter un binaire via « Ajouter un moteur local », sans redémarrer. Choisir
 ShallowRed des deux côtés lance deux processus indépendants. La partie commence
-depuis la position classique, après que **les deux moteurs** ont terminé leur
+depuis la position classique par défaut, après que **les deux moteurs** ont terminé leur
 préparation UCI ; cette préparation ne consomme pas leurs pendules.
 
 Chaque camp possède ses propres options de cœurs et de réflexion pendant le
@@ -199,7 +202,8 @@ de position. Ils ne changent ni les coups ni le PGN.
 
 ## Cadences et options du moteur
 
-« Éditer le camp » ouvre un échiquier de préparation : retirer plusieurs pièces,
+Le volet replié « Position de départ », en bas de la préparation, contient
+« Éditer le camp ». Il ouvre un échiquier de préparation : retirer plusieurs pièces,
 les déplacer en deux clics, ou les remplacer depuis la palette. Le camp humain
 est verrouillé. La configuration suit la couleur du moteur, y compris après
 un tirage aléatoire. Annuler conserve la configuration précédente ; Réinitialiser
@@ -207,6 +211,17 @@ restaure l’armée classique. Un roi par camp, au plus 16 pièces et 8 pions c�
 moteur, aucun pion en dernière rangée et aucun roi en échec au départ sont requis.
 La position et les droits de roque sont conservés dans le jeu, le ponder, le PGN
 et l’analyse. Les pièces retirées ne sont pas comptées comme des captures.
+
+En mode « Deux moteurs », le même volet propose « Éditer les Blancs » et
+« Éditer les Noirs ». Chaque camp se configure séparément sur la position
+complète ; les pièces adverses sont verrouillées, même si elles ont été déplacées
+dans une configuration précédente. La validation concerne les deux camps
+ensemble : aucun chevauchement, un roi par camp, aucune position initiale en
+échec ou déjà terminée. Les droits de roque suivent les pièces conservées sur
+leurs cases d’origine. La position est mémorisée pour « Rejouer », le PGN et
+l’analyse ; elle reste indépendante du choix des moteurs. « Revenir à la
+position classique » réinitialise les deux camps. Une position personnalisée
+est signalée dans le titre du volet même quand celui-ci reste replié.
 
 Dans la préparation d’une partie contre le bot, « Donner une cadence différente
 au bot » permet de choisir son temps initial et son incrément indépendamment des
@@ -233,6 +248,21 @@ les pendules. Un réglage non pris en charge produit une erreur explicite.
 Les cadences asymétriques sont exportées avec `TimeControl "?"` et les en-têtes
 complémentaires `WhiteTimeControl` / `BlackTimeControl`, en secondes, afin de ne
 pas annoncer à tort une cadence commune.
+
+Sous les cœurs, un conseil estime le maximum à utiliser à partir des cœurs
+**logiques annoncés par le navigateur** et des limites UCI du moteur. Il réserve
+un cœur pour l’interface quand c’est possible. Contre un humain, le ponder ne
+rajoute pas de moteur concurrent. Entre deux moteurs sans ponder, les recherches
+alternent et chacun peut utiliser le même budget. Dès qu’un des deux active le
+ponder, le conseil partage le budget et réduit encore sa part si l’autre moteur
+est déjà réglé plus haut. Sur un ou deux cœurs, les recherches simultanées et
+l’interface doivent partager les ressources.
+
+« Appliquer le conseil » change le réglage uniquement sur demande. Le conseil
+se met à jour avec les options de l’autre camp ; il ne les change pas automatiquement
+et ne constitue pas une mesure de performance. Le navigateur ne permet pas de
+connaître précisément les cœurs physiques, la charge actuelle ou les limites
+d’un conteneur. Le réglage reste manuel, dans les limites proposées par l’UI.
 
 ## Analyse et affichage
 

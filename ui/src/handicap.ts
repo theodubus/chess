@@ -10,6 +10,7 @@ import type { Side } from "./engine/analysis";
 // aléatoire de couleur ne doit pas changer l'armée préparée par le joueur.
 export type Army = Partial<Record<Square, PieceSymbol>>;
 export type Handicap = Army | null;
+export type MatchArmies = Record<Side, Handicap>;
 export const pieceNames: Record<PieceSymbol, string> = {
   p: "Pion",
   n: "Cavalier",
@@ -33,20 +34,29 @@ export function armySquare(square: Square, humanSide: Side): Square {
     : (`${square[0]}${9 - Number(square[1])}` as Square);
 }
 export function armyFen(army: Army, humanSide: Side): string {
+  return armiesFen(humanSide === "w" ? { w: null, b: army } : { w: army, b: null });
+}
+export function armiesFen(armies: MatchArmies): string {
   const chess = new Chess();
-  const color = humanSide === "w" ? "b" : "w";
   for (const piece of chess.board().flat())
-    if (piece?.color === color) chess.remove(piece.square);
-  for (const [square, type] of Object.entries(army))
-    chess.put({ type, color }, armySquare(square as Square, humanSide));
-  // Seules les pièces sur leurs cases d'origine peuvent encore roquer.
-  chess.setCastlingRights(color, {
-    k: army.e8 === "k" && army.h8 === "r",
-    q: army.e8 === "k" && army.a8 === "r",
-  });
+    if (piece && armies[piece.color]) chess.remove(piece.square);
+  for (const color of ["w", "b"] as const) {
+    const army = armies[color];
+    if (!army) continue;
+    for (const [square, type] of Object.entries(army)) {
+      const actual = armySquare(square as Square, color === "b" ? "w" : "b");
+      if (chess.get(actual)) throw new Error(`Les deux camps occupent la case ${actual}.`);
+      chess.put({ type, color }, actual);
+    }
+    // Seules les pièces sur leurs cases d'origine peuvent encore roquer.
+    chess.setCastlingRights(color, {
+      k: army.e8 === "k" && army.h8 === "r",
+      q: army.e8 === "k" && army.a8 === "r",
+    });
+  }
   return chess.fen();
 }
-export function armyError(value: unknown): string | null {
+function armyShapeError(value: unknown): string | null {
   if (!value || typeof value !== "object" || Array.isArray(value))
     return "Configuration invalide.";
   const entries = Object.entries(value);
@@ -65,22 +75,51 @@ export function armyError(value: unknown): string | null {
     return "Le moteur peut avoir au maximum 8 pions.";
   if (entries.some(([square, piece]) => piece === "p" && square[1] === "8"))
     return "Un pion ne peut pas être sur la dernière rangée.";
+  return null;
+}
+function positionError(fen: string): string | null {
+  const chess = new Chess(fen);
+  for (const piece of chess.board().flat())
+    if (
+      piece?.type === "k" &&
+      chess.isAttacked(piece.square, piece.color === "w" ? "b" : "w")
+    )
+      return "Déplacez les pièces : aucun roi ne doit commencer en échec.";
+  return chess.isGameOver() ? "La position doit permettre de commencer une partie." : null;
+}
+export function armyError(value: unknown): string | null {
+  const shape = armyShapeError(value);
+  if (shape) return shape;
   for (const side of ["w", "b"] as const) {
     try {
-      const chess = new Chess(armyFen(value as Army, side));
-      for (const piece of chess.board().flat())
-        if (
-          piece?.type === "k" &&
-          chess.isAttacked(piece.square, piece.color === "w" ? "b" : "w")
-        )
-          return "Déplacez les pièces : aucun roi ne doit commencer en échec.";
-      if (chess.isGameOver())
-        return "La position doit permettre de commencer une partie.";
+      const error = positionError(armyFen(value as Army, side));
+      if (error) return error;
     } catch {
       return "La position n’est pas valide.";
     }
   }
   return null;
+}
+export function matchArmyError(armies: MatchArmies): string | null {
+  for (const side of ["w", "b"] as const) {
+    if (armies[side] === null) continue;
+    const error = armyShapeError(armies[side]);
+    if (error) return `${side === "w" ? "Blancs" : "Noirs"} : ${error}`;
+  }
+  try { return positionError(armiesFen(armies)); }
+  catch (error) { return error instanceof Error ? error.message : "Position invalide."; }
+}
+export function matchPosition(armies: MatchArmies): string {
+  const error = matchArmyError(armies);
+  if (error) throw new Error(error);
+  return armiesFen(armies);
+}
+export function readMatchArmies(value: unknown): MatchArmies {
+  const original: MatchArmies = { w: null, b: null };
+  if (!value || typeof value !== "object" || Array.isArray(value)) return original;
+  const stored = value as Partial<MatchArmies>;
+  const armies = { w: stored.w ?? null, b: stored.b ?? null };
+  return matchArmyError(armies) ? original : armies;
 }
 export function handicapPosition(handicap: Handicap, humanSide: Side): string {
   if (!handicap) return DEFAULT_POSITION;

@@ -160,6 +160,9 @@ summary:focus-visible,
 }
 .setup-card .match-engine-setup { border-top:1px solid #ffffff16; padding-top:16px; }
 .match-engine-setup .engine-settings { margin-top:12px; }
+.position-settings summary { font-size:13px; color:#a9b8ae; cursor:pointer; }
+.position-settings summary span { margin-left:10px; font-size:11px; color:#e9cb87; }
+.position-settings .setting-help { margin:12px 0; }
 .setup-card legend {
   font-size: 13px;
   font-weight: 600;
@@ -1531,6 +1534,9 @@ dialog p {
 .setting-copy strong, .setting-copy label { color: #eeeae0; font-size: 14px; font-weight: 600; }
 .thread-setting { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid #ffffff20; border-radius: 12px; }
 .thread-setting .setting-copy { flex: 1; }
+.thread-advice { border-left:2px solid #d8bd8066; padding:0 0 0 12px; }
+.thread-advice strong { font-size:13px; }
+.thread-advice p { margin:6px 0; }
 .number-stepper { display: flex; flex: 0 0 auto; align-items: stretch; border: 1px solid #ffffff30; border-radius: 8px; overflow: hidden; }
 .number-stepper button { width: 36px; min-height: 42px; padding: 0; border: 0; border-radius: 0; font-size: 20px; }
 .number-stepper input { width: 48px; padding: 6px 2px; border: 0; border-inline: 1px solid #ffffff20; border-radius: 0; text-align: center; font-variant-numeric: tabular-nums; appearance: textfield; }

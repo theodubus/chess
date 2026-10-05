@@ -5,6 +5,7 @@ import { GameController } from "./GameController";
 import EvaluationBar from "./EvaluationBar";
 import App from "./App";
 import GameSetup from "./GameSetup";
+import GameHistory from "./GameHistory";
 import { DEFAULT_SETUP } from "./preferences";
 import type { SessionSnapshot } from "./engine/UciSession";
 
@@ -51,6 +52,27 @@ it("présente les deux moteurs et les commandes spectateur, avec les indices mas
   expect(stopped).not.toContain("Temps écoulé");
 });
 afterEach(() => vi.unstubAllGlobals());
+
+it("rend l’édition accessible dans un volet de préparation replié", () => {
+  for (const opponent of ["engine", "match"] as const) {
+    const html = renderToStaticMarkup(<GameSetup initial={{ ...DEFAULT_SETUP, opponent }}
+      busy={false} error="" onStart={() => {}} onCancel={() => {}} />);
+    expect(html).toContain('<details><summary>Position de départ');
+    expect(html).not.toContain('<legend>Camp du moteur</legend>');
+    if (opponent === "match") {
+      expect(html).toContain("Éditer les Blancs"); expect(html).toContain("Éditer les Noirs");
+    } else expect(html).toContain("Éditer le camp");
+  }
+});
+
+it("propose l’export PGN dans les coups pendant et après la partie, y compris en relecture", () => {
+  const controller = new GameController();
+  controller.move("e2", "e4");
+  const render = () => renderToStaticMarkup(<GameHistory controller={controller} selected={0} />);
+  expect(render()).toContain("Exporter PGN");
+  controller.resign();
+  expect(render()).toContain("Exporter PGN");
+});
 
 it("place les actions de fin de partie sur la surface du plateau et permet de masquer le résultat", () => {
   const controller = new GameController();

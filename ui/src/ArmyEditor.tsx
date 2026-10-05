@@ -6,11 +6,14 @@ import {
   armyError,
   armyFen,
   armySquare,
+  armiesFen,
+  matchArmyError,
   defaultArmy,
   pieceNames,
   sameArmy,
   type Army,
   type Handicap,
+  type MatchArmies,
 } from "./handicap";
 import type { Side } from "./engine/analysis";
 const roles = {
@@ -26,11 +29,13 @@ export default function ArmyEditor({
   humanSide,
   onSave,
   onClose,
+  matchArmies,
 }: {
   initial: Handicap;
   humanSide: Side;
   onSave: (army: Handicap) => void;
   onClose: () => void;
+  matchArmies?: MatchArmies;
 }) {
   const [army, setArmy] = useState<Army>(() => ({
     ...(initial ?? defaultArmy()),
@@ -38,7 +43,13 @@ export default function ArmyEditor({
   const [tool, setTool] = useState<PieceSymbol | "erase" | "move">("erase");
   const [selected, setSelected] = useState<Square | null>(null);
   const [notice, setNotice] = useState("");
-  const error = armyError(army);
+  const side = humanSide === "w" ? "b" : "w";
+  const currentArmies = matchArmies ? { ...matchArmies, [side]: army } : null;
+  const error = currentArmies ? matchArmyError(currentArmies) : armyError(army);
+  const opponent = matchArmies?.[humanSide] ?? defaultArmy();
+  const opposingSquares = new Set(Object.keys(opponent).map(square =>
+    armySquare(square as Square, humanSide === "b" ? "w" : "b"),
+  ));
   const color = humanSide === "w" ? "black" : "white";
   const files = humanSide === "w" ? "abcdefgh" : "hgfedcba";
   const ranks = humanSide === "w" ? "87654321" : "12345678";
@@ -77,11 +88,13 @@ export default function ArmyEditor({
     setSelected(null);
   }
   return (
-    <Dialog title="Éditer le camp du moteur" onClose={onClose}>
+    <Dialog title={matchArmies ? `Éditer le camp des ${side === "w" ? "Blancs" : "Noirs"}` : "Éditer le camp du moteur"} onClose={onClose}>
       <div className="army-editor">
         <p>
-          Choisissez un outil, puis cliquez sur une case. Votre camp est
-          verrouillé. La disposition suivra la couleur du moteur.
+          Choisissez un outil, puis cliquez sur une case.{" "}
+          {matchArmies
+            ? `Le camp des ${humanSide === "w" ? "Blancs" : "Noirs"} est verrouillé.`
+            : "Votre camp est verrouillé. La disposition suivra la couleur du moteur."}
         </p>
         <div className="army-tools" aria-label="Outils de placement">
           {(["erase", "move"] as const).map((value) => (
@@ -121,26 +134,26 @@ export default function ArmyEditor({
         </div>
         <div className="army-board">
           <Board
-            fen={armyFen(army, humanSide)}
+            fen={currentArmies ? armiesFen(currentArmies) : armyFen(army, humanSide)}
             orientation={humanSide === "w" ? "white" : "black"}
             turn="white"
           >
             <div
               className="army-squares"
-              aria-label="Position de départ du moteur"
+              aria-label={matchArmies ? `Position de départ des ${side === "w" ? "Blancs" : "Noirs"}` : "Position de départ du moteur"}
             >
               {[...ranks].flatMap((rank) =>
                 [...files].map((file) => {
                   const actual = `${file}${rank}` as Square;
                   const square = armySquare(actual, humanSide);
-                  const locked = Number(square[1]) <= 2;
+                  const locked = Number(square[1]) <= 2 || opposingSquares.has(actual);
                   return (
                     <button
                       type="button"
                       key={actual}
                       data-square={square}
                       disabled={locked}
-                      aria-label={`${actual} : ${locked ? "votre camp, verrouillé" : army[square] ? pieceNames[army[square]!] : "case vide"}`}
+                      aria-label={`${actual} : ${locked ? matchArmies ? "camp adverse, verrouillé" : "votre camp, verrouillé" : army[square] ? pieceNames[army[square]!] : "case vide"}`}
                       aria-pressed={selected === square}
                       onClick={() => edit(square)}
                     >

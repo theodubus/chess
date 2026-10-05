@@ -57,6 +57,7 @@ it("restaure les anciennes préférences sans activer de nouvelles options", () 
   expect(readSetup().engineOptions).toEqual({ ponder: false, threads: 1 });
   expect(readSetup().engineTimeControl).toBeNull();
   expect(readSetup().matchEngines).toEqual(DEFAULT_SETUP.matchEngines);
+  expect(readSetup().matchArmies).toEqual({ w: null, b: null });
 });
 
 it("restaure séparément le choix et les options des deux moteurs d’un match", () => {

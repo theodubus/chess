@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { inspectDevelopmentEngine } from "./engine/DevelopmentEngine";
 import type { EngineOptions, EngineCapabilities } from "./engine/options";
+import { logicalCores, threadAdvice } from "./engine/threadAdvice";
 
 export default function EngineSettings({
   options,
@@ -8,12 +9,14 @@ export default function EngineSettings({
   engineId = "default",
   prefix = "engine",
   match = false,
+  opponentOptions,
 }: {
   options: EngineOptions;
   onChange: (options: EngineOptions) => void;
   engineId?: string;
   prefix?: string;
   match?: boolean;
+  opponentOptions?: EngineOptions;
 }) {
   const [capabilities, setCapabilities] = useState<EngineCapabilities | null>(
     null,
@@ -33,8 +36,10 @@ export default function EngineSettings({
       });
     return () => controller.abort();
   }, [attempt, engineId]);
-  const cores = Math.max(1, navigator.hardwareConcurrency || 1);
+  const cores = logicalCores(navigator.hardwareConcurrency);
   const max = Math.min(cores, capabilities?.threads?.max ?? 1);
+  const advice = threadAdvice(cores, options, opponentOptions);
+  const recommended = Math.max(capabilities?.threads?.min ?? 1, Math.min(advice.limit, max));
   return (
     <div className="engine-settings-body">
       {!capabilities && !error && (
@@ -109,7 +114,7 @@ export default function EngineSettings({
             id={`${prefix}-threads`}
             type="number"
             name="engine-threads"
-            aria-describedby={`${prefix}-threads-help`}
+            aria-describedby={`${prefix}-threads-help${capabilities?.threads ? ` ${prefix}-thread-advice` : ""}`}
             min={capabilities?.threads?.min ?? 1}
             max={max}
             step="1"
@@ -137,6 +142,27 @@ export default function EngineSettings({
           </button>
         </div>
       </div>
+      {capabilities?.threads && (
+        <div className="thread-advice" id={`${prefix}-thread-advice`}>
+          <strong>Conseil : jusqu’à {recommended} cœur{recommended > 1 ? "s" : ""} pour ce moteur</strong>
+          <p className="setting-help">
+            {advice.detected} cœur{advice.detected > 1 ? "s" : ""} logique{advice.detected > 1 ? "s" : ""} annoncé{advice.detected > 1 ? "s" : ""} par le navigateur.
+            {advice.detected > (advice.shared ? 2 : 1)
+              ? " On garde une marge pour l’interface."
+              : " Les recherches et l’interface partagent le processeur."}{" "}
+            {opponentOptions
+              ? advice.shared
+                ? `Avec le ponder, les deux moteurs peuvent calculer simultanément. Le conseil partage les ressources et tient compte des ${advice.otherThreads} cœur${advice.otherThreads > 1 ? "s" : ""} de l’autre moteur.`
+                : "Sans ponder, les recherches alternent : chaque moteur peut utiliser le même budget de cœurs."
+              : options.ponder ? "Le moteur utilisera aussi ces cœurs pendant votre tour." : "Ce budget concerne le moteur pendant son tour."}
+          </p>
+          {options.threads > recommended && <p className="setting-help">Votre réglage dépasse ce conseil ; vous pouvez le conserver.</p>}
+          <button type="button" className="text-button" disabled={options.threads === recommended}
+            onClick={() => onChange({ ...options, threads: recommended })}>
+            Appliquer le conseil
+          </button>
+        </div>
+      )}
     </div>
   );
 }

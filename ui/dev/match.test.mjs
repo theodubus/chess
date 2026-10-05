@@ -5,6 +5,7 @@ import { WebSocket } from "ws";
 import { startBridge } from "./bridge.mjs";
 import { connectDevelopmentEngine } from "../src/engine/DevelopmentEngine";
 import { GameController } from "../src/GameController";
+import { defaultArmy, matchPosition } from "../src/handicap";
 
 function localSockets() {
   vi.stubGlobal("WebSocket", class extends WebSocket {
@@ -47,7 +48,9 @@ it.skipIf(!process.env.CHESS_ENGINE_BINARY)("fait jouer deux processus ShallowRe
 it.skipIf(!process.env.CHESS_ENGINE_BINARY || !process.env.CHESS_STOCKFISH_BINARY)("joue ShallowRed contre Stockfish avec ponder et reprend le match après une pause", async () => {
   const bridge = startBridge({ command: process.env.CHESS_ENGINE_BINARY, port: 0,
     engines: [{ id: "stockfish", label: "Stockfish", command: process.env.CHESS_STOCKFISH_BINARY }] });
-  const controller = new GameController({ timeControl: {
+  const white = defaultArmy(), black = defaultArmy(); delete white.a8; delete black.h8;
+  const initialFen = matchPosition({ w: white, b: black });
+  const controller = new GameController({ initialFen, timeControl: {
     w: { initialMs: 5000, incrementMs: 100 }, b: { initialMs: 3000, incrementMs: 50 },
   } });
   let goal = 4, receivedAnalysis = false;
@@ -81,6 +84,7 @@ it.skipIf(!process.env.CHESS_ENGINE_BINARY || !process.env.CHESS_STOCKFISH_BINAR
     const exported = new Chess(); exported.loadPgn(controller.exportPgn());
     expect(exported.fen()).toBe(controller.game.chess.fen());
     expect(exported.getHeaders()).toMatchObject({ Result: "*", WhiteTimeControl: "5+0.1", BlackTimeControl: "3+0.05" });
+    expect(exported.getHeaders()).toMatchObject({ SetUp: "1", FEN: initialFen });
     expect(exported.getHeaders().White).toMatch(/ShallowRed/i); expect(exported.getHeaders().Black).toMatch(/Stockfish/i);
     await vi.waitFor(() => expect(bridge.server.clients.size).toBe(0), { timeout: 4000 });
   } finally {

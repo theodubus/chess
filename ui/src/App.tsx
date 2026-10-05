@@ -1,4 +1,4 @@
-import { handicapPosition } from "./handicap";
+import { handicapPosition, matchPosition } from "./handicap";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { GameController } from "./GameController";
 import GameSetup from "./GameSetup";
@@ -83,7 +83,7 @@ export default function App() {
       initialFen:
         next.opponent === "engine"
           ? handicapPosition(next.handicap, humanSide)
-          : undefined,
+          : next.opponent === "match" ? matchPosition(next.matchArmies) : undefined,
       engineOptions: next.engineOptions,
     });
     const activate = () => {

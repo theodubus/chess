@@ -1,4 +1,4 @@
-import { readHandicap, type Handicap } from "./handicap";
+import { readHandicap, readMatchArmies, type Handicap, type MatchArmies } from "./handicap";
 import {
   DEFAULT_TIME_CONTROL,
   parseTimeControl,
@@ -15,6 +15,7 @@ export type GameSetup = {
   engineOptions: EngineOptions;
   handicap: Handicap;
   matchEngines: Record<Side, { id: string; options: EngineOptions }>;
+  matchArmies: MatchArmies;
 };
 export const DEFAULT_SETUP: GameSetup = {
   opponent: "engine",
@@ -23,6 +24,7 @@ export const DEFAULT_SETUP: GameSetup = {
   engineTimeControl: null,
   engineOptions: DEFAULT_ENGINE_OPTIONS,
   handicap: null,
+  matchArmies: { w: null, b: null },
   matchEngines: {
     w: { id: "default", options: DEFAULT_ENGINE_OPTIONS },
     b: { id: "default", options: DEFAULT_ENGINE_OPTIONS },
@@ -64,6 +66,7 @@ export function readSetup(): GameSetup {
     )
       return {
         handicap: readHandicap(value.handicap),
+        matchArmies: readMatchArmies(value.matchArmies),
         opponent: value.opponent,
         side: value.side,
         timeControl,

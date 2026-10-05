@@ -4,6 +4,7 @@ import { GameController, type EngineFactory } from "./GameController";
 import type { Engine } from "./engine/Engine";
 import type { EngineOptions } from "./engine/options";
 import type { Side } from "./engine/analysis";
+import { defaultArmy, matchPosition } from "./handicap";
 
 class MatchEngine implements Engine {
   commands: string[] = [];
@@ -122,6 +123,19 @@ it("recalcule le budget après l’attente de readyok", async () => {
   expect(b.commands.at(-1)).toBe("isready");
   now = 250; b.emit("readyok");
   expect(b.commands.at(-1)).toBe("go wtime 1000 btime 750 winc 0 binc 0");
+});
+
+it("envoie aux deux moteurs la position personnalisée complète et la conserve dans le PGN", async () => {
+  const white = defaultArmy(), black = defaultArmy(); delete white.a8; delete black.h8;
+  const initialFen = matchPosition({ w: white, b: black });
+  const { controller, w, b } = await setup({ initialFen });
+  expect(w.commands).toContain(`position fen ${initialFen}`);
+  await reply(controller, w, "e4"); await reply(controller, b, "e5");
+  expect(b.commands).toContain(`position fen ${initialFen} moves e2e4`);
+  await searching(w); controller.pauseMatch();
+  const restored = new Chess(); restored.loadPgn(controller.exportPgn());
+  expect(restored.getHeaders()).toMatchObject({ SetUp: "1", FEN: initialFen });
+  expect(restored.fen()).toBe(controller.game.chess.fen());
 });
 
 it("termine sur le mat, ferme les deux moteurs et exporte leurs noms et le résultat", async () => {

@@ -5,6 +5,8 @@ import { DEFAULT_ENGINE_OPTIONS } from "./engine/options";
 import { useState } from "react";
 import { parseTimeControl, TIME_CONTROLS } from "./GameClock";
 import type { GameSetup as Setup } from "./preferences";
+import { matchArmyError } from "./handicap";
+import type { EngineOptions } from "./engine/options";
 export default function GameSetup({
   initial,
   busy,
@@ -21,7 +23,7 @@ export default function GameSetup({
   onReturn?: () => void;
 }) {
   const [setup, setSetup] = useState(initial);
-  const [editingArmy, setEditingArmy] = useState(false);
+  const [editingArmy, setEditingArmy] = useState<"local" | "w" | "b" | null>(null);
   const [engineSettings, setEngineSettings] = useState(false);
   const [separate, setSeparate] = useState(initial.engineTimeControl !== null);
   const [engineMinutes, setEngineMinutes] = useState(
@@ -44,12 +46,15 @@ export default function GameSetup({
   const displayError = setup.opponent !== "human" ? error : "";
   const valid = parseTimeControl(minutes, increment);
   const engineControl = parseTimeControl(engineMinutes, engineIncrement);
+  const positionError = setup.opponent === "match" ? matchArmyError(setup.matchArmies) : null;
+  const customPosition = setup.opponent === "match"
+    ? !!(setup.matchArmies.w || setup.matchArmies.b) : !!setup.handicap;
   const validClocks =
     valid && (setup.opponent === "human" || !separate || engineControl) &&
     (setup.opponent !== "match" || Object.values(setup.matchEngines).every(player =>
       Number.isSafeInteger(player.options.threads) &&
       player.options.threads >= 1 && player.options.threads <= 1024,
-    ));
+    )) && !positionError;
   const choose = (control: Setup["timeControl"]) => {
     setMinutes(String(control.initialMs / 60000));
     setIncrement(String(control.incrementMs / 1000));
@@ -96,6 +101,7 @@ export default function GameSetup({
         {setup.opponent === "match" && (["w", "b"] as const).map(color => (
           <MatchEngineSetup key={color}
             color={color} player={setup.matchEngines[color]} disabled={busy}
+            opponentOptions={setup.matchEngines[color === "w" ? "b" : "w"].options}
             onChange={player => setSetup(current => ({
               ...current,
               matchEngines: { ...current.matchEngines, [color]: player },
@@ -131,41 +137,6 @@ export default function GameSetup({
                 </button>
               ))}
             </div>
-          </fieldset>
-        )}
-        {setup.opponent === "engine" && (
-          <fieldset disabled={busy}>
-            <legend>Camp du moteur</legend>
-            <div className="army-summary">
-              <div>
-                <strong>
-                  {setup.handicap
-                    ? "Position personnalisée"
-                    : "Position classique"}
-                </strong>
-                <p className="setting-help">
-                  {setup.handicap
-                    ? "Votre configuration est prête à jouer."
-                    : "Choisissez les pièces et leur disposition."}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => setEditingArmy(true)}
-              >
-                Éditer le camp
-              </button>
-            </div>
-            {setup.handicap && (
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => setSetup({ ...setup, handicap: null })}
-              >
-                Revenir à la position classique
-              </button>
-            )}
           </fieldset>
         )}
         <fieldset disabled={busy}>
@@ -327,6 +298,32 @@ export default function GameSetup({
             </fieldset>}
           </>
         )}
+        {setup.opponent !== "human" && (
+          <fieldset disabled={busy} className="position-settings">
+            <details>
+              <summary>Position de départ{customPosition && <span>Personnalisée</span>}</summary>
+              <p className="setting-help">
+                {customPosition ? "Une position personnalisée sera utilisée." : "La partie commence avec toutes les pièces."}{" "}
+                {setup.opponent === "match" ? "Vous pouvez modifier chacun des deux camps." : "Vous pouvez modifier les pièces du moteur ; votre camp reste intact."}
+              </p>
+              {setup.opponent === "match" ? (
+                <div className="choice-row">
+                  <button type="button" className="secondary" onClick={() => setEditingArmy("w")}>Éditer les Blancs</button>
+                  <button type="button" className="secondary" onClick={() => setEditingArmy("b")}>Éditer les Noirs</button>
+                </div>
+              ) : (
+                <button type="button" className="text-button" onClick={() => setEditingArmy("local")}>Éditer le camp</button>
+              )}
+              {customPosition && <button type="button" className="text-button"
+                onClick={() => setSetup(current => setup.opponent === "match"
+                  ? { ...current, matchArmies: { w: null, b: null } }
+                  : { ...current, handicap: null })}>
+                Revenir à la position classique
+              </button>}
+              {positionError && <p role="alert" className="setting-help">{positionError}</p>}
+            </details>
+          </fieldset>
+        )}
         {displayError && (
           <div className="connection-error" role="alert">
             <p>{displayError}</p>
@@ -363,12 +360,15 @@ export default function GameSetup({
       </div>
       {editingArmy && (
         <ArmyEditor
-          initial={setup.handicap}
-          humanSide={setup.side === "b" ? "b" : "w"}
-          onClose={() => setEditingArmy(false)}
+          initial={editingArmy === "local" ? setup.handicap : setup.matchArmies[editingArmy]}
+          humanSide={editingArmy === "local" ? setup.side === "b" ? "b" : "w" : editingArmy === "w" ? "b" : "w"}
+          matchArmies={editingArmy === "local" ? undefined : setup.matchArmies}
+          onClose={() => setEditingArmy(null)}
           onSave={(handicap) => {
-            setSetup({ ...setup, handicap });
-            setEditingArmy(false);
+            setSetup(current => editingArmy === "local"
+              ? { ...current, handicap }
+              : { ...current, matchArmies: { ...current.matchArmies, [editingArmy]: handicap } });
+            setEditingArmy(null);
           }}
         />
       )}
@@ -376,11 +376,12 @@ export default function GameSetup({
   );
 }
 
-function MatchEngineSetup({ color, player, disabled, onChange }: {
+function MatchEngineSetup({ color, player, disabled, onChange, opponentOptions }: {
   color: "w" | "b";
   player: Setup["matchEngines"]["w"];
   disabled: boolean;
   onChange: (player: Setup["matchEngines"]["w"]) => void;
+  opponentOptions: EngineOptions;
 }) {
   const [open, setOpen] = useState(false);
   const side = color === "w" ? "Blancs" : "Noirs";
@@ -396,6 +397,7 @@ function MatchEngineSetup({ color, player, disabled, onChange }: {
         <summary>Options des {side}</summary>
         {open && <EngineSettings engineId={player.id} prefix={`match-${color}`} match
           options={player.options}
+          opponentOptions={opponentOptions}
           onChange={options => onChange({ ...player, options })}
         />}
       </details>
