@@ -1,0 +1,102 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index b0894b0..a28b44c 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -2692,6 +2692,63 @@ mod tests {
+         );
+     }
+ 
++    /// SONDE C36 — jetable, à l'attic : `C36_POSITIONS=<fichier>`
++    /// `[C36_DEPTH=7] cargo test --release -- --ignored sonde_c36 --nocapture`.
++    #[test]
++    #[ignore]
++    fn sonde_c36_le_compte_retire_des_noeuds_en_general() {
++        let path = std::env::var("C36_POSITIONS").unwrap();
++        let depth: u32 = std::env::var("C36_DEPTH")
++            .ok()
++            .map_or(7, |d| d.parse().unwrap());
++        let limits = Limits {
++            depth: Some(depth),
++            ..Limits::default()
++        };
++        let (mut total_avec, mut total_sans) = (0_u64, 0_u64);
++        let (mut moins, mut plus, mut egal) = (0, 0, 0);
++        for (i, line) in std::fs::read_to_string(path).unwrap().lines().enumerate() {
++            let tokens: Vec<&str> = line.split_whitespace().collect();
++            let (mut position, rest) = match tokens.first() {
++                Some(&"startpos") => (Position::startpos(), &tokens[1..]),
++                Some(&"fen") => {
++                    let end = tokens
++                        .iter()
++                        .position(|t| *t == "moves")
++                        .unwrap_or(tokens.len());
++                    (
++                        Position::from_fen(&tokens[1..end].join(" ")).unwrap(),
++                        &tokens[end..],
++                    )
++                }
++                _ => panic!("ligne illisible : {line}"),
++            };
++            if rest.first() == Some(&"moves") {
++                for mv in &rest[1..] {
++                    position.play_uci(mv).unwrap();
++                }
++            }
++            let mut avec = search();
++            avec.go(&position, &limits, |_| {});
++            let mut sans = search_sans_lmp();
++            sans.go(&position, &limits, |_| {});
++            let (a, b) = (avec.nodes(), sans.nodes());
++            println!("C36 {i} {a} {b}");
++            total_avec += a;
++            total_sans += b;
++            match a.cmp(&b) {
++                std::cmp::Ordering::Less => moins += 1,
++                std::cmp::Ordering::Greater => plus += 1,
++                std::cmp::Ordering::Equal => egal += 1,
++            }
++        }
++        println!(
++            "C36 TOTAL profondeur {depth} : avec {total_avec}, sans {total_sans}, \
++             rapport {:.4} ; avec < sans {moins}, avec > sans {plus}, égal {egal}",
++            total_avec as f64 / total_sans as f64
++        );
++    }
++
+     #[test]
+     fn seuls_les_coups_tranquilles_sont_elagues() {
+         // Une capture n'est jamais élaguée, quel que soit le compte atteint.
+diff --git a/tools/sonde-c36/positions.py b/tools/sonde-c36/positions.py
+new file mode 100644
+index 0000000..8a547a3
+--- /dev/null
++++ b/tools/sonde-c36/positions.py
+@@ -0,0 +1,28 @@
++#!/usr/bin/env python3
++"""Extrait d'un journal cutechess `-debug all` les positions cherchées — la
++dernière commande `position` avant chaque `go`, par flux —, distinctes, dans
++l'ordre des parties : une par ligne, sans le mot `position`, ce que lit la
++sonde `sonde_c36_le_compte_retire_des_noeuds_en_general`.
++
++    python3 positions.py <journal> > positions.txt
++    C36_POSITIONS=positions.txt cargo test --release -p shallowred --lib \\
++        sonde_c36 -- --ignored --nocapture
++
++Sur le journal de l'écran du n° 9 (60 parties) : 5 276 recherches, 4 684
++positions distinctes.
++"""
++import re
++import sys
++
++CMD = re.compile(r'^\d+ >(\w+)\((\d+)\): (.*)$')
++derniere, vues = {}, set()
++for brut in open(sys.argv[1], errors='replace'):
++    m = CMD.match(brut.rstrip('\n'))
++    if not m:
++        continue
++    flux, cmd = (m[1], m[2]), m[3]
++    if cmd.startswith('position '):
++        derniere[flux] = cmd[len('position '):]
++    elif cmd.startswith('go') and flux in derniere and derniere[flux] not in vues:
++        vues.add(derniere[flux])
++        print(derniere[flux])
