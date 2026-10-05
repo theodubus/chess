@@ -1,0 +1,1920 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-10-04T00:05:43.198Z",
+  "publishable": false,
+  "independentSample": false,
+  "examples": [
+    {
+      "id": "queen-closes-retreat",
+      "label": "14. Dd2",
+      "source": "FEN reconstruite depuis les captures : Dd2 vient de e2. Historique antérieur inconnu, horloges FEN conventionnelles. La suite est un témoin légal, pas un PGN utilisateur.",
+      "origin": "user-screenshot",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
+      "afterFen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P1Q1PPP/R4RK1 b - - 1 14",
+      "state": "supported",
+      "reason": "stable-loss",
+      "error": null,
+      "elapsedMs": 3381.3904970000003,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "closed-retreat",
+        "role": "allows-loss",
+        "title": "Une retraite fermée avant l'attaque",
+        "summary": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3. Après f4, le pion noir en f4 attaque le fou blanc en e3. Dans la suite trouvée, fxe3 prend cette pièce. Après les reprises, le bilan depuis Dd2 est de −2 points pour les Blancs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "e2d2",
+          "change": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3.",
+          "consequence": "Dans la suite trouvée, fxe3 prend cette pièce. Après les reprises, le bilan depuis Dd2 est de −2 points pour les Blancs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P1Q1PPP/R4RK1 b - - 1 14",
+            "label": "Après Dd2",
+            "note": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3.",
+            "marks": [
+              {
+                "from": "e3",
+                "to": "d2",
+                "tone": "observation"
+              },
+              {
+                "from": "d2",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1P1Pp2/1B1PBN2/1P1Q1PPP/R4RK1 w - - 0 15",
+            "label": "f4",
+            "note": "Après f4, le pion noir en f4 attaque le fou blanc en e3.",
+            "marks": [
+              {
+                "from": "f4",
+                "to": "e3",
+                "tone": "threat"
+              },
+              {
+                "from": "d2",
+                "tone": "observation"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPPp2/1B2BN2/1P1Q1PPP/R4RK1 b - - 0 15",
+            "label": "d4",
+            "note": "",
+            "marks": [
+              {
+                "from": "d3",
+                "to": "d4",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4 f4e3",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPP3/1B2pN2/1P1Q1PPP/R4RK1 w - - 0 16",
+            "label": "fxe3",
+            "note": "fxe3 prend la pièce attaquée.",
+            "marks": [
+              {
+                "from": "f4",
+                "to": "e3",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4 f4e3 f2e3",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPP3/1B2PN2/1P1Q2PP/R4RK1 b - - 0 16",
+            "label": "fxe3",
+            "note": "",
+            "marks": [
+              {
+                "from": "f2",
+                "to": "e3",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "f5f4",
+            "d3d4",
+            "f4e3",
+            "f2e3"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -2,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "La sortie fermée est un fait du plateau. La prise et le bilan apparaissent dans deux recherches après la menace ; cela ne prouve pas que toutes les défenses perdent ni que cette sortie était la seule bonne défense."
+      },
+      "capturedAt": "2026-10-04T00:05:43.198Z"
+    },
+    {
+      "id": "queen-closes-retreat-black",
+      "label": "14… Dd7",
+      "source": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence.",
+      "origin": "transformed-regression",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14",
+      "afterFen": "r4rk1/1p1q1ppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K w - - 1 15",
+      "state": "supported",
+      "reason": "stable-loss",
+      "error": null,
+      "elapsedMs": 3832.5512150000004,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "closed-retreat",
+        "role": "allows-loss",
+        "title": "Une retraite fermée avant l'attaque",
+        "summary": "La dame noire en d7 ferme la sortie e6–d7 du fou noir en e6. Après f5, le pion blanc en f5 attaque le fou noir en e6. Dans la suite trouvée, fxe6 prend cette pièce. Après les reprises, le bilan depuis Dd7 est de −2 points pour les Noirs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "e7d7",
+          "change": "La dame noire en d7 ferme la sortie e6–d7 du fou noir en e6.",
+          "consequence": "Dans la suite trouvée, fxe6 prend cette pièce. Après les reprises, le bilan depuis Dd7 est de −2 points pour les Noirs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7",
+            "fen": "r4rk1/1p1q1ppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K w - - 1 15",
+            "label": "Après Dd7",
+            "note": "La dame noire en d7 ferme la sortie e6–d7 du fou noir en e6.",
+            "marks": [
+              {
+                "from": "e6",
+                "to": "d7",
+                "tone": "observation"
+              },
+              {
+                "from": "d7",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5",
+            "fen": "r4rk1/1p1q1ppp/1b1pbn2/p1p1pP2/P1P1P3/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 15",
+            "label": "f5",
+            "note": "Après f5, le pion blanc en f5 attaque le fou noir en e6.",
+            "marks": [
+              {
+                "from": "f5",
+                "to": "e6",
+                "tone": "threat"
+              },
+              {
+                "from": "d7",
+                "tone": "observation"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5",
+            "fen": "r4rk1/1p1q1ppp/1b2bn2/p1pppP2/P1P1P3/1P1P4/2N1B1PP/R1BQ1R1K w - - 0 16",
+            "label": "d5",
+            "note": "",
+            "marks": [
+              {
+                "from": "d6",
+                "to": "d5",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5 f5e6",
+            "fen": "r4rk1/1p1q1ppp/1b2Pn2/p1ppp3/P1P1P3/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 16",
+            "label": "fxe6",
+            "note": "fxe6 prend la pièce attaquée.",
+            "marks": [
+              {
+                "from": "f5",
+                "to": "e6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5 f5e6 f7e6",
+            "fen": "r4rk1/1p1q2pp/1b2pn2/p1ppp3/P1P1P3/1P1P4/2N1B1PP/R1BQ1R1K w - - 0 17",
+            "label": "fxe6",
+            "note": "",
+            "marks": [
+              {
+                "from": "f7",
+                "to": "e6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5 f5e6 f7e6 c4d5",
+            "fen": "r4rk1/1p1q2pp/1b2pn2/p1pPp3/P3P3/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 17",
+            "label": "cxd5",
+            "note": "",
+            "marks": [
+              {
+                "from": "c4",
+                "to": "d5",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14 moves e7d7 f4f5 d6d5 f5e6 f7e6 c4d5 e6d5",
+            "fen": "r4rk1/1p1q2pp/1b3n2/p1ppp3/P3P3/1P1P4/2N1B1PP/R1BQ1R1K w - - 0 18",
+            "label": "exd5",
+            "note": "Le moteur choisit ensuite Fg5, alors qu'une reprise reste légale. Le bilan concerne cette variante.",
+            "marks": [
+              {
+                "from": "e6",
+                "to": "d5",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "f4f5",
+            "d6d5",
+            "f5e6",
+            "f7e6",
+            "c4d5",
+            "e6d5",
+            "c1g5"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -2,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "La sortie fermée est un fait du plateau. La prise et le bilan apparaissent dans deux recherches après la menace ; cela ne prouve pas que toutes les défenses perdent ni que cette sortie était la seule bonne défense."
+      },
+      "capturedAt": "2026-10-04T00:05:43.198Z"
+    },
+    {
+      "id": "queen-closes-retreat",
+      "label": "14. Dd2",
+      "source": "FEN reconstruite depuis les captures : Dd2 vient de e2. Historique antérieur inconnu, horloges FEN conventionnelles. La suite est un témoin légal, pas un PGN utilisateur.",
+      "origin": "user-screenshot",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14",
+      "afterFen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P1Q1PPP/R4RK1 b - - 1 14",
+      "state": "supported",
+      "reason": "stable-loss",
+      "error": null,
+      "elapsedMs": 4945.131681999999,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "closed-retreat",
+        "role": "allows-loss",
+        "title": "Une retraite fermée avant l'attaque",
+        "summary": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3. Après f4, le pion noir en f4 attaque le fou blanc en e3. Dans la suite trouvée, fxe3 prend cette pièce. Après les reprises, le bilan depuis Dd2 est de −2 points pour les Blancs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "e2d2",
+          "change": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3.",
+          "consequence": "Dans la suite trouvée, fxe3 prend cette pièce. Après les reprises, le bilan depuis Dd2 est de −2 points pour les Blancs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P1Q1PPP/R4RK1 b - - 1 14",
+            "label": "Après Dd2",
+            "note": "La dame blanche en d2 ferme la sortie e3–d2 du fou blanc en e3.",
+            "marks": [
+              {
+                "from": "e3",
+                "to": "d2",
+                "tone": "observation"
+              },
+              {
+                "from": "d2",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1P1Pp2/1B1PBN2/1P1Q1PPP/R4RK1 w - - 0 15",
+            "label": "f4",
+            "note": "Après f4, le pion noir en f4 attaque le fou blanc en e3.",
+            "marks": [
+              {
+                "from": "f4",
+                "to": "e3",
+                "tone": "threat"
+              },
+              {
+                "from": "d2",
+                "tone": "observation"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPPp2/1B2BN2/1P1Q1PPP/R4RK1 b - - 0 15",
+            "label": "d4",
+            "note": "",
+            "marks": [
+              {
+                "from": "d3",
+                "to": "d4",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4 f4e3",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPP3/1B2pN2/1P1Q1PPP/R4RK1 w - - 0 16",
+            "label": "fxe3",
+            "note": "fxe3 prend la pièce attaquée.",
+            "marks": [
+              {
+                "from": "f4",
+                "to": "e3",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r1bq1r1k/2n1b1pp/1p1p4/p1p1pp2/P1P1P3/1B1PBN2/1P2QPPP/R4RK1 w - - 0 14 moves e2d2 f5f4 d3d4 f4e3 f2e3",
+            "fen": "r1bq1r1k/2n1b1pp/1p1p4/p1p1p3/P1PPP3/1B2PN2/1P1Q2PP/R4RK1 b - - 0 16",
+            "label": "fxe3",
+            "note": "",
+            "marks": [
+              {
+                "from": "f2",
+                "to": "e3",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "f5f4",
+            "d3d4",
+            "f4e3",
+            "f2e3"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -2,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "La sortie fermée est un fait du plateau. La prise et le bilan apparaissent dans deux recherches après la menace ; cela ne prouve pas que toutes les défenses perdent ni que cette sortie était la seule bonne défense."
+      },
+      "capturedAt": "2026-10-04T00:05:43.198Z"
+    },
+    {
+      "id": "queen-closes-retreat-black",
+      "label": "14… Dd7",
+      "source": "Cas de développement exécuté avec chess.js ; pas une validation indépendante de pertinence.",
+      "origin": "transformed-regression",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r4rk1/1p2qppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K b - - 0 14",
+      "afterFen": "r4rk1/1p1q1ppp/1b1pbn2/p1p1p3/P1P1PP2/1P1P4/2N1B1PP/R1BQ1R1K w - - 1 15",
+      "state": "indeterminate",
+      "reason": "unstable-search",
+      "error": null,
+      "elapsedMs": 5064.0161919999955,
+      "searches": 6,
+      "draft": null,
+      "capturedAt": "2026-10-04T00:05:43.198Z"
+    },
+    {
+      "id": "allows-fork-direct",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "supported",
+      "reason": "material-loss",
+      "error": null,
+      "elapsedMs": 1186.3329789999998,
+      "searches": 4,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "allows-loss",
+        "title": "Une fourchette permise à l'adversaire",
+        "summary": "Ce coup permet cette menace. Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "d8e8",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8",
+            "fen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Après Re8",
+            "note": "Ce coup permet Cc7+, qui crée la menace.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 3 3",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 3",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "d5c7",
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "Cette conséquence apparaît dans les deux recherches après le coup joué. Elle n'établit ni une perte contre toutes les défenses, ni le meilleur coup de remplacement. "
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "allows-fork",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "supported",
+      "reason": "double-targets",
+      "error": null,
+      "elapsedMs": 2635.881142,
+      "searches": 8,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "allows-loss",
+        "title": "Une fourchette permise à l'adversaire",
+        "summary": "Ce coup permet cette menace. Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "Avec Tb8, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée.",
+        "story": {
+          "decision": "d8e8",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": "Avec Tb8, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée."
+        },
+        "played": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8",
+            "fen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Après Re8",
+            "note": "Ce coup permet Cc7+, qui crée la menace.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 3 3",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 3",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8b8",
+            "fen": "1r1k4/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Avec Tb8",
+            "note": "L'alternative Tb8 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
+            "marks": [
+              {
+                "from": "b8",
+                "tone": "idea"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8b8 d5c7",
+            "fen": "1r1k4/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7",
+            "note": "Pour comparer, si la même menace Cc7 est tentée…",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "conditional-move"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8b8 d5c7 d8c7",
+            "fen": "1r6/2k5/8/8/8/8/7P/7K w - - 0 3",
+            "label": "Rxc7",
+            "note": "Avec Tb8, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée.",
+            "marks": [
+              {
+                "from": "d8",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "d5c7",
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [
+            "d5c7",
+            "d8c7"
+          ],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "conditional-contribution"
+        },
+        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "allows-fork-other-defence",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "supported",
+      "reason": "double-targets",
+      "error": null,
+      "elapsedMs": 2621.6525250000004,
+      "searches": 8,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "allows-loss",
+        "title": "Une fourchette permise à l'adversaire",
+        "summary": "Ce coup permet cette menace. Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "Avec Ta7, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée.",
+        "story": {
+          "decision": "d8e8",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": "Avec Ta7, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée."
+        },
+        "played": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8",
+            "fen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Après Re8",
+            "note": "Ce coup permet Cc7+, qui crée la menace.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 3 3",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 3",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8a7",
+            "fen": "3k4/r7/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Avec Ta7",
+            "note": "L'alternative Ta7 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
+            "marks": [
+              {
+                "from": "a7",
+                "tone": "idea"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8a7 d5c7",
+            "fen": "3k4/r1N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7",
+            "note": "Pour comparer, si la même menace Cc7 est tentée…",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "conditional-move"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves a8a7 d5c7 d8c7",
+            "fen": "8/r1k5/8/8/8/8/7P/7K w - - 0 3",
+            "label": "Rxc7",
+            "note": "Avec Ta7, les deux cibles ne sont plus menacées ensemble. La réponse Rxc7 les préserve dans la variante calculée.",
+            "marks": [
+              {
+                "from": "d8",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "d5c7",
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [
+            "d5c7",
+            "d8c7"
+          ],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "conditional-contribution"
+        },
+        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "allows-fork-white",
+      "label": "1. Re1",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "7k/7p/8/8/3n4/8/8/R2K4 w - - 0 1",
+      "afterFen": "7k/7p/8/8/3n4/8/8/R3K3 b - - 1 1",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 2810.666908000001,
+      "searches": 8,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "allows-fork-false-defence",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "supported",
+      "reason": "score-gap-missing",
+      "error": null,
+      "elapsedMs": 2594.996704000001,
+      "searches": 8,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "allows-loss",
+        "title": "Une fourchette permise à l'adversaire",
+        "summary": "Ce coup permet cette menace. Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "",
+        "story": {
+          "decision": "d8e8",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": ""
+        },
+        "played": [
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8",
+            "fen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+            "label": "Après Re8",
+            "note": "Ce coup permet Cc7+, qui crée la menace.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 2 2",
+            "label": "Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 3 3",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r2k4/8/8/3N4/8/8/7P/7K b - - 0 1 moves d8e8 d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 3",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [],
+        "evidence": {
+          "playedMoves": [
+            "d5c7",
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "observed-consequence"
+        },
+        "limitation": "Cette conséquence apparaît dans les deux recherches après le coup joué. Elle n'établit ni une perte contre toutes les défenses, ni le meilleur coup de remplacement. "
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "pin-retreat",
+      "label": "1. Fb5",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1",
+      "afterFen": "4k3/pp2pppp/2n5/1B1P4/8/8/PPP2PPP/7K b - - 1 1",
+      "state": "supported",
+      "reason": "blocked-retreat",
+      "error": null,
+      "elapsedMs": 1838.7042110000002,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "blocked-retreat",
+        "role": "creates-opportunity",
+        "title": "Clouer une pièce pour l'attaquer",
+        "summary": "Le cavalier noir en c6 ne peut pas quitter le rayon b5–e8 sans exposer son roi. dxc6+ exploite cette contrainte. Après les reprises de la variante, le bilan est de −2 points pour les Noirs.",
+        "comparisonText": "Avec Fd3, le clouage disparaît sans enlever cette pression. Le moteur choisit Cb4, désormais légal, et préserve la pièce.",
+        "story": {
+          "decision": "f1b5",
+          "change": "Le cavalier noir en c6 ne peut pas quitter le rayon b5–e8 sans exposer son roi.",
+          "consequence": "dxc6+ exploite cette contrainte. Après les reprises de la variante, le bilan est de −2 points pour les Noirs.",
+          "alternative": "Avec Fd3, le clouage disparaît sans enlever cette pression. Le moteur choisit Cb4, désormais légal, et préserve la pièce."
+        },
+        "played": [
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1b5",
+            "fen": "4k3/pp2pppp/2n5/1B1P4/8/8/PPP2PPP/7K b - - 1 1",
+            "label": "Après Fb5",
+            "note": "Le cavalier noir en c6 ne peut pas quitter le rayon b5–e8 sans exposer son roi.",
+            "marks": [
+              {
+                "from": "b5",
+                "to": "e8",
+                "tone": "observation"
+              },
+              {
+                "from": "c6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1b5 e8d7",
+            "fen": "8/pp1kpppp/2n5/1B1P4/8/8/PPP2PPP/7K w - - 2 2",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1b5 e8d7 d5c6",
+            "fen": "8/pp1kpppp/2P5/1B6/8/8/PPP2PPP/7K b - - 0 2",
+            "label": "dxc6+",
+            "note": "La pièce clouée est prise par dxc6+.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1b5 e8d7 d5c6 b7c6",
+            "fen": "8/p2kpppp/2p5/1B6/8/8/PPP2PPP/7K w - - 0 3",
+            "label": "bxc6",
+            "note": "Cet échange vaut −2 points pour les Noirs. Le moteur choisit ensuite Fd3, alors qu'une reprise reste légale. Le bilan est celui de cette variante.",
+            "marks": [
+              {
+                "from": "b7",
+                "to": "c6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1d3",
+            "fen": "4k3/pp2pppp/2n5/3P4/8/3B4/PPP2PPP/7K b - - 1 1",
+            "label": "Avec Fd3",
+            "note": "L'alternative Fd3 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
+            "marks": [
+              {
+                "from": "d3",
+                "tone": "idea"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1d3 c6b4",
+            "fen": "4k3/pp2pppp/8/3P4/1n6/3B4/PPP2PPP/7K w - - 2 2",
+            "label": "Cb4",
+            "note": "Avec Fd3, le clouage disparaît sans enlever cette pression. Le moteur choisit Cb4, désormais légal, et préserve la pièce.",
+            "marks": [
+              {
+                "from": "c6",
+                "to": "b4",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "e8d7",
+            "d5c6",
+            "b7c6",
+            "b5d3"
+          ],
+          "alternativeMoves": [
+            "c6b4"
+          ],
+          "materialDelta": -2,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "conditional-contribution"
+        },
+        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "fork-direct",
+      "label": "1. Cc7+",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 0 1",
+      "afterFen": "r3k3/2N5/8/8/8/8/7P/7K b - - 1 1",
+      "state": "supported",
+      "reason": "double-targets",
+      "error": null,
+      "elapsedMs": 1993.131632999999,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "creates-opportunity",
+        "title": "Menacer deux cibles à la fois",
+        "summary": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8. La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+        "comparisonText": "Avec Cb6, les deux cibles ne sont plus menacées ensemble. La réponse Ta2 les préserve dans la variante calculée.",
+        "story": {
+          "decision": "d5c7",
+          "change": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+          "consequence": "La réponse Rd7 règle une cible, puis Cxa8 prend l'autre. Le bilan de cette suite est de −5 points pour les Noirs.",
+          "alternative": "Avec Cb6, les deux cibles ne sont plus menacées ensemble. La réponse Ta2 les préserve dans la variante calculée."
+        },
+        "played": [
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5c7",
+            "fen": "r3k3/2N5/8/8/8/8/7P/7K b - - 1 1",
+            "label": "Après Cc7+",
+            "note": "Le cavalier blanc en c7 met le roi noir en e8 en échec et attaque la tour noire en a8.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "e8",
+                "tone": "threat"
+              },
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5c7 e8d7",
+            "fen": "r7/2Nk4/8/8/8/8/7P/7K w - - 2 2",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5c7 e8d7 c7a8",
+            "fen": "N7/3k4/8/8/8/8/7P/7K b - - 0 2",
+            "label": "Cxa8",
+            "note": "Cxa8 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c7",
+                "to": "a8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5b6",
+            "fen": "r3k3/8/1N6/8/8/8/7P/7K b - - 1 1",
+            "label": "Avec Cb6",
+            "note": "L'alternative Cb6 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
+            "marks": [
+              {
+                "from": "b6",
+                "tone": "idea"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen r3k3/8/8/3N4/8/8/7P/7K w - - 0 1 moves d5b6 a8a2",
+            "fen": "4k3/8/1N6/8/8/8/r6P/7K w - - 2 2",
+            "label": "Ta2",
+            "note": "Avec Cb6, les deux cibles ne sont plus menacées ensemble. La réponse Ta2 les préserve dans la variante calculée.",
+            "marks": [
+              {
+                "from": "a8",
+                "to": "a2",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "e8d7",
+            "c7a8"
+          ],
+          "alternativeMoves": [
+            "a8a2"
+          ],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "conditional-contribution"
+        },
+        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "fork-black",
+      "label": "1… Cc2+",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "7k/7p/8/8/3n4/8/8/R3K3 b - - 0 1",
+      "afterFen": "7k/7p/8/8/8/8/2n5/R3K3 w - - 1 2",
+      "state": "supported",
+      "reason": "double-targets",
+      "error": null,
+      "elapsedMs": 2253.0731099999994,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "double-targets",
+        "role": "creates-opportunity",
+        "title": "Menacer deux cibles à la fois",
+        "summary": "Le cavalier noir en c2 met le roi blanc en e1 en échec et attaque la tour blanche en a1. La réponse Rd2 règle une cible, puis Cxa1 prend l'autre. Le bilan de cette suite est de −5 points pour les Blancs.",
+        "comparisonText": "Avec Cb3, les deux cibles ne sont plus menacées ensemble. La réponse Ta7 les préserve dans la variante calculée.",
+        "story": {
+          "decision": "d4c2",
+          "change": "Le cavalier noir en c2 met le roi blanc en e1 en échec et attaque la tour blanche en a1.",
+          "consequence": "La réponse Rd2 règle une cible, puis Cxa1 prend l'autre. Le bilan de cette suite est de −5 points pour les Blancs.",
+          "alternative": "Avec Cb3, les deux cibles ne sont plus menacées ensemble. La réponse Ta7 les préserve dans la variante calculée."
+        },
+        "played": [
+          {
+            "command": "position fen 7k/7p/8/8/3n4/8/8/R3K3 b - - 0 1 moves d4c2",
+            "fen": "7k/7p/8/8/8/8/2n5/R3K3 w - - 1 2",
+            "label": "Après Cc2+",
+            "note": "Le cavalier noir en c2 met le roi blanc en e1 en échec et attaque la tour blanche en a1.",
+            "marks": [
+              {
+                "from": "c2",
+                "to": "e1",
+                "tone": "threat"
+              },
+              {
+                "from": "c2",
+                "to": "a1",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen 7k/7p/8/8/3n4/8/8/R3K3 b - - 0 1 moves d4c2 e1d2",
+            "fen": "7k/7p/8/8/8/8/2nK4/R7 b - - 2 2",
+            "label": "Rd2",
+            "note": "",
+            "marks": [
+              {
+                "from": "e1",
+                "to": "d2",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen 7k/7p/8/8/3n4/8/8/R3K3 b - - 0 1 moves d4c2 e1d2 c2a1",
+            "fen": "7k/7p/8/8/8/8/3K4/n7 w - - 0 3",
+            "label": "Cxa1",
+            "note": "Cxa1 prend la cible restée attaquée.",
+            "marks": [
+              {
+                "from": "c2",
+                "to": "a1",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position fen 7k/7p/8/8/3n4/8/8/R3K3 b - - 0 1 moves d4b3",
+            "fen": "7k/7p/8/8/8/1n6/8/R3K3 w - - 1 2",
+            "label": "Avec Cb3",
+            "note": "L'alternative Cb3 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
+            "marks": [
+              {
+                "from": "b3",
+                "tone": "idea"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen 7k/7p/8/8/3n4/8/8/R3K3 b - - 0 1 moves d4b3 a1a7",
+            "fen": "7k/R6p/8/8/8/1n6/8/4K3 b - - 2 2",
+            "label": "Ta7",
+            "note": "Avec Cb3, les deux cibles ne sont plus menacées ensemble. La réponse Ta7 les préserve dans la variante calculée.",
+            "marks": [
+              {
+                "from": "a1",
+                "to": "a7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "e1d2",
+            "c2a1"
+          ],
+          "alternativeMoves": [
+            "a1a7"
+          ],
+          "materialDelta": -5,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "conditional-contribution"
+        },
+        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "byrne-22",
+      "label": "11… Ca4",
+      "source": "Le cavalier a4 attaque la dame c5 et le cavalier c3. La suite publiée Qa3 Nxc3 bxc3 Nxe4 exploite les contraintes ; la double attaque ne prouve pas le gain contre tous les choix. Source : https://lichess.org/study/T2uBqZJH/vGAj5Ztx. Suite jouée, sans score moteur.",
+      "origin": "published-game",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2q1rk1/pp2ppbp/1np2np1/2Q3B1/3PP1b1/2N2N2/PP3PPP/3RKB1R b K - 6 11",
+      "afterFen": "r2q1rk1/pp2ppbp/2p2np1/2Q3B1/n2PP1b1/2N2N2/PP3PPP/3RKB1R w K - 7 12",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 3540.141029000002,
+      "searches": 6,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "byrne-allows-fork",
+      "label": "11. Fg5",
+      "source": "Le cavalier a4 attaque la dame c5 et le cavalier c3. La suite publiée Qa3 Nxc3 bxc3 Nxe4 exploite les contraintes ; la double attaque ne prouve pas le gain contre tous les choix. Source : https://lichess.org/study/T2uBqZJH/vGAj5Ztx. Suite jouée, sans score moteur.",
+      "origin": "published-game",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "r2q1rk1/pp2ppbp/1np2np1/2Q5/3PPBb1/2N2N2/PP3PPP/3RKB1R w K - 5 11",
+      "afterFen": "r2q1rk1/pp2ppbp/1np2np1/2Q3B1/3PP1b1/2N2N2/PP3PPP/3RKB1R b K - 6 11",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 3577.996403000001,
+      "searches": 6,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "morphy-31",
+      "label": "16. Db8+",
+      "source": "Après Qb8+, Nxb8 est la seule réponse légale et Rd8 est mat. Le cavalier est dévié de d7 ; expliquer une simple perte de dame serait faux. Source : https://lichess.org/study/OqP6ZEZX/XOlpJYfH. Suite jouée, sans score moteur.",
+      "origin": "published",
+      "engine": "ShallowRed",
+      "engineName": "ShallowRed 0.1.0",
+      "engineHash": "4fb7072ba5ee308ec613bce395f2db719a298e8ce78878a137f017ef18fc83de",
+      "beforeFen": "4kb1r/p2n1ppp/4q3/4p1B1/4P3/1Q6/PPP2PPP/2KR4 w k - 0 16",
+      "afterFen": "1Q2kb1r/p2n1ppp/4q3/4p1B1/4P3/8/PPP2PPP/2KR4 b k - 1 16",
+      "state": "supported",
+      "reason": "short-mate-confirmed",
+      "error": null,
+      "elapsedMs": 912.2222980000006,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "deflection-mate",
+        "role": "creates-opportunity",
+        "title": "Dévier la défense pour donner mat",
+        "summary": "Le cavalier noir en d7 doit répondre par Cxb8, la seule réponse légale à l'échec. Sa réponse libère le trajet d1–d8. Td8# devient alors possible et donne mat.",
+        "comparisonText": "Après Da3, la pièce bloque encore ce trajet. Ce coup ne force pas le même mat dans l'horizon réponse puis mat immédiat.",
+        "story": {
+          "decision": "b3b8",
+          "change": "Le cavalier noir en d7 doit répondre par Cxb8, la seule réponse légale à l'échec. Sa réponse libère le trajet d1–d8.",
+          "consequence": "Td8# devient alors possible et donne mat.",
+          "alternative": "Après Da3, la pièce bloque encore ce trajet. Ce coup ne force pas le même mat dans l'horizon réponse puis mat immédiat."
+        },
+        "played": [
+          {
+            "command": "position startpos moves e2e4 e7e5 g1f3 d7d6 d2d4 c8g4 d4e5 g4f3 d1f3 d6e5 f1c4 g8f6 f3b3 d8e7 b1c3 c7c6 c1g5 b7b5 c3b5 c6b5 c4b5 b8d7 e1c1 a8d8 d1d7 d8d7 h1d1 e7e6 b5d7 f6d7 b3b8",
+            "fen": "1Q2kb1r/p2n1ppp/4q3/4p1B1/4P3/8/PPP2PPP/2KR4 b k - 1 16",
+            "label": "Après Db8+",
+            "note": "L'échec impose Cxb8 et dévie le cavalier noir en d7.",
+            "marks": [
+              {
+                "from": "d7",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position startpos moves e2e4 e7e5 g1f3 d7d6 d2d4 c8g4 d4e5 g4f3 d1f3 d6e5 f1c4 g8f6 f3b3 d8e7 b1c3 c7c6 c1g5 b7b5 c3b5 c6b5 c4b5 b8d7 e1c1 a8d8 d1d7 d8d7 h1d1 e7e6 b5d7 f6d7 b3b8 d7b8",
+            "fen": "1n2kb1r/p4ppp/4q3/4p1B1/4P3/8/PPP2PPP/2KR4 w k - 0 17",
+            "label": "Cxb8",
+            "note": "Le trajet est maintenant libre pour Td8#.",
+            "marks": [
+              {
+                "from": "d1",
+                "to": "d8",
+                "tone": "idea"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position startpos moves e2e4 e7e5 g1f3 d7d6 d2d4 c8g4 d4e5 g4f3 d1f3 d6e5 f1c4 g8f6 f3b3 d8e7 b1c3 c7c6 c1g5 b7b5 c3b5 c6b5 c4b5 b8d7 e1c1 a8d8 d1d7 d8d7 h1d1 e7e6 b5d7 f6d7 b3b8 d7b8 d1d8",
+            "fen": "1n1Rkb1r/p4ppp/4q3/4p1B1/4P3/8/PPP2PPP/2K5 b k - 1 17",
+            "label": "Td8#",
+            "note": "Td8# : le roi est mat.",
+            "marks": [
+              {
+                "from": "d1",
+                "to": "d8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "rules"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position startpos moves e2e4 e7e5 g1f3 d7d6 d2d4 c8g4 d4e5 g4f3 d1f3 d6e5 f1c4 g8f6 f3b3 d8e7 b1c3 c7c6 c1g5 b7b5 c3b5 c6b5 c4b5 b8d7 e1c1 a8d8 d1d7 d8d7 h1d1 e7e6 b5d7 f6d7 b3a3",
+            "fen": "4kb1r/p2n1ppp/4q3/4p1B1/4P3/Q7/PPP2PPP/2KR4 b k - 1 16",
+            "label": "Avec Da3",
+            "note": "Après Da3, la pièce bloque encore ce trajet. Ce coup ne force pas le même mat dans l'horizon réponse puis mat immédiat.",
+            "marks": [
+              {
+                "from": "d1",
+                "to": "d7",
+                "tone": "idea"
+              },
+              {
+                "from": "d7",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "d7b8",
+            "d1d8"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": null,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-and-rules",
+          "scope": "short-forcing-route"
+        },
+        "limitation": "La preuve couvre toutes les réponses dans cet horizon de réponse puis mat immédiat. Elle ne prouve pas que l'alternative exclut un mat plus long. Le dernier coup de mat est complété par les règles, pas émis dans la variante du moteur."
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "allows-fork-direct",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "indeterminate",
+      "reason": "unstable-search",
+      "error": null,
+      "elapsedMs": 2384.1954430000005,
+      "searches": 4,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "allows-fork",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 4781.697659000001,
+      "searches": 8,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "allows-fork-other-defence",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 4750.662037000002,
+      "searches": 8,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "allows-fork-white",
+      "label": "1. Re1",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "7k/7p/8/8/3n4/8/8/R2K4 w - - 0 1",
+      "afterFen": "7k/7p/8/8/3n4/8/8/R3K3 b - - 1 1",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 4697.1618610000005,
+      "searches": 8,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "allows-fork-false-defence",
+      "label": "1… Re8",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2k4/8/8/3N4/8/8/7P/7K b - - 0 1",
+      "afterFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 1 2",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 4743.493049000004,
+      "searches": 8,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "pin-retreat",
+      "label": "1. Fb5",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1",
+      "afterFen": "4k3/pp2pppp/2n5/1B1P4/8/8/PPP2PPP/7K b - - 1 1",
+      "state": "supported",
+      "reason": "blocked-retreat",
+      "error": null,
+      "elapsedMs": 3535.2927009999985,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "blocked-retreat",
+        "role": "creates-opportunity",
+        "title": "Clouer une pièce pour l'attaquer",
+        "summary": "Le cavalier noir en c6 ne peut pas quitter le rayon b5–e8 sans exposer son roi. dxc6+ exploite cette contrainte. Après les reprises de la variante, le bilan est de −2 points pour les Noirs.",
+        "comparisonText": "Avec Fd3, le clouage disparaît sans enlever cette pression. Le moteur choisit Cb4, désormais légal, et préserve la pièce.",
+        "story": {
+          "decision": "f1b5",
+          "change": "Le cavalier noir en c6 ne peut pas quitter le rayon b5–e8 sans exposer son roi.",
+          "consequence": "dxc6+ exploite cette contrainte. Après les reprises de la variante, le bilan est de −2 points pour les Noirs.",
+          "alternative": "Avec Fd3, le clouage disparaît sans enlever cette pression. Le moteur choisit Cb4, désormais légal, et préserve la pièce."
+        },
+        "played": [
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1b5",
+            "fen": "4k3/pp2pppp/2n5/1B1P4/8/8/PPP2PPP/7K b - - 1 1",
+            "label": "Après Fb5",
+            "note": "Le cavalier noir en c6 ne peut pas quitter le rayon b5–e8 sans exposer son roi.",
+            "marks": [
+              {
+                "from": "b5",
+                "to": "e8",
+                "tone": "observation"
+              },
+              {
+                "from": "c6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1b5 e8d7",
+            "fen": "8/pp1kpppp/2n5/1B1P4/8/8/PPP2PPP/7K w - - 2 2",
+            "label": "Rd7",
+            "note": "",
+            "marks": [
+              {
+                "from": "e8",
+                "to": "d7",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1b5 e8d7 d5c6",
+            "fen": "8/pp1kpppp/2P5/1B6/8/8/PPP2PPP/7K b - - 0 2",
+            "label": "dxc6+",
+            "note": "La pièce clouée est prise par dxc6+.",
+            "marks": [
+              {
+                "from": "d5",
+                "to": "c6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1b5 e8d7 d5c6 b7c6",
+            "fen": "8/p2kpppp/2p5/1B6/8/8/PPP2PPP/7K w - - 0 3",
+            "label": "bxc6",
+            "note": "Cet échange vaut −2 points pour les Noirs. Le moteur choisit ensuite Fc4, alors qu'une reprise reste légale. Le bilan est celui de cette variante.",
+            "marks": [
+              {
+                "from": "b7",
+                "to": "c6",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1d3",
+            "fen": "4k3/pp2pppp/2n5/3P4/8/3B4/PPP2PPP/7K b - - 1 1",
+            "label": "Avec Fd3",
+            "note": "L'alternative Fd3 sert à comparer cette contrainte ; ce n'est pas forcément le meilleur coup.",
+            "marks": [
+              {
+                "from": "d3",
+                "tone": "idea"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position fen 4k3/pp2pppp/2n5/3P4/8/8/PPP2PPP/5B1K w - - 0 1 moves f1d3 c6b4",
+            "fen": "4k3/pp2pppp/8/3P4/1n6/3B4/PPP2PPP/7K w - - 2 2",
+            "label": "Cb4",
+            "note": "Avec Fd3, le clouage disparaît sans enlever cette pression. Le moteur choisit Cb4, désormais légal, et préserve la pièce.",
+            "marks": [
+              {
+                "from": "c6",
+                "to": "b4",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "e8d7",
+            "d5c6",
+            "b7c6",
+            "b5c4"
+          ],
+          "alternativeMoves": [
+            "c6b4"
+          ],
+          "materialDelta": -2,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "conditional-contribution"
+        },
+        "limitation": "Cette comparaison soutient une contribution dans les variantes calculées ; elle ne prouve ni une perte contre toutes les défenses ni le meilleur coup. "
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "fork-direct",
+      "label": "1. Cc7+",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r3k3/8/8/3N4/8/8/7P/7K w - - 0 1",
+      "afterFen": "r3k3/2N5/8/8/8/8/7P/7K b - - 1 1",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 3585.698999,
+      "searches": 6,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "fork-black",
+      "label": "1… Cc2+",
+      "source": "Fixture logicielle, sans validation pédagogique indépendante.",
+      "origin": "constructed",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "7k/7p/8/8/3n4/8/8/R3K3 b - - 0 1",
+      "afterFen": "7k/7p/8/8/8/8/2n5/R3K3 w - - 1 2",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 3497.383848999998,
+      "searches": 6,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "byrne-22",
+      "label": "11… Ca4",
+      "source": "Le cavalier a4 attaque la dame c5 et le cavalier c3. La suite publiée Qa3 Nxc3 bxc3 Nxe4 exploite les contraintes ; la double attaque ne prouve pas le gain contre tous les choix. Source : https://lichess.org/study/T2uBqZJH/vGAj5Ztx. Suite jouée, sans score moteur.",
+      "origin": "published-game",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2q1rk1/pp2ppbp/1np2np1/2Q3B1/3PP1b1/2N2N2/PP3PPP/3RKB1R b K - 6 11",
+      "afterFen": "r2q1rk1/pp2ppbp/2p2np1/2Q3B1/n2PP1b1/2N2N2/PP3PPP/3RKB1R w K - 7 12",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 5998.472802000004,
+      "searches": 7,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "byrne-allows-fork",
+      "label": "11. Fg5",
+      "source": "Le cavalier a4 attaque la dame c5 et le cavalier c3. La suite publiée Qa3 Nxc3 bxc3 Nxe4 exploite les contraintes ; la double attaque ne prouve pas le gain contre tous les choix. Source : https://lichess.org/study/T2uBqZJH/vGAj5Ztx. Suite jouée, sans score moteur.",
+      "origin": "published-game",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "r2q1rk1/pp2ppbp/1np2np1/2Q5/3PPBb1/2N2N2/PP3PPP/3RKB1R w K - 5 11",
+      "afterFen": "r2q1rk1/pp2ppbp/1np2np1/2Q3B1/3PP1b1/2N2N2/PP3PPP/3RKB1R b K - 6 11",
+      "state": "indeterminate",
+      "reason": "effect-not-verified",
+      "error": null,
+      "elapsedMs": 4769.504013000005,
+      "searches": 6,
+      "draft": null,
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    },
+    {
+      "id": "morphy-31",
+      "label": "16. Db8+",
+      "source": "Après Qb8+, Nxb8 est la seule réponse légale et Rd8 est mat. Le cavalier est dévié de d7 ; expliquer une simple perte de dame serait faux. Source : https://lichess.org/study/OqP6ZEZX/XOlpJYfH. Suite jouée, sans score moteur.",
+      "origin": "published",
+      "engine": "Stockfish",
+      "engineName": "Stockfish 16",
+      "engineHash": "00628bd9c9855c1b7ff93d7f8d51b413586cdc6336fe637f9a14a61531a05aca",
+      "beforeFen": "4kb1r/p2n1ppp/4q3/4p1B1/4P3/1Q6/PPP2PPP/2KR4 w k - 0 16",
+      "afterFen": "1Q2kb1r/p2n1ppp/4q3/4p1B1/4P3/8/PPP2PPP/2KR4 b k - 1 16",
+      "state": "supported",
+      "reason": "short-mate-confirmed",
+      "error": null,
+      "elapsedMs": 1843.058984000003,
+      "searches": 6,
+      "draft": {
+        "status": "draft",
+        "family": "deflection-mate",
+        "role": "creates-opportunity",
+        "title": "Dévier la défense pour donner mat",
+        "summary": "Le cavalier noir en d7 doit répondre par Cxb8, la seule réponse légale à l'échec. Sa réponse libère le trajet d1–d8. Td8# devient alors possible et donne mat.",
+        "comparisonText": "Après Da3, la pièce bloque encore ce trajet. Ce coup ne force pas le même mat dans l'horizon réponse puis mat immédiat.",
+        "story": {
+          "decision": "b3b8",
+          "change": "Le cavalier noir en d7 doit répondre par Cxb8, la seule réponse légale à l'échec. Sa réponse libère le trajet d1–d8.",
+          "consequence": "Td8# devient alors possible et donne mat.",
+          "alternative": "Après Da3, la pièce bloque encore ce trajet. Ce coup ne force pas le même mat dans l'horizon réponse puis mat immédiat."
+        },
+        "played": [
+          {
+            "command": "position startpos moves e2e4 e7e5 g1f3 d7d6 d2d4 c8g4 d4e5 g4f3 d1f3 d6e5 f1c4 g8f6 f3b3 d8e7 b1c3 c7c6 c1g5 b7b5 c3b5 c6b5 c4b5 b8d7 e1c1 a8d8 d1d7 d8d7 h1d1 e7e6 b5d7 f6d7 b3b8",
+            "fen": "1Q2kb1r/p2n1ppp/4q3/4p1B1/4P3/8/PPP2PPP/2KR4 b k - 1 16",
+            "label": "Après Db8+",
+            "note": "L'échec impose Cxb8 et dévie le cavalier noir en d7.",
+            "marks": [
+              {
+                "from": "d7",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          },
+          {
+            "command": "position startpos moves e2e4 e7e5 g1f3 d7d6 d2d4 c8g4 d4e5 g4f3 d1f3 d6e5 f1c4 g8f6 f3b3 d8e7 b1c3 c7c6 c1g5 b7b5 c3b5 c6b5 c4b5 b8d7 e1c1 a8d8 d1d7 d8d7 h1d1 e7e6 b5d7 f6d7 b3b8 d7b8",
+            "fen": "1n2kb1r/p4ppp/4q3/4p1B1/4P3/8/PPP2PPP/2KR4 w k - 0 17",
+            "label": "Cxb8",
+            "note": "Le trajet est maintenant libre pour Td8#.",
+            "marks": [
+              {
+                "from": "d1",
+                "to": "d8",
+                "tone": "idea"
+              }
+            ],
+            "origin": "engine-line"
+          },
+          {
+            "command": "position startpos moves e2e4 e7e5 g1f3 d7d6 d2d4 c8g4 d4e5 g4f3 d1f3 d6e5 f1c4 g8f6 f3b3 d8e7 b1c3 c7c6 c1g5 b7b5 c3b5 c6b5 c4b5 b8d7 e1c1 a8d8 d1d7 d8d7 h1d1 e7e6 b5d7 f6d7 b3b8 d7b8 d1d8",
+            "fen": "1n1Rkb1r/p4ppp/4q3/4p1B1/4P3/8/PPP2PPP/2K5 b k - 1 17",
+            "label": "Td8#",
+            "note": "Td8# : le roi est mat.",
+            "marks": [
+              {
+                "from": "d1",
+                "to": "d8",
+                "tone": "threat"
+              }
+            ],
+            "origin": "engine-line"
+          }
+        ],
+        "alternative": [
+          {
+            "command": "position startpos moves e2e4 e7e5 g1f3 d7d6 d2d4 c8g4 d4e5 g4f3 d1f3 d6e5 f1c4 g8f6 f3b3 d8e7 b1c3 c7c6 c1g5 b7b5 c3b5 c6b5 c4b5 b8d7 e1c1 a8d8 d1d7 d8d7 h1d1 e7e6 b5d7 f6d7 b3a3",
+            "fen": "4kb1r/p2n1ppp/4q3/4p1B1/4P3/Q7/PPP2PPP/2KR4 b k - 1 16",
+            "label": "Avec Da3",
+            "note": "Après Da3, la pièce bloque encore ce trajet. Ce coup ne force pas le même mat dans l'horizon réponse puis mat immédiat.",
+            "marks": [
+              {
+                "from": "d1",
+                "to": "d7",
+                "tone": "idea"
+              },
+              {
+                "from": "d7",
+                "tone": "observation"
+              }
+            ],
+            "origin": "position"
+          }
+        ],
+        "evidence": {
+          "playedMoves": [
+            "d7b8",
+            "d1d8"
+          ],
+          "alternativeMoves": [],
+          "materialDelta": null,
+          "exchange": null,
+          "contextText": null,
+          "origin": "engine-lines",
+          "scope": "short-forcing-route"
+        },
+        "limitation": "La preuve couvre toutes les réponses dans cet horizon de réponse puis mat immédiat. Elle ne prouve pas que l'alternative exclut un mat plus long. Le moteur fournit les deux coups montrés."
+      },
+      "capturedAt": "2026-10-03T21:49:28.177Z"
+    }
+  ]
+}

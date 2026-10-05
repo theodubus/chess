@@ -30,6 +30,21 @@ export class BranchAnalysis {
   resultFor(tree: StudyTree, node: number) {
     return this.cache.get(tree)?.results.get(node) ?? null;
   }
+  remember(
+    tree: StudyTree,
+    node: number,
+    result: ReviewResult,
+    verified = false,
+  ) {
+    const cached = this.cache.get(tree) ?? {
+      results: new Map<number, ReviewResult>(),
+      verified: new Set<number>(),
+    };
+    this.cache.set(tree, cached);
+    cached.results.set(node, result);
+    if (verified) cached.verified.add(node);
+    else cached.verified.delete(node);
+  }
   subscribe(listener: () => void) {
     this.listeners.add(listener);
     return () => {

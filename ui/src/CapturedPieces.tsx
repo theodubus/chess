@@ -10,16 +10,18 @@ const names = { p: "pion", n: "cavalier", b: "fou", r: "tour", q: "dame" };
 
 export default function CapturedPieces({
   captures,
+  balance,
   side,
   label = false,
 }: {
   captures: Captures;
+  balance: number;
   side: Side;
   label?: boolean;
 }) {
   const opponent = side === "w" ? "b" : "w";
   const own = captures[side];
-  const delta = own.points - captures[opponent].points;
+  const delta = side === "w" ? balance : -balance;
   const sideName = side === "w" ? "Blancs" : "Noirs";
   const description = captureOrder
     .flatMap((type) => {
@@ -31,8 +33,8 @@ export default function CapturedPieces({
     <div
       className="captured-material"
       data-side={side}
-      aria-label={`Prises des ${sideName} : ${description || "aucune"}${delta > 0 ? ` ; avantage en prises de ${delta} point${delta > 1 ? "s" : ""}` : ""}`}
-      title="Bilan des prises connues : pion 1, cavalier et fou 3, tour 5, dame 9."
+      aria-label={`Prises des ${sideName} : ${description || "aucune"}${delta > 0 ? ` ; avantage matériel de ${delta} point${delta > 1 ? "s" : ""}` : ""}`}
+      title="Pièces prises et avantage matériel sur le plateau : pion 1, cavalier et fou 3, tour 5, dame 9."
     >
       {label && <span className="capture-side">{sideName}</span>}
       <span className="captured-icons" aria-hidden="true">
