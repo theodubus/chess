@@ -1,0 +1,77 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 997627e..5e8a022 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -2795,6 +2795,72 @@ mod tests {
+         assert!(s.late_move_prune(true, false, 1, 1, 0, seuil));
+     }
+ 
++    /// SONDE RFP — jetable, à l'attic : `RFP_POSITIONS=<fichier>`
++    /// `[RFP_DEPTH=7] cargo test --release --lib sonde_rfp -- --ignored --nocapture`.
++    /// La forme de la sonde de C36, la futilité inverse à la place de LMP.
++    #[test]
++    #[ignore]
++    fn sonde_rfp_la_futilite_inverse_retire_des_noeuds_en_general() {
++        let path = std::env::var("RFP_POSITIONS").unwrap();
++        let depth: u32 = std::env::var("RFP_DEPTH")
++            .ok()
++            .map_or(7, |d| d.parse().unwrap());
++        let limits = Limits {
++            depth: Some(depth),
++            ..Limits::default()
++        };
++        let (mut total_avec, mut total_sans) = (0_u64, 0_u64);
++        let (mut moins, mut plus, mut egal) = (0, 0, 0);
++        let mut rapports = Vec::new();
++        for (i, line) in std::fs::read_to_string(path).unwrap().lines().enumerate() {
++            let tokens: Vec<&str> = line.split_whitespace().collect();
++            let (mut position, rest) = match tokens.first() {
++                Some(&"startpos") => (Position::startpos(), &tokens[1..]),
++                Some(&"fen") => {
++                    let end = tokens
++                        .iter()
++                        .position(|t| *t == "moves")
++                        .unwrap_or(tokens.len());
++                    (
++                        Position::from_fen(&tokens[1..end].join(" ")).unwrap(),
++                        &tokens[end..],
++                    )
++                }
++                _ => panic!("ligne illisible : {line}"),
++            };
++            if rest.first() == Some(&"moves") {
++                for mv in &rest[1..] {
++                    position.play_uci(mv).unwrap();
++                }
++            }
++            let mut avec = search();
++            avec.go(&position, &limits, |_| {});
++            let mut sans = search_sans_rfp();
++            sans.go(&position, &limits, |_| {});
++            let (a, b) = (avec.nodes(), sans.nodes());
++            println!("RFP {i} {a} {b}");
++            total_avec += a;
++            total_sans += b;
++            rapports.push(a as f64 / b as f64);
++            match a.cmp(&b) {
++                std::cmp::Ordering::Less => moins += 1,
++                std::cmp::Ordering::Greater => plus += 1,
++                std::cmp::Ordering::Equal => egal += 1,
++            }
++        }
++        rapports.sort_by(|x, y| x.partial_cmp(y).unwrap());
++        let q = |f: f64| rapports[((rapports.len() - 1) as f64 * f) as usize];
++        println!(
++            "RFP TOTAL profondeur {depth} : avec {total_avec}, sans {total_sans}, \
++             rapport {:.4} ; avec < sans {moins}, avec > sans {plus}, égal {egal} ; \
++             médiane {:.3}, 9e décile {:.3}, maximum {:.3}",
++            total_avec as f64 / total_sans as f64,
++            q(0.5),
++            q(0.9),
++            q(1.0)
++        );
++    }
++
+     #[test]
+     fn la_futilite_inverse_retire_des_noeuds() {
+         // Au TOTAL sur trente-six positions de parties, ni sur une seule ni

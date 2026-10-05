@@ -2687,28 +2687,16 @@ mod tests {
 
     #[test]
     fn lelagage_par_compte_retire_des_noeuds() {
-        // Au TOTAL sur les six positions du banc, jamais sur une seule. Sur
-        // `main`, à ce protocole, l'élagage par compte grossit l'arbre de 661
-        // des 4 684 positions d'un journal de parties, et le réduit de 36 %
-        // au total (5 oct. 2026, `tools/README.md`, n° 9, C36) : asserté sur
-        // une position, il ne tenait que par le choix de la position.
-        let limits = Limits {
-            depth: Some(7),
-            ..Limits::default()
-        };
-        let (mut avec, mut sans) = (0, 0);
-        for fen in crate::bench::BENCH_FENS {
-            let position = Position::from_fen(fen).unwrap();
-            let mut s = search();
-            s.go(&position, &limits, |_| {});
-            avec += s.nodes();
-            let mut s = search_sans_lmp();
-            s.go(&position, &limits, |_| {});
-            sans += s.nodes();
-        }
+        // Au TOTAL sur trente-six positions de parties, ni sur une seule ni
+        // sur les six du banc. Mesuré sur `main` (5 oct. 2026,
+        // `tools/README.md`, n° 9, la composition) : l'élagage par compte
+        // grossit l'arbre d'une position de partie sur sept, jusqu'à × 4,6,
+        // et une somme sur six positions tirées au hasard bascule 2,7 % des
+        // fois ; sur trente-six, moins d'une fois sur dix mille.
+        let (avec, sans) = noeuds_avec_et_sans(search_sans_lmp);
         assert!(
             avec < sans,
-            "l'élagage par compte ne retire rien : {avec} avec, {sans} sans, sur le banc"
+            "l'élagage par compte ne retire rien : {avec} avec, {sans} sans, sur les positions de partie"
         );
     }
 
@@ -2809,21 +2797,59 @@ mod tests {
 
     #[test]
     fn la_futilite_inverse_retire_des_noeuds() {
-        let position = Position::from_fen(crate::bench::BENCH_FENS[1]).unwrap();
+        // Au TOTAL sur trente-six positions de parties, ni sur une seule ni
+        // sur les six du banc. Mesuré sur `main` (5 oct. 2026,
+        // `tools/README.md`, n° 9, la composition) : la futilité inverse
+        // grossit l'arbre de 412 des 4 684 positions d'un journal de parties,
+        // et une somme sur six positions tirées au hasard bascule 3,1 % des
+        // fois ; sur trente-six, une fois sur dix mille.
+        let (avec, sans) = noeuds_avec_et_sans(search_sans_rfp);
+        assert!(
+            avec < sans,
+            "la futilité inverse ne retire rien : {avec} avec, {sans} sans, sur les positions de partie"
+        );
+    }
+
+    /// Trente-six positions de parties du moteur, tirées par une règle fixe
+    /// du journal de l'écran du n° 9 — voir l'en-tête du fichier.
+    fn positions_de_partie() -> Vec<Position> {
+        include_str!("../tests/donnees/positions-de-partie.txt")
+            .lines()
+            .filter(|ligne| !ligne.is_empty() && !ligne.starts_with('#'))
+            .map(|ligne| {
+                let jetons: Vec<&str> = ligne.split_whitespace().collect();
+                assert_eq!(jetons[0], "fen", "ligne illisible : {ligne}");
+                let fin = jetons
+                    .iter()
+                    .position(|j| *j == "moves")
+                    .unwrap_or(jetons.len());
+                let mut position = Position::from_fen(&jetons[1..fin].join(" ")).unwrap();
+                for coup in jetons.iter().skip(fin + 1) {
+                    position.play_uci(coup).unwrap();
+                }
+                position
+            })
+            .collect()
+    }
+
+    /// Les nœuds de recherches froides à la profondeur 7, à l'évaluation
+    /// faite main, avec tous les élagages puis avec la recherche que rend
+    /// `sans`, sommés sur les positions de partie.
+    fn noeuds_avec_et_sans(sans: fn() -> Search) -> (u64, u64) {
         let limits = Limits {
             depth: Some(7),
             ..Limits::default()
         };
-        let mut avec = search();
-        avec.go(&position, &limits, |_| {});
-        let mut sans = search_sans_rfp();
-        sans.go(&position, &limits, |_| {});
-        assert!(
-            avec.nodes() < sans.nodes(),
-            "la futilité inverse ne retire rien : {} avec, {} sans",
-            avec.nodes(),
-            sans.nodes()
-        );
+        let (mut total_avec, mut total_sans) = (0, 0);
+        for position in positions_de_partie() {
+            let mut s = search();
+            s.go(&position, &limits, |_| {});
+            total_avec += s.nodes();
+            let mut s = sans();
+            s.go(&position, &limits, |_| {});
+            total_sans += s.nodes();
+        }
+        (total_avec, total_sans)
     }
 
     #[test]
