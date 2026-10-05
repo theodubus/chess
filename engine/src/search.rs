@@ -1389,10 +1389,7 @@ impl Search {
         // Mesuré avant d'être écrit : la condition porte sur 9,8 % des nœuds et
         // se déclenche sur 4,4 % d'entre eux — concentrée à la profondeur 1, où
         // couper épargne tout un étage de quiescence.
-        // L'évaluation statique du nœud, calculée au plus une fois : la
-        // futilité inverse et la garde du coup nul la lisent toutes deux (C33).
-        let mut static_eval = None;
-        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval) {
+        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta) {
             return score;
         }
 
@@ -1408,19 +1405,12 @@ impl Search {
         //   l'hypothèse de base s'inverse — passer serait un cadeau, donc la
         //   coupure serait fausse (voir `has_non_pawn_material`) ;
         // - contre une borne de mat, la coupure produirait un mat imaginaire ;
-        // - jamais à la racine, où il faut rendre un coup ;
-        // - **sous bêta à l'évaluation statique**, l'hypothèse « ma position
-        //   est déjà assez bonne » n'a presque aucune chance — voir
-        //   `null_move_worth_trying` (C33).
+        // - jamais à la racine, où il faut rendre un coup.
         if ply > 0
             && depth >= NULL_MOVE_MIN_DEPTH
             && board.checkers().is_empty()
             && beta.abs() < MATE_THRESHOLD
             && has_non_pawn_material(board)
-            && null_move_worth_trying(
-                *static_eval.get_or_insert_with(|| self.static_eval(board, ply)),
-                beta,
-            )
             && let Some(passed) = board.null_move()
         {
             self.null_marks.push(self.path.len());
@@ -1696,7 +1686,6 @@ impl Search {
         depth: i32,
         ply: usize,
         beta: i32,
-        static_eval: &mut Option<i32>,
     ) -> Option<i32> {
         #[cfg(test)]
         if !self.reverse_futility {
@@ -1711,7 +1700,7 @@ impl Search {
             return None;
         }
 
-        let static_eval = *static_eval.get_or_insert_with(|| self.static_eval(board, ply));
+        let static_eval = self.static_eval(board, ply);
         (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
     }
 
@@ -2123,22 +2112,6 @@ fn build_lmr_table() -> Vec<i32> {
         }
     }
     table
-}
-
-/// Vrai si le coup nul vaut d'être essayé à un nœud d'évaluation statique
-/// `static_eval`, contre `beta` : seulement si la position, telle qu'elle
-/// s'évalue, atteint déjà bêta (C33).
-///
-/// **Pourquoi** : le coup nul parie que passer son tour laisse la position
-/// assez bonne pour couper. Sous bêta, le pari ne tient presque jamais.
-/// Mesuré le 5 oct. 2026, rejeu de 5 276 positions de parties du moteur qui
-/// joue, profondeur 12 : **52 % des essais** partaient sous bêta, et ils
-/// coupaient **1,8 % du temps** — contre 54 % au-dessus —, pour 8,4 % des
-/// nœuds et 3,5 % des coupures du coup nul. Ces coupures-là sont les plus
-/// douteuses : la garde les rend à une recherche entière.
-#[must_use]
-pub fn null_move_worth_trying(static_eval: i32, beta: i32) -> bool {
-    static_eval >= beta
 }
 
 /// Vrai si le camp au trait possède autre chose que des pions et son roi.
@@ -2832,27 +2805,17 @@ mod tests {
         // blancs en échec par la tour h1, malgré une dame d'avance.
         let b = board("4k3/8/8/8/8/8/6Q1/4K2r w - - 0 1");
         assert!(!b.checkers().is_empty(), "la position doit être un échec");
-        assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, -5_000, &mut None),
-            None
-        );
+        assert_eq!(search().reverse_futility_cut(&b, 1, 1, -5_000), None);
     }
 
     #[test]
     fn a_la_racine_la_futilite_inverse_ne_coupe_jamais() {
         // Il y faut un coup à jouer, pas seulement un score.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
-        assert_eq!(
-            search().reverse_futility_cut(&b, 1, 0, -5_000, &mut None),
-            None
-        );
+        assert_eq!(search().reverse_futility_cut(&b, 1, 0, -5_000), None);
         // Le même nœud hors racine coupe, lui : c'est ce qui prouve que le
         // test ci-dessus mesure la garde et non l'absence de condition.
-        assert!(
-            search()
-                .reverse_futility_cut(&b, 1, 1, -5_000, &mut None)
-                .is_some()
-        );
+        assert!(search().reverse_futility_cut(&b, 1, 1, -5_000).is_some());
     }
 
     #[test]
@@ -2860,12 +2823,12 @@ mod tests {
         // La marge suppose que `beta` mesure du matériel ; un mat ne le fait pas.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, MATE - 5, &mut None),
+            search().reverse_futility_cut(&b, 1, 1, MATE - 5),
             None,
             "borne de mat positive"
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, -MATE + 5, &mut None),
+            search().reverse_futility_cut(&b, 1, 1, -MATE + 5),
             None,
             "borne de mat négative"
         );
@@ -2876,11 +2839,11 @@ mod tests {
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert!(
             search()
-                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000, &mut None)
+                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000)
                 .is_some()
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000, &mut None),
+            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000),
             None
         );
     }
@@ -3604,16 +3567,6 @@ mod tests {
         assert!(s.table_permille() > 0, "la table doit s'être remplie");
         s.clear_table();
         assert_eq!(s.table_permille(), 0);
-    }
-
-    #[test]
-    fn le_coup_nul_ne_s_essaie_qu_a_partir_de_beta() {
-        // À bêta exactement, l'hypothèse tient déjà : on essaie.
-        assert!(null_move_worth_trying(30, 30));
-        assert!(null_move_worth_trying(31, 30));
-        // Un centième dessous, non.
-        assert!(!null_move_worth_trying(29, 30));
-        assert!(!null_move_worth_trying(-500, 30));
     }
 
     #[test]
