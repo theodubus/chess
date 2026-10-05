@@ -82,6 +82,9 @@ etape "balayage vivant"           tools/balayage-vivant-test.sh
 # sortie entrant dans le contexte du modèle. Un script devenu MUET ne se
 # verrait pas — on croirait simplement qu'il n'y a rien à dire.
 etape "état calculé"              bash -c 'tools/etat.sh | grep -q "non fusionné dans main"'
+# Sa ligne des branches à faire supprimer se tait presque toujours : sur des
+# dépôts fabriqués, elle doit parler quand il le faut, et seulement alors.
+etape "état calculé, branches"    tools/etat-test.sh
 
 if [[ $RAPIDE -eq 0 ]]; then
   etape "tests (release)"         cargo test --workspace --release

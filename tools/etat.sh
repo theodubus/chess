@@ -52,6 +52,30 @@ else
   echo "non fusionné dans main : rien"
 fi
 
+# Les branches distantes que `main` contient en entier : les supprimer ne perd
+# rien, et c'est à Théo de le faire — le jeton de session ne peut pas supprimer
+# une référence distante (vérifié le 22 sept. 2026). Il a demandé, le 5 oct.,
+# qu'on les lui signale à chaque point de récap, comme toute action humaine
+# nécessaire : une consigne en prose s'oublie au premier compactage, une ligne
+# calculée à chaque reprise non. Calculé sur les références du dernier
+# `fetch`, donc une branche supprimée depuis peut encore y figurer. Jamais
+# `main`, ni la branche de travail, ni celles de Codex (`codex/…`), qui
+# appartiennent à un autre agent (`CLAUDE.md`, Structure).
+a_supprimer=""
+while IFS= read -r ref; do
+  nom=${ref#origin/}
+  case "$nom" in
+    origin|HEAD|main|"$branche"|codex/*) continue ;;
+  esac
+  absents=$(git rev-list --count "origin/main..$ref" 2>/dev/null) || continue
+  if [ "$absents" = "0" ]; then
+    a_supprimer="$a_supprimer $nom"
+  fi
+done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin 2>/dev/null)
+if [ -n "$a_supprimer" ]; then
+  echo "à faire supprimer par Théo — contenues dans main, selon le dernier fetch :$a_supprimer"
+fi
+
 # Le signal de documentation. Il ne PRESCRIT rien — il constate, et c'est ce
 # qui le rend utilisable : « il faudrait documenter » est une consigne qu'on
 # oublie, « 6 fichiers de code et 0 de documentation » est un fait.
