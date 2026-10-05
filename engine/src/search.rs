@@ -80,22 +80,6 @@ const RFP_MAX_DEPTH: i32 = 8;
 /// n'a pas dit le contraire.
 const RFP_MARGIN: i32 = 100;
 
-/// Profondeur maximale de la futilité aux nœuds frontières (C39) — celle
-/// jusqu'où la sonde a mesuré ses dégâts.
-const FP_MAX_DEPTH: i32 = 6;
-
-/// Marge de la futilité aux nœuds frontières : `FP_BASE + FP_PER_DEPTH × d`,
-/// en unités du RÉSEAU — mesurée à son échelle, pas transposée d'une autre
-/// (n° 9, troisième écran, 5 oct. 2026). Sur 5 276 recherches de parties
-/// rejouées, à chaque profondeur, la plus petite marge qui détruit au plus
-/// 2 % des montées d'`alpha` des coups tranquilles cherchés, puis la droite
-/// la plus proche par-dessus : elle saute environ 60 % de ces coups, et
-/// retire 29 % de l'arbre à la profondeur 12.
-const FP_BASE: i32 = 140;
-
-/// Pente de la marge de la futilité aux nœuds frontières — voir [`FP_BASE`].
-const FP_PER_DEPTH: i32 = 20;
-
 /// Profondeur minimale pour tenter un coup nul.
 ///
 /// En dessous, la recherche réduite serait si courte que l'élagage ne
@@ -478,9 +462,6 @@ pub struct Search {
     /// Permet à un test de désactiver le seul élagage par compte de coups.
     #[cfg(test)]
     late_move_pruning: bool,
-    /// Permet à un test de désactiver la seule futilité aux nœuds frontières.
-    #[cfg(test)]
-    frontier_futility: bool,
     /// Fait vérifier à chaque évaluation que les accumulateurs dérivés coup
     /// par coup sont ceux d'un recalcul complet, et compte les vérifications
     /// — sans ce compte, un test qui ne passerait jamais par là resterait
@@ -535,8 +516,6 @@ impl Search {
             delta_pruning: true,
             #[cfg(test)]
             late_move_pruning: true,
-            #[cfg(test)]
-            frontier_futility: true,
             #[cfg(test)]
             checked_accumulators: None,
         }
@@ -619,32 +598,6 @@ impl Search {
             margin.saturating_mul(NETWORK_MARGIN_PERCENT) / 100
         } else {
             margin
-        }
-    }
-
-    /// Une marge MESURÉE en unités du réseau, dans celles de l'évaluation qui
-    /// joue : intacte quand un réseau joue, ramenée à l'échelle de la faite
-    /// main sinon — l'inverse de [`Search::scaled_margin`], par le même
-    /// facteur. La futilité aux nœuds frontières (C39) a été mesurée au
-    /// réseau ; la faite main n'en reçoit que l'analogue.
-    fn network_margin(&self, margin: i32) -> i32 {
-        if self.network.is_some() {
-            margin
-        } else {
-            margin.saturating_mul(100) / NETWORK_MARGIN_PERCENT
-        }
-    }
-
-    /// Vrai si la futilité aux nœuds frontières est active : toujours, hors
-    /// test.
-    fn frontier_futility_on(&self) -> bool {
-        #[cfg(test)]
-        {
-            self.frontier_futility
-        }
-        #[cfg(not(test))]
-        {
-            true
         }
     }
 
@@ -1436,10 +1389,7 @@ impl Search {
         // Mesuré avant d'être écrit : la condition porte sur 9,8 % des nœuds et
         // se déclenche sur 4,4 % d'entre eux — concentrée à la profondeur 1, où
         // couper épargne tout un étage de quiescence.
-        // L'évaluation statique du nœud, calculée au plus une fois : la
-        // futilité inverse et celle des nœuds frontières la lisent toutes deux.
-        let mut static_eval = None;
-        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval) {
+        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta) {
             return score;
         }
 
@@ -1538,42 +1488,12 @@ impl Search {
                 quiets_seen += 1;
             }
 
-            let mut child = board.clone();
-            child.play_unchecked(mv);
-
-            // Futilité aux nœuds frontières (C39) : un coup tranquille dont
-            // l'évaluation du nœud, plus une marge, n'atteint pas `alpha` se
-            // saute. Compté par l'élagage par compte comme s'il avait été
-            // cherché, ce qui laisse celui-ci tel quel. Les gardes, et ce
-            // qu'elles écartent :
-            // - **en échec**, l'évaluation statique ment, et toute parade est
-            //   obligatoire ;
-            // - **un coup qui donne échec** peut tout changer, la quiescence en
-            //   témoigne ;
-            // - **jamais à la racine**, ni avant un premier coup qui ne soit pas
-            //   une défaite matée — on ne saute rien quand on se fait mater ;
-            // - **quand `alpha` est un mat**, sauter ne raccourcirait plus rien.
-            if quiet
-                && !in_check
-                && ply > 0
-                && depth <= FP_MAX_DEPTH
-                && best > -MATE_THRESHOLD
-                && alpha < MATE_THRESHOLD
-                && child.checkers().is_empty()
-                && self.frontier_futility_on()
-                && frontier_futile(
-                    *static_eval.get_or_insert_with(|| self.static_eval(board, ply)),
-                    self.network_margin(futility_margin(depth)),
-                    alpha,
-                )
-            {
-                continue;
-            }
-
             if let Some(slot) = self.moved.get_mut(ply + 1) {
                 *slot = Some(piece_to(board, mv));
             }
             self.push_move(board, mv, ply);
+            let mut child = board.clone();
+            child.play_unchecked(mv);
 
             // Réduction des coups tardifs.
             //
@@ -1766,7 +1686,6 @@ impl Search {
         depth: i32,
         ply: usize,
         beta: i32,
-        static_eval: &mut Option<i32>,
     ) -> Option<i32> {
         #[cfg(test)]
         if !self.reverse_futility {
@@ -1781,7 +1700,7 @@ impl Search {
             return None;
         }
 
-        let static_eval = *static_eval.get_or_insert_with(|| self.static_eval(board, ply));
+        let static_eval = self.static_eval(board, ply);
         (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
     }
 
@@ -2158,21 +2077,6 @@ fn may_lose_material(board: &Board, mv: Move, victim: Piece) -> bool {
 /// a de chances de se révéler bon, donc plus on en examine avant de renoncer.
 fn lmp_limit(depth: i32) -> usize {
     LMP_BASE + (depth.max(0) as usize).pow(2)
-}
-
-/// La marge de la futilité aux nœuds frontières à la profondeur `depth`, en
-/// unités du réseau — voir [`FP_BASE`].
-fn futility_margin(depth: i32) -> i32 {
-    FP_BASE + FP_PER_DEPTH * depth
-}
-
-/// Vrai si un coup tranquille est futile à la frontière : l'évaluation
-/// statique du nœud, plus la marge, n'atteint pas `alpha` (C39). Le pari de
-/// la futilité inverse, côté `alpha` : un coup tranquille fait rarement
-/// bouger l'évaluation de plus que la marge à si peu de profondeur, et la
-/// sonde a compté combien de fois il le fait.
-fn frontier_futile(static_eval: i32, margin: i32, alpha: i32) -> bool {
-    static_eval + margin <= alpha
 }
 
 /// La fenêtre de l'élagage par distance au mat au ply `ply` (C27) : rien de
@@ -2732,67 +2636,6 @@ mod tests {
         s
     }
 
-    /// Construit une recherche dont la seule futilité aux nœuds frontières est
-    /// désactivée.
-    fn search_sans_fp() -> Search {
-        let mut s = search();
-        s.frontier_futility = false;
-        s
-    }
-
-    #[test]
-    fn la_marge_de_futilite_croit_avec_la_profondeur() {
-        // Valeurs relevées sur la formule, pas recopiées d'une intention.
-        assert_eq!(futility_margin(1), 160);
-        assert_eq!(futility_margin(FP_MAX_DEPTH), 260);
-        for d in 1..FP_MAX_DEPTH {
-            assert!(futility_margin(d) < futility_margin(d + 1));
-        }
-    }
-
-    #[test]
-    fn un_coup_est_futile_quand_l_evaluation_plus_la_marge_n_atteint_pas_alpha() {
-        // L'égalité coupe : la marge atteint `alpha` sans le dépasser.
-        assert!(frontier_futile(0, 160, 160));
-        assert!(frontier_futile(-100, 160, 60));
-        assert!(!frontier_futile(0, 160, 159));
-        assert!(!frontier_futile(1, 160, 160));
-    }
-
-    #[test]
-    fn une_marge_mesuree_au_reseau_se_ramene_a_la_faite_main() {
-        let mut s = search();
-        assert_eq!(s.network_margin(224), 100);
-        assert_eq!(s.network_margin(160), 71);
-        s.set_network(Some(Arc::new(crate::nnue::testing::random_network(1))));
-        assert_eq!(s.network_margin(160), 160);
-    }
-
-    #[test]
-    fn la_futilite_aux_noeuds_frontieres_retire_des_noeuds() {
-        // Au TOTAL sur les six positions du banc, jamais sur une seule : une
-        // propriété générale assertée sur une position ne tient que par le
-        // choix de la position (C36, 5 oct. 2026).
-        let limits = Limits {
-            depth: Some(7),
-            ..Limits::default()
-        };
-        let (mut avec, mut sans) = (0, 0);
-        for fen in crate::bench::BENCH_FENS {
-            let position = Position::from_fen(fen).unwrap();
-            let mut s = search();
-            s.go(&position, &limits, |_| {});
-            avec += s.nodes();
-            let mut s = search_sans_fp();
-            s.go(&position, &limits, |_| {});
-            sans += s.nodes();
-        }
-        assert!(
-            avec < sans,
-            "la futilité aux nœuds frontières ne retire rien : {avec} avec, {sans} sans, sur le banc"
-        );
-    }
-
     /// Construit une recherche dont le seul élagage par compte de coups est
     /// désactivé.
     fn search_sans_lmp() -> Search {
@@ -2970,27 +2813,17 @@ mod tests {
         // blancs en échec par la tour h1, malgré une dame d'avance.
         let b = board("4k3/8/8/8/8/8/6Q1/4K2r w - - 0 1");
         assert!(!b.checkers().is_empty(), "la position doit être un échec");
-        assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, -5_000, &mut None),
-            None
-        );
+        assert_eq!(search().reverse_futility_cut(&b, 1, 1, -5_000), None);
     }
 
     #[test]
     fn a_la_racine_la_futilite_inverse_ne_coupe_jamais() {
         // Il y faut un coup à jouer, pas seulement un score.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
-        assert_eq!(
-            search().reverse_futility_cut(&b, 1, 0, -5_000, &mut None),
-            None
-        );
+        assert_eq!(search().reverse_futility_cut(&b, 1, 0, -5_000), None);
         // Le même nœud hors racine coupe, lui : c'est ce qui prouve que le
         // test ci-dessus mesure la garde et non l'absence de condition.
-        assert!(
-            search()
-                .reverse_futility_cut(&b, 1, 1, -5_000, &mut None)
-                .is_some()
-        );
+        assert!(search().reverse_futility_cut(&b, 1, 1, -5_000).is_some());
     }
 
     #[test]
@@ -2998,12 +2831,12 @@ mod tests {
         // La marge suppose que `beta` mesure du matériel ; un mat ne le fait pas.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, MATE - 5, &mut None),
+            search().reverse_futility_cut(&b, 1, 1, MATE - 5),
             None,
             "borne de mat positive"
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, -MATE + 5, &mut None),
+            search().reverse_futility_cut(&b, 1, 1, -MATE + 5),
             None,
             "borne de mat négative"
         );
@@ -3014,11 +2847,11 @@ mod tests {
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert!(
             search()
-                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000, &mut None)
+                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000)
                 .is_some()
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000, &mut None),
+            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000),
             None
         );
     }
