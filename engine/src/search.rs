@@ -93,6 +93,14 @@ const NULL_MOVE_MIN_DEPTH: i32 = 3;
 /// si elle échoue.
 const NULL_MOVE_REDUCTION: i32 = 2;
 
+/// Profondeur restante maximale à laquelle une capture perdante se saute
+/// dans la recherche principale — voir [`see_prunable_main`].
+const SEE_PRUNE_MAX_DEPTH: i32 = 6;
+
+/// Ce qu'une capture peut perdre au compte de l'échange statique, par pli de
+/// profondeur restante, avant d'être sautée — voir [`see_prunable_main`].
+const SEE_PRUNE_MARGIN: i32 = 100;
+
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
 
@@ -1477,6 +1485,20 @@ impl Search {
             moves += 1;
             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
 
+            // L'échange statique dans la recherche principale (C38) — voir
+            // `see_prunable_main`. `continue` : le coup suivant peut valoir
+            // mieux, l'ordre des captures n'est pas celui de l'échange.
+            if !quiet
+                && ply > 0
+                && !in_check
+                && depth <= SEE_PRUNE_MAX_DEPTH
+                && best > -MATE_THRESHOLD
+                && Some(mv) != tt_move
+                && see_prunable_main(board, mv, depth)
+            {
+                continue;
+            }
+
             // Élagage par compte de coups : on abandonne les coups tranquilles
             // restants. `break` et non `continue`, parce que l'ordonnancement
             // place toutes les captures avant tous les coups tranquilles — ce
@@ -2032,6 +2054,32 @@ fn see_prunable(board: &Board, mv: Move, in_check: bool) -> bool {
         return false;
     };
     mv.promotion.is_none() && may_lose_material(board, mv, victim) && see::see(board, mv) < 0
+}
+
+/// Vrai si la capture `mv`, cherchée à la profondeur restante `depth` dans la
+/// recherche principale, perd à l'échange statique plus de
+/// [`SEE_PRUNE_MARGIN`] centièmes par pli : elle se saute (C38). Les gardes de
+/// nœud — hors racine, hors échec, après un premier coup, jamais le coup de
+/// la table, à la profondeur ≤ [`SEE_PRUNE_MAX_DEPTH`] — sont dans `negamax`.
+///
+/// **Pourquoi** : la quiescence saute déjà toute capture perdante
+/// (`see_prunable`) ; la recherche principale les cherchait toutes, à pleine
+/// profondeur, une fois passé le premier coup. Mesuré le 5 oct. 2026, rejeu de
+/// 5 276 positions de parties du moteur qui joue : **53 % des captures
+/// éligibles** perdent plus que la marge, et **0,5 %** d'entre elles,
+/// cherchées, montent `alpha` ; l'arbre −11,8 % à la profondeur 10, −10,0 % à
+/// la 12. La marge croît avec la profondeur : plus il reste à chercher, plus
+/// une perte apparente a de place pour se racheter. **En unités de l'échange,
+/// pas de l'évaluation** — `see` compte en valeurs de pièces fixes, que le
+/// réseau ne change pas (`CLAUDE.md`, « une marge … se mesure à l'échelle de
+/// l'évaluation qui joue », ne s'applique pas ici).
+fn see_prunable_main(board: &Board, mv: Move, depth: i32) -> bool {
+    let Some(victim) = captured_piece(board, mv) else {
+        return false;
+    };
+    mv.promotion.is_none()
+        && may_lose_material(board, mv, victim)
+        && see::see(board, mv) < -SEE_PRUNE_MARGIN * depth
 }
 
 /// Cette capture peut-elle perdre du matériel ?
@@ -3567,6 +3615,50 @@ mod tests {
         assert!(s.table_permille() > 0, "la table doit s'être remplie");
         s.clear_table();
         assert_eq!(s.table_permille(), 0);
+    }
+
+    #[test]
+    fn une_capture_perdante_se_saute_selon_la_profondeur() {
+        // Dame blanche en d1 prend le pion d7, défendu par le roi : elle perd
+        // 980 contre 100, soit −880 à l'échange (valeurs de `see`).
+        let b = board("4k3/3p4/8/8/8/8/8/3QK3 w - - 0 1");
+        let qxd7 = Move {
+            from: Square::D1,
+            to: Square::D7,
+            promotion: None,
+        };
+        assert_eq!(see::see(&b, qxd7), -880);
+        // −880 est sous −100 × profondeur jusqu'à la profondeur 8 comprise.
+        assert!(see_prunable_main(&b, qxd7, 1));
+        assert!(see_prunable_main(&b, qxd7, 8));
+        assert!(!see_prunable_main(&b, qxd7, 9));
+        // Une perte exactement à la marge se cherche : à la profondeur 4, −400
+        // n'est pas sous −400.
+        let b = board("4k3/3p4/8/8/8/8/8/3RK3 w - - 0 1");
+        let rxd7 = Move {
+            from: Square::D1,
+            to: Square::D7,
+            promotion: None,
+        };
+        assert_eq!(see::see(&b, rxd7), -400);
+        assert!(see_prunable_main(&b, rxd7, 3));
+        assert!(!see_prunable_main(&b, rxd7, 4));
+        // Une capture gagnante ou égale ne se saute jamais.
+        let b = board("4k3/3q4/8/8/8/8/8/3QK3 w - - 0 1");
+        let qxd7 = Move {
+            from: Square::D1,
+            to: Square::D7,
+            promotion: None,
+        };
+        assert!(!see_prunable_main(&b, qxd7, 1));
+        // Un coup tranquille non plus.
+        let b = board("4k3/8/8/8/8/8/8/3QK3 w - - 0 1");
+        let qd2 = Move {
+            from: Square::D1,
+            to: Square::D2,
+            promotion: None,
+        };
+        assert!(!see_prunable_main(&b, qd2, 1));
     }
 
     #[test]
