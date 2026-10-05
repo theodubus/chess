@@ -15,6 +15,12 @@ d'un aveu sur la profondeur de recherche.
 > mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
 > d'aspiration, élagage delta en quiescence, futilité inverse, l'élagage par
 > **échange statique** en quiescence et l'**élagage par compte de coups**.
+> Le 5 oct. 2026, six de plus, mesurés un par un puis ensemble : la
+> réduction du coup nul croît avec la profondeur (**+41 ± 5 Elo** à
+> `8+0,08`), puis, en un groupe mesuré contre ce moteur, la garde du coup nul,
+> la réduction itérative interne, *improving* dans l'élagage par compte,
+> l'échange statique dans la recherche principale et la futilité aux nœuds
+> frontières (**+52 ± 4**).
 > L'évaluation
 > est un **réseau NNUE** depuis le 28 sept. 2026 (plus bas), et les marges de
 > la recherche suivent son échelle depuis le 1er oct. — **+50 ± 5 Elo** à
@@ -220,7 +226,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
 dépend ni de la machine ni de sa charge.
 
-Référence à la profondeur 7 : **105 813** nœuds.
+Référence à la profondeur 7 : **90 656** nœuds.
 
 Ce chiffre est vérifié par la CI — voir
 [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
