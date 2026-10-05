@@ -420,6 +420,12 @@ pub struct Search {
     /// d'être lue par l'enfant, et la racine n'est jamais écrite : aucune
     /// remise à zéro n'est nécessaire entre deux recherches.
     moved: Vec<Option<usize>>,
+    /// L'évaluation statique de chaque ply du chemin, `None` quand le nœud
+    /// était en échec : le point de comparaison du drapeau `improving` —
+    /// voir [`is_improving`]. Écrite à chaque nœud de `negamax` avant ses
+    /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
+    /// chemin courant.
+    evals: Vec<Option<i32>>,
     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
     lmr: Vec<i32>,
     /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
@@ -506,6 +512,7 @@ impl Search {
             lmr: build_lmr_table(),
             continuation: vec![0; PIECE_TO * PIECE_TO],
             moved: vec![None; MAX_PLY + 1],
+            evals: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
             network: None,
@@ -1371,6 +1378,22 @@ impl Search {
         // collision de clés Zobrist, astronomiquement rare mais pas impossible.
         let tt_move = hit.and_then(|hit| hit.mv).filter(|&mv| board.is_legal(mv));
 
+        // L'évaluation statique du nœud, hors échec, calculée une fois : la
+        // futilité inverse la lit, et le drapeau `improving` la compare à
+        // celle de notre nœud précédent sur le chemin (voir `is_improving`).
+        let mut static_eval = board
+            .checkers()
+            .is_empty()
+            .then(|| self.static_eval(board, ply));
+        if let Some(slot) = self.evals.get_mut(ply) {
+            *slot = static_eval;
+        }
+        let back = |k: usize| {
+            ply.checked_sub(k)
+                .and_then(|p| self.evals.get(p).copied().flatten())
+        };
+        let improving = is_improving(static_eval, back(2), back(4));
+
         // Futilité inverse.
         //
         // Le pendant du coup nul, appliqué au nœud lui-même plutôt qu'à son
@@ -1389,7 +1412,9 @@ impl Search {
         // Mesuré avant d'être écrit : la condition porte sur 9,8 % des nœuds et
         // se déclenche sur 4,4 % d'entre eux — concentrée à la profondeur 1, où
         // couper épargne tout un étage de quiescence.
-        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta) {
+        if let Some(score) =
+            self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval, improving)
+        {
             return score;
         }
 
@@ -1686,6 +1711,8 @@ impl Search {
         depth: i32,
         ply: usize,
         beta: i32,
+        static_eval: &mut Option<i32>,
+        improving: bool,
     ) -> Option<i32> {
         #[cfg(test)]
         if !self.reverse_futility {
@@ -1700,8 +1727,8 @@ impl Search {
             return None;
         }
 
-        let static_eval = self.static_eval(board, ply);
-        (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
+        let static_eval = *static_eval.get_or_insert_with(|| self.static_eval(board, ply));
+        (static_eval - RFP_MARGIN * rfp_depth(depth, improving) >= beta).then_some(static_eval)
     }
 
     /// Vrai si les coups tranquilles restants doivent être abandonnés.
@@ -2112,6 +2139,33 @@ fn build_lmr_table() -> Vec<i32> {
         }
     }
     table
+}
+
+/// Le drapeau `improving` : vrai si l'évaluation statique `now` du nœud
+/// dépasse celle de notre nœud précédent sur le chemin, deux plis plus haut,
+/// même camp au trait — ou quatre plis plus haut si celui-là était en échec,
+/// sans évaluation. Vrai faute de point de comparaison, et en échec, comme
+/// chez Stockfish (`improving`, `src/search.cpp`).
+///
+/// **Ce qu'il dit** : une position qui s'améliore depuis notre dernier coup a
+/// moins de chances de cacher une menace ; une qui se dégrade, davantage. Les
+/// élagages s'en servent pour couper plus franchement dans le premier cas, et
+/// avec plus de prudence dans le second. Mesuré le 5 oct. 2026, rejeu de
+/// 5 276 positions de parties du moteur qui joue : vrai dans 78 % des nœuds
+/// hors échec (`tools/README.md`, n° 9).
+fn is_improving(now: Option<i32>, two_back: Option<i32>, four_back: Option<i32>) -> bool {
+    match (now, two_back.or(four_back)) {
+        (Some(now), Some(before)) => now > before,
+        _ => true,
+    }
+}
+
+/// La profondeur que lit la marge de la futilité inverse : un pli de moins
+/// quand la position s'améliore — la marge rétrécit, la coupure vient plus
+/// tôt, comme chez Stockfish (C35). La garde de profondeur, elle, lit
+/// toujours la vraie profondeur.
+fn rfp_depth(depth: i32, improving: bool) -> i32 {
+    depth - i32::from(improving)
 }
 
 /// Vrai si le camp au trait possède autre chose que des pions et son roi.
@@ -2805,17 +2859,27 @@ mod tests {
         // blancs en échec par la tour h1, malgré une dame d'avance.
         let b = board("4k3/8/8/8/8/8/6Q1/4K2r w - - 0 1");
         assert!(!b.checkers().is_empty(), "la position doit être un échec");
-        assert_eq!(search().reverse_futility_cut(&b, 1, 1, -5_000), None);
+        assert_eq!(
+            search().reverse_futility_cut(&b, 1, 1, -5_000, &mut None, false),
+            None
+        );
     }
 
     #[test]
     fn a_la_racine_la_futilite_inverse_ne_coupe_jamais() {
         // Il y faut un coup à jouer, pas seulement un score.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
-        assert_eq!(search().reverse_futility_cut(&b, 1, 0, -5_000), None);
+        assert_eq!(
+            search().reverse_futility_cut(&b, 1, 0, -5_000, &mut None, false),
+            None
+        );
         // Le même nœud hors racine coupe, lui : c'est ce qui prouve que le
         // test ci-dessus mesure la garde et non l'absence de condition.
-        assert!(search().reverse_futility_cut(&b, 1, 1, -5_000).is_some());
+        assert!(
+            search()
+                .reverse_futility_cut(&b, 1, 1, -5_000, &mut None, false)
+                .is_some()
+        );
     }
 
     #[test]
@@ -2823,12 +2887,12 @@ mod tests {
         // La marge suppose que `beta` mesure du matériel ; un mat ne le fait pas.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, MATE - 5),
+            search().reverse_futility_cut(&b, 1, 1, MATE - 5, &mut None, false),
             None,
             "borne de mat positive"
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, -MATE + 5),
+            search().reverse_futility_cut(&b, 1, 1, -MATE + 5, &mut None, false),
             None,
             "borne de mat négative"
         );
@@ -2839,11 +2903,11 @@ mod tests {
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert!(
             search()
-                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000)
+                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000, &mut None, false)
                 .is_some()
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000),
+            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000, &mut None, false),
             None
         );
     }
@@ -3567,6 +3631,30 @@ mod tests {
         assert!(s.table_permille() > 0, "la table doit s'être remplie");
         s.clear_table();
         assert_eq!(s.table_permille(), 0);
+    }
+
+    #[test]
+    fn la_futilite_inverse_compte_un_pli_de_moins_quand_la_position_s_ameliore() {
+        assert_eq!(rfp_depth(5, true), 4);
+        assert_eq!(rfp_depth(5, false), 5);
+        assert_eq!(rfp_depth(1, true), 0);
+    }
+
+    #[test]
+    fn la_position_s_ameliore_par_rapport_a_notre_noeud_precedent() {
+        // Deux plis plus haut, même camp au trait.
+        assert!(is_improving(Some(10), Some(5), None));
+        assert!(!is_improving(Some(5), Some(10), None));
+        // Égalité : pas d'amélioration.
+        assert!(!is_improving(Some(5), Some(5), None));
+        // Deux plis plus haut en échec : quatre plis plus haut.
+        assert!(is_improving(Some(5), None, Some(1)));
+        assert!(!is_improving(Some(5), None, Some(10)));
+        // Le point de deux plis prime sur celui de quatre.
+        assert!(!is_improving(Some(5), Some(10), Some(0)));
+        // Faute de point de comparaison, ou en échec : vrai.
+        assert!(is_improving(Some(5), None, None));
+        assert!(is_improving(None, Some(100), Some(100)));
     }
 
     #[test]
