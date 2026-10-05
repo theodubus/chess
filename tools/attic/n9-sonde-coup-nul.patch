@@ -1,0 +1,354 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 97e0ebc..67bc1dd 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -35,6 +35,68 @@ use crate::position::{Position, repetitions};
+ use crate::see;
+ use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
+ 
++/// SONDE N9 — variantes de MESURE, choisies par la variable d'environnement
++/// `N9` : « gate » (coup nul seulement si l'évaluation statique atteint
++/// bêta), « r33 » / « r34 » (R = 3 + profondeur / 3 ou / 4), « iir »
++/// (profondeur − 1 sans coup de la table, à partir de 4) ; combinables par
++/// « + ». Sans elle, `main` au nœud près.
++#[derive(Default, Clone, Copy)]
++struct N9 {
++    gate: bool,
++    r_div: i32,
++    iir: bool,
++    imp_rfp: bool,
++    imp_lmp: bool,
++    imp_lmr: bool,
++    see_cap: bool,
++}
++
++fn v9_early() -> N9 {
++    n9()
++}
++
++fn n9() -> N9 {
++    static V: std::sync::OnceLock<N9> = std::sync::OnceLock::new();
++    *V.get_or_init(|| {
++        let mut v = N9::default();
++        for part in std::env::var("N9").unwrap_or_default().split('+') {
++            match part {
++                "gate" => v.gate = true,
++                "r33" => v.r_div = 3,
++                "r34" => v.r_div = 4,
++                "iir" => v.iir = true,
++                "imp-rfp" => v.imp_rfp = true,
++                "imp-lmp" => v.imp_lmp = true,
++                "imp-lmr" => v.imp_lmr = true,
++                "see-cap" => v.see_cap = true,
++                _ => {}
++            }
++        }
++        v
++    })
++}
++
++/// SONDE N9 — le coup nul : essais, coupures et nœuds dépensés, selon que
++/// l'évaluation statique atteint bêta (ge) ou non (lt).
++pub static SONDE_NM: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];
++/// SONDE N9 — les nœuds de profondeur ≥ 4 hors racine, et ceux sans coup de
++/// la table : ce que l'IIR toucherait.
++pub static SONDE_IIR: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
++/// SONDE N9 — vrai pendant la recherche d'un coup nul : ses nœuds ne se
++/// comptent qu'au coup nul le plus extérieur, l'union et non la somme.
++static SONDE_NM_ACTIVE: AtomicBool = AtomicBool::new(false);
++/// SONDE N9 — nœuds hors échec évalués, et ceux où la position s'améliore.
++pub static SONDE_IMP: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
++/// SONDE N9 — captures éligibles à l'élagage par échange statique, celles
++/// qu'il sauterait, et parmi elles celles qui, cherchées, montent alpha.
++pub static SONDE_SEE: [AtomicU64; 3] = [const { AtomicU64::new(0) }; 3];
++thread_local! {
++    /// SONDE N9 — l'évaluation statique de chaque ply du chemin, `None` en
++    /// échec : le point de comparaison d'improving.
++    static N9_EVALS: std::cell::RefCell<Vec<Option<i32>>> =
++        std::cell::RefCell::new(vec![None; MAX_PLY + 2]);
++}
++
+ /// Profondeur maximale de la recherche principale.
+ pub const MAX_DEPTH: u32 = 64;
+ 
+@@ -1389,7 +1451,33 @@ impl Search {
+         // Mesuré avant d'être écrit : la condition porte sur 9,8 % des nœuds et
+         // se déclenche sur 4,4 % d'entre eux — concentrée à la profondeur 1, où
+         // couper épargne tout un étage de quiescence.
+-        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta) {
++        let n9_eval = board.checkers().is_empty().then(|| self.static_eval(board, ply));
++        let n9_improving = N9_EVALS.with(|e| {
++            let mut e = e.borrow_mut();
++            if let Some(slot) = e.get_mut(ply) {
++                *slot = n9_eval;
++            }
++            let back = |k: usize| ply.checked_sub(k).and_then(|p| e.get(p).copied().flatten());
++            match (n9_eval, back(2), back(4)) {
++                (Some(now), Some(before), _) => now > before,
++                (Some(now), None, Some(before)) => now > before,
++                _ => true,
++            }
++        });
++        if n9_eval.is_some() {
++            SONDE_IMP[0].fetch_add(1, Ordering::Relaxed);
++            if n9_improving {
++                SONDE_IMP[1].fetch_add(1, Ordering::Relaxed);
++            }
++        }
++        // La garde de profondeur reste sur la vraie profondeur ; seule la
++        // marge perd un pli quand la position s'améliore, comme chez Stockfish.
++        let n9_rfp_depth = if v9_early().imp_rfp && n9_improving && depth <= RFP_MAX_DEPTH {
++            depth - 1
++        } else {
++            depth
++        };
++        if let Some(score) = self.reverse_futility_cut(board, n9_rfp_depth, ply, beta) {
+             return score;
+         }
+ 
+@@ -1406,13 +1494,19 @@ impl Search {
+         //   coupure serait fausse (voir `has_non_pawn_material`) ;
+         // - contre une borne de mat, la coupure produirait un mat imaginaire ;
+         // - jamais à la racine, où il faut rendre un coup.
++        let v9 = n9();
+         if ply > 0
+             && depth >= NULL_MOVE_MIN_DEPTH
+             && board.checkers().is_empty()
+             && beta.abs() < MATE_THRESHOLD
+             && has_non_pawn_material(board)
+             && let Some(passed) = board.null_move()
++            && let eval_ge = self.static_eval(board, ply) >= beta
++            && (eval_ge || !v9.gate)
+         {
++            let n9_before = self.nodes;
++            let n9_outer = !SONDE_NM_ACTIVE.swap(true, Ordering::Relaxed);
++            let n9_r = if v9.r_div > 0 { 3 + depth / v9.r_div } else { NULL_MOVE_REDUCTION };
+             self.null_marks.push(self.path.len());
+             self.path.push(passed.hash());
+             if let Some(slot) = self.moved.get_mut(ply + 1) {
+@@ -1421,7 +1515,7 @@ impl Search {
+             self.push_null(ply);
+             let score = -self.negamax(
+                 &passed,
+-                depth - 1 - NULL_MOVE_REDUCTION,
++                depth - 1 - n9_r,
+                 ply + 1,
+                 -beta,
+                 -beta + 1,
+@@ -1429,11 +1523,18 @@ impl Search {
+             );
+             self.path.pop();
+             self.null_marks.pop();
++            let g = usize::from(!eval_ge);
++            SONDE_NM[g].fetch_add(1, Ordering::Relaxed);
++            if n9_outer {
++                SONDE_NM_ACTIVE.store(false, Ordering::Relaxed);
++                SONDE_NM[4 + g].fetch_add(self.nodes - n9_before, Ordering::Relaxed);
++            }
+ 
+             if self.aborted {
+                 return 0;
+             }
+             if score >= beta {
++                SONDE_NM[2 + g].fetch_add(1, Ordering::Relaxed);
+                 // Un score de mat obtenu grâce à un coup qu'on n'a pas le droit
+                 // de jouer est faux : on rend la borne, pas le mat.
+                 return if score.abs() > MATE_THRESHOLD {
+@@ -1450,6 +1551,17 @@ impl Search {
+         // ni ne trie jamais ses coups tranquilles. Mesuré le 22 sept. 2026 :
+         // 85 % des coups générés ici n'étaient jamais cherchés, et 49 % des
+         // nœuds ne cherchaient aucun coup tranquille.
++        if ply > 0 && depth >= 4 {
++            SONDE_IIR[0].fetch_add(1, Ordering::Relaxed);
++            if tt_move.is_none() {
++                SONDE_IIR[1].fetch_add(1, Ordering::Relaxed);
++            }
++        }
++        let depth = if v9.iir && ply > 0 && depth >= 4 && tt_move.is_none() {
++            depth - 1
++        } else {
++            depth
++        };
+         let killers = self.killers.get(ply).copied().unwrap_or([0; 2]);
+         // Les deux coups qui précèdent ce nœud : celui de l'adversaire, et le
+         // nôtre avant lui. La continuation note chaque tranquille sachant
+@@ -1481,7 +1593,36 @@ impl Search {
+             // restants. `break` et non `continue`, parce que l'ordonnancement
+             // place toutes les captures avant tous les coups tranquilles — ce
+             // qui reste derrière est tranquille, et moins bien classé encore.
+-            if self.late_move_prune(quiet, in_check, ply, depth, best, quiets_seen) {
++            let n9_lmp = if v9.imp_lmp && !n9_improving {
++                quiet
++                    && !in_check
++                    && ply > 0
++                    && depth <= LMP_MAX_DEPTH
++                    && best > -MATE_THRESHOLD
++                    && quiets_seen >= lmp_limit(depth) / 2
++            } else {
++                self.late_move_prune(quiet, in_check, ply, depth, best, quiets_seen)
++            };
++            // SONDE N9 — l'échange statique dans la recherche principale.
++            let n9_see_eligible = !quiet
++                && mv.promotion.is_none()
++                && captured_piece(board, mv).is_some()
++                && ply > 0
++                && !in_check
++                && depth <= 6
++                && best > -MATE_THRESHOLD
++                && Some(mv) != tt_move;
++            let n9_see_prune = n9_see_eligible && see::see(board, mv) < -100 * depth;
++            if n9_see_eligible {
++                SONDE_SEE[0].fetch_add(1, Ordering::Relaxed);
++            }
++            if n9_see_prune {
++                SONDE_SEE[1].fetch_add(1, Ordering::Relaxed);
++                if v9.see_cap {
++                    continue;
++                }
++            }
++            if n9_lmp {
+                 break;
+             }
+             if quiet {
+@@ -1516,7 +1657,9 @@ impl Search {
+                 && depth >= LMR_MIN_DEPTH
+                 && index >= LMR_FIRST_REDUCED
+             {
+-                self.reduction(depth, index).min(depth - 2).max(0)
++                (self.reduction(depth, index) + i32::from(v9.imp_lmr && !n9_improving))
++                    .min(depth - 2)
++                    .max(0)
+             } else {
+                 0
+             };
+@@ -1534,6 +1677,9 @@ impl Search {
+             if reduction > 0 && !self.aborted && score > alpha {
+                 score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha, rest);
+             }
++            if n9_see_prune && !self.aborted && score > alpha {
++                SONDE_SEE[2].fetch_add(1, Ordering::Relaxed);
++            }
+             self.path.pop();
+ 
+             if self.aborted {
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index 522d061..bd2eaca 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -485,6 +485,20 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                let nm: Vec<u64> = crate::search::SONDE_NM.iter().map(|c| c.swap(0, Relaxed)).collect();
++                let ii: Vec<u64> = crate::search::SONDE_IIR.iter().map(|c| c.swap(0, Relaxed)).collect();
++                send(&format!(
++                    "info string sonde-n9 nm_ge={} nm_lt={} cut_ge={} cut_lt={} nodes_ge={} nodes_lt={} d4={} d4_sans_tt={} eval={} improving={} see_elig={} see_saut={} see_degats={}",
++                    nm[0], nm[1], nm[2], nm[3], nm[4], nm[5], ii[0], ii[1],
++                    crate::search::SONDE_IMP[0].swap(0, Relaxed),
++                    crate::search::SONDE_IMP[1].swap(0, Relaxed),
++                    crate::search::SONDE_SEE[0].swap(0, Relaxed),
++                    crate::search::SONDE_SEE[1].swap(0, Relaxed),
++                    crate::search::SONDE_SEE[2].swap(0, Relaxed)
++                ));
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
+diff --git a/tools/sonde-n9/rejouer.py b/tools/sonde-n9/rejouer.py
+new file mode 100644
+index 0000000..fb345f7
+--- /dev/null
++++ b/tools/sonde-n9/rejouer.py
+@@ -0,0 +1,90 @@
++#!/usr/bin/env python3
++"""Rejoue les flux d'un journal cutechess `-debug all` dans un binaire, chaque
++`go` remplacé par `go depth D` (ou `go nodes N` si D commence par « n ») :
++mêmes positions, dans l'ordre des parties, table et historiques conservés
++d'un coup à l'autre comme en partie. Déterministe à un fil. Rend, par
++variante, le total des nœuds et la somme des compteurs `sonde-n9`.
++
++    N9=gate python3 rejouer.py <journal> <binaire> <D> [processus]
++
++Copie élargie de tools/sonde-a20/rejouer-profondeur.py (attic) : flux en
++parallèle — des nœuds à profondeur fixe ne dépendent pas de la charge.
++"""
++import re
++import subprocess
++import sys
++from collections import defaultdict
++from concurrent.futures import ThreadPoolExecutor
++
++CMD = re.compile(r'^\d+ >(\w+)\((\d+)\): (.*)$')
++SONDE = re.compile(r'info string sonde-n9 (.*)$')
++journal, binaire, prof = sys.argv[1], sys.argv[2], sys.argv[3]
++proc = int(sys.argv[4]) if len(sys.argv) > 4 else 4
++go = f'go nodes {prof[1:]}' if prof.startswith('n') else f'go depth {prof}'
++
++flux = defaultdict(list)
++for brut in open(journal, errors='replace'):
++    m = CMD.match(brut.rstrip('\n'))
++    if m:
++        flux[(m[1], m[2])].append(m[3])
++cles = sorted(flux, key=lambda k: (int(k[1]), k[0]))
++
++
++def rejouer(cle):
++    p = subprocess.Popen([binaire], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
++                         text=True, bufsize=1)
++
++    def envoyer(s):
++        p.stdin.write(s + '\n')
++        p.stdin.flush()
++
++    def attendre(fin):
++        nodes, sonde, best = None, {}, None
++        while True:
++            ligne = p.stdout.readline()
++            if not ligne:
++                sys.exit("le moteur s'est tu")
++            if ligne.startswith('info depth') and ' nodes ' in ligne:
++                nodes = int(ligne.split(' nodes ')[1].split()[0])
++            m = SONDE.search(ligne)
++            if m:
++                sonde = {k: int(v) for k, v in (x.split('=') for x in m[1].split())}
++            if ligne.startswith(fin):
++                if fin == 'bestmove':
++                    best = ligne.split()[1]
++                return nodes, sonde, best
++
++    envoyer('uci')
++    attendre('uciok')
++    somme, n, compteurs, coups = 0, 0, defaultdict(int), []
++    for cmd in flux[cle]:
++        if cmd in ('uci', 'quit') or cmd.startswith('debug'):
++            continue
++        if cmd.startswith('go'):
++            envoyer(go)
++            nodes, sonde, best = attendre('bestmove')
++            somme += nodes or 0
++            n += 1
++            coups.append(best)
++            for k, v in sonde.items():
++                compteurs[k] += v
++        elif cmd == 'isready':
++            envoyer('isready')
++            attendre('readyok')
++        else:
++            envoyer(cmd)
++    envoyer('quit')
++    p.wait(timeout=30)
++    return cle, n, somme, compteurs, coups
++
++
++total, recherches, tous = 0, 0, defaultdict(int)
++with ThreadPoolExecutor(max_workers=proc) as ex:
++    for cle, n, somme, compteurs, coups in ex.map(rejouer, cles):
++        print(f"{cle[0]}({cle[1]}) {n} {somme} {' '.join(coups)}", flush=True)
++        total += somme
++        recherches += n
++        for k, v in compteurs.items():
++            tous[k] += v
++print(f"TOTAL {recherches} {total}")
++print("SONDE " + ' '.join(f'{k}={v}' for k, v in sorted(tous.items())))
