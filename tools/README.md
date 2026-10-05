@@ -4646,6 +4646,39 @@ même. **Ce qu'il faudrait avant de le relancer** : mesurer sur `main`, sur
 un échantillon de positions et non une, si « l'élagage par compte retire
 des nœuds » tient en général à la faite main — ou ne tenait que par chance.
 
+**C36 — la mesure indépendante, protocole et attendus écrits le 5 oct. à
+07 h 30, avant de mesurer.** La règle ne demande pas « C36 grossit-il
+l'arbre ? » : il le grossit, et cette mesure-là vient du changement. Elle
+demande : **sur `main`, sans C36, `lelagage_par_compte_retire_des_noeuds`
+asserte-t-il une propriété générale, ou une propriété qui tient sur sa
+position ?** Le protocole exact du test — recherche froide, profondeur 7,
+faite main, `search()` contre `search_sans_lmp()` — sur les **4 684
+positions distinctes** cherchées dans le journal de l'écran (60 parties du
+moteur qui joue), par un test ignoré, à l'attic. **Éprouvé sur les six
+positions du banc** : 107 548 nœuds avec, la référence, 148 867 sans, les
+six réduites.
+
+**Attendus** — <span>inférence, confiance faible</span> :
+- sur `main` : au total, avec / sans **0,65 à 0,80** (le banc : 0,72) ;
+  avec ≥ sans sur **1 à 10 %** des positions ;
+- sous C36, au même protocole : avec / sans **0,75 à 1,05** ; avec > sans
+  sur **5 à 20 %** des positions.
+
+**Règle de décision, écrite avant** :
+1. **Au moins une position de `main` où avec ≥ sans** : la propriété n'est
+   pas générale, et l'assertion sur une position tient par le choix de la
+   position. Le test se reformule en **compte sur un échantillon, borné
+   qualitativement** — Σ avec < Σ sans sur les six positions du banc,
+   l'échantillon des tests de nœuds, choisi bien avant C36 —, au titre de
+   cette mesure, obtenue sans C36. Le crible de `search.rs` passe avant la
+   fusion : un test touché déplace le plafond.
+2. **Aucune** : la propriété est générale sur `main`, le test reste tel
+   quel, et C36 ne se lance pas sous cette forme.
+3. Dans le cas 1 seulement : **C36 ne passe que si Σ avec < Σ sans tient
+   aussi sur les 4 684 positions**, et pas seulement sur le banc. Je sais
+   déjà qu'il passe sur le banc — 122 554 contre 148 867 —, donc le banc
+   seul ne peut pas trancher pour lui.
+
 **Attendus, écrits avant les matchs** — <span>inférence, confiance
 faible</span> ; l'arbre à la profondeur 12 converti par l'étalon donne un
 majorant :
