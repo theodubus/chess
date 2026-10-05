@@ -4726,7 +4726,8 @@ majorant de +17 à +30. Mais l'élagage par compte ne se rattrape pas, et il
 coupe davantage là où la position se dégrade — là où une défense tranquille
 mal classée compte le plus. **Attendu −10 à +15, ~+3.** **Critère** : le
 même — gain si la borne basse commune est au-dessus de zéro. **Deux jobs**,
-contre `18a3805` comme le reste du n° 9.
+contre `18a3805` comme le reste du n° 9 — puis quatre, avec ceux du
+deuxième écran (ci-dessus).
 
 **Attendus, écrits avant les matchs** — <span>inférence, confiance
 faible</span> ; l'arbre à la profondeur 12 converti par l'étalon donne un
@@ -4741,7 +4742,12 @@ majorant :
 
 **Critère, écrit avant** : le même — gain si la borne basse commune est
 au-dessus de zéro. **Deux jobs chacun**, ± 6,2 : un vrai +7 ne passera la
-borne qu'une fois sur deux environ. Six jobs, qui portent à dix-huit ceux qui
+borne qu'une fois sur deux environ. **Porté à QUATRE jobs chacun le 5 oct. à
+08 h 00, avant tout résultat — C36 compris.** Les deux jobs par candidat
+venaient d'un plafond de vingt jobs simultanés, supposé et faux (trente
+tournent) ; à ± 4,4, un vrai +7 passe la borne neuf fois sur dix environ. Les
+jobs ajoutés finissent vers 13 h 55, et la relève les attend. Aucun journal
+de ces matchs n'a été ouvert : décidé sur la puissance, pas sur les données. Six jobs, qui portent à dix-huit ceux qui
 tournent à la fois — <s>deux places restent à la CI.</s> **Faux, relevé
 le jour même** : je supposais un plafond de vingt jobs, jamais mesuré. À
 07 h 39, le crible de C36 a lancé ses dix jobs aussitôt, à côté des
