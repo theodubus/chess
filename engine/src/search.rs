@@ -348,6 +348,10 @@ pub struct Search {
     aborted: bool,
     /// Clés Zobrist de la partie puis du chemin courant dans l'arbre.
     path: Vec<u64>,
+    /// La longueur de `path` à l'entrée de la racine : `negamax` y confronte
+    /// chaque `ply` en test — voir son début.
+    #[cfg(test)]
+    path_base: Option<usize>,
     /// Indices, dans `path`, des positions atteintes par un coup nul — une
     /// pile, puisque les coups nuls s'emboîtent.
     ///
@@ -469,10 +473,6 @@ pub struct Search {
     /// vert.
     #[cfg(test)]
     checked_accumulators: Option<std::cell::Cell<u64>>,
-    /// La longueur du chemin à l'entrée de la racine : `negamax` y confronte
-    /// chaque `ply` en test — voir son début.
-    #[cfg(test)]
-    path_base: Option<usize>,
 }
 
 impl Search {
@@ -496,6 +496,8 @@ impl Search {
             node_limit: None,
             aborted: false,
             path: Vec::new(),
+            #[cfg(test)]
+            path_base: None,
             null_marks: Vec::new(),
             pv: PvTable::new(),
             root_best: None,
@@ -523,8 +525,6 @@ impl Search {
             late_move_pruning: true,
             #[cfg(test)]
             checked_accumulators: None,
-            #[cfg(test)]
-            path_base: None,
         }
     }
 
