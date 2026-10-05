@@ -420,12 +420,6 @@ pub struct Search {
     /// d'être lue par l'enfant, et la racine n'est jamais écrite : aucune
     /// remise à zéro n'est nécessaire entre deux recherches.
     moved: Vec<Option<usize>>,
-    /// L'évaluation statique de chaque ply du chemin, `None` quand le nœud
-    /// était en échec : le point de comparaison du drapeau `improving` —
-    /// voir [`is_improving`]. Écrite à chaque nœud de `negamax` avant ses
-    /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
-    /// chemin courant.
-    evals: Vec<Option<i32>>,
     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
     lmr: Vec<i32>,
     /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
@@ -512,7 +506,6 @@ impl Search {
             lmr: build_lmr_table(),
             continuation: vec![0; PIECE_TO * PIECE_TO],
             moved: vec![None; MAX_PLY + 1],
-            evals: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
             network: None,
@@ -1396,22 +1389,7 @@ impl Search {
         // Mesuré avant d'être écrit : la condition porte sur 9,8 % des nœuds et
         // se déclenche sur 4,4 % d'entre eux — concentrée à la profondeur 1, où
         // couper épargne tout un étage de quiescence.
-        // L'évaluation statique du nœud, hors échec, calculée une fois : la
-        // futilité inverse la lit, et le drapeau `improving` la compare à
-        // celle de notre nœud précédent sur le chemin (voir `is_improving`).
-        let mut static_eval = board
-            .checkers()
-            .is_empty()
-            .then(|| self.static_eval(board, ply));
-        if let Some(slot) = self.evals.get_mut(ply) {
-            *slot = static_eval;
-        }
-        let back = |k: usize| {
-            ply.checked_sub(k)
-                .and_then(|p| self.evals.get(p).copied().flatten())
-        };
-        let improving = is_improving(static_eval, back(2), back(4));
-        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval) {
+        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta) {
             return score;
         }
 
@@ -1490,8 +1468,6 @@ impl Search {
 
         let mut quiets_seen = 0usize;
         let mut moves = 0usize;
-        // Ni la profondeur ni le drapeau ne changent d'un coup à l'autre.
-        let prune_threshold = lmp_threshold(depth, improving);
 
         while let Some(mv) = picker.next_move(self, board) {
             // Compté AVANT toute coupure : `moves` dit après la boucle s'il
@@ -1505,7 +1481,7 @@ impl Search {
             // restants. `break` et non `continue`, parce que l'ordonnancement
             // place toutes les captures avant tous les coups tranquilles — ce
             // qui reste derrière est tranquille, et moins bien classé encore.
-            if self.late_move_prune(quiet, in_check, ply, best, quiets_seen, prune_threshold) {
+            if self.late_move_prune(quiet, in_check, ply, depth, best, quiets_seen) {
                 break;
             }
             if quiet {
@@ -1710,7 +1686,6 @@ impl Search {
         depth: i32,
         ply: usize,
         beta: i32,
-        static_eval: &mut Option<i32>,
     ) -> Option<i32> {
         #[cfg(test)]
         if !self.reverse_futility {
@@ -1725,7 +1700,7 @@ impl Search {
             return None;
         }
 
-        let static_eval = *static_eval.get_or_insert_with(|| self.static_eval(board, ply));
+        let static_eval = self.static_eval(board, ply);
         (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
     }
 
@@ -1761,8 +1736,8 @@ impl Search {
     /// - **en échec**, toute parade est obligatoire : compter les coups n'a
     ///   aucun sens quand ils sont tous forcés ;
     /// - **jamais à la racine**, où il faut rendre un coup et pas un score ;
-    /// - **au-delà de `LMP_MAX_DEPTH`** — [`lmp_threshold`] n'y rend aucun
-    ///   seuil —, un coup tardif a encore la place de se révéler bon ;
+    /// - **au-delà de `LMP_MAX_DEPTH`**, un coup tardif a encore la place de se
+    ///   révéler bon ;
     /// - **tant qu'aucun coup n'a rendu mieux qu'une borne de mat** — ce qui
     ///   couvre deux cas d'un coup : on ne coupe pas quand on se fait mater, où
     ///   la seule défense peut être un coup tranquille très mal classé ; et
@@ -1783,9 +1758,9 @@ impl Search {
         quiet: bool,
         in_check: bool,
         ply: usize,
+        depth: i32,
         best: i32,
         quiets_seen: usize,
-        threshold: Option<usize>,
     ) -> bool {
         #[cfg(test)]
         if !self.late_move_pruning {
@@ -1795,8 +1770,9 @@ impl Search {
         quiet
             && !in_check
             && ply > 0
+            && depth <= LMP_MAX_DEPTH
             && best > -MATE_THRESHOLD
-            && threshold.is_some_and(|t| quiets_seen >= t)
+            && quiets_seen >= lmp_limit(depth)
     }
 
     /// Vrai si cette capture ne peut pas ramener la position jusqu'à `alpha`.
@@ -2103,21 +2079,6 @@ fn lmp_limit(depth: i32) -> usize {
     LMP_BASE + (depth.max(0) as usize).pow(2)
 }
 
-/// Le seuil de l'élagage par compte de coups d'un nœud : aucun au-delà de
-/// `LMP_MAX_DEPTH`, où l'on n'élague pas ; [`lmp_limit`] quand la position
-/// s'améliore, la moitié sinon — comme chez Stockfish,
-/// `(3 + d²) / (2 − improving)` (C36). Une position qui se dégrade depuis
-/// notre dernier coup se cherche moins large.
-fn lmp_threshold(depth: i32, improving: bool) -> Option<usize> {
-    (depth <= LMP_MAX_DEPTH).then(|| {
-        if improving {
-            lmp_limit(depth)
-        } else {
-            lmp_limit(depth) / 2
-        }
-    })
-}
-
 /// La fenêtre de l'élagage par distance au mat au ply `ply` (C27) : rien de
 /// mieux que mater au ply suivant, `MATE - ply - 1`, rien de pire qu'être maté
 /// ici même, `-MATE + ply`.
@@ -2151,25 +2112,6 @@ fn build_lmr_table() -> Vec<i32> {
         }
     }
     table
-}
-
-/// Le drapeau `improving` : vrai si l'évaluation statique `now` du nœud
-/// dépasse celle de notre nœud précédent sur le chemin, deux plis plus haut,
-/// même camp au trait — ou quatre plis plus haut si celui-là était en échec,
-/// sans évaluation. Vrai faute de point de comparaison, et en échec, comme
-/// chez Stockfish (`improving`, `src/search.cpp`).
-///
-/// **Ce qu'il dit** : une position qui s'améliore depuis notre dernier coup a
-/// moins de chances de cacher une menace ; une qui se dégrade, davantage. Les
-/// élagages s'en servent pour couper plus franchement dans le premier cas, et
-/// avec plus de prudence dans le second. Mesuré le 5 oct. 2026, rejeu de
-/// 5 276 positions de parties du moteur qui joue : vrai dans 78 % des nœuds
-/// hors échec (`tools/README.md`, n° 9).
-fn is_improving(now: Option<i32>, two_back: Option<i32>, four_back: Option<i32>) -> bool {
-    match (now, two_back.or(four_back)) {
-        (Some(now), Some(before)) => now > before,
-        _ => true,
-    }
 }
 
 /// Vrai si le camp au trait possède autre chose que des pions et son roi.
@@ -2754,10 +2696,10 @@ mod tests {
     fn seuls_les_coups_tranquilles_sont_elagues() {
         // Une capture n'est jamais élaguée, quel que soit le compte atteint.
         let s = search();
-        assert!(!s.late_move_prune(false, false, 1, 0, 1_000, lmp_threshold(1, true)));
+        assert!(!s.late_move_prune(false, false, 1, 1, 0, 1_000));
         // Le même appel sur un coup tranquille coupe, lui : c'est ce qui prouve
         // que le test mesure la garde et non l'absence de condition.
-        assert!(s.late_move_prune(true, false, 1, 0, 1_000, lmp_threshold(1, true)));
+        assert!(s.late_move_prune(true, false, 1, 1, 0, 1_000));
     }
 
     #[test]
@@ -2797,48 +2739,34 @@ mod tests {
         // Toute parade est obligatoire : compter les coups n'a aucun sens
         // quand ils sont tous forcés.
         let s = search();
-        assert!(!s.late_move_prune(true, true, 1, 0, 1_000, lmp_threshold(1, true)));
-        assert!(s.late_move_prune(true, false, 1, 0, 1_000, lmp_threshold(1, true)));
+        assert!(!s.late_move_prune(true, true, 1, 1, 0, 1_000));
+        assert!(s.late_move_prune(true, false, 1, 1, 0, 1_000));
     }
 
     #[test]
     fn a_la_racine_lelagage_par_compte_ne_coupe_jamais() {
         // Il y faut un coup à jouer, pas seulement un score.
         let s = search();
-        assert!(!s.late_move_prune(true, false, 0, 0, 1_000, lmp_threshold(1, true)));
-        assert!(s.late_move_prune(true, false, 1, 0, 1_000, lmp_threshold(1, true)));
+        assert!(!s.late_move_prune(true, false, 0, 1, 0, 1_000));
+        assert!(s.late_move_prune(true, false, 1, 1, 0, 1_000));
     }
 
     #[test]
     fn au_dela_de_la_profondeur_maximale_lelagage_par_compte_ne_coupe_jamais() {
         // Un coup tardif a encore la place de se révéler bon.
         let s = search();
-        assert!(!s.late_move_prune(
-            true,
-            false,
-            1,
-            0,
-            1_000,
-            lmp_threshold(LMP_MAX_DEPTH + 1, true)
-        ));
+        assert!(!s.late_move_prune(true, false, 1, LMP_MAX_DEPTH + 1, 0, 1_000));
         // Et il coupe pile à la borne : sans ce second appel, le test passerait
         // aussi avec une borne posée n'importe où plus bas.
-        assert!(s.late_move_prune(true, false, 1, 0, 1_000, lmp_threshold(LMP_MAX_DEPTH, true)));
+        assert!(s.late_move_prune(true, false, 1, LMP_MAX_DEPTH, 0, 1_000));
     }
 
     #[test]
     fn contre_un_mat_subi_lelagage_par_compte_ne_coupe_jamais() {
         // La seule défense peut être un coup tranquille très mal classé.
         let s = search();
-        assert!(!s.late_move_prune(true, false, 1, -MATE + 5, 1_000, lmp_threshold(1, true)));
-        assert!(s.late_move_prune(
-            true,
-            false,
-            1,
-            -MATE_THRESHOLD + 1,
-            1_000,
-            lmp_threshold(1, true)
-        ));
+        assert!(!s.late_move_prune(true, false, 1, 1, -MATE + 5, 1_000));
+        assert!(s.late_move_prune(true, false, 1, 1, -MATE_THRESHOLD + 1, 1_000));
     }
 
     #[test]
@@ -2847,7 +2775,7 @@ mod tests {
         // rendrait alors `-INFINITY` sans coup, ce qui empoisonnerait la table.
         // La garde de mat couvre ce cas, et ce test est ce qui l'établit.
         let s = search();
-        assert!(!s.late_move_prune(true, false, 1, -INFINITY, 1_000, lmp_threshold(1, true)));
+        assert!(!s.late_move_prune(true, false, 1, 1, -INFINITY, 1_000));
     }
 
     #[test]
@@ -2855,8 +2783,8 @@ mod tests {
         // Un coup en deçà du seuil : rien n'est élagué.
         let s = search();
         let seuil = lmp_limit(1);
-        assert!(!s.late_move_prune(true, false, 1, 0, seuil - 1, lmp_threshold(1, true)));
-        assert!(s.late_move_prune(true, false, 1, 0, seuil, lmp_threshold(1, true)));
+        assert!(!s.late_move_prune(true, false, 1, 1, 0, seuil - 1));
+        assert!(s.late_move_prune(true, false, 1, 1, 0, seuil));
     }
 
     #[test]
@@ -2885,27 +2813,17 @@ mod tests {
         // blancs en échec par la tour h1, malgré une dame d'avance.
         let b = board("4k3/8/8/8/8/8/6Q1/4K2r w - - 0 1");
         assert!(!b.checkers().is_empty(), "la position doit être un échec");
-        assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, -5_000, &mut None),
-            None
-        );
+        assert_eq!(search().reverse_futility_cut(&b, 1, 1, -5_000), None);
     }
 
     #[test]
     fn a_la_racine_la_futilite_inverse_ne_coupe_jamais() {
         // Il y faut un coup à jouer, pas seulement un score.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
-        assert_eq!(
-            search().reverse_futility_cut(&b, 1, 0, -5_000, &mut None),
-            None
-        );
+        assert_eq!(search().reverse_futility_cut(&b, 1, 0, -5_000), None);
         // Le même nœud hors racine coupe, lui : c'est ce qui prouve que le
         // test ci-dessus mesure la garde et non l'absence de condition.
-        assert!(
-            search()
-                .reverse_futility_cut(&b, 1, 1, -5_000, &mut None)
-                .is_some()
-        );
+        assert!(search().reverse_futility_cut(&b, 1, 1, -5_000).is_some());
     }
 
     #[test]
@@ -2913,12 +2831,12 @@ mod tests {
         // La marge suppose que `beta` mesure du matériel ; un mat ne le fait pas.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, MATE - 5, &mut None),
+            search().reverse_futility_cut(&b, 1, 1, MATE - 5),
             None,
             "borne de mat positive"
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, -MATE + 5, &mut None),
+            search().reverse_futility_cut(&b, 1, 1, -MATE + 5),
             None,
             "borne de mat négative"
         );
@@ -2929,11 +2847,11 @@ mod tests {
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert!(
             search()
-                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000, &mut None)
+                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000)
                 .is_some()
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000, &mut None),
+            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000),
             None
         );
     }
@@ -3657,37 +3575,6 @@ mod tests {
         assert!(s.table_permille() > 0, "la table doit s'être remplie");
         s.clear_table();
         assert_eq!(s.table_permille(), 0);
-    }
-
-    #[test]
-    fn le_seuil_de_compte_se_divise_par_deux_quand_la_position_se_degrade() {
-        assert_eq!(lmp_threshold(1, true), Some(lmp_limit(1)));
-        assert_eq!(lmp_threshold(1, false), Some(lmp_limit(1) / 2));
-        assert_eq!(lmp_threshold(3, false), Some((LMP_BASE + 9) / 2));
-        // Au-delà de la profondeur maximale, aucun seuil, quel que soit le drapeau.
-        assert_eq!(lmp_threshold(LMP_MAX_DEPTH + 1, true), None);
-        assert_eq!(lmp_threshold(LMP_MAX_DEPTH + 1, false), None);
-        // Une position qui se dégrade se coupe plus tôt, jamais plus tard.
-        for d in 0..=LMP_MAX_DEPTH {
-            assert!(lmp_threshold(d, false) < lmp_threshold(d, true));
-        }
-    }
-
-    #[test]
-    fn la_position_s_ameliore_par_rapport_a_notre_noeud_precedent() {
-        // Deux plis plus haut, même camp au trait.
-        assert!(is_improving(Some(10), Some(5), None));
-        assert!(!is_improving(Some(5), Some(10), None));
-        // Égalité : pas d'amélioration.
-        assert!(!is_improving(Some(5), Some(5), None));
-        // Deux plis plus haut en échec : quatre plis plus haut.
-        assert!(is_improving(Some(5), None, Some(1)));
-        assert!(!is_improving(Some(5), None, Some(10)));
-        // Le point de deux plis prime sur celui de quatre.
-        assert!(!is_improving(Some(5), Some(10), Some(0)));
-        // Faute de point de comparaison, ou en échec : vrai.
-        assert!(is_improving(Some(5), None, None));
-        assert!(is_improving(None, Some(100), Some(100)));
     }
 
     #[test]
