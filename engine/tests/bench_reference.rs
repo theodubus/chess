@@ -338,6 +338,13 @@ fn les_milliers_se_regroupent_comme_dans_le_document() {
 /// 0,86 s contre 0,51 s. L'approfondissement itératif fait de la profondeur 6
 /// un sur-ensemble de la 5 : l'itération 5 y est cherchée en entier.
 ///
+/// **Le `ply + 1` de l'appel au coup nul, la 6 ne le voit plus depuis C32
+/// (5 oct. 2026)**, ni la 7 : le coup nul n'y a plus d'enfant de profondeur ≥ 1. Sous le groupe du
+/// n° 9, la 9 ne le voit pas davantage. Approfondir encore le banc aurait été
+/// une course perdue d'avance : c'est `negamax` qui confronte désormais son
+/// `ply` à la longueur du chemin, en test, sans dépendre d'aucun arbre
+/// (issue #142).
+///
 /// **Conséquence assumée, la même que pour la profondeur 7** : tout changement
 /// délibéré de l'arbre rend ce test rouge tant que le chiffre n'est pas
 /// recopié. C'est l'effet recherché.

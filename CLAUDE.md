@@ -182,6 +182,13 @@ une mesure, pas une préférence.
   dans `null_marks`, posée au coup nul et retirée au retour : une marque
   oubliée couperait la fenêtre sur une position étrangère et ferait manquer
   de VRAIES répétitions, sans qu'aucun autre test ne bronche.
+- **Le `ply` d'un nœud est sa distance à la racine, et le chemin le mesure.**
+  Killers, *improving*, coup précédent, accumulateurs et distance au mat
+  s'y indexent ; un appel récursif qui le décale ne fait rien planter, il
+  déplace l'arbre — ou rien du tout, quand l'élagage masque ce qu'il
+  déplace. **`negamax` le confronte en test à la longueur du chemin**
+  (`path_base`) : deux bancs figés de suite avaient cessé de voir l'appel du
+  coup nul en `ply * 1` — A18, puis C32 (issue #142).
 - **Une réduction de coup tardif se rattrape toujours.** Si la recherche
   réduite dépasse `alpha`, on recommence à profondeur pleine — sans quoi un bon
   coup mal classé serait perdu. On ne réduit jamais les captures, les
@@ -672,6 +679,16 @@ une mesure, pas une préférence.
   l'arbre neuf ne les leur montrait plus. *Le crible d'un changement d'arbre
   couvre le FICHIER entier, jamais le seul diff* ; et un test de nœuds figé
   à une profondeur ne voit que ce que cet arbre-là exerce.
+  <br>**Le même mutant, encore, le 5 oct. 2026** (issue #142) : C32 a rendu
+  l'enfant du coup nul de profondeur ≤ 0 dans tout le banc à la 6 et à la 7,
+  et le `ply + 1` de son appel est redevenu invisible — à la 8, 188 566
+  nœuds sans lui, 188 503 avec. Sous le groupe du n° 9, la futilité aux
+  nœuds frontières le masque jusqu'à la 9 : les enfants de profondeur ≥ 1
+  y existent, mais leurs coups tranquilles sont sautés, et rien de ce que le
+  `ply` indexe n'y bouge. *Quand un même mutant échappe deux fois à un test
+  de nœuds, c'est l'invariant qu'il faut tester, pas un arbre plus profond*
+  : `negamax` confronte désormais le `ply` au chemin, et le mutant fait
+  tomber trente-quatre tests unitaires.
 - **Un mutant « de réglage » n'est hors de portée des tests que si rien de
   DÉTERMINISTE ne dépend du réglage.** Le plafond d'`eval.rs` était justifié
   depuis le 15 sept. 2026 par « le fichier est en très grande part des VALEURS,
