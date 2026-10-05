@@ -9,6 +9,7 @@ import { scoreLabel } from "../engine/analysis";
 import { analysisEngineFactory } from "../engine/DevelopmentEngine";
 import AnalysisEngineSelect from "../review/AnalysisEngineSelect";
 import { LiveStudy } from "../review/LiveStudy";
+import { isCompleteMateLine } from "../review/completeMateLine";
 import { boardFromCommand } from "../review/StudyTree";
 import { legalVariation } from "../review/model";
 import { useMoveKeys } from "../useMoveKeys";
@@ -59,12 +60,13 @@ function ProblemWorkspace({ problem, active }: { problem: ChessProblem; active: 
   const root = boardFromCommand(problem.position.command);
   const board = current ? new Chess(current.fen) : root;
   const score = result?.score ?? (running ? study.info?.score : null) ?? null;
+  const mateReached = isCompleteMateLine(score, root.turn(), line);
   useMoveKeys(active, index, line.length, setStep);
   function reset() { void study.stop(); setStep(0); setInterrupted(false); }
   function solve() {
     setStep(0); setInterrupted(false);
     savePreference("chess-ui.analysis-engine", engineId);
-    void study.analyse(problem.position.command, analysisEngineFactory(engineId), budget);
+    void study.analyse(problem.position.command, analysisEngineFactory(engineId), budget, { completeMateLine: true });
   }
   return <div className="workspace problem-workspace">
     <div className="board-column">
@@ -83,16 +85,17 @@ function ProblemWorkspace({ problem, active }: { problem: ChessProblem; active: 
     <aside className="setup-card problem-details">
       <h2>{problem.title}</h2>
       <AnalysisEngineSelect value={engineId} disabled={running} onChange={value => { reset(); setEngineId(value); }} />
-      <label>Temps de recherche
-        <select aria-label="Temps de recherche" value={budget} disabled={running} onChange={event => { reset(); setBudget(Number(event.target.value)); }}>
+      <label>Temps maximal de recherche
+        <select aria-label="Temps maximal de recherche" value={budget} disabled={running} onChange={event => { reset(); setBudget(Number(event.target.value)); }}>
           <option value={1000}>1 seconde</option><option value={3000}>3 secondes</option>
           <option value={10000}>10 secondes</option><option value={30000}>30 secondes</option>
         </select>
       </label>
+      <p className="hint">Le moteur peut terminer plus tôt dès qu’il trouve un mat.</p>
       {root.isGameOver() ? <p role="status">{root.isCheckmate() ? "Cette position est déjà un mat." : "Cette position est déjà nulle."} Aucun coup à chercher.</p> : <>
         <button className="wide" disabled={!active || running} onClick={solve}>{result ? "Recalculer la solution" : "Résoudre avec le moteur"}</button>
         {running && <div className="problem-progress" role="status" aria-live="polite">
-          <span className="analysis-spinner" aria-hidden="true" /><strong>Le moteur cherche la solution…</strong>
+          <span className="analysis-spinner" aria-hidden="true" /><strong>{study.completingMate ? "Le moteur complète la suite jusqu’au mat…" : "Le moteur cherche la solution…"}</strong>
           <button className="secondary" onClick={() => { setInterrupted(true); void study.stop(); }}>Arrêter</button>
         </div>}
         {interrupted && study.state === "idle" && <p role="status">Recherche interrompue. Vous pouvez la relancer.</p>}
@@ -103,11 +106,12 @@ function ProblemWorkspace({ problem, active }: { problem: ChessProblem; active: 
           {result && <>
             <h3>Premier coup conseillé : {result.bestSan}</h3>
             <p>{score?.kind === "mate" ? `Le moteur annonce un mat pour les ${score.winner === "w" ? "Blancs" : "Noirs"}.` : "Le moteur propose cette continuation. Aucun mat forcé n’est annoncé."}</p>
+            {score?.kind === "mate" && <p className="hint">{mateReached ? "La suite affichée va jusqu’au mat." : "Le mat est annoncé, mais la suite jusqu’au mat n’a pas pu être complétée dans ce budget."}</p>}
             <div className="study-line" aria-label="Suite proposée">
               <button className="secondary" aria-pressed={!index} onClick={() => setStep(0)}>Départ</button>
               {line.map((move, i) => <button key={i} className="secondary" aria-pressed={index === i + 1} onClick={() => setStep(i + 1)}>{move.label}</button>)}
             </div>
-            <p className="hint">Cette suite est une proposition du moteur au temps choisi ; elle peut être incomplète et ne démontre pas toutes les réponses possibles.</p>
+            <p className="hint">Cette suite illustre les réponses choisies par le moteur ; elle ne démontre pas toutes les défenses possibles.</p>
           </>}
         </div>}
       </>}

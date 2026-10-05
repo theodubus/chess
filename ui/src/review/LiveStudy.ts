@@ -3,6 +3,7 @@ import { UciSession } from "../engine/UciSession";
 import type { SearchInfo } from "../engine/analysis";
 import { boardFromCommand } from "./StudyTree";
 import { frenchSan, legalVariation, type ReviewResult } from "./model";
+import { completeMateLine } from "./completeMateLine";
 
 /** Une recherche annulable, indépendante de la revue et des coups réellement joués. */
 export class LiveStudy {
@@ -11,6 +12,7 @@ export class LiveStudy {
   result: ReviewResult | null = null;
   info: SearchInfo | null = null;
   error = "";
+  completingMate = false;
   private generation = 0;
   private session?: UciSession;
   private rejectReady?: (error: Error) => void;
@@ -34,10 +36,14 @@ export class LiveStudy {
     this.info = null;
     this.result = null;
     this.command = "";
+    this.completingMate = false;
     this.publish();
     await session?.dispose();
   }
-  async analyse(command: string, factory: EngineFactory, budget = 1500) {
+  async analyse(
+    command: string, factory: EngineFactory, budget = 1500,
+    options: { completeMateLine?: boolean } = {},
+  ) {
     const stopping = this.stop();
     const generation = this.generation;
     this.command = command;
@@ -45,6 +51,7 @@ export class LiveStudy {
     this.error = "";
     this.publish();
     let session: UciSession | undefined;
+    let latestInfo: SearchInfo | null = null;
     try {
       await stopping;
       if (generation !== this.generation) return;
@@ -83,7 +90,9 @@ export class LiveStudy {
         this.rejectReady = reject;
         session = new UciSession(engine, (snapshot) => {
           if (generation !== this.generation) return;
-          this.info = snapshot.analysis;
+          latestInfo = snapshot.analysis;
+          // Les recherches de fin de PV ne remplacent pas le score de départ.
+          if (!this.completingMate) this.info = snapshot.analysis;
           if (snapshot.state === "ready") resolve();
           if (snapshot.state === "error") reject(new Error(snapshot.error));
           this.publish();
@@ -93,6 +102,7 @@ export class LiveStudy {
       });
       this.rejectReady = undefined;
       if (generation !== this.generation) return;
+      const deadline = performance.now() + budget;
       const bestMove = await session!.search(command, budget, board.turn());
       if (generation !== this.generation) return;
       const move = board
@@ -105,20 +115,35 @@ export class LiveStudy {
           "Le moteur a proposé un coup illégal dans cette variante.",
         );
       const info = this.info as SearchInfo | null;
+      const pv = info?.pv?.[0] === bestMove ? info.pv : [bestMove];
+      let variation = legalVariation(board.fen(), pv);
+      if (options.completeMateLine) {
+        variation = await completeMateLine(
+          command, variation.length ? pv : [bestMove], info?.score ?? null,
+          deadline, async (position, remaining, turn) => {
+            if (generation !== this.generation) throw new Error("Recherche annulée.");
+            this.completingMate = true;
+            this.publish();
+            const bestMove = await session!.search(position, remaining, turn);
+            if (generation !== this.generation) throw new Error("Recherche annulée.");
+            return { bestMove, info: latestInfo };
+          },
+        );
+      }
+      if (generation !== this.generation) return;
+      this.completingMate = false;
       this.result = {
         score: info?.score ?? null,
         depth: info?.depth ?? null,
         bestMove,
         bestSan: frenchSan(move.san),
-        variation: legalVariation(
-          board.fen(),
-          info?.pv?.[0] === bestMove ? info.pv : [bestMove],
-        ),
+        variation,
       };
       this.state = "complete";
       this.publish();
     } catch (error) {
       if (generation === this.generation) {
+        this.completingMate = false;
         this.error =
           error instanceof Error ? error.message : "Analyse indisponible.";
         this.state = "error";

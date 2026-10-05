@@ -117,7 +117,7 @@ export default function AnalysisEngineSelect({
               name="engine-path"
               value={path}
               onChange={(event) => setPath(event.target.value)}
-              placeholder="/chemin/vers/stockfish"
+              placeholder="/chemin/vers/moteur"
               required
               disabled={disabled || adding}
             />

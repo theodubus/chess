@@ -250,12 +250,23 @@ Dans un PGN, choisissez la position initiale (par défaut, avant une éventuelle
 solution écrite) ou la dernière position. Un PGN contenant uniquement une
 position FEN est accepté ; l’import des parties garde son exigence de coups.
 
-Choisissez le moteur d’analyse et un temps de recherche de 1, 3, 10 ou 30
-secondes, puis **Résoudre avec le moteur**. Le score et la profondeur apparaissent
+Choisissez le moteur d’analyse et un temps maximal de recherche de 1, 3, 10 ou 30
+secondes, puis **Résoudre avec le moteur**. Ce budget est un plafond : le moteur
+peut s’arrêter dès qu’il trouve un mat (ShallowRed le fait), même si vous avez
+choisi 30 secondes. Le score et la profondeur apparaissent
 pendant le calcul. À la fin, le premier coup conseillé est indiqué par une
 flèche et la suite proposée peut être parcourue avec les boutons, les coups
 cliquables et les touches `←` / `→` ou `<` / `>`. L’évaluation affichée concerne
 toujours la position de départ, même pendant la lecture de la suite.
+
+Quand le moteur annonce un mat mais fournit une variante tronquée, l’UI lui
+demande de chercher depuis la fin de cette variante, avec le temps restant du
+même budget. Ces recherches gardent l’historique et ne remplacent ni le score
+ni la profondeur de départ. Elles s’arrêtent au mat, à une nulle, à une annonce
+incompatible ou à la fin du budget, sans dépasser la distance de mat annoncée
+ni 128 demi-coups. L’écran indique si la suite affichée atteint réellement le
+mat ou reste incomplète. Une solution peut différer d’une solution historique :
+le moteur choisit une défense et il peut exister plusieurs coups qui matent.
 
 **Arrêter**, quitter l’écran ou remplacer le problème annule la recherche.
 Changer de moteur ou de temps efface l’ancienne solution avant le prochain
@@ -268,7 +279,9 @@ Limites : une position à la fois, jusqu’à 1 Mo et 2 000 demi-coups pour un P
 Les collections CSV/EPD et les variantes autres que les échecs classiques ne
 sont pas prises en charge. « Mat en N » rapporte ce qu’annonce le moteur au
 temps choisi ; sans annonce de mat, l’UI présente sa recommandation. La variante
-peut être incomplète et n’est pas une preuve couvrant toutes les défenses.
+peut rester incomplète si le temps manque ou si le moteur ne confirme pas son
+annonce. Même menée jusqu’au mat, elle n’est pas une preuve couvrant toutes les
+défenses : l’UI ne construit pas un arbre exhaustif de résolution.
 
 ## Analyse interactive
 
