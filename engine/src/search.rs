@@ -86,12 +86,13 @@ const RFP_MARGIN: i32 = 100;
 /// rapporterait rien tout en pouvant tromper.
 const NULL_MOVE_MIN_DEPTH: i32 = 3;
 
-/// Réduction appliquée à la recherche qui suit un coup nul.
-///
-/// C'est ce qui rend l'élagage bon marché : on vérifie l'hypothèse « ma
-/// position est bonne » à profondeur réduite, et on ne paye le prix fort que
-/// si elle échoue.
-const NULL_MOVE_REDUCTION: i32 = 2;
+/// Réduction de base de la recherche qui suit un coup nul — voir
+/// [`null_move_reduction`].
+const NULL_MOVE_BASE_REDUCTION: i32 = 3;
+
+/// Un pli de réduction en plus du coup nul tous les `NULL_MOVE_DEPTH_DIVISOR`
+/// plis de profondeur restante — voir [`null_move_reduction`].
+const NULL_MOVE_DEPTH_DIVISOR: i32 = 3;
 
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
@@ -1421,7 +1422,7 @@ impl Search {
             self.push_null(ply);
             let score = -self.negamax(
                 &passed,
-                depth - 1 - NULL_MOVE_REDUCTION,
+                depth - 1 - null_move_reduction(depth),
                 ply + 1,
                 -beta,
                 -beta + 1,
@@ -2112,6 +2113,25 @@ fn build_lmr_table() -> Vec<i32> {
         }
     }
     table
+}
+
+/// Réduction de la recherche qui suit un coup nul, à la profondeur restante
+/// `depth` : `3 + depth / 3` — 4 à la profondeur 3, 7 à la profondeur 12 (C32).
+///
+/// C'est ce qui rend l'élagage bon marché : on vérifie l'hypothèse « ma
+/// position est bonne » à profondeur réduite, et on ne paye le prix fort que
+/// si elle échoue. **Pourquoi elle croît avec la profondeur** : la réduction
+/// fixe d'origine, 2, posée le 13 sept. 2026 à `1+0,01`, quand le moteur
+/// cherchait ~8 plis, laissait au coup nul un sous-arbre de profondeur
+/// `depth − 3` — 9 plis pour vérifier une hypothèse à la profondeur 12, où
+/// le moteur joue désormais. Mesuré le 5 oct. 2026, rejeu à la profondeur 10
+/// de 5 276 positions de parties : les recherches de coup nul y pèsent
+/// 20,0 % des nœuds, et cette réduction rend l'arbre 18,5 % plus petit. Ce
+/// que l'élagage plus agressif coûte en justesse, seul un match le dit
+/// (`tools/README.md`, n° 9).
+#[must_use]
+pub fn null_move_reduction(depth: i32) -> i32 {
+    NULL_MOVE_BASE_REDUCTION + depth / NULL_MOVE_DEPTH_DIVISOR
 }
 
 /// Vrai si le camp au trait possède autre chose que des pions et son roi.
@@ -3567,6 +3587,24 @@ mod tests {
         assert!(s.table_permille() > 0, "la table doit s'être remplie");
         s.clear_table();
         assert_eq!(s.table_permille(), 0);
+    }
+
+    #[test]
+    fn la_reduction_du_coup_nul_croit_avec_la_profondeur() {
+        // 3 + profondeur / 3 : les valeurs exactes, que la formule se lise
+        // sans calcul — et qu'un opérateur muté ne passe pas.
+        assert_eq!(null_move_reduction(3), 4);
+        assert_eq!(null_move_reduction(5), 4);
+        assert_eq!(null_move_reduction(6), 5);
+        assert_eq!(null_move_reduction(12), 7);
+        assert_eq!(null_move_reduction(20), 9);
+        // Jamais décroissante : un sous-arbre de coup nul ne s'approfondit
+        // pas quand on cherche moins loin.
+        for depth in NULL_MOVE_MIN_DEPTH..=i32::try_from(MAX_PLY).unwrap() {
+            assert!(null_move_reduction(depth + 1) >= null_move_reduction(depth));
+        }
+        // À la profondeur minimale, le coup nul se vérifie en quiescence.
+        assert!(NULL_MOVE_MIN_DEPTH - 1 - null_move_reduction(NULL_MOVE_MIN_DEPTH) <= 0);
     }
 
     #[test]
