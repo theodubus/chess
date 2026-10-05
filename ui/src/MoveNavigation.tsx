@@ -2,13 +2,15 @@ export default function MoveNavigation({
   selected,
   total,
   onSelect,
+  label = "Parcourir les coups joués",
 }: {
   selected: number;
   total: number;
   onSelect: (index: number) => void;
+  label?: string;
 }) {
   return (
-    <div className="review-navigation" aria-label="Parcourir les coups joués">
+    <div className="review-navigation" aria-label={label}>
       <button
         className="secondary"
         disabled={selected === 0}

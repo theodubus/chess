@@ -241,6 +241,35 @@ comme valeur initiale des deux vues. La profondeur pendant le jeu est optionnell
 masquée par défaut, avec une préférence indépendante mémorisée. Elle reste visible
 dans l’analyse. À deux joueurs, aucune fausse évaluation n’est affichée.
 
+## Résoudre un problème
+
+Depuis l’accueil ou la navigation, ouvrez **Problèmes**. Collez une FEN complète
+(six champs) ou chargez un fichier `.fen` ou `.pgn`, puis cliquez sur
+**Charger la position**. Le plateau affiche le camp au trait avant tout calcul.
+Dans un PGN, choisissez la position initiale (par défaut, avant une éventuelle
+solution écrite) ou la dernière position. Un PGN contenant uniquement une
+position FEN est accepté ; l’import des parties garde son exigence de coups.
+
+Choisissez le moteur d’analyse et un temps de recherche de 1, 3, 10 ou 30
+secondes, puis **Résoudre avec le moteur**. Le score et la profondeur apparaissent
+pendant le calcul. À la fin, le premier coup conseillé est indiqué par une
+flèche et la suite proposée peut être parcourue avec les boutons, les coups
+cliquables et les touches `←` / `→` ou `<` / `>`. L’évaluation affichée concerne
+toujours la position de départ, même pendant la lecture de la suite.
+
+**Arrêter**, quitter l’écran ou remplacer le problème annule la recherche.
+Changer de moteur ou de temps efface l’ancienne solution avant le prochain
+calcul. Les entrées invalides sont refusées, y compris un roi adverse déjà
+attaqué, des droits de roque incohérents ou une prise en passant impossible.
+L’historique d’un PGN est conservé pour la dernière position (répétitions
+comprises). Une position déjà terminée ne lance pas le moteur.
+
+Limites : une position à la fois, jusqu’à 1 Mo et 2 000 demi-coups pour un PGN.
+Les collections CSV/EPD et les variantes autres que les échecs classiques ne
+sont pas prises en charge. « Mat en N » rapporte ce qu’annonce le moteur au
+temps choisi ; sans annonce de mat, l’UI présente sa recommandation. La variante
+peut être incomplète et n’est pas une preuve couvrant toutes les défenses.
+
 ## Analyse interactive
 
 Un seul écran réunit revue, exercices et variantes. Les flèches `←` / `→`,

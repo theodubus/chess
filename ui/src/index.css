@@ -1399,6 +1399,26 @@ dialog p {
 .study-evaluation > span { color:#acbcb1; font-size:12px; }
 .study-suggestion { display:flex; flex-direction:column; gap:8px; border-top:1px solid #d8bd8030; padding-top:12px; }
 .study-suggestion > span:first-child { color:#acbcb1; font-size:12px; }
+.problem-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin:0 auto 20px; max-width:1040px; }
+.problem-heading h1 { font:400 30px Georgia,serif; margin:0 0 8px; }
+.problem-heading p { color:#acbcb1; margin:0; font-size:13px; }
+.problem-loader { max-width:640px; margin:auto; }
+.problem-workspace .board-column { width:min(100%,calc(100dvh - 240px)); justify-self:center; }
+.problem-board-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.problem-board-heading p { margin:0; }
+.problem-details { display:grid; gap:16px; min-width:0; padding:20px; }
+.problem-details h2,.problem-details h3,.problem-details p { margin:0; overflow-wrap:anywhere; }
+.problem-details h2 { font:400 23px Georgia,serif; }
+.problem-result h3 { font-size:15px; margin-top:8px; }
+.problem-progress { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:13px; color:#d8bd80; }
+.problem-progress button { flex-basis:100%; }
+.problem-fen { color:#acbcb1; font-size:12px; }
+.problem-fen summary { cursor:pointer; }
+.problem-fen code { display:block; overflow-wrap:anywhere; padding-top:10px; }
+@media(max-width:650px) {
+ .problem-workspace .board-column,.problem-details { width:100%; }
+ .problem-heading { margin-bottom:12px; }
+}
 .retry-invitation,.retry-feedback { background:#d8bd8010; border:1px solid #d8bd8040; border-radius:8px; padding:14px; }
 .retry-invitation p { margin-bottom:12px; }
 .retry-feedback.success { border-color:#80b785; background:#80b78520; }

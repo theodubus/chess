@@ -60,6 +60,7 @@ export default function AnalysisEngineSelect({
         Moteur d’analyse
         <select
           name="analysis-engine"
+          aria-label="Moteur d’analyse"
           value={value}
           disabled={disabled || loading}
           onChange={(event) => onChange(event.target.value)}

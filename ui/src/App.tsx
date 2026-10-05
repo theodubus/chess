@@ -17,10 +17,12 @@ import {
 
 // La bibliothèque d'ouvertures n'est utile qu'à l'ouverture de l'analyse.
 const ReviewPanel = lazy(() => import("./review/ReviewPanel"));
+const ProblemPanel = lazy(() => import("./problems/ProblemPanel"));
 
 export default function App() {
   const [controller, setController] = useState<GameController | null>(null);
-  const [screen, setScreen] = useState<"setup" | "game" | "review">("setup");
+  const [screen, setScreen] = useState<"setup" | "game" | "review" | "problem">("setup");
+  const [problemOpened, setProblemOpened] = useState(false);
   const [setup, setSetup] = useState(readSetup);
   const [gameSetup, setGameSetup] = useState(readSetup);
   const [busy, setBusy] = useState(false);
@@ -129,6 +131,10 @@ export default function App() {
     savePreference(`chess-ui.evaluation.${view}`, String(show));
     (view === "play" ? setPlayEvaluation : setReviewEvaluation)(show);
   }
+  function openProblems() {
+    setProblemOpened(true);
+    setScreen("problem");
+  }
   const reviewAvailable = !!reviewPgn;
   return (
     <main className={`app ${screen === "setup" ? "setup-app" : "table-app"}`}>
@@ -165,6 +171,11 @@ export default function App() {
               Nouvelle partie
             </button>
             {(!controller || controller.finished) && (
+              <button className="text-button" aria-current={screen === "problem" ? "page" : undefined} onClick={openProblems}>
+                Problèmes
+              </button>
+            )}
+            {(!controller || controller.finished) && (
               <button
                 className="text-button"
                 onClick={() => setImporting(true)}
@@ -195,6 +206,9 @@ export default function App() {
               onClick={() => setImporting(true)}
             >
               Importer un PGN
+            </button>
+            <button className="secondary" disabled={busy} onClick={openProblems}>
+              Problèmes
             </button>
             {reviewAvailable && (
               <button
@@ -239,6 +253,11 @@ export default function App() {
           </Suspense>
         </div>
       )}
+      {problemOpened && <div hidden={screen !== "problem"}>
+        <Suspense fallback={<div className="review-loading-splash" role="status">Chargement des problèmes…</div>}>
+          <ProblemPanel active={screen === "problem"} />
+        </Suspense>
+      </div>}
       {confirmLeave && controller && (
         <Dialog
           title="Quitter cette partie ?"
