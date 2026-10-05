@@ -93,10 +93,6 @@ const NULL_MOVE_MIN_DEPTH: i32 = 3;
 /// si elle échoue.
 const NULL_MOVE_REDUCTION: i32 = 2;
 
-/// Profondeur restante à partir de laquelle un nœud sans coup de la table
-/// se cherche un pli moins profond — voir [`iir_depth`].
-const IIR_MIN_DEPTH: i32 = 4;
-
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
 
@@ -1454,14 +1450,6 @@ impl Search {
         // ni ne trie jamais ses coups tranquilles. Mesuré le 22 sept. 2026 :
         // 85 % des coups générés ici n'étaient jamais cherchés, et 49 % des
         // nœuds ne cherchaient aucun coup tranquille.
-        // RÉDUCTION ITÉRATIVE INTERNE (C34) — voir `iir_depth`. Jamais à la
-        // racine : l'approfondissement itératif y garde toujours un coup.
-        let depth = if ply > 0 {
-            iir_depth(depth, tt_move.is_some())
-        } else {
-            depth
-        };
-
         let killers = self.killers.get(ply).copied().unwrap_or([0; 2]);
         // Les deux coups qui précèdent ce nœud : celui de l'adversaire, et le
         // nôtre avant lui. La continuation note chaque tranquille sachant
@@ -2124,27 +2112,6 @@ fn build_lmr_table() -> Vec<i32> {
         }
     }
     table
-}
-
-/// La profondeur à laquelle chercher un nœud de profondeur restante `depth` :
-/// un pli de moins quand la table n'y a pas de coup, à partir de
-/// [`IIR_MIN_DEPTH`] — la réduction itérative interne (IIR, C34).
-///
-/// **Pourquoi** : sans coup de la table, l'ordonnancement n'a pas son meilleur
-/// indice, et le premier coup essayé — celui qui porte huit coupures sur dix,
-/// mesuré pour A20 — est une supposition. Chercher ce nœud moins loin coûte moins cher ; s'il compte,
-/// l'itération suivante le retrouve AVEC un coup de la table, rangé par celle-ci.
-/// Mesuré le 5 oct. 2026, rejeu à la profondeur 10 de 5 276 positions de
-/// parties : 9,3 % des nœuds de profondeur ≥ 4 n'ont pas de coup de la table,
-/// et la réduction rend l'arbre 2,8 % plus petit. Ce qu'elle coûte en justesse,
-/// seul un match le dit (`tools/README.md`, n° 9).
-#[must_use]
-pub fn iir_depth(depth: i32, has_tt_move: bool) -> i32 {
-    if !has_tt_move && depth >= IIR_MIN_DEPTH {
-        depth - 1
-    } else {
-        depth
-    }
 }
 
 /// Vrai si le camp au trait possède autre chose que des pions et son roi.
@@ -3600,19 +3567,6 @@ mod tests {
         assert!(s.table_permille() > 0, "la table doit s'être remplie");
         s.clear_table();
         assert_eq!(s.table_permille(), 0);
-    }
-
-    #[test]
-    fn l_iir_ne_reduit_que_sans_coup_de_la_table_et_assez_profond() {
-        // Sans coup de la table, à partir de la profondeur 4 : un pli de moins.
-        assert_eq!(iir_depth(IIR_MIN_DEPTH, false), IIR_MIN_DEPTH - 1);
-        assert_eq!(iir_depth(10, false), 9);
-        // En dessous, rien : la recherche y est déjà courte.
-        assert_eq!(iir_depth(IIR_MIN_DEPTH - 1, false), IIR_MIN_DEPTH - 1);
-        assert_eq!(iir_depth(1, false), 1);
-        // Avec un coup de la table, jamais.
-        assert_eq!(iir_depth(IIR_MIN_DEPTH, true), IIR_MIN_DEPTH);
-        assert_eq!(iir_depth(10, true), 10);
     }
 
     #[test]
