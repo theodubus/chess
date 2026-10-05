@@ -4463,6 +4463,44 @@ distinctes, zéro perte au temps, zéro coup illégal :
   2,24 en place. <s>Et une série de C13 pour situer N2L sur l'échelle de
   Stockfish</s> — **relevée : 2 952 ± 30**, section C13.
 
+### N° 9 — les techniques de recherche absentes : l'écran, écrit le 5 oct. avant de mesurer
+
+**L'ordre est décidé** — Théo, 29 sept. : n° 7, puis n° 8, puis n° 9. Le
+n° 7 a mesuré ses quatre leviers (N2L joue depuis le 2 oct.) et B8 est
+fusionné. La ligne du backlog nomme neuf techniques absentes de
+`search.rs` ; **chacune un match, séparément**, et le mécanisme d'abord.
+
+**Par où commencer — le coup nul, lu au code le 5 oct.**
+`NULL_MOVE_REDUCTION` vaut 2 depuis le 13 sept. (+75,1 ± 19,7 à `1+0,01`,
+jamais revu à la cadence qui tranche), et **rien n'exige que l'évaluation
+statique atteigne bêta** pour essayer le coup nul — la condition que porte
+Stockfish, comme la plupart des moteurs. Deux leviers sur un mécanisme
+déjà payé, de deux ou trois lignes chacun ; et l'IIR — une profondeur de
+moins quand la table n'a pas de coup —, une ligne. Les autres techniques
+demandent plus de code, ou des marges en unités d'évaluation que B8 oblige
+à sonder à l'échelle du réseau : elles viennent après.
+
+**L'écran — protocole.** Un journal de 60 parties du moteur qui joue
+(`main` à `1f99a69`, N2L) contre lui-même à `8+0,08`, cutechess `-debug
+all`, `-srand 20261005`, trois parties à la fois dans le conteneur. Ses
+positions rejouées à la profondeur 10, table conservée d'un coup à
+l'autre — le rejoueur d'A20, élargi —, par un binaire de MESURE : des
+variantes choisies par la variable `N9`, et sans elle `main` au nœud près,
+vérifié par le banc. Il compte, sur le moteur tel qu'il est, les essais de
+coup nul, leurs coupures et les nœuds qu'ils dépensent, selon que
+l'évaluation statique atteint bêta ou non ; et les nœuds de profondeur ≥ 4
+sans coup de la table. Puis l'arbre de chaque variante. **Ce que l'écran
+donne : le coût, exactement, et combien le mécanisme sert ; pas l'Elo**
+(`CLAUDE.md`, « c'est plus fort »).
+
+**Attendus, écrits avant** — <span>inférence, confiance faible</span> :
+- les essais sous bêta : **30 à 50 %** des essais, et ils coupent **3 à 4
+  fois moins** souvent que les autres ;
+- les recherches de coup nul : **15 à 40 % des nœuds** de l'arbre ;
+- l'arbre de chaque variante, contre `main` : la garde **−5 à −15 %** ;
+  R = 3 + d/4 **−20 à −40 %** ; R = 3 + d/3 **−25 à −45 %** ; l'IIR **−3
+  à −10 %**.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
