@@ -4754,6 +4754,31 @@ le jour même** : je supposais un plafond de vingt jobs, jamais mesuré. À
 dix-huit matchs et de la CI — **trente jobs à la fois**, aucun en attente.
 Le plafond réel reste inconnu ; il est au moins de trente.
 
+**La composition des gagnants — protocole écrit le 5 oct. à 08 h 05, avant
+toute relève.** Chaque candidat se mesure SEUL contre `18a3805`. Plusieurs
+gagnants empilés n'ont jamais été mesurés ensemble, et deux familles se
+touchent : le coup nul (C32 ou C32b, C33) et *improving* (C35, C36, C37). Ce
+dépôt a déjà vu un acquis fondre par empilement — l'élagage delta sous
+l'échange statique. Un gain démontré seul ne dit donc rien de la somme. Le
+protocole :
+1. **À la relève de 12 h 10, le meilleur gagnant au point se fusionne seul**
+   — de C32 et C32b, un seul, comme écrit. Son gain est démontré, et
+   l'attendre retarderait tout le reste.
+2. **Les autres gagnants des deux relèves forment UN groupe**, composé sur ce
+   nouveau `main` (`verify.sh`, banc mis à jour), révoqué aussitôt, et
+   **mesuré contre ce `main`**, quatre jobs à `8+0,08`. Ce qu'il mesure est
+   exactement ce qu'on fusionnerait : l'apport du reste par-dessus le
+   meilleur.
+3. **Attendu** : au plus la somme de leurs gains seuls ; l'empilement est
+   sous-additif ici, et deux familles se recouvrent — la somme est un
+   majorant, jamais une estimation.
+4. **Critère** : le groupe se fusionne si sa borne basse commune est
+   au-dessus de zéro. Sinon, **bissection par famille** — coup nul,
+   *improving*, le reste —, chaque moitié mesurée de la même façon ; jamais
+   par intuition.
+5. Sans autre gagnant que le meilleur : rien à composer. Sans gagnant du
+   tout : rien ne se fusionne.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
