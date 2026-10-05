@@ -70,3 +70,38 @@ it("réunit navigation et jeu direct, avec les moments du camp humain seulement"
   expect(html).not.toContain("Analyse détaillée");
   expect(html).not.toContain("Revue guidée &amp; exploration");
 });
+
+it("suit le matériel de la position relue, avant et après promotion, dans les deux orientations", async () => {
+  const { GameReview } = await import("./GameReview");
+  const { default: InteractiveReview } = await import("./InteractiveReview");
+  const board = new Chess("1r5k/P7/8/8/8/8/8/7K w - - 0 1");
+  board.move("a8=Q");
+  board.move("Rxa8");
+  const review = new GameReview(board.pgn());
+  for (const orientation of ["white", "black"] as const) {
+    for (const [selected, side, score] of [
+      [0, "Noirs", 4],
+      [1, "Blancs", 4],
+      [2, "Noirs", 5],
+    ] as const) {
+      const html = renderToStaticMarkup(
+        <InteractiveReview
+          review={review}
+          selected={selected}
+          onSelect={() => {}}
+          engineId="default"
+          orientation={orientation}
+          showEvaluation={false}
+          showAnnotations={false}
+          active={false}
+          side="both"
+          treeCache={new Map()}
+        />,
+      );
+      expect(html).toContain(
+        `Prises des ${side} : ${selected === 2 ? "1 dame" : "aucune"} ; avantage matériel de ${score} points`,
+      );
+      expect(html.match(/class="capture-advantage"/g)).toHaveLength(1);
+    }
+  }
+});

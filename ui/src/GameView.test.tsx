@@ -162,8 +162,40 @@ it("affiche les prises pendant le jeu même quand l’évaluation moteur est mas
     />,
   );
   expect(html).toContain(
-    "Prises des Blancs : 1 pion ; avantage en prises de 1 point",
+    "Prises des Blancs : 1 pion ; avantage matériel de 1 point",
   );
   expect(html).toContain(">+1</strong>");
   expect(html).not.toContain('class="evaluation-bar');
+});
+
+it("met à jour le +N après une promotion même sans prise ni évaluation moteur", () => {
+  const controller = new GameController({
+    initialFen: "1r5k/P7/8/8/8/8/8/7K w - - 0 1",
+  });
+  const render = () =>
+    renderToStaticMarkup(
+      <GameView
+        controller={controller}
+        showEvaluation={false}
+        onEvaluation={() => {}}
+        onNew={() => {}}
+        onRematch={() => {}}
+        onReview={() => {}}
+      />,
+    );
+  expect(render()).toContain(
+    "Prises des Noirs : aucune ; avantage matériel de 4 points",
+  );
+  expect(controller.move("a7", "a8")).toBe(true);
+  expect(render()).toContain(
+    "Prises des Noirs : aucune ; avantage matériel de 4 points",
+  );
+  controller.promote("q");
+  expect(render()).toContain(
+    "Prises des Blancs : aucune ; avantage matériel de 4 points",
+  );
+  expect(controller.move("b8", "a8")).toBe(true);
+  expect(render()).toContain(
+    "Prises des Noirs : 1 dame ; avantage matériel de 5 points",
+  );
 });

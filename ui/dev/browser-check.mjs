@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { WebSocket } from "ws";
 import { Chess } from "chess.js";
+import { checkPlay } from "./check-play.mjs";
 
 // Ce contrôle utilise un profil temporaire, sans toucher au navigateur personnel.
 const binary = process.env.CHESS_BROWSER_BINARY;
@@ -219,8 +220,12 @@ try {
         m.params.exceptionDetails.exception?.description ||
           m.params.exceptionDetails.text,
       );
-    if (m.method === "Log.entryAdded" && m.params.entry.level === "error")
-      errors.push(m.params.entry.text);
+    if (m.method === "Log.entryAdded" && m.params.entry.level === "error") {
+      const entry = m.params.entry;
+      // Chrome demande cette icône facultative même sans lien dans la page.
+      if (!(entry.url?.endsWith("/favicon.ico") && entry.text.includes("404")))
+        errors.push(`${entry.text}${entry.url ? ` (${entry.url})` : ""}`);
+    }
   });
   await once(socket, "open");
   const target = await call("Target.createTarget", { url: "about:blank" });
@@ -236,7 +241,12 @@ try {
     deviceScaleFactor: 1,
     mobile: false,
   });
-  if (!process.env.CHESS_ANNOTATIONS_ONLY) {
+  if (process.env.CHESS_PLAY_ONLY) {
+    await checkPlay({ call, evaluate, waitFor, button, clickAt, screenshot });
+  } else if (
+    !process.env.CHESS_ANNOTATIONS_ONLY &&
+    !process.env.CHESS_EXPLANATIONS_ONLY
+  ) {
     await call("Page.navigate", {
       url: process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
     });
@@ -316,10 +326,10 @@ try {
       deviceScaleFactor: 1,
       mobile: true,
     });
-    assert(
-      await evaluate(
-        `document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth`,
-      ),
+    // Le plateau applique la nouvelle largeur après le changement de viewport.
+    // Attendre la mise en page réelle tout en échouant si le débordement persiste.
+    await waitFor(
+      `document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth`,
       "éditeur sans débordement sur mobile",
     );
     await screenshot("01d-army-editor-mobile");
@@ -545,7 +555,7 @@ try {
     );
     // Ce refus HTTP est volontaire ; toutes les autres erreurs restent bloquantes.
     const expectedRefusal = errors.indexOf(
-      "Failed to load resource: the server responded with a status of 400 (Bad Request)",
+      `Failed to load resource: the server responded with a status of 400 (Bad Request) (${new URL("/engine/engines", process.env.CHESS_UI_URL || "http://127.0.0.1:5173").href})`,
     );
     if (expectedRefusal >= 0) errors.splice(expectedRefusal, 1);
     await enginePath("/usr/games/stockfish");
@@ -1546,9 +1556,636 @@ try {
     "tous les pictogrammes partagent les mêmes ancrages",
   );
   await screenshot("10-annotation-gallery");
+  if (!process.env.CHESS_ANNOTATIONS_ONLY && !process.env.CHESS_PLAY_ONLY) {
+    await call("Page.navigate", {
+      url: new URL(
+        "/dev/explanations.html",
+        process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+      ).href,
+    });
+    await waitFor(
+      `document.querySelector('.move-explanation')`,
+      "explication pédagogique",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.move-assessment').textContent.includes('échec et mat')`,
+      ),
+      "phrase concrète issue de la suite",
+    );
+    await drawArrow("a2", "a3", ".learning-workspace");
+    await button("Montrer pourquoi");
+    await waitFor(
+      `document.querySelector('.explanation-navigation')`,
+      "démonstration ouverte",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.source-board[aria-hidden="true"] .cg-shapes line') && document.querySelector('[data-testid="source-position"]').textContent==='3'`,
+      ),
+      "dessins et position source conservés",
+    );
+    await pressKey(">");
+    await pressKey(">");
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-caption').textContent.includes('Noirs font échec et mat') && window.explanationFixture.countBranches()===0`,
+      ),
+      "navigation clavier sans créer de variante utilisateur",
+    );
+    await screenshot("11-explanation-desktop");
+    await button("Retour au coup examiné");
+    assert(
+      await evaluate(
+        `!document.querySelector('.explanation-navigation') && document.querySelector('.learning-workspace .cg-shapes line') && document.querySelector('[data-testid="source-position"]').textContent==='3'`,
+      ),
+      "retour exact avec dessin conservé",
+    );
+    await evaluate(`document.querySelector(".engine-lines").open=true`);
+    await button("Voir la meilleure idée");
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-navigation').textContent.includes('Avant le coup')`,
+      ),
+      "comparaison depuis la position avant le coup",
+    );
+    await pressKey(">");
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-caption').textContent.includes('Cc3')`,
+      ),
+      "bonne suite alternative",
+    );
+    await button("Retourner");
+    await call("Emulation.setDeviceMetricsOverride", {
+      width: 390,
+      height: 844,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
+    await screenshot("12-explanation-mobile");
+    await waitFor(
+      `document.documentElement.scrollWidth <= 390`,
+      "explication adaptée au mobile",
+    );
+    await button("Réessayer ce coup");
+    await waitFor(
+      `document.querySelector('.review-details h2').textContent==='À vous de jouer'`,
+      "retentative masquée",
+    );
+    assert(
+      await evaluate(
+        `!document.querySelector('.move-explanation') && !document.querySelector('.explanation-demo') && !document.querySelector('.variation-moves')`,
+      ),
+      "aucune explication ni meilleure suite révélée pendant le retry",
+    );
+    await button("Revenir à la partie");
+    await button("Annotations");
+    assert(
+      await evaluate(`!document.querySelector('.move-explanation')`),
+      "préférence d’annotations respectée",
+    );
+    await button("Annotations");
+    await move("d8", "h4", ".learning-workspace");
+    await waitFor(
+      `document.querySelector('.move-explanation')?.textContent.includes('Montrer pourquoi') && document.querySelector('.review-details h2')?.textContent==='Votre variante'`,
+      "explication du mat dans une variante utilisateur",
+    );
+    const branchLabel = await evaluate(
+      `document.querySelector('.review-position').textContent`,
+    );
+    await drawArrow("a2", "a3", ".learning-workspace");
+    await button("Montrer pourquoi");
+    await pressKey(">");
+    await button("Retour au coup examiné");
+    assert.deepEqual(
+      await evaluate(
+        `({ label: document.querySelector('.review-position').textContent, drawing: !!document.querySelector('.source-board .cg-shapes line'), branches: window.explanationFixture.countBranches(), position: document.querySelector('[data-testid="source-position"]').textContent })`,
+      ),
+      { label: branchLabel, drawing: true, branches: 1, position: "3" },
+      "retour exact à la variante avec ses dessins, sans ajout de branche",
+    );
+  }
+  if (!process.env.CHESS_ANNOTATIONS_ONLY && !process.env.CHESS_PLAY_ONLY) {
+    for (const [scenario, title, step, arrows] of [
+      ["fork", "Fourchette", 0, 2],
+      ["pin", "Clouage au roi", 0, 2],
+      ["defender", "Défenseur supprimé", 0, 2],
+      ["defence", "Pièce défendue", 0, 2],
+      ["miss", "Fourchette", 0, 2],
+    ]) {
+      await call("Page.navigate", {
+        url: new URL(
+          `/dev/explanations.html?case=${scenario}`,
+          process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+        ).href,
+      });
+      if (scenario === "pin") {
+        await waitFor(
+          `!!document.querySelector('.cause-progress') && window.explanationFixture.causeStats.searches > 0`,
+          "vérification visible en cours",
+        );
+        await pressKey("<");
+        await waitFor(
+          `document.querySelector('[data-testid="source-position"]').textContent==='0' && window.explanationFixture.causeStats.disposed > 0`,
+          "navigation libre et recherche annulée",
+        );
+        assert(
+          await evaluate(`!document.querySelector('.move-explanation')`),
+          "aucune cause tardive publiée sur une autre position",
+        );
+        await pressKey(">");
+      }
+      await waitFor(
+        `document.querySelector('.move-explanation')?.textContent.includes("Montrer pourquoi")`,
+        "cause tactique vérifiée",
+      );
+      assert(
+        await evaluate(`!document.querySelector('.engine-lines').open`),
+        "variante brute repliée hors de la démonstration",
+      );
+      if (scenario === "pin") {
+        const searches = await evaluate(
+          `window.explanationFixture.causeStats.searches`,
+        );
+        await button("Annotations");
+        await button("Annotations");
+        await evaluate(`new Promise(resolve => setTimeout(resolve, 650))`);
+        assert.equal(
+          await evaluate(`window.explanationFixture.causeStats.searches`),
+          searches,
+          "confirmation mise en cache sans nouveau moteur",
+        );
+      }
+      await button("Montrer pourquoi");
+      if (scenario === "miss")
+        assert(
+          await evaluate(
+            `document.querySelector('.explanation-demo h2').textContent==='Fourchette'`,
+          ),
+          "l’occasion manquée ouvre la bonne suite",
+        );
+      for (let index = 0; index < step; index++) await pressKey(">");
+      await waitFor(
+        `document.querySelector('.explanation-motif')?.textContent===${JSON.stringify(title)}`,
+        "repère tactique associé à la bonne étape",
+      );
+      await waitFor(
+        `document.querySelectorAll('.review-board-stage > .board-frame .cg-shapes line').length===${arrows}`,
+        "flèches du motif sur le plateau",
+      );
+      const geometry = await evaluate(
+        `[...document.querySelectorAll('.cg-shapes line')].map(line=>[line.getAttribute('x1'),line.getAttribute('y1'),line.getAttribute('x2'),line.getAttribute('y2')])`,
+      );
+      await screenshot(`13-tactic-${scenario}-mobile`);
+      if (scenario === "fork") {
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 1280,
+          height: 900,
+          deviceScaleFactor: 1,
+          mobile: false,
+        });
+        await screenshot("14-tactic-fork-desktop");
+        assert(
+          await evaluate(
+            `document.documentElement.scrollWidth<=1280 && document.querySelector('.explanation-caption').getBoundingClientRect().right<=1280`,
+          ),
+          "repère tactique lisible sur bureau",
+        );
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 390,
+          height: 844,
+          deviceScaleFactor: 1,
+          mobile: true,
+        });
+      }
+      await button("Retourner");
+      await waitFor(
+        `JSON.stringify([...document.querySelectorAll('.cg-shapes line')].map(line=>[line.getAttribute('x1'),line.getAttribute('y1'),line.getAttribute('x2'),line.getAttribute('y2')]))!==${JSON.stringify(JSON.stringify(geometry))}`,
+        "les repères suivent l’orientation",
+      );
+      assert(
+        await evaluate(`document.documentElement.scrollWidth<=390`),
+        "motif sans débordement mobile",
+      );
+      await button("Réessayer ce coup");
+      assert(
+        await evaluate(
+          `!document.querySelector('.explanation-motif') && !document.querySelector('.cg-shapes line') && !document.querySelector('.move-explanation')`,
+        ),
+        "retry sans fuite des motifs ni des flèches",
+      );
+      await button("Un indice");
+      await waitFor(
+        `document.querySelector('.hint-card')?.textContent.includes('Indice 1 / 2')`,
+        "premier indice affiché",
+      );
+      assert(
+        await evaluate(
+          `!/[a-h][1-8]/.test(document.querySelector('.hint-card').textContent) && !document.querySelector('.source-board .cg-shapes circle') && !document.querySelector('.source-board .cg-shapes line')`,
+        ),
+        "idée sans case ni flèche de solution",
+      );
+      if (scenario === "fork") {
+        assert(
+          await evaluate(
+            `document.querySelector('.hint-card').textContent.includes('double attaque')`,
+          ),
+          "indice tactique réutilisé",
+        );
+        await button("Effacer le résultat source");
+        assert(
+          await evaluate(
+            `document.querySelector('.hint-card').textContent.includes('double attaque')`,
+          ),
+          "indice conservé malgré la disparition du résultat source",
+        );
+        await screenshot("15-hint-idea-mobile");
+      }
+      await button("Quelle pièce ?");
+      await waitFor(
+        `document.querySelector('.hint-piece') && document.querySelector('.source-board .cg-shapes circle')`,
+        "pièce source encerclée",
+      );
+      assert(
+        await evaluate(
+          `!document.querySelector('.source-board .cg-shapes line') && !document.querySelector('.variation-moves') && !document.querySelector('.board-annotation') && !document.querySelector('.desktop-chart') && document.querySelector('.evaluation-bar').textContent.includes('?')`,
+        ),
+        "second indice sans destination, score ni meilleure suite",
+      );
+      assert(
+        await evaluate(`document.documentElement.scrollWidth<=390`),
+        "indices lisibles sans débordement mobile",
+      );
+      if (scenario === "fork") {
+        const circle = await evaluate(
+          `document.querySelector('.source-board .cg-shapes circle').getAttribute('cx')`,
+        );
+        await button("Retourner");
+        await waitFor(
+          `document.querySelector('.source-board .cg-shapes circle').getAttribute('cx')!==${JSON.stringify(circle)}`,
+          "l’indice suit l’orientation",
+        );
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 1280,
+          height: 900,
+          deviceScaleFactor: 1,
+          mobile: false,
+        });
+        await screenshot("16-hint-piece-desktop");
+        await button("Voir la solution");
+        await waitFor(
+          `document.querySelector('.retry-feedback')?.textContent.includes('Solution du moteur affichée')`,
+          "solution sur demande explicite",
+        );
+        assert(
+          await evaluate(
+            `document.querySelector('.review-position').textContent.includes('Cc7') && !document.querySelector('.hint-card') && !document.querySelector('.source-board .cg-shapes circle')`,
+          ),
+          "la solution correspond au plan d’indices et retire le repère",
+        );
+        await button("Retenter sans la solution");
+        assert(
+          await evaluate(
+            `!document.querySelector('.hint-card') && !document.querySelector('.source-board .cg-shapes circle') && [...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Un indice')`,
+          ),
+          "nouvel exercice sans indice précédent",
+        );
+        await button("Changer de moteur");
+        assert(
+          await evaluate(
+            `!document.querySelector('.retry-coach') && !document.querySelector('.hint-card') && !document.querySelector('.source-board .cg-shapes circle')`,
+          ),
+          "changement de moteur réinitialisant l’exercice",
+        );
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 390,
+          height: 844,
+          deviceScaleFactor: 1,
+          mobile: true,
+        });
+      }
+    }
+  }
+  if (!process.env.CHESS_ANNOTATIONS_ONLY && !process.env.CHESS_PLAY_ONLY) {
+    await call("Page.navigate", {
+      url: new URL(
+        "/dev/explanations.html?case=uncertain",
+        process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+      ).href,
+    });
+    await waitFor(
+      `document.querySelector('.focused-analysis button')`,
+      "approfondissement disponible sans résultat fiable",
+    );
+    await button("Changer de moteur");
+    await button("Approfondir ce coup");
+    await waitFor(
+      `document.querySelector('.focused-progress .analysis-spinner')`,
+      "calcul ciblé visible",
+    );
+    await screenshot("17-focused-progress-mobile");
+    await pressKey("<");
+    await waitFor(
+      `document.querySelector('[data-testid="source-position"]').textContent==='0' && !document.querySelector('.focused-progress')`,
+      "navigation disponible pendant le calcul",
+    );
+    await pressKey(">");
+    await waitFor(
+      `document.querySelector('.focused-analysis')?.textContent.includes('Vérification interrompue')`,
+      "recherche annulée au changement de position",
+    );
+    await button("Approfondir ce coup");
+    await waitFor(
+      `document.querySelector('.focused-analysis')?.textContent.includes('Vérification terminée') || document.querySelector('.focused-analysis')?.textContent.includes('Explication vérifiée')`,
+      "paire recalculée par Stockfish",
+      15000,
+    );
+    const verified = await evaluate(
+      `document.querySelector('.focused-analysis').textContent`,
+    );
+    await pressKey("<");
+    await pressKey(">");
+    assert.equal(
+      await evaluate(`document.querySelector('.focused-analysis').textContent`),
+      verified,
+      "résultat approfondi conservé dans le cache",
+    );
+    await button("Réessayer ce coup");
+    await waitFor(
+      `![...document.querySelectorAll('.retry-coach button')].find(b=>b.textContent.trim()==='Un indice').disabled`,
+      "indice disponible après vérification",
+    );
+    await button("Un indice");
+    await waitFor(
+      `document.querySelector('.hint-card')`,
+      "résultat approfondi réutilisé pour l’indice",
+    );
+    assert(
+      await evaluate(`!document.querySelector('.focused-progress')`),
+      "pas de nouveau calcul pour le même indice",
+    );
+    await call("Page.navigate", {
+      url: new URL(
+        "/dev/explanations.html?case=quiet",
+        process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+      ).href,
+    });
+    await waitFor(
+      `document.querySelector('.move-explanation')`,
+      "cas d’indice général chargé",
+    );
+    await button("Changer de moteur");
+    await button("Réessayer ce coup");
+    await button("Un indice");
+    await waitFor(
+      `[...document.querySelectorAll('.retry-coach button')].some(b=>b.textContent.trim()==='Préciser cet indice' && !b.disabled)`,
+      "précision proposée pour un indice général",
+    );
+    await button("Préciser cet indice");
+    await waitFor(
+      `document.querySelector('.focused-progress')?.textContent.includes('Préparation de l’indice')`,
+      "préparation d’indice visible",
+    );
+    assert(
+      await evaluate(
+        `!document.querySelector('.variation-moves') && !document.querySelector('.cg-shapes line') && document.querySelector('.study-details h2').textContent==='À vous de jouer'`,
+      ),
+      "calcul d’indice sans révéler ni jouer la solution",
+    );
+    await button("Arrêter la vérification");
+    await waitFor(
+      `document.querySelector('.retry-coach')?.textContent.includes('Vérification interrompue')`,
+      "indice interrompu explicitement",
+    );
+    await button("Préciser cet indice");
+    await waitFor(
+      `!document.querySelector('.focused-progress') && document.querySelector('.hint-card') && ![...document.querySelectorAll('button')].some(b=>b.textContent.trim()==='Préciser cet indice')`,
+      "indice recalculé et mis en cache",
+      15000,
+    );
+    await button("Quelle pièce ?");
+    await waitFor(
+      `document.querySelector('.hint-piece') && document.querySelector('.source-board .cg-shapes circle')`,
+      "second indice issu de la vérification",
+    );
+    await button("Revenir à la partie");
+    assert(
+      await evaluate(
+        `!document.querySelector('.hint-card') && !document.querySelector('.source-board .cg-shapes circle')`,
+      ),
+      "retour à la partie effaçant les repères d’indice",
+    );
+  }
+  if (!process.env.CHESS_ANNOTATIONS_ONLY && !process.env.CHESS_PLAY_ONLY) {
+    for (const scenario of ["development", "passed"]) {
+      await call("Page.navigate", {
+        url: new URL(
+          `/dev/explanations.html?case=position-${scenario}`,
+          process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+        ).href,
+      });
+      await waitFor(
+        `document.querySelector('.position-notes')`,
+        "observation complémentaire disponible",
+      );
+      assert(
+        await evaluate(
+          `!document.querySelector('.position-notes').open && !document.querySelector('.position-notes button')`,
+        ),
+        "aucun bouton pour un déplacement ou une seule case déjà visible",
+      );
+      if (scenario === "development") {
+        assert(
+          await evaluate(
+            `document.querySelector('.move-explanation > .hint').textContent.includes('pas encore identifiée')`,
+          ),
+          "le constat ne remplace pas l’absence de cause identifiée",
+        );
+        await screenshot("20-observation-complementaire-mobile");
+      }
+    }
+    for (const [scenario, title] of [
+      ["file", "Colonne ouverte"],
+      ["castle", "Roque"],
+      ["shield", "Couverture du roi"],
+      ["pawns", "Pions doublés"],
+      ["activity", "Mobilité"],
+      ["center", "Accès au centre"],
+    ]) {
+      await call("Page.navigate", {
+        url: new URL(
+          `/dev/explanations.html?case=position-${scenario}`,
+          process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+        ).href,
+      });
+      await waitFor(
+        `document.querySelector('.position-notes')`,
+        "repère positionnel disponible",
+      );
+      assert(
+        await evaluate(`!document.querySelector('.position-notes').open`),
+        "observation toujours repliée sous l’explication",
+      );
+      await evaluate(`document.querySelector('.position-notes').open=true`);
+      const label = await evaluate(
+        `document.querySelector('.review-details h2').textContent`,
+      );
+      await drawArrow("a2", "a3", ".learning-workspace");
+      await button("Voir les cases concernées");
+      await waitFor(
+        `document.querySelector('.review-board-stage > .board-frame .cg-shapes circle')`,
+        "cases visibles directement après le coup",
+      );
+      assert(
+        await evaluate(
+          `!document.querySelector('.explanation-demo') && !document.querySelector('.explanation-navigation') && document.querySelector('.review-details h2').textContent===${JSON.stringify(label)} && document.querySelector('.position-fact-title').textContent===${JSON.stringify(title)}`,
+        ),
+        "aucun rewind ni changement de panneau",
+      );
+      assert(
+        await evaluate(
+          `!document.querySelector('.review-board-stage > .board-frame .cg-shapes line') && window.explanationFixture.countBranches()===0 && document.querySelector('[data-testid="source-position"]').textContent==='1'`,
+        ),
+        "repères sans flèche du coup déjà joué ni nouvelle variante",
+      );
+      assert(
+        await evaluate(
+          `!document.querySelector('.evaluation-bar').classList.contains('unavailable') && !!document.querySelector('.desktop-chart')`,
+        ),
+        "évaluation et courbe conservées pour la position inchangée",
+      );
+      await screenshot(`18-position-${scenario}-mobile`);
+      assert(
+        await evaluate(`document.documentElement.scrollWidth<=390`),
+        "repère lisible sur mobile",
+      );
+      const geometry = await evaluate(
+        `[...document.querySelectorAll('.review-board-stage > .board-frame .cg-shapes circle')].map(n=>[n.getAttribute('cx'),n.getAttribute('cy')])`,
+      );
+      await button("Retourner");
+      await waitFor(
+        `JSON.stringify([...document.querySelectorAll('.review-board-stage > .board-frame .cg-shapes circle')].map(n=>[n.getAttribute('cx'),n.getAttribute('cy')]))!==${JSON.stringify(JSON.stringify(geometry))}`,
+        "repères suivant l’orientation",
+      );
+      if (scenario === "center") {
+        await evaluate(
+          `document.querySelector('.position-comparison').open=true`,
+        );
+        await button("Voir les cases du coup proposé");
+        assert(
+          await evaluate(
+            `document.querySelector('.position-overlay-caption').textContent.includes('Cd2') && document.querySelector('.review-details h2').textContent===${JSON.stringify(label)}`,
+          ),
+          "comparaison directement après le coup proposé avec origine conservée",
+        );
+        assert(
+          await evaluate(
+            `document.querySelector('.evaluation-bar').classList.contains('unavailable')`,
+          ),
+          "aucun score du coup joué attribué au coup alternatif",
+        );
+        await button("Voir les cases concernées");
+        assert(
+          await evaluate(
+            `document.querySelector('.position-overlay-caption').textContent.includes('Cc3')`,
+          ),
+          "retour direct aux cases du coup joué",
+        );
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 1280,
+          height: 900,
+          deviceScaleFactor: 1,
+          mobile: false,
+        });
+        await screenshot("19-position-center-desktop");
+        await call("Emulation.setDeviceMetricsOverride", {
+          width: 390,
+          height: 844,
+          deviceScaleFactor: 1,
+          mobile: true,
+        });
+      }
+      await button("Masquer les repères");
+      assert(
+        await evaluate(
+          `document.querySelector('.source-board .cg-shapes line') && !document.querySelector('.position-overlay-caption') && window.explanationFixture.countBranches()===0`,
+        ),
+        "dessins personnels conservés à la fermeture",
+      );
+      await button("Voir les cases concernées");
+      await pressKey("<");
+      assert(
+        await evaluate(
+          `document.querySelector('[data-testid="source-position"]').textContent==='0' && !document.querySelector('.position-overlay-caption')`,
+        ),
+        "la flèche garde son rôle de navigation dans la partie",
+      );
+      await pressKey(">");
+      await button("Annotations");
+      assert(
+        await evaluate(`!document.querySelector('.position-notes')`),
+        "préférence d’annotations respectée",
+      );
+      await button("Annotations");
+      await button("Réessayer ce coup");
+      assert(
+        await evaluate(
+          `!document.querySelector('.position-notes') && !document.querySelector('.explanation-motif') && !document.querySelector('.cg-shapes circle') && !document.querySelector('.cg-shapes line')`,
+        ),
+        "retry sans fuite d’observation",
+      );
+    }
+    await call("Page.navigate", {
+      url: new URL(
+        "/dev/explanations.html?case=material-center",
+        process.env.CHESS_UI_URL || "http://127.0.0.1:5173",
+      ).href,
+    });
+    await waitFor(
+      `document.querySelector('.move-assessment')?.textContent.includes('tour en a1')`,
+      "la perte de matériel explique le verdict",
+    );
+    assert(
+      await evaluate(
+        `!document.querySelector('.position-notes').open && !document.querySelector('.move-assessment').textContent.includes('centre')`,
+      ),
+      "l’occupation du centre ne masque pas la perte",
+    );
+    await screenshot("21-material-loss-mobile");
+    await button("Montrer pourquoi");
+    await pressKey(">");
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-caption').textContent.includes('capturent la tour')`,
+      ),
+      "la prise immédiate explique la faute sans dérouler les coups lointains",
+    );
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-navigation').textContent.includes('Étape 2 / 2') && document.querySelector('button[aria-label="Étape suivante"]').disabled`,
+      ),
+      "démonstration terminée dès la conséquence",
+    );
+    await button("Comparer les décisions");
+    assert(
+      await evaluate(
+        `document.querySelector('.explanation-caption').textContent.includes('élimine la tour en a8') && !document.querySelector('.explanation-navigation .review-navigation')`,
+      ),
+      "alternative liée à la menace, sans navigation vide",
+    );
+    await button("Retour au coup examiné");
+    assert(
+      await evaluate(
+        `document.querySelector('[data-testid="source-position"]').textContent==='1'`,
+      ),
+      "retour exact au coup étudié",
+    );
+  }
+
   assert.deepEqual(errors, [], "Aucune erreur JavaScript ou réseau");
   console.log(
-    `${process.env.CHESS_ANNOTATIONS_ONLY ? "Contrôle des pictogrammes réussi" : "Contrôle navigateur réussi : import PGN (texte, fichier, FEN), Stockfish, partie complète, analyse réelle, navigation, préférences, bureau, mobile, tablette et pictogrammes"}. Captures : ${output}`,
+    `${process.env.CHESS_EXPLANATIONS_ONLY ? "Contrôle des explications, de la navigation et du retry réussi" : process.env.CHESS_PLAY_ONLY ? "Contrôle du jeu, des commandes et des pictogrammes réussi" : process.env.CHESS_ANNOTATIONS_ONLY ? "Contrôle des pictogrammes réussi" : "Contrôle navigateur réussi : import PGN (texte, fichier, FEN), Stockfish, partie complète, analyse réelle, navigation, préférences, bureau, mobile, tablette et pictogrammes"}. Captures : ${output}`,
   );
 } finally {
   if (socket?.readyState === WebSocket.OPEN) {

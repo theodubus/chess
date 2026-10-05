@@ -1,0 +1,326 @@
+{
+  "baseCommit": "08aee1f3af267c2e8a014bc7679033e47a11507e",
+  "scope": "Local extraction only, development corpus, no UCI search, no pedagogical validation",
+  "before": {
+    "rows": [
+      {
+        "id": "queen-closes-retreat",
+        "elapsedMs": 626.7868520000001,
+        "hash": "80e8459a4d9c6cfa3f3864646f784241d66ca9c475e5b78e46d3a929806b2543"
+      },
+      {
+        "id": "pawn-exploits-restriction",
+        "elapsedMs": 748.9598540000002,
+        "hash": "d6d0653d6e26558d74b38c23bce57fe13a223c99c5e640dd613b82ae2201361c"
+      },
+      {
+        "id": "bishop-can-retreat",
+        "elapsedMs": 553.7656710000001,
+        "hash": "e3ea29ed515e9dd4d1f3fc2b0e91c00cf78d0d06c775e6751516e0eb71f8b7af"
+      },
+      {
+        "id": "restriction-without-threat",
+        "elapsedMs": 596.7435220000002,
+        "hash": "d0a8ed7d30ea819af7789ad854e01cdb510dc5fd98eb1a84c341630d8217deec"
+      },
+      {
+        "id": "threat-already-present",
+        "elapsedMs": 648.2685759999999,
+        "hash": "0dc2353232ec4632479d399d3be99801bdc13208b4f11c842d0a790f6b3b9808"
+      },
+      {
+        "id": "losing-exchange-recapture",
+        "elapsedMs": 63.5310400000003,
+        "hash": "f581213264609c03d926fdb30e76b29ae50766bdfed670f22220767b80152fce"
+      },
+      {
+        "id": "same-exchange-final-capture",
+        "elapsedMs": 49.540121,
+        "hash": "27b2a059d77f597f0e53829fa6cfd09fd1beb41d86c01482377fb96fed338916"
+      },
+      {
+        "id": "ordinary-development",
+        "elapsedMs": 138.4911930000003,
+        "hash": "03bbe06890e08dd697b77b4b1d280477f4cf79d77aab253266e111df87a643de"
+      },
+      {
+        "id": "fork",
+        "elapsedMs": 41.91540299999997,
+        "hash": "ba8f593bcd5e45fd414a197349723aeae34b5b962770dfc3e4f4b523510f9dfa"
+      },
+      {
+        "id": "pin",
+        "elapsedMs": 62.68161800000007,
+        "hash": "4933bb983aba29f8af1fa200c1b8b05b12d34cee6608bcd0ae2d2e98269135a9"
+      },
+      {
+        "id": "defender-removed",
+        "elapsedMs": 116.95984500000031,
+        "hash": "aec9696aab01abdb76420cf8b689d8951be84801abcfe212928ffd5d1f3ebf1f"
+      },
+      {
+        "id": "blocked-bishop-gains-queen",
+        "elapsedMs": 196.55132400000002,
+        "hash": "94f6a17eec7a1782a0c3d2d44abc437613d5441610fe06168c1c97f14e7dca5f"
+      },
+      {
+        "id": "discovered-attack",
+        "elapsedMs": 251.50117899999987,
+        "hash": "946dd0fa7d17ee10ba4ae6860a20028f30bf7d495a3e4ab194204cae17865208"
+      },
+      {
+        "id": "mate-threat",
+        "elapsedMs": 679.5254220000006,
+        "hash": "eae27065f153a6c1d13a76d2d4c812bc208c77d5a8ba9ff8794a000f8aa418f1"
+      },
+      {
+        "id": "pinned-capturer",
+        "elapsedMs": 59.479497999999694,
+        "hash": "14509ea28e535f013c0b06721d8f3ddb1fe0bd3b9bf671805835bbab70c966ff"
+      },
+      {
+        "id": "queen-closes-retreat-black",
+        "elapsedMs": 609.5158010000005,
+        "hash": "fc72082203b69cc5b963bb7d60fb8b272b83cf8d5d95901197af06852ee401b3"
+      },
+      {
+        "id": "pawn-exploits-restriction-black",
+        "elapsedMs": 744.7729169999993,
+        "hash": "32b929bd8b7b4e05b4ec58e30812a484e95ce73a6d061d5143a0d9c1375b6525"
+      },
+      {
+        "id": "losing-exchange-recapture-black",
+        "elapsedMs": 60.916381,
+        "hash": "7de62550ec87357949d404cbbcf1a41a6298bdbca3e2832b14d53e4911454c1d"
+      },
+      {
+        "id": "bishop-can-retreat-black",
+        "elapsedMs": 558.1898710000005,
+        "hash": "d9b90c6cf050a94f4c96618dff726139d48a6fef21245f90bda8cf30bf17e7de"
+      },
+      {
+        "id": "morphy-4",
+        "elapsedMs": 489.5352389999998,
+        "hash": "8bb0ddc7254e8b61ceb15a98afe018c034d59215d08ffcb26c05e003841134f4"
+      },
+      {
+        "id": "morphy-18",
+        "elapsedMs": 894.7678880000012,
+        "hash": "d108474aa538cf48a5819067ee40cd99587d76051fe420ffb41d26f322b1be04"
+      },
+      {
+        "id": "morphy-25",
+        "elapsedMs": 744.2336859999996,
+        "hash": "a1eb3f3aeb45be5d6f1a64d8f0f84606e93d3a4b7896c7db1424fe1be8b01138"
+      },
+      {
+        "id": "morphy-31",
+        "elapsedMs": 451.20880599999873,
+        "hash": "30a46205cc1af942a6fa84f521819844007bbb77b7b77f4c1146402fa2c415c9"
+      },
+      {
+        "id": "byrne-12",
+        "elapsedMs": 1101.021791000001,
+        "hash": "61c557136f4bc36686e8bf9ee6e5a79d0f08b3fc753f9c2c1a3ca7258e118546"
+      },
+      {
+        "id": "byrne-22",
+        "elapsedMs": 1657.0486579999997,
+        "hash": "5fd6ce94432d9d5b32c7fc64bc39a210c264750029c49f35ae289ccdf7664e87"
+      },
+      {
+        "id": "byrne-34",
+        "elapsedMs": 1422.5628560000005,
+        "hash": "1b3e6bbc6f5af3a94a4f9fd4b28530f43b3d15c20edaca8a99a6146506166a71"
+      },
+      {
+        "id": "byrne-50",
+        "elapsedMs": 1068.543076,
+        "hash": "5ce67cbae816d0235bacbfe81e490d2ef683daa84ebfa09a360a9d2f5d6e6e12"
+      },
+      {
+        "id": "capablanca-43",
+        "elapsedMs": 837.8812900000012,
+        "hash": "1aa9dae7b42f1e3f3ae0fd80658dd9bc024d256a123bd7bc17abaa7bd3b7f4ff"
+      },
+      {
+        "id": "capablanca-53",
+        "elapsedMs": 270.97244899999896,
+        "hash": "ed02e83bf819b64660f39fe08ccf5ab5bacc82ef8faf8bf12536bae028f0ca28"
+      },
+      {
+        "id": "capablanca-69",
+        "elapsedMs": 110.67266200000086,
+        "hash": "428b9b34c58a5330c0d78759a396b1d7c2eb31daeeab1b1522b4eb85133456e7"
+      },
+      {
+        "id": "capablanca-73",
+        "elapsedMs": 81.24840499999846,
+        "hash": "f64fa7a51bb1e17fecc458d15187d370cf8ae70f6f4f4a21c50ac7371164dbc9"
+      }
+    ],
+    "totalMs": 15937.792894000002
+  },
+  "after": {
+    "rows": [
+      {
+        "id": "queen-closes-retreat",
+        "elapsedMs": 121.81103399999995,
+        "hash": "80e8459a4d9c6cfa3f3864646f784241d66ca9c475e5b78e46d3a929806b2543"
+      },
+      {
+        "id": "pawn-exploits-restriction",
+        "elapsedMs": 112.0577649999999,
+        "hash": "d6d0653d6e26558d74b38c23bce57fe13a223c99c5e640dd613b82ae2201361c"
+      },
+      {
+        "id": "bishop-can-retreat",
+        "elapsedMs": 80.39570700000002,
+        "hash": "e3ea29ed515e9dd4d1f3fc2b0e91c00cf78d0d06c775e6751516e0eb71f8b7af"
+      },
+      {
+        "id": "restriction-without-threat",
+        "elapsedMs": 92.73725300000001,
+        "hash": "d0a8ed7d30ea819af7789ad854e01cdb510dc5fd98eb1a84c341630d8217deec"
+      },
+      {
+        "id": "threat-already-present",
+        "elapsedMs": 90.781563,
+        "hash": "0dc2353232ec4632479d399d3be99801bdc13208b4f11c842d0a790f6b3b9808"
+      },
+      {
+        "id": "losing-exchange-recapture",
+        "elapsedMs": 34.03461600000003,
+        "hash": "f581213264609c03d926fdb30e76b29ae50766bdfed670f22220767b80152fce"
+      },
+      {
+        "id": "same-exchange-final-capture",
+        "elapsedMs": 25.61918700000001,
+        "hash": "27b2a059d77f597f0e53829fa6cfd09fd1beb41d86c01482377fb96fed338916"
+      },
+      {
+        "id": "ordinary-development",
+        "elapsedMs": 26.665318999999954,
+        "hash": "03bbe06890e08dd697b77b4b1d280477f4cf79d77aab253266e111df87a643de"
+      },
+      {
+        "id": "fork",
+        "elapsedMs": 15.170272999999952,
+        "hash": "ba8f593bcd5e45fd414a197349723aeae34b5b962770dfc3e4f4b523510f9dfa"
+      },
+      {
+        "id": "pin",
+        "elapsedMs": 26.28355600000009,
+        "hash": "4933bb983aba29f8af1fa200c1b8b05b12d34cee6608bcd0ae2d2e98269135a9"
+      },
+      {
+        "id": "defender-removed",
+        "elapsedMs": 35.52681099999995,
+        "hash": "aec9696aab01abdb76420cf8b689d8951be84801abcfe212928ffd5d1f3ebf1f"
+      },
+      {
+        "id": "blocked-bishop-gains-queen",
+        "elapsedMs": 93.20429599999989,
+        "hash": "94f6a17eec7a1782a0c3d2d44abc437613d5441610fe06168c1c97f14e7dca5f"
+      },
+      {
+        "id": "discovered-attack",
+        "elapsedMs": 75.28254200000015,
+        "hash": "946dd0fa7d17ee10ba4ae6860a20028f30bf7d495a3e4ab194204cae17865208"
+      },
+      {
+        "id": "mate-threat",
+        "elapsedMs": 111.1328480000002,
+        "hash": "eae27065f153a6c1d13a76d2d4c812bc208c77d5a8ba9ff8794a000f8aa418f1"
+      },
+      {
+        "id": "pinned-capturer",
+        "elapsedMs": 27.380750000000035,
+        "hash": "14509ea28e535f013c0b06721d8f3ddb1fe0bd3b9bf671805835bbab70c966ff"
+      },
+      {
+        "id": "queen-closes-retreat-black",
+        "elapsedMs": 100.25991299999987,
+        "hash": "fc72082203b69cc5b963bb7d60fb8b272b83cf8d5d95901197af06852ee401b3"
+      },
+      {
+        "id": "pawn-exploits-restriction-black",
+        "elapsedMs": 112.36272600000007,
+        "hash": "32b929bd8b7b4e05b4ec58e30812a484e95ce73a6d061d5143a0d9c1375b6525"
+      },
+      {
+        "id": "losing-exchange-recapture-black",
+        "elapsedMs": 31.530303999999887,
+        "hash": "7de62550ec87357949d404cbbcf1a41a6298bdbca3e2832b14d53e4911454c1d"
+      },
+      {
+        "id": "bishop-can-retreat-black",
+        "elapsedMs": 85.9533899999999,
+        "hash": "d9b90c6cf050a94f4c96618dff726139d48a6fef21245f90bda8cf30bf17e7de"
+      },
+      {
+        "id": "morphy-4",
+        "elapsedMs": 89.133108,
+        "hash": "8bb0ddc7254e8b61ceb15a98afe018c034d59215d08ffcb26c05e003841134f4"
+      },
+      {
+        "id": "morphy-18",
+        "elapsedMs": 169.661423,
+        "hash": "d108474aa538cf48a5819067ee40cd99587d76051fe420ffb41d26f322b1be04"
+      },
+      {
+        "id": "morphy-25",
+        "elapsedMs": 145.358426,
+        "hash": "a1eb3f3aeb45be5d6f1a64d8f0f84606e93d3a4b7896c7db1424fe1be8b01138"
+      },
+      {
+        "id": "morphy-31",
+        "elapsedMs": 113.36223700000028,
+        "hash": "30a46205cc1af942a6fa84f521819844007bbb77b7b77f4c1146402fa2c415c9"
+      },
+      {
+        "id": "byrne-12",
+        "elapsedMs": 172.2331379999996,
+        "hash": "61c557136f4bc36686e8bf9ee6e5a79d0f08b3fc753f9c2c1a3ca7258e118546"
+      },
+      {
+        "id": "byrne-22",
+        "elapsedMs": 302.66913399999976,
+        "hash": "5fd6ce94432d9d5b32c7fc64bc39a210c264750029c49f35ae289ccdf7664e87"
+      },
+      {
+        "id": "byrne-34",
+        "elapsedMs": 265.68821800000023,
+        "hash": "1b3e6bbc6f5af3a94a4f9fd4b28530f43b3d15c20edaca8a99a6146506166a71"
+      },
+      {
+        "id": "byrne-50",
+        "elapsedMs": 220.84401199999957,
+        "hash": "5ce67cbae816d0235bacbfe81e490d2ef683daa84ebfa09a360a9d2f5d6e6e12"
+      },
+      {
+        "id": "capablanca-43",
+        "elapsedMs": 181.54292299999997,
+        "hash": "1aa9dae7b42f1e3f3ae0fd80658dd9bc024d256a123bd7bc17abaa7bd3b7f4ff"
+      },
+      {
+        "id": "capablanca-53",
+        "elapsedMs": 78.0340570000003,
+        "hash": "ed02e83bf819b64660f39fe08ccf5ab5bacc82ef8faf8bf12536bae028f0ca28"
+      },
+      {
+        "id": "capablanca-69",
+        "elapsedMs": 48.40846199999987,
+        "hash": "428b9b34c58a5330c0d78759a396b1d7c2eb31daeeab1b1522b4eb85133456e7"
+      },
+      {
+        "id": "capablanca-73",
+        "elapsedMs": 42.852650999999696,
+        "hash": "f64fa7a51bb1e17fecc458d15187d370cf8ae70f6f4f4a21c50ac7371164dbc9"
+      }
+    ],
+    "totalMs": 3127.9776419999994,
+    "changed": [],
+    "beforeMs": 15937.792894000002
+  }
+}

@@ -137,3 +137,19 @@ it('invalide les coups à refaire lorsqu’on change de cadence au départ', () 
   expect(controller.canRedo).toBe(false);
   expect(controller.clock.remaining).toEqual({ w: 60_000, b: 60_000 });
 });
+
+it('réimporte le PGN après une fin au temps et un commentaire long', () => {
+  let now = 0;
+  const controller = new GameController({ now: () => now, timeControl: { initialMs: 1000, incrementMs: 0 } });
+  const moves = ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'd3', 'Nf6'];
+  for (const san of moves) play(controller, san);
+  now = 1000;
+  controller.tick();
+  expect(controller.finished).toBe(true);
+  const loaded = new Chess();
+  loaded.loadPgn(controller.exportPgn());
+  expect(loaded.history()).toEqual(moves);
+  expect(loaded.fen()).toBe(controller.game.chess.fen());
+  expect(loaded.getHeaders().Termination).toBe('time forfeit');
+  expect(loaded.getComment()).toContain('Résultat non arbitré');
+});
