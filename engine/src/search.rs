@@ -92,7 +92,7 @@ const NULL_MOVE_BASE_REDUCTION: i32 = 3;
 
 /// Un pli de réduction en plus du coup nul tous les `NULL_MOVE_DEPTH_DIVISOR`
 /// plis de profondeur restante — voir [`null_move_reduction`].
-const NULL_MOVE_DEPTH_DIVISOR: i32 = 3;
+const NULL_MOVE_DEPTH_DIVISOR: i32 = 4;
 
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
@@ -2116,7 +2116,7 @@ fn build_lmr_table() -> Vec<i32> {
 }
 
 /// Réduction de la recherche qui suit un coup nul, à la profondeur restante
-/// `depth` : `3 + depth / 3` — 4 à la profondeur 3, 7 à la profondeur 12 (C32).
+/// `depth` : `3 + depth / 4` — 3 à la profondeur 3, 6 à la profondeur 12 (C32b).
 ///
 /// C'est ce qui rend l'élagage bon marché : on vérifie l'hypothèse « ma
 /// position est bonne » à profondeur réduite, et on ne paye le prix fort que
@@ -2126,7 +2126,7 @@ fn build_lmr_table() -> Vec<i32> {
 /// `depth − 3` — 9 plis pour vérifier une hypothèse à la profondeur 12, où
 /// le moteur joue désormais. Mesuré le 5 oct. 2026, rejeu à la profondeur 10
 /// de 5 276 positions de parties : les recherches de coup nul y pèsent
-/// 20,0 % des nœuds, et cette réduction rend l'arbre 18,5 % plus petit. Ce
+/// 20,0 % des nœuds, et cette réduction rend l'arbre 14,8 % plus petit. Ce
 /// que l'élagage plus agressif coûte en justesse, seul un match le dit
 /// (`tools/README.md`, n° 9).
 #[must_use]
@@ -3591,13 +3591,13 @@ mod tests {
 
     #[test]
     fn la_reduction_du_coup_nul_croit_avec_la_profondeur() {
-        // 3 + profondeur / 3 : les valeurs exactes, que la formule se lise
+        // 3 + profondeur / 4 : les valeurs exactes, que la formule se lise
         // sans calcul — et qu'un opérateur muté ne passe pas.
-        assert_eq!(null_move_reduction(3), 4);
-        assert_eq!(null_move_reduction(5), 4);
-        assert_eq!(null_move_reduction(6), 5);
-        assert_eq!(null_move_reduction(12), 7);
-        assert_eq!(null_move_reduction(20), 9);
+        assert_eq!(null_move_reduction(3), 3);
+        assert_eq!(null_move_reduction(4), 4);
+        assert_eq!(null_move_reduction(7), 4);
+        assert_eq!(null_move_reduction(12), 6);
+        assert_eq!(null_move_reduction(20), 8);
         // Jamais décroissante : un sous-arbre de coup nul ne s'approfondit
         // pas quand on cherche moins loin.
         for depth in NULL_MOVE_MIN_DEPTH..=i32::try_from(MAX_PLY).unwrap() {
