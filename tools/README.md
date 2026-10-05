@@ -786,6 +786,10 @@ dernière relève est faite.
 | **N° 7, levier 4 — l'Elo de N2L contre N2** | **36995335076, 36995337871** — identifiés par leur nom de run | `5764f2b` → `4526a2c`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 16 h 15** — finis ENTIERS entre 15 h 50 et 15 h 54, 6,5 s par partie | **+15,76 ± 8,67 et +17,04 ± 8,87 ; +16,40 ± 6,20 en commun, homogènes (z = −0,20)** ; zéro perte au temps. **GAIN DÉMONTRÉ — le meilleur des deux : EMBARQUÉ** (`d3edeb6`, section n° 7, « Levier 4 — VERDICT »). — *Attendu, écrit avant* : 0 à +60, ~+25. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; le meilleur des réseaux qui le passent remplace N2 |
 | **N° 7, levier 4 — l'Elo de L0 contre N2** | **36995340993, 36995343981** — identifiés par leur nom de run | `3349f53` → `4526a2c`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **RELEVÉ à 16 h 15** — finis ENTIERS entre 15 h 50 et 15 h 54, 6,5 s par partie | **+11,47 ± 8,81 et +8,57 ± 8,70 ; +10,02 ± 6,19 en commun, homogènes (z = 0,46)** ; zéro perte au temps. **Gain démontré, mais sous N2L** : non embarqué, son candidat `3349f53` reste mesuré. — *Attendu, écrit avant* : −40 à +40. **Critère, écrit avant** : le même |
 | **balayage de mutation après la fusion de N2L** | **37034305729** | `main` à `5f59449`, la PR #134 | un job par fichier, puis `Verdict` | **RELEVÉ le 5 oct., VERT** — fini le 2 oct. à 18 h 23, `search.rs` le plus long, 113 min : 499 attrapés, 49 expirés | **La prédiction tient, exactement** : les survivants du balayage d'après B8 un pour un, aux mêmes lignes et colonnes — `search.rs` **39**, tous les fichiers à leur plafond, total **140**, aucune issue. Deux mutants de `search.rs` attrapés après B8 expirent ici (501 et 47 alors) : la charge du runner. — *Prédiction, écrite avant* : **les survivants du balayage après la fusion de B8, un pour un** — tous les fichiers à leur plafond, total **140**. Le code de production est celui de `main` à une constante près, le chemin du réseau ; seuls changent les tests qui chargent le réseau embarqué — la confrontation de `nnue.rs`, les tests de `uci.rs` qui cherchent avec lui. <span>Confiance moyenne</span> : un autre réseau, c'est un autre arbre pour ces derniers (`CLAUDE.md`, « un changement d'ARBRE déplace ce que les tests de nœuds voient ») |
+| **N° 9 — C32, la réduction du coup nul à 3 + d/3** | lancé après cette ligne | `4270eef` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** | — *Attendu, écrit avant* : 0 à +40, ~+15 (majorant par l'arbre +36 à +63). **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; si C32 et C32b le passent, le meilleur au point (section n° 9) |
+| **N° 9 — C32b, la réduction du coup nul à 3 + d/4** | lancé après cette ligne | `b52e0d3` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** | — *Attendu, écrit avant* : 0 à +35, ~+15 (majorant +32 à +56). **Critère** : le même |
+| **N° 9 — C33, la garde du coup nul** | lancé après cette ligne | `94e84bb` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** | — *Attendu, écrit avant* : 0 à +10, ~+5. **Critère** : gain si la borne basse commune est au-dessus de zéro ; puissance ± 4,4 — un vrai +5 passe six fois sur dix |
+| **N° 9 — C34, l'IIR** | lancé après cette ligne | `99178f5` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** | — *Attendu, écrit avant* : −10 à +10, ~+3. **Critère** : le même |
 | **C13 — N2L contre Stockfish bridé à 2850** | **37034309570** | `main` à `5f59449` (N2L, B8, les seaux, 64 Mio), 60+0,6, graine « auto » | 300, fastchess | **RELEVÉE le 5 oct.** — finie le 2 oct. à 21 h 20, EPYC 9V74, 2 095 287 n/s ; son attendu poussé avant le lancement (`10eeffc`) | **2 952 ± 30** — 169 − 83 − 48, 64,3 % : dans l'attendu, sous son centre ; **+10 ± 42 sur N2**, pas séparé de zéro. L'attendu appliquait le facteur des réseaux à des gains de recherche, qu'elle écrase davantage (section C13, « N2L »). Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : **~2 990, 2 940 à 3 050** ; l'écart à N2 contre le même adversaire ~+48, séparé de zéro au-delà de ~+42 — section C13, « N2L » |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
@@ -4500,6 +4504,72 @@ donne : le coût, exactement, et combien le mécanisme sert ; pas l'Elo**
 - l'arbre de chaque variante, contre `main` : la garde **−5 à −15 %** ;
   R = 3 + d/4 **−20 à −40 %** ; R = 3 + d/3 **−25 à −45 %** ; l'IIR **−3
   à −10 %**.
+
+**L'écran, RELEVÉ le 5 oct. à 06 h 30** — journal de 60 parties, zéro perte
+au temps ; 5 276 recherches rejouées, table conservée. La sonde n'ajoute
+qu'un calcul pur : son binaire rend le banc de `main`, 107 548, et chaque
+candidat ci-dessous rend EXACTEMENT l'arbre de sa variante.
+
+| | profondeur 10 | profondeur 12 | attendu, écrit avant |
+|---|---|---|---|
+| essais de coup nul sous bêta | 53,2 % | 52,0 % | 30 à 50 % — **au-dessus** |
+| leur taux de coupure, contre celui des autres | 1,7 % contre 52,7 % | 1,8 % contre 54,4 % | 3 à 4 fois moins — **30 fois moins** |
+| recherches de coup nul, part de l'arbre (union) | 20,0 % | 30,7 % | 15 à 40 % — **dedans** |
+| nœuds de profondeur ≥ 4 sans coup de la table | 9,3 % | 13,3 % | — |
+| l'arbre — la garde | −2,7 % | −3,8 % | −5 à −15 % — **sous** |
+| R = 3 + d/4 | −14,8 % | −23,7 % | −20 à −40 % — **sous à 10, dedans à 12** |
+| R = 3 + d/3 | −18,5 % | −26,5 % | −25 à −45 % — **sous à 10, dedans à 12** |
+| l'IIR | −2,8 % | −3,9 % | −3 à −10 % — **au bord** |
+
+- **Les économies croissent avec la profondeur**, et le moteur joue à 12 ou
+  13 à `8+0,08`, à ~17 à 30+0,3 : la profondeur 10 les sous-estime. La part
+  du coup nul passe de 20 à 31 % de l'arbre en deux plis.
+- **Les essais sous bêta sont presque toujours vains** : 1,8 % de coupures
+  contre 54 %, pour 8,4 % des nœuds à la profondeur 12 et 3,5 % des
+  coupures du coup nul. Mais les supprimer n'épargne que 3,8 % : un essai
+  vain est court, et une coupure perdue se paie d'une recherche entière.
+- **Un premier compte sommait les nœuds de recherches emboîtées** — un coup
+  nul dans un coup nul, compté deux fois. Corrigé avant tout chiffre écrit :
+  l'union, au coup nul le plus extérieur, comme pour A20.
+
+**Les candidats** — chacun révoqué aussitôt, sa rustine à l'attic, chacun
+contre `18a3805`, le moteur de `main` :
+
+| candidat | ce qu'il change | commit | révoqué par |
+|---|---|---|---|
+| **C32** | la réduction du coup nul, `3 + d/3` au lieu de 2 | `4270eef` | `467f707` |
+| **C32b** | la même, `3 + d/4` — le second point d'une bissection | `b52e0d3` | `610428f` |
+| **C33** | le coup nul seulement si l'évaluation statique atteint bêta | `94e84bb` | `cd12cf2` |
+| **C34** | l'IIR : un pli de moins sans coup de la table, dès la profondeur 4 | `99178f5` | `f504a84` |
+
+`verify.sh --rapide` vert sur chacun ; sur C34, un test d'horloge
+(`le_budget_de_temps_est_respecte`, 900 ms admis) a d'abord échoué à
+908 ms — trois suites de tests tournaient en même temps sur quatre cœurs —,
+puis passé trois fois sur trois au repos, en 0,35 s, et la suite entière
+avec lui.
+
+**Attendus, écrits avant les matchs** — <span>inférence, confiance
+faible</span>. L'arbre à la profondeur 12, converti par l'étalon (1,36 pli
+par doublement, 60 à 105 Elo par pli), donne le gain si la justesse ne
+bougeait pas : **un majorant**, que l'élagage plus agressif rogne d'une
+quantité que seul le match mesure.
+- **C32** : −26,5 % → 0,60 pli → majorant +36 à +63 ; **attendu 0 à +40,
+  ~+15**.
+- **C32b** : −23,7 % → 0,53 pli → majorant +32 à +56 ; **attendu 0 à +35,
+  ~+15** — moins d'économie, moins de risque.
+- **C33** : −3,8 % → 0,08 pli → +5 à +8, et la garde ne retire que les
+  coupures les plus douteuses ; **attendu 0 à +10, ~+5**.
+- **C34** : −3,9 % → +5 à +8 par la vitesse, et un coût en justesse de
+  signe inconnu ; **attendu −10 à +10, ~+3**.
+
+**Critère, écrit avant** — des techniques ajoutées, pas des correctifs de
+règle : **gain si la borne basse commune est au-dessus de zéro**. Si C32 et
+C32b le passent tous deux, le meilleur au point est fusionné, comme au
+levier 4. **Puissance, dite d'avance** : C32 et C32b, deux jobs de 3 000
+parties chacun — ± 6,2 en commun ; C33 et C34, dont l'attendu est petit,
+**quatre jobs chacun** — ± 4,4 —, et même ainsi un vrai +5 ne passera la
+borne que six fois sur dix environ : c'est écrit, et on ne remesure pas
+sans fait neuf.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
