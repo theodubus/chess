@@ -88,6 +88,29 @@ cas_contient "matchs contradictoires : le dit" "ne mesurent pas le meme effet" \
   "$OUTIL" "$C21" "300,400,600,200,120"
 cas_code     "matchs homogènes : code 0" 0 "$OUTIL" "$A" "$B"
 
+# ── 4 bis. À QUATRE matchs, le seuil porte sur la probabilité ───────────────
+# Six paires : sous un seul effet, le plus grand z dépasse 2 près d'une fois
+# sur cinq. Vérité terrain, quatre jobs réels du 5 oct. 2026 à `8+0,08` : C33
+# (le plus grand z 3,02) est rare sous un seul effet ; C38 (2,49), C36 (2,02)
+# et C34 (2,15) ne le sont pas, et l'ancien seuil fixe les refusait tous
+# trois. Les probabilités attendues viennent d'un calcul indépendant du
+# script — l'intégrale de l'étendue studentisée et un tirage de 400 000
+# quadruplets seedé : 0,0135 et 0,013 pour C33, 0,0615 et 0,062 pour C38.
+C33="39,244,801,334,82 51,283,759,333,74 49,277,822,290,62 45,272,817,297,69"
+C38="53,288,798,301,60 50,247,785,348,70 47,264,812,305,72 59,276,774,315,76"
+C36="48,274,789,306,83 57,300,784,296,63 56,274,790,319,61 62,287,790,281,80"
+# shellcheck disable=SC2086 # les quatre vecteurs sont quatre arguments
+{
+  cas_code     "quatre matchs, C33 (z = 3,02) : refusé"           2 "$OUTIL" $C33
+  cas_contient "quatre matchs, C33 : la probabilité de l'étendue" "p = 0.013" "$OUTIL" $C33
+  cas_code     "quatre matchs, C38 (z = 2,49) : homogènes"        0 "$OUTIL" $C38
+  cas_contient "quatre matchs, C38 : la probabilité de l'étendue" "p = 0.062" "$OUTIL" $C38
+  cas_code     "quatre matchs, C36 (z = 2,02) : homogènes"        0 "$OUTIL" $C36
+}
+# À deux matchs, la probabilité est celle du test bilatéral ordinaire, et le
+# seuil celui de z > 2 : la décision d'avant, au bit près.
+cas_contient "deux matchs : le seuil est celui de z > 2" "seuil 0.0455" "$OUTIL" "$A" "$B"
+
 # ── 5. Lire un journal, et y prendre la DERNIÈRE ligne ──────────────────────
 # La règle du dépôt : les arbitres impriment un score courant après CHAQUE
 # partie. Prendre la première ligne rendrait le score de la partie 20.

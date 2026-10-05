@@ -6195,7 +6195,18 @@ donc deux points de fonctionnement**. Ce n'est pas nécessairement mauvais —
 moyenner sur une plage de machines ressemble davantage à « la force générale »
 qu'un point unique, qui est la cible déclarée du projet — mais **ça doit être
 dit, pas subi**. `mettre-en-commun.sh` compare les matchs deux à deux par un
-test en `z` et **refuse de conclure en silence** au-delà de `z = 2`.
+test en `z` et **refuse de conclure en silence** quand le plus grand écart
+est trop rare sous un seul effet. <s>Au-delà de `z = 2`.</s> **Seuil
+recalibré le 5 oct. 2026** : `z = 2` fixe valait un refus sur vingt-deux à
+DEUX matchs, mais à quatre il y a six paires, et le plus grand de six `z`
+dépasse 2 près d'une fois sur cinq quand tous mesurent le même effet — le
+seuil a refusé C34, C36 et C38 ce jour-là, à tort, et un avertissement qui
+crie au loup cesse d'être lu. Le script rend désormais la probabilité du
+plus grand écart sous l'étendue studentisée à `k` matchs, et refuse sous
+4,55 %, le niveau qu'avait `z > 2` à deux matchs : **à deux matchs, la
+décision est celle d'avant** ; à quatre, C33 (`z = 3,02`, p = 0,013) reste
+refusé. Calcul confronté à une intégrale et un tirage indépendants du
+script (`tools/mettre-en-commun-test.sh`).
 
 **Et les graines doivent différer — ce n'est plus une règle à retenir.**
 Mêmes binaires plus même graine donnent les mêmes parties coup pour coup :
