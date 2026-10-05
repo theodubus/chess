@@ -4571,8 +4571,8 @@ parties chacun — ± 6,2 en commun ; C33 et C34, dont l'attendu est petit,
 borne que six fois sur dix environ : c'est écrit, et on ne remesure pas
 sans fait neuf.
 
-**Le deuxième écran — protocole et attendus, écrits le 5 oct. à 06 h 50,
-avant de mesurer.** Pendant que les douze jobs jouent : ce qui ne touche ni
+**Le deuxième écran — protocole et attendus, écrits le 5 oct. à 06 h 35,
+avant de mesurer** (`5be5828` ; « 06 h 50 », d'abord écrit, était faux). Pendant que les douze jobs jouent : ce qui ne touche ni
 le coup nul ni l'IIR. Le même journal, le même rejeu, un binaire de mesure
 élargi :
 - **le drapeau *improving*** — l'évaluation statique du nœud dépasse-t-elle
