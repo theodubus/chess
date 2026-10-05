@@ -790,6 +790,9 @@ dernière relève est faite.
 | **N° 9 — C32b, la réduction du coup nul à 3 + d/4** | **37272199139, 37272201466** | `b52e0d3` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** — lancés à 06 h 24, fin vers 12 h 00 | — *Attendu, écrit avant* : 0 à +35, ~+15 (majorant +32 à +56). **Critère** : le même |
 | **N° 9 — C33, la garde du coup nul** | **37272207703, 37272210754, 37272213561, 37272216305** | `94e84bb` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 06 h 24, fin vers 12 h 00 | — *Attendu, écrit avant* : 0 à +10, ~+5. **Critère** : gain si la borne basse commune est au-dessus de zéro ; puissance ± 4,4 — un vrai +5 passe six fois sur dix |
 | **N° 9 — C34, l'IIR** | **37272223356, 37272226228, 37272229321, 37272232056** | `99178f5` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 06 h 24, fin vers 12 h 00 | — *Attendu, écrit avant* : −10 à +10, ~+3. **Critère** : le même |
+| **N° 9 — C35, *improving* dans la futilité inverse** | **37276968433, 37276971587** | `d0513da` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** — lancés à 07 h 18, fin vers 13 h 00 | — *Attendu, écrit avant* : −10 à +20, ~+5 (majorant par l'arbre +22 à +38). **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro (section n° 9) |
+| **N° 9 — C37, *improving* dans LMR** | **37276974608, 37276979436** | `cefbcfb` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** — lancés à 07 h 18, fin vers 13 h 00 | — *Attendu, écrit avant* : 0 à +20, ~+8. **Critère** : le même |
+| **N° 9 — C38, l'échange statique dans la recherche principale** | **37276982489, 37276986051** | `5b5c13e` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** — lancés à 07 h 18, fin vers 13 h 00 | — *Attendu, écrit avant* : 0 à +15, ~+7. **Critère** : le même |
 | **C13 — N2L contre Stockfish bridé à 2850** | **37034309570** | `main` à `5f59449` (N2L, B8, les seaux, 64 Mio), 60+0,6, graine « auto » | 300, fastchess | **RELEVÉE le 5 oct.** — finie le 2 oct. à 21 h 20, EPYC 9V74, 2 095 287 n/s ; son attendu poussé avant le lancement (`10eeffc`) | **2 952 ± 30** — 169 − 83 − 48, 64,3 % : dans l'attendu, sous son centre ; **+10 ± 42 sur N2**, pas séparé de zéro. L'attendu appliquait le facteur des réseaux à des gains de recherche, qu'elle écrase davantage (section C13, « N2L »). Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : **~2 990, 2 940 à 3 050** ; l'écart à N2 contre le même adversaire ~+48, séparé de zéro au-delà de ~+42 — section C13, « N2L » |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
@@ -4570,6 +4573,94 @@ parties chacun — ± 6,2 en commun ; C33 et C34, dont l'attendu est petit,
 **quatre jobs chacun** — ± 4,4 —, et même ainsi un vrai +5 ne passera la
 borne que six fois sur dix environ : c'est écrit, et on ne remesure pas
 sans fait neuf.
+
+**Le deuxième écran — protocole et attendus, écrits le 5 oct. à 06 h 35,
+avant de mesurer** (`5be5828` ; « 06 h 50 », d'abord écrit, était faux). Pendant que les douze jobs jouent : ce qui ne touche ni
+le coup nul ni l'IIR. Le même journal, le même rejeu, un binaire de mesure
+élargi :
+- **le drapeau *improving*** — l'évaluation statique du nœud dépasse-t-elle
+  celle de deux plis plus haut, même camp au trait (quatre si celui-là
+  était en échec ; vrai faute de point de comparaison), comme chez
+  Stockfish. Trois usages, chacun une variante : la futilité inverse avec
+  une profondeur de moins dans sa marge quand la position s'améliore
+  (`imp-rfp`) ; l'élagage par compte de coups à moitié de son seuil quand
+  elle ne s'améliore pas (`imp-lmp`) ; un pli de réduction de plus pour un
+  coup tardif quand elle ne s'améliore pas (`imp-lmr`). La sonde compte la
+  part des nœuds hors échec où il est vrai ;
+- **l'échange statique dans la recherche principale** (`see-cap`) : à la
+  profondeur ≤ 6, hors échec et hors racine, après un premier coup, une
+  capture qui perd plus de 100 × la profondeur au compte de `see` est
+  sautée — la quiescence le fait déjà, la recherche principale non. La sonde
+  compte les captures éligibles, celles qu'elle sauterait, et parmi
+  celles-ci **celles qui, cherchées, montent `alpha`** : les dégâts, comme
+  pour LMP. Les coups TRANQUILLES perdants attendront : `see` rend 0 pour
+  eux, l'étendre est un autre chantier.
+
+**Attendus, écrits avant** — <span>inférence, confiance faible</span> :
+- *improving* vrai dans **55 à 70 %** des nœuds hors échec ;
+- l'arbre à la profondeur 12 : `imp-rfp` **−1 à −4 %**, `imp-lmp` **−5 à
+  −15 %**, `imp-lmr` **−5 à −15 %** ;
+- `see-cap` : **10 à 30 %** des captures éligibles sautées, **1 à 5 %**
+  d'entre elles montant `alpha` ; l'arbre **−2 à −8 %**.
+
+**Le deuxième écran, RELEVÉ le 5 oct. à 06 h 55** — le même journal, le
+même rejeu ; le binaire de mesure rend toujours le banc de `main`.
+
+| | profondeur 10 | profondeur 12 | attendu, écrit avant |
+|---|---|---|---|
+| *improving* vrai, nœuds hors échec | 77,8 % | 77,9 % | 55 à 70 % — **au-dessus** |
+| l'arbre — `imp-rfp` | −19,0 % | −16,9 % | −1 à −4 % — **très au-dessus** |
+| `imp-lmp` | −15,6 % | −13,5 % | −5 à −15 % — **dedans** |
+| `imp-lmr` | −13,2 % | −16,6 % | −5 à −15 % — **au-dessus à 12** |
+| `see-cap` | −11,8 % | −10,0 % | −2 à −8 % — **au-dessus** |
+| captures éligibles sautées | 54,1 % | 52,9 % | 10 à 30 % — **au-dessus** |
+| …qui, cherchées, montent `alpha` | 0,56 % | 0,52 % | 1 à 5 % — **sous** |
+
+- **Quatre réductions d'arbre de 10 à 19 %** : c'est leur coût, exactement ;
+  ce qu'elles rognent de justesse, seul un match le dit — un élagage qui
+  retire 17 % de l'arbre et le dixième d'une variante juste peut perdre.
+- **Les captures perdantes sont la moitié des captures éligibles**, et elles
+  ne montent presque jamais `alpha` : le mécanisme que la quiescence exploite
+  déjà existe, inemployé, dans la recherche principale.
+
+**Trois candidats de plus**, contre le même `18a3805` :
+
+| candidat | ce qu'il change | commit | révoqué par |
+|---|---|---|---|
+| **C35** | *improving* dans la futilité inverse : un pli de marge de moins quand la position s'améliore | `d0513da` | `c3233e9` |
+| **C37** | *improving* dans LMR : un pli de réduction de plus quand elle se dégrade | `cefbcfb` | `2550eec` |
+| **C38** | une capture qui perd plus de 100 × la profondeur à l'échange se saute, à la profondeur ≤ 6 | `5b5c13e` | `047f62b` |
+
+Chacun rend EXACTEMENT l'arbre de sa variante ; *improving* y vit dans une
+pile d'évaluations par ply, l'évaluation du nœud calculée une fois et
+partagée avec la futilité inverse. `verify.sh --rapide` vert sur chacun.
+
+**C36 — *improving* dans l'élagage par compte de coups — n'est PAS lancé.**
+Il fait tomber `lelagage_par_compte_retire_des_noeuds` : sur la deuxième
+position du banc, évaluée à la main, l'élagage à demi-seuil quand la
+position se dégrade GROSSIT l'arbre — 84 658 nœuds avec, 73 203 sans ; le
+banc lui-même passe de 107 548 à 122 554. Au réseau, le rejeu dit −15,6 %.
+La règle (`CLAUDE.md`) ne laisse reformuler un test que si la mesure qui le
+condamne a été obtenue SANS le changement : ici, elle vient du changement
+même. **Ce qu'il faudrait avant de le relancer** : mesurer sur `main`, sur
+un échantillon de positions et non une, si « l'élagage par compte retire
+des nœuds » tient en général à la faite main — ou ne tenait que par chance.
+
+**Attendus, écrits avant les matchs** — <span>inférence, confiance
+faible</span> ; l'arbre à la profondeur 12 converti par l'étalon donne un
+majorant :
+- **C35** : −16,9 % → 0,36 pli → majorant +22 à +38. Mais la marge
+  rétrécit dans 78 % des nœuds, et la futilité inverse ne se rattrape
+  pas ; **attendu −10 à +20, ~+5**.
+- **C37** : −16,6 % → majorant +21 à +37 ; la réduction se rattrape par la
+  re-recherche ; **attendu 0 à +20, ~+8**.
+- **C38** : −10,0 % → 0,21 pli → majorant +12 à +22 ; dégâts 0,5 % des
+  sauts ; **attendu 0 à +15, ~+7**.
+
+**Critère, écrit avant** : le même — gain si la borne basse commune est
+au-dessus de zéro. **Deux jobs chacun**, ± 6,2 : un vrai +7 ne passera la
+borne qu'une fois sur deux environ. Six jobs, qui portent à dix-huit ceux qui
+tournent à la fois — deux places restent à la CI.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 

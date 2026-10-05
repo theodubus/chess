@@ -1,8 +1,8 @@
 diff --git a/engine/src/search.rs b/engine/src/search.rs
-index 97e0ebc..cb8e440 100644
+index 97e0ebc..67bc1dd 100644
 --- a/engine/src/search.rs
 +++ b/engine/src/search.rs
-@@ -35,6 +35,45 @@ use crate::position::{Position, repetitions};
+@@ -35,6 +35,68 @@ use crate::position::{Position, repetitions};
  use crate::see;
  use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
  
@@ -16,6 +16,14 @@ index 97e0ebc..cb8e440 100644
 +    gate: bool,
 +    r_div: i32,
 +    iir: bool,
++    imp_rfp: bool,
++    imp_lmp: bool,
++    imp_lmr: bool,
++    see_cap: bool,
++}
++
++fn v9_early() -> N9 {
++    n9()
 +}
 +
 +fn n9() -> N9 {
@@ -28,6 +36,10 @@ index 97e0ebc..cb8e440 100644
 +                "r33" => v.r_div = 3,
 +                "r34" => v.r_div = 4,
 +                "iir" => v.iir = true,
++                "imp-rfp" => v.imp_rfp = true,
++                "imp-lmp" => v.imp_lmp = true,
++                "imp-lmr" => v.imp_lmr = true,
++                "see-cap" => v.see_cap = true,
 +                _ => {}
 +            }
 +        }
@@ -44,11 +56,57 @@ index 97e0ebc..cb8e440 100644
 +/// SONDE N9 — vrai pendant la recherche d'un coup nul : ses nœuds ne se
 +/// comptent qu'au coup nul le plus extérieur, l'union et non la somme.
 +static SONDE_NM_ACTIVE: AtomicBool = AtomicBool::new(false);
++/// SONDE N9 — nœuds hors échec évalués, et ceux où la position s'améliore.
++pub static SONDE_IMP: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
++/// SONDE N9 — captures éligibles à l'élagage par échange statique, celles
++/// qu'il sauterait, et parmi elles celles qui, cherchées, montent alpha.
++pub static SONDE_SEE: [AtomicU64; 3] = [const { AtomicU64::new(0) }; 3];
++thread_local! {
++    /// SONDE N9 — l'évaluation statique de chaque ply du chemin, `None` en
++    /// échec : le point de comparaison d'improving.
++    static N9_EVALS: std::cell::RefCell<Vec<Option<i32>>> =
++        std::cell::RefCell::new(vec![None; MAX_PLY + 2]);
++}
 +
  /// Profondeur maximale de la recherche principale.
  pub const MAX_DEPTH: u32 = 64;
  
-@@ -1406,13 +1445,19 @@ impl Search {
+@@ -1389,7 +1451,33 @@ impl Search {
+         // Mesuré avant d'être écrit : la condition porte sur 9,8 % des nœuds et
+         // se déclenche sur 4,4 % d'entre eux — concentrée à la profondeur 1, où
+         // couper épargne tout un étage de quiescence.
+-        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta) {
++        let n9_eval = board.checkers().is_empty().then(|| self.static_eval(board, ply));
++        let n9_improving = N9_EVALS.with(|e| {
++            let mut e = e.borrow_mut();
++            if let Some(slot) = e.get_mut(ply) {
++                *slot = n9_eval;
++            }
++            let back = |k: usize| ply.checked_sub(k).and_then(|p| e.get(p).copied().flatten());
++            match (n9_eval, back(2), back(4)) {
++                (Some(now), Some(before), _) => now > before,
++                (Some(now), None, Some(before)) => now > before,
++                _ => true,
++            }
++        });
++        if n9_eval.is_some() {
++            SONDE_IMP[0].fetch_add(1, Ordering::Relaxed);
++            if n9_improving {
++                SONDE_IMP[1].fetch_add(1, Ordering::Relaxed);
++            }
++        }
++        // La garde de profondeur reste sur la vraie profondeur ; seule la
++        // marge perd un pli quand la position s'améliore, comme chez Stockfish.
++        let n9_rfp_depth = if v9_early().imp_rfp && n9_improving && depth <= RFP_MAX_DEPTH {
++            depth - 1
++        } else {
++            depth
++        };
++        if let Some(score) = self.reverse_futility_cut(board, n9_rfp_depth, ply, beta) {
+             return score;
+         }
+ 
+@@ -1406,13 +1494,19 @@ impl Search {
          //   coupure serait fausse (voir `has_non_pawn_material`) ;
          // - contre une borne de mat, la coupure produirait un mat imaginaire ;
          // - jamais à la racine, où il faut rendre un coup.
@@ -68,7 +126,7 @@ index 97e0ebc..cb8e440 100644
              self.null_marks.push(self.path.len());
              self.path.push(passed.hash());
              if let Some(slot) = self.moved.get_mut(ply + 1) {
-@@ -1421,7 +1466,7 @@ impl Search {
+@@ -1421,7 +1515,7 @@ impl Search {
              self.push_null(ply);
              let score = -self.negamax(
                  &passed,
@@ -77,7 +135,7 @@ index 97e0ebc..cb8e440 100644
                  ply + 1,
                  -beta,
                  -beta + 1,
-@@ -1429,11 +1474,18 @@ impl Search {
+@@ -1429,11 +1523,18 @@ impl Search {
              );
              self.path.pop();
              self.null_marks.pop();
@@ -96,7 +154,7 @@ index 97e0ebc..cb8e440 100644
                  // Un score de mat obtenu grâce à un coup qu'on n'a pas le droit
                  // de jouer est faux : on rend la borne, pas le mat.
                  return if score.abs() > MATE_THRESHOLD {
-@@ -1450,6 +1502,17 @@ impl Search {
+@@ -1450,6 +1551,17 @@ impl Search {
          // ni ne trie jamais ses coups tranquilles. Mesuré le 22 sept. 2026 :
          // 85 % des coups générés ici n'étaient jamais cherchés, et 49 % des
          // nœuds ne cherchaient aucun coup tranquille.
@@ -114,11 +172,70 @@ index 97e0ebc..cb8e440 100644
          let killers = self.killers.get(ply).copied().unwrap_or([0; 2]);
          // Les deux coups qui précèdent ce nœud : celui de l'adversaire, et le
          // nôtre avant lui. La continuation note chaque tranquille sachant
+@@ -1481,7 +1593,36 @@ impl Search {
+             // restants. `break` et non `continue`, parce que l'ordonnancement
+             // place toutes les captures avant tous les coups tranquilles — ce
+             // qui reste derrière est tranquille, et moins bien classé encore.
+-            if self.late_move_prune(quiet, in_check, ply, depth, best, quiets_seen) {
++            let n9_lmp = if v9.imp_lmp && !n9_improving {
++                quiet
++                    && !in_check
++                    && ply > 0
++                    && depth <= LMP_MAX_DEPTH
++                    && best > -MATE_THRESHOLD
++                    && quiets_seen >= lmp_limit(depth) / 2
++            } else {
++                self.late_move_prune(quiet, in_check, ply, depth, best, quiets_seen)
++            };
++            // SONDE N9 — l'échange statique dans la recherche principale.
++            let n9_see_eligible = !quiet
++                && mv.promotion.is_none()
++                && captured_piece(board, mv).is_some()
++                && ply > 0
++                && !in_check
++                && depth <= 6
++                && best > -MATE_THRESHOLD
++                && Some(mv) != tt_move;
++            let n9_see_prune = n9_see_eligible && see::see(board, mv) < -100 * depth;
++            if n9_see_eligible {
++                SONDE_SEE[0].fetch_add(1, Ordering::Relaxed);
++            }
++            if n9_see_prune {
++                SONDE_SEE[1].fetch_add(1, Ordering::Relaxed);
++                if v9.see_cap {
++                    continue;
++                }
++            }
++            if n9_lmp {
+                 break;
+             }
+             if quiet {
+@@ -1516,7 +1657,9 @@ impl Search {
+                 && depth >= LMR_MIN_DEPTH
+                 && index >= LMR_FIRST_REDUCED
+             {
+-                self.reduction(depth, index).min(depth - 2).max(0)
++                (self.reduction(depth, index) + i32::from(v9.imp_lmr && !n9_improving))
++                    .min(depth - 2)
++                    .max(0)
+             } else {
+                 0
+             };
+@@ -1534,6 +1677,9 @@ impl Search {
+             if reduction > 0 && !self.aborted && score > alpha {
+                 score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha, rest);
+             }
++            if n9_see_prune && !self.aborted && score > alpha {
++                SONDE_SEE[2].fetch_add(1, Ordering::Relaxed);
++            }
+             self.path.pop();
+ 
+             if self.aborted {
 diff --git a/engine/src/uci.rs b/engine/src/uci.rs
-index 522d061..5769fc6 100644
+index 522d061..bd2eaca 100644
 --- a/engine/src/uci.rs
 +++ b/engine/src/uci.rs
-@@ -485,6 +485,15 @@ impl Engine {
+@@ -485,6 +485,20 @@ impl Engine {
              });
  
              let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
@@ -127,8 +244,13 @@ index 522d061..5769fc6 100644
 +                let nm: Vec<u64> = crate::search::SONDE_NM.iter().map(|c| c.swap(0, Relaxed)).collect();
 +                let ii: Vec<u64> = crate::search::SONDE_IIR.iter().map(|c| c.swap(0, Relaxed)).collect();
 +                send(&format!(
-+                    "info string sonde-n9 nm_ge={} nm_lt={} cut_ge={} cut_lt={} nodes_ge={} nodes_lt={} d4={} d4_sans_tt={}",
-+                    nm[0], nm[1], nm[2], nm[3], nm[4], nm[5], ii[0], ii[1]
++                    "info string sonde-n9 nm_ge={} nm_lt={} cut_ge={} cut_lt={} nodes_ge={} nodes_lt={} d4={} d4_sans_tt={} eval={} improving={} see_elig={} see_saut={} see_degats={}",
++                    nm[0], nm[1], nm[2], nm[3], nm[4], nm[5], ii[0], ii[1],
++                    crate::search::SONDE_IMP[0].swap(0, Relaxed),
++                    crate::search::SONDE_IMP[1].swap(0, Relaxed),
++                    crate::search::SONDE_SEE[0].swap(0, Relaxed),
++                    crate::search::SONDE_SEE[1].swap(0, Relaxed),
++                    crate::search::SONDE_SEE[2].swap(0, Relaxed)
 +                ));
 +            }
              send(&bestmove_line(position.board(), best, ponder));
