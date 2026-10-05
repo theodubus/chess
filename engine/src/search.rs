@@ -2667,20 +2667,28 @@ mod tests {
 
     #[test]
     fn lelagage_par_compte_retire_des_noeuds() {
-        let position = Position::from_fen(crate::bench::BENCH_FENS[1]).unwrap();
+        // Au TOTAL sur les six positions du banc, jamais sur une seule. Sur
+        // `main`, à ce protocole, l'élagage par compte grossit l'arbre de 661
+        // des 4 684 positions d'un journal de parties, et le réduit de 36 %
+        // au total (5 oct. 2026, `tools/README.md`, n° 9, C36) : asserté sur
+        // une position, il ne tenait que par le choix de la position.
         let limits = Limits {
             depth: Some(7),
             ..Limits::default()
         };
-        let mut avec = search();
-        avec.go(&position, &limits, |_| {});
-        let mut sans = search_sans_lmp();
-        sans.go(&position, &limits, |_| {});
+        let (mut avec, mut sans) = (0, 0);
+        for fen in crate::bench::BENCH_FENS {
+            let position = Position::from_fen(fen).unwrap();
+            let mut s = search();
+            s.go(&position, &limits, |_| {});
+            avec += s.nodes();
+            let mut s = search_sans_lmp();
+            s.go(&position, &limits, |_| {});
+            sans += s.nodes();
+        }
         assert!(
-            avec.nodes() < sans.nodes(),
-            "l'élagage par compte ne retire rien : {} avec, {} sans",
-            avec.nodes(),
-            sans.nodes()
+            avec < sans,
+            "l'élagage par compte ne retire rien : {avec} avec, {sans} sans, sur le banc"
         );
     }
 

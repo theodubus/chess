@@ -790,9 +790,12 @@ dernière relève est faite.
 | **N° 9 — C32b, la réduction du coup nul à 3 + d/4** | **37272199139, 37272201466** | `b52e0d3` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** — lancés à 06 h 24, fin vers 12 h 00 | — *Attendu, écrit avant* : 0 à +35, ~+15 (majorant +32 à +56). **Critère** : le même |
 | **N° 9 — C33, la garde du coup nul** | **37272207703, 37272210754, 37272213561, 37272216305** | `94e84bb` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 06 h 24, fin vers 12 h 00 | — *Attendu, écrit avant* : 0 à +10, ~+5. **Critère** : gain si la borne basse commune est au-dessus de zéro ; puissance ± 4,4 — un vrai +5 passe six fois sur dix |
 | **N° 9 — C34, l'IIR** | **37272223356, 37272226228, 37272229321, 37272232056** | `99178f5` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 06 h 24, fin vers 12 h 00 | — *Attendu, écrit avant* : −10 à +10, ~+3. **Critère** : le même |
-| **N° 9 — C35, *improving* dans la futilité inverse** | **37276968433, 37276971587** | `d0513da` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** — lancés à 07 h 18, fin vers 13 h 00 | — *Attendu, écrit avant* : −10 à +20, ~+5 (majorant par l'arbre +22 à +38). **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro (section n° 9) |
-| **N° 9 — C37, *improving* dans LMR** | **37276974608, 37276979436** | `cefbcfb` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** — lancés à 07 h 18, fin vers 13 h 00 | — *Attendu, écrit avant* : 0 à +20, ~+8. **Critère** : le même |
-| **N° 9 — C38, l'échange statique dans la recherche principale** | **37276982489, 37276986051** | `5b5c13e` → `18a3805`, `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess | **EN VOL** — lancés à 07 h 18, fin vers 13 h 00 | — *Attendu, écrit avant* : 0 à +15, ~+7. **Critère** : le même |
+| **N° 9 — C35, *improving* dans la futilité inverse** | **37276968433, 37276971587** ; ajoutés **37280311807, 37280315394** | `d0513da` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 07 h 18 et 07 h 53, fin vers 13 h 00 et 13 h 55 | — *Attendu, écrit avant* : −10 à +20, ~+5 (majorant par l'arbre +22 à +38). **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro (section n° 9) |
+| **N° 9 — C37, *improving* dans LMR** | **37276974608, 37276979436** ; ajoutés **37280323583, 37280327267** | `cefbcfb` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 07 h 18 et 07 h 53, fin vers 13 h 00 et 13 h 55 | — *Attendu, écrit avant* : 0 à +20, ~+8. **Critère** : le même |
+| **N° 9 — C38, l'échange statique dans la recherche principale** | **37276982489, 37276986051** ; ajoutés **37280330067, 37280332840** | `5b5c13e` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 07 h 18 et 07 h 53, fin vers 13 h 00 et 13 h 55 | — *Attendu, écrit avant* : 0 à +15, ~+7. **Critère** : le même |
+| **N° 9 — le crible de `search.rs` au test reformulé** | **37278951437** | `0c14b63`, entrée `commit` de `Mutation` | un job par fichier, puis `Verdict` | **RELEVÉ le 5 oct. à 10 h 35** — fini à 09 h 03, `search.rs` le plus long, 84 min | — **Prédiction, écrite pendant le vol, avant tout résultat** (le crible est parti à 07 h 39 sans elle) : `search.rs` à 39, les mêmes survivants — l'ancien test ne tuait rien que le banc figé ne tue déjà. **Fusion du test après le crible** — **la prédiction tient, exactement** : `search.rs` à 39, les survivants du balayage d'après N2L un pour un, aux mêmes lignes et colonnes ; tous les fichiers à leur plafond, total 140. Le test reformulé ne perd ni ne gagne un mutant : **fusion permise** |
+| **N° 9 — C36, *improving* dans l'élagage par compte** | **37280129729, 37280132506** ; ajoutés **37280318429, 37280320931** | `fd501a8` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 07 h 51 et 07 h 53, fin vers 13 h 55 | — *Attendu, écrit avant* : −10 à +15, ~+3. **Critère** : gain si la borne basse commune est au-dessus de zéro |
+| **N° 9 — C39, la futilité aux nœuds frontières** | **37297213900, 37297216607, 37297221303, 37297225434** | `dfda892` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **EN VOL** — lancés à 10 h 32, fin vers 16 h 20 | — *Attendu, écrit avant* : 0 à +35, ~+15 (majorant par l'arbre +41 à +71). **Critère** : gain si la borne basse commune est au-dessus de zéro |
 | **C13 — N2L contre Stockfish bridé à 2850** | **37034309570** | `main` à `5f59449` (N2L, B8, les seaux, 64 Mio), 60+0,6, graine « auto » | 300, fastchess | **RELEVÉE le 5 oct.** — finie le 2 oct. à 21 h 20, EPYC 9V74, 2 095 287 n/s ; son attendu poussé avant le lancement (`10eeffc`) | **2 952 ± 30** — 169 − 83 − 48, 64,3 % : dans l'attendu, sous son centre ; **+10 ± 42 sur N2**, pas séparé de zéro. L'attendu appliquait le facteur des réseaux à des gains de recherche, qu'elle écrase davantage (section C13, « N2L »). Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : **~2 990, 2 940 à 3 050** ; l'écart à N2 contre le même adversaire ~+48, séparé de zéro au-delà de ~+42 — section C13, « N2L » |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
@@ -4646,6 +4649,87 @@ même. **Ce qu'il faudrait avant de le relancer** : mesurer sur `main`, sur
 un échantillon de positions et non une, si « l'élagage par compte retire
 des nœuds » tient en général à la faite main — ou ne tenait que par chance.
 
+**C36 — la mesure indépendante, protocole et attendus écrits le 5 oct. à
+07 h 30, avant de mesurer.** La règle ne demande pas « C36 grossit-il
+l'arbre ? » : il le grossit, et cette mesure-là vient du changement. Elle
+demande : **sur `main`, sans C36, `lelagage_par_compte_retire_des_noeuds`
+asserte-t-il une propriété générale, ou une propriété qui tient sur sa
+position ?** Le protocole exact du test — recherche froide, profondeur 7,
+faite main, `search()` contre `search_sans_lmp()` — sur les **4 684
+positions distinctes** cherchées dans le journal de l'écran (60 parties du
+moteur qui joue), par un test ignoré, à l'attic. **Éprouvé sur les six
+positions du banc** : 107 548 nœuds avec, la référence, 148 867 sans, les
+six réduites.
+
+**Attendus** — <span>inférence, confiance faible</span> :
+- sur `main` : au total, avec / sans **0,65 à 0,80** (le banc : 0,72) ;
+  avec ≥ sans sur **1 à 10 %** des positions ;
+- sous C36, au même protocole : avec / sans **0,75 à 1,05** ; avec > sans
+  sur **5 à 20 %** des positions.
+
+**Règle de décision, écrite avant** :
+1. **Au moins une position de `main` où avec ≥ sans** : la propriété n'est
+   pas générale, et l'assertion sur une position tient par le choix de la
+   position. Le test se reformule en **compte sur un échantillon, borné
+   qualitativement** — Σ avec < Σ sans sur les six positions du banc,
+   l'échantillon des tests de nœuds, choisi bien avant C36 —, au titre de
+   cette mesure, obtenue sans C36. Le crible de `search.rs` passe avant la
+   fusion : un test touché déplace le plafond.
+2. **Aucune** : la propriété est générale sur `main`, le test reste tel
+   quel, et C36 ne se lance pas sous cette forme.
+3. Dans le cas 1 seulement : **C36 ne passe que si Σ avec < Σ sans tient
+   aussi sur les 4 684 positions**, et pas seulement sur le banc. Je sais
+   déjà qu'il passe sur le banc — 122 554 contre 148 867 —, donc le banc
+   seul ne peut pas trancher pour lui.
+
+**C36 — la mesure indépendante, RELEVÉE le 5 oct. à 07 h 35** — 4 684
+positions, profondeur 7, faite main, recherches froides ; la sonde est
+`tools/attic/c36-sonde-compte.patch`.
+
+| | Σ avec / Σ sans | avec > sans | avec = sans | rapport médian | 9ᵉ décile | maximum | attendu, écrit avant |
+|---|---|---|---|---|---|---|---|
+| `main` | 0,638 | 661 (14,1 %) | 8 | 0,673 | 1,102 | 4,62 | 0,65 à 0,80 — **sous** ; 1 à 10 % — **au-dessus** |
+| C36 | 0,520 | 326 (7,0 %) | 6 | 0,539 | 0,921 | 3,49 | 0,75 à 1,05 — **sous** ; 5 à 20 % — **dedans** |
+
+Les « sans » sont identiques au nœud près d'un binaire à l'autre :
+l'infrastructure d'*improving* ne touche pas l'arbre.
+
+- **Cas 1 de la règle.** Sur `main`, l'élagage par compte grossit l'arbre
+  d'une position de partie sur sept, jusqu'à × 4,6 : la propriété que le
+  test assertait sur une position n'est pas générale, elle tenait par le
+  choix de la position. **Le test se compte désormais sur les six positions
+  du banc** (`0c14b63`) ; témoin : LMP éteint dans la recherche « avec », il
+  tombe sur 148 867 contre 148 867. Le crible de `search.rs` à ce commit
+  tourne avant la fusion : run **37278951437**.
+- **Condition 3 tenue.** Sous C36, Σ avec / Σ sans vaut 0,520 sur les 4 684
+  positions : il retire PLUS que `main`, et grossit l'arbre sur deux fois
+  moins de positions. La position du test est l'une des 326 où il le
+  grossit — 63 050 nœuds sous `main`, 84 658 sous C36, 73 203 sans
+  élagage. **C36 se lance.**
+- À la faite main et à froid, C36 retire 18,5 % de l'arbre de `main` sur
+  ces positions ; au réseau et en partie, le rejeu disait −13,5 % à la
+  profondeur 12. Même sens, même ordre de grandeur.
+- **Deux autres tests ont la même forme** : `la_futilite_inverse_retire_des_noeuds`
+  et `lelagage_delta_retire_des_noeuds`, chacun sur la même position du
+  banc. Rien ne les fait tomber aujourd'hui. Le jour où un changement les
+  fait tomber, la même sonde dira s'ils tenaient par le choix de la
+  position — avant toute reformulation, jamais après.
+
+**Le candidat** : C36 `fd501a8`, révoqué par `a4f005b`. Son arbre est
+exactement celui d'`imp-lmp` — 188 277 802 nœuds au rejeu à la profondeur
+10 — et son banc vaut 122 554 à la profondeur 7, 62 611 à la 6. Le seuil se
+calcule une fois par nœud (`lmp_threshold`), ce qui garde
+`late_move_prune` à six paramètres.
+
+**Attendu, écrit avant le match** — <span>inférence, confiance
+faible</span>. L'arbre −13,5 % à la profondeur 12 donne 0,29 pli, soit un
+majorant de +17 à +30. Mais l'élagage par compte ne se rattrape pas, et il
+coupe davantage là où la position se dégrade — là où une défense tranquille
+mal classée compte le plus. **Attendu −10 à +15, ~+3.** **Critère** : le
+même — gain si la borne basse commune est au-dessus de zéro. **Deux jobs**,
+contre `18a3805` comme le reste du n° 9 — puis quatre, avec ceux du
+deuxième écran (ci-dessus).
+
 **Attendus, écrits avant les matchs** — <span>inférence, confiance
 faible</span> ; l'arbre à la profondeur 12 converti par l'étalon donne un
 majorant :
@@ -4659,8 +4743,140 @@ majorant :
 
 **Critère, écrit avant** : le même — gain si la borne basse commune est
 au-dessus de zéro. **Deux jobs chacun**, ± 6,2 : un vrai +7 ne passera la
-borne qu'une fois sur deux environ. Six jobs, qui portent à dix-huit ceux qui
-tournent à la fois — deux places restent à la CI.
+borne qu'une fois sur deux environ. **Porté à QUATRE jobs chacun le 5 oct. à
+08 h 00, avant tout résultat — C36 compris.** Les deux jobs par candidat
+venaient d'un plafond de vingt jobs simultanés, supposé et faux (trente
+tournent) ; à ± 4,4, un vrai +7 passe la borne neuf fois sur dix environ. Les
+jobs ajoutés finissent vers 13 h 55, et la relève les attend. Aucun journal
+de ces matchs n'a été ouvert : décidé sur la puissance, pas sur les données. Six jobs, qui portent à dix-huit ceux qui
+tournent à la fois — <s>deux places restent à la CI.</s> **Faux, relevé
+le jour même** : je supposais un plafond de vingt jobs, jamais mesuré. À
+07 h 39, le crible de C36 a lancé ses dix jobs aussitôt, à côté des
+dix-huit matchs et de la CI — **trente jobs à la fois**, aucun en attente.
+Le plafond réel reste inconnu ; il est au moins de trente.
+
+**La composition des gagnants — protocole écrit le 5 oct. à 08 h 05, avant
+toute relève.** Chaque candidat se mesure SEUL contre `18a3805`. Plusieurs
+gagnants empilés n'ont jamais été mesurés ensemble, et deux familles se
+touchent : le coup nul (C32 ou C32b, C33) et *improving* (C35, C36, C37). Ce
+dépôt a déjà vu un acquis fondre par empilement — l'élagage delta sous
+l'échange statique. Un gain démontré seul ne dit donc rien de la somme. Le
+protocole :
+1. **À la relève de 12 h 10, le meilleur gagnant au point se fusionne seul**
+   — de C32 et C32b, un seul, comme écrit. Son gain est démontré, et
+   l'attendre retarderait tout le reste.
+2. **Les autres gagnants des deux relèves forment UN groupe**, composé sur ce
+   nouveau `main` (`verify.sh`, banc mis à jour), révoqué aussitôt, et
+   **mesuré contre ce `main`**, quatre jobs à `8+0,08`. Ce qu'il mesure est
+   exactement ce qu'on fusionnerait : l'apport du reste par-dessus le
+   meilleur.
+3. **Attendu** : au plus la somme de leurs gains seuls ; l'empilement est
+   sous-additif ici, et deux familles se recouvrent — la somme est un
+   majorant, jamais une estimation.
+4. **Critère** : le groupe se fusionne si sa borne basse commune est
+   au-dessus de zéro. Sinon, **bissection par famille** — coup nul,
+   *improving*, le reste —, chaque moitié mesurée de la même façon ; jamais
+   par intuition.
+5. Sans autre gagnant que le meilleur : rien à composer. Sans gagnant du
+   tout : rien ne se fusionne.
+
+**Le troisième écran — la futilité aux nœuds frontières, protocole et
+attendus écrits le 5 oct. à 08 h 30, avant de mesurer.** La futilité
+inverse coupe un NŒUD dont l'évaluation statique dépasse bêta d'une marge ;
+la futilité aux nœuds frontières coupe un COUP tranquille quand
+l'évaluation du nœud, plus une marge, n'atteint pas alpha — le même pari,
+côté alpha. Absente de `search.rs`. Sa marge est en unités d'évaluation, et
+B8 oblige à la mesurer à l'échelle du réseau plutôt qu'à la transposer.
+**La sonde mesure donc la courbe entière, pas un réglage** : pour chaque
+coup tranquille CHERCHÉ — hors échec, ne donnant pas échec, hors racine,
+après un premier coup, à la profondeur ≤ 6 —, l'écart `g = alpha −
+évaluation statique` en unités du réseau, par seau de 50 et par profondeur,
+et si le coup, une fois cherché, monte `alpha` : les dégâts, comme pour
+LMP. Une marge `M(d)` se lit alors sans rien rejouer : la part sautée,
+P(g ≥ M) ; la part des montées d'`alpha` détruites, P(g ≥ M | monte). Les
+coups que LMP coupe déjà ne sont jamais cherchés, donc jamais comptés :
+la courbe mesure exactement ce que la futilité AJOUTERAIT. Le même journal,
+le même rejeu aux profondeurs 10 et 12 ; sans variante, `main` au nœud près.
+
+**Attendus** — <span>inférence, confiance faible</span> :
+- l'évaluation statique est sous `alpha` (g > 0) pour **40 à 70 %** des
+  tranquilles éligibles ;
+- leur taux de montée d'`alpha` décroît avec g, et passe **sous 2 %**
+  au-delà de g = 300 ;
+- à 2 % des montées détruites, la marge sauterait **10 à 30 %** des
+  tranquilles éligibles à la profondeur 1, et l'arbre perdrait **5 à 15 %**
+  à la profondeur 12.
+
+**La règle de choix, écrite avant** : à chaque profondeur, la plus petite
+marge, par pas de 50, qui détruit au plus **2 % des montées d'`alpha`** —
+le niveau de LMP à son seuil retenu, mesuré le 15 sept. à la faite main —,
+puis la droite
+`a + b·d` la plus proche par-dessus, pour qu'aucune profondeur ne dépasse
+son budget de dégâts. Un candidat à ce niveau, C39 ; un second à 1 %,
+C39b, pour encadrer.
+
+**Le troisième écran, RELEVÉ le 5 oct. à 08 h 45** — le même journal, le
+même rejeu ; le binaire de mesure rend toujours le banc de `main`, et les
+totaux du rejeu sont ceux de `main` au nœud près.
+
+| profondeur restante | 1 | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|---|
+| tranquilles éligibles, rejeu à 12 (millions) | 115,0 | 71,0 | 51,1 | 48,8 | 23,9 | 12,1 |
+| évaluation sous `alpha` (g ≥ 0), rejeu à 10 | 86,7 % | 84,1 % | 85,6 % | 83,2 % | 80,3 % | 78,4 % |
+| ils montent `alpha`, rejeu à 10 | 5,5 % | 3,3 % | 1,0 % | 0,7 % | 0,6 % | 0,5 % |
+| marge à 2 % de montées détruites, max des rejeux à 10 et 12 | 100 | 150 | 200 | 200 | 200 | 250 |
+| …ce qu'elle saute, rejeu à 12 | 71,9 % | 65,7 % | 60,5 % | 58,5 % | 58,0 % | 55,7 % |
+| marge à 1 % | 150 | 150 | 200 | 250 | 250 | 300 |
+
+- **Au-dessus de l'attendu partout.** L'évaluation est sous `alpha` pour 78
+  à 87 % des tranquilles éligibles (attendu 40 à 70 %) ; leur taux de
+  montée passe sous 2 % dès g = 100, pas 300 ; une marge à 2 % de dégâts en
+  saute 72 % à la profondeur 1 (attendu 10 à 30 %).
+- **Un coup tranquille qui monte `alpha` vient presque toujours d'un nœud
+  dont l'évaluation est à moins de 100 d'`alpha`** — 0,4 pion de la faite
+  main, à l'échelle de B8. C'est le pari de la futilité, et la sonde le
+  chiffre au lieu de le supposer.
+- **La règle de choix avait un trou, nommé avant de choisir** : « la droite
+  la plus proche » ne disait pas sous quelle mesure. Lue au sens premier —
+  la somme des écarts aux marges requises, coefficients au pas de 5 —, elle
+  rend **`140 + 20·d` à 2 %** (160 à 260) et **`130 + 30·d` à 1 %** (160 à
+  310), C39 partout au moins aussi agressif que C39b, comme « encadrer » le
+  veut. La lecture pondérée par les coups touchés rendrait `110 + 30·d` ;
+  écartée, parce que la granularité des seaux la rend plate à l'intérieur
+  d'un seau.
+- **Les arbres** : C39 **−26,6 %** à la profondeur 10, **−29,1 %** à la 12 ;
+  C39b −26,5 % et −28,2 %. Attendu −5 à −15 % : **le double**.
+
+**Écart au protocole, écrit avec sa raison : C39b n'est PAS lancé.** Les
+deux droites partagent leur marge à la profondeur 1, qui porte le plus de
+coups, et leurs arbres diffèrent de 1,3 % à la profondeur 12 : un écart
+d'arbre de cet ordre se lit en un Elo ou deux, sous la résolution de quatre
+jobs. L'encadrement ne séparerait rien.
+
+**C39, le candidat** : `dfda892`, révoqué par `30256be`. Son arbre est
+exactement celui de `fp:140:20:6` — 163 788 645 nœuds au rejeu à la
+profondeur 10. La marge, mesurée au réseau, s'applique telle quelle quand
+un réseau joue ; la faite main en reçoit l'analogue par l'inverse du
+facteur de B8 (`network_margin`, 71 à 116), d'où un banc de 82 409 à la
+profondeur 7 et 60 734 à la 6. Le test des nœuds se compte sur le banc
+entier, comme le veut C36.
+
+**Attendu, écrit avant le match** — <span>inférence, confiance
+faible</span>. L'arbre −29,1 % à la profondeur 12 donne 0,68 pli, soit un
+majorant de +41 à +71. Mais la futilité ne se rattrape pas, comme LMP, qui
+détruisait aussi 2 % des montées d'`alpha` à son seuil retenu et a rendu
++17,24 ± 8,51 pour −23 % d'arbre. **Attendu 0 à +35, ~+15.** **Critère** :
+gain si la borne basse commune est au-dessus de zéro. **Quatre jobs**,
+contre `18a3805` comme le reste du n° 9.
+
+**Et la composition** — complément écrit à 08 h 50, avant toute relève :
+C39, lancé contre `18a3805` avant la relève de 12 h 10, se relève avec le
+deuxième écran, et rejoint le groupe s'il gagne. <s>La relève de 14 h 05
+passe à **14 h 50**, pour attendre ses jobs.</s> **C39 n'est parti qu'à
+10 h 32** — la session s'est interrompue entre son écriture et son
+lancement : la relève de 14 h 05 rend les verdicts du deuxième écran, et
+le groupe attend celle de C39, vers 16 h 30. Rien d'autre ne change : C39
+est mesuré contre la même référence, à la même cadence.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
