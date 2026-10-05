@@ -256,6 +256,14 @@ de créer d’autres branches. « Revenir à la partie » retrouve le coup séle
 Les variantes restent accessibles depuis leur point de départ, en mémoire,
 sans modifier le PGN original.
 
+Pendant l’exploration, « Meilleur coup dans cette position » conseille le camp
+au trait après votre coup hypothétique. « Montrer le coup » affiche une flèche
+sur le plateau ; « Jouer ce coup » poursuit la variante, promotions comprises.
+La recommandation attend la fin du calcul et reste masquée pendant une retentative
+sans solution. Un changement de moteur ou une relance invalide ces conseils.
+Le panneau « Détails et meilleure suite » conserve la recommandation avant le
+coup étudié, pour comparer ce choix à celui qui a été joué.
+
 « Réessayer ce coup » revient avant le coup visible et masque solution et
 évaluation jusqu’à la tentative. Il est mis en avant après une erreur du camp
 choisi. Après la tentative, on peut continuer à jouer, retenter ou consulter

@@ -1397,6 +1397,8 @@ dialog p {
 .study-branches h3 { flex-basis:100%; }
 .study-evaluation { display:flex; flex-direction:column; gap:8px; border:1px solid #d8bd8030; border-radius:8px; padding:12px; font-size:13px; }
 .study-evaluation > span { color:#acbcb1; font-size:12px; }
+.study-suggestion { display:flex; flex-direction:column; gap:8px; border-top:1px solid #d8bd8030; padding-top:12px; }
+.study-suggestion > span:first-child { color:#acbcb1; font-size:12px; }
 .retry-invitation,.retry-feedback { background:#d8bd8010; border:1px solid #d8bd8040; border-radius:8px; padding:14px; }
 .retry-invitation p { margin-bottom:12px; }
 .retry-feedback.success { border-color:#80b785; background:#80b78520; }
