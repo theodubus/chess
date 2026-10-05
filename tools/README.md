@@ -4808,7 +4808,8 @@ le même rejeu aux profondeurs 10 et 12 ; sans variante, `main` au nœud près.
 
 **La règle de choix, écrite avant** : à chaque profondeur, la plus petite
 marge, par pas de 50, qui détruit au plus **2 % des montées d'`alpha`** —
-le niveau de LMP à son seuil retenu, mesuré le 21 sept. —, puis la droite
+le niveau de LMP à son seuil retenu, mesuré le 15 sept. à la faite main —,
+puis la droite
 `a + b·d` la plus proche par-dessus, pour qu'aucune profondeur ne dépasse
 son budget de dégâts. Un candidat à ce niveau, C39 ; un second à 1 %,
 C39b, pour encadrer.
