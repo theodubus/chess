@@ -257,7 +257,8 @@ choisi 30 secondes. Le score et la profondeur apparaissent
 pendant le calcul. À la fin, le premier coup conseillé est indiqué par une
 flèche et la suite proposée peut être parcourue avec les boutons, les coups
 cliquables et les touches `←` / `→` ou `<` / `>`. L’évaluation affichée concerne
-toujours la position de départ, même pendant la lecture de la suite.
+toujours la position analysée, même pendant la lecture de la suite : la position
+de départ pour la solution initiale, ou celle après votre réponse pour une variante.
 
 Quand le moteur annonce un mat mais fournit une variante tronquée, l’UI lui
 demande de chercher depuis la fin de cette variante, avec le temps restant du
@@ -267,6 +268,24 @@ incompatible ou à la fin du budget, sans dépasser la distance de mat annoncée
 ni 128 demi-coups. L’écran indique si la suite affichée atteint réellement le
 mat ou reste incomplète. Une solution peut différer d’une solution historique :
 le moteur choisit une défense et il peut exister plusieurs coups qui matent.
+
+Pour explorer une autre défense, revenez avant un coup du camp adverse avec
+les flèches ou les coups cliquables, puis jouez une autre réponse sur le plateau.
+**Changer cette réponse**, affiché après une réponse adverse sélectionnée,
+revient directement avant ce coup. Le camp du problème est celui qui a le trait
+au chargement ; seul le camp opposé est modifiable dans ce parcours. Une promotion
+ouvre le choix de la pièce.
+
+Le moteur reconstruit la suite depuis votre nouvelle réponse, avec le budget
+sélectionné et ses meilleurs coups proposés pour les deux camps. Les coups
+précédents sont conservés ; toute la fin de la suite est remplacée, y compris
+les réponses choisies plus tard. Vous pouvez donc modifier successivement
+plusieurs réponses adverses. Les coups choisis sont marqués **Votre réponse**
+et le score indique la position après la dernière réponse choisie. **Recalculer
+cette variante** reprend depuis ce point. **Revenir à la solution** restaure la
+suite initiale sans nouveau calcul, en conservant le rang du coup examiné.
+Une interruption ou une erreur laisse le préfixe choisi visible et permet de
+relancer ; les résultats tardifs ne peuvent pas remplacer une autre suite.
 
 **Arrêter**, quitter l’écran ou remplacer le problème annule la recherche.
 Changer de moteur ou de temps efface l’ancienne solution avant le prochain

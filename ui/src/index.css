@@ -1410,6 +1410,11 @@ dialog p {
 .problem-details h2,.problem-details h3,.problem-details p { margin:0; overflow-wrap:anywhere; }
 .problem-details h2 { font:400 23px Georgia,serif; }
 .problem-result h3 { font-size:15px; margin-top:8px; }
+.problem-variation-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.problem-variation-actions:empty { display:none; }
+.problem-variant-label,.problem-reply-tag { color:#d8bd80; }
+.problem-chosen-reply { display:flex; flex-direction:column; gap:3px; border-color:#d8bd8060; }
+.problem-reply-tag { font-size:10px; font-weight:400; }
 .problem-progress { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:13px; color:#d8bd80; }
 .problem-progress button { flex-basis:100%; }
 .problem-fen { color:#acbcb1; font-size:12px; }
