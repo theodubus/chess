@@ -33,6 +33,13 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   plus bas.
 - Ce sur quoi travailler : **demander**. Le dépôt ne porte pas de feuille de
   route, et en deviner une reviendrait à rouvrir des questions déjà tranchées.
+- **Ce qui revient à Théo se dit à chaque point de récap** — toute action
+  humaine nécessaire, et en particulier les branches distantes à supprimer,
+  que le jeton de session ne peut pas supprimer. Théo, 5 oct. 2026 :
+  « *Quand il y a des branches à supprimer, n'hésite pas à m'en informer lors
+  des points de recap (au même titre que n'importe quelle action humaine
+  nécessaire)* ». `tools/etat.sh` calcule les branches concernées à chaque
+  reprise.
 
 ## Décisions structurantes
 
@@ -1025,7 +1032,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | où | quoi |
 |---|---|
 | `.claude/settings.json` | déclare les hooks ci-dessous |
-| `tools/etat.sh` | lancé par le hook `SessionStart`, dont la sortie **entre dans le contexte**. `SessionStart` se déclenche au démarrage, à la reprise, après `/clear` **et après chaque compactage** — le seul point d'accroche qui tombe au moment où la mémoire vient d'être perdue. Tout ce qu'il imprime est **dérivé de git**, donc rien ne peut y vieillir. Il porte aussi le signal de documentation : « N fichiers `.rs` et zéro `.md` depuis `main` » est un fait, là où « il faudrait documenter » est une consigne qu'on oublie |
+| `tools/etat.sh` | lancé par le hook `SessionStart`, dont la sortie **entre dans le contexte**. `SessionStart` se déclenche au démarrage, à la reprise, après `/clear` **et après chaque compactage** — le seul point d'accroche qui tombe au moment où la mémoire vient d'être perdue. Tout ce qu'il imprime est **dérivé de git**, donc rien ne peut y vieillir. Il porte aussi le signal de documentation : « N fichiers `.rs` et zéro `.md` depuis `main` » est un fait, là où « il faudrait documenter » est une consigne qu'on oublie ; et, depuis le 5 oct. 2026, les branches distantes que `main` contient en entier, à faire supprimer par Théo (`tools/etat-test.sh`) |
 | `.claude/hooks/verify-on-stop.sh` | refuse de finir un tour si `verify.sh --rapide` échoue et que des `.rs` ont changé. Passe après trois échecs d'affilée, avec un avertissement : un blocage qu'on ne sait pas lever vaut moins qu'un avertissement qu'on lit |
 | `.claude/hooks/no-fabricated-sha.sh` | refuse un SHA de 40 caractères qui n'est pas un objet du dépôt alors que son préfixe de 7 en est un — la signature d'un SHA complété de tête |
 | `tools/mettre-en-commun-test.sh` | éprouve `tools/mettre-en-commun.sh`, dans `verify.sh`. Son premier cas est une **vérité terrain** — la formule pentanomiale doit retomber sur ce que fastchess a imprimé, et elle y retombe à 0,003 Elo près. Sa branche précieuse est le **refus** de réunir des matchs qui se contredisent, qui ne sert qu'en cas de problème |

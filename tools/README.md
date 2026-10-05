@@ -6451,6 +6451,18 @@ L'adresse du carnet vit dans `.claude/carnet.local`, ignoré par git : le
 pointeur est mécanique sans que le dépôt porte le lien, le carnet restant privé
 et hors du dépôt.
 
+**Et les branches distantes à faire supprimer par Théo, depuis le 5 oct.
+2026.** Une branche que `main` contient en entier se supprime sans rien
+perdre, mais pas d'ici : le jeton de session ne peut pas supprimer une
+référence distante (vérifié le 22 sept., section D5). Théo a demandé qu'on
+les lui signale à chaque point de récap, comme toute action humaine
+nécessaire ; `etat.sh` les calcule donc à chaque reprise, sur les références
+du dernier `fetch` — jamais `main`, ni la branche de travail, ni celles de
+Codex (`codex/…`), qui appartiennent à un autre agent. La ligne se tait
+quand il n'y a rien à supprimer : c'est pourquoi `tools/etat-test.sh`
+l'éprouve sur des dépôts fabriqués, dans `verify.sh` — chaque exclusion et
+la détection elle-même, quatre fautes injectées, quatre attrapées.
+
 `tools/verify-hooks.sh` vérifie que le hook est déclaré, qu'il lance bien ce
 script, et que le script **rend un état non vide** — un script devenu muet ne
 se verrait pas, on croirait simplement qu'il n'y a rien à dire. C'est la même
