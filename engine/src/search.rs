@@ -80,6 +80,22 @@ const RFP_MAX_DEPTH: i32 = 8;
 /// n'a pas dit le contraire.
 const RFP_MARGIN: i32 = 100;
 
+/// Profondeur maximale de la futilité aux nœuds frontières (C39) — celle
+/// jusqu'où la sonde a mesuré ses dégâts.
+const FP_MAX_DEPTH: i32 = 6;
+
+/// Marge de la futilité aux nœuds frontières : `FP_BASE + FP_PER_DEPTH × d`,
+/// en unités du RÉSEAU — mesurée à son échelle, pas transposée d'une autre
+/// (n° 9, troisième écran, 5 oct. 2026). Sur 5 276 recherches de parties
+/// rejouées, à chaque profondeur, la plus petite marge qui détruit au plus
+/// 2 % des montées d'`alpha` des coups tranquilles cherchés, puis la droite
+/// la plus proche par-dessus : elle saute environ 60 % de ces coups, et
+/// retire 29 % de l'arbre à la profondeur 12.
+const FP_BASE: i32 = 140;
+
+/// Pente de la marge de la futilité aux nœuds frontières — voir [`FP_BASE`].
+const FP_PER_DEPTH: i32 = 20;
+
 /// Profondeur minimale pour tenter un coup nul.
 ///
 /// En dessous, la recherche réduite serait si courte que l'élagage ne
@@ -93,6 +109,18 @@ const NULL_MOVE_BASE_REDUCTION: i32 = 3;
 /// Un pli de réduction en plus du coup nul tous les `NULL_MOVE_DEPTH_DIVISOR`
 /// plis de profondeur restante — voir [`null_move_reduction`].
 const NULL_MOVE_DEPTH_DIVISOR: i32 = 3;
+
+/// Profondeur restante à partir de laquelle un nœud sans coup de la table
+/// se cherche un pli moins profond — voir [`iir_depth`].
+const IIR_MIN_DEPTH: i32 = 4;
+
+/// Profondeur restante maximale à laquelle une capture perdante se saute
+/// dans la recherche principale — voir [`see_prunable_main`].
+const SEE_PRUNE_MAX_DEPTH: i32 = 6;
+
+/// Ce qu'une capture peut perdre au compte de l'échange statique, par pli de
+/// profondeur restante, avant d'être sautée — voir [`see_prunable_main`].
+const SEE_PRUNE_MARGIN: i32 = 100;
 
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
@@ -421,6 +449,12 @@ pub struct Search {
     /// d'être lue par l'enfant, et la racine n'est jamais écrite : aucune
     /// remise à zéro n'est nécessaire entre deux recherches.
     moved: Vec<Option<usize>>,
+    /// L'évaluation statique de chaque ply du chemin, `None` quand le nœud
+    /// était en échec : le point de comparaison du drapeau `improving` —
+    /// voir [`is_improving`]. Écrite à chaque nœud de `negamax` avant ses
+    /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
+    /// chemin courant.
+    evals: Vec<Option<i32>>,
     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
     lmr: Vec<i32>,
     /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
@@ -463,6 +497,9 @@ pub struct Search {
     /// Permet à un test de désactiver le seul élagage par compte de coups.
     #[cfg(test)]
     late_move_pruning: bool,
+    /// Permet à un test de désactiver la seule futilité aux nœuds frontières.
+    #[cfg(test)]
+    frontier_futility: bool,
     /// Fait vérifier à chaque évaluation que les accumulateurs dérivés coup
     /// par coup sont ceux d'un recalcul complet, et compte les vérifications
     /// — sans ce compte, un test qui ne passerait jamais par là resterait
@@ -507,6 +544,7 @@ impl Search {
             lmr: build_lmr_table(),
             continuation: vec![0; PIECE_TO * PIECE_TO],
             moved: vec![None; MAX_PLY + 1],
+            evals: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
             network: None,
@@ -517,6 +555,8 @@ impl Search {
             delta_pruning: true,
             #[cfg(test)]
             late_move_pruning: true,
+            #[cfg(test)]
+            frontier_futility: true,
             #[cfg(test)]
             checked_accumulators: None,
         }
@@ -599,6 +639,32 @@ impl Search {
             margin.saturating_mul(NETWORK_MARGIN_PERCENT) / 100
         } else {
             margin
+        }
+    }
+
+    /// Une marge MESURÉE en unités du réseau, dans celles de l'évaluation qui
+    /// joue : intacte quand un réseau joue, ramenée à l'échelle de la faite
+    /// main sinon — l'inverse de [`Search::scaled_margin`], par le même
+    /// facteur. La futilité aux nœuds frontières (C39) a été mesurée au
+    /// réseau ; la faite main n'en reçoit que l'analogue.
+    fn network_margin(&self, margin: i32) -> i32 {
+        if self.network.is_some() {
+            margin
+        } else {
+            margin.saturating_mul(100) / NETWORK_MARGIN_PERCENT
+        }
+    }
+
+    /// Vrai si la futilité aux nœuds frontières est active : toujours, hors
+    /// test.
+    fn frontier_futility_on(&self) -> bool {
+        #[cfg(test)]
+        {
+            self.frontier_futility
+        }
+        #[cfg(not(test))]
+        {
+            true
         }
     }
 
@@ -1390,7 +1456,23 @@ impl Search {
         // Mesuré avant d'être écrit : la condition porte sur 9,8 % des nœuds et
         // se déclenche sur 4,4 % d'entre eux — concentrée à la profondeur 1, où
         // couper épargne tout un étage de quiescence.
-        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta) {
+        // L'évaluation statique du nœud, hors échec, calculée une fois : la
+        // futilité inverse, celle des nœuds frontières (C39) et la garde du
+        // coup nul (C33) la lisent, et le drapeau `improving` la compare à
+        // celle de notre nœud précédent sur le chemin (voir `is_improving`).
+        let mut static_eval = board
+            .checkers()
+            .is_empty()
+            .then(|| self.static_eval(board, ply));
+        if let Some(slot) = self.evals.get_mut(ply) {
+            *slot = static_eval;
+        }
+        let back = |k: usize| {
+            ply.checked_sub(k)
+                .and_then(|p| self.evals.get(p).copied().flatten())
+        };
+        let improving = is_improving(static_eval, back(2), back(4));
+        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval) {
             return score;
         }
 
@@ -1406,12 +1488,19 @@ impl Search {
         //   l'hypothèse de base s'inverse — passer serait un cadeau, donc la
         //   coupure serait fausse (voir `has_non_pawn_material`) ;
         // - contre une borne de mat, la coupure produirait un mat imaginaire ;
-        // - jamais à la racine, où il faut rendre un coup.
+        // - jamais à la racine, où il faut rendre un coup ;
+        // - **sous bêta à l'évaluation statique**, l'hypothèse « ma position
+        //   est déjà assez bonne » n'a presque aucune chance — voir
+        //   `null_move_worth_trying` (C33).
         if ply > 0
             && depth >= NULL_MOVE_MIN_DEPTH
             && board.checkers().is_empty()
             && beta.abs() < MATE_THRESHOLD
             && has_non_pawn_material(board)
+            && null_move_worth_trying(
+                *static_eval.get_or_insert_with(|| self.static_eval(board, ply)),
+                beta,
+            )
             && let Some(passed) = board.null_move()
         {
             self.null_marks.push(self.path.len());
@@ -1451,6 +1540,14 @@ impl Search {
         // ni ne trie jamais ses coups tranquilles. Mesuré le 22 sept. 2026 :
         // 85 % des coups générés ici n'étaient jamais cherchés, et 49 % des
         // nœuds ne cherchaient aucun coup tranquille.
+        // RÉDUCTION ITÉRATIVE INTERNE (C34) — voir `iir_depth`. Jamais à la
+        // racine : l'approfondissement itératif y garde toujours un coup.
+        let depth = if ply > 0 {
+            iir_depth(depth, tt_move.is_some())
+        } else {
+            depth
+        };
+
         let killers = self.killers.get(ply).copied().unwrap_or([0; 2]);
         // Les deux coups qui précèdent ce nœud : celui de l'adversaire, et le
         // nôtre avant lui. La continuation note chaque tranquille sachant
@@ -1469,6 +1566,8 @@ impl Search {
 
         let mut quiets_seen = 0usize;
         let mut moves = 0usize;
+        // Ni la profondeur ni le drapeau ne changent d'un coup à l'autre.
+        let prune_threshold = lmp_threshold(depth, improving);
 
         while let Some(mv) = picker.next_move(self, board) {
             // Compté AVANT toute coupure : `moves` dit après la boucle s'il
@@ -1478,23 +1577,67 @@ impl Search {
             moves += 1;
             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
 
+            // L'échange statique dans la recherche principale (C38) — voir
+            // `see_prunable_main`. `continue` : le coup suivant peut valoir
+            // mieux, l'ordre des captures n'est pas celui de l'échange.
+            if !quiet
+                && ply > 0
+                && !in_check
+                && depth <= SEE_PRUNE_MAX_DEPTH
+                && best > -MATE_THRESHOLD
+                && Some(mv) != tt_move
+                && see_prunable_main(board, mv, depth)
+            {
+                continue;
+            }
+
             // Élagage par compte de coups : on abandonne les coups tranquilles
             // restants. `break` et non `continue`, parce que l'ordonnancement
             // place toutes les captures avant tous les coups tranquilles — ce
             // qui reste derrière est tranquille, et moins bien classé encore.
-            if self.late_move_prune(quiet, in_check, ply, depth, best, quiets_seen) {
+            if self.late_move_prune(quiet, in_check, ply, best, quiets_seen, prune_threshold) {
                 break;
             }
             if quiet {
                 quiets_seen += 1;
             }
 
+            let mut child = board.clone();
+            child.play_unchecked(mv);
+
+            // Futilité aux nœuds frontières (C39) : un coup tranquille dont
+            // l'évaluation du nœud, plus une marge, n'atteint pas `alpha` se
+            // saute. Compté par l'élagage par compte comme s'il avait été
+            // cherché, ce qui laisse celui-ci tel quel. Les gardes, et ce
+            // qu'elles écartent :
+            // - **en échec**, l'évaluation statique ment, et toute parade est
+            //   obligatoire ;
+            // - **un coup qui donne échec** peut tout changer, la quiescence en
+            //   témoigne ;
+            // - **jamais à la racine**, ni avant un premier coup qui ne soit pas
+            //   une défaite matée — on ne saute rien quand on se fait mater ;
+            // - **quand `alpha` est un mat**, sauter ne raccourcirait plus rien.
+            if quiet
+                && !in_check
+                && ply > 0
+                && depth <= FP_MAX_DEPTH
+                && best > -MATE_THRESHOLD
+                && alpha < MATE_THRESHOLD
+                && child.checkers().is_empty()
+                && self.frontier_futility_on()
+                && frontier_futile(
+                    *static_eval.get_or_insert_with(|| self.static_eval(board, ply)),
+                    self.network_margin(futility_margin(depth)),
+                    alpha,
+                )
+            {
+                continue;
+            }
+
             if let Some(slot) = self.moved.get_mut(ply + 1) {
                 *slot = Some(piece_to(board, mv));
             }
             self.push_move(board, mv, ply);
-            let mut child = board.clone();
-            child.play_unchecked(mv);
 
             // Réduction des coups tardifs.
             //
@@ -1687,6 +1830,7 @@ impl Search {
         depth: i32,
         ply: usize,
         beta: i32,
+        static_eval: &mut Option<i32>,
     ) -> Option<i32> {
         #[cfg(test)]
         if !self.reverse_futility {
@@ -1701,7 +1845,7 @@ impl Search {
             return None;
         }
 
-        let static_eval = self.static_eval(board, ply);
+        let static_eval = *static_eval.get_or_insert_with(|| self.static_eval(board, ply));
         (static_eval - RFP_MARGIN * depth >= beta).then_some(static_eval)
     }
 
@@ -1737,8 +1881,8 @@ impl Search {
     /// - **en échec**, toute parade est obligatoire : compter les coups n'a
     ///   aucun sens quand ils sont tous forcés ;
     /// - **jamais à la racine**, où il faut rendre un coup et pas un score ;
-    /// - **au-delà de `LMP_MAX_DEPTH`**, un coup tardif a encore la place de se
-    ///   révéler bon ;
+    /// - **au-delà de `LMP_MAX_DEPTH`** — [`lmp_threshold`] n'y rend aucun
+    ///   seuil —, un coup tardif a encore la place de se révéler bon ;
     /// - **tant qu'aucun coup n'a rendu mieux qu'une borne de mat** — ce qui
     ///   couvre deux cas d'un coup : on ne coupe pas quand on se fait mater, où
     ///   la seule défense peut être un coup tranquille très mal classé ; et
@@ -1759,9 +1903,9 @@ impl Search {
         quiet: bool,
         in_check: bool,
         ply: usize,
-        depth: i32,
         best: i32,
         quiets_seen: usize,
+        threshold: Option<usize>,
     ) -> bool {
         #[cfg(test)]
         if !self.late_move_pruning {
@@ -1771,9 +1915,8 @@ impl Search {
         quiet
             && !in_check
             && ply > 0
-            && depth <= LMP_MAX_DEPTH
             && best > -MATE_THRESHOLD
-            && quiets_seen >= lmp_limit(depth)
+            && threshold.is_some_and(|t| quiets_seen >= t)
     }
 
     /// Vrai si cette capture ne peut pas ramener la position jusqu'à `alpha`.
@@ -2035,6 +2178,32 @@ fn see_prunable(board: &Board, mv: Move, in_check: bool) -> bool {
     mv.promotion.is_none() && may_lose_material(board, mv, victim) && see::see(board, mv) < 0
 }
 
+/// Vrai si la capture `mv`, cherchée à la profondeur restante `depth` dans la
+/// recherche principale, perd à l'échange statique plus de
+/// [`SEE_PRUNE_MARGIN`] centièmes par pli : elle se saute (C38). Les gardes de
+/// nœud — hors racine, hors échec, après un premier coup, jamais le coup de
+/// la table, à la profondeur ≤ [`SEE_PRUNE_MAX_DEPTH`] — sont dans `negamax`.
+///
+/// **Pourquoi** : la quiescence saute déjà toute capture perdante
+/// (`see_prunable`) ; la recherche principale les cherchait toutes, à pleine
+/// profondeur, une fois passé le premier coup. Mesuré le 5 oct. 2026, rejeu de
+/// 5 276 positions de parties du moteur qui joue : **53 % des captures
+/// éligibles** perdent plus que la marge, et **0,5 %** d'entre elles,
+/// cherchées, montent `alpha` ; l'arbre −11,8 % à la profondeur 10, −10,0 % à
+/// la 12. La marge croît avec la profondeur : plus il reste à chercher, plus
+/// une perte apparente a de place pour se racheter. **En unités de l'échange,
+/// pas de l'évaluation** — `see` compte en valeurs de pièces fixes, que le
+/// réseau ne change pas (`CLAUDE.md`, « une marge … se mesure à l'échelle de
+/// l'évaluation qui joue », ne s'applique pas ici).
+fn see_prunable_main(board: &Board, mv: Move, depth: i32) -> bool {
+    let Some(victim) = captured_piece(board, mv) else {
+        return false;
+    };
+    mv.promotion.is_none()
+        && may_lose_material(board, mv, victim)
+        && see::see(board, mv) < -SEE_PRUNE_MARGIN * depth
+}
+
 /// Cette capture peut-elle perdre du matériel ?
 ///
 /// **Une pure économie, jamais une garde de correction.** Se tromper ne peut
@@ -2078,6 +2247,36 @@ fn may_lose_material(board: &Board, mv: Move, victim: Piece) -> bool {
 /// a de chances de se révéler bon, donc plus on en examine avant de renoncer.
 fn lmp_limit(depth: i32) -> usize {
     LMP_BASE + (depth.max(0) as usize).pow(2)
+}
+
+/// Le seuil de l'élagage par compte de coups d'un nœud : aucun au-delà de
+/// `LMP_MAX_DEPTH`, où l'on n'élague pas ; [`lmp_limit`] quand la position
+/// s'améliore, la moitié sinon — comme chez Stockfish,
+/// `(3 + d²) / (2 − improving)` (C36). Une position qui se dégrade depuis
+/// notre dernier coup se cherche moins large.
+fn lmp_threshold(depth: i32, improving: bool) -> Option<usize> {
+    (depth <= LMP_MAX_DEPTH).then(|| {
+        if improving {
+            lmp_limit(depth)
+        } else {
+            lmp_limit(depth) / 2
+        }
+    })
+}
+
+/// La marge de la futilité aux nœuds frontières à la profondeur `depth`, en
+/// unités du réseau — voir [`FP_BASE`].
+fn futility_margin(depth: i32) -> i32 {
+    FP_BASE + FP_PER_DEPTH * depth
+}
+
+/// Vrai si un coup tranquille est futile à la frontière : l'évaluation
+/// statique du nœud, plus la marge, n'atteint pas `alpha` (C39). Le pari de
+/// la futilité inverse, côté `alpha` : un coup tranquille fait rarement
+/// bouger l'évaluation de plus que la marge à si peu de profondeur, et la
+/// sonde a compté combien de fois il le fait.
+fn frontier_futile(static_eval: i32, margin: i32, alpha: i32) -> bool {
+    static_eval + margin <= alpha
 }
 
 /// La fenêtre de l'élagage par distance au mat au ply `ply` (C27) : rien de
@@ -2132,6 +2331,62 @@ fn build_lmr_table() -> Vec<i32> {
 #[must_use]
 pub fn null_move_reduction(depth: i32) -> i32 {
     NULL_MOVE_BASE_REDUCTION + depth / NULL_MOVE_DEPTH_DIVISOR
+}
+
+/// Vrai si le coup nul vaut d'être essayé à un nœud d'évaluation statique
+/// `static_eval`, contre `beta` : seulement si la position, telle qu'elle
+/// s'évalue, atteint déjà bêta (C33).
+///
+/// **Pourquoi** : le coup nul parie que passer son tour laisse la position
+/// assez bonne pour couper. Sous bêta, le pari ne tient presque jamais.
+/// Mesuré le 5 oct. 2026, rejeu de 5 276 positions de parties du moteur qui
+/// joue, profondeur 12 : **52 % des essais** partaient sous bêta, et ils
+/// coupaient **1,8 % du temps** — contre 54 % au-dessus —, pour 8,4 % des
+/// nœuds et 3,5 % des coupures du coup nul. Ces coupures-là sont les plus
+/// douteuses : la garde les rend à une recherche entière.
+#[must_use]
+pub fn null_move_worth_trying(static_eval: i32, beta: i32) -> bool {
+    static_eval >= beta
+}
+
+/// La profondeur à laquelle chercher un nœud de profondeur restante `depth` :
+/// un pli de moins quand la table n'y a pas de coup, à partir de
+/// [`IIR_MIN_DEPTH`] — la réduction itérative interne (IIR, C34).
+///
+/// **Pourquoi** : sans coup de la table, l'ordonnancement n'a pas son meilleur
+/// indice, et le premier coup essayé — celui qui porte huit coupures sur dix,
+/// mesuré pour A20 — est une supposition. Chercher ce nœud moins loin coûte moins cher ; s'il compte,
+/// l'itération suivante le retrouve AVEC un coup de la table, rangé par celle-ci.
+/// Mesuré le 5 oct. 2026, rejeu à la profondeur 10 de 5 276 positions de
+/// parties : 9,3 % des nœuds de profondeur ≥ 4 n'ont pas de coup de la table,
+/// et la réduction rend l'arbre 2,8 % plus petit. Ce qu'elle coûte en justesse,
+/// seul un match le dit (`tools/README.md`, n° 9).
+#[must_use]
+pub fn iir_depth(depth: i32, has_tt_move: bool) -> i32 {
+    if !has_tt_move && depth >= IIR_MIN_DEPTH {
+        depth - 1
+    } else {
+        depth
+    }
+}
+
+/// Le drapeau `improving` : vrai si l'évaluation statique `now` du nœud
+/// dépasse celle de notre nœud précédent sur le chemin, deux plis plus haut,
+/// même camp au trait — ou quatre plis plus haut si celui-là était en échec,
+/// sans évaluation. Vrai faute de point de comparaison, et en échec, comme
+/// chez Stockfish (`improving`, `src/search.cpp`).
+///
+/// **Ce qu'il dit** : une position qui s'améliore depuis notre dernier coup a
+/// moins de chances de cacher une menace ; une qui se dégrade, davantage. Les
+/// élagages s'en servent pour couper plus franchement dans le premier cas, et
+/// avec plus de prudence dans le second. Mesuré le 5 oct. 2026, rejeu de
+/// 5 276 positions de parties du moteur qui joue : vrai dans 78 % des nœuds
+/// hors échec (`tools/README.md`, n° 9).
+fn is_improving(now: Option<i32>, two_back: Option<i32>, four_back: Option<i32>) -> bool {
+    match (now, two_back.or(four_back)) {
+        (Some(now), Some(before)) => now > before,
+        _ => true,
+    }
 }
 
 /// Vrai si le camp au trait possède autre chose que des pions et son roi.
@@ -2656,6 +2911,67 @@ mod tests {
         s
     }
 
+    /// Construit une recherche dont la seule futilité aux nœuds frontières est
+    /// désactivée.
+    fn search_sans_fp() -> Search {
+        let mut s = search();
+        s.frontier_futility = false;
+        s
+    }
+
+    #[test]
+    fn la_marge_de_futilite_croit_avec_la_profondeur() {
+        // Valeurs relevées sur la formule, pas recopiées d'une intention.
+        assert_eq!(futility_margin(1), 160);
+        assert_eq!(futility_margin(FP_MAX_DEPTH), 260);
+        for d in 1..FP_MAX_DEPTH {
+            assert!(futility_margin(d) < futility_margin(d + 1));
+        }
+    }
+
+    #[test]
+    fn un_coup_est_futile_quand_l_evaluation_plus_la_marge_n_atteint_pas_alpha() {
+        // L'égalité coupe : la marge atteint `alpha` sans le dépasser.
+        assert!(frontier_futile(0, 160, 160));
+        assert!(frontier_futile(-100, 160, 60));
+        assert!(!frontier_futile(0, 160, 159));
+        assert!(!frontier_futile(1, 160, 160));
+    }
+
+    #[test]
+    fn une_marge_mesuree_au_reseau_se_ramene_a_la_faite_main() {
+        let mut s = search();
+        assert_eq!(s.network_margin(224), 100);
+        assert_eq!(s.network_margin(160), 71);
+        s.set_network(Some(Arc::new(crate::nnue::testing::random_network(1))));
+        assert_eq!(s.network_margin(160), 160);
+    }
+
+    #[test]
+    fn la_futilite_aux_noeuds_frontieres_retire_des_noeuds() {
+        // Au TOTAL sur les six positions du banc, jamais sur une seule : une
+        // propriété générale assertée sur une position ne tient que par le
+        // choix de la position (C36, 5 oct. 2026).
+        let limits = Limits {
+            depth: Some(7),
+            ..Limits::default()
+        };
+        let (mut avec, mut sans) = (0, 0);
+        for fen in crate::bench::BENCH_FENS {
+            let position = Position::from_fen(fen).unwrap();
+            let mut s = search();
+            s.go(&position, &limits, |_| {});
+            avec += s.nodes();
+            let mut s = search_sans_fp();
+            s.go(&position, &limits, |_| {});
+            sans += s.nodes();
+        }
+        assert!(
+            avec < sans,
+            "la futilité aux nœuds frontières ne retire rien : {avec} avec, {sans} sans, sur le banc"
+        );
+    }
+
     /// Construit une recherche dont le seul élagage par compte de coups est
     /// désactivé.
     fn search_sans_lmp() -> Search {
@@ -2704,10 +3020,10 @@ mod tests {
     fn seuls_les_coups_tranquilles_sont_elagues() {
         // Une capture n'est jamais élaguée, quel que soit le compte atteint.
         let s = search();
-        assert!(!s.late_move_prune(false, false, 1, 1, 0, 1_000));
+        assert!(!s.late_move_prune(false, false, 1, 0, 1_000, lmp_threshold(1, true)));
         // Le même appel sur un coup tranquille coupe, lui : c'est ce qui prouve
         // que le test mesure la garde et non l'absence de condition.
-        assert!(s.late_move_prune(true, false, 1, 1, 0, 1_000));
+        assert!(s.late_move_prune(true, false, 1, 0, 1_000, lmp_threshold(1, true)));
     }
 
     #[test]
@@ -2747,34 +3063,48 @@ mod tests {
         // Toute parade est obligatoire : compter les coups n'a aucun sens
         // quand ils sont tous forcés.
         let s = search();
-        assert!(!s.late_move_prune(true, true, 1, 1, 0, 1_000));
-        assert!(s.late_move_prune(true, false, 1, 1, 0, 1_000));
+        assert!(!s.late_move_prune(true, true, 1, 0, 1_000, lmp_threshold(1, true)));
+        assert!(s.late_move_prune(true, false, 1, 0, 1_000, lmp_threshold(1, true)));
     }
 
     #[test]
     fn a_la_racine_lelagage_par_compte_ne_coupe_jamais() {
         // Il y faut un coup à jouer, pas seulement un score.
         let s = search();
-        assert!(!s.late_move_prune(true, false, 0, 1, 0, 1_000));
-        assert!(s.late_move_prune(true, false, 1, 1, 0, 1_000));
+        assert!(!s.late_move_prune(true, false, 0, 0, 1_000, lmp_threshold(1, true)));
+        assert!(s.late_move_prune(true, false, 1, 0, 1_000, lmp_threshold(1, true)));
     }
 
     #[test]
     fn au_dela_de_la_profondeur_maximale_lelagage_par_compte_ne_coupe_jamais() {
         // Un coup tardif a encore la place de se révéler bon.
         let s = search();
-        assert!(!s.late_move_prune(true, false, 1, LMP_MAX_DEPTH + 1, 0, 1_000));
+        assert!(!s.late_move_prune(
+            true,
+            false,
+            1,
+            0,
+            1_000,
+            lmp_threshold(LMP_MAX_DEPTH + 1, true)
+        ));
         // Et il coupe pile à la borne : sans ce second appel, le test passerait
         // aussi avec une borne posée n'importe où plus bas.
-        assert!(s.late_move_prune(true, false, 1, LMP_MAX_DEPTH, 0, 1_000));
+        assert!(s.late_move_prune(true, false, 1, 0, 1_000, lmp_threshold(LMP_MAX_DEPTH, true)));
     }
 
     #[test]
     fn contre_un_mat_subi_lelagage_par_compte_ne_coupe_jamais() {
         // La seule défense peut être un coup tranquille très mal classé.
         let s = search();
-        assert!(!s.late_move_prune(true, false, 1, 1, -MATE + 5, 1_000));
-        assert!(s.late_move_prune(true, false, 1, 1, -MATE_THRESHOLD + 1, 1_000));
+        assert!(!s.late_move_prune(true, false, 1, -MATE + 5, 1_000, lmp_threshold(1, true)));
+        assert!(s.late_move_prune(
+            true,
+            false,
+            1,
+            -MATE_THRESHOLD + 1,
+            1_000,
+            lmp_threshold(1, true)
+        ));
     }
 
     #[test]
@@ -2783,7 +3113,7 @@ mod tests {
         // rendrait alors `-INFINITY` sans coup, ce qui empoisonnerait la table.
         // La garde de mat couvre ce cas, et ce test est ce qui l'établit.
         let s = search();
-        assert!(!s.late_move_prune(true, false, 1, 1, -INFINITY, 1_000));
+        assert!(!s.late_move_prune(true, false, 1, -INFINITY, 1_000, lmp_threshold(1, true)));
     }
 
     #[test]
@@ -2791,8 +3121,8 @@ mod tests {
         // Un coup en deçà du seuil : rien n'est élagué.
         let s = search();
         let seuil = lmp_limit(1);
-        assert!(!s.late_move_prune(true, false, 1, 1, 0, seuil - 1));
-        assert!(s.late_move_prune(true, false, 1, 1, 0, seuil));
+        assert!(!s.late_move_prune(true, false, 1, 0, seuil - 1, lmp_threshold(1, true)));
+        assert!(s.late_move_prune(true, false, 1, 0, seuil, lmp_threshold(1, true)));
     }
 
     #[test]
@@ -2859,17 +3189,27 @@ mod tests {
         // blancs en échec par la tour h1, malgré une dame d'avance.
         let b = board("4k3/8/8/8/8/8/6Q1/4K2r w - - 0 1");
         assert!(!b.checkers().is_empty(), "la position doit être un échec");
-        assert_eq!(search().reverse_futility_cut(&b, 1, 1, -5_000), None);
+        assert_eq!(
+            search().reverse_futility_cut(&b, 1, 1, -5_000, &mut None),
+            None
+        );
     }
 
     #[test]
     fn a_la_racine_la_futilite_inverse_ne_coupe_jamais() {
         // Il y faut un coup à jouer, pas seulement un score.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
-        assert_eq!(search().reverse_futility_cut(&b, 1, 0, -5_000), None);
+        assert_eq!(
+            search().reverse_futility_cut(&b, 1, 0, -5_000, &mut None),
+            None
+        );
         // Le même nœud hors racine coupe, lui : c'est ce qui prouve que le
         // test ci-dessus mesure la garde et non l'absence de condition.
-        assert!(search().reverse_futility_cut(&b, 1, 1, -5_000).is_some());
+        assert!(
+            search()
+                .reverse_futility_cut(&b, 1, 1, -5_000, &mut None)
+                .is_some()
+        );
     }
 
     #[test]
@@ -2877,12 +3217,12 @@ mod tests {
         // La marge suppose que `beta` mesure du matériel ; un mat ne le fait pas.
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, MATE - 5),
+            search().reverse_futility_cut(&b, 1, 1, MATE - 5, &mut None),
             None,
             "borne de mat positive"
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, 1, 1, -MATE + 5),
+            search().reverse_futility_cut(&b, 1, 1, -MATE + 5, &mut None),
             None,
             "borne de mat négative"
         );
@@ -2893,11 +3233,11 @@ mod tests {
         let b = board("4k3/8/8/8/8/8/6Q1/4K3 w - - 0 1");
         assert!(
             search()
-                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000)
+                .reverse_futility_cut(&b, RFP_MAX_DEPTH, 1, -5_000, &mut None)
                 .is_some()
         );
         assert_eq!(
-            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000),
+            search().reverse_futility_cut(&b, RFP_MAX_DEPTH + 1, 1, -5_000, &mut None),
             None
         );
     }
@@ -3639,6 +3979,104 @@ mod tests {
         }
         // À la profondeur minimale, le coup nul se vérifie en quiescence.
         assert!(NULL_MOVE_MIN_DEPTH - 1 - null_move_reduction(NULL_MOVE_MIN_DEPTH) <= 0);
+    }
+
+    #[test]
+    fn le_coup_nul_ne_s_essaie_qu_a_partir_de_beta() {
+        // À bêta exactement, l'hypothèse tient déjà : on essaie.
+        assert!(null_move_worth_trying(30, 30));
+        assert!(null_move_worth_trying(31, 30));
+        // Un centième dessous, non.
+        assert!(!null_move_worth_trying(29, 30));
+        assert!(!null_move_worth_trying(-500, 30));
+    }
+
+    #[test]
+    fn l_iir_ne_reduit_que_sans_coup_de_la_table_et_assez_profond() {
+        // Sans coup de la table, à partir de la profondeur 4 : un pli de moins.
+        assert_eq!(iir_depth(IIR_MIN_DEPTH, false), IIR_MIN_DEPTH - 1);
+        assert_eq!(iir_depth(10, false), 9);
+        // En dessous, rien : la recherche y est déjà courte.
+        assert_eq!(iir_depth(IIR_MIN_DEPTH - 1, false), IIR_MIN_DEPTH - 1);
+        assert_eq!(iir_depth(1, false), 1);
+        // Avec un coup de la table, jamais.
+        assert_eq!(iir_depth(IIR_MIN_DEPTH, true), IIR_MIN_DEPTH);
+        assert_eq!(iir_depth(10, true), 10);
+    }
+
+    #[test]
+    fn le_seuil_de_compte_se_divise_par_deux_quand_la_position_se_degrade() {
+        assert_eq!(lmp_threshold(1, true), Some(lmp_limit(1)));
+        assert_eq!(lmp_threshold(1, false), Some(lmp_limit(1) / 2));
+        assert_eq!(lmp_threshold(3, false), Some((LMP_BASE + 9) / 2));
+        // Au-delà de la profondeur maximale, aucun seuil, quel que soit le drapeau.
+        assert_eq!(lmp_threshold(LMP_MAX_DEPTH + 1, true), None);
+        assert_eq!(lmp_threshold(LMP_MAX_DEPTH + 1, false), None);
+        // Une position qui se dégrade se coupe plus tôt, jamais plus tard.
+        for d in 0..=LMP_MAX_DEPTH {
+            assert!(lmp_threshold(d, false) < lmp_threshold(d, true));
+        }
+    }
+
+    #[test]
+    fn la_position_s_ameliore_par_rapport_a_notre_noeud_precedent() {
+        // Deux plis plus haut, même camp au trait.
+        assert!(is_improving(Some(10), Some(5), None));
+        assert!(!is_improving(Some(5), Some(10), None));
+        // Égalité : pas d'amélioration.
+        assert!(!is_improving(Some(5), Some(5), None));
+        // Deux plis plus haut en échec : quatre plis plus haut.
+        assert!(is_improving(Some(5), None, Some(1)));
+        assert!(!is_improving(Some(5), None, Some(10)));
+        // Le point de deux plis prime sur celui de quatre.
+        assert!(!is_improving(Some(5), Some(10), Some(0)));
+        // Faute de point de comparaison, ou en échec : vrai.
+        assert!(is_improving(Some(5), None, None));
+        assert!(is_improving(None, Some(100), Some(100)));
+    }
+
+    #[test]
+    fn une_capture_perdante_se_saute_selon_la_profondeur() {
+        // Dame blanche en d1 prend le pion d7, défendu par le roi : elle perd
+        // 980 contre 100, soit −880 à l'échange (valeurs de `see`).
+        let b = board("4k3/3p4/8/8/8/8/8/3QK3 w - - 0 1");
+        let qxd7 = Move {
+            from: Square::D1,
+            to: Square::D7,
+            promotion: None,
+        };
+        assert_eq!(see::see(&b, qxd7), -880);
+        // −880 est sous −100 × profondeur jusqu'à la profondeur 8 comprise.
+        assert!(see_prunable_main(&b, qxd7, 1));
+        assert!(see_prunable_main(&b, qxd7, 8));
+        assert!(!see_prunable_main(&b, qxd7, 9));
+        // Une perte exactement à la marge se cherche : à la profondeur 4, −400
+        // n'est pas sous −400.
+        let b = board("4k3/3p4/8/8/8/8/8/3RK3 w - - 0 1");
+        let rxd7 = Move {
+            from: Square::D1,
+            to: Square::D7,
+            promotion: None,
+        };
+        assert_eq!(see::see(&b, rxd7), -400);
+        assert!(see_prunable_main(&b, rxd7, 3));
+        assert!(!see_prunable_main(&b, rxd7, 4));
+        // Une capture gagnante ou égale ne se saute jamais.
+        let b = board("4k3/3q4/8/8/8/8/8/3QK3 w - - 0 1");
+        let qxd7 = Move {
+            from: Square::D1,
+            to: Square::D7,
+            promotion: None,
+        };
+        assert!(!see_prunable_main(&b, qxd7, 1));
+        // Un coup tranquille non plus.
+        let b = board("4k3/8/8/8/8/8/8/3QK3 w - - 0 1");
+        let qd2 = Move {
+            from: Square::D1,
+            to: Square::D2,
+            promotion: None,
+        };
+        assert!(!see_prunable_main(&b, qd2, 1));
     }
 
     #[test]
@@ -5030,9 +5468,12 @@ mod tests {
     fn le_fil_principal_publie_ses_noeuds_lui_aussi() {
         // Sans quoi un auxiliaire tiendrait le budget sans compter les nœuds
         // du fil principal. Un seul fil : le compte est déterministe.
+        // Profondeur 9 : la recherche doit franchir plusieurs intervalles
+        // de publication, et l'arbre rétrécit à chaque élagage ajouté — à
+        // la 7, le groupe du n° 9 n'en cherchait plus que 6 944 nœuds.
         let mut s = search();
         let limits = Limits {
-            depth: Some(7),
+            depth: Some(9),
             ..Limits::default()
         };
         s.go(&Position::startpos(), &limits, |_| {});
