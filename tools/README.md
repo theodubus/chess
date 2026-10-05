@@ -4779,6 +4779,40 @@ protocole :
 5. Sans autre gagnant que le meilleur : rien à composer. Sans gagnant du
    tout : rien ne se fusionne.
 
+**Le troisième écran — la futilité aux nœuds frontières, protocole et
+attendus écrits le 5 oct. à 08 h 30, avant de mesurer.** La futilité
+inverse coupe un NŒUD dont l'évaluation statique dépasse bêta d'une marge ;
+la futilité aux nœuds frontières coupe un COUP tranquille quand
+l'évaluation du nœud, plus une marge, n'atteint pas alpha — le même pari,
+côté alpha. Absente de `search.rs`. Sa marge est en unités d'évaluation, et
+B8 oblige à la mesurer à l'échelle du réseau plutôt qu'à la transposer.
+**La sonde mesure donc la courbe entière, pas un réglage** : pour chaque
+coup tranquille CHERCHÉ — hors échec, ne donnant pas échec, hors racine,
+après un premier coup, à la profondeur ≤ 6 —, l'écart `g = alpha −
+évaluation statique` en unités du réseau, par seau de 50 et par profondeur,
+et si le coup, une fois cherché, monte `alpha` : les dégâts, comme pour
+LMP. Une marge `M(d)` se lit alors sans rien rejouer : la part sautée,
+P(g ≥ M) ; la part des montées d'`alpha` détruites, P(g ≥ M | monte). Les
+coups que LMP coupe déjà ne sont jamais cherchés, donc jamais comptés :
+la courbe mesure exactement ce que la futilité AJOUTERAIT. Le même journal,
+le même rejeu aux profondeurs 10 et 12 ; sans variante, `main` au nœud près.
+
+**Attendus** — <span>inférence, confiance faible</span> :
+- l'évaluation statique est sous `alpha` (g > 0) pour **40 à 70 %** des
+  tranquilles éligibles ;
+- leur taux de montée d'`alpha` décroît avec g, et passe **sous 2 %**
+  au-delà de g = 300 ;
+- à 2 % des montées détruites, la marge sauterait **10 à 30 %** des
+  tranquilles éligibles à la profondeur 1, et l'arbre perdrait **5 à 15 %**
+  à la profondeur 12.
+
+**La règle de choix, écrite avant** : à chaque profondeur, la plus petite
+marge, par pas de 50, qui détruit au plus **2 % des montées d'`alpha`** —
+le niveau de LMP à son seuil retenu, mesuré le 21 sept. —, puis la droite
+`a + b·d` la plus proche par-dessus, pour qu'aucune profondeur ne dépasse
+son budget de dégâts. Un candidat à ce niveau, C39 ; un second à 1 %,
+C39b, pour encadrer.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
