@@ -27,15 +27,16 @@ d'un aveu sur la profondeur de recherche.
 > techniques que tous les manuels recommandent. Il gagne toutes ses parties
 > contre un adversaire jouant au hasard.
 >
-> **Force absolue, estimée le 30 sept. 2026 : ~2 940 ± 30** sur l'échelle
+> **Force absolue, estimée le 2 oct. 2026 : ~2 950 ± 30** sur l'échelle
 > `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
-> 300 parties à cette cadence contre Stockfish bridé à 2850, avec le réseau
-> N2 — celui qui joue depuis le 2 oct., +16 contre N2, n'y est pas encore
-> situé. Le premier réseau y valait **~2 850 ± 25** (600 parties, 29 sept.),
-> **l'évaluation faite main ~2 630 ± 40**. Une estimation, pas un
-> classement : l'adversaire se trompe exprès, et le moteur jouait sur un
-> runner à deux cœurs physiques, trois parties à la fois. Protocole et
-> réserves : `tools/README.md`, section C13.
+> 300 parties à cette cadence contre Stockfish bridé à 2850, avec le moteur
+> qui joue. Le précédent y valait **~2 940 ± 30** (30 sept.) : l'écart,
+> +10 ± 42, n'est pas séparé de zéro, quand notre jumeau en sépare +67 à
+> +87 — cette échelle écrase les écarts. Le premier réseau y valait
+> **~2 850 ± 25** (600 parties, 29 sept.), **l'évaluation faite main
+> ~2 630 ± 40**. Une estimation, pas un classement : l'adversaire se trompe
+> exprès, et le moteur jouait sur un runner à deux cœurs physiques, trois
+> parties à la fois. Protocole et réserves : `tools/README.md`, section C13.
 >
 > **Réserve, mesurée le 16 sept. 2026 :** les premiers verdicts du projet ont
 > tous été rendus à la cadence `1+0,01`, où le moteur atteint la profondeur
