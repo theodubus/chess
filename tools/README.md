@@ -4571,6 +4571,35 @@ parties chacun — ± 6,2 en commun ; C33 et C34, dont l'attendu est petit,
 borne que six fois sur dix environ : c'est écrit, et on ne remesure pas
 sans fait neuf.
 
+**Le deuxième écran — protocole et attendus, écrits le 5 oct. à 06 h 50,
+avant de mesurer.** Pendant que les douze jobs jouent : ce qui ne touche ni
+le coup nul ni l'IIR. Le même journal, le même rejeu, un binaire de mesure
+élargi :
+- **le drapeau *improving*** — l'évaluation statique du nœud dépasse-t-elle
+  celle de deux plis plus haut, même camp au trait (quatre si celui-là
+  était en échec ; vrai faute de point de comparaison), comme chez
+  Stockfish. Trois usages, chacun une variante : la futilité inverse avec
+  une profondeur de moins dans sa marge quand la position s'améliore
+  (`imp-rfp`) ; l'élagage par compte de coups à moitié de son seuil quand
+  elle ne s'améliore pas (`imp-lmp`) ; un pli de réduction de plus pour un
+  coup tardif quand elle ne s'améliore pas (`imp-lmr`). La sonde compte la
+  part des nœuds hors échec où il est vrai ;
+- **l'échange statique dans la recherche principale** (`see-cap`) : à la
+  profondeur ≤ 6, hors échec et hors racine, après un premier coup, une
+  capture qui perd plus de 100 × la profondeur au compte de `see` est
+  sautée — la quiescence le fait déjà, la recherche principale non. La sonde
+  compte les captures éligibles, celles qu'elle sauterait, et parmi
+  celles-ci **celles qui, cherchées, montent `alpha`** : les dégâts, comme
+  pour LMP. Les coups TRANQUILLES perdants attendront : `see` rend 0 pour
+  eux, l'étendre est un autre chantier.
+
+**Attendus, écrits avant** — <span>inférence, confiance faible</span> :
+- *improving* vrai dans **55 à 70 %** des nœuds hors échec ;
+- l'arbre à la profondeur 12 : `imp-rfp` **−1 à −4 %**, `imp-lmp` **−5 à
+  −15 %**, `imp-lmr` **−5 à −15 %** ;
+- `see-cap` : **10 à 30 %** des captures éligibles sautées, **1 à 5 %**
+  d'entre elles montant `alpha` ; l'arbre **−2 à −8 %**.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
