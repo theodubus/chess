@@ -210,6 +210,23 @@ export default function ReviewPanel({
               Afficher les annotations des coups
             </label>
             <details className="annotation-method">
+              <summary>Que peut expliquer l’analyse ?</summary>
+              <p className="hint">
+                Les explications couvrent certaines conséquences tactiques
+                courtes : gain ou perte de matériel, reprises et mats courts.
+                Le classement d’un coup et l’explication de sa raison sont deux
+                résultats distincts. Un coup peut être classé sans que sa cause
+                soit suffisamment confirmée.
+              </p>
+              <p className="hint">
+                Les plans, les compensations positionnelles et les combinaisons
+                longues ne sont pas expliqués de façon fiable. Plus de temps
+                peut stabiliser une évaluation sans fournir la raison manquante.
+                Une variante du moteur illustre une possibilité ; elle ne prouve
+                pas que toutes les réponses sont forcées.
+              </p>
+            </details>
+            <details className="annotation-method">
               <summary>Comment les coups sont-ils classés ?</summary>
               <p className="hint">
                 Les coups suspects sont vérifiés avec un budget doublé, entre 1

@@ -273,102 +273,54 @@ Les résultats sont conservés par branche et invalidés à la relance de l’an
 
 ## Comprendre un coup
 
-**État du chantier (2 octobre 2026)** : les explications actives décrites ci-dessous
-restent limitées et leur pertinence pédagogique n’est pas validée globalement.
-Une refonte commence dans `src/review/understanding/`, séparément de l’UI. Elle
-modélise les changements de possibilités et le contexte avant de produire du texte.
-La [backlog active](BACKLOG_ANALYSE_PEDAGOGIQUE.md) remplace les anciens lots déclarés
-terminés ; le [rapport initial](src/review/understanding/README.md) compte aussi les
-familles non reconnues. `npm run test:understanding` reproduit le bilan du corpus.
+L’analyse pédagogique explique **certaines conséquences tactiques courtes** :
+perte ou gain de matériel, reprises et mats courts. Elle utilise les variantes
+et évaluations du moteur choisi, puis vérifie le motif et le bilan après reprises.
+Le classement d’un coup et l’explication de sa raison sont deux résultats distincts.
+Un coup peut être classé sans que sa cause soit suffisamment confirmée.
 
-Pour relire les nouveaux textes et leurs repères sans modifier la revue active,
-ouvrez `/dev/pedagogy-review.html` sur le serveur de développement. L'instantané
-versionné vient de recherches réelles ShallowRed et Stockfish 16 ; les abstentions
-y figurent aussi. Il reste un échantillon de développement, sans validation
-pédagogique indépendante. Le bouton « Coup joué » ramène directement à la
-position après la décision ; « Autre coup comparé » montre un choix légal de
-comparaison. Ce n'est ni toujours un mauvais coup ni forcément le meilleur coup
-du moteur : le titre précise si ce choix évite un problème ou manque une occasion.
-Les nouveaux exemples négatifs expliquent directement la menace adverse et le
-bilan après reprises. Une comparaison non confirmée est masquée ; expliquer le
-coup joué n'en dépend pas. Montrer un seul autre choix ne démontre jamais que le
-coup étudié était le meilleur ou le seul bon coup. Ces changements restent dans
-le prototype de relecture, sans modification des explications de la revue active.
+« Montrer pourquoi » ouvre uniquement la conséquence acceptée, sur le même
+échiquier. La première position est déjà après le coup examiné. Les flèches,
+`←` / `→` et `<` / `>` parcourent les étapes ; « Retour au coup examiné » restaure
+la partie ou la variante et ses dessins. Les variantes brutes restent séparées,
+dans « Variantes du moteur », repliées par défaut. Elles ne constituent pas à
+elles seules une explication du coup. Une démonstration ne modifie pas le PGN.
 
-Depuis `ui/`, pour refaire l'instantané avec vos binaires :
+Une reprise est replacée dans l’échange déjà commencé : le bilan depuis la reprise
+et celui de l’échange entier peuvent différer. Une capture compensée n’est pas
+présentée comme un nouveau gain. Une promotion est comptée avant la capture
+éventuelle de la pièce promue. Quand une suite est incomplète, le bilan garde
+son incertitude.
 
-```bash
-npm run pedagogy:review -- --engine ../target/release/shallowred --stockfish /chemin/vers/stockfish
-```
+Les explications négatives couvrent notamment la double attaque, le clouage
+absolu exploité, la retraite fermée, la défense retirée, la ligne ouverte,
+le défenseur détourné, la menace ignorée et la pièce déplacée puis capturée.
+Les occasions favorables vérifiées couvrent les fourchettes, les clouages et
+le défenseur échangé. Cette liste décrit les mécanismes disponibles, pas une
+promesse de reconnaître tous les coups de ces catégories.
 
-Le paramètre `--stockfish` est facultatif. Cette commande remplace
-`dev/pedagogy-review-data.json` et conserve la date, le nom UCI et l'empreinte
-SHA-256 des binaires. Les budgets sont 200/600 ms ; ils servent au contrôle de
-développement, pas à promettre une couverture générale ou des raisons positionnelles.
-Le prototype ne publie encore aucune nouvelle explication dans la revue.
+Le calcul concerne seulement le coup consulté, avec progression, cache,
+annulation et un délai partagé de 12 secondes. Les vérifications utilisent deux
+budgets, 300 et 900 ms. Naviguer, masquer les annotations ou ouvrir un retry
+sans solution arrête le calcul. Les réponses tardives ne sont pas affichées.
+Les repères restent masqués quand les annotations le sont ou que la solution
+d’un exercice n’a pas été révélée. La barre ne réutilise pas le score du coup
+étudié sur une position différente de la démonstration.
 
-Les explications pédagogiques décrivent des faits vérifiés dans la position et
-les suites du moteur. Elles couvrent les mats, promotions et conséquences
-matérielles, puis les motifs tactiques suivants :
+**Limites :** les plans, les compensations positionnelles et les combinaisons
+longues ne sont pas expliqués de façon fiable. Une seule continuation ne prouve
+pas que toutes les réponses sont forcées ; une seule alternative ne prouve ni
+le meilleur coup global ni son unicité. Les preuves de mat court ont leur contrôle
+spécifique. Plus de temps peut stabiliser une évaluation sans fournir la raison
+manquante. Une cause non confirmée reste explicitement inconnue ; une observation
+sur le centre ou le développement ne la remplace pas.
 
-- Fourchette : deux cibles attaquées, déplacement de l’une puis capture de l’autre.
-- Clouage au roi ou à une pièce plus précieuse, exploité dans la suite.
-- Attaque à la découverte, défenseur supprimé/déplacé et pièce sans défense.
-- Menace de mat réalisée dans la suite et progression du même pion jusqu’à sa promotion.
-- Défenses immédiates : mat en un paré, échec bloqué, pièce mise à l’abri ou défendue.
-
-Une seule idée principale est retenue. Les motifs offensifs doivent avoir une
-conséquence légale visible dans la démonstration et être cohérents
-avec la classification et la comparaison des suites. Une simple attaque ou un
-alignement ne suffit pas. Les occasions manquées peuvent être expliquées par
-la meilleure suite proposée ; « Montrer pourquoi » ouvre alors cette alternative,
-et « Comparer les décisions » montre la décision réelle.
-
-La démonstration utilise le même échiquier et se parcourt avec les boutons ou le
-clavier. Une flèche bleue annonce le prochain coup. À l’étape du motif, les repères
-rouges montrent les menaces, les verts la défense ou l’idée du coup, avec les
-noms des pièces et leurs cases dans le texte. « Retour au coup examiné » restaure
-la partie ou la variante et ses dessins personnels. Aucune branche n’est ajoutée
-par la démonstration. Les repères suivent l’orientation et restent masqués pendant
-un retry sans solution, comme lorsque les annotations sont désactivées.
-
-« Montrer pourquoi » est séparé des **Variantes du moteur**, repliées par défaut.
-La démonstration commence après la décision, sauf lorsqu’il faut montrer une
-menace ou une défense avant le coup. Elle s’arrête à sa conséquence locale et
-aux reprises nécessaires, dans une limite de six demi-coups depuis la décision.
-Une capture ultérieure sans rapport n’allonge pas cette démonstration. Les
-variantes brutes restent accessibles avec un aperçu de huit demi-coups.
-
-L’UI identifie un motif local dans la suite légale du moteur. Pour une erreur,
-elle examine aussi les prises immédiates même si la PV part ailleurs (au plus
-quatre candidats, une hypothèse retenue). Avant d’afficher cette cause, le moteur
-sélectionné vérifie la position après sa conséquence et, pour une erreur ou une
-occasion manquée, celle après l’autre décision. Ces recherches disposent chacune
-de 1 200 ms, avec un délai global de six secondes. L’historique UCI est conservé.
-Les mats joués et défenses immédiates géométriquement vérifiables ne nécessitent
-pas cette recherche supplémentaire.
-
-La vérification démarre seulement sur le coup consulté, après 300 ms de stabilité.
-Un indicateur de calcul reste visible ; naviguer, masquer les annotations, ouvrir
-les coups ou réessayer annule la recherche. Le cache distingue moteur, revue,
-révision et historique. Aucune confirmation partielle ou tardive n’est publiée.
-Une paire de scores comparables doit confirmer l’avantage de l’autre décision ;
-les reprises disponibles, contre-captures immédiates qui annulent le gain,
-compensations détectées par les scores, réponses illégales et scores bornés/non
-finis empêchent la confirmation. Un résultat contradictoire garde une limite
-explicite, sans inventer une autre raison.
-
-« Comparer les décisions » montre l’autre décision vérifiée, avec une explication
-concrète lorsque la prise montrée est empêchée ou que son attaquant est éliminé.
-Le coup étudié reste indiqué, une illustration d’une seule position ne montre
-pas de navigation vide, et fermer restaure exactement la partie ou la variante.
-
-Une PV reste une continuation, pas une preuve de gain forcé. Ces recherches
-ne démontrent pas que chaque réponse intermédiaire est forcée et ne couvrent
-pas toutes les combinaisons, compensations ni causes positionnelles d’une baisse
-de score. Un motif géométrique seul ne justifie jamais un mauvais coup. Lorsque
-aucune cause courte fiable n’est reconnue, l’interface le précise. Les scores
-intermédiaires des démonstrations ne sont pas inventés : la barre affiche « ? ».
+Le périmètre livré et ses limites sont décrits dans
+[ANALYSE_PEDAGOGIQUE.md](ANALYSE_PEDAGOGIQUE.md). La
+[backlog](BACKLOG_ANALYSE_PEDAGOGIQUE.md) conserve uniquement les points de clôture,
+et la [relecture finale](RELECTURE_ANALYSE.md) fixe six cas, dont les deux premiers
+textes ont déjà été relus. Les instantanés de développement et les mesures ne
+constituent pas une validation pédagogique générale.
 
 ### Indices et approfondissement à la demande
 
@@ -449,10 +401,12 @@ pas une propriété inchangée et ne remplissent pas systématiquement le pannea
 L’historique d’une pièce n’est pas deviné à partir d’une FEN personnalisée. Une
 observation n’ajoute aucune recherche moteur ; les calculs locaux sont conservés
 dans un cache borné à 128 situations, avec leur historique. L’approfondissement
-facultatif du lot 3 reste disponible lorsqu’une cause précise manque.
+facultatif reste disponible lorsqu’une cause précise manque, sans garantie
+d’en trouver une.
 
-La [backlog d’analyse pédagogique](BACKLOG_ANALYSE_PEDAGOGIQUE.md) conserve les
-décisions, les limites et les notes de livraison des quatre lots.
+Le [périmètre livré et ses limites](ANALYSE_PEDAGOGIQUE.md) décrit ce que l’on peut
+attendre de cette fonctionnalité. La [backlog de clôture](BACKLOG_ANALYSE_PEDAGOGIQUE.md)
+ne prévoit plus d’extension automatique.
 
 ## Annotations de la revue
 

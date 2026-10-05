@@ -46,7 +46,7 @@ function render() {
   text("state", decision ? consequence ? "Conséquence confirmée · à relire" : decision.status === "unavailable" ? "Calcul indisponible · aucun récit inventé" : "Cause non confirmée · abstention" : "Parcours de la partie");
   text("title", consequence?.title ?? (decision ? "La raison courte reste inconnue" : "Coup de la partie"));
   const annotation = review.annotations[selected - 1];
-  text("summary", consequence?.summary ?? (decision ? "Le moteur classe ce coup défavorablement, mais ces contrôles n'établissent pas une raison courte. Ce cas reste à expliquer."
+  text("summary", consequence?.summary ?? (decision ? "L’analyse classe ce coup défavorablement, mais ces contrôles n'établissent pas une raison courte. La raison reste inconnue dans le périmètre actuel."
     : annotation ? `${categories[annotation.category].label}. Ce contrôle porte sur les coups défavorables ; aucun classement global n'est déduit d'un seul motif.` : "Aucun coup à expliquer à cette position."));
   node("context").hidden = !consequence?.context; text("context", consequence?.context ?? "");
   text("limitation", consequence?.limitation ?? decision?.error ?? "Pas de démonstration causale pour ce coup.");
@@ -61,7 +61,7 @@ function choose() {
   review.positions.forEach((p, index) => {
     const verdict = review.annotations[index - 1];
     moveSelect.add(new Option(`${p.label}${verdict ? ` · ${categories[verdict.category].label}` : ""}${adverseCategory(verdict?.category) ? " · à examiner" : ""}`, String(index)));
-  }); render();
+  }); render(); return game;
 }
 function go(delta: number) {
   if (proofIndex !== null) { const steps = game.decisions.find((d) => d.index === selected - 1)!.consequence!.steps; proofIndex = Math.max(0, Math.min(steps.length - 1, proofIndex + delta)); }
@@ -69,7 +69,7 @@ function go(delta: number) {
   render();
 }
 button("previous").onclick = () => go(-1); button("next").onclick = () => go(1);
-button("proof").onclick = () => { proofIndex = 1; render(); };
+button("proof").onclick = () => { proofIndex = 0; render(); };
 button("return").onclick = () => { proofIndex = null; render(); };
 moveSelect.onchange = () => { selected = Number(moveSelect.value); proofIndex = null; render(); };
 gameSelect.onchange = engineSelect.onchange = choose;
@@ -86,6 +86,18 @@ try {
   if (data.schema !== 1 || data.independentSemanticValidation !== false || !data.games.length || data.games.some((g) => !g.complete)) throw new Error("Audit absent ou incomplet.");
   for (const id of new Set(data.games.map((g) => g.id))) gameSelect.add(new Option(id, id));
   for (const engine of new Set(data.games.map((g) => g.engine))) engineSelect.add(new Option(engine, engine));
+  const params = new URLSearchParams(location.search);
+  for (const [key, select] of [["game", gameSelect], ["engine", engineSelect]] as const) {
+    const value = params.get(key);
+    if (value && !Array.from(select.options).some(option => option.value === value)) throw new Error("Partie ou moteur de relecture absent.");
+    if (value) select.value = value;
+  }
   text("snapshot", "202 demi-coups issus de trois parties. Toutes les abstentions sont conservées. Relecture échiquéenne et contrôle visuel encore nécessaires.");
-  choose();
+  const selectedGame = choose();
+  const requested = params.get("ply");
+  if (requested !== null) {
+    const index = Number(requested);
+    if (!/^\d+$/.test(requested) || index < 0 || index > selectedGame.plies) throw new Error("Position de relecture absente.");
+    selected = index; render();
+  }
 } catch (error) { board.destroy(); root.textContent = error instanceof Error ? error.message : "Audit illisible."; }

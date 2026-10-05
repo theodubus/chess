@@ -11,7 +11,7 @@ import "./preview.css";
 
 const root = document.querySelector<HTMLElement>("#preview")!;
 root.innerHTML = `
-  <header><p class="eyebrow">Aperçu de relecture · non activé dans la partie</p>
+  <header><p class="eyebrow">Instantané de relecture · calcul figé</p>
     <h1>Comprendre le coup</h1>
     <p class="intro">Ces exemples servent à juger le texte et les repères. Les positions viennent de recherches réelles ; les motifs restent des brouillons, pas une analyse validée.</p>
   </header>
@@ -34,7 +34,7 @@ root.innerHTML = `
     </section>
     <section class="explanation" aria-label="Explication à relire">
       <p id="kind" class="eyebrow"></p><h2 id="title"></h2><p id="summary"></p>
-      <p class="comparison-note">Ce repère explique une conséquence du coup. Une seule comparaison ne prouve pas que le coup joué était le meilleur, ni qu'un autre choix était le seul bon coup.</p>
+      <p id="proof-scope" class="comparison-note">Ce repère explique une conséquence du coup. Une seule comparaison ne prouve pas que le coup joué était le meilleur, ni qu'un autre choix était le seul bon coup.</p>
       <aside id="context" class="context" hidden></aside>
       <div id="comparison"><h3 id="comparison-heading"></h3><p id="comparison-text"></p><p class="comparison-note">Ce choix sert à comparer l’idée : ce n’est pas forcément le meilleur coup du moteur.</p></div>
       <details><summary>Portée de cette démonstration</summary><p id="limitation"></p><p id="provenance"></p></details>
@@ -87,6 +87,7 @@ function renderExample() {
   if (!example) throw new Error("Exemple absent pour ce moteur.");
   branch = "played"; index = 0;
   const draft = example.draft;
+  node("proof-scope").hidden = !draft;
   setText("state", draft ? "Brouillon disponible · à relire" : "Cause non confirmée · abstention");
   setText("kind", `${example.label} · ${draft?.role === "allows-loss" ? "Ce coup permet une menace" : draft ? "Ce coup crée une occasion" : "Pas de raison inventée"}`);
   setText("title", draft?.title ?? "La cause courte n’est pas confirmée");
@@ -135,6 +136,14 @@ try {
   }
   for (const id of new Set(data.examples.map((e) => e.id))) caseSelect.add(new Option(names[id] ?? id, id));
   for (const engine of new Set(data.examples.map((e) => e.engine))) engineSelect.add(new Option(engine, engine));
+  // Les liens du dossier de clôture doivent ouvrir le cas demandé, pas le
+  // premier de l'instantané. Un lien périmé reste une erreur explicite.
+  const params = new URLSearchParams(location.search);
+  for (const [key, select] of [["case", caseSelect], ["engine", engineSelect]] as const) {
+    const value = params.get(key);
+    if (value && !Array.from(select.options).some(option => option.value === value)) throw new Error("Cas ou moteur de relecture absent.");
+    if (value) select.value = value;
+  }
   setText("snapshot", `Instantané du ${new Date(data.generatedAt).toLocaleString("fr-FR")} · ${data.examples.length} cas comparés, abstentions incluses · échantillon de développement, sans validation indépendante.`);
   renderExample();
 } catch (error) {
