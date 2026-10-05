@@ -348,6 +348,10 @@ pub struct Search {
     aborted: bool,
     /// Clés Zobrist de la partie puis du chemin courant dans l'arbre.
     path: Vec<u64>,
+    /// La longueur de `path` à l'entrée de la racine : `negamax` y confronte
+    /// chaque `ply` en test — voir son début.
+    #[cfg(test)]
+    path_base: Option<usize>,
     /// Indices, dans `path`, des positions atteintes par un coup nul — une
     /// pile, puisque les coups nuls s'emboîtent.
     ///
@@ -492,6 +496,8 @@ impl Search {
             node_limit: None,
             aborted: false,
             path: Vec::new(),
+            #[cfg(test)]
+            path_base: None,
             null_marks: Vec::new(),
             pv: PvTable::new(),
             root_best: None,
@@ -1277,6 +1283,26 @@ impl Search {
         beta: i32,
         scratch: &mut [(Move, i32)],
     ) -> i32 {
+        // Le `ply` d'un nœud est sa distance à la racine, et tout s'y indexe :
+        // killers, évaluations d'*improving*, coup précédent, accumulateurs,
+        // distance au mat. Le chemin en est la mesure indépendante — chaque
+        // appel récursif y empile la position qu'il cherche, coup nul
+        // compris. Un appel qui décale le `ply` ne fait rien planter : il
+        // déplace l'arbre, ou rien du tout quand l'élagage masque ce qu'il
+        // déplace. Deux bancs figés de suite ont cessé de voir celui du coup
+        // nul — A18 à la profondeur 5, C32 à la 6 et à la 7 (issue #142).
+        // La confrontation, elle, ne dépend d'aucun arbre.
+        #[cfg(test)]
+        if ply == 0 {
+            self.path_base = Some(self.path.len());
+        } else if let Some(base) = self.path_base {
+            assert_eq!(
+                self.path.len(),
+                base + ply,
+                "le ply {ply} ne suit pas la profondeur réelle de la récursion"
+            );
+        }
+
         self.pv.clear(ply);
 
         // Une répétition, la règle des cinquante coups ou un matériel
@@ -3708,6 +3734,36 @@ mod tests {
             )
             .unwrap();
         assert!(position.board().is_legal(mv));
+    }
+
+    #[test]
+    fn toute_recherche_arme_la_confrontation_du_ply() {
+        // La confrontation du début de `negamax` ne vaut que si une vraie
+        // recherche en pose la base : sans elle, elle se tait, et toute la
+        // suite resterait verte — la faute d'un compteur que rien ne fait
+        // passer (`CLAUDE.md`, A21). La racine la pose ; ce test le vérifie.
+        let position = Position::startpos();
+        let mut s = search();
+        s.go(
+            &position,
+            &Limits {
+                depth: Some(3),
+                ..Limits::default()
+            },
+            |_| {},
+        );
+        assert_eq!(s.path_base, Some(position.history().len()));
+    }
+
+    #[test]
+    #[should_panic(expected = "ne suit pas la profondeur réelle de la récursion")]
+    fn un_ply_decale_du_chemin_fait_tomber_la_recherche() {
+        // Ce que ferait un appel récursif qui ne compte pas son ply — celui
+        // du coup nul en `ply * 1`, survivant du balayage du 5 oct. 2026
+        // (issue #142) : un nœud au ply 1 sur un chemin resté à la racine.
+        let mut s = search();
+        s.path_base = Some(0);
+        s.negamax(&Board::default(), 1, 1, -INFINITY, INFINITY, &mut ardoise());
     }
 
     #[test]
