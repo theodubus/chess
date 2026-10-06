@@ -1,0 +1,708 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index e5d1f2f..6a32303 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -35,6 +35,160 @@ use crate::position::{Position, repetitions};
+ use crate::see;
+ use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
+ 
++/// SONDE N12 v5 — variantes de MESURE du cinquième écran, choisies par la
++/// variable d'environnement `N12`, combinables par « + » ; sans elle, `main`
++/// au nœud près :
++/// - `pvs` — la fenêtre nulle après le premier coup cherché, re-recherches ;
++/// - `pv` — implique `pvs` : les nœuds PV (`bêta − alpha > 1`) ne coupent
++///   plus par la table, ni par la futilité inverse, ni par le coup nul, et
++///   LMR y réduit d'un pli de moins ;
++/// - `lmrh:D` — la réduction d'un tranquille diminue de sa note / `D` ;
++/// - `mal` — le malus d'historique : les tranquilles cherchés avant une
++///   coupure par un tranquille perdent `d²` ;
++/// - `hp:T` — l'élagage par l'historique : note sous `−T·d`, profondeur ≤ 4 ;
++/// - `rz:A:B` — le razoring, marge `A + B·d²` à l'échelle du réseau, d ≤ 3 ;
++/// - `qsc` — les tranquilles qui donnent échec, au premier pli de la
++///   quiescence ;
++/// - `mc`, `neg`, `dbl:M` — multi-cut, extension négative, double extension ;
++/// - `r50` — l'évaluation statique × (200 − c) / 200.
++#[derive(Default, Clone, Copy)]
++struct N12 {
++    pvs: bool,
++    pv: bool,
++    pv_tt: bool,
++    pv_rfp: bool,
++    pv_nmp: bool,
++    pv_lmr: bool,
++    lmrh: Option<i32>,
++    mal: bool,
++    hp: Option<i32>,
++    hp_ombre: Option<i32>,
++    rz: Option<(i32, i32)>,
++    qsc: bool,
++    mc: bool,
++    neg: bool,
++    dbl: Option<i32>,
++    r50: bool,
++}
++
++fn n12() -> N12 {
++    static V: std::sync::OnceLock<N12> = std::sync::OnceLock::new();
++    *V.get_or_init(|| {
++        let mut v = N12::default();
++        for part in std::env::var("N12").unwrap_or_default().split('+') {
++            let n: Vec<i32> = part.split(':').skip(1).filter_map(|x| x.parse().ok()).collect();
++            match (part.split(':').next().unwrap_or(""), &n[..]) {
++                ("pvs", []) => v.pvs = true,
++                ("pv", []) => {
++                    v.pvs = true;
++                    v.pv = true;
++                    v.pv_tt = true;
++                    v.pv_rfp = true;
++                    v.pv_nmp = true;
++                    v.pv_lmr = true;
++                }
++                ("pvtt", []) => {
++                    v.pvs = true;
++                    v.pv = true;
++                    v.pv_tt = true;
++                }
++                ("pvrfp", []) => {
++                    v.pvs = true;
++                    v.pv = true;
++                    v.pv_rfp = true;
++                }
++                ("pvnmp", []) => {
++                    v.pvs = true;
++                    v.pv = true;
++                    v.pv_nmp = true;
++                }
++                ("pvlmr", []) => {
++                    v.pvs = true;
++                    v.pv = true;
++                    v.pv_lmr = true;
++                }
++                ("lmrh", [d]) => v.lmrh = Some(*d),
++                ("mal", []) => v.mal = true,
++                ("hp", [t]) => v.hp = Some(*t),
++                ("hpo", [t]) => v.hp_ombre = Some(*t),
++                ("rz", [a, b]) => v.rz = Some((*a, *b)),
++                ("qsc", []) => v.qsc = true,
++                ("mc", []) => v.mc = true,
++                ("neg", []) => v.neg = true,
++                ("dbl", [m]) => v.dbl = Some(*m),
++                ("r50", []) => v.r50 = true,
++                _ => {}
++            }
++        }
++        v
++    })
++}
++
++/// SONDE N12 — les compteurs, nommés dans l'ordre pour la ligne `info string`.
++pub static N12C: [AtomicU64; 40] = [const { AtomicU64::new(0) }; 40];
++/// SONDE N12 — leurs noms.
++pub const N12_NOMS: [&str; 40] = [
++    "pvs_null", "pvs_re", "pv_nodes", "lmrh_less", "hp_elig",
++    "hp_would", "hp_cut", "hp_dmg", "rz_base", "rz_elig",
++    "rz_cond", "rz_dmg", "qsc_gen", "mc_cut", "neg_n",
++    "dbl_n", "r50_n", "r50_big", "lmr_n", "lmr_sum",
++    "se_test", "se_sing", "x22", "x23",
++    "lmr_hm1000", "lmr_hm100", "lmr_hm1", "lmr_h0", "lmr_h1", "lmr_h100", "lmr_h1000", "lmr_h10000",
++    "hp_hm1000", "hp_hm100", "hp_hm1", "hp_h0", "hp_h1", "hp_h100", "hp_h1000", "hp_h10000",
++];
++/// SONDE N12 — le seau d'une note d'historique : `< −1000`, `−1000..−101`,
++/// `−100..−1`, `0`, `1..100`, `101..1000`, `1001..10000`, `> 10000`.
++fn n12_seau(note: i32) -> usize {
++    match note {
++        i32::MIN..=-1001 => 0,
++        -1000..=-101 => 1,
++        -100..=-1 => 2,
++        0 => 3,
++        1..=100 => 4,
++        101..=1000 => 5,
++        1001..=10000 => 6,
++        _ => 7,
++    }
++}
++const K_LMR_HIST: usize = 24;
++const K_HP_HIST: usize = 32;
++const K_PVS_NULL: usize = 0;
++const K_PVS_RE: usize = 1;
++const K_PV_NODES: usize = 2;
++const K_LMRH_LESS: usize = 3;
++const K_HP_ELIG: usize = 4;
++const K_HP_WOULD: usize = 5;
++const K_HP_CUT: usize = 6;
++const K_HP_DMG: usize = 7;
++const K_RZ_BASE: usize = 8;
++const K_RZ_ELIG: usize = 9;
++const K_RZ_COND: usize = 10;
++const K_RZ_DMG: usize = 11;
++const K_QSC_GEN: usize = 12;
++const K_MC_CUT: usize = 13;
++const K_NEG_N: usize = 14;
++const K_DBL_N: usize = 15;
++const K_R50_N: usize = 16;
++const K_R50_BIG: usize = 17;
++const K_LMR_N: usize = 18;
++const K_LMR_SUM: usize = 19;
++const K_SE_TEST: usize = 20;
++const K_SE_SING: usize = 21;
++
++fn n12c(k: usize, v: u64) {
++    N12C[k].fetch_add(v, Ordering::Relaxed);
++}
++
++/// SONDE N12 — le ply du premier pli de la quiescence en cours : posé par
++/// `negamax` juste avant d'y entrer. La recherche du rejeu est à un fil.
++static N12_QS_FIRST: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(usize::MAX);
++/// SONDE N12 — les doubles extensions sur le chemin courant.
++static N12_DEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
++/// SONDE N12 — la marge du razoring en ombre, et le seuil de l'élagage par
++/// l'historique en ombre.
++const N12_RZ_OMBRE: (i32, i32) = (240, 140);
++const N12_HP_OMBRE: i32 = 50_000;
++
+ /// Profondeur maximale de la recherche principale.
+ pub const MAX_DEPTH: u32 = 64;
+ 
+@@ -709,6 +863,20 @@ impl Search {
+     /// réseau sur les accumulateurs de ce ply quand il y en a un, sinon la
+     /// faite main. Le seul point d'entrée de l'évaluation dans la recherche.
+     fn static_eval(&self, board: &Board, ply: usize) -> i32 {
++        let brute = self.static_eval_brute(board, ply);
++        if !n12().r50 {
++            return brute;
++        }
++        let c = i32::from(board.halfmove_clock());
++        n12c(K_R50_N, 1);
++        if c >= 20 {
++            n12c(K_R50_BIG, 1);
++        }
++        brute * (200 - c) / 200
++    }
++
++    /// SONDE N12 — l'évaluation statique de `main`.
++    fn static_eval_brute(&self, board: &Board, ply: usize) -> i32 {
+         let Some(network) = &self.network else {
+             return eval::evaluate(board, &self.params);
+         };
+@@ -1228,6 +1396,32 @@ impl Search {
+         self.history_score(mv)
+     }
+ 
++    /// SONDE N12 — le malus : `−d²` aux tranquilles cherchés avant la coupure.
++    fn n12_malus(&mut self, tried: &[(Move, usize)], depth: i32, context: [Option<usize>; 2]) {
++        let malus = depth * depth;
++        let mut overflow = false;
++        for &(mv, target) in tried {
++            if let Some(value) = self.history.get_mut(mv.from as usize * 64 + mv.to as usize) {
++                *value -= malus;
++                overflow |= *value < -HISTORY_MAX;
++            }
++            for previous in context.into_iter().flatten() {
++                if let Some(value) = self.continuation.get_mut(previous * PIECE_TO + target) {
++                    *value -= malus;
++                    overflow |= *value < -HISTORY_MAX;
++                }
++            }
++        }
++        if overflow {
++            for entry in &mut self.history {
++                *entry /= 2;
++            }
++            for entry in &mut self.continuation {
++                *entry /= 2;
++            }
++        }
++    }
++
+     /// La note d'historique d'un coup tranquille.
+     fn history_score(&self, mv: Move) -> i32 {
+         self.history
+@@ -1470,8 +1664,14 @@ impl Search {
+         }
+ 
+         if depth <= 0 {
++            N12_QS_FIRST.store(ply, Ordering::Relaxed);
+             return self.quiescence(board, alpha, beta, ply, scratch);
+         }
++        let v = n12();
++        let pv_node = v.pv && beta - alpha > 1;
++        if pv_node {
++            n12c(K_PV_NODES, 1);
++        }
+ 
+         // L'ardoise porte une tranche par ply jusqu'à `MAX_PLY`. L'épuiser
+         // signifierait avoir dépassé cette borne ; la garde rend la fonction
+@@ -1479,7 +1679,6 @@ impl Search {
+         if scratch.len() < MAX_MOVES {
+             return self.static_eval(board, ply);
+         }
+-        let (buffer, rest) = scratch.split_at_mut(MAX_MOVES);
+ 
+         self.nodes += 1;
+         if self.should_abort() {
+@@ -1494,6 +1693,7 @@ impl Search {
+         // pas seulement un score. Ni dans une recherche singulière : la table
+         // parle du nœud entier, la recherche du nœud privé de son coup.
+         if ply > 0
++            && !(pv_node && v.pv_tt)
+             && excluded.is_none()
+             && let Some(hit) = hit
+             && i32::from(hit.depth) >= depth
+@@ -1547,7 +1747,45 @@ impl Search {
+                 .and_then(|p| self.evals.get(p).copied().flatten())
+         };
+         let improving = is_improving(static_eval, back(2), back(4));
+-        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval) {
++
++        // SONDE N12 — le razoring, appliqué (`rz`) ou en ombre.
++        let mut rz_condamne = false;
++        if ply > 0
++            && excluded.is_none()
++            && depth <= 3
++            && !pv_node
++            && board.checkers().is_empty()
++            && alpha.abs() < MATE_THRESHOLD
++        {
++            n12c(K_RZ_BASE, 1);
++            let (a, b) = v.rz.unwrap_or(N12_RZ_OMBRE);
++            let se = *static_eval.get_or_insert_with(|| self.static_eval(board, ply));
++            if se + self.network_margin(a + b * depth * depth) < alpha {
++                n12c(K_RZ_ELIG, 1);
++                let n0 = self.nodes;
++                N12_QS_FIRST.store(ply, Ordering::Relaxed);
++                let q = self.quiescence(board, alpha - 1, alpha, ply, scratch);
++                if v.rz.is_none() {
++                    self.nodes = n0;
++                }
++                self.pv.clear(ply);
++                if self.aborted {
++                    return 0;
++                }
++                if q < alpha {
++                    n12c(K_RZ_COND, 1);
++                    if v.rz.is_some() {
++                        return q;
++                    }
++                    rz_condamne = true;
++                }
++            }
++        }
++        let (buffer, rest) = scratch.split_at_mut(MAX_MOVES);
++
++        if !(pv_node && v.pv_rfp)
++            && let Some(score) = self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval)
++        {
+             return score;
+         }
+ 
+@@ -1568,6 +1806,7 @@ impl Search {
+         //   est déjà assez bonne » n'a presque aucune chance — voir
+         //   `null_move_worth_trying` (C33).
+         if ply > 0
++            && !(pv_node && v.pv_nmp)
+             && excluded.is_none()
+             && depth >= NULL_MOVE_MIN_DEPTH
+             && board.checkers().is_empty()
+@@ -1645,6 +1884,9 @@ impl Search {
+         let mut moves = 0usize;
+         // Ni la profondeur ni le drapeau ne changent d'un coup à l'autre.
+         let prune_threshold = lmp_threshold(depth, improving);
++        let mut searched = 0usize;
++        let mut tried = [(NO_MOVE, 0usize); 64];
++        let mut ntried = 0usize;
+ 
+         while let Some(mv) = picker.next_move(self, board) {
+             // Compté AVANT toute coupure : `moves` dit après la boucle s'il
+@@ -1674,6 +1916,7 @@ impl Search {
+                 if let Some(slot) = self.excluded.get_mut(ply) {
+                     *slot = Some(mv);
+                 }
++                n12c(K_SE_TEST, 1);
+                 let score = self.negamax(board, (depth - 1) / 2, ply, sbeta - 1, sbeta, rest);
+                 if let Some(slot) = self.excluded.get_mut(ply) {
+                     *slot = None;
+@@ -1684,7 +1927,21 @@ impl Search {
+                     return 0;
+                 }
+                 if is_singular(score, sbeta) {
++                    n12c(K_SE_SING, 1);
+                     extension = 1;
++                    if let Some(m) = v.dbl
++                        && score < sbeta - self.network_margin(m)
++                        && N12_DEXT.load(Ordering::Relaxed) == 0
++                    {
++                        extension = 2;
++                        n12c(K_DBL_N, 1);
++                    }
++                } else if v.mc && sbeta >= beta {
++                    n12c(K_MC_CUT, 1);
++                    return sbeta;
++                } else if v.neg && hit.is_some_and(|h| h.score >= beta) {
++                    extension = -1;
++                    n12c(K_NEG_N, 1);
+                 }
+             }
+ 
+@@ -1745,6 +2002,30 @@ impl Search {
+                 continue;
+             }
+ 
++            // SONDE N12 — l'élagage par l'historique, appliqué (`hp`) ou en ombre.
++            let mut hp_ombre = false;
++            if quiet
++                && !in_check
++                && ply > 0
++                && depth <= 4
++                && searched > 0
++                && best > -MATE_THRESHOLD
++                && child.checkers().is_empty()
++            {
++                let note = self.quiet_score(mv, piece_to(board, mv), context);
++                let t = v.hp.or(v.hp_ombre).unwrap_or(N12_HP_OMBRE);
++                n12c(K_HP_ELIG, 1);
++                n12c(K_HP_HIST + n12_seau(note), 1);
++                if note < -t * depth {
++                    if v.hp.is_some() {
++                        n12c(K_HP_CUT, 1);
++                        continue;
++                    }
++                    n12c(K_HP_WOULD, 1);
++                    hp_ombre = true;
++                }
++            }
++
+             if let Some(slot) = self.moved.get_mut(ply + 1) {
+                 *slot = Some(piece_to(board, mv));
+             }
+@@ -1771,20 +2052,63 @@ impl Search {
+                 && depth >= LMR_MIN_DEPTH
+                 && index >= LMR_FIRST_REDUCED
+             {
+-                self.reduction(depth, index).min(depth - 2).max(0)
++                let mut r = self.reduction(depth, index).min(depth - 2).max(0);
++                if r > 0 {
++                    n12c(K_LMR_HIST + n12_seau(self.quiet_score(mv, piece_to(board, mv), context)), 1);
++                }
++                if let Some(d) = v.lmrh {
++                    let note = self.quiet_score(mv, piece_to(board, mv), context);
++                    let r2 = (r - note / d).clamp(0, (depth - 2).max(0));
++                    if r2 < r {
++                        n12c(K_LMRH_LESS, 1);
++                    }
++                    r = r2;
++                }
++                if pv_node && v.pv_lmr {
++                    r = (r - 1).max(0);
++                }
++                r
+             } else {
+                 0
+             };
++            if reduction > 0 {
++                n12c(K_LMR_N, 1);
++                n12c(K_LMR_SUM, reduction as u64);
++            }
+ 
+             self.path.push(child.hash());
+-            let mut score = -self.negamax(
+-                &child,
+-                depth - 1 + extension - reduction,
+-                ply + 1,
+-                -beta,
+-                -alpha,
+-                rest,
+-            );
++            let alpha_avant = alpha;
++            let dext = extension == 2;
++            if dext {
++                N12_DEXT.fetch_add(1, Ordering::Relaxed);
++            }
++            let mut score;
++            if v.pvs && searched > 0 {
++                n12c(K_PVS_NULL, 1);
++                score = -self.negamax(
++                    &child,
++                    depth - 1 + extension - reduction,
++                    ply + 1,
++                    -alpha - 1,
++                    -alpha,
++                    rest,
++                );
++                if reduction > 0 && !self.aborted && score > alpha {
++                    score = -self.negamax(&child, depth - 1 + extension, ply + 1, -alpha - 1, -alpha, rest);
++                }
++                if !self.aborted && score > alpha && score < beta {
++                    n12c(K_PVS_RE, 1);
++                    score = -self.negamax(&child, depth - 1 + extension, ply + 1, -beta, -alpha, rest);
++                }
++            } else {
++                score = -self.negamax(
++                    &child,
++                    depth - 1 + extension - reduction,
++                    ply + 1,
++                    -beta,
++                    -alpha,
++                    rest,
++                );
+             // La réduction a menti : ce coup mérite la profondeur pleine.
+             //
+             // `!self.aborted` n'est pas décoratif : une recherche interrompue
+@@ -1792,8 +2116,16 @@ impl Search {
+             // re-recherche partait alors sur un score qui ne veut rien dire,
+             // pour un résultat de toute façon jeté. Trouvé par le test du
+             // budget de nœuds, qui dépassait d'exactement un nœud.
+-            if reduction > 0 && !self.aborted && score > alpha {
+-                score = -self.negamax(&child, depth - 1 + extension, ply + 1, -beta, -alpha, rest);
++                if reduction > 0 && !self.aborted && score > alpha {
++                    score = -self.negamax(&child, depth - 1 + extension, ply + 1, -beta, -alpha, rest);
++                }
++            }
++            if dext {
++                N12_DEXT.fetch_sub(1, Ordering::Relaxed);
++            }
++            searched += 1;
++            if hp_ombre && score > alpha_avant {
++                n12c(K_HP_DMG, 1);
+             }
+             self.path.pop();
+ 
+@@ -1815,11 +2147,18 @@ impl Search {
+                         // souvent d'autres : on s'en souvient.
+                         if quiet {
+                             self.remember_quiet(board, mv, ply, depth, context);
++                            if v.mal {
++                                self.n12_malus(&tried[..ntried], depth, context);
++                            }
+                         }
+                         break;
+                     }
+                 }
+             }
++            if quiet && ntried < tried.len() {
++                tried[ntried] = (mv, piece_to(board, mv));
++                ntried += 1;
++            }
+         }
+ 
+         // Aucun coup rendu : il n'y en a aucun de légal. L'élagage par compte
+@@ -1843,6 +2182,9 @@ impl Search {
+         // Le type de borne dit ce que le score garantit : exact si tous les
+         // coups ont été examinés sans coupure, minorant après une coupure bêta,
+         // majorant si aucun coup n'a amélioré alpha.
++        if rz_condamne && best > original_alpha {
++            n12c(K_RZ_DMG, 1);
++        }
+         let bound = if best >= beta {
+             Bound::Lower
+         } else if best > original_alpha {
+@@ -1903,7 +2245,8 @@ impl Search {
+         } else {
+             self.stage_moves(board, true, &[], buffer, NO_CONTEXT)
+         };
+-        if count == 0 {
++        let qsc = n12().qsc && !in_check && N12_QS_FIRST.load(Ordering::Relaxed) == ply;
++        if count == 0 && !qsc {
+             return if in_check {
+                 -MATE + i32::try_from(ply).unwrap_or(0)
+             } else {
+@@ -1943,6 +2286,40 @@ impl Search {
+                 }
+             }
+         }
++        // SONDE N12 — `qsc` : les tranquilles qui donnent échec, au premier pli.
++        if qsc && alpha < beta {
++            let mut checks = Vec::new();
++            board.generate_moves(|moves| {
++                for mv in moves {
++                    if mv.promotion.is_none() && captured_piece(board, mv).is_none() {
++                        let mut child = board.clone();
++                        child.play_unchecked(mv);
++                        if !child.checkers().is_empty() {
++                            checks.push((mv, child));
++                        }
++                    }
++                }
++                false
++            });
++            n12c(K_QSC_GEN, checks.len() as u64);
++            for (mv, child) in checks {
++                self.push_move(board, mv, ply);
++                let score = -self.quiescence(&child, -beta, -alpha, ply + 1, rest);
++                if self.aborted {
++                    return 0;
++                }
++                if score > best {
++                    best = score;
++                    if score > alpha {
++                        alpha = score;
++                        self.pv.push(ply, mv);
++                        if alpha >= beta {
++                            break;
++                        }
++                    }
++                }
++            }
++        }
+         best
+     }
+ 
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index 522d061..7584adc 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -485,6 +485,15 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                let mut ligne = String::from("info string sonde-n12");
++                for (k, nom) in crate::search::N12_NOMS.iter().enumerate() {
++                    let v = crate::search::N12C[k].swap(0, Relaxed);
++                    ligne.push_str(&format!(" {nom}={v}"));
++                }
++                send(&ligne);
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
+diff --git a/tools/sonde-n12/analyse.py b/tools/sonde-n12/analyse.py
+new file mode 100644
+index 0000000..81902ad
+--- /dev/null
++++ b/tools/sonde-n12/analyse.py
+@@ -0,0 +1,38 @@
++"""Comme analyse.py, pour un préfixe de série donné (r, rb, rc) : arbre, accord, compteurs."""
++import glob, os, re, sys
++ICI = os.path.dirname(os.path.abspath(__file__))
++def lire(f):
++    flux, total, sonde = {}, None, {}
++    for ligne in open(f):
++        if ligne.startswith('TOTAL'):
++            total = int(ligne.split()[2])
++        elif ligne.startswith('SONDE'):
++            sonde = {k: int(v) for k, v in (x.split('=') for x in ligne.split()[1:])}
++        else:
++            m = re.match(r'^(\w+\(\d+\)) (\d+) (\d+) ?(.*)$', ligne.rstrip('\n'))
++            if m:
++                flux[m[1]] = m[4].split()
++    return flux, total, sonde
++pre = sys.argv[1]
++for d in sys.argv[2:]:
++    base = os.path.join(ICI, f'{pre}-none-{d}.txt')
++    if not os.path.exists(base):
++        continue
++    fb, tb, sb = lire(base)
++    if tb is None:
++        continue
++    print(f'== {pre}, profondeur {d} : main {tb:,} nœuds'.replace(',', ' '))
++    print('   main : ' + ' '.join(f'{k}={v}' for k, v in sorted(sb.items()) if v))
++    for f in sorted(glob.glob(os.path.join(ICI, f'{pre}-*-{d}.txt'))):
++        nom = os.path.basename(f)[len(pre) + 1:-len(f'-{d}.txt')]
++        fv, tv, sv = lire(f)
++        if tv is None or nom == 'none':
++            continue
++        n = same = 0
++        for k, coups in fb.items():
++            for a, b in zip(coups, fv.get(k, [])):
++                n += 1
++                same += a == b
++        diff = {k: v for k, v in sv.items() if v and v != sb.get(k)}
++        print(f'{nom:20s} {100 * (tv / tb - 1):+7.2f} %  coup changé {100 - 100 * same / max(n, 1):5.2f} %  '
++              + ' '.join(f'{k}={v}' for k, v in sorted(diff.items())))
+diff --git a/tools/sonde-n12/rejouer.py b/tools/sonde-n12/rejouer.py
+new file mode 100644
+index 0000000..b5e8986
+--- /dev/null
++++ b/tools/sonde-n12/rejouer.py
+@@ -0,0 +1,90 @@
++#!/usr/bin/env python3
++"""Rejoue les flux d'un journal cutechess `-debug all` dans un binaire, chaque
++`go` remplacé par `go depth D` (ou `go nodes N` si D commence par « n ») :
++mêmes positions, dans l'ordre des parties, table et historiques conservés
++d'un coup à l'autre comme en partie. Déterministe à un fil. Rend, par
++variante, le total des nœuds et la somme des compteurs `sonde-n12`.
++
++    N12=pvs python3 rejouer.py <journal> <binaire> <D> [processus]
++
++Copie élargie de tools/sonde-a20/rejouer-profondeur.py (attic) : flux en
++parallèle — des nœuds à profondeur fixe ne dépendent pas de la charge.
++"""
++import re
++import subprocess
++import sys
++from collections import defaultdict
++from concurrent.futures import ThreadPoolExecutor
++
++CMD = re.compile(r'^\d+ >(\w+)\((\d+)\): (.*)$')
++SONDE = re.compile(r'info string sonde-n12 (.*)$')
++journal, binaire, prof = sys.argv[1], sys.argv[2], sys.argv[3]
++proc = int(sys.argv[4]) if len(sys.argv) > 4 else 4
++go = f'go nodes {prof[1:]}' if prof.startswith('n') else f'go depth {prof}'
++
++flux = defaultdict(list)
++for brut in open(journal, errors='replace'):
++    m = CMD.match(brut.rstrip('\n'))
++    if m:
++        flux[(m[1], m[2])].append(m[3])
++cles = sorted(flux, key=lambda k: (int(k[1]), k[0]))
++
++
++def rejouer(cle):
++    p = subprocess.Popen([binaire], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
++                         text=True, bufsize=1)
++
++    def envoyer(s):
++        p.stdin.write(s + '\n')
++        p.stdin.flush()
++
++    def attendre(fin):
++        nodes, sonde, best = None, {}, None
++        while True:
++            ligne = p.stdout.readline()
++            if not ligne:
++                sys.exit("le moteur s'est tu")
++            if ligne.startswith('info depth') and ' nodes ' in ligne:
++                nodes = int(ligne.split(' nodes ')[1].split()[0])
++            m = SONDE.search(ligne)
++            if m:
++                sonde = {k: int(v) for k, v in (x.split('=') for x in m[1].split())}
++            if ligne.startswith(fin):
++                if fin == 'bestmove':
++                    best = ligne.split()[1]
++                return nodes, sonde, best
++
++    envoyer('uci')
++    attendre('uciok')
++    somme, n, compteurs, coups = 0, 0, defaultdict(int), []
++    for cmd in flux[cle]:
++        if cmd in ('uci', 'quit') or cmd.startswith('debug'):
++            continue
++        if cmd.startswith('go'):
++            envoyer(go)
++            nodes, sonde, best = attendre('bestmove')
++            somme += nodes or 0
++            n += 1
++            coups.append(best)
++            for k, v in sonde.items():
++                compteurs[k] += v
++        elif cmd == 'isready':
++            envoyer('isready')
++            attendre('readyok')
++        else:
++            envoyer(cmd)
++    envoyer('quit')
++    p.wait(timeout=30)
++    return cle, n, somme, compteurs, coups
++
++
++total, recherches, tous = 0, 0, defaultdict(int)
++with ThreadPoolExecutor(max_workers=proc) as ex:
++    for cle, n, somme, compteurs, coups in ex.map(rejouer, cles):
++        print(f"{cle[0]}({cle[1]}) {n} {somme} {' '.join(coups)}", flush=True)
++        total += somme
++        recherches += n
++        for k, v in compteurs.items():
++            tous[k] += v
++print(f"TOTAL {recherches} {total}")
++print("SONDE " + ' '.join(f'{k}={v}' for k, v in sorted(tous.items())))
