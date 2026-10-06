@@ -60,7 +60,8 @@ run-name: >-
   Match ${{ inputs.candidat }} contre ${{ inputs.reference }} —
   ${{ inputs.cadence }}${{ inputs.cadence_candidat && format(' (candidat {0})', inputs.cadence_candidat) || '' }},
   ${{ inputs.parties }} parties, graine ${{ inputs.graine }}, sonde ${{ inputs.sonde }},
-  ponder ${{ inputs.ponder }}, fils ${{ inputs.fils_candidat }}/${{ inputs.fils_reference }}
+  ponder ${{ inputs.ponder }}, fils ${{ inputs.fils_candidat }}/${{ inputs.fils_reference }},
+  ${{ inputs.cpu_candidat }}/${{ inputs.cpu_reference }}
 
 on:
   workflow_dispatch:
@@ -130,6 +131,22 @@ on:
         required: false
         default: "1"
         type: string
+      cpu_candidat:
+        description: "Jeu d'instructions du binaire candidat. x86-64-v3 (AVX2), le défaut depuis le 6 oct. 2026 : le binaire qui joue sur une machine AVX2. x86-64 : le binaire de base, qui tourne partout. Différent de la référence : le même commit est admis — la mesure du jeu d'instructions lui-même."
+        required: false
+        default: "x86-64-v3"
+        type: choice
+        options:
+          - "x86-64-v3"
+          - "x86-64"
+      cpu_reference:
+        description: "Jeu d'instructions du binaire de référence — voir « cpu_candidat »."
+        required: false
+        default: "x86-64-v3"
+        type: choice
+        options:
+          - "x86-64-v3"
+          - "x86-64"
 
 jobs:
   match:
@@ -219,9 +236,16 @@ jobs:
           # autre pendule (le handicap de temps qui calibre l'Elo par pli),
           # d'autres fils (la mesure de Lazy SMP elle-même), ou c'est une
           # sonde, dont le témoin est justement le même binaire.
+          #
+          # Ou un autre JEU D'INSTRUCTIONS : le même code compilé pour
+          # `x86-64-v3` contre `x86-64`, la mesure de l'AVX2 lui-même (n° 10,
+          # 6 oct. 2026) — les binaires diffèrent, l'arbre non.
+          cpu_cand="${{ inputs.cpu_candidat }}"
+          cpu_ref="${{ inputs.cpu_reference }}"
           meme_binaire_admis=non
           if [ "${{ inputs.ponder }}" = "candidat" ] || [ "$tc_cand" != "$tc_ref" ] \
-             || [ "$fils_cand" != "$fils_ref" ] || [ "${{ inputs.sonde }}" = "oui" ]; then
+             || [ "$fils_cand" != "$fils_ref" ] || [ "${{ inputs.sonde }}" = "oui" ] \
+             || [ "$cpu_cand" != "$cpu_ref" ]; then
             meme_binaire_admis=oui
           fi
           if [ "$cand" = "$base" ] && [ "$meme_binaire_admis" = "non" ]; then
@@ -236,6 +260,8 @@ jobs:
           echo "meme_binaire_admis=$meme_binaire_admis" >> "$GITHUB_OUTPUT"
           echo "fils_cand=$fils_cand" >> "$GITHUB_OUTPUT"
           echo "fils_ref=$fils_ref"   >> "$GITHUB_OUTPUT"
+          echo "cpu_cand=$cpu_cand"   >> "$GITHUB_OUTPUT"
+          echo "cpu_ref=$cpu_ref"     >> "$GITHUB_OUTPUT"
 
           # La graine est une CONDITION DE VALIDITÉ, dans les DEUX sens, et
           # c'est pourquoi elle se résout ici plutôt que dans l'étape qui joue.
@@ -274,18 +300,27 @@ jobs:
       # `git stash` : le stash emporte tout le travail non committé, outils de
       # mesure compris, et l'on finit par mesurer autre chose que ce qu'on
       # croit. Piège payé le 13 sept. 2026.
+      #
+      # Le jeu d'instructions passe par RUSTFLAGS, posé ICI pour chaque
+      # binaire, jamais par un fichier du dépôt : un candidat et une référence
+      # d'avant le 6 oct. doivent être bâtis de la même façon, et un réglage
+      # porté par le commit ne s'appliquerait qu'au plus récent des deux.
+      # `x86-64-v3` est le binaire AVX2 que livre le dépôt (n° 10, Théo,
+      # 6 oct. 2026) ; il cherche le même arbre que celui de base — le code est
+      # entier —, × 1,235 plus vite au réseau (`tools/README.md`, A21).
       - name: Construire les deux binaires
         shell: bash
         run: |
           set -euo pipefail
           construire() {
-            local sha="$1" sortie="$2"
+            local sha="$1" sortie="$2" cpu="$3"
             git worktree add --detach "/tmp/wt-$sortie" "$sha"
-            ( cd "/tmp/wt-$sortie" && cargo build --release --bin shallowred )
+            ( cd "/tmp/wt-$sortie" && RUSTFLAGS="-C target-cpu=$cpu" cargo build --release --bin shallowred )
             cp "/tmp/wt-$sortie/target/release/shallowred" "/tmp/$sortie"
+            echo "$sortie : $sha, $cpu"
           }
-          construire "${{ steps.refs.outputs.candidat }}"  candidat
-          construire "${{ steps.refs.outputs.reference }}" reference
+          construire "${{ steps.refs.outputs.candidat }}"  candidat  "${{ steps.refs.outputs.cpu_cand }}"
+          construire "${{ steps.refs.outputs.reference }}" reference "${{ steps.refs.outputs.cpu_ref }}"
 
           # Deux commits différents peuvent produire le même binaire — une
           # PR qui ne touche que la documentation, par exemple. La garde de
@@ -607,6 +642,7 @@ jobs:
             echo "| ponder | \`${{ inputs.ponder }}\` |"
             echo "| sonde | \`${{ inputs.sonde }}\` |"
             echo "| fils de recherche | candidat ${{ steps.refs.outputs.fils_cand }}, référence ${{ steps.refs.outputs.fils_ref }} |"
+            echo "| jeu d'instructions | candidat \`${{ steps.refs.outputs.cpu_cand }}\`, référence \`${{ steps.refs.outputs.cpu_ref }}\` |"
             echo "| arbitre | $arbitre |"
             echo "| parties à la fois | ${{ steps.jouer.outputs.concurrence }} |"
             echo "| cœurs du runner | ${{ steps.etalon.outputs.coeurs }} |"
