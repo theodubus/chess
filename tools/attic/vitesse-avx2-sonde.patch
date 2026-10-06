@@ -1,0 +1,80 @@
+diff --git a/tools/sonde-vitesse/mesure.py b/tools/sonde-vitesse/mesure.py
+new file mode 100644
+index 0000000..6b00b57
+--- /dev/null
++++ b/tools/sonde-vitesse/mesure.py
+@@ -0,0 +1,74 @@
++"""Mesure préalable : le même moteur, compilé deux fois, à arbre identique.
++
++Le banc du dépôt évalue à la main ; celui-ci cherche les six positions du banc
++AVEC le réseau embarqué (le défaut d'UCI), à profondeur fixe, par l'interface
++UCI. Les arbres doivent être identiques au nœud près entre les deux binaires —
++sinon la comparaison de temps ne vaut rien, et le script refuse. Paires
++alternées, test des signes, comme `tools/timing.sh`.
++"""
++import subprocess, sys, time, math
++
++FENS = [
++    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
++    "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
++    "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1",
++    "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
++    "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
++    "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
++]
++
++def run(binary, depth):
++    p = subprocess.Popen([binary], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
++    def send(s):
++        p.stdin.write(s + "\n"); p.stdin.flush()
++    def wait(prefix):
++        last_nodes = None
++        while True:
++            line = p.stdout.readline()
++            if not line:
++                raise RuntimeError("le moteur s'est tu")
++            if line.startswith("info") and " nodes " in line:
++                toks = line.split()
++                last_nodes = int(toks[toks.index("nodes") + 1])
++            if line.startswith(prefix):
++                return last_nodes
++    send("uci"); wait("uciok")
++    send("isready"); wait("readyok")
++    total_nodes, total_time = 0, 0.0
++    for fen in FENS:
++        send("ucinewgame"); send("isready"); wait("readyok")
++        send(f"position fen {fen}")
++        t0 = time.perf_counter()
++        send(f"go depth {depth}")
++        nodes = wait("bestmove")
++        total_time += time.perf_counter() - t0
++        total_nodes += nodes
++    send("quit"); p.wait()
++    return total_nodes, total_time
++
++def main():
++    base, cand, depth, pairs = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
++    n_base, _ = run(base, depth)
++    n_cand, _ = run(cand, depth)
++    if n_base != n_cand:
++        print(f"refus : arbres différents ({n_base} contre {n_cand} nœuds)")
++        sys.exit(1)
++    print(f"arbres identiques : {n_base} nœuds à la profondeur {depth}")
++    wins, ratios = 0, []
++    for i in range(pairs):
++        if i % 2 == 0:
++            nb, tb = run(base, depth); nc, tc = run(cand, depth)
++        else:
++            nc, tc = run(cand, depth); nb, tb = run(base, depth)
++        assert nb == nc == n_base, (nb, nc, n_base)
++        ratios.append(tb / tc)
++        wins += tc < tb
++        print(f"paire {i+1:2d} : base {tb:.3f} s, candidat {tc:.3f} s, rapport {tb/tc:.3f}", flush=True)
++    ratios.sort()
++    med = ratios[len(ratios)//2] if len(ratios) % 2 else (ratios[len(ratios)//2-1] + ratios[len(ratios)//2]) / 2
++    # test des signes bilatéral
++    n = len(ratios); k = max(wins, n - wins)
++    p = min(1.0, 2 * sum(math.comb(n, j) for j in range(k, n + 1)) / 2**n)
++    print(f"candidat plus rapide sur {wins}/{n} paires, p = {p:.4f} ; nœuds par seconde × {med:.3f} (médiane des rapports)")
++
++main()
