@@ -27,7 +27,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
-use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
+use cozy_chess::{
+    BitBoard, Board, Color, Move, Piece, Rank, Square, get_between_rays, get_bishop_moves,
+    get_bishop_rays, get_knight_moves, get_pawn_attacks, get_rook_moves, get_rook_rays,
+};
 
 use crate::eval::{self, DRAW, INFINITY, MATE, MATE_THRESHOLD};
 use crate::nnue::{Accumulators, Network};
@@ -1470,7 +1473,7 @@ impl Search {
         }
 
         if depth <= 0 {
-            return self.quiescence(board, alpha, beta, ply, scratch);
+            return self.quiescence(board, alpha, beta, ply, scratch, true);
         }
 
         // L'ardoise porte une tranche par ply jusqu'à `MAX_PLY`. L'épuiser
@@ -1864,6 +1867,13 @@ impl Search {
     /// En dehors d'un échec, seules les captures et les promotions sont
     /// explorées. En échec, tous les coups le sont : ignorer les parades ferait
     /// évaluer une position perdue comme tranquille.
+    ///
+    /// LES ÉCHECS TRANQUILLES (C51) : au premier pli — `quiet_checks`, posé
+    /// par `negamax` à l'entrée et jamais par la quiescence elle-même —, hors
+    /// échec et sans coupure par les captures, les coups tranquilles qui
+    /// donnent échec se cherchent aussi. Un échec ignoré à l'horizon est une
+    /// menace que la valeur statique ne voit pas ; plus loin, l'arbre
+    /// exploserait.
     fn quiescence(
         &mut self,
         board: &Board,
@@ -1871,6 +1881,7 @@ impl Search {
         beta: i32,
         ply: usize,
         scratch: &mut [(Move, i32)],
+        quiet_checks: bool,
     ) -> i32 {
         self.pv.clear(ply);
         self.nodes += 1;
@@ -1903,7 +1914,8 @@ impl Search {
         } else {
             self.stage_moves(board, true, &[], buffer, NO_CONTEXT)
         };
-        if count == 0 {
+        let quiet_checks = quiet_checks && !in_check;
+        if count == 0 && !quiet_checks {
             return if in_check {
                 -MATE + i32::try_from(ply).unwrap_or(0)
             } else {
@@ -1927,7 +1939,7 @@ impl Search {
             let mut child = board.clone();
             child.play_unchecked(mv);
 
-            let score = -self.quiescence(&child, -beta, -alpha, ply + 1, rest);
+            let score = -self.quiescence(&child, -beta, -alpha, ply + 1, rest, false);
 
             if self.aborted {
                 return 0;
@@ -1939,6 +1951,31 @@ impl Search {
                     self.pv.push(ply, mv);
                     if alpha >= beta {
                         break;
+                    }
+                }
+            }
+        }
+
+        // Les échecs tranquilles, après les captures et seulement si aucune
+        // n'a coupé. L'ardoise du nœud est libre : les captures sont cherchées.
+        if quiet_checks && alpha < beta {
+            let checks = quiet_checking_moves(board, buffer);
+            for &(mv, _) in &buffer[..checks] {
+                self.push_move(board, mv, ply);
+                let mut child = board.clone();
+                child.play_unchecked(mv);
+                let score = -self.quiescence(&child, -beta, -alpha, ply + 1, rest, false);
+                if self.aborted {
+                    return 0;
+                }
+                if score > best {
+                    best = score;
+                    if score > alpha {
+                        alpha = score;
+                        self.pv.push(ply, mv);
+                        if alpha >= beta {
+                            break;
+                        }
                     }
                 }
             }
@@ -2275,6 +2312,72 @@ pub fn captured_piece(board: &Board, mv: Move) -> Option<Piece> {
         return Some(Piece::Pawn); // prise en passant
     }
     None
+}
+
+/// Les coups TRANQUILLES de `board` qui donnent échec — ni capture ni
+/// promotion, le roque compris —, dans l'ordre du générateur, écrits dans
+/// `out` ; rend leur nombre (C51).
+///
+/// Jouer chaque coup légal pour lire l'échec coûterait une copie par coup.
+/// Un coup ne donne échec que de deux façons : la pièce arrive sur une case
+/// d'où elle attaque le roi adverse — les cases d'échec de son type, lues
+/// DEPUIS le roi, l'attaque étant symétrique —, ou elle était le seul écran
+/// entre le roi et l'une de nos pièces à longue portée, et elle quitte la
+/// ligne : l'échec à la découverte. Le roque, dont la tour peut donner
+/// échec, s'y ajoute. C'est un SUR-ensemble — un écran qui glisse le long
+/// de sa ligne ne découvre rien —, donc chaque candidat se joue, et la liste
+/// est exacte.
+///
+/// Les cases d'échec d'une pièce à longue portée se lisent sur
+/// l'occupation d'AVANT le coup : la case qu'elle quitte ne peut être le
+/// seul écran entre sa case d'arrivée et le roi, sans quoi elle donnait
+/// déjà échec — le roi adverse en échec au trait de l'autre camp.
+fn quiet_checking_moves(board: &Board, out: &mut [(Move, i32)]) -> usize {
+    let us = board.side_to_move();
+    let king = board.king(!us);
+    let occupied = board.occupied();
+    let ours = board.colors(us);
+    let queens = board.pieces(Piece::Queen);
+    let diagonal = (board.pieces(Piece::Bishop) | queens) & ours & get_bishop_rays(king);
+    let straight = (board.pieces(Piece::Rook) | queens) & ours & get_rook_rays(king);
+    let mut screens = BitBoard::EMPTY;
+    for slider in diagonal | straight {
+        let between = get_between_rays(slider, king) & occupied;
+        if between.len() == 1 && between.is_subset(ours) {
+            screens |= between;
+        }
+    }
+    let bishop_checks = get_bishop_moves(king, occupied);
+    let rook_checks = get_rook_moves(king, occupied);
+    let mut count = 0;
+    board.generate_moves(|mut moves| {
+        if !screens.has(moves.from) {
+            moves.to &= match moves.piece {
+                Piece::Pawn => get_pawn_attacks(king, !us),
+                Piece::Knight => get_knight_moves(king),
+                Piece::Bishop => bishop_checks,
+                Piece::Rook => rook_checks,
+                Piece::Queen => bishop_checks | rook_checks,
+                // Le roque : le roi « prend » sa propre tour.
+                Piece::King => ours,
+            };
+        }
+        for mv in moves {
+            if mv.promotion.is_some() || captured_piece(board, mv).is_some() {
+                continue;
+            }
+            let mut child = board.clone();
+            child.play_unchecked(mv);
+            if !child.checkers().is_empty()
+                && let Some(slot) = out.get_mut(count)
+            {
+                *slot = (mv, 0);
+                count += 1;
+            }
+        }
+        false
+    });
+    count
 }
 
 /// La note d'ordonnancement d'un coup qui change le matériel — MVV-LVA pour
@@ -4114,6 +4217,64 @@ mod tests {
         let mut t = search();
         t.remember_quiet(&b, coup, 2, 3, NO_CONTEXT);
         assert!(t.continuation.iter().all(|&v| v == 0));
+    }
+
+    /// L'oracle de `quiet_checking_moves` : chaque coup légal joué, dans
+    /// l'ordre du générateur — lent, et sans rien supposer de la géométrie.
+    fn echecs_tranquilles_naifs(board: &Board) -> Vec<Move> {
+        let mut coups = Vec::new();
+        board.generate_moves(|set| {
+            for mv in set {
+                if mv.promotion.is_none() && captured_piece(board, mv).is_none() {
+                    let mut child = board.clone();
+                    child.play_unchecked(mv);
+                    if !child.checkers().is_empty() {
+                        coups.push(mv);
+                    }
+                }
+            }
+            false
+        });
+        coups
+    }
+
+    fn echecs_tranquilles(board: &Board) -> Vec<Move> {
+        let mut out = [(NO_MOVE, 0); MAX_MOVES];
+        let n = quiet_checking_moves(board, &mut out);
+        out[..n].iter().map(|&(mv, _)| mv).collect()
+    }
+
+    #[test]
+    fn les_echecs_tranquilles_sont_ceux_de_l_oracle() {
+        // Le filtre géométrique est un sur-ensemble vérifié coup par coup :
+        // qu'il oublie une case d'échec ou un écran, et la liste diffère de
+        // celle qui joue tout. Ordre compris — la recherche en dépend.
+        let (mut positions, mut echecs) = (0, 0);
+        marche(40, 80, |board| {
+            let attendu = echecs_tranquilles_naifs(board);
+            assert_eq!(echecs_tranquilles(board), attendu, "sur {board}");
+            positions += 1;
+            echecs += attendu.len();
+        });
+        assert!(
+            positions >= 2_000 && echecs >= 1_000,
+            "{positions} positions, {echecs} échecs"
+        );
+        // Les deux voies rares, chacune sur sa position : l'échec à la
+        // découverte, le fou qui quitte la colonne de la tour ; et le roque
+        // qui donne échec par la tour.
+        for (fen, uci) in [
+            ("4k3/8/8/8/4B3/8/8/4R1K1 w - - 0 1", "e4d5"),
+            ("5k2/8/8/8/8/8/8/4K2R w K - 0 1", "e1h1"),
+        ] {
+            let board = Board::from_fen(fen, false).unwrap();
+            let coup = cozy_chess::util::parse_uci_move(&board, uci).unwrap();
+            assert!(
+                echecs_tranquilles(&board).contains(&coup),
+                "{uci} sur {fen}"
+            );
+            assert_eq!(echecs_tranquilles(&board), echecs_tranquilles_naifs(&board));
+        }
     }
 
     #[test]
