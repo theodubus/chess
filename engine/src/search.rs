@@ -520,10 +520,6 @@ pub struct Search {
     /// Permet à un test de désactiver les seules extensions singulières.
     #[cfg(test)]
     singular_extensions: bool,
-    /// Permet à un test de désactiver la seule extension négative (C47),
-    /// les extensions singulières restant actives.
-    #[cfg(test)]
-    negative_extensions: bool,
     /// Fait vérifier à chaque évaluation que les accumulateurs dérivés coup
     /// par coup sont ceux d'un recalcul complet, et compte les vérifications
     /// — sans ce compte, un test qui ne passerait jamais par là resterait
@@ -586,8 +582,6 @@ impl Search {
             frontier_futility: true,
             #[cfg(test)]
             singular_extensions: true,
-            #[cfg(test)]
-            negative_extensions: true,
             #[cfg(test)]
             checked_accumulators: None,
         }
@@ -704,18 +698,6 @@ impl Search {
         #[cfg(test)]
         {
             self.singular_extensions
-        }
-        #[cfg(not(test))]
-        {
-            true
-        }
-    }
-
-    /// Vrai si l'extension négative est active : toujours, hors test.
-    fn negative_extensions_on(&self) -> bool {
-        #[cfg(test)]
-        {
-            self.negative_extensions
         }
         #[cfg(not(test))]
         {
@@ -1703,14 +1685,6 @@ impl Search {
                 }
                 if is_singular(score, sbeta) {
                     extension = 1;
-                } else if self.negative_extensions_on() && hit.is_some_and(|hit| hit.score >= beta)
-                {
-                    // EXTENSION NÉGATIVE (C47). Un autre coup atteint `sbeta`
-                    // — le coup de la table n'est pas seul à tenir —, et la
-                    // table promet déjà la coupure : le nœud coupera
-                    // vraisemblablement sans lui. Il se cherche un pli plus
-                    // court, ce que ses rivaux auraient payé à sa place.
-                    extension = -1;
                 }
             }
 
@@ -3165,13 +3139,6 @@ mod tests {
         s
     }
 
-    /// Les extensions singulières sans l'extension négative (C47).
-    fn search_sans_neg() -> Search {
-        let mut s = search();
-        s.negative_extensions = false;
-        s
-    }
-
     #[test]
     fn un_coup_n_est_singulier_que_si_l_exclusion_echoue_sous_la_borne() {
         // Un échec par le bas sous la fenêtre nulle : singulier.
@@ -3269,49 +3236,27 @@ mod tests {
         assert_ne!(s.negamax(&b, 3, 1, -100, -99, &mut scratch), -100);
     }
 
-    /// Les nœuds de la recherche à la profondeur 9, au TOTAL sur les six
-    /// positions du banc : il faut des nœuds de profondeur ≥ 8 hors racine.
-    fn noeuds_du_banc_a_9(make: fn() -> Search) -> u64 {
+    #[test]
+    fn les_extensions_singulieres_allongent_l_arbre() {
+        // Il faut des nœuds de profondeur ≥ 8 hors racine : une recherche à la
+        // profondeur 9, au TOTAL sur les six positions du banc.
         let limits = Limits {
             depth: Some(9),
             ..Limits::default()
         };
-        crate::bench::BENCH_FENS
-            .iter()
-            .map(|fen| {
-                let position = Position::from_fen(fen).unwrap();
-                let mut s = make();
-                s.go(&position, &limits, |_| {});
-                s.nodes()
-            })
-            .sum()
-    }
-
-    #[test]
-    fn les_extensions_singulieres_allongent_l_arbre() {
-        // Sans l'extension négative, qui raccourcit l'arbre en sens inverse
-        // (C47) : chaque mécanisme se juge à son propre sens.
-        let (avec, sans) = (
-            noeuds_du_banc_a_9(search_sans_neg),
-            noeuds_du_banc_a_9(search_sans_se),
-        );
+        let (mut avec, mut sans) = (0, 0);
+        for fen in crate::bench::BENCH_FENS {
+            let position = Position::from_fen(fen).unwrap();
+            let mut s = search();
+            s.go(&position, &limits, |_| {});
+            avec += s.nodes();
+            let mut s = search_sans_se();
+            s.go(&position, &limits, |_| {});
+            sans += s.nodes();
+        }
         assert!(
             avec > sans,
             "les extensions singulières n'étendent rien : {avec} avec, {sans} sans, sur le banc"
-        );
-    }
-
-    #[test]
-    fn l_extension_negative_raccourcit_l_arbre() {
-        // Le coup de la table qui n'est pas seul à tenir, quand la table
-        // promet la coupure, se cherche un pli plus court (C47).
-        let (avec, sans) = (
-            noeuds_du_banc_a_9(search),
-            noeuds_du_banc_a_9(search_sans_neg),
-        );
-        assert!(
-            avec < sans,
-            "l'extension négative ne raccourcit rien : {avec} avec, {sans} sans, sur le banc"
         );
     }
 
