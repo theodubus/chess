@@ -1228,6 +1228,46 @@ impl Search {
         self.history_score(mv)
     }
 
+    /// LE MALUS D'HISTORIQUE (C49) : à une coupure par un coup tranquille,
+    /// les tranquilles cherchés avant lui depuis `board` perdent `d²` au
+    /// papillon et à la continuation, ce que le coupeur gagne. Sans lui,
+    /// l'historique ne recevait que des bonus : un coup souvent essayé et
+    /// jamais coupeur gardait sa note, et aucune n'était négative.
+    ///
+    /// Même règle de débordement que les bonus, dans l'autre sens : sous
+    /// `−HISTORY_MAX`, les deux tables se divisent par deux.
+    fn punish_quiets(
+        &mut self,
+        board: &Board,
+        tried: &[Move],
+        depth: i32,
+        context: [Option<usize>; 2],
+    ) {
+        let malus = depth * depth;
+        let mut overflow = false;
+        for &mv in tried {
+            let target = piece_to(board, mv);
+            if let Some(value) = self.history.get_mut(mv.from as usize * 64 + mv.to as usize) {
+                *value -= malus;
+                overflow |= *value < -HISTORY_MAX;
+            }
+            for previous in context.into_iter().flatten() {
+                if let Some(value) = self.continuation.get_mut(previous * PIECE_TO + target) {
+                    *value -= malus;
+                    overflow |= *value < -HISTORY_MAX;
+                }
+            }
+        }
+        if overflow {
+            for entry in &mut self.history {
+                *entry /= 2;
+            }
+            for entry in &mut self.continuation {
+                *entry /= 2;
+            }
+        }
+    }
+
     /// La note d'historique d'un coup tranquille.
     fn history_score(&self, mv: Move) -> i32 {
         self.history
@@ -1643,6 +1683,9 @@ impl Search {
 
         let mut quiets_seen = 0usize;
         let mut moves = 0usize;
+        // Les tranquilles réellement cherchés, que punira une coupure (C49).
+        let mut tried = [NO_MOVE; MALUS_QUIETS];
+        let mut tried_count = 0usize;
         // Ni la profondeur ni le drapeau ne changent d'un coup à l'autre.
         let prune_threshold = lmp_threshold(depth, improving);
 
@@ -1815,10 +1858,15 @@ impl Search {
                         // souvent d'autres : on s'en souvient.
                         if quiet {
                             self.remember_quiet(board, mv, ply, depth, context);
+                            self.punish_quiets(board, &tried[..tried_count], depth, context);
                         }
                         break;
                     }
                 }
+            }
+            if quiet && tried_count < MALUS_QUIETS {
+                tried[tried_count] = mv;
+                tried_count += 1;
             }
         }
 
@@ -2583,6 +2631,10 @@ const SCORE_KILLER_2: i32 = 900_000;
 /// Plafond de l'historique, au-delà duquel toutes les valeurs sont divisées par
 /// deux. Sans cela elles finiraient par déborder et par écraser les paliers.
 const HISTORY_MAX: i32 = 800_000;
+
+/// Les tranquilles cherchés avant une coupure que le malus d'historique
+/// retient, au plus (C49). Au-delà, rare, les suivants ne sont pas punis.
+const MALUS_QUIETS: usize = 64;
 
 /// Vrai si le camp au trait est mat.
 ///
@@ -4114,6 +4166,63 @@ mod tests {
         let mut t = search();
         t.remember_quiet(&b, coup, 2, 3, NO_CONTEXT);
         assert!(t.continuation.iter().all(|&v| v == 0));
+    }
+
+    #[test]
+    fn le_malus_punit_les_tranquilles_essayes_et_deborde_par_le_bas() {
+        let b = Board::default();
+        let coup = |uci: &str| cozy_chess::util::parse_uci_move(&b, uci).unwrap();
+        let (e4, d4, f3) = (coup("e2e4"), coup("d2d4"), coup("g1f3"));
+        let papillon = |mv: Move| mv.from as usize * 64 + mv.to as usize;
+        let (adverse, notre) = (5, 9);
+        let mut s = search();
+        s.punish_quiets(&b, &[e4, d4], 3, [Some(adverse), Some(notre)]);
+        // −d² au papillon et sous chacun des deux contextes, par coup essayé…
+        for mv in [e4, d4] {
+            let cible = piece_to(&b, mv);
+            assert_eq!(s.history[papillon(mv)], -9);
+            assert_eq!(s.continuation[adverse * PIECE_TO + cible], -9);
+            assert_eq!(s.continuation[notre * PIECE_TO + cible], -9);
+        }
+        // … et à eux seuls : le coup qui n'a pas été essayé n'y perd rien.
+        assert_eq!(s.history[papillon(f3)], 0);
+        assert_eq!(s.history.iter().filter(|&&v| v != 0).count(), 2);
+        assert_eq!(s.continuation.iter().filter(|&&v| v != 0).count(), 4);
+
+        // Le débordement par le bas divise les DEUX tables…
+        let temoin = 300;
+        let mut t = search();
+        t.history[papillon(e4)] = -HISTORY_MAX;
+        t.history[papillon(f3)] = 1000;
+        t.continuation[temoin] = 1000;
+        t.punish_quiets(&b, &[e4], 1, NO_CONTEXT);
+        assert_eq!(t.history[papillon(e4)], (-HISTORY_MAX - 1) / 2);
+        assert_eq!(t.history[papillon(f3)], 500, "tout le papillon");
+        assert_eq!(t.continuation[temoin], 500, "et toute la continuation");
+        // … et la borne est stricte : l'atteindre n'est pas la dépasser.
+        let mut u = search();
+        u.history[papillon(e4)] = -HISTORY_MAX + 1;
+        u.continuation[temoin] = 1000;
+        u.punish_quiets(&b, &[e4], 1, NO_CONTEXT);
+        assert_eq!(u.history[papillon(e4)], -HISTORY_MAX);
+        assert_eq!(u.continuation[temoin], 1000);
+    }
+
+    #[test]
+    fn une_recherche_punit_des_tranquilles() {
+        // Le branchement : sans l'appel du nœud qui coupe, aucune note ne
+        // serait jamais négative — l'historique ne recevait que des bonus.
+        let limits = Limits {
+            depth: Some(6),
+            ..Limits::default()
+        };
+        let mut s = search();
+        s.go(&Position::startpos(), &limits, |_| {});
+        assert!(s.history.iter().any(|&v| v < 0), "aucun tranquille puni");
+        assert!(
+            s.continuation.iter().any(|&v| v < 0),
+            "aucune continuation punie"
+        );
     }
 
     #[test]
