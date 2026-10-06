@@ -708,22 +708,7 @@ impl Search {
     /// L'évaluation statique de `board`, cherché au ply `ply` : celle du
     /// réseau sur les accumulateurs de ce ply quand il y en a un, sinon la
     /// faite main. Le seul point d'entrée de l'évaluation dans la recherche.
-    ///
-    /// DÉCROISSANCE AVEC LA RÈGLE DES CINQUANTE COUPS (C50) : `× (200 − c) /
-    /// 200`, `c` le compteur des demi-coups sans prise ni coup de pion. Un
-    /// avantage qui ne progresse pas vaut de moins en moins à l'approche de
-    /// la nulle que la règle prononcera — et la recherche, qui ne voit pas si
-    /// loin, cesse de croire que tourner en rond garde l'avantage. Le
-    /// compteur ne dépasse jamais 100 — `cozy-chess` refuse une position
-    /// au-delà et l'y plafonne en jouant —, donc le facteur garde son
-    /// plancher, ½, et le signe de l'évaluation ne change jamais.
     fn static_eval(&self, board: &Board, ply: usize) -> i32 {
-        let clock = i32::from(board.halfmove_clock());
-        self.raw_static_eval(board, ply) * (200 - clock) / 200
-    }
-
-    /// L'évaluation statique sans la décroissance des cinquante coups.
-    fn raw_static_eval(&self, board: &Board, ply: usize) -> i32 {
         let Some(network) = &self.network else {
             return eval::evaluate(board, &self.params);
         };
@@ -4129,28 +4114,6 @@ mod tests {
         let mut t = search();
         t.remember_quiet(&b, coup, 2, 3, NO_CONTEXT);
         assert!(t.continuation.iter().all(|&v| v == 0));
-    }
-
-    #[test]
-    fn l_evaluation_decroit_avec_la_regle_des_cinquante_coups() {
-        // Une dame de plus : un avantage net, dont le signe doit survivre.
-        let evalue = |clock: u32| {
-            let fen = format!("4k3/8/8/8/8/8/8/3QK3 w - - {clock} 60");
-            let board = Board::from_fen(&fen, false).unwrap();
-            let s = search();
-            (s.static_eval(&board, 0), s.raw_static_eval(&board, 0))
-        };
-        let (zero, brute) = evalue(0);
-        assert!(brute > 0);
-        assert_eq!(zero, brute, "à zéro, l'évaluation est intacte");
-        for clock in [1, 50, 99, 100] {
-            let (decrue, brute) = evalue(clock);
-            assert_eq!(decrue, brute * (200 - clock as i32) / 200, "à {clock}");
-        }
-        // Le plancher, ½ : `cozy-chess` refuse un compteur au-delà de cent,
-        // et le signe ne change jamais.
-        assert!(Board::from_fen("4k3/8/8/8/8/8/8/3QK3 w - - 101 60", false).is_err());
-        assert!(evalue(100).0 > 0);
     }
 
     #[test]

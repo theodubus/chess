@@ -1157,7 +1157,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
 rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
 commit.
 
-Référence à la profondeur 7 : 88 863 nœuds.
+Référence à la profondeur 7 : 90 646 nœuds.
 
 Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
 `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
