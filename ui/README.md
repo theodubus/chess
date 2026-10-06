@@ -40,7 +40,7 @@ n’est pas choisi par cette interface.
 
 ### Choisir un moteur d’analyse, notamment Stockfish
 
-Le moteur de jeu reste celui passé au pont. Dans « Options d’analyse » →
+Contre un humain, le moteur de jeu reste celui passé au pont. Dans « Options d’analyse » →
 « Ajouter un moteur local », saisir le chemin absolu du binaire et cliquer
 « Vérifier et ajouter ». Le pont vérifie le fichier exécutable, le nom UCI,
 `uciok`, `readyok`, puis trois recherches (position initiale, camp noir,
@@ -91,8 +91,8 @@ pour obtenir un binaire adapté au système. Aucun binaire Stockfish n’est liv
 
 ## Préparer, jouer, revoir
 
-L’accueil ne montre pas de plateau. Choisir le moteur local ou deux joueurs
-sur cet appareil, puis la cadence. Contre le moteur, choisir Blancs, Noirs ou
+L’accueil ne montre pas de plateau. Choisir le moteur local, deux joueurs
+sur cet appareil ou deux moteurs, puis la cadence. Contre le moteur, choisir Blancs, Noirs ou
 Aléatoire. Le tirage au sort se fait une seule fois par nouvelle partie.
 Les réglages validés sont mémorisés localement ; valeurs initiales : moteur,
 Blancs, 5 minutes + 3 secondes. Tous les anciens préréglages et les cadences
@@ -103,7 +103,10 @@ propose une aide pour lancer le pont. Le mode ne change jamais implicitement.
 
 En jeu, le plateau est centré, entouré des joueurs, des pendules et des commandes.
 L’historique est fermé par défaut : « Coups » l’ouvre à côté sur grand écran,
-ou en dessous sur téléphone. Les options regroupent retournement, évaluation,
+ou en dessous sur téléphone. Son bouton « Exporter PGN » télécharge toute la
+partie réelle, pendant le jeu ou après la fin, même quand une ancienne position
+est sélectionnée. Une partie en cours conserve le résultat `*` ; les noms,
+cadences et la position initiale personnalisée sont exportés. Les options regroupent retournement, évaluation,
 profondeur et export PGN. Le moteur factice est réservé
 aux tests ; les diagnostics UCI ne sont accessibles qu’en développement.
 
@@ -139,6 +142,43 @@ dans l’analyse, sauf dans les dialogues et les champs de saisie.
 On peut le masquer pour revoir la position ; le bouton « Résultat » le réaffiche.
 Parcourir les coups masque aussi cet encart.
 
+### Moteur contre moteur
+
+« Deux moteurs » permet de choisir un moteur UCI pour les Blancs et un autre
+pour les Noirs, dans la même liste que l’analyse et les problèmes. On peut
+ajouter un binaire via « Ajouter un moteur local », sans redémarrer. Choisir
+ShallowRed des deux côtés lance deux processus indépendants. La partie commence
+depuis la position classique par défaut, après que **les deux moteurs** ont terminé leur
+préparation UCI ; cette préparation ne consomme pas leurs pendules.
+
+Chaque camp possède ses propres options de cœurs et de réflexion pendant le
+tour adverse, vérifiées sur le moteur sélectionné. Valeurs initiales : un cœur
+et réflexion anticipée désactivée. « Cadence différente pour les Noirs » permet
+de déséquilibrer les pendules. Les réglages sont conservés pour la prochaine
+partie et pour « Rejouer ».
+
+Le plateau est en mode spectateur : les moteurs jouent automatiquement et les
+coups humains, prémouvements et reprises de coups sont bloqués. L’historique,
+les flèches au clavier, les dessins et le retournement restent disponibles.
+L’évaluation facultative est celle du moteur au trait, du point de vue des
+Blancs ; les deux moteurs peuvent donc avoir des évaluations différentes.
+La profondeur peut également être affichée, séparément pour chaque moteur.
+
+« Mettre en pause » fige les pendules et ferme les recherches des deux camps.
+« Reprendre le match » reconnecte les moteurs sur la même position et tout son
+historique, avec le temps restant. Une panne d’un seul moteur suspend tout le
+match ; « Reconnecter » reprend de la même façon. Une recherche interrompue
+repart à zéro : sa table de transposition n’est pas conservée lors d’une pause.
+
+« Arrêter le match » demande confirmation et conserve les coups avec le
+résultat PGN `*`, sans attribuer de victoire. Mat et nulles suivent les règles
+de chess.js ; comme dans les autres modes, un arrêt au temps reste explicitement
+« Résultat non arbitré » (`*`), avec `Termination "time forfeit"`.
+Le PGN contient les noms UCI des deux joueurs et leurs cadences. Après l’arrêt
+ou la fin, la partie peut être exportée et analysée avec le moteur choisi dans
+la revue ; les moments clés des deux camps sont pris en compte.
+Ce mode est un match ponctuel observable, sans tournoi ni mesure Elo.
+
 ## Gestes sur le plateau
 
 Pendant la partie comme en analyse, `←` / `→` et `<` / `>` parcourent les coups.
@@ -162,7 +202,8 @@ de position. Ils ne changent ni les coups ni le PGN.
 
 ## Cadences et options du moteur
 
-« Éditer le camp » ouvre un échiquier de préparation : retirer plusieurs pièces,
+Le volet replié « Position de départ », en bas de la préparation, contient
+« Éditer le camp ». Il ouvre un échiquier de préparation : retirer plusieurs pièces,
 les déplacer en deux clics, ou les remplacer depuis la palette. Le camp humain
 est verrouillé. La configuration suit la couleur du moteur, y compris après
 un tirage aléatoire. Annuler conserve la configuration précédente ; Réinitialiser
@@ -170,6 +211,17 @@ restaure l’armée classique. Un roi par camp, au plus 16 pièces et 8 pions c�
 moteur, aucun pion en dernière rangée et aucun roi en échec au départ sont requis.
 La position et les droits de roque sont conservés dans le jeu, le ponder, le PGN
 et l’analyse. Les pièces retirées ne sont pas comptées comme des captures.
+
+En mode « Deux moteurs », le même volet propose « Éditer les Blancs » et
+« Éditer les Noirs ». Chaque camp se configure séparément sur la position
+complète ; les pièces adverses sont verrouillées, même si elles ont été déplacées
+dans une configuration précédente. La validation concerne les deux camps
+ensemble : aucun chevauchement, un roi par camp, aucune position initiale en
+échec ou déjà terminée. Les droits de roque suivent les pièces conservées sur
+leurs cases d’origine. La position est mémorisée pour « Rejouer », le PGN et
+l’analyse ; elle reste indépendante du choix des moteurs. « Revenir à la
+position classique » réinitialise les deux camps. Une position personnalisée
+est signalée dans le titre du volet même quand celui-ci reste replié.
 
 Dans la préparation d’une partie contre le bot, « Donner une cadence différente
 au bot » permet de choisir son temps initial et son incrément indépendamment des
@@ -197,6 +249,21 @@ Les cadences asymétriques sont exportées avec `TimeControl "?"` et les en-têt
 complémentaires `WhiteTimeControl` / `BlackTimeControl`, en secondes, afin de ne
 pas annoncer à tort une cadence commune.
 
+Sous les cœurs, un conseil estime le maximum à utiliser à partir des cœurs
+**logiques annoncés par le navigateur** et des limites UCI du moteur. Il réserve
+un cœur pour l’interface quand c’est possible. Contre un humain, le ponder ne
+rajoute pas de moteur concurrent. Entre deux moteurs sans ponder, les recherches
+alternent et chacun peut utiliser le même budget. Dès qu’un des deux active le
+ponder, le conseil partage le budget et réduit encore sa part si l’autre moteur
+est déjà réglé plus haut. Sur un ou deux cœurs, les recherches simultanées et
+l’interface doivent partager les ressources.
+
+« Appliquer le conseil » change le réglage uniquement sur demande. Le conseil
+se met à jour avec les options de l’autre camp ; il ne les change pas automatiquement
+et ne constitue pas une mesure de performance. Le navigateur ne permet pas de
+connaître précisément les cœurs physiques, la charge actuelle ou les limites
+d’un conteneur. Le réglage reste manuel, dans les limites proposées par l’UI.
+
 ## Analyse et affichage
 
 « Importer un PGN », depuis l’accueil ou la revue, accepte du texte collé ou un
@@ -211,6 +278,10 @@ stockage permanent. Une erreur conserve le texte saisi et la revue précédente.
 analyse à 0,5 seconde par position, avec une connexion moteur indépendante.
 La navigation permet de revoir la partie même sans moteur disponible. Les
 onglets « Analyse » et « Coups » regroupent les détails et l’historique.
+Dans « Coups », « Exporter PGN » télécharge le PGN complet de la partie analysée,
+y compris ses en-têtes et ses commentaires d’origine. La sélection d’une position
+ou l’exploration d’une variante ne change pas cet export ; les annotations
+calculées par l’UI ne sont pas ajoutées au fichier.
 
 Chaque position est envoyée avec son historique complet. Le meilleur coup et
 la variante principale sont vérifiés avec chess.js ; cliquer sur un coup de
@@ -241,6 +312,67 @@ comme valeur initiale des deux vues. La profondeur pendant le jeu est optionnell
 masquée par défaut, avec une préférence indépendante mémorisée. Elle reste visible
 dans l’analyse. À deux joueurs, aucune fausse évaluation n’est affichée.
 
+## Résoudre un problème
+
+Depuis l’accueil ou la navigation, ouvrez **Problèmes**. Collez une FEN complète
+(six champs) ou chargez un fichier `.fen` ou `.pgn`, puis cliquez sur
+**Charger la position**. Le plateau affiche le camp au trait avant tout calcul.
+Dans un PGN, choisissez la position initiale (par défaut, avant une éventuelle
+solution écrite) ou la dernière position. Un PGN contenant uniquement une
+position FEN est accepté ; l’import des parties garde son exigence de coups.
+
+Choisissez le moteur d’analyse et un temps maximal de recherche de 1, 3, 10 ou 30
+secondes, puis **Résoudre avec le moteur**. Ce budget est un plafond : le moteur
+peut s’arrêter dès qu’il trouve un mat (ShallowRed le fait), même si vous avez
+choisi 30 secondes. Le score et la profondeur apparaissent
+pendant le calcul. À la fin, le premier coup conseillé est indiqué par une
+flèche et la suite proposée peut être parcourue avec les boutons, les coups
+cliquables et les touches `←` / `→` ou `<` / `>`. L’évaluation affichée concerne
+toujours la position analysée, même pendant la lecture de la suite : la position
+de départ pour la solution initiale, ou celle après votre réponse pour une variante.
+
+Quand le moteur annonce un mat mais fournit une variante tronquée, l’UI lui
+demande de chercher depuis la fin de cette variante, avec le temps restant du
+même budget. Ces recherches gardent l’historique et ne remplacent ni le score
+ni la profondeur de départ. Elles s’arrêtent au mat, à une nulle, à une annonce
+incompatible ou à la fin du budget, sans dépasser la distance de mat annoncée
+ni 128 demi-coups. L’écran indique si la suite affichée atteint réellement le
+mat ou reste incomplète. Une solution peut différer d’une solution historique :
+le moteur choisit une défense et il peut exister plusieurs coups qui matent.
+
+Pour explorer une autre défense, revenez avant un coup du camp adverse avec
+les flèches ou les coups cliquables, puis jouez une autre réponse sur le plateau.
+**Changer cette réponse**, affiché après une réponse adverse sélectionnée,
+revient directement avant ce coup. Le camp du problème est celui qui a le trait
+au chargement ; seul le camp opposé est modifiable dans ce parcours. Une promotion
+ouvre le choix de la pièce.
+
+Le moteur reconstruit la suite depuis votre nouvelle réponse, avec le budget
+sélectionné et ses meilleurs coups proposés pour les deux camps. Les coups
+précédents sont conservés ; toute la fin de la suite est remplacée, y compris
+les réponses choisies plus tard. Vous pouvez donc modifier successivement
+plusieurs réponses adverses. Les coups choisis sont marqués **Votre réponse**
+et le score indique la position après la dernière réponse choisie. **Recalculer
+cette variante** reprend depuis ce point. **Revenir à la solution** restaure la
+suite initiale sans nouveau calcul, en conservant le rang du coup examiné.
+Une interruption ou une erreur laisse le préfixe choisi visible et permet de
+relancer ; les résultats tardifs ne peuvent pas remplacer une autre suite.
+
+**Arrêter**, quitter l’écran ou remplacer le problème annule la recherche.
+Changer de moteur ou de temps efface l’ancienne solution avant le prochain
+calcul. Les entrées invalides sont refusées, y compris un roi adverse déjà
+attaqué, des droits de roque incohérents ou une prise en passant impossible.
+L’historique d’un PGN est conservé pour la dernière position (répétitions
+comprises). Une position déjà terminée ne lance pas le moteur.
+
+Limites : une position à la fois, jusqu’à 1 Mo et 2 000 demi-coups pour un PGN.
+Les collections CSV/EPD et les variantes autres que les échecs classiques ne
+sont pas prises en charge. « Mat en N » rapporte ce qu’annonce le moteur au
+temps choisi ; sans annonce de mat, l’UI présente sa recommandation. La variante
+peut rester incomplète si le temps manque ou si le moteur ne confirme pas son
+annonce. Même menée jusqu’au mat, elle n’est pas une preuve couvrant toutes les
+défenses : l’UI ne construit pas un arbre exhaustif de résolution.
+
 ## Analyse interactive
 
 Un seul écran réunit revue, exercices et variantes. Les flèches `←` / `→`,
@@ -255,6 +387,14 @@ Les deux camps sont jouables ; les flèches remontent la variante et permettent
 de créer d’autres branches. « Revenir à la partie » retrouve le coup sélectionné.
 Les variantes restent accessibles depuis leur point de départ, en mémoire,
 sans modifier le PGN original.
+
+Pendant l’exploration, « Meilleur coup dans cette position » conseille le camp
+au trait après votre coup hypothétique. « Montrer le coup » affiche une flèche
+sur le plateau ; « Jouer ce coup » poursuit la variante, promotions comprises.
+La recommandation attend la fin du calcul et reste masquée pendant une retentative
+sans solution. Un changement de moteur ou une relance invalide ces conseils.
+Le panneau « Détails et meilleure suite » conserve la recommandation avant le
+coup étudié, pour comparer ce choix à celui qui a été joué.
 
 « Réessayer ce coup » revient avant le coup visible et masque solution et
 évaluation jusqu’à la tentative. Il est mis en avant après une erreur du camp
@@ -546,6 +686,13 @@ Les tests couvrent règles, promotions, pendules, scores, transport UCI,
 annuler/refaire, choix du camp, abonnement/désabonnement, abandon, connexion
 tardive, reconnexion, export et analyse. Les tests de pont ouvrent des ports
 locaux. Les tests avec le vrai moteur sont ignorés sans `CHESS_ENGINE_BINARY`.
+
+`src/GameMatch.test.ts` couvre le match automatique : préparation des deux
+moteurs, pendules asymétriques, historique UCI, options distinctes, pause/reprise,
+arrêt, mat/nulle, erreurs, connexions tardives, temps écoulé et ponder.
+`dev/match.test.mjs` vérifie deux vrais processus ShallowRed jusqu’au mat, puis
+ShallowRed contre Stockfish avec ponder, pause/reprise, noms et export PGN.
+Ce second scénario nécessite aussi `CHESS_STOCKFISH_BINARY`.
 
 Avec `npm run dev -- --engines dev/engines.example.json` lancé depuis `ui/`,
 un moteur `stockfish` est configuré

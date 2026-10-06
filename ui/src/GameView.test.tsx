@@ -4,6 +4,9 @@ import GameView from "./GameView";
 import { GameController } from "./GameController";
 import EvaluationBar from "./EvaluationBar";
 import App from "./App";
+import GameSetup from "./GameSetup";
+import GameHistory from "./GameHistory";
+import { DEFAULT_SETUP } from "./preferences";
 import type { SessionSnapshot } from "./engine/UciSession";
 
 const snapshot: SessionSnapshot = {
@@ -13,7 +16,63 @@ const snapshot: SessionSnapshot = {
   log: [],
   analysis: { depth: 12, score: { kind: "cp", value: 125 } },
 };
+
+it("prépare le troisième mode avec deux moteurs et sans réglages de joueur humain", () => {
+  const html = renderToStaticMarkup(<GameSetup initial={{ ...DEFAULT_SETUP, opponent: "match" }}
+    busy={false} error="" onStart={() => {}} onCancel={() => {}} />);
+  expect(html).toContain("Deux moteurs");
+  expect(html).toContain('aria-label="Moteur des Blancs"');
+  expect(html).toContain('aria-label="Moteur des Noirs"');
+  expect(html).toContain("Options des Blancs");
+  expect(html).toContain("Options des Noirs");
+  expect(html).toContain("Lancer le match");
+  expect(html).toContain("Cadence différente pour les Noirs");
+  expect(html).not.toContain("Votre camp");
+  expect(html).not.toContain("Éditer le camp");
+  expect(html).not.toContain("cg-wrap");
+});
+
+it("présente les deux moteurs et les commandes spectateur, avec les indices masqués par défaut", () => {
+  const controller = new GameController(); controller.mode = "match";
+  controller.snapshot = snapshot;
+  vi.spyOn(controller, "snapshotFor").mockImplementation(color => ({ ...snapshot, name: color === "w" ? "ShallowRed" : "Stockfish" }));
+  const props = { controller, showEvaluation: false, onEvaluation: () => {}, onNew: () => {}, onRematch: () => {}, onReview: () => {} };
+  const html = renderToStaticMarkup(<GameView {...props} />);
+  expect(html).toContain("ShallowRed"); expect(html).toContain("Stockfish");
+  expect(html).toContain("Mettre en pause"); expect(html).toContain("Arrêter le match");
+  expect(html).not.toContain("Abandonner"); expect(html).not.toContain("Profondeur 12");
+  expect(html).not.toContain('class="evaluation-bar');
+  controller.pauseMatch();
+  const paused = renderToStaticMarkup(<GameView {...props} />);
+  expect(paused).toContain("Match en pause"); expect(paused).toContain("Reprendre le match");
+  controller.stopMatch();
+  const stopped = renderToStaticMarkup(<GameView {...props} />);
+  expect(stopped).toContain("Sans résultat");
+  expect(stopped).toContain('title="Aucun coup à analyser"');
+  expect(stopped).not.toContain("Temps écoulé");
+});
 afterEach(() => vi.unstubAllGlobals());
+
+it("rend l’édition accessible dans un volet de préparation replié", () => {
+  for (const opponent of ["engine", "match"] as const) {
+    const html = renderToStaticMarkup(<GameSetup initial={{ ...DEFAULT_SETUP, opponent }}
+      busy={false} error="" onStart={() => {}} onCancel={() => {}} />);
+    expect(html).toContain('<details><summary>Position de départ');
+    expect(html).not.toContain('<legend>Camp du moteur</legend>');
+    if (opponent === "match") {
+      expect(html).toContain("Éditer les Blancs"); expect(html).toContain("Éditer les Noirs");
+    } else expect(html).toContain("Éditer le camp");
+  }
+});
+
+it("propose l’export PGN dans les coups pendant et après la partie, y compris en relecture", () => {
+  const controller = new GameController();
+  controller.move("e2", "e4");
+  const render = () => renderToStaticMarkup(<GameHistory controller={controller} selected={0} />);
+  expect(render()).toContain("Exporter PGN");
+  controller.resign();
+  expect(render()).toContain("Exporter PGN");
+});
 
 it("place les actions de fin de partie sur la surface du plateau et permet de masquer le résultat", () => {
   const controller = new GameController();

@@ -14,8 +14,9 @@ import type { Color, Key } from "@lichess-org/chessground/types";
 import type { GameReview } from "./GameReview";
 import { boardFromCommand, StudyTree } from "./StudyTree";
 import { BranchAnalysis } from "./BranchAnalysis";
+import { playStudySuggestion, studySuggestion } from "./studySuggestion";
 import { badMove, notablePositions, moveSummary } from "./study";
-import { estimatedLoss } from "./model";
+import { estimatedLoss, frenchSan } from "./model";
 import { analysisEngineFactory } from "../engine/DevelopmentEngine";
 import { scoreLabel } from "../engine/analysis";
 import Board from "../Board";
@@ -29,6 +30,7 @@ import AnnotationBadge from "./AnnotationBadge";
 import { annotationPlacement } from "./annotationPlacement";
 import { unclassifiedReason } from "./unclassifiedReason";
 import { useMoveKeys } from "../useMoveKeys";
+import { downloadPgn } from "../pgn";
 
 type Branch = {
   tree: StudyTree;
@@ -85,6 +87,7 @@ export default function InteractiveReview({
     null,
   );
   const [retrySearch, setRetrySearch] = useState(0);
+  const [suggestionSource, setSuggestionSource] = useState<string | null>(null);
   useEffect(() => live.subscribe(() => render((value) => value + 1)), [live]);
   useEffect(
     () => focused.subscribe(() => render((value) => value + 1)),
@@ -152,6 +155,18 @@ export default function InteractiveReview({
     !!branch?.retry && branch.node === branch.retryNode && !branch.revealed;
   const canPlay =
     active && walkTarget === null && !promotion && !board.isGameOver();
+  const suggestedMove =
+    !blind && liveState === "complete"
+      ? studySuggestion(board, liveResult)
+      : null;
+  const suggestionKey = JSON.stringify([
+    engineId,
+    reviewRevision,
+    branchCommand,
+    suggestedMove?.lan,
+  ]);
+  const suggestionVisible =
+    !!suggestedMove && suggestionSource === suggestionKey;
   const score = branch
     ? (liveResult?.score ?? (matching ? live.info?.score : null) ?? null)
     : (review.results[selected]?.score ?? null);
@@ -485,7 +500,13 @@ export default function InteractiveReview({
                 autoShapes={
                   blind && highlight?.source === hintSource
                     ? [{ orig: highlight.square, brush: "green" }]
-                    : []
+                    : suggestionVisible && suggestedMove
+                      ? [{
+                          orig: suggestedMove.from,
+                          dest: suggestedMove.to,
+                          brush: "blue",
+                        }]
+                      : []
                 }
                 lastMove={
                   uci ? [uci.slice(0, 2) as Key, uci.slice(2, 4) as Key] : []
@@ -771,25 +792,36 @@ export default function InteractiveReview({
             </button>
           </div>
         ) : pane === "moves" ? (
-          <div className="review-moves" aria-label="Positions de la partie">
-            {review.positions.map((item, index) => (
-              <button
-                className="secondary"
-                key={index}
-                aria-pressed={!branch && index === selected}
-                onClick={() => navigate(index)}
-              >
-                {item.label}
-                {showAnnotations && index > 0 && (
-                  <AnnotationBadge
-                    annotation={annotations[index - 1]}
-                    provisional={review.state !== "complete"}
-                    compact
-                  />
-                )}
-              </button>
-            ))}
-          </div>
+          <section className="review-history" aria-label="Coups de la partie analysée">
+            <div className="history-header">
+              <h2>La partie</h2>
+              <div className="history-actions">
+                <button className="secondary" onClick={() => downloadPgn(review.pgn)}
+                  title="Télécharger toute la partie analysée au format PGN">
+                  Exporter PGN
+                </button>
+              </div>
+            </div>
+            <div className="review-moves" aria-label="Positions de la partie">
+              {review.positions.map((item, index) => (
+                <button
+                  className="secondary"
+                  key={index}
+                  aria-pressed={!branch && index === selected}
+                  onClick={() => navigate(index)}
+                >
+                  {item.label}
+                  {showAnnotations && index > 0 && (
+                    <AnnotationBadge
+                      annotation={annotations[index - 1]}
+                      provisional={review.state !== "complete"}
+                      compact
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </section>
         ) : (
           <div className="review-details">
             <h2>
@@ -981,6 +1013,59 @@ export default function InteractiveReview({
                           ? "Échec et mat."
                           : "Position nulle."}
                       </strong>
+                    )}
+                    {!board.isGameOver() && (
+                      <div
+                        className="study-suggestion"
+                        aria-label="Conseil du moteur pour la position explorée"
+                      >
+                        <span>Meilleur coup dans cette position</span>
+                        {suggestedMove ? (
+                          <>
+                            <strong>
+                              {board.turn() === "w" ? "Blancs" : "Noirs"} :{" "}
+                              {frenchSan(suggestedMove.san)}
+                            </strong>
+                            <div className="explanation-actions">
+                              <button
+                                className="secondary"
+                                disabled={!active}
+                                aria-pressed={suggestionVisible}
+                                onClick={() => {
+                                  setDemo(null);
+                                  setSuggestionSource(suggestionVisible ? null : suggestionKey);
+                                }}
+                              >
+                                {suggestionVisible
+                                  ? "Masquer le coup"
+                                  : "Montrer le coup"}
+                              </button>
+                              <button
+                                className="secondary"
+                                disabled={!canPlay}
+                                onClick={() => {
+                                  if (!branch || !canPlay || liveState !== "complete") return;
+                                  const next = playStudySuggestion(
+                                    branch.tree, branch.node, liveResult,
+                                  );
+                                  if (next === null) return;
+                                  setDemo(null);
+                                  setPromotion(null);
+                                  setBranch({ ...branch, node: next });
+                                }}
+                              >
+                                Jouer ce coup
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <span className="hint">
+                            {pending
+                              ? "Recherche en cours…"
+                              : "Aucun conseil disponible pour cette position."}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}

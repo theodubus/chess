@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
 import { inspectDevelopmentEngine } from "./engine/DevelopmentEngine";
 import type { EngineOptions, EngineCapabilities } from "./engine/options";
+import { logicalCores, threadAdvice } from "./engine/threadAdvice";
 
 export default function EngineSettings({
   options,
   onChange,
+  engineId = "default",
+  prefix = "engine",
+  match = false,
+  opponentOptions,
 }: {
   options: EngineOptions;
   onChange: (options: EngineOptions) => void;
+  engineId?: string;
+  prefix?: string;
+  match?: boolean;
+  opponentOptions?: EngineOptions;
 }) {
   const [capabilities, setCapabilities] = useState<EngineCapabilities | null>(
     null,
@@ -16,7 +25,9 @@ export default function EngineSettings({
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    void inspectDevelopmentEngine(controller.signal)
+    setCapabilities(null);
+    setError("");
+    void inspectDevelopmentEngine(controller.signal, engineId)
       .then((result) => {
         if (!controller.signal.aborted) setCapabilities(result.capabilities);
       })
@@ -24,9 +35,11 @@ export default function EngineSettings({
         if (!controller.signal.aborted) setError(error.message);
       });
     return () => controller.abort();
-  }, [attempt]);
-  const cores = Math.max(1, navigator.hardwareConcurrency || 1);
+  }, [attempt, engineId]);
+  const cores = logicalCores(navigator.hardwareConcurrency);
   const max = Math.min(cores, capabilities?.threads?.max ?? 1);
+  const advice = threadAdvice(cores, options, opponentOptions);
+  const recommended = Math.max(capabilities?.threads?.min ?? 1, Math.min(advice.limit, max));
   return (
     <div className="engine-settings-body">
       {!capabilities && !error && (
@@ -59,10 +72,9 @@ export default function EngineSettings({
         />
         <span className="switch-track" aria-hidden="true" />
         <span className="setting-copy">
-          <strong>Réfléchir pendant mon tour</strong>
+          <strong>{match ? "Réfléchir pendant le tour adverse" : "Réfléchir pendant mon tour"}</strong>
           <span className="setting-help">
-            Le moteur prépare sa réponse pendant votre réflexion. Votre pendule
-            continue normalement.
+            {match ? "Ce moteur prépare sa réponse pendant la recherche de l’autre moteur." : "Le moteur prépare sa réponse pendant votre réflexion. Votre pendule continue normalement."}
           </span>
         </span>
       </label>
@@ -71,8 +83,8 @@ export default function EngineSettings({
       )}
       <div className="thread-setting">
         <div className="setting-copy">
-          <label htmlFor="engine-threads">Cœurs de calcul</label>
-          <p className="setting-help" id="threads-help">
+          <label htmlFor={`${prefix}-threads`}>Cœurs de calcul</label>
+          <p className="setting-help" id={`${prefix}-threads-help`}>
             {capabilities?.threads
               ? `Jusqu’à ${max} cœurs logiques. Plus de cœurs sollicite davantage le processeur.`
               : "Un seul cœur tant que le moteur n’annonce pas cette option."}
@@ -99,10 +111,10 @@ export default function EngineSettings({
             −
           </button>
           <input
-            id="engine-threads"
+            id={`${prefix}-threads`}
             type="number"
             name="engine-threads"
-            aria-describedby="threads-help"
+            aria-describedby={`${prefix}-threads-help${capabilities?.threads ? ` ${prefix}-thread-advice` : ""}`}
             min={capabilities?.threads?.min ?? 1}
             max={max}
             step="1"
@@ -130,6 +142,27 @@ export default function EngineSettings({
           </button>
         </div>
       </div>
+      {capabilities?.threads && (
+        <div className="thread-advice" id={`${prefix}-thread-advice`}>
+          <strong>Conseil : jusqu’à {recommended} cœur{recommended > 1 ? "s" : ""} pour ce moteur</strong>
+          <p className="setting-help">
+            {advice.detected} cœur{advice.detected > 1 ? "s" : ""} logique{advice.detected > 1 ? "s" : ""} annoncé{advice.detected > 1 ? "s" : ""} par le navigateur.
+            {advice.detected > (advice.shared ? 2 : 1)
+              ? " On garde une marge pour l’interface."
+              : " Les recherches et l’interface partagent le processeur."}{" "}
+            {opponentOptions
+              ? advice.shared
+                ? `Avec le ponder, les deux moteurs peuvent calculer simultanément. Le conseil partage les ressources et tient compte des ${advice.otherThreads} cœur${advice.otherThreads > 1 ? "s" : ""} de l’autre moteur.`
+                : "Sans ponder, les recherches alternent : chaque moteur peut utiliser le même budget de cœurs."
+              : options.ponder ? "Le moteur utilisera aussi ces cœurs pendant votre tour." : "Ce budget concerne le moteur pendant son tour."}
+          </p>
+          {options.threads > recommended && <p className="setting-help">Votre réglage dépasse ce conseil ; vous pouvez le conserver.</p>}
+          <button type="button" className="text-button" disabled={options.threads === recommended}
+            onClick={() => onChange({ ...options, threads: recommended })}>
+            Appliquer le conseil
+          </button>
+        </div>
+      )}
     </div>
   );
 }

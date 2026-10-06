@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { GameController } from "./GameController";
 
 import { frenchSan } from "./review/model";
+import { downloadPgn } from "./pgn";
 
 export default function GameHistory({
   controller,
@@ -35,6 +36,12 @@ export default function GameHistory({
     <section className="game-history" aria-labelledby="history-title">
       <div className="history-header">
         <h2 id="history-title">La partie</h2>
+        <div className="history-actions">
+          <button className="secondary" onClick={() => downloadPgn(controller)}
+            title="Télécharger toute la partie au format PGN">
+            Exporter PGN
+          </button>
+        </div>
       </div>
       <div
         ref={list}

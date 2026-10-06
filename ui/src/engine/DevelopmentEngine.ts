@@ -154,11 +154,10 @@ export async function connectDevelopmentEngine(
 }
 
 /** Connexion courte dédiée à la préparation, annulée quand on quitte le formulaire. */
-export async function inspectDevelopmentEngine(signal: AbortSignal) {
+export async function inspectDevelopmentEngine(signal: AbortSignal, id = "default") {
   let session: UciSession | undefined;
-  const engine = await connectDevelopmentEngine((message) =>
-    session?.fail(message),
-  );
+  const failure = (message: string) => session?.fail(message);
+  const engine = await (id === "default" ? connectDevelopmentEngine(failure) : analysisEngineFactory(id)(failure));
   if (signal.aborted) {
     await engine.dispose();
     throw new Error("Vérification annulée.");

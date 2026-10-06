@@ -38,7 +38,8 @@ function Player({
     }, 100);
     return () => clearInterval(timer);
   }, [controller]);
-  const engine = controller.mode && color !== controller.humanSide;
+  const engine = controller.isEnginePlayer(color);
+  const snapshot = controller.snapshotFor(color);
   const running = controller.clock.runningColor === color;
   return (
     <div className={`player ${running ? "active" : ""}`}>
@@ -48,7 +49,7 @@ function Player({
       <div className="player-name">
         <strong>
           {engine
-            ? controller.snapshot?.name || "Moteur local"
+            ? snapshot?.name || "Moteur local"
             : controller.mode
               ? "Vous"
               : color === "w"
@@ -61,8 +62,8 @@ function Player({
               ? "Blancs"
               : "Noirs"
             : "Joueur local"}
-          {engine && showDepth && controller.snapshot?.analysis?.depth != null
-            ? ` · Profondeur ${controller.snapshot.analysis.depth}`
+          {engine && showDepth && snapshot?.analysis?.depth != null
+            ? ` · Profondeur ${snapshot.analysis.depth}`
             : ""}
         </small>
         <CapturedPieces captures={captures} balance={balance} side={color} />
@@ -92,7 +93,7 @@ export default function GameView({
   onReview: () => void;
 }) {
   const [orientation, setOrientation] = useState<Color>(
-    controller.mode && controller.humanSide === "b" ? "black" : "white",
+    controller.mode && !controller.isMatch && controller.humanSide === "b" ? "black" : "white",
   );
   const [options, setOptions] = useState(false);
   const [resign, setResign] = useState(false);
@@ -138,6 +139,7 @@ export default function GameView({
   const evaluation = Boolean(controller.mode && showEvaluation && !browsing);
   const status = controller.finished
     ? controller.status
+    : controller.paused ? controller.status
     : controller.snapshot?.state === "error"
       ? "Partie suspendue · Moteur indisponible"
       : controller.snapshot?.state === "connecting"
@@ -162,7 +164,7 @@ export default function GameView({
               : (["w", "b"] as const)
                   .map(
                     (color) =>
-                      `${controller.mode ? (color === controller.humanSide ? "Vous" : "Bot") : color === "w" ? "Blancs" : "Noirs"} ${controller.clock.controls[color].initialMs / 60000} + ${controller.clock.controls[color].incrementMs / 1000}`,
+                      `${controller.mode && !controller.isMatch ? (color === controller.humanSide ? "Vous" : "Bot") : color === "w" ? "Blancs" : "Noirs"} ${controller.clock.controls[color].initialMs / 60000} + ${controller.clock.controls[color].incrementMs / 1000}`,
                   )
                   .join(" · ")}
           </span>
@@ -201,7 +203,7 @@ export default function GameView({
             onPremove={(from, to) => controller.setPremove(from, to)}
             onCancelPremove={() => controller.cancelPremove()}
             onMove={
-              browsing
+              browsing || controller.isMatch
                 ? undefined
                 : (from, to) => {
                     controller.move(from, to);
@@ -228,10 +230,11 @@ export default function GameView({
                   <p>{controller.status}</p>
                   <strong className="result-score">
                     {controller.outcome?.result === "*"
-                      ? "Temps écoulé"
+                      ? controller.outcome.reason === "stopped" ? "Sans résultat" : "Temps écoulé"
                       : controller.outcome?.result}
                   </strong>
-                  <button onClick={onReview}>Analyser la partie</button>
+                  <button onClick={onReview} disabled={moves.length === 0}
+                    title={moves.length === 0 ? "Aucun coup à analyser" : undefined}>Analyser la partie</button>
                   <div className="choice-row">
                     <button className="secondary" onClick={onRematch}>
                       Rejouer
@@ -270,7 +273,7 @@ export default function GameView({
           <div className="replay-notice" role="status">
             <span>
               Relecture · {last ? frenchSan(last.san) : "Position initiale"}
-              {!controller.finished ? " · La pendule continue" : ""}
+              {!controller.finished ? controller.clock.runningColor ? " · La pendule continue" : " · Pendules suspendues" : ""}
             </span>
             <button
               className="text-button"
@@ -313,12 +316,18 @@ export default function GameView({
               </button>
             )}
             {!controller.finished && (
+              <>
+              {controller.isMatch && controller.snapshot?.state !== "error" && <button className="secondary" disabled={controller.snapshot?.state === "connecting"}
+                onClick={() => controller.paused ? void controller.reconnect() : controller.pauseMatch()}>
+                {controller.paused ? "Reprendre le match" : "Mettre en pause"}
+              </button>}
               <button
                 className="text-button danger"
                 onClick={() => setResign(true)}
               >
-                Abandonner
+                {controller.isMatch ? "Arrêter le match" : "Abandonner"}
               </button>
+              </>
             )}
           </div>
         </div>
@@ -416,11 +425,11 @@ export default function GameView({
       )}
       {resign && !controller.finished && (
         <Dialog
-          title={`Abandonner avec les ${side === "w" ? "Blancs" : "Noirs"} ?`}
+          title={controller.isMatch ? "Arrêter ce match ?" : `Abandonner avec les ${side === "w" ? "Blancs" : "Noirs"} ?`}
           onClose={() => setResign(false)}
         >
           <p>
-            L’autre camp remporte la partie. Vous pourrez ensuite l’analyser.
+            {controller.isMatch ? "Les coups joués sont conservés, sans attribuer de victoire. Vous pourrez exporter et analyser la partie." : "L’autre camp remporte la partie. Vous pourrez ensuite l’analyser."}
           </p>
           <div className="dialog-actions">
             <button
@@ -430,7 +439,7 @@ export default function GameView({
                 setResign(false);
               }}
             >
-              Confirmer l’abandon
+              {controller.isMatch ? "Confirmer l’arrêt" : "Confirmer l’abandon"}
             </button>
             <button className="secondary" onClick={() => setResign(false)}>
               Continuer la partie

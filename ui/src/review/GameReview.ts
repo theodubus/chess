@@ -55,7 +55,7 @@ export class GameReview {
   private rejectReady?: (reason: Error) => void;
   private listeners = new Set<() => void>();
 
-  constructor(pgn: string) {
+  constructor(readonly pgn: string) {
     this.positions = gamePositions(pgn);
     this.facts = this.positions.map(moveFacts);
     this.results = this.positions.map(() => null);

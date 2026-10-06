@@ -1,11 +1,11 @@
-import { handicapPosition } from "./handicap";
+import { handicapPosition, matchPosition } from "./handicap";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { GameController } from "./GameController";
 import GameSetup from "./GameSetup";
 import GameView from "./GameView";
 import Dialog from "./Dialog";
 import ImportPgnDialog from "./ImportPgnDialog";
-import { connectDevelopmentEngine } from "./engine/DevelopmentEngine";
+import { connectDevelopmentEngine, analysisEngineFactory } from "./engine/DevelopmentEngine";
 import {
   evaluationPreference,
   gameTimeControls,
@@ -17,12 +17,15 @@ import {
 
 // La bibliothèque d'ouvertures n'est utile qu'à l'ouverture de l'analyse.
 const ReviewPanel = lazy(() => import("./review/ReviewPanel"));
+const ProblemPanel = lazy(() => import("./problems/ProblemPanel"));
 
 export default function App() {
   const [controller, setController] = useState<GameController | null>(null);
-  const [screen, setScreen] = useState<"setup" | "game" | "review">("setup");
+  const [screen, setScreen] = useState<"setup" | "game" | "review" | "problem">("setup");
+  const [problemOpened, setProblemOpened] = useState(false);
   const [setup, setSetup] = useState(readSetup);
   const [gameSetup, setGameSetup] = useState(readSetup);
+  const [gameVersion, setGameVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -73,14 +76,14 @@ export default function App() {
     setError("");
     setBusy(true);
     setScreen("setup");
-    const humanSide = resolveSide(next.side);
+    const humanSide = next.opponent === "match" ? "w" : resolveSide(next.side);
     const fresh = new GameController({
       timeControl: gameTimeControls(next, humanSide),
       humanSide,
       initialFen:
         next.opponent === "engine"
           ? handicapPosition(next.handicap, humanSide)
-          : undefined,
+          : next.opponent === "match" ? matchPosition(next.matchArmies) : undefined,
       engineOptions: next.engineOptions,
     });
     const activate = () => {
@@ -90,6 +93,7 @@ export default function App() {
       void current.current?.dispose();
       current.current = fresh;
       setController(fresh);
+      setGameVersion(value => value + 1);
       setGameSetup(next);
       setReviewPgn("");
       setBusy(false);
@@ -107,7 +111,11 @@ export default function App() {
       }
     });
     candidate.current = { controller: fresh, unsubscribe };
-    await fresh.start(
+    if (next.opponent === "match") await fresh.startMatch({
+      w: { factory: analysisEngineFactory(next.matchEngines.w.id), options: next.matchEngines.w.options },
+      b: { factory: analysisEngineFactory(next.matchEngines.b.id), options: next.matchEngines.b.options },
+    });
+    else await fresh.start(
       next.opponent === "engine" ? connectDevelopmentEngine : undefined,
     );
     if (next.opponent === "human") activate();
@@ -122,12 +130,16 @@ export default function App() {
   function openReview() {
     if (!controller?.finished) return;
     setReviewPgn(controller.exportPgn());
-    setReviewSide(controller.mode ? controller.humanSide : "both");
+    setReviewSide(controller.mode && !controller.isMatch ? controller.humanSide : "both");
     setScreen("review");
   }
   function toggleEvaluation(view: "play" | "review", show: boolean) {
     savePreference(`chess-ui.evaluation.${view}`, String(show));
     (view === "play" ? setPlayEvaluation : setReviewEvaluation)(show);
+  }
+  function openProblems() {
+    setProblemOpened(true);
+    setScreen("problem");
   }
   const reviewAvailable = !!reviewPgn;
   return (
@@ -165,6 +177,11 @@ export default function App() {
               Nouvelle partie
             </button>
             {(!controller || controller.finished) && (
+              <button className="text-button" aria-current={screen === "problem" ? "page" : undefined} onClick={openProblems}>
+                Problèmes
+              </button>
+            )}
+            {(!controller || controller.finished) && (
               <button
                 className="text-button"
                 onClick={() => setImporting(true)}
@@ -196,6 +213,9 @@ export default function App() {
             >
               Importer un PGN
             </button>
+            <button className="secondary" disabled={busy} onClick={openProblems}>
+              Problèmes
+            </button>
             {reviewAvailable && (
               <button
                 className="text-button"
@@ -210,6 +230,7 @@ export default function App() {
       )}
       {screen === "game" && controller && (
         <GameView
+          key={gameVersion}
           controller={controller}
           showEvaluation={playEvaluation}
           onEvaluation={(show) => toggleEvaluation("play", show)}
@@ -239,14 +260,18 @@ export default function App() {
           </Suspense>
         </div>
       )}
+      {problemOpened && <div hidden={screen !== "problem"}>
+        <Suspense fallback={<div className="review-loading-splash" role="status">Chargement des problèmes…</div>}>
+          <ProblemPanel active={screen === "problem"} />
+        </Suspense>
+      </div>}
       {confirmLeave && controller && (
         <Dialog
           title="Quitter cette partie ?"
           onClose={() => setConfirmLeave(false)}
         >
           <p>
-            La partie sera terminée par abandon. La pendule continue tant que
-            vous n’avez pas confirmé.
+            {controller.isMatch ? "Le match sera arrêté sans attribuer de victoire. Vous pourrez exporter et analyser les coups joués." : "La partie sera terminée par abandon. La pendule continue tant que vous n’avez pas confirmé."}
           </p>
           <div className="dialog-actions">
             <button
@@ -257,7 +282,7 @@ export default function App() {
                 setScreen("setup");
               }}
             >
-              Abandonner et revenir à l’accueil
+              {controller.isMatch ? "Arrêter et revenir à l’accueil" : "Abandonner et revenir à l’accueil"}
             </button>
             <button
               className="secondary"

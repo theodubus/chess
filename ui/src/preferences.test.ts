@@ -56,6 +56,37 @@ it("restaure les anciennes préférences sans activer de nouvelles options", () 
   });
   expect(readSetup().engineOptions).toEqual({ ponder: false, threads: 1 });
   expect(readSetup().engineTimeControl).toBeNull();
+  expect(readSetup().matchEngines).toEqual(DEFAULT_SETUP.matchEngines);
+  expect(readSetup().matchArmies).toEqual({ w: null, b: null });
+});
+
+it("restaure séparément le choix et les options des deux moteurs d’un match", () => {
+  const setup = { ...DEFAULT_SETUP, opponent: "match", matchEngines: {
+    w: { id: "default", options: { ponder: true, threads: 2 } },
+    b: { id: "stockfish", options: { ponder: false, threads: 4 } },
+  } };
+  vi.stubGlobal("localStorage", { getItem: () => JSON.stringify(setup) });
+  expect(readSetup()).toEqual(setup);
+});
+
+it("valide les identifiants et options sauvegardés sans les transmettre aveuglément au pont", () => {
+  vi.stubGlobal("localStorage", { getItem: () => JSON.stringify({ ...DEFAULT_SETUP, opponent: "match", matchEngines: {
+    w: { id: "../engine?path=bad", options: { ponder: "true", threads: -3 } },
+    b: { id: "local_engine-2", options: { ponder: true, threads: 1.5 } },
+  } }) });
+  expect(readSetup().matchEngines).toEqual({
+    w: { id: "default", options: { ponder: false, threads: 1 } },
+    b: { id: "local_engine-2", options: { ponder: true, threads: 1 } },
+  });
+});
+
+it("attache les cadences du match aux couleurs sans tenir compte de l’ancien camp humain", () => {
+  const setup = { ...DEFAULT_SETUP, opponent: "match" as const,
+    engineTimeControl: { initialMs: 60000, incrementMs: 1000 } };
+  for (const side of ["w", "b"] as const) {
+    expect(gameTimeControls(setup, side)).toEqual({ w: setup.timeControl, b: setup.engineTimeControl });
+    expect(gameTimeControls({ ...setup, engineTimeControl: null }, side)).toEqual({ w: setup.timeControl, b: setup.timeControl });
+  }
 });
 it("valide aussi les temps du bot et les réglages moteur sauvegardés", () => {
   vi.stubGlobal("localStorage", {

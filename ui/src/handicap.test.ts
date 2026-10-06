@@ -5,6 +5,9 @@ import {
   defaultArmy,
   readHandicap,
   handicapPosition,
+  matchPosition,
+  matchArmyError,
+  readMatchArmies,
 } from "./handicap";
 import { GameController } from "./GameController";
 import { DEFAULT_SETUP, readSetup } from "./preferences";
@@ -42,6 +45,41 @@ it("garde la position habituelle sans handicap", () => {
   expect(handicapPosition(null, "w")).toBe(DEFAULT_POSITION);
   expect(handicapPosition(null, "b")).toBe(DEFAULT_POSITION);
   expect(handicapPosition(defaultArmy(), "w")).toBe(DEFAULT_POSITION);
+});
+
+it("combine les deux camps personnalisés et ajuste leurs droits de roque indépendamment", () => {
+  const w = defaultArmy(), b = defaultArmy(); delete w.a8; delete b.h8;
+  const fen = matchPosition({ w, b });
+  const board = new Chess(fen);
+  expect(board.get("a1")).toBeUndefined(); expect(board.get("h8")).toBeUndefined();
+  expect(board.getCastlingRights("w")).toEqual({ k: true, q: false });
+  expect(board.getCastlingRights("b")).toEqual({ k: false, q: true });
+  for (const san of ["e4", "e5", "Nf3"]) board.move(san);
+  const restored = new Chess(); restored.loadPgn(board.pgn());
+  expect(restored.fen()).toBe(board.fen());
+  expect(restored.getHeaders().FEN).toBe(fen);
+  expect(matchPosition({ w: null, b: null })).toBe(DEFAULT_POSITION);
+});
+
+it("refuse les collisions entre camps, les rois en échec et les armées incomplètes", () => {
+  const w = defaultArmy(), b = defaultArmy(); delete w.b8; delete b.b8;
+  w.c5 = "n"; b.c4 = "n";
+  expect(matchArmyError({ w, b })).toContain("case c4");
+  expect(() => matchPosition({ w, b })).toThrow("case c4");
+  const checking = defaultArmy(); delete checking.b8; checking.f3 = "n";
+  expect(matchArmyError({ w: null, b: checking })).toContain("échec");
+  expect(readMatchArmies({ w: null, b: { e8: "q" } })).toEqual({ w: null, b: null });
+});
+
+it("valide et restaure la position combinée plutôt que chacun des camps face à une armée classique", () => {
+  const w = defaultArmy(), b = defaultArmy(); delete w.b8; w.f3 = "n";
+  delete b.e8; delete b.d8; b.d8 = "k";
+  expect(armyError(w)).toContain("échec");
+  expect(matchArmyError({ w, b })).toBeNull();
+  expect(readMatchArmies({ w, b })).toEqual({ w, b });
+  const board = new Chess(matchPosition({ w, b }));
+  expect(board.get("f6")).toEqual({ color: "w", type: "n" });
+  expect(board.get("d8")).toEqual({ color: "b", type: "k" });
 });
 it("valide les rois, les pions, les effectifs et protège le camp humain", () => {
   const original = defaultArmy();

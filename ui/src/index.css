@@ -158,6 +158,11 @@ summary:focus-visible,
   margin: 0 0 24px;
   min-width: 0;
 }
+.setup-card .match-engine-setup { border-top:1px solid #ffffff16; padding-top:16px; }
+.match-engine-setup .engine-settings { margin-top:12px; }
+.position-settings summary { font-size:13px; color:#a9b8ae; cursor:pointer; }
+.position-settings summary span { margin-left:10px; font-size:11px; color:#e9cb87; }
+.position-settings .setting-help { margin:12px 0; }
 .setup-card legend {
   font-size: 13px;
   font-weight: 600;
@@ -209,7 +214,8 @@ label {
   font-size: 13px;
   color: #b9c7be;
 }
-label:not(.evaluation-toggle):not(.annotation-toggle) {
+/* :where évite que la règle générique prenne le dessus sur les contrôles personnalisés. */
+label:where(:not(.evaluation-toggle, .annotation-toggle, .depth-toggle, .setting-switch)) {
   display: grid;
   gap: 8px;
 }
@@ -635,7 +641,8 @@ textarea {
   font-size: 12px;
   color: #e7ddc8;
 }
-.evaluation-toggle {
+.evaluation-toggle,
+.depth-toggle {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -643,6 +650,7 @@ textarea {
   cursor: pointer;
 }
 .evaluation-toggle input,
+.depth-toggle input,
 .annotation-toggle input {
   accent-color: #d8bd80;
   width: 18px;
@@ -829,11 +837,19 @@ dialog p {
   padding: 7px 8px;
   font-size: 11px;
 }
+.review-history {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  max-height: calc(100dvh - 215px);
+}
+.review-history .history-header {
+  flex-shrink: 0;
+}
 .review-moves {
   display: grid;
   gap: 5px;
-  padding: 12px;
-  max-height: calc(100dvh - 215px);
+  min-height: 0;
   overflow: auto;
 }
 .review-moves button {
@@ -1037,7 +1053,7 @@ dialog p {
     max-height: none;
     padding: 14px;
   }
-  .review-moves {
+  .review-history {
     max-height: 260px;
   }
   .desktop-chart {
@@ -1079,7 +1095,7 @@ dialog p {
   }
   .move-list,
   .review-details,
-  .review-moves {
+  .review-history {
     max-height: 260px;
   }
 }
@@ -1110,7 +1126,7 @@ dialog p {
 }
 @media (max-width: 650px) {
   .review-details,
-  .review-moves {
+  .review-history {
     max-height: max(180px, calc(100dvh - 645px));
     overflow: auto;
   }
@@ -1187,11 +1203,6 @@ dialog p {
 }
 .replay-notice button {
   font-size: 11px;
-}
-.depth-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 @media (max-width: 650px) {
   .workspace.play-workspace,
@@ -1397,6 +1408,33 @@ dialog p {
 .study-branches h3 { flex-basis:100%; }
 .study-evaluation { display:flex; flex-direction:column; gap:8px; border:1px solid #d8bd8030; border-radius:8px; padding:12px; font-size:13px; }
 .study-evaluation > span { color:#acbcb1; font-size:12px; }
+.study-suggestion { display:flex; flex-direction:column; gap:8px; border-top:1px solid #d8bd8030; padding-top:12px; }
+.study-suggestion > span:first-child { color:#acbcb1; font-size:12px; }
+.problem-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin:0 auto 20px; max-width:1040px; }
+.problem-heading h1 { font:400 30px Georgia,serif; margin:0 0 8px; }
+.problem-heading p { color:#acbcb1; margin:0; font-size:13px; }
+.problem-loader { max-width:640px; margin:auto; }
+.problem-workspace .board-column { width:min(100%,calc(100dvh - 240px)); justify-self:center; }
+.problem-board-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.problem-board-heading p { margin:0; }
+.problem-details { display:grid; gap:16px; min-width:0; padding:20px; }
+.problem-details h2,.problem-details h3,.problem-details p { margin:0; overflow-wrap:anywhere; }
+.problem-details h2 { font:400 23px Georgia,serif; }
+.problem-result h3 { font-size:15px; margin-top:8px; }
+.problem-variation-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.problem-variation-actions:empty { display:none; }
+.problem-variant-label,.problem-reply-tag { color:#d8bd80; }
+.problem-chosen-reply { display:flex; flex-direction:column; gap:3px; border-color:#d8bd8060; }
+.problem-reply-tag { font-size:10px; font-weight:400; }
+.problem-progress { display:flex; align-items:center; flex-wrap:wrap; gap:10px; font-size:13px; color:#d8bd80; }
+.problem-progress button { flex-basis:100%; }
+.problem-fen { color:#acbcb1; font-size:12px; }
+.problem-fen summary { cursor:pointer; }
+.problem-fen code { display:block; overflow-wrap:anywhere; padding-top:10px; }
+@media(max-width:650px) {
+ .problem-workspace .board-column,.problem-details { width:100%; }
+ .problem-heading { margin-bottom:12px; }
+}
 .retry-invitation,.retry-feedback { background:#d8bd8010; border:1px solid #d8bd8040; border-radius:8px; padding:14px; }
 .retry-invitation p { margin-bottom:12px; }
 .retry-feedback.success { border-color:#80b785; background:#80b78520; }
@@ -1502,6 +1540,9 @@ dialog p {
 .setting-copy strong, .setting-copy label { color: #eeeae0; font-size: 14px; font-weight: 600; }
 .thread-setting { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid #ffffff20; border-radius: 12px; }
 .thread-setting .setting-copy { flex: 1; }
+.thread-advice { border-left:2px solid #d8bd8066; padding:0 0 0 12px; }
+.thread-advice strong { font-size:13px; }
+.thread-advice p { margin:6px 0; }
 .number-stepper { display: flex; flex: 0 0 auto; align-items: stretch; border: 1px solid #ffffff30; border-radius: 8px; overflow: hidden; }
 .number-stepper button { width: 36px; min-height: 42px; padding: 0; border: 0; border-radius: 0; font-size: 20px; }
 .number-stepper input { width: 48px; padding: 6px 2px; border: 0; border-inline: 1px solid #ffffff20; border-radius: 0; text-align: center; font-variant-numeric: tabular-nums; appearance: textfield; }

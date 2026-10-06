@@ -4,6 +4,11 @@ export const MAX_PGN_BYTES = 1024 * 1024;
 
 /** Normaliser une seule partie avant de remplacer la revue courante. */
 export function importPgn(text: string) {
+  return readPgn(text).pgn();
+}
+
+/** Les problèmes peuvent fournir une FEN sans coups ; les imports de parties en exigent. */
+export function readPgn(text: string, { allowEmpty = false } = {}) {
   const source = text.replace(/^\uFEFF/, "").trim();
   if (!source) throw new Error("Collez un PGN ou choisissez un fichier .pgn.");
   if (new TextEncoder().encode(source).length > MAX_PGN_BYTES)
@@ -36,8 +41,8 @@ export function importPgn(text: string) {
       "Seules les parties d’échecs classiques sont prises en charge.",
     );
   const count = game.history().length;
-  if (!count) throw new Error("Le PGN ne contient aucun coup à analyser.");
+  if (!count && !allowEmpty) throw new Error("Le PGN ne contient aucun coup à analyser.");
   if (count > 2000)
     throw new Error("Cette partie dépasse la limite de 2 000 demi-coups.");
-  return game.pgn();
+  return game;
 }
