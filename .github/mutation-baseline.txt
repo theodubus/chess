@@ -32,8 +32,8 @@ perft.rs 1
 bench.rs 2
 see.rs 2
 nnue.rs 1
-search.rs 39
-eval.rs 89
+search.rs 42
+eval.rs 104
 
 # ---------------------------------------------------------------------------
 # Pourquoi ces plafonds ne sont pas zéro
@@ -44,6 +44,65 @@ eval.rs 89
 # porte sur LA FORCE DE JEU. Le SPRT juge la seconde catégorie, et aucun test
 # unitaire ne peut trancher à sa place — pire, un test qui fige une valeur
 # d'évaluation empêche le SPRT de la déplacer.
+#
+# search.rs — 42 et eval.rs — 104, RELEVÉS le 6 oct. 2026 (run 37418116645,
+#   `main` à `123efb9` : le premier balayage hebdomadaire après le groupe du
+#   n° 9 — C32, puis C33, C34, C36, C38 et C39 composés). Le cliquet a cassé
+#   dans les deux fichiers (issue #149).
+#
+#   search.rs — 715 mutants, 594 attrapés, 30 inviables, 47 expirés : 44
+#   survivants. Les 39 d'avant un pour un, et CINQ de plus. La prédiction
+#   écrite avant disait « entre 39 et 45 » : elle tient.
+#     · Le `ply + 1` qui note `None` pour l'enfant du coup nul, en `ply - 1`.
+#       Du code d'avant le groupe, attrapé jusqu'ici : l'enfant d'un coup nul
+#       hérite alors du coup qu'un cousin avait noté à son ply, et la
+#       continuation le lit. Sous le groupe, cet enfant tombe en quiescence
+#       ou sous la futilité aux nœuds frontières, qui ne le lisent pas, et le
+#       banc figé de la profondeur 6 passe de 69 304 nœuds à 48 497 : il ne
+#       le voit plus. MÊME FAUTE QUE L'ISSUE #142, MÊME REMÈDE — l'invariant,
+#       pas un arbre plus profond : `negamax` confronte en test le coup noté
+#       au chemin, `None` si et seulement si la dernière marque de coup nul
+#       désigne la position. Le mutant fait tomber trente et un tests.
+#       CORRIGÉ PAR LE TEST.
+#     · La garde `ply > 0` de l'IIR (C34), en `ply >= 0`. L'itération
+#       précédente laisse toujours son coup à la racine, donc la garde ne
+#       décide rien en partie ; elle décide dans une table vide. Elle porte
+#       un invariant — l'itération cherche la profondeur qu'elle annonce —,
+#       et un test le lit dans la profondeur stockée à la racine, avec pour
+#       témoin le même nœud au ply 1, qui perd son pli. CORRIGÉ PAR LE TEST.
+#     · Trois `>` en `>=` et `<` en `<=` sur les gardes de mat de l'échange
+#       statique dans la recherche principale (C38) et de la futilité aux
+#       nœuds frontières (C39) : `best > -MATE_THRESHOLD`, et
+#       `alpha < MATE_THRESHOLD`. Les jumeaux exacts de celui de
+#       `late_move_prune`, admis depuis le 21 sept. : ils ne diffèrent qu'à
+#       ±`MATE_THRESHOLD` exactement, valeur qu'aucun score ne prend — une
+#       évaluation s'arrête à `MATE_THRESHOLD - 1`, et un mat est à au plus
+#       `MAX_PLY` = 128 plis de `MATE`, quand le seuil en est à 1 000.
+#       Équivalents en pratique : NOTÉS.
+#   42 = les 39 et ces trois. Les deux corrections sont re-mesurées en local,
+#   avec les trois mutants que le contrôle neuf ajoute lui-même
+#   (`tools/mutants.sh --re` sur leurs lignes) : huit mutants, huit attrapés,
+#   dont les deux survivants et leurs variantes. Le balayage suivant doit
+#   rendre 42.
+#
+#   eval.rs — 413 mutants, 306 attrapés, 2 inviables, 1 expiré : 104
+#   survivants contre 89. LE FICHIER N'A PAS CHANGÉ depuis le 16 sept.
+#   (`git log`). Les 89 un pour un sauf un, `237:34`, attrapé désormais, et
+#   seize `delete -` de plus, tous dans les tables piece-square — cavalier,
+#   fou, tour, roi en milieu de partie et en finale. Le banc figé les
+#   attrapait par effet de bord ; son arbre a perdu 30 % de ses nœuds avec
+#   le groupe, et ces cases n'y sont plus évaluées. Des VALEURS, donc le
+#   SPRT — et des valeurs de l'évaluation faite main, qui ne joue plus
+#   depuis le 28 sept. : elle ne sert qu'au banc et aux tests de recherche.
+#   NOTÉS. 104 EST LE CHIFFRE MESURÉ.
+#   LA PRÉDICTION ÉCRITE AVANT disait « les autres fichiers à leur
+#   plafond » : FAUSSE pour eval.rs. C'est la leçon d'A18 appliquée à
+#   moitié — un changement d'arbre déplace ce que les tests de nœuds voient
+#   dans des fichiers qu'il ne touche pas, et le banc figé lit l'évaluation
+#   autant que la recherche. Je l'avais appliquée à search.rs, pas à
+#   eval.rs. Pour la suite : chaque changement d'arbre fusionné déplace
+#   aussi ce plafond-ci, dans un sens ou dans l'autre, et la prédiction du
+#   balayage qui le suit doit le dire.
 #
 # eval.rs — 89 au 24 sept. 2026 au soir (run 36028076680, `main` à
 #   `f2dd0cf`), contre 121 et 122 le même jour. Le fichier n'a pas changé :
