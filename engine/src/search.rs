@@ -122,6 +122,14 @@ const SEE_PRUNE_MAX_DEPTH: i32 = 6;
 /// profondeur restante, avant d'être sautée — voir [`see_prunable_main`].
 const SEE_PRUNE_MARGIN: i32 = 100;
 
+/// Profondeur restante minimale des extensions singulières — voir
+/// [`singular_beta`].
+const SINGULAR_MIN_DEPTH: i32 = 8;
+
+/// La marge des extensions singulières, par pli de profondeur restante, en
+/// unités du réseau — voir [`singular_beta`].
+const SINGULAR_MARGIN: i32 = 10;
+
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
 
@@ -459,6 +467,11 @@ pub struct Search {
     /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
     /// chemin courant.
     evals: Vec<Option<i32>>,
+    /// Par ply, le coup EXCLU d'une recherche singulière (C41) : elle cherche
+    /// le nœud sans le coup de la table, pour savoir s'il est seul à tenir.
+    /// Écrit et effacé par le nœud qui teste, au MÊME ply — la recherche
+    /// singulière n'est pas un enfant, c'est le nœud privé d'un coup.
+    excluded: Vec<Option<Move>>,
     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
     lmr: Vec<i32>,
     /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
@@ -504,6 +517,9 @@ pub struct Search {
     /// Permet à un test de désactiver la seule futilité aux nœuds frontières.
     #[cfg(test)]
     frontier_futility: bool,
+    /// Permet à un test de désactiver les seules extensions singulières.
+    #[cfg(test)]
+    singular_extensions: bool,
     /// Fait vérifier à chaque évaluation que les accumulateurs dérivés coup
     /// par coup sont ceux d'un recalcul complet, et compte les vérifications
     /// — sans ce compte, un test qui ne passerait jamais par là resterait
@@ -551,6 +567,7 @@ impl Search {
             continuation: vec![0; PIECE_TO * PIECE_TO],
             moved: vec![None; MAX_PLY + 1],
             evals: vec![None; MAX_PLY + 1],
+            excluded: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
             network: None,
@@ -563,6 +580,8 @@ impl Search {
             late_move_pruning: true,
             #[cfg(test)]
             frontier_futility: true,
+            #[cfg(test)]
+            singular_extensions: true,
             #[cfg(test)]
             checked_accumulators: None,
         }
@@ -667,6 +686,18 @@ impl Search {
         #[cfg(test)]
         {
             self.frontier_futility
+        }
+        #[cfg(not(test))]
+        {
+            true
+        }
+    }
+
+    /// Vrai si les extensions singulières sont actives : toujours, hors test.
+    fn singular_extensions_on(&self) -> bool {
+        #[cfg(test)]
+        {
+            self.singular_extensions
         }
         #[cfg(not(test))]
         {
@@ -1370,6 +1401,8 @@ impl Search {
         }
 
         self.pv.clear(ply);
+        // Le coup exclu, quand ce nœud est une recherche singulière (C41).
+        let excluded = self.excluded.get(ply).copied().flatten();
 
         // Une répétition, la règle des cinquante coups ou un matériel
         // insuffisant font nulle. Jamais à la racine : la position de départ
@@ -1444,8 +1477,10 @@ impl Search {
         let hit = self.tt.probe(key, ply_i32);
 
         // Coupure par la table, jamais à la racine : il y faut un coup à jouer,
-        // pas seulement un score.
+        // pas seulement un score. Ni dans une recherche singulière : la table
+        // parle du nœud entier, la recherche du nœud privé de son coup.
         if ply > 0
+            && excluded.is_none()
             && let Some(hit) = hit
             && i32::from(hit.depth) >= depth
         {
@@ -1519,6 +1554,7 @@ impl Search {
         //   est déjà assez bonne » n'a presque aucune chance — voir
         //   `null_move_worth_trying` (C33).
         if ply > 0
+            && excluded.is_none()
             && depth >= NULL_MOVE_MIN_DEPTH
             && board.checkers().is_empty()
             && beta.abs() < MATE_THRESHOLD
@@ -1569,7 +1605,8 @@ impl Search {
         // RÉDUCTION ITÉRATIVE INTERNE (C34) — voir `iir_depth`. Jamais à la
         // racine : l'approfondissement itératif y garde toujours un coup.
         let depth = if ply > 0 {
-            iir_depth(depth, tt_move.is_some())
+            // Une recherche singulière a son coup de la table : exclu.
+            iir_depth(depth, tt_move.is_some() || excluded.is_some())
         } else {
             depth
         };
@@ -1599,9 +1636,43 @@ impl Search {
             // Compté AVANT toute coupure : `moves` dit après la boucle s'il
             // existait un coup légal, et une coupure bêta sur le premier coup
             // ne doit pas faire croire à un mat.
+            if Some(mv) == excluded {
+                continue;
+            }
             let index = moves;
             moves += 1;
             let quiet = captured_piece(board, mv).is_none() && mv.promotion.is_none();
+
+            // EXTENSIONS SINGULIÈRES (C41) — voir `singular_beta`. Le nœud se
+            // cherche sans le coup de la table, à mi-profondeur, sous une
+            // fenêtre nulle : si rien n'y atteint `sbeta`, ce coup est seul à
+            // tenir et gagne un pli.
+            let mut extension = 0;
+            if ply > 0
+                && excluded.is_none()
+                && depth >= SINGULAR_MIN_DEPTH
+                && Some(mv) == tt_move
+                && self.singular_extensions_on()
+                && let Some(sbeta) = hit.and_then(|hit| {
+                    singular_beta(hit, depth, self.network_margin(SINGULAR_MARGIN * depth))
+                })
+            {
+                if let Some(slot) = self.excluded.get_mut(ply) {
+                    *slot = Some(mv);
+                }
+                let score = self.negamax(board, (depth - 1) / 2, ply, sbeta - 1, sbeta, rest);
+                if let Some(slot) = self.excluded.get_mut(ply) {
+                    *slot = None;
+                }
+                // La recherche singulière a écrit sa variante à ce ply.
+                self.pv.clear(ply);
+                if self.aborted {
+                    return 0;
+                }
+                if score < sbeta {
+                    extension = 1;
+                }
+            }
 
             // L'échange statique dans la recherche principale (C38) — voir
             // `see_prunable_main`. `continue` : le coup suivant peut valoir
@@ -1692,8 +1763,14 @@ impl Search {
             };
 
             self.path.push(child.hash());
-            let mut score =
-                -self.negamax(&child, depth - 1 - reduction, ply + 1, -beta, -alpha, rest);
+            let mut score = -self.negamax(
+                &child,
+                depth - 1 + extension - reduction,
+                ply + 1,
+                -beta,
+                -alpha,
+                rest,
+            );
             // La réduction a menti : ce coup mérite la profondeur pleine.
             //
             // `!self.aborted` n'est pas décoratif : une recherche interrompue
@@ -1702,7 +1779,7 @@ impl Search {
             // pour un résultat de toute façon jeté. Trouvé par le test du
             // budget de nœuds, qui dépassait d'exactement un nœud.
             if reduction > 0 && !self.aborted && score > alpha {
-                score = -self.negamax(&child, depth - 1, ply + 1, -beta, -alpha, rest);
+                score = -self.negamax(&child, depth - 1 + extension, ply + 1, -beta, -alpha, rest);
             }
             self.path.pop();
 
@@ -1735,6 +1812,11 @@ impl Search {
         // de coups ne peut pas en être la cause — il ne coupe qu'après avoir vu
         // des coups tranquilles, donc jamais avant le premier coup.
         if moves == 0 {
+            // Une recherche singulière sans autre coup légal : rien ne tient à
+            // côté du coup exclu, qui est donc singulier.
+            if excluded.is_some() {
+                return alpha;
+            }
             return if in_check {
                 // Un mat proche vaut mieux qu'un mat lointain : soustraire le
                 // ply fait préférer la ligne la plus courte.
@@ -1754,7 +1836,11 @@ impl Search {
         } else {
             Bound::Upper
         };
-        self.tt.store(key, best_move, best, depth, bound, ply_i32);
+        // Le résultat d'une recherche singulière n'est pas celui du nœud : il
+        // y manque son meilleur coup.
+        if excluded.is_none() {
+            self.tt.store(key, best_move, best, depth, bound, ply_i32);
+        }
 
         best
     }
@@ -2228,6 +2314,28 @@ fn see_prunable_main(board: &Board, mv: Move, depth: i32) -> bool {
     mv.promotion.is_none()
         && may_lose_material(board, mv, victim)
         && see::see(board, mv) < -SEE_PRUNE_MARGIN * depth
+}
+
+/// La borne de la recherche singulière d'un nœud de profondeur restante
+/// `depth`, dont la table a l'entrée `hit` : `score − margin`, si l'entrée est
+/// assez profonde — au moins `depth − 3` —, borne basse ou exacte, et pas un
+/// mat ; `None` sinon, et le coup de la table se cherche sans test (C41).
+///
+/// **Pourquoi** : un coup de la table qui est SEUL à tenir — tous les autres
+/// restent sous son score moins la marge, à mi-profondeur — est un coup
+/// forcé, et la ligne qu'il ouvre mérite un pli de plus. Mesuré le 6 oct.
+/// 2026, rejeu de 6 203 positions de parties du moteur qui joue, profondeur
+/// 12 : les conditions tiennent dans 69 % des nœuds de profondeur ≥ 8 ; à la
+/// marge de Stockfish, 2 par pli, le coup est singulier dans 53 % des tests
+/// et l'arbre grossit de 65 % — rien n'y est plus « seul ». À 10 par pli,
+/// 38 % et +18 % ; à 20, 30 % et +10 %. **Un arbre qui grossit n'est pas un
+/// gain** : le prix d'une justesse que seul un match chiffre
+/// (`tools/README.md`, n° 9, quatrième écran).
+fn singular_beta(hit: crate::tt::Hit, depth: i32, margin: i32) -> Option<i32> {
+    (i32::from(hit.depth) >= depth - 3
+        && hit.bound != Bound::Upper
+        && hit.score.abs() < MATE_THRESHOLD)
+        .then(|| hit.score - margin)
 }
 
 /// Cette capture peut-elle perdre du matériel ?
@@ -2995,6 +3103,89 @@ mod tests {
         assert!(
             avec < sans,
             "la futilité aux nœuds frontières ne retire rien : {avec} avec, {sans} sans, sur le banc"
+        );
+    }
+
+    /// Construit une recherche sans extensions singulières.
+    fn search_sans_se() -> Search {
+        let mut s = search();
+        s.singular_extensions = false;
+        s
+    }
+
+    #[test]
+    fn la_borne_singuliere_exige_une_entree_profonde_basse_et_non_matee() {
+        let entree = |depth: i8, bound: Bound, score: i32| crate::tt::Hit {
+            mv: None,
+            score,
+            depth,
+            bound,
+        };
+        // Profondeur 10 : l'entrée doit valoir au moins 7.
+        assert_eq!(
+            singular_beta(entree(7, Bound::Lower, 50), 10, 100),
+            Some(-50)
+        );
+        assert_eq!(
+            singular_beta(entree(9, Bound::Exact, 50), 10, 100),
+            Some(-50)
+        );
+        assert_eq!(singular_beta(entree(6, Bound::Lower, 50), 10, 100), None);
+        // Une borne haute ne dit pas que le coup tient.
+        assert_eq!(singular_beta(entree(9, Bound::Upper, 50), 10, 100), None);
+        // Un score de mat ne se compare pas à une marge.
+        assert_eq!(
+            singular_beta(entree(9, Bound::Lower, MATE_THRESHOLD), 10, 100),
+            None
+        );
+        assert_eq!(
+            singular_beta(entree(9, Bound::Lower, MATE_THRESHOLD - 1), 10, 100),
+            Some(MATE_THRESHOLD - 101)
+        );
+    }
+
+    #[test]
+    fn une_recherche_singuliere_sans_autre_coup_rend_alpha() {
+        // Les noirs, en échec par la tour a8, n'ont qu'un coup légal — g7 est
+        // tenue par le cavalier ; exclu, il ne reste rien, et la recherche
+        // rend sa borne basse au lieu d'un mat.
+        let b = board("R6k/8/4N3/8/8/8/8/K7 b - - 0 1");
+        let mut coups = Vec::new();
+        b.generate_moves(|set| {
+            coups.extend(set);
+            false
+        });
+        assert_eq!(coups.len(), 1, "la position doit n'avoir qu'un coup légal");
+        let mut s = search();
+        s.excluded[1] = coups.first().copied();
+        let mut scratch = ardoise();
+        assert_eq!(s.negamax(&b, 3, 1, -100, -99, &mut scratch), -100);
+        // Le témoin : sans exclusion, le même appel cherche le coup.
+        let mut s = search();
+        assert_ne!(s.negamax(&b, 3, 1, -100, -99, &mut scratch), -100);
+    }
+
+    #[test]
+    fn les_extensions_singulieres_allongent_l_arbre() {
+        // Il faut des nœuds de profondeur ≥ 8 hors racine : une recherche à la
+        // profondeur 9, au TOTAL sur les six positions du banc.
+        let limits = Limits {
+            depth: Some(9),
+            ..Limits::default()
+        };
+        let (mut avec, mut sans) = (0, 0);
+        for fen in crate::bench::BENCH_FENS {
+            let position = Position::from_fen(fen).unwrap();
+            let mut s = search();
+            s.go(&position, &limits, |_| {});
+            avec += s.nodes();
+            let mut s = search_sans_se();
+            s.go(&position, &limits, |_| {});
+            sans += s.nodes();
+        }
+        assert!(
+            avec > sans,
+            "les extensions singulières n'étendent rien : {avec} avec, {sans} sans, sur le banc"
         );
     }
 
