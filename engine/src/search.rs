@@ -128,7 +128,7 @@ const SINGULAR_MIN_DEPTH: i32 = 8;
 
 /// La marge des extensions singulières, par pli de profondeur restante, en
 /// unités du réseau — voir [`singular_beta`].
-const SINGULAR_MARGIN: i32 = 10;
+const SINGULAR_MARGIN: i32 = 5;
 
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
