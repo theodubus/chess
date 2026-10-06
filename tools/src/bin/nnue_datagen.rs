@@ -958,7 +958,7 @@ mod tests {
         // non-vacuité ne doit pas tenir à deux tirages. Mesuré le 30 sept.
         // 2026 : sur deux parties, `main` n'en gardait déjà qu'une au réseau,
         // le candidat de B8 aucune ; sur six, 1 260 et 932 octets.
-        let (seed, games, nodes) = (5, 6, 300);
+        let (seed, games, nodes) = (5, 12, 300);
         let attendu = |network: Option<Arc<Network>>| {
             let mut search = search();
             search.set_network(network);
