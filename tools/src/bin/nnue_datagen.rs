@@ -953,12 +953,15 @@ mod tests {
     /// regénèrent à l'identique.
     #[test]
     fn run_etiquette_avec_l_evaluation_demandee() {
-        // Six parties et non deux : une partie dont l'ouverture tirée au
+        // Douze parties et non deux : une partie dont l'ouverture tirée au
         // hasard dépasse `OPENING_MAX_SCORE` est écartée, et la garde de
-        // non-vacuité ne doit pas tenir à deux tirages. Mesuré le 30 sept.
+        // non-vacuité ne doit pas tenir à quelques tirages. Mesuré le 30 sept.
         // 2026 : sur deux parties, `main` n'en gardait déjà qu'une au réseau,
-        // le candidat de B8 aucune ; sur six, 1 260 et 932 octets.
-        let (seed, games, nodes) = (5, 6, 300);
+        // le candidat de B8 aucune ; sur six, 1 260 et 932 octets. Le 6 oct.,
+        // sous la fenêtre nulle (C45), les six étaient écartées pour l'une des
+        // évaluations : un changement de recherche déplace les ouvertures
+        // tirées, et ce test n'en juge pas.
+        let (seed, games, nodes) = (5, 12, 300);
         let attendu = |network: Option<Arc<Network>>| {
             let mut search = search();
             search.set_network(network);
