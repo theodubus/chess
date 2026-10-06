@@ -130,11 +130,6 @@ const SINGULAR_MIN_DEPTH: i32 = 8;
 /// unités du réseau — voir [`singular_beta`].
 const SINGULAR_MARGIN: i32 = 10;
 
-/// La DOUBLE EXTENSION (C48) : un coup singulier dont la recherche
-/// d'exclusion échoue sous `sbeta` de plus que cette marge, en unités du
-/// réseau, gagne deux plis au lieu d'un — une seule fois par chemin.
-const DOUBLE_EXTENSION_MARGIN: i32 = 12;
-
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
 
@@ -477,11 +472,6 @@ pub struct Search {
     /// Écrit et effacé par le nœud qui teste, au MÊME ply — la recherche
     /// singulière n'est pas un enfant, c'est le nœud privé d'un coup.
     excluded: Vec<Option<Move>>,
-    /// Les doubles extensions (C48) sur le chemin courant : zéro ou un. Posé
-    /// par le nœud qui étend avant de descendre, retiré au retour — une
-    /// double extension par chemin, sans quoi un enchaînement de coups
-    /// forcés allongerait l'arbre sans borne.
-    double_extensions: u32,
     /// Réductions précalculées, indexées par profondeur puis par rang du coup.
     lmr: Vec<i32>,
     /// Ardoise de coups, découpée en tranches de `MAX_MOVES` — une par ply.
@@ -530,10 +520,6 @@ pub struct Search {
     /// Permet à un test de désactiver les seules extensions singulières.
     #[cfg(test)]
     singular_extensions: bool,
-    /// Permet à un test de désactiver la seule double extension (C48), les
-    /// extensions singulières restant actives.
-    #[cfg(test)]
-    double_extension: bool,
     /// Fait vérifier à chaque évaluation que les accumulateurs dérivés coup
     /// par coup sont ceux d'un recalcul complet, et compte les vérifications
     /// — sans ce compte, un test qui ne passerait jamais par là resterait
@@ -582,7 +568,6 @@ impl Search {
             moved: vec![None; MAX_PLY + 1],
             evals: vec![None; MAX_PLY + 1],
             excluded: vec![None; MAX_PLY + 1],
-            double_extensions: 0,
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
             network: None,
@@ -597,8 +582,6 @@ impl Search {
             frontier_futility: true,
             #[cfg(test)]
             singular_extensions: true,
-            #[cfg(test)]
-            double_extension: true,
             #[cfg(test)]
             checked_accumulators: None,
         }
@@ -703,18 +686,6 @@ impl Search {
         #[cfg(test)]
         {
             self.frontier_futility
-        }
-        #[cfg(not(test))]
-        {
-            true
-        }
-    }
-
-    /// Vrai si la double extension est active : toujours, hors test.
-    fn double_extension_on(&self) -> bool {
-        #[cfg(test)]
-        {
-            self.double_extension
         }
         #[cfg(not(test))]
         {
@@ -1714,15 +1685,6 @@ impl Search {
                 }
                 if is_singular(score, sbeta) {
                     extension = 1;
-                    // DOUBLE EXTENSION (C48) : bien seul à tenir — tous les
-                    // autres coups restent loin sous la borne — il gagne un
-                    // second pli, une fois au plus par chemin.
-                    if self.double_extensions == 0
-                        && self.double_extension_on()
-                        && score < sbeta - self.network_margin(DOUBLE_EXTENSION_MARGIN)
-                    {
-                        extension = 2;
-                    }
                 }
             }
 
@@ -1815,10 +1777,6 @@ impl Search {
             };
 
             self.path.push(child.hash());
-            let doubled = extension == 2;
-            if doubled {
-                self.double_extensions += 1;
-            }
             let mut score = -self.negamax(
                 &child,
                 depth - 1 + extension - reduction,
@@ -1836,9 +1794,6 @@ impl Search {
             // budget de nœuds, qui dépassait d'exactement un nœud.
             if reduction > 0 && !self.aborted && score > alpha {
                 score = -self.negamax(&child, depth - 1 + extension, ply + 1, -beta, -alpha, rest);
-            }
-            if doubled {
-                self.double_extensions -= 1;
             }
             self.path.pop();
 
@@ -3184,45 +3139,6 @@ mod tests {
         s
     }
 
-    /// Les extensions singulières sans la double extension (C48).
-    fn search_sans_double() -> Search {
-        let mut s = search();
-        s.double_extension = false;
-        s
-    }
-
-    #[test]
-    fn la_double_extension_agit_et_se_rend_au_retour() {
-        // Il faut des nœuds de profondeur ≥ 8 hors racine : la profondeur 9,
-        // au TOTAL sur les six positions du banc. Le SENS ne s'y asserte pas :
-        // mesuré le 7 oct. 2026, la double extension y raccourcit l'arbre de
-        // 16 % (202 068 nœuds contre 239 863), à la faite main, quand elle
-        // l'allonge de 5 % au rejeu de parties, au réseau, à la profondeur
-        // 10. Un coup forcé mieux vu coupe plus tôt ; le sens appartient au
-        // régime.
-        let limits = Limits {
-            depth: Some(9),
-            ..Limits::default()
-        };
-        let (mut avec, mut sans) = (0, 0);
-        for fen in crate::bench::BENCH_FENS {
-            let position = Position::from_fen(fen).unwrap();
-            let mut s = search();
-            s.go(&position, &limits, |_| {});
-            avec += s.nodes();
-            // Posé avant de descendre, retiré au retour : une recherche finie
-            // n'en laisse aucun, sans quoi la suivante n'étendrait plus.
-            assert_eq!(s.double_extensions, 0, "compteur déséquilibré sur {fen}");
-            let mut s = search_sans_double();
-            s.go(&position, &limits, |_| {});
-            sans += s.nodes();
-        }
-        assert_ne!(
-            avec, sans,
-            "la double extension ne change rien : {avec} nœuds avec et sans, sur le banc"
-        );
-    }
-
     #[test]
     fn un_coup_n_est_singulier_que_si_l_exclusion_echoue_sous_la_borne() {
         // Un échec par le bas sous la fenêtre nulle : singulier.
@@ -3323,8 +3239,7 @@ mod tests {
     #[test]
     fn les_extensions_singulieres_allongent_l_arbre() {
         // Il faut des nœuds de profondeur ≥ 8 hors racine : une recherche à la
-        // profondeur 9, au TOTAL sur les six positions du banc. Sans la
-        // double extension (C48), dont le sens sur ce banc est l'inverse.
+        // profondeur 9, au TOTAL sur les six positions du banc.
         let limits = Limits {
             depth: Some(9),
             ..Limits::default()
@@ -3332,7 +3247,7 @@ mod tests {
         let (mut avec, mut sans) = (0, 0);
         for fen in crate::bench::BENCH_FENS {
             let position = Position::from_fen(fen).unwrap();
-            let mut s = search_sans_double();
+            let mut s = search();
             s.go(&position, &limits, |_| {});
             avec += s.nodes();
             let mut s = search_sans_se();
