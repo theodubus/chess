@@ -1473,17 +1473,6 @@ impl Search {
             return self.quiescence(board, alpha, beta, ply, scratch);
         }
 
-        // LES NŒUDS PV (C46) : ceux dont la fenêtre n'est pas nulle. Sous PVS,
-        // ce sont la variante principale et les re-recherches pleines — les
-        // seuls dont le score remonte tel quel jusqu'à la racine. Rien n'y
-        // coupe sur une hypothèse : ni la table, dont la borne vient d'une
-        // autre recherche, ni la futilité inverse, ni le coup nul. Le reste de
-        // l'arbre, cherché sous la fenêtre nulle, garde tous ses élagages.
-        // `alpha + 1 < bêta` et non `bêta − alpha > 1` : à la racine, la
-        // fenêtre infinie des premières itérations ferait déborder la
-        // différence ; `alpha < bêta` garantit que la somme ne déborde pas.
-        let pv_node = alpha + 1 < beta;
-
         // L'ardoise porte une tranche par ply jusqu'à `MAX_PLY`. L'épuiser
         // signifierait avoir dépassé cette borne ; la garde rend la fonction
         // totale au lieu de reposer sur un raisonnement de profondeur.
@@ -1505,7 +1494,6 @@ impl Search {
         // pas seulement un score. Ni dans une recherche singulière : la table
         // parle du nœud entier, la recherche du nœud privé de son coup.
         if ply > 0
-            && !pv_node
             && excluded.is_none()
             && let Some(hit) = hit
             && i32::from(hit.depth) >= depth
@@ -1559,10 +1547,7 @@ impl Search {
                 .and_then(|p| self.evals.get(p).copied().flatten())
         };
         let improving = is_improving(static_eval, back(2), back(4));
-        if !pv_node
-            && let Some(score) =
-                self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval)
-        {
+        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval) {
             return score;
         }
 
@@ -1583,7 +1568,6 @@ impl Search {
         //   est déjà assez bonne » n'a presque aucune chance — voir
         //   `null_move_worth_trying` (C33).
         if ply > 0
-            && !pv_node
             && excluded.is_none()
             && depth >= NULL_MOVE_MIN_DEPTH
             && board.checkers().is_empty()
@@ -1659,9 +1643,6 @@ impl Search {
 
         let mut quiets_seen = 0usize;
         let mut moves = 0usize;
-        // Les coups réellement cherchés : le premier l'est sous la fenêtre
-        // pleine, les suivants sous la fenêtre nulle (C45).
-        let mut searched = 0usize;
         // Ni la profondeur ni le drapeau ne changent d'un coup à l'autre.
         let prune_threshold = lmp_threshold(depth, improving);
 
@@ -1796,45 +1777,24 @@ impl Search {
             };
 
             self.path.push(child.hash());
-            // RECHERCHE À FENÊTRE NULLE — PVS (C45). Le premier coup cherché
-            // l'est sous la fenêtre pleine ; chacun des suivants n'a qu'à
-            // prouver qu'il ne fait pas mieux que `alpha`, sous la fenêtre
-            // nulle `(alpha, alpha + 1)`, bien moins chère. S'il y échoue par
-            // le haut et tombe sous `bêta`, il a peut-être une valeur exacte
-            // à rendre : on le recherche sous la fenêtre pleine.
-            //
-            // La réduction a menti : ce coup mérite la profondeur pleine — sous
-            // la fenêtre du coup, nulle ou pleine.
+            let mut score = -self.negamax(
+                &child,
+                depth - 1 + extension - reduction,
+                ply + 1,
+                -beta,
+                -alpha,
+                rest,
+            );
+            // La réduction a menti : ce coup mérite la profondeur pleine.
             //
             // `!self.aborted` n'est pas décoratif : une recherche interrompue
             // rend 0, et zéro dépasse `alpha` dans toute position perdante. La
             // re-recherche partait alors sur un score qui ne veut rien dire,
             // pour un résultat de toute façon jeté. Trouvé par le test du
             // budget de nœuds, qui dépassait d'exactement un nœud.
-            let new_depth = depth - 1 + extension;
-            let mut score;
-            if searched == 0 {
-                score = -self.negamax(&child, new_depth - reduction, ply + 1, -beta, -alpha, rest);
-                if reduction > 0 && !self.aborted && score > alpha {
-                    score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
-                }
-            } else {
-                score = -self.negamax(
-                    &child,
-                    new_depth - reduction,
-                    ply + 1,
-                    -alpha - 1,
-                    -alpha,
-                    rest,
-                );
-                if reduction > 0 && !self.aborted && score > alpha {
-                    score = -self.negamax(&child, new_depth, ply + 1, -alpha - 1, -alpha, rest);
-                }
-                if !self.aborted && score > alpha && score < beta {
-                    score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
-                }
+            if reduction > 0 && !self.aborted && score > alpha {
+                score = -self.negamax(&child, depth - 1 + extension, ply + 1, -beta, -alpha, rest);
             }
-            searched += 1;
             self.path.pop();
 
             if self.aborted {
