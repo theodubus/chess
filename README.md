@@ -20,7 +20,9 @@ d'un aveu sur la profondeur de recherche.
 > `8+0,08`), puis, en un groupe mesuré contre ce moteur, la garde du coup nul,
 > la réduction itérative interne, *improving* dans l'élagage par compte,
 > l'échange statique dans la recherche principale et la futilité aux nœuds
-> frontières (**+52 ± 4**).
+> frontières (**+52 ± 4**). Le 6 oct., les **extensions singulières** : le
+> coup de la table gagne un pli quand aucun autre n'approche son score
+> (**+11 ± 3**).
 > L'évaluation
 > est un **réseau NNUE** depuis le 28 sept. 2026 (plus bas), et les marges de
 > la recherche suivent son échelle depuis le 1er oct. — **+50 ± 5 Elo** à
