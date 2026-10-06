@@ -91,6 +91,27 @@ jobs:
       - name: Bench
         run: cargo run --release --bin shallowred -- bench 4
 
+      # Les deux binaires que livre le dépôt (Théo, 6 oct. 2026) : celui de
+      # base et l'AVX2. Ils ne sont le même moteur que s'ils cherchent le même
+      # arbre — le banc fait main et les six positions au réseau, nœuds et
+      # coup —, et le script refuse de les rendre sinon. Les runners ont
+      # l'AVX2, donc la comparaison tourne vraiment. Sur `main`, les deux
+      # binaires partent en artefact : c'est la livraison.
+      - name: Deux binaires, le même arbre
+        run: |
+          tools/binaires-test.sh
+          tools/binaires.sh "$RUNNER_TEMP/binaires"
+
+      - name: Livrer les deux binaires
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shallowred-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/binaires/shallowred
+            ${{ runner.temp }}/binaires/shallowred-avx2
+          retention-days: 90
+
   # Signale les lints d'une toolchain plus récente sans jamais bloquer. Sans
   # ce job, une montée de version transformerait une pile de lints en un
   # build rouge le jour où l'on touche à rust-toolchain.toml.

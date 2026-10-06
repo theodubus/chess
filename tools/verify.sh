@@ -85,6 +85,10 @@ etape "état calculé"              bash -c 'tools/etat.sh | grep -q "non fusion
 # Sa ligne des branches à faire supprimer se tait presque toujours : sur des
 # dépôts fabriqués, elle doit parler quand il le faut, et seulement alors.
 etape "état calculé, branches"    tools/etat-test.sh
+# `binaires.sh` refuse de livrer deux binaires qui ne cherchent pas le même
+# arbre — un refus qui ne sert que le jour où quelque chose a mal tourné. Des
+# moteurs fabriqués l'exercent sans rien compiler.
+etape "deux binaires, la comparaison" tools/binaires-test.sh
 
 if [[ $RAPIDE -eq 0 ]]; then
   etape "tests (release)"         cargo test --workspace --release

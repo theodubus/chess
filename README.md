@@ -179,8 +179,12 @@ d'instructions commun aux processeurs x86 depuis Intel Haswell (2013) et AMD
 Zen (2017), hors certains Pentium, Celeron et Atom :
 
 ```sh
-RUSTFLAGS="-C target-cpu=x86-64-v3" cargo build --release
+tools/binaires.sh            # dist/shallowred et dist/shallowred-avx2
 ```
+
+Le script construit les deux et **vérifie qu'ils cherchent le même arbre**
+avant de les rendre. La CI fait de même à chaque push, et publie les deux
+binaires Linux de chaque commit de `main` en artefact.
 
 Il cherche **le même arbre** que celui de base — le code est entier, le
 compilateur ne change que la façon de calculer —, **× 1,235 plus vite** avec
