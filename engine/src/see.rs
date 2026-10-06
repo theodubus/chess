@@ -233,9 +233,14 @@ pub fn see(board: &Board, mv: Move) -> i32 {
         if depth >= MAX_SWAPS {
             break;
         }
-        gain[depth] = on_target - gain[depth - 1];
+        // La reprise rapporte la pièce qui se tenait sur la case — et, quand
+        // un pion reprend sur la dernière rangée, sa promotion : il quitte
+        // l'échiquier, une dame le remplace (C43). `value_on` le comptait déjà
+        // pour la suite, comme pièce à reprendre ; pas comme gain du coup.
+        let arrived = value_on(piece, target, side);
+        gain[depth] = on_target + (arrived - VALUE[piece as usize]) - gain[depth - 1];
         occupied ^= from.bitboard();
-        on_target = value_on(piece, target, side);
+        on_target = arrived;
         side = !side;
     }
 
@@ -274,6 +279,17 @@ mod tests {
 
     fn coup(b: &Board, uci: &str) -> Move {
         cozy_chess::util::parse_uci_move(b, uci).unwrap()
+    }
+
+    #[test]
+    fn un_pion_qui_reprend_en_promouvant_compte_sa_promotion() {
+        // La tour d1 prend la tour b1 ; le pion a2 la reprend EN PROMOUVANT,
+        // et personne ne reprend la dame née en b1. Valeur lue sur l'oracle
+        // (`see_check`, 6 oct. 2026) : −880 — la tour gagnée, la tour perdue,
+        // la promotion offerte. Avant C43, `see` rendait 0 : la reprise ne
+        // comptait que la tour, pas la dame qui naît sur la case.
+        let b = board("8/7P/1kp5/8/8/4PK2/p5P1/1r1R4 w - - 2 56");
+        assert_eq!(see(&b, coup(&b, "d1b1")), -880);
     }
 
     #[test]
