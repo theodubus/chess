@@ -212,76 +212,21 @@ pub fn see(board: &Board, mv: Move) -> i32 {
     } else {
         Square::new(target.file(), mv.from.rank())
     };
-    let occupied =
+    let mut occupied =
         (board.occupied() ^ mv.from.bitboard() ^ victim_square.bitboard()) | target.bitboard();
-
-    // Ce qui se tient sur la case et que l'adversaire peut prendre.
-    let on_target = mv
-        .promotion
-        .map_or_else(|| value_on(attacker, target, us), |p| VALUE[p as usize]);
 
     // Ce que notre coup rapporte, promotion comprise : le pion quitte
     // l'échiquier et la pièce promue le rejoint.
-    exchange(board, target, occupied, gain_initial, on_target)
-}
-
-/// L'échange statique d'un coup qui ne prend RIEN, en centièmes de pion : la
-/// pièce se pose sur `mv.to`, puis la suite des captures sur cette case, les
-/// deux camps pouvant s'arrêter à tout moment. Zéro si personne ne la prend,
-/// négatif si elle s'y perd — un cavalier qu'un pion prend sans reprise
-/// possible vaut −320.
-///
-/// **Le roi rend toujours zéro**, et ce n'est pas une approximation : un coup
-/// de roi légal ne se pose jamais sur une case attaquée. Mais `cozy-chess`
-/// code le roque roi-prend-tour, sa case d'arrivée est celle de NOTRE tour, et
-/// l'échange y compterait un roi de dix mille centièmes perdu sur une case
-/// que le roi n'occupera jamais — la règle du jeu tranche avant la géométrie.
-///
-/// Sert à l'élagage des coups tranquilles perdants dans la recherche
-/// principale (C40), comme [`see`] sert à celui des captures.
-#[must_use]
-pub fn see_quiet(board: &Board, mv: Move) -> i32 {
-    let Some(mover) = board.piece_on(mv.from) else {
-        return 0;
-    };
-    if mover == Piece::King {
-        return 0;
-    }
-    let target = mv.to;
-    // Une seule case se libère : rien n'est pris.
-    let occupied = (board.occupied() ^ mv.from.bitboard()) | target.bitboard();
-    exchange(
-        board,
-        target,
-        occupied,
-        0,
-        value_on(mover, target, board.side_to_move()),
-    )
-}
-
-/// La suite d'échanges sur `target`, une fois le premier coup joué : il a
-/// rapporté `gain_initial`, laisse sur la case une pièce de valeur
-/// `on_target`, et c'est à l'adversaire du camp au trait de `board` de
-/// reprendre. Commune à [`see`] et [`see_quiet`] : deux copies de cette
-/// boucle divergeraient au premier changement.
-///
-/// **Une limite connue, trouvée par l'oracle le 6 oct. 2026** : un pion qui
-/// REPREND en promouvant compte comme une dame pour la suite — c'est
-/// [`value_on`] —, mais le gain de sa promotion, +880, n'entre pas dans son
-/// propre coup. L'oracle le voit sur 33 coups tranquilles sur 77 020 et une
-/// capture sur 5 827. Le corriger change l'arbre, donc se mesure à part.
-fn exchange(
-    board: &Board,
-    target: Square,
-    mut occupied: BitBoard,
-    gain_initial: i32,
-    mut on_target: i32,
-) -> i32 {
     let mut gain = [0i32; MAX_SWAPS];
     gain[0] = gain_initial;
 
+    // Ce qui se tient sur la case et que l'adversaire peut prendre.
+    let mut on_target = mv
+        .promotion
+        .map_or_else(|| value_on(attacker, target, us), |p| VALUE[p as usize]);
+
     let mut depth = 0;
-    let mut side = !board.side_to_move();
+    let mut side = !us;
 
     while let Some((from, piece)) = least_valuable_attacker(board, target, side, occupied) {
         depth += 1;
