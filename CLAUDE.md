@@ -419,6 +419,13 @@ une mesure, pas une préférence.
   *L'Elo d'un pli d'accord appartient à la règle qui l'achète* : converti au
   taux d'une autre règle, un attendu est un majorant dès que la nouvelle
   cible davantage ce que l'étalon surestime.
+  <br>**Et l'accord se lit contre un ORACLE, jamais contre la base** — n° 12,
+  7 oct. 2026. Au rejeu de parties, table et historiques conservés d'un coup
+  à l'autre, chaque variante qui touche l'arbre change **28 à 32 %** des
+  coups rendus, la décroissance des cinquante coups comprise, dont
+  l'attendu disait 0,2 à 2 % : une perturbation se propage à toutes les
+  recherches d'après. *L'accord avec la base mesure la sensibilité du
+  rejeu, pas la décision.*
 - **Une comparaison entre réglages qui CHANGENT le déroulement n'est pas
   appariée.** La même sonde a d'abord donné le gain de profondeur non monotone
   — −0,22 à +0,66 pli pour un budget × 3. Cause : plus de temps fait jouer
@@ -591,6 +598,15 @@ une mesure, pas une préférence.
   90 % des nœuds sont en quiescence et qu'un test delta atteindrait 39 % des
   captures qu'elle examine. Les cinq lignes écrites ensuite valent
   **+32,5 Elo ± 12,3**. Choisir où creuser se mesure, comme le reste.
+- **Un seuil sur une grandeur sans échelle n'est pas un réglage, c'est une
+  dérive.** L'historique gagne `d²` par coupure et ne se divise qu'à
+  800 000 : ses notes grandissent avec la profondeur cherchée. Le cinquième
+  écran (7 oct. 2026) a d'abord posé ses seuils à 100 000 — aucune note ne
+  les atteignait, 0,00 % d'arbre ; puis à 1 000, et la même réduction
+  modulée passe de **+1,7 % d'arbre à la profondeur 10 à +14 % à la 12**.
+  Un réglage trouvé à une profondeur ne vaut pas à la suivante, ni d'une
+  cadence à l'autre. *Avant de régler un seuil, lire l'histogramme de la
+  grandeur là où il tranche — et vérifier qu'elle a une borne.*
 - **Une érosion se cherche en NŒUDS avant de s'acheter en Elo.** Revalider un
   acquis coûte un job ; mesurer ce qu'il façonne encore de l'arbre coûte trois
   minutes et ne dépend pas du hasard. Le 22 sept. 2026, les trois lignes
