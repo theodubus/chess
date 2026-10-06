@@ -32,7 +32,7 @@ perft.rs 1
 bench.rs 2
 see.rs 2
 nnue.rs 1
-search.rs 42
+search.rs 47
 eval.rs 104
 
 # ---------------------------------------------------------------------------
@@ -44,6 +44,36 @@ eval.rs 104
 # porte sur LA FORCE DE JEU. Le SPRT juge la seconde catégorie, et aucun test
 # unitaire ne peut trancher à sa place — pire, un test qui fige une valeur
 # d'évaluation empêche le SPRT de la déplacer.
+#
+# search.rs — 47, RELEVÉ le 6 oct. 2026 avec la fusion de C41 (les
+#   extensions singulières, `be0cd9d`). MESURÉ avant le balayage, pas
+#   seulement prédit : le crible des lignes neuves de C41 sur `main` à
+#   `b6d41d7` (`tools/mutants.sh --re` sur leurs 114 lignes) rend 62
+#   mutants, 40 attrapés, 7 inviables, 6 expirés — la profondeur de l'enfant
+#   ou de la recherche d'exclusion grossie, qui ne termine plus — et NEUF
+#   survivants. Quatre sont corrigés par des tests, cinq notés.
+#     · CORRIGÉS PAR LES TESTS — la garde `ply > 0` des extensions, en `>=`
+#       et en `==` : la racine s'étendrait, ou seule elle. Même invariant que
+#       la garde de l'IIR — l'itération cherche la profondeur qu'elle
+#       annonce — et même forme de test : `la_racine_ne_s_etend_jamais`
+#       cherche la racine à `SINGULAR_MIN_DEPTH`, ses enfants sous le seuil,
+#       avec et sans extensions, et exige les mêmes nœuds. Et la frontière
+#       singulière `score < sbeta`, en `<=` et en `==` : extraite en
+#       `is_singular`, testée aux bornes de la fenêtre nulle. Re-mesuré en
+#       local sur ces deux lignes : huit mutants, huit attrapés.
+#     · NOTÉS — des valeurs : la marge `SINGULAR_MARGIN * depth`, `*` en `+`
+#       et en `/` (deux), et la profondeur de la recherche d'exclusion
+#       `(depth - 1) / 2`, `-` en `+` et en `/` (deux). Le SPRT les juge —
+#       la marge se bissecte d'ailleurs par match (C44). Le test de l'arbre
+#       n'exige que « plus de nœuds avec que sans » ; figer un compte à la
+#       profondeur 9 figerait aussi ces valeurs.
+#     · NOTÉ — ÉQUIVALENT par construction : `+ extension` en `- extension`
+#       dans la re-recherche après réduction. Seul le coup de la table
+#       s'étend, il sort toujours le premier du sélecteur (rang 0), et LMR ne
+#       réduit qu'à partir du rang `LMR_FIRST_REDUCED` = 3 : extension et
+#       réduction ne coïncident jamais. Le terme reste — si un jour le coup
+#       de la table se réduisait, la re-recherche devrait le porter.
+#   47 = 42 et ces cinq. Le balayage qui suit la fusion doit rendre 47.
 #
 # search.rs — 42 et eval.rs — 104, RELEVÉS le 6 oct. 2026 (run 37418116645,
 #   `main` à `123efb9` : le premier balayage hebdomadaire après le groupe du

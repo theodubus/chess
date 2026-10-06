@@ -1683,7 +1683,7 @@ impl Search {
                 if self.aborted {
                     return 0;
                 }
-                if score < sbeta {
+                if is_singular(score, sbeta) {
                     extension = 1;
                 }
             }
@@ -2350,6 +2350,18 @@ fn singular_beta(hit: crate::tt::Hit, depth: i32, margin: i32) -> Option<i32> {
         && hit.bound != Bound::Upper
         && hit.score.abs() < MATE_THRESHOLD)
         .then(|| hit.score - margin)
+}
+
+/// Le coup de la table est-il seul à tenir ? Oui si la recherche qui
+/// l'exclut, sous la fenêtre nulle `(sbeta − 1, sbeta)`, échoue par le bas.
+///
+/// **La frontière est stricte, et c'est la définition** : sous cette fenêtre,
+/// un échec par le bas rend au plus `sbeta − 1`, un échec par le haut au
+/// moins `sbeta` — un autre coup atteint alors la borne, et le coup de la
+/// table n'est plus seul. Extraite de `negamax` pour qu'un test en lise la
+/// borne : le balayage du 6 oct. 2026 laissait passer `<=` et `==`.
+fn is_singular(score: i32, sbeta: i32) -> bool {
+    score < sbeta
 }
 
 /// Cette capture peut-elle perdre du matériel ?
@@ -3125,6 +3137,51 @@ mod tests {
         let mut s = search();
         s.singular_extensions = false;
         s
+    }
+
+    #[test]
+    fn un_coup_n_est_singulier_que_si_l_exclusion_echoue_sous_la_borne() {
+        // Un échec par le bas sous la fenêtre nulle : singulier.
+        assert!(is_singular(99, 100));
+        assert!(is_singular(-500, 100));
+        // À la borne, un autre coup l'atteint : plus seul.
+        assert!(!is_singular(100, 100));
+        assert!(!is_singular(101, 100));
+    }
+
+    #[test]
+    fn la_racine_ne_s_etend_jamais() {
+        // L'itération cherche la profondeur qu'elle annonce : ni l'IIR ni les
+        // extensions singulières ne touchent la racine. Une recherche à
+        // SINGULAR_MIN_DEPTH depuis la racine n'a qu'un nœud au seuil — la
+        // racine, ses enfants cherchent un pli plus bas —, donc les
+        // extensions n'y changent RIEN, tant que la racine en est exclue. La
+        // table est remplie d'abord un pli plus bas, où aucun nœud n'atteint
+        // le seuil : la racine a son coup de table, profond, exact, pas un
+        // mat — tout ce que demande `singular_beta`. Le balayage du 6 oct.
+        // 2026 laissait passer la garde `ply > 0` en `>=` comme en `==`.
+        let position = Position::startpos();
+        let b = Board::default();
+        let noeuds = |mut s: Search| {
+            let avant = Limits {
+                depth: Some((SINGULAR_MIN_DEPTH - 1) as u32),
+                ..Limits::default()
+            };
+            s.go(&position, &avant, |_| {});
+            let hit = s.tt.probe(b.hash(), 0).unwrap();
+            assert!(singular_beta(hit, SINGULAR_MIN_DEPTH, 0).is_some());
+            let debut = s.nodes();
+            s.negamax(
+                &b,
+                SINGULAR_MIN_DEPTH,
+                0,
+                -INFINITY,
+                INFINITY,
+                &mut ardoise(),
+            );
+            s.nodes() - debut
+        };
+        assert_eq!(noeuds(search()), noeuds(search_sans_se()));
     }
 
     #[test]
