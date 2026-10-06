@@ -5859,6 +5859,91 @@ chercherait avant toute autre mesure.
 un vrai +15 passe la borne basse presque à coup sûr. À 15 000 ouvertures, la
 corrélation des paires est négligeable à deux jobs.
 
+### N° 12, le cinquième écran — protocole et attendus, écrits le 6 oct. avant de mesurer
+
+**La décision** — n° 12, Théo, 6 oct. au soir, l'ordre recommandé : des
+techniques connues, absentes du code et jamais mesurées ici, la liste
+vérifiée dans `search.rs` le même jour (backlog, « un cinquième écran »).
+
+**La sonde, v5** — un binaire de MESURE, des variantes choisies par la
+variable `N12`, combinables par `+` ; sans elle, `main` au nœud près. Elle
+compte, sur le moteur tel qu'il est :
+- **PVS** — `pvs` : après le premier coup cherché, chaque coup se cherche
+  sous la fenêtre nulle `(alpha, alpha + 1)`, réduit s'il le doit ; à
+  profondeur pleine sous la même fenêtre si la réduction ment ; sous la
+  fenêtre pleine s'il tombe entre `alpha` et `bêta`. Comptées : les
+  recherches nulles et les re-recherches pleines. `pv`, qui implique
+  `pvs` : la distinction des nœuds PV — `bêta − alpha > 1` —, où la table
+  ne coupe plus, ni la futilité inverse, ni le coup nul, et où LMR réduit
+  d'un pli de moins ;
+- **LMR modulée** — `lmrh:D` : la réduction d'un tranquille diminue de sa
+  note d'ordonnancement, papillon et continuation, divisée par `D`, sans
+  descendre sous zéro ;
+- **le malus d'historique** — `mal` : à chaque coupure par un tranquille,
+  les tranquilles cherchés avant lui perdent `d²` au papillon et à la
+  continuation. L'historique d'aujourd'hui ne reçoit que des bonus — A20 a
+  écarté le malus à l'arbre —, si bien qu'aucune note n'est négative et
+  qu'un élagage par l'historique n'aurait rien à lire ; **l'élagage par
+  l'historique** — `hp:T`, avec `mal` : un tranquille dont la note est sous
+  `−T·d` se saute, jusqu'à la profondeur 4, avec les gardes de la futilité.
+  En ombre, comptés : les tranquilles qu'il sauterait, et ceux d'entre eux
+  qui, cherchés, montent `alpha` ;
+- **le razoring** — `rz:A:B` : jusqu'à la profondeur 3, hors échec et hors
+  racine, quand l'évaluation du nœud plus `A + B·d²` — unités de la faite
+  main, à l'échelle du réseau par B8 — n'atteint pas `alpha`, la quiescence
+  décide : sous `alpha`, le nœud rend sa valeur. En ombre : les nœuds
+  éligibles, ceux que la quiescence condamne, et ceux d'entre eux dont la
+  recherche monte quand même `alpha` ;
+- **les échecs tranquilles en quiescence** — `qsc` : au premier pli de la
+  quiescence, hors échec, les tranquilles qui donnent échec s'ajoutent aux
+  captures ;
+- **la suite des extensions singulières** — `mc` : quand la recherche
+  d'exclusion dépasse `sbeta` et que `sbeta ≥ bêta`, le nœud rend `sbeta`,
+  le multi-cut ; `neg` : quand elle le dépasse et que le score de la table
+  atteint `bêta`, le coup de la table perd un pli ; `dbl:M` : sous
+  `sbeta − M`, même échelle, il en gagne deux, une fois au plus par chemin ;
+- **la décroissance avec la règle des cinquante coups** — `r50` :
+  l'évaluation statique × `(200 − c) / 200`, `c` le compteur des cinquante
+  coups ;
+- et pour toutes, **le coup rendu** : l'accord avec `main`, position par
+  position.
+
+**Le journal** : celui du quatrième écran, 60 parties de `main` à
+`f537d33`, 6 203 recherches. Ses positions viennent du moteur d'avant C41
+et C43, qui n'ont changé l'arbre qu'au-delà de la profondeur 8 et 3,5
+appels de `see` sur un million : un échantillon de jeu toujours
+représentatif. Rejoué à la profondeur 10 et 12, table et historiques
+conservés d'un coup à l'autre, contre `main` à `1eaf0d7`.
+
+**Attendus, écrits avant** — <span>inférence, confiance faible</span>, à la
+profondeur 12 :
+- `pvs` : l'arbre **−3 à −15 %** ; les re-recherches pleines **1 à 6 %**
+  des recherches nulles. En septembre, PVS rendait ÷ 1,03 puis ÷ 1,07 ;
+- `pvs+pv` : l'arbre **0 à +10 %** sur `pvs` seul — les nœuds PV sont
+  rares ;
+- `lmrh:400000` : l'arbre **+1 à +10 %** — elle ne fait que réduire moins ;
+  `lmrh:100000` : **+5 à +25 %** ;
+- `mal` : l'arbre **−5 à +5 %** ; `mal+hp:50000` : **−3 à −15 %** sur `mal`,
+  dont **0,5 à 3 %** des tranquilles sautés qui, cherchés, montaient
+  `alpha` ;
+- `rz:240:140` — la marge de Stockfish, convertie : éligibles **5 à 20 %**
+  des nœuds de profondeur ≤ 3, condamnés par la quiescence **20 à 60 %**
+  d'entre eux, l'arbre **−2 à −10 %**, et **0,2 à 2 %** des condamnés
+  montant `alpha` ;
+- `qsc` : l'arbre **+10 à +40 %** ;
+- `mc` : **−1 à −5 %** ; `neg` : **−1 à −5 %** ; `dbl:12` : **+2 à
+  +15 %** ;
+- `r50` : l'arbre **± 1 %**, le coup rendu changé dans **0,2 à 2 %** des
+  positions.
+
+**Ce que l'écran décide** : les candidats — chacun révoqué aussitôt, sa
+rustine à l'attic, un attendu et un critère écrits avant ses matchs, quatre
+jobs de 3 000 parties sur le binaire AVX2 et le livre de 15 000, comme aux
+écrans du n° 9. **PVS en est un quel que soit son arbre** : c'est le
+changement structurel, et ses deux rejets de septembre appartiennent à une
+autre base. Une variante qui ne déplace ni l'arbre ni le coup rendu se ferme
+ici, sans match.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
