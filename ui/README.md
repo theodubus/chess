@@ -278,6 +278,10 @@ stockage permanent. Une erreur conserve le texte saisi et la revue précédente.
 analyse à 0,5 seconde par position, avec une connexion moteur indépendante.
 La navigation permet de revoir la partie même sans moteur disponible. Les
 onglets « Analyse » et « Coups » regroupent les détails et l’historique.
+Dans « Coups », « Exporter PGN » télécharge le PGN complet de la partie analysée,
+y compris ses en-têtes et ses commentaires d’origine. La sélection d’une position
+ou l’exploration d’une variante ne change pas cet export ; les annotations
+calculées par l’UI ne sont pas ajoutées au fichier.
 
 Chaque position est envoyée avec son historique complet. Le meilleur coup et
 la variante principale sont vérifiés avec chess.js ; cliquer sur un coup de

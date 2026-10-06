@@ -30,6 +30,7 @@ import AnnotationBadge from "./AnnotationBadge";
 import { annotationPlacement } from "./annotationPlacement";
 import { unclassifiedReason } from "./unclassifiedReason";
 import { useMoveKeys } from "../useMoveKeys";
+import { downloadPgn } from "../pgn";
 
 type Branch = {
   tree: StudyTree;
@@ -791,25 +792,36 @@ export default function InteractiveReview({
             </button>
           </div>
         ) : pane === "moves" ? (
-          <div className="review-moves" aria-label="Positions de la partie">
-            {review.positions.map((item, index) => (
-              <button
-                className="secondary"
-                key={index}
-                aria-pressed={!branch && index === selected}
-                onClick={() => navigate(index)}
-              >
-                {item.label}
-                {showAnnotations && index > 0 && (
-                  <AnnotationBadge
-                    annotation={annotations[index - 1]}
-                    provisional={review.state !== "complete"}
-                    compact
-                  />
-                )}
-              </button>
-            ))}
-          </div>
+          <section className="review-history" aria-label="Coups de la partie analysée">
+            <div className="history-header">
+              <h2>La partie</h2>
+              <div className="history-actions">
+                <button className="secondary" onClick={() => downloadPgn(review.pgn)}
+                  title="Télécharger toute la partie analysée au format PGN">
+                  Exporter PGN
+                </button>
+              </div>
+            </div>
+            <div className="review-moves" aria-label="Positions de la partie">
+              {review.positions.map((item, index) => (
+                <button
+                  className="secondary"
+                  key={index}
+                  aria-pressed={!branch && index === selected}
+                  onClick={() => navigate(index)}
+                >
+                  {item.label}
+                  {showAnnotations && index > 0 && (
+                    <AnnotationBadge
+                      annotation={annotations[index - 1]}
+                      provisional={review.state !== "complete"}
+                      compact
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+          </section>
         ) : (
           <div className="review-details">
             <h2>

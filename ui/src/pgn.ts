@@ -1,7 +1,7 @@
 import type { GameController } from "./GameController";
-export function downloadPgn(controller: GameController) {
+export function downloadPgn(source: GameController | string) {
   const url = URL.createObjectURL(
-    new Blob([controller.exportPgn()], {
+    new Blob([typeof source === "string" ? source : source.exportPgn()], {
       type: "application/x-chess-pgn;charset=utf-8",
     }),
   );
