@@ -1367,6 +1367,20 @@ impl Search {
                 base + ply,
                 "le ply {ply} ne suit pas la profondeur réelle de la récursion"
             );
+            // Le coup qui a mené ici, que lit la continuation : `None` si et
+            // seulement si le parent a passé son tour — c'est-à-dire si la
+            // dernière marque de coup nul désigne cette position du chemin.
+            // Même faute, même sort : le coup nul qui écrivait au mauvais ply
+            // laissait à son enfant le coup d'un cousin, et le banc figé ne le
+            // voyait plus sous le groupe du n° 9 — l'enfant d'un coup nul y
+            // tombe en quiescence ou sous la futilité (balayage du 6 oct.
+            // 2026).
+            let by_null = self.null_marks.last() == Some(&(self.path.len() - 1));
+            assert_eq!(
+                self.moved.get(ply).copied().flatten().is_none(),
+                by_null,
+                "le coup qui mène au ply {ply} est mal noté (coup nul : {by_null})"
+            );
         }
 
         self.pv.clear(ply);
@@ -4202,6 +4216,52 @@ mod tests {
         let mut s = search();
         s.path_base = Some(0);
         s.negamax(&Board::default(), 1, 1, -INFINITY, INFINITY, &mut ardoise());
+    }
+
+    #[test]
+    #[should_panic(expected = "est mal noté (coup nul : true)")]
+    fn un_coup_nul_qui_laisse_un_coup_perime_fait_tomber_la_recherche() {
+        // Ce que ferait le coup nul qui écrit au mauvais ply — `ply - 1` au
+        // lieu de `ply + 1`, survivant du balayage du 6 oct. 2026 : l'enfant
+        // atteint par un coup nul hérite du coup qu'un cousin y avait noté.
+        let mut s = search();
+        let b = Board::default();
+        s.path_base = Some(0);
+        s.null_marks.push(s.path.len());
+        s.path.push(b.hash());
+        s.moved[1] = Some(piece_to(&b, "e2e4".parse().unwrap()));
+        s.negamax(&b, 1, 1, -INFINITY, INFINITY, &mut ardoise());
+    }
+
+    #[test]
+    #[should_panic(expected = "est mal noté (coup nul : false)")]
+    fn un_coup_joue_sans_etre_note_fait_tomber_la_recherche() {
+        // Le cas symétrique : un vrai coup mène ici, et rien ne l'a noté.
+        let mut s = search();
+        let b = Board::default();
+        s.path_base = Some(0);
+        s.path.push(b.hash());
+        s.negamax(&b, 1, 1, -INFINITY, INFINITY, &mut ardoise());
+    }
+
+    #[test]
+    fn la_racine_se_cherche_a_sa_profondeur_meme_sans_coup_de_la_table() {
+        // L'IIR retranche un pli à un nœud sans coup de la table — jamais à la
+        // racine, où l'itération doit chercher la profondeur qu'elle annonce.
+        // La garde ne décide rien en partie, l'itération précédente laissant
+        // toujours son coup ; elle décide dans une table vide, et la
+        // profondeur stockée le dit.
+        let b = Board::default();
+        let mut racine = search();
+        racine.negamax(&b, IIR_MIN_DEPTH, 0, -INFINITY, INFINITY, &mut ardoise());
+        let hit = racine.tt.probe(b.hash(), 0).unwrap();
+        assert_eq!(i32::from(hit.depth), IIR_MIN_DEPTH);
+        // Témoin : la même position au ply 1, sans coup de la table, perd son
+        // pli — la profondeur stockée voit donc bien l'IIR.
+        let mut interieur = search();
+        interieur.negamax(&b, IIR_MIN_DEPTH, 1, -INFINITY, INFINITY, &mut ardoise());
+        let hit = interieur.tt.probe(b.hash(), 1).unwrap();
+        assert_eq!(i32::from(hit.depth), IIR_MIN_DEPTH - 1);
     }
 
     #[test]

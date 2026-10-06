@@ -698,6 +698,17 @@ une mesure, pas une préférence.
   de nœuds, c'est l'invariant qu'il faut tester, pas un arbre plus profond*
   : `negamax` confronte désormais le `ply` au chemin, et le mutant fait
   tomber trente-quatre tests unitaires.
+  <br>**Et un changement d'arbre déplace ce que voient les tests de nœuds
+  dans des FICHIERS qu'il ne touche pas** — 6 oct. 2026, premier balayage
+  sous le groupe du n° 9. Le banc figé perd 30 % de ses nœuds, et
+  `eval.rs`, intouché depuis le 16 sept., gagne seize survivants dans ses
+  tables piece-square, quand la prédiction le mettait à son plafond : je
+  n'avais appliqué la règle ci-dessus qu'à `search.rs`. *Le banc figé lit
+  l'évaluation autant que la recherche* ; la prédiction du balayage qui suit
+  un changement d'arbre dit donc où va le plafond d'`eval.rs` aussi. Le même
+  balayage montre un autre mutant de la famille du coup nul — le coup noté
+  pour son enfant, `moved[ply + 1]` —, et le même remède le tue :
+  l'invariant, confronté au chemin.
 - **Un mutant « de réglage » n'est hors de portée des tests que si rien de
   DÉTERMINISTE ne dépend du réglage.** Le plafond d'`eval.rs` était justifié
   depuis le 15 sept. 2026 par « le fichier est en très grande part des VALEURS,
