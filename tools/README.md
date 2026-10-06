@@ -809,7 +809,7 @@ dernière relève est faite.
 | **N° 9 — C39, la futilité aux nœuds frontières** | **37297213900, 37297216607, 37297221303, 37297225434** | `dfda892` → `18a3805`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **RELEVÉ à 15 h 45** — finis entre 15 h 38 et 15 h 44, 6,1 à 6,2 s par partie | **+16,23, +19,13, +28,20, +31,35 ; +23,72 ± 3,75 en commun** — l'amplitude hétérogène, p = 0,029 pour le plus grand écart, le signe non : chaque job passe seul. **Gain : au groupe de la composition.** — *Attendu, écrit avant* : 0 à +35, ~+15 (majorant par l'arbre +41 à +71). **Critère** : gain si la borne basse commune est au-dessus de zéro |
 | **N° 9 — le groupe : C33, C34, C36, C38 et C39 composés sur C32** | **37339198153, 37339202694, 37339207949, 37339212406** | `415f560` → `dec4672`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **RELEVÉ à 21 h 40** — lancés à 16 h 13, juste après `1ad0f69` qui écrit leur attendu ; finis entre 21 h 20 et 21 h 25, 6,1 à 6,2 s par partie | **+50,26, +50,85, +56,07, +51,68 ; +52,22 ± 3,61 en commun**, homogènes (p = 0,684) ; zéro perte au temps. **GAIN DÉMONTRÉ, FUSIONNÉ** (`920da68`, section n° 9, « la composition — VERDICT »). — *Attendu, écrit avant* : +20 à +55, ~+38 ; majorants, la somme des gains seuls +57,6 et l'arbre +80 à +140. **Critère, écrit le 5 oct. à 08 h 05** : fusion si la borne basse commune est au-dessus de zéro ; sinon, bissection par famille — coup nul (C33), *improving* (C36), le reste (C34, C38, C39). Puissance : un vrai +6 passe 88 fois sur cent (section n° 9, « la composition ») |
 | **N° 9 — le balayage hebdomadaire, sur `main` avec le groupe** | — le cron de mardi 00 h 00 UTC | `main` après la fusion du groupe | un job par fichier, puis `Verdict` | **À VENIR** — part au cron, souvent en retard | — *Prédiction, écrite avant* : `search.rs` **entre 39 et 45**, les autres fichiers à leur plafond. 39 si les tests de chaque membre tuent tout ce qu'il ajoute et si le banc figé ne perd rien ; au-dessus, ce que le banc figé, plus petit d'un tiers à la profondeur 6, cesse de voir ailleurs — le précédent d'A18, +4. <span>Confiance faible</span> : aucun crible au candidat (section n° 9, « la composition — VERDICT ») |
-| **N° 9 — le quatrième écran : extensions singulières, historique de correction, historique des captures, ProbCut, échange statique des tranquilles** | — rejeu dans le conteneur | journal neuf de 60 parties de `main` à `f537d33`, rejoué à la profondeur 10 et 12 | dix variantes de la sonde v4 | **EN COURS** — protocole et attendus poussés avant le rejeu | — *Attendus, écrits avant* (section n° 9, « quatrième écran ») : SE singulier dans 10 à 35 % des tests, l'arbre +3 à +25 % ; la première capture porte 80 à 95 % des coupures de capture ; ProbCut −3 à −15 % à la marge 200 ; l'échange statique des tranquilles −2 à −10 %, 0,5 à 3 % des sautés montant `alpha` ; la correction −5 à +5 %. <span>Confiance faible</span> |
+| **N° 9 — le quatrième écran : extensions singulières, historique de correction, historique des captures, ProbCut, échange statique des tranquilles** | — rejeu dans le conteneur | journal neuf de 60 parties de `main` à `f537d33`, rejoué à la profondeur 10, 12 et 14 | dix variantes de la sonde v4, puis six | **RELEVÉ à 04 h 30** | **Quatre candidats** : l'échange statique des tranquilles (C40, −7,2 % d'arbre, 1,4 % des montées d'`alpha` détruites), les extensions singulières à 10 et 20 par pli (C41 et C41b, +17,7 et +9,9 %), l'historique de correction (C42, +7,4 %). **Fermés sans match** : ProbCut (−1,4 % à 12, −2,9 % à 14 — à rouvrir à cadence longue) et l'historique des captures (−1,3 %, la première capture porte déjà 92 % des coupures). *Attendus, écrits avant* : dedans pour l'échange statique des tranquilles, la correction et les captures ; **très au-dessus** pour les extensions singulières — 53 % de singuliers et +65 % d'arbre à la marge de Stockfish — ; **sous** pour ProbCut. Et un défaut de `see` trouvé par l'oracle étendu : le gain d'un pion qui reprend en promouvant (section n° 9, « quatrième écran ») |
 | **C13 — N2L contre Stockfish bridé à 2850** | **37034309570** | `main` à `5f59449` (N2L, B8, les seaux, 64 Mio), 60+0,6, graine « auto » | 300, fastchess | **RELEVÉE le 5 oct.** — finie le 2 oct. à 21 h 20, EPYC 9V74, 2 095 287 n/s ; son attendu poussé avant le lancement (`10eeffc`) | **2 952 ± 30** — 169 − 83 − 48, 64,3 % : dans l'attendu, sous son centre ; **+10 ± 42 sur N2**, pas séparé de zéro. L'attendu appliquait le facteur des réseaux à des gains de recherche, qu'elle écrase davantage (section C13, « N2L »). Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : **~2 990, 2 940 à 3 050** ; l'écart à N2 contre le même adversaire ~+48, séparé de zéro au-delà de ~+42 — section C13, « N2L » |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
 | **balayage hebdomadaire de mutation** — le premier sur le réseau embarqué | 36522994957 | `main` à `4a0af37`, la PR #95 | un job par fichier, puis `Verdict` ; le cron de mardi 00 h, parti à 04 h 44 | **RELEVÉ à 06 h 45, VERT** — fini à 06 h 39, `search.rs` le plus long, 114 min : 497 attrapés, 46 expirés | **La prédiction tient, exactement** : tous les fichiers à leur plafond, total **140**, aucune issue ; les survivants de `search.rs`, `nnue.rs`, `see.rs`, `bench.rs` et `eval.rs` comparés ligne à ligne à ceux du crible — les mêmes, aux mêmes colonnes —, `tt.rs` et `perft.rs` par leur compte ; et les comptes de `search.rs`, attrapés ET expirés, sont ceux du crible. Le code est le même au bit près (`engine/src`, `tools/src`, `engine/tests` : `git diff` vide de `e944248` à `4a0af37`). — *Prédiction, écrite avant de lire le journal* : total **140**, les survivants du crible au candidat (36486347518) un pour un |
@@ -5395,6 +5395,131 @@ chacun révoqué aussitôt, sa rustine à l'attic, un attendu et un critère
 n'agit pas — un plafond nul, une variante qui ne déplace pas l'arbre — se
 ferme ici, sans match.
 
+**Le quatrième écran, RELEVÉ le 6 oct. à 04 h 30.** Sans variante, la
+sonde rend l'arbre de `main` au nœud près sur tout le journal : 107 917 343
+nœuds à la profondeur 10, autant que le binaire de `main` rejoué en témoin.
+
+| | profondeur 10 | profondeur 12 | attendu, écrit avant |
+|---|---|---|---|
+| extensions singulières éligibles, nœuds de profondeur ≥ 8 | 78,4 % | 69,1 % | 30 à 60 % — **au-dessus** |
+| singulier, `se:2:8` | 59,4 % des tests | 53,2 % | 10 à 35 % — **très au-dessus** |
+| l'arbre — `se:2:8` | +35,2 % | +64,8 % | +3 à +15 % — **très au-dessus** |
+| `se:2:6` | +83,3 % | +105,0 % | +5 à +25 % — **très au-dessus** |
+| `se:2:8+mc` | +33,4 % | +57,5 % | −5 à +10 % — **très au-dessus** |
+| la correction moyenne | 15,1 unités | 17,1 | 5 à 30 — **dedans** |
+| l'écart au résultat, brute → corrigée | 76,7 → 71,0, −7,4 % | 81,2 → 75,2, −7,4 % | −2 à −10 % — **dedans** |
+| l'arbre — `corr` | +6,0 % | +7,4 % | −5 à +5 % — **au-dessus** |
+| la première capture cherchée porte, des coupures de capture — recherche | 92,5 % | 92,4 % | 80 à 95 % — **dedans** |
+| … — quiescence | 90,7 % | 90,6 % | 90 à 98 % — **au bord bas** |
+| l'arbre — `caph` | −1,30 % | −1,34 % | −0,5 à −3 % — **dedans** |
+| `caph:400` | −1,30 % | −1,34 % | −1 à −5 % — **au bord** |
+| ProbCut éligible, nœuds de profondeur ≥ 5 hors échec | 25,9 % | 30,0 % | 50 à 90 % — **sous** |
+| il coupe, des nœuds où il cherche, marge 200 | 75,7 % | 71,3 % | 5 à 25 % — **très au-dessus** |
+| l'arbre — `pc:200:5` | −0,24 % | −1,39 % | −3 à −15 % — **sous** |
+| `pc:300:5` | −0,38 % | −1,29 % | −1 à −8 % — **au bord** |
+| tranquilles éligibles qui perdent à l'échange | 24,1 % | 24,4 % | 10 à 30 % — **dedans** |
+| sautés par `seeq:20:8`, et qui, cherchés, montent `alpha` | 1,06 % | 1,00 % | 0,5 à 3 % — **dedans** |
+| l'arbre — `seeq:20:8` | −4,8 % | −7,2 % | −2 à −10 % — **dedans** |
+
+**Une seconde série, ajoutée APRÈS lecture de la première** : les marges
+des extensions singulières, et la profondeur 14 pour la tendance (681 640 334
+nœuds sans variante).
+
+| l'arbre | profondeur 10 | profondeur 12 | profondeur 14 |
+|---|---|---|---|
+| `se:5:8` — singulier dans | +21,2 % — 51,0 % | +37,8 % — 46,0 % | — |
+| `se:10:8` | +11,3 % — 41,5 % | +17,7 % — 37,5 % | — |
+| `se:20:8` | +6,1 % — 32,1 % | +9,9 % — 29,6 % | — |
+| `corr` | +6,0 % | +7,4 % | +12,4 % |
+| `caph` | −1,30 % | −1,34 % | −1,28 % |
+| `pc:200:5` | −0,24 % | −1,39 % | −2,92 % |
+| `seeq:20:8` | −4,8 % | −7,2 % | −6,2 % |
+
+- **Les extensions singulières, à la marge de Stockfish, ne distinguent plus
+  rien.** À 2 unités par pli, plus de la moitié des tests déclarent le coup
+  de la table seul à tenir, et l'arbre gagne 65 % à la profondeur 12 — un pli
+  de moins à temps égal. Le taux de singuliers baisse lentement avec la marge
+  (53, 46, 38, 30 %), l'arbre bien plus vite (+65, +38, +18, +10 %) : les
+  coups qu'une marge plus large cesse de déclarer singuliers étaient les plus
+  chers à étendre. <span>Inférence, confiance faible</span> : la recherche
+  singulière, à mi-profondeur dans un arbre déjà très élagué — compte de
+  coups, futilité, échange statique —, laisse peu d'autres coups atteindre sa
+  borne, d'où l'écart avec un attendu tiré des moteurs qui l'emploient.
+- **ProbCut coupe presque partout où il cherche, et n'épargne presque
+  rien** : 71 % de coupures, −1,4 % d'arbre à la profondeur 12. Il cherche là
+  où une capture gagne déjà franchement ; la recherche ordinaire essaie cette
+  capture en premier et coupe aussi, presque au même prix. **Mais l'épargne
+  double tous les deux plis** — −0,24, −1,39, −2,92 % : à la profondeur 14,
+  son majorant par l'arbre vaut +3 à +6 Elo, que quatre jobs (± 3,7) ne
+  trancheraient pas. **Fermé sans match à `8+0,08`, à rouvrir à une cadence
+  où le moteur cherche à 16 plis et plus** — la cible est la force générale,
+  et une technique qui croît avec la profondeur est invisible à cadence
+  courte (`CLAUDE.md`).
+- **L'historique des captures a un plafond bas** : la première capture
+  cherchée porte déjà 92 % des coupures de capture dans la recherche, 91 %
+  dans la quiescence ; `caph` les porte à 93 et 92 %, et l'arbre perd 1,3 %
+  à toute profondeur — majorant +1,6 à +2,8 Elo. `caph:400` rend l'arbre de
+  `caph` à 121 nœuds près sur 106 millions : borné à ± 512 points
+  d'ordonnancement, l'historique ne fait presque jamais passer une victime
+  devant une plus grosse. **Fermé sans match** : un effet sous 3 Elo
+  demanderait ~30 000 parties (`CLAUDE.md`, la relation de budget).
+- **L'historique de correction corrige — et grossit l'arbre, d'autant plus
+  que la profondeur croît** : l'écart moyen au résultat −7,4 %, l'arbre +6,0,
+  +7,4 puis +12,4 %. Une évaluation qui cesse de se surestimer coupe moins.
+  Le coût en arbre vaut −8 à −15 Elo à la profondeur 12 ; ce que la justesse
+  rachète, seul un match le dit.
+- **L'échange statique des tranquilles fait ce que l'attendu disait** : le
+  quart des tranquilles éligibles perdent à l'échange, et ceux que la marge
+  saute montent `alpha` une fois sur cent — 1,4 % des montées d'`alpha`
+  détruites, la classe de la futilité (1,5 %) et du compte de coups (2,0 %).
+- **Un défaut trouvé en chemin, dans `see`.** L'oracle `see_check`, étendu
+  aux tranquilles pour C40, rend 291 écarts sur 77 020 (0,38 %) : la
+  légalité, comme pour les captures, à 33 près — **un pion qui REPREND en
+  promouvant n'y compte pas le gain de sa promotion**, +880, que l'oracle
+  compte. Une capture sur 5 827 en souffre aussi. La limite est écrite dans
+  `see.rs` ; son correctif change l'arbre, il se mesurera à part (« Ce qui
+  reste à faire »).
+
+**Les candidats** — chacun révoqué aussitôt, sa rustine à l'attic, chacun
+contre `f537d33`, le moteur de `main` :
+
+| candidat | ce qu'il change | commit | révoqué par |
+|---|---|---|---|
+| **C40** | l'échange statique des tranquilles : un tranquille qui perd plus de 20·d² à l'échange se saute, jusqu'à la profondeur 8 | `63c9678` | `3d6fe74` |
+| **C41** | les extensions singulières, marge 10·d, dès la profondeur 8 | `8bb4265` | `9bb49e2` |
+| **C41b** | les mêmes à 20·d — le second point d'une bissection | `a23ffa1` | `0418ccb` |
+| **C42** | l'historique de correction de l'évaluation statique, par structure de pions | `c9c2df3` | `1c54169` |
+
+Chacun rend EXACTEMENT l'arbre de sa variante au rejeu à la profondeur 10 —
+102 728 537, 120 054 845, 114 454 718 et 114 409 637 nœuds ; `verify.sh`
+entier vert sur chacun. Sur C40, un test d'horloge
+(`le_budget_de_temps_est_respecte`) est d'abord tombé pendant que la seconde
+série de rejeux occupait les quatre cœurs, puis a passé trois fois sur trois
+au repos. **Le banc ne voit ni C41 ni C41b** : à la profondeur 7, aucun
+nœud n'atteint la profondeur 8 ; leur test de nœuds cherche le banc à la 9.
+Sous C41, la sonde de C24 ne s'applique plus — l'appel récursif porte
+l'extension —, et la table de l'attic le dit dans le commit du candidat.
+
+**Attendus, écrits avant les matchs** — <span>inférence, confiance
+faible</span> :
+- **C40** : majorant par l'arbre **+9 à +15** (−7,2 % à 12) ; les élagages
+  aveugles du n° 9 ont rendu 19 à 80 % du leur ; **attendu 0 à +12, ~+5** ;
+- **C41** : l'arbre +17,7 % coûte 0,32 pli à temps égal, **−19 à −34 Elo**
+  si la justesse ne bougeait pas — ce que l'extension rachète est la
+  question même ; **attendu −25 à +20, ~−5** ;
+- **C41b** : +9,9 %, un coût de **−11 à −19** ; **attendu −15 à +20, ~0** ;
+- **C42** : +7,4 % à 12, +12,4 % à 14 — **−8 à −24** de coût ; une
+  évaluation plus juste là où les élagages décident ; **attendu −15 à +15,
+  ~0**.
+
+**Critère, écrit avant** — des techniques ajoutées, pas des correctifs de
+règle : **gain si la borne basse commune est au-dessus de zéro**. Si C41 et
+C41b le passent tous deux, le meilleur au point est retenu, comme C32 contre
+C32b. Un gain rejoint le groupe d'une composition, mesurée contre `main`
+comme le 5 oct. **Puissance, dite d'avance** : quatre jobs de 3 000 parties
+par candidat, ± 3,7 en commun ; un vrai +5 passe la borne trois fois sur
+quatre, un vrai +10 presque toujours — et un vrai −5 jamais.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -6482,6 +6607,7 @@ qu'en partie dans le dépôt n'existe pas.*
 |---|---|---|
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 |
+| **C43 — le gain d'un pion qui reprend en promouvant, dans `see`** — trouvé le 6 oct. par l'oracle `see_check` étendu aux coups tranquilles pour C40 | — correctif de règle | **à faire** : `exchange` compte le pion qui reprend sur la dernière rangée comme une dame pour la suite, pas le gain de sa promotion (+880) ; l'oracle le voit sur 33 tranquilles sur 77 020 et une capture sur 5 827. Le protocole des correctifs de règle (`CLAUDE.md`) : un test qui tombe sur l'ancien code, valeur lue sur l'oracle ; le mécanisme mesuré en régime réel — combien de décisions d'élagage et d'ordre en changent ; un match au critère « fusion sauf si la borne haute est sous zéro » |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : FUSIONNÉ le 24 sept., +44,64 ± 6,24 Elo à `8+0,08`** (section C24) — profondeur moyenne inchangée, le gain est dans la répartition, et la lecture par l'accord a tenu. <s>C25 — la répartition par la stabilité : ÉCRIT le 24 sept.</s> **C25 — la répartition par la stabilité : FUSIONNÉ au verdict du 24 sept., +7,87 ± 6,08 Elo à `8+0,08`** (section C25) — sous l'attendu de +12 à +25 : l'Elo d'un pli d'accord dépend de la règle, 22 à 46 ici contre ~69 pour C24. **Le chantier est au bout de ce que l'écran désignait** — l'effort à la racine n'ajoute rien, le score en chute est rare (écran, « Ce qui en sort »). <s>Prochaine action : C26, le risque que C24 et C25 ont aggravé ; ensuite, la question se repose à Théo.</s> **C26 est FUSIONNÉ le 25 sept.** (ligne C26) : **l'allocation inégale est close, et la suite se repose à Théo.** *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
@@ -6506,7 +6632,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **la vitesse de l'inférence** — proposé le 29 sept. | se convertit en plis par l'étalon, une fois mesurée | Le nœud au réseau coûte 0,873 fois le nœud fait main sur le binaire de base, **0,731 compilé pour AVX2** (26 sept.). Leviers : compiler pour le processeur de la machine qui joue, des mises à jour paresseuses de l'accumulateur. **Sans `unsafe`** — la lint l'interdit —, donc pas d'intrinsèques : la vectorisation passe par le compilateur. Exige le banc au réseau |
 | **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : FUSIONNÉS le 30 sept.** — +30,13 ± 5,60 Elo sous pression, +1,85 ± 5,51 au défaut ; **C30, la taille par défaut : FAIT le 30 sept.** — +2,90 ± 5,72, aucun coût démontré, **le défaut est à 64 Mio**. La question de la table à cadence longue est close ; au-delà de 60+0,6 — 40/15 —, c'est à l'interface de régler `Hash` | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |
 | **un livre d'ouvertures, pour les parties depuis la position initiale** — proposé le 29 sept., sur une question de Théo ; **l'issue pour Codex — le livre et `Hash` réglé selon la cadence, dans l'interface — : plus tard** (Théo, 30 sept.) | — **zéro dans toutes nos mesures, par construction** | **Nos matchs partent tous de positions de livre** (`tools/book.epd`), contre notre jumeau comme contre Stockfish bridé ; **les listes imposent le leur** — CCRL, lu par le moteur de recherche seulement, le site est bloqué d'ici : un livre générique commun, celui du moteur désactivé, l'apprentissage de livre et de positions interdit ; <span>confiance moyenne à élevée</span>. **Ce qu'il vaudrait depuis la position initiale — les parties de l'interface —, non mesuré** : du **temps**, le budget valant `restant / 12 + inc / 2` — par l'arithmétique de la formule, les huit premiers coups consomment **47 à 55 % de la base** à 80 – 100 % du budget dépensé, et le premier reçoit trois à six fois le temps du vingtième ; un livre rendrait ce temps aux premiers coups hors théorie. De la **variété** : à un fil et table vidée par `ucinewgame`, le moteur rejoue presque toujours la même ouverture. **Sa place est l'interface, pas le moteur** : dans le modèle UCI, c'est elle qui joue les coups de livre ; Stockfish n'en embarque pas ; et un livre qui APPREND des parties heurterait une décision tranchée — « pas de persistance » (`CLAUDE.md`). Donc un chantier de `ui/`. **Sa source** : un livre bâti par notre auto-jeu est le plus cher et le plus faible — il recopie nos opinions à cadence courte ; mieux, une base de parties fortes (celle de Lichess se dit dans le domaine public, à vérifier avant usage) ou des recherches profondes sur un petit arbre, sur runners. L'angle mort côté moteur — le réseau n'a jamais vu d'ouverture — est dans la section n° 7 : **sondé le 30 sept., rien de décelable** — rapporté à la faite main, le réseau perd même relativement moins en ouverture qu'en milieu de partie. Reste le temps et la variété, côté interface |
-| **techniques de recherche absentes** — proposé le 29 sept., **DÉCIDÉ n° 9** (Théo, 29 sept.) | non chiffrées | **EN COURS** — premier écran relevé le 5 oct. : **C32, la réduction du coup nul adaptée à la profondeur, +40,90 ± 5,34, FUSIONNÉ** ; la garde du coup nul +11,12 et l'IIR +7,50, au groupe de la composition ; <s>*improving*, l'échange statique hors quiescence et la futilité aux nœuds frontières en vol</s> **deuxième écran relevé le même jour** : l'échange statique hors quiescence +9,61 et *improving* dans l'élagage par compte +5,65, au groupe ; *improving* dans LMR +0,75, sans effet ; dans la futilité inverse −8,51, régression démontrée. <s>**La PROCHAINE action** : relever la futilité aux nœuds frontières, puis composer le groupe et le mesurer contre `main`</s> **troisième écran relevé le même jour** : la futilité aux nœuds frontières +23,72, au groupe. **Le groupe** — C33, C34, C36, C38, C39 — **+52,22 ± 3,61 contre `main`, FUSIONNÉ le 5 oct.** : avec C32, ~+93 Elo à `8+0,08` dans la journée ; l'arbre du groupe privé de chaque membre n'en trouvait aucun absorbé. **La PROCHAINE action** : l'écran suivant du n° 9 — extensions singulières, historique de correction de l'évaluation statique, historique des captures, ProbCut, élagage des coups tranquilles par l'échange statique —, le mécanisme mesuré d'abord (section n° 9, « la composition — VERDICT »). <s>**Aucune n'est dans `search.rs`**</s> (recherche du 29 sept.) : extensions singulières, drapeau « *improving* », historique de correction de l'évaluation statique, réduction itérative interne, réduction du coup nul adaptée à la profondeur (`NULL_MOVE_REDUCTION` vaut 2, fixe), futilité aux nœuds frontières, élagage par l'échange statique hors quiescence, historique des captures, ProbCut. **Chacune un SPRT, séparément** : être standard ne prouve rien, PVS et l'extension d'échec en sont les démentis (`CLAUDE.md`). Mesurer le mécanisme d'abord, comme pour les autres |
+| **techniques de recherche absentes** — proposé le 29 sept., **DÉCIDÉ n° 9** (Théo, 29 sept.) | non chiffrées | **EN COURS** — premier écran relevé le 5 oct. : **C32, la réduction du coup nul adaptée à la profondeur, +40,90 ± 5,34, FUSIONNÉ** ; la garde du coup nul +11,12 et l'IIR +7,50, au groupe de la composition ; <s>*improving*, l'échange statique hors quiescence et la futilité aux nœuds frontières en vol</s> **deuxième écran relevé le même jour** : l'échange statique hors quiescence +9,61 et *improving* dans l'élagage par compte +5,65, au groupe ; *improving* dans LMR +0,75, sans effet ; dans la futilité inverse −8,51, régression démontrée. <s>**La PROCHAINE action** : relever la futilité aux nœuds frontières, puis composer le groupe et le mesurer contre `main`</s> **troisième écran relevé le même jour** : la futilité aux nœuds frontières +23,72, au groupe. **Le groupe** — C33, C34, C36, C38, C39 — **+52,22 ± 3,61 contre `main`, FUSIONNÉ le 5 oct.** : avec C32, ~+93 Elo à `8+0,08` dans la journée ; l'arbre du groupe privé de chaque membre n'en trouvait aucun absorbé. <s>**La PROCHAINE action** : l'écran suivant du n° 9 — extensions singulières, historique de correction de l'évaluation statique, historique des captures, ProbCut, élagage des coups tranquilles par l'échange statique —, le mécanisme mesuré d'abord (section n° 9, « la composition — VERDICT »).</s> **Quatrième écran relevé le 6 oct.** : l'échange statique des tranquilles (C40), les extensions singulières à 10 et 20 par pli (C41, C41b) et l'historique de correction (C42) **en vol**, quatre jobs chacun ; ProbCut et l'historique des captures **fermés sans match** — ProbCut à rouvrir à cadence longue, son épargne doublant tous les deux plis. **La PROCHAINE action** : relever les quatre candidats, puis composer les gains contre `main` (section n° 9, « quatrième écran »). <s>**Aucune n'est dans `search.rs`**</s> (recherche du 29 sept.) : extensions singulières, drapeau « *improving* », historique de correction de l'évaluation statique, réduction itérative interne, réduction du coup nul adaptée à la profondeur (`NULL_MOVE_REDUCTION` vaut 2, fixe), futilité aux nœuds frontières, élagage par l'échange statique hors quiescence, historique des captures, ProbCut. **Chacune un SPRT, séparément** : être standard ne prouve rien, PVS et l'extension d'échec en sont les démentis (`CLAUDE.md`). Mesurer le mécanisme d'abord, comme pour les autres |
 | **tablebases de finale** (reste de B6) | — | **reporté**, non chiffré |
 | **B5 — analyse dans l'interface ; A8 — transport interface ↔ moteur** | — | **côté `ui/`**, chantier mené séparément sous son propre `ui/CLAUDE.md` : listés ici pour que le tableau soit complet, pas pour être ordonnés avec le moteur |
 | **l'option `MultiPV`** — proposée par Théo le 2 oct. (« *possible / long une option pour exposer multi pv (…) sans pénaliser la perf du moteur ?* »), **mise au backlog le même jour** (« *pas tout de suite* ») | — une option d'analyse, sans Elo : à `MultiPV 1`, l'arbre est le même au nœud près | **Ce qui est dit, écrit avant d'écrire une ligne** : en UCI une option entière, défaut 1 — le comportement actuel. La racine boucle sur k lignes, chacune sa fenêtre d'aspiration centrée sur son score précédent, les coups des lignes déjà trouvées exclus ; **k plafonné au nombre de coups légaux** — sans quoi l'exclusion de tous les coups ferait annoncer un faux mat ou un faux pat ; les lignes 2 et suivantes n'écrivent pas l'entrée de la table à la racine, qui garde le vrai meilleur coup ; coup joué, ponder et pendule sur la ligne 1 ; fils auxiliaires inchangés ; le champ `multipv` des `info` seulement à partir de 2, la sortie par défaut identique à l'octet. **La preuve de « sans coût »** : banc identique (107 548 nœuds) et `tools/timing.sh` — un arbre inchangé ne passe pas par un SPRT. À `MultiPV k`, environ k fois le temps par profondeur : une option d'analyse, pas de jeu. Estimée à une demi-journée, crible de mutation compris — <span>confiance moyenne</span>. L'interface devra lire le champ `multipv` : à transmettre à Codex le jour venu |

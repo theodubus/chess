@@ -1,0 +1,386 @@
+diff --git a/CLAUDE.md b/CLAUDE.md
+index a9805e5..7098b8a 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -1118,7 +1118,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
+ rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
+ commit.
+ 
+-Référence à la profondeur 7 : 90 656 nœuds.
++Référence à la profondeur 7 : 89 663 nœuds.
+ 
+ Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
+ `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
+diff --git a/README.md b/README.md
+index f2f1f33..0e3ed4e 100644
+--- a/README.md
++++ b/README.md
+@@ -226,7 +226,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
+ Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
+ dépend ni de la machine ni de sa charge.
+ 
+-Référence à la profondeur 7 : **90 656** nœuds.
++Référence à la profondeur 7 : **89 663** nœuds.
+ 
+ Ce chiffre est vérifié par la CI — voir
+ [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index f042e1f..bd86851 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -122,6 +122,15 @@ const SEE_PRUNE_MAX_DEPTH: i32 = 6;
+ /// profondeur restante, avant d'être sautée — voir [`see_prunable_main`].
+ const SEE_PRUNE_MARGIN: i32 = 100;
+ 
++/// Profondeur restante maximale à laquelle un coup tranquille perdant se
++/// saute dans la recherche principale — voir [`see_prunable_quiet`].
++const SEE_QUIET_MAX_DEPTH: i32 = 8;
++
++/// Ce qu'un coup tranquille peut perdre au compte de l'échange statique, par
++/// pli de profondeur restante AU CARRÉ, avant d'être sauté — voir
++/// [`see_prunable_quiet`].
++const SEE_QUIET_MARGIN: i32 = 20;
++
+ /// Profondeur minimale pour réduire un coup tardif.
+ const LMR_MIN_DEPTH: i32 = 3;
+ 
+@@ -504,6 +513,10 @@ pub struct Search {
+     /// Permet à un test de désactiver la seule futilité aux nœuds frontières.
+     #[cfg(test)]
+     frontier_futility: bool,
++    /// Permet à un test de désactiver le seul échange statique des coups
++    /// tranquilles.
++    #[cfg(test)]
++    quiet_see_pruning: bool,
+     /// Fait vérifier à chaque évaluation que les accumulateurs dérivés coup
+     /// par coup sont ceux d'un recalcul complet, et compte les vérifications
+     /// — sans ce compte, un test qui ne passerait jamais par là resterait
+@@ -564,6 +577,8 @@ impl Search {
+             #[cfg(test)]
+             frontier_futility: true,
+             #[cfg(test)]
++            quiet_see_pruning: true,
++            #[cfg(test)]
+             checked_accumulators: None,
+         }
+     }
+@@ -674,6 +689,19 @@ impl Search {
+         }
+     }
+ 
++    /// Vrai si l'échange statique des coups tranquilles est actif : toujours,
++    /// hors test.
++    fn quiet_see_pruning_on(&self) -> bool {
++        #[cfg(test)]
++        {
++            self.quiet_see_pruning
++        }
++        #[cfg(not(test))]
++        {
++            true
++        }
++    }
++
+     /// L'évaluation statique de `board`, cherché au ply `ply` : celle du
+     /// réseau sur les accumulateurs de ce ply quand il y en a un, sinon la
+     /// faite main. Le seul point d'entrée de l'évaluation dans la recherche.
+@@ -1660,6 +1688,22 @@ impl Search {
+                 continue;
+             }
+ 
++            // L'échange statique des coups tranquilles (C40) — voir
++            // `see_prunable_quiet`. Les gardes de la futilité ci-dessus, pour
++            // les mêmes raisons ; `continue` et non `break` : le tranquille
++            // suivant peut ne rien perdre.
++            if quiet
++                && !in_check
++                && ply > 0
++                && depth <= SEE_QUIET_MAX_DEPTH
++                && best > -MATE_THRESHOLD
++                && child.checkers().is_empty()
++                && self.quiet_see_pruning_on()
++                && see_prunable_quiet(board, mv, depth)
++            {
++                continue;
++            }
++
+             if let Some(slot) = self.moved.get_mut(ply + 1) {
+                 *slot = Some(piece_to(board, mv));
+             }
+@@ -2230,6 +2274,27 @@ fn see_prunable_main(board: &Board, mv: Move, depth: i32) -> bool {
+         && see::see(board, mv) < -SEE_PRUNE_MARGIN * depth
+ }
+ 
++/// Vrai si le coup TRANQUILLE `mv`, cherché à la profondeur restante `depth`
++/// dans la recherche principale, perd à l'échange statique plus de
++/// [`SEE_QUIET_MARGIN`] × `depth²` : il se saute (C40). Les gardes de nœud —
++/// hors racine, hors échec, après un premier coup, sans donner échec, à la
++/// profondeur ≤ [`SEE_QUIET_MAX_DEPTH`] — sont dans `negamax`.
++///
++/// **Pourquoi** : un coup tranquille qui pose une pièce en prise se cherchait
++/// à pleine profondeur ; seuls la futilité et le compte de coups le
++/// sautaient, sans regarder ce qu'il perd. Mesuré le 6 oct. 2026, rejeu de
++/// 6 203 positions de parties du moteur qui joue, profondeur 12 : **24 %** des
++/// tranquilles éligibles perdent à l'échange ; la marge en saute **12 %**, et
++/// **1 %** de ceux-là, cherchés, montent `alpha` — 1,4 % des montées
++/// d'`alpha` détruites, la classe de la futilité et du compte de coups ;
++/// l'arbre −7,2 %. **La marge croît au carré** de la profondeur, comme chez
++/// Stockfish (`-27 · lmrDepth²`) : à la profondeur 1 un pion perdu suffit, à
++/// la 8 il faut perdre plus qu'une dame. **En unités de l'échange**, pas de
++/// l'évaluation — voir [`see_prunable_main`].
++fn see_prunable_quiet(board: &Board, mv: Move, depth: i32) -> bool {
++    see::see_quiet(board, mv) < -SEE_QUIET_MARGIN * depth * depth
++}
++
+ /// Cette capture peut-elle perdre du matériel ?
+ ///
+ /// **Une pure économie, jamais une garde de correction.** Se tromper ne peut
+@@ -2998,6 +3063,57 @@ mod tests {
+         );
+     }
+ 
++    /// Construit une recherche dont le seul échange statique des coups
++    /// tranquilles est désactivé.
++    fn search_sans_seeq() -> Search {
++        let mut s = search();
++        s.quiet_see_pruning = false;
++        s
++    }
++
++    #[test]
++    fn un_tranquille_perdant_se_saute_selon_la_profondeur() {
++        // Position et valeurs lues sur l'oracle (`see_check`) : le cavalier
++        // c6 en e5 se perd contre le pion d4 (−320), en b4 contre le pion c3,
++        // repris par a5 (−220) ; e7e6 ne perd rien.
++        let b = board("r1bqkb1r/1pp1p2p/2n3pn/p2p1p2/P2P4/2P2NPP/1P2PP2/RNBQKB1R b KQkq - 1 7");
++        let coup = |uci: &str| cozy_chess::util::parse_uci_move(&b, uci).unwrap();
++        let (e5, b4, e6) = (coup("c6e5"), coup("c6b4"), coup("e7e6"));
++        assert_eq!(see::see_quiet(&b, e5), -320);
++        assert_eq!(see::see_quiet(&b, b4), -220);
++        assert_eq!(see::see_quiet(&b, e6), 0);
++        // La marge croît au carré : 20, 80, 180, 320. L'égalité ne saute pas.
++        assert!(see_prunable_quiet(&b, e5, 1));
++        assert!(see_prunable_quiet(&b, e5, 3));
++        assert!(!see_prunable_quiet(&b, e5, 4));
++        assert!(see_prunable_quiet(&b, b4, 3));
++        assert!(!see_prunable_quiet(&b, b4, 4));
++        assert!(!see_prunable_quiet(&b, e6, 1));
++    }
++
++    #[test]
++    fn le_roque_ne_se_saute_jamais_par_lechange_statique() {
++        // Le roque est codé roi-prend-tour : sa case d'arrivée, h1, est celle
++        // de la tour, que le fou b7 attaque par la grande diagonale. L'échange
++        // y compterait un roi perdu ; la règle du jeu dit zéro.
++        let b = board("4k3/1b6/8/8/8/8/8/4K2R w K - 0 1");
++        let roque = cozy_chess::util::parse_uci_move(&b, "e1g1").unwrap();
++        assert!(b.is_legal(roque), "le roque doit être légal ici");
++        assert_eq!(see::see_quiet(&b, roque), 0);
++        assert!(!see_prunable_quiet(&b, roque, 1));
++    }
++
++    #[test]
++    fn lechange_statique_des_tranquilles_retire_des_noeuds() {
++        // Au TOTAL sur les trente-six positions de parties, comme le compte de
++        // coups et la futilité inverse : une position seule ne prouve rien.
++        let (avec, sans) = noeuds_avec_et_sans(search_sans_seeq);
++        assert!(
++            avec < sans,
++            "l'échange statique des tranquilles ne retire rien : {avec} avec, {sans} sans, sur les positions de partie"
++        );
++    }
++
+     /// Construit une recherche dont le seul élagage par compte de coups est
+     /// désactivé.
+     fn search_sans_lmp() -> Search {
+diff --git a/engine/src/see.rs b/engine/src/see.rs
+index 3ffa015..03d2745 100644
+--- a/engine/src/see.rs
++++ b/engine/src/see.rs
+@@ -212,21 +212,76 @@ pub fn see(board: &Board, mv: Move) -> i32 {
+     } else {
+         Square::new(target.file(), mv.from.rank())
+     };
+-    let mut occupied =
++    let occupied =
+         (board.occupied() ^ mv.from.bitboard() ^ victim_square.bitboard()) | target.bitboard();
+ 
++    // Ce qui se tient sur la case et que l'adversaire peut prendre.
++    let on_target = mv
++        .promotion
++        .map_or_else(|| value_on(attacker, target, us), |p| VALUE[p as usize]);
++
+     // Ce que notre coup rapporte, promotion comprise : le pion quitte
+     // l'échiquier et la pièce promue le rejoint.
++    exchange(board, target, occupied, gain_initial, on_target)
++}
++
++/// L'échange statique d'un coup qui ne prend RIEN, en centièmes de pion : la
++/// pièce se pose sur `mv.to`, puis la suite des captures sur cette case, les
++/// deux camps pouvant s'arrêter à tout moment. Zéro si personne ne la prend,
++/// négatif si elle s'y perd — un cavalier qu'un pion prend sans reprise
++/// possible vaut −320.
++///
++/// **Le roi rend toujours zéro**, et ce n'est pas une approximation : un coup
++/// de roi légal ne se pose jamais sur une case attaquée. Mais `cozy-chess`
++/// code le roque roi-prend-tour, sa case d'arrivée est celle de NOTRE tour, et
++/// l'échange y compterait un roi de dix mille centièmes perdu sur une case
++/// que le roi n'occupera jamais — la règle du jeu tranche avant la géométrie.
++///
++/// Sert à l'élagage des coups tranquilles perdants dans la recherche
++/// principale (C40), comme [`see`] sert à celui des captures.
++#[must_use]
++pub fn see_quiet(board: &Board, mv: Move) -> i32 {
++    let Some(mover) = board.piece_on(mv.from) else {
++        return 0;
++    };
++    if mover == Piece::King {
++        return 0;
++    }
++    let target = mv.to;
++    // Une seule case se libère : rien n'est pris.
++    let occupied = (board.occupied() ^ mv.from.bitboard()) | target.bitboard();
++    exchange(
++        board,
++        target,
++        occupied,
++        0,
++        value_on(mover, target, board.side_to_move()),
++    )
++}
++
++/// La suite d'échanges sur `target`, une fois le premier coup joué : il a
++/// rapporté `gain_initial`, laisse sur la case une pièce de valeur
++/// `on_target`, et c'est à l'adversaire du camp au trait de `board` de
++/// reprendre. Commune à [`see`] et [`see_quiet`] : deux copies de cette
++/// boucle divergeraient au premier changement.
++///
++/// **Une limite connue, trouvée par l'oracle le 6 oct. 2026** : un pion qui
++/// REPREND en promouvant compte comme une dame pour la suite — c'est
++/// [`value_on`] —, mais le gain de sa promotion, +880, n'entre pas dans son
++/// propre coup. L'oracle le voit sur 33 coups tranquilles sur 77 020 et une
++/// capture sur 5 827. Le corriger change l'arbre, donc se mesure à part.
++fn exchange(
++    board: &Board,
++    target: Square,
++    mut occupied: BitBoard,
++    gain_initial: i32,
++    mut on_target: i32,
++) -> i32 {
+     let mut gain = [0i32; MAX_SWAPS];
+     gain[0] = gain_initial;
+ 
+-    // Ce qui se tient sur la case et que l'adversaire peut prendre.
+-    let mut on_target = mv
+-        .promotion
+-        .map_or_else(|| value_on(attacker, target, us), |p| VALUE[p as usize]);
+-
+     let mut depth = 0;
+-    let mut side = !us;
++    let mut side = !board.side_to_move();
+ 
+     while let Some((from, piece)) = least_valuable_attacker(board, target, side, occupied) {
+         depth += 1;
+diff --git a/engine/tests/bench_reference.rs b/engine/tests/bench_reference.rs
+index b910728..a877c68 100644
+--- a/engine/tests/bench_reference.rs
++++ b/engine/tests/bench_reference.rs
+@@ -351,7 +351,7 @@ fn les_milliers_se_regroupent_comme_dans_le_document() {
+ #[test]
+ fn larbre_de_recherche_ne_bouge_pas_en_silence() {
+     const PROFONDEUR: u32 = 6;
+-    const NOEUDS: u64 = 48_497;
++    const NOEUDS: u64 = 47_209;
+ 
+     let noeuds = shallowred::bench::run(PROFONDEUR).unwrap();
+     assert_eq!(
+diff --git a/tools/src/bin/see_check.rs b/tools/src/bin/see_check.rs
+index 76dc0c1..2d5134f 100644
+--- a/tools/src/bin/see_check.rs
++++ b/tools/src/bin/see_check.rs
+@@ -26,11 +26,21 @@
+ //!
+ //! Le corpus se produit par `datagen`, jamais depuis le banc : les six positions
+ //! du banc ne sont pas un échantillon de jeu.
++//!
++//! # Les coups tranquilles aussi, depuis C40
++//!
++//! `see_quiet` évalue un coup qui ne prend rien : l'oracle joue le coup, puis
++//! cherche ce que l'adversaire extrait de la case d'arrivée. Les coups de roi
++//! en sont écartés — `see_quiet` les rend à zéro par la règle du jeu, et le
++//! roque, codé roi-prend-tour, n'arrive pas en `mv.to`. Premier passage, le
++//! 6 oct. 2026, 3 337 positions : 291 écarts sur 77 020 tranquilles, 0,38 %,
++//! la légalité pour l'essentiel comme pour les captures — et 33 d'une autre
++//! cause, la promotion d'un pion qui reprend (voir `see.rs`, `exchange`).
+ use std::io::BufRead;
+ 
+-use cozy_chess::{Board, Move, Square};
++use cozy_chess::{Board, Move, Piece, Square};
+ use shallowred::search::captured_piece;
+-use shallowred::see::{capture_value, see};
++use shallowred::see::{capture_value, see, see_quiet};
+ 
+ /// Ce que le camp au trait peut extraire de `target`, au mieux.
+ ///
+@@ -62,6 +72,17 @@ fn exact(board: &Board, mv: Move) -> Option<i32> {
+     Some(gain - oracle(&child, mv.to))
+ }
+ 
++/// La valeur exacte d'un coup qui ne prend rien, selon l'oracle : rien de
++/// gagné, puis ce que l'adversaire extrait de la case d'arrivée (C40). Le
++/// roque, codé roi-prend-tour, n'a pas sa case d'arrivée en `mv.to` : il est
++/// écarté avec tous les coups de roi, que [`see_quiet`] rend à zéro par la
++/// règle du jeu.
++fn exact_quiet(board: &Board, mv: Move) -> i32 {
++    let mut child = board.clone();
++    child.play_unchecked(mv);
++    -oracle(&child, mv.to)
++}
++
+ fn main() {
+     // `detail` imprime chaque capture avec sa valeur d'oracle, au lieu de ne
+     // signaler que les écarts. C'est ce qui sert à FIXER la valeur attendue
+@@ -74,6 +95,7 @@ fn main() {
+         .unwrap_or(2000);
+ 
+     let (mut positions, mut captures, mut ecarts) = (0usize, 0u64, 0u64);
++    let (mut tranquilles, mut ecarts_tranquilles) = (0u64, 0u64);
+     let mut exemples: Vec<String> = Vec::new();
+ 
+     let stdin = std::io::stdin();
+@@ -97,6 +119,26 @@ fn main() {
+         });
+         for mv in coups {
+             if captured_piece(&board, mv).is_none() {
++                // Les coups tranquilles, hors promotion et hors roi : ceux
++                // que `see_quiet` évalue pour l'élagage (C40).
++                if mv.promotion.is_none() && board.piece_on(mv.from) != Some(Piece::King) {
++                    tranquilles += 1;
++                    let attendu = exact_quiet(&board, mv);
++                    let obtenu = see_quiet(&board, mv);
++                    if detail && attendu != 0 {
++                        println!(
++                            "DETAIL-TRANQUILLE|{fen}|{}|oracle {attendu}|see {obtenu}",
++                            cozy_chess::util::display_uci_move(&board, mv)
++                        );
++                    }
++                    if obtenu != attendu {
++                        ecarts_tranquilles += 1;
++                        exemples.push(format!(
++                            "tranquille|{fen}|{}|{attendu}|{obtenu}",
++                            cozy_chess::util::display_uci_move(&board, mv)
++                        ));
++                    }
++                }
+                 continue;
+             }
+             captures += 1;
+@@ -126,6 +168,8 @@ fn main() {
+     println!("positions            {positions}");
+     println!("captures confrontées {captures}");
+     println!("ÉCARTS               {ecarts}");
++    println!("tranquilles confrontés {tranquilles}");
++    println!("ÉCARTS TRANQUILLES     {ecarts_tranquilles}");
+     // Chaque écart est imprimé en entier, pour être classé par un oracle de
+     // clouage. Un écart qu'on ne classe pas est un écart qu'on suppose.
+     for e in &exemples {

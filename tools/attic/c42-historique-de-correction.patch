@@ -1,0 +1,333 @@
+diff --git a/CLAUDE.md b/CLAUDE.md
+index a9805e5..3c5f3d7 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -1118,7 +1118,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
+ rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
+ commit.
+ 
+-Référence à la profondeur 7 : 90 656 nœuds.
++Référence à la profondeur 7 : 85 677 nœuds.
+ 
+ Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
+ `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
+diff --git a/README.md b/README.md
+index f2f1f33..fb3a70e 100644
+--- a/README.md
++++ b/README.md
+@@ -226,7 +226,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
+ Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
+ dépend ni de la machine ni de sa charge.
+ 
+-Référence à la profondeur 7 : **90 656** nœuds.
++Référence à la profondeur 7 : **85 677** nœuds.
+ 
+ Ce chiffre est vérifié par la CI — voir
+ [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index f042e1f..03d7b16 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -122,6 +122,23 @@ const SEE_PRUNE_MAX_DEPTH: i32 = 6;
+ /// profondeur restante, avant d'être sautée — voir [`see_prunable_main`].
+ const SEE_PRUNE_MARGIN: i32 = 100;
+ 
++/// Entrées de l'historique de correction, par camp au trait — voir
++/// `Search::correction`.
++const CORRECTION_SIZE: usize = 1 << 14;
++
++/// Le grain de l'historique de correction : ses entrées sont en unités
++/// d'évaluation × `CORRECTION_GRAIN`, pour qu'une moyenne mobile garde ses
++/// fractions d'une mise à jour à l'autre.
++const CORRECTION_GRAIN: i32 = 256;
++
++/// La correction la plus forte, en unités d'évaluation : environ un pion au
++/// réseau.
++const CORRECTION_MAX: i32 = 256;
++
++/// L'écart le plus fort qu'une recherche verse à la moyenne, en unités
++/// d'évaluation : un résultat tactique ne doit pas emporter la table.
++const CORRECTION_DIFF_MAX: i32 = 512;
++
+ /// Profondeur minimale pour réduire un coup tardif.
+ const LMR_MIN_DEPTH: i32 = 3;
+ 
+@@ -448,6 +465,16 @@ pub struct Search {
+     /// 590 000 entrées n'apprend rien en un coup ; une de 4 096 apprend en un
+     /// coup, et ce qu'elle garde du précédent l'égare.
+     continuation: Vec<i32>,
++    /// Historique de correction de l'évaluation statique (C42) : par camp au
++    /// trait et par structure de pions, la moyenne mobile de l'écart entre le
++    /// résultat d'une recherche et l'évaluation brute du nœud, quand la borne
++    /// en dit le sens — voir [`informs_correction`]. Ajoutée à l'évaluation
++    /// que lisent les élagages et la quiescence.
++    ///
++    /// **Conservé d'un coup à l'autre, vidé par `ucinewgame`**, comme la
++    /// continuation : une structure de pions change peu d'un coup au suivant,
++    /// et ce que la recherche a appris d'elle vaut encore.
++    correction: Vec<i32>,
+     /// Par ply : la pièce et la case d'arrivée du coup qui y a mené, `None`
+     /// après un coup nul. Chaque case est écrite par le nœud parent avant
+     /// d'être lue par l'enfant, et la racine n'est jamais écrite : aucune
+@@ -549,6 +576,7 @@ impl Search {
+             history: vec![0; 64 * 64],
+             lmr: build_lmr_table(),
+             continuation: vec![0; PIECE_TO * PIECE_TO],
++            correction: vec![0; 2 * CORRECTION_SIZE],
+             moved: vec![None; MAX_PLY + 1],
+             evals: vec![None; MAX_PLY + 1],
+             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
+@@ -674,6 +702,21 @@ impl Search {
+         }
+     }
+ 
++    /// La correction de la structure de pions de `board`, en unités
++    /// d'évaluation — voir `Search::correction`.
++    fn correction_value(&self, board: &Board) -> i32 {
++        self.correction.get(pawn_index(board)).copied().unwrap_or(0) / CORRECTION_GRAIN
++    }
++
++    /// Verse à la moyenne de la structure de pions de `board` l'écart `diff`
++    /// entre un résultat de recherche et l'évaluation brute — voir
++    /// [`correction_step`].
++    fn update_correction(&mut self, board: &Board, diff: i32, depth: i32) {
++        if let Some(entry) = self.correction.get_mut(pawn_index(board)) {
++            *entry = correction_step(*entry, diff, depth);
++        }
++    }
++
+     /// L'évaluation statique de `board`, cherché au ply `ply` : celle du
+     /// réseau sur les accumulateurs de ce ply quand il y en a un, sinon la
+     /// faite main. Le seul point d'entrée de l'évaluation dans la recherche.
+@@ -724,8 +767,10 @@ impl Search {
+         self.killers.fill([0; 2]);
+         self.history.fill(0);
+         self.continuation.fill(0);
++        self.correction.fill(0);
+         for helper in &mut self.helpers {
+             helper.continuation.fill(0);
++            helper.correction.fill(0);
+         }
+     }
+ 
+@@ -1486,10 +1531,16 @@ impl Search {
+         // futilité inverse, celle des nœuds frontières (C39) et la garde du
+         // coup nul (C33) la lisent, et le drapeau `improving` la compare à
+         // celle de notre nœud précédent sur le chemin (voir `is_improving`).
+-        let mut static_eval = board
++        // L'évaluation BRUTE, que l'historique de correction apprend à
++        // corriger (C42), et l'évaluation corrigée, que lisent les élagages :
++        // la correction est celle de l'entrée du nœud, avant que son
++        // sous-arbre ne la mette à jour.
++        let raw_eval = board
+             .checkers()
+             .is_empty()
+             .then(|| self.static_eval(board, ply));
++        let correction = self.correction_value(board);
++        let mut static_eval = raw_eval.map(|raw| corrected(raw, correction));
+         if let Some(slot) = self.evals.get_mut(ply) {
+             *slot = static_eval;
+         }
+@@ -1754,6 +1805,18 @@ impl Search {
+         } else {
+             Bound::Upper
+         };
++        // L'historique de correction apprend du résultat (C42) : hors échec,
++        // hors mat, et jamais quand le meilleur coup change le matériel — un
++        // écart tactique, dont l'évaluation statique ne pouvait rien savoir.
++        if let (Some(raw), Some(estimate)) = (raw_eval, static_eval)
++            && best.abs() < MATE_THRESHOLD
++            && !best_move
++                .is_some_and(|mv| captured_piece(board, mv).is_some() || mv.promotion.is_some())
++            && informs_correction(bound, best, estimate)
++        {
++            self.update_correction(board, best - raw, depth);
++        }
++
+         self.tt.store(key, best_move, best, depth, bound, ply_i32);
+ 
+         best
+@@ -1789,7 +1852,8 @@ impl Search {
+             // « Stand pat » : ne rien jouer est une option, et la plupart des
+             // positions sont déjà au moins aussi bonnes que ce qu'une capture
+             // forcée donnerait.
+-            stand_pat = self.static_eval(board, ply);
++            let raw = self.static_eval(board, ply);
++            stand_pat = corrected(raw, self.correction_value(board));
+             if stand_pat >= beta {
+                 return stand_pat;
+             }
+@@ -2230,6 +2294,64 @@ fn see_prunable_main(board: &Board, mv: Move, depth: i32) -> bool {
+         && see::see(board, mv) < -SEE_PRUNE_MARGIN * depth
+ }
+ 
++/// L'index de la structure de pions de `board` dans l'historique de
++/// correction, camp au trait compris. Les pions des deux camps, mêlés par
++/// multiplication : une table de 16 384 entrées par camp n'a pas besoin d'une
++/// clé de Zobrist, seulement d'un mélange — `cozy-chess` n'en tient pas pour
++/// les pions.
++fn pawn_index(board: &Board) -> usize {
++    let white = board.colored_pieces(Color::White, Piece::Pawn).0;
++    let black = board.colored_pieces(Color::Black, Piece::Pawn).0;
++    let mixed = (white.wrapping_mul(0x9E37_79B9_7F4A_7C15)
++        ^ black.wrapping_mul(0xC2B2_AE3D_27D4_EB4F))
++    .wrapping_mul(0x1656_67B1_9E37_79F9);
++    // Les quatorze bits du haut, les mieux mêlés : `CORRECTION_SIZE` vaut 2¹⁴.
++    board.side_to_move() as usize * CORRECTION_SIZE + (mixed >> 50) as usize
++}
++
++/// L'évaluation brute `raw` plus la correction `correction` — jamais un mat :
++/// une évaluation n'en annonce pas, réseau, faite main ou corrigée.
++fn corrected(raw: i32, correction: i32) -> i32 {
++    (raw + correction).clamp(-(MATE_THRESHOLD - 1), MATE_THRESHOLD - 1)
++}
++
++/// Un pas de la moyenne mobile de l'historique de correction : l'entrée
++/// `entry` se rapproche de l'écart `diff`, borné à ±
++/// [`CORRECTION_DIFF_MAX`], d'un poids `(depth + 1) / 256` — seize au plus —,
++/// puis se borne à ± [`CORRECTION_MAX`]. Une recherche profonde dit plus de
++/// la position qu'une recherche courte, d'où le poids.
++fn correction_step(entry: i32, diff: i32, depth: i32) -> i32 {
++    let weight = (depth + 1).clamp(1, 16);
++    let target = diff.clamp(-CORRECTION_DIFF_MAX, CORRECTION_DIFF_MAX) * CORRECTION_GRAIN;
++    ((entry * (256 - weight) + target * weight) / 256).clamp(
++        -CORRECTION_MAX * CORRECTION_GRAIN,
++        CORRECTION_MAX * CORRECTION_GRAIN,
++    )
++}
++
++/// Vrai si un résultat de recherche `best`, de borne `bound`, dit dans quel
++/// sens l'évaluation `estimate` se trompe : toujours s'il est exact ; une
++/// borne basse seulement au-dessus de l'estimation, une borne haute seulement
++/// en dessous. Une borne basse SOUS l'estimation ne dit rien : la vraie valeur
++/// peut être n'importe où au-dessus.
++///
++/// **Pourquoi l'historique de correction (C42)** : l'évaluation statique se
++/// trompe dans un sens qui tient à la structure de pions, et ce biais
++/// persiste d'un nœud à l'autre. Mesuré le 6 oct. 2026, rejeu de 6 203
++/// positions de parties du moteur qui joue, profondeur 12 : la correction
++/// connue à l'entrée d'un nœud ramène l'écart moyen au résultat de 81,2 à
++/// 75,2 unités, −7,4 % ; elle vaut 17 unités en moyenne. L'arbre grossit
++/// de 7,4 % — les élagages coupent moins quand l'évaluation cesse de se
++/// surestimer. **Une erreur de prédiction n'est pas une mesure de force**
++/// (`CLAUDE.md`, le précédent de Texel) : seul le match tranche.
++fn informs_correction(bound: Bound, best: i32, estimate: i32) -> bool {
++    match bound {
++        Bound::Exact => true,
++        Bound::Lower => best > estimate,
++        Bound::Upper => best < estimate,
++    }
++}
++
+ /// Cette capture peut-elle perdre du matériel ?
+ ///
+ /// **Une pure économie, jamais une garde de correction.** Se tromper ne peut
+@@ -2998,6 +3120,95 @@ mod tests {
+         );
+     }
+ 
++    #[test]
++    fn la_correction_se_rapproche_de_l_ecart_selon_la_profondeur() {
++        // Valeurs relevées sur la formule : poids (d + 1) / 256, seize au plus.
++        assert_eq!(correction_step(0, 100, 0), 100);
++        assert_eq!(correction_step(0, 100, 15), 1_600);
++        assert_eq!(correction_step(0, 100, 40), 1_600);
++        // Arrivée à l'écart, l'entrée ne bouge plus.
++        assert_eq!(correction_step(25_600, 100, 7), 25_600);
++        // L'écart se borne, puis l'entrée, dans les deux sens.
++        assert_eq!(
++            correction_step(0, 10_000, 15),
++            correction_step(0, CORRECTION_DIFF_MAX, 15)
++        );
++        let (mut haut, mut bas) = (0, 0);
++        for _ in 0..1_000 {
++            haut = correction_step(haut, 10_000, 15);
++            bas = correction_step(bas, -10_000, 15);
++        }
++        assert_eq!(haut, CORRECTION_MAX * CORRECTION_GRAIN);
++        assert_eq!(bas, -CORRECTION_MAX * CORRECTION_GRAIN);
++    }
++
++    #[test]
++    fn seule_une_borne_qui_dit_le_sens_corrige() {
++        assert!(informs_correction(Bound::Exact, 10, 10));
++        assert!(informs_correction(Bound::Lower, 11, 10));
++        assert!(!informs_correction(Bound::Lower, 10, 10));
++        assert!(!informs_correction(Bound::Lower, 9, 10));
++        assert!(informs_correction(Bound::Upper, 9, 10));
++        assert!(!informs_correction(Bound::Upper, 10, 10));
++        assert!(!informs_correction(Bound::Upper, 11, 10));
++    }
++
++    #[test]
++    fn une_evaluation_corrigee_n_annonce_jamais_un_mat() {
++        assert_eq!(corrected(MATE_THRESHOLD - 10, 256), MATE_THRESHOLD - 1);
++        assert_eq!(
++            corrected(-(MATE_THRESHOLD - 10), -256),
++            -(MATE_THRESHOLD - 1)
++        );
++        assert_eq!(corrected(100, 17), 117);
++        assert_eq!(corrected(100, -17), 83);
++    }
++
++    #[test]
++    fn la_structure_de_pions_se_lit_par_camp_et_par_pions_seulement() {
++        let blancs = board("4k3/pppp4/8/8/8/8/4PPPP/4K3 w - - 0 1");
++        let noirs = board("4k3/pppp4/8/8/8/8/4PPPP/4K3 b - - 0 1");
++        let tour = board("4k3/pppp4/8/8/8/8/4PPPP/4K2R w - - 0 1");
++        let autre = board("4k3/pppp4/8/8/8/4P3/5PPP/4K3 w - - 0 1");
++        // L'autre camp au trait : l'autre moitié de la table.
++        assert!(pawn_index(&blancs) < CORRECTION_SIZE);
++        assert_eq!(pawn_index(&noirs), pawn_index(&blancs) + CORRECTION_SIZE);
++        // Une pièce de plus ne change pas la structure ; un pion déplacé, si.
++        assert_eq!(pawn_index(&tour), pawn_index(&blancs));
++        assert_ne!(pawn_index(&autre), pawn_index(&blancs));
++    }
++
++    #[test]
++    fn la_correction_se_garde_d_un_coup_a_l_autre_et_se_vide_a_la_nouvelle_partie() {
++        let mut s = search();
++        let avec_pions = board("4k3/pppp4/8/8/8/8/4PPPP/4K3 w - - 0 1");
++        let sentinelle = pawn_index(&avec_pions);
++        let sans_pions = board("4k3/8/8/8/8/8/8/4K2R w - - 0 1");
++        assert_ne!(sentinelle, pawn_index(&sans_pions));
++        s.correction[sentinelle] = 1_234;
++        // Une finale sans pion n'en crée aucun : la recherche ne touche
++        // jamais à l'entrée sentinelle, et `go` ne doit pas la remettre à zéro.
++        let position = Position::from_fen("4k3/8/8/8/8/8/8/4K2R w - - 0 1").unwrap();
++        let limits = Limits {
++            depth: Some(6),
++            ..Limits::default()
++        };
++        s.go(&position, &limits, |_| {});
++        assert_eq!(s.correction[sentinelle], 1_234, "`go` a vidé la correction");
++        assert!(
++            s.correction
++                .iter()
++                .enumerate()
++                .any(|(i, &e)| i != sentinelle && e != 0),
++            "la recherche n'a rien appris"
++        );
++        s.clear_table();
++        assert!(
++            s.correction.iter().all(|&e| e == 0),
++            "`ucinewgame` l'a gardée"
++        );
++    }
++
+     /// Construit une recherche dont le seul élagage par compte de coups est
+     /// désactivé.
+     fn search_sans_lmp() -> Search {
+diff --git a/engine/tests/bench_reference.rs b/engine/tests/bench_reference.rs
+index b910728..f47630f 100644
+--- a/engine/tests/bench_reference.rs
++++ b/engine/tests/bench_reference.rs
+@@ -351,7 +351,7 @@ fn les_milliers_se_regroupent_comme_dans_le_document() {
+ #[test]
+ fn larbre_de_recherche_ne_bouge_pas_en_silence() {
+     const PROFONDEUR: u32 = 6;
+-    const NOEUDS: u64 = 48_497;
++    const NOEUDS: u64 = 45_113;
+ 
+     let noeuds = shallowred::bench::run(PROFONDEUR).unwrap();
+     assert_eq!(
