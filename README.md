@@ -148,7 +148,7 @@ go wtime 300000 btime 300000 winc 2000 binc 2000
 Le binaire se charge tel quel dans n'importe quelle interface UCI — Cute Chess,
 Arena, BanksiaGUI.
 
-### Compiler pour sa machine — plus rapide, moins portable
+### Deux binaires : de base, et AVX2
 
 `cargo build --release` produit un binaire pour le jeu d'instructions de base
 du processeur (en x86-64 : SSE2). Il tourne partout, **sans carte graphique** :
@@ -170,9 +170,25 @@ aléatoire de même architecture : un ordre de grandeur, pas un verdict.
 
 **Le prix** : le binaire ne tourne plus que sur des processeurs qui ont ces
 instructions — copié sur une machine plus ancienne, il s'arrête au démarrage
-(« illegal instruction »). Le compiler sur la machine qui jouera, et ne pas le
-distribuer. Les mesures du dépôt comparent toujours deux binaires compilés de
-la même façon sur la même machine : ce drapeau ne fausse aucun verdict.
+(« illegal instruction »). `native` désigne la machine qui compile : un tel
+binaire ne se distribue pas.
+
+**Le dépôt livre donc deux binaires** (Théo, 6 oct. 2026) : celui de base, qui
+tourne partout, et un binaire **AVX2** compilé pour `x86-64-v3` — le jeu
+d'instructions commun aux processeurs x86 depuis Intel Haswell (2013) et AMD
+Zen (2017), hors certains Pentium, Celeron et Atom :
+
+```sh
+RUSTFLAGS="-C target-cpu=x86-64-v3" cargo build --release
+```
+
+Il cherche **le même arbre** que celui de base — le code est entier, le
+compilateur ne change que la façon de calculer —, **× 1,235 plus vite** avec
+le réseau qui joue (mesuré le 6 oct., 20 paires sur 20, `tools/README.md`,
+A21). S'il s'arrête au démarrage, la machine n'a pas l'AVX2 : prendre celui de
+base. **Les matchs du dépôt se jouent avec le binaire AVX2 depuis le 6 oct.** ;
+leurs deux camps sont toujours compilés de la même façon, donc ce choix ne
+fausse aucun verdict.
 
 ## Vérifier
 

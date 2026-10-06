@@ -55,6 +55,13 @@ on:
         description: "Graine des ouvertures (auto : le numéro du run)"
         type: string
         default: "auto"
+      cpu:
+        description: "Jeu d'instructions du moteur : x86-64-v3 (AVX2), le défaut depuis le 6 oct. 2026 — le binaire qui joue sur une machine AVX2 —, ou x86-64, le binaire de base"
+        type: choice
+        default: "x86-64-v3"
+        options:
+          - "x86-64-v3"
+          - "x86-64"
 
 permissions:
   contents: read
@@ -106,13 +113,16 @@ jobs:
           echo "parties=$parties" >> "$GITHUB_OUTPUT"
           echo "graine=$graine"   >> "$GITHUB_OUTPUT"
 
-      # En worktree détaché, comme `match.yml` : jamais par `git stash`.
+      # En worktree détaché, comme `match.yml` : jamais par `git stash`. Le
+      # jeu d'instructions par RUSTFLAGS, comme `match.yml` : depuis le
+      # 6 oct. 2026, la force mesurée est celle du binaire AVX2 que livre le
+      # dépôt — une série d'avant se lisait sur le binaire de base.
       - name: Construire le moteur
         shell: bash
         run: |
           set -euo pipefail
           git worktree add --detach /tmp/wt-moteur "${{ steps.entrees.outputs.moteur }}"
-          ( cd /tmp/wt-moteur && cargo build --release --bin shallowred )
+          ( cd /tmp/wt-moteur && RUSTFLAGS="-C target-cpu=${{ inputs.cpu }}" cargo build --release --bin shallowred )
           cp /tmp/wt-moteur/target/release/shallowred /tmp/moteur
 
       # L'adversaire, et la preuve qu'il sait se brider : un Stockfish qui ne
@@ -202,6 +212,7 @@ jobs:
             echo "| moteur | \`${{ inputs.moteur }}\` → \`${{ steps.entrees.outputs.moteur }}\` |"
             echo "| adversaire | ${{ steps.stockfish.outputs.version }} — paquet \`${{ steps.stockfish.outputs.paquet }}\`, \`UCI_LimitStrength\`, \`UCI_Elo = $elo\` |"
             echo "| cadence | \`${{ inputs.cadence }}\` |"
+            echo "| jeu d'instructions | \`${{ inputs.cpu }}\` |"
             echo "| graine des ouvertures | \`${{ steps.entrees.outputs.graine }}\` — pas les tirages de Stockfish, pris à l'horloge |"
             echo "| parties à la fois | ${{ steps.jouer.outputs.concurrence }} |"
             echo "| topologie du runner | ${{ steps.etalon.outputs.topologie }} |"
