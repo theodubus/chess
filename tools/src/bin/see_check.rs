@@ -26,11 +26,21 @@
 //!
 //! Le corpus se produit par `datagen`, jamais depuis le banc : les six positions
 //! du banc ne sont pas un échantillon de jeu.
+//!
+//! # Les coups tranquilles aussi, depuis C40
+//!
+//! `see_quiet` évalue un coup qui ne prend rien : l'oracle joue le coup, puis
+//! cherche ce que l'adversaire extrait de la case d'arrivée. Les coups de roi
+//! en sont écartés — `see_quiet` les rend à zéro par la règle du jeu, et le
+//! roque, codé roi-prend-tour, n'arrive pas en `mv.to`. Premier passage, le
+//! 6 oct. 2026, 3 337 positions : 291 écarts sur 77 020 tranquilles, 0,38 %,
+//! la légalité pour l'essentiel comme pour les captures — et 33 d'une autre
+//! cause, la promotion d'un pion qui reprend (voir `see.rs`, `exchange`).
 use std::io::BufRead;
 
-use cozy_chess::{Board, Move, Square};
+use cozy_chess::{Board, Move, Piece, Square};
 use shallowred::search::captured_piece;
-use shallowred::see::{capture_value, see};
+use shallowred::see::{capture_value, see, see_quiet};
 
 /// Ce que le camp au trait peut extraire de `target`, au mieux.
 ///
@@ -62,6 +72,17 @@ fn exact(board: &Board, mv: Move) -> Option<i32> {
     Some(gain - oracle(&child, mv.to))
 }
 
+/// La valeur exacte d'un coup qui ne prend rien, selon l'oracle : rien de
+/// gagné, puis ce que l'adversaire extrait de la case d'arrivée (C40). Le
+/// roque, codé roi-prend-tour, n'a pas sa case d'arrivée en `mv.to` : il est
+/// écarté avec tous les coups de roi, que [`see_quiet`] rend à zéro par la
+/// règle du jeu.
+fn exact_quiet(board: &Board, mv: Move) -> i32 {
+    let mut child = board.clone();
+    child.play_unchecked(mv);
+    -oracle(&child, mv.to)
+}
+
 fn main() {
     // `detail` imprime chaque capture avec sa valeur d'oracle, au lieu de ne
     // signaler que les écarts. C'est ce qui sert à FIXER la valeur attendue
@@ -74,6 +95,7 @@ fn main() {
         .unwrap_or(2000);
 
     let (mut positions, mut captures, mut ecarts) = (0usize, 0u64, 0u64);
+    let (mut tranquilles, mut ecarts_tranquilles) = (0u64, 0u64);
     let mut exemples: Vec<String> = Vec::new();
 
     let stdin = std::io::stdin();
@@ -97,6 +119,26 @@ fn main() {
         });
         for mv in coups {
             if captured_piece(&board, mv).is_none() {
+                // Les coups tranquilles, hors promotion et hors roi : ceux
+                // que `see_quiet` évalue pour l'élagage (C40).
+                if mv.promotion.is_none() && board.piece_on(mv.from) != Some(Piece::King) {
+                    tranquilles += 1;
+                    let attendu = exact_quiet(&board, mv);
+                    let obtenu = see_quiet(&board, mv);
+                    if detail && attendu != 0 {
+                        println!(
+                            "DETAIL-TRANQUILLE|{fen}|{}|oracle {attendu}|see {obtenu}",
+                            cozy_chess::util::display_uci_move(&board, mv)
+                        );
+                    }
+                    if obtenu != attendu {
+                        ecarts_tranquilles += 1;
+                        exemples.push(format!(
+                            "tranquille|{fen}|{}|{attendu}|{obtenu}",
+                            cozy_chess::util::display_uci_move(&board, mv)
+                        ));
+                    }
+                }
                 continue;
             }
             captures += 1;
@@ -126,6 +168,8 @@ fn main() {
     println!("positions            {positions}");
     println!("captures confrontées {captures}");
     println!("ÉCARTS               {ecarts}");
+    println!("tranquilles confrontés {tranquilles}");
+    println!("ÉCARTS TRANQUILLES     {ecarts_tranquilles}");
     // Chaque écart est imprimé en entier, pour être classé par un oracle de
     // clouage. Un écart qu'on ne classe pas est un écart qu'on suppose.
     for e in &exemples {

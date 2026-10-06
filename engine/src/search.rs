@@ -122,6 +122,15 @@ const SEE_PRUNE_MAX_DEPTH: i32 = 6;
 /// profondeur restante, avant d'être sautée — voir [`see_prunable_main`].
 const SEE_PRUNE_MARGIN: i32 = 100;
 
+/// Profondeur restante maximale à laquelle un coup tranquille perdant se
+/// saute dans la recherche principale — voir [`see_prunable_quiet`].
+const SEE_QUIET_MAX_DEPTH: i32 = 8;
+
+/// Ce qu'un coup tranquille peut perdre au compte de l'échange statique, par
+/// pli de profondeur restante AU CARRÉ, avant d'être sauté — voir
+/// [`see_prunable_quiet`].
+const SEE_QUIET_MARGIN: i32 = 20;
+
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
 
@@ -504,6 +513,10 @@ pub struct Search {
     /// Permet à un test de désactiver la seule futilité aux nœuds frontières.
     #[cfg(test)]
     frontier_futility: bool,
+    /// Permet à un test de désactiver le seul échange statique des coups
+    /// tranquilles.
+    #[cfg(test)]
+    quiet_see_pruning: bool,
     /// Fait vérifier à chaque évaluation que les accumulateurs dérivés coup
     /// par coup sont ceux d'un recalcul complet, et compte les vérifications
     /// — sans ce compte, un test qui ne passerait jamais par là resterait
@@ -563,6 +576,8 @@ impl Search {
             late_move_pruning: true,
             #[cfg(test)]
             frontier_futility: true,
+            #[cfg(test)]
+            quiet_see_pruning: true,
             #[cfg(test)]
             checked_accumulators: None,
         }
@@ -667,6 +682,19 @@ impl Search {
         #[cfg(test)]
         {
             self.frontier_futility
+        }
+        #[cfg(not(test))]
+        {
+            true
+        }
+    }
+
+    /// Vrai si l'échange statique des coups tranquilles est actif : toujours,
+    /// hors test.
+    fn quiet_see_pruning_on(&self) -> bool {
+        #[cfg(test)]
+        {
+            self.quiet_see_pruning
         }
         #[cfg(not(test))]
         {
@@ -1660,6 +1688,22 @@ impl Search {
                 continue;
             }
 
+            // L'échange statique des coups tranquilles (C40) — voir
+            // `see_prunable_quiet`. Les gardes de la futilité ci-dessus, pour
+            // les mêmes raisons ; `continue` et non `break` : le tranquille
+            // suivant peut ne rien perdre.
+            if quiet
+                && !in_check
+                && ply > 0
+                && depth <= SEE_QUIET_MAX_DEPTH
+                && best > -MATE_THRESHOLD
+                && child.checkers().is_empty()
+                && self.quiet_see_pruning_on()
+                && see_prunable_quiet(board, mv, depth)
+            {
+                continue;
+            }
+
             if let Some(slot) = self.moved.get_mut(ply + 1) {
                 *slot = Some(piece_to(board, mv));
             }
@@ -2228,6 +2272,27 @@ fn see_prunable_main(board: &Board, mv: Move, depth: i32) -> bool {
     mv.promotion.is_none()
         && may_lose_material(board, mv, victim)
         && see::see(board, mv) < -SEE_PRUNE_MARGIN * depth
+}
+
+/// Vrai si le coup TRANQUILLE `mv`, cherché à la profondeur restante `depth`
+/// dans la recherche principale, perd à l'échange statique plus de
+/// [`SEE_QUIET_MARGIN`] × `depth²` : il se saute (C40). Les gardes de nœud —
+/// hors racine, hors échec, après un premier coup, sans donner échec, à la
+/// profondeur ≤ [`SEE_QUIET_MAX_DEPTH`] — sont dans `negamax`.
+///
+/// **Pourquoi** : un coup tranquille qui pose une pièce en prise se cherchait
+/// à pleine profondeur ; seuls la futilité et le compte de coups le
+/// sautaient, sans regarder ce qu'il perd. Mesuré le 6 oct. 2026, rejeu de
+/// 6 203 positions de parties du moteur qui joue, profondeur 12 : **24 %** des
+/// tranquilles éligibles perdent à l'échange ; la marge en saute **12 %**, et
+/// **1 %** de ceux-là, cherchés, montent `alpha` — 1,4 % des montées
+/// d'`alpha` détruites, la classe de la futilité et du compte de coups ;
+/// l'arbre −7,2 %. **La marge croît au carré** de la profondeur, comme chez
+/// Stockfish (`-27 · lmrDepth²`) : à la profondeur 1 un pion perdu suffit, à
+/// la 8 il faut perdre plus qu'une dame. **En unités de l'échange**, pas de
+/// l'évaluation — voir [`see_prunable_main`].
+fn see_prunable_quiet(board: &Board, mv: Move, depth: i32) -> bool {
+    see::see_quiet(board, mv) < -SEE_QUIET_MARGIN * depth * depth
 }
 
 /// Cette capture peut-elle perdre du matériel ?
@@ -2995,6 +3060,57 @@ mod tests {
         assert!(
             avec < sans,
             "la futilité aux nœuds frontières ne retire rien : {avec} avec, {sans} sans, sur le banc"
+        );
+    }
+
+    /// Construit une recherche dont le seul échange statique des coups
+    /// tranquilles est désactivé.
+    fn search_sans_seeq() -> Search {
+        let mut s = search();
+        s.quiet_see_pruning = false;
+        s
+    }
+
+    #[test]
+    fn un_tranquille_perdant_se_saute_selon_la_profondeur() {
+        // Position et valeurs lues sur l'oracle (`see_check`) : le cavalier
+        // c6 en e5 se perd contre le pion d4 (−320), en b4 contre le pion c3,
+        // repris par a5 (−220) ; e7e6 ne perd rien.
+        let b = board("r1bqkb1r/1pp1p2p/2n3pn/p2p1p2/P2P4/2P2NPP/1P2PP2/RNBQKB1R b KQkq - 1 7");
+        let coup = |uci: &str| cozy_chess::util::parse_uci_move(&b, uci).unwrap();
+        let (e5, b4, e6) = (coup("c6e5"), coup("c6b4"), coup("e7e6"));
+        assert_eq!(see::see_quiet(&b, e5), -320);
+        assert_eq!(see::see_quiet(&b, b4), -220);
+        assert_eq!(see::see_quiet(&b, e6), 0);
+        // La marge croît au carré : 20, 80, 180, 320. L'égalité ne saute pas.
+        assert!(see_prunable_quiet(&b, e5, 1));
+        assert!(see_prunable_quiet(&b, e5, 3));
+        assert!(!see_prunable_quiet(&b, e5, 4));
+        assert!(see_prunable_quiet(&b, b4, 3));
+        assert!(!see_prunable_quiet(&b, b4, 4));
+        assert!(!see_prunable_quiet(&b, e6, 1));
+    }
+
+    #[test]
+    fn le_roque_ne_se_saute_jamais_par_lechange_statique() {
+        // Le roque est codé roi-prend-tour : sa case d'arrivée, h1, est celle
+        // de la tour, que le fou b7 attaque par la grande diagonale. L'échange
+        // y compterait un roi perdu ; la règle du jeu dit zéro.
+        let b = board("4k3/1b6/8/8/8/8/8/4K2R w K - 0 1");
+        let roque = cozy_chess::util::parse_uci_move(&b, "e1g1").unwrap();
+        assert!(b.is_legal(roque), "le roque doit être légal ici");
+        assert_eq!(see::see_quiet(&b, roque), 0);
+        assert!(!see_prunable_quiet(&b, roque, 1));
+    }
+
+    #[test]
+    fn lechange_statique_des_tranquilles_retire_des_noeuds() {
+        // Au TOTAL sur les trente-six positions de parties, comme le compte de
+        // coups et la futilité inverse : une position seule ne prouve rien.
+        let (avec, sans) = noeuds_avec_et_sans(search_sans_seeq);
+        assert!(
+            avec < sans,
+            "l'échange statique des tranquilles ne retire rien : {avec} avec, {sans} sans, sur les positions de partie"
         );
     }
 
