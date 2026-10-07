@@ -662,7 +662,8 @@ une mesure, pas une préférence.
   de bascule appartient à la marge du jour, et une marge s'érode par
   empilement* : un test qui asserte un SENS sur un échantillon se
   redimensionne quand l'effet qu'il garde fond, ou garde autre chose — ici
-  le branchement.
+  le branchement. Son jumeau, l'élagage par compte, mesuré le même jour,
+  garde la sienne : 0,62 au total, aucune bascule sur 200 000 tirages.
 - **Une reformulation justifiée par une mesure INDÉPENDANTE du changement n'est
   pas de l'accommodement.** La règle ci-dessous interdit d'assouplir un test
   jusqu'à ce qu'il passe, et tient une seconde reformulation du même test pour

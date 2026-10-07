@@ -208,8 +208,10 @@ installés — et sous **macOS** (Théo, 7 oct. 2026). Il y construit :
 | Mac Apple Silicon, Linux ARM | `shallowred` seul : l'AVX2 est propre aux processeurs x86 |
 
 **Le bon binaire se construit tout seul sur la machine qui le fera
-tourner.** `cargo build --release` y donne celui de base, qui tourne
-toujours ; sur un processeur x86 qui a l'AVX2 :
+tourner** — il n'y faut que Rust, installé par `rustup`, et sous Windows les
+outils de compilation C++ que `rustup` demande d'installer. `cargo build
+--release` y donne celui de base, qui tourne toujours ; sur un processeur x86
+qui a l'AVX2 :
 
 ```sh
 RUSTFLAGS="-C target-cpu=x86-64-v3" cargo build --release       # Linux, macOS, Git Bash

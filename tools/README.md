@@ -343,6 +343,10 @@ système »). Un binaire qui chercherait un autre arbre sous Windows serait un
 autre moteur sous le même nom, et les matchs, qui ne jouent que sous Linux,
 ne le verraient pas. Sur `main`, les binaires des quatre systèmes partent en
 artefact — en archive tar hors Windows, qui garde le droit d'exécution.
+**Éprouvé dès la première exécution, le 7 oct.** (run 37584441814) : le banc
+à 90 646 et les six positions au réseau, nœuds et coup, identiques sous Linux,
+Windows, Mac Intel et Apple Silicon ; l'AVX2 lue par `/proc/cpuinfo` sous Git
+Bash et par `sysctl` sur Mac Intel, et comparée sur les deux.
 
 Sa branche précieuse, le refus, est éprouvée par `tools/binaires-test.sh` sur
 des moteurs fabriqués — dans `verify.sh` et la CI ; une faute injectée — la
@@ -6177,9 +6181,9 @@ moyenne</span> : l'étalon porte sa propre incertitude, et chaque mesure
 | C51 | +30,7 % | −32 à −56 | −10,77 | **+21 à +45** |
 
 - **Le pari « la décision ne bouge pas » centrait les attendus, et il était
-  faux dans les deux sens.** Le terme de décision est du même ordre que le
-  coût, ou plus grand, dans cinq cas sur sept, et c'est lui qui fait le
-  signe de C45, C46 et C49 : positif pour ce qui touche la fenêtre ou
+  faux dans les deux sens.** Le terme de décision est partout du même ordre
+  que le coût, et plus grand pour C45, C46 et C49 — c'est lui qui en fait
+  le signe : positif pour ce qui touche la fenêtre ou
   l'ordre des coups, négatif pour l'extension négative — dont l'attendu
   écrivait le risque, « un coup de la table cherché moins loin peut
   manquer ». Le coût de l'arbre, lui, se lit exactement ; ce n'est pas lui
@@ -6304,6 +6308,11 @@ trente-six positions du test y rendent exactement ses nombres.
   la futilité inverse vaille encore son Elo n'est pas mesuré : au backlog,
   la mesure de son arbre au rejeu, au réseau, d'abord (`CLAUDE.md`, « une
   érosion se cherche en NŒUDS avant de s'acheter en Elo »).
+- **Son jumeau, mesuré de même sur `main` le 7 oct.** : le test de
+  l'élagage par compte, de la même forme, sur la sonde de C36. Σ avec /
+  Σ sans **0,623** (0,638 le 5 oct.), 794 positions grossies (17,0 %), les
+  trente-six du test à 0,650 — **aucune bascule sur 200 000 tirages**. Sa
+  marge tient : rien à reformuler.
 
 ### N° 12, la composition — l'arbre au rejeu, attendu et critère écrits le 7 oct. avant de mesurer
 
