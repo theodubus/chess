@@ -520,6 +520,10 @@ pub struct Search {
     /// Permet à un test de désactiver les seules extensions singulières.
     #[cfg(test)]
     singular_extensions: bool,
+    /// Permet à un test de désactiver la seule extension négative (C47),
+    /// les extensions singulières restant actives.
+    #[cfg(test)]
+    negative_extensions: bool,
     /// Fait vérifier à chaque évaluation que les accumulateurs dérivés coup
     /// par coup sont ceux d'un recalcul complet, et compte les vérifications
     /// — sans ce compte, un test qui ne passerait jamais par là resterait
@@ -582,6 +586,8 @@ impl Search {
             frontier_futility: true,
             #[cfg(test)]
             singular_extensions: true,
+            #[cfg(test)]
+            negative_extensions: true,
             #[cfg(test)]
             checked_accumulators: None,
         }
@@ -698,6 +704,18 @@ impl Search {
         #[cfg(test)]
         {
             self.singular_extensions
+        }
+        #[cfg(not(test))]
+        {
+            true
+        }
+    }
+
+    /// Vrai si l'extension négative est active : toujours, hors test.
+    fn negative_extensions_on(&self) -> bool {
+        #[cfg(test)]
+        {
+            self.negative_extensions
         }
         #[cfg(not(test))]
         {
@@ -1228,6 +1246,46 @@ impl Search {
         self.history_score(mv)
     }
 
+    /// LE MALUS D'HISTORIQUE (C49) : à une coupure par un coup tranquille,
+    /// les tranquilles cherchés avant lui depuis `board` perdent `d²` au
+    /// papillon et à la continuation, ce que le coupeur gagne. Sans lui,
+    /// l'historique ne recevait que des bonus : un coup souvent essayé et
+    /// jamais coupeur gardait sa note, et aucune n'était négative.
+    ///
+    /// Même règle de débordement que les bonus, dans l'autre sens : sous
+    /// `−HISTORY_MAX`, les deux tables se divisent par deux.
+    fn punish_quiets(
+        &mut self,
+        board: &Board,
+        tried: &[Move],
+        depth: i32,
+        context: [Option<usize>; 2],
+    ) {
+        let malus = depth * depth;
+        let mut overflow = false;
+        for &mv in tried {
+            let target = piece_to(board, mv);
+            if let Some(value) = self.history.get_mut(mv.from as usize * 64 + mv.to as usize) {
+                *value -= malus;
+                overflow |= *value < -HISTORY_MAX;
+            }
+            for previous in context.into_iter().flatten() {
+                if let Some(value) = self.continuation.get_mut(previous * PIECE_TO + target) {
+                    *value -= malus;
+                    overflow |= *value < -HISTORY_MAX;
+                }
+            }
+        }
+        if overflow {
+            for entry in &mut self.history {
+                *entry /= 2;
+            }
+            for entry in &mut self.continuation {
+                *entry /= 2;
+            }
+        }
+    }
+
     /// La note d'historique d'un coup tranquille.
     fn history_score(&self, mv: Move) -> i32 {
         self.history
@@ -1643,6 +1701,12 @@ impl Search {
 
         let mut quiets_seen = 0usize;
         let mut moves = 0usize;
+        // Les coups réellement cherchés : le premier l'est sous la fenêtre
+        // pleine, les suivants sous la fenêtre nulle (C45).
+        let mut searched = 0usize;
+        // Les tranquilles réellement cherchés, que punira une coupure (C49).
+        let mut tried = [NO_MOVE; MALUS_QUIETS];
+        let mut tried_count = 0usize;
         // Ni la profondeur ni le drapeau ne changent d'un coup à l'autre.
         let prune_threshold = lmp_threshold(depth, improving);
 
@@ -1685,6 +1749,14 @@ impl Search {
                 }
                 if is_singular(score, sbeta) {
                     extension = 1;
+                } else if self.negative_extensions_on() && hit.is_some_and(|hit| hit.score >= beta)
+                {
+                    // EXTENSION NÉGATIVE (C47). Un autre coup atteint `sbeta`
+                    // — le coup de la table n'est pas seul à tenir —, et la
+                    // table promet déjà la coupure : le nœud coupera
+                    // vraisemblablement sans lui. Il se cherche un pli plus
+                    // court, ce que ses rivaux auraient payé à sa place.
+                    extension = -1;
                 }
             }
 
@@ -1777,24 +1849,45 @@ impl Search {
             };
 
             self.path.push(child.hash());
-            let mut score = -self.negamax(
-                &child,
-                depth - 1 + extension - reduction,
-                ply + 1,
-                -beta,
-                -alpha,
-                rest,
-            );
-            // La réduction a menti : ce coup mérite la profondeur pleine.
+            // RECHERCHE À FENÊTRE NULLE — PVS (C45). Le premier coup cherché
+            // l'est sous la fenêtre pleine ; chacun des suivants n'a qu'à
+            // prouver qu'il ne fait pas mieux que `alpha`, sous la fenêtre
+            // nulle `(alpha, alpha + 1)`, bien moins chère. S'il y échoue par
+            // le haut et tombe sous `bêta`, il a peut-être une valeur exacte
+            // à rendre : on le recherche sous la fenêtre pleine.
+            //
+            // La réduction a menti : ce coup mérite la profondeur pleine — sous
+            // la fenêtre du coup, nulle ou pleine.
             //
             // `!self.aborted` n'est pas décoratif : une recherche interrompue
             // rend 0, et zéro dépasse `alpha` dans toute position perdante. La
             // re-recherche partait alors sur un score qui ne veut rien dire,
             // pour un résultat de toute façon jeté. Trouvé par le test du
             // budget de nœuds, qui dépassait d'exactement un nœud.
-            if reduction > 0 && !self.aborted && score > alpha {
-                score = -self.negamax(&child, depth - 1 + extension, ply + 1, -beta, -alpha, rest);
+            let new_depth = depth - 1 + extension;
+            let mut score;
+            if searched == 0 {
+                score = -self.negamax(&child, new_depth - reduction, ply + 1, -beta, -alpha, rest);
+                if reduction > 0 && !self.aborted && score > alpha {
+                    score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
+                }
+            } else {
+                score = -self.negamax(
+                    &child,
+                    new_depth - reduction,
+                    ply + 1,
+                    -alpha - 1,
+                    -alpha,
+                    rest,
+                );
+                if reduction > 0 && !self.aborted && score > alpha {
+                    score = -self.negamax(&child, new_depth, ply + 1, -alpha - 1, -alpha, rest);
+                }
+                if !self.aborted && score > alpha && score < beta {
+                    score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
+                }
             }
+            searched += 1;
             self.path.pop();
 
             if self.aborted {
@@ -1815,10 +1908,15 @@ impl Search {
                         // souvent d'autres : on s'en souvient.
                         if quiet {
                             self.remember_quiet(board, mv, ply, depth, context);
+                            self.punish_quiets(board, &tried[..tried_count], depth, context);
                         }
                         break;
                     }
                 }
+            }
+            if quiet && tried_count < MALUS_QUIETS {
+                tried[tried_count] = mv;
+                tried_count += 1;
             }
         }
 
@@ -2584,6 +2682,10 @@ const SCORE_KILLER_2: i32 = 900_000;
 /// deux. Sans cela elles finiraient par déborder et par écraser les paliers.
 const HISTORY_MAX: i32 = 800_000;
 
+/// Les tranquilles cherchés avant une coupure que le malus d'historique
+/// retient, au plus (C49). Au-delà, rare, les suivants ne sont pas punis.
+const MALUS_QUIETS: usize = 64;
+
 /// Vrai si le camp au trait est mat.
 ///
 /// La génération de coups ne s'exécute qu'en échec, donc presque jamais : cette
@@ -3139,6 +3241,13 @@ mod tests {
         s
     }
 
+    /// Les extensions singulières sans l'extension négative (C47).
+    fn search_sans_neg() -> Search {
+        let mut s = search();
+        s.negative_extensions = false;
+        s
+    }
+
     #[test]
     fn un_coup_n_est_singulier_que_si_l_exclusion_echoue_sous_la_borne() {
         // Un échec par le bas sous la fenêtre nulle : singulier.
@@ -3236,27 +3345,49 @@ mod tests {
         assert_ne!(s.negamax(&b, 3, 1, -100, -99, &mut scratch), -100);
     }
 
-    #[test]
-    fn les_extensions_singulieres_allongent_l_arbre() {
-        // Il faut des nœuds de profondeur ≥ 8 hors racine : une recherche à la
-        // profondeur 9, au TOTAL sur les six positions du banc.
+    /// Les nœuds de la recherche à la profondeur 9, au TOTAL sur les six
+    /// positions du banc : il faut des nœuds de profondeur ≥ 8 hors racine.
+    fn noeuds_du_banc_a_9(make: fn() -> Search) -> u64 {
         let limits = Limits {
             depth: Some(9),
             ..Limits::default()
         };
-        let (mut avec, mut sans) = (0, 0);
-        for fen in crate::bench::BENCH_FENS {
-            let position = Position::from_fen(fen).unwrap();
-            let mut s = search();
-            s.go(&position, &limits, |_| {});
-            avec += s.nodes();
-            let mut s = search_sans_se();
-            s.go(&position, &limits, |_| {});
-            sans += s.nodes();
-        }
+        crate::bench::BENCH_FENS
+            .iter()
+            .map(|fen| {
+                let position = Position::from_fen(fen).unwrap();
+                let mut s = make();
+                s.go(&position, &limits, |_| {});
+                s.nodes()
+            })
+            .sum()
+    }
+
+    #[test]
+    fn les_extensions_singulieres_allongent_l_arbre() {
+        // Sans l'extension négative, qui raccourcit l'arbre en sens inverse
+        // (C47) : chaque mécanisme se juge à son propre sens.
+        let (avec, sans) = (
+            noeuds_du_banc_a_9(search_sans_neg),
+            noeuds_du_banc_a_9(search_sans_se),
+        );
         assert!(
             avec > sans,
             "les extensions singulières n'étendent rien : {avec} avec, {sans} sans, sur le banc"
+        );
+    }
+
+    #[test]
+    fn l_extension_negative_raccourcit_l_arbre() {
+        // Le coup de la table qui n'est pas seul à tenir, quand la table
+        // promet la coupure, se cherche un pli plus court (C47).
+        let (avec, sans) = (
+            noeuds_du_banc_a_9(search),
+            noeuds_du_banc_a_9(search_sans_neg),
+        );
+        assert!(
+            avec < sans,
+            "l'extension négative ne raccourcit rien : {avec} avec, {sans} sans, sur le banc"
         );
     }
 
@@ -4122,6 +4253,63 @@ mod tests {
         let mut t = search();
         t.remember_quiet(&b, coup, 2, 3, NO_CONTEXT);
         assert!(t.continuation.iter().all(|&v| v == 0));
+    }
+
+    #[test]
+    fn le_malus_punit_les_tranquilles_essayes_et_deborde_par_le_bas() {
+        let b = Board::default();
+        let coup = |uci: &str| cozy_chess::util::parse_uci_move(&b, uci).unwrap();
+        let (e4, d4, f3) = (coup("e2e4"), coup("d2d4"), coup("g1f3"));
+        let papillon = |mv: Move| mv.from as usize * 64 + mv.to as usize;
+        let (adverse, notre) = (5, 9);
+        let mut s = search();
+        s.punish_quiets(&b, &[e4, d4], 3, [Some(adverse), Some(notre)]);
+        // −d² au papillon et sous chacun des deux contextes, par coup essayé…
+        for mv in [e4, d4] {
+            let cible = piece_to(&b, mv);
+            assert_eq!(s.history[papillon(mv)], -9);
+            assert_eq!(s.continuation[adverse * PIECE_TO + cible], -9);
+            assert_eq!(s.continuation[notre * PIECE_TO + cible], -9);
+        }
+        // … et à eux seuls : le coup qui n'a pas été essayé n'y perd rien.
+        assert_eq!(s.history[papillon(f3)], 0);
+        assert_eq!(s.history.iter().filter(|&&v| v != 0).count(), 2);
+        assert_eq!(s.continuation.iter().filter(|&&v| v != 0).count(), 4);
+
+        // Le débordement par le bas divise les DEUX tables…
+        let temoin = 300;
+        let mut t = search();
+        t.history[papillon(e4)] = -HISTORY_MAX;
+        t.history[papillon(f3)] = 1000;
+        t.continuation[temoin] = 1000;
+        t.punish_quiets(&b, &[e4], 1, NO_CONTEXT);
+        assert_eq!(t.history[papillon(e4)], (-HISTORY_MAX - 1) / 2);
+        assert_eq!(t.history[papillon(f3)], 500, "tout le papillon");
+        assert_eq!(t.continuation[temoin], 500, "et toute la continuation");
+        // … et la borne est stricte : l'atteindre n'est pas la dépasser.
+        let mut u = search();
+        u.history[papillon(e4)] = -HISTORY_MAX + 1;
+        u.continuation[temoin] = 1000;
+        u.punish_quiets(&b, &[e4], 1, NO_CONTEXT);
+        assert_eq!(u.history[papillon(e4)], -HISTORY_MAX);
+        assert_eq!(u.continuation[temoin], 1000);
+    }
+
+    #[test]
+    fn une_recherche_punit_des_tranquilles() {
+        // Le branchement : sans l'appel du nœud qui coupe, aucune note ne
+        // serait jamais négative — l'historique ne recevait que des bonus.
+        let limits = Limits {
+            depth: Some(6),
+            ..Limits::default()
+        };
+        let mut s = search();
+        s.go(&Position::startpos(), &limits, |_| {});
+        assert!(s.history.iter().any(|&v| v < 0), "aucun tranquille puni");
+        assert!(
+            s.continuation.iter().any(|&v| v < 0),
+            "aucune continuation punie"
+        );
     }
 
     #[test]
