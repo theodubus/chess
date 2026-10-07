@@ -22,7 +22,10 @@ d'un aveu sur la profondeur de recherche.
 > l'échange statique dans la recherche principale et la futilité aux nœuds
 > frontières (**+52 ± 4**). Le 6 oct., les **extensions singulières** : le
 > coup de la table gagne un pli quand aucun autre n'approche son score
-> (**+11 ± 3**).
+> (**+11 ± 3**). Le 7 oct., trois de plus, mesurés un par un puis
+> ensemble : la **fenêtre nulle** (PVS) — rejetée deux fois en septembre,
+> sur un autre moteur —, le **malus d'historique** et l'**extension
+> négative** (**+33 ± 3**).
 > L'évaluation
 > est un **réseau NNUE** depuis le 28 sept. 2026 (plus bas), et les marges de
 > la recherche suivent son échelle depuis le 1er oct. — **+50 ± 5 Elo** à
