@@ -645,6 +645,18 @@ une mesure, pas une préférence.
   **Un contrôle qui suppose une propriété doit la COMPTER sur un échantillon**,
   et borner qualitativement — « non nul », « plus grand que » — jamais par un
   taux chiffré, qu'un changement de recherche ferait dériver.
+  <br>**Et un échantillon dimensionné sur une marge ne vaut que tant que la
+  marge tient** — 7 oct. 2026. Le test de la futilité inverse comptait sa
+  somme sur trente-six positions, choisies le 5 oct. pour basculer moins
+  d'une fois sur mille. Deux jours plus tard — le groupe du n° 9 et C41
+  fusionnés entre-temps —, la futilité inverse ne retirait plus que 6,3 %
+  de l'arbre au lieu de 26 %, et la même
+  somme basculait **6,5 % des fois sur `main`** — sans que rien ne le
+  signale, jusqu'à ce qu'une composition la fasse tomber. *La probabilité
+  de bascule appartient à la marge du jour, et une marge s'érode par
+  empilement* : un test qui asserte un SENS sur un échantillon se
+  redimensionne quand l'effet qu'il garde fond, ou garde autre chose — ici
+  le branchement.
 - **Une reformulation justifiée par une mesure INDÉPENDANTE du changement n'est
   pas de l'accommodement.** La règle ci-dessous interdit d'assouplir un test
   jusqu'à ce qu'il passe, et tient une seconde reformulation du même test pour
