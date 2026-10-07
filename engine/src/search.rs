@@ -3423,9 +3423,10 @@ mod tests {
         // assertait `avec < sans` sur ces trente-six positions. Le sens ne
         // tient plus dans un test unitaire, mesuré sur `main` sans aucun
         // changement (7 oct. 2026, `tools/README.md`, n° 12, la
-        // composition) : sur les 4 684 positions du journal du n° 9, la
-        // futilité inverse ne retire plus que 6,3 % de l'arbre — 26 % le
-        // 5 oct. — et le grossit sur 670 positions ; une somme sur
+        // composition) : sur les 4 684 positions du journal du n° 9, à la
+        // faite main et à froid, la futilité inverse ne retire plus que
+        // 6,3 % de l'arbre — 26 % le 5 oct., et un tiers au réseau en
+        // partie — et le grossit sur 670 positions ; une somme sur
         // trente-six bascule 6,5 % des fois, et il en faudrait près de
         // deux cents pour descendre sous un millième. Ce qu'elle rapporte
         // se mesure par la sonde de l'attic et par le match, pas ici.
