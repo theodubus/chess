@@ -6234,7 +6234,7 @@ la futilité inverse a fondu depuis, par empilement. <span>Inférence,
 confiance moyenne</span> : la futilité aux nœuds frontières (C39) saute
 les tranquilles des mêmes nœuds peu profonds.
 
-**La règle, écrite à 8 h 35, avant de mesurer.** La sonde du n° 9
+**La règle, écrite à 8 h 25, avant de mesurer** — poussée à 8 h 26 (`e76fd96`). La sonde du n° 9
 (`n9-sonde-futilite-inverse.patch`), portée sur `main` d'aujourd'hui,
 rejoue le protocole exact du test — recherche froide, profondeur 7, faite
 main, avec et sans la futilité inverse — sur les 4 684 positions de partie
@@ -6258,6 +6258,101 @@ du n° 9, pour `main` et pour la composition.
 2. **Sous la composition, une mesure, pas une décision** : Σ avec / Σ sans
    sur les 4 684 positions, et la part des positions dont la futilité
    inverse grossit l'arbre — sur `main` le 5 oct., 412, 8,8 %.
+
+**La sonde, relevée à 8 h 45** — le protocole du test, au nœud près : les
+trente-six positions du test y rendent exactement ses nombres.
+
+| | Σ avec / Σ sans, 4 684 positions | positions que la futilité inverse grossit | les trente-six du test | une somme sur trente-six bascule |
+|---|---|---|---|---|
+| `main`, le 5 oct. | 0,744 | 412, 8,8 % | 0,786 | 0,015 % |
+| `main`, le 7 oct. | **0,937** | 670, 14,3 % | 0,970 | **6,5 %** |
+| la composition | **0,941** | 1 073, 22,9 % | 1,044 | 14,9 % |
+
+- **Par la règle, branche 1** : sur `main`, sans la composition, une
+  somme sur trente-six bascule **6,5 % des fois** — la formulation était
+  déjà une loterie, et le hasard ne l'avait pas encore tirée. Sous un
+  millième, il faudrait près de deux cents positions (150 : 0,12 % ; 200 :
+  0,017 %), au-delà des cent qu'un test en debug porte. **Le test se
+  reformule sur le branchement** : `la_futilite_inverse_agit_dans_la_recherche`,
+  `assert_ne!` sur les mêmes trente-six positions — il tombe si la
+  futilité inverse ne coupe nulle part ou si son appel quitte `negamax`.
+  Son sens reste mesuré, par la sonde de l'attic, regénérée sur `main`.
+  Le changement est un changement de `main`, fusionné avant la composition,
+  comme `556ecda` l'était avant le groupe du n° 9.
+- **Branche 2, la mesure** : sous la composition, la futilité inverse
+  retire encore 5,9 % de l'arbre en général — la propriété tient, c'est sa
+  MARGE qui a fondu : 26 % le 5 oct., 6,3 % aujourd'hui, par empilement —
+  le groupe du n° 9 et C41 sont entrés entre les deux mesures.
+  <span>Inférence, confiance moyenne</span> : la futilité aux nœuds
+  frontières (C39) saute les tranquilles des mêmes nœuds peu profonds. Que
+  la futilité inverse vaille encore son Elo n'est pas mesuré : au backlog,
+  la mesure de son arbre au rejeu, au réseau, d'abord (`CLAUDE.md`, « une
+  érosion se cherche en NŒUDS avant de s'acheter en Elo »).
+
+### N° 12, la composition — l'arbre au rejeu, attendu et critère écrits le 7 oct. avant de mesurer
+
+**L'arbre de la composition, mesuré avant le match** — le rejeu du
+cinquième écran, les 6 203 recherches de ses 60 parties, table et
+historiques conservés d'un coup à l'autre, contre `main` :
+
+| | arbre à 10 | arbre à 12 | à 12, contre `main` |
+|---|---|---|---|
+| `main` | 120 055 016 | 332 680 141 | — |
+| C45 seul | 125 644 250 | 343 299 345 | +3,19 % |
+| C47 seul | 117 380 887 | 304 950 184 | −8,34 % |
+| C49 seul | 117 635 379 | 320 173 562 | −3,76 % |
+| le produit des trois seuls | | | −8,97 % |
+| **la composition** | **118 485 702** | **300 572 487** | **−9,65 %** |
+
+- **Les arbres se composent sans recouvrement**, un peu mieux que le
+  produit : 0,903 contre 0,910 à la profondeur 12, 0,987 contre 1,003 à
+  la 10.
+- **La composition privée de chaque membre** — la règle du n° 9, écrite
+  le 5 oct. : la part d'arbre d'un membre dans la composition se compare à
+  sa part seul ; sous la moitié, il est absorbé, et si la composition
+  passe, un match de retrait le mesure.
+
+| membre retiré | arbre à 10 | arbre à 12 | sa part dans la composition, à 12 | sa part seul | rapport |
+|---|---|---|---|---|---|
+| C45 | 112 862 232 | 293 932 585 | +2,26 % | +3,19 % | 0,71 |
+| C47 | 122 576 512 | 330 893 908 | −9,16 % | −8,34 % | 1,10 |
+| C49 | 122 177 668 | 317 226 954 | −5,25 % | −3,76 % | 1,40 |
+
+
+  **Aucun membre n'est absorbé : pas de match de retrait.** C45 est le
+  plus près du seuil, il garde 71 % de sa part : la fenêtre nulle grossit
+  moins l'arbre quand le malus ordonne mieux les coups — <span>inférence,
+  confiance moyenne</span> : un premier coup plus souvent juste, moins de
+  re-recherches. C49 et C47 en font PLUS qu'ensemble que seuls.
+- **Une réserve, mesurée ci-dessus** : la paire fenêtre nulle et malus
+  fait basculer le compte de la futilité inverse à la profondeur 7, à la
+  faite main — un régime qui n'est pas celui qui joue, où rien de tel ne se
+  lit au total.
+
+**Attendu, écrit avant le match** — <span>inférence, confiance
+faible</span> :
+- **Majorant** : la somme des gains seuls, **+40,90 ± 5,75** — chacun
+  mesuré contre `9c73f99`, dont le moteur est celui de `main`.
+- **Par membre** : C49 **+18 à +30**, sa part d'arbre plus grande ensemble
+  que seule ; C45 **+5 à +15**, la sienne un peu plus petite ; C47 **−2 à
+  +7**. Somme : **+21 à +52**.
+- **En tout : +25 à +48, ~+37** — le groupe du n° 9 rendait 91 % de la
+  somme de ses gains seuls, et les arbres, ici aussi, se composent sans
+  recouvrement.
+
+**Critère, écrit avant** : **la composition se fusionne si sa borne basse
+commune est au-dessus de zéro, ET si son point n'est pas démontré sous son
+meilleur membre** — C49 seul, +25,32 ± 3,26, contre le même moteur de
+référence : sous **+20,6**, l'écart à C49 dépasse ses ± 4,7, et la
+composition ferait moins bien qu'un de ses membres. Alors, bissection :
+C49 + C45 et C49 + C47 contre `main`, quatre jobs chacun, critère écrit
+avant. **Puissance** : quatre jobs de 3 000 parties, ± 3,4 ; un vrai +37
+passe les deux clauses toujours, un vrai +25 passe la seconde 99 fois sur
+cent, un vrai +18 la manque 93 fois sur cent.
+
+**Ce que la composition ne dira pas : la part de chacun.** C47 surtout,
+gagnant de justesse seul (borne basse +0,63) : un membre nul passerait avec
+les autres — le prix écrit de « grouper, puis bissecter à l'échec ».
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
@@ -7364,13 +7459,14 @@ qu'en partie dans le dépôt n'existe pas.*
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
-| **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 |
+| **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 **Le 7 oct., C51** — les échecs tranquilles au premier pli de la quiescence — multiplie par treize ces avertissements côté candidat (157 contre 12) et régresse de −10,77 ± 3,40 : la cécité de la quiescence aux nulles pèse d'autant plus qu'elle joue de tranquilles. Un fait neuf pour C31 le jour où les échecs tranquilles se rouvrent, et alors les deux se mesurent ensemble |
 | **C43 — le gain d'un pion qui reprend en promouvant, dans `see`** — trouvé le 6 oct. par l'oracle `see_check` étendu aux coups tranquilles pour C40 | — correctif de règle | **FUSIONNÉ le 6 oct.** au titre de la règle — **+0,87 ± 4,63** à `8+0,08`, 6 000 parties contre `main` avec C41, aucune borne haute sous zéro, ni l'ensemble ni un match (section n° 9, « C43 et C44 — VERDICT »). <s>**à faire**</s> : `exchange` compte le pion qui reprend sur la dernière rangée comme une dame pour la suite, pas le gain de sa promotion (+880) ; l'oracle le voit sur 33 tranquilles sur 77 020 et une capture sur 5 827. Le protocole des correctifs de règle (`CLAUDE.md`) : un test qui tombe sur l'ancien code, valeur lue sur l'oracle ; le mécanisme mesuré en régime réel — combien de décisions d'élagage et d'ordre en changent ; un match au critère « fusion sauf si la borne haute est sous zéro ». **Écrit et mesuré le 6 oct. vers 05 h 10, pas encore lancé** : quatre lignes dans la boucle d'échange ; le test `un_pion_qui_reprend_en_promouvant_compte_sa_promotion` tombe sur l'ancien code (0 contre −880, valeur de l'oracle) ; l'oracle passe de 21 écarts de capture à 20, la légalité seule. **Le mécanisme, au rejeu du journal du quatrième écran** : 3,5 appels de `see` sur un million changent de valeur à la profondeur 12 (359 sur 102 millions, dont 235 de signe), l'arbre +0,0001 % ; banc 90 646 à la profondeur 7 contre 90 656. <s>**Son match attend la fin des seize jobs du quatrième écran et leur composition** : la boucle d'échange sera commune à `see` et `see_quiet` si C40 entre, et un correctif se mesure sur la base qu'il corrige</s> **C40 n'est pas entré, C41 si** : la rustine s'applique telle quelle, et son match se mesure contre `main` avec C41 — protocole, attendu et puissance écrits avant (section n° 9, « après le quatrième écran »). **Lancé le 6 oct. à 13 h 57** : deux jobs, `d69d2ed` contre `b6d41d7`, relevés à 19 h 30 |
 | **mesurer petit : plus de runners, un livre plus grand d'abord** — **n° 11 : le livre FAIT le 6 oct. au soir**, 15 000 positions au même filtre (section « Le livre d'ouvertures ») ; restent les runners, à la première vague qui en a besoin — Théo, 6 oct. 2026 : en phase de stagnation, les petites améliorations sur bien plus de jobs, en plusieurs vagues s'il le faut | — c'est la résolution des autres lignes | **décidé, pas commencé** — la condition est chiffrée dans « Le livre, réutilisé » : à 500 ouvertures, soixante jobs ne rendent que ± 2,4 réel et un ± affiché 2,5 fois trop étroit. **La prochaine action** : tirer par `bookgen` un livre de ~15 000 ouvertures au même filtre (8 demi-coups, écart ≤ 80), et en faire le livre des matchs à une vague neuve — une condition de mesure qui change, écrite à sa date, jamais au milieu d'une série |
 | **la gestion du temps par un réseau** — question de Théo, 6 oct. 2026 : un réseau qui fixe le budget d'un coup selon la pendule et la position | inconnu — l'écran du 24 sept. n'a pas chiffré ce qui reste | **avis, pas décidé** : l'écran du 24 sept. a trouvé le signal dans la dynamique de la recherche — la stabilité du coup, un facteur 3,5 entre classes —, pas dans la position ; l'effort à la racine et le score en chute n'y ajoutaient rien, et un pli d'accord n'a rendu que 22 à 46 Elo par la stabilité. Un réseau apprendrait la même allocation, sur une cible bruitée — l'accord avec un oracle, qui a prédit le signe mais pas le taux de C25 — et propre à sa cadence, quand la cible est la force générale. **Le geste d'abord** : rejouer la sonde d'allocation (`c24-sonde-allocation.patch`) sur le moteur d'aujourd'hui, ajuster hors ligne la meilleure allocation que ces signaux permettent, et chiffrer son plafond à temps moyen égal ; un modèle de quelques paramètres si le plafond le justifie, un réseau seulement s'il fait mieux qu'eux. <span>Inférence, confiance moyenne</span> : le reste est petit à `8+0,08` |
 | **activer une technique selon la cadence ou le temps restant** — question de Théo, 6 oct. 2026 : coder les optimisations, et les activer ou non selon le type de partie, ou seulement selon le temps qui reste | non chiffré | **DÉCIDÉ n° 14** (Théo, 6 oct. au soir), le dernier de la liste — **avis** : faisable, et c'est déjà en partie la forme standard — presque toutes nos techniques sont bornées par la profondeur RESTANTE au nœud (futilité inverse ≤ 8, futilité ≤ 6, compte de coups ≤ 3, échange statique ≤ 6, extensions singulières ≥ 8, coup nul en `3 + d/3`, LMR en `ln d · ln i`). Ce qui manque est une borne sur la profondeur de l'ITÉRATION : un seul seuil y suit à la fois la cadence, la phase — une finale se cherche plus profond — et le temps qui reste, sans notion de type de partie. **La mesure du dépôt dit dans quel sens chercher** : la cause des écarts de cadence est la profondeur (8,5 contre 12,5 plis pour le compte de coups), et chaque technique mesurée aux deux cadences valait plus à la longue, pour ce qui tient à la cadence seule — aucune ne demande d'être éteinte à `8+0,08` ou au-delà. L'usage plausible est l'inverse : allumer à grande profondeur ce qui a été rejeté à `8+0,08` parce que sa valeur croît avec elle — **ProbCut d'abord**, dont l'épargne double tous les deux plis (−0,2 % à la profondeur 10, −1,4 % à 12, −2,9 % à 14). **Le goulet est la mesure** : ce qui doit gagner à cadence longue se vérifie à cadence longue, ~7,5 fois plus cher par partie à 60+0,6 qu'à `8+0,08` — après le livre plus grand. <span>Inférence, confiance moyenne</span> |
-| **un cinquième écran de recherche** — proposé le 6 oct. 2026, le n° 9 clos : des techniques connues, absentes du code et jamais mesurées ici | non chiffré | **DÉCIDÉ n° 12** (Théo, 6 oct. au soir), après le livre — vérifié absent de `search.rs` le 6 oct. : **la fenêtre nulle (PVS) sur la base d'aujourd'hui** — tous les coups se cherchent à fenêtre pleine, seule la recherche d'exclusion des extensions singulières est nulle ; PVS a été rejetée deux fois en septembre (−10,9 à `1+0,01`, −0,8 à `8+0,08` le 21 sept.), sur une base d'avant le réseau, A18, A20 et le n° 9, et un verdict appartient à sa base autant qu'à sa cadence — l'élagage delta a fondu par empilement ; avec elle viendrait la distinction des nœuds PV, que d'autres réglages emploient ; **LMR modulée** — la réduction ne dépend que de la profondeur et du rang, ni de l'historique du coup, ni du type de nœud ; **l'élagage par l'historique** des tranquilles à faible profondeur ; **le razoring** ; **les échecs tranquilles au premier pli de la quiescence**, qui ne cherche que captures, promotions et parades ; **la suite des extensions singulières** — multi-cut à 10·d (écranté seulement à 2·d), extensions négatives, doubles ; **la décroissance de l'évaluation avec la règle des cinquante coups**. Méthode du n° 9 : l'arbre de chaque variante au rejeu d'abord, attendus écrits avant, puis quatre jobs par candidat. **Écran relevé le 7 oct.** (« le cinquième écran — RELEVÉ ») : **sept candidats en match**, C45 à C51 — la fenêtre nulle, avec et sans les nœuds PV, l'extension négative, la double, le malus d'historique, la règle des cinquante coups, les échecs tranquilles en quiescence ; **fermés à l'écran** le multi-cut (pas d'économie), le razoring (des dégâts sans économie), l'élagage et la réduction par l'historique (une échelle sans borne) ; LMR aux nœuds PV différé, s'il y a lieu, après C46 |
-| **un historique BORNÉ** — la « gravité » : un bonus et un malus pondérés par `1 − |note| / plafond`, proposé le 7 oct. 2026 par le cinquième écran | non chiffré | **à écranter** — l'historique d'aujourd'hui ne se divise qu'à 800 000, et ses notes grandissent avec la profondeur cherchée : un seuil fixe sur elles dérive — `lmrh:1000`, +1,7 % d'arbre à la profondeur 10, +14 % à la 12. C'est la condition préalable de la réduction et de l'élagage par l'historique, fermés à l'écran faute d'elle ; et c'est un changement à lui seul, qui change l'ordre des coups. Après le verdict de C49, qui donne au même historique des notes négatives |
+| **un cinquième écran de recherche** — proposé le 6 oct. 2026, le n° 9 clos : des techniques connues, absentes du code et jamais mesurées ici | non chiffré | **DÉCIDÉ n° 12** (Théo, 6 oct. au soir), après le livre — vérifié absent de `search.rs` le 6 oct. : **la fenêtre nulle (PVS) sur la base d'aujourd'hui** — tous les coups se cherchent à fenêtre pleine, seule la recherche d'exclusion des extensions singulières est nulle ; PVS a été rejetée deux fois en septembre (−10,9 à `1+0,01`, −0,8 à `8+0,08` le 21 sept.), sur une base d'avant le réseau, A18, A20 et le n° 9, et un verdict appartient à sa base autant qu'à sa cadence — l'élagage delta a fondu par empilement ; avec elle viendrait la distinction des nœuds PV, que d'autres réglages emploient ; **LMR modulée** — la réduction ne dépend que de la profondeur et du rang, ni de l'historique du coup, ni du type de nœud ; **l'élagage par l'historique** des tranquilles à faible profondeur ; **le razoring** ; **les échecs tranquilles au premier pli de la quiescence**, qui ne cherche que captures, promotions et parades ; **la suite des extensions singulières** — multi-cut à 10·d (écranté seulement à 2·d), extensions négatives, doubles ; **la décroissance de l'évaluation avec la règle des cinquante coups**. Méthode du n° 9 : l'arbre de chaque variante au rejeu d'abord, attendus écrits avant, puis quatre jobs par candidat. **Écran relevé le 7 oct.** (« le cinquième écran — RELEVÉ ») : **sept candidats en match**, C45 à C51 — la fenêtre nulle, avec et sans les nœuds PV, l'extension négative, la double, le malus d'historique, la règle des cinquante coups, les échecs tranquilles en quiescence ; **fermés à l'écran** le multi-cut (pas d'économie), le razoring (des dégâts sans économie), l'élagage et la réduction par l'historique (une échelle sans borne) ; LMR aux nœuds PV différé, s'il y a lieu, après C46. **VERDICT le 7 oct.** (« le cinquième écran — VERDICT ») : **C49 +25,32 ± 3,26, C45 +11,67 ± 3,38 et C47 +3,91 ± 3,28, gains démontrés — à la composition** ; C46 +9,56, sous C45 : LMR aux nœuds PV reste fermé ; C48 et C50 sans effet ; C51 −10,77, régression. **La composition des trois** : protocole, attendu et critère dans « N° 12, la composition » |
+| **un historique BORNÉ** — la « gravité » : un bonus et un malus pondérés par `1 − |note| / plafond`, proposé le 7 oct. 2026 par le cinquième écran | non chiffré | **à écranter** — l'historique d'aujourd'hui ne se divise qu'à 800 000, et ses notes grandissent avec la profondeur cherchée : un seuil fixe sur elles dérive — `lmrh:1000`, +1,7 % d'arbre à la profondeur 10, +14 % à la 12. C'est la condition préalable de la réduction et de l'élagage par l'historique, fermés à l'écran faute d'elle ; et c'est un changement à lui seul, qui change l'ordre des coups. <s>Après le verdict de C49, qui donne au même historique des notes négatives</s> **C49 gagne le 7 oct., +25,32 ± 3,26** : l'historique porte désormais des notes négatives, que la gravité bornerait des deux côtés. À écranter sur `main` avec la composition du n° 12, s'il y entre |
+| **la futilité inverse, érodée** — mesuré le 7 oct. 2026 en recomposant le n° 12 | non chiffré | **à mesurer en nœuds d'abord** — à la faite main, à froid, à la profondeur 7, sur les 4 684 positions du n° 9, elle retirait 26 % de l'arbre le 5 oct. et n'en retire plus que 6,3 % le 7, sur `main` — le groupe du n° 9 et C41 entrés entre les deux ; elle le grossit sur 14,3 % des positions. <span>Inférence, confiance moyenne</span> : la futilité aux nœuds frontières coupe aux mêmes nœuds. Ce qu'elle retire au réseau, dans le régime qui joue, se mesure au rejeu — une variante sans elle, la sonde du n° 12 n'en a pas ; s'il a fondu là aussi, son retrait en match, critère écrit avant (`CLAUDE.md`, « une érosion se cherche en NŒUDS avant de s'acheter en Elo ») |
 | **ponder** | **0,90** prévus — `p = 0,659` contre notre jumeau à `8+0,08` (0,654 compté par cutechess en ponder réel), × 1,36. **Mesuré en partie : +0,94 ± 0,20**, `p = 0,702` | **ÉCRIT, vérifié, MESURÉ le 23 sept. : +67,63 ± 9,19 Elo à `8+0,08` contre notre jumeau**, 2 700 parties, zéro anomalie — voir « Ponder — VERDICT ». Tout déploiement qui le permet l'active. Suite : dépenser le remboursement — le camp qui pondère laisse 13 % de sa pendule, ~0,27 pli, **16 à 28 Elo** par l'étalon du 24 sept. —, réglé à la sonde puis mesuré en `les-deux`. **Ne sert que là où le ponder est permis** — le CCRL Blitz le désactive (section B6, « Ce que font les listes »). <s>Attend un arbitrage de déploiement</s> — **faux cadre**, il n'y a pas d'arbitrage |
 | **C21 — dépenser la pendule** | 0,54 à 0,70 | **FUSIONNÉ**, +19,13 ± 6,31 Elo à `8+0,08` sur 6 000 parties |
 | **allocation inégale** — dépenser plus sur les positions **dures** — **décidée n° 4** (Théo, 24 sept.) | écran : **18,7 % du temps était jeté** ; C24 +0,65 pli d'écran, la répartition par la stabilité +0,05 à +0,35 de plus — lectures hautes | **Écran FAIT le 24 sept.** (section « L'allocation inégale — l'écran »). **C24 — laisser finir l'itération : FUSIONNÉ le 24 sept., +44,64 ± 6,24 Elo à `8+0,08`** (section C24) — profondeur moyenne inchangée, le gain est dans la répartition, et la lecture par l'accord a tenu. <s>C25 — la répartition par la stabilité : ÉCRIT le 24 sept.</s> **C25 — la répartition par la stabilité : FUSIONNÉ au verdict du 24 sept., +7,87 ± 6,08 Elo à `8+0,08`** (section C25) — sous l'attendu de +12 à +25 : l'Elo d'un pli d'accord dépend de la règle, 22 à 46 ici contre ~69 pour C24. **Le chantier est au bout de ce que l'écran désignait** — l'effort à la racine n'ajoute rien, le score en chute est rare (écran, « Ce qui en sort »). <s>Prochaine action : C26, le risque que C24 et C25 ont aggravé ; ensuite, la question se repose à Théo.</s> **C26 est FUSIONNÉ le 25 sept.** (ligne C26) : **l'allocation inégale est close, et la suite se repose à Théo.** *Le signal est la difficulté de la position ; la pendule adverse n'en fait pas partie — ligne suivante* |
@@ -7416,7 +7512,9 @@ recommandé* ») — n° 10 à n° 14 :
    tête — la seule absence structurelle ; chaque candidat de 0 à +15,
    <span>confiance faible</span>. **Écran relevé le 7 oct. : sept candidats
    en match**, C45 à C51, et quatre variantes fermées à l'écran (n° 12,
-   « le cinquième écran — RELEVÉ »).
+   « le cinquième écran — RELEVÉ »). **Verdict le même jour** : le malus
+   d'historique +25,32, la fenêtre nulle +11,67, l'extension négative
+   +3,91 — **leur composition se mesure** (« N° 12, la composition »).
 4. **Le réseau, n° 7** — le plus gros levier mesuré du projet (+330,
    +116, +50, +16) ; des données d'abord, qui tournent sur runners sans
    personne, puis la carte de Théo pour l'entraînement ; la largeur et les
