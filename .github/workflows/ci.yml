@@ -95,22 +95,121 @@ jobs:
       # base et l'AVX2. Ils ne sont le même moteur que s'ils cherchent le même
       # arbre — le banc fait main et les six positions au réseau, nœuds et
       # coup —, et le script refuse de les rendre sinon. Les runners ont
-      # l'AVX2, donc la comparaison tourne vraiment. Sur `main`, les deux
-      # binaires partent en artefact : c'est la livraison.
+      # l'AVX2, donc la comparaison tourne vraiment. Son empreinte part à
+      # chaque passage, pour la comparaison entre systèmes plus bas ; sur
+      # `main`, les deux binaires partent en artefact : c'est la livraison.
       - name: Deux binaires, le même arbre
         run: |
           tools/binaires-test.sh
-          tools/binaires.sh "$RUNNER_TEMP/binaires"
+          tools/binaires.sh dist
+          tar -czf shallowred-linux.tar.gz -C dist shallowred shallowred-avx2
+
+      - name: Empreinte
+        uses: actions/upload-artifact@v4
+        with:
+          name: empreinte-linux
+          path: dist/empreinte.txt
+          retention-days: 7
 
       - name: Livrer les deux binaires
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: shallowred-${{ github.sha }}
-          path: |
-            ${{ runner.temp }}/binaires/shallowred
-            ${{ runner.temp }}/binaires/shallowred-avx2
+          name: shallowred-linux-${{ github.sha }}
+          path: shallowred-linux.tar.gz
           retention-days: 90
+
+  # Les binaires de Windows et des deux sortes de Mac (Théo, 7 oct. 2026 :
+  # « tu peux faire pour windows et macOS »). Le même script que sous Linux,
+  # sur le système qui les fera tourner — un binaire ne se vérifie que là où il
+  # s'exécute. Sur une PR et sur `main` seulement : quatre systèmes à chaque
+  # push de chaque branche ne diraient rien de plus que la PR qui suit.
+  binaires-systemes:
+    name: Binaires — ${{ matrix.nom }}
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - nom: windows
+            os: windows-latest
+          # Apple Silicon : un seul binaire, le natif.
+          - nom: macos-arm64
+            os: macos-latest
+          # Le dernier Mac Intel des runners, maintenu jusqu'en août 2027
+          # selon GitHub.
+          - nom: macos-intel
+            os: macos-15-intel
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain
+        run: |
+          rustup show active-toolchain
+          rustc --version && cargo --version
+
+      - name: Construire, comparer, prendre l'empreinte
+        run: tools/binaires.sh dist
+
+      - name: Empreinte
+        uses: actions/upload-artifact@v4
+        with:
+          name: empreinte-${{ matrix.nom }}
+          path: dist/empreinte.txt
+          retention-days: 7
+
+      # Une archive tar hors Windows : l'artefact est un zip, qui perd le droit
+      # d'exécution. Construite à chaque passage, pour qu'une faute s'y voie
+      # sur la PR plutôt que sur `main`.
+      - name: Empaqueter
+        if: matrix.nom != 'windows'
+        run: tar -czf "shallowred-${{ matrix.nom }}.tar.gz" -C dist $(cd dist && ls shallowred*)
+
+      - name: Livrer les binaires
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: shallowred-${{ matrix.nom }}-${{ github.sha }}
+          path: ${{ matrix.nom == 'windows' && 'dist/shallowred*.exe' || format('shallowred-{0}.tar.gz', matrix.nom) }}
+          retention-days: 90
+
+  # Le même raisonnement que la comparaison des deux binaires, d'un système à
+  # l'autre : le code est entier, donc chaque système cherche le même arbre.
+  # Un binaire qui en chercherait un autre serait un autre moteur sous le même
+  # nom, et aucun match ne le verrait — les matchs ne jouent que sous Linux.
+  meme-arbre-partout:
+    name: Le même arbre sur chaque système
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    needs: [engine, binaires-systemes]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: empreinte-*
+          path: empreintes
+
+      - name: Comparer les empreintes
+        run: |
+          ref=empreintes/empreinte-linux/empreinte.txt
+          [ -s "$ref" ] || { echo "pas d'empreinte Linux"; exit 1; }
+          n=0; echecs=0
+          for f in empreintes/*/empreinte.txt; do
+            n=$((n + 1))
+            if diff "$ref" "$f" > /dev/null; then
+              echo "ok      $(basename "$(dirname "$f")")"
+            else
+              echo "ÉCHEC   $(basename "$(dirname "$f")")"; diff "$ref" "$f" || true
+              echecs=$((echecs + 1))
+            fi
+          done
+          [ "$n" -eq 4 ] || { echo "$n empreintes, quatre attendues"; exit 1; }
+          [ "$echecs" -eq 0 ] || exit 1
+          echo "le même arbre sur les quatre systèmes : $(head -1 "$ref") nœuds au banc, et les six positions au réseau"
 
   # Signale les lints d'une toolchain plus récente sans jamais bloquer. Sans
   # ce job, une montée de version transformerait une pile de lints en un

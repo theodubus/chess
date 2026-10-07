@@ -3414,17 +3414,25 @@ mod tests {
     }
 
     #[test]
-    fn la_futilite_inverse_retire_des_noeuds() {
-        // Au TOTAL sur trente-six positions de parties, ni sur une seule ni
-        // sur les six du banc. Mesuré sur `main` (5 oct. 2026,
-        // `tools/README.md`, n° 9, la composition) : la futilité inverse
-        // grossit l'arbre de 412 des 4 684 positions d'un journal de parties,
-        // et une somme sur six positions tirées au hasard bascule 3,1 % des
-        // fois ; sur trente-six, une fois sur dix mille.
+    fn la_futilite_inverse_agit_dans_la_recherche() {
+        // Le branchement, pas le SENS : sans l'appel de `negamax`, ou si
+        // elle ne coupait jamais, l'arbre serait celui de
+        // `search_sans_rfp` au nœud près.
+        //
+        // Ce test s'appelait `la_futilite_inverse_retire_des_noeuds` et
+        // assertait `avec < sans` sur ces trente-six positions. Le sens ne
+        // tient plus dans un test unitaire, mesuré sur `main` sans aucun
+        // changement (7 oct. 2026, `tools/README.md`, n° 12, la
+        // composition) : sur les 4 684 positions du journal du n° 9, la
+        // futilité inverse ne retire plus que 6,3 % de l'arbre — 26 % le
+        // 5 oct. — et le grossit sur 670 positions ; une somme sur
+        // trente-six bascule 6,5 % des fois, et il en faudrait près de
+        // deux cents pour descendre sous un millième. Ce qu'elle rapporte
+        // se mesure par la sonde de l'attic et par le match, pas ici.
         let (avec, sans) = noeuds_avec_et_sans(search_sans_rfp);
-        assert!(
-            avec < sans,
-            "la futilité inverse ne retire rien : {avec} avec, {sans} sans, sur les positions de partie"
+        assert_ne!(
+            avec, sans,
+            "la futilité inverse ne coupe nulle part sur les positions de partie"
         );
     }
 

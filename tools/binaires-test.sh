@@ -64,6 +64,22 @@ cas "refus : le réseau cherche un autre arbre" 1 "refus" "$TMP/base" "$TMP/rese
 cas "refus : le même nombre de nœuds, un autre coup" 1 "refus" "$TMP/base" "$TMP/coup"
 cas "refus : arguments manquants" 2 "usage" "$TMP/base"
 
+# L'empreinte seule : ce que la CI compare d'un système à l'autre. Le total du
+# banc d'abord, puis une ligne par position du banc — deux ici.
+sortie="$("$BINAIRES" --empreinte "$TMP/base" 2>&1)" || true
+attendu=$'90646\n608075 bestmove e2e4\n608075 bestmove e2e4'
+if [[ "$sortie" == "$attendu" ]]; then
+  echo "  ok      l'empreinte : le banc, puis chaque position"
+else
+  echo "  ÉCHEC   l'empreinte : « $sortie »"; echecs=$((echecs + 1))
+fi
+code=0; "$BINAIRES" --empreinte >/dev/null 2>&1 || code=$?
+if [[ "$code" == 2 ]]; then
+  echo "  ok      refus : l'empreinte sans binaire"
+else
+  echo "  ÉCHEC   refus : l'empreinte sans binaire — code $code"; echecs=$((echecs + 1))
+fi
+
 if ((echecs > 0)); then
   echo "$echecs cas en échec"
   exit 1

@@ -1,9 +1,9 @@
 diff --git a/engine/src/search.rs b/engine/src/search.rs
-index 997627e..5e8a022 100644
+index 656a79e..d49f0aa 100644
 --- a/engine/src/search.rs
 +++ b/engine/src/search.rs
-@@ -2795,6 +2795,72 @@ mod tests {
-         assert!(s.late_move_prune(true, false, 1, 1, 0, seuil));
+@@ -3413,6 +3413,72 @@ mod tests {
+         assert!(s.late_move_prune(true, false, 1, 0, seuil, lmp_threshold(1, true)));
      }
  
 +    /// SONDE RFP — jetable, à l'attic : `RFP_POSITIONS=<fichier>`
@@ -73,5 +73,5 @@ index 997627e..5e8a022 100644
 +    }
 +
      #[test]
-     fn la_futilite_inverse_retire_des_noeuds() {
-         // Au TOTAL sur trente-six positions de parties, ni sur une seule ni
+     fn la_futilite_inverse_agit_dans_la_recherche() {
+         // Le branchement, pas le SENS : sans l'appel de `negamax`, ou si

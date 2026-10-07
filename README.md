@@ -183,8 +183,9 @@ tools/binaires.sh            # dist/shallowred et dist/shallowred-avx2
 ```
 
 Le script construit les deux et **vérifie qu'ils cherchent le même arbre**
-avant de les rendre. La CI fait de même à chaque push, et publie les deux
-binaires Linux de chaque commit de `main` en artefact.
+avant de les rendre. La CI fait de même à chaque push, et publie les binaires
+de chaque commit de `main` en artefact — ceux de Linux, de Windows et des deux
+sortes de Mac (ci-dessous).
 
 Il cherche **le même arbre** que celui de base — le code est entier, le
 compilateur ne change que la façon de calculer —, **× 1,235 plus vite** avec
@@ -195,6 +196,47 @@ leurs deux camps sont toujours compilés de la même façon, donc ce choix ne
 fausse aucun verdict. **Ce qu'il rapporte, mesuré le 7 oct.** : le même
 commit, AVX2 contre base, **+32,23 ± 4,84 Elo** à `8+0,08` sur 6 000 parties
 — exactement ce que vaut 23,5 % de temps en plus.
+
+### Windows et macOS
+
+Le même script tourne sous **Windows** — dans Git Bash, avec Rust et Python
+installés — et sous **macOS** (Théo, 7 oct. 2026). Il y construit :
+
+| système | binaires |
+|---|---|
+| Linux, Windows, Mac Intel | `shallowred` (de base) et `shallowred-avx2` — `.exe` sous Windows |
+| Mac Apple Silicon, Linux ARM | `shallowred` seul : l'AVX2 est propre aux processeurs x86 |
+
+**Le bon binaire se construit tout seul sur la machine qui le fera
+tourner** — il n'y faut que Rust, installé par `rustup`, et sous Windows les
+outils de compilation C++ que `rustup` demande d'installer. `cargo build
+--release` y donne celui de base, qui tourne toujours ; sur un processeur x86
+qui a l'AVX2 :
+
+```sh
+RUSTFLAGS="-C target-cpu=x86-64-v3" cargo build --release       # Linux, macOS, Git Bash
+```
+
+```powershell
+$env:RUSTFLAGS = "-C target-cpu=x86-64-v3"; cargo build --release    # PowerShell
+```
+
+`x86-64-v3` plutôt que `native` : `native` prend tout ce qu'a le processeur
+qui compile, l'AVX-512 compris là où il existe, et l'AVX-512 n'a rien
+rapporté ici — × 0,95 de nœuds par seconde, mesuré le 6 oct.
+(`tools/README.md`, A21). `x86-64-v3` est exactement le binaire que mesurent
+les matchs du dépôt.
+
+**La CI construit les binaires des quatre systèmes** — Linux, Windows, Mac
+Intel, Mac Apple Silicon — à chaque PR et à chaque commit de `main`, et
+**exige que les quatre cherchent le même arbre** : le banc fait main et les
+six positions au réseau, nœuds et coup. Sur `main`, ils partent en artefact,
+dans l'onglet *Actions* du dépôt, pour 90 jours : `shallowred-linux-…`,
+`shallowred-windows-…`, `shallowred-macos-intel-…`,
+`shallowred-macos-arm64-…`, une archive `.tar.gz` hors Windows pour que
+le binaire reste exécutable. Un binaire téléchargé sur Mac est mis en
+quarantaine : `xattr -d com.apple.quarantine shallowred` avant de le lancer
+— ou le construire sur place, qui l'évite.
 
 ## Vérifier
 
