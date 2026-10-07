@@ -311,28 +311,43 @@ tools/crosscheck.sh
 Fait jouer le même match aux deux arbitres et compare. À relancer après toute
 modification de la couche UCI.
 
-## Les deux binaires livrés — `tools/binaires.sh`
+## Les binaires livrés — `tools/binaires.sh`
 
 ```sh
 tools/binaires.sh [dossier]          # défaut : dist/
 tools/binaires.sh --comparer <a> <b>
+tools/binaires.sh --empreinte <binaire>
 ```
 
 Construit `shallowred` (`x86-64`, le jeu de base) et `shallowred-avx2`
-(`x86-64-v3`) — la décision de Théo du 6 oct. 2026, n° 10. **Deux binaires du
-même code ne sont le même moteur que s'ils cherchent le même arbre** : le code
-est entier, donc ils le cherchent aujourd'hui, mais un calcul flottant entré
-demain dans la recherche laisserait au compilateur le droit d'en faire deux
-moteurs sous un même nom, et aucun match ne le verrait — les matchs jouent le
-binaire AVX2 des deux côtés. Le script compare donc, avant de rendre les
-binaires, le banc fait main à la profondeur 7 **et** les six positions du banc
-cherchées avec le réseau qui joue, nœuds et coup : le banc seul ne verrait
-rien, puisque l'AVX2 change surtout les boucles du réseau. Il tourne dans la
-CI à chaque push, qui publie les deux binaires de chaque commit de `main` en
-artefact. Sa branche précieuse, le refus, est éprouvée par
-`tools/binaires-test.sh` sur des moteurs fabriqués — dans `verify.sh` et la CI ;
-une faute injectée — la comparaison réduite au banc — y fait tomber deux cas
-sur cinq.
+(`x86-64-v3`) — la décision de Théo du 6 oct. 2026, n° 10 — sur un
+processeur x86-64 : Linux, Windows sous Git Bash (`.exe`), Mac Intel ; sur un
+processeur ARM 64 bits, Mac Apple Silicon ou Linux ARM, le seul binaire natif
+— Théo, 7 oct. 2026 : « *tu peux faire pour windows et macOS* ». **Deux
+binaires du même code ne sont le même moteur que s'ils cherchent le même
+arbre** : le code est entier, donc ils le cherchent aujourd'hui, mais un
+calcul flottant entré demain dans la recherche laisserait au compilateur le
+droit d'en faire deux moteurs sous un même nom, et aucun match ne le verrait
+— les matchs jouent le binaire AVX2 des deux côtés. Le script compare donc,
+avant de rendre les binaires, le banc fait main à la profondeur 7 **et** les
+six positions du banc cherchées avec le réseau qui joue, nœuds et coup : le
+banc seul ne verrait rien, puisque l'AVX2 change surtout les boucles du
+réseau. Le binaire AVX2 n'est comparé que sur un processeur qui l'a :
+`/proc/cpuinfo` sous Linux et Git Bash, `sysctl` sur Mac Intel.
+
+**Le même raisonnement d'un système à l'autre** : le script écrit
+l'empreinte du binaire de base dans `empreinte.txt`, et la CI, qui construit
+sur Linux, Windows, Mac Intel et Mac Apple Silicon à chaque PR et sur `main`,
+exige la même empreinte sur les quatre (job « Le même arbre sur chaque
+système »). Un binaire qui chercherait un autre arbre sous Windows serait un
+autre moteur sous le même nom, et les matchs, qui ne jouent que sous Linux,
+ne le verraient pas. Sur `main`, les binaires des quatre systèmes partent en
+artefact — en archive tar hors Windows, qui garde le droit d'exécution.
+
+Sa branche précieuse, le refus, est éprouvée par `tools/binaires-test.sh` sur
+des moteurs fabriqués — dans `verify.sh` et la CI ; une faute injectée — la
+comparaison réduite au banc — y fait tomber trois cas sur sept, l'empreinte
+comprise.
 
 ## Le livre d'ouvertures
 
