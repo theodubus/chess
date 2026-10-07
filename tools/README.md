@@ -864,13 +864,14 @@ dernière relève est faite.
 | **N° 9 — C44, la marge singulière à 5·d** | **37459864301, 37459867364, 37459870312, 37459873334** | `6ddd08c` → `b6d41d7`, `8+0,08`, graine « auto » chacun | 4 × 3 000, fastchess | **RELEVÉ à 19 h 30** (heure de Paris) — lancés à 13 h 57, le protocole fusionné avant (`2ce47d9`) ; finis entre 19 h 18 et 19 h 21, 6,4 à 6,5 s par partie | **+4,98, 0,00, +6,37, −0,58 ; +2,69 ± 3,41 en commun** — homogènes (p = 0,486), zéro perte au temps, zéro coup illégal ; **pas de gain démontré**, la borne basse à −0,72 : **la bissection s'arrête, la marge reste à 10·d**, non fusionné. Runners : deux EPYC 7763, un EPYC 9V74, un Xeon 6973P-C, 1,85 à 2,30 M n/s, à la profondeur 14, le Xeon à la 15. Le candidat rend exactement 130 762 218 nœuds au rejeu à la profondeur 10, la variante `se:5:8` de l'écran. *Attendu, écrit avant* : −15 à +10, ~−2. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro — la marge passe alors à 5·d, et 2,5·d se mesure ensuite ; sinon la bissection s'arrête à 10·d ; ± 3,7 à quatre jobs |
 | **N° 9 — le balayage après la fusion de C41** | **37462469965** | `main` à `cdd1d6f`, C41 et les tests de la racine et de la frontière singulière (PR #151, #152) | un job par fichier, puis `Verdict` | **RELEVÉ à 19 h 25, VERT** — lancé à la main à 14 h 19, la prédiction fusionnée avant (`1e10ec6`) ; fini à 17 h 03, `search.rs` le plus long, 164 min | **La prédiction tient, exactement** : `search.rs` **47** — 628 attrapés, 54 expirés, 37 inviables —, `eval.rs` **104**, tous les fichiers à leur plafond, total **163**, aucune issue ; les 47 sont les 42 d'avant, aux lignes décalées, et les cinq notés du crible de C41. *Prédiction, écrite avant* : `search.rs` **47** — les 42 d'avant un pour un, et les cinq survivants notés du crible de C41 (deux de la marge, deux de la profondeur d'exclusion, la re-recherche inatteignable) ; `eval.rs` **104**, C41 ne touchant ni le banc figé de la profondeur 6 ni celui de la 7, seuls à voir ces valeurs ; les autres à leur plafond ; total **163**. <span>Confiance moyenne</span> : le crible ne couvrait que les lignes de C41, et l'arbre change à partir de la profondeur 8 — un test qui y cherche peut cesser de voir, ou se mettre à voir, un mutant d'ailleurs ; 45 à 49 pour `search.rs` |
 | **N° 9 — le balayage après la fusion de C43** | **37505492359** | `main` à `631673e`, C43 et la relève de C43 et C44 (PR #153) | un job par fichier, puis `Verdict` | **RELEVÉ à 0 h 50 le 7 oct., VERT** — lancé à la main à 19 h 41, la prédiction fusionnée avant (`383d559`) ; fini à 21 h 29, `search.rs` le plus long, 107 min | **La prédiction tient, exactement** : `see.rs` **2**, `search.rs` **47**, `eval.rs` **104**, tous les fichiers à leur plafond, total **163**, aucune issue — les comptes, l'identité des survivants n'étant pas recomparée ligne à ligne. *Prédiction, écrite avant* : `see.rs` **2**, les deux d'avant aux lignes décalées — le crible local des lignes de C43 rend dix mutants, dix attrapés ; `search.rs` **47** et `eval.rs` **104**, les mêmes survivants : C43 ne déplace que dix nœuds sur 90 656 au banc de la profondeur 7 et laisse celui de la 6 au nœud près ; les autres à leur plafond ; total **163**. <span>Confiance moyenne</span> : un mutant que le banc de la 7 n'attrapait que par les dix nœuds que C43 déplace peut changer de camp, dans un sens ou dans l'autre |
-| **N° 12 — C45, la fenêtre nulle** | **37547528674, 37547531278, 37547533676, 37547535919** | `4db9356` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **EN VOL** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; fin attendue vers 7 h 40 — le dernier de C51, parti en file d'attente, vers 8 h 45 | — *Attendu, écrit avant* : ~−3, **−12 à +8**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
-| **N° 12 — C46, la fenêtre nulle et les nœuds PV** | **37547544297, 37547547305, 37547549618, 37547552680** | `7134c9f` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **EN VOL** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; fin attendue vers 7 h 40 — le dernier de C51, parti en file d'attente, vers 8 h 45 | — *Attendu, écrit avant* : ~−10, **−30 à +10**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
-| **N° 12 — C47, l'extension négative** | **37547555644, 37547558572, 37547561250, 37547563848** | `de87273` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **EN VOL** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; fin attendue vers 7 h 40 — le dernier de C51, parti en file d'attente, vers 8 h 45 | — *Attendu, écrit avant* : ~+5, **−5 à +15**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
-| **N° 12 — C48, la double extension** | **37547570785, 37547573454, 37547575650, 37547578955** | `b395bea` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **EN VOL** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; fin attendue vers 7 h 40 — le dernier de C51, parti en file d'attente, vers 8 h 45 | — *Attendu, écrit avant* : ~0, **−10 à +10**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
-| **N° 12 — C49, le malus d'historique** | **37547581925, 37547584558, 37547586924, 37547589346** | `98a2b1c` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **EN VOL** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; fin attendue vers 7 h 40 — le dernier de C51, parti en file d'attente, vers 8 h 45 | — *Attendu, écrit avant* : ~+3, **−3 à +10**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
-| **N° 12 — C50, la règle des cinquante coups** | **37547592132, 37547594287, 37547597155, 37547599732** | `af73ff5` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **EN VOL** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; fin attendue vers 7 h 40 — le dernier de C51, parti en file d'attente, vers 8 h 45 | — *Attendu, écrit avant* : ~0, **−5 à +5**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
-| **N° 12 — C51, les échecs tranquilles en quiescence** | **37547602827, 37547605025, 37547607538, 37547610397** | `7bc0e61` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **EN VOL** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; fin attendue vers 7 h 40 — le dernier de C51, parti en file d'attente, vers 8 h 45 | — *Attendu, écrit avant* : ~−20, **−50 à +5**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
+| **N° 12 — C45, la fenêtre nulle** | **37547528674, 37547531278, 37547533676, 37547535919** | `4db9356` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **+11,67 ± 3,38, gain démontré — à la composition** ; +15,06, +10,43, +8,57, +12,63, homogènes (p = 0,549). *Attendu, écrit avant* : ~−3, **−12 à +8** — dépassé. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
+| **N° 12 — C46, la fenêtre nulle et les nœuds PV** | **37547544297, 37547547305, 37547549618, 37547552680** | `7134c9f` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **+9,56 ± 3,38, gain démontré, sous C45 au point : non retenu** ; +12,17, +9,04, +4,75, +12,28, homogènes (p = 0,424). *Attendu, écrit avant* : ~−10, **−30 à +10**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
+| **N° 12 — C47, l'extension négative** | **37547555644, 37547558572, 37547561250, 37547563848** | `de87273` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **+3,91 ± 3,28, gain démontré — à la composition** ; +0,23, +2,20, +4,98, +8,22, homogènes (p = 0,343). *Attendu, écrit avant* : ~+5, **−5 à +15**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
+| **N° 12 — C48, la double extension** | **37547570785, 37547573454, 37547575650, 37547578955** | `b395bea` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **+0,20 ± 3,31, pas d'effet décelable** — non fusionné ; +3,24, +1,39, −1,97, −1,85, homogènes (p = 0,695). *Attendu, écrit avant* : ~0, **−10 à +10**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
+| **N° 12 — C49, le malus d'historique** | **37547581925, 37547584558, 37547586924, 37547589346** | `98a2b1c` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **+25,32 ± 3,26, gain démontré — à la composition** ; +27,39, +28,55, +22,15, +23,20, homogènes (p = 0,534). *Attendu, écrit avant* : ~+3, **−3 à +10** — dépassé. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
+| **N° 12 — C50, la règle des cinquante coups** | **37547592132, 37547594287, 37547597155, 37547599732** | `af73ff5` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **−0,00 ± 3,26, pas d'effet décelable** — non fusionné ; +0,12, +2,43, −3,94, +1,39, homogènes (p = 0,512). *Attendu, écrit avant* : ~0, **−5 à +5**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
+| **N° 12 — C51, les échecs tranquilles en quiescence** | **37547602827, 37547605025, 37547607538, 37547610397** | `7bc0e61` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **−10,77 ± 3,40, régression démontrée** — non fusionné ; −10,54, −8,34, −12,05, −12,17, homogènes (p = 0,862) ; 157 avertissements de l'arbitre côté candidat, 12 côté référence. *Attendu, écrit avant* : ~−20, **−50 à +5**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
+| **C13 — la série du 7 oct., demandée par Théo** | **37579900252** | `main` à `7d9faef` (N2L, le groupe du n° 9, C41, C43), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée à 8 h 08 (heure de Paris), son attendu poussé avant (`3c6e2c3`) ; fin attendue vers 12 h 50 | — *Attendu, écrit avant* : ~+15 sur N2L, **0 à +32** ; ~2 967 au centre, **2 935 à 3 015** ; un écart à N2L sous ~+42 ne s'en sépare pas (section C13, « La série du 7 oct. ») |
 | **N° 10 — l'AVX2 : `x86-64-v3` contre `x86-64`, le même commit** | **37514404585, 37514408893** | `ea8f3af` des deux côtés, la PR #155 ; `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 2 h 30 le 7 oct.** — lancés à 20 h 50 (heure de Paris), le protocole fusionné avant (`e584b16`) ; finis à 2 h 10 et 2 h 11, 3 000 parties chacun, aucune perte au temps | **+32,23 ± 4,84 Elo, gain démontré** — +31,00 et +33,46, homogènes (p = 0,619). *Attendu, écrit avant* : ~+33, **+15 à +45** — tenu au point, et l'étalon du temps prédisait +32,8. Le défaut des workflows reste `x86-64-v3` (section n° 10, « VERDICT ») |
 | **C13 — N2L contre Stockfish bridé à 2850** | **37034309570** | `main` à `5f59449` (N2L, B8, les seaux, 64 Mio), 60+0,6, graine « auto » | 300, fastchess | **RELEVÉE le 5 oct.** — finie le 2 oct. à 21 h 20, EPYC 9V74, 2 095 287 n/s ; son attendu poussé avant le lancement (`10eeffc`) | **2 952 ± 30** — 169 − 83 − 48, 64,3 % : dans l'attendu, sous son centre ; **+10 ± 42 sur N2**, pas séparé de zéro. L'attendu appliquait le facteur des réseaux à des gains de recherche, qu'elle écrase davantage (section C13, « N2L »). Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : **~2 990, 2 940 à 3 050** ; l'écart à N2 contre le même adversaire ~+48, séparé de zéro au-delà de ~+42 — section C13, « N2L » |
 | **C13 — deux séries à 10+0,1, la cadence de Théo** | 36529944917, 36529947739 | la faite main (`bfebbd8`) contre 2600 ; le réseau (`main` à `81e2753`) contre 2850 | 2 × 300, fastchess | **RELEVÉES à 07 h 10** — finies à 07 h 02 et 07 h 04, deux EPYC 7763 d'étalonnages voisins | **faite main 2 534 ± 36, réseau 2 790 ± 29** ; l'écart +256 ± 46. Le point de Théo ne se reproduit pas, et le source de Stockfish dit pourquoi une cadence courte nous sous-estime : bridé, il choisit son coup à profondeur fixe (section C13). — *Attendu, écrit avant* : faite main 2 630 à 2 770 (**manqué**), réseau 2 800 à 3 100 (**à sa borne basse**) |
@@ -6097,6 +6098,159 @@ Les gains rejoignent le groupe d'une composition, mesurée contre `main`
 comme le 5 oct. **Puissance, dite d'avance** : 12 000 parties par
 candidat, ± 3,5 en commun ; un vrai +5 passe la borne trois fois sur
 quatre, un vrai +10 presque toujours — et un vrai −5 jamais.
+
+### N° 12, le cinquième écran — VERDICT, 7 oct. 2026 : C49 +25,32 ± 3,26, C45 +11,67 ± 3,38 et C47 +3,91 ± 3,28 à la composition ; C46 +9,56 ± 3,38 sous C45 ; C48 et C50 sans effet ; C51 −10,77 ± 3,40, régression
+
+Les vingt-huit jobs relevés à 8 h 15 (heure de Paris) : lancés ensemble à
+1 h 37, partis sans file d'attente, finis entre 6 h 43 et 7 h 06 ; 3 000
+parties chacun, chaque candidat contre `9c73f99`, à `8+0,08`, le binaire
+AVX2 des deux côtés, le livre de 15 000. **Zéro perte au temps, zéro coup
+illégal, zéro moteur perdu sur les vingt-huit.** Profondeur 15 en 250 ms
+partout où la fin du journal la donne — vingt-cinq jobs sur vingt-huit —,
+de 1,90 M n/s au banc (Xeon 8573C) à 3,48 M (EPYC 9V45) ; 6,09 à 6,53 s
+par partie.
+
+| candidat | les quatre jobs | en commun | homogénéité | attendu, écrit avant |
+|---|---|---|---|---|
+| **C45**, la fenêtre nulle | +15,06, +10,43, +8,57, +12,63 | **+11,67 ± 3,38** | p = 0,549 | ~−3, −12 à +8 |
+| **C46**, la fenêtre nulle et les nœuds PV | +12,17, +9,04, +4,75, +12,28 | **+9,56 ± 3,38** | p = 0,424 | ~−10, −30 à +10 |
+| **C47**, l'extension négative | +0,23, +2,20, +4,98, +8,22 | **+3,91 ± 3,28** | p = 0,343 | ~+5, −5 à +15 |
+| **C48**, la double extension | +3,24, +1,39, −1,97, −1,85 | **+0,20 ± 3,31** | p = 0,695 | ~0, −10 à +10 |
+| **C49**, le malus d'historique | +27,39, +28,55, +22,15, +23,20 | **+25,32 ± 3,26** | p = 0,534 | ~+3, −3 à +10 |
+| **C50**, la règle des cinquante coups | +0,12, +2,43, −3,94, +1,39 | **−0,00 ± 3,26** | p = 0,512 | ~0, −5 à +5 |
+| **C51**, les échecs tranquilles en quiescence | −10,54, −8,34, −12,05, −12,17 | **−10,77 ± 3,40** | p = 0,862 | ~−20, −50 à +5 |
+
+Les runs, dans l'ordre des jobs : la section « EN VOL ».
+
+**Par le critère écrit avant** — gain si la borne basse commune est
+au-dessus de zéro :
+- **C49, C45 et C47 : gains démontrés**, bornes basses +22,06, +8,29 et
+  +0,63. C46 passe aussi (+6,18), mais C45 le domine au point, +11,67
+  contre +9,56 : **C45 est retenu**, comme C32 contre C32b. C46 contenant
+  C45, ses règles des nœuds PV ajoutent −2,1 ± 4,8 — rien de démontré,
+  dans un sens ni dans l'autre. Les trois rejoignent **la composition**,
+  mesurée contre `main` (section suivante).
+- **C48 et C50 : pas d'effet décelable**, non fusionnés, rustines à
+  l'attic.
+- **C51 : régression démontrée**, borne haute −7,37 ; non fusionné.
+
+**Contre les attendus : deux sur sept hors de leur intervalle, tous deux
+AU-DESSUS** — C45 (+11,67 contre −12 à +8) et C49 (+25,32 contre −3 à
++10). Les attendus avaient deux termes : le coût de l'arbre à décision
+égale, lu par l'étalon (1,38 pli par doublement, 60 à 105 Elo par pli),
+et un pari sur la décision, centré sur zéro. La mesure moins le coût rend
+le terme de décision de chacun — <span>inférence, confiance
+moyenne</span> : l'étalon porte sa propre incertitude, et chaque mesure
+± 3,3 :
+
+| candidat | l'arbre à 12 | coût, décision égale | mesuré | la décision, par différence |
+|---|---|---|---|---|
+| C45 | +3,2 % | −4 à −7 | +11,67 | **+16 à +19** |
+| C46 | +17,1 % | −19 à −33 | +9,56 | **+29 à +43** |
+| C47 | −8,3 % | +10 à +18 | +3,91 | **−6 à −14** |
+| C48 | +5,3 % | −6 à −11 | +0,20 | +6 à +11 |
+| C49 | −3,8 % | +5 à +8 | +25,32 | **+17 à +20** |
+| C50 | +1,7 % | −2 à −4 | −0,00 | +2 à +4 |
+| C51 | +30,7 % | −32 à −56 | −10,77 | **+21 à +45** |
+
+- **Le pari « la décision ne bouge pas » centrait les attendus, et il était
+  faux dans les deux sens.** Le terme de décision est du même ordre que le
+  coût, ou plus grand, dans cinq cas sur sept, et c'est lui qui fait le
+  signe de C45, C46 et C49 : positif pour ce qui touche la fenêtre ou
+  l'ordre des coups, négatif pour l'extension négative — dont l'attendu
+  écrivait le risque, « un coup de la table cherché moins loin peut
+  manquer ». Le coût de l'arbre, lui, se lit exactement ; ce n'est pas lui
+  qui a manqué.
+- **C46 contre C45** : les règles des nœuds PV rachètent par la décision
+  presque tout ce qu'elles coûtent d'arbre — +13,9 points, −15 à −26 de
+  coût, mesurées −2,1 ± 4,8 —, sans rien rapporter. **Le différé de
+  l'écran, LMR à un pli de moins aux nœuds PV, « seulement si C46 paie »,
+  reste fermé.**
+- **La fenêtre nulle, sur la base d'aujourd'hui** : −10,9 ± 7,9 à `1+0,01`
+  le 14 sept., −0,8 ± 8,2 à `8+0,08` le 21 sept. (C12), **+11,67 ± 3,38**
+  aujourd'hui. Les deux derniers sont à la même cadence, sur deux bases —
+  sans le réseau, A18, A20, le n° 9 ni C41 d'un côté, avec tout cela de
+  l'autre ; écart +12,5 ± 8,9, z = 1,41. <span>Inférence, confiance
+  faible</span> : la base l'explique, ou le hasard de septembre — rien ne
+  les sépare. Ce qui est établi : **sur `main` aujourd'hui, la fenêtre
+  nulle rapporte** ; `CLAUDE.md` le dit, ligne « cette technique est
+  standard ».
+- **Le malus d'historique, le plus gros gain de l'écran, pour 3,8 % d'arbre
+  en moins.** Il punit les tranquilles cherchés avant celui qui coupe : à
+  la coupure suivante, ils viennent plus tard, là où LMR les réduit et
+  l'élagage par compte les coupe. <span>Inférence, confiance
+  moyenne</span> : un ordre meilleur rend les réductions et les élagages
+  par le RANG plus justes, ce que la taille de l'arbre ne voit pas. Il
+  donne aussi à l'historique des notes négatives — la condition de la
+  ligne « un historique BORNÉ » du backlog.
+
+**Les avertissements de l'arbitre, lus.** Six candidats dans l'ordre connu :
+16 à 26 côté candidat, 10 à 18 côté référence sur leurs quatre jobs, tous
+« PV continues after fifty-move rule » ou « … threefold repetition », la
+nature connue depuis C31. **C51 non : 157 côté candidat — 116 « fifty-move
+rule », 41 « threefold repetition » —, 12 côté référence**, treize fois
+plus. Le mécanisme se lit dans le code : un échec tranquille ne remet pas
+l'horloge des cinquante coups à zéro et peut répéter une position, et la
+quiescence ne teste aucune nulle après un coup tranquille — le défaut de
+C31, arrêté par son critère le 30 sept. ; ses variantes traversent donc des
+nulles qu'elle ne voit pas. <span>Inférence, confiance faible</span> : que
+cette cécité coûte de l'Elo n'est pas mesuré — le terme de décision de C51
+est positif, et c'est le coût de l'arbre qui fait la régression. **Si les
+échecs tranquilles se rouvrent un jour, c'est avec la nulle en quiescence,
+mesurées ensemble** (backlog).
+
+### N° 12, la composition — C45, C47 et C49 : le candidat, et un test qui tombe — règle écrite le 7 oct. avant de mesurer
+
+**Le candidat** : C45, C47 et C49 composés sur `main` — `7d9faef`, dont le
+moteur est celui de `9c73f99` au bit près, `git diff` vide sous `engine/`
+et `tools/src`. Aucun arbitrage de code : un seul conflit, deux
+déclarations voisines en tête de la boucle des coups. Banc **38 007** nœuds
+à la profondeur 6 (48 497 sur `main`), **70 452** à la 7 (90 646).
+
+**Un test tombe en composant, et aucun membre seul ne le fait tomber.**
+`la_futilite_inverse_retire_des_noeuds` rend 261 956 nœuds avec la
+futilité inverse, 250 937 sans, sur ses trente-six positions de parties.
+Membre par membre, le même protocole :
+
+| | avec | sans | avec / sans |
+|---|---|---|---|
+| `main` | 250 177 | 257 946 | 0,970 |
+| C45 | 242 835 | 249 625 | 0,973 |
+| C47 | 250 177 | 257 946 | 0,970 — l'extension négative n'agit pas sous la profondeur 8 |
+| C49 | 212 043 | 218 524 | 0,970 |
+| C45 + C49, C45 + C47 + C49 | 261 956 | 250 937 | **1,044** |
+
+Deux faits. **La bascule tient à la paire** fenêtre nulle et malus, pas à
+un membre. Et **la marge, sur `main`, n'est plus que de 3 %** : ces
+trente-six positions rendaient 0,786 le 5 oct., avant le groupe du n° 9 —
+la futilité inverse a fondu depuis, par empilement. <span>Inférence,
+confiance moyenne</span> : la futilité aux nœuds frontières (C39) saute
+les tranquilles des mêmes nœuds peu profonds.
+
+**La règle, écrite à 8 h 35, avant de mesurer.** La sonde du n° 9
+(`n9-sonde-futilite-inverse.patch`), portée sur `main` d'aujourd'hui,
+rejoue le protocole exact du test — recherche froide, profondeur 7, faite
+main, avec et sans la futilité inverse — sur les 4 684 positions de partie
+du n° 9, pour `main` et pour la composition.
+1. **Sur `main`, la seule mesure indépendante du changement** : la
+   probabilité qu'une somme sur 36 positions tirées au hasard bascule —
+   avec ≥ sans —, sur 200 000 tirages seedés, comme le 5 oct.
+   - **Au-dessus de 0,1 %, la formulation est condamnée sans la
+     composition.** La règle du 5 oct. rechoisit `k` — le plus petit dont
+     la bascule est ≤ 0,1 % sur `main` — s'il tient dans un test en debug,
+     cent positions au plus ; sinon une somme de nœuds ne peut plus garder
+     la futilité inverse, et le test se reformule sur ce qu'il garde
+     vraiment — qu'elle est branchée et qu'elle coupe en recherche —,
+     comme `une_recherche_punit_des_tranquilles` garde le malus.
+   - **À 0,1 % ou moins, la formulation tient sur `main`** et la
+     composition la renverse au-delà du hasard : aucune reformulation. La
+     composition part en match — un compte de nœuds ne juge pas la force —,
+     mais elle ne se fusionne qu'après la mesure de la futilité inverse
+     sous elle : son arbre au rejeu, au réseau, puis son retrait en match,
+     critère écrit avant.
+2. **Sous la composition, une mesure, pas une décision** : Σ avec / Σ sans
+   sur les 4 684 positions, et la part des positions dont la futilité
+   inverse grossit l'arbre — sur `main` le 5 oct., 412, 8,8 %.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
