@@ -21,6 +21,15 @@
 # défaut est le numéro du run, donc deux jobs ne produisent jamais les mêmes
 # parties — la faute de « même graine, deux copies » est écartée par
 # construction (`CLAUDE.md`, pièges de mesure).
+#
+# # Le jeu d'instructions
+#
+# `x86-64-v3` (AVX2) par défaut depuis le 7 oct. 2026, comme `match.yml` et
+# `force.yml` : le code est entier, donc le binaire AVX2 joue les MÊMES
+# parties que celui de base, à l'octet — vérifié ce jour-là sur 40 parties à
+# 5 000 nœuds, un fil, les deux fichiers de même sha256 —, et plus vite au
+# réseau (× 1,235 de nœuds par seconde, n° 10). À budget de nœuds fixe, un
+# job écrit donc plus de positions, et les mêmes.
 name: NNUE — génération de données
 
 on:
@@ -50,6 +59,13 @@ on:
         description: "Évaluation qui joue et étiquette — les valeurs de l'option UCI EvalFile : <embedded> (le réseau embarqué, défaut), <none> (la faite main : regénère les données d'A21 à l'identique), ou le chemin d'un réseau dans le dépôt"
         type: string
         default: "<embedded>"
+      cpu:
+        description: "Jeu d'instructions du générateur : x86-64-v3 (AVX2), le défaut depuis le 7 oct. 2026 — les mêmes parties à l'octet que le binaire de base, plus vite au réseau —, ou x86-64, le binaire de base"
+        type: choice
+        default: "x86-64-v3"
+        options:
+          - "x86-64-v3"
+          - "x86-64"
 
 permissions:
   contents: read
@@ -71,7 +87,7 @@ jobs:
           rustc --version && cargo --version
 
       - name: Construire le générateur
-        run: cargo build --release -p shallowred-tools --bin nnue-datagen
+        run: RUSTFLAGS="-C target-cpu=${{ inputs.cpu }}" cargo build --release -p shallowred-tools --bin nnue-datagen
 
       - name: Générer
         shell: bash
@@ -100,7 +116,7 @@ jobs:
           {
             echo "### NNUE — génération, run ${{ github.run_id }}"
             echo
-            echo "- générateur : \`$(git rev-parse HEAD)\`"
+            echo "- générateur : \`$(git rev-parse HEAD)\`, jeu d'instructions \`${{ inputs.cpu }}\`"
             echo "- runner : $(nproc) processeurs logiques, $physiques cœurs physiques — $modele"
             echo "- volume : $(du -sh donnees | cut -f1) sur disque"
             echo

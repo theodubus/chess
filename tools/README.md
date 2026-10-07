@@ -6438,6 +6438,59 @@ perte au temps, zéro coup illégal, zéro moteur perdu.
   `main`, et leur colonne dit pourquoi ; le balayage de mutation suit la
   fusion, sa prédiction écrite avant (« EN VOL »). **Le n° 12 est clos.**
 
+### N° 13 — le réseau : une vague de données au moteur d'aujourd'hui, écrite le 7 oct. avant de la lancer
+
+**Décidé** — l'ordre du 6 oct. au soir (Théo : « *Ok, alors on testera
+tout ça dans l'ordre recommandé* »), après le n° 12 : « le réseau — des
+données d'abord, qui tournent sur runners sans personne, puis la carte de
+Théo pour l'entraînement ; la largeur et les seaux de roi une fois
+l'inférence plus rapide ».
+
+**Pourquoi des données neuves.** Toutes celles du dépôt ont été écrites le
+29 sept. par le moteur de `81e2753` : le premier réseau, N0, et la recherche
+d'alors. Le levier qui a le plus rapporté au n° 7 est l'étiqueteur — des
+étiquettes du réseau au lieu de la faite main, **+115,74 ± 6,98** —, puis le
+volume, **+50,09 ± 6,12** pour deux fois plus de positions. Depuis,
+l'étiqueteur a changé deux fois : le réseau qui joue est N2L, +182 au-dessus
+de N0 par la chaîne de ses marches, et la recherche a gagné ~+190 contre son
+jumeau à `8+0,08` — B8, le n° 9, C41, la composition du n° 12.
+<span>Inférence, confiance faible</span> : à 5 000 nœuds par coup, ces gains
+ne valent pas leur Elo à la pendule ; mais l'écart d'étiqueteur est du même
+ordre que celui qui rapportait +116, et la vague achète de quoi le mesurer.
+
+**La recette, inchangée hors l'étiqueteur et le binaire** :
+`nnue-datagen.yml` sur `main`, `<embedded>` (N2L), 5 000 nœuds par coup,
+graine « auto », un fil par processeur logique, 330 minutes. **Le binaire
+AVX2**, l'entrée `cpu`, `x86-64-v3` par défaut depuis ce changement : il
+écrit les mêmes parties que le binaire de base, à l'octet — 40 parties,
+3 970 positions, un fil, les deux fichiers de même sha256 —, et × 1,21 plus
+vite sur une paire dans le conteneur.
+
+**D'abord une sonde de 20 minutes** : le générateur, l'étiqueteur et la
+recherche ont changé depuis la dernière vague. *Attendu, écrit avant* —
+<span>inférence, confiance faible</span> :
+- **positions par seconde et par runner : 1 500 à 2 500**, ~1 800 sur un
+  EPYC 7763 — 1 477 à 1 501 la dernière fois sur ce modèle, × 1,2 du
+  binaire ; le coût du nœud ne change pas, à réseau de même taille ;
+- **parties écartées : 7 à 12 %** — 7,4 % avec N0 ; le filtre d'ouverture se
+  lit en unités du réseau, et l'échelle de N2L est plus large (pente 2,60
+  contre 2,24 en place) ;
+- **nulles : 25 à 35 %** — 25,8 % avec N0 ; un joueur plus fort en fait
+  davantage.
+
+Hors fourchette, on diagnostique avant de lancer la vague.
+
+**Puis la vague : huit jobs de 330 minutes**, la taille de la dernière. À
+volume égal, un réseau entraîné sur elle se compare à N2 — même taille,
+même recette — et n'en diffère que par l'étiqueteur. *Attendu, écrit
+avant* : **240 à 340 M de positions**, ~285 M. Huit et pas plus : le
+workflow s'impose quelques jobs à la fois, et un second volume se décidera
+à la séance, si les seaux de roi en demandent.
+
+**Ce que la vague ne décide pas : l'entraînement.** La séance sur la carte
+de Théo — les réseaux à entraîner, leurs attendus, le critère de leurs
+matchs — s'écrit à la relève de la vague, avant la séance.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -7633,7 +7686,9 @@ recommandé* ») — n° 10 à n° 14 :
 4. **Le réseau, n° 7** — le plus gros levier mesuré du projet (+330,
    +116, +50, +16) ; des données d'abord, qui tournent sur runners sans
    personne, puis la carte de Théo pour l'entraînement ; la largeur et les
-   seaux de roi une fois l'inférence plus rapide.
+   seaux de roi une fois l'inférence plus rapide. **Commencé le 7 oct.
+   (n° 13)** : une vague de données au moteur d'aujourd'hui, la séance
+   ensuite (« N° 13 — le réseau »).
 5. **La profondeur d'itération** — la question de Théo — ProbCut d'abord,
    après le livre, à cadence longue.
 

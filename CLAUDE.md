@@ -90,7 +90,8 @@ une mesure, pas une préférence.
   **× 1,235 plus vite au réseau** (mesuré le 6 oct., 20 paires sur 20), et
   **+32,23 ± 4,84 Elo** à `8+0,08` contre le binaire de base (7 oct., 6 000
   parties) — l'étalon du temps en prédisait +32,8.
-  `match.yml` et `force.yml` bâtissent en v3 par défaut ; en local,
+  `match.yml`, `force.yml` et, depuis le 7 oct., `nnue-datagen.yml` — les
+  mêmes parties à l'octet — bâtissent en v3 par défaut ; en local,
   `cargo build --release` et `ref.sh` restent au jeu de base, pour que les
   deux binaires d'une comparaison locale soient bâtis pareil. **Un verdict
   d'avant le 6 oct. au soir a été rendu sur le binaire de base et le livre
