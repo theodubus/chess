@@ -22,7 +22,10 @@ d'un aveu sur la profondeur de recherche.
 > l'échange statique dans la recherche principale et la futilité aux nœuds
 > frontières (**+52 ± 4**). Le 6 oct., les **extensions singulières** : le
 > coup de la table gagne un pli quand aucun autre n'approche son score
-> (**+11 ± 3**).
+> (**+11 ± 3**). Le 7 oct., trois de plus, mesurés un par un puis
+> ensemble : la **fenêtre nulle** (PVS) — rejetée deux fois en septembre,
+> sur un autre moteur —, le **malus d'historique** et l'**extension
+> négative** (**+33 ± 3**).
 > L'évaluation
 > est un **réseau NNUE** depuis le 28 sept. 2026 (plus bas), et les marges de
 > la recherche suivent son échelle depuis le 1er oct. — **+50 ± 5 Elo** à
@@ -293,7 +296,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
 Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
 dépend ni de la machine ni de sa charge.
 
-Référence à la profondeur 7 : **90 646** nœuds.
+Référence à la profondeur 7 : **70 452** nœuds.
 
 Ce chiffre est vérifié par la CI — voir
 [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
