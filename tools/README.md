@@ -6316,6 +6316,25 @@ illégal, aucun moteur perdu :
   cette échelle, au `README.md`. Pas davantage — un changement se mesure
   contre notre jumeau.
 
+**La série du 7 oct., demandée par Théo — attendu écrit avant.** Théo,
+7 oct. : « *tu peux lancer un force absolue pour avoir une idée ?* ». La
+règle écrite sous N2 disait « pas de nouvelle série avant le prochain
+réseau » : une série situe le moteur, elle ne tranche rien, et les gains de
+recherche s'y écrasent. Théo la lève pour cette série. `main` à `7d9faef`
+contre Stockfish 16 bridé à **2850**, le même adversaire que N2 et N2L,
+60+0,6, 300 parties, graine « auto », **le binaire AVX2** — `force.yml`
+le bâtit par défaut depuis le 6 oct., quand la série de N2L jouait le
+binaire de base. **Ce que la série mesure : tout ce qui a changé depuis
+`5f59449`** — contre notre jumeau, à `8+0,08` : le groupe du n° 9 +52,22,
+C41 +10,66, C43 +0,87, le binaire AVX2 +32,23 ; ~+96 en tout, de la
+recherche et de la vitesse. *Attendu* — <span>inférence, confiance
+faible</span> : ces gains-là s'écrasent comme le temps, ~0,16 — +40 ± 42
+pour six fois plus de temps —, d'intervalle 0 à 0,33 → **~+15 sur N2L, de
+0 à +32 ; ~2 967 au centre, 2 935 à 3 015** avec les ± 30 de la série.
+Score attendu ~66 %, dans la plage où ce niveau mesure. **Un écart à N2L
+sous ~+42 n'en est pas séparé** : la série donnera une idée du niveau, pas
+le prix de ce qui a changé.
+
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
 **Lancé par Théo le 30 sept.** (« *Ok go pour reco 8* »), sur la
