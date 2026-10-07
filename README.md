@@ -192,7 +192,9 @@ le réseau qui joue (mesuré le 6 oct., 20 paires sur 20, `tools/README.md`,
 A21). S'il s'arrête au démarrage, la machine n'a pas l'AVX2 : prendre celui de
 base. **Les matchs du dépôt se jouent avec le binaire AVX2 depuis le 6 oct.** ;
 leurs deux camps sont toujours compilés de la même façon, donc ce choix ne
-fausse aucun verdict.
+fausse aucun verdict. **Ce qu'il rapporte, mesuré le 7 oct.** : le même
+commit, AVX2 contre base, **+32,23 ± 4,84 Elo** à `8+0,08` sur 6 000 parties
+— exactement ce que vaut 23,5 % de temps en plus.
 
 ## Vérifier
 
