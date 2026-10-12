@@ -6768,6 +6768,47 @@ changé. Hors de la plage, ce serait le réseau témoin d'abord qu'il faudrait
 regarder : un témoin qui sort dit que c'est l'arbre qui a bougé, pas le
 réseau neuf.
 
+**La sonde, RELEVÉE le 12 oct. à 22 h 45** — 40 parties par réseau, finies
+entre 22 h 12 et 22 h 32, zéro perte au temps, zéro coup illégal ; un
+« PV continues after fifty-move rule » côté N2L, la nature connue depuis
+C31. Le binaire sondé rend le banc de `main` au nœud près (70 452). La
+faite main, rejouée sur le même code : 0,40 % d'élagages delta fautifs,
+4,1 % d'itérations hors de la première fenêtre.
+
+| réseau | facteur delta | facteur aspiration | moyenne géométrique | attendu, écrit avant |
+|---|---|---|---|---|
+| N2L, le témoin | × 2,9 | × 2,00 | **2,41** | 2,3 à 2,9 — 2,60 le 2 oct. |
+| **N4** | × 3,2 | × 2,40 | **2,77** | 2,0 à 2,6 — **manqué par le haut** |
+| **N4L** | × 2,8 | × 2,20 | **2,48** | 2,4 à 2,8 |
+
+- **Par la règle, les trois dans la plage — 1,68 à 2,80 : chaque réseau
+  se mesure au facteur de `main`, 2,24**, et son candidat ne change que le
+  réseau. N4 y entre de justesse ;
+- **le témoin bouge peu** : 2,60 le 2 oct., 2,41 sur l'arbre
+  d'aujourd'hui, l'élagage delta un cran plus haut (× 2,9 contre × 2,6),
+  l'aspiration plus bas (× 2,0 contre × 2,6) ;
+- **N4 porte des nombres plus grands que N2L et N4L** : son élagage delta
+  se trompe 3,8 % des fois à × 2,2, contre 2,9 % et 1,6 % — ses étiquettes,
+  venues d'un moteur qui joue N2L, sont plus tranchées que ne le disait
+  l'attendu. L'étage de Leela les ramène à l'échelle de N2L ;
+- *la grille est grossière* : le facteur delta repose sur une poignée de
+  captures fautives — 0,40 % de ~1 000 élagages de la faite main —, et
+  saute d'un dixième pour une capture. C'est la raison de la plage de
+  ± 25 %, écrite le 1er oct.
+
+**Les candidats, écrits le 12 oct.** — chacun ne change que
+`engine/src/nnue.rs` : le chemin d'`include_bytes!` et la confrontation de
+son entraînement recopiée dans le test, `verify.sh --rapide` vert à chaque
+état :
+- **N4L** : `06b0ed2`, révoqué par `caadf6d`, contre son parent `017068c` —
+  le code de `main` au bit près, N2L embarqué ;
+- **N4** : `5a425a8`, révoqué par `25df292`, contre **`827b9c1`**, qui
+  embarque N2 sur le même code (révoqué par `e05daab`).
+
+**Les matchs** : quatre jobs de 3 000 parties par comparaison, `8+0,08`,
+graine « auto » chacun, le binaire AVX2 des deux côtés — le critère et les
+attendus sont ceux de « Ce qui suit, écrit avant ».
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
