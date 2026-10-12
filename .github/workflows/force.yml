@@ -69,7 +69,11 @@ permissions:
 jobs:
   mesurer:
     name: Force absolue
-    runs-on: ubuntu-latest
+    # Épinglé, et non `ubuntu-latest` : celui-ci passe à Ubuntu 26 à partir
+    # du 19 oct. 2026 (annonce de `actions/runner-images`, issue 14748, lue
+    # le 12 oct. dans les annotations des jobs), et l'adversaire vient
+    # d'`apt` — une autre image peut installer un autre Stockfish.
+    runs-on: ubuntu-24.04
     timeout-minutes: 350
 
     steps:
@@ -141,8 +145,18 @@ jobs:
             || { echo "::error::ce Stockfish ne déclare pas UCI_LimitStrength" >&2; exit 1; }
           echo "$uci" | grep -q '^option name UCI_Elo ' \
             || { echo "::error::ce Stockfish ne déclare pas UCI_Elo" >&2; exit 1; }
-          echo "version=$(echo "$uci" | head -1)"                    >> "$GITHUB_OUTPUT"
-          echo "paquet=$(dpkg-query -W -f='${Version}' stockfish)" >> "$GITHUB_OUTPUT"
+          # L'échelle de `UCI_Elo` appartient à sa version, et toutes les
+          # séries du dépôt sont contre Stockfish 16 : un autre rendrait un
+          # chiffre plausible sur une autre échelle. Refuser plutôt que
+          # mesurer — l'épinglage de l'image ne suffit pas à le garantir.
+          paquet=$(dpkg-query -W -f='${Version}' stockfish)
+          case "$paquet" in
+            16-*) ;;
+            *) echo "::error::Stockfish $paquet installé ; les séries C13 sont contre Stockfish 16" >&2
+               exit 1 ;;
+          esac
+          echo "version=$(echo "$uci" | head -1)" >> "$GITHUB_OUTPUT"
+          echo "paquet=$paquet"                   >> "$GITHUB_OUTPUT"
 
       - name: Arbitre
         run: tools/setup-arbiters.sh

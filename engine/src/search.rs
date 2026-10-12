@@ -1701,9 +1701,12 @@ impl Search {
 
         let mut quiets_seen = 0usize;
         let mut moves = 0usize;
-        // Les coups réellement cherchés : le premier l'est sous la fenêtre
-        // pleine, les suivants sous la fenêtre nulle (C45).
-        let mut searched = 0usize;
+        // Le premier coup réellement cherché l'est sous la fenêtre pleine,
+        // les suivants sous la fenêtre nulle (C45). Un drapeau et non un
+        // compteur : seul « le premier ou non » compte, et un compteur
+        // décrémenté par erreur rendait le même arbre — il débordait sans
+        // paniquer, et ne se comparait qu'à zéro (balayage du 7 oct.).
+        let mut first = true;
         // Les tranquilles réellement cherchés, que punira une coupure (C49).
         let mut tried = [NO_MOVE; MALUS_QUIETS];
         let mut tried_count = 0usize;
@@ -1864,30 +1867,27 @@ impl Search {
             // re-recherche partait alors sur un score qui ne veut rien dire,
             // pour un résultat de toute façon jeté. Trouvé par le test du
             // budget de nœuds, qui dépassait d'exactement un nœud.
+            //
+            // Une seule re-recherche après réduction, pour le premier coup
+            // comme pour les suivants. Le premier coup cherché n'est réduit
+            // que si tous ceux d'avant ont été élagués : une branche qui lui
+            // était propre n'était presque jamais atteinte, et onze mutants y
+            // survivaient (balayage du 7 oct.). Partagée, la règle « une
+            // réduction se rattrape toujours » est exercée à chaque coup.
             let new_depth = depth - 1 + extension;
-            let mut score;
-            if searched == 0 {
-                score = -self.negamax(&child, new_depth - reduction, ply + 1, -beta, -alpha, rest);
-                if reduction > 0 && !self.aborted && score > alpha {
-                    score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
-                }
+            let (low, high) = if first {
+                (-beta, -alpha)
             } else {
-                score = -self.negamax(
-                    &child,
-                    new_depth - reduction,
-                    ply + 1,
-                    -alpha - 1,
-                    -alpha,
-                    rest,
-                );
-                if reduction > 0 && !self.aborted && score > alpha {
-                    score = -self.negamax(&child, new_depth, ply + 1, -alpha - 1, -alpha, rest);
-                }
-                if !self.aborted && score > alpha && score < beta {
-                    score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
-                }
+                (-alpha - 1, -alpha)
+            };
+            let mut score = -self.negamax(&child, new_depth - reduction, ply + 1, low, high, rest);
+            if reduction > 0 && !self.aborted && score > alpha {
+                score = -self.negamax(&child, new_depth, ply + 1, low, high, rest);
             }
-            searched += 1;
+            if !first && !self.aborted && score > alpha && score < beta {
+                score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
+            }
+            first = false;
             self.path.pop();
 
             if self.aborted {
@@ -1914,8 +1914,11 @@ impl Search {
                     }
                 }
             }
-            if quiet && tried_count < MALUS_QUIETS {
-                tried[tried_count] = mv;
+            // Au-delà de `MALUS_QUIETS` tranquilles, les suivants ne sont plus
+            // retenus : `get_mut` tient la borne sans comparaison qu'aucun
+            // test n'atteindrait.
+            if quiet && let Some(slot) = tried.get_mut(tried_count) {
+                *slot = mv;
                 tried_count += 1;
             }
         }
@@ -3235,9 +3238,16 @@ mod tests {
     }
 
     /// Construit une recherche sans extensions singulières.
+    ///
+    /// L'extension négative vit dans la recherche singulière : la couper
+    /// aussi rend « sans » indépendant de l'interrupteur des singulières.
+    /// Sinon, un mutant qui les force allumées faisait de « sans » la
+    /// recherche entière, plus courte que « avec » — l'extension négative
+    /// raccourcit l'arbre —, et le test passait (balayage du 7 oct.).
     fn search_sans_se() -> Search {
         let mut s = search();
         s.singular_extensions = false;
+        s.negative_extensions = false;
         s
     }
 
@@ -4294,6 +4304,24 @@ mod tests {
         u.punish_quiets(&b, &[e4], 1, NO_CONTEXT);
         assert_eq!(u.history[papillon(e4)], -HISTORY_MAX);
         assert_eq!(u.continuation[temoin], 1000);
+
+        // La continuation déborde pour son compte, le papillon restant sous
+        // la borne : la même règle, dans l'autre table. Le balayage du 7 oct.
+        // l'a montrée sans test — `&=` pour `|=`, `==` ou `<=` pour `<`.
+        let entree = adverse * PIECE_TO + piece_to(&b, e4);
+        let mut v = search();
+        v.continuation[entree] = -HISTORY_MAX;
+        v.history[papillon(f3)] = 1000;
+        v.punish_quiets(&b, &[e4], 1, [Some(adverse), None]);
+        assert_eq!(v.continuation[entree], (-HISTORY_MAX - 1) / 2);
+        assert_eq!(v.history[papillon(e4)], 0, "−1 divisé par deux");
+        assert_eq!(v.history[papillon(f3)], 500, "le papillon aussi");
+        let mut w = search();
+        w.continuation[entree] = -HISTORY_MAX + 1;
+        w.history[papillon(f3)] = 1000;
+        w.punish_quiets(&b, &[e4], 1, [Some(adverse), None]);
+        assert_eq!(w.continuation[entree], -HISTORY_MAX);
+        assert_eq!(w.history[papillon(f3)], 1000, "la borne est stricte");
     }
 
     #[test]

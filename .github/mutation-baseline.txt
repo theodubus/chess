@@ -32,8 +32,8 @@ perft.rs 1
 bench.rs 2
 see.rs 2
 nnue.rs 1
-search.rs 47
-eval.rs 104
+search.rs 48
+eval.rs 102
 
 # ---------------------------------------------------------------------------
 # Pourquoi ces plafonds ne sont pas zéro
@@ -44,6 +44,53 @@ eval.rs 104
 # porte sur LA FORCE DE JEU. Le SPRT juge la seconde catégorie, et aucun test
 # unitaire ne peut trancher à sa place — pire, un test qui fige une valeur
 # d'évaluation empêche le SPRT de la déplacer.
+#
+# search.rs — 48 et eval.rs — 102, RELEVÉS le 12 oct. 2026 : le balayage
+#   qui a suivi la composition du n° 12 (run 37621126792, `main` à
+#   `0e67f71` — la fenêtre nulle, l'extension négative, le malus
+#   d'historique) a cassé le cliquet, search.rs à 65 contre 47 (issue
+#   #165) ; eval.rs à 102 contre 104, une baisse.
+#
+#   search.rs — dix-neuf survivants neufs, un ancien disparu : le
+#   `+ extension` de la re-recherche, noté équivalent depuis C41, est
+#   désormais porté par `new_depth` pour toutes les recherches de l'enfant,
+#   et son mutant change l'arbre. LA PRÉDICTION ÉCRITE AVANT disait « +2 à
+#   +7 » : FAUSSE, +18 — elle avait nommé quatre des survivants, pas la
+#   branche qui en portait onze.
+#     · ONZE dans la re-recherche propre au PREMIER coup cherché, quand LMR
+#       l'avait réduit : une copie de la règle « une réduction se rattrape
+#       toujours », dans une branche que seul atteint un premier coup
+#       cherché après que tous ceux d'avant ont été élagués — presque
+#       jamais. CORRIGÉS PAR LE CODE : une seule re-recherche, partagée par
+#       tous les coups, la fenêtre seule distinguant le premier. Nœuds
+#       identiques au banc aux profondeurs 6, 7, 9 et 10, le même arbre au
+#       réseau (`tools/binaires.sh --comparer`), `timing.sh` sans écart
+#       démontré (12 paires sur 20, p = 0,36).
+#     · `searched += 1` en `-= 1` : le compteur ne se comparait qu'à zéro,
+#       et le profil de mutation déborde sans paniquer. CORRIGÉ PAR LE
+#       CODE : un drapeau, `first`.
+#     · `tried_count < MALUS_QUIETS` en `<=` : aucune position n'atteint
+#       soixante-quatre tranquilles cherchés. CORRIGÉ PAR LE CODE : `get_mut`
+#       tient la borne sans comparaison.
+#     · Trois sur le débordement de la continuation dans `punish_quiets` —
+#       `|=` en `&=`, `<` en `<=` et en `==` : le test ne faisait déborder
+#       que le papillon. CORRIGÉS PAR LE TEST, dans les deux tables.
+#     · `singular_extensions_on` forcé à `true` : le témoin « sans »
+#       devenait la recherche entière, plus courte que « avec » puisque
+#       l'extension négative raccourcit l'arbre, et le test passait.
+#       CORRIGÉ PAR LE TEST : `search_sans_se` coupe aussi l'extension
+#       négative.
+#     · NOTÉS — deux réglages. La profondeur de la recherche de
+#       vérification, `(depth - 1) / 2`, `/` en `%` — ses deux `-` y sont
+#       notés depuis C41. Et la condition de l'extension négative,
+#       `hit.score >= beta`, en `<` : son SENS est testé — l'arbre
+#       raccourcit —, pas la condition qui la déclenche, et la figer par un
+#       compte de nœuds figerait le réglage. Le SPRT les juge.
+#   48 = 47 − 1 + 2. Le crible qui suit la correction doit rendre 48.
+#
+#   eval.rs — 102 : deux de moins, le fichier inchangé. L'arbre de la
+#   composition, au banc figé, lit l'évaluation autrement ; la prédiction
+#   écrite avant le disait possible (−5 à +16). Une baisse ne demande rien.
 #
 # search.rs — 47, RELEVÉ le 6 oct. 2026 avec la fusion de C41 (les
 #   extensions singulières, `be0cd9d`). MESURÉ avant le balayage, pas

@@ -898,10 +898,12 @@ dernière relève est faite.
 | **N° 12 — C49, le malus d'historique** | **37547581925, 37547584558, 37547586924, 37547589346** | `98a2b1c` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **+25,32 ± 3,26, gain démontré — à la composition** ; +27,39, +28,55, +22,15, +23,20, homogènes (p = 0,534). *Attendu, écrit avant* : ~+3, **−3 à +10** — dépassé. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
 | **N° 12 — C50, la règle des cinquante coups** | **37547592132, 37547594287, 37547597155, 37547599732** | `af73ff5` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **−0,00 ± 3,26, pas d'effet décelable** — non fusionné ; +0,12, +2,43, −3,94, +1,39, homogènes (p = 0,512). *Attendu, écrit avant* : ~0, **−5 à +5**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
 | **N° 12 — C51, les échecs tranquilles en quiescence** | **37547602827, 37547605025, 37547607538, 37547610397** | `7bc0e61` → `9c73f99`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 15 le 7 oct.** — lancés à 1 h 37 (heure de Paris), attendus et critère fusionnés avant (PR #158) ; partis sans file d'attente, finis entre 6 h 43 et 7 h 06, 3 000 parties chacun, aucune perte au temps | **−10,77 ± 3,40, régression démontrée** — non fusionné ; −10,54, −8,34, −12,05, −12,17, homogènes (p = 0,862) ; 157 avertissements de l'arbitre côté candidat, 12 côté référence. *Attendu, écrit avant* : ~−20, **−50 à +5**. **Critère, écrit avant** : gain si la borne basse commune est au-dessus de zéro ; ± 3,5 à quatre jobs |
-| **balayage de mutation après la PR #161** — le test de la futilité inverse garde son branchement, plus son sens | **37617275341** | `main` à `6157d61` | un job par fichier, puis `Verdict` | **EN VOL** — lancé à 13 h 54 (heure de Paris), juste après `5fe53a1` qui écrit sa prédiction ; *prédiction écrite et poussée avant* : `search.rs` **47 à 52**, `eval.rs` **104 à 115**, les autres fichiers à leur plafond, total **163 à 179**. Le test reformulé assertait un SENS sur 3 % de marge : un mutant étranger à la futilité inverse — une valeur de l'évaluation faite main, une marge de la recherche — pouvait le renverser et tombait par effet de bord ; `assert_ne!` ne voit plus que le branchement. <span>Confiance faible</span> sur l'ampleur | — |
-| **balayage de mutation après la composition du n° 12** — la fenêtre nulle, l'extension négative, le malus d'historique | **37621126792** | `main` à `0e67f71` | un job par fichier, puis `Verdict` | **EN VOL** — lancé à 14 h 27 (heure de Paris), à la fusion de la PR #163 ; *prédiction écrite et poussée avant* (`e965ee8`), relative au balayage après la PR #161 (encore en vol à l'écrire) : `search.rs` **+2 à +7** sur son compte, `eval.rs` **−5 à +16**, les autres fichiers à leur plafond. Pour `search.rs`, les survivants attendus du code neuf sont ceux qu'aucun arbre ne distingue : `searched += 1` en `-= 1` — le compteur n'est comparé qu'à zéro et le profil de mutation déborde sans paniquer —, les égalités `score < beta` et `hit.score >= beta`, la borne `tried_count < MALUS_QUIETS` qu'aucune position du banc n'atteint, la comparaison `< -HISTORY_MAX` du débordement. Pour `eval.rs`, le banc à la profondeur 7 perd 22 % de ses nœuds, et le groupe du n° 9, qui en perdait 30 %, y avait ajouté seize survivants (`CLAUDE.md`, « un changement d'arbre déplace ce que voient les tests de nœuds dans des FICHIERS qu'il ne touche pas »). <span>Confiance faible</span> sur les deux amplitudes | — |
+| **balayage de mutation après la PR #161** — le test de la futilité inverse garde son branchement, plus son sens | **37617275341** | `main` à `6157d61` | un job par fichier, puis `Verdict` | **RELEVÉ le 12 oct., VERT** — lancé à 13 h 54 (heure de Paris), juste après `5fe53a1` qui écrit sa prédiction ; fini le 7 à 16 h 33, `search.rs` le plus long, 159 min ; *prédiction écrite et poussée avant* : `search.rs` **47 à 52**, `eval.rs` **104 à 115**, les autres fichiers à leur plafond, total **163 à 179**. Le test reformulé assertait un SENS sur 3 % de marge : un mutant étranger à la futilité inverse — une valeur de l'évaluation faite main, une marge de la recherche — pouvait le renverser et tombait par effet de bord ; `assert_ne!` ne voit plus que le branchement. <span>Confiance faible</span> sur l'ampleur | **La prédiction tient, à son plancher** : `search.rs` **47**, `eval.rs` **104**, tous les fichiers à leur plafond, total **163**, aucune issue. Le test reformulé ne perd rien de ce qu'il attrapait par effet de bord — ou ce qu'il perd, un autre test le prend : les comptes, l'identité des survivants n'étant pas recomparée ligne à ligne |
+| **balayage de mutation après la composition du n° 12** — la fenêtre nulle, l'extension négative, le malus d'historique | **37621126792** | `main` à `0e67f71` | un job par fichier, puis `Verdict` | **RELEVÉ le 12 oct., ROUGE** — lancé à 14 h 27 (heure de Paris), à la fusion de la PR #163 ; fini le 7 à 16 h 52, `search.rs` le plus long, 145 min ; issue **#165**, ouverte par le job `Verdict` ; *prédiction écrite et poussée avant* (`e965ee8`), relative au balayage après la PR #161 (encore en vol à l'écrire) : `search.rs` **+2 à +7** sur son compte, `eval.rs` **−5 à +16**, les autres fichiers à leur plafond. Pour `search.rs`, les survivants attendus du code neuf sont ceux qu'aucun arbre ne distingue : `searched += 1` en `-= 1` — le compteur n'est comparé qu'à zéro et le profil de mutation déborde sans paniquer —, les égalités `score < beta` et `hit.score >= beta`, la borne `tried_count < MALUS_QUIETS` qu'aucune position du banc n'atteint, la comparaison `< -HISTORY_MAX` du débordement. Pour `eval.rs`, le banc à la profondeur 7 perd 22 % de ses nœuds, et le groupe du n° 9, qui en perdait 30 %, y avait ajouté seize survivants (`CLAUDE.md`, « un changement d'arbre déplace ce que voient les tests de nœuds dans des FICHIERS qu'il ne touche pas »). <span>Confiance faible</span> sur les deux amplitudes | **La prédiction tient pour `eval.rs`, pas pour `search.rs`** : `search.rs` **65** — **+18** sur les 47 du balayage d'avant, quand elle disait +2 à +7 —, `eval.rs` **102**, deux de moins, dans « −5 à +16 » ; les autres à leur plafond, total **179**. Dix-neuf survivants neufs dans `search.rs`, un ancien disparu — le `+ extension` de la re-recherche, que `new_depth` porte désormais pour toutes les recherches de l'enfant. **Elle avait nommé quatre des neufs** — le compteur `searched`, la borne `tried_count < MALUS_QUIETS`, le débordement `< -HISTORY_MAX`, la condition `hit.score >= beta` — **et manqué la branche qui en portait onze** : la re-recherche propre au PREMIER coup cherché quand LMR l'avait réduit, une copie de la règle « une réduction se rattrape toujours » que seul atteint un premier coup cherché après que tous ceux d'avant ont été élagués. Plus le témoin « sans » du test des extensions singulières, que l'extension négative raccourcissait sous le mutant qui les force. **Corrigés le 12 oct., dix-sept sur dix-neuf** (`a51d9c2`) : une seule re-recherche partagée par tous les coups, la fenêtre seule distinguant le premier ; un drapeau au lieu du compteur ; `get_mut` pour la borne ; le débordement de la continuation testé ; `search_sans_se` coupe aussi l'extension négative. **Refactor pur** : nœuds identiques au banc aux profondeurs 6, 7, 9 et 10, le même arbre au réseau (`tools/binaires.sh --comparer`), `timing.sh` sans écart démontré (12 paires sur 20, p = 0,36). **Deux notés**, des réglages : la profondeur de la vérification singulière, `/` en `%`, et la condition de l'extension négative. **Plafonds : `search.rs` 48, `eval.rs` 102**, raisons dans `.github/mutation-baseline.txt` ; le crible suit, sa prédiction à la ligne suivante |
+| **crible de mutation après la correction des survivants de la composition** | **38211633387** | la branche au commit qui écrit cette ligne — la correction (`a51d9c2`) et les plafonds | `mutation.yml` sur l'entrée `commit` — un job par fichier, puis `Verdict` ; un crible n'ouvre pas d'issue | **EN VOL** — lancé à 08 h 15 le 12 oct. (heure de Paris), juste après `8462197` qui écrit sa prédiction, sur ce commit même ; fin attendue vers 10 h 50 ; *prédiction écrite et poussée avant* : `search.rs` **48**, entre 47 et 50 — les 47 d'avant moins le `+ extension` disparu, plus les deux réglages notés, et les dix-sept corrigés attrapés ; `eval.rs` **102**, entre 100 et 104 : l'arbre est le même au nœud près, mais deux tests ont changé, et un test changé déplace le plafond autant qu'un code changé (`CLAUDE.md`) ; les autres fichiers à leur plafond ; total **162**. <span>Confiance moyenne</span> : la re-recherche partagée n'a pas été criblée en local — son code est celui des coups suivants, que le balayage attrapait déjà | — |
 | **N° 13 — la sonde de débit de la vague de données** | **37622274982** | le générateur de `main` à `0e67f71`, `<embedded>` (N2L), `x86-64-v3`, 5 000 nœuds, 20 minutes, lancé depuis la branche pour l'entrée `cpu` | `nnue-datagen.yml` | **RELEVÉE à 15 h 00** — lancée à 14 h 37 (heure de Paris), son attendu poussé avant (`553402e`) ; finie à 14 h 57, Xeon Platinum 8573C | **1 641 positions par seconde, 9,7 % d'écartées, 27,5 % de nulles — les trois dans l'attendu.** Le résidu nommé : à binaire égal, le générateur d'aujourd'hui écrit × 0,72 des positions par seconde de celui du 29 sept. ; la table de 64 Mio n'y est pour rien (section « N° 13 — le réseau ») — *Attendu, écrit avant* : 1 500 à 2 500 positions par seconde, ~1 800 sur un EPYC 7763 ; 7 à 12 % de parties écartées ; 25 à 35 % de nulles — hors fourchette, diagnostic avant la vague (section « N° 13 — le réseau ») |
-| **N° 13 — la vague de données au moteur d'aujourd'hui** | **37625421881, 37625430114, 37625438110, 37625443145, 37625448710, 37625456368, 37625461638, 37625467887** | le générateur de `main` à `0e67f71`, `<embedded>` (N2L), `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **EN VOL** — lancée à 15 h 03 (heure de Paris), son attendu poussé avant (`553402e`) ; fin attendue vers 20 h 45 | — *Attendu, écrit avant* : **240 à 340 M de positions**, ~285 M ; la sonde la place au bas, ~240 M. Ensuite la séance sur la carte de Théo, écrite à la relève (section « N° 13 — le réseau ») |
+| **N° 13 — la vague de données au moteur d'aujourd'hui** | **37625421881, 37625430114, 37625438110, 37625443145, 37625448710, 37625456368, 37625461638, 37625467887** | le générateur de `main` à `0e67f71`, `<embedded>` (N2L), `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **RELEVÉE le 12 oct.** — lancée à 15 h 03 (heure de Paris), son attendu poussé avant (`553402e`) ; sept succès finis à 20 h 33, le premier job perdu à 19 h 27 avec son runner (« *lost communication with the server* »), sans artefact, pas relancé | **271,2 M positions à sept jobs — dans l'attendu** (240 à 340 M, ~285 ; la sonde disait ~240 pour huit) : quatre runners sur sept étaient des EPYC 9V74 et 9V45. Écartées 9,45 %, nulles 27,09 %, dans leurs attendus, d'un job à l'autre à 0,2 point près. **Six jobs gardent 159,1 M positions par le filtre de l'entraîneur, N2 en voyait 158,4 M** : le réseau des six ne diffère de N2 que par l'étiqueteur. *Attendu, écrit avant* : **240 à 340 M de positions**, ~285 M ; la sonde la place au bas, ~240 M. **La séance est écrite** — N4 et N4L (section « N° 13 — le réseau ») |
+| **N° 13 — les deux entraînements, sur la carte de Théo** | — | N4 : 128 unités, les six jobs sans 37625443145, depuis zéro ; N4L : N4 puis le binpack de Leela du levier 4 — la recette de N2L | une séance, ~25 minutes d'entraînement | **EN ATTENTE de la carte de Théo** — écrite le 12 oct., avant de la lui demander | — *Attendus et critère, écrits avant* (section « N° 13 — le réseau ») : N4 contre N2, 0 à +60, ~+25, ne décide rien ; **N4L remplace N2L si la borne basse contre N2L est au-dessus de zéro**, −10 à +30, ~+8 attendus ; quatre jobs de 3 000 parties par comparaison, après la sonde de B8 sur chaque réseau |
 | **N° 12 — la composition : C45, C47 et C49** | **37584104209, 37584107001, 37584109645, 37584112743** | `ff8d4bb` → `7d9faef`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 14 h 25** — lancés à 8 h 54 (heure de Paris), attendu et critère poussés avant (`6bb5948`) ; finis entre 14 h 13 et 14 h 16, 6,36 à 6,43 s par partie | **+30,30, +28,79, +33,11, +38,02 ; +32,55 ± 3,36 en commun** — homogènes (p = 0,244), zéro perte au temps ; **les deux clauses tenues, FUSIONNÉ** (`0e31ac2`, la révocation révoquée). Au-dessus de C49 seul de +7,2 ± 4,7 ; 80 % de la somme des gains seuls, sous-additif démontré. Runners : deux EPYC 7763, un 9V74, un 9V45, 2,12 à 3,23 M n/s, tous à la profondeur 15. — *Attendu, écrit avant* : ~+37, **+25 à +48**. **Critère, écrit avant** : fusion si la borne basse commune est au-dessus de zéro ET si le point n'est pas démontré sous C49 seul (+20,6) ; sinon, bissection (section n° 12, « la composition ») |
 | **C13 — la série du 7 oct., demandée par Théo** | **37579900252** | `main` à `7d9faef` (N2L, le groupe du n° 9, C41, C43), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 13 h 50** — lancée à 8 h 08 (heure de Paris), son attendu poussé avant (`3c6e2c3`) ; finie à 12 h 55, EPYC 7763, 2 183 146 n/s | **3 003 ± 33** — 198 − 74 − 28, 70,7 % : dans l'attendu, en haut de sa plage ; **+50 ± 44 sur N2L**, séparé de zéro de justesse — au point au-dessus de l'attendu, que son intervalle recoupe. Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : ~+15 sur N2L, **0 à +32** ; ~2 967 au centre, **2 935 à 3 015** ; un écart à N2L sous ~+42 ne s'en sépare pas (section C13, « La série du 7 oct. ») |
 | **N° 10 — l'AVX2 : `x86-64-v3` contre `x86-64`, le même commit** | **37514404585, 37514408893** | `ea8f3af` des deux côtés, la PR #155 ; `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 2 h 30 le 7 oct.** — lancés à 20 h 50 (heure de Paris), le protocole fusionné avant (`e584b16`) ; finis à 2 h 10 et 2 h 11, 3 000 parties chacun, aucune perte au temps | **+32,23 ± 4,84 Elo, gain démontré** — +31,00 et +33,46, homogènes (p = 0,619). *Attendu, écrit avant* : ~+33, **+15 à +45** — tenu au point, et l'étalon du temps prédisait +32,8. Le défaut des workflows reste `x86-64-v3` (section n° 10, « VERDICT ») |
@@ -6526,6 +6528,206 @@ attendue vers 20 h 45.
 de Théo — les réseaux à entraîner, leurs attendus, le critère de leurs
 matchs — s'écrit à la relève de la vague, avant la séance.
 
+**La vague, RELEVÉE le 12 oct. — dans l'attendu, à sept jobs sur huit.**
+Les sept succès ont fini le 7 oct. à 20 h 33 ; chaque résumé nomme
+`0e67f71`, `x86-64-v3` et `evaluation=reseau-embarque` :
+
+| run | processeur | parties | écartées | positions | gardées par le filtre | positions/s | artefact |
+|---|---|---|---|---|---|---|---|
+| 37625430114 | EPYC 9V74 | 350 201 | 33 137 | 39 735 092 | 26 114 143 | 2 007 | 144,6 Mo |
+| 37625438110 | EPYC 7763 | 262 414 | 24 649 | 29 828 925 | 19 608 724 | 1 506 | 108,5 Mo |
+| 37625443145 | Xeon Platinum 8573C | 256 492 | 24 081 | 29 147 076 | 19 160 455 | 1 472 | 106,0 Mo |
+| 37625448710 | EPYC 7763 | 261 559 | 24 699 | 29 713 727 | 19 547 431 | 1 501 | 108,1 Mo |
+| 37625456368 | EPYC 9V45 | 460 083 | 43 473 | 52 191 732 | 34 297 887 | 2 636 | 189,9 Mo |
+| 37625461638 | EPYC 9V74 | 350 827 | 33 266 | 39 829 823 | 26 178 734 | 2 012 | 144,9 Mo |
+| 37625467887 | EPYC 9V45 | 446 950 | 42 352 | 50 733 896 | 33 340 095 | 2 562 | 184,6 Mo |
+
+- **le huitième, 37625421881, a perdu son runner** à 19 h 27, après 4 h 25
+  de génération : « *The hosted runner lost communication with the
+  server* », lu dans les annotations du job ; l'étape « Générer » est restée
+  « en cours », sans artefact, et son journal ne se télécharge pas (404).
+  Une panne de runner, pas du générateur : les sept autres, même commit,
+  mêmes entrées, ont fini. **Pas relancé** — les sept tiennent l'attendu, et
+  la comparaison à volume égal n'en prend que six (paragraphe suivant) ;
+- **2 388 526 parties, 271 180 271 positions** — dans l'attendu (240 à
+  340 M) à sept jobs sur huit, et au-dessus des ~240 M que la sonde
+  annonçait pour huit : elle se lisait sur un EPYC 7763, et quatre runners
+  sur sept étaient des EPYC 9V74 et 9V45, à 2 007 – 2 636 positions par
+  seconde. 178 247 469 gardées par le filtre, 65,7 % ;
+- **par processeur, la vague se prévoit par la précédente** : EPYC 7763 à
+  1 501 et 1 506 positions par seconde (1 477 à 1 501 le 29 sept.), EPYC
+  9V74 à 2 007 et 2 012 (2 030), Xeon 8573C à 1 472 (1 624) ; l'EPYC 9V45,
+  neuf dans ces tables, à 2 636 et 2 562. Le résidu de la sonde se
+  confirme : × 0,91 à × 1,01 le débit du 29 sept. sur les mêmes modèles,
+  quand le binaire AVX2 seul promettait × 1,2 ;
+- **la composition, dans l'attendu sur ses deux chiffres** : 9,45 % de
+  parties écartées (7 à 12 % ; 7,07 % le 29 sept.), 27,09 % de nulles (25 à
+  35 % ; 26,15 %) — d'un job à l'autre à 0,2 point près, 9,39 à 9,48 % et
+  27,03 à 27,21 %. 113,5 demi-coups par partie (117,6) ; les noirs gagnent
+  50,6 % des parties décisives, comme aux deux vagues d'avant ;
+- 1 120 Mio sur disque, **987 Mo d'artefacts**, expirant le **5 janv. 2027
+  à 13 h 02 UTC** (lu à l'API : `expires_at`) ; ceux du 29 sept., le
+  28 déc. 2026 ;
+- pour les regénérer, K = parties + écartées, dans l'ordre du tableau :
+  383 338, 287 063, 280 573, 286 258, 503 556, 384 093 et 489 302.
+
+**À volume égal, six jobs — le filtre le dit.** L'entraîneur ne voit que les
+positions que garde le filtre par défaut de `viriformat` :
+`ViriFilter::Builtin(Filter::default())` dans `tools/nnue-train`, le filtre
+même que compte `retenues_filtre_defaut` dans le résumé. N2 en a vu
+**158 444 563**. Les sept jobs en gardent 178,2 M, **+12,5 %** ; six, sans
+37625443145, **159 087 014 — +0,4 %**. Des runners plus rapides et une part
+gardée plus haute — 65,7 % contre 63,5 % — font tenir dans six jobs le volume
+de huit. Un réseau entraîné sur ces six
+ne diffère donc de N2 que par l'étiqueteur, à 0,4 % de volume près ; le
+septième reste pour un second volume, s'il se décide.
+
+**La séance sur la carte de Théo — deux réseaux, écrite à la relève, le
+12 oct.** Le plan l'annonçait : un réseau de la taille de N2, entraîné par
+sa recette sur la vague neuve, ne diffère de N2 que par l'étiqueteur. Mais
+le réseau qui joue est N2L — N2, puis les données de Leela. D'où deux
+réseaux :
+- **N4 — la vague neuve seule**, 128 unités, 40 superlots, depuis zéro :
+  mesuré contre **N2**, il isole l'étiqueteur ;
+- **N4L — N4, puis Leela**, la recette de N2L au caractère près : mesuré
+  contre **N2L**, il isole l'étiqueteur sous l'étage de Leela, et c'est lui
+  qui peut remplacer le réseau qui joue.
+
+**Ce qui n'y est pas, et pourquoi.** Les deux vagues ensemble, 520 M : leurs
+étiqueteurs diffèrent, et un mélange ne mesure que lui-même ; le volume se
+mesure à un seul étiqueteur, et le plan le lie aux seaux de roi. La largeur
+et les seaux de roi : l'ordre du 6 oct. les met après une inférence plus
+rapide.
+
+**Vérifié ici avant de l'écrire** : à la tête de la branche qui porte cette
+séance, `tools/nnue-train` compile avec `--locked` et passe ses six tests —
+contre le runtime factice de bullet, donc sans rien dire de CUDA. Le
+programme n'a pas changé depuis la séance du levier 4 ; seul le moteur dont
+il lit les constantes a avancé. Chaque bloc se colle dans le MÊME terminal,
+dans l'ordre :
+
+0. **le dépôt à jour, et le fichier de Leela** :
+   ```sh
+   cd ~/chess && git status
+   git fetch origin && git switch main && git pull --ff-only
+   git log -1 --format='%h %cd'
+   DONNEES=~/leela
+   find "$DONNEES" -name '*.binpack' -exec ls -l {} +
+   ```
+   — `git log` doit dater du 12 oct. 2026 ou d'après. `find` doit montrer
+   le binpack de la séance du levier 4, **14 366 468 016 octets** ; s'il est
+   dans un sous-dossier, `DONNEES` désigne ce sous-dossier. Des fichiers
+   « modifiés », un `--ff-only` qui refuse : s'arrêter et le dire. **Le
+   binpack absent** : le retélécharger et l'extraire — l'étape 2 de la
+   séance du levier 4, telle quelle ;
+1. **CUDA dans ce terminal** — le bloc « CUDA dans ce terminal » de la
+   séance d'entraînement du n° 7, tel quel : les trois bibliothèques du
+   toolkit 13.2 doivent s'afficher ;
+2. **les données** — six archives, **avant le 5 janv. 2027 à 13 h 02 UTC**,
+   depuis un navigateur connecté à GitHub — un artefact ne se télécharge pas
+   anonymement. Chacune s'enregistre sous `nnue-<run>.zip`, 881 Mo en tout :
+   - [nnue-37625430114](https://github.com/theodubus/chess/actions/runs/37625430114/artifacts/11503362865), 144,6 Mo
+   - [nnue-37625438110](https://github.com/theodubus/chess/actions/runs/37625438110/artifacts/11503068245), 108,5 Mo
+   - [nnue-37625448710](https://github.com/theodubus/chess/actions/runs/37625448710/artifacts/11502793336), 108,1 Mo
+   - [nnue-37625456368](https://github.com/theodubus/chess/actions/runs/37625456368/artifacts/11502379657), 189,9 Mo
+   - [nnue-37625461638](https://github.com/theodubus/chess/actions/runs/37625461638/artifacts/11504040955), 144,9 Mo
+   - [nnue-37625467887](https://github.com/theodubus/chess/actions/runs/37625467887/artifacts/11502808364), 184,6 Mo
+
+   Puis chacune dans son propre dossier, hors du dépôt — la boucle et le
+   `mkdir` pour les raisons de la séance du n° 7 :
+   ```sh
+   DL=$(xdg-user-dir DOWNLOAD); echo "$DL"
+   mkdir -p ~/nnue-vague3
+   for r in 37625430114 37625438110 37625448710 \
+            37625456368 37625461638 37625467887; do
+     unzip -o "$DL/nnue-$r.zip" -d ~/nnue-vague3/$r
+   done
+   ls ~/nnue-vague3/*/*.vf | wc -l
+   ```
+   — **24** : quatre `.vf` par dossier, ~1 000 Mio. Avec `gh` connecté, la
+   même boucle télécharge et décompresse en une ligne :
+   `gh run download $r -R theodubus/chess -n nnue-$r -D ~/nnue-vague3/$r` ;
+3. **N4** — les six, 128 unités, depuis zéro :
+   ```sh
+   cd ~/chess/tools/nnue-train
+   cargo run --release --features cuda -- --attendu 2132034:242033195 --sortie n4 \
+     ~/nnue-vague3/* 2>&1 | tee n4.sortie.txt
+   ```
+   → `RÉSEAU PRÊT : n4/shallowred-768x128-40/quantised.bin`. L'attendu est
+   exact : un écart arrête tout avant d'entraîner ;
+4. **N4L** — N4, puis Leela :
+   ```sh
+   cargo run --release --features cuda -- --depuis n4/shallowred-768x128-40 \
+     --sortie n4l "$DONNEES" 2>&1 | tee n4l.sortie.txt
+   ```
+   → `RÉSEAU PRÊT : n4l/shallowred-768x128-40/quantised.bin`. **Critère,
+   écrit avant** : la ligne `échantillon : …` doit redire **échelle ajustée
+   282.1** — le même fichier, le même échantillon que le 2 oct. Un autre
+   nombre dit un autre fichier : s'arrêter et m'envoyer la ligne ;
+5. **rapporter**, sur une branche `reseau/n13` :
+   ```sh
+   cd ~/chess && git switch -c reseau/n13
+   for n in n4 n4l; do
+     d=tools/nnue-train/$n/shallowred-768x128-40
+     cp $d/quantised.bin reseaux/$n-768x128-40.bin
+     cp $d/log.txt reseaux/$n-768x128-40.log.txt
+     cp tools/nnue-train/$n.sortie.txt reseaux/$n-768x128-40.sortie.txt
+   done
+   git add reseaux/n4-* reseaux/n4l-*
+   git commit -m "Réseaux NNUE du n° 13 : N4 et N4L, la vague au moteur du 7 oct."
+   git push -u origin reseau/n13
+   ```
+   **Garder les dossiers `n4/` et `n4l/`**, `~/nnue-vague3` et le binpack :
+   un ré-entraînement de plus en repartirait.
+
+*Durée* — <span>inférence, confiance moyenne</span> : ~11 minutes par
+réseau — N2 11 min 05 s, N2L 11 min 34 s ; les positions vues ne dépendent
+pas du volume —, trois quarts d'heure en tout, téléchargement et compilation
+compris. Un `ÉCHEC — …` à n'importe quel temps arrête tout, et son message
+suffit à le diagnostiquer.
+
+**Ce qui suit, écrit avant** :
+- **les contrôles du programme** : chaque réseau relu exactement, puis
+  confronté à son entraîneur sous le critère de toujours — écart médian
+  ≤ 15, maximal ≤ 50. La perte finale de N4L se compare à celle de N2L,
+  0,05815 — mêmes données, mêmes superlots ; *une perte ne dit pas la
+  force*, elle dit seulement qu'un entraînement n'a pas déraillé ;
+- **la sonde de B8 sur chacun**, le protocole du 2 oct. — 40 parties du
+  réseau contre lui-même à `8+0,08`, la moyenne géométrique des facteurs
+  delta et aspiration : **dans 1,68 à 2,80, le réseau se mesure au facteur
+  de `main`, 2,24** ; hors de cette plage, le facteur se règle d'abord. La
+  rustine (`tools/attic/b8-sonde-marges.patch`) ne s'applique plus sur
+  `main` : elle se rebase d'abord ;
+- **les matchs : quatre jobs de 3 000 parties par comparaison**, `8+0,08`,
+  le livre de 15 000, le binaire AVX2 des deux côtés, graine « auto »
+  chacun. **N4L contre N2L** : le candidat est le `main` du jour plus UN
+  commit qui ne change que le réseau embarqué — le chemin d'`include_bytes!`
+  et la confrontation recopiée dans le test —, la référence ce même `main`.
+  **N4 contre N2** : de même, et la référence porte elle aussi un commit,
+  qui embarque N2 avec la confrontation de `reseaux/n2-768x128-40.sortie.txt`.
+  Les commits sont révoqués aussitôt ;
+- **critère, écrit avant** — **N4L remplace N2L si la borne basse de
+  l'intervalle mis en commun contre N2L est au-dessus de zéro** ; sa
+  confrontation entre alors dans le test du moteur, `CLAUDE.md` dit le
+  réseau qui joue, et la mention d'attribution de l'ODbL reste dans
+  `README.md` — N4L a appris sur les données de Leela. **N4 contre N2 ne
+  décide rien** : il chiffre l'étiqueteur, donc ce que vaut une vague au
+  moteur du jour à chaque marche du moteur ;
+- **attendus** — <span>inférence, confiance faible</span> : **N4 contre N2,
+  0 à +60, ~+25** — la seule marche d'étiqueteur mesurée, de la faite main
+  à N0, a rendu +116 pour un étiqueteur ~+330 plus fort à la pendule ;
+  celle-ci est d'un ordre voisin à la pendule — le réseau +182 par la chaîne
+  de ses marches, la recherche ~+190 contre son jumeau —, moindre à 5 000
+  nœuds par coup, et 128 unités en bornent déjà la perte. **N4L contre N2L,
+  −10 à +30, ~+8** — l'étage de Leela domine : N2L partait plus bas que L0
+  et arrivait à la même perte, et ne le devançait que de +6,4 ± 8,8, la
+  différence de leurs deux matchs contre N2 ;
+- **ce que dirait chaque issue, écrit avant** : N4 gagne et N4L non —
+  l'étage de Leela absorbe l'étiqueteur, et le levier suivant est de son
+  côté ; N4 ne gagne pas — l'étiqueteur a cessé de payer à 5 000 nœuds, et
+  une prochaine vague se décide par le volume ou par le budget de nœuds,
+  plus par la marche du moteur.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -7688,7 +7890,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
 | **C13 — mesurer la force absolue** — **DÉCIDÉ, en parallèle** (Théo, 29 sept.), **FAIT le 29 sept.** : le réseau **~2 850 ± 25**, la faite main ~2 630 ± 40, sur l'échelle de Stockfish 16 à 60+0,6 — section « C13 — la force absolue » ; à re-mesurer après chaque changement de réseau — **N2 le 30 sept. : 2 942 ± 29**, +112 ± 42 sur N0 contre le même adversaire ; **N2L le 2 oct. : 2 952 ± 30**, +10 ± 42 sur N2 — avec B8, les seaux et 64 Mio ; **le 7 oct. : 3 003 ± 33**, +50 ± 44 sur N2L — le groupe du n° 9, C41, C43 et le binaire AVX2 | — | <s>**reporté**</s> : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread. **Un premier point, de Théo, le 28 sept.** : le moteur d'avant le réseau, contre un Stockfish bridé à 2 600 sur sa machine, estimé vers 2 700 — <s>cadence et effectif non consignés</s> **100 parties à 10+0,1**, précisé le 29 sept. **Rouvert sans liste de classement** — le protocole, écrit avant de mesurer : section « C13 — la force absolue » ; proposé le 29 sept. : Stockfish s'installe sur les runners (`ui.yml` le fait déjà), donc une série contre Stockfish bridé à plusieurs niveaux se joue sur runner. Deux réserves, écrites avant : l'échelle d'`UCI_Elo` appartient à la cadence et aux adversaires sur lesquels Stockfish l'a étalonnée — à lire dans son source avant de s'y fier — **lu le 29 sept.** : ancrée à l'Elo CCRL, ajustée à 60+0,6 ; et un gain mesuré contre notre jumeau ne s'ajoute pas à ce point. <span>Inférence, confiance moyenne</span> : l'auto-jeu grossit les écarts qu'on retrouve contre d'autres adversaires |
 | **B4 — évaluation NNUE** | — | <s>**reporté.**</s> <s>**EN COURS depuis le 25 sept.**</s> **FAIT le 28 sept. 2026 — A21, la fin de cette ligne.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —<s>, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation.</s> <em>tranchée le 25 sept. (A21).</em> **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 ; **première vague relevée le 26 sept. : 125 M positions, 77,7 M gardées par le filtre** — la cible de 100 M est atteinte ; **l'inférence dans le moteur écrite le 26 sept. et FUSIONNÉE le 28** (PR #89), derrière `EvalFile` — un nœud avec réseau coûte 0,73 à 0,87 fois un nœud fait main ; **l'entraînement fait le 28 sept.** sur la carte de Théo, 11 min 53 s, le critère tenu — section A21, étape 3 ; **l'étape 4 FAITE le même soir : le réseau embarqué est l'évaluation par défaut, +330,61 ± 19,21 Elo à `8+0,08` contre la faite main** (section « Étape 4 — VERDICT »). Restent ouverts : les marges de la recherche, réglées sur l'échelle de la faite main ; un réseau plus large ou plus de données — la carte de Théo peut être resollicitée ; et un banc qui évalue par le réseau |
-| **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **N2 ADOPTÉ le 30 sept.**, **N2L le 2 oct. — levier 4, +16,40 ± 6,20 contre N2** (L0 +10,02 ± 6,19) ; reste le facteur des marges de N2L (2,60 mesuré, 2,24 en place) ; sa série de C13 relevée : 2 952 ± 30 — N1 contre N0 **+115,74 ± 6,98**, N2 contre N1 **+50,09 ± 6,12**, N3 contre N2 **−28,79 ± 5,99**, écarté : trop lent ; <s>restent la série de C13 pour N2 et</s> **la série de C13 pour N2 relevée le 30 sept. : 2 942 ± 29** ; <s>reste le levier 4, les données de Leela — section « N° 7 » — **accordé par Théo le 30 sept., sa séance écrite le même jour** (« La séance du levier 4 ») : elle attend sa carte</s> **le levier 4 relevé le 2 oct.** (« Levier 4 — VERDICT ») ; <s>EN COURS</s> : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`). **n° 13** (Théo, 6 oct. au soir) : la suite du réseau, après le cinquième écran. **Deux leviers d'architecture absents du plan, notés le 6 oct.** : des entrées par seau de roi — les pièces lues selon la case du roi — et des seaux de sortie selon le matériel restant ; connus, jamais mesurés ici, ils demandent la carte de Théo et, pour le premier, plus de données. <span>Inférence, confiance faible</span> : ils coûtent peu à l'inférence — un rafraîchissement de l'accumulateur quand le roi change de seau, un choix de poids en sortie —, là où la largeur seule a perdu sur la vitesse (N3) |
+| **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **N2 ADOPTÉ le 30 sept.**, **N2L le 2 oct. — levier 4, +16,40 ± 6,20 contre N2** (L0 +10,02 ± 6,19) ; reste le facteur des marges de N2L (2,60 mesuré, 2,24 en place) ; sa série de C13 relevée : 2 952 ± 30 — N1 contre N0 **+115,74 ± 6,98**, N2 contre N1 **+50,09 ± 6,12**, N3 contre N2 **−28,79 ± 5,99**, écarté : trop lent ; <s>restent la série de C13 pour N2 et</s> **la série de C13 pour N2 relevée le 30 sept. : 2 942 ± 29** ; <s>reste le levier 4, les données de Leela — section « N° 7 » — **accordé par Théo le 30 sept., sa séance écrite le même jour** (« La séance du levier 4 ») : elle attend sa carte</s> **le levier 4 relevé le 2 oct.** (« Levier 4 — VERDICT ») ; <s>EN COURS</s> : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`). **n° 13** (Théo, 6 oct. au soir) : la suite du réseau, après le cinquième écran — **la vague au moteur du 7 oct. relevée le 12 : 271,2 M positions ; la séance écrite, N4 et N4L, elle attend la carte de Théo** (section « N° 13 — le réseau »). **Deux leviers d'architecture absents du plan, notés le 6 oct.** : des entrées par seau de roi — les pièces lues selon la case du roi — et des seaux de sortie selon le matériel restant ; connus, jamais mesurés ici, ils demandent la carte de Théo et, pour le premier, plus de données. <span>Inférence, confiance faible</span> : ils coûtent peu à l'inférence — un rafraîchissement de l'accumulateur quand le roi change de seau, un choix de poids en sortie —, là où la largeur seule a perdu sur la vitesse (N3) |
 | **un banc qui emploie le réseau** — proposé le 29 sept. | — de l'outillage, sans Elo | Le banc et `tools/timing.sh` évaluent à la main, le moteur joue avec le réseau (« Ce qu'il faut surveiller »). **Préalable** à toute mesure de vitesse de l'inférence et à tout écran en nœuds sur l'arbre qu'on joue ; il déplace la référence du banc, ses tests et le crible d'`eval.rs`, donc il se conçoit, il ne se bricole pas |
 | **la vitesse de l'inférence** — proposé le 29 sept. | se convertit en plis par l'étalon, une fois mesurée | Le nœud au réseau coûte 0,873 fois le nœud fait main sur le binaire de base, **0,731 compilé pour AVX2** (26 sept.). Leviers : compiler pour le processeur de la machine qui joue, des mises à jour paresseuses de l'accumulateur. **Sans `unsafe`** — la lint l'interdit —, donc pas d'intrinsèques : la vectorisation passe par le compilateur. Exige le banc au réseau. **Remesuré le 6 oct. au soir, avec le réseau qui joue** : aucun binaire du dépôt n'est compilé pour un processeur ; compilé pour `x86-64-v3`, le même `main` cherche le même arbre **× 1,235 plus vite**, 20 paires sur 20 — ~0,4 pli, +25 à +44 Elo par l'étalon (section A21, « Remesuré le 6 oct. »). Ce levier-là n'attend pas le banc au réseau : il ne change pas l'arbre. **La décision qui revient à Théo : la machine qui joue.** Et la vitesse est la condition écrite d'une couche plus large (N3). **n° 10 — DÉCIDÉ par Théo le 6 oct. au soir** : « *on livrera deux binaires selon AVX2 ou non* » ; `match.yml` et `force.yml` bâtissent en `x86-64-v3` par défaut, le match qui chiffre l'AVX2 a son protocole écrit avant (section n° 10). **VERDICT le 7 oct. : +32,23 ± 4,84 Elo à `8+0,08`, gain démontré** — l'étalon du temps prédisait +32,8. **L'AVX-512** (`x86-64-v4`), mesuré le même soir : pas de gain — 6 paires sur 20, × 0,95 —, pas de troisième binaire ; à remesurer avec une couche cachée plus large |
 | **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : FUSIONNÉS le 30 sept.** — +30,13 ± 5,60 Elo sous pression, +1,85 ± 5,51 au défaut ; **C30, la taille par défaut : FAIT le 30 sept.** — +2,90 ± 5,72, aucun coût démontré, **le défaut est à 64 Mio**. La question de la table à cadence longue est close ; au-delà de 60+0,6 — 40/15 —, c'est à l'interface de régler `Hash` | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |
@@ -7722,8 +7924,10 @@ recommandé* ») — n° 10 à n° 14 :
    +116, +50, +16) ; des données d'abord, qui tournent sur runners sans
    personne, puis la carte de Théo pour l'entraînement ; la largeur et les
    seaux de roi une fois l'inférence plus rapide. **Commencé le 7 oct.
-   (n° 13)** : une vague de données au moteur d'aujourd'hui, la séance
-   ensuite (« N° 13 — le réseau »).
+   (n° 13)** : une vague de données au moteur d'aujourd'hui, <s>la séance
+   ensuite</s> **relevée le 12 oct. — 271,2 M positions ; la séance écrite
+   le même jour, N4 et N4L : elle attend la carte de Théo** (« N° 13 — le
+   réseau »).
 5. **La profondeur d'itération** — la question de Théo — ProbCut d'abord,
    après le livre, à cadence longue.
 
@@ -8573,6 +8777,19 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
   en interne ; deux runs ne se comparent qu'après lecture de leurs
   étalonnages, et un chiffre de vitesse ne se recopie jamais d'un run à
   l'autre.
+- **L'image des runners change le 19 oct. 2026** — `ubuntu-latest` passe à
+  Ubuntu 26 (annonce de `actions/runner-images`, issue 14748, lue le 12 oct.
+  dans les annotations des jobs de génération du 7). Le moteur n'en bouge
+  pas : la toolchain Rust est épinglée (`rust-toolchain.toml`), et un
+  match oppose deux binaires sur la même machine. **Ce que le runner
+  installe lui-même, si** : le compilateur et Qt6 qui construisent les
+  arbitres (`tools/setup-arbiters.sh`), et l'adversaire de C13, que `apt`
+  fournit. `force.yml` est donc épinglé à `ubuntu-24.04` depuis le 12 oct.,
+  et **refuse tout Stockfish autre que 16** : l'échelle de `UCI_Elo`
+  appartient à sa version, et une autre rendrait un chiffre plausible et
+  incomparable. Les autres workflows restent sur `ubuntu-latest` : le
+  premier match d'après le 19 se lit en vérifiant que ses arbitres se sont
+  construits et que son étalonnage tombe dans la plage connue.
 - **Le livre, réutilisé** — mesuré le 1er oct. 2026, sur les deux matchs de
   B8, dont les pentanomiaux sortaient presque identiques. `tools/book.epd`
   porte **500 ouvertures** ; fastchess (`60d7a7a`, `opening_book.cpp` et
