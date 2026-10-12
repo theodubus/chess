@@ -6747,7 +6747,7 @@ RTX 3050 :
 - les pertes de N4 et de N2 ne se comparent pas — d'autres étiquettes ;
 - la séance a duré ce que l'attendu disait, ~11 minutes par réseau.
 
-**La sonde de B8 sur N4 et N4L — écrite le 12 oct. à 22 h 25, avant de la
+**La sonde de B8 sur N4 et N4L — écrite le 12 oct. à 22 h 11, avant de la
 lancer.** Le protocole du 2 oct., sur le code d'aujourd'hui : la rustine
 rebasée sur `main` à `ce3798f` — un conflit, dans la futilité inverse, dont
 l'évaluation statique passe désormais par un cache —, 40 parties de chaque
