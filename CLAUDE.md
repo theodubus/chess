@@ -899,6 +899,16 @@ une mesure, pas une préférence.
   `-1`. Aucun test n'aurait pu la couvrir ; la bonne réponse était de la
   supprimer. **Avant de classer un survivant « équivalent », se demander si la
   branche est atteignable** — la réponse change ce qu'il faut faire.
+  <br>**Et une COPIE d'une règle dans une branche presque jamais atteinte est
+  une règle qu'aucun test ne garde** — 12 oct. 2026, la composition du
+  n° 12. PVS avait dédoublé la re-recherche après réduction : une copie
+  pour le premier coup cherché, sous la fenêtre pleine, une pour les
+  suivants. Le premier coup cherché n'est réduit que si tous ceux d'avant
+  ont été élagués — presque jamais —, et onze mutants vivaient dans sa
+  copie, que la prédiction du balayage n'avait pas vue. Ni code mort ni
+  mutant équivalent : une branche atteignable que rien n'atteint. *Une
+  règle s'écrit une fois, sur le chemin que tous les coups empruntent* ;
+  la fenêtre seule distingue désormais le premier.
 - **Un invariant qu'on ne peut pas appeler est un invariant qu'aucun test ne
   protège.** Trois fois le même geste sur ce projet : `parse_go` extrait de
   `Engine::go`, dont le corps lance un thread ; `random_seed` extrait d'une
