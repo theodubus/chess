@@ -904,7 +904,7 @@ dernière relève est faite.
 | **balayage hebdomadaire du 13 oct.** — la vérification complète de la correction | le cron de mardi 00 h 00 UTC | `main` à la fusion qui relève la limite des jobs à 350 minutes | un job par fichier, puis `Verdict` | **À VENIR** — *prédiction écrite et poussée avant* : `search.rs` **48**, entre 48 et 50 — les survivants du crible un pour un ; les 36 mutants qu'il n'a pas essayés ne portent aucun des survivants attendus, tous déjà vus, et un de plus ne pourrait venir que d'un mutant attrapé jusqu'ici ou du code neuf de la correction — <span>confiance moyenne</span> ; `eval.rs` **102**, les autres fichiers à leur plafond ; total **162** ; `search.rs` en ~190 minutes, sous la limite neuve. Vert : l'issue #165 se ferme | — |
 | **N° 13 — la sonde de débit de la vague de données** | **37622274982** | le générateur de `main` à `0e67f71`, `<embedded>` (N2L), `x86-64-v3`, 5 000 nœuds, 20 minutes, lancé depuis la branche pour l'entrée `cpu` | `nnue-datagen.yml` | **RELEVÉE à 15 h 00** — lancée à 14 h 37 (heure de Paris), son attendu poussé avant (`553402e`) ; finie à 14 h 57, Xeon Platinum 8573C | **1 641 positions par seconde, 9,7 % d'écartées, 27,5 % de nulles — les trois dans l'attendu.** Le résidu nommé : à binaire égal, le générateur d'aujourd'hui écrit × 0,72 des positions par seconde de celui du 29 sept. ; la table de 64 Mio n'y est pour rien (section « N° 13 — le réseau ») — *Attendu, écrit avant* : 1 500 à 2 500 positions par seconde, ~1 800 sur un EPYC 7763 ; 7 à 12 % de parties écartées ; 25 à 35 % de nulles — hors fourchette, diagnostic avant la vague (section « N° 13 — le réseau ») |
 | **N° 13 — la vague de données au moteur d'aujourd'hui** | **37625421881, 37625430114, 37625438110, 37625443145, 37625448710, 37625456368, 37625461638, 37625467887** | le générateur de `main` à `0e67f71`, `<embedded>` (N2L), `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **RELEVÉE le 12 oct.** — lancée à 15 h 03 (heure de Paris), son attendu poussé avant (`553402e`) ; sept succès finis à 20 h 33, le premier job perdu à 19 h 27 avec son runner (« *lost communication with the server* »), sans artefact, pas relancé | **271,2 M positions à sept jobs — dans l'attendu** (240 à 340 M, ~285 ; la sonde disait ~240 pour huit) : quatre runners sur sept étaient des EPYC 9V74 et 9V45. Écartées 9,45 %, nulles 27,09 %, dans leurs attendus, d'un job à l'autre à 0,2 point près. **Six jobs gardent 159,1 M positions par le filtre de l'entraîneur, N2 en voyait 158,4 M** : le réseau des six ne diffère de N2 que par l'étiqueteur. *Attendu, écrit avant* : **240 à 340 M de positions**, ~285 M ; la sonde la place au bas, ~240 M. **La séance est écrite** — N4 et N4L (section « N° 13 — le réseau ») |
-| **N° 13 — les deux entraînements, sur la carte de Théo** | — | N4 : 128 unités, les six jobs sans 37625443145, depuis zéro ; N4L : N4 puis le binpack de Leela du levier 4 — la recette de N2L | une séance, ~25 minutes d'entraînement | **EN ATTENTE de la carte de Théo** — écrite le 12 oct., avant de la lui demander | — *Attendus et critère, écrits avant* (section « N° 13 — le réseau ») : N4 contre N2, 0 à +60, ~+25, ne décide rien ; **N4L remplace N2L si la borne basse contre N2L est au-dessus de zéro**, −10 à +30, ~+8 attendus ; quatre jobs de 3 000 parties par comparaison, après la sonde de B8 sur chaque réseau |
+| **N° 13 — les deux entraînements, sur la carte de Théo** | — | N4 : 128 unités, les six jobs sans 37625443145, depuis zéro ; N4L : N4 puis le binpack de Leela du levier 4 — la recette de N2L | une séance, ~25 minutes d'entraînement | **RELEVÉE le 12 oct. à 22 h 10** — écrite le matin, avant de la lui demander ; poussée par Théo sur `reseau/n13` (`ce0557d`) | — *Attendus et critère, écrits avant* (section « N° 13 — le réseau ») : N4 contre N2, 0 à +60, ~+25, ne décide rien ; **N4L remplace N2L si la borne basse contre N2L est au-dessus de zéro**, −10 à +30, ~+8 attendus ; quatre jobs de 3 000 parties par comparaison, après la sonde de B8 sur chaque réseau |
 | **N° 12 — la composition : C45, C47 et C49** | **37584104209, 37584107001, 37584109645, 37584112743** | `ff8d4bb` → `7d9faef`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 14 h 25** — lancés à 8 h 54 (heure de Paris), attendu et critère poussés avant (`6bb5948`) ; finis entre 14 h 13 et 14 h 16, 6,36 à 6,43 s par partie | **+30,30, +28,79, +33,11, +38,02 ; +32,55 ± 3,36 en commun** — homogènes (p = 0,244), zéro perte au temps ; **les deux clauses tenues, FUSIONNÉ** (`0e31ac2`, la révocation révoquée). Au-dessus de C49 seul de +7,2 ± 4,7 ; 80 % de la somme des gains seuls, sous-additif démontré. Runners : deux EPYC 7763, un 9V74, un 9V45, 2,12 à 3,23 M n/s, tous à la profondeur 15. — *Attendu, écrit avant* : ~+37, **+25 à +48**. **Critère, écrit avant** : fusion si la borne basse commune est au-dessus de zéro ET si le point n'est pas démontré sous C49 seul (+20,6) ; sinon, bissection (section n° 12, « la composition ») |
 | **C13 — la série du 7 oct., demandée par Théo** | **37579900252** | `main` à `7d9faef` (N2L, le groupe du n° 9, C41, C43), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 13 h 50** — lancée à 8 h 08 (heure de Paris), son attendu poussé avant (`3c6e2c3`) ; finie à 12 h 55, EPYC 7763, 2 183 146 n/s | **3 003 ± 33** — 198 − 74 − 28, 70,7 % : dans l'attendu, en haut de sa plage ; **+50 ± 44 sur N2L**, séparé de zéro de justesse — au point au-dessus de l'attendu, que son intervalle recoupe. Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : ~+15 sur N2L, **0 à +32** ; ~2 967 au centre, **2 935 à 3 015** ; un écart à N2L sous ~+42 ne s'en sépare pas (section C13, « La série du 7 oct. ») |
 | **N° 10 — l'AVX2 : `x86-64-v3` contre `x86-64`, le même commit** | **37514404585, 37514408893** | `ea8f3af` des deux côtés, la PR #155 ; `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 2 h 30 le 7 oct.** — lancés à 20 h 50 (heure de Paris), le protocole fusionné avant (`e584b16`) ; finis à 2 h 10 et 2 h 11, 3 000 parties chacun, aucune perte au temps | **+32,23 ± 4,84 Elo, gain démontré** — +31,00 et +33,46, homogènes (p = 0,619). *Attendu, écrit avant* : ~+33, **+15 à +45** — tenu au point, et l'étalon du temps prédisait +32,8. Le défaut des workflows reste `x86-64-v3` (section n° 10, « VERDICT ») |
@@ -6728,6 +6728,45 @@ suffit à le diagnostiquer.
   côté ; N4 ne gagne pas — l'étiqueteur a cessé de payer à 5 000 nœuds, et
   une prochaine vague se décide par le volume ou par le budget de nœuds,
   plus par la marche du moteur.
+
+**La séance, RELEVÉE le 12 oct. à 22 h 10 — les deux réseaux tiennent
+leurs contrôles.** Poussés par Théo sur `reseau/n13` (`ce0557d`), sur la
+RTX 3050 :
+
+| | relus, parties : positions | confrontation, médian / maximal (admis 15 / 50) | entraînement | perte moyenne au 1ᵉʳ, 10ᵉ, 20ᵉ, 40ᵉ superlot |
+|---|---|---|---|---|
+| **N4**, la vague neuve seule | 2 132 034 : 242 033 195 — **l'attendu exact** | **8 / 16** | 10 min 10 s | 0,0461 · 0,0425 · 0,0422 · 0,0423 |
+| **N4L**, N4 puis Leela | le binpack — échelle ajustée **282.1**, le critère | **10 / 16** | 11 min 30 s | 0,0593 · 0,0589 · 0,0589 · 0,0581 |
+| N2, pour mémoire | 2 121 130 : 249 458 187 | 4 / 8 | 11 min 05 s | 0,0463 · 0,0436 · 0,0436 · 0,0435 |
+| N2L, pour mémoire | le même binpack, 282.1 | 4 / 9 | 11 min 34 s | 0,0598 · 0,0590 · 0,0589 · 0,0582 |
+
+- **N4L finit à la perte de N2L** — 0,0581 contre 0,0582, mêmes données,
+  mêmes superlots : l'étage de Leela efface la différence de départ, comme
+  N2L et L0 le 2 oct. *Une perte ne dit pas la force* : les matchs le
+  diront ;
+- les pertes de N4 et de N2 ne se comparent pas — d'autres étiquettes ;
+- la séance a duré ce que l'attendu disait, ~11 minutes par réseau.
+
+**La sonde de B8 sur N4 et N4L — écrite le 12 oct. à 22 h 25, avant de la
+lancer.** Le protocole du 2 oct., sur le code d'aujourd'hui : la rustine
+rebasée sur `main` à `ce3798f` — un conflit, dans la futilité inverse, dont
+l'évaluation statique passe désormais par un cache —, 40 parties de chaque
+réseau contre lui-même à `8+0,08`, `-srand 20260930`, le livre du dépôt —
+de 15 000 ouvertures désormais. **La faite main se rejoue elle aussi**, et
+**N2L avec elle, en témoin** : depuis le 2 oct., la recherche a changé —
+le n° 9, C41, le n° 12 —, et les taux de la faite main d'alors ne
+décrivent plus l'arbre d'aujourd'hui ; N2L dit ce que ce changement fait
+au facteur d'un réseau déjà mesuré. **Règle, inchangée** : la moyenne
+géométrique des facteurs delta et aspiration ; **dans 1,68 à 2,80, le
+réseau se mesure au facteur de `main`, 2,24** ; hors de cette plage, le
+facteur se règle d'abord. *Attendu* — <span>inférence, confiance
+faible</span> : N4L près de N2L, **2,4 à 2,8** — le même étage de Leela,
+la même échelle d'entraînement ; N4 près de N2, **2,0 à 2,6** — ses
+étiquettes viennent d'un moteur qui joue N2L, un peu plus tranchées que
+celles de N0 ; N2L témoin, **2,3 à 2,9** — 2,60 le 2 oct., l'arbre a
+changé. Hors de la plage, ce serait le réseau témoin d'abord qu'il faudrait
+regarder : un témoin qui sort dit que c'est l'arbre qui a bougé, pas le
+réseau neuf.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
