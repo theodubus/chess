@@ -41,7 +41,14 @@ jobs:
   balayage:
     name: Mutation — ${{ matrix.fichier }}
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    # 180 minutes jusqu'au 12 oct. 2026, posées à la création quand le
+    # balayage entier en prenait 35 à 81. `search.rs` seul a grandi avec son
+    # code et ses tests — 107 minutes le 6 oct., 145 à 164 le 7 — et le
+    # crible du 12 y est mort à 781 mutants sur 817. 350 laisse ~1,9 fois la
+    # durée de ce jour-là, sous le plafond de six heures d'un runner hébergé ;
+    # au-delà, le fichier se découpe (`cargo mutants --shard`), le plafond ne
+    # monte plus.
+    timeout-minutes: 350
     strategy:
       # Un fichier qui échoue ne doit pas emporter les autres : le but est le
       # tableau complet, pas le premier échec.
