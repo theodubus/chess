@@ -1186,7 +1186,7 @@ mesure, que la branche ne porte plus. Un tel balayage n'ouvre jamais d'issue :
 le cliquet garde `main`. Sans elle, le crible du fichier entier se lançait dans
 le conteneur, où il est mort à 57 mutants sur 570 au premier redémarrage.
 
-**Durée du balayage** : 35 puis 81 minutes sur deux exécutions réelles. Les
+**Durée du balayage** : 35 puis 81 minutes sur deux exécutions réelles <s>(15 sept.)</s> — **`search.rs` seul en prend désormais 145 à 180 et plus** : le 12 oct., coupé par la limite de 180 minutes du job à 781 mutants sur 817, relevée à 350 ; au-delà, découper par `--shard` (`tools/README.md`, « Ce qu'il faut surveiller »). Les
 runners partagés varient du simple au double — ne pas caler un rendez-vous
 serré dessus. **Ce chiffre porte sur un débit de COMPILATION**, et ne dit rien
 de la vitesse de RECHERCHE : celle-ci varie de **58 %** d'un runner à l'autre
