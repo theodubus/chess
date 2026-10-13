@@ -42,8 +42,11 @@ use std::io::{BufReader, Seek};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use bullet_lib::game::inputs::Chess768;
-use bullet_lib::nn::optimiser::AdamW;
+use bullet_lib::game::formats::bulletformat::ChessBoard;
+use bullet_lib::game::inputs::{Chess768, ChessBucketsMirrored, SparseInputType};
+use bullet_lib::game::outputs::MaterialCount;
+use bullet_lib::nn::optimiser::{AdamW, AdamWParams};
+use bullet_lib::nn::{InitSettings, Shape};
 use bullet_lib::trainer::save::SavedFormat;
 use bullet_lib::trainer::schedule::{TrainingSchedule, TrainingSteps, lr, wdl};
 use bullet_lib::trainer::settings::LocalSettings;
@@ -53,13 +56,21 @@ use bullet_lib::value::loader::viribinpack::{Filter, Game};
 use bullet_lib::value::loader::{SfBinpackLoader, ViriBinpackLoader, ViriFilter};
 use cozy_chess::Board;
 use sfbinpack::{ChunkReader, read_chunk_into};
-use shallowred::nnue::{HIDDEN, Network, QA, QB, SCALE};
+use shallowred::nnue::{ARCH, HIDDEN, Network, QA, QB, SCALE};
 
 /// Identifiant des points de sauvegarde : `<sortie>/<identifiant>-<superlot>/`.
-/// Tiré de la largeur du MOTEUR, comme l'architecture : un réseau plus large
-/// ne peut pas porter le nom de celui qu'il doit battre.
+/// Tiré de l'architecture du MOTEUR : un réseau plus large, ou à seaux, ne
+/// peut pas porter le nom de celui qu'il doit battre. Sans seaux, le nom
+/// d'avant le n° 17 : `shallowred-768x128`.
 fn net_id() -> String {
-    format!("shallowred-768x{HIDDEN}")
+    let mut id = match ARCH.king_buckets {
+        None => format!("shallowred-768x{HIDDEN}"),
+        Some(_) => format!("shallowred-768x{}hm-{HIDDEN}", ARCH.input_buckets()),
+    };
+    if ARCH.output_buckets > 1 {
+        id.push_str(&format!("-s{}", ARCH.output_buckets));
+    }
+    id
 }
 
 /// L'échelle des scores d'un binpack tiré de Leela Chess Zero, en unités de
@@ -137,6 +148,15 @@ const FENS: &[&str] = &[
     "6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1",
     "8/8/8/4k3/8/8/4KP2/8 w - - 0 1",
     "8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1",
+    // Des rois sur d'autres seaux et de l'autre côté — grands roques, rois
+    // centraux, coins —, et de 2 à 32 pièces : de quoi éprouver les seaux de
+    // roi et de sortie (n° 17).
+    "2kr3r/ppp2ppp/2n5/8/8/2N5/PPP2PPP/2KR3R w - - 0 12",
+    "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w - - 0 7",
+    "8/8/4k3/3p4/3P4/4K3/8/8 w - - 0 1",
+    "4k3/8/8/2K5/8/8/8/R7 w - - 0 1",
+    "8/8/3k4/8/3K4/8/8/8 w - - 0 1",
+    "1k6/8/8/8/8/8/8/K7 b - - 0 1",
 ];
 
 /// L'écart médian admis entre le moteur et l'entraîneur, en centièmes —
@@ -440,29 +460,87 @@ fn run(args: &[String]) -> Result<(), String> {
         }
     }
 
-    // ---- 2. Entraîner.
+    // ---- 2 et 3. Entraîner, puis confronter le moteur à l'entraîneur, sur
+    // les entrées de l'architecture du moteur : `Chess768` sans seaux de roi,
+    // `ChessBucketsMirrored` avec (n° 17).
+    match ARCH.king_buckets {
+        None => train_and_check(Chess768, &options),
+        Some(layout) => {
+            train_and_check(ChessBucketsMirrored::new(layout.map(usize::from)), &options)
+        }
+    }
+}
+
+/// Entraîne un réseau de l'architecture du moteur sur les entrées `inputs`,
+/// puis confronte le moteur à l'entraîneur.
+fn train_and_check<I>(inputs: I, options: &Options) -> Result<(), String>
+where
+    I: SparseInputType<RequiredDataType = ChessBoard>,
+{
     println!("== 2. Entraînement ==");
     let qa = i16::try_from(QA).map_err(|_| "QA hors d'un i16")?;
     let qb = i16::try_from(QB).map_err(|_| "QB hors d'un i16")?;
     let qab = i16::try_from(QA * QB).map_err(|_| "QA × QB hors d'un i16")?;
+    let buckets = ARCH.input_buckets();
+    // Le factoriseur — 768 × largeur poids communs à tous les seaux de roi —
+    // n'existe qu'avec des seaux : il partage entre eux ce que chacun voit
+    // trop peu, et s'ajoute à chacun au moment d'écrire le fichier, si bien
+    // que le moteur n'en voit rien (`examples/progression/3_input_buckets.rs`
+    // au commit épinglé).
+    let feature_weights = if buckets > 1 {
+        SavedFormat::id("l0w").transform(move |store, weights| {
+            let factoriser = store.get("l0f").values.f32().repeat(buckets);
+            weights
+                .into_iter()
+                .zip(factoriser)
+                .map(|(a, b)| a + b)
+                .collect()
+        })
+    } else {
+        SavedFormat::id("l0w")
+    };
     let mut trainer = ValueTrainerBuilder::default()
         .dual_perspective()
         .optimiser(AdamW)
-        .inputs(Chess768)
+        .inputs(inputs)
+        .output_buckets(MaterialCount::<{ ARCH.output_buckets }>)
         .save_format(&[
-            SavedFormat::id("l0w").round().quantise::<i16>(qa),
+            feature_weights.round().quantise::<i16>(qa),
             SavedFormat::id("l0b").round().quantise::<i16>(qa),
-            SavedFormat::id("l1w").round().quantise::<i16>(qb),
+            // Seau de sortie par seau de sortie, `2 × HIDDEN` poids chacun :
+            // la transposée de la matrice de bullet — l'identité à un seul
+            // seau.
+            SavedFormat::id("l1w")
+                .round()
+                .quantise::<i16>(qb)
+                .transpose(),
             SavedFormat::id("l1b").round().quantise::<i16>(qab),
         ])
         .loss_fn(|output, target| output.sigmoid().squared_error(target))
-        .build(|builder, stm_inputs, ntm_inputs| {
-            let l0 = builder.new_affine("l0", 768, HIDDEN);
-            let l1 = builder.new_affine("l1", 2 * HIDDEN, 1);
+        .build(|builder, stm_inputs, ntm_inputs, output_buckets| {
+            let mut l0 = builder.new_affine("l0", 768 * buckets, HIDDEN);
+            if buckets > 1 {
+                let l0f = builder.new_weights("l0f", Shape::new(HIDDEN, 768), InitSettings::Zeroed);
+                l0.weights = l0.weights + l0f.repeat(buckets);
+            }
+            let l1 = builder.new_affine("l1", 2 * HIDDEN, ARCH.output_buckets);
             let stm_hidden = l0.forward(stm_inputs).screlu();
             let ntm_hidden = l0.forward(ntm_inputs).screlu();
             l1.forward(stm_hidden.concat(ntm_hidden))
+                .select(output_buckets)
         });
+    if buckets > 1 {
+        // La couche d'entrée et le factoriseur bornés chacun à ±0,99 : leur
+        // somme reste dans les ±1,98 que la borne d'accumulateur du chargeur
+        // suppose, comme l'exemple.
+        let stricter = AdamWParams {
+            max_weight: 0.99,
+            min_weight: -0.99,
+            ..Default::default()
+        };
+        trainer.optimiser.set_params_for_weight("l0w", stricter);
+        trainer.optimiser.set_params_for_weight("l0f", stricter);
+    }
 
     if let Some(checkpoint) = &options.resume {
         // bullet sort du processus sur un point de sauvegarde illisible, avec
@@ -542,7 +620,7 @@ fn run(args: &[String]) -> Result<(), String> {
     let mut gaps = Vec::new();
     for fen in FENS {
         let board: Board = fen.parse().map_err(|e| format!("{fen} : {e:?}"))?;
-        let engine = network.evaluate(&network.refresh(&board), board.side_to_move());
+        let engine = network.evaluate(&network.refresh(&board), &board);
         let trainer_cp = (SCALE as f32 * trainer.eval(fen)).round() as i32;
         let gap = (engine - trainer_cp).abs();
         println!("  {engine:>6}  {trainer_cp:>6}  écart {gap:>4}   {fen}");
@@ -590,6 +668,93 @@ mod tests {
             score,
             ply,
             result: 1,
+        }
+    }
+
+    /// Les entrées et le seau de sortie du moteur, à seaux, confrontés au
+    /// CODE de bullet : `ChessBucketsMirrored::map_features` et
+    /// `MaterialCount::bucket` eux-mêmes, sur des positions de parties au
+    /// hasard passées par la chaîne de l'entraîneur — `viriformat` puis
+    /// `bulletformat`, qui retourne l'échiquier quand les Noirs ont le trait.
+    /// Une case retournée d'un seul côté ne ferait rien planter : elle
+    /// entraînerait un réseau sur d'autres positions que celles que le moteur
+    /// lui montrera (n° 17). Les deux dispositions de la séance, celles que
+    /// le moteur publie.
+    #[test]
+    fn les_seaux_du_moteur_sont_ceux_de_bullet() {
+        use bullet_lib::game::formats::viriformat::chess::board::Board as VfBoard;
+        use bullet_lib::game::outputs::OutputBuckets;
+        use cozy_chess::{Color as CColor, Piece as CPiece};
+        use shallowred::nnue::{Arch, KING_BUCKETS_4, KING_BUCKETS_10};
+
+        for layout in [KING_BUCKETS_4, KING_BUCKETS_10] {
+            let arch = Arch {
+                king_buckets: Some(layout),
+                output_buckets: 8,
+            };
+            let inputs = ChessBucketsMirrored::new(layout.map(usize::from));
+
+            let (mut checked, mut black, mut mirrored) = (0, 0, 0);
+            let mut buckets_seen = [false; 8];
+            let mut state = 0x5EA0_0017_u64 | 1;
+            for _ in 0..40 {
+                let mut ours = Board::default();
+                for _ in 0..160 {
+                    let mut moves = Vec::new();
+                    ours.generate_moves(|piece_moves| {
+                        moves.extend(piece_moves);
+                        false
+                    });
+                    if moves.is_empty() || ours.halfmove_clock() >= 100 {
+                        break;
+                    }
+                    let mut theirs = VfBoard::new();
+                    theirs.set_from_fen(&ours.to_string()).unwrap();
+                    let position: ChessBoard = theirs.to_bulletformat(1, 0).unwrap();
+                    let mut trainer = Vec::new();
+                    inputs.map_features(&position, |stm, ntm| trainer.push((stm, ntm)));
+                    trainer.sort_unstable();
+
+                    let us = ours.side_to_move();
+                    let mut engine = Vec::new();
+                    for color in CColor::ALL {
+                        for piece in CPiece::ALL {
+                            for square in ours.colored_pieces(color, piece) {
+                                engine.push((
+                                    arch.feature(us, ours.king(us), color, piece, square),
+                                    arch.feature(!us, ours.king(!us), color, piece, square),
+                                ));
+                            }
+                        }
+                    }
+                    engine.sort_unstable();
+                    assert_eq!(engine, trainer, "entrées, sur {ours}");
+
+                    let bucket = usize::from(MaterialCount::<8>.bucket(&position));
+                    assert_eq!(
+                        arch.output_bucket(ours.occupied().len() as usize),
+                        bucket,
+                        "seau de sortie, sur {ours}"
+                    );
+                    buckets_seen[bucket] = true;
+                    checked += 1;
+                    black += usize::from(us == CColor::Black);
+                    mirrored += usize::from(arch.king_key(us, ours.king(us)).1 == 7);
+
+                    state ^= state << 13;
+                    state ^= state >> 7;
+                    state ^= state << 17;
+                    ours.play_unchecked(moves[(state % moves.len() as u64) as usize]);
+                }
+            }
+            assert!(
+                checked >= 2_000 && black >= 1_000 && mirrored >= 500 && mirrored < checked,
+                "positions {checked}, dont {black} aux Noirs et {mirrored} roi au trait en miroir"
+            );
+            assert!(
+                buckets_seen.iter().filter(|&&seen| seen).count() >= 6,
+                "seaux de sortie vus : {buckets_seen:?}"
+            );
         }
     }
 

@@ -889,8 +889,7 @@ mod tests {
         // réseau aléatoire du fichier, la faite main. Trois valeurs
         // distinctes, sans quoi le test ne distinguerait rien.
         let depart = cozy_chess::Board::default();
-        let dit =
-            |reseau: &Network| reseau.evaluate(&reseau.refresh(&depart), depart.side_to_move());
+        let dit = |reseau: &Network| reseau.evaluate(&reseau.refresh(&depart), &depart);
         let embarque = dit(&nnue::embedded().unwrap());
         let aleatoire = dit(&Network::from_bytes(&reseau_aleatoire()).unwrap());
         let faite_main = crate::eval::evaluate(&depart, &crate::eval::Params::DEFAULT);

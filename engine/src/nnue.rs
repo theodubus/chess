@@ -28,6 +28,15 @@
 //!   sortie — ceux du camp au trait d'abord —, par `QB` ; le biais de sortie,
 //!   par `QA × QB`. Des `i16` petit-boutistes, arrondis, puis un bourrage
 //!   jusqu'au multiple de 64 octets.
+//! - **Les seaux** (n° 17 ; [`Arch`]) : avec des seaux de roi
+//!   (`ChessBucketsMirrored`), chaque camp lit ses entrées dans le bloc de
+//!   768 que choisit la case de son roi, dans son propre repère, la colonne
+//!   retournée si ce roi est sur e à h ; avec des seaux de sortie
+//!   (`MaterialCount`), un jeu de poids de sortie par tranche du nombre de
+//!   pièces. Le fichier range les lignes bloc par bloc, et les poids de
+//!   sortie seau par seau — la transposée de la matrice de bullet. Sans
+//!   seaux, tout cela vaut l'identité : un bloc, pas de retournement, un
+//!   seau.
 //! - **La sortie** (`Network::evaluate` de l'exemple) : SCReLU — l'entrée
 //!   bornée à `[0, QA]` puis élevée au carré —, produit scalaire, division par
 //!   `QA`, biais, × `SCALE`, division par `QA × QB`. Les mêmes étapes et les
@@ -91,13 +100,152 @@ pub const SCALE: i32 = 400;
 /// laquelle repose la garantie de non-débordement de l'accumulateur.
 const MAX_PIECES: usize = 32;
 
-/// Nombre de `i16` du fichier, dans l'ordre où bullet les écrit.
-const VALUES: usize = INPUTS * HIDDEN + HIDDEN + 2 * HIDDEN + 1;
+/// L'architecture d'un réseau au-delà de sa largeur : ce que son fichier ne
+/// dit pas, et que le moteur doit savoir pour le lire (n° 17). Lue au source
+/// de bullet `10e7e82` — `ChessBucketsMirrored`
+/// (`bullet_lib/src/game/inputs/chess_buckets.rs`) et `MaterialCount`
+/// (`bullet_lib/src/game/outputs.rs`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Arch {
+    /// Les seaux de roi : une disposition de 32 cases — les colonnes a à d
+    /// de chaque rangée, la rangée 1 d'abord —, que bullet étend en miroir
+    /// aux colonnes e à h. `None` : les entrées `Chess768`, un seul bloc et
+    /// pas de miroir.
+    pub king_buckets: Option<[u8; 32]>,
+    /// Le nombre de seaux de sortie, de 1 à 32 : un jeu de poids de sortie
+    /// par tranche du nombre de pièces sur l'échiquier.
+    pub output_buckets: usize,
+}
 
-/// Taille exacte d'un fichier de réseau : les valeurs, puis le bourrage de
-/// bullet jusqu'au multiple de 64 octets. Un réseau d'une autre taille de
-/// couche cachée a une autre taille de fichier, et il est refusé.
-pub const FILE_BYTES: usize = (2 * VALUES).div_ceil(64) * 64;
+impl Arch {
+    /// Le nombre de blocs de [`INPUTS`] entrées : un par seau de roi.
+    #[must_use]
+    pub const fn input_buckets(&self) -> usize {
+        let Some(layout) = self.king_buckets else {
+            return 1;
+        };
+        let mut highest = 0;
+        let mut index = 0;
+        while index < layout.len() {
+            if layout[index] > highest {
+                highest = layout[index];
+            }
+            index += 1;
+        }
+        highest as usize + 1
+    }
+
+    /// Le nombre de `i16` du fichier, dans l'ordre où bullet les écrit : les
+    /// lignes de la couche cachée, ses biais, puis pour chaque seau de sortie
+    /// ses `2 × HIDDEN` poids, et enfin un biais par seau.
+    #[must_use]
+    pub const fn values(&self) -> usize {
+        INPUTS * self.input_buckets() * HIDDEN + HIDDEN + self.output_buckets * (2 * HIDDEN + 1)
+    }
+
+    /// Taille exacte d'un fichier de ce réseau : les valeurs, puis le
+    /// bourrage de bullet jusqu'au multiple de 64 octets.
+    #[must_use]
+    pub const fn file_bytes(&self) -> usize {
+        (2 * self.values()).div_ceil(64) * 64
+    }
+
+    /// Le bloc d'entrées et le retournement de colonne que choisit le roi de
+    /// `perspective` sur `king` : l'entrée `f` de ce camp devient
+    /// `décalage + (f ^ masque)`. Dans le repère du camp — son roque en bas,
+    /// `our_ksq` et `opp_ksq ^ 56` de `bulletformat` —, le seau est celui de
+    /// la disposition, et un roi sur les colonnes e à h retourne la colonne
+    /// de chaque entrée (`^ 7`), comme `ChessBucketsMirrored::map_features`.
+    #[must_use]
+    pub fn king_key(&self, perspective: Color, king: Square) -> (usize, usize) {
+        let Some(layout) = self.king_buckets else {
+            return (0, 0);
+        };
+        let square = relative(perspective, king);
+        let (file, rank) = (square % 8, square / 8);
+        let mirrored = file > 3;
+        let column = if mirrored { 7 - file } else { file };
+        let bucket = usize::from(layout[4 * rank + column]);
+        (INPUTS * bucket, if mirrored { 7 } else { 0 })
+    }
+
+    /// L'indice d'une pièce vue par `perspective`, dont le roi est sur
+    /// `king` : l'entrée `Chess768` de [`feature`], déplacée dans le bloc du
+    /// seau et retournée s'il le faut.
+    #[must_use]
+    pub fn feature(
+        &self,
+        perspective: Color,
+        king: Square,
+        color: Color,
+        piece: Piece,
+        square: Square,
+    ) -> usize {
+        bucketed(
+            self.king_key(perspective, king),
+            perspective,
+            color,
+            piece,
+            square,
+        )
+    }
+
+    /// Le seau de sortie d'une position qui porte `pieces` pièces, rois
+    /// compris : `(pièces − 2) / ⌈32 / seaux⌉`, comme `MaterialCount::bucket`.
+    #[must_use]
+    pub const fn output_bucket(&self, pieces: usize) -> usize {
+        pieces.saturating_sub(2) / 32usize.div_ceil(self.output_buckets)
+    }
+}
+
+/// La disposition à dix seaux de roi de l'exemple de bullet,
+/// `examples/progression/3_input_buckets.rs` au commit `10e7e82` : la rangée
+/// 1 case par case, la 2 par paires de colonnes, puis une rangée, une
+/// rangée, deux rangées, deux rangées (n° 17, N5r10).
+#[rustfmt::skip]
+pub const KING_BUCKETS_10: [u8; 32] = [
+    0, 1, 2, 3,
+    4, 4, 5, 5,
+    6, 6, 6, 6,
+    7, 7, 7, 7,
+    8, 8, 8, 8,
+    8, 8, 8, 8,
+    9, 9, 9, 9,
+    9, 9, 9, 9,
+];
+
+/// La même, grossie à quatre seaux : la rangée 1 par paires de colonnes, la
+/// rangée 2, puis tout le reste. Lue nulle part — un choix (n° 17, N5r4).
+#[rustfmt::skip]
+pub const KING_BUCKETS_4: [u8; 32] = [
+    0, 0, 1, 1,
+    2, 2, 2, 2,
+    3, 3, 3, 3,
+    3, 3, 3, 3,
+    3, 3, 3, 3,
+    3, 3, 3, 3,
+    3, 3, 3, 3,
+    3, 3, 3, 3,
+];
+
+/// L'architecture des réseaux de ce binaire, l'embarqué comme ceux
+/// qu'`EvalFile` charge : N4, sans seaux.
+pub const ARCH: Arch = Arch {
+    king_buckets: None,
+    output_buckets: 1,
+};
+
+// Un seau de sortie par tranche du nombre de pièces : de 1 à 32 seaux, le
+// plus haut — 32 pièces — tombant toujours sous `output_buckets`.
+const _: () = assert!(ARCH.output_buckets >= 1 && ARCH.output_buckets <= MAX_PIECES);
+
+/// Taille exacte d'un fichier de réseau de ce binaire. Un réseau d'une autre
+/// architecture a une autre taille de fichier, et il est refusé.
+pub const FILE_BYTES: usize = ARCH.file_bytes();
+
+/// Nombre de `i16` d'un fichier de réseau de ce binaire.
+#[cfg(test)]
+const VALUES: usize = ARCH.values();
 
 /// Le plus grand poids de sortie admis, en valeur absolue : `QA` fois lui
 /// tient dans un `i16`, si bien que [`dot`] peut multiplier sur seize bits.
@@ -122,6 +270,14 @@ const QA_I16: i16 = {
     assert!(QA <= i16::MAX as i32);
     QA as i16
 };
+
+// Les recalculs d'un camp dans `apply_move`, comptés par fil pour les tests :
+// un recalcul fait à la place d'une mise à jour rend le même accumulateur, et
+// seul ce compte distingue l'un de l'autre.
+#[cfg(test)]
+thread_local! {
+    static REFRESHES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
 
 /// Une ligne de poids nulle : ce que [`Network::apply_move`] ajoute ou retire
 /// à la place d'une pièce qu'un coup ne déplace pas, pour que tous les coups
@@ -163,12 +319,31 @@ pub type Accumulators = [Accumulator; 2];
 #[must_use]
 pub fn feature(perspective: Color, color: Color, piece: Piece, square: Square) -> usize {
     let side = if color == perspective { 0 } else { 384 };
-    let square = if perspective == Color::White {
+    side + 64 * piece as usize + relative(perspective, square)
+}
+
+/// L'entrée `Chess768` d'une pièce, placée dans le bloc et sous le
+/// retournement `(offset, flip)` que choisit le roi du camp
+/// ([`Arch::king_key`]) : la seule écriture de cette règle, que l'indice
+/// d'[`Arch::feature`], le recalcul et la mise à jour empruntent tous.
+fn bucketed(
+    (offset, flip): (usize, usize),
+    perspective: Color,
+    color: Color,
+    piece: Piece,
+    square: Square,
+) -> usize {
+    offset + (feature(perspective, color, piece, square) ^ flip)
+}
+
+/// Une case dans le repère de `perspective` : retournée (`^ 56`) pour les
+/// Noirs, chacun se voyant « blanc », son roque en bas.
+fn relative(perspective: Color, square: Square) -> usize {
+    if perspective == Color::White {
         square as usize
     } else {
         square as usize ^ 56
-    };
-    side + 64 * piece as usize + square
+    }
 }
 
 /// Une pièce qui apparaît ou disparaît d'une case : tout ce qu'un coup fait à
@@ -290,15 +465,24 @@ fn dot(values: &[i16], weights: &[i16]) -> i64 {
 
 /// Un réseau quantifié, tel que bullet l'écrit.
 pub struct Network {
-    /// Une ligne de `HIDDEN` poids par entrée, quantifiés par `QA`.
+    /// Son architecture.
+    arch: Arch,
+    /// Pour chaque camp et chaque case de son roi, le bloc et le
+    /// retournement de [`Arch::king_key`], calculés une fois au chargement.
+    king_keys: [[(usize, usize); 64]; 2],
+    /// Le seau de sortie de chaque nombre de pièces, de 0 à 32 — calculé une
+    /// fois, pour qu'une évaluation ne paie pas une division.
+    output_buckets: [usize; MAX_PIECES + 1],
+    /// Une ligne de `HIDDEN` poids par entrée, bloc de roi par bloc de roi,
+    /// quantifiés par `QA`.
     feature_weights: Box<[[i16; HIDDEN]]>,
     /// Les biais de la couche cachée, quantifiés par `QA`.
     feature_bias: [i16; HIDDEN],
-    /// Les poids de sortie du camp au trait, puis ceux de l'autre, quantifiés
-    /// par `QB`.
-    output_weights: [i16; 2 * HIDDEN],
-    /// Le biais de sortie, quantifié par `QA × QB`.
-    output_bias: i16,
+    /// Pour chaque seau de sortie, les poids du camp au trait puis ceux de
+    /// l'autre, quantifiés par `QB`.
+    output_weights: Box<[[i16; 2 * HIDDEN]]>,
+    /// Un biais de sortie par seau, quantifié par `QA × QB`.
+    output_bias: Box<[i16]>,
 }
 
 impl Network {
@@ -310,32 +494,59 @@ impl Network {
     /// ou des poids qui pourraient faire déborder un accumulateur ou le
     /// produit scalaire.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, String> {
-        if bytes.len() != FILE_BYTES {
+        Self::from_bytes_with(bytes, ARCH)
+    }
+
+    /// Lit un réseau d'une architecture donnée — celle du binaire pour
+    /// [`Network::from_bytes`], une autre pour les tests et pour
+    /// l'entraîneur.
+    ///
+    /// # Errors
+    /// Ceux de [`Network::from_bytes`].
+    pub fn from_bytes_with(bytes: &[u8], arch: Arch) -> Result<Self, String> {
+        let expected = arch.file_bytes();
+        if bytes.len() != expected {
             return Err(format!(
-                "réseau de {} octets : l'architecture (768 → {HIDDEN}) × 2 → 1 en attend {FILE_BYTES}",
-                bytes.len()
+                "réseau de {} octets : l'architecture (768 × {} → {HIDDEN}) × 2 → {} en attend {expected}",
+                bytes.len(),
+                arch.input_buckets(),
+                arch.output_buckets,
             ));
         }
         let (pairs, _) = bytes.as_chunks::<2>();
         let values: Vec<i16> = pairs.iter().map(|&pair| i16::from_le_bytes(pair)).collect();
-        let (weights, rest) = values.split_at(INPUTS * HIDDEN);
+        let (weights, rest) = values.split_at(INPUTS * arch.input_buckets() * HIDDEN);
         let (bias, rest) = rest.split_at(HIDDEN);
-        let (output, rest) = rest.split_at(2 * HIDDEN);
-        let &[output_bias, ..] = rest else {
-            return Err("réseau tronqué : pas de biais de sortie".to_owned());
-        };
+        let (output, rest) = rest.split_at(arch.output_buckets * 2 * HIDDEN);
+        let output_bias = &rest[..arch.output_buckets];
 
+        let mut king_keys = [[(0, 0); 64]; 2];
+        for perspective in Color::ALL {
+            for square in Square::ALL {
+                king_keys[perspective as usize][square as usize] =
+                    arch.king_key(perspective, square);
+            }
+        }
+        let output_buckets = std::array::from_fn(|pieces| arch.output_bucket(pieces));
         let (rows, _) = weights.as_chunks::<HIDDEN>();
         let network = Self {
+            arch,
+            king_keys,
+            output_buckets,
             feature_weights: Box::from(rows),
             feature_bias: <[i16; HIDDEN]>::try_from(bias)
                 .map_err(|_| "biais de la couche cachée mal découpés".to_owned())?,
-            output_weights: <[i16; 2 * HIDDEN]>::try_from(output)
-                .map_err(|_| "poids de sortie mal découpés".to_owned())?,
-            output_bias,
+            output_weights: Box::from(output.as_chunks::<{ 2 * HIDDEN }>().0),
+            output_bias: Box::from(output_bias),
         };
         network.check_bounds()?;
         Ok(network)
+    }
+
+    /// Son architecture.
+    #[must_use]
+    pub const fn arch(&self) -> Arch {
+        self.arch
     }
 
     /// Refuse un réseau dont un accumulateur ou le produit scalaire pourrait
@@ -358,6 +569,7 @@ impl Network {
         if let Some(&weight) = self
             .output_weights
             .iter()
+            .flatten()
             .find(|&&weight| i32::from(weight).abs() > MAX_OUTPUT_WEIGHT)
         {
             return Err(format!(
@@ -376,22 +588,25 @@ impl Network {
     /// Les deux accumulateurs d'une position, recalculés de zéro.
     #[must_use]
     pub fn refresh(&self, board: &Board) -> Accumulators {
-        let mut accumulators = [Accumulator(self.feature_bias); 2];
+        [
+            self.refresh_side(board, Color::White),
+            self.refresh_side(board, Color::Black),
+        ]
+    }
+
+    /// L'accumulateur d'un camp, recalculé de zéro dans le bloc que choisit
+    /// son roi.
+    fn refresh_side(&self, board: &Board, perspective: Color) -> Accumulator {
+        let key = self.king_keys[perspective as usize][board.king(perspective) as usize];
+        let mut accumulator = Accumulator(self.feature_bias);
         for color in Color::ALL {
             for piece in Piece::ALL {
                 for square in board.colored_pieces(color, piece) {
-                    for perspective in Color::ALL {
-                        accumulators[perspective as usize].add(self.row(feature(
-                            perspective,
-                            color,
-                            piece,
-                            square,
-                        )));
-                    }
+                    accumulator.add(self.row(bucketed(key, perspective, color, piece, square)));
                 }
             }
         }
-        accumulators
+        accumulator
     }
 
     /// Les accumulateurs d'après `mv`, joué depuis `board`, dérivés de ceux
@@ -406,43 +621,88 @@ impl Network {
     ) {
         let mut buffer = [BLANK; 4];
         let count = changes(board, mv, &mut buffer);
+        let changes = &buffer[..count];
+        if self.arch.king_buckets.is_none() {
+            // Sans seaux de roi, un seul bloc et pas de retournement : le
+            // chemin d'avant le n° 17, sans rien chercher du roi — mesuré,
+            // le chercher coûtait 3,5 % du temps d'un nœud.
+            for perspective in Color::ALL {
+                self.update_side(before, after, perspective, changes, (0, 0));
+            }
+            return;
+        }
+        // Seul le roi du camp qui joue peut changer de case — la pièce
+        // ajoutée qui est un roi, au roque comme ailleurs.
+        let us = board.side_to_move();
+        let king_to = changes
+            .iter()
+            .find(|change| change.added && change.piece == Piece::King)
+            .map_or(board.king(us), |change| change.square);
         for perspective in Color::ALL {
-            // Au plus deux pièces apparaissent et deux disparaissent — le
-            // roque ; les places libres lisent la ligne de zéros. Un seul
-            // passage écrit l'enfant depuis le parent, la copie fondue dans
-            // la mise à jour, et tous les coups prennent le même chemin
-            // (n° 16, chemin A).
-            let mut added = [&ZERO_ROW; 2];
-            let mut removed = [&ZERO_ROW; 2];
-            let (mut adds, mut removes) = (0, 0);
-            for change in buffer.iter().take(count) {
-                let row = self.row(feature(
-                    perspective,
-                    change.color,
-                    change.piece,
-                    change.square,
-                ));
-                let (slots, used) = if change.added {
-                    (&mut added, &mut adds)
-                } else {
-                    (&mut removed, &mut removes)
-                };
-                if let Some(slot) = slots.get_mut(*used) {
-                    *slot = row;
-                    *used += 1;
-                }
+            let keys = &self.king_keys[perspective as usize];
+            let key = keys[board.king(perspective) as usize];
+            if perspective == us && keys[king_to as usize] != key {
+                // Le roi change de seau ou de côté : TOUTES les entrées de son
+                // camp changent de bloc. Recalculé depuis l'enfant — un coup
+                // de roi qui franchit une frontière, rare (n° 17).
+                let mut child = board.clone();
+                child.play_unchecked(mv);
+                after[perspective as usize] = self.refresh_side(&child, perspective);
+                #[cfg(test)]
+                REFRESHES.with(|count| count.set(count.get() + 1));
+                continue;
             }
-            let [a0, a1] = added;
-            let [r0, r1] = removed;
-            let source = &before[perspective as usize].0;
-            let target = &mut after[perspective as usize].0;
-            for (i, value) in target.iter_mut().enumerate() {
-                *value = source[i]
-                    .wrapping_add(a0[i])
-                    .wrapping_add(a1[i])
-                    .wrapping_sub(r0[i])
-                    .wrapping_sub(r1[i]);
+            self.update_side(before, after, perspective, changes, key);
+        }
+    }
+
+    /// L'accumulateur d'un camp après `changes`, dérivé de celui d'avant,
+    /// dans le bloc et sous le retournement de `key` ([`Arch::king_key`]).
+    ///
+    /// Au plus deux pièces apparaissent et deux disparaissent — le roque ;
+    /// les places libres lisent la ligne de zéros. Un seul passage écrit
+    /// l'enfant depuis le parent, la copie fondue dans la mise à jour, et
+    /// tous les coups prennent le même chemin (n° 16, chemin A).
+    #[inline(always)]
+    fn update_side(
+        &self,
+        before: &Accumulators,
+        after: &mut Accumulators,
+        perspective: Color,
+        changes: &[Change],
+        key: (usize, usize),
+    ) {
+        let mut added = [&ZERO_ROW; 2];
+        let mut removed = [&ZERO_ROW; 2];
+        let (mut adds, mut removes) = (0, 0);
+        for change in changes {
+            let row = self.row(bucketed(
+                key,
+                perspective,
+                change.color,
+                change.piece,
+                change.square,
+            ));
+            let (slots, used) = if change.added {
+                (&mut added, &mut adds)
+            } else {
+                (&mut removed, &mut removes)
+            };
+            if let Some(slot) = slots.get_mut(*used) {
+                *slot = row;
+                *used += 1;
             }
+        }
+        let [a0, a1] = added;
+        let [r0, r1] = removed;
+        let source = &before[perspective as usize].0;
+        let target = &mut after[perspective as usize].0;
+        for (i, value) in target.iter_mut().enumerate() {
+            *value = source[i]
+                .wrapping_add(a0[i])
+                .wrapping_add(a1[i])
+                .wrapping_sub(r0[i])
+                .wrapping_sub(r1[i]);
         }
     }
 
@@ -451,15 +711,20 @@ impl Network {
     /// [`crate::eval::evaluate`].
     ///
     /// Bornée à `MATE_THRESHOLD - 1` : une évaluation n'annonce jamais un mat.
+    /// Le seau de sortie se lit au nombre de pièces de `board`, le camp au
+    /// trait à son trait.
     #[must_use]
-    pub fn evaluate(&self, accumulators: &Accumulators, side_to_move: Color) -> i32 {
-        let (ours, theirs) = self.output_weights.split_at(HIDDEN);
+    pub fn evaluate(&self, accumulators: &Accumulators, board: &Board) -> i32 {
+        let side_to_move = board.side_to_move();
+        let bucket = self.output_buckets[board.occupied().len() as usize];
+        let weights = &self.output_weights[bucket];
+        let (ours, theirs) = weights.split_at(HIDDEN);
         let sum = dot(&accumulators[side_to_move as usize].0, ours)
             + dot(&accumulators[!side_to_move as usize].0, theirs);
         // Les étapes et les troncatures de l'inférence de bullet, en `i64` :
         // `× SCALE` sortirait d'un `i32` bien avant que le produit scalaire ne
         // le fasse.
-        let output = (sum / i64::from(QA) + i64::from(self.output_bias)) * i64::from(SCALE)
+        let output = (sum / i64::from(QA) + i64::from(self.output_bias[bucket])) * i64::from(SCALE)
             / i64::from(QA * QB);
         let bound = i64::from(MATE_THRESHOLD - 1);
         i32::try_from(output.clamp(-bound, bound)).unwrap_or(0)
@@ -520,6 +785,11 @@ pub(crate) mod testing {
     /// ses valeurs.
     pub(crate) fn file_of(values: &[i16]) -> Vec<u8> {
         assert_eq!(values.len(), VALUES);
+        file_of_any(values)
+    }
+
+    /// Les octets d'un fichier, quelle que soit l'architecture.
+    pub(crate) fn file_of_any(values: &[i16]) -> Vec<u8> {
         let mut bytes: Vec<u8> = values.iter().flat_map(|v| v.to_le_bytes()).collect();
         let pattern = b"bullet";
         let mut index = 0;
@@ -534,13 +804,28 @@ pub(crate) mod testing {
     /// hidden]`, sortie dans `[-output, output]`, biais de sortie dans
     /// `[-5000, 5000]`.
     pub(crate) fn random_values(seed: u64, hidden: i16, output: i16) -> Vec<i16> {
+        random_values_with(ARCH, seed, hidden, output)
+    }
+
+    /// Les valeurs d'un réseau aléatoire d'une architecture donnée, dans
+    /// l'ordre du fichier.
+    pub(crate) fn random_values_with(arch: Arch, seed: u64, hidden: i16, output: i16) -> Vec<i16> {
         let mut rng = Rng(seed | 1);
-        let mut values = Vec::with_capacity(VALUES);
-        values.extend((0..INPUTS * HIDDEN + HIDDEN).map(|_| rng.spread(hidden)));
-        values.extend((0..2 * HIDDEN).map(|_| rng.spread(output)));
-        values.push(rng.spread(5_000));
+        let mut values = Vec::with_capacity(arch.values());
+        values.extend(
+            (0..INPUTS * arch.input_buckets() * HIDDEN + HIDDEN).map(|_| rng.spread(hidden)),
+        );
+        values.extend((0..arch.output_buckets * 2 * HIDDEN).map(|_| rng.spread(output)));
+        values.extend((0..arch.output_buckets).map(|_| rng.spread(5_000)));
         values
     }
+
+    /// Une architecture à seaux, celle de l'exemple de bullet : dix seaux de
+    /// roi en miroir, huit seaux de sortie.
+    pub(crate) const BUCKETED: Arch = Arch {
+        king_buckets: Some(KING_BUCKETS_10),
+        output_buckets: 8,
+    };
 
     /// Un réseau aléatoire aux poids d'un réseau entraîné — bornés comme
     /// `AdamW` les borne, ±127 en sortie, donc toujours admis par le
@@ -786,10 +1071,13 @@ mod tests {
                 }
                 values[OUTPUT_BIAS_AT] = sign * i16::MAX;
             });
-            let accumulators = network.refresh(&board(FENS[0]));
             let expected = i32::from(sign) * (MATE_THRESHOLD - 1);
-            assert_eq!(network.evaluate(&accumulators, Color::White), expected);
-            assert_eq!(network.evaluate(&accumulators, Color::Black), expected);
+            let white = board(FENS[0]);
+            let black = board(&FENS[0].replacen(" w ", " b ", 1));
+            for position in [white, black] {
+                let accumulators = network.refresh(&position);
+                assert_eq!(network.evaluate(&accumulators, &position), expected);
+            }
         }
     }
 
@@ -798,7 +1086,7 @@ mod tests {
         // Seul le biais de sortie : QA × QB vaut « 1,0 », soit 400 centièmes.
         let biais = network_with(|values| values[OUTPUT_BIAS_AT] = 16_320);
         let start = board(FENS[0]);
-        assert_eq!(biais.evaluate(&biais.refresh(&start), Color::White), 400);
+        assert_eq!(biais.evaluate(&biais.refresh(&start), &start), 400);
 
         // Une unité, alimentée par le roi du camp qui la regarde : l'entrée
         // 324 est « mon roi en e1 » pour chaque camp de la position initiale.
@@ -812,12 +1100,12 @@ mod tests {
                 values[OUTPUT_AT] = weight;
             });
             let accumulators = network.refresh(&start);
-            assert_eq!(network.evaluate(&accumulators, Color::White), expected);
+            assert_eq!(network.evaluate(&accumulators, &start), expected);
             let black: Board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1"
                 .parse()
                 .unwrap();
             assert_eq!(
-                network.evaluate(&network.refresh(&black), Color::Black),
+                network.evaluate(&network.refresh(&black), &black),
                 expected,
                 "les Noirs voient leur roi en e1, eux aussi"
             );
@@ -828,13 +1116,13 @@ mod tests {
             values[324 * HIDDEN] = 300;
             values[OUTPUT_AT] = 64;
         });
-        assert_eq!(sature.evaluate(&sature.refresh(&start), Color::White), 400);
+        assert_eq!(sature.evaluate(&sature.refresh(&start), &start), 400);
         // Et sous zéro, elle s'annule.
         let negatif = network_with(|values| {
             values[324 * HIDDEN] = -300;
             values[OUTPUT_AT] = 64;
         });
-        assert_eq!(negatif.evaluate(&negatif.refresh(&start), Color::White), 0);
+        assert_eq!(negatif.evaluate(&negatif.refresh(&start), &start), 0);
     }
 
     #[test]
@@ -1017,6 +1305,176 @@ mod tests {
         assert!(checked >= 1_000, "coups vérifiés : {checked}");
     }
 
+    #[test]
+    fn le_seau_du_roi_suit_la_disposition_de_bullet() {
+        // Les cases lues à la main dans `KING_BUCKETS_10`, dans le repère de
+        // chaque camp ; la colonne retournée dès que le roi est sur e à h.
+        let cases = [
+            (Color::White, Square::A1, 0, 0),
+            (Color::White, Square::D1, 3, 0),
+            // e1 : le miroir de d1, retourné.
+            (Color::White, Square::E1, 3, 7),
+            // g1, après le petit roque : le miroir de b1.
+            (Color::White, Square::G1, 1, 7),
+            // c1, après le grand : pas de miroir.
+            (Color::White, Square::C1, 2, 0),
+            (Color::White, Square::B2, 4, 0),
+            (Color::White, Square::F2, 5, 7),
+            (Color::White, Square::H8, 9, 7),
+            // Les Noirs se voient blancs : e8 est leur e1, b7 leur b2, a1
+            // leur a8.
+            (Color::Black, Square::E8, 3, 7),
+            (Color::Black, Square::B7, 4, 0),
+            (Color::Black, Square::A1, 9, 0),
+            (Color::Black, Square::F4, 8, 7),
+        ];
+        for (perspective, king, bucket, flip) in cases {
+            assert_eq!(
+                BUCKETED.king_key(perspective, king),
+                (bucket * INPUTS, flip),
+                "{perspective:?}, roi en {king}"
+            );
+        }
+        // L'entrée retournée : mon roi en e1, vu de lui-même, est 324 sans
+        // seaux ; dans le seau 3, colonne retournée — e devient d —, 323.
+        assert_eq!(
+            BUCKETED.feature(
+                Color::White,
+                Square::E1,
+                Color::White,
+                Piece::King,
+                Square::E1
+            ),
+            3 * INPUTS + 323
+        );
+        // Sans seaux de roi, ni bloc ni retournement.
+        let plain = Arch {
+            king_buckets: None,
+            output_buckets: 1,
+        };
+        for king in Square::ALL {
+            assert_eq!(plain.king_key(Color::White, king), (0, 0));
+            assert_eq!(plain.king_key(Color::Black, king), (0, 0));
+        }
+        assert_eq!(BUCKETED.input_buckets(), 10);
+        assert_eq!(plain.input_buckets(), 1);
+    }
+
+    #[test]
+    fn le_seau_de_sortie_suit_le_nombre_de_pieces() {
+        // `MaterialCount` : (pièces − 2) / ⌈32 / seaux⌉.
+        let arch = |output_buckets| Arch {
+            king_buckets: None,
+            output_buckets,
+        };
+        for pieces in 2..=32 {
+            assert_eq!(arch(8).output_bucket(pieces), (pieces - 2) / 4);
+            assert_eq!(arch(1).output_bucket(pieces), 0);
+            // ⌈32 / 3⌉ = 11 : de 2 à 12 pièces le seau 0, de 13 à 23 le 1.
+            assert_eq!(arch(3).output_bucket(pieces), (pieces - 2) / 11);
+        }
+        assert_eq!(arch(8).output_bucket(32), 7);
+        assert_eq!(arch(3).output_bucket(13), 1);
+
+        // Et l'évaluation lit le seau de la position : seuls les biais de
+        // sortie diffèrent, 1 632 × (seau + 1), soit 40 centièmes par seau.
+        let biases_at = INPUTS * BUCKETED.input_buckets() * HIDDEN + HIDDEN + 8 * 2 * HIDDEN;
+        let mut values = vec![0; BUCKETED.values()];
+        for (bucket, value) in values[biases_at..].iter_mut().enumerate() {
+            *value = 1_632 * (i16::try_from(bucket).unwrap() + 1);
+        }
+        let network = Network::from_bytes_with(&file_of_any(&values), BUCKETED).unwrap();
+        for (fen, bucket) in [
+            ("8/8/4k3/8/8/4K3/8/8 w - - 0 1", 0),
+            ("8/8/4k3/8/8/4K3/8/8 b - - 0 1", 0),
+            ("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1", 1),
+            ("r1bqk2r/pp3ppp/2n5/8/8/8/PP3PPP/R2QK2R w KQkq - 0 1", 4),
+            (FENS[0], 7),
+        ] {
+            let position = board(fen);
+            assert_eq!(
+                network.evaluate(&network.refresh(&position), &position),
+                40 * (bucket + 1),
+                "{fen}"
+            );
+        }
+    }
+
+    #[test]
+    fn l_increment_egale_le_recalcul_avec_des_seaux() {
+        // Les seaux de roi de l'exemple de bullet : un coup de roi qui change
+        // de seau ou de côté recalcule son camp, les autres se mettent à
+        // jour. Chacun des deux chemins doit être pris, et compté des deux
+        // côtés : un compteur faux passerait une borne basse seule.
+        let values = random_values_with(BUCKETED, 23, 150, 127);
+        let network = Network::from_bytes_with(&file_of_any(&values), BUCKETED).unwrap();
+        let (mut checked, mut crossings, mut quiet_kings, mut castles) = (0, 0, 0, 0);
+        REFRESHES.with(|count| count.set(0));
+        for (index, position) in positions().into_iter().enumerate() {
+            if index % 3 != 0 {
+                continue;
+            }
+            let us = position.side_to_move();
+            let before = network.refresh(&position);
+            for mv in moves_of(&position) {
+                let mut after = before;
+                network.apply_move(&before, &mut after, &position, mv);
+                let mut child = position.clone();
+                child.play_unchecked(mv);
+                assert_eq!(after, network.refresh(&child), "{mv} sur {position}");
+                checked += 1;
+                if position.piece_on(mv.from) == Some(Piece::King) {
+                    castles += usize::from(position.colors(us).has(mv.to));
+                    if BUCKETED.king_key(us, position.king(us))
+                        == BUCKETED.king_key(us, child.king(us))
+                    {
+                        quiet_kings += 1;
+                    } else {
+                        crossings += 1;
+                    }
+                }
+            }
+        }
+        assert!(
+            crossings >= 20 && quiet_kings >= 20 && castles >= 2,
+            "franchissements {crossings}, coups de roi sans franchir {quiet_kings}, roques {castles}"
+        );
+        assert!(
+            crossings + quiet_kings <= checked && checked <= 218 * positions().len(),
+            "coups vérifiés {checked}"
+        );
+        // Un recalcul par franchissement, et pas un de plus : les autres coups
+        // se mettent à jour, ce qu'aucune comparaison de résultat ne verrait.
+        assert_eq!(REFRESHES.with(std::cell::Cell::get), crossings);
+    }
+
+    #[test]
+    fn sans_seaux_un_coup_ne_recalcule_jamais() {
+        // L'architecture de N4 : un seul bloc, pas de retournement — aucun
+        // coup de roi ne franchit rien.
+        let plain = Arch {
+            king_buckets: None,
+            output_buckets: 1,
+        };
+        let network = Network::from_bytes_with(
+            &file_of_any(&random_values_with(plain, 29, 150, 127)),
+            plain,
+        )
+        .unwrap();
+        REFRESHES.with(|count| count.set(0));
+        let mut checked = 0;
+        for position in positions().into_iter().step_by(5) {
+            let before = network.refresh(&position);
+            for mv in moves_of(&position) {
+                let mut after = before;
+                network.apply_move(&before, &mut after, &position, mv);
+                checked += 1;
+            }
+        }
+        assert!(checked >= 500, "coups {checked}");
+        assert_eq!(REFRESHES.with(std::cell::Cell::get), 0);
+    }
+
     /// Le calcul de référence : les octets du fichier relus sans passer par
     /// [`Network`], les entrées de [`bullet_features`], tout en `i64`, et les
     /// étapes de l'inférence de bullet. Rend la sortie AVANT la borne.
@@ -1051,7 +1509,7 @@ mod tests {
             for position in positions() {
                 let expected = reference(&bytes, &position);
                 inside += usize::from(expected.abs() < bound);
-                let got = network.evaluate(&network.refresh(&position), position.side_to_move());
+                let got = network.evaluate(&network.refresh(&position), &position);
                 assert_eq!(
                     i64::from(got),
                     expected.clamp(-bound, bound),
@@ -1122,8 +1580,8 @@ mod tests {
         for position in positions() {
             let mirrored = mirror(&position);
             assert_eq!(
-                network.evaluate(&network.refresh(&position), position.side_to_move()),
-                network.evaluate(&network.refresh(&mirrored), mirrored.side_to_move()),
+                network.evaluate(&network.refresh(&position), &position),
+                network.evaluate(&network.refresh(&mirrored), &mirrored),
                 "{position} contre {mirrored}"
             );
         }
@@ -1193,7 +1651,7 @@ mod tests {
         let mut gaps = Vec::new();
         for (fen, engine, trainer) in CONFRONTATION {
             let board: Board = fen.parse().unwrap();
-            let eval = network.evaluate(&network.refresh(&board), board.side_to_move());
+            let eval = network.evaluate(&network.refresh(&board), &board);
             assert_eq!(eval, engine, "{fen}");
             gaps.push((eval - trainer).abs());
         }

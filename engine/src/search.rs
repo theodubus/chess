@@ -2197,7 +2197,7 @@ fn network_eval(network: &Network, accumulators: &Accumulators, board: &Board) -
     if eval::is_insufficient_material(board) {
         return DRAW;
     }
-    network.evaluate(accumulators, board.side_to_move())
+    network.evaluate(accumulators, board)
 }
 
 /// Le nombre de fils retenu pour une demande : au moins un, au plus
@@ -6821,7 +6821,7 @@ mod nnue_tests {
         let depart = board(crate::bench::BENCH_FENS[0]);
         let morte = board("8/8/4k3/8/8/2BK4/8/8 w - - 0 1");
         // Le témoin : le réseau seul ne dirait pas zéro sur la position morte.
-        assert_ne!(reseau.evaluate(&reseau.refresh(&morte), Color::White), DRAW);
+        assert_ne!(reseau.evaluate(&reseau.refresh(&morte), &morte), DRAW);
 
         let faite_main = search();
         assert_eq!(
@@ -6833,7 +6833,7 @@ mod nnue_tests {
         s.set_network(Some(Arc::new(crate::nnue::testing::random_network(21))));
         assert_eq!(
             s.evaluate(&depart),
-            reseau.evaluate(&reseau.refresh(&depart), Color::White)
+            reseau.evaluate(&reseau.refresh(&depart), &depart)
         );
         assert_eq!(s.evaluate(&morte), DRAW, "une position morte vaut zéro");
         // Hors de la pile — inatteignable par la recherche —, le recalcul.
