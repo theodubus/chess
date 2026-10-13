@@ -7051,6 +7051,90 @@ avant de mesurer.**
   repense avant d'être réexpliqué ; une dérivation lourde — fondre la copie
   dans la mise à jour, du code portable, sans `unsafe`, viendrait d'abord.
 
+**N° 15 — RELEVÉ le 13 oct. à 12 h 20 : le réseau pèse 16,8 ± 2,0 % du temps
+d'un nœud, au centre de l'attendu ; et la largeur ne coûte que son calcul.**
+Rustine `n15-sonde-inference.patch` (les trois variantes et le pilote
+`tools/sonde-inference/rejeu.py`), corpus de 20 parties de N4 — 1 839
+positions —, profondeur 10, 24 910 364 nœuds par passe, **arbres identiques
+au nœud près sur les 80 passes**, ~23 s par passe, 1,09 M nœuds par seconde
+dans le conteneur ; vingt tours en cinq tranches de quatre, chacune sous dix
+minutes — une mesure longue ne survit pas au conteneur :
+
+| variante — ce qui est fait deux fois | surcoût, moyenne des tours (IC 95 %) | plus lente | test des signes | attendu, écrit avant |
+|---|---|---|---|---|
+| `sortie` — le produit de sortie | **+10,0 ± 2,1 %** | 19/20 | p = 0,00004 | ~60 % de la part |
+| `maj` — la dérivation des accumulateurs, copie comprise | **+7,6 ± 2,0 %** | 19/20 | p = 0,00004 | ~40 % |
+| `deux` | **+16,8 ± 2,0 %** | 20/20 | p = 0,000002 | **10 à 30 %, ~18 %** |
+| `sortie` + `maj` − `deux`, l'additivité | +0,8 ± 3,0 points | — | — | 0 à 2 points près |
+
+| n° 15 b — N3 sur le code d'aujourd'hui, `HIDDEN` 256 | nœuds par seconde contre `main` | plus lent | test des signes | attendu, écrit avant |
+|---|---|---|---|---|
+| `n3-768x256-40.bin`, binaire AVX2, le même corpus | **× 0,887** (médiane de 10 tours) | 10/10 | p = 0,0020 | × 1/(1 + 0,168) = **× 0,856** si le coût suit le calcul |
+
+- **La part est au centre de l'attendu, et ses deux moitiés aussi** : 60/40
+  attendus, 57/43 mesurés ; elles s'additionnent.
+- **La largeur ne coûte que son calcul, et un peu moins** : × 0,887 contre
+  × 0,856 prédits par le seul calcul — aucun mur de mémoire ; des vecteurs
+  plus longs s'emploient un peu mieux. Le 30 sept., N3 coûtait × 0,785 sur
+  le binaire de base : l'AVX2 en a rendu la moitié. Par l'étalon, 256
+  neurones coûtent aujourd'hui **~−19 Elo de vitesse**, contre ~−38 alors.
+- **Ce que la mesure dit du n° 16, par l'issue écrite avant** : la part
+  dépasse 15 % — un SIMD vaut seul de l'ordre de **+10 à +15 Elo**, borné
+  par **+29** — un réseau infiniment rapide rendrait × 1,20 de vitesse,
+  0,27 doublement. **Sa vraie valeur est ailleurs : il rend la largeur bon
+  marché**, ce que le n° 17 demande.
+
+**N° 16 — le SIMD, expliqué à Théo le 13 oct. avant d'écrire une ligne** —
+sa demande : « *quand on viendra au simd il faudra mieux me reexpliquer et
+détailler* ». **En attente de sa décision.**
+- **ce que le réseau calcule** : à chaque coup joué dans l'arbre, il met à
+  jour deux listes de 128 nombres — les accumulateurs, une par camp — en
+  ajoutant et retirant les lignes de poids des pièces qui bougent (`maj`,
+  7,6 % du temps) ; à chaque position évaluée, il borne chacun des 256
+  nombres entre 0 et 255, l'élève au carré, le multiplie par son poids de
+  sortie et somme le tout (`sortie`, 10,0 %) ;
+- **ce qu'est le SIMD** : des instructions qui traitent seize nombres de
+  16 bits d'un coup — les registres de 256 bits de l'AVX2. Le compilateur en
+  produit déjà seul : c'est ce qu'a gagné le binaire AVX2 (× 1,235) ;
+- **ce qu'il ne fait pas tout seul** : notre produit de sortie calcule chaque
+  terme sur 32 bits, avec deux multiplications 32 bits — l'instruction la
+  plus lente des deux familles. L'astuce que bullet et les moteurs forts
+  emploient : multiplier sur 16 bits la valeur bornée par son poids
+  (`vpmullw`), puis multiplier-additionner par paires le résultat par la
+  valeur bornée (`vpmaddwd`) — moitié moins d'instructions, et plus rapides.
+  **Sa condition** : le produit tient sur 16 bits, donc `|poids| ≤ 127`
+  quand la valeur va jusqu'à 255. **Lu au source de bullet, au commit
+  épinglé `10e7e82`** : l'optimiseur AdamW borne les poids à ±1,98, soit
+  ±127 une fois quantifiés par 64 — **vérifié sur N2, N2L, N3, N4L et N4,
+  tous entre −127 et +127**. Le chargeur le refuserait sinon, comme il
+  refuse déjà un réseau qui pourrait déborder ;
+- **quatre chemins en Rust** :
+  - **A — écrire le code scalaire sous la forme que le vectoriseur
+    reconnaît** : l'astuce écrite en Rust ordinaire, la copie fondue dans la
+    mise à jour. **Ni `unsafe` ni dépendance**, aucune règle du dépôt ne
+    bouge ; le compilateur peut ne pas suivre partout ;
+  - **B — une crate de SIMD sûre** (`safe_arch`, `wide`) : les
+    instructions choisies une à une ; l'`unsafe` vit dans la dépendance, pas
+    dans notre code ; une dépendance de plus à auditer ;
+  - **C — les intrinsèques de `std::arch`**, dans un module seul : le
+    contrôle complet, et le choix de l'instruction à l'exécution ; **contre
+    la règle « pas d'`unsafe` »**, qui demanderait une exception écrite —
+    chaque bloc justifié, un test qui confronte le SIMD au scalaire bit à
+    bit ;
+  - **D — `std::simd`** : instable, il faudrait la chaîne nightly — écarté ;
+- **pourquoi c'est sûr, quel que soit le chemin** : tout est en entiers, donc
+  le résultat est EXACTEMENT celui d'aujourd'hui — même évaluation, même
+  arbre. La preuve est celle des optimisations pures (`CLAUDE.md`) : nœuds
+  identiques au rejeu, un test qui confronte la nouvelle voie à l'ancienne,
+  la CI qui exige le même arbre sur les quatre systèmes, et le temps par le
+  rejeu — **pas de match** : l'Elo suit de l'étalon, vérifié sur l'AVX2 ;
+- **la recommandation** : **A d'abord** — il respecte toutes les règles, et
+  s'il prend l'essentiel, on s'arrête là ; B ou C seulement si A reste loin,
+  chiffres à l'appui, et sur décision de Théo ;
+- **attendu de A** — <span>inférence, confiance faible</span> : la sortie de
+  10 % à ~4 %, la dérivation de 7,6 % à ~5 % — **−7 à −9 % de temps par
+  nœud, +11 à +15 Elo par l'étalon**.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -8208,7 +8292,7 @@ qu'en partie dans le dépôt n'existe pas.*
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | **n° 15 EN COURS** — protocole et attendu écrits avant de mesurer (section « N° 15 à 19 — la chaîne du réseau ») ; **le n° 16 se réexplique en détail à Théo avant d'écrire** : il touche à la règle « pas d'`unsafe` » |
+| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. **n° 16 expliqué à Théo le même jour, en attente de sa décision** : recommandé, le chemin A — le code scalaire écrit pour le vectoriseur, sans `unsafe` ni dépendance (section « N° 15 à 19 — la chaîne du réseau ») |
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 **Le 7 oct., C51** — les échecs tranquilles au premier pli de la quiescence — multiplie par treize ces avertissements côté candidat (157 contre 12) et régresse de −10,77 ± 3,40 : la cécité de la quiescence aux nulles pèse d'autant plus qu'elle joue de tranquilles. Un fait neuf pour C31 le jour où les échecs tranquilles se rouvrent, et alors les deux se mesurent ensemble |
 | **C43 — le gain d'un pion qui reprend en promouvant, dans `see`** — trouvé le 6 oct. par l'oracle `see_check` étendu aux coups tranquilles pour C40 | — correctif de règle | **FUSIONNÉ le 6 oct.** au titre de la règle — **+0,87 ± 4,63** à `8+0,08`, 6 000 parties contre `main` avec C41, aucune borne haute sous zéro, ni l'ensemble ni un match (section n° 9, « C43 et C44 — VERDICT »). <s>**à faire**</s> : `exchange` compte le pion qui reprend sur la dernière rangée comme une dame pour la suite, pas le gain de sa promotion (+880) ; l'oracle le voit sur 33 tranquilles sur 77 020 et une capture sur 5 827. Le protocole des correctifs de règle (`CLAUDE.md`) : un test qui tombe sur l'ancien code, valeur lue sur l'oracle ; le mécanisme mesuré en régime réel — combien de décisions d'élagage et d'ordre en changent ; un match au critère « fusion sauf si la borne haute est sous zéro ». **Écrit et mesuré le 6 oct. vers 05 h 10, pas encore lancé** : quatre lignes dans la boucle d'échange ; le test `un_pion_qui_reprend_en_promouvant_compte_sa_promotion` tombe sur l'ancien code (0 contre −880, valeur de l'oracle) ; l'oracle passe de 21 écarts de capture à 20, la légalité seule. **Le mécanisme, au rejeu du journal du quatrième écran** : 3,5 appels de `see` sur un million changent de valeur à la profondeur 12 (359 sur 102 millions, dont 235 de signe), l'arbre +0,0001 % ; banc 90 646 à la profondeur 7 contre 90 656. <s>**Son match attend la fin des seize jobs du quatrième écran et leur composition** : la boucle d'échange sera commune à `see` et `see_quiet` si C40 entre, et un correctif se mesure sur la base qu'il corrige</s> **C40 n'est pas entré, C41 si** : la rustine s'applique telle quelle, et son match se mesure contre `main` avec C41 — protocole, attendu et puissance écrits avant (section n° 9, « après le quatrième écran »). **Lancé le 6 oct. à 13 h 57** : deux jobs, `d69d2ed` contre `b6d41d7`, relevés à 19 h 30 |
