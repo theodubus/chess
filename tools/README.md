@@ -7735,6 +7735,35 @@ de seau ; **N5r10 × 0,88 à × 0,93**, plus de franchissements. Ils ne
 décident rien : ils disent combien d'Elo de vitesse chaque réseau doit
 racheter par sa qualité — × 0,93 vaut ~−11 Elo par l'étalon.
 
+**Les nœuds par seconde, RELEVÉS le 14 oct. à 1 h 35** — le rejeu du
+n° 15, binaires AVX2, dix tours, pendant que les matchs jouent sur des
+runners — le conteneur, lui, ne faisait rien d'autre :
+
+| réseau | n/s contre N4 | plus lent | attendu, écrit avant | Elo de vitesse, par l'étalon |
+|---|---|---|---|---|
+| **N5s** | × 0,995 | 5 tours sur 10, p = 1 | × 0,98 à × 1,00 — **tenu** | ~−1 |
+| **N5l** | × 0,897 | 10 sur 10, p = 0,002 | × 0,90 à × 0,96 — juste sous | ~−17 |
+| **N5r4** | × 0,835 | 10 sur 10, p = 0,002 | × 0,90 à × 0,93 — **manqué** | ~−28 |
+| **N5r10** | × 0,823 | 10 sur 10, p = 0,002 | × 0,88 à × 0,93 — **manqué** | ~−30 |
+
+- **les seaux de roi coûtent ~7 % de plus que la largeur seule** — × 0,835
+  contre × 0,897 —, quand l'attendu leur en prêtait 0 à 3 : un roi qui
+  change de seau ou de côté fait recalculer TOUT l'accumulateur de son
+  camp, une trentaine de lignes de 256 au lieu de deux à quatre. Dix seaux
+  n'en coûtent qu'un peu plus que quatre : ce sont surtout les passages de
+  colonne d à e, que les deux dispositions partagent ;
+- **N5l, × 0,897, sous N3 (× 0,93 le 13 oct.)** : les seaux de sortie n'y
+  coûtent rien (N5s), l'écart tient à deux jours de conteneur et à un autre
+  arbre — <span>inférence, confiance faible</span> ;
+- **le levier connu, s'il en faut un** : un cache d'accumulateurs par seau
+  et par camp — chez Stockfish les « finny tables » — rend un recalcul
+  incrémental depuis la dernière fois que ce seau a servi. Il ne s'écrit
+  que si un réseau à seaux de roi l'emporte : son coût ne se paie qu'alors.
+  *Ce que cela change aux matchs* : rien — ils mesurent chaque réseau à sa
+  vitesse d'aujourd'hui ; un réseau à seaux qui gagne paie ~−11 Elo pour ses
+  seaux au-delà de sa largeur — log₂(0,931) × 107,7 —, et ce cache en
+  rendrait une partie.
+
 **Les matchs** : quatre jobs de 2 800 parties par candidat, `8+0,08`,
 graine « auto » chacun, le binaire AVX2 des deux côtés, contre `e626900` ;
 le critère est celui du plan — un gain démontré contre N4, borne basse
