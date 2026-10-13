@@ -83,7 +83,7 @@ use crate::eval::MATE_THRESHOLD;
 pub const INPUTS: usize = 768;
 
 /// Taille de la couche cachée, pour chacune des deux perspectives.
-pub const HIDDEN: usize = 256;
+pub const HIDDEN: usize = 128;
 
 /// Quantification de la couche cachée, poids et biais.
 pub const QA: i32 = 255;
@@ -231,8 +231,8 @@ pub const KING_BUCKETS_4: [u8; 32] = [
 /// L'architecture des réseaux de ce binaire, l'embarqué comme ceux
 /// qu'`EvalFile` charge : N4, sans seaux.
 pub const ARCH: Arch = Arch {
-    king_buckets: Some(KING_BUCKETS_10),
-    output_buckets: 8,
+    king_buckets: None,
+    output_buckets: 1,
 };
 
 // Un seau de sortie par tranche du nombre de pièces : de 1 à 32 seaux, le
