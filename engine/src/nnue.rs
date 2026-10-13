@@ -181,8 +181,13 @@ impl Arch {
         piece: Piece,
         square: Square,
     ) -> usize {
-        let (offset, flip) = self.king_key(perspective, king);
-        offset + (feature(perspective, color, piece, square) ^ flip)
+        bucketed(
+            self.king_key(perspective, king),
+            perspective,
+            color,
+            piece,
+            square,
+        )
     }
 
     /// Le seau de sortie d'une position qui porte `pieces` pièces, rois
@@ -315,6 +320,20 @@ pub type Accumulators = [Accumulator; 2];
 pub fn feature(perspective: Color, color: Color, piece: Piece, square: Square) -> usize {
     let side = if color == perspective { 0 } else { 384 };
     side + 64 * piece as usize + relative(perspective, square)
+}
+
+/// L'entrée `Chess768` d'une pièce, placée dans le bloc et sous le
+/// retournement `(offset, flip)` que choisit le roi du camp
+/// ([`Arch::king_key`]) : la seule écriture de cette règle, que l'indice
+/// d'[`Arch::feature`], le recalcul et la mise à jour empruntent tous.
+fn bucketed(
+    (offset, flip): (usize, usize),
+    perspective: Color,
+    color: Color,
+    piece: Piece,
+    square: Square,
+) -> usize {
+    offset + (feature(perspective, color, piece, square) ^ flip)
 }
 
 /// Une case dans le repère de `perspective` : retournée (`^ 56`) pour les
@@ -578,14 +597,12 @@ impl Network {
     /// L'accumulateur d'un camp, recalculé de zéro dans le bloc que choisit
     /// son roi.
     fn refresh_side(&self, board: &Board, perspective: Color) -> Accumulator {
-        let (offset, flip) = self.king_keys[perspective as usize][board.king(perspective) as usize];
+        let key = self.king_keys[perspective as usize][board.king(perspective) as usize];
         let mut accumulator = Accumulator(self.feature_bias);
         for color in Color::ALL {
             for piece in Piece::ALL {
                 for square in board.colored_pieces(color, piece) {
-                    accumulator.add(
-                        self.row(offset + (feature(perspective, color, piece, square) ^ flip)),
-                    );
+                    accumulator.add(self.row(bucketed(key, perspective, color, piece, square)));
                 }
             }
         }
@@ -640,7 +657,7 @@ impl Network {
     }
 
     /// L'accumulateur d'un camp après `changes`, dérivé de celui d'avant,
-    /// dans le bloc et sous le retournement de `(offset, flip)`.
+    /// dans le bloc et sous le retournement de `key` ([`Arch::king_key`]).
     ///
     /// Au plus deux pièces apparaissent et deux disparaissent — le roque ;
     /// les places libres lisent la ligne de zéros. Un seul passage écrit
@@ -653,15 +670,19 @@ impl Network {
         after: &mut Accumulators,
         perspective: Color,
         changes: &[Change],
-        (offset, flip): (usize, usize),
+        key: (usize, usize),
     ) {
         let mut added = [&ZERO_ROW; 2];
         let mut removed = [&ZERO_ROW; 2];
         let (mut adds, mut removes) = (0, 0);
         for change in changes {
-            let row = self.row(
-                offset + (feature(perspective, change.color, change.piece, change.square) ^ flip),
-            );
+            let row = self.row(bucketed(
+                key,
+                perspective,
+                change.color,
+                change.piece,
+                change.square,
+            ));
             let (slots, used) = if change.added {
                 (&mut added, &mut adds)
             } else {

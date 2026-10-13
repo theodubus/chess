@@ -7455,6 +7455,7 @@ n° 15, l'arbre identique au nœud près à chaque passe :
 | le premier jet (`75e07bc`) | 17 tours sur 20 | p = 0,0026 | **+3,47 ± 1,81 %** |
 | V1 — sans seaux de roi, `apply_move` ne cherche pas le roi | 9 sur 20 | p = 0,82 | +0,06 ± 2,25 % |
 | V2 — V1, et les poids de sortie en lignes de taille fixe | 10 sur 20 | p = 1,00 | +1,22 ± 1,99 % |
+| V3 — V2, la règle de l'indice écrite une fois | 9 sur 20 | p = 0,82 | +0,38 ± 1,57 % |
 
 - **le premier jet tombait sous son critère**, au-dessus de l'attendu
   (0 à +1 %) : chercher à chaque coup la case d'arrivée du roi et les deux
@@ -7467,6 +7468,20 @@ n° 15, l'arbre identique au nœud près à chaque passe :
 - **le bruit du conteneur** : d'une tranche de cinq tours à l'autre, la
   médiane d'un même binaire a varié de −4 % à +6 % — d'où les vingt tours
   et le test des signes, jamais une tranche seule.
+- **la règle de l'indice écrite une fois** (`bucketed`) — l'indice
+  d'`Arch::feature`, le recalcul et la mise à jour l'empruntent tous, au
+  lieu de trois copies : la leçon du 12 oct. Le code machine n'est pas
+  identique à l'octet, d'où un rejeu de plus, vingt tours contre `main` —
+  V3 au tableau : le critère tient. **C'est V3 qui entre.**
+
+*Le crible de `nnue.rs` sur ce code — prédiction, écrite avant de le
+lancer* : **2 survivants, tous deux équivalents** — celui du roque, déjà au
+plafond, et `>` en `>=` dans le maximum d'`Arch::input_buckets`, qui rend le
+même maximum. Tout le reste du code neuf tombe sous les tests : la
+disposition lue case par case, l'indice retourné, les tailles de fichier,
+les seaux de sortie, et le compte des recalculs pour ce qu'aucune
+comparaison de résultat ne verrait. Le plafond de `nnue.rs` passerait de 1
+à 2, avec sa raison ; le total de 162 à 163.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
