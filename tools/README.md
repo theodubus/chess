@@ -7382,6 +7382,69 @@ sonde de B8, la série de C13, le balayage de mutation. Aucun gain
 démontré : N4 reste, et le levier suivant est le volume (n° 18), ce que
 N3 disait déjà en septembre.
 
+**N° 17, étape 1 — son crible, RELEVÉ à 18 h 55** (local, `tools/mutants.sh
+--file engine/src/nnue.rs`, l'arbre de l'étape) : 93 mutants en 51 min,
+81 attrapés, 9 inviables, 2 expirés — les deux `row` qui allouent à chaque
+appel, comme au crible du chemin A —, **1 survivant : le même équivalent du
+roque**, exactement la prédiction. L'étape est fusionnée (PR #172) ; le
+balayage d'après fusion tourne, prédiction 162.
+
+**N° 17 — le code des seaux, écrit le 13 oct. au soir ; ce qu'il prouve et
+ce qu'il reste à mesurer, écrit avant de mesurer le temps.** L'architecture
+de N4 ne change pas : sans seaux, tout le nouveau code vaut l'identité.
+- **`Arch`** — les seaux de roi (une disposition de 32 cases, ou aucune) et
+  le nombre de seaux de sortie — devient une DONNÉE du réseau :
+  `Network::from_bytes_with` lit n'importe quelle architecture,
+  `from_bytes` celle du binaire (`ARCH`, N4). Les tests empruntent donc les
+  chemins des seaux quelle que soit l'architecture du binaire — c'est ce
+  qui permet au code d'entrer dans `main` avant qu'un réseau à seaux n'y
+  entre, sans y laisser une ligne que rien n'emprunte. Si aucun réseau à
+  seaux ne l'emporte, ce code part à l'attic : il n'aura servi qu'à
+  mesurer ;
+- **l'indice d'une entrée** : le bloc et le retournement que choisit le roi
+  du camp, précalculés au chargement pour les 64 cases et les deux camps ;
+  le seau de sortie, une table des 33 nombres de pièces — pas de division
+  par évaluation ;
+- **`apply_move`** : un coup de roi qui change de seau ou de côté recalcule
+  son camp depuis l'enfant ; tout le reste se met à jour comme avant.
+  `evaluate` prend la position, d'où il lit le trait et le nombre de
+  pièces ;
+- **le programme d'entraînement** lit l'architecture dans les constantes du
+  moteur : `Chess768` ou `ChessBucketsMirrored`, `MaterialCount` toujours —
+  à un seau, l'identité —, le factoriseur et le bornage à ±0,99 avec des
+  seaux de roi seulement, les poids de sortie transposés. Six positions de
+  confrontation de plus : grands roques, rois centraux et dans les coins,
+  de 2 à 32 pièces ;
+- **les dispositions de la séance** sont publiques dans le moteur,
+  `KING_BUCKETS_4` et `KING_BUCKETS_10`.
+
+*Prouvé avant la mesure* :
+- **le même arbre** : 24 910 364 nœuds au rejeu du n° 15, ceux de `main` ;
+- **l'incrément égale le recalcul avec les seaux** de l'exemple de bullet,
+  sur les positions de parties des tests : des franchissements, des coups
+  de roi qui ne franchissent rien, les deux roques — chacun compté, des
+  deux côtés — et **autant de recalculs que de franchissements, pas un de
+  plus** : un recalcul fait à la place d'une mise à jour rend le même
+  accumulateur, et seul ce compte le distingue. Sans seaux, zéro recalcul ;
+- **le seau du roi** lu à la main dans la disposition, case par case et
+  camp par camp ; **le seau de sortie** de 2 à 32 pièces, et l'évaluation
+  qui lit le bon ;
+- **contre le CODE de bullet** — `les_seaux_du_moteur_sont_ceux_de_bullet`,
+  dans `tools/nnue-train`, que la CI joue sans GPU : les entrées du moteur
+  contre `ChessBucketsMirrored::map_features`, son seau de sortie contre
+  `MaterialCount::bucket`, pour les deux dispositions de la séance, sur
+  plus de 2 000 positions de parties au hasard chacune. **Éprouvé par une
+  faute injectée** : le retournement de colonne supprimé, le test tombe sur
+  la position initiale.
+
+*À mesurer — attendu et critère écrits avant* : le temps, `main` contre le
+code des seaux, au rejeu, vingt tours. Le nouveau code ajoute à chaque coup
+deux lectures de table et une comparaison par camp. **Attendu** —
+<span>inférence, confiance moyenne</span> : **0 à +1 %**. **Critère** :
+l'entrée dans `main` demande l'arbre identique, les tests verts et un temps
+PAS plus long au test des signes ; plus long, le chemin sans seaux se
+spécialise d'abord.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
