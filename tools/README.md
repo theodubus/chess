@@ -7135,6 +7135,39 @@ détailler* ». **En attente de sa décision.**
   10 % à ~4 %, la dérivation de 7,6 % à ~5 % — **−7 à −9 % de temps par
   nœud, +11 à +15 Elo par l'étalon**.
 
+**N° 16 — le chemin A, DÉCIDÉ le 13 oct. (Théo, « *Ok pour A* ») : protocole
+écrit avant d'écrire le code.** Théo demande si « le compilateur ne suit pas
+partout » se vérifie : **oui, de deux façons indépendantes**, et les deux
+entrent dans la preuve.
+- **le code** — `dot` écrit `c² · w` comme `(c · w) · c`, le produit
+  `c · w` sur seize bits ; le chargeur refuse un poids de sortie au-delà de
+  `i16::MAX / QA` = 128 en valeur absolue, la condition de l'astuce. La
+  dérivation des accumulateurs fond la copie dans la mise à jour : un seul
+  passage, `après = avant + a₀ + a₁ − r₀ − r₁`, les lignes absentes lues
+  dans une ligne de zéros — **un seul chemin pour tous les coups**, sans
+  copie de règle dans une branche que rien n'atteindrait (la leçon du
+  12 oct.) ;
+- **le code machine, lu** : `objdump` du binaire AVX2. **Avant**, la boucle
+  du produit de sortie, dans `network_eval`, porte **32 `vpmulld`** — la
+  multiplication 32 bits — et aucune `vpmullw`. **Attendu après : zéro
+  `vpmulld`, des `vpmullw` et des `vpmaddwd`** dans la même fonction ;
+- **l'exactitude** : tout est en entiers, le résultat ne change pas d'un
+  bit. Les tests existants — l'incrément contre le recalcul sur chaque coup
+  légal de positions variées, la sortie contre le calcul de référence de
+  bullet, le réseau embarqué contre son entraîneur — passent tels quels ; un
+  test confronte le nouveau produit à sa définition, en `i64`, jusqu'aux
+  bornes ; un autre, le refus d'un poids de 129 et l'admission de 128 ;
+- **l'arbre** : identique au nœud près au rejeu du n° 15 — le pilote refuse
+  sinon —, et la CI exige le même arbre sur les quatre systèmes ;
+- **le temps** : `tools/sonde-inference/rejeu.py` de la rustine du n° 15,
+  `main` contre le chemin A, vingt tours, test des signes ;
+- **le crible de mutation de `nnue.rs`** avant la fusion, prédiction écrite
+  avec le code ;
+- **critère, écrit avant** : fusion si l'arbre est identique, les tests
+  verts et le temps plus court au test des signes — une optimisation pure ne
+  passe pas par un match (`CLAUDE.md`). **Attendu**, celui du n° 16 : −7 à
+  −9 % de temps par nœud au rejeu.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
