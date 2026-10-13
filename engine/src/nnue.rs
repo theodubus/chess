@@ -820,6 +820,16 @@ pub(crate) mod testing {
         values
     }
 
+    /// L'architecture de N4 — un seul bloc d'entrées, une seule sortie :
+    /// celle des réseaux écrits à la main dans les tests, QUEL QUE SOIT
+    /// l'architecture du binaire. Un test qui pose une valeur à un indice
+    /// calculé à la main ne vaut que pour une disposition du fichier ; la
+    /// nommer le laisse valable le jour où le binaire embarque des seaux.
+    pub(crate) const PLAIN: Arch = Arch {
+        king_buckets: None,
+        output_buckets: 1,
+    };
+
     /// Une architecture à seaux, celle de l'exemple de bullet : dix seaux de
     /// roi en miroir, huit seaux de sortie.
     pub(crate) const BUCKETED: Arch = Arch {
@@ -853,12 +863,18 @@ mod tests {
     /// Un réseau nul partout, sauf les valeurs posées par `edit` — pour les
     /// calculs à la main.
     fn network_with(edit: impl FnOnce(&mut Vec<i16>)) -> Network {
-        let mut values = vec![0; VALUES];
+        let mut values = vec![0; PLAIN.values()];
         edit(&mut values);
-        Network::from_bytes(&file_of(&values)).unwrap()
+        plain(&values).unwrap()
     }
 
-    /// Indices, dans les valeurs du fichier, des différentes parties.
+    /// Un réseau de l'architecture [`PLAIN`], depuis ses valeurs.
+    fn plain(values: &[i16]) -> Result<Network, String> {
+        Network::from_bytes_with(&file_of_any(values), PLAIN)
+    }
+
+    /// Indices, dans les valeurs d'un fichier [`PLAIN`], des différentes
+    /// parties.
     const BIAS_AT: usize = INPUTS * HIDDEN;
     const OUTPUT_AT: usize = BIAS_AT + HIDDEN;
     const OUTPUT_BIAS_AT: usize = OUTPUT_AT + 2 * HIDDEN;
@@ -930,9 +946,9 @@ mod tests {
             256 => 394_816,
             other => panic!("taille à calculer à la main pour {other} unités"),
         };
-        assert_eq!(FILE_BYTES, expected);
+        assert_eq!(PLAIN.file_bytes(), expected);
         let output = i16::try_from(127 * 128 / HIDDEN).unwrap();
-        assert!(Network::from_bytes(&file_of(&random_values(7, 300, output))).is_ok());
+        assert!(plain(&random_values_with(PLAIN, 7, 300, output)).is_ok());
     }
 
     #[test]
@@ -951,12 +967,12 @@ mod tests {
         // L'unité 5 : un biais de 767 et 32 poids de 1 000 atteignent tout
         // juste `i16::MAX` — admis. Un de plus au biais ne l'est plus.
         let limit = |bias: i16| {
-            let mut values = vec![0; VALUES];
+            let mut values = vec![0; PLAIN.values()];
             values[BIAS_AT + 5] = bias;
             for input in 0..32 {
                 values[input * 7 * HIDDEN + 5] = if input % 2 == 0 { 1_000 } else { -1_000 };
             }
-            Network::from_bytes(&file_of(&values))
+            plain(&values)
         };
         assert!(limit(767).is_ok(), "32 767 tient dans un i16");
         assert!(limit(-767).is_ok(), "le signe du biais ne compte pas");
@@ -965,12 +981,12 @@ mod tests {
 
         // Seuls les 32 plus grands comptent : un 33ᵉ poids ne rend pas
         // refusable un réseau qui ne peut jamais l'additionner aux 32 autres.
-        let mut values = vec![0; VALUES];
+        let mut values = vec![0; PLAIN.values()];
         for input in 0..33 {
             values[input * HIDDEN] = 1_000;
         }
         values[BIAS_AT] = 767;
-        assert!(Network::from_bytes(&file_of(&values)).is_ok());
+        assert!(plain(&values).is_ok());
     }
 
     #[test]
@@ -978,9 +994,9 @@ mod tests {
         // 255 × 128 = 32 640 tient dans un i16, 255 × 129 = 32 895 non — dans
         // les deux signes, et quelle que soit la place du poids.
         let avec = |index: usize, weight: i16| {
-            let mut values = vec![0; VALUES];
+            let mut values = vec![0; PLAIN.values()];
             values[OUTPUT_AT + index] = weight;
-            Network::from_bytes(&file_of(&values))
+            plain(&values)
         };
         for index in [0, HIDDEN, 2 * HIDDEN - 1] {
             assert!(avec(index, 128).is_ok(), "128 est admis, place {index}");
@@ -1502,8 +1518,8 @@ mod tests {
         // Deux réseaux : l'un aux poids d'un réseau entraîné, l'autre plus
         // petits, pour que la sortie ne soit pas toujours bornée.
         for (seed, hidden, output) in [(3, 300, 127), (5, 40, 20)] {
-            let bytes = file_of(&random_values(seed, hidden, output));
-            let network = Network::from_bytes(&bytes).unwrap();
+            let bytes = file_of_any(&random_values_with(PLAIN, seed, hidden, output));
+            let network = Network::from_bytes_with(&bytes, PLAIN).unwrap();
             let bound = i64::from(MATE_THRESHOLD - 1);
             let mut inside = 0;
             for position in positions() {
