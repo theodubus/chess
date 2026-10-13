@@ -38,17 +38,18 @@ d'un aveu sur la profondeur de recherche.
 > techniques que tous les manuels recommandent. Il gagne toutes ses parties
 > contre un adversaire jouant au hasard.
 >
-> **Force absolue, estimée le 7 oct. 2026 : ~3 000 ± 33** sur l'échelle
+> **Force absolue, estimée le 13 oct. 2026 : ~3 040 ± 36** sur l'échelle
 > `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
 > 300 parties à cette cadence contre Stockfish bridé à 2850, avec le moteur
-> qui joue, binaire AVX2. Le 2 oct., avant le n° 9, C41, C43 et l'AVX2, il
-> y valait **~2 950 ± 30** : l'écart, +50 ± 44, n'est séparé de zéro que de
-> justesse, quand notre jumeau en mesure ~+96 — cette échelle écrase les
-> écarts. N2 y valait **~2 940 ± 30** (30 sept.), le premier réseau
-> **~2 850 ± 25** (600 parties, 29 sept.), **l'évaluation faite main
-> ~2 630 ± 40**. Une estimation, pas un classement : l'adversaire se trompe
-> exprès, et le moteur jouait sur un runner à deux cœurs physiques, trois
-> parties à la fois. Protocole et réserves : `tools/README.md`, section C13.
+> qui joue, N4, binaire AVX2. Le 7 oct., avant la composition du n° 12 et
+> N4, il y valait **~3 000 ± 33** : l'écart, +35 ± 49, n'est pas séparé de
+> zéro, quand notre jumeau en mesure ~+52 — cette échelle écrase les
+> écarts. Le 2 oct., **~2 950 ± 30** ; N2 **~2 940 ± 30** (30 sept.), le
+> premier réseau **~2 850 ± 25** (600 parties, 29 sept.), **l'évaluation
+> faite main ~2 630 ± 40**. Une estimation, pas un classement :
+> l'adversaire se trompe exprès, et le moteur jouait sur un runner à deux
+> cœurs physiques, trois parties à la fois. Protocole et réserves :
+> `tools/README.md`, section C13.
 >
 > **Réserve, mesurée le 16 sept. 2026 :** les premiers verdicts du projet ont
 > tous été rendus à la cadence `1+0,01`, où le moteur atteint la profondeur

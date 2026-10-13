@@ -38,13 +38,16 @@
 //! **Déborder**, et c'est garanti AU CHARGEMENT, pas espéré. Un accumulateur
 //! est le biais plus au plus 32 lignes — autant que de pièces sur un
 //! échiquier légal —, et [`Network::from_bytes`] refuse un réseau dont une
-//! unité, avec ses 32 plus grands poids, sortirait d'un `i16`. Le produit
-//! scalaire reste dans un `i32` tant que la somme des poids de sortie en
-//! valeur absolue ne dépasse pas `i32::MAX / QA²` ; le reste se calcule en
-//! `i64`. Un réseau entraîné par bullet avec ses réglages par défaut passe
-//! les deux : `AdamW` y borne les poids à ±1,98, soit 505 et 127 une fois
-//! quantifiés — 16 665 au plus dans un accumulateur, 32 512 au total en
-//! sortie contre 33 025 admis.
+//! unité, avec ses 32 plus grands poids, sortirait d'un `i16`. Il refuse
+//! aussi un poids de sortie au-delà de `i16::MAX / QA` = 128 en valeur
+//! absolue : le produit d'une activation bornée par son poids tient alors
+//! sur seize bits, ce dont le produit scalaire a besoin pour se vectoriser
+//! (voir `dot`). Cette borne suffit au produit scalaire lui-même : 256 termes
+//! d'au plus `QA² × 128` tiennent dans un `i32`, ce qu'une assertion vérifie
+//! à la COMPILATION ; le reste se calcule en `i64`. Un réseau entraîné par
+//! bullet avec ses réglages par défaut passe les deux : `AdamW` y borne les
+//! poids à ±1,98, soit 505 et 127 une fois quantifiés — 16 665 au plus dans
+//! un accumulateur, 127 par poids de sortie.
 //!
 //! **Sortir de la plage des scores ordinaires** : la sortie est bornée à
 //! `MATE_THRESHOLD - 1`, sans quoi un réseau exotique annoncerait un mat.
@@ -95,10 +98,29 @@ const VALUES: usize = INPUTS * HIDDEN + HIDDEN + 2 * HIDDEN + 1;
 /// couche cachée a une autre taille de fichier, et il est refusé.
 pub const FILE_BYTES: usize = (2 * VALUES).div_ceil(64) * 64;
 
-/// La plus grande somme des poids de sortie, en valeur absolue, pour laquelle
-/// le produit scalaire tient dans un `i32` : chaque terme vaut au plus `QA²`
-/// fois son poids.
-const MAX_OUTPUT_WEIGHT_SUM: i64 = i32::MAX as i64 / (QA as i64 * QA as i64);
+/// Le plus grand poids de sortie admis, en valeur absolue : `QA` fois lui
+/// tient dans un `i16`, si bien que [`dot`] peut multiplier sur seize bits.
+const MAX_OUTPUT_WEIGHT: i32 = i16::MAX as i32 / QA;
+
+// Le produit scalaire tient dans un `i32` dès que chaque poids de sortie
+// respecte la borne : 2 × `HIDDEN` termes d'au plus `QA² × 128` — à 128 unités,
+// 2 130 739 200, sous `i32::MAX`. Vérifié à la compilation : une couche plus
+// large (n° 17) cesse de compiler ICI, et il faudra alors sommer autrement
+// plutôt que refuser au chargement les réseaux que bullet produit.
+const _: () = assert!(
+    2 * HIDDEN as i64 * MAX_OUTPUT_WEIGHT as i64 * (QA as i64 * QA as i64) <= i32::MAX as i64
+);
+
+/// `QA` en `i16`, la borne de l'activation dans [`dot`].
+const QA_I16: i16 = {
+    assert!(QA <= i16::MAX as i32);
+    QA as i16
+};
+
+/// Une ligne de poids nulle : ce que [`Network::apply_move`] ajoute ou retire
+/// à la place d'une pièce qu'un coup ne déplace pas, pour que tous les coups
+/// passent par le même calcul.
+static ZERO_ROW: [i16; HIDDEN] = [0; HIDDEN];
 
 /// Une moitié de la couche cachée : ce que voit un camp, avant activation.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -119,13 +141,6 @@ impl Accumulator {
     fn add(&mut self, row: &[i16; HIDDEN]) {
         for (value, &weight) in self.0.iter_mut().zip(row) {
             *value = value.wrapping_add(weight);
-        }
-    }
-
-    /// Retire une ligne de poids.
-    fn sub(&mut self, row: &[i16; HIDDEN]) {
-        for (value, &weight) in self.0.iter_mut().zip(row) {
-            *value = value.wrapping_sub(weight);
         }
     }
 }
@@ -236,19 +251,25 @@ pub fn changes(board: &Board, mv: Move, out: &mut [Change; 4]) -> usize {
     count
 }
 
-/// SCReLU : l'entrée bornée à `[0, QA]`, puis élevée au carré.
-fn screlu(value: i16) -> i32 {
-    let clipped = i32::from(value).clamp(0, QA);
-    clipped * clipped
-}
-
-/// Le produit scalaire d'une moitié activée et de ses poids de sortie.
+/// Le produit scalaire d'une moitié activée par SCReLU — l'entrée bornée à
+/// `[0, QA]` puis élevée au carré — et de ses poids de sortie.
+///
+/// `c² · w` s'écrit `(c · w) · c`, et ce n'est pas une coquetterie : `c · w`
+/// tient sur seize bits — `c ≤ QA`, `|w| ≤ MAX_OUTPUT_WEIGHT`, vérifié au
+/// chargement —, et cette forme laisse le compilateur employer la
+/// multiplication seize bits puis la multiplication-addition par paires
+/// (`vpmullw`, `vpmaddwd` en AVX2) là où `c² · w` lui faisait faire deux
+/// multiplications trente-deux bits par terme. Même valeur au bit près — des
+/// entiers, sans arrondi —, donc même arbre (n° 16, chemin A).
 fn dot(accumulator: &Accumulator, weights: &[i16]) -> i32 {
     accumulator
         .0
         .iter()
         .zip(weights)
-        .map(|(&value, &weight)| screlu(value) * i32::from(weight))
+        .map(|(&value, &weight)| {
+            let clipped = value.clamp(0, QA_I16);
+            i32::from(clipped.wrapping_mul(weight)) * i32::from(clipped)
+        })
         .sum()
 }
 
@@ -319,15 +340,14 @@ impl Network {
                 ));
             }
         }
-        let total: i64 = self
+        if let Some(&weight) = self
             .output_weights
             .iter()
-            .map(|&weight| i64::from(weight).abs())
-            .sum();
-        if total > MAX_OUTPUT_WEIGHT_SUM {
+            .find(|&&weight| i32::from(weight).abs() > MAX_OUTPUT_WEIGHT)
+        {
             return Err(format!(
-                "les poids de sortie totalisent {total} en valeur absolue, au-delà des \
-                 {MAX_OUTPUT_WEIGHT_SUM} qu'admet un produit scalaire sur 32 bits"
+                "un poids de sortie vaut {weight}, au-delà des ±{MAX_OUTPUT_WEIGHT} dont le \
+                 produit par une activation tient sur seize bits"
             ));
         }
         Ok(())
@@ -369,23 +389,44 @@ impl Network {
         board: &Board,
         mv: Move,
     ) {
-        *after = *before;
         let mut buffer = [BLANK; 4];
         let count = changes(board, mv, &mut buffer);
-        for change in &buffer[..count] {
-            for perspective in Color::ALL {
+        for perspective in Color::ALL {
+            // Au plus deux pièces apparaissent et deux disparaissent — le
+            // roque ; les places libres lisent la ligne de zéros. Un seul
+            // passage écrit l'enfant depuis le parent, la copie fondue dans
+            // la mise à jour, et tous les coups prennent le même chemin
+            // (n° 16, chemin A).
+            let mut added = [&ZERO_ROW; 2];
+            let mut removed = [&ZERO_ROW; 2];
+            let (mut adds, mut removes) = (0, 0);
+            for change in buffer.iter().take(count) {
                 let row = self.row(feature(
                     perspective,
                     change.color,
                     change.piece,
                     change.square,
                 ));
-                let accumulator = &mut after[perspective as usize];
-                if change.added {
-                    accumulator.add(row);
+                let (slots, used) = if change.added {
+                    (&mut added, &mut adds)
                 } else {
-                    accumulator.sub(row);
+                    (&mut removed, &mut removes)
+                };
+                if let Some(slot) = slots.get_mut(*used) {
+                    *slot = row;
+                    *used += 1;
                 }
+            }
+            let [a0, a1] = added;
+            let [r0, r1] = removed;
+            let source = &before[perspective as usize].0;
+            let target = &mut after[perspective as usize].0;
+            for (i, value) in target.iter_mut().enumerate() {
+                *value = source[i]
+                    .wrapping_add(a0[i])
+                    .wrapping_add(a1[i])
+                    .wrapping_sub(r0[i])
+                    .wrapping_sub(r1[i]);
             }
         }
     }
@@ -488,14 +529,10 @@ pub(crate) mod testing {
     }
 
     /// Un réseau aléatoire aux poids d'un réseau entraîné — bornés comme
-    /// `AdamW` les borne, donc toujours admis par le chargeur.
-    ///
-    /// La borne de sortie suit la largeur : ±127 sur 2 × 128 unités
-    /// totalisent au plus 32 512, sous les 33 025 que le chargeur admet ; sur
-    /// 2 × 256, le même ±127 le dépasserait, et le réseau serait refusé.
+    /// `AdamW` les borne, ±127 en sortie, donc toujours admis par le
+    /// chargeur.
     pub(crate) fn random_network(seed: u64) -> Network {
-        let output = i16::try_from(127 * 128 / HIDDEN).unwrap_or(127);
-        Network::from_bytes(&file_of(&random_values(seed, 300, output))).unwrap()
+        Network::from_bytes(&file_of(&random_values(seed, 300, 127))).unwrap()
     }
 
     /// Un réseau aléatoire aux évaluations de l'ordre de celles d'une vraie
@@ -526,15 +563,6 @@ mod tests {
     const BIAS_AT: usize = INPUTS * HIDDEN;
     const OUTPUT_AT: usize = BIAS_AT + HIDDEN;
     const OUTPUT_BIAS_AT: usize = OUTPUT_AT + 2 * HIDDEN;
-
-    /// La valeur absolue du poids de sortie `index` quand les 2 × `HIDDEN`
-    /// poids se partagent `total` au plus près : à 128 unités, 33 024 font
-    /// 129 partout ; à 256, 64 et 65. Les tests de la borne du produit
-    /// scalaire valent ainsi pour toute largeur.
-    fn share_of(total: usize, index: usize) -> i16 {
-        let (base, rest) = (total / (2 * HIDDEN), total % (2 * HIDDEN));
-        i16::try_from(base + usize::from(index < rest)).unwrap()
-    }
 
     fn board(fen: &str) -> Board {
         fen.parse().unwrap()
@@ -647,22 +675,63 @@ mod tests {
     }
 
     #[test]
-    fn un_produit_scalaire_qui_pourrait_deborder_est_refuse() {
-        // Les poids de sortie totalisant exactement 33 025 : le pire produit
-        // scalaire, 65 025 × 33 025 = 2 147 450 625, tient dans un i32. Un de
-        // plus, non.
-        let total = |extra: i16| {
+    fn un_poids_de_sortie_dont_le_produit_sortirait_de_seize_bits_est_refuse() {
+        // 255 × 128 = 32 640 tient dans un i16, 255 × 129 = 32 895 non — dans
+        // les deux signes, et quelle que soit la place du poids.
+        let avec = |index: usize, weight: i16| {
             let mut values = vec![0; VALUES];
-            for index in 0..2 * HIDDEN {
-                let weight = share_of(33_024, index);
-                values[OUTPUT_AT + index] = if index % 3 == 0 { -weight } else { weight };
-            }
-            // Le premier poids est négatif : l'éloigner de zéro ajoute `extra`.
-            values[OUTPUT_AT] -= extra;
+            values[OUTPUT_AT + index] = weight;
             Network::from_bytes(&file_of(&values))
         };
-        assert!(total(1).is_ok(), "33 025 est admis");
-        assert!(total(2).is_err(), "33 026 ne l'est pas");
+        for index in [0, HIDDEN, 2 * HIDDEN - 1] {
+            assert!(avec(index, 128).is_ok(), "128 est admis, place {index}");
+            assert!(avec(index, -128).is_ok(), "−128 est admis, place {index}");
+            assert!(avec(index, 129).is_err(), "129 ne l'est pas, place {index}");
+            assert!(
+                avec(index, -129).is_err(),
+                "−129 ne l'est pas, place {index}"
+            );
+        }
+    }
+
+    #[test]
+    fn le_produit_scalaire_suit_sa_definition() {
+        // La forme vectorisable `(c · w) · c` contre la définition `c² · w`,
+        // en i64 : des accumulateurs sur toute la plage d'un i16 — négatifs,
+        // dans [0, QA], au-delà —, des poids sur toute la plage admise, et les
+        // deux extrêmes où chaque terme vaut ±QA² × 128.
+        let definition = |accumulator: &Accumulator, weights: &[i16]| -> i64 {
+            accumulator
+                .0
+                .iter()
+                .zip(weights)
+                .map(|(&value, &weight)| {
+                    let clipped = i64::from(value).clamp(0, i64::from(QA));
+                    clipped * clipped * i64::from(weight)
+                })
+                .sum()
+        };
+        let mut rng = Rng(0x5eed_0016);
+        let bound = i16::try_from(MAX_OUTPUT_WEIGHT).unwrap();
+        let mut cases: Vec<(Accumulator, Vec<i16>)> = (0..2_000)
+            .map(|_| {
+                let mut accumulator = Accumulator::default();
+                for value in &mut accumulator.0 {
+                    *value = rng.spread(i16::MAX);
+                }
+                let weights = (0..HIDDEN).map(|_| rng.spread(bound)).collect();
+                (accumulator, weights)
+            })
+            .collect();
+        for sign in [1, -1] {
+            cases.push((Accumulator([i16::MAX; HIDDEN]), vec![sign * bound; HIDDEN]));
+        }
+        for (accumulator, weights) in &cases {
+            assert_eq!(
+                i64::from(dot(accumulator, weights)),
+                definition(accumulator, weights)
+            );
+        }
     }
 
     #[test]
@@ -676,7 +745,7 @@ mod tests {
                     values[BIAS_AT + unit] = 1_000;
                 }
                 for index in 0..2 * HIDDEN {
-                    values[OUTPUT_AT + index] = sign * share_of(33_024, index);
+                    values[OUTPUT_AT + index] = sign * i16::try_from(MAX_OUTPUT_WEIGHT).unwrap();
                 }
                 values[OUTPUT_BIAS_AT] = sign * i16::MAX;
             });
