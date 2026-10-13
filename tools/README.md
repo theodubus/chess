@@ -6961,6 +6961,180 @@ au temps, zéro coup illégal :
   réglage a le plus de chances de payer ; une série de C13 pour situer N4
   sur l'échelle de Stockfish.
 
+### N° 15 à 19 — la chaîne du réseau : DÉCIDÉE le 13 oct. 2026
+
+**La question de Théo, le 13 oct.** : reste-t-il de gros gains — les
+meilleurs moteurs sont loin devant —, ou seulement du grattage à +1 à +5 ?
+**La réponse, le même jour** : un gros gisement reste, le réseau, et il est de
+structure, pas de réglage ; la recherche, elle, se gratte désormais.
+
+**Le constat, avec ses sources** :
+- **l'écart** : ~3 000 ± 33 sur l'échelle de Stockfish 16 (série C13 du
+  7 oct.) ; Stockfish 16 vaut 3 632 ± 13 au CCRL 40/15, à quatre fils
+  (Wikipedia, février 2024 — source secondaire). Conditions différentes :
+  un ordre de grandeur, ~600, davantage si l'échelle écrase, ce qu'elle fait
+  (section C13) ;
+- **la recherche** : cinq écrans ; ProbCut, l'historique des captures, le
+  multi-cut, le razoring, l'élagage par l'historique fermés à l'écran, la
+  correction et la double extension sans effet en match. Il reste du +1 à
+  +10 par technique ;
+- **le réseau** : `(768 → 128) × 2 → 1`, sans seaux, 242 M positions. Chaque
+  marche a payé — +330, +116, +50, +16, +47 — et rien ne dit qu'elles
+  saturent. **N3, deux fois plus large, a perdu −29 par la vitesse seule**
+  (× 0,785 n/s) : l'inférence est le verrou de la largeur. Elle est
+  scalaire, laissée à la vectorisation du compilateur, et le produit de
+  sortie calcule chaque terme en `i32`. Les moteurs forts portent des seaux
+  de roi et des seaux de sortie selon le matériel (sources secondaires :
+  talkchess, GaiaChess), des couches de 1 024 et plus et des milliards de
+  positions (de mémoire, confiance moyenne). Gains publiés, auto-déclarés,
+  d'autres moteurs : seaux de sortie +14, seaux de roi +20 à +80 ;
+- **le réglage** : jamais fait ici, toutes les constantes posées à la main
+  et mesurées une à une. Gains publiés : +30 à +134, ce dernier en
+  auto-jeu, gonflé.
+
+**L'ordre, décidé** :
+1. **n° 15 — mesurer la part de l'inférence dans le temps d'un nœud** : elle
+   chiffre ce qu'un SIMD rapporterait, et si la largeur coûte en calcul ou
+   en mémoire ;
+2. **n° 16 — le SIMD** : à **réexpliquer en détail à Théo avant de
+   l'écrire** — il touche à la règle « pas d'`unsafe` » (`std::arch`, une
+   crate SIMD sûre, ou `portable_simd` en nightly) ;
+3. **n° 17 — les seaux de sortie et les seaux de roi, sur un réseau
+   élargi** ;
+4. **n° 18 — le volume de données** : ~8 à 10 vagues pour × 10, puis des
+   entraînements plus longs sur la carte de Théo ;
+5. **n° 19 — le réglage automatique (SPSA)**, le réseau stabilisé : les
+   marges appartiennent au réseau (B8).
+
+<span>Attendu d'ensemble — inférence, confiance faible : +100 à +300 pour les
+n° 15 à 18, +15 à +50 pour le n° 19.</span>
+
+**Ce qui tourne ne gêne pas** — vérifié le 13 oct. à 11 h 25 : le balayage
+de mutation après N4 et la série C13 de N4 tournent sur des runners, sur des
+commits figés ; le conteneur, où se mesure le temps, est libre.
+
+**N° 15 — la part de l'inférence : protocole et attendu, écrits le 13 oct.
+avant de mesurer.**
+- **la méthode du doublement** (`d6-sonde-ordonnancement.patch`, l'ordre des
+  coups pesé ainsi le 22 sept.) : refaire un calcul une seconde fois, à
+  résultat identique et par `std::hint::black_box` pour que le compilateur
+  ne l'efface pas — l'arbre ne bouge pas d'un nœud, et le surcoût de temps
+  EST la part de ce calcul. Trois variantes de `main` à `0c33842` (N4), par
+  la rustine `n15-sonde-inference.patch` : **`sortie`** — le produit de
+  sortie d'`evaluate`, deux fois ; **`maj`** — la dérivation des
+  accumulateurs d'`apply_move`, copie comprise, deux fois ; **`deux`** — les
+  deux. Le binaire AVX2, celui qui joue ;
+- **le régime qui joue** : un corpus de 20 parties de N4 contre lui-même à
+  `8+0,08` dans le conteneur, en notation UCI, livre du dépôt,
+  `-srand 20261013` ; chaque partie rejouée dans l'ordre, la table conservée
+  d'un coup à l'autre, `ucinewgame` entre deux parties seulement, `go depth`
+  fixe — choisie avant de mesurer pour ~30 s par passe. Le pilote refuse si
+  un arbre diffère de `main` ;
+- **vingt tours**, chacun passant les quatre binaires dans un ordre qui
+  tourne ; chaque variante se compare au `main` de son tour ; test des
+  signes ;
+- **N3 sur le code d'aujourd'hui** (n° 15 b) : `HIDDEN` à 256 et
+  `n3-768x256-40.bin`, ses nœuds par seconde contre ceux de `main` sur le
+  même corpus — les arbres diffèrent, d'où les n/s, comme le 30 sept. ;
+- **attendu** — <span>inférence, confiance faible</span> : **la part du
+  réseau, 10 à 30 %, ~18 %** — N3 à × 0,785, si le coût suit la largeur,
+  dirait 27 % sur le binaire de base, et l'AVX2 a d'abord accéléré le
+  réseau ; **la sortie plus lourde que la dérivation**, ~60/40 — elle
+  traverse 256 termes en `i32` à chaque évaluation ; **additivité** : `deux`
+  ≈ `sortie` + `maj` à 2 points près ; **N3** : sa lenteur suit le calcul,
+  × 1/(1 + part) — ses poids, 393 Kio, tiennent comme ceux de N4 (197 Kio)
+  dans le Mio de L2 par cœur de ce Xeon ;
+- **ce que dirait chaque issue, écrit avant** : une part de 15 % et plus —
+  le SIMD vaut seul +10 à +17 Elo par l'étalon (× 2 à × 4 sur la part) et,
+  surtout, rouvre la largeur ; moins de 8 % — le SIMD rapporte peu seul, et
+  si N3 reste lent, c'est la mémoire qui coûte, pas le calcul — le n° 16 se
+  repense avant d'être réexpliqué ; une dérivation lourde — fondre la copie
+  dans la mise à jour, du code portable, sans `unsafe`, viendrait d'abord.
+
+**N° 15 — RELEVÉ le 13 oct. à 12 h 20 : le réseau pèse 16,8 ± 2,0 % du temps
+d'un nœud, au centre de l'attendu ; et la largeur ne coûte que son calcul.**
+Rustine `n15-sonde-inference.patch` (les trois variantes et le pilote
+`tools/sonde-inference/rejeu.py`), corpus de 20 parties de N4 — 1 839
+positions —, profondeur 10, 24 910 364 nœuds par passe, **arbres identiques
+au nœud près sur les 80 passes**, ~23 s par passe, 1,09 M nœuds par seconde
+dans le conteneur ; vingt tours en cinq tranches de quatre, chacune sous dix
+minutes — une mesure longue ne survit pas au conteneur :
+
+| variante — ce qui est fait deux fois | surcoût, moyenne des tours (IC 95 %) | plus lente | test des signes | attendu, écrit avant |
+|---|---|---|---|---|
+| `sortie` — le produit de sortie | **+10,0 ± 2,1 %** | 19/20 | p = 0,00004 | ~60 % de la part |
+| `maj` — la dérivation des accumulateurs, copie comprise | **+7,6 ± 2,0 %** | 19/20 | p = 0,00004 | ~40 % |
+| `deux` | **+16,8 ± 2,0 %** | 20/20 | p = 0,000002 | **10 à 30 %, ~18 %** |
+| `sortie` + `maj` − `deux`, l'additivité | +0,8 ± 3,0 points | — | — | 0 à 2 points près |
+
+| n° 15 b — N3 sur le code d'aujourd'hui, `HIDDEN` 256 | nœuds par seconde contre `main` | plus lent | test des signes | attendu, écrit avant |
+|---|---|---|---|---|
+| `n3-768x256-40.bin`, binaire AVX2, le même corpus | **× 0,887** (médiane de 10 tours) | 10/10 | p = 0,0020 | × 1/(1 + 0,168) = **× 0,856** si le coût suit le calcul |
+
+- **La part est au centre de l'attendu, et ses deux moitiés aussi** : 60/40
+  attendus, 57/43 mesurés ; elles s'additionnent.
+- **La largeur ne coûte que son calcul, et un peu moins** : × 0,887 contre
+  × 0,856 prédits par le seul calcul — aucun mur de mémoire ; des vecteurs
+  plus longs s'emploient un peu mieux. Le 30 sept., N3 coûtait × 0,785 sur
+  le binaire de base : l'AVX2 en a rendu la moitié. Par l'étalon, 256
+  neurones coûtent aujourd'hui **~−19 Elo de vitesse**, contre ~−38 alors.
+- **Ce que la mesure dit du n° 16, par l'issue écrite avant** : la part
+  dépasse 15 % — un SIMD vaut seul de l'ordre de **+10 à +15 Elo**, borné
+  par **+29** — un réseau infiniment rapide rendrait × 1,20 de vitesse,
+  0,27 doublement. **Sa vraie valeur est ailleurs : il rend la largeur bon
+  marché**, ce que le n° 17 demande.
+
+**N° 16 — le SIMD, expliqué à Théo le 13 oct. avant d'écrire une ligne** —
+sa demande : « *quand on viendra au simd il faudra mieux me reexpliquer et
+détailler* ». **En attente de sa décision.**
+- **ce que le réseau calcule** : à chaque coup joué dans l'arbre, il met à
+  jour deux listes de 128 nombres — les accumulateurs, une par camp — en
+  ajoutant et retirant les lignes de poids des pièces qui bougent (`maj`,
+  7,6 % du temps) ; à chaque position évaluée, il borne chacun des 256
+  nombres entre 0 et 255, l'élève au carré, le multiplie par son poids de
+  sortie et somme le tout (`sortie`, 10,0 %) ;
+- **ce qu'est le SIMD** : des instructions qui traitent seize nombres de
+  16 bits d'un coup — les registres de 256 bits de l'AVX2. Le compilateur en
+  produit déjà seul : c'est ce qu'a gagné le binaire AVX2 (× 1,235) ;
+- **ce qu'il ne fait pas tout seul** : notre produit de sortie calcule chaque
+  terme sur 32 bits, avec deux multiplications 32 bits — l'instruction la
+  plus lente des deux familles. L'astuce que bullet et les moteurs forts
+  emploient : multiplier sur 16 bits la valeur bornée par son poids
+  (`vpmullw`), puis multiplier-additionner par paires le résultat par la
+  valeur bornée (`vpmaddwd`) — moitié moins d'instructions, et plus rapides.
+  **Sa condition** : le produit tient sur 16 bits, donc `|poids| ≤ 127`
+  quand la valeur va jusqu'à 255. **Lu au source de bullet, au commit
+  épinglé `10e7e82`** : l'optimiseur AdamW borne les poids à ±1,98, soit
+  ±127 une fois quantifiés par 64 — **vérifié sur N2, N2L, N3, N4L et N4,
+  tous entre −127 et +127**. Le chargeur le refuserait sinon, comme il
+  refuse déjà un réseau qui pourrait déborder ;
+- **quatre chemins en Rust** :
+  - **A — écrire le code scalaire sous la forme que le vectoriseur
+    reconnaît** : l'astuce écrite en Rust ordinaire, la copie fondue dans la
+    mise à jour. **Ni `unsafe` ni dépendance**, aucune règle du dépôt ne
+    bouge ; le compilateur peut ne pas suivre partout ;
+  - **B — une crate de SIMD sûre** (`safe_arch`, `wide`) : les
+    instructions choisies une à une ; l'`unsafe` vit dans la dépendance, pas
+    dans notre code ; une dépendance de plus à auditer ;
+  - **C — les intrinsèques de `std::arch`**, dans un module seul : le
+    contrôle complet, et le choix de l'instruction à l'exécution ; **contre
+    la règle « pas d'`unsafe` »**, qui demanderait une exception écrite —
+    chaque bloc justifié, un test qui confronte le SIMD au scalaire bit à
+    bit ;
+  - **D — `std::simd`** : instable, il faudrait la chaîne nightly — écarté ;
+- **pourquoi c'est sûr, quel que soit le chemin** : tout est en entiers, donc
+  le résultat est EXACTEMENT celui d'aujourd'hui — même évaluation, même
+  arbre. La preuve est celle des optimisations pures (`CLAUDE.md`) : nœuds
+  identiques au rejeu, un test qui confronte la nouvelle voie à l'ancienne,
+  la CI qui exige le même arbre sur les quatre systèmes, et le temps par le
+  rejeu — **pas de match** : l'Elo suit de l'étalon, vérifié sur l'AVX2 ;
+- **la recommandation** : **A d'abord** — il respecte toutes les règles, et
+  s'il prend l'essentiel, on s'arrête là ; B ou C seulement si A reste loin,
+  chiffres à l'appui, et sur décision de Théo ;
+- **attendu de A** — <span>inférence, confiance faible</span> : la sortie de
+  10 % à ~4 %, la dérivation de 7,6 % à ~5 % — **−7 à −9 % de temps par
+  nœud, +11 à +15 Elo par l'étalon**.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -8100,6 +8274,15 @@ le réseau (B8), puis n° 9 les techniques de recherche absentes ; la force
 absolue (C13) en parallèle.** Le banc au réseau et la vitesse de l'inférence
 restent proposés, non ordonnés ; la table à cadence longue aussi, proposée le
 même jour sur une question de Théo, son mécanisme mesuré.
+**Reposée le 13 oct. — reste-t-il de gros gains, ou seulement du grattage ? —
+et DÉCIDÉE — Théo** : « *Ok go dans cette ordre (n'oublie pas de consigner),
+assure toi que ce qui tourne ne gêne pas le démarrage de ces chantiers. Et
+quand on viendra au simd il faudra mieux me reexpliquer et détailler* » —
+**n° 15 la part de l'inférence dans un nœud, puis n° 16 le SIMD — réexpliqué
+en détail à Théo avant d'écrire une ligne —, n° 17 les seaux de sortie et de
+roi sur un réseau élargi, n° 18 le volume de données, n° 19 le réglage
+automatique (SPSA)**, section « N° 15 à 19 — la chaîne du réseau ». Le n° 14,
+décidé le 6 oct. comme le dernier de sa liste, reste après eux.
 
 **Ce tableau porte TOUT le backlog du moteur**, reportés et bloqués compris,
 chacun avec sa condition. Il ne portait jusqu'au 23 sept. au soir que les
@@ -8109,6 +8292,7 @@ qu'en partie dans le dépôt n'existe pas.*
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
+| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. **n° 16 expliqué à Théo le même jour, en attente de sa décision** : recommandé, le chemin A — le code scalaire écrit pour le vectoriseur, sans `unsafe` ni dépendance (section « N° 15 à 19 — la chaîne du réseau ») |
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 **Le 7 oct., C51** — les échecs tranquilles au premier pli de la quiescence — multiplie par treize ces avertissements côté candidat (157 contre 12) et régresse de −10,77 ± 3,40 : la cécité de la quiescence aux nulles pèse d'autant plus qu'elle joue de tranquilles. Un fait neuf pour C31 le jour où les échecs tranquilles se rouvrent, et alors les deux se mesurent ensemble |
 | **C43 — le gain d'un pion qui reprend en promouvant, dans `see`** — trouvé le 6 oct. par l'oracle `see_check` étendu aux coups tranquilles pour C40 | — correctif de règle | **FUSIONNÉ le 6 oct.** au titre de la règle — **+0,87 ± 4,63** à `8+0,08`, 6 000 parties contre `main` avec C41, aucune borne haute sous zéro, ni l'ensemble ni un match (section n° 9, « C43 et C44 — VERDICT »). <s>**à faire**</s> : `exchange` compte le pion qui reprend sur la dernière rangée comme une dame pour la suite, pas le gain de sa promotion (+880) ; l'oracle le voit sur 33 tranquilles sur 77 020 et une capture sur 5 827. Le protocole des correctifs de règle (`CLAUDE.md`) : un test qui tombe sur l'ancien code, valeur lue sur l'oracle ; le mécanisme mesuré en régime réel — combien de décisions d'élagage et d'ordre en changent ; un match au critère « fusion sauf si la borne haute est sous zéro ». **Écrit et mesuré le 6 oct. vers 05 h 10, pas encore lancé** : quatre lignes dans la boucle d'échange ; le test `un_pion_qui_reprend_en_promouvant_compte_sa_promotion` tombe sur l'ancien code (0 contre −880, valeur de l'oracle) ; l'oracle passe de 21 écarts de capture à 20, la légalité seule. **Le mécanisme, au rejeu du journal du quatrième écran** : 3,5 appels de `see` sur un million changent de valeur à la profondeur 12 (359 sur 102 millions, dont 235 de signe), l'arbre +0,0001 % ; banc 90 646 à la profondeur 7 contre 90 656. <s>**Son match attend la fin des seize jobs du quatrième écran et leur composition** : la boucle d'échange sera commune à `see` et `see_quiet` si C40 entre, et un correctif se mesure sur la base qu'il corrige</s> **C40 n'est pas entré, C41 si** : la rustine s'applique telle quelle, et son match se mesure contre `main` avec C41 — protocole, attendu et puissance écrits avant (section n° 9, « après le quatrième écran »). **Lancé le 6 oct. à 13 h 57** : deux jobs, `d69d2ed` contre `b6d41d7`, relevés à 19 h 30 |
@@ -8137,7 +8321,7 @@ qu'en partie dans le dépôt n'existe pas.*
 | **B7 phase 2 — régler l'évaluation** | — | **bloqué, sur deux conditions écrites** : C13, et « un corpus nettement plus grand ou une contrainte de structure » (`CLAUDE.md`) — le réglage Texel de sept. prédisait mieux et jouait 25 Elo plus mal. La phase 1, compléter, est faite |
 | **C13 — mesurer la force absolue** — **DÉCIDÉ, en parallèle** (Théo, 29 sept.), **FAIT le 29 sept.** : le réseau **~2 850 ± 25**, la faite main ~2 630 ± 40, sur l'échelle de Stockfish 16 à 60+0,6 — section « C13 — la force absolue » ; à re-mesurer après chaque changement de réseau — **N2 le 30 sept. : 2 942 ± 29**, +112 ± 42 sur N0 contre le même adversaire ; **N2L le 2 oct. : 2 952 ± 30**, +10 ± 42 sur N2 — avec B8, les seaux et 64 Mio ; **le 7 oct. : 3 003 ± 33**, +50 ± 44 sur N2L — le groupe du n° 9, C41, C43 et le binaire AVX2 | — | <s>**reporté**</s> : aucune liste de classement n'est joignable depuis le conteneur (vérifié le 14 sept.). Il ne bloque que l'arbitrage de grande allocation — NNUE, évaluation faite main, multithread. **Un premier point, de Théo, le 28 sept.** : le moteur d'avant le réseau, contre un Stockfish bridé à 2 600 sur sa machine, estimé vers 2 700 — <s>cadence et effectif non consignés</s> **100 parties à 10+0,1**, précisé le 29 sept. **Rouvert sans liste de classement** — le protocole, écrit avant de mesurer : section « C13 — la force absolue » ; proposé le 29 sept. : Stockfish s'installe sur les runners (`ui.yml` le fait déjà), donc une série contre Stockfish bridé à plusieurs niveaux se joue sur runner. Deux réserves, écrites avant : l'échelle d'`UCI_Elo` appartient à la cadence et aux adversaires sur lesquels Stockfish l'a étalonnée — à lire dans son source avant de s'y fier — **lu le 29 sept.** : ancrée à l'Elo CCRL, ajustée à 60+0,6 ; et un gain mesuré contre notre jumeau ne s'ajoute pas à ce point. <span>Inférence, confiance moyenne</span> : l'auto-jeu grossit les écarts qu'on retrouve contre d'autres adversaires |
 | **B4 — évaluation NNUE** | — | <s>**reporté.**</s> <s>**EN COURS depuis le 25 sept.**</s> **FAIT le 28 sept. 2026 — A21, la fin de cette ligne.** L'architecture ne le bloque pas — vérifié par sonde, 2,8 % du coût d'un nœud (`CLAUDE.md`) —<s>, rien d'autre n'est commencé : données, entraînement, inférence. Sa place relève de l'arbitrage de grande allocation.</s> <em>tranchée le 25 sept. (A21).</em> **Le matériel, lu au source le 25 sept.** (`jw1912/bullet` au commit `10e7e82`, l'entraîneur de référence de la communauté, en Rust) : **il n'entraîne que sur GPU** — fonctionnalités `cuda` (NVIDIA), `rocm` (AMD) ou `metal` (macOS) ; sans l'une d'elles, il compile contre un runtime factice qui refuse toute exécution (`crates/gpu/src/runtime/mock.rs`). Les runners de GitHub n'ont pas de GPU : l'**entraînement** demandera une carte, celle de Théo ou une louée. La **génération des données** — l'auto-jeu du moteur, étiqueté par sa recherche — est un travail CPU que les runners savent faire. **Et que leurs conditions permettent**, lues au source le même jour (`github/site-policy` au commit `b9578b5`, *GitHub Terms for Additional Products and Features*, section Actions) : sur runners hébergés, est exclue « *any other activity unrelated to the production, testing, deployment, or publication of the software project associated with the repository* » — produire le réseau du dépôt relève de sa production. Lecture, pas un avis juridique ; la même section exclut une charge « *disproportionate to the benefits provided to users* », ce qui reste un jugement de volume. Question posée par Théo le 25 sept. : sa carte suffit-elle pour commencer ? <s>Ouverte tant que le modèle n'est pas connu</s> **Répondue le même jour** : une NVIDIA RTX 3050 ou 3060 pour portable, 4 Go. Architecture Ampere, que CUDA prend en charge : bullet s'y compile. **4 Go suffisent aux premiers réseaux, par le calcul** — 768 → 1 024 × 2 → 1 et des lots de 16 384 positions demandent quelques centaines de Mo ; le débit d'une carte de portable, lui, reste à mesurer le moment venu. <span><strong>Confiance moyenne</strong>, de mémoire — la page de NVIDIA n'est pas joignable d'ici : le 3060 pour portable porte 6 Go, donc 4 Go désignent plutôt un 3050 ; `nvidia-smi` le dira.</span> **Et son accord** pour lever la règle « pas de runs sur ma machine » : « *ok le moment venu si ça permet de débloquer la suite* » — pour l'entraînement de B4, rien d'autre n'est demandé. **DÉCIDÉ n° 6 le 25 sept. (A21)** : la génération des données d'abord, sur runners — section A21 ; **première vague relevée le 26 sept. : 125 M positions, 77,7 M gardées par le filtre** — la cible de 100 M est atteinte ; **l'inférence dans le moteur écrite le 26 sept. et FUSIONNÉE le 28** (PR #89), derrière `EvalFile` — un nœud avec réseau coûte 0,73 à 0,87 fois un nœud fait main ; **l'entraînement fait le 28 sept.** sur la carte de Théo, 11 min 53 s, le critère tenu — section A21, étape 3 ; **l'étape 4 FAITE le même soir : le réseau embarqué est l'évaluation par défaut, +330,61 ± 19,21 Elo à `8+0,08` contre la faite main** (section « Étape 4 — VERDICT »). Restent ouverts : les marges de la recherche, réglées sur l'échelle de la faite main ; un réseau plus large ou plus de données — la carte de Théo peut être resollicitée ; et un banc qui évalue par le réseau |
-| **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **N2 ADOPTÉ le 30 sept.**, **N2L le 2 oct. — levier 4, +16,40 ± 6,20 contre N2** (L0 +10,02 ± 6,19) ; reste le facteur des marges de N2L (2,60 mesuré, 2,24 en place) ; sa série de C13 relevée : 2 952 ± 30 — N1 contre N0 **+115,74 ± 6,98**, N2 contre N1 **+50,09 ± 6,12**, N3 contre N2 **−28,79 ± 5,99**, écarté : trop lent ; <s>restent la série de C13 pour N2 et</s> **la série de C13 pour N2 relevée le 30 sept. : 2 942 ± 29** ; <s>reste le levier 4, les données de Leela — section « N° 7 » — **accordé par Théo le 30 sept., sa séance écrite le même jour** (« La séance du levier 4 ») : elle attend sa carte</s> **le levier 4 relevé le 2 oct.** (« Levier 4 — VERDICT ») ; <s>EN COURS</s> : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`). **n° 13** (Théo, 6 oct. au soir) : la suite du réseau, après le cinquième écran — **la vague au moteur du 7 oct. relevée le 12 : 271,2 M positions** ; <s>la séance écrite, N4 et N4L, elle attend la carte de Théo</s> **N4L EMBARQUÉ le 13 oct. — +14,08 ± 3,74 contre N2L** ; N4 **+46,98 ± 4,16** contre N2 — l'étiqueteur paie toujours ; <s>**N4 contre N4L se mesure**, la chaîne plaçant N4 devant</s> **N4 EMBARQUÉ le 13 oct., +5,43 ± 4,23 contre N4L** — sur nos meilleures données, l'étage de Leela ne paie plus ; reste le facteur des marges de N4 (2,77 mesuré, au bord de la plage ; 2,24 en place) et sa série de C13 (section « N° 13 — le réseau », « N° 13 — VERDICT »). **Deux leviers d'architecture absents du plan, notés le 6 oct.** : des entrées par seau de roi — les pièces lues selon la case du roi — et des seaux de sortie selon le matériel restant ; connus, jamais mesurés ici, ils demandent la carte de Théo et, pour le premier, plus de données. <span>Inférence, confiance faible</span> : ils coûtent peu à l'inférence — un rafraîchissement de l'accumulateur quand le roi change de seau, un choix de poids en sortie —, là où la largeur seule a perdu sur la vitesse (N3) |
+| **NNUE — un meilleur réseau** — proposé le 29 sept., **DÉCIDÉ n° 7** (Théo, 29 sept.), **N2 ADOPTÉ le 30 sept.**, **N2L le 2 oct. — levier 4, +16,40 ± 6,20 contre N2** (L0 +10,02 ± 6,19) ; reste le facteur des marges de N2L (2,60 mesuré, 2,24 en place) ; sa série de C13 relevée : 2 952 ± 30 — N1 contre N0 **+115,74 ± 6,98**, N2 contre N1 **+50,09 ± 6,12**, N3 contre N2 **−28,79 ± 5,99**, écarté : trop lent ; <s>restent la série de C13 pour N2 et</s> **la série de C13 pour N2 relevée le 30 sept. : 2 942 ± 29** ; <s>reste le levier 4, les données de Leela — section « N° 7 » — **accordé par Théo le 30 sept., sa séance écrite le même jour** (« La séance du levier 4 ») : elle attend sa carte</s> **le levier 4 relevé le 2 oct.** (« Levier 4 — VERDICT ») ; <s>EN COURS</s> : le générateur au réseau écrit (PR #98), <s>la vague au réseau en vol</s> **la vague relevée le 29 sept. — 249,5 M positions, dans l'attendu —, la séance des trois entraînements écrite : elle attend la carte de Théo**, la sonde d'adjudication relevée ; **les données de Leela admises**, levier 4 après les trois premiers — section « N° 7 — un meilleur réseau » | non chiffré — <span>inférence, confiance faible</span> : le plus gros levier restant | Trois leviers, qui se mesurent séparément : **des données étiquetées par le moteur AU RÉSEAU** — <s>le générateur évalue encore à la main (`Search::new` sans réseau dans `nnue_datagen.rs`, vérifié le 29 sept.)</s> **il étiquette au réseau depuis la PR #98** (`--eval`, défaut `<embedded>`) ; **plus de positions** que les 125 M de la première vague ; **une couche cachée plus large** que 128. La perte plafonnait dès le 20ᵉ superlot sur 40 : la capacité ou les données limitent, pas la durée. Génération sur runners, entraînement sur la carte de Théo — « *s'il faut ressolliciter mon GPU, c'est possible* » (28 sept.). Chaque réseau contre le précédent, critère écrit avant ; remplacer le réseau embarqué demande d'y recopier la confrontation (`CLAUDE.md`). **n° 13** (Théo, 6 oct. au soir) : la suite du réseau, après le cinquième écran — **la vague au moteur du 7 oct. relevée le 12 : 271,2 M positions** ; <s>la séance écrite, N4 et N4L, elle attend la carte de Théo</s> **N4L EMBARQUÉ le 13 oct. — +14,08 ± 3,74 contre N2L** ; N4 **+46,98 ± 4,16** contre N2 — l'étiqueteur paie toujours ; <s>**N4 contre N4L se mesure**, la chaîne plaçant N4 devant</s> **N4 EMBARQUÉ le 13 oct., +5,43 ± 4,23 contre N4L** — sur nos meilleures données, l'étage de Leela ne paie plus ; reste le facteur des marges de N4 (2,77 mesuré, au bord de la plage ; 2,24 en place) et sa série de C13 (section « N° 13 — le réseau », « N° 13 — VERDICT »). **Deux leviers d'architecture absents du plan, notés le 6 oct.** : des entrées par seau de roi — les pièces lues selon la case du roi — et des seaux de sortie selon le matériel restant ; connus, jamais mesurés ici, ils demandent la carte de Théo et, pour le premier, plus de données. <span>Inférence, confiance faible</span> : ils coûtent peu à l'inférence — un rafraîchissement de l'accumulateur quand le roi change de seau, un choix de poids en sortie —, là où la largeur seule a perdu sur la vitesse (N3). **Ordonnés le 13 oct. — n° 15 à 19** (Théo) : l'inférence d'abord, puis les seaux sur un réseau élargi, puis le volume, puis le réglage — section « N° 15 à 19 — la chaîne du réseau » |
 | **un banc qui emploie le réseau** — proposé le 29 sept. | — de l'outillage, sans Elo | Le banc et `tools/timing.sh` évaluent à la main, le moteur joue avec le réseau (« Ce qu'il faut surveiller »). **Préalable** à toute mesure de vitesse de l'inférence et à tout écran en nœuds sur l'arbre qu'on joue ; il déplace la référence du banc, ses tests et le crible d'`eval.rs`, donc il se conçoit, il ne se bricole pas |
 | **la vitesse de l'inférence** — proposé le 29 sept. | se convertit en plis par l'étalon, une fois mesurée | Le nœud au réseau coûte 0,873 fois le nœud fait main sur le binaire de base, **0,731 compilé pour AVX2** (26 sept.). Leviers : compiler pour le processeur de la machine qui joue, des mises à jour paresseuses de l'accumulateur. **Sans `unsafe`** — la lint l'interdit —, donc pas d'intrinsèques : la vectorisation passe par le compilateur. Exige le banc au réseau. **Remesuré le 6 oct. au soir, avec le réseau qui joue** : aucun binaire du dépôt n'est compilé pour un processeur ; compilé pour `x86-64-v3`, le même `main` cherche le même arbre **× 1,235 plus vite**, 20 paires sur 20 — ~0,4 pli, +25 à +44 Elo par l'étalon (section A21, « Remesuré le 6 oct. »). Ce levier-là n'attend pas le banc au réseau : il ne change pas l'arbre. **La décision qui revient à Théo : la machine qui joue.** Et la vitesse est la condition écrite d'une couche plus large (N3). **n° 10 — DÉCIDÉ par Théo le 6 oct. au soir** : « *on livrera deux binaires selon AVX2 ou non* » ; `match.yml` et `force.yml` bâtissent en `x86-64-v3` par défaut, le match qui chiffre l'AVX2 a son protocole écrit avant (section n° 10). **VERDICT le 7 oct. : +32,23 ± 4,84 Elo à `8+0,08`, gain démontré** — l'étalon du temps prédisait +32,8. **L'AVX-512** (`x86-64-v4`), mesuré le même soir : pas de gain — 6 paires sur 20, × 0,95 —, pas de troisième binaire ; à remesurer avec une couche cachée plus large |
 | **la table à cadence longue — sa taille et son schéma de remplacement** — proposé le 29 sept., sur une question de Théo ; **le proxy DÉCIDÉ le même jour (Théo) et MESURÉ : C28, −19,42 ± 5,78 Elo à `8+0,08` — la pression de 60+0,6 coûte** ; ses deux leviers, les seaux puis la taille, proposés — section C28 ; **ouverts le 30 sept.** (Théo : clore les sujets en cours) — **C29, les seaux : FUSIONNÉS le 30 sept.** — +30,13 ± 5,60 Elo sous pression, +1,85 ± 5,51 au défaut ; **C30, la taille par défaut : FAIT le 30 sept.** — +2,90 ± 5,72, aucun coût démontré, **le défaut est à 64 Mio**. La question de la table à cadence longue est close ; au-delà de 60+0,6 — 40/15 —, c'est à l'interface de régler `Hash` | non chiffré — le mécanisme dit que la question existe, pas combien elle vaut | **Le mécanisme, MESURÉ le 29 sept.** : une recherche range une position distincte tous les 7 à 12 nœuds — **0,08 à 0,14 par nœud**, stable de 0,2 à 21 M de nœuds, sur la position initiale, deux positions du banc et deux du livre (graine 20260929), table vidée avant chaque recherche ; positions distinctes = −C ln(1 − `hashfull`/1000), C = 1 048 576 entrées. **La table par défaut, 16 Mio, est à moitié pleine après 6 à 8 M de nœuds, pleine à 80 – 92 % vers 20 M.** Converti par les runners (2,3 à 2,9 M n/s) et le temps moyen par coup — <span>inférence, confiance moyenne</span> : **4 à 9 % de la capacité par recherche à `8+0,08`** (~0,22 s par coup), où B9 a doublé la table sans effet décelable — cohérent, elle n'y est pas sous pression ; **30 à 65 % à 60+0,6** (~1,7 s par coup, des parties de ~170 s à concurrence 3), davantage aux premiers coups, dont le budget monte à ~5 s ; **quatre à neuf fois la capacité à 40/15** (~22 s par coup). **Le schéma de remplacement aggrave la pression, lu au code** (`tt::store`) : une entrée par case, et une AUTRE position écrase toujours l'entrée en place — la profondeur ne protège que la même position dans la même recherche ; sous pression, une entrée cherchée à 18 plis cède à une de 1 pli. Les moteurs de tête rangent par seaux de plusieurs entrées et remplacent la moins utile — ce qui, ici, ne prouve rien. **L'interface ne règle pas `Hash`** (lu dans `ui/src`, le 29 sept.) : ses parties jouent à 16 Mio. **Proposé** — le coût de la pression d'abord, à peu de frais : à `8+0,08`, une table de 2 Mio contre 16 reproduit la pression de 60+0,6 à 16 Mio ; deux jobs. <span>Inférence, confiance moyenne</span> : ce proxy minore, les entrées perdues à 60+0,6 étant plus profondes. Nul, la question est close à 60+0,6 ; un coût, et les deux leviers se mesurent — la taille, une option sans code, et les seaux, du code et un SPRT |

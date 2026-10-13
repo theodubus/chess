@@ -1,0 +1,178 @@
+diff --git a/engine/src/nnue.rs b/engine/src/nnue.rs
+index b130423..442e7f3 100644
+--- a/engine/src/nnue.rs
++++ b/engine/src/nnue.rs
+@@ -72,6 +72,12 @@ pub const INPUTS: usize = 768;
+ /// Taille de la couche cachée, pour chacune des deux perspectives.
+ pub const HIDDEN: usize = 128;
+ 
++// Sonde du n° 15 : refaire un calcul à résultat identique pour en peser la
++// part dans le temps d'un nœud — la méthode du doublement. Fixées à la
++// compilation : sans les variables, le code est celui de `main`.
++const SONDE_SORTIE: bool = option_env!("SONDE_N15_SORTIE").is_some();
++const SONDE_MAJ: bool = option_env!("SONDE_N15_MAJ").is_some();
++
+ /// Quantification de la couche cachée, poids et biais.
+ pub const QA: i32 = 255;
+ 
+@@ -369,6 +375,14 @@ impl Network {
+         board: &Board,
+         mv: Move,
+     ) {
++        self.apply_once(before, after, board, mv);
++        if SONDE_MAJ {
++            std::hint::black_box(&mut *after);
++            self.apply_once(std::hint::black_box(before), after, board, mv);
++        }
++    }
++
++    fn apply_once(&self, before: &Accumulators, after: &mut Accumulators, board: &Board, mv: Move) {
+         *after = *before;
+         let mut buffer = [BLANK; 4];
+         let count = changes(board, mv, &mut buffer);
+@@ -400,6 +414,11 @@ impl Network {
+         let (ours, theirs) = self.output_weights.split_at(HIDDEN);
+         let sum = dot(&accumulators[side_to_move as usize], ours)
+             + dot(&accumulators[!side_to_move as usize], theirs);
++        if SONDE_SORTIE {
++            let again = dot(std::hint::black_box(&accumulators[side_to_move as usize]), ours)
++                + dot(std::hint::black_box(&accumulators[!side_to_move as usize]), theirs);
++            std::hint::black_box(again);
++        }
+         // Les étapes et les troncatures de l'inférence de bullet, en `i64` :
+         // `× SCALE` sortirait d'un `i32` bien avant que le produit scalaire ne
+         // le fasse.
+diff --git a/tools/sonde-inference/rejeu.py b/tools/sonde-inference/rejeu.py
+new file mode 100644
+index 0000000..213afb3
+--- /dev/null
++++ b/tools/sonde-inference/rejeu.py
+@@ -0,0 +1,128 @@
++"""Sonde du n° 15 : la part de l'inférence dans le temps d'un nœud.
++
++Rejoue un corpus de parties (PGN en notation UCI, `-pgnout notation=uci` de
++fastchess) dans le régime qui joue : le réseau embarqué (le défaut d'UCI),
++chaque partie dans l'ordre, la table conservée d'un coup à l'autre,
++`ucinewgame` entre deux parties seulement, `go depth` fixe.
++
++    python3 rejeu.py corpus.pgn PROFONDEUR TOURS base:bin variante:bin ...
++
++Chaque tour passe tous les binaires, dans un ordre qui tourne ; chaque
++variante se compare à la base de SON tour (paires), et le pilote refuse de
++conclure si un arbre diffère de celui de la base : la méthode du doublement
++ne vaut qu'à arbre identique. Test des signes, comme `tools/timing.sh`.
++Avec `--nps`, les arbres peuvent différer (N3 contre N4) : on compare alors
++les nœuds par seconde.
++"""
++import math
++import re
++import subprocess
++import sys
++import time
++
++
++def lire_corpus(chemin):
++    parties = []
++    texte = open(chemin, encoding="utf-8").read()
++    for bloc in re.split(r"\n(?=\[Event )", texte):
++        fen = re.search(r'\[FEN "([^"]+)"\]', bloc)
++        corps = re.sub(r"\{[^}]*\}", " ", bloc.split("\n\n", 1)[-1])
++        coups = [t for t in corps.split() if re.fullmatch(r"[a-h][1-8][a-h][1-8][qrbn]?", t)]
++        if coups:
++            parties.append((fen.group(1) if fen else None, coups))
++    return parties
++
++
++def passe(binaire, parties, profondeur):
++    p = subprocess.Popen([binaire], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
++                         text=True, bufsize=1)
++
++    def envoie(s):
++        p.stdin.write(s + "\n")
++        p.stdin.flush()
++
++    def attend(prefixe):
++        noeuds = None
++        while True:
++            ligne = p.stdout.readline()
++            if not ligne:
++                raise RuntimeError(f"{binaire} s'est tu")
++            if ligne.startswith("info") and " nodes " in ligne:
++                t = ligne.split()
++                noeuds = int(t[t.index("nodes") + 1])
++            if ligne.startswith(prefixe):
++                return noeuds
++
++    envoie("uci")
++    attend("uciok")
++    total_noeuds, total_temps = 0, 0.0
++    for fen, coups in parties:
++        envoie("ucinewgame")
++        envoie("isready")
++        attend("readyok")
++        base = f"position fen {fen}" if fen else "position startpos"
++        for i in range(len(coups)):
++            envoie(base + (" moves " + " ".join(coups[:i]) if i else ""))
++            t0 = time.perf_counter()
++            envoie(f"go depth {profondeur}")
++            n = attend("bestmove")
++            total_temps += time.perf_counter() - t0
++            total_noeuds += n or 0
++    envoie("quit")
++    p.wait()
++    return total_noeuds, total_temps
++
++
++def signes(gagnes, n):
++    k = max(gagnes, n - gagnes)
++    return min(1.0, 2 * sum(math.comb(n, j) for j in range(k, n + 1)) / 2 ** n)
++
++
++def main():
++    args = sys.argv[1:]
++    nps = "--nps" in args
++    args = [a for a in args if a != "--nps"]
++    corpus, profondeur, tours = args[0], int(args[1]), int(args[2])
++    binaires = [a.split(":", 1) for a in args[3:]]
++    parties = lire_corpus(corpus)
++    print(f"{len(parties)} parties, {sum(len(c) for _, c in parties)} positions, "
++          f"profondeur {profondeur}", flush=True)
++    noms = [n for n, _ in binaires]
++    temps = {n: [] for n in noms}
++    noeuds = {n: [] for n in noms}
++    for t in range(tours):
++        ordre = binaires[t % len(binaires):] + binaires[:t % len(binaires)]
++        for nom, chemin in ordre:
++            n, s = passe(chemin, parties, profondeur)
++            noeuds[nom].append(n)
++            temps[nom].append(s)
++        ligne = "  ".join(f"{n} {temps[n][-1]:.2f} s" for n in noms)
++        print(f"tour {t + 1:2d} : {ligne}", flush=True)
++        if not nps:
++            for n in noms[1:]:
++                if noeuds[n][-1] != noeuds[noms[0]][-1]:
++                    print(f"REFUS : l'arbre de {n} diffère ({noeuds[n][-1]} contre "
++                          f"{noeuds[noms[0]][-1]} nœuds)")
++                    sys.exit(1)
++    base = noms[0]
++    print(f"\nbase {base} : {noeuds[base][0]} nœuds par passe")
++    for n in noms[1:]:
++        if nps:
++            r = [(noeuds[n][i] / temps[n][i]) / (noeuds[base][i] / temps[base][i])
++                 for i in range(tours)]
++            plus = sum(x < 1 for x in r)
++            r.sort()
++            med = r[len(r) // 2] if len(r) % 2 else (r[len(r) // 2 - 1] + r[len(r) // 2]) / 2
++            print(f"{n:8s} : n/s × {med:.3f} (médiane des tours), plus lent sur "
++                  f"{plus}/{tours} tours, p = {signes(plus, tours):.4f}")
++        else:
++            r = [temps[n][i] / temps[base][i] - 1 for i in range(tours)]
++            plus = sum(x > 0 for x in r)
++            r.sort()
++            med = r[len(r) // 2] if len(r) % 2 else (r[len(r) // 2 - 1] + r[len(r) // 2]) / 2
++            print(f"{n:8s} : surcoût {100 * med:+.1f} % (médiane des tours, "
++                  f"de {100 * r[0]:+.1f} à {100 * r[-1]:+.1f}), plus lent sur "
++                  f"{plus}/{tours} tours, p = {signes(plus, tours):.4f}")
++
++
++main()
