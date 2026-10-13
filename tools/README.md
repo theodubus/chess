@@ -7237,6 +7237,38 @@ critères d'acceptation, et `CLAUDE.md` le dit : *vérifier par
 raison ; la sonde se rejoue sur `0c33842`, et la porter attendra le n° 17,
 où la part de l'inférence se remesure sur un réseau plus large.
 
+**N° 17, étape 1 — la largeur débloquée, et ce qu'elle coûte après le
+chemin A : protocole et attendu, écrits le 13 oct. à 18 h 05 avant le
+code.** Le n° 17 met des seaux sur un réseau ÉLARGI ; or le chemin A a
+borné la largeur à la compilation — `2 × HIDDEN × 128 × QA²` doit tenir
+dans un `i32`, donc 128 unités au plus. Et la seule mesure du coût de la
+largeur, N3 à × 0,887 (n° 15 b), date d'avant le chemin A.
+- **le produit scalaire par tranches** : `dot` somme en `i32` des tranches
+  de 256 termes — une tranche d'au plus `256 × 128 × QA²` = 2 130 739 200
+  tient, et c'est cela que l'assertion à la compilation vérifie désormais —,
+  puis les tranches et les deux camps en `i64`. **Aucune vérification à
+  l'exécution** : la borne par poids suffit à toute largeur, et rien ne
+  reste que les tests n'atteignent. À 128 unités, une tranche par camp :
+  les mêmes entiers, donc **le même arbre au nœud près**, et un temps qui
+  ne doit pas bouger ;
+- **les preuves** : le banc et le rejeu du n° 15 au nœud près ; le code
+  machine lu — `vpmullw` et `vpmaddwd` toujours là — ; le temps, `main`
+  contre l'étape, au rejeu, vingt tours, test des signes ;
+- **puis N3 sur ce code** — `HIDDEN` à 256 et `n3-768x256-40.bin`, ce que
+  la compilation refusait —, ses nœuds par seconde contre ceux de N4 sur
+  le même corpus, `--nps`, dix tours ;
+- **attendu** — <span>inférence, confiance faible</span> : l'étape seule,
+  **0 ± 1 %** de temps, le même arbre ; **N3 à × 0,90 à × 0,96, ~× 0,93**
+  — le chemin A a retiré 14,4 % du temps, presque tout pris au réseau, et
+  la largeur double ce qui en reste ; soit **~−11 Elo** de vitesse par
+  l'étalon pour 256 unités, contre ~−19 avant le chemin A ;
+- **critère, écrit avant** : l'étape entre dans `main` si l'arbre est
+  identique, les tests verts et le temps PAS plus long au test des signes
+  — elle ne promet aucun gain, elle lève un verrou ; le chiffre de N3 ne
+  décide rien seul : il dit combien d'Elo de qualité un réseau de 256
+  devra rendre pour payer sa vitesse, et donc quelle largeur la séance du
+  n° 17 entraîne.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
