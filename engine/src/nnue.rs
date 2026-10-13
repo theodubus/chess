@@ -411,12 +411,13 @@ impl Network {
     }
 }
 
-/// Le réseau que le binaire embarque : N2L, le levier 4 du n° 7 —
-/// `(768 → 128) × 2 → 1`, N2 ré-entraîné 40 superlots sur les données de
-/// Leela Chess Zero (`training_data.binpack`, parties T60 et T74), le
-/// 2 oct. 2026. Sa courbe de perte et la sortie complète de l'entraînement
-/// sont à côté de lui, dans `reseaux/`.
-const EMBEDDED: &[u8] = include_bytes!("../../reseaux/n2l-768x128-40.bin");
+/// Le réseau que le binaire embarque : N4L, le n° 13 —
+/// `(768 → 128) × 2 → 1`, N4 ré-entraîné 40 superlots sur les données de
+/// Leela Chess Zero (`training_data.binpack`, parties T60 et T74), la recette
+/// de N2L ; N4 avait appris sur la vague du 7 oct. 2026, étiquetée par le
+/// moteur qui joue N2L. Entraîné le 12 oct. 2026. Sa courbe de perte et la
+/// sortie complète de l'entraînement sont à côté de lui, dans `reseaux/`.
+const EMBEDDED: &[u8] = include_bytes!("../../reseaux/n4l-768x128-40.bin");
 
 /// Le réseau embarqué, lu une seule fois et partagé.
 ///
@@ -1028,7 +1029,7 @@ mod tests {
         // La confrontation de l'entraînement du réseau embarqué, rejouée à
         // chaque build : les douze positions, ce qu'en disait le moteur et ce
         // qu'en disait bullet (`trainer.eval(fen) × 400`) au bout de
-        // l'entraînement — relevés dans `reseaux/n2l-768x128-40.sortie.txt`.
+        // l'entraînement — relevés dans `reseaux/n4l-768x128-40.sortie.txt`.
         // Le seul test qui confronte l'inférence à l'entraîneur sur un VRAI
         // réseau ; ceux d'au-dessus tiennent des réseaux aléatoires.
         //
@@ -1040,48 +1041,48 @@ mod tests {
         const CONFRONTATION: [(&str, i32, i32); 12] = [
             (
                 "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                45,
-                47,
+                55,
+                43,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-                -356,
-                -361,
+                -129,
+                -140,
             ),
-            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 227, 225),
+            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 176, 172),
             (
                 "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-                357,
-                366,
+                655,
+                647,
             ),
             (
                 "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-                -18,
-                -12,
+                112,
+                119,
             ),
             (
                 "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
-                29,
-                31,
+                40,
+                24,
             ),
             (
                 "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
-                -56,
                 -57,
+                -67,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1",
-                404,
-                406,
+                193,
+                182,
             ),
             (
                 "r2q1rk1/pp2bppp/2n1bn2/3p4/3P4/2NBBN2/PP3PPP/R2Q1RK1 b - - 0 1",
-                27,
-                19,
+                33,
+                17,
             ),
-            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -1954, -1949),
-            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 85, 85),
-            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -2869, -2873),
+            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -1926, -1927),
+            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 120, 128),
+            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -3713, -3715),
         ];
         let network = embedded().unwrap();
         let mut gaps = Vec::new();
