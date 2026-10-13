@@ -31,7 +31,7 @@ main.rs 0
 perft.rs 1
 bench.rs 2
 see.rs 2
-nnue.rs 1
+nnue.rs 2
 search.rs 48
 eval.rs 102
 
@@ -477,7 +477,19 @@ eval.rs 102
 #       alors sans rien demander ; il reste à 8 d'ici là parce qu'un plafond
 #       est un chiffre MESURÉ, jamais extrapolé.
 #
-# nnue.rs — 1, MESURÉ le 26 sept. 2026 avant la fusion, par le crible du
+# nnue.rs — 2, MESURÉ le 13 oct. 2026 avant la fusion du code des seaux
+#   (n° 17), par le crible du commit `6eb99d5` (run 38445139652 : 161
+#   mutants, 141 attrapés, 14 inviables, 4 expirés). EXACTEMENT la
+#   prédiction écrite avant : le survivant du roque, ci-dessous, et un
+#   second ÉQUIVALENT — dans `Arch::input_buckets`, le maximum de la
+#   disposition se cherche par `layout[index] > highest`, et `>=` rend le
+#   même maximum : à égalité, il réécrit la même valeur. Une fonction
+#   `const` ne peut pas appeler `Ord::max`, et toute recherche de maximum
+#   par comparaison porte ce mutant ; le reste du code des seaux tombe sous
+#   les tests — la disposition lue case par case, l'indice retourné, les
+#   tailles de fichier, les seaux de sortie, et le compte des recalculs.
+#
+# nnue.rs (jusqu'au 13 oct.) — 1, MESURÉ le 26 sept. 2026 avant la fusion, par le crible du
 #   candidat (run 36210591242, `cc8e105` : 98 mutants, 88 attrapés, 7
 #   inviables, 2 expirés). EXACTEMENT la prédiction écrite avant : le fichier
 #   naît avec l'inférence NNUE (A21, étape 2), et son seul survivant est
