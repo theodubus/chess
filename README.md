@@ -116,10 +116,12 @@ d'un aveu sur la profondeur de recherche.
 > temps). Le suivant, N2, entraîné sur 249,5 millions de positions
 > étiquetées par le moteur au réseau, l'a dépassé en deux marches, chacune
 > mesurée contre la précédente sur 6 000 parties : **+115,7 ± 7,0**, puis
-> **+50,1 ± 6,1**. **Celui qui joue depuis le 2 oct.** est N2 ré-entraîné
-> sur des données de Leela Chess Zero (voir « Remerciements ») :
-> **+16,4 ± 6,2** contre N2. L'évaluation faite main reste disponible par
-> `setoption name EvalFile value <none>`.
+> **+50,1 ± 6,1**. N2L, N2 ré-entraîné sur des données de Leela Chess Zero
+> (voir « Remerciements »), valait **+16,4 ± 6,2** contre N2 le 2 oct.
+> **Celui qui joue depuis le 13 oct.**, N4L, suit la même recette sur
+> 242 millions de positions neuves, étiquetées par le moteur du 7 oct. :
+> **+14,1 ± 3,7** contre N2L, sur 12 000 parties. L'évaluation faite main
+> reste disponible par `setoption name EvalFile value <none>`.
 
 ## Structure
 
