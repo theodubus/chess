@@ -914,6 +914,7 @@ dernière relève est faite.
 | **C13 — la série de N4** | **38369561586** | `ce57170` (N4, le moteur de `main` après la PR du n° 13), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 15 h 30** — lancée à 10 h 29 le 13 oct. (heure de Paris), son attendu poussé avant (`c6afbbd`) ; finie à 15 h 06, Xeon 8370C, 1 585 632 n/s | **3 038 ± 36** — 207 − 59 − 34, 74,7 % : dans l'attendu, au-dessus du centre ; **+35 ± 49 sur la série du 7 oct.**, non séparé de zéro, comme l'attendu le disait possible. Un avertissement côté ShallowRed, « PV continues after fifty-move rule » — la signature de C31 ; zéro perte au temps. — *Attendu, écrit avant* : ~+20 sur la série du 7 oct., **0 à +42** ; ~3 023 au centre, **2 990 à 3 080** ; un écart sous ~+46 ne s'en sépare pas (section C13, « La série de N4 ») |
 | **Le balayage de mutation après N4** | **38370321139** | `main` à `0c33842` (N4) | `mutation.yml` | **RELEVÉ à 13 h 31** — lancé à 10 h 36 après la fusion de la PR #169 ; `search.rs` au bout en 2 h 55 | **162, exactement la prédiction** — tous les fichiers à leur plafond. — *Prédiction, écrite avant* : 162, rien ne bouge (section « N° 13, N4 contre N4L — VERDICT ») |
 | **N° 16, le chemin A — son crible** | **38395814727** | le commit `25f26ae`, entrée `commit` | `mutation.yml` | **RELEVÉ à 17 h 30** — lancé à 14 h 14, fini à 17 h 11 | **162, exactement la prédiction** — `nnue.rs` 1, le même survivant équivalent ; le chemin A fusionné (PR #171) — *Prédiction, écrite avant* : **162**, rien ne bouge ; fusion du chemin A à son vert (section « N° 15 à 19 ») |
+| **Le balayage de mutation après l'étape 1 du n° 17** | **38435805735** | `main` à `f925293` (PR #172) | `mutation.yml` | **EN VOL** — lancé à 19 h 05 ; `search.rs` en prend ~3 h, fin vers 22 h 10 | — *Prédiction, écrite avant* : **162**, rien ne bouge — le crible local de `nnue.rs` rendait déjà son seul survivant, l'équivalent du roque |
 | **N° 12 — la composition : C45, C47 et C49** | **37584104209, 37584107001, 37584109645, 37584112743** | `ff8d4bb` → `7d9faef`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 14 h 25** — lancés à 8 h 54 (heure de Paris), attendu et critère poussés avant (`6bb5948`) ; finis entre 14 h 13 et 14 h 16, 6,36 à 6,43 s par partie | **+30,30, +28,79, +33,11, +38,02 ; +32,55 ± 3,36 en commun** — homogènes (p = 0,244), zéro perte au temps ; **les deux clauses tenues, FUSIONNÉ** (`0e31ac2`, la révocation révoquée). Au-dessus de C49 seul de +7,2 ± 4,7 ; 80 % de la somme des gains seuls, sous-additif démontré. Runners : deux EPYC 7763, un 9V74, un 9V45, 2,12 à 3,23 M n/s, tous à la profondeur 15. — *Attendu, écrit avant* : ~+37, **+25 à +48**. **Critère, écrit avant** : fusion si la borne basse commune est au-dessus de zéro ET si le point n'est pas démontré sous C49 seul (+20,6) ; sinon, bissection (section n° 12, « la composition ») |
 | **C13 — la série du 7 oct., demandée par Théo** | **37579900252** | `main` à `7d9faef` (N2L, le groupe du n° 9, C41, C43), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 13 h 50** — lancée à 8 h 08 (heure de Paris), son attendu poussé avant (`3c6e2c3`) ; finie à 12 h 55, EPYC 7763, 2 183 146 n/s | **3 003 ± 33** — 198 − 74 − 28, 70,7 % : dans l'attendu, en haut de sa plage ; **+50 ± 44 sur N2L**, séparé de zéro de justesse — au point au-dessus de l'attendu, que son intervalle recoupe. Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : ~+15 sur N2L, **0 à +32** ; ~2 967 au centre, **2 935 à 3 015** ; un écart à N2L sous ~+42 ne s'en sépare pas (section C13, « La série du 7 oct. ») |
 | **N° 10 — l'AVX2 : `x86-64-v3` contre `x86-64`, le même commit** | **37514404585, 37514408893** | `ea8f3af` des deux côtés, la PR #155 ; `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 2 h 30 le 7 oct.** — lancés à 20 h 50 (heure de Paris), le protocole fusionné avant (`e584b16`) ; finis à 2 h 10 et 2 h 11, 3 000 parties chacun, aucune perte au temps | **+32,23 ± 4,84 Elo, gain démontré** — +31,00 et +33,46, homogènes (p = 0,619). *Attendu, écrit avant* : ~+33, **+15 à +45** — tenu au point, et l'étalon du temps prédisait +32,8. Le défaut des workflows reste `x86-64-v3` (section n° 10, « VERDICT ») |
@@ -7444,6 +7445,28 @@ deux lectures de table et une comparaison par camp. **Attendu** —
 l'entrée dans `main` demande l'arbre identique, les tests verts et un temps
 PAS plus long au test des signes ; plus long, le chemin sans seaux se
 spécialise d'abord.
+
+**N° 17, le code des seaux — le temps, RELEVÉ le 13 oct. à 20 h 05 : le
+premier jet coûtait 3,5 %, le chemin spécialisé ne coûte rien.** Rejeu du
+n° 15, l'arbre identique au nœud près à chaque passe :
+
+| binaire, contre `main` | plus lent | test des signes | temps, moyenne ± 1,96 e.t. |
+|---|---|---|---|
+| le premier jet (`75e07bc`) | 17 tours sur 20 | p = 0,0026 | **+3,47 ± 1,81 %** |
+| V1 — sans seaux de roi, `apply_move` ne cherche pas le roi | 9 sur 20 | p = 0,82 | +0,06 ± 2,25 % |
+| V2 — V1, et les poids de sortie en lignes de taille fixe | 10 sur 20 | p = 1,00 | +1,22 ± 1,99 % |
+
+- **le premier jet tombait sous son critère**, au-dessus de l'attendu
+  (0 à +1 %) : chercher à chaque coup la case d'arrivée du roi et les deux
+  clés de seau pesait 3,5 % du temps d'un nœud — l'ordre de la mise à jour
+  elle-même. Comme écrit avant, le chemin sans seaux s'est spécialisé ;
+- **V2 est retenue** : le même temps que V1 au test des signes, et le type
+  porte la longueur d'une ligne de sortie au lieu d'une arithmétique
+  d'indices. Le critère tient : arbre identique, tests verts, temps pas
+  plus long ;
+- **le bruit du conteneur** : d'une tranche de cinq tours à l'autre, la
+  médiane d'un même binaire a varié de −4 % à +6 % — d'où les vingt tours
+  et le test des signes, jamais une tranche seule.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 

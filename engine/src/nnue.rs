@@ -461,7 +461,7 @@ pub struct Network {
     feature_bias: [i16; HIDDEN],
     /// Pour chaque seau de sortie, les poids du camp au trait puis ceux de
     /// l'autre, quantifiés par `QB`.
-    output_weights: Box<[i16]>,
+    output_weights: Box<[[i16; 2 * HIDDEN]]>,
     /// Un biais de sortie par seau, quantifié par `QA × QB`.
     output_bias: Box<[i16]>,
 }
@@ -517,7 +517,7 @@ impl Network {
             feature_weights: Box::from(rows),
             feature_bias: <[i16; HIDDEN]>::try_from(bias)
                 .map_err(|_| "biais de la couche cachée mal découpés".to_owned())?,
-            output_weights: Box::from(output),
+            output_weights: Box::from(output.as_chunks::<{ 2 * HIDDEN }>().0),
             output_bias: Box::from(output_bias),
         };
         network.check_bounds()?;
@@ -550,6 +550,7 @@ impl Network {
         if let Some(&weight) = self
             .output_weights
             .iter()
+            .flatten()
             .find(|&&weight| i32::from(weight).abs() > MAX_OUTPUT_WEIGHT)
         {
             return Err(format!(
@@ -603,18 +604,27 @@ impl Network {
     ) {
         let mut buffer = [BLANK; 4];
         let count = changes(board, mv, &mut buffer);
+        let changes = &buffer[..count];
+        if self.arch.king_buckets.is_none() {
+            // Sans seaux de roi, un seul bloc et pas de retournement : le
+            // chemin d'avant le n° 17, sans rien chercher du roi — mesuré,
+            // le chercher coûtait 3,5 % du temps d'un nœud.
+            for perspective in Color::ALL {
+                self.update_side(before, after, perspective, changes, (0, 0));
+            }
+            return;
+        }
         // Seul le roi du camp qui joue peut changer de case — la pièce
         // ajoutée qui est un roi, au roque comme ailleurs.
         let us = board.side_to_move();
-        let king_to = buffer
+        let king_to = changes
             .iter()
-            .take(count)
             .find(|change| change.added && change.piece == Piece::King)
             .map_or(board.king(us), |change| change.square);
         for perspective in Color::ALL {
             let keys = &self.king_keys[perspective as usize];
-            let (offset, flip) = keys[board.king(perspective) as usize];
-            if perspective == us && keys[king_to as usize] != (offset, flip) {
+            let key = keys[board.king(perspective) as usize];
+            if perspective == us && keys[king_to as usize] != key {
                 // Le roi change de seau ou de côté : TOUTES les entrées de son
                 // camp changent de bloc. Recalculé depuis l'enfant — un coup
                 // de roi qui franchit une frontière, rare (n° 17).
@@ -625,40 +635,53 @@ impl Network {
                 REFRESHES.with(|count| count.set(count.get() + 1));
                 continue;
             }
-            // Au plus deux pièces apparaissent et deux disparaissent — le
-            // roque ; les places libres lisent la ligne de zéros. Un seul
-            // passage écrit l'enfant depuis le parent, la copie fondue dans
-            // la mise à jour, et tous les coups prennent le même chemin
-            // (n° 16, chemin A).
-            let mut added = [&ZERO_ROW; 2];
-            let mut removed = [&ZERO_ROW; 2];
-            let (mut adds, mut removes) = (0, 0);
-            for change in buffer.iter().take(count) {
-                let row = self.row(
-                    offset
-                        + (feature(perspective, change.color, change.piece, change.square) ^ flip),
-                );
-                let (slots, used) = if change.added {
-                    (&mut added, &mut adds)
-                } else {
-                    (&mut removed, &mut removes)
-                };
-                if let Some(slot) = slots.get_mut(*used) {
-                    *slot = row;
-                    *used += 1;
-                }
+            self.update_side(before, after, perspective, changes, key);
+        }
+    }
+
+    /// L'accumulateur d'un camp après `changes`, dérivé de celui d'avant,
+    /// dans le bloc et sous le retournement de `(offset, flip)`.
+    ///
+    /// Au plus deux pièces apparaissent et deux disparaissent — le roque ;
+    /// les places libres lisent la ligne de zéros. Un seul passage écrit
+    /// l'enfant depuis le parent, la copie fondue dans la mise à jour, et
+    /// tous les coups prennent le même chemin (n° 16, chemin A).
+    #[inline(always)]
+    fn update_side(
+        &self,
+        before: &Accumulators,
+        after: &mut Accumulators,
+        perspective: Color,
+        changes: &[Change],
+        (offset, flip): (usize, usize),
+    ) {
+        let mut added = [&ZERO_ROW; 2];
+        let mut removed = [&ZERO_ROW; 2];
+        let (mut adds, mut removes) = (0, 0);
+        for change in changes {
+            let row = self.row(
+                offset + (feature(perspective, change.color, change.piece, change.square) ^ flip),
+            );
+            let (slots, used) = if change.added {
+                (&mut added, &mut adds)
+            } else {
+                (&mut removed, &mut removes)
+            };
+            if let Some(slot) = slots.get_mut(*used) {
+                *slot = row;
+                *used += 1;
             }
-            let [a0, a1] = added;
-            let [r0, r1] = removed;
-            let source = &before[perspective as usize].0;
-            let target = &mut after[perspective as usize].0;
-            for (i, value) in target.iter_mut().enumerate() {
-                *value = source[i]
-                    .wrapping_add(a0[i])
-                    .wrapping_add(a1[i])
-                    .wrapping_sub(r0[i])
-                    .wrapping_sub(r1[i]);
-            }
+        }
+        let [a0, a1] = added;
+        let [r0, r1] = removed;
+        let source = &before[perspective as usize].0;
+        let target = &mut after[perspective as usize].0;
+        for (i, value) in target.iter_mut().enumerate() {
+            *value = source[i]
+                .wrapping_add(a0[i])
+                .wrapping_add(a1[i])
+                .wrapping_sub(r0[i])
+                .wrapping_sub(r1[i]);
         }
     }
 
@@ -673,7 +696,7 @@ impl Network {
     pub fn evaluate(&self, accumulators: &Accumulators, board: &Board) -> i32 {
         let side_to_move = board.side_to_move();
         let bucket = self.output_buckets[board.occupied().len() as usize];
-        let weights = &self.output_weights[bucket * 2 * HIDDEN..(bucket + 1) * 2 * HIDDEN];
+        let weights = &self.output_weights[bucket];
         let (ours, theirs) = weights.split_at(HIDDEN);
         let sum = dot(&accumulators[side_to_move as usize].0, ours)
             + dot(&accumulators[!side_to_move as usize].0, theirs);
