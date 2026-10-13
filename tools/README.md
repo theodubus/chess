@@ -913,7 +913,7 @@ dernière relève est faite.
 | **N° 13 — N4 contre N4L**, la question de la chaîne | **38338147723, 38338152332, 38338157031, 38338161432** | `5a425a8` (N4) → `06b0ed2` (N4L), le même code au bit près, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 10 h 20** — lancés à 4 h 42 le 13 oct. (heure de Paris), le critère poussé avant (`42b3933`) ; finis ENTIERS entre 9 h 43 et 9 h 45, 6,4 s par partie | **+6,95, +2,61, +5,83 et +6,33 ; +5,43 ± 4,23 en commun sur 11 200 parties, homogènes (p = 0,890)** ; zéro perte au temps. **GAIN DÉMONTRÉ, borne basse +1,2 — N4 EMBARQUÉ** (`ce57170`, section « N° 13, N4 contre N4L — VERDICT »). — *Critère, écrit avant* : **N4 remplace N4L si la borne basse de l'intervalle mis en commun est au-dessus de zéro** ; *attendu* −10 à +35, ~+12 — dedans, sous le centre |
 | **C13 — la série de N4** | **38369561586** | `ce57170` (N4, le moteur de `main` après la PR du n° 13), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 15 h 30** — lancée à 10 h 29 le 13 oct. (heure de Paris), son attendu poussé avant (`c6afbbd`) ; finie à 15 h 06, Xeon 8370C, 1 585 632 n/s | **3 038 ± 36** — 207 − 59 − 34, 74,7 % : dans l'attendu, au-dessus du centre ; **+35 ± 49 sur la série du 7 oct.**, non séparé de zéro, comme l'attendu le disait possible. Un avertissement côté ShallowRed, « PV continues after fifty-move rule » — la signature de C31 ; zéro perte au temps. — *Attendu, écrit avant* : ~+20 sur la série du 7 oct., **0 à +42** ; ~3 023 au centre, **2 990 à 3 080** ; un écart sous ~+46 ne s'en sépare pas (section C13, « La série de N4 ») |
 | **Le balayage de mutation après N4** | **38370321139** | `main` à `0c33842` (N4) | `mutation.yml` | **RELEVÉ à 13 h 31** — lancé à 10 h 36 après la fusion de la PR #169 ; `search.rs` au bout en 2 h 55 | **162, exactement la prédiction** — tous les fichiers à leur plafond. — *Prédiction, écrite avant* : 162, rien ne bouge (section « N° 13, N4 contre N4L — VERDICT ») |
-| **N° 16, le chemin A — son crible** | **38395814727** | le commit `25f26ae`, entrée `commit` | `mutation.yml` | **EN VOL** — lancé à 14 h 14 ; `search.rs` en prend ~3 h, fin vers 17 h 15 | — *Prédiction, écrite avant* : **162**, rien ne bouge ; fusion du chemin A à son vert (section « N° 15 à 19 ») |
+| **N° 16, le chemin A — son crible** | **38395814727** | le commit `25f26ae`, entrée `commit` | `mutation.yml` | **RELEVÉ à 17 h 30** — lancé à 14 h 14, fini à 17 h 11 | **162, exactement la prédiction** — `nnue.rs` 1, le même survivant équivalent ; le chemin A fusionné (PR #171) — *Prédiction, écrite avant* : **162**, rien ne bouge ; fusion du chemin A à son vert (section « N° 15 à 19 ») |
 | **N° 12 — la composition : C45, C47 et C49** | **37584104209, 37584107001, 37584109645, 37584112743** | `ff8d4bb` → `7d9faef`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 14 h 25** — lancés à 8 h 54 (heure de Paris), attendu et critère poussés avant (`6bb5948`) ; finis entre 14 h 13 et 14 h 16, 6,36 à 6,43 s par partie | **+30,30, +28,79, +33,11, +38,02 ; +32,55 ± 3,36 en commun** — homogènes (p = 0,244), zéro perte au temps ; **les deux clauses tenues, FUSIONNÉ** (`0e31ac2`, la révocation révoquée). Au-dessus de C49 seul de +7,2 ± 4,7 ; 80 % de la somme des gains seuls, sous-additif démontré. Runners : deux EPYC 7763, un 9V74, un 9V45, 2,12 à 3,23 M n/s, tous à la profondeur 15. — *Attendu, écrit avant* : ~+37, **+25 à +48**. **Critère, écrit avant** : fusion si la borne basse commune est au-dessus de zéro ET si le point n'est pas démontré sous C49 seul (+20,6) ; sinon, bissection (section n° 12, « la composition ») |
 | **C13 — la série du 7 oct., demandée par Théo** | **37579900252** | `main` à `7d9faef` (N2L, le groupe du n° 9, C41, C43), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 13 h 50** — lancée à 8 h 08 (heure de Paris), son attendu poussé avant (`3c6e2c3`) ; finie à 12 h 55, EPYC 7763, 2 183 146 n/s | **3 003 ± 33** — 198 − 74 − 28, 70,7 % : dans l'attendu, en haut de sa plage ; **+50 ± 44 sur N2L**, séparé de zéro de justesse — au point au-dessus de l'attendu, que son intervalle recoupe. Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : ~+15 sur N2L, **0 à +32** ; ~2 967 au centre, **2 935 à 3 015** ; un écart à N2L sous ~+42 ne s'en sépare pas (section C13, « La série du 7 oct. ») |
 | **N° 10 — l'AVX2 : `x86-64-v3` contre `x86-64`, le même commit** | **37514404585, 37514408893** | `ea8f3af` des deux côtés, la PR #155 ; `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 2 h 30 le 7 oct.** — lancés à 20 h 50 (heure de Paris), le protocole fusionné avant (`e584b16`) ; finis à 2 h 10 et 2 h 11, 3 000 parties chacun, aucune perte au temps | **+32,23 ± 4,84 Elo, gain démontré** — +31,00 et +33,46, homogènes (p = 0,619). *Attendu, écrit avant* : ~+33, **+15 à +45** — tenu au point, et l'étalon du temps prédisait +32,8. Le défaut des workflows reste `x86-64-v3` (section n° 10, « VERDICT ») |
@@ -7213,6 +7213,29 @@ l'attendu.** Commit `25f26ae` :
   de la borne sous ±128 / ±129 ;
 - **par le critère, écrit avant** : arbre identique, tests verts, temps plus
   court au test des signes — **fusion au crible vert**, sans match.
+
+**Le crible du chemin A, RELEVÉ à 17 h 30 — vert, exactement la
+prédiction** : run 38395814727, fini à 17 h 11, `search.rs` au bout ;
+**162**, tous les fichiers à leur plafond. `nnue.rs` : 1 survivant, **le
+même** — `>` en `>=` dans le côté du roque de `changes`, l'équivalent écrit
+au plafond depuis le 26 sept. —, 80 attrapés, 9 inviables, 3 expirés. Les
+mutants du produit sur seize bits, de la dérivation fondue et de la borne
+par poids tombent tous. **Pas de balayage après la fusion** : `main` est
+l'ancêtre de `25f26ae`, et rien sous `engine/` ni `.github/` ne change
+entre ce commit et la tête fusionnée (`git diff`, vide) — le crible EST ce
+balayage, sur le même arbre et les mêmes tests ; l'hebdomadaire du 20 oct.
+le rejouera.
+
+**La CI de la PR était rouge depuis son ouverture**, et je ne l'ai lue
+qu'au moment de fusionner : le critère `rustines_attic.rs` attrapait
+`n15-sonde-inference.patch`, que le chemin A empêche de s'appliquer — il
+récrit `dot` et `apply_move`, précisément ce que la sonde double. Le
+dispositif a tenu : rien n'a fusionné. La faute est de méthode —
+`tools/verify.sh --rapide`, lancé avant chaque poussée, ne joue pas les
+critères d'acceptation, et `CLAUDE.md` le dit : *vérifier par
+`tools/verify.sh`*. La colonne de l'attic dit désormais **non**, avec la
+raison ; la sonde se rejoue sur `0c33842`, et la porter attendra le n° 17,
+où la part de l'inférence se remesure sur un réseau plus large.
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
