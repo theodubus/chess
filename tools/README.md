@@ -912,6 +912,8 @@ dernière relève est faite.
 | **N° 13 — N4 contre N2**, l'étiqueteur | **38306273760, 38306278679, 38306281708, 38306285057** | `5a425a8` → `827b9c1` (N2 sur le même code), `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 4 h 40 le 13 oct.** — lancés à 22 h 45 le 12 oct. ; la sonde de B8 relevée avant (2,77, dans la plage de justesse) ; trois finis ENTIERS entre 4 h 30 et 4 h 34, 6,9 s par partie, le quatrième — le 9V45, le plus rapide — **coupé au plafond de 350 min à 2 980 parties**, son résumé écrit quand même ; <s>fin attendue vers 0 h 50</s> | **+42,77, +53,46, +45,78 et +45,89 ; +46,98 ± 4,16 en commun sur 11 980 parties, homogènes (p = 0,282)** ; zéro perte au temps. *Ne décidait rien* — mais avec N4L contre N2L, la chaîne place N4 devant N4L : **N4 contre N4L se mesure** (section n° 13, « N° 13 — VERDICT »). — *Attendu* 0 à +60, ~+25 — dedans, au-dessus du centre |
 | **N° 13 — N4 contre N4L**, la question de la chaîne | **38338147723, 38338152332, 38338157031, 38338161432** | `5a425a8` (N4) → `06b0ed2` (N4L), le même code au bit près, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 10 h 20** — lancés à 4 h 42 le 13 oct. (heure de Paris), le critère poussé avant (`42b3933`) ; finis ENTIERS entre 9 h 43 et 9 h 45, 6,4 s par partie | **+6,95, +2,61, +5,83 et +6,33 ; +5,43 ± 4,23 en commun sur 11 200 parties, homogènes (p = 0,890)** ; zéro perte au temps. **GAIN DÉMONTRÉ, borne basse +1,2 — N4 EMBARQUÉ** (`ce57170`, section « N° 13, N4 contre N4L — VERDICT »). — *Critère, écrit avant* : **N4 remplace N4L si la borne basse de l'intervalle mis en commun est au-dessus de zéro** ; *attendu* −10 à +35, ~+12 — dedans, sous le centre |
 | **C13 — la série de N4** | **38369561586** | `ce57170` (N4, le moteur de `main` après la PR du n° 13), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée à 10 h 29 le 13 oct. (heure de Paris), son attendu poussé avant (`c6afbbd`) ; fin attendue vers 15 h 15, la série du 7 oct. ayant duré 4 h 47 | — *Attendu, écrit avant* : ~+20 sur la série du 7 oct., **0 à +42** ; ~3 023 au centre, **2 990 à 3 080** ; un écart sous ~+46 ne s'en sépare pas (section C13, « La série de N4 ») |
+| **Le balayage de mutation après N4** | **38370321139** | `main` à `0c33842` (N4) | `mutation.yml` | **RELEVÉ à 13 h 31** — lancé à 10 h 36 après la fusion de la PR #169 ; `search.rs` au bout en 2 h 55 | **162, exactement la prédiction** — tous les fichiers à leur plafond. — *Prédiction, écrite avant* : 162, rien ne bouge (section « N° 13, N4 contre N4L — VERDICT ») |
+| **N° 16, le chemin A — son crible** | **38395814727** | le commit `25f26ae`, entrée `commit` | `mutation.yml` | **EN VOL** — lancé à 14 h 14 ; `search.rs` en prend ~3 h, fin vers 17 h 15 | — *Prédiction, écrite avant* : **162**, rien ne bouge ; fusion du chemin A à son vert (section « N° 15 à 19 ») |
 | **N° 12 — la composition : C45, C47 et C49** | **37584104209, 37584107001, 37584109645, 37584112743** | `ff8d4bb` → `7d9faef`, `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés | 4 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 14 h 25** — lancés à 8 h 54 (heure de Paris), attendu et critère poussés avant (`6bb5948`) ; finis entre 14 h 13 et 14 h 16, 6,36 à 6,43 s par partie | **+30,30, +28,79, +33,11, +38,02 ; +32,55 ± 3,36 en commun** — homogènes (p = 0,244), zéro perte au temps ; **les deux clauses tenues, FUSIONNÉ** (`0e31ac2`, la révocation révoquée). Au-dessus de C49 seul de +7,2 ± 4,7 ; 80 % de la somme des gains seuls, sous-additif démontré. Runners : deux EPYC 7763, un 9V74, un 9V45, 2,12 à 3,23 M n/s, tous à la profondeur 15. — *Attendu, écrit avant* : ~+37, **+25 à +48**. **Critère, écrit avant** : fusion si la borne basse commune est au-dessus de zéro ET si le point n'est pas démontré sous C49 seul (+20,6) ; sinon, bissection (section n° 12, « la composition ») |
 | **C13 — la série du 7 oct., demandée par Théo** | **37579900252** | `main` à `7d9faef` (N2L, le groupe du n° 9, C41, C43), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 13 h 50** — lancée à 8 h 08 (heure de Paris), son attendu poussé avant (`3c6e2c3`) ; finie à 12 h 55, EPYC 7763, 2 183 146 n/s | **3 003 ± 33** — 198 − 74 − 28, 70,7 % : dans l'attendu, en haut de sa plage ; **+50 ± 44 sur N2L**, séparé de zéro de justesse — au point au-dessus de l'attendu, que son intervalle recoupe. Aucun avertissement côté ShallowRed, zéro perte au temps. — *Attendu, écrit avant* : ~+15 sur N2L, **0 à +32** ; ~2 967 au centre, **2 935 à 3 015** ; un écart à N2L sous ~+42 ne s'en sépare pas (section C13, « La série du 7 oct. ») |
 | **N° 10 — l'AVX2 : `x86-64-v3` contre `x86-64`, le même commit** | **37514404585, 37514408893** | `ea8f3af` des deux côtés, la PR #155 ; `8+0,08`, graine « auto » chacun | 2 × 3 000, fastchess, le livre de 15 000 | **RELEVÉ à 2 h 30 le 7 oct.** — lancés à 20 h 50 (heure de Paris), le protocole fusionné avant (`e584b16`) ; finis à 2 h 10 et 2 h 11, 3 000 parties chacun, aucune perte au temps | **+32,23 ± 4,84 Elo, gain démontré** — +31,00 et +33,46, homogènes (p = 0,619). *Attendu, écrit avant* : ~+33, **+15 à +45** — tenu au point, et l'étalon du temps prédisait +32,8. Le défaut des workflows reste `x86-64-v3` (section n° 10, « VERDICT ») |
@@ -7168,6 +7170,50 @@ entrent dans la preuve.
   passe pas par un match (`CLAUDE.md`). **Attendu**, celui du n° 16 : −7 à
   −9 % de temps par nœud au rejeu.
 
+**N° 16, chemin A — RELEVÉ le 13 oct. à 14 h 15 : −14,4 ± 1,6 % de temps à
+arbre identique, × 1,170 de vitesse, ~+24 Elo par l'étalon — le double de
+l'attendu.** Commit `25f26ae` :
+- **le code machine, lu** (`objdump`, binaire AVX2) :
+
+  | fonction | instruction | `main` | chemin A |
+  |---|---|---|---|
+  | `network_eval` (la sortie) | `vpmulld` — multiplication 32 bits | 32 | **0** |
+  | | `vpmullw` — multiplication 16 bits | 0 | **32** |
+  | | `vpmaddwd` — multiplication-addition par paires | 32 | 32 |
+  | `Network::apply_move` (la dérivation) | `vpaddw` / `vpsubw` | 16 / 16, une passe par pièce et une copie | **48 / 16, une seule passe par camp** |
+
+  **Le compilateur a suivi partout**, ce que Théo demandait de vérifier ;
+- **l'arbre** : identique au nœud près sur les 40 passes du rejeu
+  (24 910 364 nœuds), et les tests — l'incrément contre le recalcul sur
+  chaque coup légal, la sortie contre le calcul de référence, le réseau
+  embarqué contre son entraîneur — passent tels quels ; deux tests neufs :
+  le produit contre sa définition en `i64` sur 2 002 cas jusqu'aux bornes,
+  et le refus d'un poids de sortie de ±129 quand ±128 passe ;
+- **le temps**, `main` à `5b99eeb` contre le chemin A, vingt tours au rejeu
+  du corpus du n° 15 : **plus rapide sur 20 tours sur 20, p = 0,000002,
+  −14,4 ± 1,6 % de temps par passe** — × 1,170 de nœuds par seconde, 0,227
+  doublement, **+21 à +27 Elo par l'étalon** (+107,7 par doublement) ;
+- **l'attendu, −7 à −9 %, est manqué par le haut d'un facteur deux, et la
+  cause est la méthode du n° 15** : le doublement refait le calcul sur des
+  poids et un accumulateur déjà en cache — un coût marginal, plus bas que
+  celui de la première exécution. *Il minore la part ; il ne la mesure pas*
+  (`CLAUDE.md`, pièges de mesure). Le gain réel approche la part entière
+  mesurée au doublement, 16,8 %, quand le chemin A ne devait en retirer
+  qu'une moitié ;
+- **la borne de la somme des poids de sortie devient une assertion à la
+  compilation** : à 128 unités, la borne par poids l'implique —
+  2 × 128 × 128 × 255² = 2 130 739 200 ≤ `i32::MAX` —, et la garder à
+  l'exécution aurait laissé une branche que rien n'atteint, la leçon du
+  12 oct. Un réseau plus large (n° 17) cessera de compiler à cette ligne, là
+  où il faudra sommer autrement ;
+- **le crible de mutation** du commit, run 38395814727 — *prédiction,
+  écrite avant son relevé* : **rien ne bouge, 162** — `nnue.rs` 1, le même
+  survivant équivalent du roque ; les mutants du produit et de la
+  dérivation tombent sous l'incrément, la référence et la définition, ceux
+  de la borne sous ±128 / ±129 ;
+- **par le critère, écrit avant** : arbre identique, tests verts, temps plus
+  court au test des signes — **fusion au crible vert**, sans match.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -8325,7 +8371,7 @@ qu'en partie dans le dépôt n'existe pas.*
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. **n° 16 expliqué à Théo le même jour, en attente de sa décision** : recommandé, le chemin A — le code scalaire écrit pour le vectoriseur, sans `unsafe` ni dépendance (section « N° 15 à 19 — la chaîne du réseau ») |
+| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. <s>**n° 16 expliqué à Théo le même jour, en attente de sa décision**</s> **n° 16, le chemin A, DÉCIDÉ (Théo) et ÉCRIT le 13 oct.** : sans `unsafe` ni dépendance, **−14,4 ± 1,6 % de temps à arbre identique, ~+24 Elo par l'étalon** ; le code machine lu, 32 `vpmulld` remplacés par 32 `vpmullw` ; crible en vol, fusion à son vert (section « N° 15 à 19 — la chaîne du réseau ») |
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 **Le 7 oct., C51** — les échecs tranquilles au premier pli de la quiescence — multiplie par treize ces avertissements côté candidat (157 contre 12) et régresse de −10,77 ± 3,40 : la cécité de la quiescence aux nulles pèse d'autant plus qu'elle joue de tranquilles. Un fait neuf pour C31 le jour où les échecs tranquilles se rouvrent, et alors les deux se mesurent ensemble |
 | **C43 — le gain d'un pion qui reprend en promouvant, dans `see`** — trouvé le 6 oct. par l'oracle `see_check` étendu aux coups tranquilles pour C40 | — correctif de règle | **FUSIONNÉ le 6 oct.** au titre de la règle — **+0,87 ± 4,63** à `8+0,08`, 6 000 parties contre `main` avec C41, aucune borne haute sous zéro, ni l'ensemble ni un match (section n° 9, « C43 et C44 — VERDICT »). <s>**à faire**</s> : `exchange` compte le pion qui reprend sur la dernière rangée comme une dame pour la suite, pas le gain de sa promotion (+880) ; l'oracle le voit sur 33 tranquilles sur 77 020 et une capture sur 5 827. Le protocole des correctifs de règle (`CLAUDE.md`) : un test qui tombe sur l'ancien code, valeur lue sur l'oracle ; le mécanisme mesuré en régime réel — combien de décisions d'élagage et d'ordre en changent ; un match au critère « fusion sauf si la borne haute est sous zéro ». **Écrit et mesuré le 6 oct. vers 05 h 10, pas encore lancé** : quatre lignes dans la boucle d'échange ; le test `un_pion_qui_reprend_en_promouvant_compte_sa_promotion` tombe sur l'ancien code (0 contre −880, valeur de l'oracle) ; l'oracle passe de 21 écarts de capture à 20, la légalité seule. **Le mécanisme, au rejeu du journal du quatrième écran** : 3,5 appels de `see` sur un million changent de valeur à la profondeur 12 (359 sur 102 millions, dont 235 de signe), l'arbre +0,0001 % ; banc 90 646 à la profondeur 7 contre 90 656. <s>**Son match attend la fin des seize jobs du quatrième écran et leur composition** : la boucle d'échange sera commune à `see` et `see_quiet` si C40 entre, et un correctif se mesure sur la base qu'il corrige</s> **C40 n'est pas entré, C41 si** : la rustine s'applique telle quelle, et son match se mesure contre `main` avec C41 — protocole, attendu et puissance écrits avant (section n° 9, « après le quatrième écran »). **Lancé le 6 oct. à 13 h 57** : deux jobs, `d69d2ed` contre `b6d41d7`, relevés à 19 h 30 |

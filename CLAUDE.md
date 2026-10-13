@@ -175,7 +175,11 @@ une mesure, pas une préférence.
   demande de relire le source et de refaire passer ce test.
 - **Un réseau qui pourrait déborder est refusé au chargement, et une
   évaluation n'annonce jamais un mat.** `Network::from_bytes` borne
-  l'accumulateur sur 32 pièces et le produit scalaire sur 32 bits ; la sortie
+  l'accumulateur sur 32 pièces, et chaque poids de sortie à `i16::MAX / QA`
+  = 128 — la condition du produit sur seize bits que le compilateur
+  vectorise (n° 16) ; une assertion à la COMPILATION en déduit que le
+  produit scalaire tient sur 32 bits, et un réseau plus large cessera de
+  compiler là plutôt que de déborder ; la sortie
   est bornée à `MATE_THRESHOLD - 1`, et une position morte vaut zéro, réseau
   ou non. Un réseau refusé par `EvalFile` laisse l'évaluation telle qu'elle
   était, et le dit. **Le réseau embarqué se rejoue contre son entraîneur à
@@ -607,6 +611,16 @@ une mesure, pas une préférence.
   C19 (+31,6 % / +6,5 % / −4,2 %) a été rendue en trois minutes et n'aurait
   demandé aucun match. **Ce qui reste au SPRT, c'est de savoir si le coût
   s'achète** ; ce qui ne lui appartient pas, c'est de mesurer le coût.
+- **Le doublement mesure un coût MARGINAL, pas une part — un minorant.**
+  N° 15, 13 oct. 2026 : refaire le calcul du réseau une seconde fois, à
+  résultat identique, coûtait **16,8 %** du temps d'un nœud ; récrire ce
+  calcul pour le vectoriseur en a retiré **14,4 %** (n° 16) — pour un
+  attendu de 7 à 9 %, dérivé de la première mesure. La seconde exécution
+  trouve les poids et l'accumulateur déjà en cache : elle coûte moins que
+  la première, et le doublement sous-estime la part d'autant que le calcul
+  attend la mémoire. *Il borne par en dessous ce qu'on peut gagner ; il ne
+  dit pas combien.* Le chiffre qui décide est la variante écrite, mesurée
+  contre `main` à arbre identique.
 - **Mesurer le mécanisme avant d'en mesurer l'effet en Elo.** Compter combien
   de fois un phénomène se produit coûte des minutes d'instrumentation ; en
   mesurer l'effet coûte des heures de match. Et si le phénomène ne se produit
