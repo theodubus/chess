@@ -267,13 +267,20 @@ fn bench_est_accessible_en_ligne_de_commande() {
 
 #[test]
 fn evalfile_et_eval_de_bout_en_bout() {
-    // Un réseau nul partout sauf son biais de sortie, `QA × QB` : il évalue
-    // toute position vivante à exactement 400 centièmes, du point de vue du
-    // trait — un calcul qu'on sait faire à la main.
-    use shallowred::nnue::{FILE_BYTES, HIDDEN, INPUTS};
+    // Un réseau nul partout sauf ses biais de sortie, `QA × QB` chacun : il
+    // évalue toute position vivante à exactement 400 centièmes, du point de
+    // vue du trait, quel que soit le seau de sortie que la position choisit —
+    // un calcul qu'on sait faire à la main. Le fichier suit l'architecture
+    // du binaire, celle qu'`EvalFile` charge : la couche cachée, un bloc de
+    // 768 entrées par seau de roi, ses biais, 2 × HIDDEN poids par seau de
+    // sortie, puis un biais par seau, qui ferment le fichier.
+    use shallowred::nnue::{ARCH, FILE_BYTES, HIDDEN, INPUTS};
     let mut octets = vec![0u8; FILE_BYTES];
-    let biais = 2 * (INPUTS * HIDDEN + HIDDEN + 2 * HIDDEN);
-    octets[biais..biais + 2].copy_from_slice(&16_320i16.to_le_bytes());
+    let biais = INPUTS * ARCH.input_buckets() * HIDDEN + HIDDEN + ARCH.output_buckets * 2 * HIDDEN;
+    for seau in 0..ARCH.output_buckets {
+        let at = 2 * (biais + seau);
+        octets[at..at + 2].copy_from_slice(&16_320i16.to_le_bytes());
+    }
     let chemin = std::env::temp_dir().join(format!("shallowred-eval {}.bin", std::process::id()));
     std::fs::write(&chemin, &octets).unwrap();
     let charger = format!("setoption name EvalFile value {}", chemin.display());

@@ -117,7 +117,7 @@ index bc7fac3..b53a330 100644
 +                None => (
 +                    "hc",
 +                    crate::nnue::embedded()
-+                        .map(|n| n.evaluate(&n.refresh(board), board.side_to_move()))
++                        .map(|n| n.evaluate(&n.refresh(board), board))
 +                        .unwrap_or(i32::MIN),
 +                ),
 +            };

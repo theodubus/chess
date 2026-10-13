@@ -237,7 +237,17 @@ const DELTA_MARGIN: i32 = 200;
 /// qui ramènent ces taux sur ceux de la faite main valent 2,5 et 2,0 ; celui-ci
 /// est leur moyenne géométrique. **La futilité inverse n'en prend pas** : au
 /// réseau, elle coupait plus et se trompait moins.
+///
+/// **Le facteur appartient au réseau** : en embarquer un autre demande de
+/// relancer la sonde (`tools/attic/b8-sonde-marges.patch`).
 const NETWORK_MARGIN_PERCENT: i32 = 224;
+
+/// Le facteur, en centièmes, qui ramène à la faite main une marge MESURÉE au
+/// réseau — voir [`Search::network_margin`]. Il vaut le facteur en place quand
+/// ces marges ont été posées (C39, C41), et il est figé : il ne suit pas
+/// [`NETWORK_MARGIN_PERCENT`], parce qu'embarquer un autre réseau ne doit rien
+/// changer à l'arbre de la faite main — le banc et les tests de recherche.
+const HANDCRAFTED_MARGIN_PERCENT: i32 = 224;
 
 /// Nombre de nœuds entre deux consultations de l'horloge et du drapeau d'arrêt.
 ///
@@ -675,14 +685,15 @@ impl Search {
 
     /// Une marge MESURÉE en unités du réseau, dans celles de l'évaluation qui
     /// joue : intacte quand un réseau joue, ramenée à l'échelle de la faite
-    /// main sinon — l'inverse de [`Search::scaled_margin`], par le même
-    /// facteur. La futilité aux nœuds frontières (C39) a été mesurée au
-    /// réseau ; la faite main n'en reçoit que l'analogue.
+    /// main sinon — l'inverse de [`Search::scaled_margin`], par le facteur
+    /// figé [`HANDCRAFTED_MARGIN_PERCENT`]. La futilité aux nœuds frontières
+    /// (C39) a été mesurée au réseau ; la faite main n'en reçoit que
+    /// l'analogue.
     fn network_margin(&self, margin: i32) -> i32 {
         if self.network.is_some() {
             margin
         } else {
-            margin.saturating_mul(100) / NETWORK_MARGIN_PERCENT
+            margin.saturating_mul(100) / HANDCRAFTED_MARGIN_PERCENT
         }
     }
 
@@ -3851,8 +3862,13 @@ mod tests {
             movetime: Some(120),
             ..Limits::default()
         };
+        // La recherche se construit AVANT le chronomètre : allouer la table
+        // par défaut coûte ~0,3 s en debug, et sous la charge d'une suite
+        // parallèle, assez pour faire tomber le test sans que la recherche
+        // ait dépassé quoi que ce soit (14 oct. 2026).
+        let mut recherche = search();
         let at = Instant::now();
-        assert!(search().go(&position, &limits, |_| {}).is_some());
+        assert!(recherche.go(&position, &limits, |_| {}).is_some());
         let elapsed = at.elapsed();
         assert!(
             elapsed < Duration::from_millis(900),
