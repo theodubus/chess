@@ -177,9 +177,10 @@ une mesure, pas une préférence.
   évaluation n'annonce jamais un mat.** `Network::from_bytes` borne
   l'accumulateur sur 32 pièces, et chaque poids de sortie à `i16::MAX / QA`
   = 128 — la condition du produit sur seize bits que le compilateur
-  vectorise (n° 16) ; une assertion à la COMPILATION en déduit que le
-  produit scalaire tient sur 32 bits, et un réseau plus large cessera de
-  compiler là plutôt que de déborder ; la sortie
+  vectorise (n° 16) ; le produit scalaire se somme en `i32` par tranches
+  de 256 termes — une assertion à la COMPILATION vérifie qu'une tranche
+  tient —, puis en `i64` : aucune largeur ne le fait déborder (n° 17,
+  étape 1) ; la sortie
   est bornée à `MATE_THRESHOLD - 1`, et une position morte vaut zéro, réseau
   ou non. Un réseau refusé par `EvalFile` laisse l'évaluation telle qu'elle
   était, et le dit. **Le réseau embarqué se rejoue contre son entraîneur à

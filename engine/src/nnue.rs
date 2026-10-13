@@ -42,9 +42,10 @@
 //! aussi un poids de sortie au-delà de `i16::MAX / QA` = 128 en valeur
 //! absolue : le produit d'une activation bornée par son poids tient alors
 //! sur seize bits, ce dont le produit scalaire a besoin pour se vectoriser
-//! (voir `dot`). Cette borne suffit au produit scalaire lui-même : 256 termes
-//! d'au plus `QA² × 128` tiennent dans un `i32`, ce qu'une assertion vérifie
-//! à la COMPILATION ; le reste se calcule en `i64`. Un réseau entraîné par
+//! (voir `dot`). Cette borne suffit au produit scalaire lui-même, à toute
+//! largeur : il se somme en `i32` par tranches de 256 termes d'au plus
+//! `QA² × 128` — une tranche tient, ce qu'une assertion vérifie à la
+//! COMPILATION —, puis en `i64`, comme le reste. Un réseau entraîné par
 //! bullet avec ses réglages par défaut passe les deux : `AdamW` y borne les
 //! poids à ±1,98, soit 505 et 127 une fois quantifiés — 16 665 au plus dans
 //! un accumulateur, 127 par poids de sortie.
@@ -102,13 +103,18 @@ pub const FILE_BYTES: usize = (2 * VALUES).div_ceil(64) * 64;
 /// tient dans un `i16`, si bien que [`dot`] peut multiplier sur seize bits.
 const MAX_OUTPUT_WEIGHT: i32 = i16::MAX as i32 / QA;
 
-// Le produit scalaire tient dans un `i32` dès que chaque poids de sortie
-// respecte la borne : 2 × `HIDDEN` termes d'au plus `QA² × 128` — à 128 unités,
-// 2 130 739 200, sous `i32::MAX`. Vérifié à la compilation : une couche plus
-// large (n° 17) cesse de compiler ICI, et il faudra alors sommer autrement
-// plutôt que refuser au chargement les réseaux que bullet produit.
+/// Le nombre de termes que [`dot`] somme en `i32` avant de passer en `i64`.
+const DOT_CHUNK: usize = 256;
+
+// Une tranche de `DOT_CHUNK` termes d'au plus `QA² × 128` chacun tient dans
+// un `i32` — 2 130 739 200, sous `i32::MAX` — dès que chaque poids de sortie
+// respecte la borne. Vérifié à la compilation. Les tranches, et les deux
+// camps, se somment en `i64` : aucune largeur de couche ne fait déborder le
+// produit, la borne par poids suffit, et rien ne reste à vérifier à
+// l'exécution (n° 17, étape 1). Avant, la largeur entière se sommait en
+// `i32`, et une couche de plus de 128 unités cessait de compiler.
 const _: () = assert!(
-    2 * HIDDEN as i64 * MAX_OUTPUT_WEIGHT as i64 * (QA as i64 * QA as i64) <= i32::MAX as i64
+    DOT_CHUNK as i64 * MAX_OUTPUT_WEIGHT as i64 * (QA as i64 * QA as i64) <= i32::MAX as i64
 );
 
 /// `QA` en `i16`, la borne de l'activation dans [`dot`].
@@ -261,14 +267,23 @@ pub fn changes(board: &Board, mv: Move, out: &mut [Change; 4]) -> usize {
 /// (`vpmullw`, `vpmaddwd` en AVX2) là où `c² · w` lui faisait faire deux
 /// multiplications trente-deux bits par terme. Même valeur au bit près — des
 /// entiers, sans arrondi —, donc même arbre (n° 16, chemin A).
-fn dot(accumulator: &Accumulator, weights: &[i16]) -> i32 {
-    accumulator
-        .0
-        .iter()
-        .zip(weights)
-        .map(|(&value, &weight)| {
-            let clipped = value.clamp(0, QA_I16);
-            i32::from(clipped.wrapping_mul(weight)) * i32::from(clipped)
+///
+/// La somme se fait en `i32` par tranches de [`DOT_CHUNK`] termes, puis en
+/// `i64` : à 128 unités, une seule tranche par camp, les mêmes entiers.
+fn dot(values: &[i16], weights: &[i16]) -> i64 {
+    values
+        .chunks(DOT_CHUNK)
+        .zip(weights.chunks(DOT_CHUNK))
+        .map(|(values, weights)| {
+            let chunk: i32 = values
+                .iter()
+                .zip(weights)
+                .map(|(&value, &weight)| {
+                    let clipped = value.clamp(0, QA_I16);
+                    i32::from(clipped.wrapping_mul(weight)) * i32::from(clipped)
+                })
+                .sum();
+            i64::from(chunk)
         })
         .sum()
 }
@@ -439,13 +454,12 @@ impl Network {
     #[must_use]
     pub fn evaluate(&self, accumulators: &Accumulators, side_to_move: Color) -> i32 {
         let (ours, theirs) = self.output_weights.split_at(HIDDEN);
-        let sum = dot(&accumulators[side_to_move as usize], ours)
-            + dot(&accumulators[!side_to_move as usize], theirs);
+        let sum = dot(&accumulators[side_to_move as usize].0, ours)
+            + dot(&accumulators[!side_to_move as usize].0, theirs);
         // Les étapes et les troncatures de l'inférence de bullet, en `i64` :
         // `× SCALE` sortirait d'un `i32` bien avant que le produit scalaire ne
         // le fasse.
-        let output = (i64::from(sum) / i64::from(QA) + i64::from(self.output_bias))
-            * i64::from(SCALE)
+        let output = (sum / i64::from(QA) + i64::from(self.output_bias)) * i64::from(SCALE)
             / i64::from(QA * QB);
         let bound = i64::from(MATE_THRESHOLD - 1);
         i32::try_from(output.clamp(-bound, bound)).unwrap_or(0)
@@ -728,10 +742,33 @@ mod tests {
         }
         for (accumulator, weights) in &cases {
             assert_eq!(
-                i64::from(dot(accumulator, weights)),
+                dot(&accumulator.0, weights),
                 definition(accumulator, weights)
             );
         }
+    }
+
+    #[test]
+    fn le_produit_scalaire_ne_deborde_a_aucune_largeur() {
+        // Plus de deux tranches au pire : 1 000 termes de ±QA² × 128 font
+        // ±8,3 milliards, bien au-delà d'un i32. Sommé d'un bloc en i32, le
+        // produit paniquerait ici en debug et serait faux en release ; par
+        // tranches, il est exact — la largeur n'est plus bornée par lui
+        // (n° 17, étape 1).
+        let bound = i16::try_from(MAX_OUTPUT_WEIGHT).unwrap();
+        let values = vec![i16::MAX; 1_000];
+        for sign in [1, -1] {
+            let weights = vec![sign * bound; 1_000];
+            let expected = i64::from(sign) * 1_000 * i64::from(QA * QA) * i64::from(bound);
+            assert_eq!(dot(&values, &weights), expected);
+        }
+        // Une tranche partielle compte comme les autres : 300 termes, une
+        // tranche pleine et une de 44.
+        let weights: Vec<i16> = (0..300)
+            .map(|i| if i < 256 { bound } else { -bound })
+            .collect();
+        let expected = (256 - 44) * i64::from(QA * QA) * i64::from(bound);
+        assert_eq!(dot(&values[..300], &weights), expected);
     }
 
     #[test]

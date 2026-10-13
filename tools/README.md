@@ -7269,6 +7269,119 @@ largeur, N3 à × 0,887 (n° 15 b), date d'avant le chemin A.
   devra rendre pour payer sa vitesse, et donc quelle largeur la séance du
   n° 17 entraîne.
 
+**N° 17, étape 1 — RELEVÉE le 13 oct. à 18 h 15 : le même arbre, le même
+temps ; et N3 ne coûte plus que × 0,93, l'attendu au centre.**
+- **l'arbre** : 24 910 364 nœuds par passe au rejeu du n° 15, ceux de
+  `main` au nœud près — le pilote refuse sinon ;
+- **le code machine** : 32 `vpmullw` et 32 `vpmaddwd` dans le binaire AVX2,
+  autant qu'au chemin A ;
+- **le temps** — `main` (le chemin A) contre l'étape, quatre tranches de
+  cinq tours : plus lente sur **8 tours sur 20, p = 0,50** ; **−1,4 ± 2,4 %**
+  en moyenne, −0,75 % en médiane. Dans l'attendu, 0 ± 1 % ; le critère —
+  pas plus long au test des signes — tient ;
+- **N3 sur ce code** (`HIDDEN` à 256, `n3-768x256-40.bin`, binaire AVX2,
+  chargé — son évaluation n'est pas la faite main) contre N4, `--nps`, deux
+  tranches de cinq tours : **× 0,93 de nœuds par seconde** (médiane des dix
+  tours ; × 0,925 et × 0,951 par tranche), plus lent sur 9 tours sur 10,
+  p = 0,021. **Au centre de l'attendu**, × 0,90 à × 0,96. Par l'étalon,
+  **~−11 Elo de vitesse** pour 256 unités, contre ~−19 avant le chemin A ;
+- **ce que cela dit de la largeur** : la doubler coûte ~7,4 % du temps d'un
+  nœud — × 1/(1 + 0,074). Par la même règle, <span>inférence, confiance
+  moyenne</span> : 384 unités ~× 0,87 (~−22 Elo), 512 ~× 0,82 (~−31). Un
+  réseau de 256 doit rendre **plus de ~+11 Elo de qualité** pour payer ;
+  N3 en rendait ~+9 en septembre, sur les données d'alors et sans seaux.
+  La séance du n° 17 s'écrit donc autour de **256 unités**, avec et sans
+  seaux, et un réseau de 128 à seaux pour séparer ce que paient les seaux
+  de ce que paie la largeur.
+
+**N° 17 — le plan de la séance, écrit le 13 oct. à 18 h 30, avant le code
+des seaux.**
+
+*Lu au source* — bullet `10e7e82`, `bulletformat` 1.8.0 :
+- **les seaux de sortie** (`MaterialCount<N>`,
+  `bullet_lib/src/game/outputs.rs`) : le seau vaut
+  `(pièces sur l'échiquier − 2) / ⌈32 / N⌉` — à 8 seaux, `(n − 2) / 4`, de
+  0 à 7 ; un jeu de poids de sortie par seau, le reste du réseau commun ;
+- **les seaux de roi** (`ChessBucketsMirrored`,
+  `bullet_lib/src/game/inputs/chess_buckets.rs`) : une disposition de 32
+  cases — quatre colonnes, huit rangées —, étendue en miroir. Chaque camp,
+  vu dans son propre repère (son roque en bas : `our_ksq`, et `opp_ksq`
+  retourné de `^ 56`, `bulletformat`, `chess.rs`), choisit par la case de
+  son roi un bloc de 768 entrées ; si ce roi est sur les colonnes e à h,
+  chaque entrée a sa colonne retournée (`^ 7`). Le **factoriseur** — 768 ×
+  largeur poids communs à tous les seaux — s'ajoute à chacun au moment
+  d'écrire le fichier : le moteur n'en voit rien ;
+- **le fichier** (`SavedFormat::transpose`,
+  `crates/trainer/src/model/weights.rs`, et l'exemple
+  `examples/progression/3_input_buckets.rs`) : les lignes de la couche
+  cachée, seau de roi par seau de roi ; ses biais ; les poids de sortie
+  rangés seau de sortie par seau de sortie, `2 × largeur` chacun, le camp
+  au trait d'abord ; un biais par seau. L'exemple borne la couche d'entrée
+  et le factoriseur à ±0,99 chacun : leur somme reste dans ±1,98, soit ±505
+  quantifiés — la borne d'accumulateur du chargeur vaut telle quelle ; les
+  poids de sortie restent à ±127.
+
+*Les réseaux* — une séance, les données de N4 (les six jobs de la vague du
+7 oct., le même filtre, 40 superlots, depuis zéro) ; chacun ne diffère que
+d'un levier de celui qu'il suit :
+
+| réseau | largeur | seaux de sortie | seaux de roi | ce qu'il isole |
+|---|---|---|---|---|
+| **N5s** | 128 | 8 | — | les seaux de sortie, à vitesse égale — contre N4 |
+| **N5l** | 256 | 8 | — | la largeur — contre N5s |
+| **N5r4** | 256 | 8 | 4, en miroir | les seaux de roi, grossiers — contre N5l |
+| **N5r10** | 256 | 8 | 10, en miroir : la disposition de l'exemple de bullet, lue au source | les seaux de roi, fins — contre N5r4 |
+
+La disposition à 4 seaux n'est lue nulle part : c'est celle de l'exemple,
+grossie — rangée 1, colonnes a–b et c–d, puis la rangée 2, puis tout le
+reste. <span>Choix, confiance faible</span> ; N5r10 dit si la finesse paie
+sur nos 160 M de positions, le factoriseur partageant ce que chaque seau
+n'a pas assez vu.
+
+*Le moteur, avant la séance* — un commit de code, les seaux de sortie et
+de roi tenus par des constantes, puis un commit par architecture : le
+programme d'entraînement lit l'architecture dans les constantes du moteur,
+et chacun s'entraîne depuis le sien, comme N3 depuis `87c3d27`. Rien de cela
+n'entre dans `main` avant qu'un réseau ne l'emporte : sur N4, ces chemins
+ne s'emprunteraient jamais, et des chemins que rien n'emprunte sont ceux
+qu'aucun test ne garde (la leçon du 12 oct.). Avant de demander la carte :
+- **l'incrément égale le recalcul**, sur des parties entières, y compris
+  les coups de roi qui changent de seau ou de côté — le camp du roi qui
+  bouge se recalcule alors, l'autre se met à jour ; les deux roques, la
+  prise en passant, les promotions ;
+- **les indices confrontés au CODE de bullet** — un test de
+  `tools/nnue-train`, que la CI joue sans GPU (`nnue-train.yml`) : les
+  entrées du moteur contre `ChessBucketsMirrored::map_features`, son seau
+  de sortie contre `MaterialCount::bucket`, sur des positions de parties,
+  chaque camp au trait ;
+- **la confrontation de fin d'entraînement** — écart médian ≤ 15, maximal
+  ≤ 50 — sur les positions d'aujourd'hui, plus des rois sur chaque seau et
+  de chaque côté, et de 3 à 32 pièces.
+
+*La mesure* — chaque candidat, un commit révoqué (code, architecture,
+réseau, confrontation recopiée), contre N4 (`main`) à `8+0,08`, quatre
+jobs de 2 800 parties ; ses nœuds par seconde au rejeu du n° 15 ; la sonde
+de B8 sur chacun, le facteur des marges appartenant au réseau.
+
+*Attendus* — <span>inférence, confiance faible pour tous</span> ; gains
+publiés d'autres moteurs, auto-déclarés : seaux de sortie +14, seaux de roi
++20 à +80, sur bien plus de données :
+- **N5s** contre N4 : **+3 à +15** ;
+- **N5l** : la qualité de la largeur, +5 à +25, moins ses ~11 Elo de
+  vitesse → **−5 à +20** contre N4 ;
+- **N5r4** : **+10 à +40** contre N4 ; ses nœuds par seconde, × 0,90 à
+  × 0,93 — la largeur, plus un recalcul quand un roi change de seau ;
+- **N5r10** : **−10 à +40** contre N4 — dix seaux sur 160 M de positions
+  peuvent manquer de données là où quatre suffisent.
+
+*Critère, écrit avant* : un gain se démontre contre N4, borne basse
+au-dessus de zéro. Parmi les gains démontrés, le meilleur au point devient
+le candidat ; si l'intervalle du second recoupe le sien, un match direct
+entre eux tranche, par le même critère. Le gagnant s'embarque — puis la
+sonde de B8, la série de C13, le balayage de mutation. Aucun gain
+démontré : N4 reste, et le levier suivant est le volume (n° 18), ce que
+N3 disait déjà en septembre.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
@@ -8461,7 +8574,7 @@ qu'en partie dans le dépôt n'existe pas.*
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. <s>**n° 16 expliqué à Théo le même jour, en attente de sa décision**</s> **n° 16, le chemin A, DÉCIDÉ (Théo) et ÉCRIT le 13 oct.** : sans `unsafe` ni dépendance, **−14,4 ± 1,6 % de temps à arbre identique, ~+24 Elo par l'étalon** ; le code machine lu, 32 `vpmulld` remplacés par 32 `vpmullw` ; crible en vol, fusion à son vert (section « N° 15 à 19 — la chaîne du réseau ») |
+| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. <s>**n° 16 expliqué à Théo le même jour, en attente de sa décision**</s> **n° 16, le chemin A, DÉCIDÉ (Théo) et ÉCRIT le 13 oct.** : sans `unsafe` ni dépendance, **−14,4 ± 1,6 % de temps à arbre identique, ~+24 Elo par l'étalon** ; le code machine lu, 32 `vpmulld` remplacés par 32 `vpmullw` ; <s>crible en vol, fusion à son vert</s> **crible exact à 162, FUSIONNÉ le 13 oct.** (PR #171). **n° 17, étape 1, le 13 oct.** : le produit scalaire par tranches de 256 lève la borne de largeur — même arbre, même temps ; **N3 sur ce code, × 0,93** de nœuds par seconde, ~−11 Elo de vitesse pour 256 unités. **Le plan de la séance du n° 17 écrit** : N5s (128, seaux de sortie), N5l (256), N5r4 et N5r10 (256, seaux de roi), chacun contre N4 ; le code des seaux d'abord, confronté au code de bullet, avant de demander la carte de Théo (section « N° 15 à 19 — la chaîne du réseau ») |
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 **Le 7 oct., C51** — les échecs tranquilles au premier pli de la quiescence — multiplie par treize ces avertissements côté candidat (157 contre 12) et régresse de −10,77 ± 3,40 : la cécité de la quiescence aux nulles pèse d'autant plus qu'elle joue de tranquilles. Un fait neuf pour C31 le jour où les échecs tranquilles se rouvrent, et alors les deux se mesurent ensemble |
 | **C43 — le gain d'un pion qui reprend en promouvant, dans `see`** — trouvé le 6 oct. par l'oracle `see_check` étendu aux coups tranquilles pour C40 | — correctif de règle | **FUSIONNÉ le 6 oct.** au titre de la règle — **+0,87 ± 4,63** à `8+0,08`, 6 000 parties contre `main` avec C41, aucune borne haute sous zéro, ni l'ensemble ni un match (section n° 9, « C43 et C44 — VERDICT »). <s>**à faire**</s> : `exchange` compte le pion qui reprend sur la dernière rangée comme une dame pour la suite, pas le gain de sa promotion (+880) ; l'oracle le voit sur 33 tranquilles sur 77 020 et une capture sur 5 827. Le protocole des correctifs de règle (`CLAUDE.md`) : un test qui tombe sur l'ancien code, valeur lue sur l'oracle ; le mécanisme mesuré en régime réel — combien de décisions d'élagage et d'ordre en changent ; un match au critère « fusion sauf si la borne haute est sous zéro ». **Écrit et mesuré le 6 oct. vers 05 h 10, pas encore lancé** : quatre lignes dans la boucle d'échange ; le test `un_pion_qui_reprend_en_promouvant_compte_sa_promotion` tombe sur l'ancien code (0 contre −880, valeur de l'oracle) ; l'oracle passe de 21 écarts de capture à 20, la légalité seule. **Le mécanisme, au rejeu du journal du quatrième écran** : 3,5 appels de `see` sur un million changent de valeur à la profondeur 12 (359 sur 102 millions, dont 235 de signe), l'arbre +0,0001 % ; banc 90 646 à la profondeur 7 contre 90 656. <s>**Son match attend la fin des seize jobs du quatrième écran et leur composition** : la boucle d'échange sera commune à `see` et `see_quiet` si C40 entre, et un correctif se mesure sur la base qu'il corrige</s> **C40 n'est pas entré, C41 si** : la rustine s'applique telle quelle, et son match se mesure contre `main` avec C41 — protocole, attendu et puissance écrits avant (section n° 9, « après le quatrième écran »). **Lancé le 6 oct. à 13 h 57** : deux jobs, `d69d2ed` contre `b6d41d7`, relevés à 19 h 30 |
