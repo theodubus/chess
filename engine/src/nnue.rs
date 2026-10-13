@@ -231,7 +231,7 @@ pub const KING_BUCKETS_4: [u8; 32] = [
 /// L'architecture des réseaux de ce binaire, l'embarqué comme ceux
 /// qu'`EvalFile` charge : N4, sans seaux.
 pub const ARCH: Arch = Arch {
-    king_buckets: None,
+    king_buckets: Some(KING_BUCKETS_4),
     output_buckets: 8,
 };
 
