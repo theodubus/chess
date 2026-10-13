@@ -3862,8 +3862,13 @@ mod tests {
             movetime: Some(120),
             ..Limits::default()
         };
+        // La recherche se construit AVANT le chronomètre : allouer la table
+        // par défaut coûte ~0,3 s en debug, et sous la charge d'une suite
+        // parallèle, assez pour faire tomber le test sans que la recherche
+        // ait dépassé quoi que ce soit (14 oct. 2026).
+        let mut recherche = search();
         let at = Instant::now();
-        assert!(search().go(&position, &limits, |_| {}).is_some());
+        assert!(recherche.go(&position, &limits, |_| {}).is_some());
         let elapsed = at.elapsed();
         assert!(
             elapsed < Duration::from_millis(900),
