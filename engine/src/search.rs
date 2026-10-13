@@ -239,8 +239,10 @@ const DELTA_MARGIN: i32 = 200;
 /// réseau, elle coupait plus et se trompait moins.
 ///
 /// **Le facteur appartient au réseau** : en embarquer un autre demande de
-/// relancer la sonde (`tools/attic/b8-sonde-marges.patch`).
-const NETWORK_MARGIN_PERCENT: i32 = 224;
+/// relancer la sonde (`tools/attic/b8-sonde-marges.patch`). Celui de N5l,
+/// mesuré le 14 oct. 2026 (n° 17) : delta × 2,9, aspiration × 2,80, sa
+/// moyenne géométrique 2,85 — hors de la plage où le facteur de N2 suffisait.
+const NETWORK_MARGIN_PERCENT: i32 = 285;
 
 /// Le facteur, en centièmes, qui ramène à la faite main une marge MESURÉE au
 /// réseau — voir [`Search::network_margin`]. Il vaut le facteur en place quand
@@ -5896,8 +5898,8 @@ mod tests {
         );
         assert_eq!(s.scaled_margin(1_000), 1_000, "faite main : intacte");
         s.set_network(Some(Arc::new(crate::nnue::testing::random_network(1))));
-        assert_eq!(s.scaled_margin(ASPIRATION_DELTA), 56, "réseau : 25 × 2,24");
-        assert_eq!(s.scaled_margin(1_000), 2_240, "réseau : 1 000 × 2,24");
+        assert_eq!(s.scaled_margin(ASPIRATION_DELTA), 71, "réseau : 25 × 2,85");
+        assert_eq!(s.scaled_margin(1_000), 2_850, "réseau : 1 000 × 2,85");
         s.set_network(None);
         assert_eq!(
             s.scaled_margin(ASPIRATION_DELTA),
@@ -5910,7 +5912,7 @@ mod tests {
     fn l_elagage_delta_compte_la_piece_prise_a_l_echelle_du_reseau() {
         // Le cavalier prend le pion d5. À la faite main, `alpha` au ras de
         // `stand_pat + gain + DELTA_MARGIN` : la prise ne peut pas le
-        // rejoindre, elle s'élague. Au réseau, le même pion vaut 2,24 fois
+        // rejoindre, elle s'élague. Au réseau, le même pion vaut 2,85 fois
         // plus : elle ne s'élague plus.
         let b = board("4k3/8/8/3p4/8/4N3/8/4K3 w - - 0 1");
         let mv = Move {
@@ -5934,7 +5936,7 @@ mod tests {
         s.set_network(Some(Arc::new(crate::nnue::testing::random_network(1))));
         assert!(
             !s.delta_prunable(&b, mv, false, stand_pat, alpha),
-            "réseau : le pion compte 2,24 fois, la prise reste"
+            "réseau : le pion compte 2,85 fois, la prise reste"
         );
         let seuil = stand_pat + (gain + DELTA_MARGIN) * NETWORK_MARGIN_PERCENT / 100;
         assert!(
