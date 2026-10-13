@@ -118,10 +118,12 @@ d'un aveu sur la profondeur de recherche.
 > mesurée contre la précédente sur 6 000 parties : **+115,7 ± 7,0**, puis
 > **+50,1 ± 6,1**. N2L, N2 ré-entraîné sur des données de Leela Chess Zero
 > (voir « Remerciements »), valait **+16,4 ± 6,2** contre N2 le 2 oct.
-> **Celui qui joue depuis le 13 oct.**, N4L, suit la même recette sur
-> 242 millions de positions neuves, étiquetées par le moteur du 7 oct. :
-> **+14,1 ± 3,7** contre N2L, sur 12 000 parties. L'évaluation faite main
-> reste disponible par `setoption name EvalFile value <none>`.
+> **Celui qui joue depuis le 13 oct.**, N4, apprend sur 242 millions de
+> positions neuves, étiquetées par le moteur du 7 oct. : **+47,0 ± 4,2**
+> contre N2, et **+5,4 ± 4,2** contre N4L, le même ré-entraîné sur les
+> données de Leela — sur ces positions-là, l'étage de Leela ne paie plus.
+> L'évaluation faite main reste disponible par
+> `setoption name EvalFile value <none>`.
 
 ## Structure
 
@@ -334,12 +336,14 @@ frontière UCI ; ne jamais afficher un `Move` brut.
 
 ## Remerciements
 
-Le réseau NNUE embarqué est entraîné sur des [données fournies par le projet
+Les réseaux NNUE N2L et N4L — embarqués du 2 au 13 oct. 2026, et conservés
+dans `reseaux/` — sont entraînés sur des [données fournies par le projet
 Leela Chess Zero](https://storage.lczero.org/files/training_data), mises à
 disposition sous l'[Open Database
 License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
 converties au format `.binpack` par des contributeurs de Stockfish (voir
-`tools/README.md`, section n° 7).
+`tools/README.md`, section n° 7). Le réseau embarqué depuis le 13 oct., N4,
+n'apprend que sur les parties du moteur.
 
 ## Licence
 

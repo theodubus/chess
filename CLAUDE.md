@@ -65,10 +65,13 @@ une mesure, pas une préférence.
   un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
   la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
   plus qu'à dégrossir, jamais à trancher.
-- **L'évaluation qui joue est le réseau NNUE embarqué** — **N4L depuis le
-  13 oct. 2026** (n° 13) : la recette de N2L sur une vague neuve,
-  étiquetée par le moteur du 7 oct. — **+14,08 ± 3,74** contre N2L à
-  `8+0,08`, 12 000 parties. N2L (2 oct., n° 7, levier 4) fermait trois
+- **L'évaluation qui joue est le réseau NNUE embarqué** — **N4 depuis le
+  13 oct. 2026** (n° 13) : une vague neuve, étiquetée par le moteur du
+  7 oct., seule et depuis zéro — **+46,98 ± 4,16** contre N2 et
+  **+5,43 ± 4,23** contre N4L, la même vague puis les données de Leela,
+  qui valait **+14,08 ± 3,74** contre N2L ; ~12 000 parties chacun, à
+  `8+0,08`. *Sur nos meilleures données, l'étage de Leela ne paie plus.*
+  N2L (2 oct., n° 7, levier 4) fermait trois
   marches, chacune mesurée contre la précédente sur 6 000 parties —
   **+115,74 ± 6,98** pour des étiquettes du moteur au réseau,
   **+50,09 ± 6,12** pour deux fois plus de positions, **+16,40 ± 6,20**
@@ -84,8 +87,9 @@ une mesure, pas une préférence.
   seules, les leurs seules ou les nôtres puis les leurs, **selon ce qui mesure
   le mieux**. Licence ODbL : **le jour où un réseau entraîné sur elles est
   embarqué, `README.md` porte la mention d'attribution**, comme celui de
-  Stockfish — **fait le 2 oct. 2026 avec N2L**, gardé avec N4L, section
-  « Remerciements ».
+  Stockfish — **fait le 2 oct. 2026 avec N2L**, section « Remerciements ».
+  N4, qui joue depuis le 13 oct., n'a rien appris d'elles ; la mention
+  reste, parce que `reseaux/` garde N2L et N4L, qui en ont appris.
   Plan et faits vérifiés : `tools/README.md`, section n° 7.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Deux binaires livrés, et la mesure se fait sur le binaire AVX2.** Théo,
