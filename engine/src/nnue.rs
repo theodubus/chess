@@ -232,7 +232,7 @@ pub const KING_BUCKETS_4: [u8; 32] = [
 /// qu'`EvalFile` charge : N4, sans seaux.
 pub const ARCH: Arch = Arch {
     king_buckets: None,
-    output_buckets: 1,
+    output_buckets: 8,
 };
 
 // Un seau de sortie par tranche du nombre de pièces : de 1 à 32 seaux, le
