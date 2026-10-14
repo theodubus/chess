@@ -35,6 +35,58 @@ use crate::position::{Position, repetitions};
 use crate::see;
 use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
 
+/// Un entier écrit en décimal, lu À LA COMPILATION — la valeur d'un
+/// [`reglage!`] remplacée par sa variable d'environnement (n° 19). Une valeur
+/// illisible arrête la compilation au lieu de jouer avec un défaut.
+const fn reglage_lu(texte: &str) -> i64 {
+    let octets = texte.as_bytes();
+    let (signe, mut i) = if !octets.is_empty() && octets[0] == b'-' {
+        (-1, 1)
+    } else {
+        (1, 0)
+    };
+    assert!(i < octets.len(), "réglage vide");
+    let mut valeur: i64 = 0;
+    while i < octets.len() {
+        let chiffre = octets[i];
+        assert!(chiffre.is_ascii_digit(), "réglage illisible");
+        assert!(valeur < i64::MAX / 100, "réglage trop grand");
+        valeur = valeur * 10 + (chiffre - b'0') as i64;
+        i += 1;
+    }
+    signe * valeur
+}
+
+/// Une constante de la recherche que le réglage automatique (n° 19) peut
+/// remplacer : sans la variable d'environnement `SR_<NOM>`, elle vaut son
+/// défaut, et le binaire est celui d'avant au bit près ; avec elle, sa valeur
+/// est lue au moment de compiler.
+///
+/// **À la compilation, jamais en option UCI** : une constante se plie dans le
+/// code machine, une option se lirait à chaque nœud, et l'arbre par défaut ne
+/// peut pas bouger — aucun chemin de lecture ne s'ajoute à la recherche. Un
+/// jeu de paramètres coûte un binaire ; le pilote (`tools/spsa.py`) en
+/// construit deux par perturbation. Une valeur qui ne tient pas dans le type
+/// arrête la compilation.
+macro_rules! reglage {
+    ($(#[$doc:meta])* $nom:ident: $type:ty = $defaut:expr) => {
+        $(#[$doc])*
+        const $nom: $type = match option_env!(concat!("SR_", stringify!($nom))) {
+            Some(texte) => {
+                let valeur = reglage_lu(texte);
+                // Par `i128` : un aller-retour par `i64` laisserait passer un
+                // négatif replié dans un type non signé.
+                assert!(
+                    <$type>::MIN as i128 <= valeur as i128 && valeur as i128 <= <$type>::MAX as i128,
+                    "réglage hors du type"
+                );
+                valeur as $type
+            }
+            None => $defaut,
+        };
+    };
+}
+
 /// Profondeur maximale de la recherche principale.
 pub const MAX_DEPTH: u32 = 64;
 
@@ -70,31 +122,37 @@ pub const MAX_THREADS: usize = 1024;
 /// il reste trop de coups à jouer pour qu'une évaluation immobile fasse foi.
 const RFP_MAX_DEPTH: i32 = 8;
 
-/// Marge de la futilité inverse, par unité de profondeur restante.
-///
-/// Elle croît avec la profondeur parce que plus il reste de coups, plus le
-/// score peut encore bouger. **Mesuré le 15 sept. 2026 sur des positions tirées
-/// de vraies parties** : la condition se déclenche sur 44,7 % des nœuds
-/// candidats à 100 par profondeur, 47,4 % à 75, 40,0 % à 150 — la sensibilité à
-/// la marge est faible, donc la valeur conventionnelle suffit tant qu'un SPRT
-/// n'a pas dit le contraire.
-const RFP_MARGIN: i32 = 100;
+reglage! {
+    /// Marge de la futilité inverse, par unité de profondeur restante.
+    ///
+    /// Elle croît avec la profondeur parce que plus il reste de coups, plus le
+    /// score peut encore bouger. **Mesuré le 15 sept. 2026 sur des positions tirées
+    /// de vraies parties** : la condition se déclenche sur 44,7 % des nœuds
+    /// candidats à 100 par profondeur, 47,4 % à 75, 40,0 % à 150 — la sensibilité à
+    /// la marge est faible, donc la valeur conventionnelle suffit tant qu'un SPRT
+    /// n'a pas dit le contraire.
+    RFP_MARGIN: i32 = 100
+}
 
 /// Profondeur maximale de la futilité aux nœuds frontières (C39) — celle
 /// jusqu'où la sonde a mesuré ses dégâts.
 const FP_MAX_DEPTH: i32 = 6;
 
-/// Marge de la futilité aux nœuds frontières : `FP_BASE + FP_PER_DEPTH × d`,
-/// en unités du RÉSEAU — mesurée à son échelle, pas transposée d'une autre
-/// (n° 9, troisième écran, 5 oct. 2026). Sur 5 276 recherches de parties
-/// rejouées, à chaque profondeur, la plus petite marge qui détruit au plus
-/// 2 % des montées d'`alpha` des coups tranquilles cherchés, puis la droite
-/// la plus proche par-dessus : elle saute environ 60 % de ces coups, et
-/// retire 29 % de l'arbre à la profondeur 12.
-const FP_BASE: i32 = 140;
+reglage! {
+    /// Marge de la futilité aux nœuds frontières : `FP_BASE + FP_PER_DEPTH × d`,
+    /// en unités du RÉSEAU — mesurée à son échelle, pas transposée d'une autre
+    /// (n° 9, troisième écran, 5 oct. 2026). Sur 5 276 recherches de parties
+    /// rejouées, à chaque profondeur, la plus petite marge qui détruit au plus
+    /// 2 % des montées d'`alpha` des coups tranquilles cherchés, puis la droite
+    /// la plus proche par-dessus : elle saute environ 60 % de ces coups, et
+    /// retire 29 % de l'arbre à la profondeur 12.
+    FP_BASE: i32 = 140
+}
 
-/// Pente de la marge de la futilité aux nœuds frontières — voir [`FP_BASE`].
-const FP_PER_DEPTH: i32 = 20;
+reglage! {
+    /// Pente de la marge de la futilité aux nœuds frontières — voir [`FP_BASE`].
+    FP_PER_DEPTH: i32 = 20
+}
 
 /// Profondeur minimale pour tenter un coup nul.
 ///
@@ -118,17 +176,21 @@ const IIR_MIN_DEPTH: i32 = 4;
 /// dans la recherche principale — voir [`see_prunable_main`].
 const SEE_PRUNE_MAX_DEPTH: i32 = 6;
 
-/// Ce qu'une capture peut perdre au compte de l'échange statique, par pli de
-/// profondeur restante, avant d'être sautée — voir [`see_prunable_main`].
-const SEE_PRUNE_MARGIN: i32 = 100;
+reglage! {
+    /// Ce qu'une capture peut perdre au compte de l'échange statique, par pli de
+    /// profondeur restante, avant d'être sautée — voir [`see_prunable_main`].
+    SEE_PRUNE_MARGIN: i32 = 100
+}
 
 /// Profondeur restante minimale des extensions singulières — voir
 /// [`singular_beta`].
 const SINGULAR_MIN_DEPTH: i32 = 8;
 
-/// La marge des extensions singulières, par pli de profondeur restante, en
-/// unités du réseau — voir [`singular_beta`].
-const SINGULAR_MARGIN: i32 = 10;
+reglage! {
+    /// La marge des extensions singulières, par pli de profondeur restante, en
+    /// unités du réseau — voir [`singular_beta`].
+    SINGULAR_MARGIN: i32 = 10
+}
 
 /// Profondeur minimale pour réduire un coup tardif.
 const LMR_MIN_DEPTH: i32 = 3;
@@ -150,26 +212,28 @@ const LMR_FIRST_REDUCED: usize = 3;
 /// plateau ; 3 est là où il commence.
 const LMP_MAX_DEPTH: i32 = 3;
 
-/// Nombre de coups tranquilles toujours examinés, avant le terme quadratique.
-///
-/// **La mesure a borné le risque, elle n'a pas choisi cette valeur** — et c'est
-/// la différence avec `RFP_MARGIN`, dont la sensibilité mesurée était faible.
-/// Ici le compromis est **monotone et sans genou** : au seuil `base + d²`, sur
-/// le même échantillon, la part des coups tranquilles élagués et celle des
-/// montées d'`alpha` détruites tombent ensemble, continûment.
-///
-/// | base | tranquilles élagués | montées d'`alpha` détruites |
-/// |---|---|---|
-/// | 3 (conventionnel) | 68,5 % | **6,1 %** |
-/// | **6** | **58,4 %** | **3,8 %** |
-/// | 8 | 52,0 % | 3,0 % |
-/// | 12 | 39,8 % | 2,0 % |
-///
-/// 6 est le premier candidat soumis au SPRT : il garde l'essentiel de
-/// l'élagage disponible en divisant par 1,6 le risque de la valeur
-/// conventionnelle. **Si le verdict est H0, bissecter par le seuil avant de
-/// conclure quoi que ce soit sur LMP lui-même.**
-const LMP_BASE: usize = 6;
+reglage! {
+    /// Nombre de coups tranquilles toujours examinés, avant le terme quadratique.
+    ///
+    /// **La mesure a borné le risque, elle n'a pas choisi cette valeur** — et c'est
+    /// la différence avec `RFP_MARGIN`, dont la sensibilité mesurée était faible.
+    /// Ici le compromis est **monotone et sans genou** : au seuil `base + d²`, sur
+    /// le même échantillon, la part des coups tranquilles élagués et celle des
+    /// montées d'`alpha` détruites tombent ensemble, continûment.
+    ///
+    /// | base | tranquilles élagués | montées d'`alpha` détruites |
+    /// |---|---|---|
+    /// | 3 (conventionnel) | 68,5 % | **6,1 %** |
+    /// | **6** | **58,4 %** | **3,8 %** |
+    /// | 8 | 52,0 % | 3,0 % |
+    /// | 12 | 39,8 % | 2,0 % |
+    ///
+    /// 6 est le premier candidat soumis au SPRT : il garde l'essentiel de
+    /// l'élagage disponible en divisant par 1,6 le risque de la valeur
+    /// conventionnelle. **Si le verdict est H0, bissecter par le seuil avant de
+    /// conclure quoi que ce soit sur LMP lui-même.**
+    LMP_BASE: usize = 6
+}
 
 /// Profondeur à partir de laquelle on ose une fenêtre étroite.
 ///
@@ -178,12 +242,14 @@ const LMP_BASE: usize = 6;
 /// l'on paierait des recherches répétées.
 const ASPIRATION_MIN_DEPTH: u32 = 4;
 
-/// Demi-largeur initiale de la fenêtre, en centièmes de pion.
-///
-/// Trop étroite, la fenêtre échoue sans cesse et chaque échec coûte une
-/// recherche complète ; trop large, elle ne coupe plus rien. Valeur
-/// conventionnelle, à régler par SPRT comme le reste.
-const ASPIRATION_DELTA: i32 = 25;
+reglage! {
+    /// Demi-largeur initiale de la fenêtre, en centièmes de pion.
+    ///
+    /// Trop étroite, la fenêtre échoue sans cesse et chaque échec coûte une
+    /// recherche complète ; trop large, elle ne coupe plus rien. Valeur
+    /// conventionnelle, à régler par SPRT comme le reste.
+    ASPIRATION_DELTA: i32 = 25
+}
 
 /// Taille du tampon de coups d'un nœud.
 ///
@@ -211,19 +277,21 @@ const NO_MOVE: Move = Move {
     promotion: None,
 };
 
-/// Marge de l'élagage delta en quiescence, en centièmes de pion.
-///
-/// Une capture ne rapporte, au mieux, que la pièce prise. Si le score statique
-/// plus cette pièce plus une marge reste sous `alpha`, la capture ne peut pas
-/// sauver la position et son sous-arbre est inutile.
-///
-/// La marge couvre ce que la valeur de la pièce ne dit pas : un gain positionnel
-/// consécutif à la capture, ou une erreur de l'évaluation statique. Trop
-/// étroite, elle élague des captures qui sauvaient la position ; trop large,
-/// elle n'élague plus rien. **Valeur conventionnelle, à régler par SPRT comme
-/// le reste** — c'est celle qui a servi à mesurer la portée de l'élagage avant
-/// de l'écrire.
-const DELTA_MARGIN: i32 = 200;
+reglage! {
+    /// Marge de l'élagage delta en quiescence, en centièmes de pion.
+    ///
+    /// Une capture ne rapporte, au mieux, que la pièce prise. Si le score statique
+    /// plus cette pièce plus une marge reste sous `alpha`, la capture ne peut pas
+    /// sauver la position et son sous-arbre est inutile.
+    ///
+    /// La marge couvre ce que la valeur de la pièce ne dit pas : un gain positionnel
+    /// consécutif à la capture, ou une erreur de l'évaluation statique. Trop
+    /// étroite, elle élague des captures qui sauvaient la position ; trop large,
+    /// elle n'élague plus rien. **Valeur conventionnelle, à régler par SPRT comme
+    /// le reste** — c'est celle qui a servi à mesurer la portée de l'élagage avant
+    /// de l'écrire.
+    DELTA_MARGIN: i32 = 200
+}
 
 /// Le facteur, en centièmes, des marges d'aspiration et d'élagage delta quand
 /// le réseau joue.
@@ -2568,6 +2636,18 @@ fn mate_distance_window(alpha: i32, beta: i32, ply: usize) -> (i32, i32) {
 
 const LMR_TABLE_SIDE: usize = 64;
 
+reglage! {
+    /// Le terme constant de la réduction des coups tardifs, en centièmes de
+    /// pli — voir [`build_lmr_table`] : 75, soit 0,75, exact en binaire.
+    LMR_BASE: i32 = 75
+}
+
+reglage! {
+    /// Le diviseur du produit des logarithmes de la réduction des coups
+    /// tardifs, en centièmes — voir [`build_lmr_table`] : 225, soit 2,25.
+    LMR_DIVISEUR: i32 = 225
+}
+
 /// Précalcule les réductions.
 ///
 /// La croissance est logarithmique dans les deux dimensions : réduire d'autant
@@ -2578,10 +2658,12 @@ const LMR_TABLE_SIDE: usize = 64;
 /// Les constantes sont conventionnelles, pas réglées pour ce moteur : elles
 /// sont à améliorer par SPRT, comme les valeurs de l'évaluation.
 fn build_lmr_table() -> Vec<i32> {
+    let base = f64::from(LMR_BASE) / 100.0;
+    let divisor = f64::from(LMR_DIVISEUR) / 100.0;
     let mut table = vec![0; LMR_TABLE_SIDE * LMR_TABLE_SIDE];
     for depth in 1..LMR_TABLE_SIDE {
         for index in 1..LMR_TABLE_SIDE {
-            let value = 0.75 + (depth as f64).ln() * (index as f64).ln() / 2.25;
+            let value = base + (depth as f64).ln() * (index as f64).ln() / divisor;
             table[depth * LMR_TABLE_SIDE + index] = (value as i32).max(1);
         }
     }
@@ -3015,6 +3097,87 @@ mod tests {
 
     fn search() -> Search {
         Search::new(Arc::new(AtomicBool::new(false)))
+    }
+
+    /// Le lecteur des réglages (n° 19) : décimal signé, et rien d'autre.
+    #[test]
+    fn un_reglage_se_lit_en_decimal_signe() {
+        assert_eq!(reglage_lu("0"), 0);
+        assert_eq!(reglage_lu("7"), 7);
+        assert_eq!(reglage_lu("137"), 137);
+        assert_eq!(reglage_lu("-12"), -12);
+        assert_eq!(reglage_lu("2147483648"), 2_147_483_648);
+    }
+
+    #[test]
+    #[should_panic(expected = "réglage illisible")]
+    fn un_reglage_illisible_arrete_tout() {
+        let _ = reglage_lu("1x");
+    }
+
+    #[test]
+    #[should_panic(expected = "réglage illisible")]
+    fn un_signe_plus_n_est_pas_lu() {
+        let _ = reglage_lu("+5");
+    }
+
+    #[test]
+    #[should_panic(expected = "réglage vide")]
+    fn un_reglage_vide_arrete_tout() {
+        let _ = reglage_lu("-");
+    }
+
+    #[test]
+    #[should_panic(expected = "réglage trop grand")]
+    fn un_reglage_demesure_arrete_tout() {
+        let _ = reglage_lu("99999999999999999999");
+    }
+
+    /// La garde de débordement à sa borne exacte : un préfixe de
+    /// `i64::MAX / 100` refuse un chiffre de plus, un préfixe d'un de moins
+    /// l'accepte.
+    #[test]
+    fn la_garde_de_debordement_tient_a_sa_borne() {
+        assert_eq!(reglage_lu("922337203685477570"), 922_337_203_685_477_570);
+        let refus = std::panic::catch_unwind(|| reglage_lu("922337203685477580"));
+        assert!(refus.is_err());
+    }
+
+    /// Sans variable d'environnement, chaque réglage vaut le défaut qu'écrit
+    /// la documentation : c'est ce qui rend le binaire par défaut identique à
+    /// celui d'avant le n° 19. Un binaire de réglage, lui, ne passe pas ses
+    /// tests — il n'est pas fait pour.
+    #[test]
+    fn sans_variable_les_reglages_valent_leur_defaut() {
+        let defauts: [(Option<&str>, i64, i64); 10] = [
+            (option_env!("SR_RFP_MARGIN"), i64::from(RFP_MARGIN), 100),
+            (option_env!("SR_FP_BASE"), i64::from(FP_BASE), 140),
+            (option_env!("SR_FP_PER_DEPTH"), i64::from(FP_PER_DEPTH), 20),
+            (
+                option_env!("SR_SEE_PRUNE_MARGIN"),
+                i64::from(SEE_PRUNE_MARGIN),
+                100,
+            ),
+            (
+                option_env!("SR_SINGULAR_MARGIN"),
+                i64::from(SINGULAR_MARGIN),
+                10,
+            ),
+            (
+                option_env!("SR_ASPIRATION_DELTA"),
+                i64::from(ASPIRATION_DELTA),
+                25,
+            ),
+            (option_env!("SR_DELTA_MARGIN"), i64::from(DELTA_MARGIN), 200),
+            (option_env!("SR_LMR_BASE"), i64::from(LMR_BASE), 75),
+            (option_env!("SR_LMR_DIVISEUR"), i64::from(LMR_DIVISEUR), 225),
+            (option_env!("SR_LMP_BASE"), LMP_BASE as i64, 6),
+        ];
+        for (variable, valeur, defaut) in defauts {
+            if variable.is_none() {
+                assert_eq!(valeur, defaut);
+            }
+        }
     }
 
     /// Une ardoise jetable, pour les tests qui appellent la recherche

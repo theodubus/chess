@@ -267,6 +267,7 @@ ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 | `nnue_probe.rs` | le benchmark obligatoire de B4 : ce que coûtent le copy-make (7,2 %) et la dérivation du delta d'accumulateur NNUE (2,8 %) en part du temps d'un nœud |
 | `nnue_datagen.rs` | les données d'entraînement NNUE (A21) : parties d'auto-jeu à nœuds fixes, au format `viriformat` que lit bullet, **écrit par la crate de référence** et jamais réimplémenté. Lancé sur runner par `.github/workflows/nnue-datagen.yml`, un artefact par job. **Étiquette par le réseau embarqué depuis le 29 sept.** (`--eval`, n° 7) ; `--eval '<none>'` regénère les données d'A21 |
 | `nnue_validation.rs` | la perte de l'entraîneur sur des positions qu'il n'a PAS apprises (n° 18) — bullet `10e7e82` n'a pas de jeu de validation, lu au source. Les positions et les étiquettes de l'entraîneur, dépliées par `viriformat` sous son filtre par défaut ; chaque réseau QUANTIFIÉ évalué par le code du moteur ; la position confrontée pièce à pièce à son étiquette avant d'être comptée ; intervalle par partie, écarts appariés. Lancé sur runner par `.github/workflows/nnue-validation.yml`, qui télécharge les artefacts de `nnue-datagen.yml`. **Un diagnostic — apprendre ou retenir —, jamais une mesure de force** |
+| `spsa.rs` | le pilote du réglage automatique (n° 19) : l'arithmétique de SPSA par manches — l'état (valeurs, plages, paires jouées), le tirage des perturbations d'un job, la lecture du résultat de fastchess, la mise à jour. Ne joue aucune partie : `.github/workflows/spsa.yml` construit les deux camps par les variables `SR_*` que lisent les `reglage!` de `engine/src/search.rs`, fait jouer fastchess, agrège et enchaîne les manches. Ses tests portent une **vérité terrain** — sur des parties simulées autour d'un optimum connu, SPSA doit s'en rapprocher, et ne s'en rapproche pas quand le signal est nul. L'état de la première passe : `tools/spsa/n19.txt` |
 | `see_check.rs` | confronte l'échange statique à un oracle par force brute. Il a trouvé un **bug du manuel** au premier passage — 27 valeurs fausses sur 771 |
 | `attack_dump.rs` | confronte la géométrie d'attaque de `see::least_valuable_attacker` à `python-chess`, case par case |
 
@@ -924,9 +925,12 @@ dernière relève est faite.
 | **Le balayage de mutation après le code des seaux** | **38451261124** | `main` à `6b9881b` (PR #173) | `mutation.yml` | **RELEVÉ le 14 oct. à 0 h 05** — lancé à 20 h 59, fini à 23 h 59 ; **163, exactement la prédiction**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48, `eval.rs` 102 ; `Verdict` vert | — *Prédiction, écrite avant* : **163** — `nnue.rs` 2, les deux équivalents du crible ; le reste à son plafond |
 | **N° 17 — la séance des quatre réseaux, sur la carte de Théo** | — | N5s `1ddb31c`, N5l `6a293b4`, N5r4 `4a604ea`, N5r10 `f729f8c` | `tools/nnue-train` | **RELEVÉE le 14 oct. à 0 h 05** — écrite le 13 oct. au soir, poussée par Théo sur `reseau/n17` (`c7329d6`) ; les quatre confrontations dans le critère, relus 2 132 034 : 242 033 195, l'attendu exact | — les candidats écrits et révoqués (N5s `a684ee1`, N5l `f6ddfed`, N5r4 `7496db3`, N5r10 `d3fe59d`, contre `6a71964`) ; la sonde de B8 relevée, N5l et N5r10 portant leur facteur ; les matchs aux lignes suivantes — section « N° 15 à 19 », « N° 17, la séance — RELEVÉE » |
 | **Le balayage de mutation après la PR #174** | **38486471455** | `main` à `33de0ce` | `mutation.yml` | **RELEVÉ le 14 oct. à 6 h 55** — lancé à 1 h 48, fini à 4 h 46 ; **163, exactement la prédiction**, chaque fichier à son plafond ; `Verdict` vert | — *Prédiction, écrite avant* (section « N° 15 à 19 », les tests qui supposaient N4) : **163** — `nnue.rs` 2, `search.rs` 48 : les tests changés exercent le même code sous la même architecture, et la séparation du facteur n'ajoute qu'une constante |
-| **C13 — la série de N5l** | **38514982795** | `c4697e2` (N5l, le moteur de `main` après la PR #175), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 14 oct. à 7 h 08 ; fin vers 11 h 50 | — *Attendu, écrit avant* (section « N° 17 — VERDICT ») : **3 040 à 3 110** — cette échelle écrase les écarts, ~+20 des ~+30 contre le jumeau |
-| **Le balayage de mutation après N5l** | **38514979900** | `main` à `c4697e2` (PR #175) | `mutation.yml` | **EN VOL** — lancé le 14 oct. à 7 h 07 ; fin vers 10 h 10 | — *Prédiction, écrite avant* (section « N° 17 — VERDICT ») : **163** — `nnue.rs` 2, `search.rs` 48 ; un de moins possible, un de plus non |
-| **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **EN VOL** — lancée le 14 oct. à 9 h 03 ; un premier lancement à 9 h 01 (38525718698) a échoué au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) — relancé avec le SHA complet | — *Attendus, écrits avant* (section « N° 18 — le volume ») : **× 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur** ; **8 à 14 % d'écartées** ; **26 à 32 % de nulles** — hors fourchette, diagnostic avant la vague |
+| **C13 — la série de N5l** | **38514982795** | `c4697e2` (N5l, le moteur de `main` après la PR #175), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 12 h 10** — lancée à 7 h 08, finie à 11 h 38, EPYC 9V74 | **222 − 45 − 33, 79,5 %, ~3 085 ± 38 — dans l'attendu** ; +47 ± 52 sur la série de N4, pas séparé de zéro ; trois « PV continues after fifty-move rule » côté ShallowRed, la signature de C31 (section C13) — *Attendu, écrit avant* (section « N° 17 — VERDICT ») : **3 040 à 3 110** — cette échelle écrase les écarts, ~+20 des ~+30 contre le jumeau |
+| **C13 — N5l contre 3100, le pont** | **38535098523** | `c4697e2` (N5l), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 14 oct. à 10 h 26 ; fin vers 15 h 10 | — *Attendu, écrit avant* (section C13, « Le niveau passe de 2850 à 3100 ») : **3 040 à 3 110**, et d'accord avec la série à 2850 à ~65 près |
+| **Le balayage de mutation après N5l** | **38514979900** | `main` à `c4697e2` (PR #175) | `mutation.yml` | **EN VOL, tentative 2** — lancé le 14 oct. à 7 h 07 ; **le runner de `search.rs` a perdu le serveur à 8 h 07** (« *The hosted runner lost communication with the server* », lu dans les annotations ; son journal ne se télécharge pas), d'où `search.rs` « ILLISIBLE » au verdict et l'issue #176 — une panne de runner, pas une régression : les neuf autres fichiers à leur plafond exact (115 sans `search.rs`). `search.rs` et `Verdict` relancés à 10 h 14, même commit ; fin vers 13 h 15 | — *Prédiction, écrite avant* (section « N° 17 — VERDICT ») : **163** — `nnue.rs` 2, `search.rs` 48 ; un de moins possible, un de plus non |
+| **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 9 h 30** — lancée à 9 h 03, finie à 9 h 24, EPYC 7763 ; un premier lancement à 9 h 01 (38525718698) mort au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) | **1 287 positions par seconde — HORS attendu, × 0,86 ; 13,6 % d'écartées, 31,8 % de nulles, dans leurs attendus.** Diagnostic dans le conteneur : N5l coûte × 0,83 contre N4 au générateur, à un fil comme à quatre — la largeur s'y paie plus qu'au rejeu ; les données ne changent pas, la vague se lance, ~73 jobs au lieu de ~64 (section « N° 18 — le volume ») — *Attendus, écrits avant* : × 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur ; 8 à 14 % d'écartées ; 26 à 32 % de nulles |
+| **N° 18 — la vague 1** | **38531414161** (tenu à l'écart), 38531424497, 38531434938, 38531444819, 38531455378, 38531465902, 38531477470, 38531487267 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **EN VOL** — lancée le 14 oct. à 9 h 54 ; fin vers 15 h 30 | — *Attendu, écrit avant* (section « N° 18 — le volume ») : **190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %, nulles 30 à 33 % |
+| **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
 | **N° 17 — N5l contre N4**, 256 unités et 8 seaux de sortie, facteur 2,85 | **38483035817, 38483038473, 38483041220, 38483044735** | `f6ddfed` → `6a71964` | 4 × 2 800 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+27,11, +43,03, +21,49 et +29,60 ; +30,29 ± 3,95 en commun, hétérogènes (p = 0,001)** — le seul 9V45 (3,02 M n/s) à +43, les trois 7763 (1,83 à 1,97 M) à +26,07 ± 4,61, homogènes ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR — N5l EMBARQUÉ** (section « N° 17 — VERDICT »). — *Attendu, écrit avant* : −5 à +20 — dépassé |
 | **N° 17 — N5r4 contre N4**, 256 unités, 4 seaux de roi, 8 de sortie | **38483047543, 38483050676, 38483054167, 38483056786** | `7496db3` → `6a71964` | 4 × 2 800 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **−54,16, −56,96, −67,08 et −57,47 ; −58,91 ± 4,45 en commun, homogènes (p = 0,187)** ; zéro perte au temps. **Régression**. — *Attendu, écrit avant* : +10 à +40 — manqué de ~70 |
@@ -7811,7 +7815,8 @@ et 6 h 31, graines distinctes, le binaire AVX2 des deux côtés contre
   positions pour chaque disposition, l'incrément égal au recalcul avec
   autant de recalculs que de franchissements, les confrontations de fin
   d'entraînement dans le critère — rois sur chaque seau compris.
-  <span>Inférence, confiance moyenne</span> : **ils retiennent au lieu
+  <span><s>Inférence, confiance moyenne</s></span> **MESURÉ le 14 oct.
+  (section « N° 18 », la perte tenue à l'écart)** : **ils retiennent au lieu
   d'apprendre** — quatre ou dix fois les poids d'entrée de N5l pour les
   mêmes 159 M de positions, et la perte d'entraînement la plus basse des
   quatre (0,0393, 0,0374) ; plus il y a de seaux, plus c'est grave. La
@@ -7938,6 +7943,120 @@ le `gh` intégré refusant l'hôte de stockage (vérifié le 14 oct.).
   l'écart, désigné avant d'en voir le compte ; ses positions ne
   s'entraînent pas — 1/64 du volume.
 
+**La sonde, RELEVÉE le 14 oct. à 9 h 30 — le débit HORS de son attendu,
+la composition dedans.** Run 38525942509, 20 minutes sur un EPYC 7763,
+quatre fils, `x86-64-v3`, `evaluation=reseau-embarque`, `c4697e2` :
+
+| | la sonde | le 7 oct., EPYC 7763 | attendu, écrit avant |
+|---|---|---|---|
+| positions par seconde | **1 287** | 1 501 et 1 506 | 1 430 à 1 730 — **manqué, × 0,86** |
+| parties écartées | **13,6 %** (1 920 sur 14 136) | 9,45 % | 8 à 14 % |
+| nulles | **31,8 %** | 27,09 % | 26 à 32 % |
+
+126,4 positions par partie (113,5 le 7 oct.), 67,2 % gardées par le filtre
+(65,7 %). Un premier lancement, 38525718698, est mort au checkout : le SHA
+tapé de tête, faux d'un caractère.
+
+**Le diagnostic, dans le conteneur, avant la vague** — le générateur de
+chaque commit construit en `x86-64-v3`, la même graine, trois minutes
+(deux à un fil), dans un ordre alterné :
+
+| générateur | réseau | quatre fils | un fil |
+|---|---|---|---|
+| `0e67f71`, celui du 7 oct. | N2L | 1 427 · 1 431 | — |
+| `ce57170` | N4 | 1 399 | 319 |
+| `25f26ae`, le SIMD du n° 16 | N4 | 1 370 | 345 |
+| `c4697e2`, la recette du n° 18 | N5l | 1 161 · 1 109 | 287 |
+
+- **le conteneur reproduit le runner** : × 0,79 contre le générateur du
+  7 oct., × 0,86 sur le runner. Le coût est dans le code, pas dans la
+  machine ;
+- **N5l coûte × 0,83 contre N4, à quatre fils comme à un** — pas une
+  contention entre fils. Au rejeu du n° 17, à la profondeur 10 et la table
+  gardée d'un coup à l'autre, il coûtait × 0,897. <span>Inférence,
+  confiance faible</span> : à 5 000 nœuds, la table vidée à chaque partie,
+  presque chaque nœud est une feuille qui évalue, et la part du réseau
+  dans le temps d'un nœud y dépasse celle du rejeu — la largeur s'y paie
+  davantage. Les matchs, eux, ont mesuré N5l à sa vitesse réelle ;
+- **le gain du SIMD ne se lit pas ici** : × 0,98 à quatre fils, × 1,08 à
+  un, un tirage chacun — rien à conclure, et aucun ne décide de la vague ;
+- **ce qui ne change pas** : les données, à débit près. La vague se lance.
+  **Ce qui change, c'est le compte** : ~22 M positions gardées par job au
+  lieu de ~25, donc **~73 jobs, neuf vagues** pour ~1,6 G.
+
+**La vague 1, lancée le 14 oct. à 9 h 54** — huit jobs de 330 minutes,
+`c4697e2`, les entrées par défaut ; **le PREMIER lancé est tenu à
+l'écart**. *Attendu, écrit avant* — <span>inférence, confiance moyenne,
+le débit de la sonde par processeur, × 0,86 celui du 7 oct.</span> :
+**190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %,
+nulles 30 à 33 %. Les runs, dans l'ordre de lancement : **38531414161**
+— tenu à l'écart —, 38531424497, 38531434938, 38531444819, 38531455378,
+38531465902, 38531477470 et 38531487267. Fin attendue vers 15 h 30.
+
+**La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
+38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
+du 7 oct. (37625443145, tenu à l'écart) puis sur un job appris
+(37625438110). La prédiction est celle écrite plus haut. *Contrôle
+indépendant, écrit avant* : le compte de positions de l'outil retombe
+sur le `retenues_filtre_defaut` de chaque job — **19 160 455** et
+**19 608 724**.
+
+**La perte tenue à l'écart des réseaux du n° 17, RELEVÉE à 10 h 15 — la
+prédiction tient, sur ses deux critères : les seaux de roi RETIENNENT.**
+Run 38531523447, deux minutes et dix secondes en tout. *Le contrôle
+d'abord* : **19 160 455** et **19 608 724** positions, les
+`retenues_filtre_defaut` des deux jobs au chiffre près — l'outil lit ce
+que l'entraîneur lit. Perte moyenne, intervalle à 95 % par partie ; écart
+à N5l apparié, mêmes positions :
+
+| | tenu à l'écart — 37625443145, 256 404 parties | appris — 37625438110, 262 306 parties | tenu à l'écart − appris |
+|---|---|---|---|
+| **N5l** | **0,042157** ± 0,000196 | 0,040954 ± 0,000188 | +0,001203 |
+| **N5r4** | 0,043386 — **+0,001230 ± 0,000040** | 0,039389 — **−0,001565 ± 0,000039** | +0,003997 — × 3,3 |
+| **N5r10** | 0,044944 — **+0,002788 ± 0,000048** | 0,037495 — **−0,003459 ± 0,000053** | +0,007449 — × 6,2 |
+
+- **l'ordre s'inverse** : sur les positions apprises, N5r10 < N5r4 < N5l,
+  l'ordre de leurs pertes d'entraînement ; sur les positions tenues à
+  l'écart, N5l < N5r4 < N5r10, l'ordre de leurs matchs. Les deux écarts
+  appariés sont à trente intervalles de zéro ;
+- **l'écart entre appris et tenu à l'écart croît avec les seaux** : × 3,3
+  pour quatre, × 6,2 pour dix, celui de N5l. Les deux jobs n'ont pas les
+  mêmes parties, donc chaque ligne mêle la généralisation et la différence
+  des jobs ; la COMPARAISON entre lignes, elle, est appariée ;
+- **l'inférence du n° 17 devient une mesure** : sur 159 M positions, les
+  seaux de roi retiennent ce qu'ils voient au lieu d'apprendre. Ce n'est
+  pas un réglage : quatre ou dix fois les poids d'entrée de N5l pour les
+  mêmes données. Le remède écrit est le volume, et le n° 18 le mesure ;
+- **ce que cela ne dit pas** : la force. L'ordre tenu à l'écart retombe
+  ici sur celui des matchs, une fois sur trois réseaux d'une même
+  famille ; qu'il le fasse en général n'est pas établi, et une perte ne
+  remplace jamais un match (`CLAUDE.md`, Texel) ;
+- **N5l retient un peu aussi** — +0,0012, que la différence des jobs peut
+  porter en partie. Le volume du n° 18 doit le faire baisser ; la séance
+  le mesurera par le job tenu à l'écart, 38531414161, et par les points
+  de sauvegarde de l'entraînement.
+
+**Pendant les vagues, une piste de vitesse fermée par sa mesure — la mise
+à jour paresseuse des accumulateurs, 14 oct.** N5l coûte × 0,83 contre N4
+au générateur ; une dérivation qu'aucun nœud ne lit — ni évaluée, ni base
+d'un enfant — serait épargnée par une mise à jour à la demande, comme
+chez Stockfish. *Le mécanisme d'abord* (`tools/attic/n18-sonde-paresse.patch`,
+`c4697e2`, un fil) :
+
+| régime | dérivations | jamais lues | lues par un enfant seulement | évaluations par dérivation |
+|---|---|---|---|---|
+| générateur, 5 000 nœuds, 60 parties | 33 874 214 | **14,3 %** | 6,6 % | 0,80 |
+| jeu, 200 000 nœuds, 4 parties | 30 784 143 | **5,9 %** | 6,6 % | 0,88 |
+
+- **la paresse ne paie pas ici** : la dérivation pesant ~12 % du temps
+  d'un nœud à 256 unités — <span>inférence, confiance moyenne : 7,6 % à
+  128 au n° 15, × ~1,6</span> —, en épargner 5,9 % rend ~0,7 % de temps
+  en partie, ~1 Elo ; 14,3 % au générateur, ~2 % de débit. Ni l'un ni
+  l'autre ne vaut le code ni la vérification qu'il demanderait ;
+- **presque chaque nœud évalue** : 0,80 à 0,88 évaluation par
+  dérivation. Ce qui reste du coût du réseau est le calcul lui-même — la
+  sortie et la dérivation —, que le chemin A a déjà vectorisé.
+
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :
 - **N6l** — l'architecture de N5l sur tout le volume, plus de superlots ;
@@ -7949,6 +8068,130 @@ vagues, avant la séance**, comme au n° 13 :
   × 0,82 de nœuds par seconde attendus (n° 17, étape 1) ;
 - **le nombre de superlots**, par la perte tenue à l'écart des points de
   sauvegarde : elle dit où la retenue commence, si elle commence.
+
+### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
+
+**Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
+(chaîne du 13 oct.) et vient **le réseau stabilisé** : les marges
+appartiennent au réseau (B8), et régler sur N5l ce que le n° 18 remplacera
+serait à refaire. L'OUTILLAGE, lui, ne dépend d'aucun réseau : il s'écrit
+pendant que les vagues tournent — Théo, 14 oct. : « *Y'a rien que tu peux
+faire en parallèle sans affecter la suite en attendant ?* ». Rien de ce qui
+est en vol n'en dépend : vagues, séries C13 et balayage sont épinglés à
+`c4697e2`.
+
+**Le mécanisme — des réglages à la COMPILATION, jamais des options UCI.**
+Chaque constante réglée devient `reglage!(NOM: type = défaut)` : sans la
+variable d'environnement `SR_NOM`, la constante vaut son défaut, et le
+binaire par défaut est le même — le banc et l'empreinte des deux binaires
+le prouvent ; avec elle, la constante prend sa valeur au moment de
+compiler. Pourquoi pas des options UCI :
+- aucun coût en jeu : une option se lit à chaque nœud, une constante se
+  plie dans le code machine ;
+- l'arbre par défaut ne PEUT pas bouger, et aucun chemin de lecture ne
+  s'ajoute à la recherche — une option se règle de travers en silence ;
+- le prix : un binaire par jeu de paramètres, deux par perturbation, ~2 à 3
+  minutes de compilation sur un runner — petit devant une heure de parties.
+
+Éprouvé avant de l'écrire, sur une crate jetable : la constante prend le
+défaut sans variable, `137` et `-12` avec, et une valeur illisible arrête la
+compilation (« *réglage illisible* ») au lieu de jouer avec un défaut.
+
+**Les paramètres de la première passe — des MARGES, pas des seuils de
+profondeur.** SPSA perturbe chaque paramètre de ± c ; un seuil entier de
+plage 3 à 8 ne se perturbe que d'un pli, soit ± 20 à 30 % d'un coup :
+bruit et biais d'arrondi y dominent. D'abord les grandeurs à plage large —
+défaut, plage, perturbation c de fin :
+
+| réglage | défaut | plage | c |
+|---|---|---|---|
+| `RFP_MARGIN` — futilité inverse, par pli | 100 | 40 à 220 | 10 |
+| `FP_BASE` — futilité aux nœuds frontières | 140 | 60 à 280 | 12 |
+| `FP_PER_DEPTH` — sa pente | 20 | 4 à 50 | 3 |
+| `SEE_PRUNE_MARGIN` — capture perdante, par pli | 100 | 40 à 220 | 10 |
+| `SINGULAR_MARGIN` — extensions singulières, par pli | 10 | 3 à 30 | 2 |
+| `ASPIRATION_DELTA` — avant le facteur du réseau | 25 | 8 à 60 | 4 |
+| `DELTA_MARGIN` — élagage delta, avant le facteur | 200 | 80 à 400 | 20 |
+| `LMR_BASE` — terme constant de LMR, en centièmes | 75 | 0 à 200 | 12 |
+| `LMR_DIVISEUR` — diviseur du produit des logarithmes, en centièmes | 225 | 120 à 400 | 15 |
+| `LMP_BASE` — élagage par compte de coups | 6 | 2 à 14 | 1 |
+
+`NETWORK_MARGIN_PERCENT` reste figé : il multiplie l'aspiration et l'élagage
+delta, qui se règlent eux-mêmes ; le régler aussi ferait deux paramètres
+d'une seule direction.
+
+**L'algorithme — SPSA par manches, le pilote sur les runners.** Une manche :
+- `J` jobs en parallèle ; le job `j` tire `Δⱼ ∈ {−1, +1}ᵏ` d'une graine
+  fixée par la manche et `j`, construit `θ + c·Δⱼ` et `θ − c·Δⱼ` — arrondis
+  à l'entier, bornés à la plage —, et joue `P` paires d'ouvertures, couleurs
+  échangées, l'un contre l'autre, à `8+0,08`, le livre du dépôt ;
+- un job d'agrégation lit les `J` scores et met à jour
+  `θ ← θ + a · moyenne_j((s⁺ⱼ − s⁻ⱼ) / (2c) · Δⱼ)`, borné à la plage ;
+  il écrit `θ` dans son résumé et en artefact, puis lance la manche
+  suivante ;
+- la chaîne tient sans le conteneur, qui dort entre deux tours : chaque
+  manche lit son `θ` en entrée et passe le suivant à la manche qu'elle lance.
+  <span>De mémoire, confiance moyenne</span> : le jeton `GITHUB_TOKEN` d'un
+  job peut lancer un `workflow_dispatch`, à la différence des autres
+  événements — **à éprouver par l'essai**, pas à supposer.
+
+**Le budget, écrit avant** — <span>inférence, confiance faible</span> : les
+réglages SPSA publiés de moteurs amateurs emploient de l'ordre de 20 000 à
+80 000 parties pour une dizaine de paramètres, à cadence courte. À
+`8+0,08`, un runner joue ~1 500 parties par heure (trois à la fois,
+~7,25 s chacune) : **huit jobs d'une heure font ~12 000 parties par manche,
+trois à six manches** — une demi-journée de runners, à ne lancer qu'une fois
+le réseau du n° 18 embarqué et les vagues finies.
+
+**La cadence du réglage est celle de la mesure, `8+0,08`** : un réglage
+appartient à sa cadence comme un verdict (`CLAUDE.md`) — régler court
+optimiserait un régime qui n'est pas la cible.
+
+**Le verdict reste un match.** Le `θ` final est un candidat comme un autre :
+commit révoqué, quatre jobs de 2 800 parties à `8+0,08` contre `main`,
+critère écrit avant ; puis C13 à 3100. Un réglage SPSA prédit bien sur son
+propre bruit : seul le match dit s'il joue mieux.
+
+**L'ordre de l'écriture** : (1) le mécanisme dans le moteur, le binaire par
+défaut prouvé identique ; (2) le pilote, <s>`tools/spsa.py`</s>
+`tools/src/bin/spsa.rs` — en Rust comme le reste de l'outillage, ses tests
+dans la CI ; (3) le workflow `spsa.yml` ; (4) un essai court — deux jobs,
+quelques parties à cadence courte — qui éprouve la chaîne, pas un réglage.
+
+**(1) à (3) ÉCRITS le 14 oct.** :
+- **le mécanisme** : `reglage!` et `reglage_lu` dans `engine/src/search.rs`,
+  les dix constantes du tableau converties — `LMR_BASE` et `LMR_DIVISEUR`
+  en centièmes, 0,75 et 2,25 exacts en binaire. **Sans variable, le code
+  machine est celui d'avant à l'octet** : sections `.text` et `.rodata`
+  identiques, seules `.data.rel.ro` — les numéros de ligne des
+  emplacements de panique, que les lignes ajoutées décalent — et
+  l'identifiant de build diffèrent ; banc 70 452. **Avec une variable, elle
+  prend** : `SR_LMP_BASE=9` rend 77 099 nœuds au banc. Éprouvé dans les
+  deux sens : une valeur illisible et une valeur hors du type arrêtent la
+  compilation — la seconde ne le faisait pas au premier jet, un négatif
+  replié dans `usize` passant l'aller-retour par `i64` ; borné par `i128`
+  depuis. **Crible local des vingt mutants de `reglage_lu`**, sur les tests
+  du moteur : **19 attrapés, 1 expiré** — `i += 1` en `i *= 1`, une boucle
+  sans fin —, **aucun survivant**. *Prédiction pour le balayage qui suivra
+  la fusion, écrite avant* : **`search.rs` reste à 48** — les constantes ne
+  se mutent pas, le lecteur est couvert, et les mutants neufs de
+  `build_lmr_table` (`/ 100.0` en `* 100.0` ou `% 100.0`) changent la table,
+  donc le banc figé ;
+- **deux rustines de l'attic portées** : `b8-sonde-marges.patch` — celle
+  qu'on rejoue à chaque réseau neuf — et `c44-marge-singuliere-5.patch`
+  ne s'appliquaient plus, leur contexte ayant bougé. Le `verify.sh` complet
+  l'a vu, le rapide non ; la première portée, construite, régénérée, la
+  seconde équivaut désormais à `SR_SINGULAR_MARGIN=5` ;
+- **le pilote** : huit tests, dont la vérité terrain — seize manches de
+  huit jobs simulés autour d'un optimum connu rapprochent l'état de plus
+  de moitié ; deux fautes injectées attrapées, le signe de la mise à jour
+  inversé et un simulateur sans signal ;
+- **le workflow** : `préparer` fige le SHA du moteur et la liste des jobs ;
+  `jouer` tire, construit les deux camps — refuse s'ils sont le même
+  binaire —, joue, lit le score ; `agréger` met l'état à jour, le dépose en
+  artefact `spsa-etat` et lance la manche suivante.
+
+
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
@@ -8265,6 +8508,59 @@ aucun moteur perdu :
 - **ce que la série dit** : le moteur qui joue se situe à ~3 040 ± 36 sur
   cette échelle, au `README.md`. Pas davantage — un changement se mesure
   contre notre jumeau.
+
+**La série de N5l contre 2850, RELEVÉE le 14 oct. à 12 h 10** — run
+38514982795, finie à 11 h 38, trois parties à la fois, zéro perte au
+temps, zéro coup illégal, aucun moteur perdu :
+
+| série | runner — bench, profondeur en 250 ms | score | écart | estimation | attendu, écrit avant |
+|---|---|---|---|---|---|
+| N5l (`c4697e2`), AVX2, contre 2850 — 38514982795 | EPYC 9V74 — 2 561 220 n/s, 16 | 222 − 45 − 33, 79,5 % | +235,5 ± 37,5 | **3 085 ± 38** | 3 040 à 3 110 : **dedans** |
+
+- **l'écart à la série de N4 contre le même adversaire : +47 ± 52**,
+  `[−5 ; +99]` — pas séparé de zéro ; notre jumeau mesure +30,29 ± 3,95.
+  Le facteur d'écrasement au point, 1,6, d'intervalle −0,2 à 3,3 : il ne
+  départage toujours rien ;
+- **le runner** : un EPYC 9V74 à 2,56 M n/s et la profondeur 16 en
+  250 ms, contre un Xeon 8370C à 1,59 M et 15 pour N4 — deux binaires,
+  donc pas comparables au sens strict ; mais Stockfish bridé choisit son
+  coup à profondeur fixe, et une machine plus rapide ne peut que nous
+  avantager. <span>Inférence, confiance faible</span> : une part de l'écart
+  au point peut venir du runner ;
+- **trois avertissements côté ShallowRed, « PV continues after
+  fifty-move rule »** — la signature connue de C31, à son taux ; la ligne
+  n'a pas été ouverte, pour la raison écrite à la série de N4. Les 7 312
+  « Bestmove does not match… » sont ceux du bridage ;
+- **79,5 %** : le score qui justifie de monter de niveau, écrit avant
+  cette relève ; le pont contre 3100 est en vol (38535098523).
+
+**Le niveau passe de 2850 à 3100 — décidé le 14 oct. 2026**, sur la
+question de Théo (« *est-ce qu'il serait préférable de lancer les futurs
+tests de force absolue sur un stockfish moins bridé (ex 3000) ? L'écart
+commence à se sentir* ») :
+- **ce qui presse, et ce qui ne presse pas** : N4 marquait 74,7 % contre
+  2850, dans la plage lisible (10 à 90 %). Ce que coûte l'écart, c'est la
+  précision — ± 36 à 75 % contre ~± 30 près de 50 % pour 300 parties — et
+  la marge : N5l est attendu vers 3 040 à 3 110, soit 75 à 80 % contre
+  2850, et un gain du n° 18 de l'ordre de +50 à +100 le porterait vers
+  85 %, au bord de la règle ;
+- **pourquoi 3100 plutôt que 3000** : 3100 laisse de la place jusqu'à
+  ~3 480 (90 %) sous le plafond de Stockfish 16 (3190) ; il porte déjà un
+  point — le réseau du 29 sept., **2 882 ± 37 contre 3100, 2 830 ± 30
+  contre 2850, d'accord à 52 ± 48** ; et Stockfish bridé y choisit son coup
+  à la profondeur 17 au lieu de 12 (`time_to_pick`, `sf_16`) —
+  <span>inférence, confiance faible</span> : moins de fautes au hasard,
+  peut-être une échelle moins écrasée ;
+- **le pont, pour ne pas casser la série** : N5l se mesure aux DEUX
+  niveaux — 2850 (38514982795, en vol) et 3100 —, le même moteur ; ensuite,
+  3100 seul. *Attendu, écrit avant* — <span>inférence, confiance
+  faible</span> : **3 040 à 3 110 contre 3100 aussi**, et les deux
+  estimations d'accord à leurs intervalles près (écart sous ~1,96 ·
+  √(σ₁² + σ₂²), ~65). Un désaccord dirait que l'échelle de `UCI_Elo` n'est
+  pas cohérente entre les deux niveaux, et les séries d'avant le 14 oct. ne
+  se compareraient plus à celles d'après qu'à travers ce pont ;
+- **ce que cela ne change pas** : un changement se mesure contre notre
+  jumeau, jamais contre Stockfish bridé, qui écrase les écarts.
 
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 

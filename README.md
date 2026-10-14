@@ -38,14 +38,15 @@ d'un aveu sur la profondeur de recherche.
 > techniques que tous les manuels recommandent. Il gagne toutes ses parties
 > contre un adversaire jouant au hasard.
 >
-> **Force absolue, estimée le 13 oct. 2026 : ~3 040 ± 36** sur l'échelle
+> **Force absolue, estimée le 14 oct. 2026 : ~3 085 ± 38** sur l'échelle
 > `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
 > 300 parties à cette cadence contre Stockfish bridé à 2850, avec le moteur
-> qui jouait, N4, binaire AVX2 — N5l, embarqué le 14 oct., n'y est pas
-> encore mesuré. Le 7 oct., avant la composition du n° 12 et
-> N4, il y valait **~3 000 ± 33** : l'écart, +35 ± 49, n'est pas séparé de
-> zéro, quand notre jumeau en mesure ~+52 — cette échelle écrase les
-> écarts. Le 2 oct., **~2 950 ± 30** ; N2 **~2 940 ± 30** (30 sept.), le
+> qui joue, N5l, binaire AVX2. Le 13 oct., avec N4, **~3 040 ± 36** ; le
+> 7 oct., avant la composition du n° 12 et N4, **~3 000 ± 33**. Les écarts
+> d'une série à l'autre — +35 ± 49, puis +47 ± 52 — ne se séparent pas de
+> zéro, quand notre jumeau en mesure ~+52 puis +30 : cette échelle écrase
+> les écarts. À 79,5 %, le niveau passe à 3100 — N5l y est mesuré aussi,
+> pour faire le pont. Le 2 oct., **~2 950 ± 30** ; N2 **~2 940 ± 30** (30 sept.), le
 > premier réseau **~2 850 ± 25** (600 parties, 29 sept.), **l'évaluation
 > faite main ~2 630 ± 40**. Une estimation, pas un classement :
 > l'adversaire se trompe exprès, et le moteur jouait sur un runner à deux

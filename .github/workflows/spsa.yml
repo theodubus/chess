@@ -1,0 +1,238 @@
+# Le réglage automatique (n° 19) : SPSA par manches, sur runners.
+#
+# Une exécution = une manche : `jobs` runners tirent chacun une perturbation
+# du même état, construisent les deux moteurs `θ + c·Δ` et `θ − c·Δ` — les
+# constantes `reglage!` de `engine/src/search.rs`, remplacées à la
+# compilation par les variables `SR_*` —, et les font jouer l'un contre
+# l'autre en paires d'ouvertures. Le job `Agréger` met l'état à jour
+# (`tools/src/bin/spsa.rs`), le dépose en artefact `spsa-etat`, et lance la
+# manche suivante tant qu'il en reste.
+#
+# La chaîne tient sans le conteneur de session, qui dort entre deux tours :
+# chaque manche reçoit l'état de la précédente par `etat_run`, et le moteur
+# par un SHA résolu une fois — toutes les manches règlent le même code.
+#
+# Ce que ce workflow ne rend PAS : un verdict. Le θ final est un candidat
+# comme un autre, mesuré par `match.yml` contre `main` (`tools/README.md`,
+# « N° 19 »).
+name: SPSA — réglage par manches
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit du moteur réglé (vide : la référence lancée). La chaîne le fige en SHA dès la première manche."
+        type: string
+        default: ""
+      etat:
+        description: "État initial, un fichier du dépôt — ignoré si etat_run est donné"
+        type: string
+        default: "tools/spsa/n19.txt"
+      etat_run:
+        description: "Run SPSA dont l'artefact spsa-etat est l'état de départ (vide : le fichier etat)"
+        type: string
+        default: ""
+      manches:
+        description: "Manches à enchaîner, celle-ci comprise"
+        type: string
+        default: "1"
+      jobs:
+        description: "Jobs parallèles par manche"
+        type: string
+        default: "8"
+      paires:
+        description: "Paires d'ouvertures par job (deux parties chacune)"
+        type: string
+        default: "250"
+      cadence:
+        description: "Cadence des deux camps — celle de la mesure, 8+0.08 ; une cadence courte ne sert qu'à éprouver la chaîne"
+        type: string
+        default: "8+0.08"
+
+permissions:
+  contents: read
+  # Lire les artefacts de la manche précédente, et lancer la suivante.
+  actions: write
+
+jobs:
+  preparer:
+    name: Préparer
+    runs-on: ubuntu-latest
+    outputs:
+      indices: ${{ steps.p.outputs.indices }}
+      sha: ${{ steps.p.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit }}
+      - id: p
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ inputs.jobs }}" =~ ^[1-9][0-9]?$ ]] || { echo "::error::jobs illisible : ${{ inputs.jobs }}"; exit 1; }
+          [[ "${{ inputs.paires }}" =~ ^[1-9][0-9]*$ ]] || { echo "::error::paires illisible : ${{ inputs.paires }}"; exit 1; }
+          [[ "${{ inputs.manches }}" =~ ^[1-9][0-9]*$ ]] || { echo "::error::manches illisible : ${{ inputs.manches }}"; exit 1; }
+          indices=$(seq 0 $(( ${{ inputs.jobs }} - 1 )) | paste -sd, -)
+          echo "indices=[$indices]" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  jouer:
+    name: Jouer ${{ matrix.job }}
+    needs: preparer
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        job: ${{ fromJSON(needs.preparer.outputs.indices) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preparer.outputs.sha }}
+
+      - name: L'état de la manche
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -n "${{ inputs.etat_run }}" ]; then
+            gh run download "${{ inputs.etat_run }}" -R "${{ github.repository }}" -n spsa-etat -D /tmp/etat
+            cp /tmp/etat/etat.txt /tmp/etat.txt
+          else
+            cp "${{ inputs.etat }}" /tmp/etat.txt
+          fi
+          cat /tmp/etat.txt
+
+      - name: Tirer
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --release -p shallowred-tools --bin spsa
+          ./target/release/spsa tirer /tmp/etat.txt "${{ matrix.job }}" /tmp/tirage
+
+      # Deux binaires, deux compilations : la variable change, cargo
+      # recompile. Le binaire AVX2, celui de la mesure (n° 10).
+      - name: Construire les deux camps
+        shell: bash
+        run: |
+          set -euo pipefail
+          for camp in plus moins; do
+            env $(cat "/tmp/tirage/$camp.env") RUSTFLAGS="-C target-cpu=x86-64-v3" \
+              cargo build --release --bin shallowred
+            cp target/release/shallowred "/tmp/$camp"
+            echo "$camp : $(md5sum "/tmp/$camp" | cut -d' ' -f1)"
+          done
+          if cmp -s /tmp/plus /tmp/moins; then
+            echo "::error::les deux camps sont le même binaire : la variable n'a pas pris" >&2
+            exit 1
+          fi
+
+      - name: Arbitre
+        run: tools/setup-arbiters.sh
+
+      # Monofil sans ponder : un seul moteur réfléchit à la fois par partie,
+      # d'où trois parties sur les quatre processeurs (`CLAUDE.md`).
+      - name: Jouer
+        shell: bash
+        run: |
+          set -euo pipefail
+          graine=$(( ${{ github.run_id }} % 1000000 * 100 + ${{ matrix.job }} ))
+          tools/arbiters/fastchess \
+            -engine cmd=/tmp/plus  name=plus  tc="${{ inputs.cadence }}" \
+            -engine cmd=/tmp/moins name=moins tc="${{ inputs.cadence }}" \
+            -each proto=uci \
+            -openings file=tools/book.epd format=epd order=random \
+            -srand "$graine" \
+            -games 2 -repeat -rounds "${{ inputs.paires }}" \
+            -concurrency 3 \
+            -draw movenumber=40 movecount=8 score=10 \
+            -resign movecount=4 score=600 twosided=true \
+            | tee /tmp/match.log
+          ./target/release/spsa resultat /tmp/match.log /tmp/tirage
+
+      - name: Déposer le tirage
+        uses: actions/upload-artifact@v4
+        with:
+          name: spsa-tirage-${{ matrix.job }}
+          path: /tmp/tirage/
+          if-no-files-found: error
+
+  agreger:
+    name: Agréger
+    needs: [preparer, jouer]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preparer.outputs.sha }}
+
+      - name: L'état de la manche
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -n "${{ inputs.etat_run }}" ]; then
+            gh run download "${{ inputs.etat_run }}" -R "${{ github.repository }}" -n spsa-etat -D /tmp/etat
+            cp /tmp/etat/etat.txt /tmp/etat.txt
+          else
+            cp "${{ inputs.etat }}" /tmp/etat.txt
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: spsa-tirage-*
+          path: /tmp/tirages
+
+      - name: Agréger
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --release -p shallowred-tools --bin spsa
+          mkdir -p /tmp/sortie
+          ./target/release/spsa agreger /tmp/etat.txt /tmp/sortie/etat.txt /tmp/tirages/spsa-tirage-* \
+            | tee /tmp/bilan.txt
+          {
+            echo "### SPSA — manche, run ${{ github.run_id }}"
+            echo
+            echo "- moteur : \`${{ needs.preparer.outputs.sha }}\`, cadence \`${{ inputs.cadence }}\`"
+            echo "- état de départ : ${{ inputs.etat_run && format('run {0}', inputs.etat_run) || inputs.etat }}"
+            echo
+            echo '```'
+            cat /tmp/bilan.txt
+            echo '```'
+            echo
+            echo "État suivant :"
+            echo
+            echo '```'
+            cat /tmp/sortie/etat.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Déposer l'état
+        uses: actions/upload-artifact@v4
+        with:
+          name: spsa-etat
+          path: /tmp/sortie/etat.txt
+          if-no-files-found: error
+          retention-days: 90
+
+      # Le jeton d'un job peut lancer un `workflow_dispatch` — l'exception
+      # que GitHub fait aux événements nés de ce jeton. Éprouvé par l'essai
+      # court, pas supposé (`tools/README.md`, « N° 19 »).
+      - name: La manche suivante
+        if: ${{ inputs.manches != '1' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run spsa.yml -R "${{ github.repository }}" --ref "${{ github.ref_name }}" \
+            -f commit="${{ needs.preparer.outputs.sha }}" \
+            -f etat_run="${{ github.run_id }}" \
+            -f manches="$(( ${{ inputs.manches }} - 1 ))" \
+            -f jobs="${{ inputs.jobs }}" \
+            -f paires="${{ inputs.paires }}" \
+            -f cadence="${{ inputs.cadence }}"
+          echo "manche suivante lancée — $(( ${{ inputs.manches }} - 1 )) restante(s)" >> "$GITHUB_STEP_SUMMARY"
