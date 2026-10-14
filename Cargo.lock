@@ -199,6 +199,7 @@ dependencies = [
 name = "shallowred-tools"
 version = "0.1.0"
 dependencies = [
+ "bulletformat",
  "cozy-chess",
  "shallowred",
  "viriformat",

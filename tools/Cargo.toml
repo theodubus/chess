@@ -56,6 +56,13 @@ path = "src/bin/tune.rs"
 name = "nnue-datagen"
 path = "src/bin/nnue_datagen.rs"
 
+# La perte de l'entraîneur sur des positions qu'il n'a pas apprises (n° 18) :
+# bullet `10e7e82` n'a pas de jeu de validation. Lancé sur runner par
+# `.github/workflows/nnue-validation.yml`, qui télécharge les artefacts.
+[[bin]]
+name = "nnue-validation"
+path = "src/bin/nnue_validation.rs"
+
 [[bin]]
 name = "nnue-probe"
 path = "src/bin/nnue_probe.rs"
@@ -67,3 +74,6 @@ cozy-chess = "0.3.4"
 # écrit ses parties par elle, jamais par une réimplémentation. Version épinglée
 # — c'est celle qu'emploie bullet au commit lu (`10e7e82`).
 viriformat = "=2.0.1"
+# Le `ChessBoard` que rend le dépliage de `viriformat` — l'étiquette même que
+# lit bullet. La version que tire `viriformat` à la sienne.
+bulletformat = "=1.8.0"
