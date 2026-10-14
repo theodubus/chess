@@ -926,7 +926,9 @@ dernière relève est faite.
 | **Le balayage de mutation après la PR #174** | **38486471455** | `main` à `33de0ce` | `mutation.yml` | **RELEVÉ le 14 oct. à 6 h 55** — lancé à 1 h 48, fini à 4 h 46 ; **163, exactement la prédiction**, chaque fichier à son plafond ; `Verdict` vert | — *Prédiction, écrite avant* (section « N° 15 à 19 », les tests qui supposaient N4) : **163** — `nnue.rs` 2, `search.rs` 48 : les tests changés exercent le même code sous la même architecture, et la séparation du facteur n'ajoute qu'une constante |
 | **C13 — la série de N5l** | **38514982795** | `c4697e2` (N5l, le moteur de `main` après la PR #175), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 14 oct. à 7 h 08 ; fin vers 11 h 50 | — *Attendu, écrit avant* (section « N° 17 — VERDICT ») : **3 040 à 3 110** — cette échelle écrase les écarts, ~+20 des ~+30 contre le jumeau |
 | **Le balayage de mutation après N5l** | **38514979900** | `main` à `c4697e2` (PR #175) | `mutation.yml` | **EN VOL** — lancé le 14 oct. à 7 h 07 ; fin vers 10 h 10 | — *Prédiction, écrite avant* (section « N° 17 — VERDICT ») : **163** — `nnue.rs` 2, `search.rs` 48 ; un de moins possible, un de plus non |
-| **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **EN VOL** — lancée le 14 oct. à 9 h 03 ; un premier lancement à 9 h 01 (38525718698) a échoué au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) — relancé avec le SHA complet | — *Attendus, écrits avant* (section « N° 18 — le volume ») : **× 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur** ; **8 à 14 % d'écartées** ; **26 à 32 % de nulles** — hors fourchette, diagnostic avant la vague |
+| **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 9 h 30** — lancée à 9 h 03, finie à 9 h 24, EPYC 7763 ; un premier lancement à 9 h 01 (38525718698) mort au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) | **1 287 positions par seconde — HORS attendu, × 0,86 ; 13,6 % d'écartées, 31,8 % de nulles, dans leurs attendus.** Diagnostic dans le conteneur : N5l coûte × 0,83 contre N4 au générateur, à un fil comme à quatre — la largeur s'y paie plus qu'au rejeu ; les données ne changent pas, la vague se lance, ~73 jobs au lieu de ~64 (section « N° 18 — le volume ») — *Attendus, écrits avant* : × 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur ; 8 à 14 % d'écartées ; 26 à 32 % de nulles |
+| **N° 18 — la vague 1** | **38531414161** (tenu à l'écart), 38531424497, 38531434938, 38531444819, 38531455378, 38531465902, 38531477470, 38531487267 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **EN VOL** — lancée le 14 oct. à 9 h 54 ; fin vers 15 h 30 | — *Attendu, écrit avant* (section « N° 18 — le volume ») : **190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %, nulles 30 à 33 % |
+| **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **EN VOL** — lancée le 14 oct. à 9 h 55 | — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
 | **N° 17 — N5l contre N4**, 256 unités et 8 seaux de sortie, facteur 2,85 | **38483035817, 38483038473, 38483041220, 38483044735** | `f6ddfed` → `6a71964` | 4 × 2 800 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+27,11, +43,03, +21,49 et +29,60 ; +30,29 ± 3,95 en commun, hétérogènes (p = 0,001)** — le seul 9V45 (3,02 M n/s) à +43, les trois 7763 (1,83 à 1,97 M) à +26,07 ± 4,61, homogènes ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR — N5l EMBARQUÉ** (section « N° 17 — VERDICT »). — *Attendu, écrit avant* : −5 à +20 — dépassé |
 | **N° 17 — N5r4 contre N4**, 256 unités, 4 seaux de roi, 8 de sortie | **38483047543, 38483050676, 38483054167, 38483056786** | `7496db3` → `6a71964` | 4 × 2 800 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **−54,16, −56,96, −67,08 et −57,47 ; −58,91 ± 4,45 en commun, homogènes (p = 0,187)** ; zéro perte au temps. **Régression**. — *Attendu, écrit avant* : +10 à +40 — manqué de ~70 |
@@ -7979,12 +7981,22 @@ chaque commit construit en `x86-64-v3`, la même graine, trois minutes
   **Ce qui change, c'est le compte** : ~22 M positions gardées par job au
   lieu de ~25, donc **~73 jobs, neuf vagues** pour ~1,6 G.
 
-**La vague 1, lancée le 14 oct. à 9 h 45** — huit jobs de 330 minutes,
+**La vague 1, lancée le 14 oct. à 9 h 54** — huit jobs de 330 minutes,
 `c4697e2`, les entrées par défaut ; **le PREMIER lancé est tenu à
 l'écart**. *Attendu, écrit avant* — <span>inférence, confiance moyenne,
 le débit de la sonde par processeur, × 0,86 celui du 7 oct.</span> :
 **190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %,
-nulles 30 à 33 %.
+nulles 30 à 33 %. Les runs, dans l'ordre de lancement : **38531414161**
+— tenu à l'écart —, 38531424497, 38531434938, 38531444819, 38531455378,
+38531465902, 38531477470 et 38531487267. Fin attendue vers 15 h 30.
+
+**La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
+38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
+du 7 oct. (37625443145, tenu à l'écart) puis sur un job appris
+(37625438110). La prédiction est celle écrite plus haut. *Contrôle
+indépendant, écrit avant* : le compte de positions de l'outil retombe
+sur le `retenues_filtre_defaut` de chaque job — **19 160 455** et
+**19 608 724**.
 
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :
