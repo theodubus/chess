@@ -926,7 +926,7 @@ dernière relève est faite.
 | **N° 17 — la séance des quatre réseaux, sur la carte de Théo** | — | N5s `1ddb31c`, N5l `6a293b4`, N5r4 `4a604ea`, N5r10 `f729f8c` | `tools/nnue-train` | **RELEVÉE le 14 oct. à 0 h 05** — écrite le 13 oct. au soir, poussée par Théo sur `reseau/n17` (`c7329d6`) ; les quatre confrontations dans le critère, relus 2 132 034 : 242 033 195, l'attendu exact | — les candidats écrits et révoqués (N5s `a684ee1`, N5l `f6ddfed`, N5r4 `7496db3`, N5r10 `d3fe59d`, contre `6a71964`) ; la sonde de B8 relevée, N5l et N5r10 portant leur facteur ; les matchs aux lignes suivantes — section « N° 15 à 19 », « N° 17, la séance — RELEVÉE » |
 | **Le balayage de mutation après la PR #174** | **38486471455** | `main` à `33de0ce` | `mutation.yml` | **RELEVÉ le 14 oct. à 6 h 55** — lancé à 1 h 48, fini à 4 h 46 ; **163, exactement la prédiction**, chaque fichier à son plafond ; `Verdict` vert | — *Prédiction, écrite avant* (section « N° 15 à 19 », les tests qui supposaient N4) : **163** — `nnue.rs` 2, `search.rs` 48 : les tests changés exercent le même code sous la même architecture, et la séparation du facteur n'ajoute qu'une constante |
 | **C13 — la série de N5l** | **38514982795** | `c4697e2` (N5l, le moteur de `main` après la PR #175), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 12 h 10** — lancée à 7 h 08, finie à 11 h 38, EPYC 9V74 | **222 − 45 − 33, 79,5 %, ~3 085 ± 38 — dans l'attendu** ; +47 ± 52 sur la série de N4, pas séparé de zéro ; trois « PV continues after fifty-move rule » côté ShallowRed, la signature de C31 (section C13) — *Attendu, écrit avant* (section « N° 17 — VERDICT ») : **3 040 à 3 110** — cette échelle écrase les écarts, ~+20 des ~+30 contre le jumeau |
-| **C13 — N5l contre 3100, le pont** | **38535098523** | `c4697e2` (N5l), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 14 oct. à 10 h 26 ; fin vers 15 h 10 | — *Attendu, écrit avant* (section C13, « Le niveau passe de 2850 à 3100 ») : **3 040 à 3 110**, et d'accord avec la série à 2850 à ~65 près |
+| **C13 — N5l contre 3100, le pont** | **38535098523** | `c4697e2` (N5l), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 15 h 55** — lancée le 14 oct. à 10 h 26, finie à 15 h 50 | **91 − 118 − 91, 45,5 % : 3 069 ± 25, dedans ; le pont tient**, −16 ± 45 contre la série à 2850 — les séries suivantes, à 3100 (section C13, « Le pont, RELEVÉ ») — *Attendu, écrit avant* (section C13, « Le niveau passe de 2850 à 3100 ») : **3 040 à 3 110**, et d'accord avec la série à 2850 à ~65 près |
 | **Le balayage de mutation après la PR #178** | **38548275506** | `main` à `c64d532` | `mutation.yml` | **RELEVÉ à 15 h 35 : 163, EXACT** — lancé le 14 oct. à 12 h 15, fini à 14 h 42 ; `search.rs` balayé en 2 h 26 | **Vert, la prédiction exacte** : `search.rs` 48, chaque fichier à son plafond — les constantes `reglage!` et `reglage_lu` n'ajoutent aucun survivant — *Prédiction, écrite avant* (section « N° 19 ») : **163, rien ne bouge** — `search.rs` à 48 : les constantes `reglage!` ne se mutent pas, le crible local de `reglage_lu` n'a laissé aucun survivant (19 attrapés, 1 expiré), et les mutants neufs de `build_lmr_table` changent la table, donc le banc figé |
 | **N° 19 — l'essai court de la chaîne SPSA** | **38548271784** (manche 1), **38548577735** (manche 2) | `main` à `c64d532`, `tools/spsa/n19.txt`, deux jobs de dix paires à `1+0.01`, deux manches | `spsa.yml` | **RELEVÉ à 12 h 30** — lancé à 12 h 15, la manche 2 lancée par la 1 à 12 h 17, finie à 12 h 20 | **Conforme : la chaîne tient.** Le jeton du job lance la manche suivante ; deux camps distincts à chaque job ; la manche 2 lit l'état de la 1 et finit à `manche 2`, 40 paires (section « N° 19 », l'essai court) — *Attendu, écrit avant* : la manche 1 tire, construit deux camps différents, joue, agrège, et **lance la manche 2 par `workflow_dispatch` avec le jeton du job** — <span>de mémoire, confiance moyenne</span> ; la manche 2 lit l'état par l'artefact de la 1 et finit à `manche 2`, `paires_faites 40`. Un refus du jeton dirait de chaîner autrement (`repository_dispatch`, ou un jeton personnel). Ce n'est PAS un réglage : la cadence est trop courte, l'état produit est jeté |
 | **Le balayage de mutation après N5l** | **38514979900** | `main` à `c4697e2` (PR #175) | `mutation.yml` | **RELEVÉ à 13 h 25, tentative 2 : 163, EXACT** — lancé le 14 oct. à 7 h 07 ; **le runner de `search.rs` a perdu le serveur à 8 h 07** (« *The hosted runner lost communication with the server* », lu dans les annotations ; son journal ne se télécharge pas), d'où `search.rs` « ILLISIBLE » au verdict et l'issue #176 — une panne de runner, pas une régression : les neuf autres fichiers à leur plafond exact (115 sans `search.rs`). `search.rs` et `Verdict` relancés à 10 h 14, même commit ; `search.rs` balayé en 3 h 01, fini à 13 h 15 | **Vert, la prédiction exacte** : `search.rs` 48, `nnue.rs` 2, chaque fichier à son plafond, total 163. L'issue #176 fermée avec la raison — une panne de runner, pas une régression | *Prédiction, écrite avant* (section « N° 17 — VERDICT ») : **163** — `nnue.rs` 2, `search.rs` 48 ; un de moins possible, un de plus non |
@@ -8749,6 +8749,39 @@ commence à se sentir* ») :
   se compareraient plus à celles d'après qu'à travers ce pont ;
 - **ce que cela ne change pas** : un changement se mesure contre notre
   jumeau, jamais contre Stockfish bridé, qui écrase les écarts.
+
+**Le pont, RELEVÉ le 14 oct. à 15 h 55 — dans l'attendu, et les deux
+niveaux d'accord.** Run 38535098523, finie à 15 h 50 — 5 h 24 contre 4 h 31
+pour la série à 2850 : des parties plus équilibrées durent plus —, trois
+parties à la fois, zéro perte au temps, zéro coup illégal, aucun moteur
+perdu :
+
+| série | runner — bench, profondeur en 250 ms | score | écart | estimation | attendu, écrit avant |
+|---|---|---|---|---|---|
+| N5l (`c4697e2`), AVX2, contre **3100** — 38535098523 | EPYC 7763 — 2 012 147 n/s, 15 | 91 − 118 − 91, 45,5 % | −31,4 ± 25,3 | **3 069 ± 25** | 3 040 à 3 110 : **dedans** |
+| N5l (`c4697e2`), AVX2, contre 2850 — 38514982795 | EPYC 9V74 — 2 561 220 n/s, 16 | 222 − 45 − 33, 79,5 % | +235,5 ± 37,5 | 3 085 ± 38 | — |
+
+- **le pont tient** : 3 069 contre 3 085, **−16 ± 45** — sous
+  1,96 · √(σ₁² + σ₂²), le critère écrit avant. Le second pont après celui
+  du réseau du 29 sept. (+52 ± 48) : les deux ensemble, ~+17, rien qui
+  sépare les deux niveaux. **Les séries suivantes se mesurent à 3100**, et
+  se comparent à celles d'avant le 14 oct. à travers ce pont ;
+- **la précision annoncée** : ± 25 à 45,5 % de score, contre ± 38 à
+  79,5 % — ce que le changement de niveau devait acheter ;
+- **le runner** : un EPYC 7763 à 2,01 M n/s et la profondeur 15, contre
+  un EPYC 9V74 à 2,56 M et 16 pour la série à 2850 — Stockfish bridé
+  choisissant à profondeur fixe, la machine plus lente ne peut que nous
+  sous-estimer. <span>Inférence, confiance faible</span> : une part des
+  −16 peut venir du runner ;
+- **quatre avertissements côté ShallowRed** : trois « PV continues after
+  fifty-move rule », la signature connue de C31, à son taux ; **un « PV
+  continues after threefold repetition »**, absent des séries de N4 et de
+  N5l à 2850. Ligne non ouverte — l'artefact `force-log` est servi par un
+  hôte que le proxy refuse, et le journal fait 35 417 lignes, dont l'outil
+  ne rend que la fin. <span>Inférence, confiance faible</span> : une PV
+  qui se prolonge au-delà d'une répétition que la recherche a vue comme
+  nulle, la famille de C22 ; un sur 300 parties ne dit pas de taux. Les
+  8 544 « Bestmove does not match… » sont ceux du bridage.
 
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
