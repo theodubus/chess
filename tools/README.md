@@ -933,7 +933,7 @@ dernière relève est faite.
 | **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 9 h 30** — lancée à 9 h 03, finie à 9 h 24, EPYC 7763 ; un premier lancement à 9 h 01 (38525718698) mort au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) | **1 287 positions par seconde — HORS attendu, × 0,86 ; 13,6 % d'écartées, 31,8 % de nulles, dans leurs attendus.** Diagnostic dans le conteneur : N5l coûte × 0,83 contre N4 au générateur, à un fil comme à quatre — la largeur s'y paie plus qu'au rejeu ; les données ne changent pas, la vague se lance, ~73 jobs au lieu de ~64 (section « N° 18 — le volume ») — *Attendus, écrits avant* : × 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur ; 8 à 14 % d'écartées ; 26 à 32 % de nulles |
 | **N° 18 — la vague 1** | **38531414161** (tenu à l'écart), 38531424497, 38531434938, 38531444819, 38531455378, 38531465902, 38531477470, 38531487267 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **EN VOL** — lancée le 14 oct. à 9 h 54 ; fin vers 15 h 30 | — *Attendu, écrit avant* (section « N° 18 — le volume ») : **190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %, nulles 30 à 33 % |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
-| **N° 18 — la perte tenue à l'écart des points de sauvegarde du n° 17** | **38549900154** | l'outil et les réseaux de `reseau/n17-points` à `e7a497d` ; N5l, N5r4, N5r10 à 10, 20, 30 et 40 superlots, sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **EN VOL** — lancée le 14 oct. à 12 h 29 | — *Prédiction, écrite avant* (section « N° 18 », les points de sauvegarde) : l'écart tenu à l'écart − appris croît d'un point au suivant, plus vite avec les seaux — celui de N5r10 au point 10 sous la moitié du sien au 40 ; la pénalité des seaux contre N5l plus petite au point 10 qu'au 40 ; la perte tenue à l'écart de N5r10 minimale avant le 40, celle de N5l au 40. *Contrôle* : 19 160 455 et 19 608 724 positions |
+| **N° 18 — la perte tenue à l'écart des points de sauvegarde du n° 17** | **38549900154** | l'outil et les réseaux de `reseau/n17-points` à `e7a497d` ; N5l, N5r4, N5r10 à 10, 20, 30 et 40 superlots, sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 50** — lancée à 12 h 29, finie à 12 h 32 | **Deux critères sur quatre ; aucune perte tenue à l'écart ne remonte.** Contrôle exact. L'écart tenu à l'écart − appris croît à chaque point, plus vite avec les seaux — tient ; mais celui de N5r10 au point 10 en vaut déjà les deux tiers, pas moins de la moitié — tombe ; la pénalité des seaux plus petite au point 10 : N5r10 oui (0,00230 contre 0,00279), N5r4 plate à 0,0012 ; N5r10 baisse jusqu'au 40 — tombe. La pénalité des seaux est là dès ~6 passes : le volume, pas la durée (section « N° 18 », la perte des points de sauvegarde) — *Prédiction, écrite avant* (section « N° 18 », les points de sauvegarde) : l'écart tenu à l'écart − appris croît d'un point au suivant, plus vite avec les seaux — celui de N5r10 au point 10 sous la moitié du sien au 40 ; la pénalité des seaux contre N5l plus petite au point 10 qu'au 40 ; la perte tenue à l'écart de N5r10 minimale avant le 40, celle de N5l au 40. *Contrôle* : 19 160 455 et 19 608 724 positions |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
 | **N° 17 — N5l contre N4**, 256 unités et 8 seaux de sortie, facteur 2,85 | **38483035817, 38483038473, 38483041220, 38483044735** | `f6ddfed` → `6a71964` | 4 × 2 800 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+27,11, +43,03, +21,49 et +29,60 ; +30,29 ± 3,95 en commun, hétérogènes (p = 0,001)** — le seul 9V45 (3,02 M n/s) à +43, les trois 7763 (1,83 à 1,97 M) à +26,07 ± 4,61, homogènes ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR — N5l EMBARQUÉ** (section « N° 17 — VERDICT »). — *Attendu, écrit avant* : −5 à +20 — dépassé |
 | **N° 17 — N5r4 contre N4**, 256 unités, 4 seaux de roi, 8 de sortie | **38483047543, 38483050676, 38483054167, 38483056786** | `7496db3` → `6a71964` | 4 × 2 800 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **−54,16, −56,96, −67,08 et −57,47 ; −58,91 ± 4,45 en commun, homogènes (p = 0,187)** ; zéro perte au temps. **Régression**. — *Attendu, écrit avant* : +10 à +40 — manqué de ~70 |
@@ -8100,6 +8100,67 @@ sur ~1,6 G n'en font que ~2,5 passes, et la séance pourra en donner
 davantage ; si N5l retient lui aussi dès le point 20, la même règle vaut
 pour lui. *Ce que cela ne décidera pas* : la force (`CLAUDE.md`, Texel).
 
+**La perte des points de sauvegarde, RELEVÉE le 14 oct. à 12 h 50 — deux
+critères sur quatre tiennent, et les deux qui tombent disent la même
+chose : la pénalité des seaux est là dès le début, et rien ne remonte.**
+Run 38549900154, trois minutes. *Contrôle* : **19 160 455** et
+**19 608 724** positions, exact. Perte moyenne (± 0,00016 à 0,00020 par
+partie), aux points 10, 20, 30 et 40 :
+
+| | tenu à l'écart | appris | tenu à l'écart − appris | pénalité tenue à l'écart contre N5l au même point |
+|---|---|---|---|---|
+| **N5l** | 0,043547 · 0,042940 · 0,042506 · **0,042157** | 0,042595 · 0,041862 · 0,041348 · 0,040954 | 0,00095 · 0,00108 · 0,00116 · 0,00120 | — |
+| **N5r4** | 0,044740 · 0,044155 · 0,043780 · **0,043386** | 0,042001 · 0,040936 · 0,039987 · 0,039389 | 0,00274 · 0,00322 · 0,00379 · 0,00400 | 0,00119 · 0,00122 · 0,00127 · 0,00123 |
+| **N5r10** | 0,045846 · 0,045496 · 0,045295 · **0,044944** | 0,040911 · 0,039501 · 0,038202 · 0,037495 | 0,00494 · 0,00600 · 0,00709 · 0,00745 | 0,00230 · 0,00256 · 0,00279 · 0,00279 |
+
+Les écarts appariés à N5l au point 40 sont à ± 0,000018 à 0,000054 : chaque
+pas de la table est hors du bruit, sauf la pénalité de N5r4, plate.
+- **tient — l'écart tenu à l'écart − appris croît à chaque point, plus vite
+  avec les seaux** : de 10 à 40, +0,00025 pour N5l, +0,00126 pour N5r4,
+  +0,00251 pour N5r10 ;
+- **tombe — « celui de N5r10 au point 10 sous la moitié du sien au 40 »** :
+  0,00494 contre 0,00745, les deux tiers. Ôté l'écart de N5l — la
+  différence des jobs et ce que N5l retient —, encore 0,0040 contre
+  0,0062. *La plus grande part est déjà là à ~6 passes* ;
+- **à moitié — la pénalité des seaux plus petite au point 10** : N5r10
+  oui, 0,00230 contre 0,00279 ; **N5r4 non, plate** à 0,0012 du premier
+  point au dernier, l'écart (+0,00004) sous son bruit ;
+- **tombe — « la perte tenue à l'écart de N5r10 minimale avant 40 »** :
+  elle baisse jusqu'au bout, comme celle des deux autres. **Aucune perte
+  tenue à l'écart ne remonte**, à aucun point, pour aucun réseau.
+
+*Ce que cela dit* :
+- **les seaux de roi ne surajustent pas au sens où l'entraînement
+  dégraderait ce qu'ils savent** : leur perte tenue à l'écart baisse avec
+  celle de N5l — de 10 à 40, −0,00135 pour N5r4 contre −0,00139, −0,00090
+  pour N5r10 —, quand leur perte apprise baisse deux et trois fois plus
+  vite (−0,00261, −0,00342 contre −0,00164). *La capacité de trop sert à
+  apprendre les positions vues, sans rien enlever ailleurs* ;
+- **leur pénalité est là dès 10 superlots** : 0,0012 et 0,0023, quand
+  l'écart appris − tenu à l'écart n'a pas encore fini de s'ouvrir.
+  <span>Inférence, confiance moyenne</span> : chaque seau ne s'entraîne que
+  sur les positions où le roi est dans sa zone, une part du volume ; ses
+  poids estiment avec moins de données que ceux de N5l, d'emblée — ce que
+  le volume corrige et qu'aucune durée n'y change. *Le remède écrit au
+  n° 17 — le volume — en sort renforcé, l'autre — moins de superlots —
+  écarté* ;
+- **pour la séance** : rien ici ne demande d'entraîner moins. Sur 159 M,
+  25 passes n'ont fait remonter aucune perte tenue à l'écart ; sur ~1,6 G,
+  40 superlots n'en font que ~2,5. Le nombre de superlots se choisira par
+  les points de sauvegarde de la séance, sur le job tenu à l'écart de la
+  vague 1 — avec la même réserve du pas cosinus ;
+- **le journal d'entraînement n'est pas une perte** : N5l y remonte du
+  superlot ~25 au 40, quand sa perte sur un job appris BAISSE sur le même
+  intervalle (0,041348 au 30, 0,040954 au 40). <span>Inférence, confiance
+  faible</span> : le journal moyenne la perte des lots AVANT leur mise à
+  jour, sur un flux dont la composition varie d'un superlot à l'autre —
+  le chargeur entrelace les fichiers. *Une courbe d'entraînement se lit
+  sur des données fixes, pas sur le flux* ;
+- **ce que cela ne dit pas** : la force — les matchs du n° 17 l'ont
+  mesurée, et ils s'accordent avec l'ordre tenu à l'écart.
+
+`reseau/n17-points` a servi : la branche peut être supprimée — Théo.
+
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :
 - **N6l** — l'architecture de N5l sur tout le volume, plus de superlots ;
@@ -8110,7 +8171,9 @@ vagues, avant la séance**, comme au n° 13 :
 - **les seaux de roi sur le volume**, et **384 ou 512 unités** — × 0,87 et
   × 0,82 de nœuds par seconde attendus (n° 17, étape 1) ;
 - **le nombre de superlots**, par la perte tenue à l'écart des points de
-  sauvegarde : elle dit où la retenue commence, si elle commence.
+  sauvegarde : elle dit où la retenue commence, si elle commence. **Sur
+  ceux du n° 17, relevés le 14 oct., aucune perte tenue à l'écart ne
+  remonte en 25 passes** — rien ne demande d'entraîner moins.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
