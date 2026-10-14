@@ -1,0 +1,21 @@
+# réglage SPSA — n° 19, première passe : les marges (tools/README.md, « N° 19 »)
+# Le défaut de chaque paramètre est celui du moteur ; la plage et la
+# perturbation de fin, celles écrites avant le premier réglage.
+paires_prevues 12000
+paires_faites 0
+manche 0
+alpha 0.602
+gamma 0.101
+a_frac 0.1
+r_fin 0.002
+# param NOM valeur min max c_fin
+param RFP_MARGIN 100 40 220 10
+param FP_BASE 140 60 280 12
+param FP_PER_DEPTH 20 4 50 3
+param SEE_PRUNE_MARGIN 100 40 220 10
+param SINGULAR_MARGIN 10 3 30 2
+param ASPIRATION_DELTA 25 8 60 4
+param DELTA_MARGIN 200 80 400 20
+param LMR_BASE 75 0 200 12
+param LMR_DIVISEUR 225 120 400 15
+param LMP_BASE 6 2 14 1

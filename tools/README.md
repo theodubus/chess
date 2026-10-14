@@ -267,6 +267,7 @@ ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 | `nnue_probe.rs` | le benchmark obligatoire de B4 : ce que coûtent le copy-make (7,2 %) et la dérivation du delta d'accumulateur NNUE (2,8 %) en part du temps d'un nœud |
 | `nnue_datagen.rs` | les données d'entraînement NNUE (A21) : parties d'auto-jeu à nœuds fixes, au format `viriformat` que lit bullet, **écrit par la crate de référence** et jamais réimplémenté. Lancé sur runner par `.github/workflows/nnue-datagen.yml`, un artefact par job. **Étiquette par le réseau embarqué depuis le 29 sept.** (`--eval`, n° 7) ; `--eval '<none>'` regénère les données d'A21 |
 | `nnue_validation.rs` | la perte de l'entraîneur sur des positions qu'il n'a PAS apprises (n° 18) — bullet `10e7e82` n'a pas de jeu de validation, lu au source. Les positions et les étiquettes de l'entraîneur, dépliées par `viriformat` sous son filtre par défaut ; chaque réseau QUANTIFIÉ évalué par le code du moteur ; la position confrontée pièce à pièce à son étiquette avant d'être comptée ; intervalle par partie, écarts appariés. Lancé sur runner par `.github/workflows/nnue-validation.yml`, qui télécharge les artefacts de `nnue-datagen.yml`. **Un diagnostic — apprendre ou retenir —, jamais une mesure de force** |
+| `spsa.rs` | le pilote du réglage automatique (n° 19) : l'arithmétique de SPSA par manches — l'état (valeurs, plages, paires jouées), le tirage des perturbations d'un job, la lecture du résultat de fastchess, la mise à jour. Ne joue aucune partie : `.github/workflows/spsa.yml` construit les deux camps par les variables `SR_*` que lisent les `reglage!` de `engine/src/search.rs`, fait jouer fastchess, agrège et enchaîne les manches. Ses tests portent une **vérité terrain** — sur des parties simulées autour d'un optimum connu, SPSA doit s'en rapprocher, et ne s'en rapproche pas quand le signal est nul. L'état de la première passe : `tools/spsa/n19.txt` |
 | `see_check.rs` | confronte l'échange statique à un oracle par force brute. Il a trouvé un **bug du manuel** au premier passage — 27 valeurs fausses sur 771 |
 | `attack_dump.rs` | confronte la géométrie d'attaque de `see::least_valuable_attacker` à `python-chess`, case par case |
 
@@ -8152,10 +8153,35 @@ critère écrit avant ; puis C13 à 3100. Un réglage SPSA prédit bien sur son
 propre bruit : seul le match dit s'il joue mieux.
 
 **L'ordre de l'écriture** : (1) le mécanisme dans le moteur, le binaire par
-défaut prouvé identique ; (2) le pilote, `tools/spsa.py`, éprouvé par ses
-tests dans `verify.sh` ; (3) le workflow `spsa.yml` ; (4) un essai court —
-deux jobs, quelques parties à cadence courte — qui éprouve la chaîne, pas un
-réglage.
+défaut prouvé identique ; (2) le pilote, <s>`tools/spsa.py`</s>
+`tools/src/bin/spsa.rs` — en Rust comme le reste de l'outillage, ses tests
+dans la CI ; (3) le workflow `spsa.yml` ; (4) un essai court — deux jobs,
+quelques parties à cadence courte — qui éprouve la chaîne, pas un réglage.
+
+**(1) à (3) ÉCRITS le 14 oct.** :
+- **le mécanisme** : `reglage!` et `reglage_lu` dans `engine/src/search.rs`,
+  les dix constantes du tableau converties — `LMR_BASE` et `LMR_DIVISEUR`
+  en centièmes, 0,75 et 2,25 exacts en binaire. **Sans variable, le code
+  machine est celui d'avant à l'octet** : sections `.text` et `.rodata`
+  identiques, seules `.data.rel.ro` — les numéros de ligne des
+  emplacements de panique, que les lignes ajoutées décalent — et
+  l'identifiant de build diffèrent ; banc 70 452. **Avec une variable, elle
+  prend** : `SR_LMP_BASE=9` rend 77 099 nœuds au banc. Éprouvé dans les
+  deux sens : une valeur illisible et une valeur hors du type arrêtent la
+  compilation — la seconde ne le faisait pas au premier jet, un négatif
+  replié dans `usize` passant l'aller-retour par `i64` ; borné par `i128`
+  depuis. Crible local des vingt mutants de `reglage_lu` sur les tests du
+  moteur : voir la relève ci-dessous ;
+- **le pilote** : huit tests, dont la vérité terrain — seize manches de
+  huit jobs simulés autour d'un optimum connu rapprochent l'état de plus
+  de moitié ; deux fautes injectées attrapées, le signe de la mise à jour
+  inversé et un simulateur sans signal ;
+- **le workflow** : `préparer` fige le SHA du moteur et la liste des jobs ;
+  `jouer` tire, construit les deux camps — refuse s'ils sont le même
+  binaire —, joue, lit le score ; `agréger` met l'état à jour, le dépose en
+  artefact `spsa-etat` et lance la manche suivante.
+
+
 
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 

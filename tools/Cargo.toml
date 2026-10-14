@@ -63,6 +63,12 @@ path = "src/bin/nnue_datagen.rs"
 name = "nnue-validation"
 path = "src/bin/nnue_validation.rs"
 
+# Le pilote du réglage automatique (n° 19) : l'arithmétique de SPSA par
+# manches. Lancé sur runner par `.github/workflows/spsa.yml`.
+[[bin]]
+name = "spsa"
+path = "src/bin/spsa.rs"
+
 [[bin]]
 name = "nnue-probe"
 path = "src/bin/nnue_probe.rs"
