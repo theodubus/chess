@@ -7938,6 +7938,54 @@ le `gh` intégré refusant l'hôte de stockage (vérifié le 14 oct.).
   l'écart, désigné avant d'en voir le compte ; ses positions ne
   s'entraînent pas — 1/64 du volume.
 
+**La sonde, RELEVÉE le 14 oct. à 9 h 30 — le débit HORS de son attendu,
+la composition dedans.** Run 38525942509, 20 minutes sur un EPYC 7763,
+quatre fils, `x86-64-v3`, `evaluation=reseau-embarque`, `c4697e2` :
+
+| | la sonde | le 7 oct., EPYC 7763 | attendu, écrit avant |
+|---|---|---|---|
+| positions par seconde | **1 287** | 1 501 et 1 506 | 1 430 à 1 730 — **manqué, × 0,86** |
+| parties écartées | **13,6 %** (1 920 sur 14 136) | 9,45 % | 8 à 14 % |
+| nulles | **31,8 %** | 27,09 % | 26 à 32 % |
+
+126,4 positions par partie (113,5 le 7 oct.), 67,2 % gardées par le filtre
+(65,7 %). Un premier lancement, 38525718698, est mort au checkout : le SHA
+tapé de tête, faux d'un caractère.
+
+**Le diagnostic, dans le conteneur, avant la vague** — le générateur de
+chaque commit construit en `x86-64-v3`, la même graine, trois minutes
+(deux à un fil), dans un ordre alterné :
+
+| générateur | réseau | quatre fils | un fil |
+|---|---|---|---|
+| `0e67f71`, celui du 7 oct. | N2L | 1 427 · 1 431 | — |
+| `ce57170` | N4 | 1 399 | 319 |
+| `25f26ae`, le SIMD du n° 16 | N4 | 1 370 | 345 |
+| `c4697e2`, la recette du n° 18 | N5l | 1 161 · 1 109 | 287 |
+
+- **le conteneur reproduit le runner** : × 0,79 contre le générateur du
+  7 oct., × 0,86 sur le runner. Le coût est dans le code, pas dans la
+  machine ;
+- **N5l coûte × 0,83 contre N4, à quatre fils comme à un** — pas une
+  contention entre fils. Au rejeu du n° 17, à la profondeur 10 et la table
+  gardée d'un coup à l'autre, il coûtait × 0,897. <span>Inférence,
+  confiance faible</span> : à 5 000 nœuds, la table vidée à chaque partie,
+  presque chaque nœud est une feuille qui évalue, et la part du réseau
+  dans le temps d'un nœud y dépasse celle du rejeu — la largeur s'y paie
+  davantage. Les matchs, eux, ont mesuré N5l à sa vitesse réelle ;
+- **le gain du SIMD ne se lit pas ici** : × 0,98 à quatre fils, × 1,08 à
+  un, un tirage chacun — rien à conclure, et aucun ne décide de la vague ;
+- **ce qui ne change pas** : les données, à débit près. La vague se lance.
+  **Ce qui change, c'est le compte** : ~22 M positions gardées par job au
+  lieu de ~25, donc **~73 jobs, neuf vagues** pour ~1,6 G.
+
+**La vague 1, lancée le 14 oct. à 9 h 45** — huit jobs de 330 minutes,
+`c4697e2`, les entrées par défaut ; **le PREMIER lancé est tenu à
+l'écart**. *Attendu, écrit avant* — <span>inférence, confiance moyenne,
+le débit de la sonde par processeur, × 0,86 celui du 7 oct.</span> :
+**190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %,
+nulles 30 à 33 %.
+
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :
 - **N6l** — l'architecture de N5l sur tout le volume, plus de superlots ;
