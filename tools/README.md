@@ -8059,6 +8059,46 @@ chez Stockfish. *Le mécanisme d'abord* (`tools/attic/n18-sonde-paresse.patch`,
   dérivation. Ce qui reste du coût du réseau est le calcul lui-même — la
   sortie et la dérivation —, que le chemin A a déjà vectorisé.
 
+**La perte tenue à l'écart des points de sauvegarde — écrit avant, le
+14 oct.** Théo a publié ceux du n° 17 (branche `reseau/n17-points`,
+`e7a497d`) : N5l, N5r4 et N5r10 à 10, 20 et 30 superlots, plus les
+réseaux embarqués à 40. *La question* : à quel moment de l'entraînement
+la retenue commence — elle dit combien de superlots donner au volume.
+Un superlot fait 16 384 × 6 104 = **100 M positions**, ~0,63 passe sur les
+~159 M gardées : 10, 20, 30 et 40 superlots font ~6, ~13, ~19 et ~25
+passes.
+- **la réserve, lue au source** (`crates/bullet_lib/src/trainer/schedule/lr.rs`,
+  `10e7e82`) : le pas suit un cosinus de 1·10⁻³ à 2,4·10⁻⁶ sur les 40
+  superlots — **8,5·10⁻⁴, 5,0·10⁻⁴ et 1,5·10⁻⁴** aux points 10, 20 et 30.
+  *Un point de sauvegarde n'est donc PAS un entraînement plus court* : ses
+  poids bougent encore à grand pas, et sa perte en est gonflée sur TOUTES
+  les données. Ce qui isole la retenue est l'écart **tenu à l'écart −
+  appris** d'un même réseau, dont le pas pèse sur les deux termes — à la
+  différence des deux jobs près, qui est la même à chaque point ;
+- **ce que dit déjà le journal d'entraînement** (`reseaux/*.log.txt`,
+  moyenne par superlot sur les données apprises) : N5l touche son plancher
+  vers les superlots 22 à 28 (0,04078) et **remonte** jusqu'au 40
+  (0,04088) — à pas décroissant ; N5r4 et N5r10 baissent jusqu'au bout
+  (0,03929, 0,03739).
+
+*Prédiction, écrite avant* — <span>inférence, confiance faible</span> :
+- **contrôle** : 19 160 455 et 19 608 724 positions, comme au run
+  38531523447 ;
+- **l'écart tenu à l'écart − appris croît d'un point au suivant pour les
+  trois réseaux**, et plus vite avec les seaux : celui de N5r10 au point 10
+  vaut moins de la moitié du sien au point 40 (+0,0074) ;
+- **sur le job tenu à l'écart, la pénalité appariée des seaux contre N5l
+  au même point est plus petite au point 10 qu'au point 40** — pour N5r4
+  comme pour N5r10 ;
+- **la perte tenue à l'écart de N5r10 touche son minimum avant le point
+  40** ; celle de N5l baisse jusqu'au 40, le pas qui s'éteint l'emportant.
+
+*Ce que cela décidera* : si la retenue des seaux commence à ~6 à 13
+passes, × 10 de données la repousse à × 10 de superlots — 40 superlots
+sur ~1,6 G n'en font que ~2,5 passes, et la séance pourra en donner
+davantage ; si N5l retient lui aussi dès le point 20, la même règle vaut
+pour lui. *Ce que cela ne décidera pas* : la force (`CLAUDE.md`, Texel).
+
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :
 - **N6l** — l'architecture de N5l sur tout le volume, plus de superlots ;
