@@ -8068,6 +8068,95 @@ vagues, avant la séance**, comme au n° 13 :
 - **le nombre de superlots**, par la perte tenue à l'écart des points de
   sauvegarde : elle dit où la retenue commence, si elle commence.
 
+### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
+
+**Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
+(chaîne du 13 oct.) et vient **le réseau stabilisé** : les marges
+appartiennent au réseau (B8), et régler sur N5l ce que le n° 18 remplacera
+serait à refaire. L'OUTILLAGE, lui, ne dépend d'aucun réseau : il s'écrit
+pendant que les vagues tournent — Théo, 14 oct. : « *Y'a rien que tu peux
+faire en parallèle sans affecter la suite en attendant ?* ». Rien de ce qui
+est en vol n'en dépend : vagues, séries C13 et balayage sont épinglés à
+`c4697e2`.
+
+**Le mécanisme — des réglages à la COMPILATION, jamais des options UCI.**
+Chaque constante réglée devient `reglage!(NOM: type = défaut)` : sans la
+variable d'environnement `SR_NOM`, la constante vaut son défaut, et le
+binaire par défaut est le même — le banc et l'empreinte des deux binaires
+le prouvent ; avec elle, la constante prend sa valeur au moment de
+compiler. Pourquoi pas des options UCI :
+- aucun coût en jeu : une option se lit à chaque nœud, une constante se
+  plie dans le code machine ;
+- l'arbre par défaut ne PEUT pas bouger, et aucun chemin de lecture ne
+  s'ajoute à la recherche — une option se règle de travers en silence ;
+- le prix : un binaire par jeu de paramètres, deux par perturbation, ~2 à 3
+  minutes de compilation sur un runner — petit devant une heure de parties.
+
+Éprouvé avant de l'écrire, sur une crate jetable : la constante prend le
+défaut sans variable, `137` et `-12` avec, et une valeur illisible arrête la
+compilation (« *réglage illisible* ») au lieu de jouer avec un défaut.
+
+**Les paramètres de la première passe — des MARGES, pas des seuils de
+profondeur.** SPSA perturbe chaque paramètre de ± c ; un seuil entier de
+plage 3 à 8 ne se perturbe que d'un pli, soit ± 20 à 30 % d'un coup :
+bruit et biais d'arrondi y dominent. D'abord les grandeurs à plage large —
+défaut, plage, perturbation c de fin :
+
+| réglage | défaut | plage | c |
+|---|---|---|---|
+| `RFP_MARGIN` — futilité inverse, par pli | 100 | 40 à 220 | 10 |
+| `FP_BASE` — futilité aux nœuds frontières | 140 | 60 à 280 | 12 |
+| `FP_PER_DEPTH` — sa pente | 20 | 4 à 50 | 3 |
+| `SEE_PRUNE_MARGIN` — capture perdante, par pli | 100 | 40 à 220 | 10 |
+| `SINGULAR_MARGIN` — extensions singulières, par pli | 10 | 3 à 30 | 2 |
+| `ASPIRATION_DELTA` — avant le facteur du réseau | 25 | 8 à 60 | 4 |
+| `DELTA_MARGIN` — élagage delta, avant le facteur | 200 | 80 à 400 | 20 |
+| `LMR_BASE` — terme constant de LMR, en centièmes | 75 | 0 à 200 | 12 |
+| `LMR_DIVISEUR` — diviseur du produit des logarithmes, en centièmes | 225 | 120 à 400 | 15 |
+| `LMP_BASE` — élagage par compte de coups | 6 | 2 à 14 | 1 |
+
+`NETWORK_MARGIN_PERCENT` reste figé : il multiplie l'aspiration et l'élagage
+delta, qui se règlent eux-mêmes ; le régler aussi ferait deux paramètres
+d'une seule direction.
+
+**L'algorithme — SPSA par manches, le pilote sur les runners.** Une manche :
+- `J` jobs en parallèle ; le job `j` tire `Δⱼ ∈ {−1, +1}ᵏ` d'une graine
+  fixée par la manche et `j`, construit `θ + c·Δⱼ` et `θ − c·Δⱼ` — arrondis
+  à l'entier, bornés à la plage —, et joue `P` paires d'ouvertures, couleurs
+  échangées, l'un contre l'autre, à `8+0,08`, le livre du dépôt ;
+- un job d'agrégation lit les `J` scores et met à jour
+  `θ ← θ + a · moyenne_j((s⁺ⱼ − s⁻ⱼ) / (2c) · Δⱼ)`, borné à la plage ;
+  il écrit `θ` dans son résumé et en artefact, puis lance la manche
+  suivante ;
+- la chaîne tient sans le conteneur, qui dort entre deux tours : chaque
+  manche lit son `θ` en entrée et passe le suivant à la manche qu'elle lance.
+  <span>De mémoire, confiance moyenne</span> : le jeton `GITHUB_TOKEN` d'un
+  job peut lancer un `workflow_dispatch`, à la différence des autres
+  événements — **à éprouver par l'essai**, pas à supposer.
+
+**Le budget, écrit avant** — <span>inférence, confiance faible</span> : les
+réglages SPSA publiés de moteurs amateurs emploient de l'ordre de 20 000 à
+80 000 parties pour une dizaine de paramètres, à cadence courte. À
+`8+0,08`, un runner joue ~1 500 parties par heure (trois à la fois,
+~7,25 s chacune) : **huit jobs d'une heure font ~12 000 parties par manche,
+trois à six manches** — une demi-journée de runners, à ne lancer qu'une fois
+le réseau du n° 18 embarqué et les vagues finies.
+
+**La cadence du réglage est celle de la mesure, `8+0,08`** : un réglage
+appartient à sa cadence comme un verdict (`CLAUDE.md`) — régler court
+optimiserait un régime qui n'est pas la cible.
+
+**Le verdict reste un match.** Le `θ` final est un candidat comme un autre :
+commit révoqué, quatre jobs de 2 800 parties à `8+0,08` contre `main`,
+critère écrit avant ; puis C13 à 3100. Un réglage SPSA prédit bien sur son
+propre bruit : seul le match dit s'il joue mieux.
+
+**L'ordre de l'écriture** : (1) le mécanisme dans le moteur, le binaire par
+défaut prouvé identique ; (2) le pilote, `tools/spsa.py`, éprouvé par ses
+tests dans `verify.sh` ; (3) le workflow `spsa.yml` ; (4) un essai court —
+deux jobs, quelques parties à cadence courte — qui éprouve la chaîne, pas un
+réglage.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
