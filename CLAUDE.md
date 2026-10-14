@@ -1141,6 +1141,9 @@ sortie sur « test result » et sommé les totaux. La ligne disait `FAILED`, la
 somme disait 81, et j'ai lu la somme. **Un code de sortie ne se lit pas de
 travers.** Le script exécute toutes les étapes même après un échec — découvrir
 trois problèmes d'un coup coûte moins cher que trois allers-retours.
+**Et jamais à travers un tube** : `verify.sh | tail && git commit` rend le
+code de `tail`, toujours zéro — le 14 oct. 2026, un commit est parti ainsi
+sur un clippy rouge. Rediriger vers un fichier, puis lire `$?`.
 
 **Mesurer un temps par `tools/timing.sh`, jamais à la main.** Il refuse de
 mesurer si les deux binaires n'explorent pas le même nombre de nœuds, mesure à
