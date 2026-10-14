@@ -8177,6 +8177,11 @@ quelques parties à cadence courte — qui éprouve la chaîne, pas un réglage.
   se mutent pas, le lecteur est couvert, et les mutants neufs de
   `build_lmr_table` (`/ 100.0` en `* 100.0` ou `% 100.0`) changent la table,
   donc le banc figé ;
+- **deux rustines de l'attic portées** : `b8-sonde-marges.patch` — celle
+  qu'on rejoue à chaque réseau neuf — et `c44-marge-singuliere-5.patch`
+  ne s'appliquaient plus, leur contexte ayant bougé. Le `verify.sh` complet
+  l'a vu, le rapide non ; la première portée, construite, régénérée, la
+  seconde équivaut désormais à `SR_SINGULAR_MARGIN=5` ;
 - **le pilote** : huit tests, dont la vérité terrain — seize manches de
   huit jobs simulés autour d'un optimum connu rapprochent l'état de plus
   de moitié ; deux fautes injectées attrapées, le signe de la mise à jour

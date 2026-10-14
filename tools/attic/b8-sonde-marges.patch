@@ -1,10 +1,10 @@
 diff --git a/engine/src/search.rs b/engine/src/search.rs
-index bc7fac3..b53a330 100644
+index 442243b..7950a80 100644
 --- a/engine/src/search.rs
 +++ b/engine/src/search.rs
-@@ -35,6 +35,71 @@ use crate::position::{Position, repetitions};
- use crate::see;
- use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
+@@ -87,6 +87,71 @@ macro_rules! reglage {
+     };
+ }
  
 +// SONDE jetable (B8, les marges à l'échelle du réseau) — ne jamais fusionner.
 +// Active seulement si la variable d'environnement SONDE_B8 désigne un dossier :
@@ -74,7 +74,7 @@ index bc7fac3..b53a330 100644
  /// Profondeur maximale de la recherche principale.
  pub const MAX_DEPTH: u32 = 64;
  
-@@ -1059,12 +1124,30 @@ impl Search {
+@@ -1140,12 +1205,30 @@ impl Search {
          let mut delta = self.scaled_margin(ASPIRATION_DELTA);
          let mut alpha = previous.saturating_sub(delta).max(-INFINITY);
          let mut beta = previous.saturating_add(delta).min(INFINITY);
@@ -105,7 +105,7 @@ index bc7fac3..b53a330 100644
  
              if score <= alpha {
                  // Échec par le bas : la position est pire que prévu. On abaisse
-@@ -2073,7 +2156,23 @@ impl Search {
+@@ -2154,7 +2237,23 @@ impl Search {
          }
  
          let static_eval = *static_eval.get_or_insert_with(|| self.static_eval(board, ply));
@@ -130,7 +130,7 @@ index bc7fac3..b53a330 100644
      }
  
      /// Vrai si les coups tranquilles restants doivent être abandonnés.
-@@ -2186,7 +2285,17 @@ impl Search {
+@@ -2267,7 +2366,17 @@ impl Search {
              return false;
          };
          let gain = self.params.mg_value[victim as usize].max(self.params.eg_value[victim as usize]);
