@@ -925,7 +925,7 @@ dernière relève est faite.
 | **Le balayage de mutation après le code des seaux** | **38451261124** | `main` à `6b9881b` (PR #173) | `mutation.yml` | **RELEVÉ le 14 oct. à 0 h 05** — lancé à 20 h 59, fini à 23 h 59 ; **163, exactement la prédiction**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48, `eval.rs` 102 ; `Verdict` vert | — *Prédiction, écrite avant* : **163** — `nnue.rs` 2, les deux équivalents du crible ; le reste à son plafond |
 | **N° 17 — la séance des quatre réseaux, sur la carte de Théo** | — | N5s `1ddb31c`, N5l `6a293b4`, N5r4 `4a604ea`, N5r10 `f729f8c` | `tools/nnue-train` | **RELEVÉE le 14 oct. à 0 h 05** — écrite le 13 oct. au soir, poussée par Théo sur `reseau/n17` (`c7329d6`) ; les quatre confrontations dans le critère, relus 2 132 034 : 242 033 195, l'attendu exact | — les candidats écrits et révoqués (N5s `a684ee1`, N5l `f6ddfed`, N5r4 `7496db3`, N5r10 `d3fe59d`, contre `6a71964`) ; la sonde de B8 relevée, N5l et N5r10 portant leur facteur ; les matchs aux lignes suivantes — section « N° 15 à 19 », « N° 17, la séance — RELEVÉE » |
 | **Le balayage de mutation après la PR #174** | **38486471455** | `main` à `33de0ce` | `mutation.yml` | **RELEVÉ le 14 oct. à 6 h 55** — lancé à 1 h 48, fini à 4 h 46 ; **163, exactement la prédiction**, chaque fichier à son plafond ; `Verdict` vert | — *Prédiction, écrite avant* (section « N° 15 à 19 », les tests qui supposaient N4) : **163** — `nnue.rs` 2, `search.rs` 48 : les tests changés exercent le même code sous la même architecture, et la séparation du facteur n'ajoute qu'une constante |
-| **C13 — la série de N5l** | **38514982795** | `c4697e2` (N5l, le moteur de `main` après la PR #175), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 14 oct. à 7 h 08 ; fin vers 11 h 50 | — *Attendu, écrit avant* (section « N° 17 — VERDICT ») : **3 040 à 3 110** — cette échelle écrase les écarts, ~+20 des ~+30 contre le jumeau |
+| **C13 — la série de N5l** | **38514982795** | `c4697e2` (N5l, le moteur de `main` après la PR #175), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 12 h 10** — lancée à 7 h 08, finie à 11 h 38, EPYC 9V74 | **222 − 45 − 33, 79,5 %, ~3 085 ± 38 — dans l'attendu** ; +47 ± 52 sur la série de N4, pas séparé de zéro ; trois « PV continues after fifty-move rule » côté ShallowRed, la signature de C31 (section C13) — *Attendu, écrit avant* (section « N° 17 — VERDICT ») : **3 040 à 3 110** — cette échelle écrase les écarts, ~+20 des ~+30 contre le jumeau |
 | **C13 — N5l contre 3100, le pont** | **38535098523** | `c4697e2` (N5l), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 14 oct. à 10 h 26 ; fin vers 15 h 10 | — *Attendu, écrit avant* (section C13, « Le niveau passe de 2850 à 3100 ») : **3 040 à 3 110**, et d'accord avec la série à 2850 à ~65 près |
 | **Le balayage de mutation après N5l** | **38514979900** | `main` à `c4697e2` (PR #175) | `mutation.yml` | **EN VOL, tentative 2** — lancé le 14 oct. à 7 h 07 ; **le runner de `search.rs` a perdu le serveur à 8 h 07** (« *The hosted runner lost communication with the server* », lu dans les annotations ; son journal ne se télécharge pas), d'où `search.rs` « ILLISIBLE » au verdict et l'issue #176 — une panne de runner, pas une régression : les neuf autres fichiers à leur plafond exact (115 sans `search.rs`). `search.rs` et `Verdict` relancés à 10 h 14, même commit ; fin vers 13 h 15 | — *Prédiction, écrite avant* (section « N° 17 — VERDICT ») : **163** — `nnue.rs` 2, `search.rs` 48 ; un de moins possible, un de plus non |
 | **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 9 h 30** — lancée à 9 h 03, finie à 9 h 24, EPYC 7763 ; un premier lancement à 9 h 01 (38525718698) mort au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) | **1 287 positions par seconde — HORS attendu, × 0,86 ; 13,6 % d'écartées, 31,8 % de nulles, dans leurs attendus.** Diagnostic dans le conteneur : N5l coûte × 0,83 contre N4 au générateur, à un fil comme à quatre — la largeur s'y paie plus qu'au rejeu ; les données ne changent pas, la vague se lance, ~73 jobs au lieu de ~64 (section « N° 18 — le volume ») — *Attendus, écrits avant* : × 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur ; 8 à 14 % d'écartées ; 26 à 32 % de nulles |
@@ -8508,6 +8508,31 @@ aucun moteur perdu :
 - **ce que la série dit** : le moteur qui joue se situe à ~3 040 ± 36 sur
   cette échelle, au `README.md`. Pas davantage — un changement se mesure
   contre notre jumeau.
+
+**La série de N5l contre 2850, RELEVÉE le 14 oct. à 12 h 10** — run
+38514982795, finie à 11 h 38, trois parties à la fois, zéro perte au
+temps, zéro coup illégal, aucun moteur perdu :
+
+| série | runner — bench, profondeur en 250 ms | score | écart | estimation | attendu, écrit avant |
+|---|---|---|---|---|---|
+| N5l (`c4697e2`), AVX2, contre 2850 — 38514982795 | EPYC 9V74 — 2 561 220 n/s, 16 | 222 − 45 − 33, 79,5 % | +235,5 ± 37,5 | **3 085 ± 38** | 3 040 à 3 110 : **dedans** |
+
+- **l'écart à la série de N4 contre le même adversaire : +47 ± 52**,
+  `[−5 ; +99]` — pas séparé de zéro ; notre jumeau mesure +30,29 ± 3,95.
+  Le facteur d'écrasement au point, 1,6, d'intervalle −0,2 à 3,3 : il ne
+  départage toujours rien ;
+- **le runner** : un EPYC 9V74 à 2,56 M n/s et la profondeur 16 en
+  250 ms, contre un Xeon 8370C à 1,59 M et 15 pour N4 — deux binaires,
+  donc pas comparables au sens strict ; mais Stockfish bridé choisit son
+  coup à profondeur fixe, et une machine plus rapide ne peut que nous
+  avantager. <span>Inférence, confiance faible</span> : une part de l'écart
+  au point peut venir du runner ;
+- **trois avertissements côté ShallowRed, « PV continues after
+  fifty-move rule »** — la signature connue de C31, à son taux ; la ligne
+  n'a pas été ouverte, pour la raison écrite à la série de N4. Les 7 312
+  « Bestmove does not match… » sont ceux du bridage ;
+- **79,5 %** : le score qui justifie de monter de niveau, écrit avant
+  cette relève ; le pont contre 3100 est en vol (38535098523).
 
 **Le niveau passe de 2850 à 3100 — décidé le 14 oct. 2026**, sur la
 question de Théo (« *est-ce qu'il serait préférable de lancer les futurs
