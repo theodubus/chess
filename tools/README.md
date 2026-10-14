@@ -8163,7 +8163,13 @@ pas de la table est hors du bruit, sauf la pénalité de N5r4, plate.
 - **ce que cela ne dit pas** : la force — les matchs du n° 17 l'ont
   mesurée, et ils s'accordent avec l'ordre tenu à l'écart.
 
-`reseau/n17-points` a servi : la branche peut être supprimée — Théo.
+**`reseau/n17-points` se garde** : son commit, `e7a497d`, n'est pas dans
+`main`, et c'est la seule copie du dépôt des neuf points de sauvegarde — la
+mesure ci-dessus le cite. Le supprimer rendrait la mesure irrejouable.
+L'entrer dans `main` doublerait `reseaux/` (14 Mo, ~18 Mo de plus) pour
+des réseaux qui ne jouent pas : la branche suffit. *Une branche à
+supprimer est une branche que `main` contient en entier* — ce que
+`tools/etat.sh` calcule, et que j'avais d'abord affirmé de tête, à tort.
 
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :
