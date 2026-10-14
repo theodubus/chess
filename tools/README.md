@@ -7850,6 +7850,104 @@ le critère est celui du plan — un gain démontré contre N4, borne basse
 au-dessus de zéro ; parmi les gains démontrés, le meilleur au point, et un
 match direct si l'intervalle du second recoupe le sien.
 
+### N° 18 — le volume de données : DÉCIDÉ le 14 oct. 2026, écrit avant de lancer
+
+**Décidé** — Théo, 14 oct. : « *Ok je valide la suite* », en réponse au
+récapitulatif qui proposait le volume d'abord, puis 384 ou 512 unités sur
+plus de données, et un jeu de validation si bullet en a un. Le plan du
+13 oct. (n° 15 à 19) l'écrivait : « ~8 à 10 vagues pour × 10, puis des
+entraînements plus longs sur la carte de Théo ».
+
+**La recette — un seul étiqueteur, pour que le volume se mesure.**
+`nnue-datagen.yml` sur `main` à `c4697e2` : N5l embarqué, et la recherche
+de la composition du n° 12, inchangée depuis `0e67f71` — vérifié,
+`git log 0e67f71..c4697e2 -- engine/src` ne porte que le réseau, son
+inférence, le facteur séparé et des tests. 5 000 nœuds par coup, graine
+« auto », un fil par processeur logique, 330 minutes, `x86-64-v3`. Seul
+l'étiqueteur change depuis le 7 oct. : N2L → N5l, ~+50 Elo par la chaîne
+N4L (+14), N4 (+5), N5l (+30). **Les données du 7 oct. n'entrent pas dans
+le volume** : un autre étiqueteur, et un mélange ne mesure que lui-même
+(n° 13).
+
+**Le volume** : × 10 les ~159 M de positions gardées par le filtre qu'ont
+vues N4 et N5l, soit **~1,6 G**. À ~25 M gardées par job — 178,2 M en sept
+jobs le 7 oct. —, **~64 jobs : huit vagues de huit, l'une après l'autre**.
+Huit à la fois, la charge que le workflow s'impose depuis A21 — « quelques
+jobs à la fois, pas par dizaines », par les conditions de GitHub (ligne B4).
+~6 h par vague, ~2 jours si elles s'enchaînent. Le volume se relève vague
+par vague ; on s'arrête à ~1,6 G gardées, ou plus tôt si la séance le
+décide.
+
+**Le stockage** : ~140 Mo par artefact, ~9 Go pour huit vagues, gardés
+90 jours. Le dépôt en porte déjà **2,46 Go vivants**, lus à l'API le 14 oct.,
+sans qu'un dépôt ait été refusé ; la page de facturation de GitHub n'est pas
+joignable d'ici — <span>inférence, confiance moyenne : un dépôt public ne
+paie pas le stockage de ses artefacts</span>. Chez Théo, ~10 Go de `.vf`.
+
+**D'abord une sonde de 20 minutes** : l'étiqueteur a changé, et le débit
+avec lui. *Attendus, écrits avant* — <span>inférence, confiance
+faible</span> :
+- **positions par seconde : × 0,95 à × 1,15 celles du 7 oct. sur le même
+  processeur** — EPYC 7763 1 430 à 1 730, EPYC 9V74 1 910 à 2 310, EPYC
+  9V45 2 470 à 3 000, Xeon 8573C 1 400 à 1 690. Le nœud coûte plus au
+  réseau — N5l × 0,897 contre N4, de la taille de N2L —, et moins depuis le
+  n° 16 — × 1,168 à arbre égal : × 1,05 au centre ; la longueur des parties
+  peut bouger ;
+- **parties écartées : 8 à 14 %** — 9,45 % le 7 oct. Le filtre d'ouverture
+  (`OPENING_MAX_SCORE`, 1 000) se lit en unités du réseau qui étiquette, et
+  l'échelle de N5l n'est pas celle de N2L — leurs facteurs de B8, 2,85 et
+  2,41, le disent là où les marges tranchent ;
+- **nulles : 26 à 32 %** — 27,09 % le 7 oct. ; un étiqueteur plus fort en
+  fait un peu plus.
+
+Hors fourchette, on diagnostique avant de lancer la vague.
+
+**Le jeu de validation — lu au source de bullet, `10e7e82`.**
+`LocalSettings` porte un champ `test_set`, mais `ValueTrainer::run`, s'il
+est rempli, imprime « *Warning: Validation data not currently implemented!
+Please bother me on discord.* » (`crates/bullet_lib/src/value.rs`) et ne
+calcule rien. **Bullet n'en a pas, à ce commit.** Il s'écrit donc ici : un
+binaire `nnue-validation` qui lit des `.vf`, garde les positions par le
+filtre par défaut de `viriformat` — celui de l'entraîneur —, évalue chaque
+réseau QUANTIFIÉ par le code du moteur, et rend la perte de l'entraîneur,
+`(σ(éval / 400) − (0,75 · résultat + 0,25 · σ(score / 400)))²` — la
+recette de `tools/nnue-train`, dont la convention de camp se lit dans le
+chargeur de bullet avant de l'écrire —, avec l'écart APPARIÉ entre réseaux.
+Il tourne par un workflow : le conteneur ne télécharge pas les artefacts,
+le `gh` intégré refusant l'hôte de stockage (vérifié le 14 oct.).
+- **ce qu'il dira, et ce qu'il ne dira pas** : une perte tenue à l'écart
+  n'est PAS une force — `CLAUDE.md`, l'ajustement Texel : 7,8 % de mieux en
+  prédiction, 25 Elo de moins en partie. Elle diagnostique : un réseau qui
+  retient voit sa perte d'entraînement baisser et sa perte tenue à l'écart
+  monter. Les matchs décident, toujours ;
+- **son premier usage, avant la première vague** : le septième job du
+  7 oct., 37625443145, n'a servi à AUCUN réseau du n° 17 — il est déjà tenu
+  à l'écart. Sur lui, N5l, N5r4 et N5r10, les trois à 256 unités, la
+  largeur que le binaire porte ; puis la même mesure sur un job appris de
+  taille voisine, 37625438110. *Prédiction, écrite avant —
+  l'inférence du verdict du n° 17* : si les seaux de roi retiennent,
+  **leur perte tenue à l'écart dépasse celle de N5l**, l'ordre de
+  l'entraînement (N5r10 < N5r4 < N5l) s'inversant, ou du moins l'écart
+  entre données apprises et tenues à l'écart croît avec les seaux. Si
+  l'ordre de l'entraînement tient à l'écart sans que l'écart croisse,
+  l'inférence est réfutée, et la régression des seaux de roi se cherche
+  ailleurs ;
+- **pour le n° 18** : le PREMIER job lancé de la première vague est tenu à
+  l'écart, désigné avant d'en voir le compte ; ses positions ne
+  s'entraînent pas — 1/64 du volume.
+
+**Ce que la séance mesurera — esquissé ici, détaillé à la relève des
+vagues, avant la séance**, comme au n° 13 :
+- **N6l** — l'architecture de N5l sur tout le volume, plus de superlots ;
+  contre N5l ;
+- **N6l à volume égal** — 159 M positions gardées des données neuves :
+  contre N5l, il isole l'étiqueteur ; contre N6l, le volume. Il dit s'il
+  faut regénérer à chaque réseau ou seulement accumuler ;
+- **les seaux de roi sur le volume**, et **384 ou 512 unités** — × 0,87 et
+  × 0,82 de nœuds par seconde attendus (n° 17, étape 1) ;
+- **le nombre de superlots**, par la perte tenue à l'écart des points de
+  sauvegarde : elle dit où la retenue commence, si elle commence.
+
 ### C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer
 
 **Décidé en parallèle par Théo le 29 sept.** Tous les verdicts du dépôt sont
