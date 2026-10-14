@@ -1,0 +1,83 @@
+# La perte de l'entraîneur sur des positions qu'il n'a pas apprises (n° 18).
+#
+# bullet, au commit qu'on épingle (`10e7e82`), n'a pas de jeu de validation :
+# `tools/src/bin/nnue_validation.rs` le remplace. Il tourne ici parce que les
+# données sont des artefacts de `nnue-datagen.yml`, que le conteneur de
+# session ne sait pas télécharger — le `gh` qu'il porte refuse l'hôte de
+# stockage, vérifié le 14 oct. 2026.
+#
+# Ce que la perte dit : si un réseau apprend ou retient. Ce qu'elle ne dit
+# pas : sa force — les matchs décident (`CLAUDE.md`, « cette valeur
+# d'évaluation est meilleure »).
+name: NNUE — perte tenue à l'écart
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit, branche ou tag de l'outil (vide : la référence lancée)"
+        type: string
+        default: ""
+      donnees:
+        description: "Runs de nnue-datagen.yml, séparés par des espaces — chacun mesuré à part"
+        type: string
+      reseaux:
+        description: "Réseaux du dépôt, CHEMIN:ROI:SORTIE (ROI : aucun, 4 ou 10), séparés par des espaces — le premier sert de référence aux écarts"
+        type: string
+
+permissions:
+  contents: read
+  # Télécharger les artefacts d'autres runs du dépôt.
+  actions: read
+
+jobs:
+  mesurer:
+    name: Mesurer
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit }}
+
+      - name: Toolchain
+        run: |
+          rustup show active-toolchain
+          rustc --version && cargo --version
+
+      # Le code du réseau est entier : le binaire AVX2 évalue au bit près comme
+      # celui de base (n° 10), plus vite.
+      - name: Construire l'outil
+        run: RUSTFLAGS="-C target-cpu=x86-64-v3" cargo build --release -p shallowred-tools --bin nnue-validation
+
+      - name: Mesurer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DONNEES: ${{ inputs.donnees }}
+          RESEAUX: ${{ inputs.reseaux }}
+        run: |
+          set -euo pipefail
+          args=()
+          for reseau in $RESEAUX; do args+=(--reseau "$reseau"); done
+          {
+            echo "### NNUE — perte tenue à l'écart, run ${{ github.run_id }}"
+            echo
+            echo "- outil : \`$(git rev-parse HEAD)\`"
+            echo "- runner : $(nproc) processeurs logiques"
+          } >> "$GITHUB_STEP_SUMMARY"
+          for run in $DONNEES; do
+            gh run download "$run" -R "${{ github.repository }}" -n "nnue-$run" -D "donnees/$run"
+            debut=$(date +%s)
+            ./target/release/nnue-validation "${args[@]}" "donnees/$run" | tee "perte-$run.txt"
+            {
+              echo
+              echo "#### données \`nnue-$run\`, $(( $(date +%s) - debut )) s"
+              echo
+              echo '```'
+              cat "perte-$run.txt"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            rm -rf "donnees/$run"
+          done
