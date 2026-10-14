@@ -8170,8 +8170,13 @@ quelques parties à cadence courte — qui éprouve la chaîne, pas un réglage.
   deux sens : une valeur illisible et une valeur hors du type arrêtent la
   compilation — la seconde ne le faisait pas au premier jet, un négatif
   replié dans `usize` passant l'aller-retour par `i64` ; borné par `i128`
-  depuis. Crible local des vingt mutants de `reglage_lu` sur les tests du
-  moteur : voir la relève ci-dessous ;
+  depuis. **Crible local des vingt mutants de `reglage_lu`**, sur les tests
+  du moteur : **19 attrapés, 1 expiré** — `i += 1` en `i *= 1`, une boucle
+  sans fin —, **aucun survivant**. *Prédiction pour le balayage qui suivra
+  la fusion, écrite avant* : **`search.rs` reste à 48** — les constantes ne
+  se mutent pas, le lecteur est couvert, et les mutants neufs de
+  `build_lmr_table` (`/ 100.0` en `* 100.0` ou `% 100.0`) changent la table,
+  donc le banc figé ;
 - **le pilote** : huit tests, dont la vérité terrain — seize manches de
   huit jobs simulés autour d'un optimum connu rapprochent l'état de plus
   de moitié ; deux fautes injectées attrapées, le signe de la mise à jour

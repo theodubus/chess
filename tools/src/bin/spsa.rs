@@ -259,8 +259,7 @@ impl Draw {
 fn read_result(log: &str) -> Result<(u64, u64, u64), String> {
     let line = log
         .lines()
-        .filter(|l| l.contains("Wins: ") && l.contains("Losses: ") && l.contains("Draws: "))
-        .next_back()
+        .rfind(|l| l.contains("Wins: ") && l.contains("Losses: ") && l.contains("Draws: "))
         .ok_or("aucune ligne « Wins, Losses, Draws » dans le journal")?;
     let field = |key: &str| -> Result<u64, String> {
         let rest = line
