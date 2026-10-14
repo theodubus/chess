@@ -41,7 +41,8 @@ d'un aveu sur la profondeur de recherche.
 > **Force absolue, estimée le 13 oct. 2026 : ~3 040 ± 36** sur l'échelle
 > `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
 > 300 parties à cette cadence contre Stockfish bridé à 2850, avec le moteur
-> qui joue, N4, binaire AVX2. Le 7 oct., avant la composition du n° 12 et
+> qui jouait, N4, binaire AVX2 — N5l, embarqué le 14 oct., n'y est pas
+> encore mesuré. Le 7 oct., avant la composition du n° 12 et
 > N4, il y valait **~3 000 ± 33** : l'écart, +35 ± 49, n'est pas séparé de
 > zéro, quand notre jumeau en mesure ~+52 — cette échelle écrase les
 > écarts. Le 2 oct., **~2 950 ± 30** ; N2 **~2 940 ± 30** (30 sept.), le
@@ -119,10 +120,15 @@ d'un aveu sur la profondeur de recherche.
 > mesurée contre la précédente sur 6 000 parties : **+115,7 ± 7,0**, puis
 > **+50,1 ± 6,1**. N2L, N2 ré-entraîné sur des données de Leela Chess Zero
 > (voir « Remerciements »), valait **+16,4 ± 6,2** contre N2 le 2 oct.
-> **Celui qui joue depuis le 13 oct.**, N4, apprend sur 242 millions de
-> positions neuves, étiquetées par le moteur du 7 oct. : **+47,0 ± 4,2**
-> contre N2, et **+5,4 ± 4,2** contre N4L, le même ré-entraîné sur les
-> données de Leela — sur ces positions-là, l'étage de Leela ne paie plus.
+> N4, le 13 oct., apprend sur 242 millions de positions neuves,
+> étiquetées par le moteur du 7 oct. : **+47,0 ± 4,2** contre N2, et
+> **+5,4 ± 4,2** contre N4L, le même ré-entraîné sur les données de
+> Leela — sur ces positions-là, l'étage de Leela ne paie plus. **Celui qui
+> joue depuis le 14 oct.**, N5l, apprend sur les mêmes données avec deux
+> fois plus d'unités (256) et huit jeux de poids de sortie selon le
+> matériel : **+30,3 ± 4,0** contre N4 sur 11 200 parties. Des seaux selon
+> la case du roi, sur ces mêmes données, régressent nettement : ils
+> demandent plus de positions.
 > L'évaluation faite main reste disponible par
 > `setoption name EvalFile value <none>`.
 
@@ -343,8 +349,8 @@ Leela Chess Zero](https://storage.lczero.org/files/training_data), mises à
 disposition sous l'[Open Database
 License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
 converties au format `.binpack` par des contributeurs de Stockfish (voir
-`tools/README.md`, section n° 7). Le réseau embarqué depuis le 13 oct., N4,
-n'apprend que sur les parties du moteur.
+`tools/README.md`, section n° 7). Le réseau embarqué depuis le 14 oct., N5l
+— comme N4 avant lui —, n'apprend que sur les parties du moteur.
 
 ## Licence
 

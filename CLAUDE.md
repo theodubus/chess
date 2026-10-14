@@ -65,9 +65,16 @@ une mesure, pas une préférence.
   un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
   la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
   plus qu'à dégrossir, jamais à trancher.
-- **L'évaluation qui joue est le réseau NNUE embarqué** — **N4 depuis le
-  13 oct. 2026** (n° 13) : une vague neuve, étiquetée par le moteur du
-  7 oct., seule et depuis zéro — **+46,98 ± 4,16** contre N2 et
+- **L'évaluation qui joue est le réseau NNUE embarqué** — **N5l depuis le
+  14 oct. 2026** (n° 17) : les données de N4, un réseau deux fois plus
+  large (256 unités) et huit seaux de sortie selon le matériel, son propre
+  facteur des marges (2,85) — **+30,29 ± 3,95** contre N4 sur 11 200
+  parties à `8+0,08`, malgré × 0,90 de nœuds par seconde. Les mêmes
+  données avec des seaux de ROI régressent : **−58,91 ± 4,45** à quatre
+  seaux, **−133,59 ± 4,93** à dix — sur 159 M de positions, ils
+  n'apprennent pas ce qu'ils retiennent. *La largeur paie, les seaux de
+  roi demandent le volume.* N4 (13 oct., n° 13) : une vague neuve,
+  étiquetée par le moteur du 7 oct., seule et depuis zéro — **+46,98 ± 4,16** contre N2 et
   **+5,43 ± 4,23** contre N4L, la même vague puis les données de Leela,
   qui valait **+14,08 ± 3,74** contre N2L ; ~12 000 parties chacun, à
   `8+0,08`. *Sur nos meilleures données, l'étage de Leela ne paie plus.*
@@ -88,8 +95,9 @@ une mesure, pas une préférence.
   le mieux**. Licence ODbL : **le jour où un réseau entraîné sur elles est
   embarqué, `README.md` porte la mention d'attribution**, comme celui de
   Stockfish — **fait le 2 oct. 2026 avec N2L**, section « Remerciements ».
-  N4, qui joue depuis le 13 oct., n'a rien appris d'elles ; la mention
-  reste, parce que `reseaux/` garde N2L et N4L, qui en ont appris.
+  N5l, qui joue depuis le 14 oct., n'a rien appris d'elles — ni N4 avant
+  lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui en
+  ont appris.
   Plan et faits vérifiés : `tools/README.md`, section n° 7.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Deux binaires livrés, et la mesure se fait sur le binaire AVX2.** Théo,
@@ -193,7 +201,11 @@ une mesure, pas une préférence.
   main, mesurée là où la futilité tranche. B8, 30 sept. 2026 : l'aspiration
   et l'élagage delta passent par `scaled_margin`, × 2,24 quand un réseau
   joue — **+50,50 ± 5,37 Elo** à `8+0,08` ; la futilité inverse, sondée,
-  tient telle quelle. L'échelle ne se transpose donc pas en bloc : **elle se
+  tient telle quelle. **× 2,85 depuis N5l** (14 oct.), sa sonde le
+  sortant de la plage où le facteur de N2 suffisait ; et le facteur qui
+  ramène à la faite main les marges mesurées au réseau est désormais
+  SÉPARÉ et figé à 224 (n° 17) — sans quoi changer de réseau aurait changé
+  le banc. L'échelle ne se transpose donc pas en bloc : **elle se
   mesure, marge par marge** (`tools/attic/b8-sonde-marges.patch`). **Le
   facteur appartient au réseau** : en embarquer un autre demande de relancer
   la sonde, et une marge nouvelle en unités d'évaluation passe par elle. La
