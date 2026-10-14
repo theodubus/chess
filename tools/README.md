@@ -926,12 +926,13 @@ dernière relève est faite.
 | **N° 17 — la séance des quatre réseaux, sur la carte de Théo** | — | N5s `1ddb31c`, N5l `6a293b4`, N5r4 `4a604ea`, N5r10 `f729f8c` | `tools/nnue-train` | **RELEVÉE le 14 oct. à 0 h 05** — écrite le 13 oct. au soir, poussée par Théo sur `reseau/n17` (`c7329d6`) ; les quatre confrontations dans le critère, relus 2 132 034 : 242 033 195, l'attendu exact | — les candidats écrits et révoqués (N5s `a684ee1`, N5l `f6ddfed`, N5r4 `7496db3`, N5r10 `d3fe59d`, contre `6a71964`) ; la sonde de B8 relevée, N5l et N5r10 portant leur facteur ; les matchs aux lignes suivantes — section « N° 15 à 19 », « N° 17, la séance — RELEVÉE » |
 | **Le balayage de mutation après la PR #174** | **38486471455** | `main` à `33de0ce` | `mutation.yml` | **RELEVÉ le 14 oct. à 6 h 55** — lancé à 1 h 48, fini à 4 h 46 ; **163, exactement la prédiction**, chaque fichier à son plafond ; `Verdict` vert | — *Prédiction, écrite avant* (section « N° 15 à 19 », les tests qui supposaient N4) : **163** — `nnue.rs` 2, `search.rs` 48 : les tests changés exercent le même code sous la même architecture, et la séparation du facteur n'ajoute qu'une constante |
 | **C13 — la série de N5l** | **38514982795** | `c4697e2` (N5l, le moteur de `main` après la PR #175), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 12 h 10** — lancée à 7 h 08, finie à 11 h 38, EPYC 9V74 | **222 − 45 − 33, 79,5 %, ~3 085 ± 38 — dans l'attendu** ; +47 ± 52 sur la série de N4, pas séparé de zéro ; trois « PV continues after fifty-move rule » côté ShallowRed, la signature de C31 (section C13) — *Attendu, écrit avant* (section « N° 17 — VERDICT ») : **3 040 à 3 110** — cette échelle écrase les écarts, ~+20 des ~+30 contre le jumeau |
-| **C13 — N5l contre 3100, le pont** | **38535098523** | `c4697e2` (N5l), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 14 oct. à 10 h 26 ; fin vers 15 h 10 | — *Attendu, écrit avant* (section C13, « Le niveau passe de 2850 à 3100 ») : **3 040 à 3 110**, et d'accord avec la série à 2850 à ~65 près |
-| **Le balayage de mutation après la PR #178** | **38548275506** | `main` à `c64d532` | `mutation.yml` | **EN VOL** — lancé le 14 oct. à 12 h 15 ; fin vers 15 h 30 | — *Prédiction, écrite avant* (section « N° 19 ») : **163, rien ne bouge** — `search.rs` à 48 : les constantes `reglage!` ne se mutent pas, le crible local de `reglage_lu` n'a laissé aucun survivant (19 attrapés, 1 expiré), et les mutants neufs de `build_lmr_table` changent la table, donc le banc figé |
+| **C13 — N5l contre 3100, le pont** | **38535098523** | `c4697e2` (N5l), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE à 15 h 55** — lancée le 14 oct. à 10 h 26, finie à 15 h 50 | **91 − 118 − 91, 45,5 % : 3 069 ± 25, dedans ; le pont tient**, −16 ± 45 contre la série à 2850 — les séries suivantes, à 3100 (section C13, « Le pont, RELEVÉ ») — *Attendu, écrit avant* (section C13, « Le niveau passe de 2850 à 3100 ») : **3 040 à 3 110**, et d'accord avec la série à 2850 à ~65 près |
+| **Le balayage de mutation après la PR #178** | **38548275506** | `main` à `c64d532` | `mutation.yml` | **RELEVÉ à 15 h 35 : 163, EXACT** — lancé le 14 oct. à 12 h 15, fini à 14 h 42 ; `search.rs` balayé en 2 h 26 | **Vert, la prédiction exacte** : `search.rs` 48, chaque fichier à son plafond — les constantes `reglage!` et `reglage_lu` n'ajoutent aucun survivant — *Prédiction, écrite avant* (section « N° 19 ») : **163, rien ne bouge** — `search.rs` à 48 : les constantes `reglage!` ne se mutent pas, le crible local de `reglage_lu` n'a laissé aucun survivant (19 attrapés, 1 expiré), et les mutants neufs de `build_lmr_table` changent la table, donc le banc figé |
 | **N° 19 — l'essai court de la chaîne SPSA** | **38548271784** (manche 1), **38548577735** (manche 2) | `main` à `c64d532`, `tools/spsa/n19.txt`, deux jobs de dix paires à `1+0.01`, deux manches | `spsa.yml` | **RELEVÉ à 12 h 30** — lancé à 12 h 15, la manche 2 lancée par la 1 à 12 h 17, finie à 12 h 20 | **Conforme : la chaîne tient.** Le jeton du job lance la manche suivante ; deux camps distincts à chaque job ; la manche 2 lit l'état de la 1 et finit à `manche 2`, 40 paires (section « N° 19 », l'essai court) — *Attendu, écrit avant* : la manche 1 tire, construit deux camps différents, joue, agrège, et **lance la manche 2 par `workflow_dispatch` avec le jeton du job** — <span>de mémoire, confiance moyenne</span> ; la manche 2 lit l'état par l'artefact de la 1 et finit à `manche 2`, `paires_faites 40`. Un refus du jeton dirait de chaîner autrement (`repository_dispatch`, ou un jeton personnel). Ce n'est PAS un réglage : la cadence est trop courte, l'état produit est jeté |
 | **Le balayage de mutation après N5l** | **38514979900** | `main` à `c4697e2` (PR #175) | `mutation.yml` | **RELEVÉ à 13 h 25, tentative 2 : 163, EXACT** — lancé le 14 oct. à 7 h 07 ; **le runner de `search.rs` a perdu le serveur à 8 h 07** (« *The hosted runner lost communication with the server* », lu dans les annotations ; son journal ne se télécharge pas), d'où `search.rs` « ILLISIBLE » au verdict et l'issue #176 — une panne de runner, pas une régression : les neuf autres fichiers à leur plafond exact (115 sans `search.rs`). `search.rs` et `Verdict` relancés à 10 h 14, même commit ; `search.rs` balayé en 3 h 01, fini à 13 h 15 | **Vert, la prédiction exacte** : `search.rs` 48, `nnue.rs` 2, chaque fichier à son plafond, total 163. L'issue #176 fermée avec la raison — une panne de runner, pas une régression | *Prédiction, écrite avant* (section « N° 17 — VERDICT ») : **163** — `nnue.rs` 2, `search.rs` 48 ; un de moins possible, un de plus non |
-| **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 9 h 30** — lancée à 9 h 03, finie à 9 h 24, EPYC 7763 ; un premier lancement à 9 h 01 (38525718698) mort au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) | **1 287 positions par seconde — HORS attendu, × 0,86 ; 13,6 % d'écartées, 31,8 % de nulles, dans leurs attendus.** Diagnostic dans le conteneur : N5l coûte × 0,83 contre N4 au générateur, à un fil comme à quatre — la largeur s'y paie plus qu'au rejeu ; les données ne changent pas, la vague se lance, ~73 jobs au lieu de ~64 (section « N° 18 — le volume ») — *Attendus, écrits avant* : × 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur ; 8 à 14 % d'écartées ; 26 à 32 % de nulles |
-| **N° 18 — la vague 1** | **38531414161** (tenu à l'écart), 38531424497, 38531434938, 38531444819, 38531455378, 38531465902, 38531477470, 38531487267 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **EN VOL** — lancée le 14 oct. à 9 h 54 ; fin vers 15 h 30 | — *Attendu, écrit avant* (section « N° 18 — le volume ») : **190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %, nulles 30 à 33 % |
+| **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 9 h 30** — lancée à 9 h 03, finie à 9 h 24, EPYC 7763 ; un premier lancement à 9 h 01 (38525718698) mort au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) | **1 287 positions par seconde — HORS attendu, × 0,86 ; <s>13,6 % d'écartées</s> 15,72 % d'écartées sur les gardées — hors attendu aussi, lu sur le total jusqu'à la relève de la vague 1 —, 31,8 % de nulles.** Diagnostic dans le conteneur : N5l coûte × 0,83 contre N4 au générateur, à un fil comme à quatre — la largeur s'y paie plus qu'au rejeu ; les données ne changent pas, la vague se lance, ~73 jobs au lieu de ~64 (section « N° 18 — le volume ») — *Attendus, écrits avant* : × 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur ; 8 à 14 % d'écartées ; 26 à 32 % de nulles |
+| **N° 18 — la vague 1** | **38531414161** (tenu à l'écart), 38531424497, 38531434938, 38531444819, 38531455378, 38531465902, 38531477470, 38531487267 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **RELEVÉE à 15 h 35** — lancée le 14 oct. à 9 h 54, finie à 15 h 25 | **208,3 M positions, 139,8 M gardées, 32,27 % de nulles : dans l'attendu ; 15,75 % d'écartées sur les gardées : hors**, et d'accord avec la sonde relue au même dénominateur (15,72 %) — l'attendu héritait d'une faute de lecture de la sonde. ~17,5 M gardées par job, aucun processeur rapide : ~85 jobs restent pour ~1,6 G (section « N° 18 — le volume », la vague 1) — *Attendu, écrit avant* (section « N° 18 — le volume ») : **190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %, nulles 30 à 33 % |
+| **N° 18 — la vague 2** | 38573763466, 38573777850, 38573791988, 38573805694, 38573819362, 38573833059, 38573846725, 38573860433 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **EN VOL** — lancée le 14 oct. à 15 h 40 ; fin vers 21 h 15 | — *Attendu, écrit avant* (section « N° 18 — le volume », la vague 2) : **200 à 285 M positions, 134 à 192 M gardées** ; écartées 15,4 à 16,0 % et nulles 31,8 à 32,7 %, sur les parties gardées |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 18 — la perte tenue à l'écart des points de sauvegarde du n° 17** | **38549900154** | l'outil et les réseaux de `reseau/n17-points` à `e7a497d` ; N5l, N5r4, N5r10 à 10, 20, 30 et 40 superlots, sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 35** — lancée à 12 h 29, finie à 12 h 32 | **Deux critères sur quatre ; aucune perte tenue à l'écart ne remonte.** Contrôle exact. L'écart tenu à l'écart − appris croît à chaque point, plus vite avec les seaux — tient ; mais celui de N5r10 au point 10 en vaut déjà les deux tiers, pas moins de la moitié — tombe ; la pénalité des seaux plus petite au point 10 : N5r10 oui (0,00230 contre 0,00279), N5r4 plate à 0,0012 ; N5r10 baisse jusqu'au 40 — tombe. La pénalité des seaux est là dès ~6 passes : le volume, pas la durée (section « N° 18 », la perte des points de sauvegarde) — *Prédiction, écrite avant* (section « N° 18 », les points de sauvegarde) : l'écart tenu à l'écart − appris croît d'un point au suivant, plus vite avec les seaux — celui de N5r10 au point 10 sous la moitié du sien au 40 ; la pénalité des seaux contre N5l plus petite au point 10 qu'au 40 ; la perte tenue à l'écart de N5r10 minimale avant le 40, celle de N5l au 40. *Contrôle* : 19 160 455 et 19 608 724 positions |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
@@ -7951,13 +7952,14 @@ le `gh` intégré refusant l'hôte de stockage (vérifié le 14 oct.).
   s'entraînent pas — 1/64 du volume.
 
 **La sonde, RELEVÉE le 14 oct. à 9 h 30 — le débit HORS de son attendu,
-la composition dedans.** Run 38525942509, 20 minutes sur un EPYC 7763,
+<s>la composition dedans</s> les écartées aussi, lues sur le mauvais
+dénominateur jusqu'à la relève de la vague 1.** Run 38525942509, 20 minutes sur un EPYC 7763,
 quatre fils, `x86-64-v3`, `evaluation=reseau-embarque`, `c4697e2` :
 
 | | la sonde | le 7 oct., EPYC 7763 | attendu, écrit avant |
 |---|---|---|---|
 | positions par seconde | **1 287** | 1 501 et 1 506 | 1 430 à 1 730 — **manqué, × 0,86** |
-| parties écartées | **13,6 %** (1 920 sur 14 136) | 9,45 % | 8 à 14 % |
+| parties écartées, sur les gardées | <s>**13,6 %** (1 920 sur 14 136)</s> **15,72 %** (1 920 sur 12 216) — corrigé le 14 oct. à la relève de la vague 1 : 14 136 était le total | 9,45 % | 8 à 14 % — **manqué** |
 | nulles | **31,8 %** | 27,09 % | 26 à 32 % |
 
 126,4 positions par partie (113,5 le 7 oct.), 67,2 % gardées par le filtre
@@ -7999,6 +8001,55 @@ le débit de la sonde par processeur, × 0,86 celui du 7 oct.</span> :
 nulles 30 à 33 %. Les runs, dans l'ordre de lancement : **38531414161**
 — tenu à l'écart —, 38531424497, 38531434938, 38531444819, 38531455378,
 38531465902, 38531477470 et 38531487267. Fin attendue vers 15 h 30.
+
+**La vague 1, RELEVÉE le 14 oct. à 15 h 35 — dans ses attendus, sauf les
+écartées, et l'écart est le mien : un DÉNOMINATEUR.** Les huit jobs finis
+à 15 h 25 :
+
+| | vague 1 | attendu, écrit avant |
+|---|---|---|
+| positions | **208 303 640** | 190 à 290 M |
+| gardées par le filtre | **139 847 163** (67,1 %) | 125 à 195 M |
+| parties écartées, sur les parties gardées | **15,75 %** (259 647 sur 1 649 013), d'un job à l'autre 15,54 à 15,86 % | 12 à 15 % — **manqué** |
+| nulles | **32,27 %**, d'un job à l'autre 32,1 à 32,4 % | 30 à 33 % |
+| positions par seconde | 1 284 à 1 350 | — |
+
+- **le dénominateur** : `ecartees` et `parties` sont deux compteurs
+  disjoints — `parties` ne compte que les gardées. Le 7 oct., 9,45 % se
+  lisait sur les gardées, et la sonde du 7 oct. aussi (9,7 %, 1 680 sur
+  17 301 gardées). **La sonde du 14 oct. a été lue sur le total** — 1 920
+  sur 14 136 = 12 216 gardées + 1 920 écartées, d'où 13,6 % ; sur les
+  gardées, **15,72 %**. Vérifié dans son journal (run 38525942509). Lue
+  pareil, la sonde et la vague s'accordent à 0,03 point ; et la sonde
+  était **hors** de son attendu (8 à 14 %), pas dedans comme je l'ai
+  écrit. L'attendu de la vague, tiré de ce 13,6 %, héritait de la faute ;
+  *même famille que « vérifier le dénominateur » (`CLAUDE.md`), et je
+  l'ai relue dans un chiffre que j'avais écrit moi-même* ;
+- **pourquoi plus d'écartées qu'avec N2L** — <span>inférence, confiance
+  faible</span> : le filtre d'ouverture tranche à 1 000 en unités du
+  réseau qui étiquette, et N5l porte des nombres plus grands — facteurs de
+  B8 2,85 contre 2,41, × 1,18 —, soit un filtre plus strict d'autant en
+  unités de N2L. C'est la raison que l'attendu de la sonde nommait déjà. Une
+  partie écartée l'est au premier coup, après une recherche : le coût est
+  négligeable, et les données gardées restent homogènes — **un seul
+  étiqueteur, un seul filtre sur tout le volume** ;
+- **le débit** : 1 284 à 1 350 positions par seconde, ~17,5 M gardées par
+  job — pas les ~22 M prévus. <span>Inférence, confiance moyenne</span> :
+  à ces débits, aucun EPYC 9V74 ni 9V45, les processeurs rapides du
+  7 oct. ; la prévision moyennait leur mélange. **Le volume
+  d'entraînement après la vague 1 : 122,6 M gardées**, le job tenu à
+  l'écart (38531414161, 17 208 872) mis à part. Au débit de la vague 1, il
+  reste **~85 jobs, une dizaine de vagues, ~2,5 jours** pour ~1,6 G ;
+  moins si des processeurs rapides reviennent. La règle d'arrêt ne change
+  pas : ~1,6 G, ou plus tôt si la séance le décide ;
+- **752 Mo d'artefacts**, expirant le **12 janv. 2027** (lu à l'API).
+
+**La vague 2, lancée le 14 oct. à 15 h 40** — la même recette, `c4697e2`,
+huit jobs de 330 minutes, aucun tenu à l'écart ; runs 38573763466, 38573777850, 38573791988, 38573805694, 38573819362, 38573833059, 38573846725 et 38573860433. Fin attendue vers 21 h 15. *Attendu, écrit avant* —
+<span>inférence, confiance moyenne, le débit de la vague 1 et celui des
+processeurs rapides du 7 oct. aux deux bouts</span> : **200 à 285 M
+positions, 134 à 192 M gardées** ; écartées **15,4 à 16,0 %** et nulles
+**31,8 à 32,7 %**, lues sur les parties gardées comme ci-dessus.
 
 **La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
 38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
@@ -8163,7 +8214,13 @@ pas de la table est hors du bruit, sauf la pénalité de N5r4, plate.
 - **ce que cela ne dit pas** : la force — les matchs du n° 17 l'ont
   mesurée, et ils s'accordent avec l'ordre tenu à l'écart.
 
-`reseau/n17-points` a servi : la branche peut être supprimée — Théo.
+**`reseau/n17-points` se garde** : son commit, `e7a497d`, n'est pas dans
+`main`, et c'est la seule copie du dépôt des neuf points de sauvegarde — la
+mesure ci-dessus le cite. Le supprimer rendrait la mesure irrejouable.
+L'entrer dans `main` doublerait `reseaux/` (14 Mo, ~18 Mo de plus) pour
+des réseaux qui ne jouent pas : la branche suffit. *Une branche à
+supprimer est une branche que `main` contient en entier* — ce que
+`tools/etat.sh` calcule, et que j'avais d'abord affirmé de tête, à tort.
 
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :
@@ -8286,7 +8343,8 @@ quelques parties à cadence courte — qui éprouve la chaîne, pas un réglage.
   la fusion, écrite avant* : **`search.rs` reste à 48** — les constantes ne
   se mutent pas, le lecteur est couvert, et les mutants neufs de
   `build_lmr_table` (`/ 100.0` en `* 100.0` ou `% 100.0`) changent la table,
-  donc le banc figé ;
+  donc le banc figé. **RELEVÉ le 14 oct. à 15 h 35 : 163, exact**, `search.rs`
+  à 48 (run 38548275506) ;
 - **deux rustines de l'attic portées** : `b8-sonde-marges.patch` — celle
   qu'on rejoue à chaque réseau neuf — et `c44-marge-singuliere-5.patch`
   ne s'appliquaient plus, leur contexte ayant bougé. Le `verify.sh` complet
@@ -8691,6 +8749,39 @@ commence à se sentir* ») :
   se compareraient plus à celles d'après qu'à travers ce pont ;
 - **ce que cela ne change pas** : un changement se mesure contre notre
   jumeau, jamais contre Stockfish bridé, qui écrase les écarts.
+
+**Le pont, RELEVÉ le 14 oct. à 15 h 55 — dans l'attendu, et les deux
+niveaux d'accord.** Run 38535098523, finie à 15 h 50 — 5 h 24 contre 4 h 31
+pour la série à 2850 : des parties plus équilibrées durent plus —, trois
+parties à la fois, zéro perte au temps, zéro coup illégal, aucun moteur
+perdu :
+
+| série | runner — bench, profondeur en 250 ms | score | écart | estimation | attendu, écrit avant |
+|---|---|---|---|---|---|
+| N5l (`c4697e2`), AVX2, contre **3100** — 38535098523 | EPYC 7763 — 2 012 147 n/s, 15 | 91 − 118 − 91, 45,5 % | −31,4 ± 25,3 | **3 069 ± 25** | 3 040 à 3 110 : **dedans** |
+| N5l (`c4697e2`), AVX2, contre 2850 — 38514982795 | EPYC 9V74 — 2 561 220 n/s, 16 | 222 − 45 − 33, 79,5 % | +235,5 ± 37,5 | 3 085 ± 38 | — |
+
+- **le pont tient** : 3 069 contre 3 085, **−16 ± 45** — sous
+  1,96 · √(σ₁² + σ₂²), le critère écrit avant. Le second pont après celui
+  du réseau du 29 sept. (+52 ± 48) : les deux ensemble, ~+17, rien qui
+  sépare les deux niveaux. **Les séries suivantes se mesurent à 3100**, et
+  se comparent à celles d'avant le 14 oct. à travers ce pont ;
+- **la précision annoncée** : ± 25 à 45,5 % de score, contre ± 38 à
+  79,5 % — ce que le changement de niveau devait acheter ;
+- **le runner** : un EPYC 7763 à 2,01 M n/s et la profondeur 15, contre
+  un EPYC 9V74 à 2,56 M et 16 pour la série à 2850 — Stockfish bridé
+  choisissant à profondeur fixe, la machine plus lente ne peut que nous
+  sous-estimer. <span>Inférence, confiance faible</span> : une part des
+  −16 peut venir du runner ;
+- **quatre avertissements côté ShallowRed** : trois « PV continues after
+  fifty-move rule », la signature connue de C31, à son taux ; **un « PV
+  continues after threefold repetition »**, absent des séries de N4 et de
+  N5l à 2850. Ligne non ouverte — l'artefact `force-log` est servi par un
+  hôte que le proxy refuse, et le journal fait 35 417 lignes, dont l'outil
+  ne rend que la fin. <span>Inférence, confiance faible</span> : une PV
+  qui se prolonge au-delà d'une répétition que la recherche a vue comme
+  nulle, la famille de C22 ; un sur 300 parties ne dit pas de taux. Les
+  8 544 « Bestmove does not match… » sont ceux du bridage.
 
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
