@@ -8051,6 +8051,34 @@ processeurs rapides du 7 oct. aux deux bouts</span> : **200 à 285 M
 positions, 134 à 192 M gardées** ; écartées **15,4 à 16,0 %** et nulles
 **31,8 à 32,7 %**, lues sur les parties gardées comme ci-dessus.
 
+**La vague 2, RELEVÉE le 14 oct. à 21 h 30 — dans ses attendus, sur les
+quatre chiffres.** Les huit jobs finis à 21 h 12 :
+
+| | vague 2 | attendu, écrit avant |
+|---|---|---|
+| positions | **218 180 300** | 200 à 285 M |
+| gardées par le filtre | **146 508 723** (67,2 %) | 134 à 192 M |
+| parties écartées, sur les gardées | **15,71 %**, d'un job à l'autre 15,66 à 15,81 % | 15,4 à 16,0 % |
+| nulles | **32,34 %**, d'un job à l'autre 32,24 à 32,44 % | 31,8 à 32,7 % |
+
+- **les processeurs, et leur dispersion** : trois EPYC 7763 à 1 264, 1 284
+  et 1 291 positions par seconde, un quatrième à **736** — la moitié, sur
+  le même modèle ; un Xeon 8573C à 1 229 ; deux EPYC 9V74 à **1 332 et
+  1 701** ; un EPYC 9V45 à 2 183. <span>Inférence, confiance faible</span> :
+  un hôte chargé, que les quatre cœurs logiques d'un runner ne protègent
+  pas ; la composition n'en bouge pas — 15,81 % d'écartées et 32,24 % de
+  nulles sur ce job, au milieu des autres ;
+- **le volume d'entraînement : 269,1 M gardées** après deux vagues, le job
+  tenu à l'écart mis à part — 17 % de ~1,6 G. À ~18 M par job, la moyenne
+  des deux vagues, **~73 jobs encore, ~9 vagues**.
+
+**La vague 3, lancée le 14 oct. à 21 h 35** — la même recette, `c4697e2`,
+huit jobs. *Attendu, écrit avant* — <span>inférence, confiance moyenne,
+les deux vagues et leurs processeurs</span> : **185 à 290 M positions,
+124 à 195 M gardées** — le bas compte un runner à moitié vitesse, comme
+celui de la vague 2 ; écartées **15,4 à 16,0 %**, nulles **31,8 à
+32,7 %**.
+
 **La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
 38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
 du 7 oct. (37625443145, tenu à l'écart) puis sur un job appris
