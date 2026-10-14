@@ -1,0 +1,112 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 377f4b5..9cbd738 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -368,6 +368,52 @@ impl PvTable {
+     }
+ }
+ 
++// SONDE JETABLE (accumulateurs dérivés jamais lus) — vit dans sa rustine.
++pub mod sonde_paresse {
++    use std::cell::RefCell;
++    use std::sync::atomic::{AtomicU64, Ordering};
++    pub static DERIVEES: AtomicU64 = AtomicU64::new(0);
++    pub static JAMAIS_LUES: AtomicU64 = AtomicU64::new(0);
++    pub static PAR_ENFANT_SEUL: AtomicU64 = AtomicU64::new(0);
++    pub static EVALUATIONS: AtomicU64 = AtomicU64::new(0);
++    // Par ply : (dérivé en attente, lu comme base d'un enfant, évalué).
++    thread_local! {
++        static ETAT: RefCell<Vec<(bool, bool, bool)>> = RefCell::new(vec![(false, false, false); 1024]);
++    }
++    fn solde(e: (bool, bool, bool)) {
++        if e.0 {
++            if !e.1 && !e.2 {
++                JAMAIS_LUES.fetch_add(1, Ordering::Relaxed);
++            } else if !e.2 {
++                PAR_ENFANT_SEUL.fetch_add(1, Ordering::Relaxed);
++            }
++        }
++    }
++    pub fn derive(parent: usize) {
++        ETAT.with(|t| {
++            let mut t = t.borrow_mut();
++            t[parent].1 = true;
++            solde(t[parent + 1]);
++            t[parent + 1] = (true, false, false);
++        });
++        DERIVEES.fetch_add(1, Ordering::Relaxed);
++    }
++    pub fn evalue(ply: usize) {
++        ETAT.with(|t| t.borrow_mut()[ply].2 = true);
++        EVALUATIONS.fetch_add(1, Ordering::Relaxed);
++    }
++    pub fn racine() {
++        ETAT.with(|t| {
++            let mut t = t.borrow_mut();
++            for e in t.iter_mut() {
++                solde(*e);
++                *e = (false, false, false);
++            }
++        });
++    }
++}
++
++
+ /// L'état d'une recherche.
+ pub struct Search {
+     stop: Arc<AtomicBool>,
+@@ -743,6 +789,7 @@ impl Search {
+         let Some(network) = &self.network else {
+             return eval::evaluate(board, &self.params);
+         };
++        sonde_paresse::evalue(ply);
+         let Some(accumulators) = self.accumulators.get(ply) else {
+             // Hors de la pile — impossible, le ply étant borné par `MAX_PLY`
+             // comme la pile elle-même. Le recalcul rend la fonction totale
+@@ -767,6 +814,7 @@ impl Search {
+         if let Some(network) = &self.network
+             && let Some([before, after]) = self.accumulators.get_mut(ply..=ply + 1)
+         {
++            sonde_paresse::derive(ply);
+             network.apply_move(before, after, board, mv);
+         }
+     }
+@@ -776,6 +824,7 @@ impl Search {
+     /// s'échanger.
+     fn push_null(&mut self, ply: usize) {
+         if let Some([before, after]) = self.accumulators.get_mut(ply..=ply + 1) {
++            sonde_paresse::derive(ply);
+             *after = *before;
+         }
+     }
+@@ -955,6 +1004,7 @@ impl Search {
+         // Les seuls accumulateurs recalculés de zéro : tout le reste de
+         // l'arbre en dérive, coup par coup.
+         if let (Some(network), Some(root)) = (&self.network, self.accumulators.first_mut()) {
++            sonde_paresse::racine();
+             *root = network.refresh(board);
+         }
+         for depth in 1..=max_depth {
+diff --git a/tools/src/bin/nnue_datagen.rs b/tools/src/bin/nnue_datagen.rs
+index 5294c84..5f313ac 100644
+--- a/tools/src/bin/nnue_datagen.rs
++++ b/tools/src/bin/nnue_datagen.rs
+@@ -577,6 +577,18 @@ fn main() {
+             println!("ecartees={}", stats.discarded);
+             println!("positions={}", stats.positions);
+             println!("retenues_filtre_defaut={}", stats.kept_by_default_filter);
++            {
++                use shallowred::search::sonde_paresse as p;
++                use std::sync::atomic::Ordering::Relaxed;
++                p::racine();
++                println!(
++                    "sonde derivees={} jamais_lues={} par_enfant_seul={} evaluations={}",
++                    p::DERIVEES.load(Relaxed),
++                    p::JAMAIS_LUES.load(Relaxed),
++                    p::PAR_ENFANT_SEUL.load(Relaxed),
++                    p::EVALUATIONS.load(Relaxed)
++                );
++            }
+             println!("gains_blancs={}", stats.white_wins);
+             println!("gains_noirs={}", stats.black_wins);
+             println!("nulles={}", stats.draws);

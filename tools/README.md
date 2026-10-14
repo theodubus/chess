@@ -8035,6 +8035,27 @@ que l'entraîneur lit. Perte moyenne, intervalle à 95 % par partie ; écart
   le mesurera par le job tenu à l'écart, 38531414161, et par les points
   de sauvegarde de l'entraînement.
 
+**Pendant les vagues, une piste de vitesse fermée par sa mesure — la mise
+à jour paresseuse des accumulateurs, 14 oct.** N5l coûte × 0,83 contre N4
+au générateur ; une dérivation qu'aucun nœud ne lit — ni évaluée, ni base
+d'un enfant — serait épargnée par une mise à jour à la demande, comme
+chez Stockfish. *Le mécanisme d'abord* (`tools/attic/n18-sonde-paresse.patch`,
+`c4697e2`, un fil) :
+
+| régime | dérivations | jamais lues | lues par un enfant seulement | évaluations par dérivation |
+|---|---|---|---|---|
+| générateur, 5 000 nœuds, 60 parties | 33 874 214 | **14,3 %** | 6,6 % | 0,80 |
+| jeu, 200 000 nœuds, 4 parties | 30 784 143 | **5,9 %** | 6,6 % | 0,88 |
+
+- **la paresse ne paie pas ici** : la dérivation pesant ~12 % du temps
+  d'un nœud à 256 unités — <span>inférence, confiance moyenne : 7,6 % à
+  128 au n° 15, × ~1,6</span> —, en épargner 5,9 % rend ~0,7 % de temps
+  en partie, ~1 Elo ; 14,3 % au générateur, ~2 % de débit. Ni l'un ni
+  l'autre ne vaut le code ni la vérification qu'il demanderait ;
+- **presque chaque nœud évalue** : 0,80 à 0,88 évaluation par
+  dérivation. Ce qui reste du coût du réseau est le calcul lui-même — la
+  sortie et la dérivation —, que le chemin A a déjà vectorisé.
+
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :
 - **N6l** — l'architecture de N5l sur tout le volume, plus de superlots ;
