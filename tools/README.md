@@ -928,7 +928,7 @@ dernière relève est faite.
 | **Le balayage de mutation après N5l** | **38514979900** | `main` à `c4697e2` (PR #175) | `mutation.yml` | **EN VOL** — lancé le 14 oct. à 7 h 07 ; fin vers 10 h 10 | — *Prédiction, écrite avant* (section « N° 17 — VERDICT ») : **163** — `nnue.rs` 2, `search.rs` 48 ; un de moins possible, un de plus non |
 | **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 9 h 30** — lancée à 9 h 03, finie à 9 h 24, EPYC 7763 ; un premier lancement à 9 h 01 (38525718698) mort au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) | **1 287 positions par seconde — HORS attendu, × 0,86 ; 13,6 % d'écartées, 31,8 % de nulles, dans leurs attendus.** Diagnostic dans le conteneur : N5l coûte × 0,83 contre N4 au générateur, à un fil comme à quatre — la largeur s'y paie plus qu'au rejeu ; les données ne changent pas, la vague se lance, ~73 jobs au lieu de ~64 (section « N° 18 — le volume ») — *Attendus, écrits avant* : × 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur ; 8 à 14 % d'écartées ; 26 à 32 % de nulles |
 | **N° 18 — la vague 1** | **38531414161** (tenu à l'écart), 38531424497, 38531434938, 38531444819, 38531455378, 38531465902, 38531477470, 38531487267 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **EN VOL** — lancée le 14 oct. à 9 h 54 ; fin vers 15 h 30 | — *Attendu, écrit avant* (section « N° 18 — le volume ») : **190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %, nulles 30 à 33 % |
-| **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **EN VOL** — lancée le 14 oct. à 9 h 55 | — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
+| **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
 | **N° 17 — N5l contre N4**, 256 unités et 8 seaux de sortie, facteur 2,85 | **38483035817, 38483038473, 38483041220, 38483044735** | `f6ddfed` → `6a71964` | 4 × 2 800 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+27,11, +43,03, +21,49 et +29,60 ; +30,29 ± 3,95 en commun, hétérogènes (p = 0,001)** — le seul 9V45 (3,02 M n/s) à +43, les trois 7763 (1,83 à 1,97 M) à +26,07 ± 4,61, homogènes ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR — N5l EMBARQUÉ** (section « N° 17 — VERDICT »). — *Attendu, écrit avant* : −5 à +20 — dépassé |
 | **N° 17 — N5r4 contre N4**, 256 unités, 4 seaux de roi, 8 de sortie | **38483047543, 38483050676, 38483054167, 38483056786** | `7496db3` → `6a71964` | 4 × 2 800 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **−54,16, −56,96, −67,08 et −57,47 ; −58,91 ± 4,45 en commun, homogènes (p = 0,187)** ; zéro perte au temps. **Régression**. — *Attendu, écrit avant* : +10 à +40 — manqué de ~70 |
@@ -7813,7 +7813,8 @@ et 6 h 31, graines distinctes, le binaire AVX2 des deux côtés contre
   positions pour chaque disposition, l'incrément égal au recalcul avec
   autant de recalculs que de franchissements, les confrontations de fin
   d'entraînement dans le critère — rois sur chaque seau compris.
-  <span>Inférence, confiance moyenne</span> : **ils retiennent au lieu
+  <span><s>Inférence, confiance moyenne</s></span> **MESURÉ le 14 oct.
+  (section « N° 18 », la perte tenue à l'écart)** : **ils retiennent au lieu
   d'apprendre** — quatre ou dix fois les poids d'entrée de N5l pour les
   mêmes 159 M de positions, et la perte d'entraînement la plus basse des
   quatre (0,0393, 0,0374) ; plus il y a de seaux, plus c'est grave. La
@@ -7997,6 +7998,41 @@ du 7 oct. (37625443145, tenu à l'écart) puis sur un job appris
 indépendant, écrit avant* : le compte de positions de l'outil retombe
 sur le `retenues_filtre_defaut` de chaque job — **19 160 455** et
 **19 608 724**.
+
+**La perte tenue à l'écart des réseaux du n° 17, RELEVÉE à 10 h 15 — la
+prédiction tient, sur ses deux critères : les seaux de roi RETIENNENT.**
+Run 38531523447, deux minutes et dix secondes en tout. *Le contrôle
+d'abord* : **19 160 455** et **19 608 724** positions, les
+`retenues_filtre_defaut` des deux jobs au chiffre près — l'outil lit ce
+que l'entraîneur lit. Perte moyenne, intervalle à 95 % par partie ; écart
+à N5l apparié, mêmes positions :
+
+| | tenu à l'écart — 37625443145, 256 404 parties | appris — 37625438110, 262 306 parties | tenu à l'écart − appris |
+|---|---|---|---|
+| **N5l** | **0,042157** ± 0,000196 | 0,040954 ± 0,000188 | +0,001203 |
+| **N5r4** | 0,043386 — **+0,001230 ± 0,000040** | 0,039389 — **−0,001565 ± 0,000039** | +0,003997 — × 3,3 |
+| **N5r10** | 0,044944 — **+0,002788 ± 0,000048** | 0,037495 — **−0,003459 ± 0,000053** | +0,007449 — × 6,2 |
+
+- **l'ordre s'inverse** : sur les positions apprises, N5r10 < N5r4 < N5l,
+  l'ordre de leurs pertes d'entraînement ; sur les positions tenues à
+  l'écart, N5l < N5r4 < N5r10, l'ordre de leurs matchs. Les deux écarts
+  appariés sont à trente intervalles de zéro ;
+- **l'écart entre appris et tenu à l'écart croît avec les seaux** : × 3,3
+  pour quatre, × 6,2 pour dix, celui de N5l. Les deux jobs n'ont pas les
+  mêmes parties, donc chaque ligne mêle la généralisation et la différence
+  des jobs ; la COMPARAISON entre lignes, elle, est appariée ;
+- **l'inférence du n° 17 devient une mesure** : sur 159 M positions, les
+  seaux de roi retiennent ce qu'ils voient au lieu d'apprendre. Ce n'est
+  pas un réglage : quatre ou dix fois les poids d'entrée de N5l pour les
+  mêmes données. Le remède écrit est le volume, et le n° 18 le mesure ;
+- **ce que cela ne dit pas** : la force. L'ordre tenu à l'écart retombe
+  ici sur celui des matchs, une fois sur trois réseaux d'une même
+  famille ; qu'il le fasse en général n'est pas établi, et une perte ne
+  remplace jamais un match (`CLAUDE.md`, Texel) ;
+- **N5l retient un peu aussi** — +0,0012, que la différence des jobs peut
+  porter en partie. Le volume du n° 18 doit le faire baisser ; la séance
+  le mesurera par le job tenu à l'écart, 38531414161, et par les points
+  de sauvegarde de l'entraînement.
 
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :

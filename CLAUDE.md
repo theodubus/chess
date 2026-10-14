@@ -72,8 +72,10 @@ une mesure, pas une préférence.
   parties à `8+0,08`, malgré × 0,90 de nœuds par seconde. Les mêmes
   données avec des seaux de ROI régressent : **−58,91 ± 4,45** à quatre
   seaux, **−133,59 ± 4,93** à dix — sur 159 M de positions, ils
-  n'apprennent pas ce qu'ils retiennent. *La largeur paie, les seaux de
-  roi demandent le volume.* N4 (13 oct., n° 13) : une vague neuve,
+  n'apprennent pas ce qu'ils retiennent : **mesuré le 14 oct.** sur un job
+  qu'aucun n'avait vu, l'ordre de leurs pertes s'inverse (`nnue_validation.rs`,
+  n° 18 — bullet n'a pas de jeu de validation). *La largeur paie, les seaux
+  de roi demandent le volume.* N4 (13 oct., n° 13) : une vague neuve,
   étiquetée par le moteur du 7 oct., seule et depuis zéro — **+46,98 ± 4,16** contre N2 et
   **+5,43 ± 4,23** contre N4L, la même vague puis les données de Leela,
   qui valait **+14,08 ± 3,74** contre N2L ; ~12 000 parties chacun, à
