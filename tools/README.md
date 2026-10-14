@@ -925,6 +925,7 @@ dernière relève est faite.
 | **N° 17 — la séance des quatre réseaux, sur la carte de Théo** | — | N5s `1ddb31c`, N5l `6a293b4`, N5r4 `4a604ea`, N5r10 `f729f8c` | `tools/nnue-train` | **RELEVÉE le 14 oct. à 0 h 05** — écrite le 13 oct. au soir, poussée par Théo sur `reseau/n17` (`c7329d6`) ; les quatre confrontations dans le critère, relus 2 132 034 : 242 033 195, l'attendu exact | — les candidats écrits et révoqués (N5s `a684ee1`, N5l `f6ddfed`, N5r4 `7496db3`, N5r10 `d3fe59d`, contre `6a71964`) ; la sonde de B8 relevée, N5l et N5r10 portant leur facteur ; les matchs aux lignes suivantes — section « N° 15 à 19 », « N° 17, la séance — RELEVÉE » |
 | **Le balayage de mutation après la PR #174** | **38486471455** | `main` à `33de0ce` | `mutation.yml` | **RELEVÉ le 14 oct. à 6 h 55** — lancé à 1 h 48, fini à 4 h 46 ; **163, exactement la prédiction**, chaque fichier à son plafond ; `Verdict` vert | — *Prédiction, écrite avant* (section « N° 15 à 19 », les tests qui supposaient N4) : **163** — `nnue.rs` 2, `search.rs` 48 : les tests changés exercent le même code sous la même architecture, et la séparation du facteur n'ajoute qu'une constante |
 | **C13 — la série de N5l** | **38514982795** | `c4697e2` (N5l, le moteur de `main` après la PR #175), contre Stockfish 16 bridé à 2850, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 14 oct. à 7 h 08 ; fin vers 11 h 50 | — *Attendu, écrit avant* (section « N° 17 — VERDICT ») : **3 040 à 3 110** — cette échelle écrase les écarts, ~+20 des ~+30 contre le jumeau |
+| **C13 — N5l contre 3100, le pont** | *(au lancement)* | `c4697e2` (N5l), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 14 oct. à 10 h 30 ; fin vers 15 h 15 | — *Attendu, écrit avant* (section C13, « Le niveau passe de 2850 à 3100 ») : **3 040 à 3 110**, et d'accord avec la série à 2850 à ~65 près |
 | **Le balayage de mutation après N5l** | **38514979900** | `main` à `c4697e2` (PR #175) | `mutation.yml` | **EN VOL, tentative 2** — lancé le 14 oct. à 7 h 07 ; **le runner de `search.rs` a perdu le serveur à 8 h 07** (« *The hosted runner lost communication with the server* », lu dans les annotations ; son journal ne se télécharge pas), d'où `search.rs` « ILLISIBLE » au verdict et l'issue #176 — une panne de runner, pas une régression : les neuf autres fichiers à leur plafond exact (115 sans `search.rs`). `search.rs` et `Verdict` relancés à 10 h 14, même commit ; fin vers 13 h 15 | — *Prédiction, écrite avant* (section « N° 17 — VERDICT ») : **163** — `nnue.rs` 2, `search.rs` 48 ; un de moins possible, un de plus non |
 | **N° 18 — la sonde de débit, l'étiqueteur N5l** | **38525942509** | `main` à `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 9 h 30** — lancée à 9 h 03, finie à 9 h 24, EPYC 7763 ; un premier lancement à 9 h 01 (38525718698) mort au checkout, le SHA tapé de tête faux d'un caractère (`c4697e2d`) | **1 287 positions par seconde — HORS attendu, × 0,86 ; 13,6 % d'écartées, 31,8 % de nulles, dans leurs attendus.** Diagnostic dans le conteneur : N5l coûte × 0,83 contre N4 au générateur, à un fil comme à quatre — la largeur s'y paie plus qu'au rejeu ; les données ne changent pas, la vague se lance, ~73 jobs au lieu de ~64 (section « N° 18 — le volume ») — *Attendus, écrits avant* : × 0,95 à × 1,15 les positions par seconde du 7 oct. sur le même processeur ; 8 à 14 % d'écartées ; 26 à 32 % de nulles |
 | **N° 18 — la vague 1** | **38531414161** (tenu à l'écart), 38531424497, 38531434938, 38531444819, 38531455378, 38531465902, 38531477470, 38531487267 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **EN VOL** — lancée le 14 oct. à 9 h 54 ; fin vers 15 h 30 | — *Attendu, écrit avant* (section « N° 18 — le volume ») : **190 à 290 M positions, 125 à 195 M gardées** ; écartées 12 à 15 %, nulles 30 à 33 % |
@@ -8361,6 +8362,34 @@ aucun moteur perdu :
 - **ce que la série dit** : le moteur qui joue se situe à ~3 040 ± 36 sur
   cette échelle, au `README.md`. Pas davantage — un changement se mesure
   contre notre jumeau.
+
+**Le niveau passe de 2850 à 3100 — décidé le 14 oct. 2026**, sur la
+question de Théo (« *est-ce qu'il serait préférable de lancer les futurs
+tests de force absolue sur un stockfish moins bridé (ex 3000) ? L'écart
+commence à se sentir* ») :
+- **ce qui presse, et ce qui ne presse pas** : N4 marquait 74,7 % contre
+  2850, dans la plage lisible (10 à 90 %). Ce que coûte l'écart, c'est la
+  précision — ± 36 à 75 % contre ~± 30 près de 50 % pour 300 parties — et
+  la marge : N5l est attendu vers 3 040 à 3 110, soit 75 à 80 % contre
+  2850, et un gain du n° 18 de l'ordre de +50 à +100 le porterait vers
+  85 %, au bord de la règle ;
+- **pourquoi 3100 plutôt que 3000** : 3100 laisse de la place jusqu'à
+  ~3 480 (90 %) sous le plafond de Stockfish 16 (3190) ; il porte déjà un
+  point — le réseau du 29 sept., **2 882 ± 37 contre 3100, 2 830 ± 30
+  contre 2850, d'accord à 52 ± 48** ; et Stockfish bridé y choisit son coup
+  à la profondeur 17 au lieu de 12 (`time_to_pick`, `sf_16`) —
+  <span>inférence, confiance faible</span> : moins de fautes au hasard,
+  peut-être une échelle moins écrasée ;
+- **le pont, pour ne pas casser la série** : N5l se mesure aux DEUX
+  niveaux — 2850 (38514982795, en vol) et 3100 —, le même moteur ; ensuite,
+  3100 seul. *Attendu, écrit avant* — <span>inférence, confiance
+  faible</span> : **3 040 à 3 110 contre 3100 aussi**, et les deux
+  estimations d'accord à leurs intervalles près (écart sous ~1,96 ·
+  √(σ₁² + σ₂²), ~65). Un désaccord dirait que l'échelle de `UCI_Elo` n'est
+  pas cohérente entre les deux niveaux, et les séries d'avant le 14 oct. ne
+  se compareraient plus à celles d'après qu'à travers ce pont ;
+- **ce que cela ne change pas** : un changement se mesure contre notre
+  jumeau, jamais contre Stockfish bridé, qui écrase les écarts.
 
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
