@@ -8080,6 +8080,29 @@ les deux vagues et leurs processeurs</span> : **185 à 290 M positions,
 celui de la vague 2 ; écartées **15,4 à 16,0 %**, nulles **31,8 à
 32,7 %**.
 
+**La vague 3, RELEVÉE le 15 oct. à 3 h 20 — dans ses attendus, sur les
+quatre chiffres.** Les huit jobs finis à 3 h 00 :
+
+| | vague 3 | attendu, écrit avant |
+|---|---|---|
+| positions | **245 971 974** | 185 à 290 M |
+| gardées par le filtre | **165 155 160** (67,1 %) | 124 à 195 M |
+| parties écartées, sur les gardées | **15,74 %**, d'un job à l'autre 15,63 à 15,89 % | 15,4 à 16,0 % |
+| nulles | **32,27 %**, d'un job à l'autre 32,09 à 32,42 % | 31,8 à 32,7 % |
+
+- **les processeurs** : trois EPYC 9V74 à 1 702, 1 710 et 1 719 positions
+  par seconde — la vague 2 en montrait un à 1 332 —, un EPYC 9V45 à 2 177,
+  trois EPYC 7763 à 1 283 à 1 340, un Xeon 8370C, neuf dans ces tables, à
+  1 199 ;
+- **le volume d'entraînement : 434,3 M gardées** après trois vagues, le
+  job tenu à l'écart mis à part — 27 % de ~1,6 G. À ~18,9 M par job, la
+  moyenne des 23 jobs d'entraînement, **~62 jobs encore, ~8 vagues**.
+
+**La vague 4, lancée le 15 oct. à 3 h 25** — la même recette, `c4697e2`,
+huit jobs. *Attendu, écrit avant* — <span>inférence, confiance moyenne,
+les trois vagues</span> : **185 à 290 M positions, 124 à 195 M
+gardées** ; écartées **15,4 à 16,0 %**, nulles **31,8 à 32,7 %**.
+
 **La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
 38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
 du 7 oct. (37625443145, tenu à l'écart) puis sur un job appris
