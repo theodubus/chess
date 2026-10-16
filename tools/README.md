@@ -940,7 +940,8 @@ dernière relève est faite.
 | **N° 18 — la vague 7** | 38790151546, 38790162034, 38790172823, 38790182980, 38790193608, 38790203674, 38790214545, 38790224445 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **RELEVÉE le 16 oct. à 2 h 45** — lancée le 15 oct. à 21 h 00, finie le 16 à 2 h 30 | **242,2 M positions, 162,6 M gardées, 15,74 % d'écartées, 32,26 % de nulles : dans l'attendu sur les quatre chiffres.** 1 097,9 M gardées à l'entraînement après sept vagues, ~25 jobs encore (section « N° 18 — le volume », la vague 7) — *Attendu, écrit avant* (section « N° 18 — le volume », la vague 7) : **185 à 290 M positions, 124 à 195 M gardées** ; écartées 15,4 à 16,0 % et nulles 31,8 à 32,7 %, sur les parties gardées |
 | **N° 18 — la vague 8** | 38831468864, 38831475554, 38831482415, 38831489161, 38831495931, 38831502475, 38831508720, 38831514780 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **RELEVÉE à 8 h 30** — lancée le 16 oct. à 2 h 45, finie à 8 h 20 | **213,0 M positions, 143,0 M gardées, 15,68 % d'écartées, 32,26 % de nulles : dans l'attendu sur les quatre chiffres.** 1 240,9 M gardées à l'entraînement après huit vagues, ~18 jobs encore (section « N° 18 — le volume », la vague 8) — *Attendu, écrit avant* (section « N° 18 — le volume », la vague 8) : **185 à 290 M positions, 124 à 195 M gardées** ; écartées 15,4 à 16,0 % et nulles 31,8 à 32,7 %, sur les parties gardées |
 | **N° 18 — la vague 9** | 38861751668, 38861758821, 38861766291, 38861773204, 38861780421, 38861787224, 38861794604, 38861801128 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **RELEVÉE à 14 h 25** — lancée le 16 oct. à 8 h 30, finie à 14 h 05 | **247,9 M positions, 166,4 M gardées, 15,71 % d'écartées, 32,24 % de nulles : dans l'attendu sur les quatre chiffres.** 1 407,3 M gardées à l'entraînement après neuf vagues, ~10 jobs encore : la vague 10 la dernière (section « N° 18 — le volume », la vague 9) — *Attendu, écrit avant* (section « N° 18 — le volume », la vague 9) : **185 à 290 M positions, 124 à 195 M gardées** ; écartées 15,4 à 16,0 % et nulles 31,8 à 32,7 %, sur les parties gardées |
-| **N° 18 — la vague 10** | 38900204625, 38900213002, 38900221691, 38900230079, 38900238002, 38900246025, 38900254597, 38900264329 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **EN VOL** — lancée le 16 oct. à 14 h 25 ; fin vers 19 h 55 ; **la dernière si elle tient** (règle de fin : arrêt à 1,5 G) | — *Attendu, écrit avant* (section « N° 18 — le volume », la vague 10) : **185 à 290 M positions, 124 à 195 M gardées** ; écartées 15,4 à 16,0 % et nulles 31,8 à 32,7 %, sur les parties gardées ; cumul 1,53 à 1,60 G |
+| **N° 18 — la vague 10** | 38900204625, 38900213002, 38900221691, 38900230079, 38900238002, 38900246025, 38900254597, 38900264329 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **RELEVÉE le 16 oct. à 20 h 10** — lancée à 14 h 25, finie à 19 h 55 ; **la dernière : la règle de fin s'applique** | **232,4 M positions, 156,0 M gardées, 15,73 % d'écartées, 32,24 % de nulles : dans l'attendu ; cumul 1 563,4 M gardées, ≥ 1,5 G — la génération S'ARRÊTE, le n° 18 CLOS** : 80 jobs, 79 appris, 8,50 Go d'artefacts jusqu'au 12–14 janv. 2027, chaque job dans `tools/n18-jobs.tsv` (section « N° 18 — le volume », le bilan) — *Attendu, écrit avant* (section « N° 18 — le volume », la vague 10) : **185 à 290 M positions, 124 à 195 M gardées** ; écartées 15,4 à 16,0 % et nulles 31,8 à 32,7 %, sur les parties gardées ; cumul 1,53 à 1,60 G |
+| **N° 18 — la séance, sur la carte de Théo** | — | N6l, N6m, N6v, N6l200 à `main` ; N6r4 `4a604ea` ; N6r10 `f729f8c` | `tools/nnue-train`, 79 jobs téléchargés | **ÉCRITE le 16 oct. à 20 h 20 — attend la carte de Théo** ; ~4 h d'entraînement plus six relectures, une nuit | — six réseaux : le volume (N6l), la pente (N6m, une moitié emboîtée), l'étiqueteur seul (N6v), les seaux de roi sur le volume (N6r4, N6r10), les superlots (N6l200) ; puis 24 jobs à `8+0,08` ; critère et attendus écrits avant (section « N° 18 — la séance ») |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 18 — la perte tenue à l'écart des points de sauvegarde du n° 17** | **38549900154** | l'outil et les réseaux de `reseau/n17-points` à `e7a497d` ; N5l, N5r4, N5r10 à 10, 20, 30 et 40 superlots, sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 35** — lancée à 12 h 29, finie à 12 h 32 | **Deux critères sur quatre ; aucune perte tenue à l'écart ne remonte.** Contrôle exact. L'écart tenu à l'écart − appris croît à chaque point, plus vite avec les seaux — tient ; mais celui de N5r10 au point 10 en vaut déjà les deux tiers, pas moins de la moitié — tombe ; la pénalité des seaux plus petite au point 10 : N5r10 oui (0,00230 contre 0,00279), N5r4 plate à 0,0012 ; N5r10 baisse jusqu'au 40 — tombe. La pénalité des seaux est là dès ~6 passes : le volume, pas la durée (section « N° 18 », la perte des points de sauvegarde) — *Prédiction, écrite avant* (section « N° 18 », les points de sauvegarde) : l'écart tenu à l'écart − appris croît d'un point au suivant, plus vite avec les seaux — celui de N5r10 au point 10 sous la moitié du sien au 40 ; la pénalité des seaux contre N5l plus petite au point 10 qu'au 40 ; la perte tenue à l'écart de N5r10 minimale avant le 40, celle de N5l au 40. *Contrôle* : 19 160 455 et 19 608 724 positions |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
@@ -8290,6 +8291,258 @@ moyenne, les neuf vagues</span> : **185 à 290 M positions, 124 à 195 M
 gardées** ; écartées **15,4 à 16,0 %**, nulles **31,8 à 32,7 %** ; le
 cumul d'entraînement à **1,53 à 1,60 G**.
 
+**La vague 10, RELEVÉE le 16 oct. à 20 h 10 — dans ses attendus, sur les
+cinq chiffres ; la règle de fin s'applique : la génération S'ARRÊTE.** Les
+huit jobs finis à 19 h 55 :
+
+| | vague 10 | attendu, écrit avant |
+|---|---|---|
+| positions | **232 404 123** | 185 à 290 M |
+| gardées par le filtre | **156 024 568** (67,1 %) | 124 à 195 M |
+| parties écartées, sur les gardées | **15,73 %**, d'un job à l'autre 15,59 à 15,84 % | 15,4 à 16,0 % |
+| nulles | **32,24 %**, d'un job à l'autre 32,11 à 32,33 % | 31,8 à 32,7 % |
+| cumul d'entraînement | **1 563 356 858** | 1,53 à 1,60 G |
+
+- **les processeurs** : cinq EPYC 7763 à 1 292 à 1 301 positions par
+  seconde, deux EPYC 9V74 à 1 309 — le plus lent jamais vu pour lui — et
+  1 709, un EPYC 9V45 à 2 231 ;
+- **1,563 G ≥ 1,5 G : arrêt**, par la règle écrite avant la relève de la
+  vague 9.
+
+**N° 18 — le volume, CLOS le 16 oct. à 20 h 10 : le bilan.**
+
+| | |
+|---|---|
+| jobs | **80** — dix vagues de huit, tous en succès ; **79 appris**, 1 tenu à l'écart (38531414161, vague 1) |
+| parties, appris | **18 435 764** |
+| positions, appris | **2 328 546 367** |
+| gardées par le filtre, appris | **1 563 356 858** — × 9,83 les 159 087 014 de N5l |
+| écartées / nulles, sur les gardées | 15,73 % / 32,28 %, dix vagues entre 15,68 et 15,77 % et 32,24 et 32,34 % |
+| le job tenu à l'écart | 202 898 parties, 25 628 451 positions, 17 208 872 gardées |
+| artefacts | **80, 8,50 Go** compressés (lu à l'API) ; ~10 Go décompressés, <span>inférence, confiance moyenne : ~4,1 octets par position, d'après le « volume sur disque » des résumés</span> |
+| expiration | **du 12 janv. 2027 à 8 h 54 au 14 janv. 2027 à 13 h 24** (UTC à l'API : 7 h 54 et 12 h 24) |
+| le dépôt en tout | 1 194 artefacts vivants, **11,02 Go** (lu à l'API le 16 oct.) — aucun refusé |
+
+**Chaque job, compté — `tools/n18-jobs.tsv`** : run, artefact, vague,
+rôle (`tenu` ou `appris`), parties, positions, gardées, octets
+compressés. Lu dans le journal de chaque job et à l'API ; ses sommes par
+vague retombent au chiffre près sur les dix tableaux ci-dessus — un
+contrôle de la recopie, fait avant de l'écrire. C'est la liste dont la
+séance tire ses sous-ensembles, et dont elle tire ses `--attendu` : rien
+n'y est recopié à la main.
+
+**N° 18 — la séance, écrite le 16 oct. à 20 h 20, avant de la demander.**
+Six réseaux, depuis zéro, sur la carte de Théo, l'un après l'autre et sans
+surveillance. Ce que chacun mesure :
+
+| réseau | architecture (commit) | données | superlots | ce qu'il mesure |
+|---|---|---|---|---|
+| **N6l** | celle de N5l (`main`) | les 79 jobs, 1,563 G gardées | **100** | **le volume et l'étiqueteur** ensemble : le candidat principal, contre N5l |
+| **N6m** | celle de N5l (`main`) | les vagues 1 à 5, 39 jobs, 756,7 M gardées — **une moitié emboîtée** (48,4 %) | 100 | **la pente** : contre N6l, à calcul égal |
+| **N6v** | celle de N5l (`main`) | les 9 premiers jobs appris, 155,8 M gardées — **à volume égal** de N5l, −2,1 % | **40**, ceux de N5l | **l'étiqueteur seul** : contre N5l, rien d'autre ne change |
+| **N6r4** | 4 seaux de roi (`4a604ea`) | les 79 jobs | 100 | **les seaux de roi sur le volume** — la raison du n° 18 |
+| **N6r10** | 10 seaux de roi (`f729f8c`) | les 79 jobs | 100 | idem, dix seaux |
+| **N6l200** | celle de N5l (`main`) | les 79 jobs | **200** | **le nombre de superlots** : contre N6l, à données égales |
+
+- **100 superlots, et pourquoi** : un superlot vaut 16 384 × 6 104 =
+  **100,0 M positions** (`tools/nnue-train`, `TrainingSteps`) ; 40 en
+  faisaient 25 passes sur 159 M, et ne feraient que 2,6 passes sur
+  1,563 G. 100 en font 6,4, et la décroissance cosinus se cale sur le
+  dernier — un point de sauvegarde au milieu n'est pas un entraînement
+  plus court (la réserve du n° 17). Le nombre se mesure donc par un
+  second entraînement, N6l200, pas par les points de N6l ;
+- **384 et 512 unités n'y sont pas** : il leur faut des commits
+  d'architecture neufs, et une séance de plus. Ce que celle-ci dira de la
+  pente et des superlots dira aussi comment les entraîner ;
+- **les sous-ensembles sont emboîtés et tirés du TSV**, dans son ordre :
+  N6v ⊂ N6m ⊂ N6l. La génération était la même recette à 5 000 nœuds,
+  d'une vague à l'autre — seuls les runners changeaient, qui ne changent
+  que le débit : les vagues sont interchangeables.
+
+**Vérifié ici avant de l'écrire** : à `main` (`0725ef8`), `tools/nnue-train`
+compile avec `--locked` et passe ses **sept** tests — contre le runtime
+factice de bullet, donc sans rien dire de CUDA — dont
+`les_seaux_du_moteur_sont_ceux_de_bullet` ; le programme n'a pas changé
+depuis `4a604ea` et `f729f8c` (`git diff` vide sur `tools/nnue-train`), qui
+ont entraîné N5r4 et N5r10 le 14 oct. Chaque bloc se colle dans le MÊME
+terminal, dans l'ordre :
+
+0. **le dépôt à jour, et la place** :
+   ```sh
+   cd ~/chess && git status
+   git fetch origin && git switch main && git pull --ff-only
+   git log -1 --format='%h %cd'
+   df -h ~
+   ```
+   — `git log` doit dater du 16 oct. 2026 ou d'après ; **12 Go libres au
+   moins** : ~10 Go de données, plus les points de sauvegarde. Des fichiers
+   « modifiés », un `--ff-only` qui refuse : s'arrêter et le dire. Les
+   données des séances précédentes — `~/nnue-vague3`, le binpack de
+   Leela — peuvent rester ;
+1. **les données — 79 archives, 8,41 Go, avant le 12 janv. 2027** ; le
+   job tenu à l'écart ne descend pas : il ne sert qu'à la perte tenue à
+   l'écart, calculée sur runner, et l'absence même de ses fichiers garantit
+   qu'aucun entraînement ne l'a vu. Avec
+   `gh` connecté (`gh auth status`), une boucle télécharge et décompresse,
+   chaque job dans son dossier, et reprend là où elle s'est arrêtée si on
+   la relance :
+   ```sh
+   D=~/nnue-n18; mkdir -p $D
+   awk -F'\t' '$4=="appris" {print $1}' ~/chess/tools/n18-jobs.tsv |
+   while read r; do
+     [ -d $D/$r ] && continue
+     rm -rf $D/.tmp-$r
+     gh run download $r -R theodubus/chess -n nnue-$r -D $D/.tmp-$r \
+       && mv $D/.tmp-$r $D/$r || { echo "ÉCHEC sur $r"; break; }
+   done
+   ls $D/*/*.vf | wc -l; du -sh $D
+   ```
+   — **316** fichiers `.vf`, quatre par job, ~10 Go. Sans `gh` : un jeton
+   GitHub au droit « Actions : lecture » sur `theodubus/chess`, et la même
+   boucle par l'API — le TSV porte l'identifiant de chaque artefact :
+   ```sh
+   D=~/nnue-n18; mkdir -p $D; TOKEN=…   # le jeton
+   awk -F'\t' '$4=="appris" {print $1, $2}' ~/chess/tools/n18-jobs.tsv |
+   while read r a; do
+     [ -d $D/$r ] && continue
+     rm -rf $D/.tmp-$r
+     curl -fsSL -H "Authorization: Bearer $TOKEN" -o $D/$r.zip \
+       https://api.github.com/repos/theodubus/chess/actions/artifacts/$a/zip \
+       && unzip -q -o $D/$r.zip -d $D/.tmp-$r && mv $D/.tmp-$r $D/$r \
+       && rm $D/$r.zip || { echo "ÉCHEC sur $r"; break; }
+   done
+   ls $D/*/*.vf | wc -l; du -sh $D
+   ```
+2. **les trois listes**, tirées du TSV — le job tenu à l'écart n'y est
+   jamais :
+   ```sh
+   T=~/chess/tools/n18-jobs.tsv
+   TOUS=$(awk -F'\t' -v d=$D '$4=="appris" {print d"/"$1}' $T)
+   MOITIE=$(awk -F'\t' -v d=$D '$4=="appris" && $3<=5 {print d"/"$1}' $T)
+   EGAL=$(awk -F'\t' -v d=$D '$4=="appris" {print d"/"$1}' $T | head -9)
+   echo $TOUS | wc -w; echo $MOITIE | wc -w; echo $EGAL | wc -w
+   ```
+   — **79, 39 et 9** ;
+3. **CUDA dans ce terminal** — le bloc « CUDA dans ce terminal » de la
+   séance d'entraînement du n° 7, tel quel ;
+4. **un essai court d'abord** — un superlot sur tout, qui relit d'abord
+   chaque octet des 79 jobs et refuse au moindre écart de compte :
+   ```sh
+   cd ~/chess/tools/nnue-train
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 1 \
+     --sortie essai18 $TOUS 2>&1 | tee essai18.sortie.txt
+   ```
+   il doit finir sur `RÉSEAU PRÊT : essai18/shallowred-768x256-s8-1/quantised.bin`.
+   Un écart de compte dit une archive incomplète : supprimer son dossier
+   et relancer la boucle de l'étape 1. Un `ÉCHEC — le moteur n'évalue pas
+   comme l'entraîneur` : s'arrêter et m'envoyer la sortie. **Noter la durée
+   de la relecture** — elle se répétera à chaque réseau ;
+5. **les six réseaux, d'une traite** — un échec arrête la chaîne, et
+   `pipefail` fait compter celui de l'entraînement, pas celui de `tee` :
+   ```sh
+   set -o pipefail
+   cd ~/chess/tools/nnue-train && git switch main &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 100 \
+     --sortie n6l $TOUS 2>&1 | tee n6l.sortie.txt &&
+   cargo run --release --features cuda -- --attendu 8920492:1126989018 --superlots 100 \
+     --sortie n6m $MOITIE 2>&1 | tee n6m.sortie.txt &&
+   cargo run --release --features cuda -- --attendu 1836408:232052120 --superlots 40 \
+     --sortie n6v $EGAL 2>&1 | tee n6v.sortie.txt &&
+   git checkout 4a604ea &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 100 \
+     --sortie n6r4 $TOUS 2>&1 | tee n6r4.sortie.txt &&
+   git checkout f729f8c &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 100 \
+     --sortie n6r10 $TOUS 2>&1 | tee n6r10.sortie.txt &&
+   git switch main &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 200 \
+     --sortie n6l200 $TOUS 2>&1 | tee n6l200.sortie.txt
+   echo "FIN : $?"; git switch main
+   ```
+   → `RÉSEAU PRÊT :` respectivement `n6l/shallowred-768x256-s8-100`,
+   `n6m/shallowred-768x256-s8-100`, `n6v/shallowred-768x256-s8-40`,
+   `n6r4/shallowred-768x4hm-256-s8-100`, `n6r10/shallowred-768x10hm-256-s8-100`
+   et `n6l200/shallowred-768x256-s8-200`, chacun suivi de
+   `/quantised.bin`, et **`FIN : 0`**. Git annonce une « HEAD détachée » aux
+   deux `checkout` : c'est voulu. Interrompue, la chaîne se reprend au
+   réseau qui manque, en recollant ses lignes à partir de lui ;
+6. **rapporter** — les réseaux sur `reseau/n18`, et un point de
+   sauvegarde sur deux (tous les 20 superlots) sur `reseau/n18-points` :
+   ```sh
+   cd ~/chess && git switch -c reseau/n18
+   for c in n6l:768x256-s8-100 n6m:768x256-s8-100 n6v:768x256-s8-40 \
+            n6r4:768x4hm-256-s8-100 n6r10:768x10hm-256-s8-100 n6l200:768x256-s8-200; do
+     n=${c%%:*}; a=${c#*:}; d=tools/nnue-train/$n/shallowred-$a
+     cp $d/quantised.bin reseaux/$n-$a.bin
+     cp $d/log.txt reseaux/$n-$a.log.txt
+     cp tools/nnue-train/$n.sortie.txt reseaux/$n-$a.sortie.txt
+   done
+   cp tools/nnue-train/essai18.sortie.txt reseaux/essai18.sortie.txt
+   git add reseaux/n6* reseaux/essai18.sortie.txt
+   git commit -m "Réseaux NNUE du n° 18 : N6l, N6m, N6v, N6r4, N6r10, N6l200 — le volume"
+   git push -u origin reseau/n18
+   git switch -c reseau/n18-points
+   mkdir -p reseaux/points-n18
+   for d in tools/nnue-train/n6*/shallowred-*; do
+     s=${d##*-}; [ $((s % 20)) -eq 0 ] || continue
+     cp $d/quantised.bin reseaux/points-n18/$(basename $(dirname $d))-$(basename $d).bin
+   done
+   ls reseaux/points-n18 | wc -l
+   git add reseaux/points-n18
+   git commit -m "Points de sauvegarde du n° 18, tous les 20 superlots"
+   git push -u origin reseau/n18-points
+   git switch main
+   ```
+   — **32** points : 5 par réseau à 100 superlots, 2 pour N6v, 10 pour
+   N6l200 ; ~36 Mo, dont les trois quarts pour les seaux de roi. **Garder
+   `~/nnue-n18` et les dossiers `n6*/`** : un ré-entraînement en
+   repartirait, et 384 ou 512 unités s'entraîneront sur les mêmes données.
+
+*Durée* — <span>inférence, confiance faible</span> : N5l a pris 13 min 00 s
+pour 40 superlots, soit ~19,5 s chacun, et les positions vues ne dépendent
+pas du volume ; N5r4 et N5r10, ~23,6 et ~31,9 s. D'où **N6l ~33 min, N6m
+~33, N6v ~13, N6r4 ~39, N6r10 ~53, N6l200 ~65 : ~4 h d'entraînement**,
+plus six relectures dont l'essai donnera la durée — sur 2,3 G positions
+au lieu de 242 M. **Une nuit.** Le téléchargement dépend de la ligne :
+8,5 Go.
+
+**Ce qui suit, écrit avant** : pour chaque réseau, la confrontation
+recopiée dans le moteur, le candidat révoqué aussitôt, ses nœuds par
+seconde au rejeu, la sonde de B8 — son facteur des marges ; **la perte
+tenue à l'écart** de chaque réseau et de ses points, sur 38531414161, par
+`nnue-validation` sur runner. Puis **24 jobs de 2 800 parties à
+`8+0,08`**, en deux vagues de douze :
+- **N6l, N6r4, N6r10 contre N5l**, quatre jobs chacun — la décision ;
+- **N6m contre N6l, N6l200 contre N6l, N6v contre N5l**, quatre jobs
+  chacun — les trois mesures. Un écart entre deux réseaux se mesure par
+  un match direct, pas par la différence de leurs écarts à N5l : celle-ci
+  porterait deux incertitudes.
+
+**Le critère d'embarquement, écrit avant** : celui du n° 17 — un gain
+démontré contre N5l, borne basse au-dessus de zéro ; parmi les gains
+démontrés, le meilleur au point, et un match direct si l'intervalle du
+second recoupe le sien. **La lecture de la pente, écrite avant** : N6l
+contre N6m démontré positif — un nouveau × 2 de données se justifie,
+puisque doubler a encore payé ; compatible avec zéro — plus de données
+ne paierait pas à 100 superlots, et la génération s'arrête là pour cette
+architecture. *Réserve* : la pente se lit à calcul fixe ; à plus de
+superlots, elle peut croître — N6l200 le dira en partie.
+
+*Attendus* — <span>inférence, confiance faible : le volume n'a jamais été
+mesuré seul ici</span> :
+- **N6v contre N5l : 0 à +25** — un étiqueteur plus fort de ~50 Elo,
+  quand celui du 7 oct., plus fort que le sien de bien davantage — la
+  composition du n° 9, C41, l'AVX2, N2L —, avait rendu +47 (N4 contre
+  N2) ;
+- **N6l contre N5l : +15 à +60** — l'étiqueteur et × 9,8 de données ;
+- **N6l contre N6m : 0 à +20** ; **N6l200 contre N6l : 0 à +15** ;
+- **N6r4 et N6r10 contre N5l : −30 à +40**, sans ordre attendu entre eux
+  — ils régressaient de −59 et −134 sur 159 M ; le volume dira s'ils
+  manquaient de données ou d'autre chose ;
+- **pertes tenues à l'écart** : N6l sous N5l ; N6m entre les deux ; aucun
+  point d'aucun réseau ne remonte — 6,4 passes au plus sur 1,563 G, 13
+  pour N6m, quand 25 sur 159 M n'en faisaient remonter aucune.
+
 **La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
 38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
 du 7 oct. (37625443145, tenu à l'écart) puis sur un job appris
@@ -9898,7 +10151,7 @@ qu'en partie dans le dépôt n'existe pas.*
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. <s>**n° 16 expliqué à Théo le même jour, en attente de sa décision**</s> **n° 16, le chemin A, DÉCIDÉ (Théo) et ÉCRIT le 13 oct.** : sans `unsafe` ni dépendance, **−14,4 ± 1,6 % de temps à arbre identique, ~+24 Elo par l'étalon** ; le code machine lu, 32 `vpmulld` remplacés par 32 `vpmullw` ; <s>crible en vol, fusion à son vert</s> **crible exact à 162, FUSIONNÉ le 13 oct.** (PR #171). **n° 17, étape 1, le 13 oct.** : le produit scalaire par tranches de 256 lève la borne de largeur — même arbre, même temps ; **N3 sur ce code, × 0,93** de nœuds par seconde, ~−11 Elo de vitesse pour 256 unités. **Le plan de la séance du n° 17 écrit** : N5s (128, seaux de sortie), N5l (256), N5r4 et N5r10 (256, seaux de roi), chacun contre N4 ; <s>le code des seaux d'abord, confronté au code de bullet, avant de demander la carte de Théo</s> **le code des seaux écrit le 13 oct. au soir** — confronté au code de bullet, le même arbre et le même temps que `main` sur N4 ; <s>**la séance des quatre réseaux écrite : elle attend la carte de Théo**</s> **la séance RELEVÉE le 14 oct.** — quatre réseaux dans le critère ; la sonde de B8 relevée, N5l (2,85) et N5r10 (3,38) hors de la plage, leurs candidats portant leur facteur ; <s>**seize jobs contre N4 EN VOL depuis 1 h 14**</s> **VERDICT le 14 oct.** : **N5l +30,29 ± 3,95 contre N4, EMBARQUÉ** ; N5s +15,58 ± 3,87 ; les seaux de roi régressent, **N5r4 −58,91, N5r10 −133,59** — la largeur paie, les seaux de roi demandent le volume (n° 18) (section « N° 17 — VERDICT ») |
+| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. <s>**n° 16 expliqué à Théo le même jour, en attente de sa décision**</s> **n° 16, le chemin A, DÉCIDÉ (Théo) et ÉCRIT le 13 oct.** : sans `unsafe` ni dépendance, **−14,4 ± 1,6 % de temps à arbre identique, ~+24 Elo par l'étalon** ; le code machine lu, 32 `vpmulld` remplacés par 32 `vpmullw` ; <s>crible en vol, fusion à son vert</s> **crible exact à 162, FUSIONNÉ le 13 oct.** (PR #171). **n° 17, étape 1, le 13 oct.** : le produit scalaire par tranches de 256 lève la borne de largeur — même arbre, même temps ; **N3 sur ce code, × 0,93** de nœuds par seconde, ~−11 Elo de vitesse pour 256 unités. **Le plan de la séance du n° 17 écrit** : N5s (128, seaux de sortie), N5l (256), N5r4 et N5r10 (256, seaux de roi), chacun contre N4 ; <s>le code des seaux d'abord, confronté au code de bullet, avant de demander la carte de Théo</s> **le code des seaux écrit le 13 oct. au soir** — confronté au code de bullet, le même arbre et le même temps que `main` sur N4 ; <s>**la séance des quatre réseaux écrite : elle attend la carte de Théo**</s> **la séance RELEVÉE le 14 oct.** — quatre réseaux dans le critère ; la sonde de B8 relevée, N5l (2,85) et N5r10 (3,38) hors de la plage, leurs candidats portant leur facteur ; <s>**seize jobs contre N4 EN VOL depuis 1 h 14**</s> **VERDICT le 14 oct.** : **N5l +30,29 ± 3,95 contre N4, EMBARQUÉ** ; N5s +15,58 ± 3,87 ; les seaux de roi régressent, **N5r4 −58,91, N5r10 −133,59** — la largeur paie, les seaux de roi demandent le volume (n° 18) (section « N° 17 — VERDICT »). **n° 18 CLOS le 16 oct.** : dix vagues, 80 jobs, **1,563 G positions gardées** — × 9,8 ; **la séance de six réseaux écrite, elle attend la carte de Théo** (section « N° 18 — la séance ») |
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 **Le 7 oct., C51** — les échecs tranquilles au premier pli de la quiescence — multiplie par treize ces avertissements côté candidat (157 contre 12) et régresse de −10,77 ± 3,40 : la cécité de la quiescence aux nulles pèse d'autant plus qu'elle joue de tranquilles. Un fait neuf pour C31 le jour où les échecs tranquilles se rouvrent, et alors les deux se mesurent ensemble |
 | **C43 — le gain d'un pion qui reprend en promouvant, dans `see`** — trouvé le 6 oct. par l'oracle `see_check` étendu aux coups tranquilles pour C40 | — correctif de règle | **FUSIONNÉ le 6 oct.** au titre de la règle — **+0,87 ± 4,63** à `8+0,08`, 6 000 parties contre `main` avec C41, aucune borne haute sous zéro, ni l'ensemble ni un match (section n° 9, « C43 et C44 — VERDICT »). <s>**à faire**</s> : `exchange` compte le pion qui reprend sur la dernière rangée comme une dame pour la suite, pas le gain de sa promotion (+880) ; l'oracle le voit sur 33 tranquilles sur 77 020 et une capture sur 5 827. Le protocole des correctifs de règle (`CLAUDE.md`) : un test qui tombe sur l'ancien code, valeur lue sur l'oracle ; le mécanisme mesuré en régime réel — combien de décisions d'élagage et d'ordre en changent ; un match au critère « fusion sauf si la borne haute est sous zéro ». **Écrit et mesuré le 6 oct. vers 05 h 10, pas encore lancé** : quatre lignes dans la boucle d'échange ; le test `un_pion_qui_reprend_en_promouvant_compte_sa_promotion` tombe sur l'ancien code (0 contre −880, valeur de l'oracle) ; l'oracle passe de 21 écarts de capture à 20, la légalité seule. **Le mécanisme, au rejeu du journal du quatrième écran** : 3,5 appels de `see` sur un million changent de valeur à la profondeur 12 (359 sur 102 millions, dont 235 de signe), l'arbre +0,0001 % ; banc 90 646 à la profondeur 7 contre 90 656. <s>**Son match attend la fin des seize jobs du quatrième écran et leur composition** : la boucle d'échange sera commune à `see` et `see_quiet` si C40 entre, et un correctif se mesure sur la base qu'il corrige</s> **C40 n'est pas entré, C41 si** : la rustine s'applique telle quelle, et son match se mesure contre `main` avec C41 — protocole, attendu et puissance écrits avant (section n° 9, « après le quatrième écran »). **Lancé le 6 oct. à 13 h 57** : deux jobs, `d69d2ed` contre `b6d41d7`, relevés à 19 h 30 |
