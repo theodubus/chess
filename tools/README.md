@@ -8263,6 +8263,31 @@ avant* — <span>inférence, confiance moyenne, les huit vagues</span> :
 **185 à 290 M positions, 124 à 195 M gardées** ; écartées **15,4 à
 16,0 %**, nulles **31,8 à 32,7 %**.
 
+**La vague 9, RELEVÉE le 16 oct. à 14 h 25 — dans ses attendus, sur les
+quatre chiffres.** Les huit jobs finis à 14 h 05 :
+
+| | vague 9 | attendu, écrit avant |
+|---|---|---|
+| positions | **247 880 043** | 185 à 290 M |
+| gardées par le filtre | **166 404 333** (67,1 %) | 124 à 195 M |
+| parties écartées, sur les gardées | **15,71 %**, d'un job à l'autre 15,63 à 15,86 % | 15,4 à 16,0 % |
+| nulles | **32,24 %**, d'un job à l'autre 32,04 à 32,41 % | 31,8 à 32,7 % |
+
+- **les processeurs** : un EPYC 9V45 à 2 260 positions par seconde, trois
+  EPYC 9V74 au régime rapide, 1 707 à 1 717, trois EPYC 7763 à 1 290 à
+  1 295, un Xeon 8573C revenu au régime lent, 1 243 ;
+- **le volume d'entraînement : 1 407,3 M gardées** après neuf vagues, le
+  job tenu à l'écart mis à part — 88 % de ~1,6 G, ~10 jobs encore à
+  ~19,8 M. La vague 10 part pleine ; **même au bas de son attendu, 124 M,
+  elle porte le cumul à 1,53 G** — la règle de fin écrite plus haut
+  arrêtera donc la génération après elle, sauf vague hors attendu.
+
+**La vague 10** — la même recette, `c4697e2`, huit jobs, **la dernière
+si elle tient**. *Attendu, écrit avant* — <span>inférence, confiance
+moyenne, les neuf vagues</span> : **185 à 290 M positions, 124 à 195 M
+gardées** ; écartées **15,4 à 16,0 %**, nulles **31,8 à 32,7 %** ; le
+cumul d'entraînement à **1,53 à 1,60 G**.
+
 **La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
 38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
 du 7 oct. (37625443145, tenu à l'écart) puis sur un job appris
