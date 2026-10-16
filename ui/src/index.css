@@ -425,10 +425,9 @@ textarea {
   padding: 5px 0;
 }
 .player-piece {
-  font-size: 28px;
   width: 34px;
-  text-align: center;
-  color: #e6d9b9;
+  height: 34px;
+  flex: none;
 }
 .player-name {
   min-width: 0;
