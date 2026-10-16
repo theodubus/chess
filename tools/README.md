@@ -8224,8 +8224,38 @@ quatre chiffres.** Les huit jobs finis à 8 h 20 :
   job tenu à l'écart mis à part — 78 % de ~1,6 G. À ~19,7 M par job, la
   moyenne des 63 jobs d'entraînement, **~18 jobs encore, un peu plus de
   deux vagues**. La règle d'arrêt reste celle du protocole — ~1,6 G, ou
-  plus tôt si la séance le décide ; la taille de la dernière vague se
-  décidera à la relève de la vague 9, sur le cumul mesuré.
+  plus tôt si la séance le décide. <s>la taille de la dernière vague se
+  décidera à la relève de la vague 9, sur le cumul mesuré.</s> **Faux,
+  relevé par Théo le 16 oct.** : ~18 jobs, c'est plus de deux vagues — la
+  vague 10 sera pleine quoi qu'il arrive, et la seule question, un reliquat
+  de quelques jobs, appartient à la relève de la vague 10.
+
+**La règle de fin, écrite le 16 oct. à 14 h 10, avant la relève de la vague 9 — ses journaux non lus** : après
+la vague 10, **on s'arrête si le cumul d'entraînement atteint 1,5 G**
+gardées ; en dessous, un reliquat de jobs, juste ce qu'il faut pour
+1,6 G au débit moyen. Raison : ~1,6 G n'est pas une cible fine — voir
+plus bas —, et 1 à 3 jobs de plus, 2 à 4 % du volume, ne se verraient
+dans aucune mesure. *Attendu* — <span>inférence, confiance moyenne, les
+huit vagues</span> : **1,49 à 1,63 G** après la vague 10, le plus
+probable ~1,53 à 1,60 G — **l'arrêt après la vague 10**.
+
+**Pourquoi ~1,6 G, et pas plus ni moins — ce qui est mesuré et ce qui ne
+l'est pas.** Le chiffre est **× 10 les 159 M** sur lesquels les seaux de
+roi ont régressé : un ORDRE DE GRANDEUR, choisi le 13 oct. (« ~8 à 10
+vagues pour × 10 »), pas un point d'une courbe. Ce qui est mesuré : à
+159 M, les seaux de roi retiennent dès ~6 passes et régressent de −59 et
+−134 Elo (n° 17, `nnue_validation.rs`) — ils manquent de données, et un
+× 2 risquait de ne rien trancher. Ce qui borne vers le haut : ~80 jobs de
+5 h 30 sur runner, soit ~2,5 jours, sous la clause de charge des conditions
+de GitHub (ligne B4) ; ~11 Go d'artefacts gardés 90 jours ; et la séance
+sur la carte de Théo, dont la durée croît avec le volume à nombre de
+passes égal. **Ce qui n'est PAS mesuré : la pente** — combien rapporte
+un doublement de données à architecture fixe. *Comment la mesurer, et
+ainsi décider la vague suivante par un fait* : à la séance, le même
+réseau entraîné sur une moitié emboîtée (~0,8 G) et sur le tout, comparé
+sur le job tenu à l'écart puis par un match ; si la moitié vaut le tout,
+plus de données ne paierait pas ; si l'écart est net, un nouveau × 2 se
+justifie.
 
 **La vague 9, lancée le 16 oct. à 8 h 30** — la même recette, `c4697e2`,
 huit jobs ; runs 38861751668, 38861758821, 38861766291, 38861773204, 38861780421, 38861787224, 38861794604 et 38861801128. Fin attendue vers 14 h 05. *Attendu, écrit
