@@ -16,6 +16,8 @@ import Dialog from "./Dialog";
 import { downloadPgn } from "./pgn";
 import { type Side } from "./engine/analysis";
 import type { Promotion } from "./game";
+import whiteKing from "./assets/captured/wk.svg";
+import blackKing from "./assets/captured/bk.svg";
 
 function Player({
   controller,
@@ -43,9 +45,16 @@ function Player({
   const running = controller.clock.runningColor === color;
   return (
     <div className={`player ${running ? "active" : ""}`}>
-      <span className="player-piece" aria-hidden="true">
-        {color === "w" ? "♔" : "♚"}
-      </span>
+      {/* Les glyphes ♔/♚ s'inversaient sur fond sombre : le contour clair du
+          roi blanc laissait voir le fond, le roi noir plein prenait la couleur
+          du texte. Les pièces du plateau ne dépendent pas du thème. */}
+      <img
+        className="player-piece"
+        aria-hidden="true"
+        alt=""
+        draggable={false}
+        src={color === "w" ? whiteKing : blackKing}
+      />
       <div className="player-name">
         <strong>
           {engine
