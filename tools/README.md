@@ -642,6 +642,12 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-10-14 | **N5s — 128 unités, huit seaux de sortie**, n° 17 (`a684ee1` contre `6a71964`) | **+15,58 Elo ± 3,87** sur 11 200 parties à `8+0,08`, homogènes (p = 0,364). Gain démontré, sous N5l sans recoupement ; attendu +3 à +15, au bord |
 | 2026-10-14 | **N5r4 — 256 unités, quatre seaux de roi, huit de sortie**, n° 17 (`7496db3` contre `6a71964`) | **−58,91 Elo ± 4,45** sur 11 200 parties à `8+0,08`, homogènes (p = 0,187). **Régression** ; attendu +10 à +40, manqué de ~70 |
 | 2026-10-14 | **N5r10 — 256 unités, dix seaux de roi, huit de sortie**, n° 17, facteur 3,38 (`d3fe59d` contre `6a71964`) | **−133,59 Elo ± 4,93** sur 11 200 parties à `8+0,08`, hétérogènes (p = 0,009), chaque job sous −120. **Régression** ; attendu −10 à +40, manqué de ~145 |
+| 2026-10-17 | **N6r4 — quatre seaux de roi sur 1,563 G positions**, n° 18, étiquetées par N5l, au facteur de `main` 2,85 (`cd6ed79` contre `2648fb1`, N5l) | **+98,74 Elo ± 4,27** sur 11 200 parties à `8+0,08`, quatre matchs homogènes (p = 0,457), zéro perte au temps. **EMBARQUÉ** — le meilleur au point, et N6r10 ne démontre rien devant lui |
+| 2026-10-17 | **N6r10 — dix seaux de roi**, n° 18 (`04727b5` contre `2648fb1`) | **+97,30 Elo ± 4,26**, homogènes (p = 0,531) ; **contre N6r4 : +0,34 ± 3,59**, quatre matchs hétérogènes (p = 0,026), les runners ne l'expliquant pas — rien de démontré |
+| 2026-10-17 | **N6l — le volume sans seaux de roi**, n° 18 (`e769992` contre `2648fb1`) | **+76,99 Elo ± 4,00**, homogènes (p = 0,113) |
+| 2026-10-17 | **N6v — l'étiqueteur seul**, n° 18, 155,8 M positions à 40 superlots (`6844597` contre `2648fb1`) | **+5,52 Elo ± 3,97**, homogènes — démontré de justesse |
+| 2026-10-17 | **N6l contre N6m — doubler les données**, n° 18, à 100 superlots (`0edbe22` contre `e769992`, signe opposé) | **+7,32 Elo ± 3,53**, homogènes — **la pente démontrée positive** |
+| 2026-10-17 | **N6l200 contre N6l — doubler les passes**, n° 18 (`8416e67` contre `e769992`) | **+5,49 Elo ± 3,55**, homogènes — démontré |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -949,7 +955,8 @@ dernière relève est faite.
 | **N° 18 — N6v contre N5l** | **39006667845, 39006671292, 39006674945, 39006678512** | `6844597` → `2648fb1` (N5l), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 12 h 55** — lancés à 7 h 32, la sonde de B8 relevée avant ; finis ENTIERS entre 12 h 28 et 12 h 48, 6,3 à 6,7 s par partie | **+2,11, +4,34, +5,96 et +9,68 ; +5,52 ± 3,97 en commun, homogènes (p = 0,545)** ; zéro perte au temps. L'étiqueteur seul, démontré de justesse (section « N° 18 — VERDICT »). — l'étiqueteur seul ; *attendu* 0 à +25. *Critère* : celui du n° 17, écrit avant (section « N° 18 — la séance ») |
 | **N° 18 — N6m contre N6l** | **39006681743, 39006685083, 39006688461, 39006691694** | `0edbe22` → `e769992` (N6l), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 12 h 55** — lancés à 7 h 32, la sonde de B8 relevée avant ; finis ENTIERS entre 12 h 28 et 12 h 48, 6,3 à 6,7 s par partie | **−9,31, −6,83, −9,68 et −3,47 ; −7,32 ± 3,53 en commun, homogènes (p = 0,621)** ; zéro perte au temps. **La pente démontrée positive** : un nouveau × 2 de données se justifie (section « N° 18 — VERDICT »). — la pente des données, lue au signe opposé : le candidat est N6m ; *attendu* −20 à 0 (N6l contre N6m, 0 à +20). *Critère* : celui du n° 17, écrit avant (section « N° 18 — la séance ») |
 | **N° 18 — N6l200 contre N6l** | **39006694641, 39006697705, 39006700858, 39006704130** | `8416e67` → `e769992` (N6l), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 12 h 55** — lancés à 7 h 32, la sonde de B8 relevée avant ; finis ENTIERS entre 12 h 28 et 12 h 48, 6,3 à 6,7 s par partie | **+8,32, +7,32, +3,97 et +2,36 ; +5,49 ± 3,55 en commun, homogènes (p = 0,652)** ; zéro perte au temps. La durée paie aussi, démontré (section « N° 18 — VERDICT »). — la durée ; *attendu* 0 à +15. *Critère* : celui du n° 17, écrit avant (section « N° 18 — la séance ») |
-| **N° 18 — N6r10 contre N6r4**, le match direct | **39026852676, 39026855187, 39026857893, 39026860781** | `04727b5` (N6r10) → `cd6ed79` (N6r4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN VOL** — lancés le 17 oct. à 12 h 57, le critère poussé avant (`6c44d66`) ; fin attendue vers 17 h 50–18 h 15, au plus tard 18 h 47 | — *Critère, écrit avant* : **N6r10 embarque si la borne basse est au-dessus de zéro ; sinon N6r4** ; *attendu* −10 à +8, ~−2 (section « N° 18 — VERDICT ») |
+| **N° 18 — N6r10 contre N6r4**, le match direct | **39026852676, 39026855187, 39026857893, 39026860781** | `04727b5` (N6r10) → `cd6ed79` (N6r4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 18 h 15** — lancés à 12 h 57, le critère poussé avant (`6c44d66`) ; finis ENTIERS entre 17 h 54 et 18 h 02, 6,3 à 6,5 s par partie | **−2,73, +2,11, +8,32 et −6,33 ; +0,34 ± 3,59 en commun, HÉTÉROGÈNES (p = 0,026)** — les deux extrêmes sur le même processeur, les runners ne l'expliquent pas ; zéro perte au temps. **Rien de démontré : N6R4 EMBARQUÉ** par le critère (section « N° 18 — VERDICT »). — *Critère, écrit avant* : **N6r10 embarque si la borne basse est au-dessus de zéro ; sinon N6r4** ; *attendu* −10 à +8, ~−2 (section « N° 18 — VERDICT ») |
+| **N° 20 — la sonde de débit, l'étiqueteur N6r4** | **39048761614** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **EN VOL** — lancée le 17 oct. à 18 h 17, ses attendus poussés avant (`e634340`) ; fin vers 18 h 40 | — *Attendus, écrits avant* (section « N° 20 ») : sur un EPYC 7763, **× 0,85 à × 1,00** les 1 287 positions par seconde de N5l ; **12 à 20 %** d'écartées sur les gardées ; **30 à 36 %** de nulles. Hors fourchette, diagnostic avant la vague |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 18 — la perte tenue à l'écart des points de sauvegarde du n° 17** | **38549900154** | l'outil et les réseaux de `reseau/n17-points` à `e7a497d` ; N5l, N5r4, N5r10 à 10, 20, 30 et 40 superlots, sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 35** — lancée à 12 h 29, finie à 12 h 32 | **Deux critères sur quatre ; aucune perte tenue à l'écart ne remonte.** Contrôle exact. L'écart tenu à l'écart − appris croît à chaque point, plus vite avec les seaux — tient ; mais celui de N5r10 au point 10 en vaut déjà les deux tiers, pas moins de la moitié — tombe ; la pénalité des seaux plus petite au point 10 : N5r10 oui (0,00230 contre 0,00279), N5r4 plate à 0,0012 ; N5r10 baisse jusqu'au 40 — tombe. La pénalité des seaux est là dès ~6 passes : le volume, pas la durée (section « N° 18 », la perte des points de sauvegarde) — *Prédiction, écrite avant* (section « N° 18 », les points de sauvegarde) : l'écart tenu à l'écart − appris croît d'un point au suivant, plus vite avec les seaux — celui de N5r10 au point 10 sous la moitié du sien au 40 ; la pénalité des seaux contre N5l plus petite au point 10 qu'au 40 ; la perte tenue à l'écart de N5r10 minimale avant le 40, celle de N5l au 40. *Contrôle* : 19 160 455 et 19 608 724 positions |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
@@ -8825,6 +8832,60 @@ dans son bruit. *Puissance dite d'avance* : ± 4,3 — un vrai écart de
 quelques Elo ne passera pas la borne, et c'est accepté : à égalité,
 le plus léger embarque.
 
+**Le match direct, RELEVÉ le 17 oct. à 18 h 15 — N6r10 contre N6r4,
++0,34 ± 3,59 : rien de démontré, N6R4 EMBARQUÉ par le critère écrit.**
+Les quatre jobs finis ENTIERS entre 17 h 54 et 18 h 02, 6,34 à 6,51 s par
+partie, zéro perte au temps, zéro coup illégal :
+
+| match | runner, n/s au banc, profondeur en 250 ms | N6r10 contre N6r4 |
+|---|---|---|
+| 39026852676 | EPYC 9V74, 2 598 024, 15 | −2,73 ± 7,12 |
+| 39026855187 | EPYC 9V74, 2 588 234, 15 | +2,11 ± 7,13 |
+| 39026857893 | EPYC 7763, 2 039 954, 14 | +8,32 ± 7,14 |
+| 39026860781 | EPYC 7763, 2 003 233, 13 | −6,33 ± 7,32 |
+| **en commun, 11 200 parties** | | **+0,34 ± 3,59** |
+
+- **le critère, écrit avant** : N6r10 n'embarque que si la borne basse
+  de l'intervalle MIS EN COMMUN dépasse zéro — elle vaut −3,25. **N6r4
+  embarque** : à force égale, le plus rapide et le plus léger ;
+- **`mettre-en-commun.sh` refuse l'homogénéité** : le plus grand écart,
+  entre les deux 7763 (+8,32 et −6,33), z = 2,81, p = 0,026 sous un seul
+  effet (seuil 0,0455). **Les runners ne l'expliquent pas** : les deux
+  extrêmes viennent du MÊME processeur à la même vitesse, quand les deux
+  9V74, un quart plus rapides, sont au milieu. Le résidu reste nommé
+  comme tel — un écart que l'appareil de mesure laisse passer environ une
+  fois sur vingt-deux sous un seul effet ; rien ne le rattache à un
+  régime ;
+- **lu match par match**, le troisième seul passerait la borne (+1,2),
+  le quatrième la frôle dans l'autre sens (borne haute +1,0). Le critère
+  a été écrit sur l'ensemble précisément pour cela : un critère de GAIN
+  lu sur n'importe lequel de quatre matchs multiplierait par ~4 le
+  risque d'en déclarer un à tort. La lecture match par match ne protège
+  que dans le sens prudent — celui d'un correctif qu'on arrête (C22,
+  C31) ;
+- **ce que cela dit des seaux de roi** : à 1,563 G, quatre seaux valent
+  dix, à ± 3,6 près. <span>Inférence, confiance faible</span> : dix
+  seaux, plus de poids pour les mêmes positions, demandent plus de
+  données pour se séparer — le n° 20 le dira peut-être en passant.
+
+**N6r4 embarqué — écrit le 17 oct. à 18 h 25, avant la fusion.** La
+révocation `0384ee7` révoquée : le moteur est celui de `cd6ed79` à
+l'octet (`git diff` vide sur `engine/`). `CLAUDE.md` et `README.md` le
+disent ; la mention d'attribution reste, `reseaux/` gardant N2L et N4L.
+- **le balayage de mutation après la fusion — prédiction** : **163**,
+  chaque fichier à son plafond — `nnue.rs` 2, les deux équivalents ; le
+  code des seaux de roi a eu son crible exact au n° 17 (2), et que le
+  réseau embarqué l'exerce désormais ne peut qu'en tuer davantage.
+  `search.rs` 48 : ses tests évaluent à la main. Un écart d'un ou deux
+  dans `search.rs` ne serait pas une régression du code mais de ce que
+  l'arbre du nouveau réseau exerce dans les tests qui jouent avec lui —
+  il se lirait mutant par mutant ;
+- **la série de C13 à 3100 — attendu** — <span>inférence, confiance
+  faible</span> : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à
+  60 %)**. N5l y rendait ~3 069 ± 25 (45,5 %) ; cette échelle écrase les
+  gains des réseaux à ~0,6 de ce que mesure notre jumeau (section C13),
+  et N6r4 en vaut ~+99 : ~+60 attendus, sous ± 45 de bruit de série.
+
 **Ce qui suit, écrit avant** : le gagnant embarqué — le candidat
 révoqué remis, sa confrontation déjà recopiée —, `CLAUDE.md` (« L'évaluation
 qui joue ») et `README.md` mis à jour, la mention d'attribution vérifiée :
@@ -9018,6 +9079,200 @@ vagues, avant la séance**, comme au n° 13 :
   sauvegarde : elle dit où la retenue commence, si elle commence. **Sur
   ceux du n° 17, relevés le 14 oct., aucune perte tenue à l'écart ne
   remonte en 25 passes** — rien ne demande d'entraîner moins.
+
+### N° 20 — plus de passes, plus de données : DÉCIDÉ le 17 oct. 2026, écrit avant de lancer
+
+**Décidé** — Théo, 17 oct. : « *Ok je valide ton conseil* », en réponse à
+sa question « *ça vaut le coup de relancer de l'entraînement plus long sur
+plus de données ? (et de mesurer au passage si on a besoin d'encore plus
+de temps/données ou si cette première augmentation suffit)* ». Le conseil
+validé : deux étapes, menées en parallèle, sur l'architecture que le
+match direct du n° 18 désignera — appelée **W** ci-dessous, N6r4 ou N6r10
+—, et **les données neuves étiquetées par W**, pas par N5l.
+
+**Ce que dit déjà la mesure, et ce qu'elle ne dit pas.** Sur l'architecture
+plate, rien n'est saturé : doubler les données +7,32 ± 3,53, doubler les
+passes +5,49 ± 3,55, démontrés tous deux (« N° 18 — VERDICT »). Mais les
+rendements décroissent : × 4,9 de positions rapportaient ~+64, le × 2
+suivant +7. **Les seaux de roi n'ont qu'un point sur leur courbe** — ils
+portent quatre à dix fois les poids d'entrée de N6l, chacun vu d'autant
+moins souvent par passe ; <span>inférence, confiance faible</span> : leur
+courbe est plus raide que celle du plat, en données comme en passes.
+
+**Le prix du choix de l'étiqueteur, écrit avec lui.** Étiqueter par W rend
+de meilleures données — W vaut ~+99 sur N5l — mais la pente ne mesure plus
+le volume pur : la moitié neuve diffère de l'ancienne par l'étiqueteur
+aussi. La séance B les sépare par un troisième réseau, les données neuves
+seules, à volume égal (plus bas). Le n° 13 l'avait écrit : un mélange ne
+mesure que lui-même — c'est pourquoi on mesure aussi chaque moitié seule.
+
+#### Étape A — plus de passes, sur la carte de Théo, sans donnée neuve
+
+Deux réseaux de l'architecture W sur les 79 jobs du n° 18 — le job tenu à
+l'écart jamais vu —, la recette du n° 18 à la durée près : **N7p2, 200
+superlots ; N7p4, 400**. Un superlot vaut 100,0 M positions vues : 200 et
+400 font **12,8 et 25,6 passes** sur les 1,563 G — W en a fait 6,4. La
+décroissance cosinus se cale sur le dernier superlot : le point à 200 d'un
+entraînement à 400 n'est pas N7p2 (mesuré au n° 18 : celui de N6l200 à 100
+valait bien moins que N6l), d'où deux entraînements. *Durée* — à 23,7 s
+par superlot pour quatre seaux de roi, 31,4 pour dix (n° 18) : **N6r4 :
+~1 h 20 et ~2 h 40 ; N6r10 : ~1 h 45 et ~3 h 30**, relectures en plus. Les
+commandes s'écrivent au verdict du match direct, avant de les demander.
+
+*Ce qu'elle mesure* : N7p2 contre W, la première doublure des passes ;
+**N7p4 contre N7p2, la seconde — la réponse à « faut-il encore plus ? »**.
+*Le risque, nommé avant* : au n° 17, les seaux de roi portaient la pénalité
+de la retenue dès ~6 passes sur 159 M ; sur 1,563 G, N6r4 retient déjà
+plus que N6l (tenu − appris 0,0004 contre 0,0002). À 25,6 passes, la
+retenue peut l'emporter : un N7p4 PIRE que N7p2 est un résultat possible,
+pas une panne. Les points de sauvegarde, tous les 20 superlots, diront à
+la perte tenue à l'écart où elle commence.
+
+*Attendus* — <span>inférence, confiance faible</span> :
+- **N7p2 contre W : +3 à +12**, ~+6 — le plat a rendu +5,49 ; plus de
+  poids par position vue plaide pour plus ;
+- **N7p4 contre N7p2 : −10 à +8**, ~+1 — le signe n'est pas acquis ;
+- **perte tenue à l'écart** : N7p2 sous W ; N7p4 sous N7p2 de moins que
+  N7p2 sous W, ou au-dessus.
+
+*Les matchs* : **N7p2 contre W et N7p4 contre W** — la décision, quatre jobs
+chacun ; **N7p4 contre N7p2** — la mesure, quatre jobs, et le match direct
+si les deux premiers se recoupent. **Critère d'embarquement : celui du
+n° 17**, contre W. La sonde de B8, la perte tenue à l'écart et les nœuds
+par seconde avant, comme au n° 18.
+
+**La séance A — W est N6r4 ; écrite le 17 oct., avant de la demander.**
+L'architecture de N6r4 — quatre seaux de roi, 256 unités, huit de sortie —
+est celle de `4a604ea`, qui l'a entraîné, et de `main` dès la fusion de
+son embarquement ; la séance part de `4a604ea`, qui ne dépend pas de la
+fusion. Les données sont déjà chez Théo, `~/nnue-n18` : rien à
+télécharger. Chaque bloc se colle dans le MÊME terminal, dans l'ordre :
+
+0. **le dépôt à jour, les données, la place** :
+   ```sh
+   cd ~/chess && git status
+   git fetch origin && git switch main && git pull --ff-only
+   ls ~/nnue-n18/*/*.vf | wc -l; df -h ~
+   ```
+   — **316** fichiers `.vf` ; **3 Go libres au moins**, pour les points de
+   sauvegarde (un tous les 10 superlots, 60 en tout). Des fichiers
+   « modifiés », un `--ff-only` qui refuse : s'arrêter et le dire ;
+1. **la liste** — le job tenu à l'écart n'y est jamais :
+   ```sh
+   D=~/nnue-n18; T=~/chess/tools/n18-jobs.tsv
+   TOUS=$(awk -F'\t' -v d=$D '$4=="appris" {print d"/"$1}' $T)
+   echo $TOUS | wc -w
+   ```
+   — **79** ;
+2. **CUDA dans ce terminal** — le bloc « CUDA dans ce terminal » de la
+   séance d'entraînement du n° 7, tel quel ;
+3. **les deux réseaux, d'une traite** — un échec arrête la chaîne :
+   ```sh
+   set -o pipefail
+   cd ~/chess/tools/nnue-train && git checkout 4a604ea &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 200 \
+     --sortie n7p2 $TOUS 2>&1 | tee n7p2.sortie.txt &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 400 \
+     --sortie n7p4 $TOUS 2>&1 | tee n7p4.sortie.txt
+   echo "FIN : $?"; git switch main
+   ```
+   → `RÉSEAU PRÊT : n7p2/shallowred-768x4hm-256-s8-200/quantised.bin`,
+   puis `n7p4/shallowred-768x4hm-256-s8-400/quantised.bin`, et
+   **`FIN : 0`**. Git annonce une « HEAD détachée » au `checkout` : c'est
+   voulu. *Durée* : à 23,7 s par superlot (N6r4, n° 18), **~1 h 20 puis
+   ~2 h 40**, plus une relecture des 79 jobs avant chaque réseau —
+   **~4 h en tout, une soirée ou une nuit**. Interrompue, la chaîne se
+   reprend au réseau qui manque ;
+4. **rapporter** — les deux réseaux sur `reseau/n20a`, un point de
+   sauvegarde tous les 40 superlots sur `reseau/n20a-points` :
+   ```sh
+   cd ~/chess && git switch -c reseau/n20a
+   for c in n7p2:768x4hm-256-s8-200 n7p4:768x4hm-256-s8-400; do
+     n=${c%%:*}; a=${c#*:}; d=tools/nnue-train/$n/shallowred-$a
+     cp $d/quantised.bin reseaux/$n-$a.bin
+     cp $d/log.txt reseaux/$n-$a.log.txt
+     cp tools/nnue-train/$n.sortie.txt reseaux/$n-$a.sortie.txt
+   done
+   git add reseaux/n7p*
+   git commit -m "Réseaux NNUE du n° 20, étape A : N7p2 et N7p4 — plus de passes"
+   git push -u origin reseau/n20a
+   git switch -c reseau/n20a-points
+   mkdir -p reseaux/points-n20a
+   for d in tools/nnue-train/n7p*/shallowred-*; do
+     s=${d##*-}; [ $((s % 40)) -eq 0 ] || continue
+     cp $d/quantised.bin reseaux/points-n20a/$(basename $(dirname $d))-$(basename $d).bin
+   done
+   ls reseaux/points-n20a | wc -l
+   git add reseaux/points-n20a
+   git commit -m "Points de sauvegarde du n° 20, étape A, tous les 40 superlots"
+   git push -u origin reseau/n20a-points
+   git switch main
+   ```
+   — **15** points : 5 pour N7p2, 10 pour N7p4, ~24 Mo. **Garder
+   `~/nnue-n18`** : la séance B en repartira.
+
+*Ce qui suit, écrit avant* : pour chacun, la confrontation recopiée, le
+candidat révoqué aussitôt, la sonde de B8, ses nœuds par seconde ; la
+perte tenue à l'écart des deux et de leurs points, sur 38531414161 ; puis
+**12 jobs de 2 800 parties à `8+0,08`** — N7p2 contre N6r4, N7p4 contre
+N6r4 (la décision), N7p4 contre N7p2 (la mesure) —, critère et attendus
+écrits plus haut.
+
+#### Étape B — plus de données, sur les runners, étiquetées par W
+
+**La recette** : `nnue-datagen.yml` au commit candidat de W — `cd6ed79`
+pour N6r4, `04727b5` pour N6r10 —, son réseau embarqué, 5 000 nœuds par
+coup, graine « auto », un fil par processeur logique, 330 minutes,
+`x86-64-v3`. **Le même commit pour toutes les vagues** : un seul
+étiqueteur. Le moteur de ce commit est celui du n° 18 au réseau près — le
+générateur ne change que par l'étiqueteur.
+
+**Le volume** : autant que l'ancien, **1,563 G positions gardées**, pour
+que les deux moitiés se comparent à volume égal. À ~19,8 M gardées par job
+au n° 18 — le débit de W les fera bouger —, **~79 jobs, plus un tenu à
+l'écart : le PREMIER job lancé de la vague 1**, désigné avant d'en voir le
+compte. **Huit à la fois**, la charge que `nnue-datagen.yml` s'impose par
+les conditions de GitHub (ligne B4) : **~10 vagues de ~6 h, ~2,5 jours**
+si elles s'enchaînent. *Règle de fin, écrite avant* : la génération
+s'arrête à la vague dont le cumul atteint 1,563 G gardées — la vague
+entière, même au-delà ; la séance B tirera alors des jobs neufs dans
+l'ordre de lancement jusqu'au volume ancien.
+
+**D'abord une sonde de 20 minutes**, l'étiqueteur ayant changé. *Attendus,
+écrits avant* — <span>inférence, confiance faible</span>, contre la sonde
+de N5l (1 287 positions par seconde, EPYC 7763 ; 15,72 % d'écartées ;
+31,8 % de nulles) :
+- **positions par seconde, sur un EPYC 7763 : × 0,85 à × 1,00 pour N6r4,
+  × 0,80 à × 0,98 pour N6r10** — au rejeu × 0,982 et × 0,956 ; mais au
+  générateur, presque chaque nœud évalue, et la largeur s'y payait plus
+  qu'au rejeu (× 0,83 contre × 0,897 pour N5l au n° 18) ; un roi qui change
+  de seau y force un recalcul ;
+- **parties écartées, sur les gardées : 12 à 20 %** — le filtre
+  d'ouverture se lit en unités de l'étiqueteur, et l'échelle de W n'est
+  pas celle de N5l (facteurs de B8 2,49 pour N6r4, 3,31 pour N6r10, 2,85
+  pour N5l) ;
+- **nulles : 30 à 36 %** — un étiqueteur plus fort en fait un peu plus.
+
+Hors fourchette, on diagnostique avant la vague.
+
+#### La séance B — après le volume
+
+Trois réseaux de l'architecture W, aux superlots que l'étape A aura
+désignés (200, ou 400 si N7p4 gagne) : **les données anciennes seules** —
+le réseau de l'étape A à ces superlots, réutilisé — ; **les données neuves
+seules**, à volume égal ; **les deux, 3,1 G**. Les deux moitiés seules se
+comparent à volume, architecture et durée égaux : **l'étiqueteur**. Le tout
+contre chaque moitié : **la pente**, une fois avec de meilleures étiquettes
+sur la moitié ajoutée, une fois avec de moins bonnes — leur moyenne
+approche le volume seul. *Attendus* — <span>inférence, confiance
+faible</span> : **les deux contre l'ancienne seule : +3 à +12** ; **la
+neuve seule contre l'ancienne seule : 0 à +10** — N6v, d'un étiqueteur
+plus fort de ~50, rendait +5,52 ; W l'est de ~99. Critère d'embarquement :
+celui du n° 17. **Chez Théo** : ~8,5 Go de plus à télécharger.
+
+**Ce qui vient après, noté sans être décidé** : 384 ou 512 unités sur les
+3,1 G — la largeur a payé au n° 17, et elle demande du volume ; le réglage
+du n° 19, qui attendait le réseau du n° 18.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
@@ -10442,7 +10697,7 @@ qu'en partie dans le dépôt n'existe pas.*
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. <s>**n° 16 expliqué à Théo le même jour, en attente de sa décision**</s> **n° 16, le chemin A, DÉCIDÉ (Théo) et ÉCRIT le 13 oct.** : sans `unsafe` ni dépendance, **−14,4 ± 1,6 % de temps à arbre identique, ~+24 Elo par l'étalon** ; le code machine lu, 32 `vpmulld` remplacés par 32 `vpmullw` ; <s>crible en vol, fusion à son vert</s> **crible exact à 162, FUSIONNÉ le 13 oct.** (PR #171). **n° 17, étape 1, le 13 oct.** : le produit scalaire par tranches de 256 lève la borne de largeur — même arbre, même temps ; **N3 sur ce code, × 0,93** de nœuds par seconde, ~−11 Elo de vitesse pour 256 unités. **Le plan de la séance du n° 17 écrit** : N5s (128, seaux de sortie), N5l (256), N5r4 et N5r10 (256, seaux de roi), chacun contre N4 ; <s>le code des seaux d'abord, confronté au code de bullet, avant de demander la carte de Théo</s> **le code des seaux écrit le 13 oct. au soir** — confronté au code de bullet, le même arbre et le même temps que `main` sur N4 ; <s>**la séance des quatre réseaux écrite : elle attend la carte de Théo**</s> **la séance RELEVÉE le 14 oct.** — quatre réseaux dans le critère ; la sonde de B8 relevée, N5l (2,85) et N5r10 (3,38) hors de la plage, leurs candidats portant leur facteur ; <s>**seize jobs contre N4 EN VOL depuis 1 h 14**</s> **VERDICT le 14 oct.** : **N5l +30,29 ± 3,95 contre N4, EMBARQUÉ** ; N5s +15,58 ± 3,87 ; les seaux de roi régressent, **N5r4 −58,91, N5r10 −133,59** — la largeur paie, les seaux de roi demandent le volume (n° 18) (section « N° 17 — VERDICT »). **n° 18 CLOS le 16 oct.** : dix vagues, 80 jobs, **1,563 G positions gardées** — × 9,8 ; <s>**la séance de six réseaux écrite, elle attend la carte de Théo**</s> **la séance faite le 17 oct., VERDICT le même jour** : contre N5l, **N6r4 +98,74 ± 4,27, N6r10 +97,30 ± 4,26** — les seaux de roi renversés par le volume —, N6l +76,99 ± 4,00 ; l'étiqueteur seul +5,52 ; doubler les données +7,32, doubler les passes +5,49 — les deux paient encore ; **N6r10 contre N6r4 en vol**, le second doit démontrer (section « N° 18 — VERDICT ») |
+| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. <s>**n° 16 expliqué à Théo le même jour, en attente de sa décision**</s> **n° 16, le chemin A, DÉCIDÉ (Théo) et ÉCRIT le 13 oct.** : sans `unsafe` ni dépendance, **−14,4 ± 1,6 % de temps à arbre identique, ~+24 Elo par l'étalon** ; le code machine lu, 32 `vpmulld` remplacés par 32 `vpmullw` ; <s>crible en vol, fusion à son vert</s> **crible exact à 162, FUSIONNÉ le 13 oct.** (PR #171). **n° 17, étape 1, le 13 oct.** : le produit scalaire par tranches de 256 lève la borne de largeur — même arbre, même temps ; **N3 sur ce code, × 0,93** de nœuds par seconde, ~−11 Elo de vitesse pour 256 unités. **Le plan de la séance du n° 17 écrit** : N5s (128, seaux de sortie), N5l (256), N5r4 et N5r10 (256, seaux de roi), chacun contre N4 ; <s>le code des seaux d'abord, confronté au code de bullet, avant de demander la carte de Théo</s> **le code des seaux écrit le 13 oct. au soir** — confronté au code de bullet, le même arbre et le même temps que `main` sur N4 ; <s>**la séance des quatre réseaux écrite : elle attend la carte de Théo**</s> **la séance RELEVÉE le 14 oct.** — quatre réseaux dans le critère ; la sonde de B8 relevée, N5l (2,85) et N5r10 (3,38) hors de la plage, leurs candidats portant leur facteur ; <s>**seize jobs contre N4 EN VOL depuis 1 h 14**</s> **VERDICT le 14 oct.** : **N5l +30,29 ± 3,95 contre N4, EMBARQUÉ** ; N5s +15,58 ± 3,87 ; les seaux de roi régressent, **N5r4 −58,91, N5r10 −133,59** — la largeur paie, les seaux de roi demandent le volume (n° 18) (section « N° 17 — VERDICT »). **n° 18 CLOS le 16 oct.** : dix vagues, 80 jobs, **1,563 G positions gardées** — × 9,8 ; <s>**la séance de six réseaux écrite, elle attend la carte de Théo**</s> **la séance faite le 17 oct., VERDICT le même jour** : contre N5l, **N6r4 +98,74 ± 4,27, N6r10 +97,30 ± 4,26** — les seaux de roi renversés par le volume —, N6l +76,99 ± 4,00 ; l'étiqueteur seul +5,52 ; doubler les données +7,32, doubler les passes +5,49 — les deux paient encore ; **N6r10 contre N6r4 en vol**, le second doit démontrer (section « N° 18 — VERDICT »). **n° 20 DÉCIDÉ le 17 oct.** (Théo, « *Ok je valide ton conseil* ») : plus de passes — 200 et 400 superlots sur les 1,563 G, sur sa carte — et plus de données — 1,563 G de plus, étiquetées par le réseau gagnant, sur les runners —, chaque effet mesuré séparément (section « N° 20 ») |
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 **Le 7 oct., C51** — les échecs tranquilles au premier pli de la quiescence — multiplie par treize ces avertissements côté candidat (157 contre 12) et régresse de −10,77 ± 3,40 : la cécité de la quiescence aux nulles pèse d'autant plus qu'elle joue de tranquilles. Un fait neuf pour C31 le jour où les échecs tranquilles se rouvrent, et alors les deux se mesurent ensemble |
 | **C43 — le gain d'un pion qui reprend en promouvant, dans `see`** — trouvé le 6 oct. par l'oracle `see_check` étendu aux coups tranquilles pour C40 | — correctif de règle | **FUSIONNÉ le 6 oct.** au titre de la règle — **+0,87 ± 4,63** à `8+0,08`, 6 000 parties contre `main` avec C41, aucune borne haute sous zéro, ni l'ensemble ni un match (section n° 9, « C43 et C44 — VERDICT »). <s>**à faire**</s> : `exchange` compte le pion qui reprend sur la dernière rangée comme une dame pour la suite, pas le gain de sa promotion (+880) ; l'oracle le voit sur 33 tranquilles sur 77 020 et une capture sur 5 827. Le protocole des correctifs de règle (`CLAUDE.md`) : un test qui tombe sur l'ancien code, valeur lue sur l'oracle ; le mécanisme mesuré en régime réel — combien de décisions d'élagage et d'ordre en changent ; un match au critère « fusion sauf si la borne haute est sous zéro ». **Écrit et mesuré le 6 oct. vers 05 h 10, pas encore lancé** : quatre lignes dans la boucle d'échange ; le test `un_pion_qui_reprend_en_promouvant_compte_sa_promotion` tombe sur l'ancien code (0 contre −880, valeur de l'oracle) ; l'oracle passe de 21 écarts de capture à 20, la légalité seule. **Le mécanisme, au rejeu du journal du quatrième écran** : 3,5 appels de `see` sur un million changent de valeur à la profondeur 12 (359 sur 102 millions, dont 235 de signe), l'arbre +0,0001 % ; banc 90 646 à la profondeur 7 contre 90 656. <s>**Son match attend la fin des seize jobs du quatrième écran et leur composition** : la boucle d'échange sera commune à `see` et `see_quiet` si C40 entre, et un correctif se mesure sur la base qu'il corrige</s> **C40 n'est pas entré, C41 si** : la rustine s'applique telle quelle, et son match se mesure contre `main` avec C41 — protocole, attendu et puissance écrits avant (section n° 9, « après le quatrième écran »). **Lancé le 6 oct. à 13 h 57** : deux jobs, `d69d2ed` contre `b6d41d7`, relevés à 19 h 30 |

@@ -41,7 +41,7 @@ d'un aveu sur la profondeur de recherche.
 > **Force absolue, estimée le 14 oct. 2026 : ~3 069 ± 25** sur l'échelle
 > `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
 > 300 parties à cette cadence contre Stockfish bridé à 3100 (45,5 %), avec
-> le moteur qui joue, N5l, binaire AVX2 ; **~3 085 ± 38** contre 2850
+> N5l, le réseau qui jouait alors, binaire AVX2 ; **~3 085 ± 38** contre 2850
 > (79,5 %), le même moteur — les deux niveaux d'accord à −16 ± 45. Le 13 oct., avec N4, **~3 040 ± 36** ; le
 > 7 oct., avant la composition du n° 12 et N4, **~3 000 ± 33**. Les écarts
 > d'une série à l'autre — +35 ± 49, puis +47 ± 52 — ne se séparent pas de
@@ -126,11 +126,13 @@ d'un aveu sur la profondeur de recherche.
 > étiquetées par le moteur du 7 oct. : **+47,0 ± 4,2** contre N2, et
 > **+5,4 ± 4,2** contre N4L, le même ré-entraîné sur les données de
 > Leela — sur ces positions-là, l'étage de Leela ne paie plus. **Celui qui
-> joue depuis le 14 oct.**, N5l, apprend sur les mêmes données avec deux
+> a joué du 14 au 17 oct.**, N5l, apprend sur les mêmes données avec deux
 > fois plus d'unités (256) et huit jeux de poids de sortie selon le
 > matériel : **+30,3 ± 4,0** contre N4 sur 11 200 parties. Des seaux selon
-> la case du roi, sur ces mêmes données, régressent nettement : ils
-> demandent plus de positions.
+> la case du roi, sur ces mêmes données, régressaient nettement : ils
+> demandaient plus de positions. **Celui qui joue depuis le 17 oct.**,
+> N6r4, les a eues : 1,563 milliard de positions étiquetées par N5l, quatre
+> seaux de roi — **+98,7 ± 4,3** contre N5l sur 11 200 parties.
 > L'évaluation faite main reste disponible par
 > `setoption name EvalFile value <none>`.
 
@@ -351,8 +353,8 @@ Leela Chess Zero](https://storage.lczero.org/files/training_data), mises à
 disposition sous l'[Open Database
 License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
 converties au format `.binpack` par des contributeurs de Stockfish (voir
-`tools/README.md`, section n° 7). Le réseau embarqué depuis le 14 oct., N5l
-— comme N4 avant lui —, n'apprend que sur les parties du moteur.
+`tools/README.md`, section n° 7). Le réseau embarqué depuis le 17 oct., N6r4
+— comme N5l et N4 avant lui —, n'apprend que sur les parties du moteur.
 
 ## Licence
 
