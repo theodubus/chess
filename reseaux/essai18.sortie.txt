@@ -1,0 +1,408 @@
+    Finished `release` profile [optimized] target(s) in 0.08s
+     Running `target/release/shallowred-nnue-train --attendu '18435764:2328546367' --superlots 1 --sortie essai18 /home/theo/nnue-n18/38531424497 /home/theo/nnue-n18/38531434938 /home/theo/nnue-n18/38531444819 /home/theo/nnue-n18/38531455378 /home/theo/nnue-n18/38531465902 /home/theo/nnue-n18/38531477470 /home/theo/nnue-n18/38531487267 /home/theo/nnue-n18/38573763466 /home/theo/nnue-n18/38573777850 /home/theo/nnue-n18/38573791988 /home/theo/nnue-n18/38573805694 /home/theo/nnue-n18/38573819362 /home/theo/nnue-n18/38573833059 /home/theo/nnue-n18/38573846725 /home/theo/nnue-n18/38573860433 /home/theo/nnue-n18/38624068570 /home/theo/nnue-n18/38624081338 /home/theo/nnue-n18/38624094423 /home/theo/nnue-n18/38624107491 /home/theo/nnue-n18/38624120715 /home/theo/nnue-n18/38624133819 /home/theo/nnue-n18/38624147212 /home/theo/nnue-n18/38624162318 /home/theo/nnue-n18/38664957401 /home/theo/nnue-n18/38664965647 /home/theo/nnue-n18/38664973720 /home/theo/nnue-n18/38664981879 /home/theo/nnue-n18/38664989777 /home/theo/nnue-n18/38664997418 /home/theo/nnue-n18/38665005177 /home/theo/nnue-n18/38665013007 /home/theo/nnue-n18/38697853489 /home/theo/nnue-n18/38697863368 /home/theo/nnue-n18/38697872916 /home/theo/nnue-n18/38697882539 /home/theo/nnue-n18/38697892416 /home/theo/nnue-n18/38697902774 /home/theo/nnue-n18/38697912990 /home/theo/nnue-n18/38697922671 /home/theo/nnue-n18/38740299898 /home/theo/nnue-n18/38740307273 /home/theo/nnue-n18/38740315429 /home/theo/nnue-n18/38740328347 /home/theo/nnue-n18/38740339122 /home/theo/nnue-n18/38740349014 /home/theo/nnue-n18/38740358656 /home/theo/nnue-n18/38740368533 /home/theo/nnue-n18/38790151546 /home/theo/nnue-n18/38790162034 /home/theo/nnue-n18/38790172823 /home/theo/nnue-n18/38790182980 /home/theo/nnue-n18/38790193608 /home/theo/nnue-n18/38790203674 /home/theo/nnue-n18/38790214545 /home/theo/nnue-n18/38790224445 /home/theo/nnue-n18/38831468864 /home/theo/nnue-n18/38831475554 /home/theo/nnue-n18/38831482415 /home/theo/nnue-n18/38831489161 /home/theo/nnue-n18/38831495931 /home/theo/nnue-n18/38831502475 /home/theo/nnue-n18/38831508720 /home/theo/nnue-n18/38831514780 /home/theo/nnue-n18/38861751668 /home/theo/nnue-n18/38861758821 /home/theo/nnue-n18/38861766291 /home/theo/nnue-n18/38861773204 /home/theo/nnue-n18/38861780421 /home/theo/nnue-n18/38861787224 /home/theo/nnue-n18/38861794604 /home/theo/nnue-n18/38861801128 /home/theo/nnue-n18/38900204625 /home/theo/nnue-n18/38900213002 /home/theo/nnue-n18/38900221691 /home/theo/nnue-n18/38900230079 /home/theo/nnue-n18/38900238002 /home/theo/nnue-n18/38900246025 /home/theo/nnue-n18/38900254597 /home/theo/nnue-n18/38900264329`
+== 1. Relecture des données ==
+  /home/theo/nnue-n18/38531424497/nnue-38531424497-0.vf  52984 parties  6682297 positions
+  /home/theo/nnue-n18/38531424497/nnue-38531424497-1.vf  52750 parties  6687044 positions
+  /home/theo/nnue-n18/38531424497/nnue-38531424497-2.vf  52802 parties  6682909 positions
+  /home/theo/nnue-n18/38531424497/nnue-38531424497-3.vf  52935 parties  6683329 positions
+  /home/theo/nnue-n18/38531434938/nnue-38531434938-0.vf  52454 parties  6641155 positions
+  /home/theo/nnue-n18/38531434938/nnue-38531434938-1.vf  52503 parties  6643577 positions
+  /home/theo/nnue-n18/38531434938/nnue-38531434938-2.vf  52841 parties  6633892 positions
+  /home/theo/nnue-n18/38531434938/nnue-38531434938-3.vf  52655 parties  6638381 positions
+  /home/theo/nnue-n18/38531444819/nnue-38531444819-0.vf  50501 parties  6356197 positions
+  /home/theo/nnue-n18/38531444819/nnue-38531444819-1.vf  50408 parties  6358639 positions
+  /home/theo/nnue-n18/38531444819/nnue-38531444819-2.vf  50458 parties  6356989 positions
+  /home/theo/nnue-n18/38531444819/nnue-38531444819-3.vf  50386 parties  6358481 positions
+  /home/theo/nnue-n18/38531455378/nnue-38531455378-0.vf  51149 parties  6467885 positions
+  /home/theo/nnue-n18/38531455378/nnue-38531455378-1.vf  51105 parties  6460442 positions
+  /home/theo/nnue-n18/38531455378/nnue-38531455378-2.vf  51050 parties  6457213 positions
+  /home/theo/nnue-n18/38531455378/nnue-38531455378-3.vf  51298 parties  6461559 positions
+  /home/theo/nnue-n18/38531465902/nnue-38531465902-0.vf  53115 parties  6710668 positions
+  /home/theo/nnue-n18/38531465902/nnue-38531465902-1.vf  52942 parties  6682252 positions
+  /home/theo/nnue-n18/38531465902/nnue-38531465902-2.vf  52752 parties  6660771 positions
+  /home/theo/nnue-n18/38531465902/nnue-38531465902-3.vf  52281 parties  6627565 positions
+  /home/theo/nnue-n18/38531477470/nnue-38531477470-0.vf  50802 parties  6442623 positions
+  /home/theo/nnue-n18/38531477470/nnue-38531477470-1.vf  50858 parties  6434164 positions
+  /home/theo/nnue-n18/38531477470/nnue-38531477470-2.vf  50791 parties  6405116 positions
+  /home/theo/nnue-n18/38531477470/nnue-38531477470-3.vf  50731 parties  6414676 positions
+  /home/theo/nnue-n18/38531487267/nnue-38531487267-0.vf  51002 parties  6430291 positions
+  /home/theo/nnue-n18/38531487267/nnue-38531487267-1.vf  50754 parties  6428781 positions
+  /home/theo/nnue-n18/38531487267/nnue-38531487267-2.vf  50762 parties  6431563 positions
+  /home/theo/nnue-n18/38531487267/nnue-38531487267-3.vf  51046 parties  6436730 positions
+  /home/theo/nnue-n18/38573763466/nnue-38573763466-0.vf  49642 parties  6275302 positions
+  /home/theo/nnue-n18/38573763466/nnue-38573763466-1.vf  49218 parties  6260130 positions
+  /home/theo/nnue-n18/38573763466/nnue-38573763466-2.vf  49304 parties  6232275 positions
+  /home/theo/nnue-n18/38573763466/nnue-38573763466-3.vf  49784 parties  6269178 positions
+  /home/theo/nnue-n18/38573777850/nnue-38573777850-0.vf  48130 parties  6084208 positions
+  /home/theo/nnue-n18/38573777850/nnue-38573777850-1.vf  48160 parties  6083743 positions
+  /home/theo/nnue-n18/38573777850/nnue-38573777850-2.vf  47890 parties  6089815 positions
+  /home/theo/nnue-n18/38573777850/nnue-38573777850-3.vf  48165 parties  6082280 positions
+  /home/theo/nnue-n18/38573791988/nnue-38573791988-0.vf  50467 parties  6385963 positions
+  /home/theo/nnue-n18/38573791988/nnue-38573791988-1.vf  50733 parties  6393079 positions
+  /home/theo/nnue-n18/38573791988/nnue-38573791988-2.vf  50707 parties  6386706 positions
+  /home/theo/nnue-n18/38573791988/nnue-38573791988-3.vf  50468 parties  6387004 positions
+  /home/theo/nnue-n18/38573805694/nnue-38573805694-0.vf  85575 parties  10807367 positions
+  /home/theo/nnue-n18/38573805694/nnue-38573805694-1.vf  85215 parties  10809930 positions
+  /home/theo/nnue-n18/38573805694/nnue-38573805694-2.vf  85616 parties  10802425 positions
+  /home/theo/nnue-n18/38573805694/nnue-38573805694-3.vf  85365 parties  10802618 positions
+  /home/theo/nnue-n18/38573819362/nnue-38573819362-0.vf  66595 parties  8403135 positions
+  /home/theo/nnue-n18/38573819362/nnue-38573819362-1.vf  66622 parties  8419019 positions
+  /home/theo/nnue-n18/38573819362/nnue-38573819362-2.vf  66486 parties  8428699 positions
+  /home/theo/nnue-n18/38573819362/nnue-38573819362-3.vf  66664 parties  8422171 positions
+  /home/theo/nnue-n18/38573833059/nnue-38573833059-0.vf  50248 parties  6362696 positions
+  /home/theo/nnue-n18/38573833059/nnue-38573833059-1.vf  50292 parties  6346486 positions
+  /home/theo/nnue-n18/38573833059/nnue-38573833059-2.vf  50422 parties  6362181 positions
+  /home/theo/nnue-n18/38573833059/nnue-38573833059-3.vf  50283 parties  6355046 positions
+  /home/theo/nnue-n18/38573846725/nnue-38573846725-0.vf  52120 parties  6605833 positions
+  /home/theo/nnue-n18/38573846725/nnue-38573846725-1.vf  52371 parties  6589996 positions
+  /home/theo/nnue-n18/38573846725/nnue-38573846725-2.vf  52176 parties  6586788 positions
+  /home/theo/nnue-n18/38573846725/nnue-38573846725-3.vf  52199 parties  6581914 positions
+  /home/theo/nnue-n18/38573860433/nnue-38573860433-0.vf  28673 parties  3636265 positions
+  /home/theo/nnue-n18/38573860433/nnue-38573860433-1.vf  28684 parties  3648100 positions
+  /home/theo/nnue-n18/38573860433/nnue-38573860433-2.vf  28764 parties  3633457 positions
+  /home/theo/nnue-n18/38573860433/nnue-38573860433-3.vf  28897 parties  3646491 positions
+  /home/theo/nnue-n18/38624068570/nnue-38624068570-0.vf  46826 parties  5938709 positions
+  /home/theo/nnue-n18/38624068570/nnue-38624068570-1.vf  46948 parties  5935952 positions
+  /home/theo/nnue-n18/38624068570/nnue-38624068570-2.vf  47036 parties  5933764 positions
+  /home/theo/nnue-n18/38624068570/nnue-38624068570-3.vf  47046 parties  5935632 positions
+  /home/theo/nnue-n18/38624081338/nnue-38624081338-0.vf  85550 parties  10780161 positions
+  /home/theo/nnue-n18/38624081338/nnue-38624081338-1.vf  85305 parties  10778958 positions
+  /home/theo/nnue-n18/38624081338/nnue-38624081338-2.vf  85412 parties  10776001 positions
+  /home/theo/nnue-n18/38624081338/nnue-38624081338-3.vf  85217 parties  10778825 positions
+  /home/theo/nnue-n18/38624094423/nnue-38624094423-0.vf  52368 parties  6640627 positions
+  /home/theo/nnue-n18/38624094423/nnue-38624094423-1.vf  52610 parties  6632343 positions
+  /home/theo/nnue-n18/38624094423/nnue-38624094423-2.vf  52550 parties  6626918 positions
+  /home/theo/nnue-n18/38624094423/nnue-38624094423-3.vf  52584 parties  6631452 positions
+  /home/theo/nnue-n18/38624107491/nnue-38624107491-0.vf  66918 parties  8467620 positions
+  /home/theo/nnue-n18/38624107491/nnue-38624107491-1.vf  66838 parties  8463773 positions
+  /home/theo/nnue-n18/38624107491/nnue-38624107491-2.vf  66782 parties  8464120 positions
+  /home/theo/nnue-n18/38624107491/nnue-38624107491-3.vf  65866 parties  8308435 positions
+  /home/theo/nnue-n18/38624120715/nnue-38624120715-0.vf  50685 parties  6383471 positions
+  /home/theo/nnue-n18/38624120715/nnue-38624120715-1.vf  50511 parties  6394516 positions
+  /home/theo/nnue-n18/38624120715/nnue-38624120715-2.vf  50543 parties  6394445 positions
+  /home/theo/nnue-n18/38624120715/nnue-38624120715-3.vf  50436 parties  6383476 positions
+  /home/theo/nnue-n18/38624133819/nnue-38624133819-0.vf  50424 parties  6369664 positions
+  /home/theo/nnue-n18/38624133819/nnue-38624133819-1.vf  49966 parties  6324313 positions
+  /home/theo/nnue-n18/38624133819/nnue-38624133819-2.vf  50225 parties  6347437 positions
+  /home/theo/nnue-n18/38624133819/nnue-38624133819-3.vf  50475 parties  6370390 positions
+  /home/theo/nnue-n18/38624147212/nnue-38624147212-0.vf  66387 parties  8411737 positions
+  /home/theo/nnue-n18/38624147212/nnue-38624147212-1.vf  67715 parties  8549970 positions
+  /home/theo/nnue-n18/38624147212/nnue-38624147212-2.vf  67800 parties  8545536 positions
+  /home/theo/nnue-n18/38624147212/nnue-38624147212-3.vf  67548 parties  8535977 positions
+  /home/theo/nnue-n18/38624162318/nnue-38624162318-0.vf  66804 parties  8449936 positions
+  /home/theo/nnue-n18/38624162318/nnue-38624162318-1.vf  66784 parties  8482692 positions
+  /home/theo/nnue-n18/38624162318/nnue-38624162318-2.vf  67266 parties  8470465 positions
+  /home/theo/nnue-n18/38624162318/nnue-38624162318-3.vf  67175 parties  8464659 positions
+  /home/theo/nnue-n18/38664957401/nnue-38664957401-0.vf  50977 parties  6445693 positions
+  /home/theo/nnue-n18/38664957401/nnue-38664957401-1.vf  50986 parties  6455579 positions
+  /home/theo/nnue-n18/38664957401/nnue-38664957401-2.vf  51216 parties  6446595 positions
+  /home/theo/nnue-n18/38664957401/nnue-38664957401-3.vf  50932 parties  6451183 positions
+  /home/theo/nnue-n18/38664965647/nnue-38664965647-0.vf  46530 parties  5884775 positions
+  /home/theo/nnue-n18/38664965647/nnue-38664965647-1.vf  46487 parties  5881627 positions
+  /home/theo/nnue-n18/38664965647/nnue-38664965647-2.vf  46236 parties  5885518 positions
+  /home/theo/nnue-n18/38664965647/nnue-38664965647-3.vf  46683 parties  5880469 positions
+  /home/theo/nnue-n18/38664973720/nnue-38664973720-0.vf  48682 parties  6158136 positions
+  /home/theo/nnue-n18/38664973720/nnue-38664973720-1.vf  48754 parties  6158603 positions
+  /home/theo/nnue-n18/38664973720/nnue-38664973720-2.vf  48748 parties  6158860 positions
+  /home/theo/nnue-n18/38664973720/nnue-38664973720-3.vf  48790 parties  6158103 positions
+  /home/theo/nnue-n18/38664981879/nnue-38664981879-0.vf  50799 parties  6407248 positions
+  /home/theo/nnue-n18/38664981879/nnue-38664981879-1.vf  50915 parties  6429967 positions
+  /home/theo/nnue-n18/38664981879/nnue-38664981879-2.vf  51038 parties  6428829 positions
+  /home/theo/nnue-n18/38664981879/nnue-38664981879-3.vf  50808 parties  6417674 positions
+  /home/theo/nnue-n18/38664989777/nnue-38664989777-0.vf  53013 parties  6679214 positions
+  /home/theo/nnue-n18/38664989777/nnue-38664989777-1.vf  52659 parties  6667087 positions
+  /home/theo/nnue-n18/38664989777/nnue-38664989777-2.vf  52994 parties  6671765 positions
+  /home/theo/nnue-n18/38664989777/nnue-38664989777-3.vf  52922 parties  6671505 positions
+  /home/theo/nnue-n18/38664997418/nnue-38664997418-0.vf  50740 parties  6411488 positions
+  /home/theo/nnue-n18/38664997418/nnue-38664997418-1.vf  50630 parties  6413642 positions
+  /home/theo/nnue-n18/38664997418/nnue-38664997418-2.vf  50735 parties  6413966 positions
+  /home/theo/nnue-n18/38664997418/nnue-38664997418-3.vf  50847 parties  6413112 positions
+  /home/theo/nnue-n18/38665005177/nnue-38665005177-0.vf  67264 parties  8536720 positions
+  /home/theo/nnue-n18/38665005177/nnue-38665005177-1.vf  67177 parties  8493324 positions
+  /home/theo/nnue-n18/38665005177/nnue-38665005177-2.vf  67718 parties  8518141 positions
+  /home/theo/nnue-n18/38665005177/nnue-38665005177-3.vf  67506 parties  8524880 positions
+  /home/theo/nnue-n18/38665013007/nnue-38665013007-0.vf  51417 parties  6489330 positions
+  /home/theo/nnue-n18/38665013007/nnue-38665013007-1.vf  51522 parties  6494513 positions
+  /home/theo/nnue-n18/38665013007/nnue-38665013007-2.vf  51436 parties  6483883 positions
+  /home/theo/nnue-n18/38665013007/nnue-38665013007-3.vf  51095 parties  6484360 positions
+  /home/theo/nnue-n18/38697853489/nnue-38697853489-0.vf  50942 parties  6423690 positions
+  /home/theo/nnue-n18/38697853489/nnue-38697853489-1.vf  50884 parties  6422205 positions
+  /home/theo/nnue-n18/38697853489/nnue-38697853489-2.vf  51031 parties  6423127 positions
+  /home/theo/nnue-n18/38697853489/nnue-38697853489-3.vf  50667 parties  6419456 positions
+  /home/theo/nnue-n18/38697863368/nnue-38697863368-0.vf  51021 parties  6426132 positions
+  /home/theo/nnue-n18/38697863368/nnue-38697863368-1.vf  50940 parties  6399683 positions
+  /home/theo/nnue-n18/38697863368/nnue-38697863368-2.vf  51037 parties  6432466 positions
+  /home/theo/nnue-n18/38697863368/nnue-38697863368-3.vf  50929 parties  6436293 positions
+  /home/theo/nnue-n18/38697872916/nnue-38697872916-0.vf  67250 parties  8494031 positions
+  /home/theo/nnue-n18/38697872916/nnue-38697872916-1.vf  67370 parties  8497154 positions
+  /home/theo/nnue-n18/38697872916/nnue-38697872916-2.vf  67055 parties  8458191 positions
+  /home/theo/nnue-n18/38697872916/nnue-38697872916-3.vf  67187 parties  8487980 positions
+  /home/theo/nnue-n18/38697882539/nnue-38697882539-0.vf  66958 parties  8443726 positions
+  /home/theo/nnue-n18/38697882539/nnue-38697882539-1.vf  66858 parties  8447362 positions
+  /home/theo/nnue-n18/38697882539/nnue-38697882539-2.vf  66817 parties  8445284 positions
+  /home/theo/nnue-n18/38697882539/nnue-38697882539-3.vf  67145 parties  8439423 positions
+  /home/theo/nnue-n18/38697892416/nnue-38697892416-0.vf  67643 parties  8540954 positions
+  /home/theo/nnue-n18/38697892416/nnue-38697892416-1.vf  67703 parties  8553095 positions
+  /home/theo/nnue-n18/38697892416/nnue-38697892416-2.vf  67156 parties  8469902 positions
+  /home/theo/nnue-n18/38697892416/nnue-38697892416-3.vf  67753 parties  8564616 positions
+  /home/theo/nnue-n18/38697902774/nnue-38697902774-0.vf  89671 parties  11322747 positions
+  /home/theo/nnue-n18/38697902774/nnue-38697902774-1.vf  89450 parties  11327458 positions
+  /home/theo/nnue-n18/38697902774/nnue-38697902774-2.vf  89538 parties  11325595 positions
+  /home/theo/nnue-n18/38697902774/nnue-38697902774-3.vf  89736 parties  11312055 positions
+  /home/theo/nnue-n18/38697912990/nnue-38697912990-0.vf  86547 parties  10946301 positions
+  /home/theo/nnue-n18/38697912990/nnue-38697912990-1.vf  86341 parties  10927474 positions
+  /home/theo/nnue-n18/38697912990/nnue-38697912990-2.vf  86740 parties  10941973 positions
+  /home/theo/nnue-n18/38697912990/nnue-38697912990-3.vf  86491 parties  10941908 positions
+  /home/theo/nnue-n18/38697922671/nnue-38697922671-0.vf  51167 parties  6467665 positions
+  /home/theo/nnue-n18/38697922671/nnue-38697922671-1.vf  51040 parties  6470675 positions
+  /home/theo/nnue-n18/38697922671/nnue-38697922671-2.vf  51303 parties  6467132 positions
+  /home/theo/nnue-n18/38697922671/nnue-38697922671-3.vf  51216 parties  6470013 positions
+  /home/theo/nnue-n18/38740299898/nnue-38740299898-0.vf  47928 parties  6041856 positions
+  /home/theo/nnue-n18/38740299898/nnue-38740299898-1.vf  47755 parties  6042939 positions
+  /home/theo/nnue-n18/38740299898/nnue-38740299898-2.vf  48002 parties  6037729 positions
+  /home/theo/nnue-n18/38740299898/nnue-38740299898-3.vf  47769 parties  6042413 positions
+  /home/theo/nnue-n18/38740307273/nnue-38740307273-0.vf  50125 parties  6343963 positions
+  /home/theo/nnue-n18/38740307273/nnue-38740307273-1.vf  50355 parties  6363803 positions
+  /home/theo/nnue-n18/38740307273/nnue-38740307273-2.vf  50347 parties  6367666 positions
+  /home/theo/nnue-n18/38740307273/nnue-38740307273-3.vf  50363 parties  6363541 positions
+  /home/theo/nnue-n18/38740315429/nnue-38740315429-0.vf  67368 parties  8494911 positions
+  /home/theo/nnue-n18/38740315429/nnue-38740315429-1.vf  67387 parties  8499710 positions
+  /home/theo/nnue-n18/38740315429/nnue-38740315429-2.vf  67051 parties  8487355 positions
+  /home/theo/nnue-n18/38740315429/nnue-38740315429-3.vf  67432 parties  8498707 positions
+  /home/theo/nnue-n18/38740328347/nnue-38740328347-0.vf  68635 parties  8672626 positions
+  /home/theo/nnue-n18/38740328347/nnue-38740328347-1.vf  68725 parties  8677870 positions
+  /home/theo/nnue-n18/38740328347/nnue-38740328347-2.vf  68847 parties  8677417 positions
+  /home/theo/nnue-n18/38740328347/nnue-38740328347-3.vf  68696 parties  8673935 positions
+  /home/theo/nnue-n18/38740339122/nnue-38740339122-0.vf  62690 parties  7899096 positions
+  /home/theo/nnue-n18/38740339122/nnue-38740339122-1.vf  62775 parties  7916715 positions
+  /home/theo/nnue-n18/38740339122/nnue-38740339122-2.vf  62554 parties  7898296 positions
+  /home/theo/nnue-n18/38740339122/nnue-38740339122-3.vf  62462 parties  7902132 positions
+  /home/theo/nnue-n18/38740349014/nnue-38740349014-0.vf  91566 parties  11580720 positions
+  /home/theo/nnue-n18/38740349014/nnue-38740349014-1.vf  91815 parties  11575052 positions
+  /home/theo/nnue-n18/38740349014/nnue-38740349014-2.vf  91762 parties  11574604 positions
+  /home/theo/nnue-n18/38740349014/nnue-38740349014-3.vf  91586 parties  11568452 positions
+  /home/theo/nnue-n18/38740358656/nnue-38740358656-0.vf  50554 parties  6387726 positions
+  /home/theo/nnue-n18/38740358656/nnue-38740358656-1.vf  50601 parties  6373892 positions
+  /home/theo/nnue-n18/38740358656/nnue-38740358656-2.vf  50503 parties  6386897 positions
+  /home/theo/nnue-n18/38740358656/nnue-38740358656-3.vf  50611 parties  6381766 positions
+  /home/theo/nnue-n18/38740368533/nnue-38740368533-0.vf  87652 parties  11080094 positions
+  /home/theo/nnue-n18/38740368533/nnue-38740368533-1.vf  87638 parties  11089831 positions
+  /home/theo/nnue-n18/38740368533/nnue-38740368533-2.vf  87640 parties  11087287 positions
+  /home/theo/nnue-n18/38740368533/nnue-38740368533-3.vf  87534 parties  11071262 positions
+  /home/theo/nnue-n18/38790151546/nnue-38790151546-0.vf  51268 parties  6483913 positions
+  /home/theo/nnue-n18/38790151546/nnue-38790151546-1.vf  51540 parties  6485641 positions
+  /home/theo/nnue-n18/38790151546/nnue-38790151546-2.vf  51414 parties  6490029 positions
+  /home/theo/nnue-n18/38790151546/nnue-38790151546-3.vf  51263 parties  6494385 positions
+  /home/theo/nnue-n18/38790162034/nnue-38790162034-0.vf  52932 parties  6669048 positions
+  /home/theo/nnue-n18/38790162034/nnue-38790162034-1.vf  52691 parties  6685448 positions
+  /home/theo/nnue-n18/38790162034/nnue-38790162034-2.vf  52860 parties  6679340 positions
+  /home/theo/nnue-n18/38790162034/nnue-38790162034-3.vf  53070 parties  6688004 positions
+  /home/theo/nnue-n18/38790172823/nnue-38790172823-0.vf  65821 parties  8335311 positions
+  /home/theo/nnue-n18/38790172823/nnue-38790172823-1.vf  66028 parties  8336635 positions
+  /home/theo/nnue-n18/38790172823/nnue-38790172823-2.vf  65892 parties  8335502 positions
+  /home/theo/nnue-n18/38790172823/nnue-38790172823-3.vf  66045 parties  8339751 positions
+  /home/theo/nnue-n18/38790182980/nnue-38790182980-0.vf  54802 parties  6929726 positions
+  /home/theo/nnue-n18/38790182980/nnue-38790182980-1.vf  54978 parties  6936874 positions
+  /home/theo/nnue-n18/38790182980/nnue-38790182980-2.vf  54869 parties  6932399 positions
+  /home/theo/nnue-n18/38790182980/nnue-38790182980-3.vf  54906 parties  6936209 positions
+  /home/theo/nnue-n18/38790193608/nnue-38790193608-0.vf  48913 parties  6163729 positions
+  /home/theo/nnue-n18/38790193608/nnue-38790193608-1.vf  48743 parties  6166903 positions
+  /home/theo/nnue-n18/38790193608/nnue-38790193608-2.vf  49045 parties  6161068 positions
+  /home/theo/nnue-n18/38790193608/nnue-38790193608-3.vf  48780 parties  6165749 positions
+  /home/theo/nnue-n18/38790203674/nnue-38790203674-0.vf  50955 parties  6420164 positions
+  /home/theo/nnue-n18/38790203674/nnue-38790203674-1.vf  50723 parties  6432379 positions
+  /home/theo/nnue-n18/38790203674/nnue-38790203674-2.vf  50932 parties  6428588 positions
+  /home/theo/nnue-n18/38790203674/nnue-38790203674-3.vf  51017 parties  6419359 positions
+  /home/theo/nnue-n18/38790214545/nnue-38790214545-0.vf  87006 parties  11002232 positions
+  /home/theo/nnue-n18/38790214545/nnue-38790214545-1.vf  86963 parties  10993483 positions
+  /home/theo/nnue-n18/38790214545/nnue-38790214545-2.vf  87158 parties  10994176 positions
+  /home/theo/nnue-n18/38790214545/nnue-38790214545-3.vf  87009 parties  10984223 positions
+  /home/theo/nnue-n18/38790224445/nnue-38790224445-0.vf  67752 parties  8531425 positions
+  /home/theo/nnue-n18/38790224445/nnue-38790224445-1.vf  67136 parties  8507870 positions
+  /home/theo/nnue-n18/38790224445/nnue-38790224445-2.vf  67531 parties  8513614 positions
+  /home/theo/nnue-n18/38790224445/nnue-38790224445-3.vf  67805 parties  8528540 positions
+  /home/theo/nnue-n18/38831468864/nnue-38831468864-0.vf  51062 parties  6439535 positions
+  /home/theo/nnue-n18/38831468864/nnue-38831468864-1.vf  51031 parties  6431829 positions
+  /home/theo/nnue-n18/38831468864/nnue-38831468864-2.vf  50847 parties  6397760 positions
+  /home/theo/nnue-n18/38831468864/nnue-38831468864-3.vf  51084 parties  6448690 positions
+  /home/theo/nnue-n18/38831475554/nnue-38831475554-0.vf  51053 parties  6443853 positions
+  /home/theo/nnue-n18/38831475554/nnue-38831475554-1.vf  51048 parties  6434915 positions
+  /home/theo/nnue-n18/38831475554/nnue-38831475554-2.vf  51182 parties  6446381 positions
+  /home/theo/nnue-n18/38831475554/nnue-38831475554-3.vf  51016 parties  6438640 positions
+  /home/theo/nnue-n18/38831482415/nnue-38831482415-0.vf  51101 parties  6446786 positions
+  /home/theo/nnue-n18/38831482415/nnue-38831482415-1.vf  51026 parties  6441637 positions
+  /home/theo/nnue-n18/38831482415/nnue-38831482415-2.vf  51156 parties  6460405 positions
+  /home/theo/nnue-n18/38831482415/nnue-38831482415-3.vf  51083 parties  6463235 positions
+  /home/theo/nnue-n18/38831489161/nnue-38831489161-0.vf  55538 parties  7006405 positions
+  /home/theo/nnue-n18/38831489161/nnue-38831489161-1.vf  55486 parties  7009641 positions
+  /home/theo/nnue-n18/38831489161/nnue-38831489161-2.vf  55367 parties  7010376 positions
+  /home/theo/nnue-n18/38831489161/nnue-38831489161-3.vf  55660 parties  7005210 positions
+  /home/theo/nnue-n18/38831495931/nnue-38831495931-0.vf  56375 parties  7110803 positions
+  /home/theo/nnue-n18/38831495931/nnue-38831495931-1.vf  56211 parties  7124629 positions
+  /home/theo/nnue-n18/38831495931/nnue-38831495931-2.vf  56345 parties  7113585 positions
+  /home/theo/nnue-n18/38831495931/nnue-38831495931-3.vf  56209 parties  7120105 positions
+  /home/theo/nnue-n18/38831502475/nnue-38831502475-0.vf  50681 parties  6430768 positions
+  /home/theo/nnue-n18/38831502475/nnue-38831502475-1.vf  50818 parties  6408405 positions
+  /home/theo/nnue-n18/38831502475/nnue-38831502475-2.vf  50887 parties  6423416 positions
+  /home/theo/nnue-n18/38831502475/nnue-38831502475-3.vf  50818 parties  6422167 positions
+  /home/theo/nnue-n18/38831508720/nnue-38831508720-0.vf  55655 parties  7035531 positions
+  /home/theo/nnue-n18/38831508720/nnue-38831508720-1.vf  55666 parties  7034989 positions
+  /home/theo/nnue-n18/38831508720/nnue-38831508720-2.vf  55861 parties  7034836 positions
+  /home/theo/nnue-n18/38831508720/nnue-38831508720-3.vf  55619 parties  7043464 positions
+  /home/theo/nnue-n18/38831514780/nnue-38831514780-0.vf  50521 parties  6358884 positions
+  /home/theo/nnue-n18/38831514780/nnue-38831514780-1.vf  50105 parties  6353340 positions
+  /home/theo/nnue-n18/38831514780/nnue-38831514780-2.vf  50438 parties  6350675 positions
+  /home/theo/nnue-n18/38831514780/nnue-38831514780-3.vf  50087 parties  6350308 positions
+  /home/theo/nnue-n18/38861751668/nnue-38861751668-0.vf  67405 parties  8511462 positions
+  /home/theo/nnue-n18/38861751668/nnue-38861751668-1.vf  67296 parties  8502057 positions
+  /home/theo/nnue-n18/38861751668/nnue-38861751668-2.vf  67365 parties  8490664 positions
+  /home/theo/nnue-n18/38861751668/nnue-38861751668-3.vf  66848 parties  8500037 positions
+  /home/theo/nnue-n18/38861758821/nnue-38861758821-0.vf  50851 parties  6416082 positions
+  /home/theo/nnue-n18/38861758821/nnue-38861758821-1.vf  50678 parties  6412943 positions
+  /home/theo/nnue-n18/38861758821/nnue-38861758821-2.vf  50802 parties  6408148 positions
+  /home/theo/nnue-n18/38861758821/nnue-38861758821-3.vf  50711 parties  6412109 positions
+  /home/theo/nnue-n18/38861766291/nnue-38861766291-0.vf  48592 parties  6153372 positions
+  /home/theo/nnue-n18/38861766291/nnue-38861766291-1.vf  48781 parties  6150182 positions
+  /home/theo/nnue-n18/38861766291/nnue-38861766291-2.vf  48758 parties  6154130 positions
+  /home/theo/nnue-n18/38861766291/nnue-38861766291-3.vf  48689 parties  6152473 positions
+  /home/theo/nnue-n18/38861773204/nnue-38861773204-0.vf  66621 parties  8385101 positions
+  /home/theo/nnue-n18/38861773204/nnue-38861773204-1.vf  67173 parties  8480105 positions
+  /home/theo/nnue-n18/38861773204/nnue-38861773204-2.vf  67074 parties  8470365 positions
+  /home/theo/nnue-n18/38861773204/nnue-38861773204-3.vf  67083 parties  8471796 positions
+  /home/theo/nnue-n18/38861780421/nnue-38861780421-0.vf  88638 parties  11190178 positions
+  /home/theo/nnue-n18/38861780421/nnue-38861780421-1.vf  88557 parties  11189222 positions
+  /home/theo/nnue-n18/38861780421/nnue-38861780421-2.vf  88470 parties  11183804 positions
+  /home/theo/nnue-n18/38861780421/nnue-38861780421-3.vf  88699 parties  11182447 positions
+  /home/theo/nnue-n18/38861787224/nnue-38861787224-0.vf  67041 parties  8473942 positions
+  /home/theo/nnue-n18/38861787224/nnue-38861787224-1.vf  67135 parties  8484992 positions
+  /home/theo/nnue-n18/38861787224/nnue-38861787224-2.vf  67278 parties  8471239 positions
+  /home/theo/nnue-n18/38861787224/nnue-38861787224-3.vf  67102 parties  8482283 positions
+  /home/theo/nnue-n18/38861794604/nnue-38861794604-0.vf  50652 parties  6385276 positions
+  /home/theo/nnue-n18/38861794604/nnue-38861794604-1.vf  50642 parties  6392293 positions
+  /home/theo/nnue-n18/38861794604/nnue-38861794604-2.vf  50325 parties  6378086 positions
+  /home/theo/nnue-n18/38861794604/nnue-38861794604-3.vf  50601 parties  6393743 positions
+  /home/theo/nnue-n18/38861801128/nnue-38861801128-0.vf  50705 parties  6399012 positions
+  /home/theo/nnue-n18/38861801128/nnue-38861801128-1.vf  50729 parties  6414005 positions
+  /home/theo/nnue-n18/38861801128/nnue-38861801128-2.vf  50662 parties  6388270 positions
+  /home/theo/nnue-n18/38861801128/nnue-38861801128-3.vf  50757 parties  6400225 positions
+  /home/theo/nnue-n18/38900204625/nnue-38900204625-0.vf  51053 parties  6428712 positions
+  /home/theo/nnue-n18/38900204625/nnue-38900204625-1.vf  50856 parties  6439029 positions
+  /home/theo/nnue-n18/38900204625/nnue-38900204625-2.vf  50973 parties  6432112 positions
+  /home/theo/nnue-n18/38900204625/nnue-38900204625-3.vf  51021 parties  6417987 positions
+  /home/theo/nnue-n18/38900213002/nnue-38900213002-0.vf  50970 parties  6436191 positions
+  /home/theo/nnue-n18/38900213002/nnue-38900213002-1.vf  50938 parties  6438811 positions
+  /home/theo/nnue-n18/38900213002/nnue-38900213002-2.vf  50756 parties  6423892 positions
+  /home/theo/nnue-n18/38900213002/nnue-38900213002-3.vf  51007 parties  6422829 positions
+  /home/theo/nnue-n18/38900221691/nnue-38900221691-0.vf  51128 parties  6462544 positions
+  /home/theo/nnue-n18/38900221691/nnue-38900221691-1.vf  51274 parties  6476267 positions
+  /home/theo/nnue-n18/38900221691/nnue-38900221691-2.vf  51579 parties  6485250 positions
+  /home/theo/nnue-n18/38900221691/nnue-38900221691-3.vf  51239 parties  6495605 positions
+  /home/theo/nnue-n18/38900230079/nnue-38900230079-0.vf  66797 parties  8452447 positions
+  /home/theo/nnue-n18/38900230079/nnue-38900230079-1.vf  66996 parties  8455831 positions
+  /home/theo/nnue-n18/38900230079/nnue-38900230079-2.vf  66970 parties  8466355 positions
+  /home/theo/nnue-n18/38900230079/nnue-38900230079-3.vf  66880 parties  8457964 positions
+  /home/theo/nnue-n18/38900238002/nnue-38900238002-0.vf  50423 parties  6373758 positions
+  /home/theo/nnue-n18/38900238002/nnue-38900238002-1.vf  50545 parties  6402146 positions
+  /home/theo/nnue-n18/38900238002/nnue-38900238002-2.vf  50922 parties  6399652 positions
+  /home/theo/nnue-n18/38900238002/nnue-38900238002-3.vf  50811 parties  6404744 positions
+  /home/theo/nnue-n18/38900246025/nnue-38900246025-0.vf  50990 parties  6442691 positions
+  /home/theo/nnue-n18/38900246025/nnue-38900246025-1.vf  51058 parties  6441168 positions
+  /home/theo/nnue-n18/38900246025/nnue-38900246025-2.vf  50993 parties  6438632 positions
+  /home/theo/nnue-n18/38900246025/nnue-38900246025-3.vf  51060 parties  6431477 positions
+  /home/theo/nnue-n18/38900254597/nnue-38900254597-0.vf  87475 parties  11034916 positions
+  /home/theo/nnue-n18/38900254597/nnue-38900254597-1.vf  87662 parties  11050801 positions
+  /home/theo/nnue-n18/38900254597/nnue-38900254597-2.vf  87507 parties  11052898 positions
+  /home/theo/nnue-n18/38900254597/nnue-38900254597-3.vf  87571 parties  11042055 positions
+  /home/theo/nnue-n18/38900264329/nnue-38900264329-0.vf  51089 parties  6414279 positions
+  /home/theo/nnue-n18/38900264329/nnue-38900264329-1.vf  50846 parties  6427600 positions
+  /home/theo/nnue-n18/38900264329/nnue-38900264329-2.vf  50714 parties  6431296 positions
+  /home/theo/nnue-n18/38900264329/nnue-38900264329-3.vf  50838 parties  6424184 positions
+  total : 18435764 parties, 2328546367 positions
+== 2. Entraînement ==
+[34;1mTraining Preamble[0m
+Net Name               : [32;1mshallowred-768x256-s8[0m
+Batch Size             : [31m16384[0m
+Batches / Superbatch   : [31m6104[0m
+Positions / Superbatch : [31m100007936[0m
+Start Superbatch       : [31m1[0m
+End Superbatch         : [31m1[0m
+Eval Scale             : [31m400[0m
+Save Rate              : [31m10[0m
+WDL Scheduler          : constant [31m0.75[0m
+LR Scheduler           : start at [31m0.001[0m and cosine decay to [31m0.0000024300007[0m at superbatch [31m1[0m
+Threads                : [31m4[0m
+Output Path            : [32;1messai18[0m
+[34;1mTraining on NVIDIA GeForce RTX 3050 Laptop GPU (sm_86)[0m
+superbatch [36m1[0m [[35m0.0[0m% ([36m0[0m/[36m6104[0m batches, [36m171331[0m pos/sec)]
+Estimated time to end of superbatch: [36minf[0ms     [Fsuperbatch [36m1[0m [[35m2.1[0m% ([36m128[0m/[36m6104[0m batches, [36m4223860[0m pos/sec)]
+Estimated time to end of superbatch: [36m23.4[0ms     [Fsuperbatch [36m1[0m [[35m4.2[0m% ([36m256[0m/[36m6104[0m batches, [36m4758003[0m pos/sec)]
+Estimated time to end of superbatch: [36m20.2[0ms     [Fsuperbatch [36m1[0m [[35m6.3[0m% ([36m384[0m/[36m6104[0m batches, [36m4928628[0m pos/sec)]
+Estimated time to end of superbatch: [36m19.1[0ms     [Fsuperbatch [36m1[0m [[35m8.4[0m% ([36m512[0m/[36m6104[0m batches, [36m5028698[0m pos/sec)]
+Estimated time to end of superbatch: [36m18.3[0ms     [Fsuperbatch [36m1[0m [[35m10.5[0m% ([36m640[0m/[36m6104[0m batches, [36m5100678[0m pos/sec)]
+Estimated time to end of superbatch: [36m17.6[0ms     [Fsuperbatch [36m1[0m [[35m12.6[0m% ([36m768[0m/[36m6104[0m batches, [36m5143794[0m pos/sec)]
+Estimated time to end of superbatch: [36m17.0[0ms     [Fsuperbatch [36m1[0m [[35m14.7[0m% ([36m896[0m/[36m6104[0m batches, [36m5187965[0m pos/sec)]
+Estimated time to end of superbatch: [36m16.5[0ms     [Fsuperbatch [36m1[0m [[35m16.8[0m% ([36m1024[0m/[36m6104[0m batches, [36m5212826[0m pos/sec)]
+Estimated time to end of superbatch: [36m16.0[0ms     [Fsuperbatch [36m1[0m [[35m18.9[0m% ([36m1152[0m/[36m6104[0m batches, [36m5229184[0m pos/sec)]
+Estimated time to end of superbatch: [36m15.5[0ms     [Fsuperbatch [36m1[0m [[35m21.0[0m% ([36m1280[0m/[36m6104[0m batches, [36m5238811[0m pos/sec)]
+Estimated time to end of superbatch: [36m15.1[0ms     [Fsuperbatch [36m1[0m [[35m23.1[0m% ([36m1408[0m/[36m6104[0m batches, [36m5241676[0m pos/sec)]
+Estimated time to end of superbatch: [36m14.7[0ms     [Fsuperbatch [36m1[0m [[35m25.2[0m% ([36m1536[0m/[36m6104[0m batches, [36m5254648[0m pos/sec)]
+Estimated time to end of superbatch: [36m14.3[0ms     [Fsuperbatch [36m1[0m [[35m27.3[0m% ([36m1664[0m/[36m6104[0m batches, [36m5265460[0m pos/sec)]
+Estimated time to end of superbatch: [36m13.8[0ms     [Fsuperbatch [36m1[0m [[35m29.4[0m% ([36m1792[0m/[36m6104[0m batches, [36m5274482[0m pos/sec)]
+Estimated time to end of superbatch: [36m13.4[0ms     [Fsuperbatch [36m1[0m [[35m31.5[0m% ([36m1920[0m/[36m6104[0m batches, [36m5284232[0m pos/sec)]
+Estimated time to end of superbatch: [36m13.0[0ms     [Fsuperbatch [36m1[0m [[35m33.6[0m% ([36m2048[0m/[36m6104[0m batches, [36m5288980[0m pos/sec)]
+Estimated time to end of superbatch: [36m12.6[0ms     [Fsuperbatch [36m1[0m [[35m35.6[0m% ([36m2176[0m/[36m6104[0m batches, [36m5293956[0m pos/sec)]
+Estimated time to end of superbatch: [36m12.2[0ms     [Fsuperbatch [36m1[0m [[35m37.7[0m% ([36m2304[0m/[36m6104[0m batches, [36m5295702[0m pos/sec)]
+Estimated time to end of superbatch: [36m11.8[0ms     [Fsuperbatch [36m1[0m [[35m39.8[0m% ([36m2432[0m/[36m6104[0m batches, [36m5296709[0m pos/sec)]
+Estimated time to end of superbatch: [36m11.4[0ms     [Fsuperbatch [36m1[0m [[35m41.9[0m% ([36m2560[0m/[36m6104[0m batches, [36m5300122[0m pos/sec)]
+Estimated time to end of superbatch: [36m11.0[0ms     [Fsuperbatch [36m1[0m [[35m44.0[0m% ([36m2688[0m/[36m6104[0m batches, [36m5302976[0m pos/sec)]
+Estimated time to end of superbatch: [36m10.6[0ms     [Fsuperbatch [36m1[0m [[35m46.1[0m% ([36m2816[0m/[36m6104[0m batches, [36m5305682[0m pos/sec)]
+Estimated time to end of superbatch: [36m10.2[0ms     [Fsuperbatch [36m1[0m [[35m48.2[0m% ([36m2944[0m/[36m6104[0m batches, [36m5307516[0m pos/sec)]
+Estimated time to end of superbatch: [36m9.8[0ms     [Fsuperbatch [36m1[0m [[35m50.3[0m% ([36m3072[0m/[36m6104[0m batches, [36m5308777[0m pos/sec)]
+Estimated time to end of superbatch: [36m9.4[0ms     [Fsuperbatch [36m1[0m [[35m52.4[0m% ([36m3200[0m/[36m6104[0m batches, [36m5309908[0m pos/sec)]
+Estimated time to end of superbatch: [36m9.0[0ms     [Fsuperbatch [36m1[0m [[35m54.5[0m% ([36m3328[0m/[36m6104[0m batches, [36m5310930[0m pos/sec)]
+Estimated time to end of superbatch: [36m8.6[0ms     [Fsuperbatch [36m1[0m [[35m56.6[0m% ([36m3456[0m/[36m6104[0m batches, [36m5309945[0m pos/sec)]
+Estimated time to end of superbatch: [36m8.2[0ms     [Fsuperbatch [36m1[0m [[35m58.7[0m% ([36m3584[0m/[36m6104[0m batches, [36m5310059[0m pos/sec)]
+Estimated time to end of superbatch: [36m7.8[0ms     [Fsuperbatch [36m1[0m [[35m60.8[0m% ([36m3712[0m/[36m6104[0m batches, [36m5310730[0m pos/sec)]
+Estimated time to end of superbatch: [36m7.4[0ms     [Fsuperbatch [36m1[0m [[35m62.9[0m% ([36m3840[0m/[36m6104[0m batches, [36m5311052[0m pos/sec)]
+Estimated time to end of superbatch: [36m7.0[0ms     [Fsuperbatch [36m1[0m [[35m65.0[0m% ([36m3968[0m/[36m6104[0m batches, [36m5311058[0m pos/sec)]
+Estimated time to end of superbatch: [36m6.6[0ms     [Fsuperbatch [36m1[0m [[35m67.1[0m% ([36m4096[0m/[36m6104[0m batches, [36m5311214[0m pos/sec)]
+Estimated time to end of superbatch: [36m6.2[0ms     [Fsuperbatch [36m1[0m [[35m69.2[0m% ([36m4224[0m/[36m6104[0m batches, [36m5310846[0m pos/sec)]
+Estimated time to end of superbatch: [36m5.8[0ms     [Fsuperbatch [36m1[0m [[35m71.3[0m% ([36m4352[0m/[36m6104[0m batches, [36m5310782[0m pos/sec)]
+Estimated time to end of superbatch: [36m5.4[0ms     [Fsuperbatch [36m1[0m [[35m73.4[0m% ([36m4480[0m/[36m6104[0m batches, [36m5309938[0m pos/sec)]
+Estimated time to end of superbatch: [36m5.0[0ms     [Fsuperbatch [36m1[0m [[35m75.5[0m% ([36m4608[0m/[36m6104[0m batches, [36m5308716[0m pos/sec)]
+Estimated time to end of superbatch: [36m4.6[0ms     [Fsuperbatch [36m1[0m [[35m77.6[0m% ([36m4736[0m/[36m6104[0m batches, [36m5308341[0m pos/sec)]
+Estimated time to end of superbatch: [36m4.2[0ms     [Fsuperbatch [36m1[0m [[35m79.7[0m% ([36m4864[0m/[36m6104[0m batches, [36m5308251[0m pos/sec)]
+Estimated time to end of superbatch: [36m3.8[0ms     [Fsuperbatch [36m1[0m [[35m81.8[0m% ([36m4992[0m/[36m6104[0m batches, [36m5308084[0m pos/sec)]
+Estimated time to end of superbatch: [36m3.4[0ms     [Fsuperbatch [36m1[0m [[35m83.9[0m% ([36m5120[0m/[36m6104[0m batches, [36m5307827[0m pos/sec)]
+Estimated time to end of superbatch: [36m3.0[0ms     [Fsuperbatch [36m1[0m [[35m86.0[0m% ([36m5248[0m/[36m6104[0m batches, [36m5307356[0m pos/sec)]
+Estimated time to end of superbatch: [36m2.6[0ms     [Fsuperbatch [36m1[0m [[35m88.1[0m% ([36m5376[0m/[36m6104[0m batches, [36m5307052[0m pos/sec)]
+Estimated time to end of superbatch: [36m2.2[0ms     [Fsuperbatch [36m1[0m [[35m90.2[0m% ([36m5504[0m/[36m6104[0m batches, [36m5305885[0m pos/sec)]
+Estimated time to end of superbatch: [36m1.9[0ms     [Fsuperbatch [36m1[0m [[35m92.3[0m% ([36m5632[0m/[36m6104[0m batches, [36m5304642[0m pos/sec)]
+Estimated time to end of superbatch: [36m1.5[0ms     [Fsuperbatch [36m1[0m [[35m94.4[0m% ([36m5760[0m/[36m6104[0m batches, [36m5303878[0m pos/sec)]
+Estimated time to end of superbatch: [36m1.1[0ms     [Fsuperbatch [36m1[0m [[35m96.5[0m% ([36m5888[0m/[36m6104[0m batches, [36m5303402[0m pos/sec)]
+Estimated time to end of superbatch: [36m0.7[0ms     [Fsuperbatch [36m1[0m [[35m98.6[0m% ([36m6016[0m/[36m6104[0m batches, [36m5302821[0m pos/sec)]
+Estimated time to end of superbatch: [36m0.3[0ms     [Fsuperbatch [36m1[0m | time [36m18.9[0ms | running loss [36m0.118183[0m | [36m5302669[0m pos/sec | total time [36m29.1[0ms
+Estimated time remaining in training: [36m0[0mh [36m0[0mm [36m0[0ms
+Saved [[31mshallowred-768x256-s8-1[0m]
+Total Training Time: [36m0[0mh [36m0[0mm [36m29[0ms
+== 3. Le moteur contre l'entraîneur ==
+      17      24  écart    7   rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+      91      92  écart    1   r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1
+     -12     -10  écart    2   8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1
+      23      28  écart    5   r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1
+      63      64  écart    1   rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8
+      -5       5  écart   10   r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10
+     -43     -33  écart   10   rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+    -117    -101  écart   16   r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1
+     -43     -44  écart    1   r2q1rk1/pp2bppp/2n1bn2/3p4/3P4/2NBBN2/PP3PPP/R2Q1RK1 b - - 0 1
+      16      16  écart    0   6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1
+       5       5  écart    0   8/8/8/4k3/8/8/4KP2/8 w - - 0 1
+      -8     -10  écart    2   8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1
+       4       1  écart    3   2kr3r/ppp2ppp/2n5/8/8/2N5/PPP2PPP/2KR3R w - - 0 12
+       0      14  écart   14   r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w - - 0 7
+      15      15  écart    0   8/8/4k3/3p4/3P4/4K3/8/8 w - - 0 1
+       8       8  écart    0   4k3/8/8/2K5/8/8/8/R7 w - - 0 1
+       6       6  écart    0   8/8/3k4/8/3K4/8/8/8 w - - 0 1
+       7       7  écart    0   1k6/8/8/8/8/8/8/K7 b - - 0 1
+  écart médian 2 (admis 15), maximal 16 (admis 50)
+RÉSEAU PRÊT : essai18/shallowred-768x256-s8-1/quantised.bin (401984 octets)
