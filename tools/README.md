@@ -9257,6 +9257,32 @@ de N5l (1 287 positions par seconde, EPYC 7763 ; 15,72 % d'écartées ;
 
 Hors fourchette, on diagnostique avant la vague.
 
+**La sonde, RELEVÉE le 17 oct. à 18 h 45 — les trois chiffres dans leur
+attendu.** Run 39048761614, 20 minutes sur un EPYC 7763, quatre fils,
+`x86-64-v3`, `cd6ed79` ; `parties` ne compte que les gardées, `ecartees`
+à part — le dénominateur du n° 18 :
+
+| | la sonde, N6r4 | la sonde de N5l, EPYC 7763 | attendu, écrit avant |
+|---|---|---|---|
+| positions par seconde | **1 183** | 1 287 | × 0,85 à × 1,00 — **× 0,919, dedans** |
+| parties écartées, sur les gardées | **19,69 %** (2 224 sur 11 294) | 15,72 % | 12 à 20 % — dedans, au bord |
+| nulles | **34,00 %** | 31,8 % | 30 à 36 % — dedans |
+
+125,7 positions par partie (126,4 pour N5l), 68,1 % gardées par le filtre
+(67,2 %). Plus d'écartées : le filtre d'ouverture se lit en unités de N6r4
+— la cause que l'attendu nommait ; une partie écartée l'est au premier
+coup, le coût est négligeable. **Le compte** : ~806 positions gardées par
+seconde sur un 7763, soit ~16 M par job de 330 minutes sur ce processeur,
+~18,4 M en moyenne sur le mélange de runners du n° 18 — **~85 jobs pour
+1,563 G, plus le tenu à l'écart : ~11 vagues de huit**.
+
+**La vague 1 — écrite avant de la lancer.** Huit jobs de 330 minutes au
+commit `cd6ed79`, `<embedded>`, 5 000 nœuds, graine « auto » ; **le
+PREMIER lancé est tenu à l'écart**. *Attendus* — <span>inférence,
+confiance moyenne</span>, les vagues de N5l (208 à 268 M positions) à
+× 0,92 : **180 à 260 M positions, 120 à 178 M gardées ; écartées 18,9 à
+20,5 % ; nulles 33,2 à 34,8 %**, sur les gardées.
+
 #### La séance B — après le volume
 
 Trois réseaux de l'architecture W, aux superlots que l'étape A aura
