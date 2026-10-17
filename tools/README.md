@@ -8512,7 +8512,10 @@ recopiée dans le moteur, le candidat révoqué aussitôt, ses nœuds par
 seconde au rejeu, la sonde de B8 — son facteur des marges ; **la perte
 tenue à l'écart** de chaque réseau et de ses points, sur 38531414161, par
 `nnue-validation` sur runner. Puis **24 jobs de 2 800 parties à
-`8+0,08`**, en deux vagues de douze :
+`8+0,08`**, <s>en deux vagues de douze</s> **en une seule — corrigé le
+17 oct. à 7 h 35, avant de lancer** : trente jobs ont tourné ensemble le
+5 oct. sans attente (n° 9), et rien ne lie une comparaison à une autre ;
+la seconde vague n'aurait acheté que six heures de retard :
 - **N6l, N6r4, N6r10 contre N5l**, quatre jobs chacun — la décision ;
 - **N6m contre N6l, N6l200 contre N6l, N6v contre N5l**, quatre jobs
   chacun — les trois mesures. Un écart entre deux réseaux se mesure par
@@ -8648,6 +8651,44 @@ binaires AVX2, dix tours, contre N5l, après la sonde. *Attendus* —
 0,99 à × 1,01** — la même architecture, le même code, seuls les poids
 changent ; **N6r4 × 0,91 à × 0,95, N6r10 × 0,90 à × 0,94** — N5r4 et
 N5r10 valaient × 0,931 et × 0,918 de N5l le 14 oct.
+
+**La sonde de B8, RELEVÉE le 17 oct. à 7 h 30 — les six dans la plage,
+tous mesurés au facteur de `main`, 2,85.** Six binaires construits à
+6 h 59, 40 parties chacun, finies entre 7 h 04 et 7 h 28 ; zéro perte au
+temps, zéro anomalie ; la faite main, celle du 12 oct. (0,40 % d'élagages
+delta fautifs, 4,1 % d'itérations hors de la première fenêtre). La
+rustine s'applique et compile telle quelle :
+
+| réseau | facteur delta | facteur aspiration | moyenne géométrique | hors fenêtre à δ = 25 | par la règle (2,14 à 3,56) |
+|---|---|---|---|---|---|
+| N5l, le 14 oct. | × 2,9 | × 2,80 | 2,85 | 13,2 % | — le facteur en place |
+| **N6l** | × 2,6 | × 2,40 | **2,50** | 10,4 % | dedans — 2,85 |
+| **N6m** | × 3,1 | × 2,20 | **2,61** | 9,6 % | dedans — 2,85 |
+| **N6v** | × 3,1 | × 2,00 | **2,49** | 8,3 % | dedans — 2,85 |
+| **N6r4** | × 3,1 | × 2,00 | **2,49** | 8,3 % | dedans — 2,85 |
+| **N6r10** | × 4,2 | × 2,60 | **3,31** | 11,9 % | dedans — 2,85 |
+| **N6l200** | × 3,1 | × 2,20 | **2,61** | 9,5 % | dedans — 2,85 |
+
+- **les candidats ne changent pas** : écrits au facteur de `main`, ils se
+  mesurent tels quels — aucun n'a à porter le sien ;
+- **l'attendu tient pour trois sur six, et son SENS s'est trompé** :
+  N6m, N6l200 et N6r10 dedans ; N6l sur la borne basse (2,498), N6v
+  juste sous elle, **N6r4 nettement sous la sienne** (2,49 pour 2,8 à
+  3,6). Tous descendent sous N5l sauf N6r10, par l'aspiration surtout :
+  leurs scores bougent MOINS d'une itération à l'autre — 8,3 à 11,9 %
+  hors de la première fenêtre, contre 13,2 % pour N5l, 13,5 et 17,9 %
+  pour N5r4 et N5r10. <span>Inférence, confiance faible</span> : les
+  seaux de roi, qui retenaient sur 159 M, retiennent moins sur 1,563 G
+  (perte tenue à l'écart, plus haut), et une évaluation qui retient moins
+  est moins bruitée d'une itération à l'autre ; le delta, lui, ne bouge
+  presque pas — 3,1 pour cinq réseaux sur six, la grille n'ayant rien
+  entre 3,0 et 4,0 ;
+- **ce que cela mêle** : les plats tombent à 2,49–2,61 et jouent à 2,85,
+  ~14 % au-dessus de leur mesure — dans la plage, que la règle a écrite
+  précisément pour ne pas régler un facteur par réseau à chaque séance.
+  Si le réseau gagné embarque, sa sonde dit déjà qu'un facteur plus bas
+  serait à essayer : **une mesure à part, après le verdict**, pas une
+  condition du verdict.
 
 **La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
 38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
