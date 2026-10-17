@@ -8696,6 +8696,39 @@ rustine s'applique et compile telle quelle :
   serait à essayer : **une mesure à part, après le verdict**, pas une
   condition du verdict.
 
+**Leurs nœuds par seconde, RELEVÉS le 17 oct. à 7 h 55 — les plats un
+peu PLUS rapides que N5l, les seaux de roi moins lents qu'au n° 17 : les
+deux attendus manqués, vers le haut.** Le rejeu du n° 15, `--nps`, les
+binaires AVX2 construits à 7 h 35–7 h 36, dix tours, la base N5l
+(`2648fb1`) à 25 939 629 nœuds par passe ; le conteneur sans autre
+charge, les matchs tournant sur les runners :
+
+| réseau | n/s contre N5l, médiane des tours | tours plus lents | signes | *attendu* |
+|---|---|---|---|---|
+| **N6l** | **× 1,024** | 1 / 10 | p = 0,02 | × 0,99 à × 1,01 — au-dessus |
+| **N6m** | × 1,017 | 3 / 10 | p = 0,34 | au-dessus au point, non séparé |
+| **N6v** | × 1,012 | 3 / 10 | p = 0,34 | au bord, non séparé |
+| **N6l200** | **× 1,037** | 1 / 10 | p = 0,02 | au-dessus |
+| **N6r4** | × 0,982 | 8 / 10 | p = 0,11 | × 0,91 à × 0,95 — au-dessus |
+| **N6r10** | × 0,956 | 8 / 10 | p = 0,11 | × 0,90 à × 0,94 — au-dessus |
+
+- **à architecture égale, les poids changent la vitesse** — × 1,01 à
+  × 1,04 pour les quatre plats, deux d'entre eux séparés de un. Le calcul
+  d'une évaluation ne dépend pas des poids ; ce qui change est l'ARBRE :
+  un autre réseau cherche d'autres nœuds, dans une autre proportion de
+  quiescence, de coupures par la table et d'évaluations par nœud.
+  <span>Inférence, confiance moyenne</span> : mon attendu supposait la
+  vitesse attachée au code seul, et le n° 17 l'avait déjà démenti en
+  petit (N5s × 0,995 contre N4) ;
+- **les seaux de roi, ramenés aux plats** : × 0,982 et × 0,956 contre
+  N5l, soit × 0,96 et × 0,94 contre la moyenne des plats (× 1,022) — près
+  des × 0,931 et × 0,918 du n° 17, un peu au-dessus. Le surcoût propre
+  aux seaux n'a pas changé de nature : c'est le même code ;
+- **ce que cela pèse** : à cadence horloge, la vitesse entre dans le
+  résultat du match, qui mesure tout ensemble. Par l'étalon du temps,
+  × 1,02 vaut ~+3 Elo et × 0,956 ~−7 : une petite part des écarts
+  attendus.
+
 **Les matchs, lancés le 17 oct. à 7 h 32** — 24 jobs de 2 800 parties à
 `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux côtés, en une
 seule vague, tous démarrés aussitôt : N6l 39006627542, 39006630789,
