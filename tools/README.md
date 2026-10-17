@@ -942,7 +942,7 @@ dernière relève est faite.
 | **N° 18 — la vague 9** | 38861751668, 38861758821, 38861766291, 38861773204, 38861780421, 38861787224, 38861794604, 38861801128 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **RELEVÉE à 14 h 25** — lancée le 16 oct. à 8 h 30, finie à 14 h 05 | **247,9 M positions, 166,4 M gardées, 15,71 % d'écartées, 32,24 % de nulles : dans l'attendu sur les quatre chiffres.** 1 407,3 M gardées à l'entraînement après neuf vagues, ~10 jobs encore : la vague 10 la dernière (section « N° 18 — le volume », la vague 9) — *Attendu, écrit avant* (section « N° 18 — le volume », la vague 9) : **185 à 290 M positions, 124 à 195 M gardées** ; écartées 15,4 à 16,0 % et nulles 31,8 à 32,7 %, sur les parties gardées |
 | **N° 18 — la vague 10** | 38900204625, 38900213002, 38900221691, 38900230079, 38900238002, 38900246025, 38900254597, 38900264329 | `c4697e2` (N5l), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 8 × 330 min | **RELEVÉE le 16 oct. à 20 h 10** — lancée à 14 h 25, finie à 19 h 55 ; **la dernière : la règle de fin s'applique** | **232,4 M positions, 156,0 M gardées, 15,73 % d'écartées, 32,24 % de nulles : dans l'attendu ; cumul 1 563,4 M gardées, ≥ 1,5 G — la génération S'ARRÊTE, le n° 18 CLOS** : 80 jobs, 79 appris, 8,50 Go d'artefacts jusqu'au 12–14 janv. 2027, chaque job dans `tools/n18-jobs.tsv` (section « N° 18 — le volume », le bilan) — *Attendu, écrit avant* (section « N° 18 — le volume », la vague 10) : **185 à 290 M positions, 124 à 195 M gardées** ; écartées 15,4 à 16,0 % et nulles 31,8 à 32,7 %, sur les parties gardées ; cumul 1,53 à 1,60 G |
 | **N° 18 — la séance, sur la carte de Théo** | — | N6l, N6m, N6v, N6l200 à `main` ; N6r4 `4a604ea` ; N6r10 `f729f8c` | `tools/nnue-train`, 79 jobs téléchargés | **FAITE dans la nuit du 16 au 17 oct.** — écrite le 16 à 20 h 20 ; poussée par Théo sur `reseau/n18` (`32c9604`) et `reseau/n18-points` (`c04dfe3`, 32 points) ; les six relectures exactes, les six confrontations dans le critère, l'entraînement à ± 3 % de l'estimé | — six réseaux : le volume (N6l), la pente (N6m, une moitié emboîtée), l'étiqueteur seul (N6v), les seaux de roi sur le volume (N6r4, N6r10), les superlots (N6l200) ; puis 24 jobs à `8+0,08` ; critère et attendus écrits avant (section « N° 18 — la séance ») |
-| **N° 18 — la perte tenue à l'écart des six réseaux et de leurs points** | **39003117564** — un premier lancement, 39003038240, mort au checkout : le SHA court, que `actions/checkout` ne sait pas chercher | outil à `reseau/n18-points` (`c04dfe34f9f0914db0d09b2bdf61168f90226c51`, l'outil de `main`) ; N5l en référence, puis les 32 points | `nnue-validation.yml` | **EN VOL** — lancé le 17 oct. à 6 h 35 ; ~25 min attendues, 33 réseaux sur deux jobs | — *Attendus, écrits avant* (section « N° 18 — la séance ») : **N6l sous N5l ; N6m entre les deux ; aucun point d'aucun réseau ne remonte**. *Contrôle indépendant* : le compte de positions de l'outil retombe sur les `gardees` de `tools/n18-jobs.tsv` — **17 208 872** pour le job tenu à l'écart (38531414161), **17 938 594** pour un job appris de tous (38531424497) |
+| **N° 18 — la perte tenue à l'écart des six réseaux et de leurs points** | **39003117564** — un premier lancement, 39003038240, mort au checkout : le SHA court, que `actions/checkout` ne sait pas chercher | outil à `reseau/n18-points` (`c04dfe34f9f0914db0d09b2bdf61168f90226c51`, l'outil de `main`) ; N5l en référence, puis les 32 points | `nnue-validation.yml` | **RELEVÉ le 17 oct. à 6 h 45** — lancé à 6 h 35, cinq minutes | **les trois attendus tiennent** ; contrôle exact (17 208 872, 17 938 594) ; N6l −0,00139 ± 0,00005 sous N5l, N6m à 0,00005 de N6l — doubler les données ne se voit presque plus à 100 superlots ; N6l200 −0,00005 sur N6l ; **N6r4 et N6r10 devant N6l**, −0,00038 et −0,00041 — le volume renverse le verdict du n° 17 en perte (section « N° 18 — la séance », la perte tenue à l'écart) — *Attendus, écrits avant* (section « N° 18 — la séance ») : **N6l sous N5l ; N6m entre les deux ; aucun point d'aucun réseau ne remonte**. *Contrôle indépendant* : le compte de positions de l'outil retombe sur les `gardees` de `tools/n18-jobs.tsv` — **17 208 872** pour le job tenu à l'écart (38531414161), **17 938 594** pour un job appris de tous (38531424497) |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 18 — la perte tenue à l'écart des points de sauvegarde du n° 17** | **38549900154** | l'outil et les réseaux de `reseau/n17-points` à `e7a497d` ; N5l, N5r4, N5r10 à 10, 20, 30 et 40 superlots, sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 35** — lancée à 12 h 29, finie à 12 h 32 | **Deux critères sur quatre ; aucune perte tenue à l'écart ne remonte.** Contrôle exact. L'écart tenu à l'écart − appris croît à chaque point, plus vite avec les seaux — tient ; mais celui de N5r10 au point 10 en vaut déjà les deux tiers, pas moins de la moitié — tombe ; la pénalité des seaux plus petite au point 10 : N5r10 oui (0,00230 contre 0,00279), N5r4 plate à 0,0012 ; N5r10 baisse jusqu'au 40 — tombe. La pénalité des seaux est là dès ~6 passes : le volume, pas la durée (section « N° 18 », la perte des points de sauvegarde) — *Prédiction, écrite avant* (section « N° 18 », les points de sauvegarde) : l'écart tenu à l'écart − appris croît d'un point au suivant, plus vite avec les seaux — celui de N5r10 au point 10 sous la moitié du sien au 40 ; la pénalité des seaux contre N5l plus petite au point 10 qu'au 40 ; la perte tenue à l'écart de N5r10 minimale avant le 40, celle de N5l au 40. *Contrôle* : 19 160 455 et 19 608 724 positions |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
@@ -8543,6 +8543,111 @@ mesuré seul ici</span> :
 - **pertes tenues à l'écart** : N6l sous N5l ; N6m entre les deux ; aucun
   point d'aucun réseau ne remonte — 6,4 passes au plus sur 1,563 G, 13
   pour N6m, quand 25 sur 159 M n'en faisaient remonter aucune.
+
+**La séance, RELEVÉE le 17 oct. à 6 h 30 — faite dans la nuit, les six
+réseaux conformes.** Poussés par Théo sur `reseau/n18` (`32c9604`) et, les
+32 points, sur `reseau/n18-points` (`c04dfe3`) :
+
+| réseau | relecture | confrontation, médian / maximal (admis 15 / 50) | entraînement | estimé |
+|---|---|---|---|---|
+| essai, 1 superlot | exacte, 18 435 764 : 2 328 546 367 | 2 / 16 | 29 s | — |
+| **N6l** | exacte | 6 / 16 | 33 min 53 s | ~33 min |
+| **N6m** | exacte, 8 920 492 : 1 126 989 018 | 5 / 18 | 34 min 07 s | ~33 |
+| **N6v** | exacte, 1 836 408 : 232 052 120 | 4 / 21 | 13 min 40 s | ~13 |
+| **N6r4** | exacte | 4 / 29 | 39 min 29 s | ~39 |
+| **N6r10** | exacte | 7 / 13 | 52 min 15 s | ~53 |
+| **N6l200** | exacte | 3 / 20 | 1 h 07 min 28 s | ~65 |
+
+- **les durées, à 3 % de l'estimé** : ~20,3 s par superlot à 256 unités,
+  ~23,7 et ~31,4 avec quatre et dix seaux de roi — les vitesses du n° 17,
+  à volume dix fois plus grand : les positions vues ne dépendaient pas du
+  volume, comme écrit. Le premier lancement de l'essai, sans les listes
+  dans le terminal (« aucun fichier de données »), n'a rien coûté ;
+- **le journal d'entraînement remonte sur les derniers superlots** —
+  0,0383 au 20ᵉ, 0,0387 au 100ᵉ pour N6l —, comme au n° 17 : ce n'est pas
+  une perte (plus haut, « le journal d'entraînement n'est pas une perte »).
+
+**La perte tenue à l'écart des six réseaux, RELEVÉE le 17 oct. à 6 h 45 —
+les trois attendus tiennent ; doubler les données ne se voit presque plus
+à 100 superlots, et les seaux de roi passent devant.** Run 39003117564,
+cinq minutes. *Le contrôle d'abord* : **17 208 872** et **17 938 594**
+positions, les `gardees` du TSV au chiffre près. Perte moyenne,
+intervalle par partie ; écart à N5l apparié, mêmes positions :
+
+| réseau | tenu à l'écart — 38531414161 | écart à N5l | appris de tous — 38531424497 | tenu − appris |
+|---|---|---|---|---|
+| N5l, pour référence | 0,040336 ± 0,000201 | — | 0,040292 | +0,000044 — deux jobs qu'il n'a jamais vus |
+| **N6v** — 155,8 M, 40 superlots | 0,039793 | **−0,000542 ± 0,000050** | 0,038490 | +0,001303 |
+| **N6m** — 756,7 M, 100 | 0,038991 | **−0,001345 ± 0,000046** | 0,038691 | +0,000300 |
+| **N6l** — 1,563 G, 100 | 0,038942 | **−0,001394 ± 0,000046** | 0,038765 | +0,000177 |
+| **N6l200** — 1,563 G, 200 | 0,038890 | **−0,001446 ± 0,000047** | 0,038722 | +0,000168 |
+| **N6r4** — 1,563 G, 100 | 0,038560 | **−0,001775 ± 0,000050** | 0,038148 | +0,000412 |
+| **N6r10** — 1,563 G, 100 | 0,038534 | **−0,001802 ± 0,000051** | 0,037840 | +0,000694 |
+
+- **les attendus** : N6l sous N5l, à trente intervalles ; N6m entre les
+  deux — **de justesse** : 0,000049 au-dessus de N6l, 3,5 % de ce que N6l
+  gagne sur N5l ; aucun point d'aucun réseau ne remonte — les 32 points
+  descendent jusqu'au dernier, sur les deux jobs ;
+- **la pente, en perte** : de la moitié au tout, à 100 superlots, presque
+  rien. De 155,8 M à 40 superlots (N6v) à 756,7 M à 100 (N6m), beaucoup —
+  mais le calcul change avec le volume, et N6v retient (tenu − appris
+  ×7 celui de N6l) : 25 passes sur peu de données. *Les matchs liront la
+  pente par le critère écrit* ; la perte la dit déjà petite ;
+- **les superlots, en perte** : N6l200 ne gagne que 0,000052 sur N6l. Et
+  son point à 100 (0,040145) est bien au-dessus du N6l final (0,038942) —
+  **la réserve du pas cosinus, vérifiée** : un point au milieu d'un
+  entraînement n'est pas un entraînement plus court ;
+- **les seaux de roi, renversés par le volume** : sur 159 M, N5r4 et N5r10
+  perdaient sur N5l tenu à l'écart ; sur 1,563 G, N6r4 et N6r10 passent
+  devant N6l de 0,00038 et 0,00041. Ils retiennent davantage (tenu − appris
+  0,0004 et 0,0007, contre 0,0002) mais apprennent plus encore. <span>Inférence,
+  confiance moyenne</span> : à ce volume, la capacité limite l'architecture
+  plate plus que les données — le coin « l'architecture sature » du tableau
+  de lecture, que les matchs confirmeront ou non ;
+- **ce que cela ne dit pas** : la force (`CLAUDE.md`, Texel). Les seaux de
+  roi coûtent ~7 % de vitesse au-delà de la largeur (n° 17), et la perte
+  n'en sait rien.
+
+**Les candidats, écrits le 17 oct.** — chacun, sur `2648fb1` (`main` plus
+les réseaux), ne change que `engine/src/nnue.rs` : l'architecture, le
+chemin d'`include_bytes!` et la confrontation de son entraînement recopiée
+dans le test, aux dix-huit positions ; au facteur des marges de `main`,
+2,85 ; `verify.sh --rapide` vert à chaque état, et révoqué aussitôt :
+
+| réseau | candidat | révoqué par |
+|---|---|---|
+| N6l | `e769992` | `a2766fc` |
+| N6m | `0edbe22` | `648a92b` |
+| N6v | `6844597` | `8e76948` |
+| N6r4 | `cd6ed79` | `0384ee7` |
+| N6r10 | `04727b5` | `5a187c8` |
+| N6l200 | `8416e67` | `1bb60b7` |
+
+La référence des matchs contre N5l : **`2648fb1`** — `main` et ses réseaux,
+N5l embarqué.
+
+**La sonde de B8 sur les six — écrite le 17 oct. à 7 h 00, avant de la
+lancer.** Le protocole du n° 17 tel quel : 40 parties de chaque candidat
+contre lui-même à `8+0,08`, `-srand 20260930`, le livre du dépôt ; le
+binaire sondé est le candidat plus `b8-sonde-marges.patch` ; la faite main,
+celle du 12 oct. — son chemin n'a pas bougé : le `reglage!` du n° 19 rend
+le binaire par défaut identique à l'octet. **La règle, recentrée sur le
+facteur en place** : elle s'écrivait « ± 25 % de 2,24 » quand `main` jouait
+2,24 ; `main` joue 2,85 depuis N5l, donc **dans 2,14 à 3,56, le réseau se
+mesure au facteur de `main`** ; hors de cette plage, son facteur d'abord,
+et le candidat porte les deux. *Attendus* — <span>inférence, confiance
+faible</span> : **2,5 à 3,3 pour les quatre plats** — des étiquettes à
+l'échelle de N5l, quand N5l, appris sur celles de N2L, mesurait 2,85 ;
+**2,8 à 3,6 pour N6r4 et N6r10** — N5r10 mesurait 3,38, son score bougeant
+davantage d'une itération à l'autre. Tous dans la plage, sauf peut-être
+N6r10 par le haut.
+
+**Leurs nœuds par seconde — écrits avant.** Le rejeu du n° 15, `--nps`,
+binaires AVX2, dix tours, contre N5l, après la sonde. *Attendus* —
+<span>inférence, confiance moyenne</span> : **N6l, N6m, N6v, N6l200 ×
+0,99 à × 1,01** — la même architecture, le même code, seuls les poids
+changent ; **N6r4 × 0,91 à × 0,95, N6r10 × 0,90 à × 0,94** — N5r4 et
+N5r10 valaient × 0,931 et × 0,918 de N5l le 14 oct.
 
 **La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
 38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
