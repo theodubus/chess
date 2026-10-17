@@ -949,7 +949,8 @@ dernière relève est faite.
 | **N° 18 — N6v contre N5l** | **39006667845, 39006671292, 39006674945, 39006678512** | `6844597` → `2648fb1` (N5l), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 12 h 55** — lancés à 7 h 32, la sonde de B8 relevée avant ; finis ENTIERS entre 12 h 28 et 12 h 48, 6,3 à 6,7 s par partie | **+2,11, +4,34, +5,96 et +9,68 ; +5,52 ± 3,97 en commun, homogènes (p = 0,545)** ; zéro perte au temps. L'étiqueteur seul, démontré de justesse (section « N° 18 — VERDICT »). — l'étiqueteur seul ; *attendu* 0 à +25. *Critère* : celui du n° 17, écrit avant (section « N° 18 — la séance ») |
 | **N° 18 — N6m contre N6l** | **39006681743, 39006685083, 39006688461, 39006691694** | `0edbe22` → `e769992` (N6l), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 12 h 55** — lancés à 7 h 32, la sonde de B8 relevée avant ; finis ENTIERS entre 12 h 28 et 12 h 48, 6,3 à 6,7 s par partie | **−9,31, −6,83, −9,68 et −3,47 ; −7,32 ± 3,53 en commun, homogènes (p = 0,621)** ; zéro perte au temps. **La pente démontrée positive** : un nouveau × 2 de données se justifie (section « N° 18 — VERDICT »). — la pente des données, lue au signe opposé : le candidat est N6m ; *attendu* −20 à 0 (N6l contre N6m, 0 à +20). *Critère* : celui du n° 17, écrit avant (section « N° 18 — la séance ») |
 | **N° 18 — N6l200 contre N6l** | **39006694641, 39006697705, 39006700858, 39006704130** | `8416e67` → `e769992` (N6l), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 12 h 55** — lancés à 7 h 32, la sonde de B8 relevée avant ; finis ENTIERS entre 12 h 28 et 12 h 48, 6,3 à 6,7 s par partie | **+8,32, +7,32, +3,97 et +2,36 ; +5,49 ± 3,55 en commun, homogènes (p = 0,652)** ; zéro perte au temps. La durée paie aussi, démontré (section « N° 18 — VERDICT »). — la durée ; *attendu* 0 à +15. *Critère* : celui du n° 17, écrit avant (section « N° 18 — la séance ») |
-| **N° 18 — N6r10 contre N6r4**, le match direct | **39026852676, 39026855187, 39026857893, 39026860781** | `04727b5` (N6r10) → `cd6ed79` (N6r4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN VOL** — lancés le 17 oct. à 12 h 57, le critère poussé avant (`6c44d66`) ; fin attendue vers 17 h 50–18 h 15, au plus tard 18 h 47 | — *Critère, écrit avant* : **N6r10 embarque si la borne basse est au-dessus de zéro ; sinon N6r4** ; *attendu* −10 à +8, ~−2 (section « N° 18 — VERDICT ») |
+| **N° 18 — N6r10 contre N6r4**, le match direct | **39026852676, 39026855187, 39026857893, 39026860781** | `04727b5` (N6r10) → `cd6ed79` (N6r4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 18 h 15** — lancés à 12 h 57, le critère poussé avant (`6c44d66`) ; finis ENTIERS entre 17 h 54 et 18 h 02, 6,3 à 6,5 s par partie | **−2,73, +2,11, +8,32 et −6,33 ; +0,34 ± 3,59 en commun, HÉTÉROGÈNES (p = 0,026)** — les deux extrêmes sur le même processeur, les runners ne l'expliquent pas ; zéro perte au temps. **Rien de démontré : N6R4 EMBARQUÉ** par le critère (section « N° 18 — VERDICT »). — *Critère, écrit avant* : **N6r10 embarque si la borne basse est au-dessus de zéro ; sinon N6r4** ; *attendu* −10 à +8, ~−2 (section « N° 18 — VERDICT ») |
+| **N° 20 — la sonde de débit, l'étiqueteur N6r4** | **39048761614** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **EN VOL** — lancée le 17 oct. à 18 h 17, ses attendus poussés avant (`e634340`) ; fin vers 18 h 40 | — *Attendus, écrits avant* (section « N° 20 ») : sur un EPYC 7763, **× 0,85 à × 1,00** les 1 287 positions par seconde de N5l ; **12 à 20 %** d'écartées sur les gardées ; **30 à 36 %** de nulles. Hors fourchette, diagnostic avant la vague |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 18 — la perte tenue à l'écart des points de sauvegarde du n° 17** | **38549900154** | l'outil et les réseaux de `reseau/n17-points` à `e7a497d` ; N5l, N5r4, N5r10 à 10, 20, 30 et 40 superlots, sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 35** — lancée à 12 h 29, finie à 12 h 32 | **Deux critères sur quatre ; aucune perte tenue à l'écart ne remonte.** Contrôle exact. L'écart tenu à l'écart − appris croît à chaque point, plus vite avec les seaux — tient ; mais celui de N5r10 au point 10 en vaut déjà les deux tiers, pas moins de la moitié — tombe ; la pénalité des seaux plus petite au point 10 : N5r10 oui (0,00230 contre 0,00279), N5r4 plate à 0,0012 ; N5r10 baisse jusqu'au 40 — tombe. La pénalité des seaux est là dès ~6 passes : le volume, pas la durée (section « N° 18 », la perte des points de sauvegarde) — *Prédiction, écrite avant* (section « N° 18 », les points de sauvegarde) : l'écart tenu à l'écart − appris croît d'un point au suivant, plus vite avec les seaux — celui de N5r10 au point 10 sous la moitié du sien au 40 ; la pénalité des seaux contre N5l plus petite au point 10 qu'au 40 ; la perte tenue à l'écart de N5r10 minimale avant le 40, celle de N5l au 40. *Contrôle* : 19 160 455 et 19 608 724 positions |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
@@ -8824,6 +8825,42 @@ vitesse comprise ; la perte tenue à l'écart met N6r10 devant de 0,00003,
 dans son bruit. *Puissance dite d'avance* : ± 4,3 — un vrai écart de
 quelques Elo ne passera pas la borne, et c'est accepté : à égalité,
 le plus léger embarque.
+
+**Le match direct, RELEVÉ le 17 oct. à 18 h 15 — N6r10 contre N6r4,
++0,34 ± 3,59 : rien de démontré, N6R4 EMBARQUÉ par le critère écrit.**
+Les quatre jobs finis ENTIERS entre 17 h 54 et 18 h 02, 6,34 à 6,51 s par
+partie, zéro perte au temps, zéro coup illégal :
+
+| match | runner, n/s au banc, profondeur en 250 ms | N6r10 contre N6r4 |
+|---|---|---|
+| 39026852676 | EPYC 9V74, 2 598 024, 15 | −2,73 ± 7,12 |
+| 39026855187 | EPYC 9V74, 2 588 234, 15 | +2,11 ± 7,13 |
+| 39026857893 | EPYC 7763, 2 039 954, 14 | +8,32 ± 7,14 |
+| 39026860781 | EPYC 7763, 2 003 233, 13 | −6,33 ± 7,32 |
+| **en commun, 11 200 parties** | | **+0,34 ± 3,59** |
+
+- **le critère, écrit avant** : N6r10 n'embarque que si la borne basse
+  de l'intervalle MIS EN COMMUN dépasse zéro — elle vaut −3,25. **N6r4
+  embarque** : à force égale, le plus rapide et le plus léger ;
+- **`mettre-en-commun.sh` refuse l'homogénéité** : le plus grand écart,
+  entre les deux 7763 (+8,32 et −6,33), z = 2,81, p = 0,026 sous un seul
+  effet (seuil 0,0455). **Les runners ne l'expliquent pas** : les deux
+  extrêmes viennent du MÊME processeur à la même vitesse, quand les deux
+  9V74, un quart plus rapides, sont au milieu. Le résidu reste nommé
+  comme tel — un écart que l'appareil de mesure laisse passer environ une
+  fois sur vingt-deux sous un seul effet ; rien ne le rattache à un
+  régime ;
+- **lu match par match**, le troisième seul passerait la borne (+1,2),
+  le quatrième la frôle dans l'autre sens (borne haute +1,0). Le critère
+  a été écrit sur l'ensemble précisément pour cela : un critère de GAIN
+  lu sur n'importe lequel de quatre matchs multiplierait par ~4 le
+  risque d'en déclarer un à tort. La lecture match par match ne protège
+  que dans le sens prudent — celui d'un correctif qu'on arrête (C22,
+  C31) ;
+- **ce que cela dit des seaux de roi** : à 1,563 G, quatre seaux valent
+  dix, à ± 3,6 près. <span>Inférence, confiance faible</span> : dix
+  seaux, plus de poids pour les mêmes positions, demandent plus de
+  données pour se séparer — le n° 20 le dira peut-être en passant.
 
 **Ce qui suit, écrit avant** : le gagnant embarqué — le candidat
 révoqué remis, sa confrontation déjà recopiée —, `CLAUDE.md` (« L'évaluation
