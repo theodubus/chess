@@ -956,7 +956,10 @@ dernière relève est faite.
 | **N° 18 — N6m contre N6l** | **39006681743, 39006685083, 39006688461, 39006691694** | `0edbe22` → `e769992` (N6l), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 12 h 55** — lancés à 7 h 32, la sonde de B8 relevée avant ; finis ENTIERS entre 12 h 28 et 12 h 48, 6,3 à 6,7 s par partie | **−9,31, −6,83, −9,68 et −3,47 ; −7,32 ± 3,53 en commun, homogènes (p = 0,621)** ; zéro perte au temps. **La pente démontrée positive** : un nouveau × 2 de données se justifie (section « N° 18 — VERDICT »). — la pente des données, lue au signe opposé : le candidat est N6m ; *attendu* −20 à 0 (N6l contre N6m, 0 à +20). *Critère* : celui du n° 17, écrit avant (section « N° 18 — la séance ») |
 | **N° 18 — N6l200 contre N6l** | **39006694641, 39006697705, 39006700858, 39006704130** | `8416e67` → `e769992` (N6l), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 12 h 55** — lancés à 7 h 32, la sonde de B8 relevée avant ; finis ENTIERS entre 12 h 28 et 12 h 48, 6,3 à 6,7 s par partie | **+8,32, +7,32, +3,97 et +2,36 ; +5,49 ± 3,55 en commun, homogènes (p = 0,652)** ; zéro perte au temps. La durée paie aussi, démontré (section « N° 18 — VERDICT »). — la durée ; *attendu* 0 à +15. *Critère* : celui du n° 17, écrit avant (section « N° 18 — la séance ») |
 | **N° 18 — N6r10 contre N6r4**, le match direct | **39026852676, 39026855187, 39026857893, 39026860781** | `04727b5` (N6r10) → `cd6ed79` (N6r4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 18 h 15** — lancés à 12 h 57, le critère poussé avant (`6c44d66`) ; finis ENTIERS entre 17 h 54 et 18 h 02, 6,3 à 6,5 s par partie | **−2,73, +2,11, +8,32 et −6,33 ; +0,34 ± 3,59 en commun, HÉTÉROGÈNES (p = 0,026)** — les deux extrêmes sur le même processeur, les runners ne l'expliquent pas ; zéro perte au temps. **Rien de démontré : N6R4 EMBARQUÉ** par le critère (section « N° 18 — VERDICT »). — *Critère, écrit avant* : **N6r10 embarque si la borne basse est au-dessus de zéro ; sinon N6r4** ; *attendu* −10 à +8, ~−2 (section « N° 18 — VERDICT ») |
-| **N° 20 — la sonde de débit, l'étiqueteur N6r4** | **39048761614** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **EN VOL** — lancée le 17 oct. à 18 h 17, ses attendus poussés avant (`e634340`) ; fin vers 18 h 40 | — *Attendus, écrits avant* (section « N° 20 ») : sur un EPYC 7763, **× 0,85 à × 1,00** les 1 287 positions par seconde de N5l ; **12 à 20 %** d'écartées sur les gardées ; **30 à 36 %** de nulles. Hors fourchette, diagnostic avant la vague |
+| **N° 20 — la sonde de débit, l'étiqueteur N6r4** | **39048761614** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 18 h 39** — lancée le 17 oct. à 18 h 17, ses attendus poussés avant (`e634340`) ; finie à 18 h 38, EPYC 7763 | **1 183 positions par seconde (× 0,919), 19,69 % d'écartées sur les gardées, 34,00 % de nulles — les trois dans l'attendu** ; ~18,4 M gardées par job en moyenne, ~85 jobs pour 1,563 G (section « N° 20 ») — *Attendus, écrits avant* (section « N° 20 ») : sur un EPYC 7763, **× 0,85 à × 1,00** les 1 287 positions par seconde de N5l ; **12 à 20 %** d'écartées sur les gardées ; **30 à 36 %** de nulles. Hors fourchette, diagnostic avant la vague |
+| **N° 20 — la vague 1**, étiquetée par N6r4 | **39050360980** (tenu à l'écart), 39050368395, 39050375091, 39050382143, 39050389029, 39050396724, 39050405996, 39050415152 ; **la seconde moitié** : 39051369039, 39051375413, 39051381991, 39051387892, 39051395719, 39051403904, 39051412411, 39051421014 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — la première moitié lancée le 17 oct. à 18 h 39, ses attendus poussés avant (`330c248`) ; la seconde à 18 h 53, à seize par la décision de Théo, ses attendus poussés avant (`51fefe9`) ; fin vers 0 h 20–0 h 35 | — *Attendus, écrits avant* (section « N° 20 »), pour chaque huitaine : **180 à 260 M positions, 120 à 178 M gardées ; écartées 18,9 à 20,5 % ; nulles 33,2 à 34,8 %**, sur les gardées |
+| **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **EN VOL** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fin attendue vers 21 h 30–22 h, `search.rs` en dernier | — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
+| **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 17 oct. à 18 h 34 ; fin attendue vers 23 h 30 | — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 18 — la perte tenue à l'écart des points de sauvegarde du n° 17** | **38549900154** | l'outil et les réseaux de `reseau/n17-points` à `e7a497d` ; N5l, N5r4, N5r10 à 10, 20, 30 et 40 superlots, sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 35** — lancée à 12 h 29, finie à 12 h 32 | **Deux critères sur quatre ; aucune perte tenue à l'écart ne remonte.** Contrôle exact. L'écart tenu à l'écart − appris croît à chaque point, plus vite avec les seaux — tient ; mais celui de N5r10 au point 10 en vaut déjà les deux tiers, pas moins de la moitié — tombe ; la pénalité des seaux plus petite au point 10 : N5r10 oui (0,00230 contre 0,00279), N5r4 plate à 0,0012 ; N5r10 baisse jusqu'au 40 — tombe. La pénalité des seaux est là dès ~6 passes : le volume, pas la durée (section « N° 18 », la perte des points de sauvegarde) — *Prédiction, écrite avant* (section « N° 18 », les points de sauvegarde) : l'écart tenu à l'écart − appris croît d'un point au suivant, plus vite avec les seaux — celui de N5r10 au point 10 sous la moitié du sien au 40 ; la pénalité des seaux contre N5l plus petite au point 10 qu'au 40 ; la perte tenue à l'écart de N5r10 minimale avant le 40, celle de N5l au 40. *Contrôle* : 19 160 455 et 19 608 724 positions |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
@@ -9231,9 +9234,10 @@ générateur ne change que par l'étiqueteur.
 que les deux moitiés se comparent à volume égal. À ~19,8 M gardées par job
 au n° 18 — le débit de W les fera bouger —, **~79 jobs, plus un tenu à
 l'écart : le PREMIER job lancé de la vague 1**, désigné avant d'en voir le
-compte. **Huit à la fois**, la charge que `nnue-datagen.yml` s'impose par
+compte. <s>**Huit à la fois**, la charge que `nnue-datagen.yml` s'impose par
 les conditions de GitHub (ligne B4) : **~10 vagues de ~6 h, ~2,5 jours**
-si elles s'enchaînent. *Règle de fin, écrite avant* : la génération
+si elles s'enchaînent.</s> **Seize à la fois depuis le 17 oct. au soir**
+(Théo, plus bas) : ~6 vagues, ~1,4 jour. *Règle de fin, écrite avant* : la génération
 s'arrête à la vague dont le cumul atteint 1,563 G gardées — la vague
 entière, même au-delà ; la séance B tirera alors des jobs neufs dans
 l'ordre de lancement jusqu'au volume ancien.
@@ -9254,6 +9258,55 @@ de N5l (1 287 positions par seconde, EPYC 7763 ; 15,72 % d'écartées ;
 - **nulles : 30 à 36 %** — un étiqueteur plus fort en fait un peu plus.
 
 Hors fourchette, on diagnostique avant la vague.
+
+**La sonde, RELEVÉE le 17 oct. à 18 h 39 — les trois chiffres dans leur
+attendu** — <s>18 h 45</s>, l'heure d'abord écrite devançait l'horloge. Run 39048761614, 20 minutes sur un EPYC 7763, quatre fils,
+`x86-64-v3`, `cd6ed79` ; `parties` ne compte que les gardées, `ecartees`
+à part — le dénominateur du n° 18 :
+
+| | la sonde, N6r4 | la sonde de N5l, EPYC 7763 | attendu, écrit avant |
+|---|---|---|---|
+| positions par seconde | **1 183** | 1 287 | × 0,85 à × 1,00 — **× 0,919, dedans** |
+| parties écartées, sur les gardées | **19,69 %** (2 224 sur 11 294) | 15,72 % | 12 à 20 % — dedans, au bord |
+| nulles | **34,00 %** | 31,8 % | 30 à 36 % — dedans |
+
+125,7 positions par partie (126,4 pour N5l), 68,1 % gardées par le filtre
+(67,2 %). Plus d'écartées : le filtre d'ouverture se lit en unités de N6r4
+— la cause que l'attendu nommait ; une partie écartée l'est au premier
+coup, le coût est négligeable. **Le compte** : ~806 positions gardées par
+seconde sur un 7763, soit ~16 M par job de 330 minutes sur ce processeur,
+~18,4 M en moyenne sur le mélange de runners du n° 18 — **~85 jobs pour
+1,563 G, plus le tenu à l'écart : ~11 vagues de huit**.
+
+**La vague 1 — écrite avant de la lancer.** Huit jobs de 330 minutes au
+commit `cd6ed79`, `<embedded>`, 5 000 nœuds, graine « auto » ; **le
+PREMIER lancé est tenu à l'écart**. *Attendus* — <span>inférence,
+confiance moyenne</span>, les vagues de N5l (208 à 268 M positions) à
+× 0,92 : **180 à 260 M positions, 120 à 178 M gardées ; écartées 18,9 à
+20,5 % ; nulles 33,2 à 34,8 %**, sur les gardées.
+
+**Seize à la fois — DÉCIDÉ par Théo le 17 oct. à 18 h 50** : « *Ok pour
+16* », en réponse à la question « huit est-il un maximum ? ». Il ne
+l'était pas : une prudence que je m'étais donnée le 25 sept. La
+documentation de GitHub, lue à sa source (`github/docs`,
+`content/actions/reference/limits.md`), fixe la concurrence des runners
+standard à 20 jobs en Free, 40 en Pro ; trente ont tourné ensemble le
+5 oct. Les conditions (`github/site-policy`, section Actions, relue le
+même jour) ne fixent aucun chiffre — seulement une charge
+« *disproportionate to the benefits provided to users* », un jugement de
+volume que la simultanéité ne change pas : ~85 jobs de 5 h 30, par huit
+ou par seize. **La génération se lance désormais par seize** : ~6 vagues,
+~1,4 jour au lieu de ~2,5.
+
+**La vague 1 complétée à seize — écrit avant de lancer la seconde
+moitié.** Huit jobs de plus, même recette, lancés vingt minutes après les
+huit premiers ; le tenu à l'écart reste 39050360980. *Attendus* : ceux de
+la première moitié, pour chaque huitaine — **180 à 260 M positions, 120 à
+178 M gardées ; écartées 18,9 à 20,5 % ; nulles 33,2 à 34,8 %**.
+
+**La séance A attendra le 18 oct. au soir** — Théo : « *Je pourrais pas
+avant demain soir la session gpu* ». Rien n'en dépend avant : les
+données neuves se génèrent en attendant.
 
 #### La séance B — après le volume
 

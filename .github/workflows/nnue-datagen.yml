@@ -10,8 +10,10 @@
 #
 # Les conditions de GitHub Actions le permettent — lues au source le 25 sept.
 # 2026 (`tools/README.md`, ligne B4) : produire le réseau du dépôt relève de sa
-# production. La même section exclut une charge disproportionnée : on génère
-# donc par quelques jobs à la fois, pas par dizaines.
+# production. La même section exclut une charge disproportionnée — un
+# jugement de volume, sans chiffre : on a d'abord généré par huit jobs à la
+# fois, par prudence ; par seize depuis le 17 oct. 2026 (Théo), la
+# simultanéité ne changeant pas le volume total d'une campagne.
 #
 # # Ce que produit un job
 #
