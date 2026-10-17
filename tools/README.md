@@ -9234,9 +9234,10 @@ générateur ne change que par l'étiqueteur.
 que les deux moitiés se comparent à volume égal. À ~19,8 M gardées par job
 au n° 18 — le débit de W les fera bouger —, **~79 jobs, plus un tenu à
 l'écart : le PREMIER job lancé de la vague 1**, désigné avant d'en voir le
-compte. **Huit à la fois**, la charge que `nnue-datagen.yml` s'impose par
+compte. <s>**Huit à la fois**, la charge que `nnue-datagen.yml` s'impose par
 les conditions de GitHub (ligne B4) : **~10 vagues de ~6 h, ~2,5 jours**
-si elles s'enchaînent. *Règle de fin, écrite avant* : la génération
+si elles s'enchaînent.</s> **Seize à la fois depuis le 17 oct. au soir**
+(Théo, plus bas) : ~6 vagues, ~1,4 jour. *Règle de fin, écrite avant* : la génération
 s'arrête à la vague dont le cumul atteint 1,563 G gardées — la vague
 entière, même au-delà ; la séance B tirera alors des jobs neufs dans
 l'ordre de lancement jusqu'au volume ancien.
@@ -9283,6 +9284,29 @@ PREMIER lancé est tenu à l'écart**. *Attendus* — <span>inférence,
 confiance moyenne</span>, les vagues de N5l (208 à 268 M positions) à
 × 0,92 : **180 à 260 M positions, 120 à 178 M gardées ; écartées 18,9 à
 20,5 % ; nulles 33,2 à 34,8 %**, sur les gardées.
+
+**Seize à la fois — DÉCIDÉ par Théo le 17 oct. à 18 h 50** : « *Ok pour
+16* », en réponse à la question « huit est-il un maximum ? ». Il ne
+l'était pas : une prudence que je m'étais donnée le 25 sept. La
+documentation de GitHub, lue à sa source (`github/docs`,
+`content/actions/reference/limits.md`), fixe la concurrence des runners
+standard à 20 jobs en Free, 40 en Pro ; trente ont tourné ensemble le
+5 oct. Les conditions (`github/site-policy`, section Actions, relue le
+même jour) ne fixent aucun chiffre — seulement une charge
+« *disproportionate to the benefits provided to users* », un jugement de
+volume que la simultanéité ne change pas : ~85 jobs de 5 h 30, par huit
+ou par seize. **La génération se lance désormais par seize** : ~6 vagues,
+~1,4 jour au lieu de ~2,5.
+
+**La vague 1 complétée à seize — écrit avant de lancer la seconde
+moitié.** Huit jobs de plus, même recette, lancés vingt minutes après les
+huit premiers ; le tenu à l'écart reste 39050360980. *Attendus* : ceux de
+la première moitié, pour chaque huitaine — **180 à 260 M positions, 120 à
+178 M gardées ; écartées 18,9 à 20,5 % ; nulles 33,2 à 34,8 %**.
+
+**La séance A attendra le 18 oct. au soir** — Théo : « *Je pourrais pas
+avant demain soir la session gpu* ». Rien n'en dépend avant : les
+données neuves se génèrent en attendant.
 
 #### La séance B — après le volume
 
