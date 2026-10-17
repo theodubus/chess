@@ -8744,6 +8744,92 @@ n° 17 finissaient en 4 h 35 à 5 h 17 —, au plus tard au plafond de
 350 minutes, 13 h 25. Critère, lecture de la pente et attendus : ceux de
 la séance, écrits avant.
 
+#### N° 18 — VERDICT, 17 oct. 2026 : N6r4 +98,74 ± 4,27 et N6r10 +97,30 ± 4,26 Elo à `8+0,08` contre N5l, N6l +76,99 ± 4,00 — les seaux de roi passent devant, un match direct les départage ; doubler les données paie encore (+7,32 ± 3,53)
+
+**Relevé le 17 oct. à 13 h 00.** Les 24 jobs finis ENTIERS entre 12 h 28 et
+12 h 48, 6,32 à 6,72 s par partie, zéro perte au temps, zéro coup
+illégal ; les avertissements « PV continues after… », 0 à 10 par job,
+des deux côtés à parts voisines. Chaque groupe de quatre mis en commun
+par `tools/mettre-en-commun.sh`, homogène :
+
+| comparaison | les quatre jobs | en commun, 11 200 parties | homogénéité | *attendu, écrit avant* |
+|---|---|---|---|---|
+| **N6r4 contre N5l** | +92,85, +101,97, +98,61, +101,57 | **+98,74 ± 4,27** | p = 0,457 | −30 à +40 — **dépassé de loin** |
+| **N6r10 contre N5l** | +99,14, +99,82, +91,52, +98,74 | **+97,30 ± 4,26** | p = 0,531 | −30 à +40 — **dépassé de loin** |
+| **N6l contre N5l** | +76,92, +79,27, +82,41, +69,40 | **+76,99 ± 4,00** | p = 0,113 | +15 à +60 — **dépassé** |
+| N6v contre N5l | +2,11, +4,34, +5,96, +9,68 | **+5,52 ± 3,97** | p = 0,545 | 0 à +25 — dedans, en bas |
+| N6m contre N6l | −9,31, −6,83, −9,68, −3,47 | **−7,32 ± 3,53** | p = 0,621 | −20 à 0 — dedans |
+| N6l200 contre N6l | +8,32, +7,32, +3,97, +2,36 | **+5,49 ± 3,55** | p = 0,652 | 0 à +15 — dedans |
+
+- **le critère, écrit avant** — celui du n° 17 : trois gains démontrés
+  contre N5l dans la décision, N6r4, N6r10 et N6l. **Le meilleur au point
+  est N6r4** (+94,5 à +103,0) ; **l'intervalle du second, N6r10, recoupe
+  le sien** (+93,0 à +101,6) — **un match direct, écrit plus bas**. N6l
+  (+73,0 à +81,0) ne recoupe pas N6r4 : il sort. N6l200, qui ne
+  décidait rien, se place par la chaîne à ~+82,5 ± 5,3 de N5l
+  (<span>inférence, deux intervalles composés</span>) : sous les seaux de
+  roi, sans recoupement avec N6r4 ;
+- **la pente, lue comme écrit avant** : N6l contre N6m — le signe opposé
+  du match — **+7,32 ± 3,53, démontré positif**. La règle écrite le
+  disait : *doubler a encore payé, un nouveau × 2 de données se
+  justifie*. Réserve écrite avec elle : la pente se lit à calcul fixe,
+  100 superlots ; **N6l200 la confirme sous l'autre axe** — deux fois plus
+  de passes sur les mêmes données, +5,49 ± 3,55, démontré aussi. Les deux
+  leviers paient encore, chacun de ~+5 à +7 ;
+- **l'étiqueteur seul** : N6v, les 155,8 M premières positions des
+  données neuves à 40 superlots, comme N5l, **+5,52 ± 3,97** — démontré
+  de justesse (borne basse +1,6), en bas de l'attendu. Presque tout le
+  gain de N6l vient donc du volume : ~+71 sur ~+77
+  (<span>inférence, confiance moyenne</span> : N6v diffère aussi de N6l
+  par la durée, 40 superlots contre 100 — le volume et la durée y sont
+  mêlés) ;
+- **le volume, sa courbe** — par la chaîne, N6m (757 M) ≈ +69,7 de N5l
+  et N6l (1,563 G) +77,0 : ×4,9 de positions depuis N6v rapportent ~+64,
+  le × 2 suivant +7,3. **Concave, comme attendu d'un volume** ; elle ne
+  dit pas où elle s'aplatit tout à fait (<span>inférence</span> : mêmes
+  réserves de durée) ;
+- **les seaux de roi, renversés** : −58,91 et −133,59 contre N4 sur 159 M
+  au n° 17 ; **+98,74 et +97,30 contre N5l sur 1,563 G**, soit ~+22 et
+  ~+20 au-dessus de N6l par la chaîne. *Le remède écrit au n° 17 — le
+  volume, pas moins de durée — était le bon* ; la perte tenue à l'écart
+  l'avait annoncé ce matin ;
+- **la perte tenue à l'écart a rendu l'ORDRE des matchs, réseau pour
+  réseau** : N6r10 ≈ N6r4 < N6l200 < N6l < N6m < N6v < N5l en perte ;
+  N6r4 ≈ N6r10 > N6l200 > N6l > N6m > N6v > N5l en Elo — N6r4 et N6r10
+  s'échangeant dans le bruit des deux mesures. Deuxième famille sur deux
+  où l'ordre retombe (le n° 17 l'avait fait sur trois réseaux).
+  **Ce que cela ne fait pas** : remplacer un match (`CLAUDE.md`, Texel)
+  — l'ÉCHELLE ne se lit pas en perte, et aucun attendu chiffré depuis
+  elle n'a tenu : −0,00139 de perte valait +77, −0,00178 en valait +99 ;
+- **les attendus dépassés le sont tous vers le haut** — le volume n'avait
+  jamais été mesuré seul ici, confiance faible écrite. Les seaux de roi
+  étaient donnés −30 à +40 « sans ordre attendu » : la mesure du n° 17
+  ne disait pas combien ils perdaient faute de données.
+
+**Le match direct — N6r10 contre N6r4, écrit le 17 oct. à 13 h 05, avant de
+le lancer.** Quatre jobs de 2 800 parties à `8+0,08`, graine « auto »
+chacun, le binaire AVX2 des deux côtés : `04727b5` (N6r10) contre
+`cd6ed79` (N6r4), le même code au bit près, le facteur de `main` (2,85)
+des deux côtés. **Critère, écrit avant : N6r10 embarque si la borne basse
+de l'intervalle mis en commun est au-dessus de zéro ; sinon N6r4** — le
+meilleur au point contre N5l, le plus rapide (× 0,982 de N5l contre
+× 0,956) et le plus léger (un binaire de 3,0 Mo contre 5,4 Mo). La règle
+du n° 13 : le second doit démontrer. *Attendu* — <span>inférence, confiance
+faible</span> : **−10 à +8, ~−2** — à 1,4 Elo l'un de l'autre contre N5l,
+vitesse comprise ; la perte tenue à l'écart met N6r10 devant de 0,00003,
+dans son bruit. *Puissance dite d'avance* : ± 4,3 — un vrai écart de
+quelques Elo ne passera pas la borne, et c'est accepté : à égalité,
+le plus léger embarque.
+
+**Ce qui suit, écrit avant** : le gagnant embarqué — le candidat
+révoqué remis, sa confrontation déjà recopiée —, `CLAUDE.md` (« L'évaluation
+qui joue ») et `README.md` mis à jour, la mention d'attribution vérifiée :
+les réseaux du n° 18 n'ont rien appris des données de Leela, la mention
+reste pour N2L et N4L, que `reseaux/` garde ; puis le balayage de mutation
+après la fusion, et la série de C13 du nouveau réseau à 3100. **Son facteur
+des marges** — 2,49 mesuré pour N6r4, 3,31 pour N6r10, 2,85 en place —
+**se mesurera à part, après l'embarquement**, comme écrit avec la sonde.
+
 **La perte tenue à l'écart des réseaux du n° 17, lancée à 9 h 55** — run
 38531523447, `main` à `35f6c7b` : N5l, N5r4 et N5r10 sur le septième job
 du 7 oct. (37625443145, tenu à l'écart) puis sur un job appris
