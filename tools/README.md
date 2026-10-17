@@ -642,6 +642,12 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-10-14 | **N5s — 128 unités, huit seaux de sortie**, n° 17 (`a684ee1` contre `6a71964`) | **+15,58 Elo ± 3,87** sur 11 200 parties à `8+0,08`, homogènes (p = 0,364). Gain démontré, sous N5l sans recoupement ; attendu +3 à +15, au bord |
 | 2026-10-14 | **N5r4 — 256 unités, quatre seaux de roi, huit de sortie**, n° 17 (`7496db3` contre `6a71964`) | **−58,91 Elo ± 4,45** sur 11 200 parties à `8+0,08`, homogènes (p = 0,187). **Régression** ; attendu +10 à +40, manqué de ~70 |
 | 2026-10-14 | **N5r10 — 256 unités, dix seaux de roi, huit de sortie**, n° 17, facteur 3,38 (`d3fe59d` contre `6a71964`) | **−133,59 Elo ± 4,93** sur 11 200 parties à `8+0,08`, hétérogènes (p = 0,009), chaque job sous −120. **Régression** ; attendu −10 à +40, manqué de ~145 |
+| 2026-10-17 | **N6r4 — quatre seaux de roi sur 1,563 G positions**, n° 18, étiquetées par N5l, au facteur de `main` 2,85 (`cd6ed79` contre `2648fb1`, N5l) | **+98,74 Elo ± 4,27** sur 11 200 parties à `8+0,08`, quatre matchs homogènes (p = 0,457), zéro perte au temps. **EMBARQUÉ** — le meilleur au point, et N6r10 ne démontre rien devant lui |
+| 2026-10-17 | **N6r10 — dix seaux de roi**, n° 18 (`04727b5` contre `2648fb1`) | **+97,30 Elo ± 4,26**, homogènes (p = 0,531) ; **contre N6r4 : +0,34 ± 3,59**, quatre matchs hétérogènes (p = 0,026), les runners ne l'expliquant pas — rien de démontré |
+| 2026-10-17 | **N6l — le volume sans seaux de roi**, n° 18 (`e769992` contre `2648fb1`) | **+76,99 Elo ± 4,00**, homogènes (p = 0,113) |
+| 2026-10-17 | **N6v — l'étiqueteur seul**, n° 18, 155,8 M positions à 40 superlots (`6844597` contre `2648fb1`) | **+5,52 Elo ± 3,97**, homogènes — démontré de justesse |
+| 2026-10-17 | **N6l contre N6m — doubler les données**, n° 18, à 100 superlots (`0edbe22` contre `e769992`, signe opposé) | **+7,32 Elo ± 3,53**, homogènes — **la pente démontrée positive** |
+| 2026-10-17 | **N6l200 contre N6l — doubler les passes**, n° 18 (`8416e67` contre `e769992`) | **+5,49 Elo ± 3,55**, homogènes — démontré |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -8861,6 +8867,24 @@ partie, zéro perte au temps, zéro coup illégal :
   dix, à ± 3,6 près. <span>Inférence, confiance faible</span> : dix
   seaux, plus de poids pour les mêmes positions, demandent plus de
   données pour se séparer — le n° 20 le dira peut-être en passant.
+
+**N6r4 embarqué — écrit le 17 oct. à 18 h 25, avant la fusion.** La
+révocation `0384ee7` révoquée : le moteur est celui de `cd6ed79` à
+l'octet (`git diff` vide sur `engine/`). `CLAUDE.md` et `README.md` le
+disent ; la mention d'attribution reste, `reseaux/` gardant N2L et N4L.
+- **le balayage de mutation après la fusion — prédiction** : **163**,
+  chaque fichier à son plafond — `nnue.rs` 2, les deux équivalents ; le
+  code des seaux de roi a eu son crible exact au n° 17 (2), et que le
+  réseau embarqué l'exerce désormais ne peut qu'en tuer davantage.
+  `search.rs` 48 : ses tests évaluent à la main. Un écart d'un ou deux
+  dans `search.rs` ne serait pas une régression du code mais de ce que
+  l'arbre du nouveau réseau exerce dans les tests qui jouent avec lui —
+  il se lirait mutant par mutant ;
+- **la série de C13 à 3100 — attendu** — <span>inférence, confiance
+  faible</span> : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à
+  60 %)**. N5l y rendait ~3 069 ± 25 (45,5 %) ; cette échelle écrase les
+  gains des réseaux à ~0,6 de ce que mesure notre jumeau (section C13),
+  et N6r4 en vaut ~+99 : ~+60 attendus, sous ± 45 de bruit de série.
 
 **Ce qui suit, écrit avant** : le gagnant embarqué — le candidat
 révoqué remis, sa confrontation déjà recopiée —, `CLAUDE.md` (« L'évaluation

@@ -65,8 +65,17 @@ une mesure, pas une préférence.
   un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
   la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
   plus qu'à dégrossir, jamais à trancher.
-- **L'évaluation qui joue est le réseau NNUE embarqué** — **N5l depuis le
-  14 oct. 2026** (n° 17) : les données de N4, un réseau deux fois plus
+- **L'évaluation qui joue est le réseau NNUE embarqué** — **N6r4 depuis le
+  17 oct. 2026** (n° 18) : 256 unités, huit seaux de sortie et **quatre
+  seaux selon la case du roi**, appris sur **1,563 G positions** étiquetées
+  par N5l — × 9,8 ses données — : **+98,74 ± 4,27** contre N5l sur
+  11 200 parties à `8+0,08`. Le volume a renversé les seaux de roi : à dix
+  seaux, +97,30 ± 4,26, et le match direct ne sépare rien (+0,34 ± 3,59) —
+  à force égale, le plus rapide et le plus léger. Sans seaux de roi, le même
+  volume rend +76,99 ± 4,00 ; l'étiqueteur seul +5,52 ± 3,97 ; doubler les
+  données (+7,32) et doubler les passes (+5,49) paient encore, démontrés —
+  d'où le n° 20. Il joue au facteur des marges de `main`, 2,85, sa sonde
+  mesurant 2,49 dans la plage. Avant lui, **N5l du 14 oct.** (n° 17) : les données de N4, un réseau deux fois plus
   large (256 unités) et huit seaux de sortie selon le matériel, son propre
   facteur des marges (2,85) — **+30,29 ± 3,95** contre N4 sur 11 200
   parties à `8+0,08`, malgré × 0,90 de nœuds par seconde. Les mêmes
@@ -99,9 +108,9 @@ une mesure, pas une préférence.
   le mieux**. Licence ODbL : **le jour où un réseau entraîné sur elles est
   embarqué, `README.md` porte la mention d'attribution**, comme celui de
   Stockfish — **fait le 2 oct. 2026 avec N2L**, section « Remerciements ».
-  N5l, qui joue depuis le 14 oct., n'a rien appris d'elles — ni N4 avant
-  lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui en
-  ont appris.
+  N6r4, qui joue depuis le 17 oct., n'a rien appris d'elles — ni N5l ni N4
+  avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
+  en ont appris.
   Plan et faits vérifiés : `tools/README.md`, section n° 7.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Deux binaires livrés, et la mesure se fait sur le binaire AVX2.** Théo,
@@ -206,7 +215,8 @@ une mesure, pas une préférence.
   et l'élagage delta passent par `scaled_margin`, × 2,24 quand un réseau
   joue — **+50,50 ± 5,37 Elo** à `8+0,08` ; la futilité inverse, sondée,
   tient telle quelle. **× 2,85 depuis N5l** (14 oct.), sa sonde le
-  sortant de la plage où le facteur de N2 suffisait ; et le facteur qui
+  sortant de la plage où le facteur de N2 suffisait — N6r4 (17 oct.) y
+  joue aussi, sa sonde (2,49) dans la plage ; et le facteur qui
   ramène à la faite main les marges mesurées au réseau est désormais
   SÉPARÉ et figé à 224 (n° 17) — sans quoi changer de réseau aurait changé
   le banc. L'échelle ne se transpose donc pas en bloc : **elle se
