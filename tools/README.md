@@ -9141,6 +9141,83 @@ si les deux premiers se recoupent. **Critère d'embarquement : celui du
 n° 17**, contre W. La sonde de B8, la perte tenue à l'écart et les nœuds
 par seconde avant, comme au n° 18.
 
+**La séance A — W est N6r4 ; écrite le 17 oct., avant de la demander.**
+L'architecture de N6r4 — quatre seaux de roi, 256 unités, huit de sortie —
+est celle de `4a604ea`, qui l'a entraîné, et de `main` dès la fusion de
+son embarquement ; la séance part de `4a604ea`, qui ne dépend pas de la
+fusion. Les données sont déjà chez Théo, `~/nnue-n18` : rien à
+télécharger. Chaque bloc se colle dans le MÊME terminal, dans l'ordre :
+
+0. **le dépôt à jour, les données, la place** :
+   ```sh
+   cd ~/chess && git status
+   git fetch origin && git switch main && git pull --ff-only
+   ls ~/nnue-n18/*/*.vf | wc -l; df -h ~
+   ```
+   — **316** fichiers `.vf` ; **3 Go libres au moins**, pour les points de
+   sauvegarde (un tous les 10 superlots, 60 en tout). Des fichiers
+   « modifiés », un `--ff-only` qui refuse : s'arrêter et le dire ;
+1. **la liste** — le job tenu à l'écart n'y est jamais :
+   ```sh
+   D=~/nnue-n18; T=~/chess/tools/n18-jobs.tsv
+   TOUS=$(awk -F'\t' -v d=$D '$4=="appris" {print d"/"$1}' $T)
+   echo $TOUS | wc -w
+   ```
+   — **79** ;
+2. **CUDA dans ce terminal** — le bloc « CUDA dans ce terminal » de la
+   séance d'entraînement du n° 7, tel quel ;
+3. **les deux réseaux, d'une traite** — un échec arrête la chaîne :
+   ```sh
+   set -o pipefail
+   cd ~/chess/tools/nnue-train && git checkout 4a604ea &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 200 \
+     --sortie n7p2 $TOUS 2>&1 | tee n7p2.sortie.txt &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 400 \
+     --sortie n7p4 $TOUS 2>&1 | tee n7p4.sortie.txt
+   echo "FIN : $?"; git switch main
+   ```
+   → `RÉSEAU PRÊT : n7p2/shallowred-768x4hm-256-s8-200/quantised.bin`,
+   puis `n7p4/shallowred-768x4hm-256-s8-400/quantised.bin`, et
+   **`FIN : 0`**. Git annonce une « HEAD détachée » au `checkout` : c'est
+   voulu. *Durée* : à 23,7 s par superlot (N6r4, n° 18), **~1 h 20 puis
+   ~2 h 40**, plus une relecture des 79 jobs avant chaque réseau —
+   **~4 h en tout, une soirée ou une nuit**. Interrompue, la chaîne se
+   reprend au réseau qui manque ;
+4. **rapporter** — les deux réseaux sur `reseau/n20a`, un point de
+   sauvegarde tous les 40 superlots sur `reseau/n20a-points` :
+   ```sh
+   cd ~/chess && git switch -c reseau/n20a
+   for c in n7p2:768x4hm-256-s8-200 n7p4:768x4hm-256-s8-400; do
+     n=${c%%:*}; a=${c#*:}; d=tools/nnue-train/$n/shallowred-$a
+     cp $d/quantised.bin reseaux/$n-$a.bin
+     cp $d/log.txt reseaux/$n-$a.log.txt
+     cp tools/nnue-train/$n.sortie.txt reseaux/$n-$a.sortie.txt
+   done
+   git add reseaux/n7p*
+   git commit -m "Réseaux NNUE du n° 20, étape A : N7p2 et N7p4 — plus de passes"
+   git push -u origin reseau/n20a
+   git switch -c reseau/n20a-points
+   mkdir -p reseaux/points-n20a
+   for d in tools/nnue-train/n7p*/shallowred-*; do
+     s=${d##*-}; [ $((s % 40)) -eq 0 ] || continue
+     cp $d/quantised.bin reseaux/points-n20a/$(basename $(dirname $d))-$(basename $d).bin
+   done
+   ls reseaux/points-n20a | wc -l
+   git add reseaux/points-n20a
+   git commit -m "Points de sauvegarde du n° 20, étape A, tous les 40 superlots"
+   git push -u origin reseau/n20a-points
+   git switch main
+   ```
+   — **15** points : 5 pour N7p2, 10 pour N7p4, ~24 Mo. **Garder
+   `~/nnue-n18`** : la séance B en repartira.
+
+*Ce qui suit, écrit avant* : pour chacun, la confrontation recopiée, le
+candidat révoqué aussitôt, la sonde de B8, ses nœuds par seconde ; la
+perte tenue à l'écart des deux et de leurs points, sur 38531414161 ; puis
+**12 jobs de 2 800 parties à `8+0,08`** — N7p2 contre N6r4, N7p4 contre
+N6r4 (la décision), N7p4 contre N7p2 (la mesure) —, critère et attendus
+écrits plus haut.
+
 #### Étape B — plus de données, sur les runners, étiquetées par W
 
 **La recette** : `nnue-datagen.yml` au commit candidat de W — `cd6ed79`
