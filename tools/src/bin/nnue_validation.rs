@@ -30,8 +30,10 @@
 //!   que bullet lit — score et résultat retournés vers le camp au trait par
 //!   `bulletformat` ;
 //! - **la cible** : `0,75 · résultat + 0,25 · σ(score / 400)` — le mélange de
-//!   `make_mapper` (`bullet_lib/src/value.rs`) sous le `ConstantWDL` de
-//!   `tools/nnue-train`, à l'échelle de `nnue::SCALE` ;
+//!   `make_mapper` (`bullet_lib/src/value.rs`) sous le `ConstantWDL` par
+//!   défaut de `tools/nnue-train`, à l'échelle de `nnue::SCALE`. Un réseau
+//!   entraîné sous un autre `--wdl` (n° 20, (d)) se lit ici sous 0,75 : une
+//!   perte commune à tous, pas celle qu'il a minimisée ;
 //! - **la prédiction** : `σ(éval / 400)`, l'évaluation du réseau QUANTIFIÉ par
 //!   le code du moteur — le réseau qui joue, pas celui en flottants que
 //!   l'entraîneur optimise ; les deux diffèrent d'une dizaine de centièmes au
@@ -76,7 +78,7 @@ use cozy_chess::{Board, Piece, Square};
 use shallowred::nnue::{Arch, KING_BUCKETS_4, KING_BUCKETS_10, Network, SCALE};
 use viriformat::dataformat::{Filter, Game};
 
-/// La part du résultat dans la cible : le `ConstantWDL { value: 0.75 }` de
+/// La part du résultat dans la cible : le défaut de `--wdl` de
 /// `tools/nnue-train`. Un test confronte ce nombre au source de l'entraîneur.
 const WDL_BLEND: f64 = 0.75;
 
@@ -488,9 +490,11 @@ mod tests {
         assert!((loss(0, 1.0) - 0.25).abs() < 1e-12);
     }
 
-    /// Le mélange est celui de l'entraîneur : un autre `ConstantWDL` dans
-    /// `tools/nnue-train` ferait mesurer une autre perte que celle qu'il
-    /// minimise, sans que rien ne le signale.
+    /// Le mélange est celui de l'entraîneur par défaut : un autre défaut de
+    /// `--wdl` dans `tools/nnue-train` ferait mesurer une autre perte que
+    /// celle que nos réseaux minimisent, sans que rien ne le signale. Et le
+    /// `ConstantWDL` doit bien recevoir l'option — sans quoi le défaut lu ici
+    /// ne dirait rien de ce qu'entraîne l'entraîneur.
     #[test]
     fn le_melange_est_celui_de_l_entraineur() {
         let source = std::fs::read_to_string(concat!(
@@ -499,8 +503,12 @@ mod tests {
         ))
         .unwrap();
         assert!(
-            source.contains(&format!("wdl::ConstantWDL {{ value: {WDL_BLEND} }}")),
-            "le ConstantWDL de tools/nnue-train n'est plus {WDL_BLEND}"
+            source.contains(&format!("const WDL: f32 = {WDL_BLEND};")),
+            "le défaut de --wdl de tools/nnue-train n'est plus {WDL_BLEND}"
+        );
+        assert!(
+            source.contains("wdl::ConstantWDL { value: options.wdl }"),
+            "le ConstantWDL de tools/nnue-train ne reçoit plus --wdl"
         );
         assert!(
             source.contains(".loss_fn(|output, target| output.sigmoid().squared_error(target))")

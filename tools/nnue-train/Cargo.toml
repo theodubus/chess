@@ -33,8 +33,8 @@ shallowred = { path = "../../engine" }
 # relecture d'un binpack de Leela passe par le même code que l'entraînement.
 sfbinpack = "0.6.4"
 cozy-chess = "0.3.4"
-
-[dev-dependencies]
-# Pour éprouver, dans les tests, le chargeur de binpacks de bullet lui-même :
-# son trait `DataReader` n'est pas réexporté par `bullet_lib`.
+# Le trait `DataReader` des chargeurs de bullet, que `bullet_lib` ne réexporte
+# pas : le mélange de nos données et de celles de Leela l'implémente (n° 20),
+# et les tests éprouvent à travers lui le chargeur de binpacks lui-même. Le
+# même commit que `bullet_lib`.
 bullet-trainer = { git = "https://github.com/jw1912/bullet", rev = "10e7e82ee2f853c13a96962a209e1ac9e3855c7e" }

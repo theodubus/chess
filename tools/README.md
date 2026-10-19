@@ -958,7 +958,9 @@ dernière relève est faite.
 | **N° 18 — N6r10 contre N6r4**, le match direct | **39026852676, 39026855187, 39026857893, 39026860781** | `04727b5` (N6r10) → `cd6ed79` (N6r4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 18 h 15** — lancés à 12 h 57, le critère poussé avant (`6c44d66`) ; finis ENTIERS entre 17 h 54 et 18 h 02, 6,3 à 6,5 s par partie | **−2,73, +2,11, +8,32 et −6,33 ; +0,34 ± 3,59 en commun, HÉTÉROGÈNES (p = 0,026)** — les deux extrêmes sur le même processeur, les runners ne l'expliquent pas ; zéro perte au temps. **Rien de démontré : N6R4 EMBARQUÉ** par le critère (section « N° 18 — VERDICT »). — *Critère, écrit avant* : **N6r10 embarque si la borne basse est au-dessus de zéro ; sinon N6r4** ; *attendu* −10 à +8, ~−2 (section « N° 18 — VERDICT ») |
 | **N° 20 — la sonde de débit, l'étiqueteur N6r4** | **39048761614** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 18 h 39** — lancée le 17 oct. à 18 h 17, ses attendus poussés avant (`e634340`) ; finie à 18 h 38, EPYC 7763 | **1 183 positions par seconde (× 0,919), 19,69 % d'écartées sur les gardées, 34,00 % de nulles — les trois dans l'attendu** ; ~18,4 M gardées par job en moyenne, ~85 jobs pour 1,563 G (section « N° 20 ») — *Attendus, écrits avant* (section « N° 20 ») : sur un EPYC 7763, **× 0,85 à × 1,00** les 1 287 positions par seconde de N5l ; **12 à 20 %** d'écartées sur les gardées ; **30 à 36 %** de nulles. Hors fourchette, diagnostic avant la vague |
 | **N° 20 — la vague 1**, étiquetée par N6r4 | **39050360980** (tenu à l'écart), 39050368395, 39050375091, 39050382143, 39050389029, 39050396724, 39050405996, 39050415152 ; **la seconde moitié** : 39051369039, 39051375413, 39051381991, 39051387892, 39051395719, 39051403904, 39051412411, 39051421014 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 19 oct. à 8 h** — la première moitié lancée le 17 oct. à 18 h 39, ses attendus poussés avant (`330c248`) ; la seconde à 18 h 53, à seize par la décision de Théo, ses attendus poussés avant (`51fefe9`) ; seize succès finis le 18 oct. vers 0 h 25, relevés trente heures plus tard, la session coupée par sa limite d'usage | **195,7 et 235,1 M positions, 133,8 et 160,6 M gardées, 19,28 et 19,31 % d'écartées, 34,35 % de nulles : dans l'attendu sur les quatre chiffres, pour chaque huitaine.** 278,4 M gardées à l'entraînement, le tenu à l'écart à part ; deux EPYC 9V45 à 2 140 et 2 231 positions par seconde (`tools/n20-jobs.tsv`, section « N° 20 », la vague 1) — *Attendus, écrits avant* (section « N° 20 »), pour chaque huitaine : **180 à 260 M positions, 120 à 178 M gardées ; écartées 18,9 à 20,5 % ; nulles 33,2 à 34,8 %**, sur les gardées |
-| **N° 20 — la vague 2**, étiquetée par N6r4 | 39207769953, 39207774644, 39207779296, 39207783907, 39207788940, 39207794261, 39207799756, 39207804571, 39207809343, 39207814612, 39207820057, 39207825098, 39207830049, 39207834616, 39207839915, 39207845597 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 19 oct. à 8 h 04, ses attendus poussés avant (`2bc76fe`) ; fin vers 13 h 45–14 h | — *Attendus, écrits avant* (section « N° 20 », la vague 2) : **les seize, 360 à 520 M positions, 245 à 355 M gardées ; écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %**, sur les gardées ; **1 150 à 1 220 positions par seconde sur un EPYC 7763**, l'image Ubuntu 26 ou non |
+| **N° 20 — la vague 2**, étiquetée par N6r4 | 39207769953, 39207774644, 39207779296, 39207783907, 39207788940, 39207794261, 39207799756, 39207804571, 39207809343, 39207814612, 39207820057, 39207825098, 39207830049, 39207834616, 39207839915, 39207845597 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 19 oct. à 14 h** — lancée à 8 h 04, ses attendus poussés avant (`2bc76fe`) ; quinze succès finis à 13 h 35 ; **39207799756 a perdu son runner** à 11 h 09, sans artefact, pas relancé | **414,2 M positions, 283,0 M gardées, 19,29 % d'écartées, 34,32 % de nulles, EPYC 7763 à 1 161 – 1 193 positions par seconde : dans l'attendu sur les cinq chiffres**, même à quinze ; l'image encore `ubuntu-24.04` ; 561,4 M gardées après deux vagues, quatre vagues encore (`tools/n20-jobs.tsv`, section « N° 20 », la vague 2) — *Attendus, écrits avant* (section « N° 20 », la vague 2) : **les seize, 360 à 520 M positions, 245 à 355 M gardées ; écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %**, sur les gardées ; **1 150 à 1 220 positions par seconde sur un EPYC 7763**, l'image Ubuntu 26 ou non |
+| **N° 20 — la vague 3**, étiquetée par N6r4 | 39248624744, 39248631100, 39248637436, 39248644219, 39248651141, 39248657122, 39248663803, 39248669858, 39248676659, 39248687175, 39248695901, 39248704266, 39248713067, 39248721450, 39248728947, 39248737285 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 19 oct. à 14 h 00, ses attendus poussés avant (`12ce133`) ; fin vers 19 h 35–19 h 45 | — *Attendus, écrits avant* (section « N° 20 », la vague 3) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
+| **Le balayage hebdomadaire du 20 oct.** | — (le run du mardi, 00:00 UTC) | `main` après la PR de la relève de la vague 2 | `mutation.yml` | **À VENIR** — mardi 20 oct. à 2 h 00, heure de Paris | — *Prédiction, écrite avant* : **163**, chaque fichier à son plafond — aucune ligne d'`engine/src/` n'a changé depuis le balayage après N6r4 (163, exact) ; `--pas`, `--wdl` et `--melange` vivent dans `tools/nnue-train`, hors du cliquet |
 | **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **RELEVÉ le 18 oct. à 0 h 40 : 163, EXACT** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fini à 20 h 47 | **Vert, la prédiction exacte** : chaque fichier à son plafond, `nnue.rs` 2, `search.rs` 48 — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
 | **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 18 oct. à 0 h 40** — lancée le 17 oct. à 18 h 34, finie le 18 à 0 h 03 ; Xeon 8573C, 1,64 M n/s, profondeur 13 | **109 − 99 − 92, 51,7 % : 3 112 ± 21, dedans, sous le centre** ; +43 ± 33 sur N5l à la même échelle, 0,44 au point de ce que mesure le jumeau ; zéro perte au temps (section C13, « N6r4, RELEVÉ ») — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
@@ -9136,8 +9138,9 @@ commandes s'écrivent au verdict du match direct, avant de les demander.
 de la retenue dès ~6 passes sur 159 M ; sur 1,563 G, N6r4 retient déjà
 plus que N6l (tenu − appris 0,0004 contre 0,0002). À 25,6 passes, la
 retenue peut l'emporter : un N7p4 PIRE que N7p2 est un résultat possible,
-pas une panne. Les points de sauvegarde, tous les 20 superlots, diront à
-la perte tenue à l'écart où elle commence.
+pas une panne. Les points de sauvegarde — <s>tous les 20 superlots</s>
+écrits tous les 10 par l'entraîneur (`save_rate`), rapportés au dépôt tous
+les 40, plus bas — diront à la perte tenue à l'écart où elle commence.
 
 *Attendus* — <span>inférence, confiance faible</span> :
 - **N7p2 contre W : +3 à +12**, ~+6 — le plat a rendu +5,49 ; plus de
@@ -9358,6 +9361,37 @@ vague 1 et le mélange de runners qu'on a vu :
   touche pas le moteur ; hors de là, on regarde l'image du job avant la
   vague 3.
 
+**La vague 2, RELEVÉE le 19 oct. à 14 h — quinze succès sur seize, dans
+les attendus sur les cinq chiffres.** Lancée à 8 h 04, finie à 13 h 35.
+**39207799756 a perdu son runner** à 11 h 09, après trois heures —
+« *The hosted runner lost communication with the server* », lu dans ses
+annotations —, sans artefact : la panne du n° 13, pas une faute du
+générateur ; pas relancé, le volume se rattrape à la vague suivante.
+
+| | les quinze | attendu, écrit avant, pour seize |
+|---|---|---|
+| positions | **414,2 M** | 360 à 520 M — dedans, même à quinze |
+| gardées par le filtre de l'entraîneur | **283,0 M** | 245 à 355 M — dedans |
+| écartées, sur les gardées | **19,29 %** (19,16 à 19,40 d'un job à l'autre) | 18,9 à 20,5 % — dedans |
+| nulles, sur les gardées | **34,32 %** (34,19 à 34,45) | 33,2 à 34,8 % — dedans |
+| EPYC 7763, positions par seconde | **1 161 à 1 193**, sept runners | 1 150 à 1 220 — dedans |
+
+**L'image n'a pas encore changé** : le journal du premier job dit
+`ubuntu-24.04`, version `20261012.334.1`, avec l'annonce « *will migrate
+to Ubuntu 26 beginning October 19* ». Deux processeurs nouveaux : un Xeon
+6973P-C à 1 225 positions par seconde, un Xeon 8370C à 1 127. **561,4 M
+gardées à l'entraînement après deux vagues** ; il en reste **1 001,6 M** —
+~3,5 vagues à ce rendement, donc **quatre**, la vague 6 entière par la
+règle de fin.
+
+**La vague 3 — écrite avant de la lancer.** Seize jobs, la recette
+inchangée. *Attendus* — <span>inférence, confiance moyenne</span> — ceux
+de la vague 2, que deux vagues ont tenus : **les seize, 360 à 520 M
+positions, 245 à 355 M gardées** — à proportion s'il manque des jobs ;
+**écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **sur un EPYC 7763,
+1 150 à 1 220 positions par seconde**. Si l'image a basculé sur Ubuntu 26
+pour une partie des jobs, les deux groupes se lisent séparément.
+
 #### La séance B — après le volume
 
 Trois réseaux de l'architecture W, aux superlots que l'étape A aura
@@ -9376,6 +9410,129 @@ celui du n° 17. **Chez Théo** : ~8,5 Go de plus à télécharger.
 **Ce qui vient après, noté sans être décidé** : 384 ou 512 unités sur les
 3,1 G — la largeur a payé au n° 17, et elle demande du volume ; le réglage
 du n° 19, qui attendait le réseau du n° 18.
+
+**Leela, à rouvrir ? — question de Théo le 19 oct., ce que le dépôt en dit
+déjà.** Le seul verdict contre l'étage de Leela (N4 contre N4L, −5,43 ±
+4,23) porte sur une recette précise, et elle n'est pas celle d'un réglage
+fin :
+- **un seul fichier** — `training_data.binpack`, T60 et T74 de 2021
+  convertis, 14,4 Go, 58,9 % des positions gardées par le filtre ; son
+  compte de positions n'a pas été relevé : **~3,4 à 5,1 G gardées** par
+  le format (~2 octets par position), <span>inférence, confiance
+  moyenne</span>. 40 superlots, 4 G positions vues : **environ une
+  passe**. Le corpus de Leela est bien plus grand — les seuls fichiers des
+  derniers étages de Stockfish pèsent 141 et 223 Go ;
+- **`--depuis` ne règle pas finement, il ré-entraîne** — lu au code de
+  `tools/nnue-train` : les poids repris, le pas repart à 0,001 et décroît
+  en cosinus sur tous les superlots, comme depuis zéro. Mesuré : N2L et
+  L0 finissent à la même perte sur Leela (0,05815 et 0,05821), N4L et N2L
+  aussi (0,0581 et 0,0582) — **l'étage remplaçait son point de départ plus
+  qu'il ne l'affinait** ;
+- **sur un réseau de 128 unités sans seaux**, et contre des données à nous
+  dont l'étiqueteur a gagné depuis.
+
+**Jamais mesuré** : un vrai réglage fin — pas réduit, quelques superlots —
+depuis le réseau qui joue ; Leela **mêlé** à nos données, l'issue que le
+verdict de N4 nommait (`tools/nnue-train` refuse aujourd'hui les deux
+formats ensemble) ; les seaux de roi, gourmands de volume, nourris de ces
+~4 G. Et un angle voisin : la cible pèse le RÉSULTAT à 0,75 (`wdl`), un
+défaut repris de l'exemple de bullet en septembre, jamais mesuré ici.
+
+**DÉCIDÉ par Théo le 19 oct. — les quatre se testent, puis un cinquième** : « *Ok, on
+testera tout a, b, c et le réglage de la cible d'entraînement (d'une
+manière générale tout ce qui peut faire augmenter l'elo vaut le coup
+d'être testé)* ». Le fichier de Leela et les points de sauvegarde de
+N6r4 — `optimiser_state` compris — sont toujours chez lui. **À faire** :
+- **(a) un vrai réglage fin sur Leela** — depuis le point de sauvegarde
+  de N6r4, au pas réduit, quelques superlots, sur le binpack seul ;
+  mesuré contre N6r4. L'option `--pas` de `tools/nnue-train` est écrite
+  (19 oct.). Se
+  fait avec la séance A, à la demande de Théo — il redemandera le
+  protocole ;
+- **(b) Leela mêlé à nos données** — l'architecture W depuis zéro, nos
+  données et le binpack dans le même entraînement ; mesuré contre le
+  réseau de nos données seules au même volume et aux mêmes superlots.
+  <s>Demande un outillage neuf : `tools/nnue-train` refuse les deux formats
+  ensemble, et leurs échelles diffèrent (330,3 contre 400).</s> L'outillage
+  est écrit le 19 oct., `--melange PART` (plus bas). Avec la séance B,
+  après le volume ;
+- **(c) les architectures gourmandes, nourries du mélange** — sur
+  l'architecture W, (b) donne déjà aux seaux de roi le volume de Leela ;
+  (c) porte ce volume là où il compte le plus, plus de paramètres : dix
+  seaux de roi, 384 ou 512 unités — la largeur a payé au n° 17, les
+  seaux de roi au volume du n° 18. Après (b), sur son verdict ;
+- **(d) le poids du résultat dans la cible** (`wdl`, 0,75 aujourd'hui) —
+  la recette de N6r4 à l'identique (les 1,563 G anciennes, 100
+  superlots), au seul `wdl` près, deux valeurs plus basses ; **N6r4 est
+  le témoin à 0,75**, sans rien ré-entraîner. L'option `--wdl` est écrite
+  (19 oct.) ; lu au source de bullet (`value.rs`, `10e7e82`) : la cible
+  vaut `wdl × résultat + (1 − wdl) × sigmoid(score / échelle)`.
+  Indépendant du volume : peut se faire avec la séance A.
+- **(e) le budget de nœuds de l'étiqueteur** — ajouté par Théo le même
+  jour (« *Ok, note le comme (e)* »). 5 000 nœuds par coup est un « choix
+  non mesuré » depuis A21 (`nnue_datagen.rs`). Doubler le budget rend de
+  meilleures étiquettes — scores plus justes, parties mieux jouées, donc
+  résultats moins bruités — et deux fois moins de positions par heure de
+  runner. Les deux effets ont un voisin mesuré : doubler les données
+  +7,32 ± 3,53 (N6l contre N6m) ; un étiqueteur ~30 Elo plus fort à
+  volume égal +5,52 ± 3,97 (N6v) — quand un doublement de nœuds le rend
+  bien plus fort (~+108 par doublement de temps à `8+0,08`, non mesuré à
+  5 000 nœuds). <span>Inférence, confiance faible</span> : 0 à +20 à
+  volume égal, −7 à +13 à temps de runner égal — **le signe n'est pas
+  connu**. *Le protocole* : la recette de l'étape B — `cd6ed79`, N6r4 —
+  à **10 000 nœuds** (`nnue-datagen.yml` prend déjà `noeuds`, aucun code
+  à écrire), **~780 M positions gardées**, ~4 à 5 vagues de seize ; le
+  témoin à 5 000 nœuds est GRATUIT, les données de l'étape B, même
+  étiqueteur. Deux comparaisons, l'architecture W : **à volume égal**
+  (780 M contre 780 M — la qualité de l'étiquette) et **à temps égal**
+  (780 M à 10 000 contre 1,56 G à 5 000 — la décision). *Son ordre* :
+  **après la génération de l'étape B** — un budget changé en route mêlerait
+  deux étiqueteurs dans la moitié neuve, que l'étape B veut d'un seul — et
+  **après le verdict de (d)** : la cible ne pèse le score qu'à 25 %, et ce
+  que vaut un score plus juste dépend de ce poids.
+
+Les valeurs, les attendus et les critères s'écrivent avec chaque
+protocole, avant de le demander.
+
+**`--pas` et `--wdl`, écrites le 19 oct.** — `tools/nnue-train` : le pas
+de départ de la décroissance en cosinus (défaut 0,001, refusé hors de
+]0 ; 0,01]) et le poids du résultat (défaut 0,75, refusé hors de
+[0 ; 1]) ; sans elles, la recette de tous nos réseaux à l'identique. La
+recette passe par une fonction, `schedule`, qu'un test lit sans GPU ; et
+chaque entraînement l'imprime en tête, pour que sa sortie gardée la dise.
+Trois fautes injectées — le poids, le pas lu, le pas transmis figés à leur
+défaut —, trois attrapées. **Et une garde voisine l'a vu avant la PR** : `nnue_validation.rs`
+confrontait sa perte au TEXTE `ConstantWDL { value: 0.75 }` de
+l'entraîneur, que l'option a remplacé — `verify.sh` rouge, comme il le
+doit. La garde lit désormais le défaut de `--wdl` et vérifie que le
+`ConstantWDL` reçoit l'option ; deux fautes injectées, deux attrapées. Un
+réseau entraîné sous un autre `--wdl` se lit à la validation sous 0,75 :
+une perte commune à tous, pas celle qu'il a minimisée.
+
+**`--melange PART`, écrite le 19 oct. — l'outillage de (b).** bullet n'a
+pas de chargeur mixte (lu au commit épinglé : un chargeur par format,
+`trainer.run` en prend un). `tools/nnue-train` en implémente un,
+`MixedReader`, sur le trait `DataReader` de bullet : le chargeur de nos
+`.vf` et celui des binpacks tournent chacun dans son fil, chacun mélangeant
+déjà son tampon, et leurs positions s'entrelacent **à proportion exacte** —
+la `k`-ième vient de Leela tant que Leela en a fourni moins de `PART × k` ;
+un lot de 16 384 porte la part à une position près, jamais de longues
+séries d'une seule source. **Les scores de Leela sont ramenés à notre
+échelle**, `score × 400 / 330,3` arrondi — la même espérance —, et la cible
+se lit à 400, une seule sigmoïde. Sans `--melange`, les deux formats
+ensemble se refusent toujours ; avec, il les faut tous les deux. La
+relecture vérifie les deux — nos comptes par `--attendu`, l'échelle du
+binpack par son ajustement. `--memoire` se partage entre les deux
+chargeurs ; chaque tranche se copie d'un fil à l'autre, ~1,5 Gio de plus
+au défaut. Quatre tests sans GPU, dont le chargeur de binpacks de bullet
+lui-même lu à travers le mélange ; **six fautes injectées, six
+attrapées** — l'échelle oubliée, la part décalée d'une position, la
+sigmoïde du mélange, un mélange sans `--melange`, les bornes de la part,
+la troncature au lieu de l'arrondi. *Ce qui reste à décider avec le
+protocole* : la part. Le compte des positions que le filtre garde dans le
+binpack n'a jamais été relevé — la relecture n'en décode qu'un
+échantillon —, donc une part « au volume » s'écrirait sur une estimation
+(~3,4 à 5,1 G contre nos 3,1 G).
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
@@ -10827,7 +10984,7 @@ qu'en partie dans le dépôt n'existe pas.*
 
 | chantier | plis | état — et la PROCHAINE action |
 |---|---|---|
-| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. <s>**n° 16 expliqué à Théo le même jour, en attente de sa décision**</s> **n° 16, le chemin A, DÉCIDÉ (Théo) et ÉCRIT le 13 oct.** : sans `unsafe` ni dépendance, **−14,4 ± 1,6 % de temps à arbre identique, ~+24 Elo par l'étalon** ; le code machine lu, 32 `vpmulld` remplacés par 32 `vpmullw` ; <s>crible en vol, fusion à son vert</s> **crible exact à 162, FUSIONNÉ le 13 oct.** (PR #171). **n° 17, étape 1, le 13 oct.** : le produit scalaire par tranches de 256 lève la borne de largeur — même arbre, même temps ; **N3 sur ce code, × 0,93** de nœuds par seconde, ~−11 Elo de vitesse pour 256 unités. **Le plan de la séance du n° 17 écrit** : N5s (128, seaux de sortie), N5l (256), N5r4 et N5r10 (256, seaux de roi), chacun contre N4 ; <s>le code des seaux d'abord, confronté au code de bullet, avant de demander la carte de Théo</s> **le code des seaux écrit le 13 oct. au soir** — confronté au code de bullet, le même arbre et le même temps que `main` sur N4 ; <s>**la séance des quatre réseaux écrite : elle attend la carte de Théo**</s> **la séance RELEVÉE le 14 oct.** — quatre réseaux dans le critère ; la sonde de B8 relevée, N5l (2,85) et N5r10 (3,38) hors de la plage, leurs candidats portant leur facteur ; <s>**seize jobs contre N4 EN VOL depuis 1 h 14**</s> **VERDICT le 14 oct.** : **N5l +30,29 ± 3,95 contre N4, EMBARQUÉ** ; N5s +15,58 ± 3,87 ; les seaux de roi régressent, **N5r4 −58,91, N5r10 −133,59** — la largeur paie, les seaux de roi demandent le volume (n° 18) (section « N° 17 — VERDICT »). **n° 18 CLOS le 16 oct.** : dix vagues, 80 jobs, **1,563 G positions gardées** — × 9,8 ; <s>**la séance de six réseaux écrite, elle attend la carte de Théo**</s> **la séance faite le 17 oct., VERDICT le même jour** : contre N5l, **N6r4 +98,74 ± 4,27, N6r10 +97,30 ± 4,26** — les seaux de roi renversés par le volume —, N6l +76,99 ± 4,00 ; l'étiqueteur seul +5,52 ; doubler les données +7,32, doubler les passes +5,49 — les deux paient encore ; **N6r10 contre N6r4 en vol**, le second doit démontrer (section « N° 18 — VERDICT »). **n° 20 DÉCIDÉ le 17 oct.** (Théo, « *Ok je valide ton conseil* ») : plus de passes — 200 et 400 superlots sur les 1,563 G, sur sa carte — et plus de données — 1,563 G de plus, étiquetées par le réseau gagnant, sur les runners —, chaque effet mesuré séparément (section « N° 20 ») |
+| **la chaîne du réseau — n° 15 à 19** — **DÉCIDÉE le 13 oct.** (Théo) : la part de l'inférence, le SIMD, les seaux sur un réseau élargi, le volume de données, le réglage automatique | <span>inférence, confiance faible</span> : +100 à +300 pour les n° 15 à 18, +15 à +50 pour le n° 19 | <s>**n° 15 EN COURS**</s> **n° 15 RELEVÉ le 13 oct.** : le réseau pèse **16,8 ± 2,0 %** du temps d'un nœud (sortie 10,0, dérivation 7,6) ; N3, deux fois plus large, × 0,887 de nœuds par seconde — la largeur ne coûte que son calcul. <s>**n° 16 expliqué à Théo le même jour, en attente de sa décision**</s> **n° 16, le chemin A, DÉCIDÉ (Théo) et ÉCRIT le 13 oct.** : sans `unsafe` ni dépendance, **−14,4 ± 1,6 % de temps à arbre identique, ~+24 Elo par l'étalon** ; le code machine lu, 32 `vpmulld` remplacés par 32 `vpmullw` ; <s>crible en vol, fusion à son vert</s> **crible exact à 162, FUSIONNÉ le 13 oct.** (PR #171). **n° 17, étape 1, le 13 oct.** : le produit scalaire par tranches de 256 lève la borne de largeur — même arbre, même temps ; **N3 sur ce code, × 0,93** de nœuds par seconde, ~−11 Elo de vitesse pour 256 unités. **Le plan de la séance du n° 17 écrit** : N5s (128, seaux de sortie), N5l (256), N5r4 et N5r10 (256, seaux de roi), chacun contre N4 ; <s>le code des seaux d'abord, confronté au code de bullet, avant de demander la carte de Théo</s> **le code des seaux écrit le 13 oct. au soir** — confronté au code de bullet, le même arbre et le même temps que `main` sur N4 ; <s>**la séance des quatre réseaux écrite : elle attend la carte de Théo**</s> **la séance RELEVÉE le 14 oct.** — quatre réseaux dans le critère ; la sonde de B8 relevée, N5l (2,85) et N5r10 (3,38) hors de la plage, leurs candidats portant leur facteur ; <s>**seize jobs contre N4 EN VOL depuis 1 h 14**</s> **VERDICT le 14 oct.** : **N5l +30,29 ± 3,95 contre N4, EMBARQUÉ** ; N5s +15,58 ± 3,87 ; les seaux de roi régressent, **N5r4 −58,91, N5r10 −133,59** — la largeur paie, les seaux de roi demandent le volume (n° 18) (section « N° 17 — VERDICT »). **n° 18 CLOS le 16 oct.** : dix vagues, 80 jobs, **1,563 G positions gardées** — × 9,8 ; <s>**la séance de six réseaux écrite, elle attend la carte de Théo**</s> **la séance faite le 17 oct., VERDICT le même jour** : contre N5l, **N6r4 +98,74 ± 4,27, N6r10 +97,30 ± 4,26** — les seaux de roi renversés par le volume —, N6l +76,99 ± 4,00 ; l'étiqueteur seul +5,52 ; doubler les données +7,32, doubler les passes +5,49 — les deux paient encore ; **N6r10 contre N6r4 en vol**, le second doit démontrer (section « N° 18 — VERDICT »). **n° 20 DÉCIDÉ le 17 oct.** (Théo, « *Ok je valide ton conseil* ») : plus de passes — 200 et 400 superlots sur les 1,563 G, sur sa carte — et plus de données — 1,563 G de plus, étiquetées par le réseau gagnant, sur les runners —, chaque effet mesuré séparément (section « N° 20 ») ; **Leela rouvert le 19 oct.** (Théo, « *tout ce qui peut faire augmenter l'elo vaut le coup d'être testé* ») : **(a)** un vrai réglage fin sur Leela depuis N6r4, **(b)** Leela mêlé à nos données, **(c)** les architectures gourmandes — dix seaux de roi, 384 ou 512 unités — nourries du mélange, **(d)** le poids du résultat dans la cible (`wdl`, 0,75 jamais mesuré), **(e)** le budget de nœuds de l'étiqueteur (5 000 jamais mesuré ; 10 000 à volume égal et à temps égal) ; (a) et (d) avec la séance A, (b) avec la séance B, (c) après, (e) après la génération de l'étape B et le verdict de (d) (section « N° 20 », « Leela, à rouvrir ? ») |
 | **C22 — la nulle vue à l'horizon** | — correctif de règle | <s>RÉGRESSION, non fusionné</s> sur une base à fausses nulles : −10,44 ± 6,34 Elo à `8+0,08`. **Remesuré sur C23 et FUSIONNÉ le 24 sept.** au titre de la règle — +3,98 ± 6,26 en commun, deux matchs hétérogènes ; voir « C22 sur C23 — VERDICT » |
 | **C31 — la nulle après une parade tranquille, dans la quiescence** — trouvé le 30 sept. par les avertissements de l'arbitre dans C13 | — correctif de règle | <s>**EN VOL**</s> **ARRÊTÉ PAR SON CRITÈRE le 30 sept.** — **−2,43 ± 5,36** en commun, mais la borne haute du match 1 seul est sous zéro (−7,88 ± 7,61) : non fusionné, rustine à l'attic. Trois tests qui échouent sur `main`, le mécanisme mesuré en partie (**61,4 % des recherches**), crible vert — rien de cela ne manque ; ce qui manque est une raison de remesurer : **un fait technique neuf, pas une seconde chance** — section C31 **Le 7 oct., C51** — les échecs tranquilles au premier pli de la quiescence — multiplie par treize ces avertissements côté candidat (157 contre 12) et régresse de −10,77 ± 3,40 : la cécité de la quiescence aux nulles pèse d'autant plus qu'elle joue de tranquilles. Un fait neuf pour C31 le jour où les échecs tranquilles se rouvrent, et alors les deux se mesurent ensemble |
 | **C43 — le gain d'un pion qui reprend en promouvant, dans `see`** — trouvé le 6 oct. par l'oracle `see_check` étendu aux coups tranquilles pour C40 | — correctif de règle | **FUSIONNÉ le 6 oct.** au titre de la règle — **+0,87 ± 4,63** à `8+0,08`, 6 000 parties contre `main` avec C41, aucune borne haute sous zéro, ni l'ensemble ni un match (section n° 9, « C43 et C44 — VERDICT »). <s>**à faire**</s> : `exchange` compte le pion qui reprend sur la dernière rangée comme une dame pour la suite, pas le gain de sa promotion (+880) ; l'oracle le voit sur 33 tranquilles sur 77 020 et une capture sur 5 827. Le protocole des correctifs de règle (`CLAUDE.md`) : un test qui tombe sur l'ancien code, valeur lue sur l'oracle ; le mécanisme mesuré en régime réel — combien de décisions d'élagage et d'ordre en changent ; un match au critère « fusion sauf si la borne haute est sous zéro ». **Écrit et mesuré le 6 oct. vers 05 h 10, pas encore lancé** : quatre lignes dans la boucle d'échange ; le test `un_pion_qui_reprend_en_promouvant_compte_sa_promotion` tombe sur l'ancien code (0 contre −880, valeur de l'oracle) ; l'oracle passe de 21 écarts de capture à 20, la légalité seule. **Le mécanisme, au rejeu du journal du quatrième écran** : 3,5 appels de `see` sur un million changent de valeur à la profondeur 12 (359 sur 102 millions, dont 235 de signe), l'arbre +0,0001 % ; banc 90 646 à la profondeur 7 contre 90 656. <s>**Son match attend la fin des seize jobs du quatrième écran et leur composition** : la boucle d'échange sera commune à `see` et `see_quiet` si C40 entre, et un correctif se mesure sur la base qu'il corrige</s> **C40 n'est pas entré, C41 si** : la rustine s'applique telle quelle, et son match se mesure contre `main` avec C41 — protocole, attendu et puissance écrits avant (section n° 9, « après le quatrième écran »). **Lancé le 6 oct. à 13 h 57** : deux jobs, `d69d2ed` contre `b6d41d7`, relevés à 19 h 30 |
