@@ -958,8 +958,9 @@ dernière relève est faite.
 | **N° 18 — N6r10 contre N6r4**, le match direct | **39026852676, 39026855187, 39026857893, 39026860781** | `04727b5` (N6r10) → `cd6ed79` (N6r4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 18 h 15** — lancés à 12 h 57, le critère poussé avant (`6c44d66`) ; finis ENTIERS entre 17 h 54 et 18 h 02, 6,3 à 6,5 s par partie | **−2,73, +2,11, +8,32 et −6,33 ; +0,34 ± 3,59 en commun, HÉTÉROGÈNES (p = 0,026)** — les deux extrêmes sur le même processeur, les runners ne l'expliquent pas ; zéro perte au temps. **Rien de démontré : N6R4 EMBARQUÉ** par le critère (section « N° 18 — VERDICT »). — *Critère, écrit avant* : **N6r10 embarque si la borne basse est au-dessus de zéro ; sinon N6r4** ; *attendu* −10 à +8, ~−2 (section « N° 18 — VERDICT ») |
 | **N° 20 — la sonde de débit, l'étiqueteur N6r4** | **39048761614** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 18 h 39** — lancée le 17 oct. à 18 h 17, ses attendus poussés avant (`e634340`) ; finie à 18 h 38, EPYC 7763 | **1 183 positions par seconde (× 0,919), 19,69 % d'écartées sur les gardées, 34,00 % de nulles — les trois dans l'attendu** ; ~18,4 M gardées par job en moyenne, ~85 jobs pour 1,563 G (section « N° 20 ») — *Attendus, écrits avant* (section « N° 20 ») : sur un EPYC 7763, **× 0,85 à × 1,00** les 1 287 positions par seconde de N5l ; **12 à 20 %** d'écartées sur les gardées ; **30 à 36 %** de nulles. Hors fourchette, diagnostic avant la vague |
 | **N° 20 — la vague 1**, étiquetée par N6r4 | **39050360980** (tenu à l'écart), 39050368395, 39050375091, 39050382143, 39050389029, 39050396724, 39050405996, 39050415152 ; **la seconde moitié** : 39051369039, 39051375413, 39051381991, 39051387892, 39051395719, 39051403904, 39051412411, 39051421014 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 19 oct. à 8 h** — la première moitié lancée le 17 oct. à 18 h 39, ses attendus poussés avant (`330c248`) ; la seconde à 18 h 53, à seize par la décision de Théo, ses attendus poussés avant (`51fefe9`) ; seize succès finis le 18 oct. vers 0 h 25, relevés trente heures plus tard, la session coupée par sa limite d'usage | **195,7 et 235,1 M positions, 133,8 et 160,6 M gardées, 19,28 et 19,31 % d'écartées, 34,35 % de nulles : dans l'attendu sur les quatre chiffres, pour chaque huitaine.** 278,4 M gardées à l'entraînement, le tenu à l'écart à part ; deux EPYC 9V45 à 2 140 et 2 231 positions par seconde (`tools/n20-jobs.tsv`, section « N° 20 », la vague 1) — *Attendus, écrits avant* (section « N° 20 »), pour chaque huitaine : **180 à 260 M positions, 120 à 178 M gardées ; écartées 18,9 à 20,5 % ; nulles 33,2 à 34,8 %**, sur les gardées |
-| **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **EN VOL** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fin attendue vers 21 h 30–22 h, `search.rs` en dernier | — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
-| **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 17 oct. à 18 h 34 ; fin attendue vers 23 h 30 | — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
+| **N° 20 — la vague 2**, étiquetée par N6r4 | 39207769953, 39207774644, 39207779296, 39207783907, 39207788940, 39207794261, 39207799756, 39207804571, 39207809343, 39207814612, 39207820057, 39207825098, 39207830049, 39207834616, 39207839915, 39207845597 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 19 oct. à 8 h 04, ses attendus poussés avant (`2bc76fe`) ; fin vers 13 h 45–14 h | — *Attendus, écrits avant* (section « N° 20 », la vague 2) : **les seize, 360 à 520 M positions, 245 à 355 M gardées ; écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %**, sur les gardées ; **1 150 à 1 220 positions par seconde sur un EPYC 7763**, l'image Ubuntu 26 ou non |
+| **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **RELEVÉ le 18 oct. à 0 h 40 : 163, EXACT** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fini à 20 h 47 | **Vert, la prédiction exacte** : chaque fichier à son plafond, `nnue.rs` 2, `search.rs` 48 — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
+| **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 18 oct. à 0 h 40** — lancée le 17 oct. à 18 h 34, finie le 18 à 0 h 03 ; Xeon 8573C, 1,64 M n/s, profondeur 13 | **109 − 99 − 92, 51,7 % : 3 112 ± 21, dedans, sous le centre** ; +43 ± 33 sur N5l à la même échelle, 0,44 au point de ce que mesure le jumeau ; zéro perte au temps (section C13, « N6r4, RELEVÉ ») — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
 | **N° 18 — la perte tenue à l'écart des points de sauvegarde du n° 17** | **38549900154** | l'outil et les réseaux de `reseau/n17-points` à `e7a497d` ; N5l, N5r4, N5r10 à 10, 20, 30 et 40 superlots, sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 35** — lancée à 12 h 29, finie à 12 h 32 | **Deux critères sur quatre ; aucune perte tenue à l'écart ne remonte.** Contrôle exact. L'écart tenu à l'écart − appris croît à chaque point, plus vite avec les seaux — tient ; mais celui de N5r10 au point 10 en vaut déjà les deux tiers, pas moins de la moitié — tombe ; la pénalité des seaux plus petite au point 10 : N5r10 oui (0,00230 contre 0,00279), N5r4 plate à 0,0012 ; N5r10 baisse jusqu'au 40 — tombe. La pénalité des seaux est là dès ~6 passes : le volume, pas la durée (section « N° 18 », la perte des points de sauvegarde) — *Prédiction, écrite avant* (section « N° 18 », les points de sauvegarde) : l'écart tenu à l'écart − appris croît d'un point au suivant, plus vite avec les seaux — celui de N5r10 au point 10 sous la moitié du sien au 40 ; la pénalité des seaux contre N5l plus petite au point 10 qu'au 40 ; la perte tenue à l'écart de N5r10 minimale avant le 40, celle de N5l au 40. *Contrôle* : 19 160 455 et 19 608 724 positions |
 | **N° 17 — N5s contre N4**, 128 unités et 8 seaux de sortie | **38483020202, 38483023343, 38483026303, 38483029013** | `a684ee1` → `6a71964` (N4), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 14 oct. à 6 h 50** — lancés à 1 h 14, finis ENTIERS entre 5 h 49 et 6 h 31, 5,9 à 6,8 s par partie | **+15,40, +12,66, +12,66 et +21,62 ; +15,58 ± 3,87 en commun, homogènes (p = 0,364)** ; zéro perte au temps. Gain démontré, sous N5l sans recoupement. — *Attendu, écrit avant* : +3 à +15 — au bord |
@@ -8889,6 +8890,13 @@ disent ; la mention d'attribution reste, `reseaux/` gardant N2L et N4L.
   gains des réseaux à ~0,6 de ce que mesure notre jumeau (section C13),
   et N6r4 en vaut ~+99 : ~+60 attendus, sous ± 45 de bruit de série.
 
+**Relevés le 18 oct. à 0 h 40, écrits le 19.** **Le balayage : 163,
+EXACT** — run 39049958329, fini le 17 oct. à 20 h 47, chaque fichier à
+son plafond, `nnue.rs` 2, `search.rs` 48 ; `Verdict` vert. **La série de
+C13 : 3 112 ± 21** (51,7 %), dans l'attendu, sous son centre — +43 ± 33
+sur N5l, 0,44 au point de ce que mesure le jumeau, sur un runner plus
+lent (section C13, « N6r4, RELEVÉ »).
+
 **Ce qui suit, écrit avant** : le gagnant embarqué — le candidat
 révoqué remis, sa confrontation déjà recopiée —, `CLAUDE.md` (« L'évaluation
 qui joue ») et `README.md` mis à jour, la mention d'attribution vérifiée :
@@ -9915,6 +9923,33 @@ perdu :
   qui se prolonge au-delà d'une répétition que la recherche a vue comme
   nulle, la famille de C22 ; un sur 300 parties ne dit pas de taux. Les
   8 544 « Bestmove does not match… » sont ceux du bridage.
+
+**N6r4, RELEVÉ — dans l'attendu, sous son centre.** Run 39049959724,
+lancée le 17 oct. à 18 h 34 sur `def53d8`, le moteur de `main` après
+l'embarquement de N6r4, finie le 18 oct. à 0 h 03 ; relevée à la relève de
+0 h 40, écrite le 19. Trois parties à la fois, zéro perte au temps, zéro
+coup illégal, aucun moteur perdu :
+
+| série | runner — bench, profondeur en 250 ms | score | écart | estimation | attendu, écrit avant |
+|---|---|---|---|---|---|
+| N6r4 (`def53d8`), AVX2, contre **3100** — 39049959724 | Xeon 8573C — 1 636 414 n/s, 13 | 109 − 99 − 92, 51,7 % | +11,6 ± 21,0 | **3 112 ± 21** | 3 095 à 3 170 : **dedans**, sous le centre (~3 130) |
+
+- **sur N5l, à la même échelle** : 3 112 contre 3 069, **+43 ± 33** —
+  le premier écart entre deux séries qui se sépare de zéro, quand notre
+  jumeau mesurait N6r4 à +98,74 ± 4,27 sur N5l. **0,44 au point** de ce
+  que mesure le jumeau, de 0,10 à 0,77 : sous les ~0,6 qui fondaient
+  l'attendu, compatible avec eux ;
+- **le runner** : le plus lent des séries à 3100 — un Xeon 8573C à
+  1,64 M n/s et la profondeur 13, contre un EPYC 7763 à 2,01 M et 15 pour
+  N5l. Stockfish bridé choisissant à profondeur fixe, une machine plus
+  lente ne peut que nous sous-estimer. <span>Inférence, confiance
+  faible</span> : × 0,81 de vitesse fait ~0,3 doublement, et six fois plus
+  de temps ne rapportait que +40 ± 42 à cette échelle — **~−5** de ce
+  côté, peu de chose devant ± 21 ;
+- **un avertissement côté ShallowRed** : un « PV continues after
+  threefold repetition », comme la série de N5l à 3100, et **aucun**
+  « … after fifty-move rule » (trois pour N5l) ; 8 496 « Bestmove does not
+  match… », ceux du bridage.
 
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
