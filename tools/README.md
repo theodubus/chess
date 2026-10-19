@@ -9136,8 +9136,9 @@ commandes s'écrivent au verdict du match direct, avant de les demander.
 de la retenue dès ~6 passes sur 159 M ; sur 1,563 G, N6r4 retient déjà
 plus que N6l (tenu − appris 0,0004 contre 0,0002). À 25,6 passes, la
 retenue peut l'emporter : un N7p4 PIRE que N7p2 est un résultat possible,
-pas une panne. Les points de sauvegarde, tous les 20 superlots, diront à
-la perte tenue à l'écart où elle commence.
+pas une panne. Les points de sauvegarde — <s>tous les 20 superlots</s>
+écrits tous les 10 par l'entraîneur (`save_rate`), rapportés au dépôt tous
+les 40, plus bas — diront à la perte tenue à l'écart où elle commence.
 
 *Attendus* — <span>inférence, confiance faible</span> :
 - **N7p2 contre W : +3 à +12**, ~+6 — le plat a rendu +5,49 ; plus de

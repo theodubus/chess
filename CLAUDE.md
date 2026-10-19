@@ -12,7 +12,9 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
   **Un autre agent, Codex, y travaille en parallèle** sur ses propres branches
   (`codex/…`) et leurs PR : c'est normal, et ça ne touche qu'à `ui/` (Théo,
   24 sept. 2026). Ne pas les prendre pour des anomalies, ni les fusionner
-  ou les nettoyer. **La V1 de l'interface est finie** (Théo, 6 oct. 2026) :
+  ou les nettoyer. **Des sessions Claude dédiées à l'interface poussent
+  aussi des branches `ccr-…`**, pour des correctifs de `ui/` seulement
+  (Théo, 19 oct. 2026) : même règle. **La V1 de l'interface est finie** (Théo, 6 oct. 2026) :
   on y retouchera peut-être, mais toute retouche de `ui/` est **non
   prioritaire**.
 - `tools/` — arbitres de match, livre d'ouvertures, SPRT. Voir `tools/README.md`.
