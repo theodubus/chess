@@ -9378,6 +9378,33 @@ celui du n° 17. **Chez Théo** : ~8,5 Go de plus à télécharger.
 3,1 G — la largeur a payé au n° 17, et elle demande du volume ; le réglage
 du n° 19, qui attendait le réseau du n° 18.
 
+**Leela, à rouvrir ? — question de Théo le 19 oct., ce que le dépôt en dit
+déjà.** Le seul verdict contre l'étage de Leela (N4 contre N4L, −5,43 ±
+4,23) porte sur une recette précise, et elle n'est pas celle d'un réglage
+fin :
+- **un seul fichier** — `training_data.binpack`, T60 et T74 de 2021
+  convertis, 14,4 Go, 58,9 % des positions gardées par le filtre ; son
+  compte de positions n'a pas été relevé : **~3,4 à 5,1 G gardées** par
+  le format (~2 octets par position), <span>inférence, confiance
+  moyenne</span>. 40 superlots, 4 G positions vues : **environ une
+  passe**. Le corpus de Leela est bien plus grand — les seuls fichiers des
+  derniers étages de Stockfish pèsent 141 et 223 Go ;
+- **`--depuis` ne règle pas finement, il ré-entraîne** — lu au code de
+  `tools/nnue-train` : les poids repris, le pas repart à 0,001 et décroît
+  en cosinus sur tous les superlots, comme depuis zéro. Mesuré : N2L et
+  L0 finissent à la même perte sur Leela (0,05815 et 0,05821), N4L et N2L
+  aussi (0,0581 et 0,0582) — **l'étage remplaçait son point de départ plus
+  qu'il ne l'affinait** ;
+- **sur un réseau de 128 unités sans seaux**, et contre des données à nous
+  dont l'étiqueteur a gagné depuis.
+
+**Jamais mesuré** : un vrai réglage fin — pas réduit, quelques superlots —
+depuis le réseau qui joue ; Leela **mêlé** à nos données, l'issue que le
+verdict de N4 nommait (`tools/nnue-train` refuse aujourd'hui les deux
+formats ensemble) ; les seaux de roi, gourmands de volume, nourris de ces
+~4 G. Et un angle voisin : la cible pèse le RÉSULTAT à 0,75 (`wdl`), un
+défaut repris de l'exemple de bullet en septembre, jamais mesuré ici.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
