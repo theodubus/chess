@@ -9501,7 +9501,13 @@ de départ de la décroissance en cosinus (défaut 0,001, refusé hors de
 recette passe par une fonction, `schedule`, qu'un test lit sans GPU ; et
 chaque entraînement l'imprime en tête, pour que sa sortie gardée la dise.
 Trois fautes injectées — le poids, le pas lu, le pas transmis figés à leur
-défaut —, trois attrapées.
+défaut —, trois attrapées. **Et une garde voisine l'a vu avant la PR** : `nnue_validation.rs`
+confrontait sa perte au TEXTE `ConstantWDL { value: 0.75 }` de
+l'entraîneur, que l'option a remplacé — `verify.sh` rouge, comme il le
+doit. La garde lit désormais le défaut de `--wdl` et vérifie que le
+`ConstantWDL` reçoit l'option ; deux fautes injectées, deux attrapées. Un
+réseau entraîné sous un autre `--wdl` se lit à la validation sous 0,75 :
+une perte commune à tous, pas celle qu'il a minimisée.
 
 **`--melange PART`, écrite le 19 oct. — l'outillage de (b).** bullet n'a
 pas de chargeur mixte (lu au commit épinglé : un chargeur par format,
