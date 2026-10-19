@@ -9419,9 +9419,10 @@ N6r4 — `optimiser_state` compris — sont toujours chez lui. **À faire** :
 - **(b) Leela mêlé à nos données** — l'architecture W depuis zéro, nos
   données et le binpack dans le même entraînement ; mesuré contre le
   réseau de nos données seules au même volume et aux mêmes superlots.
-  Demande un outillage neuf : `tools/nnue-train` refuse les deux formats
-  ensemble, et leurs échelles diffèrent (330,3 contre 400). Avec la
-  séance B, après le volume ;
+  <s>Demande un outillage neuf : `tools/nnue-train` refuse les deux formats
+  ensemble, et leurs échelles diffèrent (330,3 contre 400).</s> L'outillage
+  est écrit le 19 oct., `--melange PART` (plus bas). Avec la séance B,
+  après le volume ;
 - **(c) les architectures gourmandes, nourries du mélange** — sur
   l'architecture W, (b) donne déjà aux seaux de roi le volume de Leela ;
   (c) porte ce volume là où il compte le plus, plus de paramètres : dix
@@ -9446,6 +9447,31 @@ recette passe par une fonction, `schedule`, qu'un test lit sans GPU ; et
 chaque entraînement l'imprime en tête, pour que sa sortie gardée la dise.
 Trois fautes injectées — le poids, le pas lu, le pas transmis figés à leur
 défaut —, trois attrapées.
+
+**`--melange PART`, écrite le 19 oct. — l'outillage de (b).** bullet n'a
+pas de chargeur mixte (lu au commit épinglé : un chargeur par format,
+`trainer.run` en prend un). `tools/nnue-train` en implémente un,
+`MixedReader`, sur le trait `DataReader` de bullet : le chargeur de nos
+`.vf` et celui des binpacks tournent chacun dans son fil, chacun mélangeant
+déjà son tampon, et leurs positions s'entrelacent **à proportion exacte** —
+la `k`-ième vient de Leela tant que Leela en a fourni moins de `PART × k` ;
+un lot de 16 384 porte la part à une position près, jamais de longues
+séries d'une seule source. **Les scores de Leela sont ramenés à notre
+échelle**, `score × 400 / 330,3` arrondi — la même espérance —, et la cible
+se lit à 400, une seule sigmoïde. Sans `--melange`, les deux formats
+ensemble se refusent toujours ; avec, il les faut tous les deux. La
+relecture vérifie les deux — nos comptes par `--attendu`, l'échelle du
+binpack par son ajustement. `--memoire` se partage entre les deux
+chargeurs ; chaque tranche se copie d'un fil à l'autre, ~1,5 Gio de plus
+au défaut. Quatre tests sans GPU, dont le chargeur de binpacks de bullet
+lui-même lu à travers le mélange ; **six fautes injectées, six
+attrapées** — l'échelle oubliée, la part décalée d'une position, la
+sigmoïde du mélange, un mélange sans `--melange`, les bornes de la part,
+la troncature au lieu de l'arrondi. *Ce qui reste à décider avec le
+protocole* : la part. Le compte des positions que le filtre garde dans le
+binpack n'a jamais été relevé — la relecture n'en décode qu'un
+échantillon —, donc une part « au volume » s'écrirait sur une estimation
+(~3,4 à 5,1 G contre nos 3,1 G).
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 

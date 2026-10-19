@@ -34,17 +34,21 @@
 //! ```text
 //! cargo run --release --features cuda -- [--attendu P:N] [--superlots 40]
 //!     [--sortie checkpoints] [--memoire 1024] [--fils 4] [--depuis DOSSIER]
-//!     [--pas 0.001] [--wdl 0.75] DOSSIER_OU_FICHIER...
+//!     [--pas 0.001] [--wdl 0.75] [--melange PART] DOSSIER_OU_FICHIER...
 //! ```
 //!
 //! Un dossier donne tous ses fichiers `.vf` et `.binpack`, triés par nom.
-//! **Les deux formats ne se mélangent pas** dans un même entraînement : leurs
-//! scores n'ont pas la même échelle ([`Format::eval_scale`]).
+//! **Les deux formats ne se mélangent que sur demande** : leurs scores n'ont
+//! pas la même échelle ([`Format::eval_scale`]), et un mélange par mégarde
+//! fausserait la cible. `--melange PART` les mêle (n° 20, (b)) : PART des
+//! positions vues viennent des binpacks, ramenées à notre échelle
+//! ([`MixedReader`]).
 
 use std::fs::File;
 use std::io::{BufReader, Seek};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::mpsc;
 
 use bullet_lib::game::formats::bulletformat::ChessBoard;
 use bullet_lib::game::inputs::{Chess768, ChessBucketsMirrored, SparseInputType};
@@ -58,6 +62,7 @@ use bullet_lib::value::ValueTrainerBuilder;
 use bullet_lib::value::loader::sfbinpack::{MoveType, PieceType, TrainingDataEntry};
 use bullet_lib::value::loader::viribinpack::{Filter, Game};
 use bullet_lib::value::loader::{SfBinpackLoader, ViriBinpackLoader, ViriFilter};
+use bullet_trainer::reader::DataReader;
 use cozy_chess::Board;
 use sfbinpack::{ChunkReader, read_chunk_into};
 use shallowred::nnue::{ARCH, HIDDEN, Network, QA, QB, SCALE};
@@ -95,7 +100,7 @@ const LEELA_SCALE: f32 = 330.3;
 /// assez peu pour quelques secondes.
 const SCALE_SAMPLE: usize = 2_000_000;
 
-/// Les deux formats que le programme sait lire.
+/// Les deux formats que le programme sait lire, et leur mélange.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Format {
     /// `viriformat`, `.vf` : nos données, de `nnue-datagen`.
@@ -103,6 +108,9 @@ enum Format {
     /// Le binpack de Stockfish, `.binpack` : les données de Leela Chess Zero
     /// converties (`tools/README.md`, n° 7, levier 4).
     Binpack,
+    /// Les deux, par `--melange` : les scores des binpacks ramenés à la nôtre.
+    /// Jamais le format d'un fichier.
+    Mixed,
 }
 
 impl Format {
@@ -117,8 +125,113 @@ impl Format {
     /// Unités de score par unité de logit, dans la cible de bullet.
     fn eval_scale(self) -> f32 {
         match self {
-            Self::Viri => SCALE as f32,
+            Self::Viri | Self::Mixed => SCALE as f32,
             Self::Binpack => LEELA_SCALE,
+        }
+    }
+}
+
+/// Un score de binpack de Leela, ramené à l'échelle de nos données : la même
+/// espérance, `sigmoid(score / LEELA_SCALE) = sigmoid(ramené / SCALE)`. Le
+/// filtre des binpacks écarte les scores au-delà de ±10 000, donc ±12 110 au
+/// plus : un `i16` les tient ; la saturation n'est qu'une garde.
+fn to_our_scale(score: i16) -> i16 {
+    let scaled = (f32::from(score) * SCALE as f32 / LEELA_SCALE).round();
+    scaled.clamp(f32::from(i16::MIN), f32::from(i16::MAX)) as i16
+}
+
+/// Taille des tranches qu'un mélange rend à l'entraîneur — qui les recoupe en
+/// lots de 16 384 : la proportion y est exacte à une position près.
+const MIXED_SLICE: usize = 1 << 20;
+
+/// Nos données et celles de Leela dans le MÊME entraînement (n° 20, (b)) :
+/// bullet n'a pas de chargeur mixte. Deux chargeurs tournent chacun dans son
+/// fil — chacun mélange déjà son tampon —, et leurs positions s'entrelacent
+/// à proportion exacte : la `k`-ième position vient de Leela tant que Leela
+/// en a fourni moins de `leela_share × k`. Un lot de 16 384 porte donc la
+/// part demandée, jamais une alternance de longues séries d'une seule
+/// source, qui ferait osciller le gradient. Les scores de Leela passent par
+/// [`to_our_scale`] : la cible se lit à [`SCALE`], une seule sigmoïde.
+#[derive(Clone)]
+struct MixedReader<A, B> {
+    ours: A,
+    leela: B,
+    /// La part des positions tirées de Leela, dans ]0 ; 1[.
+    leela_share: f64,
+    slice: usize,
+}
+
+/// Lance `reader` dans son propre fil ; ses tampons arrivent par le canal.
+/// Quand le récepteur tombe, l'envoi échoue et le chargeur s'arrête de
+/// lui-même — c'est ainsi que les chargeurs de bullet s'arrêtent.
+fn spawn_source<R: DataReader<ChessBoard>>(reader: R) -> mpsc::Receiver<Vec<ChessBoard>> {
+    let (sender, receiver) = mpsc::sync_channel(1);
+    std::thread::spawn(move || {
+        reader.read_chunks(0, |chunk| sender.send(chunk.to_vec()).is_err());
+    });
+    receiver
+}
+
+/// La position suivante d'une source, tampon par tampon ; `None` si elle
+/// s'est tue — un chargeur de bullet boucle sur ses fichiers et ne se tait
+/// pas, mais un fil mort ne doit pas faire boucler le mélange.
+struct Source {
+    receiver: mpsc::Receiver<Vec<ChessBoard>>,
+    buffer: Vec<ChessBoard>,
+    next: usize,
+}
+
+impl Source {
+    fn new(receiver: mpsc::Receiver<Vec<ChessBoard>>) -> Self {
+        Self {
+            receiver,
+            buffer: Vec::new(),
+            next: 0,
+        }
+    }
+
+    fn pop(&mut self) -> Option<ChessBoard> {
+        while self.next == self.buffer.len() {
+            self.buffer = self.receiver.recv().ok()?;
+            self.next = 0;
+        }
+        self.next += 1;
+        Some(self.buffer[self.next - 1])
+    }
+}
+
+impl<A, B> DataReader<ChessBoard> for MixedReader<A, B>
+where
+    A: DataReader<ChessBoard>,
+    B: DataReader<ChessBoard>,
+{
+    // `skip_count` sert à reprendre un entraînement au milieu de ses données ;
+    // nos entraînements partent du premier superlot, et les chargeurs de
+    // binpack de bullet l'ignorent déjà.
+    fn read_chunks<F: FnMut(&[ChessBoard]) -> bool>(&self, _skip_count: usize, mut f: F) {
+        let mut ours = Source::new(spawn_source(self.ours.clone()));
+        let mut leela = Source::new(spawn_source(self.leela.clone()));
+        let (mut taken, mut from_leela) = (0u64, 0u64);
+        let mut slice = Vec::with_capacity(self.slice);
+        loop {
+            taken += 1;
+            let board = if (from_leela as f64) < self.leela_share * taken as f64 {
+                from_leela += 1;
+                leela.pop().map(|mut board| {
+                    board.score = to_our_scale(board.score);
+                    board
+                })
+            } else {
+                ours.pop()
+            };
+            let Some(board) = board else { return };
+            slice.push(board);
+            if slice.len() == self.slice {
+                if f(&slice) {
+                    return;
+                }
+                slice.clear();
+            }
         }
     }
 }
@@ -189,6 +302,8 @@ struct Options {
     resume: Option<PathBuf>,
     initial_lr: f32,
     wdl: f32,
+    /// `--melange` : la part de Leela, si les deux formats se mêlent.
+    leela_share: Option<f64>,
     files: Vec<PathBuf>,
     format: Format,
 }
@@ -203,6 +318,7 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
         resume: None,
         initial_lr: INITIAL_LR,
         wdl: WDL,
+        leela_share: None,
         files: Vec::new(),
         format: Format::Viri,
     };
@@ -265,10 +381,20 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
                 }
                 options.wdl = wdl;
             }
+            "--melange" => {
+                let share: f64 = value("--melange")?
+                    .parse()
+                    .map_err(|_| "--melange attend la part de Leela, un nombre")?;
+                // Aux bornes, ce ne serait plus un mélange : un seul format suffit.
+                if !(share > 0.0 && share < 1.0) {
+                    return Err(format!("--melange {share} : hors de ]0 ; 1["));
+                }
+                options.leela_share = Some(share);
+            }
             path => options.files.extend(data_files(Path::new(path))?),
         }
     }
-    options.format = common_format(&options.files)?;
+    options.format = data_format(&options.files, options.leela_share)?;
     if options.format == Format::Binpack && options.expected.is_some() {
         return Err(
             "--attendu compte nos parties .vf ; un binpack n'a pas de compte attendu".into(),
@@ -277,19 +403,50 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
     Ok(options)
 }
 
-/// Le format commun à tous les fichiers — refusé s'il n'y en a pas un seul :
-/// deux échelles de scores dans un même entraînement fausseraient la cible.
-fn common_format(files: &[PathBuf]) -> Result<Format, String> {
-    let mut formats = files.iter().map(|file| {
-        Format::of(file).ok_or_else(|| format!("{} : ni .vf ni .binpack", file.display()))
-    });
-    let first = formats.next().ok_or("aucun fichier de données")??;
-    for format in formats {
-        if format? != first {
-            return Err("des .vf et des .binpack mêlés : un format par entraînement".into());
+/// Le format de l'entraînement. Un seul format sans `--melange` — deux
+/// échelles de scores mêlées par mégarde fausseraient la cible ; les deux
+/// avec, et seulement les deux.
+fn data_format(files: &[PathBuf], leela_share: Option<f64>) -> Result<Format, String> {
+    if files.is_empty() {
+        return Err("aucun fichier de données".into());
+    }
+    let (mut viri, mut binpack) = (false, false);
+    for file in files {
+        match Format::of(file) {
+            Some(Format::Viri) => viri = true,
+            Some(Format::Binpack) => binpack = true,
+            _ => return Err(format!("{} : ni .vf ni .binpack", file.display())),
         }
     }
-    Ok(first)
+    match (viri, binpack, leela_share) {
+        (true, false, None) => Ok(Format::Viri),
+        (false, true, None) => Ok(Format::Binpack),
+        (true, true, Some(_)) => Ok(Format::Mixed),
+        (true, true, None) => Err(
+            "des .vf et des .binpack mêlés : un format par entraînement, ou --melange PART".into(),
+        ),
+        _ => Err("--melange demande des .vf ET des .binpack".into()),
+    }
+}
+
+/// Les chemins tels que les chargeurs de bullet les prennent.
+fn utf8<'a>(files: &[&'a Path]) -> Result<Vec<&'a str>, String> {
+    files
+        .iter()
+        .map(|file| file.to_str().ok_or_else(|| "chemin non UTF-8".to_owned()))
+        .collect()
+}
+
+/// Les fichiers de nos données, puis ceux de Leela.
+fn split_by_format(files: &[PathBuf]) -> (Vec<&Path>, Vec<&Path>) {
+    let of = |wanted| {
+        files
+            .iter()
+            .filter(|file| Format::of(file) == Some(wanted))
+            .map(PathBuf::as_path)
+            .collect()
+    };
+    (of(Format::Viri), of(Format::Binpack))
 }
 
 /// Un fichier, ou tous les `.vf` et `.binpack` d'un dossier, triés par nom.
@@ -450,49 +607,12 @@ fn run(args: &[String]) -> Result<(), String> {
 
     // ---- 1. Relire les données.
     println!("== 1. Relecture des données ==");
-    match options.format {
-        Format::Viri => {
-            let (mut games, mut positions) = (0u64, 0u64);
-            for file in &options.files {
-                let (g, p) = count(file)?;
-                println!("  {}  {g} parties  {p} positions", file.display());
-                games += g;
-                positions += p;
-            }
-            println!("  total : {games} parties, {positions} positions");
-            if let Some((expected_games, expected_positions)) = options.expected
-                && (games, positions) != (expected_games, expected_positions)
-            {
-                return Err(format!(
-                    "les données ne retombent pas sur les résumés : {games}:{positions} lus, \
-                     {expected_games}:{expected_positions} attendus"
-                ));
-            }
-        }
-        Format::Binpack => {
-            let mut sample = Vec::new();
-            let mut decoded = 0u64;
-            for file in &options.files {
-                let survey = survey_binpack(file, &mut sample, SCALE_SAMPLE)?;
-                println!(
-                    "  {}  {} octets  {} blocs",
-                    file.display(),
-                    survey.bytes,
-                    survey.chunks
-                );
-                decoded += survey.decoded;
-            }
-            if sample.is_empty() {
-                return Err("aucune position gardée par le filtre dans l'échantillon".into());
-            }
-            let fitted = fit_scale(&sample);
-            println!(
-                "  échantillon : {} positions gardées sur {decoded} décodées ; échelle ajustée \
-                 {fitted:.1}, celle de la conversion de Leela {LEELA_SCALE}",
-                sample.len()
-            );
-            check_scale(fitted)?;
-        }
+    let (viri, binpacks) = split_by_format(&options.files);
+    if !viri.is_empty() {
+        reread_viri(&viri, options.expected)?;
+    }
+    if !binpacks.is_empty() {
+        reread_binpacks(&binpacks)?;
     }
 
     // ---- 2 et 3. Entraîner, puis confronter le moteur à l'entraîneur, sur
@@ -504,6 +624,56 @@ fn run(args: &[String]) -> Result<(), String> {
             train_and_check(ChessBucketsMirrored::new(layout.map(usize::from)), &options)
         }
     }
+}
+
+/// Relit nos fichiers jusqu'au dernier octet, et confronte leurs comptes à
+/// `--attendu` s'il est donné.
+fn reread_viri(files: &[&Path], expected: Option<(u64, u64)>) -> Result<(), String> {
+    let (mut games, mut positions) = (0u64, 0u64);
+    for file in files {
+        let (g, p) = count(file)?;
+        println!("  {}  {g} parties  {p} positions", file.display());
+        games += g;
+        positions += p;
+    }
+    println!("  total : {games} parties, {positions} positions");
+    if let Some((expected_games, expected_positions)) = expected
+        && (games, positions) != (expected_games, expected_positions)
+    {
+        return Err(format!(
+            "les données ne retombent pas sur les résumés : {games}:{positions} lus, \
+             {expected_games}:{expected_positions} attendus"
+        ));
+    }
+    Ok(())
+}
+
+/// Relit les binpacks bloc par bloc, et refuse une échelle de scores qui
+/// n'est pas celle de Leela.
+fn reread_binpacks(files: &[&Path]) -> Result<(), String> {
+    let mut sample = Vec::new();
+    let mut decoded = 0u64;
+    for file in files {
+        let survey = survey_binpack(file, &mut sample, SCALE_SAMPLE)?;
+        println!(
+            "  {}  {} octets  {} blocs",
+            file.display(),
+            survey.bytes,
+            survey.chunks
+        );
+        decoded += survey.decoded;
+    }
+    if sample.is_empty() {
+        return Err("aucune position gardée par le filtre dans l'échantillon".into());
+    }
+    let fitted = fit_scale(&sample);
+    println!(
+        "  échantillon : {} positions gardées sur {decoded} décodées ; échelle ajustée \
+         {fitted:.1}, celle de la conversion de Leela {LEELA_SCALE}",
+        sample.len()
+    );
+    check_scale(fitted)?;
+    Ok(())
 }
 
 /// La recette de l'entraînement, hors du GPU pour qu'un test la lise : la
@@ -653,6 +823,34 @@ where
             );
             trainer.run(&schedule, &settings, &loader);
         }
+        Format::Mixed => {
+            let leela_share = options.leela_share.ok_or("un mélange sans --melange")?;
+            let (viri, binpacks) = split_by_format(&options.files);
+            let (viri, binpacks) = (utf8(&viri)?, utf8(&binpacks)?);
+            println!(
+                "  mélange : {:.1} % des positions tirées de Leela, ses scores × {:.4}",
+                100.0 * leela_share,
+                SCALE as f32 / LEELA_SCALE
+            );
+            // La mémoire de `--memoire` partagée entre les deux chargeurs.
+            let reader = MixedReader {
+                ours: ViriBinpackLoader::new_interleave_multiple(
+                    &viri,
+                    options.buffer_mb / 2,
+                    options.threads,
+                    ViriFilter::Builtin(Filter::default()),
+                ),
+                leela: SfBinpackLoader::new_concat_multiple(
+                    &binpacks,
+                    options.buffer_mb / 2,
+                    options.threads,
+                    keep_binpack,
+                ),
+                leela_share,
+                slice: MIXED_SLICE,
+            };
+            trainer.run(&schedule, &settings, &reader);
+        }
     }
 
     // ---- 3. Confronter le moteur à l'entraîneur.
@@ -691,7 +889,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bullet_trainer::reader::DataReader;
     use sfbinpack::CompressedTrainingDataEntryWriter;
     use sfbinpack::chess::color::Color;
     use sfbinpack::chess::coords::Square;
@@ -858,14 +1055,38 @@ mod tests {
     #[test]
     fn un_seul_format_par_entrainement() {
         let files = |names: &[&str]| names.iter().map(PathBuf::from).collect::<Vec<_>>();
-        assert_eq!(common_format(&files(&["a.vf", "b.vf"])), Ok(Format::Viri));
-        assert_eq!(common_format(&files(&["a.binpack"])), Ok(Format::Binpack));
-        assert!(common_format(&files(&["a.vf", "b.binpack"])).is_err());
-        assert!(common_format(&files(&["a.binpack", "b.txt"])).is_err());
-        assert!(common_format(&[]).is_err());
+        assert_eq!(
+            data_format(&files(&["a.vf", "b.vf"]), None),
+            Ok(Format::Viri)
+        );
+        assert_eq!(
+            data_format(&files(&["a.binpack"]), None),
+            Ok(Format::Binpack)
+        );
+        assert!(data_format(&files(&["a.vf", "b.binpack"]), None).is_err());
+        assert!(data_format(&files(&["a.binpack", "b.txt"]), None).is_err());
+        assert!(data_format(&[], None).is_err());
+        // Mêlés sur demande seulement, et seulement s'il y a les deux.
+        let melange = Some(0.5);
+        assert_eq!(
+            data_format(&files(&["a.vf", "b.binpack"]), melange),
+            Ok(Format::Mixed)
+        );
+        assert!(data_format(&files(&["a.vf", "b.vf"]), melange).is_err());
+        assert!(data_format(&files(&["a.binpack"]), melange).is_err());
+        assert!(data_format(&files(&["a.vf", "b.binpack", "c.txt"]), melange).is_err());
+        assert_eq!(
+            split_by_format(&files(&["b.binpack", "a.vf", "c.vf"])),
+            (
+                vec![Path::new("a.vf"), Path::new("c.vf")],
+                vec![Path::new("b.binpack")]
+            )
+        );
         // Et chacun sa sigmoïde.
         assert_eq!(Format::Viri.eval_scale(), SCALE as f32);
         assert_eq!(Format::Binpack.eval_scale(), LEELA_SCALE);
+        // Le mélange se lit à notre échelle : Leela y est ramenée.
+        assert_eq!(Format::Mixed.eval_scale(), SCALE as f32);
         // --attendu compte des parties .vf : sur un binpack, il se refuse.
         let args = |list: &[&str]| list.iter().map(|arg| (*arg).to_owned()).collect::<Vec<_>>();
         assert!(parse_options(&args(&["--attendu", "1:2", "x.binpack"])).is_err());
@@ -1037,6 +1258,146 @@ mod tests {
                 board.score
             );
             assert_eq!(i16::from(board.result), 1 + kept.result);
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn la_part_de_leela_se_borne() {
+        let args = |list: &[&str]| list.iter().map(|arg| (*arg).to_owned()).collect::<Vec<_>>();
+        let ok = parse_options(&args(&["--melange", "0.56", "a.vf", "b.binpack"])).unwrap();
+        assert_eq!((ok.leela_share, ok.format), (Some(0.56), Format::Mixed));
+        // --attendu compte nos .vf : il reste permis dans un mélange.
+        assert!(
+            parse_options(&args(&[
+                "--attendu",
+                "1:2",
+                "--melange",
+                "0.5",
+                "a.vf",
+                "b.binpack"
+            ]))
+            .is_ok()
+        );
+        for part in ["0", "1", "-0.1", "1.5", "NaN", "moitié"] {
+            assert!(
+                parse_options(&args(&["--melange", part, "a.vf", "b.binpack"])).is_err(),
+                "--melange {part} devait se refuser"
+            );
+        }
+    }
+
+    #[test]
+    fn un_score_de_leela_garde_son_esperance_a_notre_echelle() {
+        assert_eq!(to_our_scale(0), 0);
+        assert_eq!(to_our_scale(3303), 4000);
+        assert_eq!(to_our_scale(-3303), -4000);
+        // Arrondi, pas tronqué : 3 × 400 / 330,3 = 3,63.
+        assert_eq!((to_our_scale(3), to_our_scale(-3)), (4, -4));
+        // Le plus grand score que le filtre laisse passer tient dans un i16.
+        assert_eq!(to_our_scale(10_000), 12_110);
+        // Au-delà, la garde sature au lieu de déborder.
+        assert_eq!(to_our_scale(i16::MAX), i16::MAX);
+        assert_eq!(to_our_scale(i16::MIN), i16::MIN);
+        // La même espérance des deux côtés.
+        let expectation = |score: f32, scale: f32| 1.0 / (1.0 + (-score / scale).exp());
+        for score in [-2000i16, -150, 37, 900] {
+            let ours = expectation(f32::from(to_our_scale(score)), SCALE as f32);
+            assert!((ours - expectation(f32::from(score), LEELA_SCALE)).abs() < 1e-3);
+        }
+    }
+
+    /// Une source qui rend toujours le même tampon, comme un chargeur de
+    /// bullet qui boucle sur un fichier.
+    #[derive(Clone)]
+    struct Repeat(Vec<ChessBoard>);
+
+    impl DataReader<ChessBoard> for Repeat {
+        fn read_chunks<F: FnMut(&[ChessBoard]) -> bool>(&self, _: usize, mut f: F) {
+            while !f(&self.0) {}
+        }
+    }
+
+    fn scored(score: i16) -> ChessBoard {
+        ChessBoard {
+            score,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn le_melange_tient_sa_part_dans_chaque_tranche_et_rameme_leela_a_notre_echelle() {
+        // Des tampons de tailles premières entre elles et avec la tranche :
+        // la part ne doit rien devoir à un alignement.
+        let reader = MixedReader {
+            ours: Repeat(vec![scored(100); 7]),
+            leela: Repeat(vec![scored(3303); 5]),
+            leela_share: 0.25,
+            slice: 1000,
+        };
+        let mut slices = 0;
+        reader.read_chunks(0, |slice| {
+            assert_eq!(slice.len(), 1000);
+            let leela = slice.iter().filter(|board| board.score == 4000).count();
+            let ours = slice.iter().filter(|board| board.score == 100).count();
+            assert_eq!((leela, ours), (250, 750), "tranche {slices}");
+            slices += 1;
+            slices == 4
+        });
+        // Et la lecture s'arrête quand l'entraîneur le demande.
+        assert_eq!(slices, 4);
+        // Une part qui ne tombe pas juste : à une position près, à chaque
+        // tranche, et jamais deux positions de Leela d'affilée sous 1/2.
+        let reader = MixedReader {
+            ours: Repeat(vec![scored(1); 3]),
+            leela: Repeat(vec![scored(2); 11]),
+            leela_share: 0.3,
+            slice: 997,
+        };
+        let mut seen = (0u64, 0u64);
+        reader.read_chunks(0, |slice| {
+            for pair in slice.windows(2) {
+                assert!(!(pair[0].score != 1 && pair[1].score != 1));
+            }
+            seen.0 += slice.iter().filter(|board| board.score != 1).count() as u64;
+            seen.1 += slice.len() as u64;
+            seen.1 >= 997 * 5
+        });
+        let expected = 0.3 * seen.1 as f64;
+        assert!((seen.0 as f64 - expected).abs() <= 1.0, "{seen:?}");
+    }
+
+    #[test]
+    fn le_melange_lit_les_binpacks_par_le_chargeur_de_bullet() {
+        let dir = scratch("melange");
+        let path = dir.join("essai.binpack");
+        let entries = write_binpack(&path);
+        let marker = i16::MIN + 7;
+        let reader = MixedReader {
+            ours: Repeat(vec![scored(marker); 13]),
+            leela: SfBinpackLoader::new(path.to_str().unwrap(), 1, 1, keep_binpack),
+            leela_share: 0.5,
+            slice: 4096,
+        };
+        let mut boards = Vec::new();
+        reader.read_chunks(0, |slice| {
+            boards.extend_from_slice(slice);
+            true
+        });
+        let leela: Vec<_> = boards
+            .iter()
+            .filter(|board| board.score != marker)
+            .collect();
+        assert_eq!(leela.len(), 2048);
+        for board in leela {
+            // Une position gardée du fichier, son score ramené à notre échelle.
+            assert!(
+                entries
+                    .iter()
+                    .any(|entry| keep_binpack(entry) && to_our_scale(entry.score) == board.score),
+                "score {} : pas un score ramené du fichier",
+                board.score
+            );
         }
         let _ = std::fs::remove_dir_all(&dir);
     }
