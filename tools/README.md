@@ -957,7 +957,7 @@ dernière relève est faite.
 | **N° 18 — N6l200 contre N6l** | **39006694641, 39006697705, 39006700858, 39006704130** | `8416e67` → `e769992` (N6l), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 12 h 55** — lancés à 7 h 32, la sonde de B8 relevée avant ; finis ENTIERS entre 12 h 28 et 12 h 48, 6,3 à 6,7 s par partie | **+8,32, +7,32, +3,97 et +2,36 ; +5,49 ± 3,55 en commun, homogènes (p = 0,652)** ; zéro perte au temps. La durée paie aussi, démontré (section « N° 18 — VERDICT »). — la durée ; *attendu* 0 à +15. *Critère* : celui du n° 17, écrit avant (section « N° 18 — la séance ») |
 | **N° 18 — N6r10 contre N6r4**, le match direct | **39026852676, 39026855187, 39026857893, 39026860781** | `04727b5` (N6r10) → `cd6ed79` (N6r4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 17 oct. à 18 h 15** — lancés à 12 h 57, le critère poussé avant (`6c44d66`) ; finis ENTIERS entre 17 h 54 et 18 h 02, 6,3 à 6,5 s par partie | **−2,73, +2,11, +8,32 et −6,33 ; +0,34 ± 3,59 en commun, HÉTÉROGÈNES (p = 0,026)** — les deux extrêmes sur le même processeur, les runners ne l'expliquent pas ; zéro perte au temps. **Rien de démontré : N6R4 EMBARQUÉ** par le critère (section « N° 18 — VERDICT »). — *Critère, écrit avant* : **N6r10 embarque si la borne basse est au-dessus de zéro ; sinon N6r4** ; *attendu* −10 à +8, ~−2 (section « N° 18 — VERDICT ») |
 | **N° 20 — la sonde de débit, l'étiqueteur N6r4** | **39048761614** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 18 h 39** — lancée le 17 oct. à 18 h 17, ses attendus poussés avant (`e634340`) ; finie à 18 h 38, EPYC 7763 | **1 183 positions par seconde (× 0,919), 19,69 % d'écartées sur les gardées, 34,00 % de nulles — les trois dans l'attendu** ; ~18,4 M gardées par job en moyenne, ~85 jobs pour 1,563 G (section « N° 20 ») — *Attendus, écrits avant* (section « N° 20 ») : sur un EPYC 7763, **× 0,85 à × 1,00** les 1 287 positions par seconde de N5l ; **12 à 20 %** d'écartées sur les gardées ; **30 à 36 %** de nulles. Hors fourchette, diagnostic avant la vague |
-| **N° 20 — la vague 1**, étiquetée par N6r4 | **39050360980** (tenu à l'écart), 39050368395, 39050375091, 39050382143, 39050389029, 39050396724, 39050405996, 39050415152 ; **la seconde moitié** : 39051369039, 39051375413, 39051381991, 39051387892, 39051395719, 39051403904, 39051412411, 39051421014 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — la première moitié lancée le 17 oct. à 18 h 39, ses attendus poussés avant (`330c248`) ; la seconde à 18 h 53, à seize par la décision de Théo, ses attendus poussés avant (`51fefe9`) ; fin vers 0 h 20–0 h 35 | — *Attendus, écrits avant* (section « N° 20 »), pour chaque huitaine : **180 à 260 M positions, 120 à 178 M gardées ; écartées 18,9 à 20,5 % ; nulles 33,2 à 34,8 %**, sur les gardées |
+| **N° 20 — la vague 1**, étiquetée par N6r4 | **39050360980** (tenu à l'écart), 39050368395, 39050375091, 39050382143, 39050389029, 39050396724, 39050405996, 39050415152 ; **la seconde moitié** : 39051369039, 39051375413, 39051381991, 39051387892, 39051395719, 39051403904, 39051412411, 39051421014 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 19 oct. à 8 h** — la première moitié lancée le 17 oct. à 18 h 39, ses attendus poussés avant (`330c248`) ; la seconde à 18 h 53, à seize par la décision de Théo, ses attendus poussés avant (`51fefe9`) ; seize succès finis le 18 oct. vers 0 h 25, relevés trente heures plus tard, la session coupée par sa limite d'usage | **195,7 et 235,1 M positions, 133,8 et 160,6 M gardées, 19,28 et 19,31 % d'écartées, 34,35 % de nulles : dans l'attendu sur les quatre chiffres, pour chaque huitaine.** 278,4 M gardées à l'entraînement, le tenu à l'écart à part ; deux EPYC 9V45 à 2 140 et 2 231 positions par seconde (`tools/n20-jobs.tsv`, section « N° 20 », la vague 1) — *Attendus, écrits avant* (section « N° 20 »), pour chaque huitaine : **180 à 260 M positions, 120 à 178 M gardées ; écartées 18,9 à 20,5 % ; nulles 33,2 à 34,8 %**, sur les gardées |
 | **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **EN VOL** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fin attendue vers 21 h 30–22 h, `search.rs` en dernier | — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
 | **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN VOL** — lancée le 17 oct. à 18 h 34 ; fin attendue vers 23 h 30 | — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
 | **N° 18 — la perte tenue à l'écart des réseaux du n° 17** | **38531523447** | l'outil de `main` à `35f6c7b` ; N5l, N5r4, N5r10 sur 37625443145 (tenu à l'écart) puis 37625438110 (appris) | `nnue-validation.yml` | **RELEVÉE à 10 h 15** — lancée à 9 h 55, finie à 9 h 57 | **La prédiction tient, sur ses deux critères : les seaux de roi retiennent.** Contrôle exact (19 160 455 et 19 608 724). Tenu à l'écart : N5r4 **+0,001230 ± 0,000040**, N5r10 **+0,002788 ± 0,000048** au-dessus de N5l (0,042157) ; appris : −0,001565 et −0,003459 en dessous — l'ordre s'inverse ; l'écart appris / tenu à l'écart × 3,3 et × 6,2 celui de N5l (section « N° 18 — le volume ») — *Prédiction, écrite avant* : si les seaux de roi retiennent, leur perte tenue à l'écart dépasse celle de N5l, ou l'écart appris / tenu à l'écart croît avec les seaux ; sinon l'inférence du n° 17 est réfutée. *Contrôle* : 19 160 455 et 19 608 724 positions, les `retenues_filtre_defaut` des deux jobs |
@@ -9307,6 +9307,48 @@ la première moitié, pour chaque huitaine — **180 à 260 M positions, 120 à
 **La séance A attendra le 18 oct. au soir** — Théo : « *Je pourrais pas
 avant demain soir la session gpu* ». Rien n'en dépend avant : les
 données neuves se génèrent en attendant.
+
+**La vague 1, RELEVÉE le 19 oct. à 8 h — seize succès, dans les
+attendus sur les quatre chiffres, pour chaque huitaine.** Finie le 18 oct.
+vers 0 h 25 ; relevée trente heures plus tard, la session ayant été
+coupée par sa limite d'usage — trente heures de runners perdues, pas une
+donnée. Les comptes, job par job : `tools/n20-jobs.tsv`.
+
+| | première huitaine | seconde huitaine | attendu, écrit avant, par huitaine |
+|---|---|---|---|
+| positions | **195,7 M** | **235,1 M** | 180 à 260 M — dedans |
+| gardées par le filtre de l'entraîneur | **133,8 M** | **160,6 M** | 120 à 178 M — dedans |
+| écartées, sur les gardées | **19,28 %** | **19,31 %** | 18,9 à 20,5 % — dedans |
+| nulles, sur les gardées | **34,35 %** | **34,35 %** | 33,2 à 34,8 % — dedans |
+
+D'un job à l'autre, écartées 19,15 à 19,51 %, nulles 34,16 à 34,55 %.
+Les runners : neuf EPYC 7763 à **1 177 – 1 191** positions par seconde —
+la sonde en rendait 1 183 —, deux Xeon 8573C à 1 179 et 1 221, deux EPYC
+9V74 à 1 564 et 1 577, **deux EPYC 9V45 à 2 140 et 2 231**, presque deux
+7763 chacun ; la seconde huitaine doit son volume à ces deux-là. **278,4 M
+gardées à l'entraînement** — le tenu à l'écart (39050360980) en garde
+16,0 M à part. Il en reste **1 284,6 M jusqu'au volume ancien : ~4,4
+vagues à ce rendement, donc cinq** par la règle de fin (la vague 6
+entière).
+
+**La vague 2 — écrite avant de la lancer.** Seize jobs, la recette de la
+vague 1 à l'identique : `cd6ed79`, `<embedded>`, 5 000 nœuds, graine
+« auto », 330 minutes, `x86-64-v3`. **L'image des runners a pu changer**
+— `ubuntu-latest` passe à Ubuntu 26 à partir du 19 oct. (« Ce qu'il faut
+surveiller ») : la toolchain est épinglée, le générateur n'emploie rien
+que le runner installe, donc rien ne doit bouger — et les attendus le
+vérifient. *Attendus* — <span>inférence, confiance moyenne</span>, la
+vague 1 et le mélange de runners qu'on a vu :
+- **les seize : 360 à 520 M positions, 245 à 355 M gardées** — seize
+  7763 en feraient ~375 M, la vague 1 en a fait 431 M ; le haut admet
+  cinq 9V45. Une huitaine peut sortir de 180 – 260 M par le tirage des
+  runners sans que rien soit faux : quatre 9V45 dans la même en feraient
+  ~267 M ; on lit les seize ;
+- **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %**, sur les gardées —
+  les fourchettes de la vague 1, inchangées ;
+- **sur un EPYC 7763, 1 150 à 1 220 positions par seconde** — l'image ne
+  touche pas le moteur ; hors de là, on regarde l'image du job avant la
+  vague 3.
 
 #### La séance B — après le volume
 
