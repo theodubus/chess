@@ -20,7 +20,11 @@
 //!    constantes du MOTEUR : les changer d'un côté les change de l'autre.
 //!    `--depuis DOSSIER` repart d'un point de sauvegarde de bullet — ré-
 //!    entraîner un réseau déjà bon, comme Stockfish sur les données de
-//!    Leela.
+//!    Leela. **Au pas plein par défaut, il ré-entraîne plus qu'il n'affine**
+//!    : N2L et N4L finissaient à la perte de L0 (`tools/README.md`, n° 20) ;
+//!    `--pas` réduit le pas de départ, pour un vrai réglage fin. `--wdl` règle
+//!    le poids du résultat de la partie dans la cible, 0,75 depuis le premier
+//!    réseau sans avoir jamais été mesuré.
 //! 3. **Confronter** le réseau quantifié, rechargé par le chargeur du moteur,
 //!    à ce que l'entraîneur lui-même en dit, position par position. C'est la
 //!    seule vérification de bout en bout que les entrées du moteur sont
@@ -30,7 +34,7 @@
 //! ```text
 //! cargo run --release --features cuda -- [--attendu P:N] [--superlots 40]
 //!     [--sortie checkpoints] [--memoire 1024] [--fils 4] [--depuis DOSSIER]
-//!     DOSSIER_OU_FICHIER...
+//!     [--pas 0.001] [--wdl 0.75] DOSSIER_OU_FICHIER...
 //! ```
 //!
 //! Un dossier donne tous ses fichiers `.vf` et `.binpack`, triés par nom.
@@ -168,6 +172,13 @@ const MEDIAN_GAP: i32 = 15;
 /// L'écart maximal admis, sur les positions de [`FENS`].
 const MAX_GAP: i32 = 50;
 
+/// Le pas de départ de la décroissance en cosinus, celui de l'exemple de
+/// bullet que suivent tous nos réseaux. Le pas final en vaut 0,3⁵.
+const INITIAL_LR: f32 = 0.001;
+/// Le poids du résultat de la partie dans la cible, le reste allant à
+/// `sigmoid(score / échelle)` : celui de l'exemple, jamais mesuré ici.
+const WDL: f32 = 0.75;
+
 /// Les réglages lus sur la ligne de commande.
 struct Options {
     expected: Option<(u64, u64)>,
@@ -176,6 +187,8 @@ struct Options {
     buffer_mb: usize,
     threads: usize,
     resume: Option<PathBuf>,
+    initial_lr: f32,
+    wdl: f32,
     files: Vec<PathBuf>,
     format: Format,
 }
@@ -188,6 +201,8 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
         buffer_mb: 1024,
         threads: 4,
         resume: None,
+        initial_lr: INITIAL_LR,
+        wdl: WDL,
         files: Vec::new(),
         format: Format::Viri,
     };
@@ -230,6 +245,26 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
                     .map_err(|_| "--fils attend un entier")?;
             }
             "--depuis" => options.resume = Some(PathBuf::from(value("--depuis")?)),
+            "--pas" => {
+                let lr: f32 = value("--pas")?
+                    .parse()
+                    .map_err(|_| "--pas attend un nombre")?;
+                // Au-dessus de dix fois le pas de l'exemple, une faute de
+                // frappe plutôt qu'un réglage ; un NaN échoue à la comparaison.
+                if !(lr > 0.0 && lr <= 10.0 * INITIAL_LR) {
+                    return Err(format!("--pas {lr} : hors de ]0 ; {}]", 10.0 * INITIAL_LR));
+                }
+                options.initial_lr = lr;
+            }
+            "--wdl" => {
+                let wdl: f32 = value("--wdl")?
+                    .parse()
+                    .map_err(|_| "--wdl attend un nombre")?;
+                if !(0.0..=1.0).contains(&wdl) {
+                    return Err(format!("--wdl {wdl} : hors de [0 ; 1]"));
+                }
+                options.wdl = wdl;
+            }
             path => options.files.extend(data_files(Path::new(path))?),
         }
     }
@@ -471,6 +506,29 @@ fn run(args: &[String]) -> Result<(), String> {
     }
 }
 
+/// La recette de l'entraînement, hors du GPU pour qu'un test la lise : la
+/// décroissance en cosinus de `--pas` à `--pas × 0,3⁵`, et le poids `--wdl`
+/// du résultat dans la cible.
+fn schedule(options: &Options) -> TrainingSchedule<lr::CosineDecayLR, wdl::ConstantWDL> {
+    TrainingSchedule {
+        net_id: net_id(),
+        eval_scale: options.format.eval_scale(),
+        steps: TrainingSteps {
+            batch_size: 16_384,
+            batches_per_superbatch: 6104,
+            start_superbatch: 1,
+            end_superbatch: options.superbatches,
+        },
+        wdl_scheduler: wdl::ConstantWDL { value: options.wdl },
+        lr_scheduler: lr::CosineDecayLR {
+            initial_lr: options.initial_lr,
+            final_lr: options.initial_lr * 0.3f32.powi(5),
+            final_superbatch: options.superbatches,
+        },
+        save_rate: 10,
+    }
+}
+
 /// Entraîne un réseau de l'architecture du moteur sur les entrées `inputs`,
 /// puis confronte le moteur à l'entraîneur.
 fn train_and_check<I>(inputs: I, options: &Options) -> Result<(), String>
@@ -556,24 +614,15 @@ where
         trainer.load_from_checkpoint(path);
     }
 
-    let initial_lr = 0.001;
-    let schedule = TrainingSchedule {
-        net_id: net_id(),
-        eval_scale: options.format.eval_scale(),
-        steps: TrainingSteps {
-            batch_size: 16_384,
-            batches_per_superbatch: 6104,
-            start_superbatch: 1,
-            end_superbatch: options.superbatches,
-        },
-        wdl_scheduler: wdl::ConstantWDL { value: 0.75 },
-        lr_scheduler: lr::CosineDecayLR {
-            initial_lr,
-            final_lr: initial_lr * 0.3f32.powi(5),
-            final_superbatch: options.superbatches,
-        },
-        save_rate: 10,
-    };
+    let schedule = schedule(options);
+    // Imprimés pour que la sortie gardée de chaque entraînement dise sa recette.
+    println!(
+        "  {} superlots, pas {} → {:e}, wdl {}",
+        options.superbatches,
+        schedule.lr_scheduler.initial_lr,
+        schedule.lr_scheduler.final_lr,
+        schedule.wdl_scheduler.value
+    );
     let settings = LocalSettings {
         threads: options.threads,
         test_set: None,
@@ -821,6 +870,48 @@ mod tests {
         let args = |list: &[&str]| list.iter().map(|arg| (*arg).to_owned()).collect::<Vec<_>>();
         assert!(parse_options(&args(&["--attendu", "1:2", "x.binpack"])).is_err());
         assert!(parse_options(&args(&["--attendu", "1:2", "x.vf"])).is_ok());
+    }
+
+    #[test]
+    fn le_pas_et_le_poids_du_resultat_se_reglent_et_se_bornent() {
+        let args = |list: &[&str]| list.iter().map(|arg| (*arg).to_owned()).collect::<Vec<_>>();
+        // Sans option, la recette de tous nos réseaux.
+        let defaut = parse_options(&args(&["x.vf"])).unwrap();
+        assert_eq!((defaut.initial_lr, defaut.wdl), (0.001, 0.75));
+        let regle =
+            parse_options(&args(&["--pas", "0.0001", "--wdl", "0.3", "x.binpack"])).unwrap();
+        assert_eq!((regle.initial_lr, regle.wdl), (0.0001, 0.3));
+        // Et c'est bien ce que l'entraînement reçoit.
+        let recette = schedule(&regle);
+        assert_eq!(recette.lr_scheduler.initial_lr, 0.0001);
+        assert_eq!(recette.lr_scheduler.final_lr, 0.0001 * 0.3f32.powi(5));
+        assert_eq!(recette.wdl_scheduler.value, 0.3);
+        assert_eq!(recette.eval_scale, LEELA_SCALE);
+        let recette = schedule(&defaut);
+        assert_eq!(recette.lr_scheduler.initial_lr, 0.001);
+        assert_eq!(recette.wdl_scheduler.value, 0.75);
+        assert_eq!(recette.eval_scale, SCALE as f32);
+        // Les bornes elles-mêmes passent.
+        assert!(parse_options(&args(&["--wdl", "0", "x.vf"])).is_ok());
+        assert!(parse_options(&args(&["--wdl", "1", "x.vf"])).is_ok());
+        assert!(parse_options(&args(&["--pas", "0.01", "x.vf"])).is_ok());
+        for refus in [
+            ["--pas", "0"],
+            ["--pas", "-0.001"],
+            ["--pas", "0.0101"],
+            ["--pas", "NaN"],
+            ["--pas", "un"],
+            ["--wdl", "-0.01"],
+            ["--wdl", "1.01"],
+            ["--wdl", "NaN"],
+        ] {
+            let mut list = refus.to_vec();
+            list.push("x.vf");
+            assert!(
+                parse_options(&args(&list)).is_err(),
+                "{refus:?} devait se refuser"
+            );
+        }
     }
 
     /// Des résultats tirés, en proportions exactes, d'une sigmoïde d'échelle

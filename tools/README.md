@@ -9412,7 +9412,8 @@ d'être testé)* ». Le fichier de Leela et les points de sauvegarde de
 N6r4 — `optimiser_state` compris — sont toujours chez lui. **À faire** :
 - **(a) un vrai réglage fin sur Leela** — depuis le point de sauvegarde
   de N6r4, au pas réduit, quelques superlots, sur le binpack seul ;
-  mesuré contre N6r4. Demande l'option `--pas` de `tools/nnue-train`. Se
+  mesuré contre N6r4. L'option `--pas` de `tools/nnue-train` est écrite
+  (19 oct.). Se
   fait avec la séance A, à la demande de Théo — il redemandera le
   protocole ;
 - **(b) Leela mêlé à nos données** — l'architecture W depuis zéro, nos
@@ -9429,11 +9430,22 @@ N6r4 — `optimiser_state` compris — sont toujours chez lui. **À faire** :
 - **(d) le poids du résultat dans la cible** (`wdl`, 0,75 aujourd'hui) —
   la recette de N6r4 à l'identique (les 1,563 G anciennes, 100
   superlots), au seul `wdl` près, deux valeurs plus basses ; **N6r4 est
-  le témoin à 0,75**, sans rien ré-entraîner. Demande l'option `--wdl`.
+  le témoin à 0,75**, sans rien ré-entraîner. L'option `--wdl` est écrite
+  (19 oct.) ; lu au source de bullet (`value.rs`, `10e7e82`) : la cible
+  vaut `wdl × résultat + (1 − wdl) × sigmoid(score / échelle)`.
   Indépendant du volume : peut se faire avec la séance A.
 
 Les valeurs, les attendus et les critères s'écrivent avec chaque
 protocole, avant de le demander.
+
+**`--pas` et `--wdl`, écrites le 19 oct.** — `tools/nnue-train` : le pas
+de départ de la décroissance en cosinus (défaut 0,001, refusé hors de
+]0 ; 0,01]) et le poids du résultat (défaut 0,75, refusé hors de
+[0 ; 1]) ; sans elles, la recette de tous nos réseaux à l'identique. La
+recette passe par une fonction, `schedule`, qu'un test lit sans GPU ; et
+chaque entraînement l'imprime en tête, pour que sa sortie gardée la dise.
+Trois fautes injectées — le poids, le pas lu, le pas transmis figés à leur
+défaut —, trois attrapées.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
