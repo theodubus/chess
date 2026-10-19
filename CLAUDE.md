@@ -37,6 +37,10 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   plus bas.
 - Ce sur quoi travailler : **demander**. Le dépôt ne porte pas de feuille de
   route, et en deviner une reviendrait à rouvrir des questions déjà tranchées.
+  Mais **proposer ne coûte rien** — Théo, 19 oct. 2026 : « *d'une manière
+  générale tout ce qui peut faire augmenter l'elo vaut le coup d'être
+  testé* ». Un levier possible se signale et se propose ; une fois validé,
+  il se note au dépôt, à faire, avec sa place dans la file.
 - **Ce qui revient à Théo se dit à chaque point de récap** — toute action
   humaine nécessaire, et en particulier les branches distantes à supprimer,
   que le jeton de session ne peut pas supprimer. Théo, 5 oct. 2026 :
@@ -112,7 +116,11 @@ une mesure, pas une préférence.
   Stockfish — **fait le 2 oct. 2026 avec N2L**, section « Remerciements ».
   N6r4, qui joue depuis le 17 oct., n'a rien appris d'elles — ni N5l ni N4
   avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
-  en ont appris.
+  en ont appris. **Rouvert le 19 oct. (Théo)** : le seul verdict contre
+  elles portait sur un « réglage fin » qui ré-entraînait au pas plein un
+  réseau de 128 unités, une passe sur un seul fichier ; restent à tester
+  un vrai réglage fin, le mélange avec nos données, et les architectures
+  plus grandes nourries de ce mélange (`tools/README.md`, n° 20).
   Plan et faits vérifiés : `tools/README.md`, section n° 7.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Deux binaires livrés, et la mesure se fait sur le binaire AVX2.** Théo,
