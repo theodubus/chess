@@ -961,6 +961,7 @@ dernière relève est faite.
 | **N° 20 — la vague 2**, étiquetée par N6r4 | 39207769953, 39207774644, 39207779296, 39207783907, 39207788940, 39207794261, 39207799756, 39207804571, 39207809343, 39207814612, 39207820057, 39207825098, 39207830049, 39207834616, 39207839915, 39207845597 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 19 oct. à 14 h** — lancée à 8 h 04, ses attendus poussés avant (`2bc76fe`) ; quinze succès finis à 13 h 35 ; **39207799756 a perdu son runner** à 11 h 09, sans artefact, pas relancé | **414,2 M positions, 283,0 M gardées, 19,29 % d'écartées, 34,32 % de nulles, EPYC 7763 à 1 161 – 1 193 positions par seconde : dans l'attendu sur les cinq chiffres**, même à quinze ; l'image encore `ubuntu-24.04` ; 561,4 M gardées après deux vagues, quatre vagues encore (`tools/n20-jobs.tsv`, section « N° 20 », la vague 2) — *Attendus, écrits avant* (section « N° 20 », la vague 2) : **les seize, 360 à 520 M positions, 245 à 355 M gardées ; écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %**, sur les gardées ; **1 150 à 1 220 positions par seconde sur un EPYC 7763**, l'image Ubuntu 26 ou non |
 | **N° 20 — la vague 3**, étiquetée par N6r4 | 39248624744, 39248631100, 39248637436, 39248644219, 39248651141, 39248657122, 39248663803, 39248669858, 39248676659, 39248687175, 39248695901, 39248704266, 39248713067, 39248721450, 39248728947, 39248737285 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 19 oct. à 19 h 55** — lancée à 14 h 00, ses attendus poussés avant (`12ce133`) ; seize succès finis à 19 h 31 | **417,2 M positions, 285,1 M gardées, 19,27 % d'écartées, 34,35 % de nulles, EPYC 7763 à 1 173 – 1 194 positions par seconde : dans l'attendu sur les cinq chiffres** ; l'image encore `ubuntu-24.04` ; 846,5 M gardées après trois vagues, trois vagues encore (`tools/n20-jobs.tsv`, section « N° 20 », la vague 3) — *Attendus, écrits avant* (section « N° 20 », la vague 3) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
 | **N° 20 — la vague 4**, étiquetée par N6r4 | 39298202589, 39298211381, 39298220429, 39298228880, 39298235765, 39298246238, 39298256527, 39298265446, 39298274102, 39298282360, 39298291145, 39298299675, 39298308393, 39298317493, 39298326638, 39298334978 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 19 oct. à 19 h 55, ses attendus poussés avant (`7411672`) ; fin vers 1 h 25–1 h 35 le 20 oct. | — *Attendus, écrits avant* (section « N° 20 », la vague 4) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
+| **N° 20 — la séance A, puis (a) et (d), sur la carte de Théo** | — | séance A : N7p2, N7p4 à `4a604ea` ; (a) N6r4La, N6r4Lb et (d) N6r4w50, N6r4w25 à `main` (`2a8cca1` et après) | `tools/nnue-train`, les 79 jobs du n° 18 et le binpack du levier 4 | **DEMANDÉE le 19 oct. au soir** — Théo : « *je suis prêt* » ; la séance A donnée telle qu'écrite le 17, (a) et (d) écrites à 20 h 14, avant de les donner ; ~4 h puis ~1 h 45 ; rapport sur `reseau/n20a`, `reseau/n20a-points` et `reseau/n20-ad` | — *Attendus, écrits avant* (section « N° 20 », la séance A et « (a) et (d) ») : N7p2 contre N6r4 +3 à +12, N7p4 contre N7p2 −10 à +8 ; N6r4La −15 à +10, N6r4Lb −6 à +6 ; N6r4w50 −8 à +12, N6r4w25 −12 à +15 ; critère du n° 17 contre N6r4, chaque axe à part |
 | **Le balayage hebdomadaire du 20 oct.** | — (le run du mardi, 00:00 UTC) | `main` après la PR de la relève de la vague 2 | `mutation.yml` | **À VENIR** — mardi 20 oct. à 2 h 00, heure de Paris | — *Prédiction, écrite avant* : **163**, chaque fichier à son plafond — aucune ligne d'`engine/src/` n'a changé depuis le balayage après N6r4 (163, exact) ; `--pas`, `--wdl` et `--melange` vivent dans `tools/nnue-train`, hors du cliquet |
 | **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **RELEVÉ le 18 oct. à 0 h 40 : 163, EXACT** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fini à 20 h 47 | **Vert, la prédiction exacte** : chaque fichier à son plafond, `nnue.rs` 2, `search.rs` 48 — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
 | **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 18 oct. à 0 h 40** — lancée le 17 oct. à 18 h 34, finie le 18 à 0 h 03 ; Xeon 8573C, 1,64 M n/s, profondeur 13 | **109 − 99 − 92, 51,7 % : 3 112 ± 21, dedans, sous le centre** ; +43 ± 33 sur N5l à la même échelle, 0,44 au point de ce que mesure le jumeau ; zéro perte au temps (section C13, « N6r4, RELEVÉ ») — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
@@ -9561,6 +9562,135 @@ protocole* : la part. Le compte des positions que le filtre garde dans le
 binpack n'a jamais été relevé — la relecture n'en décode qu'un
 échantillon —, donc une part « au volume » s'écrirait sur une estimation
 (~3,4 à 5,1 G contre nos 3,1 G).
+
+#### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
+
+Théo, le 19 oct. au soir : « *je suis prêt* ». La séance A d'abord, telle
+qu'écrite le 17 ; puis, dans le même terminal, quatre réseaux de
+l'architecture de N6r4, au `main` du 19 oct. — `2a8cca1` y a mis `--pas`
+et `--wdl`. **N6r4 est le témoin des deux axes**, sans rien
+ré-entraîner : chaque réseau ne diffère de lui que par ce qu'on mesure.
+
+**(a) — le réglage fin sur Leela.** Depuis le point de sauvegarde de
+N6r4 (`n6r4/shallowred-768x4hm-256-s8-100`, `optimiser_state` compris),
+le binpack seul, **20 superlots** — 2,0 G positions vues, ~0,4 à 0,6
+passe sur les ~3,4 à 5,1 G que le filtre y garde —, à deux pas :
+- **N6r4La, `--pas 0.0001`** — un dixième du pas de N6r4 : le pas qu'avait
+  sa propre décroissance vers son 80ᵉ superlot sur 100, donc ses derniers
+  20 % refaits sur Leela ;
+- **N6r4Lb, `--pas 0.00002`** — cinq fois moins : le bas de la fourchette,
+  si le premier efface encore trop de son point de départ.
+
+Le pas est l'inconnue : au pas plein, N2L et N4L finissaient à la perte
+de L0, le point de départ effacé (« Leela, à rouvrir ? ») ; trop bas, rien
+ne bouge. Deux pas encadrent ; la durée reste fixe. *Le binpack se lit à
+son échelle* (330,3 dans la cible) : la sigmoïde de la cible porte la même
+espérance que la nôtre à 400, donc le logit du réseau garde son sens et
+le moteur le lit à 400 — comme N2L et N4L, embarqués à cette recette.
+
+**(d) — le poids du résultat dans la cible.** La recette de N6r4 à
+l'identique — les 79 jobs du n° 18, 100 superlots, depuis zéro — au seul
+`--wdl` près : **N6r4w50 à 0,5 et N6r4w25 à 0,25** ; N6r4 est le témoin à
+0,75. Deux pas égaux vers le bas, parce que le défaut vient de l'exemple
+de bullet et n'a jamais été mesuré ici ; le sens de la pente n'est pas
+connu.
+
+*Attendus* — <span>inférence, confiance faible</span> :
+- **N6r4La contre N6r4 : −15 à +10**, ~−2 — l'étage de Leela a rendu +16
+  sur N2 puis −5 sur N4, à mesure que nos données s'amélioraient ; celles
+  de N6r4 le sont encore, mais un réglage fin garde plus de son point de
+  départ qu'un ré-entraînement ;
+- **N6r4Lb contre N6r4 : −6 à +6**, ~0 — il bouge moins ;
+- **perte tenue à l'écart** (38531414161, `nnue_validation.rs`) : N6r4 ≤
+  N6r4Lb ≤ N6r4La — le réglage tire vers la distribution de Leela,
+  d'autant plus que le pas est grand. <span>Confiance moyenne</span> ;
+- **N6r4w50 contre N6r4 : −8 à +12, N6r4w25 : −12 à +15** — ni le sens
+  ni l'ordre ne sont connus ; leur perte tenue à l'écart, lue sous 0,75,
+  au-dessus de N6r4 : ils minimisent une autre cible, et elle ne dira
+  rien de leur force.
+
+**Le critère d'embarquement, écrit avant** : celui du n° 17, contre
+N6r4 — un gain démontré, borne basse au-dessus de zéro ; parmi les gains
+démontrés, le meilleur au point, et un match direct si l'intervalle du
+second recoupe le sien. **Chaque axe se lit à part** : deux gains
+démontrés sur deux axes — des passes (étape A), Leela, le poids du
+résultat — se composent dans un réseau neuf, mesuré à son tour ; jamais
+leurs Elo ne s'additionnent sur le papier. Un réglage fin qui paie se
+refait sur le réseau qui joue alors, s'il a changé.
+
+*Ce qui suit, écrit avant* : pour chacun, la confrontation recopiée, le
+candidat révoqué aussitôt, la sonde de B8, ses nœuds par seconde, sa
+perte tenue à l'écart ; puis **quatre jobs de 2 800 parties à `8+0,08`
+contre N6r4**, seize en tout. Avec les douze de l'étape A et les seize de
+la génération, les jobs au-delà de la limite de concurrence du compte
+attendent leur tour dans la file de GitHub.
+
+**Les commandes** — après « `FIN : 0` » et le rapport de la séance A, dans
+le même terminal : `$TOUS`, CUDA et `pipefail` y sont déjà posés.
+Dans un terminal neuf, les blocs 0 à 2 de la séance A d'abord.
+
+0. **le dépôt, le binpack, le point de départ** :
+   ```sh
+   cd ~/chess && git switch main && git log -1 --format='%h %cd'
+   DONNEES=~/leela
+   find "$DONNEES" -name '*.binpack' -exec ls -l {} +
+   ls -d tools/nnue-train/n6r4/shallowred-768x4hm-256-s8-100/optimiser_state
+   echo $TOUS | wc -w
+   ```
+   — `git log` du 19 oct. 2026 ou d'après ; le binpack du levier 4,
+   **14 366 468 016 octets** (s'il est dans un sous-dossier, `DONNEES` le
+   désigne) ; `optimiser_state` présent ; **79**. Un seul écart :
+   s'arrêter et le dire ;
+1. **un essai court** — la reprise depuis N6r4 au pas réduit, l'échelle du
+   binpack, la confrontation, sur une architecture à seaux :
+   ```sh
+   set -o pipefail
+   cd ~/chess/tools/nnue-train &&
+   cargo run --release --features cuda -- --depuis n6r4/shallowred-768x4hm-256-s8-100 \
+     --pas 0.0001 --superlots 1 --sortie essai-n6r4l "$DONNEES" \
+     2>&1 | tee essai-n6r4l.sortie.txt
+   ```
+   → `repart de n6r4/…`, `1 superlots, pas 0.0001 → 2.43…e-7, wdl 0.75`,
+   puis `RÉSEAU PRÊT : essai-n6r4l/shallowred-768x4hm-256-s8-1/quantised.bin`.
+   **Critère, écrit avant** : `échelle ajustée` **entre 250 et 450** — le
+   même fichier rendait 282,1. Hors de là, ou sans `RÉSEAU PRÊT` :
+   s'arrêter et m'envoyer la sortie ;
+2. **les quatre réseaux, d'une traite** — un échec arrête la chaîne :
+   ```sh
+   cargo run --release --features cuda -- --depuis n6r4/shallowred-768x4hm-256-s8-100 \
+     --pas 0.0001 --superlots 20 --sortie n6r4la "$DONNEES" 2>&1 | tee n6r4la.sortie.txt &&
+   cargo run --release --features cuda -- --depuis n6r4/shallowred-768x4hm-256-s8-100 \
+     --pas 0.00002 --superlots 20 --sortie n6r4lb "$DONNEES" 2>&1 | tee n6r4lb.sortie.txt &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 100 \
+     --wdl 0.5 --sortie n6r4w50 $TOUS 2>&1 | tee n6r4w50.sortie.txt &&
+   cargo run --release --features cuda -- --attendu 18435764:2328546367 --superlots 100 \
+     --wdl 0.25 --sortie n6r4w25 $TOUS 2>&1 | tee n6r4w25.sortie.txt
+   echo "FIN : $?"
+   ```
+   → `RÉSEAU PRÊT :` `n6r4la/shallowred-768x4hm-256-s8-20`,
+   `n6r4lb/…-20`, `n6r4w50/…-100`, `n6r4w25/…-100`, chacun suivi de
+   `/quantised.bin`, et **`FIN : 0`**. *Durée* : ~9 min par réglage fin
+   — 23,7 s par superlot pour N6r4, et le binpack en demandait 1,13 fois
+   plus que nos données (N4L contre N4, n° 13) —, ~40 min par réseau de
+   (d), relectures en plus : **~1 h 45**. Interrompue, la chaîne se reprend au réseau qui
+   manque ;
+3. **rapporter**, sur `reseau/n20-ad` :
+   ```sh
+   cd ~/chess && git switch -c reseau/n20-ad
+   for c in n6r4la:768x4hm-256-s8-20 n6r4lb:768x4hm-256-s8-20 \
+            n6r4w50:768x4hm-256-s8-100 n6r4w25:768x4hm-256-s8-100; do
+     n=${c%%:*}; a=${c#*:}; d=tools/nnue-train/$n/shallowred-$a
+     cp $d/quantised.bin reseaux/$n-$a.bin
+     cp $d/log.txt reseaux/$n-$a.log.txt
+     cp tools/nnue-train/$n.sortie.txt reseaux/$n-$a.sortie.txt
+   done
+   cp tools/nnue-train/essai-n6r4l.sortie.txt reseaux/
+   git add reseaux/n6r4l* reseaux/n6r4w* reseaux/essai-n6r4l.sortie.txt
+   git commit -m "Réseaux NNUE du n° 20, (a) et (d) : N6r4La et N6r4Lb, réglés sur Leela ; N6r4w50 et N6r4w25, le poids du résultat"
+   git push -u origin reseau/n20-ad
+   git switch main
+   ```
+   — douze fichiers et la sortie de l'essai.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
