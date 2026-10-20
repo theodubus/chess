@@ -9519,8 +9519,9 @@ ne s'est pas reproduit —, un Xeon 8370C à 1 127, un 8573C à 1 135.
 L'image : `ubuntu-24.04` `20261012.334.1` (Ubuntu 24.04.5), lue dans le
 journal de 39375395417 — pas de bascule sur Ubuntu 26.
 
-**L'étape B, close : 1 751,9 M positions gardées en six vagues**, 95 jobs
-appris (`tools/n20-jobs.tsv`), étiquetés par N6r4 à `cd6ed79` — × 1,12
+**L'étape B, close : 1 751,9 M positions gardées en six vagues**, 94 jobs
+appris et le tenu à l'écart (`tools/n20-jobs.tsv`) — <s>95 jobs appris</s>,
+le compte d'abord écrit comptait le tenu à l'écart parmi eux —, étiquetés par N6r4 à `cd6ed79` — × 1,12
 le volume ancien (1 563 M). Le surplus, **188,6 M**, au-dessus des ~170 M
 attendus : la séance B tire dans l'ordre de lancement jusqu'au volume
 ancien, le reste est gardé pour (c) et (e). La séance B s'écrit après le
@@ -9540,6 +9541,103 @@ faible</span> : **les deux contre l'ancienne seule : +3 à +12** ; **la
 neuve seule contre l'ancienne seule : 0 à +10** — N6v, d'un étiqueteur
 plus fort de ~50, rendait +5,52 ; W l'est de ~99. Critère d'embarquement :
 celui du n° 17. **Chez Théo** : ~8,5 Go de plus à télécharger.
+
+**La séance B — les commandes, écrites le 20 oct. à 13 h 25, avant de la
+demander ; elle ne se demande qu'au verdict de A.** Deux réseaux neufs de
+l'architecture de N6r4, à `main`, au même nombre de superlots `SL` — 200,
+ou 400 si N7p4 gagne l'étape A — : **N8n, les données neuves seules** ;
+**N8t, les anciennes et les neuves**. Le troisième, les anciennes seules à
+`SL` superlots, est N7p2 ou N7p4, déjà entraîné. *Les neuves* : les **84
+premiers jobs appris dans l'ordre de lancement**, la règle de fin écrite
+avant — **1 571 050 534 positions gardées**, 0,5 % au-dessus des
+1 563 356 858 anciennes —, 18 245 052 parties, 2 299 253 673 positions ;
+les dix suivants restent pour (c) et (e). *Le tout* : 3,13 G gardées,
+36 680 816 parties, 4 627 800 040 positions.
+
+0. **le dépôt, les données anciennes, la place** :
+   ```sh
+   cd ~/chess && git status
+   git fetch origin && git switch main && git pull --ff-only
+   git log -1 --format='%h %cd'
+   ls ~/nnue-n18/*/*.vf | wc -l; df -h ~
+   ```
+   — **316** fichiers anciens ; **14 Go libres au moins** : ~10 Go de
+   données neuves, plus les points de sauvegarde ;
+1. **les données neuves — 94 archives, 9,25 Go, avant le 16 janv. 2027**
+   (les artefacts de la vague 1 expirent les premiers) ; le job tenu à
+   l'écart, 39050360980, ne descend pas. La boucle du n° 18, reprise là
+   où elle s'arrête si on la relance :
+   ```sh
+   N=~/nnue-n20; mkdir -p $N
+   awk -F'\t' '$4=="appris" {print $1}' ~/chess/tools/n20-jobs.tsv |
+   while read r; do
+     [ -d $N/$r ] && continue
+     rm -rf $N/.tmp-$r
+     gh run download $r -R theodubus/chess -n nnue-$r -D $N/.tmp-$r \
+       && mv $N/.tmp-$r $N/$r || { echo "ÉCHEC sur $r"; break; }
+   done
+   ls $N/*/*.vf | wc -l; du -sh $N
+   ```
+   — **376** fichiers `.vf`, quatre par job. Sans `gh` : la boucle par
+   l'API du n° 18, le TSV portant l'identifiant de chaque artefact ;
+2. **les deux listes** — le tenu à l'écart n'y est jamais :
+   ```sh
+   A=~/nnue-n18; N=~/nnue-n20
+   ANCIENNES=$(awk -F'\t' -v d=$A '$4=="appris" {print d"/"$1}' ~/chess/tools/n18-jobs.tsv)
+   NEUVES=$(awk -F'\t' '$4=="appris" {print $1}' ~/chess/tools/n20-jobs.tsv | sort -n | head -84 | sed "s|^|$N/|")
+   echo $ANCIENNES | wc -w; echo $NEUVES | wc -w
+   ```
+   — **79 et 84** ;
+3. **CUDA dans ce terminal** — le bloc de la séance du n° 7, tel quel ;
+4. **les superlots**, que le verdict de A fixe : `SL=200` ou `SL=400` ;
+5. **un essai court, puis les deux réseaux d'une traite** — l'essai relit
+   chaque octet des 84 jobs neufs et refuse au moindre écart de compte :
+   ```sh
+   set -o pipefail
+   cd ~/chess/tools/nnue-train &&
+   cargo run --release --features cuda -- --attendu 18245052:2299253673 --superlots 1 \
+     --sortie essai-n8 $NEUVES 2>&1 | tee essai-n8.sortie.txt &&
+   cargo run --release --features cuda -- --attendu 18245052:2299253673 --superlots $SL \
+     --sortie n8n $NEUVES 2>&1 | tee n8n.sortie.txt &&
+   cargo run --release --features cuda -- --attendu 36680816:4627800040 --superlots $SL \
+     --sortie n8t $ANCIENNES $NEUVES 2>&1 | tee n8t.sortie.txt
+   echo "FIN : $?"
+   ```
+   → `RÉSEAU PRÊT :` `essai-n8/…-1`, `n8n/shallowred-768x4hm-256-s8-$SL`,
+   `n8t/…-$SL`, chacun suivi de `/quantised.bin`, et **`FIN : 0`**. Un
+   écart de compte dit une archive incomplète : supprimer son dossier et
+   relancer l'étape 1. *Durée* — à 23,7 s par superlot (N6r4) : **~1 h 20
+   par réseau à 200, ~2 h 40 à 400**, plus une relecture par réseau, celle
+   de N8t deux fois plus longue ;
+6. **rapporter**, sur `reseau/n20b` :
+   ```sh
+   cd ~/chess && git switch -c reseau/n20b
+   for n in n8n n8t; do
+     d=tools/nnue-train/$n/shallowred-768x4hm-256-s8-$SL
+     cp $d/quantised.bin reseaux/$n-768x4hm-256-s8-$SL.bin
+     cp $d/log.txt reseaux/$n-768x4hm-256-s8-$SL.log.txt
+     cp tools/nnue-train/$n.sortie.txt reseaux/$n-768x4hm-256-s8-$SL.sortie.txt
+   done
+   cp tools/nnue-train/essai-n8.sortie.txt reseaux/
+   git add reseaux/n8* reseaux/essai-n8.sortie.txt
+   git commit -m "Réseaux NNUE du n° 20, étape B : N8n (les neuves) et N8t (les deux)"
+   git push -u origin reseau/n20b
+   git switch main
+   ```
+   — **Garder `~/nnue-n20`** : (b), (c) et (e) en repartiront.
+
+*Ce qui suit, écrit avant* : pour chacun, la confrontation recopiée, le
+candidat révoqué aussitôt, la sonde de B8, ses nœuds par seconde ; la
+perte tenue à l'écart sur les DEUX jobs tenus à l'écart, 38531414161
+(étiqueté par N5l) et 39050360980 (par N6r4) ; puis **12 jobs de 2 800
+parties à `8+0,08`** — N8n contre l'ancienne seule (l'étiqueteur), N8t
+contre l'ancienne seule (la décision), N8t contre N8n (la pente). Attendus
+et critère : ceux écrits plus haut. **(b), Leela mêlé à nos données**,
+s'ajoutera à cette séance une fois (a) jugé — vers 17 h 35 : sa part,
+seule chose qui reste à décider, se lit mieux après le verdict du réglage
+fin ; elle se compare à N8t, mêmes données et mêmes superlots. *Un script
+d'une traite*, comme `tools/seance-n20.sh`, s'écrira quand la séance se
+demandera, `SL` alors connu.
 
 **Ce qui vient après, noté sans être décidé** : 384 ou 512 unités sur les
 3,1 G — la largeur a payé au n° 17, et elle demande du volume ; le réglage
@@ -11507,7 +11605,7 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 | **A — plus de passes** | N7p2 et N7p4 : 200 et 400 superlots sur les 1,563 G anciennes ; N6r4 en avait fait 100 | sur la carte de Théo depuis le 20 oct. (`tools/seance-n20.sh`) ; puis sonde de B8, matchs contre N6r4 (« La séance A ») |
 | **(a) — le réglage fin sur Leela** | N6r4 affiné 20 superlots sur le binpack, au pas 10⁻⁴ et 2·10⁻⁵ | idem (« (a) et (d) — la séance ») |
 | **(d) — le poids du résultat** | la recette de N6r4, `wdl` 0,5 et 0,25 au lieu de 0,75 | idem |
-| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; la séance s'écrit au verdict de A, qui fixe ses superlots |
+| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; **la séance ÉCRITE le 20 oct.** (téléchargement, listes, commandes ; N8n et N8t), demandée au verdict de A, qui fixe ses superlots |
 | **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | avec la séance B |
 | **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
 | **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | runners, après B et (d) |
