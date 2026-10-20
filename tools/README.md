@@ -10315,6 +10315,51 @@ reste à l'attic, pour de bon.** Cent vingt tours, arbre identique
   la force », un cran plus bas : il borne, il ne prédit pas. Le n° 15
   l'avait vue sous une autre forme (le doublement, un minorant).
 
+### La file, phase 2 — le produit scalaire en AVX2 : écrit le 20 oct. 2026, le mécanisme lu au code machine
+
+**Le mécanisme, lu avant d'écrire.** Le chemin A du n° 16 laissait le
+compilateur vectoriser le produit scalaire de la sortie. Lu au code
+machine du binaire AVX2 de `main` le 20 oct. : `Network::evaluate` fait
+**396 instructions, toutes sur des registres de 128 bits** — 64
+`vpmaddwd xmm`, 64 `vpmullw`, 64 `vpmaxsw`, 64 `vpminsw` —, quand
+`apply_move` et `refresh_side`, eux, emploient les registres de 256 bits.
+Le compilateur reconnaît la multiplication-addition par paires mais la
+cale sur huit sommes `i32`, la moitié d'un registre AVX2. *Essayé d'abord
+sans `unsafe`* : la même boucle réécrite par blocs de seize termes et huit
+sommes partielles — le compilateur en sort 224 `vpinsrw`, pire.
+
+**Écrit** (Théo, 20 oct. : `unsafe` admis pour ce seul usage) : un module
+`avx2` dans `engine/src/nnue.rs`, `#[allow(unsafe_code)]`, la lint de
+l'espace de travail passée de `forbid` à `deny` ; derrière
+`is_x86_feature_detected!("avx2")` — une constante dans le binaire AVX2,
+une lecture en cache dans celui de base, qui en profite donc sur un
+processeur qui l'a ; les mêmes entiers que le calcul scalaire, sommés dans
+un autre ordre — exact, aucune somme partielle ne pouvant déborder sous la
+borne de [`DOT_CHUNK`]. Le scalaire reste, pour tout autre processeur et
+comme définition. **Le code machine** : `evaluate` passe à 242
+instructions, 32 `vpmaddwd ymm`. *Les tests* : la confrontation au calcul
+scalaire sur 200 paires de vecteurs — longueurs 0 à 1 000, registres
+pleins, reste, tranches, entrées dans toute la plage d'un `i16` —, et deux
+comptes, des passages par AVX2 et des termes laissés au reste. *Éprouvés*
+par cinq fautes injectées — la borne basse oubliée, le reste perdu, le
+produit sur l'entrée non bornée, la détection forcée à faux, un registre
+plein laissé au reste —, cinq attrapées ; la dernière ne change aucune
+valeur, seul le compte du reste la voit.
+
+*Attendu, écrit le 20 oct. à 15 h 05, avant de mesurer le temps* —
+<span>inférence, confiance faible</span> : **−1 à −5 % de temps à arbre
+identique**, ~−2,5 %. `evaluate` perd 154 instructions sur 396 ; sa part
+du temps d'un nœud n'est pas mesurée seule depuis le n° 16 — la sortie
+pesait 10 % par doublement avant lui (un minorant), et le n° 16 en a
+retiré 14,4 %. *La leçon du cache, appliquée* : ce produit lit ~1 Ko
+d'accumulateur et ~1 Ko de poids par camp, déjà en cache L1 — il est borné
+par le calcul, là où le recalcul de l'accumulateur l'était par la mémoire.
+*La mesure* : le rejeu du n° 15, binaires AVX2, **120 tours**, test des
+signes — la puissance du cache, ~80 % à −1,5 %. *Critère* : il entre si le
+test des signes donne plus rapide à p < 0,05 ; sinon il reste à l'attic.
+Le binaire de base, qui ne lit l'AVX2 qu'à l'exécution, se vérifie par
+`tools/binaires.sh` — le même arbre, par construction des valeurs.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
@@ -11742,7 +11787,7 @@ l'inférence suit.
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
 | **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **ÉCRIT le 20 oct., À L'ATTIC POUR DE BON** — vingt tours, −1,2 % non séparé ; puis cent vingt, la puissance écrite avant : **+0,46 %, IC −0,42 à +1,34** — aucun gain au-delà de 0,4 % (section « La file, phase 2 — le cache des recalculs ») : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
-| **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; après le cache |
+| **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; **ÉCRIT le 20 oct., en mesure** : le produit scalaire de la sortie était resté en 128 bits — 64 `vpmaddwd xmm` —, il passe à 32 en 256 bits (section « La file, phase 2 — le produit scalaire en AVX2 ») |
 | **l'évaluation statique dans la table** | une entrée trouvée rend aussi son évaluation, sans recalcul | pur seulement si l'entrée garde sa taille : sinon la capacité change et l'arbre avec (le piège de B9), et c'est un match |
 | **un banc qui emploie le réseau** | de l'outillage : mesurer la vitesse de ce qui joue, pas de la faite main | si le rejeu ne suffit pas à mesurer les trois lignes précédentes |
 
