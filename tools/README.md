@@ -10789,6 +10789,30 @@ limite de 6 Go. La cause reste inconnue ; les deux mutants expirés,
 qu'aucun résumé ne nomme, sont les suivants à regarder. **Relancé une fois
 à la fin du run** ; la PR #206 ne fusionne qu'au crible conforme.
 
+**Relancé à 22 h 06, perdu à 22 h 46 — et la cause trouvée.** Les deux
+mêmes survivants, puis « *shutdown signal* » au bout de 40 minutes : la
+quatrième perte du jour. Le journal de l'essai réussi du mardi nomme ses
+deux expirés : **`Network::row` rendu par `Box::leak(Box::new([1;
+HIDDEN]))` et `[-1; HIDDEN]`** — 512 octets perdus à chaque mise à jour
+d'accumulateur. *Mesuré dans le conteneur*, au commit `e77e0b1` : le
+premier monte à **13,4 Go résidents** en moins de 75 s, puis le noyau le
+tue. Le délai de `cargo mutants` suit la durée de la suite saine sur le
+runner : **21 s** à l'essai réussi — la fuite coupée à temps, comptée
+« expirée » —, **75 s** au crible — deux tests à la fois vident les 16 Go,
+le runner meurt. L'hypothèse mémoire était la bonne ; je l'avais écartée
+sur un seul mutant, le mauvais. **Le remède, éprouvé** : chaque processus
+de test sous `prlimit --as=4294967296` — le « runner » de cargo,
+`CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER`, la compilation non
+plafonnée —, dans `mutation.yml` et `tools/mutants.sh`. Sous le plafond,
+le même mutant meurt sur son allocation et compte **attrapé, en 6 s** ; la
+suite saine passe sous 2 Gio et casse sous 1 ; un témoin à 1 Mo casse
+aussi, le plafond s'applique donc bien. Le piège est archivé
+(`tools/pieges-fermes.md`). *Ce que ça change à la prédiction* : les deux
+expirés deviennent attrapés, les survivants restent 163.
+**Le crible relancé à 22 h 56** sur la branche, au même commit
+`e77e0b1` — le moteur n'a pas bougé depuis —, run 39496202305 : il éprouve
+aussi le plafond sur chaque fichier, sur un vrai runner.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
