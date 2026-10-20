@@ -9273,6 +9273,36 @@ référence, sur 38531414161 puis 38531424497. *Attendus* : ceux de l'étape
 A — N7p2 sous N6r4 ; N7p4 sous N7p2 de moins que N7p2 sous N6r4, ou
 au-dessus ; les points diront où la retenue commence.
 
+**La perte tenue à l'écart, RELEVÉE le 20 oct. à 14 h 39 — plus de passes
+paie encore en perte, sans retenir davantage ; le second attendu tombe.**
+Run 39423324257, quatre minutes, contrôle exact (17 208 872, 17 938 594),
+N6r4 à sa perte du 17 oct. :
+
+| réseau | tenu à l'écart | écart à N6r4 | appris de tous | tenu − appris |
+|---|---|---|---|---|
+| N6r4, 100 superlots | 0,038560 | — | 0,038148 | +0,000412 |
+| **N7p2**, 200 | 0,038481 | **−0,000080 ± 0,000021** | 0,038065 | +0,000416 |
+| **N7p4**, 400 | 0,038390 | **−0,000170 ± 0,000021** | 0,037974 | +0,000416 |
+
+- **N7p2 sous N6r4** : l'attendu tient, à quatre intervalles ;
+- **N7p4 sous N7p2 de 0,000090** — autant que N7p2 sous N6r4, pas moins :
+  l'attendu « de moins, ou au-dessus » tombe. **Chaque doublement des
+  passes rend la même chose en perte**, sans rendement décroissant visible
+  à 25,6 passes ;
+- **la retenue ne bouge pas** : tenu − appris, 0,000412 à 100 superlots,
+  0,000416 à 200 et à 400. Le risque nommé avant — la retenue l'emportant
+  à 25,6 passes — ne se voit pas ;
+- **les points** : au milieu d'un entraînement, la perte est bien plus
+  haute qu'au bout — le point à 200 de N7p4 (+0,00185) est loin de N7p2
+  (−0,00008) : le pas cosinus, comme au n° 18. La retenue des points
+  monte avec la décroissance du pas, de 0,00027–0,00030 à 40 superlots à
+  0,00041 au dernier ; N7p4 remonte un peu entre ses points 40 et 80
+  (+0,00022), au pas plein. Aucune perte tenue à l'écart ne remonte dans
+  le dernier tiers ;
+- **ce que cela ne dit pas** : la force — 0,00008 et 0,00017, c'est le
+  vingtième et le dixième de ce que N6r4 gagnait sur N6l en perte
+  (0,00038) ; les matchs liront.
+
 #### Étape B — plus de données, sur les runners, étiquetées par W
 
 **La recette** : `nnue-datagen.yml` au commit candidat de W — `cd6ed79`
