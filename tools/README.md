@@ -965,7 +965,11 @@ dernière relève est faite.
 | **N° 20 — la vague 6**, la dernière, étiquetée par N6r4 | 39375325547, 39375329849, 39375334077, 39375338208, 39375342511, 39375346497, 39375350622, 39375355535, 39375360071, 39375364672, 39375369257, 39375373891, 39375379162, 39375384258, 39375389499, 39375395417 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 20 oct. à 7 h 31, ses attendus poussés avant (`5c0107c`) ; fin vers 13 h 00–13 h 10 | — *Attendus, écrits avant* (section « N° 20 », la vague 6) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763**, un runner isolé jusqu'à 1 % dessous ; **le cumul, 1 687 à 1 797 M gardées** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
 | **N° 20 — la séance A, puis (a) et (d), sur la carte de Théo** | — | séance A : N7p2, N7p4 à `4a604ea` ; (a) N6r4La, N6r4Lb et (d) N6r4w50, N6r4w25 à `main` (`2a8cca1` et après) | `tools/nnue-train`, les 79 jobs du n° 18 et le binpack du levier 4 | **EN COURS chez Théo depuis le 20 oct. à 8 h 11**, par `tools/seance-n20.sh` (PR #202) — **(a) et (d) RELEVÉS à 11 h 50** : les quatre réseaux conformes, poussés sur `reseau/n20-ad` (`2332ee0`), confrontations 8 / 21, 4 / 12, 5 / 26, 7 / 18, échelle 282,1 (section « (a) et (d) », la séance relevée) ; **A en cours** — demandée le 19 au soir, pas lancée la nuit ; **l'essai court de (a) RÉUSSI à 8 h 07** : écart médian 4, maximal 29 (admis 15 / 50), échelle ajustée **282,1** (critère 250 – 450), la première compilation CUDA du `nnue-train` de `main` ; tous les contrôles d'avant passés, la veille bloquée ; (a) et (d) d'abord (~2 h, `reseau/n20-ad`), puis A (~4 h, `reseau/n20a`, `reseau/n20a-points`) | — *Attendus, écrits avant* (section « N° 20 », la séance A et « (a) et (d) ») : N7p2 contre N6r4 +3 à +12, N7p4 contre N7p2 −10 à +8 ; N6r4La −15 à +10, N6r4Lb −6 à +6 ; N6r4w50 −8 à +12, N6r4w25 −12 à +15 ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — la perte tenue à l'écart de (a) et (d)** | **39406254639** | l'outil à `4ab82af` ; N6r4, puis N6r4La, N6r4Lb, N6r4w50, N6r4w25, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 18** — lancée à 12 h 12, finie à 12 h 14 | **(a) tient, (d) tombe pour N6r4w50.** Contrôle exact (17 208 872, 17 938 594), N6r4 à sa perte du 17 oct. ; tenu à l'écart, N6r4La **+0,00195 ± 0,00006**, N6r4Lb **+0,00143 ± 0,00005** — N6r4 < Lb < La ; N6r4w50 **−0,00003 ± 0,00002**, indiscernable de N6r4, N6r4w25 **+0,00032 ± 0,00003** ; les deux de (d) retiennent moins que N6r4 (section « (a) et (d) », la perte tenue à l'écart) — *Attendus, écrits avant* (section « (a) et (d) ») : N6r4 ≤ N6r4Lb ≤ N6r4La ; N6r4w50 et N6r4w25 au-dessus de N6r4, ils minimisent une autre cible |
-| **N° 20 — la sonde de B8 et les nœuds par seconde de (a) et (d), dans le conteneur** | — | les candidats `89bb3e9`, `739452f`, `0f5214b`, `85c88a6` plus `b8-sonde-marges.patch`, chacun contre lui-même, `8+0,08`, 40 parties, `-srand 20260930` ; puis le rejeu du n° 15, `--nps`, AVX2, dix tours, contre `0eca96a` | fastchess ; `facteurs.py` ; `rejeu.py` | **EN COURS depuis 12 h 13** — `n20ad/sonde.sh` puis `nps.sh` au carnet | — *Attendus, écrits avant* (section « (a) et (d) », la sonde et les nœuds par seconde) : N6r4La 2,3 à 3,2, N6r4Lb 2,3 à 2,9, N6r4w50 et N6r4w25 2,2 à 3,2 — les quatre dans 2,14 à 3,56, au facteur de `main` ; n/s × 0,97 à × 1,04 contre N6r4 |
+| **N° 20 — la sonde de B8 et les nœuds par seconde de (a) et (d), dans le conteneur** | — | les candidats `89bb3e9`, `739452f`, `0f5214b`, `85c88a6` plus `b8-sonde-marges.patch`, chacun contre lui-même, `8+0,08`, 40 parties, `-srand 20260930` ; puis le rejeu du n° 15, `--nps`, AVX2, dix tours, contre `0eca96a` | fastchess ; `facteurs.py` ; `rejeu.py` | **la sonde RELEVÉE à 12 h 33 — les quatre dans la plage et dans leur attendu** : N6r4La **2,59**, N6r4Lb **2,86**, N6r4w50 **2,44**, N6r4w25 **2,47**, tous au facteur de `main`, les candidats inchangés ; zéro perte au temps ; **les nœuds par seconde EN COURS** depuis 12 h 33 (`n20ad/nps.sh`) | — *Attendus, écrits avant* (section « (a) et (d) », la sonde et les nœuds par seconde) : N6r4La 2,3 à 3,2, N6r4Lb 2,3 à 2,9, N6r4w50 et N6r4w25 2,2 à 3,2 — les quatre dans 2,14 à 3,56, au facteur de `main` ; n/s × 0,97 à × 1,04 contre N6r4 |
+| **N° 20 — N6r4La contre N6r4** | **39408732940, 39408736055, 39408739135, 39408741873** | `89bb3e9` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−15 à +10, ~−2** ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20 — N6r4Lb contre N6r4** | **39408744693, 39408747673, 39408750838, 39408753851** | `739452f` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−6 à +6, ~0** ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20 — N6r4w50 contre N6r4** | **39408757801, 39408760808, 39408763781, 39408766522** | `0f5214b` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−8 à +12** ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20 — N6r4w25 contre N6r4** | **39408769776, 39408772645, 39408775372, 39408778493** | `85c88a6` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−12 à +15** ; critère du n° 17 contre N6r4, chaque axe à part |
 | **Le balayage hebdomadaire du 20 oct.** | — (le run du mardi, 00:00 UTC) | `main` après la PR de la relève de la vague 2 | `mutation.yml` | **EN COURS** — run 39366549848, parti à 5 h 52 (le cron en retard de 3 h 52) ; **le job de `nnue.rs` a perdu son runner** à 6 h 22 (« *The runner has received a shutdown signal* », 2 mutants manqués lus avant la coupure, sur 161), sans résumé : à relancer une fois le run fini (`rerun-failed-jobs`, qui relance aussi `Verdict`) ; les autres fichiers verts, `search.rs` en cours | — *Prédiction, écrite avant* : **163**, chaque fichier à son plafond — aucune ligne d'`engine/src/` n'a changé depuis le balayage après N6r4 (163, exact) ; `--pas`, `--wdl` et `--melange` vivent dans `tools/nnue-train`, hors du cliquet |
 | **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **RELEVÉ le 18 oct. à 0 h 40 : 163, EXACT** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fini à 20 h 47 | **Vert, la prédiction exacte** : chaque fichier à son plafond, `nnue.rs` 2, `search.rs` 48 — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
 | **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 18 oct. à 0 h 40** — lancée le 17 oct. à 18 h 34, finie le 18 à 0 h 03 ; Xeon 8573C, 1,64 M n/s, profondeur 13 | **109 − 99 − 92, 51,7 % : 3 112 ± 21, dedans, sous le centre** ; +43 ± 33 sur N5l à la même échelle, 0,44 au point de ce que mesure le jumeau ; zéro perte au temps (section C13, « N6r4, RELEVÉ ») — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
@@ -9877,6 +9881,44 @@ rejeu du n° 15, `--nps`, binaires AVX2, dix tours, contre N6r4 (`0eca96a`).
 - **nœuds par seconde, × 0,97 à × 1,04 contre N6r4**, sans sens attendu :
   même architecture, même code ; au n° 18, des poids différents ont rendu
   × 1,01 à × 1,04 à architecture égale, par l'arbre.
+
+**La sonde de B8, RELEVÉE le 20 oct. à 12 h 33 — les quatre dans la
+plage et dans leur attendu, tous mesurés au facteur de `main`, 2,85.**
+Quatre binaires construits à 12 h 13, 40 parties chacun, finies entre
+12 h 18 et 12 h 32 ; zéro perte au temps, zéro anomalie ; la rustine
+s'applique et compile telle quelle ; la faite main, celle du 12 oct.
+(0,40 % d'élagages delta fautifs, 4,1 % d'itérations hors de la première
+fenêtre) :
+
+| réseau | facteur delta | facteur aspiration | moyenne géométrique | hors fenêtre à δ = 25 | *attendu* | par la règle (2,14 à 3,56) |
+|---|---|---|---|---|---|---|
+| N6r4, le 17 oct. | × 3,1 | × 2,00 | 2,49 | 8,3 % | — | — le réseau de `main` |
+| **N6r4La** | × 2,8 | × 2,40 | **2,59** | 10,4 % | 2,3 à 3,2 | dedans — 2,85 |
+| **N6r4Lb** | × 3,4 | × 2,40 | **2,86** | 10,3 % | 2,3 à 2,9 | dedans — 2,85 |
+| **N6r4w50** | × 2,7 | × 2,20 | **2,44** | 9,5 % | 2,2 à 3,2 | dedans — 2,85 |
+| **N6r4w25** | × 3,4 | × 1,80 | **2,47** | 7,0 % | 2,2 à 3,2 | dedans — 2,85 |
+
+- **les candidats ne changent pas** ; Lb au bord haut de son attendu ;
+- **le réglage sur Leela bouge les scores d'une itération à l'autre** :
+  10,3 et 10,4 % hors de la première fenêtre, contre 8,3 % pour N6r4 —
+  l'aspiration y échoue un quart de fois plus, ce que dit aussi son
+  facteur (× 2,40 contre × 2,00) ; **le poids du résultat les stabilise**,
+  9,5 puis 7,0 % à mesure qu'il baisse. <span>Inférence, confiance
+  faible</span> : une cible qui suit davantage le score de l'étiqueteur
+  donne une évaluation plus lisse d'une profondeur à la suivante ;
+- **le delta**, sur la grille de 0,1 sans rien entre 3,0 et 4,0 pour
+  certains, ne départage rien de net.
+
+**Les matchs, lancés le 20 oct. à 12 h 33** — seize jobs de 2 800
+parties à `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux
+côtés, tous démarrés aussitôt, contre **`0eca96a`** (N6r4) : N6r4La
+39408732940, 39408736055, 39408739135, 39408741873 ; N6r4Lb 39408744693,
+39408747673, 39408750838, 39408753851 ; N6r4w50 39408757801,
+39408760808, 39408763781, 39408766522 ; N6r4w25 39408769776,
+39408772645, 39408775372, 39408778493. Fin attendue vers 17 h 10–17 h 50
+— les jobs du n° 18 finissaient en 4 h 55 à 5 h 15 —, au plus tard au
+plafond de 350 minutes, 18 h 25. Critère et attendus : ceux de la
+séance, écrits le 19 oct.
 
 **La perte tenue à l'écart, RELEVÉE le 20 oct. à 12 h 18 — l'attendu de
 (a) tient ; celui de (d) tombe pour N6r4w50.** Run 39406254639, l'outil à
