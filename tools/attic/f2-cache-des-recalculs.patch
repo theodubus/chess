@@ -1,0 +1,320 @@
+diff --git a/engine/src/nnue.rs b/engine/src/nnue.rs
+index 1a7388f..fa4071d 100644
+--- a/engine/src/nnue.rs
++++ b/engine/src/nnue.rs
+@@ -75,7 +75,7 @@
+ 
+ use std::sync::{Arc, OnceLock};
+ 
+-use cozy_chess::{Board, Color, File, Move, Piece, Square};
++use cozy_chess::{BitBoard, Board, Color, File, Move, Piece, Square};
+ 
+ use crate::eval::MATE_THRESHOLD;
+ 
+@@ -279,6 +279,14 @@ thread_local! {
+     static REFRESHES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+ }
+ 
++// Les lignes ajoutées ou retirées par les recalculs repris du cache, comptées
++// par fil pour les tests : un cache ignoré rend le même accumulateur qu'un
++// cache servi, et seul ce compte distingue l'un de l'autre.
++#[cfg(test)]
++thread_local! {
++    static CACHED_ROWS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
++}
++
+ /// Une ligne de poids nulle : ce que [`Network::apply_move`] ajoute ou retire
+ /// à la place d'une pièce qu'un coup ne déplace pas, pour que tous les coups
+ /// passent par le même calcul.
+@@ -305,6 +313,13 @@ impl Accumulator {
+             *value = value.wrapping_add(weight);
+         }
+     }
++
++    /// Retire une ligne de poids, l'inverse exact de [`Accumulator::add`].
++    fn sub(&mut self, row: &[i16; HIDDEN]) {
++        for (value, &weight) in self.0.iter_mut().zip(row) {
++            *value = value.wrapping_sub(weight);
++        }
++    }
+ }
+ 
+ /// Les deux moitiés d'une position, indexées par camp : `[Blancs, Noirs]`.
+@@ -313,6 +328,35 @@ impl Accumulator {
+ /// déplacer une pièce, et les laisse donc telles quelles.
+ pub type Accumulators = [Accumulator; 2];
+ 
++/// Le cache des recalculs — la « finny table » des moteurs à seaux de roi :
++/// pour chaque camp et chaque bloc de roi, seau et retournement compris, le
++/// dernier accumulateur calculé dans ce bloc et les pièces qu'il compte.
++///
++/// Quand un roi change de bloc, toutes les entrées de son camp changent de
++/// ligne, et un recalcul de zéro ajoute une ligne par pièce — jusqu'à 32. Le
++/// bloc d'arrivée a presque toujours servi peu avant, sur une position
++/// voisine : on repart de ce qu'il gardait, et seules les pièces qui diffèrent
++/// s'ajoutent ou se retirent. L'arithmétique étant modulaire, l'ordre des
++/// lignes ne change rien : l'accumulateur rendu est celui du recalcul au bit
++/// près, donc l'arbre aussi (la file du 20 oct. 2026, phase 2).
++///
++/// Propre à UN réseau — [`Network::refresh_cache`] — et à un fil : la
++/// recherche en garde un par fil et le recrée quand elle change de réseau.
++/// Neuve, chaque entrée vaut l'échiquier vide, le biais et aucune pièce : son
++/// premier emploi est un recalcul ordinaire, sans cas particulier.
++pub struct RefreshCache {
++    /// Par camp, puis par bloc : `2 × seau + retourné`.
++    entries: Box<[CachedSide]>,
++}
++
++/// Une entrée du cache : un accumulateur et les pièces qu'il compte.
++#[derive(Clone, Copy)]
++struct CachedSide {
++    accumulator: Accumulator,
++    /// Par camp et par type, comme [`Board::colored_pieces`].
++    pieces: [[BitBoard; Piece::NUM]; Color::NUM],
++}
++
+ /// L'indice de l'entrée d'une pièce, vue par `perspective`.
+ ///
+ /// Voir l'en-tête du module pour la dérivation depuis `bulletformat`.
+@@ -585,6 +629,18 @@ impl Network {
+         &self.feature_weights[feature]
+     }
+ 
++    /// Un cache des recalculs neuf, à la mesure de ce réseau.
++    #[must_use]
++    pub fn refresh_cache(&self) -> RefreshCache {
++        let empty = CachedSide {
++            accumulator: Accumulator(self.feature_bias),
++            pieces: [[BitBoard::EMPTY; Piece::NUM]; Color::NUM],
++        };
++        RefreshCache {
++            entries: vec![empty; Color::NUM * 2 * self.arch.input_buckets()].into_boxed_slice(),
++        }
++    }
++
+     /// Les deux accumulateurs d'une position, recalculés de zéro.
+     #[must_use]
+     pub fn refresh(&self, board: &Board) -> Accumulators {
+@@ -609,15 +665,57 @@ impl Network {
+         accumulator
+     }
+ 
++    /// L'accumulateur d'un camp dans le bloc que choisit son roi, repris de
++    /// ce que `cache` gardait pour ce bloc : seules les pièces qui diffèrent
++    /// s'ajoutent ou se retirent, et le cache retient le résultat. Le même
++    /// accumulateur que [`Network::refresh_side`], au bit près.
++    fn refresh_side_cached(
++        &self,
++        cache: &mut RefreshCache,
++        board: &Board,
++        perspective: Color,
++    ) -> Accumulator {
++        let key = self.king_keys[perspective as usize][board.king(perspective) as usize];
++        let (offset, flip) = key;
++        let slot = (perspective as usize * self.arch.input_buckets() + offset / INPUTS) * 2
++            + usize::from(flip != 0);
++        let Some(cached) = cache.entries.get_mut(slot) else {
++            // Un cache d'une autre architecture : `refresh_cache` le rend
++            // impossible. Le recalcul rend la fonction totale.
++            return self.refresh_side(board, perspective);
++        };
++        for color in Color::ALL {
++            for piece in Piece::ALL {
++                let now = board.colored_pieces(color, piece);
++                let kept = cached.pieces[color as usize][piece as usize];
++                for square in now - kept {
++                    let row = self.row(bucketed(key, perspective, color, piece, square));
++                    cached.accumulator.add(row);
++                    #[cfg(test)]
++                    CACHED_ROWS.with(|count| count.set(count.get() + 1));
++                }
++                for square in kept - now {
++                    let row = self.row(bucketed(key, perspective, color, piece, square));
++                    cached.accumulator.sub(row);
++                    #[cfg(test)]
++                    CACHED_ROWS.with(|count| count.set(count.get() + 1));
++                }
++                cached.pieces[color as usize][piece as usize] = now;
++            }
++        }
++        cached.accumulator
++    }
++
+     /// Les accumulateurs d'après `mv`, joué depuis `board`, dérivés de ceux
+-    /// d'avant sans rien recalculer : au plus quatre lignes ajoutées ou
+-    /// retirées, pour chaque camp.
++    /// d'avant : au plus quatre lignes ajoutées ou retirées, pour chaque camp
++    /// — sauf quand un roi change de bloc, où `cache` épargne le recalcul.
+     pub fn apply_move(
+         &self,
+         before: &Accumulators,
+         after: &mut Accumulators,
+         board: &Board,
+         mv: Move,
++        cache: &mut RefreshCache,
+     ) {
+         let mut buffer = [BLANK; 4];
+         let count = changes(board, mv, &mut buffer);
+@@ -643,11 +741,11 @@ impl Network {
+             let key = keys[board.king(perspective) as usize];
+             if perspective == us && keys[king_to as usize] != key {
+                 // Le roi change de seau ou de côté : TOUTES les entrées de son
+-                // camp changent de bloc. Recalculé depuis l'enfant — un coup
+-                // de roi qui franchit une frontière, rare (n° 17).
++                // camp changent de bloc. Repris du cache sur l'enfant — un
++                // coup de roi qui franchit une frontière, rare (n° 17).
+                 let mut child = board.clone();
+                 child.play_unchecked(mv);
+-                after[perspective as usize] = self.refresh_side(&child, perspective);
++                after[perspective as usize] = self.refresh_side_cached(cache, &child, perspective);
+                 #[cfg(test)]
+                 REFRESHES.with(|count| count.set(count.get() + 1));
+                 continue;
+@@ -1301,6 +1399,7 @@ mod tests {
+     #[test]
+     fn l_increment_egale_le_recalcul() {
+         let network = random_network(11);
++        let mut cache = network.refresh_cache();
+         let mut checked = 0;
+         for (index, position) in positions().into_iter().enumerate() {
+             // Une position sur trois : le recalcul complet est cher en debug,
+@@ -1311,7 +1410,7 @@ mod tests {
+             let before = network.refresh(&position);
+             for mv in moves_of(&position) {
+                 let mut after = before;
+-                network.apply_move(&before, &mut after, &position, mv);
++                network.apply_move(&before, &mut after, &position, mv, &mut cache);
+                 let mut child = position.clone();
+                 child.play_unchecked(mv);
+                 assert_eq!(after, network.refresh(&child), "{mv} sur {position}");
+@@ -1421,9 +1520,12 @@ mod tests {
+         // Les seaux de roi de l'exemple de bullet : un coup de roi qui change
+         // de seau ou de côté recalcule son camp, les autres se mettent à
+         // jour. Chacun des deux chemins doit être pris, et compté des deux
+-        // côtés : un compteur faux passerait une borne basse seule.
++        // côtés : un compteur faux passerait une borne basse seule. Le cache
++        // des recalculs sert d'une position à l'autre : chaque bloc y repart
++        // de ce qu'une position sans rapport y a laissé.
+         let values = random_values_with(BUCKETED, 23, 150, 127);
+         let network = Network::from_bytes_with(&file_of_any(&values), BUCKETED).unwrap();
++        let mut cache = network.refresh_cache();
+         let (mut checked, mut crossings, mut quiet_kings, mut castles) = (0, 0, 0, 0);
+         REFRESHES.with(|count| count.set(0));
+         for (index, position) in positions().into_iter().enumerate() {
+@@ -1434,7 +1536,7 @@ mod tests {
+             let before = network.refresh(&position);
+             for mv in moves_of(&position) {
+                 let mut after = before;
+-                network.apply_move(&before, &mut after, &position, mv);
++                network.apply_move(&before, &mut after, &position, mv, &mut cache);
+                 let mut child = position.clone();
+                 child.play_unchecked(mv);
+                 assert_eq!(after, network.refresh(&child), "{mv} sur {position}");
+@@ -1478,12 +1580,13 @@ mod tests {
+         )
+         .unwrap();
+         REFRESHES.with(|count| count.set(0));
++        let mut cache = network.refresh_cache();
+         let mut checked = 0;
+         for position in positions().into_iter().step_by(5) {
+             let before = network.refresh(&position);
+             for mv in moves_of(&position) {
+                 let mut after = before;
+-                network.apply_move(&before, &mut after, &position, mv);
++                network.apply_move(&before, &mut after, &position, mv, &mut cache);
+                 checked += 1;
+             }
+         }
+@@ -1491,6 +1594,40 @@ mod tests {
+         assert_eq!(REFRESHES.with(std::cell::Cell::get), 0);
+     }
+ 
++    #[test]
++    fn le_cache_ne_recompte_que_les_pieces_qui_ont_change() {
++        // Le roi blanc passe de d1 à e1 : il change de côté, donc de bloc, et
++        // son camp se recalcule — trois fois, chaque fois repris du cache.
++        // Le résultat seul ne distingue pas un cache servi d'un cache ignoré,
++        // ni un cache qui retient de travers : le compte des lignes, si.
++        let values = random_values_with(BUCKETED, 31, 150, 127);
++        let network = Network::from_bytes_with(&file_of_any(&values), BUCKETED).unwrap();
++        let mut cache = network.refresh_cache();
++        let rows_for = |cache: &mut RefreshCache, fen: &str| {
++            let position = board(fen);
++            let mv = cozy_chess::util::parse_uci_move(&position, "d1e1").unwrap();
++            let before = network.refresh(&position);
++            let mut after = before;
++            CACHED_ROWS.with(|count| count.set(0));
++            network.apply_move(&before, &mut after, &position, mv, cache);
++            let mut child = position.clone();
++            child.play_unchecked(mv);
++            assert_eq!(after, network.refresh(&child), "{fen}");
++            CACHED_ROWS.with(std::cell::Cell::get)
++        };
++        let start = "4k3/pppppppp/8/8/8/8/PPPPPPPP/3K4 w - - 0 1";
++        // Neuf, le bloc vaut l'échiquier vide : une ligne par pièce.
++        assert_eq!(rows_for(&mut cache, start), 18);
++        // La même position : rien à ajouter ni à retirer.
++        assert_eq!(rows_for(&mut cache, start), 0);
++        // Un pion noir de plus avancé, un pion blanc de moins : une ligne
++        // retirée et une ajoutée pour le premier, une retirée pour le second.
++        assert_eq!(
++            rows_for(&mut cache, "4k3/1ppppppp/p7/8/8/8/1PPPPPPP/3K4 w - - 0 1"),
++            3
++        );
++    }
++
+     /// Le calcul de référence : les octets du fichier relus sans passer par
+     /// [`Network`], les entrées de [`bullet_features`], tout en `i64`, et les
+     /// étapes de l'inférence de bullet. Rend la sortie AVANT la borne.
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 442243b..2bd27cf 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -30,7 +30,7 @@ use std::time::{Duration, Instant};
+ use cozy_chess::{Board, Color, Move, Piece, Rank, Square};
+ 
+ use crate::eval::{self, DRAW, INFINITY, MATE, MATE_THRESHOLD};
+-use crate::nnue::{Accumulators, Network};
++use crate::nnue::{Accumulators, Network, RefreshCache};
+ use crate::position::{Position, repetitions};
+ use crate::see;
+ use crate::tt::{Bound, TranspositionTable, pack_move, unpack_move};
+@@ -577,6 +577,10 @@ pub struct Search {
+     /// descendre — comme `moved`, écrit par le parent avant d'être lu par
+     /// l'enfant. Vide sans réseau.
+     accumulators: Vec<Accumulators>,
++    /// Le cache des recalculs du réseau, propre à ce fil : quand un roi
++    /// change de bloc, son camp repart de ce que ce bloc gardait au lieu de
++    /// tout recalculer. Recréé avec le réseau, absent sans lui.
++    refresh_cache: Option<RefreshCache>,
+     /// Permet à un test de désactiver la seule futilité inverse.
+     ///
+     /// Hors test, la constante `true` est connue du compilateur : la condition
+@@ -656,6 +660,7 @@ impl Search {
+             params: eval::Params::DEFAULT,
+             network: None,
+             accumulators: Vec::new(),
++            refresh_cache: None,
+             #[cfg(test)]
+             reverse_futility: true,
+             #[cfg(test)]
+@@ -719,6 +724,7 @@ impl Search {
+         } else {
+             Vec::new()
+         };
++        self.refresh_cache = network.as_deref().map(Network::refresh_cache);
+         for helper in &mut self.helpers {
+             helper.set_network(network.clone());
+         }
+@@ -833,9 +839,10 @@ impl Search {
+     /// `board` au ply `ply`. Sans réseau, rien.
+     fn push_move(&mut self, board: &Board, mv: Move, ply: usize) {
+         if let Some(network) = &self.network
++            && let Some(cache) = &mut self.refresh_cache
+             && let Some([before, after]) = self.accumulators.get_mut(ply..=ply + 1)
+         {
+-            network.apply_move(before, after, board, mv);
++            network.apply_move(before, after, board, mv, cache);
+         }
+     }
+ 

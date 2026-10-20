@@ -10032,6 +10032,40 @@ des seaux de roi à ~4 à 7 % de vitesse, et le cache en retire la partie
 identique — plus rapide au test des signes, p < 0,05 sur vingt tours ;
 sinon il reste à l'attic, sa mesure écrite.
 
+**Le temps, RELEVÉ le 20 oct. à 13 h 04 — non démontré à son critère :
+le cache va à l'attic** (`tools/attic/f2-cache-des-recalculs.patch`).
+`main` (`0eca96a`, N6r4) contre le cache, binaires AVX2, vingt tours au
+rejeu du corpus du n° 15, profondeur 10 ; **arbre identique** — 27 312 684
+nœuds par passe des deux côtés, le pilote refusant sinon :
+
+| | surcoût du cache, médiane des tours | étendue | plus lent | test des signes |
+|---|---|---|---|---|
+| cache contre `main` | **−1,2 %** | −8,6 à +6,8 % | 7 / 20 | p = 0,26 |
+
+- **dans l'attendu au point** (−1 à −4 %), **pas séparé de zéro** : le
+  critère écrit avant — p < 0,05 sur vingt tours — n'est pas atteint, et
+  le cache n'entre pas ;
+- **la faute est dans le critère, et elle se nomme** : l'écart apparié
+  d'un tour à l'autre vaut **4,7 %** (écart-type des vingt différences),
+  donc vingt tours ne résolvent qu'un effet de ~3 % — l'attendu, −1 à
+  −4 %, tombait presque entier sous ce seuil. *Un critère de temps écrit
+  sans sa puissance* : la règle « dire la puissance d'avance » vaut pour
+  le temps comme pour l'Elo, et je ne l'ai pas appliquée. Le n° 16 passait
+  avec vingt tours parce que son effet valait 14 % ;
+- **ce que cela ne dit pas** : que le cache ne rapporte rien. Le
+  mécanisme est mesuré — 65 % des lignes de recalcul épargnées, à 8,2 %
+  des coups — et l'arbre identique.
+
+**La remesure, écrite le 20 oct. à 13 h 06, avant de la lancer** — le
+même pilote, les mêmes binaires, **120 tours** (~70 minutes), quand le
+conteneur n'a rien d'autre à faire. *La puissance, d'avance* : à 4,7 % par
+tour, le test des signes sur 120 tours — ~77 tours d'un test t, son
+efficacité valant ~0,64 — détecte **−1,5 % à 80 %, −2 % à 97 %, −1 % à
+~45 %**. *Critère* : le cache entre si le test des signes donne plus
+rapide à p < 0,05 ; sinon il reste à l'attic **pour de bon** — une troisième
+mesure demanderait un fait neuf, un instrument moins bruité par exemple,
+pas plus de tours. Les vingt tours d'aujourd'hui ne s'y ajoutent pas.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
@@ -11458,7 +11492,7 @@ l'inférence suit.
 
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
-| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **ÉCRIT le 20 oct., en mesure** (section « La file, phase 2 — le cache des recalculs ») : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
+| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **ÉCRIT le 20 oct. ; à l'attic à son premier critère** — −1,2 % au point, p = 0,26 sur vingt tours, qui ne résolvaient que ~3 % ; **une remesure de 120 tours écrite avant**, à lancer conteneur libre (section « La file, phase 2 — le cache des recalculs ») : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
 | **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; après le cache |
 | **l'évaluation statique dans la table** | une entrée trouvée rend aussi son évaluation, sans recalcul | pur seulement si l'entrée garde sa taille : sinon la capacité change et l'arbre avec (le piège de B9), et c'est un match |
 | **un banc qui emploie le réseau** | de l'outillage : mesurer la vitesse de ce qui joue, pas de la faite main | si le rejeu ne suffit pas à mesurer les trois lignes précédentes |
