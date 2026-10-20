@@ -9714,7 +9714,9 @@ celui du n° 17. **Chez Théo** : ~8,5 Go de plus à télécharger.
 demandé le même soir** : tel qu'écrit — N8n et N8t au poids 0,75, puis une
 séance de composition à leurs verdicts — ou, recommandé, **tout au poids
 0,5** : N7p4w50 (les anciennes), N8tw50 (les deux), **N8tw50s800** (les
-deux, 800 superlots) et N8nw50 (les neuves, en dernier), ~13 h de carte,
+deux, 800 superlots), **l'écran du pas** — N6r4w50 aux pas 0,0005 et
+0,002, 100 superlots, contre N6r4w50 — et N8nw50 (les neuves, en dernier),
+~14 h 30 de carte,
 le gagnant déjà composé. Avec le second, l'axe des données se lit à poids
 fixe, et N7p4w50 contre N7p4 dit si le poids paie encore à 400
 superlots.
@@ -9732,8 +9734,8 @@ qu'on y répond :
   serviront**. *Attendu* — <span>inférence, confiance faible</span> : +3 à
   +12, ~+7, sur le modèle de 12,8 → 25,6 passes (+9,31). S'il paie, 1 600
   à la séance suivante ;
-- *« Faut-il tester d'autres poids du résultat ? »* — **Pas maintenant,
-  et la raison se chiffre.** 0,75 → 0, 0,5 → +11,79, 0,25 → +7,17, chacun à
+- *« Faut-il tester d'autres poids du résultat ? »* — **Déprioritisé,
+  pas fermé, et la raison se chiffre.** 0,75 → 0, 0,5 → +11,79, 0,25 → +7,17, chacun à
   ± 3,5 : l'optimum est entre 0,25 et 0,75, la parabole par les trois
   points le met vers 0,45, à +0,4 au-dessus de 0,5. Même chaque point
   poussé au bord de son intervalle — 0,25 à +10,7, 0,5 à +8,3 —, l'optimum
@@ -9766,7 +9768,7 @@ puis les réseaux du format choisi, **chacun commité et poussé sur
 pendant que les suivants s'entraînent. `bash tools/seance-n20b.sh essai`,
 puis `bash tools/seance-n20b.sh tout w50` — ou `tout ecrit`. L'ordre au
 format `w50` : N7p4w50, le plus probable à embarquer, puis N8tw50, puis
-N8tw50s800, puis N8nw50, qu'on peut couper. *Éprouvé dans un bac à sable* — faux `cargo`, faux `gh`, dépôt
+N8tw50s800, puis l'écran du pas, puis N8nw50, qu'on peut couper. *Éprouvé dans un bac à sable* — faux `cargo`, faux `gh`, dépôt
 distant local : l'essai ; la séance entière avec une panne simulée sur
 N8tw50, puis la relance, qui reprend N8tw50 seul et pousse les trois ; une
 troisième relance qui ne refait rien ; un téléchargement interrompu puis
@@ -12040,6 +12042,32 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 | **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | runners, après B et (d) |
 | **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) |
 
+**Les réglages ouverts — rien n'y passe à « résolu »** (Théo, 20 oct. ;
+`CLAUDE.md`, « Par où commencer »). Une valeur validée est une borne
+basse : chaque réglage garde sa marge estimée et son prochain test, et
+se déprioritise quand la marge est fine — jamais ne se ferme. Les
+défauts de l'exemple de bullet en sont le premier gisement : le poids du
+résultat en était un, jamais mesuré, et valait +11,79.
+
+| réglage | aujourd'hui | ce qui l'a mesuré | marge estimée | prochain test |
+|---|---|---|---|---|
+| **superlots (passes)** | 400 | 100 → 200 +14,74 ; 200 → 400 +9,31 | ~+7 au doublement suivant — <span>confiance faible</span> | N8tw50s800, séance B ; s'il paie, 1 600 |
+| **poids du résultat** (`wdl`) | 0,5 | 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17, à 100 superlots | ~2,4 au plus au même point ; inconnue à la recette finale | N7p4w50 contre N7p4 dit s'il bouge ; deux points autour de 0,5 à la recette finale |
+| **pas initial** (`--pas`) | 0,001, le défaut de bullet | jamais depuis zéro | inconnue | l'écran ×0,5 et ×2, séance B |
+| **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | une option dans `nnue-train`, séance C |
+| **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 ; une option, séance C |
+| **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | une option, séance C |
+| **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | une option, séance C |
+| **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | une option, séance C |
+| **volume de données** | 3,1 G après B | doubler : +7,32 (n° 18) | encore | séance B, puis la génération en continu |
+| **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; le budget, jamais | inconnue | N8nw50 (séance B) ; (e) sur les runners |
+| **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17) | inconnue au volume d'aujourd'hui | (c) 384 et 512, puis 1 024 |
+| **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | (c) |
+| **seaux de sortie** | 8, selon le matériel | 1 contre 8 seulement | inconnue | (c) |
+| **couches cachées** | aucune | jamais | inconnue | phase 3, après (c) |
+| **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |
+| **marges et constantes de recherche** | réglées à la main ; × 2,85 au réseau (B8) | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA, phase 5, à refaire à chaque réseau |
+
 **Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
 optimisations pures : même arbre au nœud près, prouvées par le temps au
 rejeu, sans match. Elles précèdent les réseaux larges, qui ne paient que si
@@ -12057,7 +12085,7 @@ phases 1 et 2).**
 
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
-| **(c) — les architectures gourmandes** | dix seaux de roi, 384 ou 512 unités, nourris du mélange | après (b) |
+| **(c) — les architectures gourmandes** | dix seaux de roi, 384 ou 512 unités | **sur nos données, à la recette que la séance B fixe** — volume, passes, poids —, en séance C, chaque architecture avec ses nœuds par seconde ; la variante nourrie du mélange de Leela, si (b) paie. *Ce qui était écrit « après (b) » ne voulait pas dire « sans (b), jamais »* — corrigé le 20 oct. au soir, quand (b) est passé derrière la séance B |
 | **1 024 unités et des couches cachées** | une première couche quatre fois plus large, puis une ou deux couches de plus avant la sortie — la forme des moteurs forts, <span>de mémoire, confiance moyenne</span> | à écrire dans le moteur (inférence à plusieurs couches, quantification) et dans l'entraîneur ; après le cache, le SIMD et assez de données ; ~4 fois le temps par superlot sur la carte de Théo |
 
 **Phase 4 — la recherche (conteneur, puis runners ; en parallèle des

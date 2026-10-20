@@ -38,12 +38,21 @@ pièges déjà payés. Il ne dit pas **où on en est**.
 - Ce sur quoi travailler : **la file validée**, `tools/README.md`, section
   *Ce qui reste à faire*, sous-section *La file* — réécrite le 20 oct. 2026
   dans l'ordre où faire, Théo : « *Je valide tous ces points, tout ce qui
-  vaut le coup d'être testé* » ; « *Le but absolu est la perf* ». Ce qui n'y
-  est pas se **demande** : en deviner l'ordre reviendrait à rouvrir des
-  questions déjà tranchées. Mais **proposer ne coûte rien** — Théo, 19 oct. :
-  « *d'une manière générale tout ce qui peut faire augmenter l'elo vaut le
-  coup d'être testé* ». Un levier possible se signale et se propose ; une
-  fois validé, il entre dans la file à sa place.
+  vaut le coup d'être testé* » ; « *Le but absolu est la perf* ». **Un test
+  qui vaut le coup n'attend pas de validation** — Théo, 20 oct. : « *as tu
+  vraiment besoin de ma validation ? j'ai dit plein de fois que tout ce qui
+  vaut le coup d'être testé doit être testé* ». Il entre dans la file à son
+  rang — marge estimée contre coût — et se signale au récap suivant. Ce
+  qui se demande encore : ce qui engage Théo hors du test lui-même, et ce
+  qui rouvrirait une décision structurante.
+  **Aucun réglage n'est « résolu » parce qu'une valeur a été validée** —
+  Théo, 20 oct. : « *il ne faut jamais considérer le point comme résolu si
+  on a juste testé et validé une implémentation* » ; « *au pire, on
+  dépriorise les nouveaux tests si la marge à chercher est fine* ». Une
+  valeur validée est une borne basse, pas un optimum, et l'optimum bouge
+  quand la base change. Chaque réglage vit dans le registre des réglages
+  ouverts (`tools/README.md`, « La file ») : sa valeur, ce qui l'a mesuré,
+  la marge estimée, le prochain test, son rang.
 - **Ce qui revient à Théo se dit à chaque point de récap** — toute action
   humaine nécessaire, et en particulier les branches distantes à supprimer,
   que le jeton de session ne peut pas supprimer. Théo, 5 oct. 2026 :

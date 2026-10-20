@@ -7,14 +7,15 @@
 # fini se mesure pendant que les suivants s'entraînent.
 #
 #   bash tools/seance-n20b.sh essai        # contrôles, téléchargement, essai court
-#   bash tools/seance-n20b.sh              # tout, ~13 h ; le résumé dans ~/seance-n20b/
+#   bash tools/seance-n20b.sh              # tout, ~14 h 30 ; le résumé dans ~/seance-n20b/
 #   bash tools/seance-n20b.sh tout ecrit   # le format écrit le 20 oct. à 13 h 25
 #
 # Deux formats, l'arbitrage de Théo les départage (tools/README.md, section
 # « N° 20 », « La séance B ») :
 #   w50   — tout au poids du résultat 0,5 : N7p4w50 (les anciennes, la
 #           composition de A et de (d)), N8tw50 (les deux), N8tw50s800 (les
-#           deux, 800 superlots : faut-il encore plus de passes ?), N8nw50
+#           deux, 800 superlots : faut-il encore plus de passes ?), l'écran
+#           du pas (N6r4w50 aux pas 0,0005 et 0,002, 100 superlots), N8nw50
 #           (les neuves seules, l'étiqueteur — le dernier, qu'on peut couper) ;
 #   ecrit — au poids 0,75 : N8t, N8n ; N7p4, déjà entraîné, sert de troisième.
 # Relancé après une interruption, il reprend au réseau qui manque et saute
@@ -289,13 +290,13 @@ fi
 B=0
 git_d fetch -q origin
 deja_pousse() { git_d cat-file -e "origin/reseau/n20b:reseaux/$1-$2.bin" 2>/dev/null; }
-reseau_b() { # nom, superlots, poids, puis les arguments de données
-  local nom=$1 sl=$2 wdl=$3 id=$ARCH-$2
-  shift 3
+reseau_b() { # nom, superlots, poids, pas, puis les arguments de données
+  local nom=$1 sl=$2 wdl=$3 pas=$4 id=$ARCH-$2
+  shift 4
   if deja_pousse "$nom" "$id"; then
     dire "déjà poussé  $nom"
-  elif former "$nom" "$id" --superlots "$sl" --wdl "$wdl" --sortie "$nom" "$@" &&
-    controler "$nom" "$id" pas=0.001 "wdl=$wdl"; then
+  elif former "$nom" "$id" --superlots "$sl" --wdl "$wdl" --pas "$pas" --sortie "$nom" "$@" &&
+    controler "$nom" "$id" "pas=$pas" "wdl=$wdl"; then
     publier "Réseau NNUE du n° 20, séance B : $nom — tools/seance-n20b.sh, tous les contrôles passés" \
       "$nom:$id" || B=1
   else
@@ -304,18 +305,23 @@ reseau_b() { # nom, superlots, poids, puis les arguments de données
 }
 if [ "$FORMAT" = w50 ]; then
   dire "— N7p4w50 : les anciennes, 400 superlots, poids 0,5"
-  reseau_b n7p4w50 "$SL" 0.5 --attendu "$ATT_ANCIENNES" "${ANCIENNES[@]}"
+  reseau_b n7p4w50 "$SL" 0.5 0.001 --attendu "$ATT_ANCIENNES" "${ANCIENNES[@]}"
   dire "— N8tw50 : les anciennes et les neuves"
-  reseau_b n8tw50 "$SL" 0.5 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
+  reseau_b n8tw50 "$SL" 0.5 0.001 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
   dire "— N8tw50s800 : les mêmes, 800 superlots — le doublement suivant"
-  reseau_b n8tw50s800 800 0.5 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
+  reseau_b n8tw50s800 800 0.5 0.001 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
+  # L'écran du pas : le pas initial de l'exemple de bullet, jamais mesuré
+  # depuis zéro — la recette de N6r4w50 au seul pas près, 100 superlots.
+  dire "— l'écran du pas : N6r4w50 au pas 0,0005, puis 0,002"
+  reseau_b n6r4w50pas0005 100 0.5 0.0005 --attendu "$ATT_ANCIENNES" "${ANCIENNES[@]}"
+  reseau_b n6r4w50pas002 100 0.5 0.002 --attendu "$ATT_ANCIENNES" "${ANCIENNES[@]}"
   dire "— N8nw50 : les neuves seules — le dernier, qu'on peut couper"
-  reseau_b n8nw50 "$SL" 0.5 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
+  reseau_b n8nw50 "$SL" 0.5 0.001 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
 else
   dire "— N8t : les anciennes et les neuves, 400 superlots, poids 0,75"
-  reseau_b n8t "$SL" 0.75 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
+  reseau_b n8t "$SL" 0.75 0.001 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
   dire "— N8n : les neuves seules"
-  reseau_b n8n "$SL" 0.75 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
+  reseau_b n8n "$SL" 0.75 0.001 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
 fi
 
 if [ "$B" = 0 ]; then
