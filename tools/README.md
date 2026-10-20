@@ -9521,7 +9521,7 @@ journal de 39375395417 — pas de bascule sur Ubuntu 26.
 
 **L'étape B, close : 1 751,9 M positions gardées en six vagues**, 95 jobs
 appris (`tools/n20-jobs.tsv`), étiquetés par N6r4 à `cd6ed79` — × 1,12
-le volume ancien (1 563 M). Le surplus, **188,8 M**, au-dessus des ~170 M
+le volume ancien (1 563 M). Le surplus, **188,6 M**, au-dessus des ~170 M
 attendus : la séance B tire dans l'ordre de lancement jusqu'au volume
 ancien, le reste est gardé pour (c) et (e). La séance B s'écrit après le
 verdict de A, qui fixe ses superlots.
