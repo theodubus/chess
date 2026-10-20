@@ -9839,6 +9839,14 @@ checkout : je lui avais passé un SHA court), contrôle exact (17 208 872,
   confiance faible</span> : une cible qui pèse moins le résultat, bruité,
   s'apprend moins par cœur. Le match dira si ça se joue.
 
+**La sonde de B8 et les nœuds par seconde de N7p4w50, RELEVÉS le 21 oct.
+à 0 h 38 — dans l'attendu, au facteur de `main`.** La sonde : 40 parties,
+finies à 0 h 32, zéro anomalie — facteur delta **× 2,7**, aspiration
+**× 2,40** (10,4 % hors fenêtre à δ = 25), **moyenne géométrique 2,55**,
+dans 2,2 à 3,2 et dans la plage : le candidat ne change pas. Les nœuds par
+seconde, au rejeu du n° 15, dix tours, contre N7p4 recommité : **× 1,011**,
+plus lent 4 tours sur 10, p = 0,75 — rien de séparé, dans × 0,97 à × 1,04.
+
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
 la séance A : les contrôles d'avant (dépôt, 79 jobs anciens et leurs 316
