@@ -10192,6 +10192,33 @@ pas plus de tours. Les vingt tours d'aujourd'hui ne s'y ajoutent pas.
 **Lancée le 20 oct. à 13 h 15**, le conteneur sans autre charge — les
 matchs tournent sur les runners.
 
+**La remesure, RELEVÉE le 20 oct. à 14 h 26 — rien à prendre : le cache
+reste à l'attic, pour de bon.** Cent vingt tours, arbre identique
+(27 312 684 nœuds par passe des deux côtés) :
+
+| | médiane des tours | moyenne, IC 95 % | plus lent | test des signes |
+|---|---|---|---|---|
+| cache contre `main` | **+0,2 %** | **+0,46 %, de −0,42 à +1,34** | 62 / 120 | p = 0,78 |
+
+- **l'attendu est réfuté, pas seulement non atteint** : l'intervalle
+  exclut tout gain au-delà de 0,42 %, quand l'attendu disait −1 à −4 %.
+  La puissance écrite avant était là — 97 % à −2 % ; le bruit par tour,
+  4,9 %, celui des vingt premiers ;
+- **ce que le mécanisme ne disait pas** : il comptait des LIGNES — 65 %
+  de moins sur les recalculs — et les convertissait en temps par
+  « des passages de même coût », hypothèse que je savais fausse en
+  l'écrivant (confiance moyenne). Un recalcul ajoute ses lignes dans un
+  accumulateur qui reste en cache L1 ; ce qu'il paie, c'est de lire ces
+  lignes, éparses dans 1,5 Mo de poids — et le cache lit aussi les
+  siennes, plus son entrée de 512 octets parmi seize. <span>Inférence,
+  confiance faible</span> : le recalcul était borné par la mémoire, pas
+  par l'arithmétique, et le cache n'en retire qu'une partie, que son
+  propre accès rend ;
+- **la règle qui en sort** — *un compte d'opérations n'est pas un temps,
+  même à arbre identique* — est celle de « le nombre de nœuds ne dit pas
+  la force », un cran plus bas : il borne, il ne prédit pas. Le n° 15
+  l'avait vue sous une autre forme (le doublement, un minorant).
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
@@ -11618,7 +11645,7 @@ l'inférence suit.
 
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
-| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **ÉCRIT le 20 oct. ; à l'attic à son premier critère** — −1,2 % au point, p = 0,26 sur vingt tours, qui ne résolvaient que ~3 % ; **une remesure de 120 tours écrite avant**, à lancer conteneur libre (section « La file, phase 2 — le cache des recalculs ») : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
+| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **ÉCRIT le 20 oct., À L'ATTIC POUR DE BON** — vingt tours, −1,2 % non séparé ; puis cent vingt, la puissance écrite avant : **+0,46 %, IC −0,42 à +1,34** — aucun gain au-delà de 0,4 % (section « La file, phase 2 — le cache des recalculs ») : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
 | **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; après le cache |
 | **l'évaluation statique dans la table** | une entrée trouvée rend aussi son évaluation, sans recalcul | pur seulement si l'entrée garde sa taille : sinon la capacité change et l'arbre avec (le piège de B9), et c'est un match |
 | **un banc qui emploie le réseau** | de l'outillage : mesurer la vitesse de ce qui joue, pas de la faite main | si le rejeu ne suffit pas à mesurer les trois lignes précédentes |
