@@ -1,0 +1,95 @@
+    Finished `release` profile [optimized] target(s) in 0.08s
+     Running `target/release/shallowred-nnue-train --depuis n6r4/shallowred-768x4hm-256-s8-100 --pas 0.0001 --superlots 1 --sortie essai-n6r4l /home/theo/leela`
+== 1. Relecture des données ==
+  /home/theo/leela/training_data.binpack  14366468016 octets  14905 blocs
+  échantillon : 2000000 positions gardées sur 3397354 décodées ; échelle ajustée 282.1, celle de la conversion de Leela 330.3
+== 2. Entraînement ==
+  repart de n6r4/shallowred-768x4hm-256-s8-100
+  1 superlots, pas 0.0001 → 2.4300004e-7, wdl 0.75
+[34;1mTraining Preamble[0m
+Net Name               : [32;1mshallowred-768x4hm-256-s8[0m
+Batch Size             : [31m16384[0m
+Batches / Superbatch   : [31m6104[0m
+Positions / Superbatch : [31m100007936[0m
+Start Superbatch       : [31m1[0m
+End Superbatch         : [31m1[0m
+Eval Scale             : [31m330[0m
+Save Rate              : [31m10[0m
+WDL Scheduler          : constant [31m0.75[0m
+LR Scheduler           : start at [31m0.0001[0m and cosine decay to [31m0.00000024300004[0m at superbatch [31m1[0m
+Threads                : [31m4[0m
+Output Path            : [32;1messai-n6r4l[0m
+[34;1mTraining on NVIDIA GeForce RTX 3050 Laptop GPU (sm_86)[0m
+superbatch [36m1[0m [[35m0.0[0m% ([36m0[0m/[36m6104[0m batches, [36m181326[0m pos/sec)]
+Estimated time to end of superbatch: [36minf[0ms     [Fsuperbatch [36m1[0m [[35m2.1[0m% ([36m128[0m/[36m6104[0m batches, [36m3570279[0m pos/sec)]
+Estimated time to end of superbatch: [36m27.6[0ms     [Fsuperbatch [36m1[0m [[35m4.2[0m% ([36m256[0m/[36m6104[0m batches, [36m3914578[0m pos/sec)]
+Estimated time to end of superbatch: [36m24.6[0ms     [Fsuperbatch [36m1[0m [[35m6.3[0m% ([36m384[0m/[36m6104[0m batches, [36m4029632[0m pos/sec)]
+Estimated time to end of superbatch: [36m23.3[0ms     [Fsuperbatch [36m1[0m [[35m8.4[0m% ([36m512[0m/[36m6104[0m batches, [36m4079175[0m pos/sec)]
+Estimated time to end of superbatch: [36m22.5[0ms     [Fsuperbatch [36m1[0m [[35m10.5[0m% ([36m640[0m/[36m6104[0m batches, [36m4122689[0m pos/sec)]
+Estimated time to end of superbatch: [36m21.7[0ms     [Fsuperbatch [36m1[0m [[35m12.6[0m% ([36m768[0m/[36m6104[0m batches, [36m4155864[0m pos/sec)]
+Estimated time to end of superbatch: [36m21.1[0ms     [Fsuperbatch [36m1[0m [[35m14.7[0m% ([36m896[0m/[36m6104[0m batches, [36m4177340[0m pos/sec)]
+Estimated time to end of superbatch: [36m20.4[0ms     [Fsuperbatch [36m1[0m [[35m16.8[0m% ([36m1024[0m/[36m6104[0m batches, [36m4194022[0m pos/sec)]
+Estimated time to end of superbatch: [36m19.9[0ms     [Fsuperbatch [36m1[0m [[35m18.9[0m% ([36m1152[0m/[36m6104[0m batches, [36m4203943[0m pos/sec)]
+Estimated time to end of superbatch: [36m19.3[0ms     [Fsuperbatch [36m1[0m [[35m21.0[0m% ([36m1280[0m/[36m6104[0m batches, [36m4213040[0m pos/sec)]
+Estimated time to end of superbatch: [36m18.8[0ms     [Fsuperbatch [36m1[0m [[35m23.1[0m% ([36m1408[0m/[36m6104[0m batches, [36m4217510[0m pos/sec)]
+Estimated time to end of superbatch: [36m18.3[0ms     [Fsuperbatch [36m1[0m [[35m25.2[0m% ([36m1536[0m/[36m6104[0m batches, [36m4216422[0m pos/sec)]
+Estimated time to end of superbatch: [36m17.8[0ms     [Fsuperbatch [36m1[0m [[35m27.3[0m% ([36m1664[0m/[36m6104[0m batches, [36m4222430[0m pos/sec)]
+Estimated time to end of superbatch: [36m17.2[0ms     [Fsuperbatch [36m1[0m [[35m29.4[0m% ([36m1792[0m/[36m6104[0m batches, [36m4227878[0m pos/sec)]
+Estimated time to end of superbatch: [36m16.7[0ms     [Fsuperbatch [36m1[0m [[35m31.5[0m% ([36m1920[0m/[36m6104[0m batches, [36m4231918[0m pos/sec)]
+Estimated time to end of superbatch: [36m16.2[0ms     [Fsuperbatch [36m1[0m [[35m33.6[0m% ([36m2048[0m/[36m6104[0m batches, [36m4235321[0m pos/sec)]
+Estimated time to end of superbatch: [36m15.7[0ms     [Fsuperbatch [36m1[0m [[35m35.6[0m% ([36m2176[0m/[36m6104[0m batches, [36m4237510[0m pos/sec)]
+Estimated time to end of superbatch: [36m15.2[0ms     [Fsuperbatch [36m1[0m [[35m37.7[0m% ([36m2304[0m/[36m6104[0m batches, [36m4239657[0m pos/sec)]
+Estimated time to end of superbatch: [36m14.7[0ms     [Fsuperbatch [36m1[0m [[35m39.8[0m% ([36m2432[0m/[36m6104[0m batches, [36m4241165[0m pos/sec)]
+Estimated time to end of superbatch: [36m14.2[0ms     [Fsuperbatch [36m1[0m [[35m41.9[0m% ([36m2560[0m/[36m6104[0m batches, [36m4238964[0m pos/sec)]
+Estimated time to end of superbatch: [36m13.7[0ms     [Fsuperbatch [36m1[0m [[35m44.0[0m% ([36m2688[0m/[36m6104[0m batches, [36m4238912[0m pos/sec)]
+Estimated time to end of superbatch: [36m13.2[0ms     [Fsuperbatch [36m1[0m [[35m46.1[0m% ([36m2816[0m/[36m6104[0m batches, [36m4239972[0m pos/sec)]
+Estimated time to end of superbatch: [36m12.7[0ms     [Fsuperbatch [36m1[0m [[35m48.2[0m% ([36m2944[0m/[36m6104[0m batches, [36m4240716[0m pos/sec)]
+Estimated time to end of superbatch: [36m12.2[0ms     [Fsuperbatch [36m1[0m [[35m50.3[0m% ([36m3072[0m/[36m6104[0m batches, [36m4241061[0m pos/sec)]
+Estimated time to end of superbatch: [36m11.7[0ms     [Fsuperbatch [36m1[0m [[35m52.4[0m% ([36m3200[0m/[36m6104[0m batches, [36m4241902[0m pos/sec)]
+Estimated time to end of superbatch: [36m11.2[0ms     [Fsuperbatch [36m1[0m [[35m54.5[0m% ([36m3328[0m/[36m6104[0m batches, [36m4242705[0m pos/sec)]
+Estimated time to end of superbatch: [36m10.7[0ms     [Fsuperbatch [36m1[0m [[35m56.6[0m% ([36m3456[0m/[36m6104[0m batches, [36m4243480[0m pos/sec)]
+Estimated time to end of superbatch: [36m10.2[0ms     [Fsuperbatch [36m1[0m [[35m58.7[0m% ([36m3584[0m/[36m6104[0m batches, [36m4244006[0m pos/sec)]
+Estimated time to end of superbatch: [36m9.7[0ms     [Fsuperbatch [36m1[0m [[35m60.8[0m% ([36m3712[0m/[36m6104[0m batches, [36m4244127[0m pos/sec)]
+Estimated time to end of superbatch: [36m9.2[0ms     [Fsuperbatch [36m1[0m [[35m62.9[0m% ([36m3840[0m/[36m6104[0m batches, [36m4242238[0m pos/sec)]
+Estimated time to end of superbatch: [36m8.7[0ms     [Fsuperbatch [36m1[0m [[35m65.0[0m% ([36m3968[0m/[36m6104[0m batches, [36m4241757[0m pos/sec)]
+Estimated time to end of superbatch: [36m8.3[0ms     [Fsuperbatch [36m1[0m [[35m67.1[0m% ([36m4096[0m/[36m6104[0m batches, [36m4242057[0m pos/sec)]
+Estimated time to end of superbatch: [36m7.8[0ms     [Fsuperbatch [36m1[0m [[35m69.2[0m% ([36m4224[0m/[36m6104[0m batches, [36m4241537[0m pos/sec)]
+Estimated time to end of superbatch: [36m7.3[0ms     [Fsuperbatch [36m1[0m [[35m71.3[0m% ([36m4352[0m/[36m6104[0m batches, [36m4241302[0m pos/sec)]
+Estimated time to end of superbatch: [36m6.8[0ms     [Fsuperbatch [36m1[0m [[35m73.4[0m% ([36m4480[0m/[36m6104[0m batches, [36m4241023[0m pos/sec)]
+Estimated time to end of superbatch: [36m6.3[0ms     [Fsuperbatch [36m1[0m [[35m75.5[0m% ([36m4608[0m/[36m6104[0m batches, [36m4240908[0m pos/sec)]
+Estimated time to end of superbatch: [36m5.8[0ms     [Fsuperbatch [36m1[0m [[35m77.6[0m% ([36m4736[0m/[36m6104[0m batches, [36m4240084[0m pos/sec)]
+Estimated time to end of superbatch: [36m5.3[0ms     [Fsuperbatch [36m1[0m [[35m79.7[0m% ([36m4864[0m/[36m6104[0m batches, [36m4237648[0m pos/sec)]
+Estimated time to end of superbatch: [36m4.8[0ms     [Fsuperbatch [36m1[0m [[35m81.8[0m% ([36m4992[0m/[36m6104[0m batches, [36m4235540[0m pos/sec)]
+Estimated time to end of superbatch: [36m4.3[0ms     [Fsuperbatch [36m1[0m [[35m83.9[0m% ([36m5120[0m/[36m6104[0m batches, [36m4234744[0m pos/sec)]
+Estimated time to end of superbatch: [36m3.8[0ms     [Fsuperbatch [36m1[0m [[35m86.0[0m% ([36m5248[0m/[36m6104[0m batches, [36m4234363[0m pos/sec)]
+Estimated time to end of superbatch: [36m3.3[0ms     [Fsuperbatch [36m1[0m [[35m88.1[0m% ([36m5376[0m/[36m6104[0m batches, [36m4233863[0m pos/sec)]
+Estimated time to end of superbatch: [36m2.8[0ms     [Fsuperbatch [36m1[0m [[35m90.2[0m% ([36m5504[0m/[36m6104[0m batches, [36m4233618[0m pos/sec)]
+Estimated time to end of superbatch: [36m2.3[0ms     [Fsuperbatch [36m1[0m [[35m92.3[0m% ([36m5632[0m/[36m6104[0m batches, [36m4233330[0m pos/sec)]
+Estimated time to end of superbatch: [36m1.8[0ms     [Fsuperbatch [36m1[0m [[35m94.4[0m% ([36m5760[0m/[36m6104[0m batches, [36m4232798[0m pos/sec)]
+Estimated time to end of superbatch: [36m1.3[0ms     [Fsuperbatch [36m1[0m [[35m96.5[0m% ([36m5888[0m/[36m6104[0m batches, [36m4231875[0m pos/sec)]
+Estimated time to end of superbatch: [36m0.8[0ms     [Fsuperbatch [36m1[0m [[35m98.6[0m% ([36m6016[0m/[36m6104[0m batches, [36m4229717[0m pos/sec)]
+Estimated time to end of superbatch: [36m0.3[0ms     [Fsuperbatch [36m1[0m | time [36m23.6[0ms | running loss [36m0.058597[0m | [36m4229276[0m pos/sec | total time [36m25.8[0ms
+Estimated time remaining in training: [36m0[0mh [36m0[0mm [36m0[0ms
+Saved [[31mshallowred-768x4hm-256-s8-1[0m]
+Total Training Time: [36m0[0mh [36m0[0mm [36m25[0ms
+== 3. Le moteur contre l'entraîneur ==
+      66      67  écart    1   rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+    -197    -169  écart   28   r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1
+     -35     -32  écart    3   8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1
+     331     340  écart    9   r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1
+    -136    -154  écart   18   rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8
+      34      30  écart    4   r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10
+     -33     -32  écart    1   rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1
+     242     241  écart    1   r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1
+       2       0  écart    2   r2q1rk1/pp2bppp/2n1bn2/3p4/3P4/2NBBN2/PP3PPP/R2Q1RK1 b - - 0 1
+   -2209   -2219  écart   10   6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1
+     402     404  écart    2   8/8/8/4k3/8/8/4KP2/8 w - - 0 1
+   -4866   -4872  écart    6   8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1
+      75      74  écart    1   2kr3r/ppp2ppp/2n5/8/8/2N5/PPP2PPP/2KR3R w - - 0 12
+      95      93  écart    2   r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w - - 0 7
+      12      10  écart    2   8/8/4k3/3p4/3P4/4K3/8/8 w - - 0 1
+    1038    1029  écart    9   4k3/8/8/2K5/8/8/8/R7 w - - 0 1
+     -22     -18  écart    4   8/8/3k4/8/3K4/8/8/8 w - - 0 1
+      -4       3  écart    7   1k6/8/8/8/8/8/8/K7 b - - 0 1
+  écart médian 4 (admis 15), maximal 28 (admis 50)
+RÉSEAU PRÊT : essai-n6r4l/shallowred-768x4hm-256-s8-1/quantised.bin (1581632 octets)
