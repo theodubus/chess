@@ -977,6 +977,7 @@ dernière relève est faite.
 | **N° 20 — N6r4w50 contre N6r4** | **39408757801, 39408760808, 39408763781, 39408766522** | `0f5214b` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 17 h 49** — lancés à 12 h 33 ; finis ENTIERS entre 17 h 32 et 17 h 44, 6,39 à 6,64 s par partie | **+12,41, +13,16, +8,94 et +12,66 ; +11,79 ± 3,52 en commun, homogènes (p = 0,835)** ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR AU POINT** — N6r4w25 le recoupe : match direct (section « (a) et (d) — VERDICT »). — *Attendu, écrit avant* (section « (a) et (d) ») : **−8 à +12** — tenu, au bord ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — N6r4w25 contre N6r4** | **39408769776, 39408772645, 39408775372, 39408778493** | `85c88a6` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 17 h 49** — lancés à 12 h 33 ; finis ENTIERS entre 17 h 40 et 17 h 46, 6,54 à 6,68 s par partie | **+9,06, +5,21, +7,57 et +6,83 ; +7,17 ± 3,49 en commun, homogènes (p = 0,864)** ; zéro perte au temps. **Gain démontré, recoupe N6r4w50** : match direct (section « (a) et (d) — VERDICT »). — *Attendu, écrit avant* (section « (a) et (d) ») : **−12 à +15** — tenu ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — N6r4w25 contre N6r4w50**, le match direct de (d) | **39452745551, 39452754806, 39452763795, 39452773226** | `85c88a6` (N6r4w25) → `0f5214b` (N6r4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — le critère poussé à 17 h 54 (`4f54caa`), lancés à 17 h 55 ; fin attendue 22 h 50–23 h 10, au plus tard 23 h 45 | — *Critère, écrit avant* : **N6r4w25 embarque si la borne basse est au-dessus de zéro ; sinon N6r4w50** ; *attendu* −10 à +3, ~−4 (section « (a) et (d) — VERDICT ») |
+| **N° 20 — la séance B, sur la carte de Théo** | — | `tools/seance-n20b.sh tout w50`, depuis une copie, à `main` : N7p4w50, N8tw50, N8tw50s800, N6r4w50pas0005, N6r4w50pas002, N8nw50 | `tools/nnue-train`, les 79 jobs anciens, les 84 premiers neufs | **EN COURS chez Théo depuis le 20 oct. au soir** — l'essai réussi, la séance lancée avant 21 h 22 ; chaque réseau poussé sur `reseau/n20b` dès ses contrôles passés ; N7p4w50 attendu vers 23 h 45–0 h 15, la séance entière vers 11 h–12 h | — *Attendus et comparaisons, écrits avant* (section « La séance B ») |
 | **N° 20 — N6r4w50 contre N7p4**, le match direct entre les axes | **39471565620, 39471574281, 39471583801, 39471592587** | `0f5214b` (N6r4w50) → `ec97f35` (N7p4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — le critère poussé à 20 h 04 (`6c753e2`), lancés à 20 h 04 ; fin attendue 1 h 00–1 h 20, au plus tard 1 h 55 | — *Critère, écrit avant* : **N6r4w50 embarque si la borne basse est au-dessus de zéro ; sinon N7p4** ; *attendu* −11 à +2, ~−5 (section « Étape A — VERDICT ») |
 | **N° 20, étape A — N7p2 contre N6r4** | **39424657675, 39424661145, 39424664674, 39424667800** | `8603bd3` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 46 et 19 h 51 | **+12,79, +11,05, +19,50 et +15,65 ; +14,74 ± 3,52 en commun, homogènes (p = 0,339)** ; zéro perte au temps. Gain démontré ; N7p4 le recoupe, le match direct tranche pour N7p4 (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **+3 à +12, ~+6** — dépassé ; critère du n° 17 contre N6r4 |
 | **N° 20, étape A — N7p4 contre N6r4** | **39424671016, 39424674757, 39424677788, 39424680763** | `ec97f35` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 47 et 19 h 54 | **+15,40, +21,12, +15,89 et +15,15 ; +16,89 ± 3,55 en commun, homogènes (p = 0,652)** ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR AU POINT** — l'étape A désigne N7p4, `SL=400` ; N6r4w50 le recoupe : match direct (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **la décision, avec N7p2 contre N6r4** ; critère du n° 17 contre N6r4 |
@@ -9757,6 +9758,32 @@ qu'on y répond :
 - **(b), Leela mêlé à nos données, passe derrière la séance B et la
   composition** — Théo, 20 oct. : « *ok pour passer leela derrière la
   séance B et composition* ».
+
+**La séance B, lancée par Théo le 20 oct. au soir** — l'essai réussi,
+puis `tout w50`. *Ce que chaque réseau affronte, et ce qu'on en attend,
+écrit avant le premier* — <span>inférence, confiance faible</span>,
+quatre jobs de 2 800 parties à `8+0,08` chacun, sonde de B8, nœuds par
+seconde et perte tenue à l'écart avant :
+- **N7p4w50 contre N7p4** — le poids paie-t-il encore à 400 superlots ?
+  **+3 à +15, ~+9** : il rendait +11,79 à 100 ; un optimum qui bouge avec
+  les passes le rognerait. Loin de +11,8 dans un sens ou l'autre, le poids
+  se réexamine à la recette finale (le registre) ;
+- **N8tw50 contre N7p4w50** — l'axe des données à poids et passes fixés :
+  **+3 à +12, ~+7** — doubler payait +7,32 au n° 18, et la moitié neuve a
+  un meilleur étiqueteur ; mais à 400 superlots, 3,1 G ne font que 12,9
+  passes contre 25,6, ce qui en reprend une part ;
+- **N8tw50s800 contre N8tw50** — le doublement suivant : **+3 à +12,
+  ~+7** ;
+- **N6r4w50pas0005 et N6r4w50pas002 contre N6r4w50** (`0f5214b`) — le pas
+  de bullet : **−10 à +10 chacun**, sans sens attendu ;
+- **N8nw50 contre N7p4w50** — l'étiqueteur à volume égal : **0 à +10,
+  ~+4** — N6v rendait +5,52 pour un étiqueteur plus fort de ~50, N6r4
+  l'est de ~99 sur N5l.
+*Critère d'embarquement* : celui du n° 17, contre le réseau qui joue à
+ce moment, chaque axe à part, un match direct quand deux gains se
+recoupent ; le gagnant composé se mesure à son tour. Les candidats se
+commitent et se révoquent comme aux étapes précédentes, au facteur de
+`main` si leur sonde tombe dans la plage.
 
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
