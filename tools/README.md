@@ -9807,6 +9807,80 @@ puis la relance (N6r4w25 seul refait, ajouté à `reseau/n20-ad`, le reste
 sauté) ; une échelle à 500 (l'essai refusé) ; deux binpacks (rien ne
 part).
 
+**La séance (a) et (d), RELEVÉE le 20 oct. à 11 h 50 — les quatre réseaux
+conformes.** `tools/seance-n20.sh`, lancé par Théo à 8 h 11, les a poussés
+sur `reseau/n20-ad` (`2332ee0`), intégrés par `0eca96a` ; l'étape A tourne
+encore. Les sorties, relues ici :
+
+| réseau | recette imprimée | confrontation, médian / maximal (admis 15 / 50) | échelle | entraînement | estimé |
+|---|---|---|---|---|---|
+| essai, 1 superlot | repart de N6r4 ; pas 0,0001, wdl 0,75 | 4 / 29 | 282,1 | — | — |
+| **N6r4La** | repart de N6r4 ; 20 superlots, pas 0,0001 → 2,43·10⁻⁷, wdl 0,75 | 8 / 21 | 282,1 | 8 min 08 s | ~9 min |
+| **N6r4Lb** | repart de N6r4 ; 20 superlots, pas 0,00002 → 4,86·10⁻⁸, wdl 0,75 | 4 / 12 | 282,1 | 8 min 11 s | ~9 |
+| **N6r4w50** | relecture exacte ; 100 superlots, pas 0,001 → 2,43·10⁻⁶, wdl 0,5 | 5 / 26 | — | 39 min 31 s | ~40 |
+| **N6r4w25** | relecture exacte ; 100 superlots, pas 0,001 → 2,43·10⁻⁶, wdl 0,25 | 7 / 18 | — | 40 min 15 s | ~40 |
+
+- **les durées** : (d) au rythme de N6r4 (39 min 29 s) ; (a) à ~24,5 s
+  par superlot, contre 23,7 sur nos données — le binpack n'en demande que
+  × 1,03 ici, quand N4L en demandait × 1,13 à N4. Rien d'autre à lire ;
+- **les réglages fins bougent les finales gagnées, même au petit pas.**
+  Roi et pion contre roi (`8/8/8/4k3/8/8/4KP2/8 w`) : N6r4 420, **N6r4La
+  116, N6r4Lb 133** ; une tour de moins (`6k1/5ppp/…/3R2K1 b`) : −2 255,
+  −1 685, −1 840. Le pas divisé par cinq déplace ces scores presque
+  autant : Adam avance d'environ un pas par lot quand le gradient garde son
+  signe, et 122 000 lots y suffisent. <span>Inférence, confiance
+  faible</span> : les cibles de Leela, converties d'une probabilité de
+  gain, tassent les finales que nos étiquettes chiffrent en matériel ;
+  aucune ne dit si le tassement coûte — les matchs le diront ;
+- **le poids du résultat, sur les mêmes finales** : roi et pion contre
+  roi 420 à wdl 0,75, **488 à 0,5, 525 à 0,25** — la cible suit davantage
+  le score de l'étiqueteur à mesure que le résultat pèse moins ; roi et
+  tour contre roi, 1 048, 956 et 841, dans l'autre sens. Aucun ordre
+  simple : la pente du score à la cible n'est pas celle du résultat.
+
+*Intégrés le 20 oct., entre 12 h 00 et 12 h 10* — chacun ne change, sur `0eca96a`, que
+`engine/src/nnue.rs` : le chemin d'`include_bytes!`, son commentaire et
+la confrontation de son entraînement recopiée dans le test, aux
+dix-huit positions — par un script qui retrouve chaque position par sa
+FEN, éprouvé d'abord sur N6r4 lui-même (aucun écart) ; même architecture
+que N6r4, au facteur des marges de `main`, 2,85 ; `verify.sh --rapide`
+vert à chaque candidat, révoqué aussitôt, l'arbre revenu à `0eca96a` au
+bit près :
+
+| réseau | candidat | révoqué par |
+|---|---|---|
+| N6r4La | `89bb3e9` | `37f1bbd` |
+| N6r4w50 | `0f5214b` | `d9ab8dd` |
+| N6r4Lb | `739452f` | `cb343be` |
+| N6r4w25 | `85c88a6` | `4ab82af` |
+
+La référence des matchs : **`0eca96a`** — `main` et ces réseaux, N6r4
+embarqué.
+
+**La sonde de B8 et les nœuds par seconde — écrits le 20 oct. à 12 h 12,
+avant de les lancer.** Le protocole du n° 18 tel quel (ses scripts,
+`n18/sonde.sh` et `n18/nps.sh` au carnet, rejoués) : 40 parties de chaque
+candidat contre lui-même à `8+0,08`, `-srand 20260930`, le livre du
+dépôt, le binaire sondé étant le candidat plus `b8-sonde-marges.patch`,
+la faite main celle du 12 oct. ; **dans 2,14 à 3,56, le réseau se mesure
+au facteur de `main`, 2,85**, hors de là son facteur d'abord. Puis le
+rejeu du n° 15, `--nps`, binaires AVX2, dix tours, contre N6r4 (`0eca96a`).
+*Attendus* — <span>inférence, confiance faible</span> :
+- **N6r4La 2,3 à 3,2, N6r4Lb 2,3 à 2,9** — N6r4 mesurait 2,49 ; les
+  réseaux de Leela portaient des nombres 12 à 25 % plus grands que N2
+  (2,60 et 2,61 contre 2,24), mais ceux-ci repartent de N6r4 et le
+  tassement des finales dit le contraire : le sens n'est pas connu ;
+- **N6r4w50 et N6r4w25, 2,2 à 3,2**, sans sens attendu ;
+- **les quatre dans la plage** — aucun candidat ne change ;
+- **nœuds par seconde, × 0,97 à × 1,04 contre N6r4**, sans sens attendu :
+  même architecture, même code ; au n° 18, des poids différents ont rendu
+  × 1,01 à × 1,04 à architecture égale, par l'arbre.
+
+**La perte tenue à l'écart** — run sur `nnue-validation.yml`, l'outil à
+`4ab82af`, N6r4 en référence puis les quatre, sur 38531414161 (tenu à
+l'écart) et 38531424497 (appris de tous) ; attendus plus haut, écrits le
+19 oct. *Contrôle* : 17 208 872 et 17 938 594 positions, comme au n° 18.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
