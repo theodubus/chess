@@ -981,7 +981,7 @@ dernière relève est faite.
 | **N° 20 — la séance B, sur la carte de Théo** | — | `tools/seance-n20b.sh tout w50`, depuis une copie, à `main` : N7p4w50, N8tw50, N8tw50s800, N6r4w50pas0005, N6r4w50pas002, N8nw50 | `tools/nnue-train`, les 79 jobs anciens, les 84 premiers neufs | **EN COURS chez Théo depuis le 20 oct. au soir** — l'essai réussi, la séance lancée avant 21 h 22 ; chaque réseau poussé sur `reseau/n20b` dès ses contrôles passés ; N7p4w50 attendu vers 23 h 45–0 h 15, la séance entière vers 11 h–12 h | — *Attendus et comparaisons, écrits avant* (section « La séance B ») |
 | **N° 20 — N6r4w50 contre N7p4**, le match direct entre les axes | **39471565620, 39471574281, 39471583801, 39471592587** | `0f5214b` (N6r4w50) → `ec97f35` (N7p4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — le critère poussé à 20 h 04 (`6c753e2`), lancés à 20 h 04 ; fin attendue 1 h 00–1 h 20, au plus tard 1 h 55 | — *Critère, écrit avant* : **N6r4w50 embarque si la borne basse est au-dessus de zéro ; sinon N7p4** ; *attendu* −11 à +2, ~−5 (section « Étape A — VERDICT ») |
 | **N° 20, séance B — N7p4w50 contre N7p4 recommité** | **39508171364, 39508177771, 39508184279, 39508191011** | `e37468b` (N7p4w50) → `7d84860` (N7p4 sur le code d'aujourd'hui), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 0 h 27, les attendus poussés avant (`49b0ec5`) ; fin attendue vers 5 h 30–5 h 50 | — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +15, ~+9 (section « La séance B ») |
-| **N° 20, séance B — la perte tenue à l'écart de N7p4w50** | **39508350034** (39508197862 mort au checkout, le SHA passé court) | l'outil à `49b0ec5` ; N7p4, N7p4w50, N6r4, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **EN COURS** — lancée le 21 oct. à 0 h 27 | — *Attendu, écrit avant* : indiscernable de N7p4, ± 0,0001 |
+| **N° 20, séance B — la perte tenue à l'écart de N7p4w50** | **39508350034** (39508197862 mort au checkout, le SHA passé court) | l'outil à `49b0ec5` ; N7p4, N7p4w50, N6r4, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **RELEVÉE à 0 h 33** — relancée à 0 h 29, finie à 0 h 30 | **+0,000042 ± 0,000022 contre N7p4 — dans l'attendu** ; tenu − appris +0,000310 contre +0,000416 : il retient un quart de moins (section « La séance B ») — *Attendu, écrit avant* : indiscernable de N7p4, ± 0,0001 |
 | **N° 20 (e) — la sonde de débit à 10 000 nœuds** | **39490138743** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, **10 000 nœuds**, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 22 h 38** — lancée le 20 oct. à 22 h 13, ses attendus poussés avant (`9ff72a0`) ; finie à 22 h 34, EPYC 7763 | **581 positions par seconde (× 0,491), 19,46 % d'écartées, 39,97 % de nulles, 133,0 positions par partie — les quatre dans l'attendu, les nulles au bord** ; ~9,3 M gardées par job au mélange de runners, ~84 jobs appris pour 780 M (section « (e) — le budget de l'étiqueteur ») — *Attendus, écrits avant* : × 0,45 à × 0,56 ; 17 à 23 % ; 34 à 40 % ; 120 à 140 |
 | **N° 20 (e) — la vague 1**, 10 000 nœuds | **39493777327** (tenu à l'écart), 39493787774, 39493798320, 39493809476, 39493820297, 39493831080, 39493841672, 39493852340, 39493863591, 39493874159, 39493884870, 39493894271, 39493902078, 39493916776, 39493928679, 39493940533 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 20 oct. à 22 h 39, ses attendus poussés avant (`fbd0196`) ; fin vers 4 h 30 | — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 1) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,5 à 20,5 %, nulles 39,0 à 41,0 % ; 565 à 600 positions par seconde sur un EPYC 7763 |
 | **N° 20, étape A — N7p2 contre N6r4** | **39424657675, 39424661145, 39424664674, 39424667800** | `8603bd3` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 46 et 19 h 51 | **+12,79, +11,05, +19,50 et +15,65 ; +14,74 ± 3,52 en commun, homogènes (p = 0,339)** ; zéro perte au temps. Gain démontré ; N7p4 le recoupe, le match direct tranche pour N7p4 (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **+3 à +12, ~+6** — dépassé ; critère du n° 17 contre N6r4 |
@@ -9820,6 +9820,24 @@ faible</span> :
   moment : si le match entre les axes fait embarquer N7p4, N7p4w50 le
   remplace sur ce match-ci ; s'il fait embarquer N6r4w50, un match direct
   N7p4w50 contre N6r4w50 s'écrit avant d'embarquer.
+
+**La perte tenue à l'écart de N7p4w50, RELEVÉE le 21 oct. à 0 h 33 —
+dans l'attendu.** Run 39508350034 (le premier, 39508197862, mort au
+checkout : je lui avais passé un SHA court), contrôle exact (17 208 872,
+17 938 594), N7p4 en référence :
+
+| réseau | tenu à l'écart | écart à N7p4 | appris de tous | tenu − appris |
+|---|---|---|---|---|
+| N7p4 | 0,038390 | — | 0,037974 | +0,000416 |
+| **N7p4w50** | 0,038432 | **+0,000042 ± 0,000022** | 0,038122 | **+0,000310** |
+| N6r4 | 0,038560 | +0,000170 ± 0,000021 | 0,038148 | +0,000412 |
+
+- **indiscernable de N7p4 à ± 0,0001**, comme écrit : la mesure se lit
+  sous 0,75, une cible que N7p4w50 n'a pas minimisée ;
+- **mais il retient un quart de moins** : +0,000310 d'écart entre tenu et
+  appris, contre +0,000416 à N7p4 et +0,000412 à N6r4 — <span>inférence,
+  confiance faible</span> : une cible qui pèse moins le résultat, bruité,
+  s'apprend moins par cœur. Le match dira si ça se joue.
 
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
