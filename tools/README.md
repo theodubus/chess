@@ -10477,6 +10477,20 @@ les deux tests lisent ; un pas de boucle faussé tourne sans fin, et
 `cargo mutants` le compte expiré, donc attrapé. Un survivant s'y lirait
 mutant par mutant avant de relever le plafond.
 
+**Le job de `nnue.rs` a perdu son runner à 18 h 26**, au bout de
+42 minutes — « *The runner has received a shutdown signal* » —, ses deux
+seuls survivants déjà lus, ceux du plafond (130:30 et 408:50). C'est la
+**troisième perte du même job en un jour** : le balayage du mardi l'avait
+perdu à 6 h 22 et 12 h 33, au bout de 30 et 40 minutes, et son essai
+réussi a duré 35 minutes, avec deux mutants expirés. Aucun autre fichier
+n'a perdu de runner. *Une hypothèse, écartée sur un cas* : un mutant qui
+alloue sans borne épuiserait la mémoire du runner avant son délai. Le plus
+suspect, `Arch::values` (143:48) — `+` en `*`, un réseau × 256 —, est
+attrapé en 8 s pour ~600 Mo de pic, mesuré dans le conteneur sous une
+limite de 6 Go. La cause reste inconnue ; les deux mutants expirés,
+qu'aucun résumé ne nomme, sont les suivants à regarder. **Relancé une fois
+à la fin du run** ; la PR #206 ne fusionne qu'au crible conforme.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
