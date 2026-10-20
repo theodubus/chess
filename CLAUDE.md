@@ -83,7 +83,15 @@ une mesure, pas une préférence.
   un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
   la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
   plus qu'à dégrossir, jamais à trancher.
-- **L'évaluation qui joue est le réseau NNUE embarqué** — **N6r4 depuis le
+- **L'évaluation qui joue est le réseau NNUE embarqué** — **N7p4 depuis le
+  21 oct. 2026** (n° 20, étape A) : la recette de N6r4 au seul nombre de
+  passes près, **400 superlots au lieu de 100** — **+16,89 ± 3,55** contre
+  N6r4, +9,31 ± 3,51 contre N7p2 (200), et devant N6r4w50 — le poids du
+  résultat à 0,5, l'autre axe gagnant, +11,79 contre N6r4 — de
+  **+6,67 ± 3,41** en match direct, 11 200 parties chacun à `8+0,08`. Il
+  joue au facteur des marges de `main`, 2,85, sa sonde mesurant 2,79 dans
+  la plage. Leur composition, 400 superlots au poids 0,5 (N7p4w50), est en
+  match contre lui. Avant lui, **N6r4 du
   17 oct. 2026** (n° 18) : 256 unités, huit seaux de sortie et **quatre
   seaux selon la case du roi**, appris sur **1,563 G positions** étiquetées
   par N5l — × 9,8 ses données — : **+98,74 ± 4,27** contre N5l sur
@@ -126,8 +134,8 @@ une mesure, pas une préférence.
   le mieux**. Licence ODbL : **le jour où un réseau entraîné sur elles est
   embarqué, `README.md` porte la mention d'attribution**, comme celui de
   Stockfish — **fait le 2 oct. 2026 avec N2L**, section « Remerciements ».
-  N6r4, qui joue depuis le 17 oct., n'a rien appris d'elles — ni N5l ni N4
-  avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
+  N7p4, qui joue depuis le 21 oct., n'a rien appris d'elles — ni N6r4, N5l
+  ni N4 avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
   en ont appris. **Rouvert le 19 oct. (Théo)** : le seul verdict contre
   elles portait sur un « réglage fin » qui ré-entraînait au pas plein un
   réseau de 128 unités, une passe sur un seul fichier. **Le vrai réglage
@@ -240,8 +248,9 @@ une mesure, pas une préférence.
   et l'élagage delta passent par `scaled_margin`, × 2,24 quand un réseau
   joue — **+50,50 ± 5,37 Elo** à `8+0,08` ; la futilité inverse, sondée,
   tient telle quelle. **× 2,85 depuis N5l** (14 oct.), sa sonde le
-  sortant de la plage où le facteur de N2 suffisait — N6r4 (17 oct.) y
-  joue aussi, sa sonde (2,49) dans la plage ; et le facteur qui
+  sortant de la plage où le facteur de N2 suffisait — N6r4 (17 oct.) et
+  N7p4 (21 oct.) y jouent aussi, leurs sondes (2,49 et 2,79) dans la
+  plage ; et le facteur qui
   ramène à la faite main les marges mesurées au réseau est désormais
   SÉPARÉ et figé à 224 (n° 17) — sans quoi changer de réseau aurait changé
   le banc. L'échelle ne se transpose donc pas en bloc : **elle se
