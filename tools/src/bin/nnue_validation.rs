@@ -25,21 +25,25 @@
 //! - **les positions** : celles que l'entraîneur voit — chaque partie
 //!   dépliée par `Game::splat_to_bulletformat_with_filter_callback` de
 //!   `viriformat`, sous le filtre par défaut de la même crate, celui que
-//!   `tools/nnue-train` passe au chargeur de bullet ;
+//!   `tools/nnue-train` passe au chargeur de bullet sans `--ply-min` ; un
+//!   réseau entraîné sous un autre premier demi-coup se lit ici sur les
+//!   positions par défaut ;
 //! - **les étiquettes** : le `ChessBoard` que rend ce dépliage, celui-là même
 //!   que bullet lit — score et résultat retournés vers le camp au trait par
 //!   `bulletformat` ;
 //! - **la cible** : `0,75 · résultat + 0,25 · σ(score / 400)` — le mélange de
-//!   `make_mapper` (`bullet_lib/src/value.rs`) sous le `ConstantWDL` par
-//!   défaut de `tools/nnue-train`, à l'échelle de `nnue::SCALE`. Un réseau
-//!   entraîné sous un autre `--wdl` (n° 20, (d)) se lit ici sous 0,75 : une
-//!   perte commune à tous, pas celle qu'il a minimisée ;
+//!   `make_mapper` (`bullet_lib/src/value.rs`) sous le poids par défaut de
+//!   `tools/nnue-train`, à l'échelle de `nnue::SCALE`. Un réseau entraîné
+//!   sous un autre `--wdl`, ou un `--wdl-final` (n° 20, (d) et séance C), se
+//!   lit ici sous 0,75 : une perte commune à tous, pas celle qu'il a
+//!   minimisée ;
 //! - **la prédiction** : `σ(éval / 400)`, l'évaluation du réseau QUANTIFIÉ par
 //!   le code du moteur — le réseau qui joue, pas celui en flottants que
 //!   l'entraîneur optimise ; les deux diffèrent d'une dizaine de centièmes au
 //!   plus, le critère de leurs confrontations ;
 //! - **la perte** : `(prédiction − cible)²`, le `squared_error` de
-//!   `tools/nnue-train`, moyenné sur les positions.
+//!   `tools/nnue-train` sans `--perte`, moyenné sur les positions — la même
+//!   mesure pour un réseau entraîné sous un autre exposant.
 //!
 //! **La position évaluée est celle de l'étiquette, vérifiée à chaque
 //! position** : l'échiquier vient du FEN de `viriformat` — roque et prise en
@@ -493,8 +497,10 @@ mod tests {
     /// Le mélange est celui de l'entraîneur par défaut : un autre défaut de
     /// `--wdl` dans `tools/nnue-train` ferait mesurer une autre perte que
     /// celle que nos réseaux minimisent, sans que rien ne le signale. Et le
-    /// `ConstantWDL` doit bien recevoir l'option — sans quoi le défaut lu ici
-    /// ne dirait rien de ce qu'entraîne l'entraîneur.
+    /// poids doit bien recevoir l'option, constant sans `--wdl-final` —
+    /// sans quoi le défaut lu ici ne dirait rien de ce qu'entraîne
+    /// l'entraîneur. Même chose pour la perte : l'écart au carré par défaut,
+    /// et c'est bien lui que le chargeur reçoit sans `--perte`.
     #[test]
     fn le_melange_est_celui_de_l_entraineur() {
         let source = std::fs::read_to_string(concat!(
@@ -506,13 +512,35 @@ mod tests {
             source.contains(&format!("const WDL: f32 = {WDL_BLEND};")),
             "le défaut de --wdl de tools/nnue-train n'est plus {WDL_BLEND}"
         );
-        assert!(
-            source.contains("wdl::ConstantWDL { value: options.wdl }"),
-            "le ConstantWDL de tools/nnue-train ne reçoit plus --wdl"
-        );
-        assert!(
-            source.contains(".loss_fn(|output, target| output.sigmoid().squared_error(target))")
-        );
+        for (texte, ce_qu_il_garde) in [
+            ("start: options.wdl,", "le poids ne part plus de --wdl"),
+            (
+                "end: options.wdl_end.unwrap_or(options.wdl),",
+                "sans --wdl-final, le poids n'est plus constant",
+            ),
+            ("wdl_end: None,", "--wdl-final a pris un défaut"),
+            (
+                "loss: LossPower::Two,",
+                "la perte par défaut n'est plus l'exposant 2",
+            ),
+            (
+                "Self::Two => squared_loss,",
+                "l'exposant 2 n'est plus l'écart au carré",
+            ),
+            (
+                "output.sigmoid().squared_error(target)",
+                "l'écart au carré a changé",
+            ),
+            (
+                ".loss_fn(options.loss.function())",
+                "le chargeur ne reçoit plus --perte",
+            ),
+        ] {
+            assert!(
+                source.contains(texte),
+                "tools/nnue-train : {ce_qu_il_garde}"
+            );
+        }
     }
 
     /// Chaque position gardée se relit avec SON étiquette : le score retourné

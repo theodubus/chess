@@ -10002,6 +10002,32 @@ doit. La garde lit désormais le défaut de `--wdl` et vérifie que le
 réseau entraîné sous un autre `--wdl` se lit à la validation sous 0,75 :
 une perte commune à tous, pas celle qu'il a minimisée.
 
+**Les options de la séance C, écrites le 20 oct.** — `tools/nnue-train`,
+pour les réglages que le registre (« Les réglages ouverts ») marque
+« jamais » : `--pas-final F`, le pas final en fraction du pas de départ
+(0,3⁵, refusé hors de ]0 ; 1]) ; `--wdl-final W`, le poids du résultat en
+ligne droite de `--wdl` à `W` (`LinearWDL` de bullet) ; `--perte P`,
+l'exposant de `|σ(sortie) − cible|` — 2, 2.5 ou 3, bullet ne prenant
+qu'une fonction sans capture —, `power_error` de bullet hors de 2 ;
+`--lot N`, les positions d'un lot, un diviseur de 16 384 × 6 104 entre
+1 024 et 131 072 — **un superlot garde ses positions**, donc un nombre de
+superlots reste un nombre de passes ; `--ply-min K`, le premier demi-coup
+gardé de nos `.vf` (16, le défaut de `viriformat` ; refusé sur un binpack
+ou un mélange, dont le filtre ne le lit pas). **Sans elles, la recette de
+tous nos réseaux au bit près**, testé : le pas final calculé comme avant
+(`0.002_43` n'est pas le même `f32` que 0,3⁵), le poids constant au bit
+près sur chaque superlot — `LinearWDL` à deux bouts égaux, pente nulle —,
+16 384 × 6 104, l'écart au carré de l'exemple. Six fautes injectées — les
+lots par superlot, le poids final, le pas final, le premier demi-coup,
+l'exposant, le lot transmis —, six attrapées ; la garde de
+`nnue_validation.rs` lit désormais ces défauts dans le source, trois
+fautes injectées, trois attrapées. **La validation reste une mesure
+commune** : un réseau entraîné sous un autre exposant, un autre poids ou
+un autre premier demi-coup s'y lit sous l'écart au carré, à 0,75, sur les
+positions par défaut. *Les valeurs à essayer, leurs attendus et leurs
+critères s'écrivent avec le protocole de la séance C, avant de la
+demander.*
+
 **`--melange PART`, écrite le 19 oct. — l'outillage de (b).** bullet n'a
 pas de chargeur mixte (lu au commit épinglé : un chargeur par format,
 `trainer.run` en prend un). `tools/nnue-train` en implémente un,
@@ -12162,13 +12188,13 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **superlots (passes)** | 400 | 100 → 200 +14,74 ; 200 → 400 +9,31 | ~+7 au doublement suivant — <span>confiance faible</span> | N8tw50s800, séance B ; s'il paie, 1 600 |
 | **poids du résultat** (`wdl`) | 0,5 | 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17, à 100 superlots | ~2,4 au plus au même point ; inconnue à la recette finale | N7p4w50 contre N7p4 dit s'il bouge ; deux points autour de 0,5 à la recette finale |
 | **pas initial** (`--pas`) | 0,001, le défaut de bullet | jamais depuis zéro | inconnue | l'écran ×0,5 et ×2, séance B |
-| **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | une option dans `nnue-train`, séance C |
-| **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 ; une option, séance C |
-| **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | une option, séance C |
-| **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | une option, séance C |
-| **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | une option, séance C |
+| **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; séance C |
+| **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 — `--perte`, écrite le 20 oct. ; séance C |
+| **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; séance C |
+| **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; séance C |
+| **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | `--wdl-final`, écrite le 20 oct. ; séance C |
 | **volume de données** | 3,1 G après B | doubler : +7,32 (n° 18) | encore | séance B, puis la génération en continu |
-| **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; le budget, jamais | inconnue | N8nw50 (séance B) ; (e) sur les runners |
+| **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; le budget, jamais | inconnue | N8nw50 (séance B) ; (e) : la sonde à 10 000 nœuds lancée le 20 oct., E10, E5t, E5v en séance C |
 | **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17) | inconnue au volume d'aujourd'hui | (c) 384 et 512, puis 1 024 |
 | **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | (c) |
 | **seaux de sortie** | 8, selon le matériel | 1 contre 8 seulement | inconnue | (c) |
