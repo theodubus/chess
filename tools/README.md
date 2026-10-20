@@ -970,6 +970,9 @@ dernière relève est faite.
 | **N° 20 — N6r4Lb contre N6r4** | **39408744693, 39408747673, 39408750838, 39408753851** | `739452f` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−6 à +6, ~0** ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — N6r4w50 contre N6r4** | **39408757801, 39408760808, 39408763781, 39408766522** | `0f5214b` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−8 à +12** ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — N6r4w25 contre N6r4** | **39408769776, 39408772645, 39408775372, 39408778493** | `85c88a6` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−12 à +15** ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20, étape A — N7p2 contre N6r4** | **39424657675, 39424661145, 39424664674, 39424667800** | `8603bd3` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 14 h 45 ; fin attendue 19 h 40–20 h 00, au plus tard 20 h 35 | — *Attendu, écrit avant* (section « N° 20 », étape A) : **+3 à +12, ~+6** ; critère du n° 17 contre N6r4 |
+| **N° 20, étape A — N7p4 contre N6r4** | **39424671016, 39424674757, 39424677788, 39424680763** | `ec97f35` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 14 h 45 ; fin attendue 19 h 40–20 h 00, au plus tard 20 h 35 | — *Attendu, écrit avant* (section « N° 20 », étape A) : **la décision, avec N7p2 contre N6r4** ; critère du n° 17 contre N6r4 |
+| **N° 20, étape A — N7p4 contre N7p2** | **39424684239, 39424687745, 39424691136, 39424694996** | `ec97f35` → `8603bd3`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 14 h 45 ; fin attendue 19 h 40–20 h 00, au plus tard 20 h 35 | — *Attendu, écrit avant* (section « N° 20 », étape A) : **−10 à +8, ~+1 — le signe n'est pas acquis** ; critère du n° 17 contre N6r4 |
 | **Le balayage hebdomadaire du 20 oct.** | — (le run du mardi, 00:00 UTC) | `main` après la PR de la relève de la vague 2 | `mutation.yml` | **RELEVÉ le 20 oct. à 13 h 42 : 163, EXACT** — run 39366549848, parti à 5 h 52 (le cron en retard de 3 h 52) ; **le job de `nnue.rs` a perdu son runner deux fois** (« *The runner has received a shutdown signal* », à 6 h 22 puis 12 h 33, chaque fois les deux mutants du plafond lus avant la coupure) ; troisième essai à 13 h 07, vert à 13 h 42 ; l'issue #203, ouverte par `Verdict` sur le résumé manquant, fermée | **Vert, la prédiction exacte** : chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48, `eval.rs` 102 | — *Prédiction, écrite avant* : **163**, chaque fichier à son plafond — aucune ligne d'`engine/src/` n'a changé depuis le balayage après N6r4 (163, exact) ; `--pas`, `--wdl` et `--melange` vivent dans `tools/nnue-train`, hors du cliquet |
 | **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **RELEVÉ le 18 oct. à 0 h 40 : 163, EXACT** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fini à 20 h 47 | **Vert, la prédiction exacte** : chaque fichier à son plafond, `nnue.rs` 2, `search.rs` 48 — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
 | **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 18 oct. à 0 h 40** — lancée le 17 oct. à 18 h 34, finie le 18 à 0 h 03 ; Xeon 8573C, 1,64 M n/s, profondeur 13 | **109 − 99 − 92, 51,7 % : 3 112 ± 21, dedans, sous le centre** ; +43 ± 33 sur N5l à la même échelle, 0,44 au point de ce que mesure le jumeau ; zéro perte au temps (section C13, « N6r4, RELEVÉ ») — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
@@ -9272,6 +9275,29 @@ l'outil et les réseaux à `reseau/n20a-points` (`26c7822`), N6r4 en
 référence, sur 38531414161 puis 38531424497. *Attendus* : ceux de l'étape
 A — N7p2 sous N6r4 ; N7p4 sous N7p2 de moins que N7p2 sous N6r4, ou
 au-dessus ; les points diront où la retenue commence.
+
+**La sonde de B8, RELEVÉE le 20 oct. à 14 h 45 — les deux dans la plage et
+dans leur attendu, au facteur de `main`.** 40 parties chacun, finies à
+14 h 39 et 14 h 44, zéro anomalie :
+
+| réseau | facteur delta | facteur aspiration | moyenne géométrique | hors fenêtre à δ = 25 | *attendu* |
+|---|---|---|---|---|---|
+| N6r4, le 17 oct. | × 3,1 | × 2,00 | 2,49 | 8,3 % | — |
+| **N7p2** | × 3,3 | × 2,60 | **2,93** | 11,6 % | 2,3 à 3,0 — dedans |
+| **N7p4** | × 3,9 | × 2,00 | **2,79** | 7,8 % | 2,3 à 3,2 — dedans |
+
+Les deux plus hauts que N6r4, par le delta surtout — le sens que N6l200
+avait montré sur N6l. **Les candidats ne changent pas.**
+
+**Les matchs, lancés le 20 oct. à 14 h 45** — douze jobs de 2 800 parties
+à `8+0,08`, graine « auto », AVX2 des deux côtés : **N7p2 contre N6r4**
+(`8603bd3` → `0eca96a`) 39424657675, 39424661145, 39424664674,
+39424667800 ; **N7p4 contre N6r4** (`ec97f35` → `0eca96a`) 39424671016,
+39424674757, 39424677788, 39424680763 ; **N7p4 contre N7p2** (`ec97f35` →
+`8603bd3`) 39424684239, 39424687745, 39424691136, 39424694996. Fin
+attendue vers 19 h 40–20 h 00, au plus tard 20 h 35 ; leurs nœuds par
+seconde se relèvent pendant le vol. Critère et attendus : ceux de l'étape
+A, écrits le 17 oct.
 
 **La perte tenue à l'écart, RELEVÉE le 20 oct. à 14 h 39 — plus de passes
 paie encore en perte, sans retenir davantage ; le second attendu tombe.**
