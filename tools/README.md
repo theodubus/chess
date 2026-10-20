@@ -9242,6 +9242,37 @@ perte tenue à l'écart des deux et de leurs points, sur 38531414161 ; puis
 N6r4 (la décision), N7p4 contre N7p2 (la mesure) —, critère et attendus
 écrits plus haut.
 
+**La séance A, RELEVÉE le 20 oct. à 14 h 27 — les deux réseaux conformes.**
+`tools/seance-n20.sh` les a poussés sur `reseau/n20a` (`30e60e9`) à 13 h 39,
+et les quinze points de sauvegarde sur `reseau/n20a-points` (`26c7822`) ;
+intégrés par `e8d4ee6`. Entraînés à `4a604ea`, comme écrit :
+
+| réseau | relecture | confrontation, médian / maximal (admis 15 / 50) | entraînement | estimé |
+|---|---|---|---|---|
+| **N7p2**, 200 superlots | exacte, 18 435 764 : 2 328 546 367 | 3 / 16 | 1 h 16 min 51 s | ~1 h 20 |
+| **N7p4**, 400 superlots | exacte | 5 / 13 | 2 h 32 min 40 s | ~2 h 40 |
+
+Les durées à 4 % sous l'estimé : ~23,0 s par superlot, contre 23,7 au
+n° 18. **Les candidats**, écrits comme ceux de (a) et (d) — le chemin du
+réseau, son commentaire et sa confrontation recopiée, au facteur de
+`main` ; `verify.sh --rapide` vert, révoqués aussitôt, l'arbre revenu à
+`e8d4ee6` au bit près : **N7p2 `8603bd3`** (révoqué par `beab569`),
+**N7p4 `ec97f35`** (par `ce9fc2e`).
+
+**La sonde de B8 et les nœuds par seconde — écrits le 20 oct. à 14 h 35,
+avant de les lancer.** Le protocole de (a) et (d), le même script.
+*Attendus* — <span>inférence, confiance faible</span> : **N7p2 2,3 à 3,0,
+N7p4 2,3 à 3,2** — N6r4 mesurait 2,49 ; au n° 18, deux fois plus de passes
+avaient monté le facteur de 2,50 (N6l) à 2,61 (N6l200) ; **les deux dans
+2,14 à 3,56**, au facteur de `main`. **Nœuds par seconde, × 0,97 à × 1,04
+contre N6r4**, sans sens attendu.
+
+**La perte tenue à l'écart des deux et de leurs points** — `nnue-validation.yml`,
+l'outil et les réseaux à `reseau/n20a-points` (`26c7822`), N6r4 en
+référence, sur 38531414161 puis 38531424497. *Attendus* : ceux de l'étape
+A — N7p2 sous N6r4 ; N7p4 sous N7p2 de moins que N7p2 sous N6r4, ou
+au-dessus ; les points diront où la retenue commence.
+
 #### Étape B — plus de données, sur les runners, étiquetées par W
 
 **La recette** : `nnue-datagen.yml` au commit candidat de W — `cd6ed79`
