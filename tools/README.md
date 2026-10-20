@@ -9765,6 +9765,48 @@ Dans un terminal neuf, les blocs 0 à 2 de la séance A d'abord.
    ```
    — douze fichiers et la sortie de l'essai.
 
+**D'une traite et sans surveillance — `tools/seance-n20.sh`, écrit le
+20 oct. au matin.** Théo : « *Je vais partir toute la journée […] tu peux
+me faire un bloc de commandes (ou un fichier sh) qui fasse A, a et d,
+vérifie que tout se soit bien passé et commite tout seul si c'est le
+cas ?* ». Le script enchaîne les blocs ci-dessus et ceux de la séance A,
+**mêmes commandes, mêmes valeurs**, et lit à la place de Théo ce que ces
+blocs demandent de lire :
+- **avant** : le dépôt sans fichier suivi modifié et `main` à jour ; les
+  316 `.vf` des 79 jobs appris ; un seul binpack, de 14 366 468 016
+  octets ; le point de départ de N6r4 avec son `optimiser_state` ; les
+  trois bibliothèques de CUDA ; 4 Go libres. Un seul écart et rien ne
+  part ;
+- **l'essai court de (a) d'abord**, son critère d'échelle écrit avant
+  (250 à 450) : s'il échoue, (a) ne part pas, (d) et A si ;
+- **pour chaque réseau** : `RÉSEAU PRÊT` au bon chemin, `quantised.bin`
+  non vide, la confrontation imprimée — l'entraîneur refuse lui-même au
+  delà de 15 / 50, et une relecture qui ne tombe pas sur `--attendu` ;
+  pour ceux de `main`, la recette imprimée (le pas, `wdl`) ; pour (a),
+  la reprise depuis N6r4 et l'échelle ;
+- **chaque étape qui passe ses contrôles est commitée et poussée seule**
+  — `reseau/n20-ad` avec ceux de (a) et (d) qui passent, même si un
+  voisin échoue, les deux axes se lisant à part ; `reseau/n20a` puis
+  `reseau/n20a-points` (les quinze points comptés) seulement si les deux
+  réseaux de A passent. Personne pour taper un mot de passe : un push qui
+  en demanderait un échoue, et la branche reste commitée en local ;
+- **relancé**, il reprend au réseau qui manque et saute ce qui est déjà
+  poussé ; il bloque la mise en veille quand `systemd-inhibit` le permet,
+  tourne sur une copie de lui-même hors du dépôt (`4a604ea` ne l'a pas) et
+  rend le dépôt sur `main` en sortant, quoi qu'il arrive.
+
+**L'ordre change, pas la mesure** : (a) et (d) d'abord, à `main` — l'essai
+court y est déjà, et leurs réseaux, plus courts, arrivent ~2 h plus tôt —,
+puis A à `4a604ea` : un seul aller-retour de commit au lieu de deux. Les
+réseaux ne dépendent pas de l'ordre. *Éprouvé* avant de le donner, dans
+un bac à sable — un faux `cargo` qui imprime ce qu'imprime l'entraîneur, de
+fausses données aux bonnes tailles, un dépôt distant local : la séance
+entière (les trois branches poussées, quinze points) ; une panne simulée
+sur N6r4w25 (les trois autres poussés, A aussi, le code de sortie à 1),
+puis la relance (N6r4w25 seul refait, ajouté à `reseau/n20-ad`, le reste
+sauté) ; une échelle à 500 (l'essai refusé) ; deux binpacks (rien ne
+part).
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
