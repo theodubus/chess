@@ -10091,6 +10091,8 @@ efficacité valant ~0,64 — détecte **−1,5 % à 80 %, −2 % à 97 %, −1 %
 rapide à p < 0,05 ; sinon il reste à l'attic **pour de bon** — une troisième
 mesure demanderait un fait neuf, un instrument moins bruité par exemple,
 pas plus de tours. Les vingt tours d'aujourd'hui ne s'y ajoutent pas.
+**Lancée le 20 oct. à 13 h 15**, le conteneur sans autre charge — les
+matchs tournent sur les runners.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
