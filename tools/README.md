@@ -648,6 +648,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-10-17 | **N6v — l'étiqueteur seul**, n° 18, 155,8 M positions à 40 superlots (`6844597` contre `2648fb1`) | **+5,52 Elo ± 3,97**, homogènes — démontré de justesse |
 | 2026-10-17 | **N6l contre N6m — doubler les données**, n° 18, à 100 superlots (`0edbe22` contre `e769992`, signe opposé) | **+7,32 Elo ± 3,53**, homogènes — **la pente démontrée positive** |
 | 2026-10-17 | **N6l200 contre N6l — doubler les passes**, n° 18 (`8416e67` contre `e769992`) | **+5,49 Elo ± 3,55**, homogènes — démontré |
+| 2026-10-20 | **N7p4 — 400 superlots**, n° 20 étape A, la recette de N6r4 au seul nombre de passes près (`ec97f35` contre `0eca96a`, N6r4) | **+16,89 Elo ± 3,55** sur 11 200 parties à `8+0,08`, homogènes (p = 0,652), zéro perte au temps. **Gain démontré, le meilleur au point** ; contre N7p2 **+9,31 ± 3,51** — doubler encore les passes paie |
+| 2026-10-20 | **N7p2 — 200 superlots**, n° 20 étape A (`8603bd3` contre `0eca96a`) | **+14,74 Elo ± 3,52**, homogènes (p = 0,339) — gain démontré, sous N7p4 en match direct |
 | 2026-10-20 | **N6r4w50 — le poids du résultat à 0,5**, n° 20 (d), la recette de N6r4 au seul `wdl` près (`0f5214b` contre `0eca96a`, N6r4) | **+11,79 Elo ± 3,52** sur 11 200 parties à `8+0,08`, homogènes (p = 0,835), zéro perte au temps. **Gain démontré, le meilleur au point** ; N6r4w25 le recoupe — match direct |
 | 2026-10-20 | **N6r4w25 — le poids du résultat à 0,25**, n° 20 (d) (`85c88a6` contre `0eca96a`) | **+7,17 Elo ± 3,49**, homogènes (p = 0,864) — gain démontré |
 | 2026-10-20 | **N6r4Lb — N6r4 affiné sur Leela au pas 2·10⁻⁵**, n° 20 (a), 20 superlots (`739452f` contre `0eca96a`) | **−2,45 Elo ± 3,55**, homogènes (p = 0,966) — rien de démontré |
@@ -975,9 +977,10 @@ dernière relève est faite.
 | **N° 20 — N6r4w50 contre N6r4** | **39408757801, 39408760808, 39408763781, 39408766522** | `0f5214b` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 17 h 49** — lancés à 12 h 33 ; finis ENTIERS entre 17 h 32 et 17 h 44, 6,39 à 6,64 s par partie | **+12,41, +13,16, +8,94 et +12,66 ; +11,79 ± 3,52 en commun, homogènes (p = 0,835)** ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR AU POINT** — N6r4w25 le recoupe : match direct (section « (a) et (d) — VERDICT »). — *Attendu, écrit avant* (section « (a) et (d) ») : **−8 à +12** — tenu, au bord ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — N6r4w25 contre N6r4** | **39408769776, 39408772645, 39408775372, 39408778493** | `85c88a6` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 17 h 49** — lancés à 12 h 33 ; finis ENTIERS entre 17 h 40 et 17 h 46, 6,54 à 6,68 s par partie | **+9,06, +5,21, +7,57 et +6,83 ; +7,17 ± 3,49 en commun, homogènes (p = 0,864)** ; zéro perte au temps. **Gain démontré, recoupe N6r4w50** : match direct (section « (a) et (d) — VERDICT »). — *Attendu, écrit avant* (section « (a) et (d) ») : **−12 à +15** — tenu ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — N6r4w25 contre N6r4w50**, le match direct de (d) | **39452745551, 39452754806, 39452763795, 39452773226** | `85c88a6` (N6r4w25) → `0f5214b` (N6r4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — le critère poussé à 17 h 54 (`4f54caa`), lancés à 17 h 55 ; fin attendue 22 h 50–23 h 10, au plus tard 23 h 45 | — *Critère, écrit avant* : **N6r4w25 embarque si la borne basse est au-dessus de zéro ; sinon N6r4w50** ; *attendu* −10 à +3, ~−4 (section « (a) et (d) — VERDICT ») |
-| **N° 20, étape A — N7p2 contre N6r4** | **39424657675, 39424661145, 39424664674, 39424667800** | `8603bd3` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 14 h 45 ; fin attendue 19 h 40–20 h 00, au plus tard 20 h 35 | — *Attendu, écrit avant* (section « N° 20 », étape A) : **+3 à +12, ~+6** ; critère du n° 17 contre N6r4 |
-| **N° 20, étape A — N7p4 contre N6r4** | **39424671016, 39424674757, 39424677788, 39424680763** | `ec97f35` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 14 h 45 ; fin attendue 19 h 40–20 h 00, au plus tard 20 h 35 | — *Attendu, écrit avant* (section « N° 20 », étape A) : **la décision, avec N7p2 contre N6r4** ; critère du n° 17 contre N6r4 |
-| **N° 20, étape A — N7p4 contre N7p2** | **39424684239, 39424687745, 39424691136, 39424694996** | `ec97f35` → `8603bd3`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 14 h 45 ; fin attendue 19 h 40–20 h 00, au plus tard 20 h 35 | — *Attendu, écrit avant* (section « N° 20 », étape A) : **−10 à +8, ~+1 — le signe n'est pas acquis** ; critère du n° 17 contre N6r4 |
+| **N° 20 — N6r4w50 contre N7p4**, le match direct entre les axes | **À LANCER** | `0f5214b` (N6r4w50) → `ec97f35` (N7p4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **le critère écrit à 20 h 05, avant de lancer** | — *Critère, écrit avant* : **N6r4w50 embarque si la borne basse est au-dessus de zéro ; sinon N7p4** ; *attendu* −11 à +2, ~−5 (section « Étape A — VERDICT ») |
+| **N° 20, étape A — N7p2 contre N6r4** | **39424657675, 39424661145, 39424664674, 39424667800** | `8603bd3` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 46 et 19 h 51 | **+12,79, +11,05, +19,50 et +15,65 ; +14,74 ± 3,52 en commun, homogènes (p = 0,339)** ; zéro perte au temps. Gain démontré ; N7p4 le recoupe, le match direct tranche pour N7p4 (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **+3 à +12, ~+6** — dépassé ; critère du n° 17 contre N6r4 |
+| **N° 20, étape A — N7p4 contre N6r4** | **39424671016, 39424674757, 39424677788, 39424680763** | `ec97f35` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 47 et 19 h 54 | **+15,40, +21,12, +15,89 et +15,15 ; +16,89 ± 3,55 en commun, homogènes (p = 0,652)** ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR AU POINT** — l'étape A désigne N7p4, `SL=400` ; N6r4w50 le recoupe : match direct (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **la décision, avec N7p2 contre N6r4** ; critère du n° 17 contre N6r4 |
+| **N° 20, étape A — N7p4 contre N7p2** | **39424684239, 39424687745, 39424691136, 39424694996** | `ec97f35` → `8603bd3`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 44 et 19 h 57 | **+7,32, +14,53, +11,67 et +3,72 ; +9,31 ± 3,51 en commun, homogènes (p = 0,146)** ; zéro perte au temps. **Gain démontré : doubler encore les passes paie** (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **−10 à +8, ~+1 — le signe n'est pas acquis** — dépassé ; critère du n° 17 contre N6r4 |
 | **Le balayage hebdomadaire du 20 oct.** | — (le run du mardi, 00:00 UTC) | `main` après la PR de la relève de la vague 2 | `mutation.yml` | **RELEVÉ le 20 oct. à 13 h 42 : 163, EXACT** — run 39366549848, parti à 5 h 52 (le cron en retard de 3 h 52) ; **le job de `nnue.rs` a perdu son runner deux fois** (« *The runner has received a shutdown signal* », à 6 h 22 puis 12 h 33, chaque fois les deux mutants du plafond lus avant la coupure) ; troisième essai à 13 h 07, vert à 13 h 42 ; l'issue #203, ouverte par `Verdict` sur le résumé manquant, fermée | **Vert, la prédiction exacte** : chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48, `eval.rs` 102 | — *Prédiction, écrite avant* : **163**, chaque fichier à son plafond — aucune ligne d'`engine/src/` n'a changé depuis le balayage après N6r4 (163, exact) ; `--pas`, `--wdl` et `--melange` vivent dans `tools/nnue-train`, hors du cliquet |
 | **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **RELEVÉ le 18 oct. à 0 h 40 : 163, EXACT** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fini à 20 h 47 | **Vert, la prédiction exacte** : chaque fichier à son plafond, `nnue.rs` 2, `search.rs` 48 — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
 | **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 18 oct. à 0 h 40** — lancée le 17 oct. à 18 h 34, finie le 18 à 0 h 03 ; Xeon 8573C, 1,64 M n/s, profondeur 13 | **109 − 99 − 92, 51,7 % : 3 112 ± 21, dedans, sous le centre** ; +43 ± 33 sur N5l à la même échelle, 0,44 au point de ce que mesure le jumeau ; zéro perte au temps (section C13, « N6r4, RELEVÉ ») — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
@@ -9343,6 +9346,67 @@ N6r4 à sa perte du 17 oct. :
   perte (0,00038) — pour ~+22 Elo par la différence de leurs écarts à N5l,
   sans match direct, donc à deux incertitudes ; les matchs liront.
 
+#### Étape A — VERDICT, 20 oct. 2026 : plus de passes paie encore — N7p4 +16,89 ± 3,55 et N7p2 +14,74 ± 3,52 contre N6r4 à `8+0,08`, N7p4 +9,31 ± 3,51 contre N7p2 ; la séance B à 400 superlots
+
+**Relevé le 20 oct. à 20 h 00.** Les douze jobs finis ENTIERS entre
+19 h 44 et 19 h 57, 4 h 58 à 5 h 11 chacun, 6,39 à 6,66 s par partie ;
+zéro perte au temps, zéro coup illégal, zéro moteur perdu, sur la
+totalité des journaux. 2 800 parties par job :
+
+| match | job 1 | job 2 | job 3 | job 4 | en commun, 11 200 parties | homogénéité | attendu, écrit avant |
+|---|---|---|---|---|---|---|---|
+| **N7p2 contre N6r4** | +12,79 | +11,05 | +19,50 | +15,65 | **+14,74 ± 3,52** | p = 0,339 | +3 à +12 — dépassé |
+| **N7p4 contre N6r4** | +15,40 | +21,12 | +15,89 | +15,15 | **+16,89 ± 3,55** | p = 0,652 | la décision, avec N7p2 |
+| **N7p4 contre N7p2** | +7,32 | +14,53 | +11,67 | +3,72 | **+9,31 ± 3,51** | p = 0,146 | −10 à +8 — dépassé |
+
+Pentanomiaux, pour `tools/mettre-en-commun.sh` : N7p2 contre N6r4
+`30,231,787,310,42` `39,227,789,296,49` `25,205,802,324,44`
+`33,223,781,311,52` ; N7p4 contre N6r4 `34,233,764,313,56`
+`27,215,778,321,59` `21,223,808,303,45` `33,222,784,312,49` ; N7p4 contre
+N7p2 `25,239,829,266,41` `33,227,781,308,51` `31,244,783,284,58`
+`31,259,802,265,43`. *Étalonnages*, lus sur neuf jobs : EPYC 7763, 9V74
+et Xeon 8573C, 1,02 à 2,60 M n/s au banc, profondeur 13 à 15 en 250 ms.
+*Avertissements* : « PV continues after fifty-move rule » et « … after
+threefold repetition », 34 côté référence et 43 côté candidat sur 33 600
+parties — la famille connue, des deux côtés.
+
+- **Plus de passes paie encore, deux fois** : 100 → 200 superlots
+  +14,74, 200 → 400 +9,31 en match direct — démontré à chaque doublement,
+  et au-dessus des deux attendus. La perte tenue à l'écart l'avait dit
+  dans le sens (chaque doublement rendait autant), pas dans la mesure ;
+- **la retenue ne l'emporte pas à 25,6 passes** : le risque nommé avant
+  ne se voit ni en perte (tenu − appris inchangé) ni en jeu ;
+- **une incohérence apparente, dans le bruit** : par leurs écarts à N6r4,
+  N7p4 ne devance N7p2 que de +2,15 ; en match direct, de +9,31. Écart
+  7,2 ± 6,1 — 1,2 σ. *Le match direct fait foi* : c'est la mesure
+  appariée, et le critère la désigne ;
+- **le critère du n° 17** : N7p4, gain démontré, le meilleur au point de
+  l'étape ; N7p2 le recoupe, et le match direct, déjà écrit, tranche pour
+  N7p4. **L'étape A désigne N7p4 ; la séance B passe à `SL=400`** ;
+- **ce qui embarque** : N7p4 et N6r4w50 — deux gains démontrés sur deux
+  axes, +16,89 et +11,79 contre le même N6r4 — se recoupent (+13,34 à
+  +20,44 et +8,27 à +15,31) : **un match direct, par le critère du
+  n° 17, écrit plus bas**. Si N6r4w25 l'emportait sur N6r4w50 à 23 h, le
+  représentant de (d) ne recouperait plus N7p4, et N7p4 embarquerait sans
+  ce match. N6r4 joue jusque-là. Leurs Elo ne s'additionnent pas : leur
+  composition — 400 superlots au poids 0,5 — est un réseau neuf, mesuré à
+  son tour.
+
+**Le match direct — N6r4w50 contre N7p4, écrit le 20 oct. à 20 h 05,
+avant de le lancer.** Quatre jobs de 2 800 parties à `8+0,08`, graine
+« auto » chacun, le binaire AVX2 des deux côtés : `0f5214b` (N6r4w50)
+contre `ec97f35` (N7p4) — le même code au bit près, leur diff ne touche
+que le réseau, sa documentation et sa confrontation —, le facteur de
+`main` (2,85) des deux côtés, leurs sondes dans la plage (2,44 et 2,79).
+**Critère, écrit avant : N6r4w50 embarque si la borne basse de
+l'intervalle mis en commun est au-dessus de zéro ; sinon N7p4** — le
+meilleur au point contre N6r4, à une vitesse voisine (× 1,020 et × 1,048,
+non séparés). La règle du n° 13 : le second doit démontrer. *Attendu* —
+<span>inférence, confiance faible</span> : **−11 à +2, ~−5** — la
+différence de leurs écarts à N6r4, −5,10 ± 5,00, lue sans match direct.
+*Puissance dite d'avance* : ± 3,5 — à égalité, le meilleur au point
+embarque.
+
 #### Étape B — plus de données, sur les runners, étiquetées par W
 
 **La recette** : `nnue-datagen.yml` au commit candidat de W — `cd6ed79`
@@ -9642,6 +9706,15 @@ faible</span> : **les deux contre l'ancienne seule : +3 à +12** ; **la
 neuve seule contre l'ancienne seule : 0 à +10** — N6v, d'un étiqueteur
 plus fort de ~50, rendait +5,52 ; W l'est de ~99. Critère d'embarquement :
 celui du n° 17. **Chez Théo** : ~8,5 Go de plus à télécharger.
+
+**Le verdict de A, le 20 oct. à 20 h 00 : `SL=400`** — N7p4 l'emporte
+(section « Étape A — VERDICT »). **Le format attend l'arbitrage de Théo,
+demandé le même soir** : tel qu'écrit — N8n et N8t au poids 0,75, puis une
+séance de composition à leurs verdicts — ou, recommandé, **tout au poids
+0,5** : N7p4w50 (les anciennes), N8n-w50 et N8t-w50, ~7 h 45 de carte, le
+gagnant déjà composé. Avec le second, l'axe des données se lit à poids
+fixe, et N7p4w50 contre N7p4 dit si le poids paie encore à 400
+superlots.
 
 **La séance B — les commandes, écrites le 20 oct. à 13 h 25, avant de la
 demander ; elle ne se demande qu'au verdict de A.** Deux réseaux neufs de
@@ -11901,7 +11974,7 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
-| **A — plus de passes** | N7p2 et N7p4 : 200 et 400 superlots sur les 1,563 G anciennes ; N6r4 en avait fait 100 | sur la carte de Théo depuis le 20 oct. (`tools/seance-n20.sh`) ; puis sonde de B8, matchs contre N6r4 (« La séance A ») |
+| **A — plus de passes** | N7p2 et N7p4 : 200 et 400 superlots sur les 1,563 G anciennes ; N6r4 en avait fait 100 | **VERDICT le 20 oct. : N7p4 +16,89 ± 3,55, N7p2 +14,74 ± 3,52** contre N6r4, **N7p4 +9,31 ± 3,51 contre N7p2** — doubler paie encore ; `SL=400` pour la séance B ; N7p4 contre N6r4w50 en match direct avant d'embarquer (« Étape A — VERDICT ») |
 | **(a) — le réglage fin sur Leela** | N6r4 affiné 20 superlots sur le binpack, au pas 10⁻⁴ et 2·10⁻⁵ | **FERMÉ le 20 oct.** : **−11,42 ± 3,73** au pas 10⁻⁴, régression démontrée ; −2,45 ± 3,55 au pas 2·10⁻⁵, rien — rien n'embarque (« (a) et (d) — VERDICT ») |
 | **(d) — le poids du résultat** | la recette de N6r4, `wdl` 0,5 et 0,25 au lieu de 0,75 | **VERDICT le 20 oct. : les deux paient** — **+11,79 ± 3,52** à 0,5, +7,17 ± 3,49 à 0,25 ; ils se recoupent : **le match direct EN VOL**, le second doit démontrer ; puis le gagnant embarque, et son poids entre à la composition (« (a) et (d) — VERDICT ») |
 | **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; **la séance ÉCRITE le 20 oct.** (téléchargement, listes, commandes ; N8n et N8t), demandée au verdict de A, qui fixe ses superlots |
