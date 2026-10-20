@@ -9713,10 +9713,48 @@ celui du n° 17. **Chez Théo** : ~8,5 Go de plus à télécharger.
 (section « Étape A — VERDICT »). **Le format attend l'arbitrage de Théo,
 demandé le même soir** : tel qu'écrit — N8n et N8t au poids 0,75, puis une
 séance de composition à leurs verdicts — ou, recommandé, **tout au poids
-0,5** : N7p4w50 (les anciennes), N8n-w50 et N8t-w50, ~7 h 45 de carte, le
-gagnant déjà composé. Avec le second, l'axe des données se lit à poids
+0,5** : N7p4w50 (les anciennes), N8tw50 (les deux), **N8tw50s800** (les
+deux, 800 superlots) et N8nw50 (les neuves, en dernier), ~13 h de carte,
+le gagnant déjà composé. Avec le second, l'axe des données se lit à poids
 fixe, et N7p4w50 contre N7p4 dit si le poids paie encore à 400
 superlots.
+
+**Les questions de Théo, le 20 oct. au soir, avant de valider** — et ce
+qu'on y répond :
+- *« Qu'est-ce qui nous dit que 600 ou 800 superlots ne sont pas
+  mieux ? »* — **Rien, et la règle se l'écrit : on double tant qu'un
+  doublement paie, démontré.** 100 → 200 a rendu +14,74, 200 → 400 +9,31 :
+  le rendement décroît, rien ne dit qu'il est nul. On double plutôt que
+  d'ajouter 200 — 600 contre 400 vaudrait ~+5 au mieux, sous la résolution
+  de quatre jobs (± 3,5). Et le bon nombre de superlots suit le volume :
+  400 superlots sur 3,1 G font 12,9 passes, autant que N7p2 sur 1,56 G —
+  **N8tw50s800 contre N8tw50 pose donc la question sur les données qui
+  serviront**. *Attendu* — <span>inférence, confiance faible</span> : +3 à
+  +12, ~+7, sur le modèle de 12,8 → 25,6 passes (+9,31). S'il paie, 1 600
+  à la séance suivante ;
+- *« Faut-il tester d'autres poids du résultat ? »* — **Pas maintenant,
+  et la raison se chiffre.** 0,75 → 0, 0,5 → +11,79, 0,25 → +7,17, chacun à
+  ± 3,5 : l'optimum est entre 0,25 et 0,75, la parabole par les trois
+  points le met vers 0,45, à +0,4 au-dessus de 0,5. Même chaque point
+  poussé au bord de son intervalle — 0,25 à +10,7, 0,5 à +8,3 —, l'optimum
+  ne rendrait que ~2,4 au-dessus de 0,5 : il faudrait ~12 jobs pour le
+  séparer, pour un gain qu'on ne saurait pas distinguer de zéro.
+  **Ce qui le rouvrirait** : N7p4w50 contre N7p4 très loin de +11,8 — le
+  signe que l'optimum bouge avec les passes ; on placerait alors deux
+  points autour de 0,5, à la recette finale ;
+- *« (c) et (e) dans la séance B ? »* — **Non, ni l'un ni l'autre, pour
+  deux raisons différentes.** (c), les architectures plus grandes, se
+  mesure à la recette finale — volume, passes, poids —, que la séance B
+  fixe : une séance C après son verdict, avec les nœuds par seconde de
+  chaque architecture, l'AVX2 en place. (e), le budget de l'étiqueteur,
+  n'est pas un entraînement mais une génération sur les runners : 10 000
+  nœuds au lieu de 5 000, ~780 M positions, **étiquetées par N6r4** pour
+  se comparer aux données neuves à étiqueteur égal ; elle peut commencer
+  dès son protocole écrit, et ses réseaux entreront dans une séance
+  suivante.
+- **(b), Leela mêlé à nos données, passe derrière la séance B et la
+  composition** — Théo, 20 oct. : « *ok pour passer leela derrière la
+  séance B et composition* ».
 
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
@@ -9728,7 +9766,7 @@ puis les réseaux du format choisi, **chacun commité et poussé sur
 pendant que les suivants s'entraînent. `bash tools/seance-n20b.sh essai`,
 puis `bash tools/seance-n20b.sh tout w50` — ou `tout ecrit`. L'ordre au
 format `w50` : N7p4w50, le plus probable à embarquer, puis N8tw50, puis
-N8nw50. *Éprouvé dans un bac à sable* — faux `cargo`, faux `gh`, dépôt
+N8tw50s800, puis N8nw50, qu'on peut couper. *Éprouvé dans un bac à sable* — faux `cargo`, faux `gh`, dépôt
 distant local : l'essai ; la séance entière avec une panne simulée sur
 N8tw50, puis la relance, qui reprend N8tw50 seul et pousse les trois ; une
 troisième relance qui ne refait rien ; un téléchargement interrompu puis
@@ -11997,7 +12035,7 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 | **(a) — le réglage fin sur Leela** | N6r4 affiné 20 superlots sur le binpack, au pas 10⁻⁴ et 2·10⁻⁵ | **FERMÉ le 20 oct.** : **−11,42 ± 3,73** au pas 10⁻⁴, régression démontrée ; −2,45 ± 3,55 au pas 2·10⁻⁵, rien — rien n'embarque (« (a) et (d) — VERDICT ») |
 | **(d) — le poids du résultat** | la recette de N6r4, `wdl` 0,5 et 0,25 au lieu de 0,75 | **VERDICT le 20 oct. : les deux paient** — **+11,79 ± 3,52** à 0,5, +7,17 ± 3,49 à 0,25 ; ils se recoupent : **le match direct EN VOL**, le second doit démontrer ; puis le gagnant embarque, et son poids entre à la composition (« (a) et (d) — VERDICT ») |
 | **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; **la séance ÉCRITE le 20 oct.** (téléchargement, listes, commandes ; N8n et N8t), demandée au verdict de A, qui fixe ses superlots |
-| **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | avec la séance B ; **son attendu baisse le 20 oct.** — le réglage fin sur Leela régresse (−11,42), troisième verdict dans le même sens |
+| **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | **derrière la séance B et la composition** — Théo, 20 oct. ; son attendu baisse : le réglage fin sur Leela régresse (−11,42), troisième verdict dans le même sens |
 | **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
 | **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | runners, après B et (d) |
 | **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) |

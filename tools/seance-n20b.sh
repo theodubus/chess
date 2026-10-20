@@ -1,18 +1,21 @@
 #!/usr/bin/env bash
 # La séance B du n° 20 sur la carte de Théo, d'une traite et sans surveillance :
-# les données neuves de l'étape B téléchargées, puis trois réseaux à 400
-# superlots (`SL=400`, le verdict de l'étape A). Chaque réseau qui passe TOUS
+# les données neuves de l'étape B téléchargées, puis les réseaux du format
+# choisi, à 400 superlots (`SL=400`, le verdict de l'étape A) — et 800 pour
+# le doublement suivant, au format w50. Chaque réseau qui passe TOUS
 # ses contrôles est commité et poussé aussitôt sur `reseau/n20b` : le premier
 # fini se mesure pendant que les suivants s'entraînent.
 #
 #   bash tools/seance-n20b.sh essai        # contrôles, téléchargement, essai court
-#   bash tools/seance-n20b.sh              # tout, ~8 h ; le résumé dans ~/seance-n20b/
+#   bash tools/seance-n20b.sh              # tout, ~13 h ; le résumé dans ~/seance-n20b/
 #   bash tools/seance-n20b.sh tout ecrit   # le format écrit le 20 oct. à 13 h 25
 #
 # Deux formats, l'arbitrage de Théo les départage (tools/README.md, section
 # « N° 20 », « La séance B ») :
 #   w50   — tout au poids du résultat 0,5 : N7p4w50 (les anciennes, la
-#           composition de A et de (d)), N8tw50 (les deux), N8nw50 (les neuves) ;
+#           composition de A et de (d)), N8tw50 (les deux), N8tw50s800 (les
+#           deux, 800 superlots : faut-il encore plus de passes ?), N8nw50
+#           (les neuves seules, l'étiqueteur — le dernier, qu'on peut couper) ;
 #   ecrit — au poids 0,75 : N8t, N8n ; N7p4, déjà entraîné, sert de troisième.
 # Relancé après une interruption, il reprend au réseau qui manque et saute
 # ce qui est déjà poussé ; le téléchargement reprend au job qui manque.
@@ -286,12 +289,12 @@ fi
 B=0
 git_d fetch -q origin
 deja_pousse() { git_d cat-file -e "origin/reseau/n20b:reseaux/$1-$2.bin" 2>/dev/null; }
-reseau_b() { # nom, poids, puis les arguments de données
-  local nom=$1 wdl=$2 id=$ARCH-$SL
-  shift 2
+reseau_b() { # nom, superlots, poids, puis les arguments de données
+  local nom=$1 sl=$2 wdl=$3 id=$ARCH-$2
+  shift 3
   if deja_pousse "$nom" "$id"; then
     dire "déjà poussé  $nom"
-  elif former "$nom" "$id" --superlots "$SL" --wdl "$wdl" --sortie "$nom" "$@" &&
+  elif former "$nom" "$id" --superlots "$sl" --wdl "$wdl" --sortie "$nom" "$@" &&
     controler "$nom" "$id" pas=0.001 "wdl=$wdl"; then
     publier "Réseau NNUE du n° 20, séance B : $nom — tools/seance-n20b.sh, tous les contrôles passés" \
       "$nom:$id" || B=1
@@ -301,16 +304,18 @@ reseau_b() { # nom, poids, puis les arguments de données
 }
 if [ "$FORMAT" = w50 ]; then
   dire "— N7p4w50 : les anciennes, 400 superlots, poids 0,5"
-  reseau_b n7p4w50 0.5 --attendu "$ATT_ANCIENNES" "${ANCIENNES[@]}"
+  reseau_b n7p4w50 "$SL" 0.5 --attendu "$ATT_ANCIENNES" "${ANCIENNES[@]}"
   dire "— N8tw50 : les anciennes et les neuves"
-  reseau_b n8tw50 0.5 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
-  dire "— N8nw50 : les neuves seules"
-  reseau_b n8nw50 0.5 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
+  reseau_b n8tw50 "$SL" 0.5 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
+  dire "— N8tw50s800 : les mêmes, 800 superlots — le doublement suivant"
+  reseau_b n8tw50s800 800 0.5 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
+  dire "— N8nw50 : les neuves seules — le dernier, qu'on peut couper"
+  reseau_b n8nw50 "$SL" 0.5 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
 else
   dire "— N8t : les anciennes et les neuves, 400 superlots, poids 0,75"
-  reseau_b n8t 0.75 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
+  reseau_b n8t "$SL" 0.75 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
   dire "— N8n : les neuves seules"
-  reseau_b n8n 0.75 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
+  reseau_b n8n "$SL" 0.75 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
 fi
 
 if [ "$B" = 0 ]; then
