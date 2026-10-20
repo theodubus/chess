@@ -35,12 +35,15 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   périmée.
 - Ce qui s'exécute sans qu'on l'appelle : section *Ce qui tourne tout seul*,
   plus bas.
-- Ce sur quoi travailler : **demander**. Le dépôt ne porte pas de feuille de
-  route, et en deviner une reviendrait à rouvrir des questions déjà tranchées.
-  Mais **proposer ne coûte rien** — Théo, 19 oct. 2026 : « *d'une manière
-  générale tout ce qui peut faire augmenter l'elo vaut le coup d'être
-  testé* ». Un levier possible se signale et se propose ; une fois validé,
-  il se note au dépôt, à faire, avec sa place dans la file.
+- Ce sur quoi travailler : **la file validée**, `tools/README.md`, section
+  *Ce qui reste à faire*, sous-section *La file* — réécrite le 20 oct. 2026
+  dans l'ordre où faire, Théo : « *Je valide tous ces points, tout ce qui
+  vaut le coup d'être testé* » ; « *Le but absolu est la perf* ». Ce qui n'y
+  est pas se **demande** : en deviner l'ordre reviendrait à rouvrir des
+  questions déjà tranchées. Mais **proposer ne coûte rien** — Théo, 19 oct. :
+  « *d'une manière générale tout ce qui peut faire augmenter l'elo vaut le
+  coup d'être testé* ». Un levier possible se signale et se propose ; une
+  fois validé, il entre dans la file à sa place.
 - **Ce qui revient à Théo se dit à chaque point de récap** — toute action
   humaine nécessaire, et en particulier les branches distantes à supprimer,
   que le jeton de session ne peut pas supprimer. Théo, 5 oct. 2026 :
@@ -1127,7 +1130,17 @@ une mesure, pas une préférence.
 
 - Tests écrits en même temps que le code, pas après.
 - Pas d'`unwrap()` ni d'`expect()` hors des tests — la lint les signale.
-- Pas d'`unsafe` : la lint l'interdit.
+- Pas d'`unsafe` : la lint l'interdit — **sauf le SIMD de l'inférence**.
+  Théo, 20 oct. 2026 : « *Si annuler cette décision augmente l'elo long
+  terme, je le fais. Le but absolu est la perf* ». Les conditions, écrites
+  le même jour : confiné à UN module de `engine/src/nnue.rs` qui porte
+  `#[allow(unsafe_code)]` — la lint de l'espace de travail passe alors de
+  `forbid` à `deny`, pour que tout le reste refuse encore —, chaque bloc
+  derrière la détection du jeu d'instructions à l'exécution ou la cible de
+  compilation, et **confronté en test à la version scalaire**, qui reste :
+  même évaluation à l'unité près, donc même arbre. Il entre s'il rend du
+  temps à arbre identique (rejeu, test des signes), comme le chemin A du
+  n° 16.
 - Commentaires en français, code et identifiants en anglais.
 - **Les heures s'écrivent à l'heure de Paris** — messages, carnet,
   documentation (Théo, 6 oct. 2026). Celles d'avant cette date, dans le dépôt

@@ -11201,6 +11201,93 @@ fait tourner la recherche à vide.
 
 ### Ce qui reste à faire, par ordre mesuré
 
+#### La file — réécrite le 20 oct. 2026, dans l'ordre où la faire
+
+Théo, 20 oct. : « *Je valide tous ces points, tout ce qui vaut le coup d'être
+testé* » ; « *Le but absolu est la perf* ». Trois ressources travaillent en
+même temps — **la carte de Théo** (entraîner), **les runners** (générer,
+mesurer), **le conteneur** (écrire, écranter) — : l'ordre se lit file par
+file, et les phases se chevauchent. Chaque ligne se mesure comme les autres :
+le mécanisme d'abord, les attendus écrits avant, un match pour trancher. Le
+détail, les mesures et l'histoire de chaque chantier : le tableau plus bas
+et les sections citées.
+
+**Phase 1 — le réseau, en cours (n° 20 ; carte et runners).** Le réseau
+reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **A — plus de passes** | N7p2 et N7p4 : 200 et 400 superlots sur les 1,563 G anciennes ; N6r4 en avait fait 100 | sur la carte de Théo depuis le 20 oct. (`tools/seance-n20.sh`) ; puis sonde de B8, matchs contre N6r4 (« La séance A ») |
+| **(a) — le réglage fin sur Leela** | N6r4 affiné 20 superlots sur le binpack, au pas 10⁻⁴ et 2·10⁻⁵ | idem (« (a) et (d) — la séance ») |
+| **(d) — le poids du résultat** | la recette de N6r4, `wdl` 0,5 et 0,25 au lieu de 0,75 | idem |
+| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | génération : la vague 6, la dernière, finit le 20 oct. ; la séance s'écrit au verdict de A, qui fixe ses superlots |
+| **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | avec la séance B |
+| **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
+| **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | runners, après B et (d) |
+| **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) |
+
+**Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
+optimisations pures : même arbre au nœud près, prouvées par le temps au
+rejeu, sans match. Elles précèdent les réseaux larges, qui ne paient que si
+l'inférence suit.
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **à écrire maintenant** : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
+| **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; après le cache |
+| **l'évaluation statique dans la table** | une entrée trouvée rend aussi son évaluation, sans recalcul | pur seulement si l'entrée garde sa taille : sinon la capacité change et l'arbre avec (le piège de B9), et c'est un match |
+| **un banc qui emploie le réseau** | de l'outillage : mesurer la vitesse de ce qui joue, pas de la faite main | si le rejeu ne suffit pas à mesurer les trois lignes précédentes |
+
+**Phase 3 — des réseaux plus grands (la carte de Théo, le volume des
+phases 1 et 2).**
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **(c) — les architectures gourmandes** | dix seaux de roi, 384 ou 512 unités, nourris du mélange | après (b) |
+| **1 024 unités et des couches cachées** | une première couche quatre fois plus large, puis une ou deux couches de plus avant la sortie — la forme des moteurs forts, <span>de mémoire, confiance moyenne</span> | à écrire dans le moteur (inférence à plusieurs couches, quantification) et dans l'entraîneur ; après le cache, le SIMD et assez de données ; ~4 fois le temps par superlot sur la carte de Théo |
+
+**Phase 4 — la recherche (conteneur, puis runners ; en parallèle des
+phases 1 à 3).** Chaque ligne a son écran, l'arbre de chaque variante au
+rejeu, puis quatre jobs par candidat.
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **l'historique borné** (« gravité ») | bonus et malus pondérés par `1 − abs(note) / plafond` : l'historique cesse de grandir avec la profondeur cherchée | à écranter en premier : c'est la condition des deux lignes suivantes, et un changement à lui seul — il change l'ordre des coups |
+| **la LMR modulée** | la réduction selon l'historique du coup, le type de nœud (coupure attendue ou non), la variante principale en table — elle ne dépend aujourd'hui que de la profondeur et du rang | après l'historique borné |
+| **l'élagage par l'historique** | sauter les tranquilles mal notés à faible profondeur | après l'historique borné ; fermé à l'écran le 7 oct. faute de lui |
+| **l'historique de correction, en plusieurs tables** | corriger l'évaluation statique par ce que la recherche a appris, indexé par la structure de pions, le matériel, le coup précédent ; la variante unique de C42 rendait −1,1 ± 3,6 et grossissait l'arbre | après l'historique borné ; à remesurer aussi après SPSA, qui peut retoucher les marges qu'il gêne |
+| **l'historique des captures, rouvert** | fermé à l'écran (plafond +1,6 à +2,8) ; borné, il peut ordonner autrement | bas de la phase |
+| **Lazy SMP au-delà de deux fils, et ses variantes** | décalage de profondeur, coup du meilleur fil, historiques partagés | condition : une machine à plus de deux cœurs physiques ; les runners n'en ont que deux |
+
+**Phase 5 — le réglage (runners), le réseau et la recherche stabilisés.**
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **SPSA (n° 19)** | régler ensemble les marges de la recherche — dix aujourd'hui, celles de la phase 4 ensuite — par paires de binaires perturbés, à `8+0,08` ; le réglage final est un candidat comme un autre | outillage prêt et éprouvé (14 oct.) ; après la composition et la phase 4 ; **à refaire à chaque réseau embarqué** — les marges lui appartiennent |
+
+**Phase 6 — la cadence longue (runners, le plus cher).**
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **n° 14 — ce qui croît avec la profondeur** | ProbCut d'abord — son épargne double tous les deux plis —, puis le multi-cut et le razoring, fermés à l'écran à `8+0,08` ; allumés selon la profondeur d'itération, mesurés là où le moteur cherche à 16 plis et plus | ~7,5 fois le prix d'une partie à `8+0,08` à 60+0,6 |
+
+**Phase 7 — plus tard, ou sur un chiffre.**
+
+| quoi | ce que c'est | où on en est |
+|---|---|---|
+| **les tables de finale Syzygy** | sonder des tables exactes quand il reste peu de pièces | +2,7 Elo chez Stockfish 15 au réseau (source secondaire) ; reporté |
+| **les ouvertures du générateur** | 8 à 11 demi-coups au hasard, jamais comparés à un livre pour la diversité des données | à écranter le jour où le volume ne paiera plus |
+| **plus de données de Leela** | d'autres fichiers que T60 et T74 | si (a) ou (b) paie |
+| **la gestion du temps par un réseau** | un réseau qui fixe le budget d'un coup | avis : petit à `8+0,08` ; le plafond d'abord, par la sonde d'allocation |
+| **`MultiPV`** | une option d'analyse, sans Elo | « *pas tout de suite* » (Théo, 2 oct.) |
+| **l'interface** — B5, A8, le livre et `Hash` selon la cadence | côté `ui/`, sous son propre `CLAUDE.md` | ailleurs |
+
+**Sans objet** : B7 phase 2, régler l'évaluation faite main — elle ne joue
+plus. **À chaque réseau embarqué, toujours** : la sonde de B8 (son facteur
+des marges), une série de C13, le balayage de mutation.
+
+#### L'histoire de l'ordre, et le détail de chaque chantier
+
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
 d'abord les relèves en vol (C22 sur C23, balayage de mutation), puis
 **calibrer l'Elo par pli**, puis **B6 — la recherche multithread** (Lazy
