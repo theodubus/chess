@@ -9299,6 +9299,14 @@ attendue vers 19 h 40–20 h 00, au plus tard 20 h 35 ; leurs nœuds par
 seconde se relèvent pendant le vol. Critère et attendus : ceux de l'étape
 A, écrits le 17 oct.
 
+**Leurs nœuds par seconde, RELEVÉS le 20 oct. à 14 h 53** — le rejeu du
+n° 15, `--nps`, AVX2, dix tours, contre N6r4 (`0eca96a`) : **N7p2 × 1,011,
+N7p4 × 1,048**, chacun plus rapide sur 7 tours sur 10, p = 0,34 — aucun
+séparé. N7p4 au point juste au-dessus de l'attendu (× 0,97 à × 1,04) :
+plus de passes, un arbre un peu plus petit au rejeu, <span>inférence,
+confiance faible</span> ; par l'étalon du temps, × 1,05 vaudrait ~+7 Elo
+dans son match, si l'écart tenait.
+
 **La perte tenue à l'écart, RELEVÉE le 20 oct. à 14 h 39 — plus de passes
 paie encore en perte, sans retenir davantage ; le second attendu tombe.**
 Run 39423324257, quatre minutes, contrôle exact (17 208 872, 17 938 594),
