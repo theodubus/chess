@@ -962,8 +962,14 @@ dernière relève est faite.
 | **N° 20 — la vague 3**, étiquetée par N6r4 | 39248624744, 39248631100, 39248637436, 39248644219, 39248651141, 39248657122, 39248663803, 39248669858, 39248676659, 39248687175, 39248695901, 39248704266, 39248713067, 39248721450, 39248728947, 39248737285 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 19 oct. à 19 h 55** — lancée à 14 h 00, ses attendus poussés avant (`12ce133`) ; seize succès finis à 19 h 31 | **417,2 M positions, 285,1 M gardées, 19,27 % d'écartées, 34,35 % de nulles, EPYC 7763 à 1 173 – 1 194 positions par seconde : dans l'attendu sur les cinq chiffres** ; l'image encore `ubuntu-24.04` ; 846,5 M gardées après trois vagues, trois vagues encore (`tools/n20-jobs.tsv`, section « N° 20 », la vague 3) — *Attendus, écrits avant* (section « N° 20 », la vague 3) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
 | **N° 20 — la vague 4**, étiquetée par N6r4 | 39298202589, 39298211381, 39298220429, 39298228880, 39298235765, 39298246238, 39298256527, 39298265446, 39298274102, 39298282360, 39298291145, 39298299675, 39298308393, 39298317493, 39298326638, 39298334978 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 20 oct. à 1 h 45** — lancée le 19 à 19 h 55, ses attendus poussés avant (`7411672`) ; seize succès finis à 1 h 27 | **428,2 M positions, 292,6 M gardées, 19,26 % d'écartées, 34,31 % de nulles, EPYC 7763 à 1 161 – 1 187 positions par seconde : dans l'attendu sur les cinq chiffres** ; l'image `ubuntu-24.04`, version `20261018.339.1` ; 1 139,1 M gardées après quatre vagues, deux vagues encore (`tools/n20-jobs.tsv`, section « N° 20 », la vague 4) — *Attendus, écrits avant* (section « N° 20 », la vague 4) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
 | **N° 20 — la vague 5**, étiquetée par N6r4 | 39343457092, 39343463026, 39343469332, 39343475933, 39343482982, 39343490144, 39343497398, 39343503779, 39343510501, 39343517114, 39343523528, 39343529992, 39343536213, 39343542186, 39343548177, 39343553716 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 20 oct. à 7 h 30** — lancée à 1 h 45, ses attendus poussés avant (`0e184b3`) ; seize succès finis à 7 h 16 | **443,1 M positions, 302,8 M gardées, 19,28 % d'écartées, 34,29 % de nulles : dans l'attendu sur quatre chiffres ; EPYC 7763 à 1 139 – 1 188, un seul des dix 1 % sous la borne**, ses comptes dans les leurs ; l'image `ubuntu-24.04` `20261018.339.1` ; 1 441,9 M gardées après cinq vagues, la vague 6 entière (`tools/n20-jobs.tsv`, section « N° 20 », la vague 5) — *Attendus, écrits avant* (section « N° 20 », la vague 5) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
-| **N° 20 — la vague 6**, la dernière, étiquetée par N6r4 | 39375325547, 39375329849, 39375334077, 39375338208, 39375342511, 39375346497, 39375350622, 39375355535, 39375360071, 39375364672, 39375369257, 39375373891, 39375379162, 39375384258, 39375389499, 39375395417 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 20 oct. à 7 h 31, ses attendus poussés avant (`5c0107c`) ; fin vers 13 h 00–13 h 10 | — *Attendus, écrits avant* (section « N° 20 », la vague 6) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763**, un runner isolé jusqu'à 1 % dessous ; **le cumul, 1 687 à 1 797 M gardées** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
-| **N° 20 — la séance A, puis (a) et (d), sur la carte de Théo** | — | séance A : N7p2, N7p4 à `4a604ea` ; (a) N6r4La, N6r4Lb et (d) N6r4w50, N6r4w25 à `main` (`2a8cca1` et après) | `tools/nnue-train`, les 79 jobs du n° 18 et le binpack du levier 4 | **EN COURS chez Théo depuis le 20 oct. à 8 h 11**, par `tools/seance-n20.sh` (PR #202) — demandée le 19 au soir, pas lancée la nuit ; **l'essai court de (a) RÉUSSI à 8 h 07** : écart médian 4, maximal 29 (admis 15 / 50), échelle ajustée **282,1** (critère 250 – 450), la première compilation CUDA du `nnue-train` de `main` ; tous les contrôles d'avant passés, la veille bloquée ; (a) et (d) d'abord (~2 h, `reseau/n20-ad`), puis A (~4 h, `reseau/n20a`, `reseau/n20a-points`) | — *Attendus, écrits avant* (section « N° 20 », la séance A et « (a) et (d) ») : N7p2 contre N6r4 +3 à +12, N7p4 contre N7p2 −10 à +8 ; N6r4La −15 à +10, N6r4Lb −6 à +6 ; N6r4w50 −8 à +12, N6r4w25 −12 à +15 ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20 — la vague 6**, la dernière, étiquetée par N6r4 | 39375325547, 39375329849, 39375334077, 39375338208, 39375342511, 39375346497, 39375350622, 39375355535, 39375360071, 39375364672, 39375369257, 39375373891, 39375379162, 39375384258, 39375389499, 39375395417 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 20 oct. à 13 h 10** — lancée à 7 h 31, ses attendus poussés avant (`5c0107c`) ; seize succès finis entre 13 h 01 et 13 h 03 | **453,8 M positions, 310,0 M gardées, 19,23 % d'écartées, 34,30 % de nulles ; sept EPYC 7763 à 1 176 – 1 191 ; cumul 1 751,9 M : dans l'attendu sur les six chiffres** ; l'image `ubuntu-24.04` `20261012.334.1` ; **l'étape B close** (`tools/n20-jobs.tsv`, section « N° 20 », la vague 6) — *Attendus, écrits avant* (section « N° 20 », la vague 6) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763**, un runner isolé jusqu'à 1 % dessous ; **le cumul, 1 687 à 1 797 M gardées** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
+| **N° 20 — la séance A, puis (a) et (d), sur la carte de Théo** | — | séance A : N7p2, N7p4 à `4a604ea` ; (a) N6r4La, N6r4Lb et (d) N6r4w50, N6r4w25 à `main` (`2a8cca1` et après) | `tools/nnue-train`, les 79 jobs du n° 18 et le binpack du levier 4 | **EN COURS chez Théo depuis le 20 oct. à 8 h 11**, par `tools/seance-n20.sh` (PR #202) — **(a) et (d) RELEVÉS à 11 h 50** : les quatre réseaux conformes, poussés sur `reseau/n20-ad` (`2332ee0`), confrontations 8 / 21, 4 / 12, 5 / 26, 7 / 18, échelle 282,1 (section « (a) et (d) », la séance relevée) ; **A en cours** — demandée le 19 au soir, pas lancée la nuit ; **l'essai court de (a) RÉUSSI à 8 h 07** : écart médian 4, maximal 29 (admis 15 / 50), échelle ajustée **282,1** (critère 250 – 450), la première compilation CUDA du `nnue-train` de `main` ; tous les contrôles d'avant passés, la veille bloquée ; (a) et (d) d'abord (~2 h, `reseau/n20-ad`), puis A (~4 h, `reseau/n20a`, `reseau/n20a-points`) | — *Attendus, écrits avant* (section « N° 20 », la séance A et « (a) et (d) ») : N7p2 contre N6r4 +3 à +12, N7p4 contre N7p2 −10 à +8 ; N6r4La −15 à +10, N6r4Lb −6 à +6 ; N6r4w50 −8 à +12, N6r4w25 −12 à +15 ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20 — la perte tenue à l'écart de (a) et (d)** | **39406254639** | l'outil à `4ab82af` ; N6r4, puis N6r4La, N6r4Lb, N6r4w50, N6r4w25, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 18** — lancée à 12 h 12, finie à 12 h 14 | **(a) tient, (d) tombe pour N6r4w50.** Contrôle exact (17 208 872, 17 938 594), N6r4 à sa perte du 17 oct. ; tenu à l'écart, N6r4La **+0,00195 ± 0,00006**, N6r4Lb **+0,00143 ± 0,00005** — N6r4 < Lb < La ; N6r4w50 **−0,00003 ± 0,00002**, indiscernable de N6r4, N6r4w25 **+0,00032 ± 0,00003** ; les deux de (d) retiennent moins que N6r4 (section « (a) et (d) », la perte tenue à l'écart) — *Attendus, écrits avant* (section « (a) et (d) ») : N6r4 ≤ N6r4Lb ≤ N6r4La ; N6r4w50 et N6r4w25 au-dessus de N6r4, ils minimisent une autre cible |
+| **N° 20 — la sonde de B8 et les nœuds par seconde de (a) et (d), dans le conteneur** — RELEVÉS | — | les candidats `89bb3e9`, `739452f`, `0f5214b`, `85c88a6` plus `b8-sonde-marges.patch`, chacun contre lui-même, `8+0,08`, 40 parties, `-srand 20260930` ; puis le rejeu du n° 15, `--nps`, AVX2, dix tours, contre `0eca96a` | fastchess ; `facteurs.py` ; `rejeu.py` | **la sonde RELEVÉE à 12 h 33 — les quatre dans la plage et dans leur attendu** : N6r4La **2,59**, N6r4Lb **2,86**, N6r4w50 **2,44**, N6r4w25 **2,47**, tous au facteur de `main`, les candidats inchangés ; zéro perte au temps ; **les nœuds par seconde RELEVÉS à 12 h 48** : × 0,987, × 1,010, × 1,020, × 1,014 contre N6r4, aucun séparé (p = 0,75), dans l'attendu | — *Attendus, écrits avant* (section « (a) et (d) », la sonde et les nœuds par seconde) : N6r4La 2,3 à 3,2, N6r4Lb 2,3 à 2,9, N6r4w50 et N6r4w25 2,2 à 3,2 — les quatre dans 2,14 à 3,56, au facteur de `main` ; n/s × 0,97 à × 1,04 contre N6r4 |
+| **N° 20 — N6r4La contre N6r4** | **39408732940, 39408736055, 39408739135, 39408741873** | `89bb3e9` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−15 à +10, ~−2** ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20 — N6r4Lb contre N6r4** | **39408744693, 39408747673, 39408750838, 39408753851** | `739452f` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−6 à +6, ~0** ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20 — N6r4w50 contre N6r4** | **39408757801, 39408760808, 39408763781, 39408766522** | `0f5214b` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−8 à +12** ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20 — N6r4w25 contre N6r4** | **39408769776, 39408772645, 39408775372, 39408778493** | `85c88a6` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−12 à +15** ; critère du n° 17 contre N6r4, chaque axe à part |
 | **Le balayage hebdomadaire du 20 oct.** | — (le run du mardi, 00:00 UTC) | `main` après la PR de la relève de la vague 2 | `mutation.yml` | **EN COURS** — run 39366549848, parti à 5 h 52 (le cron en retard de 3 h 52) ; **le job de `nnue.rs` a perdu son runner** à 6 h 22 (« *The runner has received a shutdown signal* », 2 mutants manqués lus avant la coupure, sur 161), sans résumé : à relancer une fois le run fini (`rerun-failed-jobs`, qui relance aussi `Verdict`) ; les autres fichiers verts, `search.rs` en cours | — *Prédiction, écrite avant* : **163**, chaque fichier à son plafond — aucune ligne d'`engine/src/` n'a changé depuis le balayage après N6r4 (163, exact) ; `--pas`, `--wdl` et `--melange` vivent dans `tools/nnue-train`, hors du cliquet |
 | **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **RELEVÉ le 18 oct. à 0 h 40 : 163, EXACT** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fini à 20 h 47 | **Vert, la prédiction exacte** : chaque fichier à son plafond, `nnue.rs` 2, `search.rs` 48 — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
 | **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 18 oct. à 0 h 40** — lancée le 17 oct. à 18 h 34, finie le 18 à 0 h 03 ; Xeon 8573C, 1,64 M n/s, profondeur 13 | **109 − 99 − 92, 51,7 % : 3 112 ± 21, dedans, sous le centre** ; +43 ± 33 sur N5l à la même échelle, 0,44 au point de ce que mesure le jumeau ; zéro perte au temps (section C13, « N6r4, RELEVÉ ») — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
@@ -9494,6 +9500,32 @@ ancien (1 563 M) atteint dans tous les cas. Si l'image bascule sur
 Ubuntu 26 pour une partie des jobs, les deux groupes se lisent
 séparément.
 
+**La vague 6, RELEVÉE le 20 oct. à 13 h 10 — seize succès, dans les
+attendus sur les six chiffres ; l'étape B est close.** Lancée à 7 h 31,
+finie entre 13 h 01 et 13 h 03.
+
+| | les seize | attendu, écrit avant |
+|---|---|---|
+| positions | **453,8 M** | 360 à 520 M — dedans |
+| gardées par le filtre de l'entraîneur | **310,0 M** | 245 à 355 M — dedans |
+| écartées, sur les gardées | **19,23 %** (18,99 à 19,35 d'un job à l'autre) | 18,9 à 20,5 % — dedans |
+| nulles, sur les gardées | **34,30 %** (34,15 à 34,48) | 33,2 à 34,8 % — dedans |
+| EPYC 7763, positions par seconde | **1 176 à 1 191**, sept runners | 1 150 à 1 220 — dedans, tous |
+| le cumul gardé | **1 751,9 M** | 1 687 à 1 797 M — dedans |
+
+Les autres processeurs à leurs débits habituels : trois EPYC 9V45 à
+2 023 – 2 059, quatre 9V74 à 1 543 – 1 571 — le 9V74 lent de la vague 5
+ne s'est pas reproduit —, un Xeon 8370C à 1 127, un 8573C à 1 135.
+L'image : `ubuntu-24.04` `20261012.334.1` (Ubuntu 24.04.5), lue dans le
+journal de 39375395417 — pas de bascule sur Ubuntu 26.
+
+**L'étape B, close : 1 751,9 M positions gardées en six vagues**, 95 jobs
+appris (`tools/n20-jobs.tsv`), étiquetés par N6r4 à `cd6ed79` — × 1,12
+le volume ancien (1 563 M). Le surplus, **188,6 M**, au-dessus des ~170 M
+attendus : la séance B tire dans l'ordre de lancement jusqu'au volume
+ancien, le reste est gardé pour (c) et (e). La séance B s'écrit après le
+verdict de A, qui fixe ses superlots.
+
 #### La séance B — après le volume
 
 Trois réseaux de l'architecture W, aux superlots que l'étape A aura
@@ -9806,6 +9838,259 @@ sur N6r4w25 (les trois autres poussés, A aussi, le code de sortie à 1),
 puis la relance (N6r4w25 seul refait, ajouté à `reseau/n20-ad`, le reste
 sauté) ; une échelle à 500 (l'essai refusé) ; deux binpacks (rien ne
 part).
+
+**La séance (a) et (d), RELEVÉE le 20 oct. à 11 h 50 — les quatre réseaux
+conformes.** `tools/seance-n20.sh`, lancé par Théo à 8 h 11, les a poussés
+sur `reseau/n20-ad` (`2332ee0`), intégrés par `0eca96a` ; l'étape A tourne
+encore. Les sorties, relues ici :
+
+| réseau | recette imprimée | confrontation, médian / maximal (admis 15 / 50) | échelle | entraînement | estimé |
+|---|---|---|---|---|---|
+| essai, 1 superlot | repart de N6r4 ; pas 0,0001, wdl 0,75 | 4 / 29 | 282,1 | — | — |
+| **N6r4La** | repart de N6r4 ; 20 superlots, pas 0,0001 → 2,43·10⁻⁷, wdl 0,75 | 8 / 21 | 282,1 | 8 min 08 s | ~9 min |
+| **N6r4Lb** | repart de N6r4 ; 20 superlots, pas 0,00002 → 4,86·10⁻⁸, wdl 0,75 | 4 / 12 | 282,1 | 8 min 11 s | ~9 |
+| **N6r4w50** | relecture exacte ; 100 superlots, pas 0,001 → 2,43·10⁻⁶, wdl 0,5 | 5 / 26 | — | 39 min 31 s | ~40 |
+| **N6r4w25** | relecture exacte ; 100 superlots, pas 0,001 → 2,43·10⁻⁶, wdl 0,25 | 7 / 18 | — | 40 min 15 s | ~40 |
+
+- **les durées** : (d) au rythme de N6r4 (39 min 29 s) ; (a) à ~24,5 s
+  par superlot, contre 23,7 sur nos données — le binpack n'en demande que
+  × 1,03 ici, quand N4L en demandait × 1,13 à N4. Rien d'autre à lire ;
+- **les réglages fins bougent les finales gagnées, même au petit pas.**
+  Roi et pion contre roi (`8/8/8/4k3/8/8/4KP2/8 w`) : N6r4 420, **N6r4La
+  116, N6r4Lb 133** ; une tour de moins (`6k1/5ppp/…/3R2K1 b`) : −2 255,
+  −1 685, −1 840. Le pas divisé par cinq déplace ces scores presque
+  autant : Adam avance d'environ un pas par lot quand le gradient garde son
+  signe, et 122 000 lots y suffisent. <span>Inférence, confiance
+  faible</span> : les cibles de Leela, converties d'une probabilité de
+  gain, tassent les finales que nos étiquettes chiffrent en matériel ;
+  aucune ne dit si le tassement coûte — les matchs le diront ;
+- **le poids du résultat, sur les mêmes finales** : roi et pion contre
+  roi 420 à wdl 0,75, **488 à 0,5, 525 à 0,25** — la cible suit davantage
+  le score de l'étiqueteur à mesure que le résultat pèse moins ; roi et
+  tour contre roi, 1 048, 956 et 841, dans l'autre sens. Aucun ordre
+  simple : la pente du score à la cible n'est pas celle du résultat.
+
+*Intégrés le 20 oct., entre 12 h 00 et 12 h 10* — chacun ne change, sur `0eca96a`, que
+`engine/src/nnue.rs` : le chemin d'`include_bytes!`, son commentaire et
+la confrontation de son entraînement recopiée dans le test, aux
+dix-huit positions — par un script qui retrouve chaque position par sa
+FEN, éprouvé d'abord sur N6r4 lui-même (aucun écart) ; même architecture
+que N6r4, au facteur des marges de `main`, 2,85 ; `verify.sh --rapide`
+vert à chaque candidat, révoqué aussitôt, l'arbre revenu à `0eca96a` au
+bit près :
+
+| réseau | candidat | révoqué par |
+|---|---|---|
+| N6r4La | `89bb3e9` | `37f1bbd` |
+| N6r4w50 | `0f5214b` | `d9ab8dd` |
+| N6r4Lb | `739452f` | `cb343be` |
+| N6r4w25 | `85c88a6` | `4ab82af` |
+
+La référence des matchs : **`0eca96a`** — `main` et ces réseaux, N6r4
+embarqué.
+
+**La sonde de B8 et les nœuds par seconde — écrits le 20 oct. à 12 h 12,
+avant de les lancer.** Le protocole du n° 18 tel quel (ses scripts,
+`n18/sonde.sh` et `n18/nps.sh` au carnet, rejoués) : 40 parties de chaque
+candidat contre lui-même à `8+0,08`, `-srand 20260930`, le livre du
+dépôt, le binaire sondé étant le candidat plus `b8-sonde-marges.patch`,
+la faite main celle du 12 oct. ; **dans 2,14 à 3,56, le réseau se mesure
+au facteur de `main`, 2,85**, hors de là son facteur d'abord. Puis le
+rejeu du n° 15, `--nps`, binaires AVX2, dix tours, contre N6r4 (`0eca96a`).
+*Attendus* — <span>inférence, confiance faible</span> :
+- **N6r4La 2,3 à 3,2, N6r4Lb 2,3 à 2,9** — N6r4 mesurait 2,49 ; les
+  réseaux de Leela portaient des nombres 12 à 25 % plus grands que N2
+  (2,60 et 2,61 contre 2,24), mais ceux-ci repartent de N6r4 et le
+  tassement des finales dit le contraire : le sens n'est pas connu ;
+- **N6r4w50 et N6r4w25, 2,2 à 3,2**, sans sens attendu ;
+- **les quatre dans la plage** — aucun candidat ne change ;
+- **nœuds par seconde, × 0,97 à × 1,04 contre N6r4**, sans sens attendu :
+  même architecture, même code ; au n° 18, des poids différents ont rendu
+  × 1,01 à × 1,04 à architecture égale, par l'arbre.
+
+**La sonde de B8, RELEVÉE le 20 oct. à 12 h 33 — les quatre dans la
+plage et dans leur attendu, tous mesurés au facteur de `main`, 2,85.**
+Quatre binaires construits à 12 h 13, 40 parties chacun, finies entre
+12 h 18 et 12 h 32 ; zéro perte au temps, zéro anomalie ; la rustine
+s'applique et compile telle quelle ; la faite main, celle du 12 oct.
+(0,40 % d'élagages delta fautifs, 4,1 % d'itérations hors de la première
+fenêtre) :
+
+| réseau | facteur delta | facteur aspiration | moyenne géométrique | hors fenêtre à δ = 25 | *attendu* | par la règle (2,14 à 3,56) |
+|---|---|---|---|---|---|---|
+| N6r4, le 17 oct. | × 3,1 | × 2,00 | 2,49 | 8,3 % | — | — le réseau de `main` |
+| **N6r4La** | × 2,8 | × 2,40 | **2,59** | 10,4 % | 2,3 à 3,2 | dedans — 2,85 |
+| **N6r4Lb** | × 3,4 | × 2,40 | **2,86** | 10,3 % | 2,3 à 2,9 | dedans — 2,85 |
+| **N6r4w50** | × 2,7 | × 2,20 | **2,44** | 9,5 % | 2,2 à 3,2 | dedans — 2,85 |
+| **N6r4w25** | × 3,4 | × 1,80 | **2,47** | 7,0 % | 2,2 à 3,2 | dedans — 2,85 |
+
+- **les candidats ne changent pas** ; Lb au bord haut de son attendu ;
+- **le réglage sur Leela bouge les scores d'une itération à l'autre** :
+  10,3 et 10,4 % hors de la première fenêtre, contre 8,3 % pour N6r4 —
+  l'aspiration y échoue un quart de fois plus, ce que dit aussi son
+  facteur (× 2,40 contre × 2,00) ; **le poids du résultat les stabilise**,
+  9,5 puis 7,0 % à mesure qu'il baisse. <span>Inférence, confiance
+  faible</span> : une cible qui suit davantage le score de l'étiqueteur
+  donne une évaluation plus lisse d'une profondeur à la suivante ;
+- **le delta**, sur la grille de 0,1 sans rien entre 3,0 et 4,0 pour
+  certains, ne départage rien de net.
+
+**Leurs nœuds par seconde, RELEVÉS le 20 oct. à 12 h 48 — les quatre
+dans l'attendu, aucun séparé de N6r4.** Le rejeu du n° 15, `--nps`, les
+binaires AVX2 construits à 12 h 33, dix tours, la base N6r4 (`0eca96a`) à
+27 312 684 nœuds par passe ; le conteneur sans autre charge :
+
+| réseau | n/s contre N6r4, médiane des tours | tours plus lents | signes |
+|---|---|---|---|
+| **N6r4La** | × 0,987 | 6 / 10 | p = 0,75 |
+| **N6r4Lb** | × 1,010 | 4 / 10 | p = 0,75 |
+| **N6r4w50** | × 1,020 | 4 / 10 | p = 0,75 |
+| **N6r4w25** | × 1,014 | 4 / 10 | p = 0,75 |
+
+*Attendu* : × 0,97 à × 1,04, sans sens — tenu. Par l'étalon du temps,
+± 2 % valent ± 3 Elo au plus : rien qui pèse sur les écarts attendus.
+
+**Les matchs, lancés le 20 oct. à 12 h 33** — seize jobs de 2 800
+parties à `8+0,08`, graine « auto » chacun, le binaire AVX2 des deux
+côtés, tous démarrés aussitôt, contre **`0eca96a`** (N6r4) : N6r4La
+39408732940, 39408736055, 39408739135, 39408741873 ; N6r4Lb 39408744693,
+39408747673, 39408750838, 39408753851 ; N6r4w50 39408757801,
+39408760808, 39408763781, 39408766522 ; N6r4w25 39408769776,
+39408772645, 39408775372, 39408778493. Fin attendue vers 17 h 10–17 h 50
+— les jobs du n° 18 finissaient en 4 h 55 à 5 h 15 —, au plus tard au
+plafond de 350 minutes, 18 h 25. Critère et attendus : ceux de la
+séance, écrits le 19 oct.
+
+**La perte tenue à l'écart, RELEVÉE le 20 oct. à 12 h 18 — l'attendu de
+(a) tient ; celui de (d) tombe pour N6r4w50.** Run 39406254639, l'outil à
+`4ab82af`, lancé à 12 h 12, deux minutes. *Le contrôle d'abord* :
+**17 208 872** et **17 938 594** positions, les chiffres du n° 18 ; N6r4
+retombe sur sa perte du 17 oct. au chiffre près (0,038560). Écarts à N6r4
+appariés, mêmes positions, sous la cible à 0,75 :
+
+| réseau | tenu à l'écart — 38531414161 | écart à N6r4 | appris de tous — 38531424497 | écart à N6r4 | tenu − appris |
+|---|---|---|---|---|---|
+| N6r4, la référence | 0,038560 ± 0,000201 | — | 0,038148 | — | +0,000412 |
+| **N6r4La** | 0,040511 | **+0,001951 ± 0,000064** | 0,040364 | +0,002216 | +0,000147 |
+| **N6r4Lb** | 0,039986 | **+0,001426 ± 0,000052** | 0,039711 | +0,001563 | +0,000275 |
+| **N6r4w50** | 0,038535 | **−0,000026 ± 0,000023** | 0,038225 | +0,000078 ± 0,000022 | +0,000310 |
+| **N6r4w25** | 0,038882 | **+0,000322 ± 0,000033** | 0,038668 | +0,000520 | +0,000214 |
+
+- **(a), l'attendu tient** : N6r4 < N6r4Lb < N6r4La — chacun à plus de
+  vingt-cinq fois son intervalle au-dessus de N6r4, et 0,00052 entre les
+  deux — : le réglage tire vers la distribution de Leela,
+  d'autant plus que le pas est grand. Cinq fois moins de pas n'en retire
+  qu'un quart : 0,00143 contre 0,00195 — ce que disaient déjà les finales
+  de la confrontation. *Une perte ne dit pas la force* : sur nos
+  positions, sous notre cible, Leela ne pouvait que coûter ; les matchs
+  diront si ce qu'elle apporte ailleurs le rachète ;
+- **(d), l'attendu tombe pour N6r4w50** : « au-dessus de N6r4 » — il est
+  à **−0,000026 ± 0,000023** tenu à l'écart, indiscernable de N6r4 et
+  plutôt dessous, quand il minimise une autre cible ; au-dessus, de
+  +0,000078, sur le job appris. N6r4w25 tient l'attendu. Et **les deux
+  retiennent moins que N6r4** — tenu − appris 0,000310 et 0,000214 contre
+  0,000412. <span>Inférence, confiance faible</span> : le résultat d'une
+  partie est la part BRUITÉE de la cible ; moins pesé, il s'apprend moins
+  par cœur, et ce qu'on y perd en fidélité à 0,75 se rattrape en
+  généralisation — jusqu'à 0,5, pas à 0,25 ;
+- **ce que cela ne dit pas** : la force (`CLAUDE.md`, Texel), et pour (d)
+  moins encore — la perte est lue sous une cible qui n'est pas la sienne.
+
+### La file, phase 2 — le cache des recalculs : écrit le 20 oct. 2026, mesuré avant d'en écrire l'attendu
+
+**Ce que c'est.** Avec des seaux de roi, chaque camp lit ses entrées dans
+le bloc que choisit la case de son roi, retourné si ce roi est sur les
+colonnes e à h (n° 17). Un coup de roi qui change de bloc change donc
+TOUTES les entrées de son camp, et `apply_move` recalculait ce camp de
+zéro : le biais, puis une ligne par pièce. Le cache — la « finny table »
+des moteurs à seaux de roi — garde, pour chaque camp et chaque bloc, le
+dernier accumulateur calculé dans ce bloc et les pièces qu'il compte ; un
+franchissement repart de là, et seules les pièces qui diffèrent
+s'ajoutent ou se retirent. L'arithmétique de l'accumulateur est
+modulaire : l'ordre des lignes ne change rien, l'accumulateur est celui
+du recalcul AU BIT PRÈS — donc l'arbre aussi, et la règle est celle d'une
+optimisation pure : arbre identique, temps au rejeu, vingt tours, test
+des signes ; pas de match.
+
+**Écrit** dans `engine/src/nnue.rs` (`RefreshCache`,
+`Network::refresh_cache`, `refresh_side_cached`) et branché dans
+`Search` — un cache par fil, recréé avec le réseau. Neuf, chaque entrée
+vaut l'échiquier vide : son premier emploi est un recalcul ordinaire, sans
+cas particulier. *Les tests* : les deux tests d'incrément confrontent
+chaque coup au recalcul avec UN cache qui sert d'une position à l'autre —
+chaque bloc y repart de ce qu'une position sans rapport y a laissé ; et
+`le_cache_ne_recompte_que_les_pieces_qui_ont_change` compte les lignes, des
+deux côtés — 18 pour un bloc neuf, 0 pour la même position, 3 pour trois
+pièces changées : le résultat seul ne distingue pas un cache servi d'un
+cache ignoré. *Éprouvés* par trois fautes injectées : le cache ignoré
+(le compte tombe), les pièces non retenues (trois tests tombent), deux
+blocs confondus (les deux tests d'incrément tombent).
+
+**Le mécanisme, mesuré d'abord** — une sonde jetable, des compteurs sur
+le rejeu du corpus du n° 15 à la profondeur 10, une passe (le compte de
+nœuds, 27 312 684, est celui de N6r4 au nœud près) :
+
+| grandeur | valeur |
+|---|---|
+| coups dérivés (`apply_move`) | 26 088 385 — 0,955 par nœud |
+| franchissements — un camp recalculé | **2 145 800 — 8,2 % des coups** |
+| lignes d'un recalcul de zéro, au total | 31 803 924 — 14,8 par franchissement, le biais en plus |
+| lignes repris du cache, au total | **11 017 332 — 5,1 par franchissement : −65 %** |
+
+- **le franchissement n'est pas rare** : un coup sur douze. Le
+  commentaire d'`apply_move` le disait « rare (n° 17) » ; le retournement
+  aux colonnes d/e suffit, et le corpus, riche en finales, fait marcher
+  les rois ;
+- **ce que pèse un recalcul** : une mise à jour ordinaire fait UN passage
+  sur les 256 valeurs par camp, deux par coup ; un recalcul en fait ~15,8
+  pour un camp. À 8,2 % des coups, ~1,3 passage par coup en moyenne — de
+  l'ordre des deux de la mise à jour : **les recalculs pèsent ~40 % de
+  l'entretien des accumulateurs**, que le cache ramène à ~0,5.
+  <span>Inférence, confiance moyenne</span> : des passages de même coût,
+  ce qui ignore les lectures de lignes dispersées dans 1,5 Mo de poids.
+
+*Attendu, écrit le 20 oct. à 12 h 55, avant de mesurer le temps* —
+<span>inférence, confiance faible</span> : **−1 à −4 % de temps à arbre
+identique**, ~−2 %. La part de l'entretien des accumulateurs dans le
+temps d'un nœud n'est pas mesurée seule ; le n° 17 bornait le coût propre
+des seaux de roi à ~4 à 7 % de vitesse, et le cache en retire la partie
+« recalcul ». *Critère, écrit avant* : il entre s'il rend du temps à arbre
+identique — plus rapide au test des signes, p < 0,05 sur vingt tours ;
+sinon il reste à l'attic, sa mesure écrite.
+
+**Le temps, RELEVÉ le 20 oct. à 13 h 04 — non démontré à son critère :
+le cache va à l'attic** (`tools/attic/f2-cache-des-recalculs.patch`).
+`main` (`0eca96a`, N6r4) contre le cache, binaires AVX2, vingt tours au
+rejeu du corpus du n° 15, profondeur 10 ; **arbre identique** — 27 312 684
+nœuds par passe des deux côtés, le pilote refusant sinon :
+
+| | surcoût du cache, médiane des tours | étendue | plus lent | test des signes |
+|---|---|---|---|---|
+| cache contre `main` | **−1,2 %** | −8,6 à +6,8 % | 7 / 20 | p = 0,26 |
+
+- **dans l'attendu au point** (−1 à −4 %), **pas séparé de zéro** : le
+  critère écrit avant — p < 0,05 sur vingt tours — n'est pas atteint, et
+  le cache n'entre pas ;
+- **la faute est dans le critère, et elle se nomme** : l'écart apparié
+  d'un tour à l'autre vaut **4,7 %** (écart-type des vingt différences),
+  donc vingt tours ne résolvent qu'un effet de ~3 % — l'attendu, −1 à
+  −4 %, tombait presque entier sous ce seuil. *Un critère de temps écrit
+  sans sa puissance* : la règle « dire la puissance d'avance » vaut pour
+  le temps comme pour l'Elo, et je ne l'ai pas appliquée. Le n° 16 passait
+  avec vingt tours parce que son effet valait 14 % ;
+- **ce que cela ne dit pas** : que le cache ne rapporte rien. Le
+  mécanisme est mesuré — 65 % des lignes de recalcul épargnées, à 8,2 %
+  des coups — et l'arbre identique.
+
+**La remesure, écrite le 20 oct. à 13 h 06, avant de la lancer** — le
+même pilote, les mêmes binaires, **120 tours** (~70 minutes), quand le
+conteneur n'a rien d'autre à faire. *La puissance, d'avance* : à 4,7 % par
+tour, le test des signes sur 120 tours — ~77 tours d'un test t, son
+efficacité valant ~0,64 — détecte **−1,5 % à 80 %, −2 % à 97 %, −1 % à
+~45 %**. *Critère* : le cache entre si le test des signes donne plus
+rapide à p < 0,05 ; sinon il reste à l'attic **pour de bon** — une troisième
+mesure demanderait un fait neuf, un instrument moins bruité par exemple,
+pas plus de tours. Les vingt tours d'aujourd'hui ne s'y ajoutent pas.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
@@ -11220,7 +11505,7 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 | **A — plus de passes** | N7p2 et N7p4 : 200 et 400 superlots sur les 1,563 G anciennes ; N6r4 en avait fait 100 | sur la carte de Théo depuis le 20 oct. (`tools/seance-n20.sh`) ; puis sonde de B8, matchs contre N6r4 (« La séance A ») |
 | **(a) — le réglage fin sur Leela** | N6r4 affiné 20 superlots sur le binpack, au pas 10⁻⁴ et 2·10⁻⁵ | idem (« (a) et (d) — la séance ») |
 | **(d) — le poids du résultat** | la recette de N6r4, `wdl` 0,5 et 0,25 au lieu de 0,75 | idem |
-| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | génération : la vague 6, la dernière, finit le 20 oct. ; la séance s'écrit au verdict de A, qui fixe ses superlots |
+| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; la séance s'écrit au verdict de A, qui fixe ses superlots |
 | **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | avec la séance B |
 | **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
 | **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | runners, après B et (d) |
@@ -11233,7 +11518,7 @@ l'inférence suit.
 
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
-| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **à écrire maintenant** : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
+| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **ÉCRIT le 20 oct. ; à l'attic à son premier critère** — −1,2 % au point, p = 0,26 sur vingt tours, qui ne résolvaient que ~3 % ; **une remesure de 120 tours écrite avant**, à lancer conteneur libre (section « La file, phase 2 — le cache des recalculs ») : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
 | **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; après le cache |
 | **l'évaluation statique dans la table** | une entrée trouvée rend aussi son évaluation, sans recalcul | pur seulement si l'entrée garde sa taille : sinon la capacité change et l'arbre avec (le piège de B9), et c'est un match |
 | **un banc qui emploie le réseau** | de l'outillage : mesurer la vitesse de ce qui joue, pas de la faite main | si le rejeu ne suffit pas à mesurer les trois lignes précédentes |
