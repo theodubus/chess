@@ -9718,6 +9718,23 @@ gagnant déjà composé. Avec le second, l'axe des données se lit à poids
 fixe, et N7p4w50 contre N7p4 dit si le poids paie encore à 400
 superlots.
 
+**Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
+blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
+la séance A : les contrôles d'avant (dépôt, 79 jobs anciens et leurs 316
+fichiers, `gh` connecté, CUDA, 16 Go libres), le téléchargement des 94
+jobs neufs — repris au job qui manque —, l'essai court sur les 84 retenus,
+puis les réseaux du format choisi, **chacun commité et poussé sur
+`reseau/n20b` dès qu'il passe ses contrôles** : le premier fini se mesure
+pendant que les suivants s'entraînent. `bash tools/seance-n20b.sh essai`,
+puis `bash tools/seance-n20b.sh tout w50` — ou `tout ecrit`. L'ordre au
+format `w50` : N7p4w50, le plus probable à embarquer, puis N8tw50, puis
+N8nw50. *Éprouvé dans un bac à sable* — faux `cargo`, faux `gh`, dépôt
+distant local : l'essai ; la séance entière avec une panne simulée sur
+N8tw50, puis la relance, qui reprend N8tw50 seul et pousse les trois ; une
+troisième relance qui ne refait rien ; un téléchargement interrompu puis
+repris ; `gh` déconnecté, arrêt avant tout lancement ; le format écrit ;
+un format inconnu refusé.
+
 **La séance B — les commandes, écrites le 20 oct. à 13 h 25, avant de la
 demander ; elle ne se demande qu'au verdict de A.** Deux réseaux neufs de
 l'architecture de N6r4, à `main`, au même nombre de superlots `SL` — 200,
