@@ -9300,8 +9300,9 @@ N6r4 à sa perte du 17 oct. :
   (+0,00022), au pas plein. Aucune perte tenue à l'écart ne remonte dans
   le dernier tiers ;
 - **ce que cela ne dit pas** : la force — 0,00008 et 0,00017, c'est le
-  vingtième et le dixième de ce que N6r4 gagnait sur N6l en perte
-  (0,00038) ; les matchs liront.
+  cinquième et un peu moins de la moitié de ce que N6r4 gagnait sur N6l en
+  perte (0,00038) — pour ~+22 Elo par la différence de leurs écarts à N5l,
+  sans match direct, donc à deux incertitudes ; les matchs liront.
 
 #### Étape B — plus de données, sur les runners, étiquetées par W
 
