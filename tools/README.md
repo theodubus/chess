@@ -979,7 +979,8 @@ dernière relève est faite.
 | **N° 20 — N6r4w25 contre N6r4w50**, le match direct de (d) | **39452745551, 39452754806, 39452763795, 39452773226** | `85c88a6` (N6r4w25) → `0f5214b` (N6r4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — le critère poussé à 17 h 54 (`4f54caa`), lancés à 17 h 55 ; fin attendue 22 h 50–23 h 10, au plus tard 23 h 45 | — *Critère, écrit avant* : **N6r4w25 embarque si la borne basse est au-dessus de zéro ; sinon N6r4w50** ; *attendu* −10 à +3, ~−4 (section « (a) et (d) — VERDICT ») |
 | **N° 20 — la séance B, sur la carte de Théo** | — | `tools/seance-n20b.sh tout w50`, depuis une copie, à `main` : N7p4w50, N8tw50, N8tw50s800, N6r4w50pas0005, N6r4w50pas002, N8nw50 | `tools/nnue-train`, les 79 jobs anciens, les 84 premiers neufs | **EN COURS chez Théo depuis le 20 oct. au soir** — l'essai réussi, la séance lancée avant 21 h 22 ; chaque réseau poussé sur `reseau/n20b` dès ses contrôles passés ; N7p4w50 attendu vers 23 h 45–0 h 15, la séance entière vers 11 h–12 h | — *Attendus et comparaisons, écrits avant* (section « La séance B ») |
 | **N° 20 — N6r4w50 contre N7p4**, le match direct entre les axes | **39471565620, 39471574281, 39471583801, 39471592587** | `0f5214b` (N6r4w50) → `ec97f35` (N7p4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — le critère poussé à 20 h 04 (`6c753e2`), lancés à 20 h 04 ; fin attendue 1 h 00–1 h 20, au plus tard 1 h 55 | — *Critère, écrit avant* : **N6r4w50 embarque si la borne basse est au-dessus de zéro ; sinon N7p4** ; *attendu* −11 à +2, ~−5 (section « Étape A — VERDICT ») |
-| **N° 20 (e) — la sonde de débit à 10 000 nœuds** | **39490138743** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, **10 000 nœuds**, 20 minutes | `nnue-datagen.yml` | **EN VOL** — lancée le 20 oct. à 22 h 13, ses attendus poussés avant (`9ff72a0`) ; fin ~22 h 40 | — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur ») : **× 0,45 à × 0,56** les positions par seconde de N6r4 à 5 000 nœuds sur le même processeur (1 183 sur un EPYC 7763) ; **17 à 23 %** d'écartées sur les gardées ; **34 à 40 %** de nulles ; **120 à 140** positions par partie. Hors fourchette, diagnostic avant la vague |
+| **N° 20 (e) — la sonde de débit à 10 000 nœuds** | **39490138743** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, **10 000 nœuds**, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 22 h 38** — lancée le 20 oct. à 22 h 13, ses attendus poussés avant (`9ff72a0`) ; finie à 22 h 34, EPYC 7763 | **581 positions par seconde (× 0,491), 19,46 % d'écartées, 39,97 % de nulles, 133,0 positions par partie — les quatre dans l'attendu, les nulles au bord** ; ~9,3 M gardées par job au mélange de runners, ~84 jobs appris pour 780 M (section « (e) — le budget de l'étiqueteur ») — *Attendus, écrits avant* : × 0,45 à × 0,56 ; 17 à 23 % ; 34 à 40 % ; 120 à 140 |
+| **N° 20 (e) — la vague 1**, 10 000 nœuds | (à lancer) | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **ÉCRITE à 22 h 38**, ses attendus poussés avant de la lancer ; le premier job lancé tenu à l'écart | — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 1) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,5 à 20,5 %, nulles 39,0 à 41,0 % ; 565 à 600 positions par seconde sur un EPYC 7763 |
 | **N° 20, étape A — N7p2 contre N6r4** | **39424657675, 39424661145, 39424664674, 39424667800** | `8603bd3` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 46 et 19 h 51 | **+12,79, +11,05, +19,50 et +15,65 ; +14,74 ± 3,52 en commun, homogènes (p = 0,339)** ; zéro perte au temps. Gain démontré ; N7p4 le recoupe, le match direct tranche pour N7p4 (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **+3 à +12, ~+6** — dépassé ; critère du n° 17 contre N6r4 |
 | **N° 20, étape A — N7p4 contre N6r4** | **39424671016, 39424674757, 39424677788, 39424680763** | `ec97f35` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 47 et 19 h 54 | **+15,40, +21,12, +15,89 et +15,15 ; +16,89 ± 3,55 en commun, homogènes (p = 0,652)** ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR AU POINT** — l'étape A désigne N7p4, `SL=400` ; N6r4w50 le recoupe : match direct (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **la décision, avec N7p2 contre N6r4** ; critère du n° 17 contre N6r4 |
 | **N° 20, étape A — N7p4 contre N7p2** | **39424684239, 39424687745, 39424691136, 39424694996** | `ec97f35` → `8603bd3`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 44 et 19 h 57 | **+7,32, +14,53, +11,67 et +3,72 ; +9,31 ± 3,51 en commun, homogènes (p = 0,146)** ; zéro perte au temps. **Gain démontré : doubler encore les passes paie** (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **−10 à +8, ~+1 — le signe n'est pas acquis** — dépassé ; critère du n° 17 contre N6r4 |
@@ -10132,6 +10133,37 @@ Hors fourchette, on diagnostique avant la vague. **Le compte, si
 l'attendu tient** : ~9 M gardées par job en moyenne, **~85 jobs appris,
 ~5 à 6 vagues, ~1,5 jour** — les matchs de la séance B passent dans la
 même limite de concurrence (40 en Pro).
+
+**La sonde, RELEVÉE le 20 oct. à 22 h 38 — les quatre chiffres dans leur
+attendu, les nulles au bord.** Run 39490138743, 20 minutes sur un EPYC
+7763, quatre fils, `x86-64-v3`, `cd6ed79`, 10 000 nœuds ; `parties` ne
+compte que les gardées :
+
+| | 10 000 nœuds | 5 000 nœuds, la sonde de N6r4 | attendu, écrit avant |
+|---|---|---|---|
+| positions par seconde | **581** | 1 183 | × 0,45 à × 0,56 — **× 0,491, dedans** |
+| parties écartées, sur les gardées | **19,46 %** (1 021 sur 5 246) | 19,69 % | 17 à 23 % — dedans |
+| nulles | **39,97 %** (2 097) | 34,00 % | 34 à 40 % — dedans, **au bord** |
+| positions par partie | **133,0** | 125,7 | 120 à 140 — dedans |
+
+69,7 % des positions gardées par le filtre (68,1 %). **Six points de
+nulles de plus** : un étiqueteur deux fois plus long joue des parties
+plus justes, et la moitié « résultat » de la cible y porte plus de
+nulles — c'est précisément l'un des effets que (e) mesure, pas un
+défaut. Le filtre d'ouverture ne bouge pas. **Le compte** : ~405
+positions gardées par seconde sur un 7763, ~8,0 M par job de 330 minutes
+sur ce processeur ; au mélange de runners de l'étape B (× 1,16 sur le
+7763), **~9,3 M par job, ~84 jobs appris pour 780 M, plus le tenu à
+l'écart : six vagues, la dernière dimensionnée au reste**.
+
+**La vague 1 — écrite avant de la lancer.** Seize jobs de 330 minutes,
+la recette ci-dessus ; **le premier lancé est tenu à l'écart**. *Attendus*
+— l'étape B, vague par vague, rapportée par la sonde (× 0,491 en
+positions, × 0,501 en gardées) : **les seize, 175 à 260 M positions, 120 à
+180 M gardées** — à proportion s'il manque des jobs ; **écartées 18,5 à
+20,5 %, nulles 39,0 à 41,0 %**, sur les parties gardées ; **565 à 600
+positions par seconde sur un EPYC 7763** — les vagues de l'étape B
+tenaient leur sonde à 1 % près.
 
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
