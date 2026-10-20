@@ -965,7 +965,7 @@ dernière relève est faite.
 | **N° 20 — la vague 6**, la dernière, étiquetée par N6r4 | 39375325547, 39375329849, 39375334077, 39375338208, 39375342511, 39375346497, 39375350622, 39375355535, 39375360071, 39375364672, 39375369257, 39375373891, 39375379162, 39375384258, 39375389499, 39375395417 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 20 oct. à 7 h 31, ses attendus poussés avant (`5c0107c`) ; fin vers 13 h 00–13 h 10 | — *Attendus, écrits avant* (section « N° 20 », la vague 6) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763**, un runner isolé jusqu'à 1 % dessous ; **le cumul, 1 687 à 1 797 M gardées** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
 | **N° 20 — la séance A, puis (a) et (d), sur la carte de Théo** | — | séance A : N7p2, N7p4 à `4a604ea` ; (a) N6r4La, N6r4Lb et (d) N6r4w50, N6r4w25 à `main` (`2a8cca1` et après) | `tools/nnue-train`, les 79 jobs du n° 18 et le binpack du levier 4 | **EN COURS chez Théo depuis le 20 oct. à 8 h 11**, par `tools/seance-n20.sh` (PR #202) — **(a) et (d) RELEVÉS à 11 h 50** : les quatre réseaux conformes, poussés sur `reseau/n20-ad` (`2332ee0`), confrontations 8 / 21, 4 / 12, 5 / 26, 7 / 18, échelle 282,1 (section « (a) et (d) », la séance relevée) ; **A en cours** — demandée le 19 au soir, pas lancée la nuit ; **l'essai court de (a) RÉUSSI à 8 h 07** : écart médian 4, maximal 29 (admis 15 / 50), échelle ajustée **282,1** (critère 250 – 450), la première compilation CUDA du `nnue-train` de `main` ; tous les contrôles d'avant passés, la veille bloquée ; (a) et (d) d'abord (~2 h, `reseau/n20-ad`), puis A (~4 h, `reseau/n20a`, `reseau/n20a-points`) | — *Attendus, écrits avant* (section « N° 20 », la séance A et « (a) et (d) ») : N7p2 contre N6r4 +3 à +12, N7p4 contre N7p2 −10 à +8 ; N6r4La −15 à +10, N6r4Lb −6 à +6 ; N6r4w50 −8 à +12, N6r4w25 −12 à +15 ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — la perte tenue à l'écart de (a) et (d)** | **39406254639** | l'outil à `4ab82af` ; N6r4, puis N6r4La, N6r4Lb, N6r4w50, N6r4w25, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **RELEVÉE à 12 h 18** — lancée à 12 h 12, finie à 12 h 14 | **(a) tient, (d) tombe pour N6r4w50.** Contrôle exact (17 208 872, 17 938 594), N6r4 à sa perte du 17 oct. ; tenu à l'écart, N6r4La **+0,00195 ± 0,00006**, N6r4Lb **+0,00143 ± 0,00005** — N6r4 < Lb < La ; N6r4w50 **−0,00003 ± 0,00002**, indiscernable de N6r4, N6r4w25 **+0,00032 ± 0,00003** ; les deux de (d) retiennent moins que N6r4 (section « (a) et (d) », la perte tenue à l'écart) — *Attendus, écrits avant* (section « (a) et (d) ») : N6r4 ≤ N6r4Lb ≤ N6r4La ; N6r4w50 et N6r4w25 au-dessus de N6r4, ils minimisent une autre cible |
-| **N° 20 — la sonde de B8 et les nœuds par seconde de (a) et (d), dans le conteneur** — RELEVÉS | — | les candidats `89bb3e9`, `739452f`, `0f5214b`, `85c88a6` plus `b8-sonde-marges.patch`, chacun contre lui-même, `8+0,08`, 40 parties, `-srand 20260930` ; puis le rejeu du n° 15, `--nps`, AVX2, dix tours, contre `0eca96a` | fastchess ; `facteurs.py` ; `rejeu.py` | **la sonde RELEVÉE à 12 h 33 — les quatre dans la plage et dans leur attendu** : N6r4La **2,59**, N6r4Lb **2,86**, N6r4w50 **2,44**, N6r4w25 **2,47**, tous au facteur de `main`, les candidats inchangés ; zéro perte au temps ; **les nœuds par seconde RELEVÉS à 12 h 49** : × 0,987, × 1,010, × 1,020, × 1,014 contre N6r4, aucun séparé (p = 0,75), dans l'attendu | — *Attendus, écrits avant* (section « (a) et (d) », la sonde et les nœuds par seconde) : N6r4La 2,3 à 3,2, N6r4Lb 2,3 à 2,9, N6r4w50 et N6r4w25 2,2 à 3,2 — les quatre dans 2,14 à 3,56, au facteur de `main` ; n/s × 0,97 à × 1,04 contre N6r4 |
+| **N° 20 — la sonde de B8 et les nœuds par seconde de (a) et (d), dans le conteneur** — RELEVÉS | — | les candidats `89bb3e9`, `739452f`, `0f5214b`, `85c88a6` plus `b8-sonde-marges.patch`, chacun contre lui-même, `8+0,08`, 40 parties, `-srand 20260930` ; puis le rejeu du n° 15, `--nps`, AVX2, dix tours, contre `0eca96a` | fastchess ; `facteurs.py` ; `rejeu.py` | **la sonde RELEVÉE à 12 h 33 — les quatre dans la plage et dans leur attendu** : N6r4La **2,59**, N6r4Lb **2,86**, N6r4w50 **2,44**, N6r4w25 **2,47**, tous au facteur de `main`, les candidats inchangés ; zéro perte au temps ; **les nœuds par seconde RELEVÉS à 12 h 48** : × 0,987, × 1,010, × 1,020, × 1,014 contre N6r4, aucun séparé (p = 0,75), dans l'attendu | — *Attendus, écrits avant* (section « (a) et (d) », la sonde et les nœuds par seconde) : N6r4La 2,3 à 3,2, N6r4Lb 2,3 à 2,9, N6r4w50 et N6r4w25 2,2 à 3,2 — les quatre dans 2,14 à 3,56, au facteur de `main` ; n/s × 0,97 à × 1,04 contre N6r4 |
 | **N° 20 — N6r4La contre N6r4** | **39408732940, 39408736055, 39408739135, 39408741873** | `89bb3e9` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−15 à +10, ~−2** ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — N6r4Lb contre N6r4** | **39408744693, 39408747673, 39408750838, 39408753851** | `739452f` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−6 à +6, ~0** ; critère du n° 17 contre N6r4, chaque axe à part |
 | **N° 20 — N6r4w50 contre N6r4** | **39408757801, 39408760808, 39408763781, 39408766522** | `0f5214b` → `0eca96a` (N6r4, `main` et les réseaux), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés à 12 h 33 ; fin attendue 17 h 10–17 h 50, au plus tard 18 h 25 | — *Attendu, écrit avant* (section « (a) et (d) ») : **−8 à +12** ; critère du n° 17 contre N6r4, chaque axe à part |
@@ -9909,7 +9909,7 @@ fenêtre) :
 - **le delta**, sur la grille de 0,1 sans rien entre 3,0 et 4,0 pour
   certains, ne départage rien de net.
 
-**Leurs nœuds par seconde, RELEVÉS le 20 oct. à 12 h 49 — les quatre
+**Leurs nœuds par seconde, RELEVÉS le 20 oct. à 12 h 48 — les quatre
 dans l'attendu, aucun séparé de N6r4.** Le rejeu du n° 15, `--nps`, les
 binaires AVX2 construits à 12 h 33, dix tours, la base N6r4 (`0eca96a`) à
 27 312 684 nœuds par passe ; le conteneur sans autre charge :
@@ -9969,6 +9969,68 @@ appariés, mêmes positions, sous la cible à 0,75 :
   généralisation — jusqu'à 0,5, pas à 0,25 ;
 - **ce que cela ne dit pas** : la force (`CLAUDE.md`, Texel), et pour (d)
   moins encore — la perte est lue sous une cible qui n'est pas la sienne.
+
+### La file, phase 2 — le cache des recalculs : écrit le 20 oct. 2026, mesuré avant d'en écrire l'attendu
+
+**Ce que c'est.** Avec des seaux de roi, chaque camp lit ses entrées dans
+le bloc que choisit la case de son roi, retourné si ce roi est sur les
+colonnes e à h (n° 17). Un coup de roi qui change de bloc change donc
+TOUTES les entrées de son camp, et `apply_move` recalculait ce camp de
+zéro : le biais, puis une ligne par pièce. Le cache — la « finny table »
+des moteurs à seaux de roi — garde, pour chaque camp et chaque bloc, le
+dernier accumulateur calculé dans ce bloc et les pièces qu'il compte ; un
+franchissement repart de là, et seules les pièces qui diffèrent
+s'ajoutent ou se retirent. L'arithmétique de l'accumulateur est
+modulaire : l'ordre des lignes ne change rien, l'accumulateur est celui
+du recalcul AU BIT PRÈS — donc l'arbre aussi, et la règle est celle d'une
+optimisation pure : arbre identique, temps au rejeu, vingt tours, test
+des signes ; pas de match.
+
+**Écrit** dans `engine/src/nnue.rs` (`RefreshCache`,
+`Network::refresh_cache`, `refresh_side_cached`) et branché dans
+`Search` — un cache par fil, recréé avec le réseau. Neuf, chaque entrée
+vaut l'échiquier vide : son premier emploi est un recalcul ordinaire, sans
+cas particulier. *Les tests* : les deux tests d'incrément confrontent
+chaque coup au recalcul avec UN cache qui sert d'une position à l'autre —
+chaque bloc y repart de ce qu'une position sans rapport y a laissé ; et
+`le_cache_ne_recompte_que_les_pieces_qui_ont_change` compte les lignes, des
+deux côtés — 18 pour un bloc neuf, 0 pour la même position, 3 pour trois
+pièces changées : le résultat seul ne distingue pas un cache servi d'un
+cache ignoré. *Éprouvés* par trois fautes injectées : le cache ignoré
+(le compte tombe), les pièces non retenues (trois tests tombent), deux
+blocs confondus (les deux tests d'incrément tombent).
+
+**Le mécanisme, mesuré d'abord** — une sonde jetable, des compteurs sur
+le rejeu du corpus du n° 15 à la profondeur 10, une passe (le compte de
+nœuds, 27 312 684, est celui de N6r4 au nœud près) :
+
+| grandeur | valeur |
+|---|---|
+| coups dérivés (`apply_move`) | 26 088 385 — 0,955 par nœud |
+| franchissements — un camp recalculé | **2 145 800 — 8,2 % des coups** |
+| lignes d'un recalcul de zéro, au total | 31 803 924 — 14,8 par franchissement, le biais en plus |
+| lignes repris du cache, au total | **11 017 332 — 5,1 par franchissement : −65 %** |
+
+- **le franchissement n'est pas rare** : un coup sur douze. Le
+  commentaire d'`apply_move` le disait « rare (n° 17) » ; le retournement
+  aux colonnes d/e suffit, et le corpus, riche en finales, fait marcher
+  les rois ;
+- **ce que pèse un recalcul** : une mise à jour ordinaire fait UN passage
+  sur les 256 valeurs par camp, deux par coup ; un recalcul en fait ~15,8
+  pour un camp. À 8,2 % des coups, ~1,3 passage par coup en moyenne — de
+  l'ordre des deux de la mise à jour : **les recalculs pèsent ~40 % de
+  l'entretien des accumulateurs**, que le cache ramène à ~0,5.
+  <span>Inférence, confiance moyenne</span> : des passages de même coût,
+  ce qui ignore les lectures de lignes dispersées dans 1,5 Mo de poids.
+
+*Attendu, écrit le 20 oct. à 12 h 55, avant de mesurer le temps* —
+<span>inférence, confiance faible</span> : **−1 à −4 % de temps à arbre
+identique**, ~−2 %. La part de l'entretien des accumulateurs dans le
+temps d'un nœud n'est pas mesurée seule ; le n° 17 bornait le coût propre
+des seaux de roi à ~4 à 7 % de vitesse, et le cache en retire la partie
+« recalcul ». *Critère, écrit avant* : il entre s'il rend du temps à arbre
+identique — plus rapide au test des signes, p < 0,05 sur vingt tours ;
+sinon il reste à l'attic, sa mesure écrite.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
@@ -11396,7 +11458,7 @@ l'inférence suit.
 
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
-| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **à écrire maintenant** : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
+| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **ÉCRIT le 20 oct., en mesure** (section « La file, phase 2 — le cache des recalculs ») : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
 | **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; après le cache |
 | **l'évaluation statique dans la table** | une entrée trouvée rend aussi son évaluation, sans recalcul | pur seulement si l'entrée garde sa taille : sinon la capacité change et l'arbre avec (le piège de B9), et c'est un match |
 | **un banc qui emploie le réseau** | de l'outillage : mesurer la vitesse de ce qui joue, pas de la faite main | si le rejeu ne suffit pas à mesurer les trois lignes précédentes |
