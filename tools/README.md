@@ -9788,6 +9788,37 @@ recoupent ; le gagnant composé se mesure à son tour. Les candidats se
 commitent et se révoquent comme aux étapes précédentes, au facteur de
 `main` si leur sonde tombe dans la plage.
 
+**N7p4w50, poussé par la séance le 20 oct. à 23 h 50, intégré le 21 oct. à
+0 h 22 — conforme.** Relecture exacte des 79 jobs anciens (18 435 764 :
+2 328 546 367), 400 superlots au poids 0,5, confrontation **6 / 30**
+(admis 15 / 50) ; le réseau, sa courbe et sa sortie sur la branche
+(`dd51299`). **Ses candidats, sur le code d'aujourd'hui** : N7p4 (`ec97f35`)
+précède le produit AVX2 (`e77e0b1`, −5,09 % de temps) — le mesurer contre
+lui fausserait le match de ~8 Elo. D'où deux candidats au même code au bit
+près, commités et révoqués aussitôt, l'arbre revenu à `dd51299` :
+**N7p4 recommité `7d84860`** (révoqué par `f46274f`), la même modification
+que `ec97f35` ligne pour ligne ; **N7p4w50 `e37468b`** (par `04263c2`).
+`verify.sh --rapide` vert sur chacun. Les comparaisons suivantes de la
+séance B se mesurent sur ce code.
+
+*Écrit le 21 oct. à 0 h 26, avant de lancer* — <span>inférence, confiance
+faible</span> :
+- **la sonde de B8 : 2,2 à 3,2**, dans 2,14 à 3,56, au facteur de `main` —
+  N7p4 mesurait 2,79, N6r4w50 2,44 ;
+- **les nœuds par seconde, × 0,97 à × 1,04 contre N7p4 recommité**, au
+  rejeu du n° 15, dix tours ;
+- **la perte tenue à l'écart : indiscernable de N7p4, ± 0,0001** — elle se
+  lit sous 0,75, et N6r4w50 n'y était pas séparé de N6r4 ;
+- **le match, N7p4w50 contre N7p4 recommité** (`e37468b` → `7d84860`),
+  quatre jobs de 2 800 parties à `8+0,08`, graine « auto », AVX2 des deux
+  côtés : **+3 à +15, ~+9**, écrit le 20 oct. au soir. *Critère, écrit
+  avant* : **gain démontré si la borne basse est au-dessus de zéro** ;
+  alors N7p4w50 devient la référence des comparaisons suivantes de la
+  séance B, et le candidat à embarquer — contre le réseau qui joue à ce
+  moment : si le match entre les axes fait embarquer N7p4, N7p4w50 le
+  remplace sur ce match-ci ; s'il fait embarquer N6r4w50, un match direct
+  N7p4w50 contre N6r4w50 s'écrit avant d'embarquer.
+
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
 la séance A : les contrôles d'avant (dépôt, 79 jobs anciens et leurs 316
