@@ -10360,6 +10360,30 @@ test des signes donne plus rapide à p < 0,05 ; sinon il reste à l'attic.
 Le binaire de base, qui ne lit l'AVX2 qu'à l'exécution, se vérifie par
 `tools/binaires.sh` — le même arbre, par construction des valeurs.
 
+**Le temps, mesuré de 15 h 05 à 16 h 13, relevé le 20 oct. à 17 h 40 — gain démontré, au bord haut de
+l'attendu : le produit AVX2 ENTRE.** `main`
+(`0eca96a`, N6r4) contre le produit AVX2, binaires AVX2, cent vingt tours
+au rejeu du corpus du n° 15, profondeur 10 ; **arbre identique** —
+27 312 684 nœuds par passe des deux côtés :
+
+| | médiane des tours | moyenne, IC 95 % | plus lent | test des signes |
+|---|---|---|---|---|
+| AVX2 contre `main` | **−5,9 %** | **−5,09 %, de −6,07 à −4,11** | 20 / 120 | p < 0,0001 |
+
+- **le critère est atteint**, et l'effet est au bord haut de l'attendu
+  (−1 à −5 %) : l'intervalle entier est au-delà de −4 % ;
+- **ce qu'il vaut** : × 1,054 de nœuds par seconde, soit 0,076
+  doublement — **~+8 Elo par l'étalon du temps** (107,7 par doublement),
+  la conversion que l'AVX2 du n° 10 avait vérifiée à 0,6 Elo près ;
+- **la leçon du cache, confirmée dans l'autre sens** : 154 instructions
+  sur 396 retirées d'une boucle qui ne lit que le cache L1 ont rendu ce
+  que leur compte promettait ; les lignes du cache des recalculs, lues
+  dans 1,5 Mo de poids, ne l'avaient pas fait. *Un compte d'opérations
+  se traduit en temps quand les données sont déjà là* ;
+- **le binaire de base** profite aussi du chemin AVX2 quand son processeur
+  l'a — il le détecte à l'exécution —, et cherche le même arbre que le
+  binaire AVX2 : c'est ce que `tools/binaires.sh` vérifie à chaque push.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
@@ -11787,7 +11811,7 @@ l'inférence suit.
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
 | **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **ÉCRIT le 20 oct., À L'ATTIC POUR DE BON** — vingt tours, −1,2 % non séparé ; puis cent vingt, la puissance écrite avant : **+0,46 %, IC −0,42 à +1,34** — aucun gain au-delà de 0,4 % (section « La file, phase 2 — le cache des recalculs ») : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
-| **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; **ÉCRIT le 20 oct., en mesure** : le produit scalaire de la sortie était resté en 128 bits — 64 `vpmaddwd xmm` —, il passe à 32 en 256 bits (section « La file, phase 2 — le produit scalaire en AVX2 ») |
+| **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; **FAIT le 20 oct.** : le produit scalaire de la sortie était resté en 128 bits — 64 `vpmaddwd xmm` —, il passe à 32 en 256 bits ; **−5,09 % de temps à arbre identique** (IC −6,07 à −4,11, 120 tours), ~+8 Elo par l'étalon (section « La file, phase 2 — le produit scalaire en AVX2 ») ; la mise à jour des accumulateurs, elle, était déjà en 256 bits |
 | **l'évaluation statique dans la table** | une entrée trouvée rend aussi son évaluation, sans recalcul | pur seulement si l'entrée garde sa taille : sinon la capacité change et l'arbre avec (le piège de B9), et c'est un match |
 | **un banc qui emploie le réseau** | de l'outillage : mesurer la vitesse de ce qui joue, pas de la faite main | si le rejeu ne suffit pas à mesurer les trois lignes précédentes |
 

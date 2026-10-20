@@ -1140,7 +1140,11 @@ une mesure, pas une préférence.
   compilation, et **confronté en test à la version scalaire**, qui reste :
   même évaluation à l'unité près, donc même arbre. Il entre s'il rend du
   temps à arbre identique (rejeu, test des signes), comme le chemin A du
-  n° 16.
+  n° 16. **En place depuis le 20 oct. 2026** : le module `avx2` du produit
+  scalaire de la sortie, **−5,09 % de temps** à arbre identique (120
+  tours, IC −6,07 à −4,11) — le compilateur ne sortait de la forme scalaire
+  que des registres de 128 bits (`tools/README.md`, « La file, phase 2 — le
+  produit scalaire en AVX2 »).
 - Commentaires en français, code et identifiants en anglais.
 - **Les heures s'écrivent à l'heure de Paris** — messages, carnet,
   documentation (Théo, 6 oct. 2026). Celles d'avant cette date, dans le dépôt
