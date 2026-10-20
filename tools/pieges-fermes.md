@@ -178,3 +178,21 @@ C'est la seule condition de sortie de ce fichier.
   vite que la cadence nominale — donc C21 le fera dériver vers 1 en
   fusionnant. *Une constante qu'un chantier en cours invalide ne s'écrit pas.*
   <br>**Tenu par** : `.github/workflows/match.yml`, dont le plafond est calculé depuis la cadence.
+
+- **Un mutant qui fuit tue son runner au lieu d'être compté.** Le 20 oct.
+  2026, le job de mutation de `nnue.rs` a perdu sa machine quatre fois —
+  « *The runner has received a shutdown signal* », au bout de 30 à
+  42 minutes —, et l'a gardée une fois, avec deux mutants « expirés ».
+  C'étaient eux : `Network::row` rendu par `Box::leak(Box::new([1;
+  HIDDEN]))` et `[-1; …]`, une fuite de 512 octets à chaque mise à jour
+  d'accumulateur. Mesuré dans le conteneur : **13 Go résidents en une
+  minute**, puis la mort par le noyau. Le délai de `cargo mutants` se
+  règle sur la durée de la suite saine : à 21 s, il coupait la fuite à
+  temps ; à 75 s, deux tests à la fois vidaient les 16 Go du runner.
+  L'hypothèse « un mutant alloue sans borne » avait été écartée sur UN
+  mutant, le mauvais ; les expirés, qu'aucun résumé ne nommait, étaient
+  dans le journal de l'essai réussi. *Un mutant expiré se lit par son nom.*
+  Sous un plafond de 4 Gio d'espace d'adresses par processus de test, le
+  même mutant est attrapé en six secondes ; la suite saine passe sous
+  2 Gio et casse sous 1.
+  <br>**Tenu par** : `.github/workflows/mutation.yml` et `tools/mutants.sh`, qui lancent chaque test sous `prlimit --as=4294967296` par le « runner » de cargo — la compilation n'est pas plafonnée.

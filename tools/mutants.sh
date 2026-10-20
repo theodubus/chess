@@ -39,6 +39,13 @@ if [ -d "$ROOT/mutants.out" ]; then
     mv "$ROOT/mutants.out" "$ROOT/mutants.out.old"
 fi
 
+# Chaque processus de test sous 4 Gio d'espace d'adresses, comme dans
+# `mutation.yml` : un mutant qui fuit — `Network::row` rendu par
+# `Box::leak` — monte à 13 Go résidents en une minute et tue la machine
+# au lieu d'être compté. Sous le plafond, il est attrapé en six secondes.
+# Une valeur déjà posée dans l'environnement l'emporte.
+export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER:-prlimit --as=4294967296}"
+
 # `--profile mutants` hérite de release sans LTO : le LTO recompile tout le
 # graphe à chaque mutant. Le code testé reste optimisé.
 exec cargo mutants --profile mutants "$@"

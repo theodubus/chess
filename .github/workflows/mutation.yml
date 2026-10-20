@@ -111,6 +111,17 @@ jobs:
       # Le code exécuté reste optimisé, donc les tests gardent leur vitesse.
       - name: Balayage
         run: cargo mutants --file "engine/src/${{ matrix.fichier }}" --profile mutants -j 2
+        # Chaque processus de test sous 4 Gio d'espace d'adresses : un mutant
+        # qui fuit — `Network::row` rendu par `Box::leak` — monte à 13 Go
+        # résidents en une minute, et le runner de 16 Go, deux tests à la
+        # fois, perdait la machine entière (« shutdown signal », quatre fois
+        # le 20 oct. 2026) au lieu de compter le mutant. Sous le plafond,
+        # l'allocation échoue, le test s'arrête, le mutant est attrapé en
+        # six secondes. La suite saine passe sous 2 Gio et casse sous 1 :
+        # 4 Gio laisse la marge d'un facteur deux. Le plafond ne vise que les
+        # tests — le « runner » de cargo —, jamais la compilation.
+        env:
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER: prlimit --as=4294967296
         # Des survivants ne sont pas une panne : ils sont le résultat. Le
         # verdict est rendu par le job `verdict`, qui les compare au plafond.
         continue-on-error: true
