@@ -10384,6 +10384,14 @@ au rejeu du corpus du n° 15, profondeur 10 ; **arbre identique** —
   l'a — il le détecte à l'exécution —, et cherche le même arbre que le
   binaire AVX2 : c'est ce que `tools/binaires.sh` vérifie à chaque push.
 
+**Le crible, lancé le 20 oct. à 17 h 44** — `mutation.yml` au commit
+`e77e0b1`, run 39451211784. *Prédiction, écrite avant* : **163**, chaque
+fichier à son plafond, `nnue.rs` compris (2) — chaque ligne du chemin AVX2
+change une valeur que la confrontation au scalaire lit, ou un compte que
+les deux tests lisent ; un pas de boucle faussé tourne sans fin, et
+`cargo mutants` le compte expiré, donc attrapé. Un survivant s'y lirait
+mutant par mutant avant de relever le plafond.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
