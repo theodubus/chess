@@ -979,6 +979,7 @@ dernière relève est faite.
 | **N° 20 — N6r4w25 contre N6r4w50**, le match direct de (d) | **39452745551, 39452754806, 39452763795, 39452773226** | `85c88a6` (N6r4w25) → `0f5214b` (N6r4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — le critère poussé à 17 h 54 (`4f54caa`), lancés à 17 h 55 ; fin attendue 22 h 50–23 h 10, au plus tard 23 h 45 | — *Critère, écrit avant* : **N6r4w25 embarque si la borne basse est au-dessus de zéro ; sinon N6r4w50** ; *attendu* −10 à +3, ~−4 (section « (a) et (d) — VERDICT ») |
 | **N° 20 — la séance B, sur la carte de Théo** | — | `tools/seance-n20b.sh tout w50`, depuis une copie, à `main` : N7p4w50, N8tw50, N8tw50s800, N6r4w50pas0005, N6r4w50pas002, N8nw50 | `tools/nnue-train`, les 79 jobs anciens, les 84 premiers neufs | **EN COURS chez Théo depuis le 20 oct. au soir** — l'essai réussi, la séance lancée avant 21 h 22 ; chaque réseau poussé sur `reseau/n20b` dès ses contrôles passés ; N7p4w50 attendu vers 23 h 45–0 h 15, la séance entière vers 11 h–12 h | — *Attendus et comparaisons, écrits avant* (section « La séance B ») |
 | **N° 20 — N6r4w50 contre N7p4**, le match direct entre les axes | **39471565620, 39471574281, 39471583801, 39471592587** | `0f5214b` (N6r4w50) → `ec97f35` (N7p4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — le critère poussé à 20 h 04 (`6c753e2`), lancés à 20 h 04 ; fin attendue 1 h 00–1 h 20, au plus tard 1 h 55 | — *Critère, écrit avant* : **N6r4w50 embarque si la borne basse est au-dessus de zéro ; sinon N7p4** ; *attendu* −11 à +2, ~−5 (section « Étape A — VERDICT ») |
+| **N° 20 (e) — la sonde de débit à 10 000 nœuds** | (à lancer) | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, **10 000 nœuds**, 20 minutes | `nnue-datagen.yml` | **ÉCRITE le 20 oct. à 22 h 09**, ses attendus poussés avant de la lancer | — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur ») : **× 0,45 à × 0,56** les positions par seconde de N6r4 à 5 000 nœuds sur le même processeur (1 183 sur un EPYC 7763) ; **17 à 23 %** d'écartées sur les gardées ; **34 à 40 %** de nulles ; **120 à 140** positions par partie. Hors fourchette, diagnostic avant la vague |
 | **N° 20, étape A — N7p2 contre N6r4** | **39424657675, 39424661145, 39424664674, 39424667800** | `8603bd3` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 46 et 19 h 51 | **+12,79, +11,05, +19,50 et +15,65 ; +14,74 ± 3,52 en commun, homogènes (p = 0,339)** ; zéro perte au temps. Gain démontré ; N7p4 le recoupe, le match direct tranche pour N7p4 (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **+3 à +12, ~+6** — dépassé ; critère du n° 17 contre N6r4 |
 | **N° 20, étape A — N7p4 contre N6r4** | **39424671016, 39424674757, 39424677788, 39424680763** | `ec97f35` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 47 et 19 h 54 | **+15,40, +21,12, +15,89 et +15,15 ; +16,89 ± 3,55 en commun, homogènes (p = 0,652)** ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR AU POINT** — l'étape A désigne N7p4, `SL=400` ; N6r4w50 le recoupe : match direct (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **la décision, avec N7p2 contre N6r4** ; critère du n° 17 contre N6r4 |
 | **N° 20, étape A — N7p4 contre N7p2** | **39424684239, 39424687745, 39424691136, 39424694996** | `ec97f35` → `8603bd3`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 44 et 19 h 57 | **+7,32, +14,53, +11,67 et +3,72 ; +9,31 ± 3,51 en commun, homogènes (p = 0,146)** ; zéro perte au temps. **Gain démontré : doubler encore les passes paie** (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **−10 à +8, ~+1 — le signe n'est pas acquis** — dépassé ; critère du n° 17 contre N6r4 |
@@ -10026,6 +10027,86 @@ binpack n'a jamais été relevé — la relecture n'en décode qu'un
 échantillon —, donc une part « au volume » s'écrirait sur une estimation
 (~3,4 à 5,1 G contre nos 3,1 G).
 
+#### (e) — le budget de l'étiqueteur : écrit le 20 oct. à 22 h 09, avant de lancer
+
+**Son ordre est tenu.** La génération de l'étape B est close (1 751,9 M
+gardées, `tools/n20-jobs.tsv`) ; (d) est relevé : le poids du résultat
+paie, N6r4w50 +11,79 ± 3,52. À `wdl` 0,5, le score pèse 50 % de la cible
+au lieu de 25 % : un score plus juste y vaut davantage qu'au moment où
+(e) a été écrit — l'ordre le servait. Le match direct de (d), w25 contre
+w50, ne touche que l'entraînement, pas la génération.
+
+**La recette** : `nnue-datagen.yml` à `cd6ed79` — **l'étiqueteur de
+l'étape B, N6r4**, pour que ses données servent de témoin sans rien
+regénérer —, `<embedded>`, **10 000 nœuds par coup**, graine « auto », un
+fil par processeur logique, 330 minutes, `x86-64-v3`. Le même commit pour
+toutes les vagues. Seul le budget change : même moteur, même filtre, même
+livre d'ouvertures aléatoires.
+
+**Le volume et la règle de fin, écrits avant** : des vagues de seize ; le
+PREMIER job lancé de la vague 1 est tenu à l'écart, désigné avant d'en
+voir le compte. La génération s'arrête quand les jobs appris atteignent
+**780 M positions gardées** — la moitié de l'ancien volume, le témoin à
+volume égal restant ainsi dans l'étape B. La dernière vague se
+dimensionne au compte restant, plus 10 % : ce n'est pas un test, rien ne
+s'y choisit au vu d'un résultat. On note `J` le nombre de jobs appris.
+
+**Les témoins, gratuits, tirés de l'étape B** — ses jobs appris, dans
+l'ordre de lancement (`tools/n20-jobs.tsv`), comme la séance B :
+- **à temps égal** — les `J` premiers : autant de jobs de 330 minutes,
+  tirés du même parc de runners. *C'est la décision* : ce que rapporte une
+  heure de runner à 10 000 nœuds contre à 5 000 ;
+- **à volume égal** — les premiers jusqu'à atteindre le volume gardé des
+  `J` jobs à 10 000, à un job près (~2 %). *C'est la qualité de
+  l'étiquette*, à quantité égale.
+
+**L'entraînement** : trois réseaux sur la carte de Théo, en séance C —
+**E10** (10 000 nœuds, `J` jobs), **E5t** (5 000, temps égal), **E5v**
+(5 000, volume égal) —, l'architecture et la recette que la séance B
+fixe, **les mêmes pour les trois**, superlots compris. Le nombre de
+superlots s'écrit avec le protocole de la séance C : à 780 M, 400
+superlots font ~51 passes, au-delà de ce que le n° 20 a éprouvé (25,6) ;
+la perte tenue à l'écart de chacun le dira.
+
+**Les comparaisons**, quatre jobs de 2 800 parties à `8+0,08` chacune, le
+binaire AVX2 des deux côtés. *Attendus, écrits le 19 oct. à `wdl` 0,75* —
+<span>inférence, confiance faible</span> — : **E10 contre E5v, 0 à +20** ;
+**E10 contre E5t, −7 à +13**, le signe inconnu. À `wdl` 0,5, le haut de
+chaque fourchette devient plus plausible ; les fourchettes restent.
+
+**Le critère, écrit avant** — la règle du n° 13 : le budget en place ne
+cède qu'à une démonstration.
+- **10 000 remplace 5 000 pour la génération suivante** (« plus de
+  données encore ») **si E10 contre E5t a sa borne basse au-dessus de
+  zéro** ; sinon 5 000 reste.
+- E10 contre E5v ne décide rien : il dit si l'étiquette vaut mieux, ce
+  qui sépare « le budget ne paie pas » de « il paie, mais moins que le
+  volume qu'il coûte ».
+- *Le registre* : si 10 000 démontre, **20 000** devient le test suivant
+  — on double tant qu'un doublement paie ; si E10 régresse, démontré, à
+  temps égal, **2 500** y entre ; sinon le budget reste ouvert, à basse
+  priorité. Rien n'y passe à « résolu ».
+
+**D'abord une sonde de 20 minutes**, le budget ayant changé. *Attendus,
+écrits avant* — <span>inférence, confiance faible</span>, contre la sonde
+de N6r4 à 5 000 nœuds (1 183 positions par seconde sur un EPYC 7763 ;
+19,69 % d'écartées sur les gardées ; 34,00 % de nulles ; 125,7 positions
+par partie) :
+- **positions par seconde : × 0,45 à × 0,56**, sur le même processeur —
+  deux fois les nœuds par coup, la table vidée par partie et non par coup ;
+  sur un autre processeur, contre le débit de l'étape B sur celui-ci
+  (2 140 et 2 231 sur deux EPYC 9V45, vague 1) ;
+- **parties écartées, sur les gardées : 17 à 23 %** — le filtre lit le
+  score de la première position, et une recherche deux fois plus longue
+  peut l'écarter de zéro comme l'y ramener ;
+- **nulles : 34 à 40 %** — un étiqueteur plus fort en fait davantage ;
+- **positions par partie : 120 à 140.**
+
+Hors fourchette, on diagnostique avant la vague. **Le compte, si
+l'attendu tient** : ~9 M gardées par job en moyenne, **~85 jobs appris,
+~5 à 6 vagues, ~1,5 jour** — les matchs de la séance B passent dans la
+même limite de concurrence (40 en Pro).
+
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
 Théo, le 19 oct. au soir : « *je suis prêt* ». La séance A d'abord, telle
@@ -12066,7 +12147,7 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 | **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; **la séance ÉCRITE le 20 oct.** (téléchargement, listes, commandes ; N8n et N8t), demandée au verdict de A, qui fixe ses superlots |
 | **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | **derrière la séance B et la composition** — Théo, 20 oct. ; son attendu baisse : le réglage fin sur Leela régresse (−11,42), troisième verdict dans le même sens |
 | **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
-| **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | runners, après B et (d) |
+| **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | **protocole écrit le 20 oct. à 22 h 09**, son ordre tenu (B close, (d) relevé) : sonde de débit à 10 000 nœuds, puis vagues de seize jusqu'à 780 M ; E10, E5t, E5v en séance C ; 10 000 ne remplace 5 000 que s'il démontre à temps égal (« (e) — le budget de l'étiqueteur ») |
 | **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) |
 
 **Les réglages ouverts — rien n'y passe à « résolu »** (Théo, 20 oct. ;
