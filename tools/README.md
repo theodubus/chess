@@ -963,7 +963,7 @@ dernière relève est faite.
 | **N° 20 — la vague 4**, étiquetée par N6r4 | 39298202589, 39298211381, 39298220429, 39298228880, 39298235765, 39298246238, 39298256527, 39298265446, 39298274102, 39298282360, 39298291145, 39298299675, 39298308393, 39298317493, 39298326638, 39298334978 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 20 oct. à 1 h 45** — lancée le 19 à 19 h 55, ses attendus poussés avant (`7411672`) ; seize succès finis à 1 h 27 | **428,2 M positions, 292,6 M gardées, 19,26 % d'écartées, 34,31 % de nulles, EPYC 7763 à 1 161 – 1 187 positions par seconde : dans l'attendu sur les cinq chiffres** ; l'image `ubuntu-24.04`, version `20261018.339.1` ; 1 139,1 M gardées après quatre vagues, deux vagues encore (`tools/n20-jobs.tsv`, section « N° 20 », la vague 4) — *Attendus, écrits avant* (section « N° 20 », la vague 4) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
 | **N° 20 — la vague 5**, étiquetée par N6r4 | 39343457092, 39343463026, 39343469332, 39343475933, 39343482982, 39343490144, 39343497398, 39343503779, 39343510501, 39343517114, 39343523528, 39343529992, 39343536213, 39343542186, 39343548177, 39343553716 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 20 oct. à 7 h 30** — lancée à 1 h 45, ses attendus poussés avant (`0e184b3`) ; seize succès finis à 7 h 16 | **443,1 M positions, 302,8 M gardées, 19,28 % d'écartées, 34,29 % de nulles : dans l'attendu sur quatre chiffres ; EPYC 7763 à 1 139 – 1 188, un seul des dix 1 % sous la borne**, ses comptes dans les leurs ; l'image `ubuntu-24.04` `20261018.339.1` ; 1 441,9 M gardées après cinq vagues, la vague 6 entière (`tools/n20-jobs.tsv`, section « N° 20 », la vague 5) — *Attendus, écrits avant* (section « N° 20 », la vague 5) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
 | **N° 20 — la vague 6**, la dernière, étiquetée par N6r4 | 39375325547, 39375329849, 39375334077, 39375338208, 39375342511, 39375346497, 39375350622, 39375355535, 39375360071, 39375364672, 39375369257, 39375373891, 39375379162, 39375384258, 39375389499, 39375395417 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 20 oct. à 7 h 31, ses attendus poussés avant (`5c0107c`) ; fin vers 13 h 00–13 h 10 | — *Attendus, écrits avant* (section « N° 20 », la vague 6) : **les seize, 360 à 520 M positions, 245 à 355 M gardées**, à proportion s'il manque des jobs ; **écartées 18,9 à 20,5 %, nulles 33,2 à 34,8 %** ; **1 150 à 1 220 positions par seconde sur un EPYC 7763**, un runner isolé jusqu'à 1 % dessous ; **le cumul, 1 687 à 1 797 M gardées** ; Ubuntu 24 et 26 lus séparément si l'image bascule |
-| **N° 20 — la séance A, puis (a) et (d), sur la carte de Théo** | — | séance A : N7p2, N7p4 à `4a604ea` ; (a) N6r4La, N6r4Lb et (d) N6r4w50, N6r4w25 à `main` (`2a8cca1` et après) | `tools/nnue-train`, les 79 jobs du n° 18 et le binpack du levier 4 | **DEMANDÉE le 19 oct. au soir** — Théo : « *je suis prêt* » ; la séance A donnée telle qu'écrite le 17, (a) et (d) écrites à 20 h 14, avant de les donner ; ~4 h puis ~1 h 45 ; rapport sur `reseau/n20a`, `reseau/n20a-points` et `reseau/n20-ad` | — *Attendus, écrits avant* (section « N° 20 », la séance A et « (a) et (d) ») : N7p2 contre N6r4 +3 à +12, N7p4 contre N7p2 −10 à +8 ; N6r4La −15 à +10, N6r4Lb −6 à +6 ; N6r4w50 −8 à +12, N6r4w25 −12 à +15 ; critère du n° 17 contre N6r4, chaque axe à part |
+| **N° 20 — la séance A, puis (a) et (d), sur la carte de Théo** | — | séance A : N7p2, N7p4 à `4a604ea` ; (a) N6r4La, N6r4Lb et (d) N6r4w50, N6r4w25 à `main` (`2a8cca1` et après) | `tools/nnue-train`, les 79 jobs du n° 18 et le binpack du levier 4 | **EN COURS chez Théo depuis le 20 oct. à 8 h 11**, par `tools/seance-n20.sh` (PR #202) — demandée le 19 au soir, pas lancée la nuit ; **l'essai court de (a) RÉUSSI à 8 h 07** : écart médian 4, maximal 29 (admis 15 / 50), échelle ajustée **282,1** (critère 250 – 450), la première compilation CUDA du `nnue-train` de `main` ; tous les contrôles d'avant passés, la veille bloquée ; (a) et (d) d'abord (~2 h, `reseau/n20-ad`), puis A (~4 h, `reseau/n20a`, `reseau/n20a-points`) | — *Attendus, écrits avant* (section « N° 20 », la séance A et « (a) et (d) ») : N7p2 contre N6r4 +3 à +12, N7p4 contre N7p2 −10 à +8 ; N6r4La −15 à +10, N6r4Lb −6 à +6 ; N6r4w50 −8 à +12, N6r4w25 −12 à +15 ; critère du n° 17 contre N6r4, chaque axe à part |
 | **Le balayage hebdomadaire du 20 oct.** | — (le run du mardi, 00:00 UTC) | `main` après la PR de la relève de la vague 2 | `mutation.yml` | **EN COURS** — run 39366549848, parti à 5 h 52 (le cron en retard de 3 h 52) ; **le job de `nnue.rs` a perdu son runner** à 6 h 22 (« *The runner has received a shutdown signal* », 2 mutants manqués lus avant la coupure, sur 161), sans résumé : à relancer une fois le run fini (`rerun-failed-jobs`, qui relance aussi `Verdict`) ; les autres fichiers verts, `search.rs` en cours | — *Prédiction, écrite avant* : **163**, chaque fichier à son plafond — aucune ligne d'`engine/src/` n'a changé depuis le balayage après N6r4 (163, exact) ; `--pas`, `--wdl` et `--melange` vivent dans `tools/nnue-train`, hors du cliquet |
 | **Le balayage de mutation après N6r4** | **39049958329** | `main` à `def53d8` (PR #194) | `mutation.yml` | **RELEVÉ le 18 oct. à 0 h 40 : 163, EXACT** — lancé le 17 oct. à 18 h 34, juste après la fusion ; fini à 20 h 47 | **Vert, la prédiction exacte** : chaque fichier à son plafond, `nnue.rs` 2, `search.rs` 48 — *Prédiction, écrite avant* (section « N° 18 — VERDICT », N6r4 embarqué) : **163**, chaque fichier à son plafond — `nnue.rs` 2, `search.rs` 48 ; un écart dans `search.rs` se lirait mutant par mutant |
 | **C13 — la série de N6r4** | **39049959724** | `def53d8` (N6r4, le moteur de `main` après la PR #194), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 18 oct. à 0 h 40** — lancée le 17 oct. à 18 h 34, finie le 18 à 0 h 03 ; Xeon 8573C, 1,64 M n/s, profondeur 13 | **109 − 99 − 92, 51,7 % : 3 112 ± 21, dedans, sous le centre** ; +43 ± 33 sur N5l à la même échelle, 0,44 au point de ce que mesure le jumeau ; zéro perte au temps (section C13, « N6r4, RELEVÉ ») — *Attendu, écrit avant* (section « N° 18 — VERDICT ») : **~3 130, de 3 095 à 3 170, ~54 % de score (49 à 60 %)** — N5l y rendait ~3 069 ± 25 (45,5 %) |
@@ -11200,6 +11200,93 @@ Recriblé : **22 attrapés sur 23, un expiré** — `alpha >= beta` en `<`, qui
 fait tourner la recherche à vide.
 
 ### Ce qui reste à faire, par ordre mesuré
+
+#### La file — réécrite le 20 oct. 2026, dans l'ordre où la faire
+
+Théo, 20 oct. : « *Je valide tous ces points, tout ce qui vaut le coup d'être
+testé* » ; « *Le but absolu est la perf* ». Trois ressources travaillent en
+même temps — **la carte de Théo** (entraîner), **les runners** (générer,
+mesurer), **le conteneur** (écrire, écranter) — : l'ordre se lit file par
+file, et les phases se chevauchent. Chaque ligne se mesure comme les autres :
+le mécanisme d'abord, les attendus écrits avant, un match pour trancher. Le
+détail, les mesures et l'histoire de chaque chantier : le tableau plus bas
+et les sections citées.
+
+**Phase 1 — le réseau, en cours (n° 20 ; carte et runners).** Le réseau
+reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **A — plus de passes** | N7p2 et N7p4 : 200 et 400 superlots sur les 1,563 G anciennes ; N6r4 en avait fait 100 | sur la carte de Théo depuis le 20 oct. (`tools/seance-n20.sh`) ; puis sonde de B8, matchs contre N6r4 (« La séance A ») |
+| **(a) — le réglage fin sur Leela** | N6r4 affiné 20 superlots sur le binpack, au pas 10⁻⁴ et 2·10⁻⁵ | idem (« (a) et (d) — la séance ») |
+| **(d) — le poids du résultat** | la recette de N6r4, `wdl` 0,5 et 0,25 au lieu de 0,75 | idem |
+| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | génération : la vague 6, la dernière, finit le 20 oct. ; la séance s'écrit au verdict de A, qui fixe ses superlots |
+| **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | avec la séance B |
+| **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
+| **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | runners, après B et (d) |
+| **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) |
+
+**Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
+optimisations pures : même arbre au nœud près, prouvées par le temps au
+rejeu, sans match. Elles précèdent les réseaux larges, qui ne paient que si
+l'inférence suit.
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **le cache d'accumulateurs** (« finny tables ») | quand le roi change de seau, reprendre l'accumulateur gardé pour ce seau au lieu de tout recalculer ; les seaux de roi coûtent ~−11 Elo de vitesse (n° 17) | **à écrire maintenant** : sa condition — un réseau à seaux de roi embarqué — est remplie depuis le 17 oct. |
+| **le SIMD explicite** | l'inférence en instructions AVX2 écrites à la main, au lieu de la vectorisation du compilateur (n° 16, chemin A) | **`unsafe` admis par Théo le 20 oct.** pour ce seul usage, ses conditions dans `CLAUDE.md` (Style) ; après le cache |
+| **l'évaluation statique dans la table** | une entrée trouvée rend aussi son évaluation, sans recalcul | pur seulement si l'entrée garde sa taille : sinon la capacité change et l'arbre avec (le piège de B9), et c'est un match |
+| **un banc qui emploie le réseau** | de l'outillage : mesurer la vitesse de ce qui joue, pas de la faite main | si le rejeu ne suffit pas à mesurer les trois lignes précédentes |
+
+**Phase 3 — des réseaux plus grands (la carte de Théo, le volume des
+phases 1 et 2).**
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **(c) — les architectures gourmandes** | dix seaux de roi, 384 ou 512 unités, nourris du mélange | après (b) |
+| **1 024 unités et des couches cachées** | une première couche quatre fois plus large, puis une ou deux couches de plus avant la sortie — la forme des moteurs forts, <span>de mémoire, confiance moyenne</span> | à écrire dans le moteur (inférence à plusieurs couches, quantification) et dans l'entraîneur ; après le cache, le SIMD et assez de données ; ~4 fois le temps par superlot sur la carte de Théo |
+
+**Phase 4 — la recherche (conteneur, puis runners ; en parallèle des
+phases 1 à 3).** Chaque ligne a son écran, l'arbre de chaque variante au
+rejeu, puis quatre jobs par candidat.
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **l'historique borné** (« gravité ») | bonus et malus pondérés par `1 − abs(note) / plafond` : l'historique cesse de grandir avec la profondeur cherchée | à écranter en premier : c'est la condition des deux lignes suivantes, et un changement à lui seul — il change l'ordre des coups |
+| **la LMR modulée** | la réduction selon l'historique du coup, le type de nœud (coupure attendue ou non), la variante principale en table — elle ne dépend aujourd'hui que de la profondeur et du rang | après l'historique borné |
+| **l'élagage par l'historique** | sauter les tranquilles mal notés à faible profondeur | après l'historique borné ; fermé à l'écran le 7 oct. faute de lui |
+| **l'historique de correction, en plusieurs tables** | corriger l'évaluation statique par ce que la recherche a appris, indexé par la structure de pions, le matériel, le coup précédent ; la variante unique de C42 rendait −1,1 ± 3,6 et grossissait l'arbre | après l'historique borné ; à remesurer aussi après SPSA, qui peut retoucher les marges qu'il gêne |
+| **l'historique des captures, rouvert** | fermé à l'écran (plafond +1,6 à +2,8) ; borné, il peut ordonner autrement | bas de la phase |
+| **Lazy SMP au-delà de deux fils, et ses variantes** | décalage de profondeur, coup du meilleur fil, historiques partagés | condition : une machine à plus de deux cœurs physiques ; les runners n'en ont que deux |
+
+**Phase 5 — le réglage (runners), le réseau et la recherche stabilisés.**
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **SPSA (n° 19)** | régler ensemble les marges de la recherche — dix aujourd'hui, celles de la phase 4 ensuite — par paires de binaires perturbés, à `8+0,08` ; le réglage final est un candidat comme un autre | outillage prêt et éprouvé (14 oct.) ; après la composition et la phase 4 ; **à refaire à chaque réseau embarqué** — les marges lui appartiennent |
+
+**Phase 6 — la cadence longue (runners, le plus cher).**
+
+| quoi | ce que c'est | où on en est, et ce qui l'attend |
+|---|---|---|
+| **n° 14 — ce qui croît avec la profondeur** | ProbCut d'abord — son épargne double tous les deux plis —, puis le multi-cut et le razoring, fermés à l'écran à `8+0,08` ; allumés selon la profondeur d'itération, mesurés là où le moteur cherche à 16 plis et plus | ~7,5 fois le prix d'une partie à `8+0,08` à 60+0,6 |
+
+**Phase 7 — plus tard, ou sur un chiffre.**
+
+| quoi | ce que c'est | où on en est |
+|---|---|---|
+| **les tables de finale Syzygy** | sonder des tables exactes quand il reste peu de pièces | +2,7 Elo chez Stockfish 15 au réseau (source secondaire) ; reporté |
+| **les ouvertures du générateur** | 8 à 11 demi-coups au hasard, jamais comparés à un livre pour la diversité des données | à écranter le jour où le volume ne paiera plus |
+| **plus de données de Leela** | d'autres fichiers que T60 et T74 | si (a) ou (b) paie |
+| **la gestion du temps par un réseau** | un réseau qui fixe le budget d'un coup | avis : petit à `8+0,08` ; le plafond d'abord, par la sonde d'allocation |
+| **`MultiPV`** | une option d'analyse, sans Elo | « *pas tout de suite* » (Théo, 2 oct.) |
+| **l'interface** — B5, A8, le livre et `Hash` selon la cadence | côté `ui/`, sous son propre `CLAUDE.md` | ailleurs |
+
+**Sans objet** : B7 phase 2, régler l'évaluation faite main — elle ne joue
+plus. **À chaque réseau embarqué, toujours** : la sonde de B8 (son facteur
+des marges), une série de C13, le balayage de mutation.
+
+#### L'histoire de l'ordre, et le détail de chaque chantier
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
 d'abord les relèves en vol (C22 sur C23, balayage de mutation), puis
