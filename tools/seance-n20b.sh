@@ -273,7 +273,7 @@ entrainer essai-n8 --attendu "$ATT_NEUVES" --superlots 1 --sortie essai-n8 "${NE
   dire "  ÉCHEC essai-n8 : l'entraîneur a rendu une erreur"
 controler essai-n8 "$ARCH-1" pas=0.001 || ESSAI=1
 if [ "$MODE" = essai ]; then
-  if [ "$ESSAI" = 0 ]; then dire "ESSAI RÉUSSI — lancer : bash $DEPOT/tools/seance-n20b.sh tout $FORMAT"; else dire "ESSAI ÉCHOUÉ — m'envoyer $RESUME"; fi
+  if [ "$ESSAI" = 0 ]; then dire "ESSAI RÉUSSI — lancer : bash $0 tout $FORMAT"; else dire "ESSAI ÉCHOUÉ — m'envoyer $RESUME"; fi
   exit "$ESSAI"
 fi
 if [ "$ESSAI" != 0 ]; then
