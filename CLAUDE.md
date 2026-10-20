@@ -121,9 +121,12 @@ une mesure, pas une préférence.
   avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
   en ont appris. **Rouvert le 19 oct. (Théo)** : le seul verdict contre
   elles portait sur un « réglage fin » qui ré-entraînait au pas plein un
-  réseau de 128 unités, une passe sur un seul fichier ; restent à tester
-  un vrai réglage fin, le mélange avec nos données, et les architectures
-  plus grandes nourries de ce mélange (`tools/README.md`, n° 20).
+  réseau de 128 unités, une passe sur un seul fichier. **Le vrai réglage
+  fin, mesuré le 20 oct. : il régresse** — N6r4 affiné 20 superlots sur
+  Leela, **−11,42 ± 3,73** au pas 10⁻⁴, rien de démontré à 2·10⁻⁵ ;
+  troisième verdict dans le même sens. Restent à tester le mélange avec
+  nos données, et les architectures plus grandes nourries de ce mélange
+  (`tools/README.md`, n° 20, « (a) et (d) — VERDICT »).
   Plan et faits vérifiés : `tools/README.md`, section n° 7.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde.
 - **Deux binaires livrés, et la mesure se fait sur le binaire AVX2.** Théo,
