@@ -10165,6 +10165,35 @@ vitesse ensuite, jamais en même temps :
   matchs sont valides tels que lancés ;
 - **la vitesse** : même architecture, rien de démontré.
 
+**N8nw50, poussé par la séance le 21 oct. à 11 h 33, intégré à 11 h 51 —
+conforme.** Le dernier réseau de la séance B : les 84 premiers jobs appris
+de l'étape B seuls — **la liste de N8tw50 moins les 79 du n° 18, vérifiée
+job par job** —, relecture exacte (18 245 052 : 2 299 253 673), 400
+superlots au poids 0,5, 17,4 passes ; confrontation **7 / 12** (admis
+15 / 50) ; perte d'entraînement au 400ᵉ superlot 0,019267. Le réseau sur la
+branche (`817155f`) ; candidat **`6a1b1d6`** (révoqué par `0c9bf93`), au
+code de N7p4w50 (`e37468b`) au bit près — seul `nnue.rs` diffère.
+
+*Écrit le 21 oct. à 11 h 51, avant de lancer* — <span>inférence, confiance
+faible</span> :
+- **la sonde de B8 : 2,3 à 3,3** — N7p4w50 2,55, N8tw50 2,64 ;
+- **les nœuds par seconde, × 0,97 à × 1,04 contre N7p4w50** — même
+  architecture ;
+- **la perte tenue à l'écart**, N7p4w50 en référence, N8tw50 à côté, sur
+  38531414161 (tenu, étiqueté par N5l), 39050360980 (tenu, par N6r4),
+  38531424497 et 39050368395 (appris) : **plus basse sur le jeu de N6r4,
+  −0,0004 à −0,0012** — il en apprend les étiquettes, N8tw50 y rendait
+  −0,000589 contre N7p4 ; **plus haute sur celui de N5l, 0 à +0,0006** —
+  il n'en a vu aucune ;
+- **le match, N8nw50 contre N7p4w50** (`6a1b1d6` → `e37468b`), quatre
+  jobs de 2 800 parties à `8+0,08`, graine « auto », AVX2 des deux côtés :
+  **0 à +10, ~+4**, écrit le 20 oct. au soir — l'étiqueteur à volume égal.
+  *Critère, écrit avant* : un gain démontré (borne basse au-dessus de
+  zéro) dit que l'étiqueteur paie encore — N6r4 sur N5l —, et (e), qui
+  double le budget de l'étiqueteur, garde son rang ; rien de démontré : le
+  registre le note, sans fermer l'axe. **Aucun embarquement n'en dépend** :
+  N8tw50, qui joue, a deux fois ses données.
+
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
 la séance A : les contrôles d'avant (dépôt, 79 jobs anciens et leurs 316
