@@ -995,8 +995,8 @@ dernière relève est faite.
 | **N° 20, séance B — N8nw50 contre N8tw50**, les données de N5l à superlots fixés | **39625371366, 39625376858, 39625382206, 39625386627** | `6a1b1d6` (N8nw50) → `2115850` (N8tw50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 17 h 24, les attendus poussés avant (`e096a9e`) ; fin attendue vers 22 h 35 | — *Critère, écrit avant* : un gain démontré dit que les données de N5l coûtent à superlots fixés — la séance C les laisse hors de sa recette ; une régression démontrée, qu'elles paient ; rien : elles restent ; aucun embarquement n'en dépend ; *attendu* −3 à +13, ~+5 (« N8nw50 contre N8tw50 — écrit … avant de lancer ») |
 | **N° 20, séance B — N8nw50 contre N7p4w50**, l'étiqueteur à volume égal | **39580170864, 39580178400, 39580185874, 39580193883** | `6a1b1d6` (N8nw50) → `e37468b` (N7p4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉS le 21 oct. à 17 h 20** — lancés à 11 h 51, les attendus poussés avant (`71a9988`) ; finis ENTIERS entre 16 h 58 et 17 h 06 | **+12,76 ± 3,45 en commun, homogènes (p = 0,817), zéro perte au temps — gain démontré : l'étiqueteur paie encore ; (e) garde son rang.** Au-dessus de l'attendu au point, l'intervalle le touche ; la chaîne place N8nw50 à +5,4 ± 4,8 sur N8tw50 — le match direct suit (« N8nw50 contre N7p4w50 — VERDICT ») — *Critère, écrit avant* : un gain démontré dit que l'étiqueteur paie encore ; aucun embarquement n'en dépend ; *attendu* 0 à +10, ~+4 (section « La séance B », « N8nw50 ») |
 | **N° 20, séance B — la perte tenue à l'écart de N8nw50** | **39580201385** | l'outil à `71a9988` ; N7p4w50, N8tw50, N8nw50, sur 38531414161 et 39050360980 (tenus) puis 38531424497 et 39050368395 (appris) | `nnue-validation.yml` | **RELEVÉE le 21 oct. à 12 h 04** — finie à 11 h 55 ; la sonde et les nœuds par seconde dans le conteneur, finis à 12 h 03 | **Tenu par N6r4 −0,000747 ± 0,000031 : dedans ; tenu par N5l +0,000660 ± 0,000046 : 0,00006 au-dessus. Sonde 2,53, dedans ; n/s × 0,966, p = 0,34 : 0,004 sous la fourchette, rien de séparé** — chacun apprend son étiqueteur ; la perte ne départage pas deux étiqueteurs (« Les mesures hors match de N8nw50 ») | — *Attendus, écrits avant* : −0,0004 à −0,0012 sur le jeu de N6r4, 0 à +0,0006 sur celui de N5l ; sonde 2,3 à 3,3 ; n/s × 0,97 à × 1,04 |
-| **balayage de mutation après la PR #208** — N8tw50s800 embarqué | **39607356269** | `main` à `8c39061` | un job par fichier, puis `Verdict` | **EN COURS** — lancé le 21 oct. à 15 h 22 | — *Prédiction, écrite avant* : **163**, chaque fichier à son plafond — le crible au même code (`743c6ec`, 163 exact) ; seul le réseau embarqué diffère, et rien de ce que les tests en lisent n'a de survivant |
-| **C13 — la série de N8tw50s800** | **39607395788** | `main` après la PR #208 (`8c39061`), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **EN COURS** — lancée le 21 oct. à 15 h 22, l'attendu écrit et poussé avant (`9b918ce`) ; fin vers 20 h 50 | — *Attendu, écrit avant* — <span>inférence, confiance faible</span> : **~3 155, de 3 115 à 3 200** — N7p4 3 141 ± 20 ; le jumeau mesure ~+23 en chaîne, l'échelle en rend ~0,6 |
+| **balayage de mutation après la PR #208** — N8tw50s800 embarqué | **39607356269** | `main` à `8c39061` | un job par fichier, puis `Verdict` | **RELEVÉ le 21 oct. à 21 h 05** — lancé à 15 h 22, fini à 18 h 22 | **163, exact : chaque fichier à son plafond** ; `nnue.rs` 2 survivants, 152 attrapés, **0 expiré** (3 au crible) ; `search.rs` en **180 min**, 51 % de la limite (252 au crible) — *Prédiction, écrite avant* : **163**, chaque fichier à son plafond — le crible au même code (`743c6ec`, 163 exact) ; seul le réseau embarqué diffère, et rien de ce que les tests en lisent n'a de survivant |
+| **C13 — la série de N8tw50s800** | **39607395788** | `main` après la PR #208 (`8c39061`), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 21 oct. à 21 h 05** — lancée à 15 h 22 sur `8c39061`, l'attendu écrit et poussé avant (`9b918ce`) ; finie à 20 h 47 ; EPYC 7763, 1,88 M n/s, profondeur 15 | **122 − 99 − 79, 53,8 % : 3 127 ± 24, dedans, sous le centre** ; −14 ± 31 sur N7p4 à la même échelle, quand le jumeau mesure ~+23 ; zéro perte au temps (section C13, « N8tw50s800, RELEVÉ ») — *Attendu, écrit avant* — <span>inférence, confiance faible</span> : **~3 155, de 3 115 à 3 200** — N7p4 3 141 ± 20 ; le jumeau mesure ~+23 en chaîne, l'échelle en rend ~0,6 |
 | **N8tw50 — le crible de mutation avant la fusion** | **39574588694** | `743c6ec` — N8tw50 embarqué (`e9b7dd4`) et sa documentation, tous les fichiers | `Mutation`, entrée `commit`, sur runner | **RELEVÉ à 15 h 21, CONFORME** — lancé à 11 h 08, le `Verdict` vert à 15 h 20 ; `search.rs` en 252 minutes | **163, exactement, chaque fichier à son plafond** ; `nnue.rs` 2 survivants, 149 attrapés, 3 expirés, 15 inviables — les mêmes deux survivants. `verify.sh` complet vert sur `e9b7dd4` (11 h 11) et sur `553e76e` (13 h 31). **PR #208 fusionnée à 15 h 22** (`8c39061`) | — le 21 oct. à 13 h 23, N8tw50s800 a remplacé N8tw50 sur la branche (`553e76e`) : le CODE balayé est le même au bit près, seul le réseau embarqué diffère — le balayage après fusion le confirmera sur le réseau qui joue. *Prédiction, écrite avant* : **163, chaque fichier à son plafond** — `nnue.rs` 2, `search.rs` 48, `eval.rs` 102 : seuls le chemin du réseau et les valeurs de la confrontation changent dans `engine/src/`, comme à l'embarquement de N7p4 (163, exact) |
 | **N° 20, séance B — N8tw50 contre N7p4**, le match direct contre le réseau qui joue | **39540594928, 39540601262, 39540607357, 39540613220** | `2115850` (N8tw50) → `7d84860` (N7p4 recommité), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 11 h 07** — lancés le 21 oct. à 5 h 48, les attendus poussés avant (`ad56d4b`) ; finis ENTIERS entre 10 h 51 et 10 h 58, 6,5 s par partie | **+23,74, +19,88, +12,91 et +15,15 ; +17,91 ± 3,40 en commun sur 11 200 parties, homogènes (p = 0,109)** ; zéro perte au temps. **Gain démontré : N8tw50 EMBARQUÉ** (`e9b7dd4`) ; au-dessus de l'attendu de 1,9, la chaîne par N7p4w50 l'avait sous-estimé (section « La séance B », « N8tw50 contre N7p4 — VERDICT ») — *Critère, écrit avant* : **N8tw50 embarque si la borne basse est au-dessus de zéro** ; *attendu* +3 à +16, ~+10 (section « La séance B », « N8tw50 contre N7p4, le match direct ») |
 | **N° 20, séance B — N8tw50 contre N7p4w50** | **39523413909, 39523421083, 39523427998, 39523435015** | `2115850` (N8tw50) → `e37468b` (N7p4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 04** — lancés le 21 oct. à 2 h 47, les attendus poussés avant (`64a66df`) ; finis ENTIERS entre 7 h 50 et 7 h 56, 6,5 s par partie | **+5,46, +10,30, +3,97 et +9,81 ; +7,38 ± 3,40 en commun sur 11 200 parties, homogènes (p = 0,567)** ; zéro perte au temps. **Gain démontré** : N8tw50 devient la référence de la séance B ; l'embarquement se décide contre N7p4, en vol (section « La séance B », « N8tw50 contre N7p4w50 — VERDICT ») — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +12, ~+7 — dedans, au centre |
@@ -10184,7 +10184,11 @@ en **252 minutes**, 72 % de la limite de 350 (274 la veille). `verify.sh`
 complet vert sur `e9b7dd4` à 11 h 11 et sur `553e76e` à 13 h 31. **La PR
 #208 fusionnée à 15 h 22** (`8c39061`) : N8tw50s800 joue sur `main`.
 Lancés à 15 h 22 : le balayage après fusion (39607356269, prédiction 163)
-et **la série C13 de N8tw50s800** (39607395788, attendu ~3 155).
+et **la série C13 de N8tw50s800** (39607395788, attendu ~3 155). **Relevés
+le 21 oct. à 21 h 05** : le balayage **163, exact**, `nnue.rs` sans expiré —
+les trois du crible ne sont pas devenus des survivants —, `search.rs` en
+180 minutes ; la série, **3 127 ± 24**, dans son attendu (section C13,
+« N8tw50s800, RELEVÉ »).
 
 **L'écran du pas, poussé par la séance le 21 oct. à 8 h 18 et 8 h 56,
 intégré à 9 h 23 — conforme.** **N6r4w50pas0005** (pas initial 0,0005, la
@@ -12169,6 +12173,29 @@ change pas les parties ou le chiffre absolu, on laisse tel quel* ».
 Départager deux réseaux sur cette échelle demanderait ~2 400 parties par
 série, ~16 jobs de 5 h 30, pour ce qu'un match contre le jumeau tranche en
 quatre ; resserrer le seul chiffre absolu à ± 10, 1 200 parties.
+
+**N8tw50s800, RELEVÉ le 21 oct. à 21 h 05 — dans l'attendu, sous son centre.**
+Run 39607395788, lancée à 15 h 22 sur `8c39061`, le moteur de `main` après
+la PR #208, finie à 20 h 47. Trois parties à la fois, zéro perte au temps,
+zéro coup illégal, aucun moteur perdu :
+
+| série | runner — bench, profondeur en 250 ms | score | écart | estimation | attendu, écrit avant |
+|---|---|---|---|---|---|
+| N8tw50s800 (`8c39061`), AVX2, contre **3100** — 39607395788 | EPYC 7763 — 1 880 755 n/s, 15 | 122 − 99 − 79, 53,8 % | +26,7 ± 24,2 | **3 127 ± 24** | 3 115 à 3 200 : **dedans**, sous le centre (~3 155) |
+
+- **sur N7p4, à la même échelle** : 3 127 contre 3 141, **−14 ± 31** — ne
+  se sépare pas de zéro ; notre jumeau mesure ~+23 (+17,91 puis +5,43).
+  L'écart attendu, ~+14, était sous le bruit d'une série : c'était écrit,
+  et la série reste à 300 parties (Théo) ;
+- **le runner** : profondeur 15 en 250 ms, 16 à la série de N7p4.
+  Stockfish bridé choisissant à profondeur fixe, un point de
+  fonctionnement plus bas ne peut que nous sous-estimer. <span>Inférence,
+  confiance faible</span> : un pli vaut ~0,7 doublement, et six fois plus
+  de temps ne rapportait que +40 ± 42 à cette échelle — **~−10** de ce
+  côté au plus, sous ± 24, et une profondeur entière en 250 ms est un
+  relevé grossier ;
+- **quatre avertissements côté ShallowRed** : « PV continues after
+  fifty-move rule » ; 8 280 « Bestmove does not match… », ceux du bridage.
 
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
