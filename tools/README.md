@@ -9941,6 +9941,16 @@ gardées sur les jeux tenus à l'écart) :
   match la dira ; la perte n'est pas un substitut (`CLAUDE.md`, « Ce qui
   compte comme preuve »).
 
+**La sonde de B8 et les nœuds par seconde de N8tw50, RELEVÉS le 21 oct.
+à 3 h 35 — dans l'attendu, au facteur de `main`.** La sonde : 40 parties,
+finies à 2 h 53, zéro anomalie — facteur delta **× 2,9**, aspiration
+**× 2,40** (10,5 % hors fenêtre à δ = 25), **moyenne géométrique 2,64**,
+dans 2,0 à 3,0 et dans la plage (2,14 à 3,56) : le candidat ne change pas,
+et ses grandes évaluations plus petites ne se lisent pas dans l'échelle
+là où les marges tranchent. Les nœuds par seconde, au rejeu du n° 15, dix
+tours, contre N7p4w50 : **× 1,005**, plus lent 4 tours sur 10, p = 0,75 —
+rien de séparé, dans × 0,97 à × 1,04.
+
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
 la séance A : les contrôles d'avant (dépôt, 79 jobs anciens et leurs 316
