@@ -134,7 +134,12 @@ d'un aveu sur la profondeur de recherche.
 > la case du roi, sur ces mêmes données, régressaient nettement : ils
 > demandaient plus de positions. **Celui qui joue depuis le 17 oct.**,
 > N6r4, les a eues : 1,563 milliard de positions étiquetées par N5l, quatre
-> seaux de roi — **+98,7 ± 4,3** contre N5l sur 11 200 parties.
+> seaux de roi — **+98,7 ± 4,3** contre N5l sur 11 200 parties. **Celui qui
+> joue depuis le 21 oct.**, N7p4, apprend sur les mêmes positions quatre
+> fois plus longtemps (400 passages de lots au lieu de 100) : **+16,9 ± 3,6**
+> contre N6r4, et devant N6r4w50 — le même que N6r4 avec moins de poids au
+> résultat des parties, +11,8 contre N6r4 — de **+6,7 ± 3,4** en match
+> direct.
 > L'évaluation faite main reste disponible par
 > `setoption name EvalFile value <none>`.
 
@@ -355,8 +360,8 @@ Leela Chess Zero](https://storage.lczero.org/files/training_data), mises à
 disposition sous l'[Open Database
 License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
 converties au format `.binpack` par des contributeurs de Stockfish (voir
-`tools/README.md`, section n° 7). Le réseau embarqué depuis le 17 oct., N6r4
-— comme N5l et N4 avant lui —, n'apprend que sur les parties du moteur.
+`tools/README.md`, section n° 7). Le réseau embarqué depuis le 21 oct., N7p4
+— comme N6r4, N5l et N4 avant lui —, n'apprend que sur les parties du moteur.
 
 ## Licence
 

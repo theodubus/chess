@@ -445,7 +445,23 @@ pub fn changes(board: &Board, mv: Move, out: &mut [Change; 4]) -> usize {
 ///
 /// La somme se fait en `i32` par tranches de [`DOT_CHUNK`] termes, puis en
 /// `i64` : à 128 unités, une seule tranche par camp, les mêmes entiers.
+///
+/// Sur un processeur AVX2, le calcul passe par [`avx2`] : le compilateur ne
+/// sort de cette forme que des instructions de 128 bits (lu au code machine
+/// le 20 oct. 2026), quand AVX2 en traite 256. Les mêmes entiers, sommés dans
+/// un autre ordre — exact, sans débordement possible (voir [`DOT_CHUNK`]).
 fn dot(values: &[i16], weights: &[i16]) -> i64 {
+    #[cfg(target_arch = "x86_64")]
+    if let Some(sum) = avx2::dot(values, weights) {
+        return sum;
+    }
+    dot_scalar(values, weights)
+}
+
+/// Le produit scalaire de [`dot`] en Rust ordinaire : la définition, que le
+/// chemin AVX2 doit rendre au bit près, et le calcul de tout processeur qui
+/// n'a pas AVX2.
+fn dot_scalar(values: &[i16], weights: &[i16]) -> i64 {
     values
         .chunks(DOT_CHUNK)
         .zip(weights.chunks(DOT_CHUNK))
@@ -461,6 +477,100 @@ fn dot(values: &[i16], weights: &[i16]) -> i64 {
             i64::from(chunk)
         })
         .sum()
+}
+
+/// Le produit scalaire en instructions AVX2 écrites à la main — le seul
+/// `unsafe` du dépôt. Théo, 20 oct. 2026 : « *Si annuler cette décision
+/// augmente l'elo long terme, je le fais. Le but absolu est la perf* ». Les
+/// conditions écrites le même jour (`CLAUDE.md`, Style) : confiné à ce
+/// module, derrière la détection du jeu d'instructions, confronté en test au
+/// calcul scalaire, entré seulement s'il rend du temps à arbre identique.
+///
+/// Par 16 termes : l'entrée bornée à `[0, QA]` (`vpmaxsw`, `vpminsw`), son
+/// produit seize bits par le poids (`vpmullw`) — exact, `|c · w| ≤ 32 640` —,
+/// puis la multiplication-addition par paires avec l'entrée (`vpmaddwd`), qui
+/// rend huit sommes `i32` de deux termes `c² · w`.
+#[cfg(target_arch = "x86_64")]
+#[allow(unsafe_code)]
+mod avx2 {
+    use std::arch::x86_64::{
+        __m256i, _mm256_add_epi32, _mm256_loadu_si256, _mm256_madd_epi16, _mm256_max_epi16,
+        _mm256_min_epi16, _mm256_mullo_epi16, _mm256_set1_epi16, _mm256_setzero_si256,
+        _mm256_storeu_si256,
+    };
+
+    use super::{DOT_CHUNK, QA_I16};
+
+    /// Les termes d'un registre AVX2 : seize `i16`.
+    const LANES: usize = 16;
+
+    // Les produits scalaires passés par AVX2, et les termes laissés au
+    // reste scalaire, comptés par fil pour les tests : un chemin AVX2 jamais
+    // pris, ou qui laisse au reste un registre qu'il pouvait traiter, rend
+    // le même résultat que le scalaire, et seuls ces comptes le distinguent.
+    #[cfg(test)]
+    thread_local! {
+        pub(super) static DOTS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+        pub(super) static TAIL: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+    }
+
+    /// Le produit scalaire de [`super::dot_scalar`] en AVX2, ou `None` si le
+    /// processeur ne l'a pas. Compilé pour AVX2 (`x86-64-v3`), la détection
+    /// est une constante ; sinon une lecture mise en cache par la
+    /// bibliothèque standard.
+    pub(super) fn dot(values: &[i16], weights: &[i16]) -> Option<i64> {
+        if !std::arch::is_x86_feature_detected!("avx2") {
+            return None;
+        }
+        #[cfg(test)]
+        DOTS.with(|count| count.set(count.get() + 1));
+        // SAFETY : AVX2 vient d'être détecté sur le processeur qui exécute.
+        Some(unsafe { dot_avx2(values, weights) })
+    }
+
+    /// # Safety
+    /// Le processeur doit porter AVX2.
+    #[target_feature(enable = "avx2")]
+    unsafe fn dot_avx2(values: &[i16], weights: &[i16]) -> i64 {
+        let len = values.len().min(weights.len());
+        let zero = _mm256_setzero_si256();
+        let qa = _mm256_set1_epi16(QA_I16);
+        let mut total = 0_i64;
+        let mut start = 0;
+        while start < len {
+            let end = (start + DOT_CHUNK).min(len);
+            let mut lanes = zero;
+            let mut index = start;
+            while index + LANES <= end {
+                // SAFETY : `index + LANES ≤ end ≤ len`, la longueur de la
+                // plus courte des deux tranches ; les lectures non alignées
+                // n'exigent rien de plus.
+                let (value, weight) = unsafe {
+                    (
+                        _mm256_loadu_si256(values.as_ptr().add(index).cast::<__m256i>()),
+                        _mm256_loadu_si256(weights.as_ptr().add(index).cast::<__m256i>()),
+                    )
+                };
+                let clipped = _mm256_min_epi16(_mm256_max_epi16(value, zero), qa);
+                let products = _mm256_mullo_epi16(clipped, weight);
+                lanes = _mm256_add_epi32(lanes, _mm256_madd_epi16(products, clipped));
+                index += LANES;
+            }
+            let mut sums = [0_i32; 8];
+            // SAFETY : `sums` tient exactement un registre de 256 bits.
+            unsafe { _mm256_storeu_si256(sums.as_mut_ptr().cast::<__m256i>(), lanes) };
+            let mut chunk: i32 = sums.iter().sum();
+            for (&value, &weight) in values[index..end].iter().zip(&weights[index..end]) {
+                let clipped = value.clamp(0, QA_I16);
+                chunk += i32::from(clipped.wrapping_mul(weight)) * i32::from(clipped);
+                #[cfg(test)]
+                TAIL.with(|count| count.set(count.get() + 1));
+            }
+            total += i64::from(chunk);
+            start = end;
+        }
+        total
+    }
 }
 
 /// Un réseau quantifié, tel que bullet l'écrit.
@@ -731,12 +841,13 @@ impl Network {
     }
 }
 
-/// Le réseau que le binaire embarque : N6r4, le n° 18 —
-/// `(768 × 4 → 256) × 2 → 1`, quatre seaux de roi en miroir, huit seaux de sortie, 100 superlots sur le volume du n° 18 — 79 jobs (2,33 G positions, 1,563 G gardées par le filtre), étiquetés par le moteur qui joue N5l (`c4697e2`) —,
-/// depuis zéro. Entraîné dans la nuit du 16 au 17 oct. 2026. Sa courbe de
-/// perte et la sortie complète de l'entraînement sont à côté de lui, dans
+/// Le réseau que le binaire embarque : N7p4, le n° 20 étape A — la recette
+/// de N6r4 au seul nombre de passes près : `(768 × 4 → 256) × 2 → 1`, quatre
+/// seaux de roi en miroir, huit seaux de sortie, 400 superlots au lieu de 100
+/// sur les 79 jobs du n° 18, depuis zéro. Entraîné le 20 oct. 2026. Sa courbe
+/// de perte et la sortie complète de l'entraînement sont à côté de lui, dans
 /// `reseaux/`.
-const EMBEDDED: &[u8] = include_bytes!("../../reseaux/n6r4-768x4hm-256-s8-100.bin");
+const EMBEDDED: &[u8] = include_bytes!("../../reseaux/n7p4-768x4hm-256-s8-400.bin");
 
 /// Le réseau embarqué, lu une seule fois et partagé.
 ///
@@ -1070,6 +1181,84 @@ mod tests {
             .collect();
         let expected = (256 - 44) * i64::from(QA * QA) * i64::from(bound);
         assert_eq!(dot(&values[..300], &weights), expected);
+    }
+
+    #[test]
+    #[cfg(target_arch = "x86_64")]
+    fn le_produit_avx2_est_le_produit_scalaire() {
+        // Au bit près, sur toutes les longueurs qui mêlent registres pleins,
+        // reste scalaire et tranches : vide, moins d'un registre, un registre
+        // et un terme, une tranche pleine, une tranche et un reste de 44, et
+        // quatre tranches dont la dernière partielle ; les entrées dans toute
+        // la plage d'un `i16` — négatives, nulles, au-delà de `QA` —, les
+        // poids aux bornes admises. Sans AVX2, rien à confronter.
+        if !std::arch::is_x86_feature_detected!("avx2") {
+            eprintln!("pas d'AVX2 sur ce processeur : confrontation sautée");
+            return;
+        }
+        let bound = i16::try_from(MAX_OUTPUT_WEIGHT).unwrap();
+        let mut rng = Rng(0x5eed_a5a2);
+        let mut checked = 0;
+        for len in [0, 1, 15, 16, 17, 255, 256, 257, 300, 1_000] {
+            for round in 0..20 {
+                let values: Vec<i16> = (0..len)
+                    .map(|_| match round % 3 {
+                        0 => rng.spread(i16::MAX),
+                        1 => rng.spread(2 * QA_I16),
+                        _ => i16::MAX,
+                    })
+                    .collect();
+                let weights: Vec<i16> = (0..len)
+                    .map(|_| {
+                        if round % 3 == 2 {
+                            bound
+                        } else {
+                            rng.spread(bound)
+                        }
+                    })
+                    .collect();
+                assert_eq!(
+                    avx2::dot(&values, &weights),
+                    Some(dot_scalar(&values, &weights)),
+                    "longueur {len}, tour {round}"
+                );
+                checked += 1;
+            }
+        }
+        // Deux tranches de longueurs différentes : la plus courte décide,
+        // comme pour le calcul scalaire.
+        let values = vec![QA_I16; 40];
+        let weights = vec![bound; 33];
+        assert_eq!(
+            avx2::dot(&values, &weights),
+            Some(dot_scalar(&values, &weights))
+        );
+        assert_eq!(checked, 200);
+    }
+
+    #[test]
+    #[cfg(target_arch = "x86_64")]
+    fn le_produit_scalaire_passe_par_avx2_quand_il_est_la() {
+        // Le chemin AVX2 et le scalaire rendent les mêmes entiers : seul le
+        // compte des passages dit lequel a servi.
+        avx2::DOTS.with(|count| count.set(0));
+        avx2::TAIL.with(|count| count.set(0));
+        let values = vec![100_i16; HIDDEN];
+        let weights = vec![-3_i16; HIDDEN];
+        assert_eq!(dot(&values, &weights), dot_scalar(&values, &weights));
+        let available = std::arch::is_x86_feature_detected!("avx2");
+        assert_eq!(
+            avx2::DOTS.with(std::cell::Cell::get),
+            usize::from(available)
+        );
+        // Chaque registre plein passe par AVX2 : une couche entière ne laisse
+        // rien au reste, 300 termes en laissent 12 — 256, puis 2 × 16 + 12.
+        assert_eq!(avx2::TAIL.with(std::cell::Cell::get), 0);
+        if available {
+            let long = vec![1_i16; 300];
+            assert_eq!(avx2::dot(&long, &long), Some(300));
+            assert_eq!(avx2::TAIL.with(std::cell::Cell::get), 12);
+        }
     }
 
     #[test]
@@ -1608,7 +1797,7 @@ mod tests {
         // La confrontation de l'entraînement du réseau embarqué, rejouée à
         // chaque build : les dix-huit positions, ce qu'en disait le moteur et ce
         // qu'en disait bullet (`trainer.eval(fen) × 400`) au bout de
-        // l'entraînement — relevés dans `reseaux/n6r4-768x4hm-256-s8-100.sortie.txt`.
+        // l'entraînement — relevés dans `reseaux/n7p4-768x4hm-256-s8-400.sortie.txt`.
         // Le seul test qui confronte l'inférence à l'entraîneur sur un VRAI
         // réseau ; ceux d'au-dessus tiennent des réseaux aléatoires.
         //
@@ -1621,57 +1810,57 @@ mod tests {
             (
                 "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
                 68,
-                70,
+                67,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-                -224,
-                -195,
+                -245,
+                -252,
             ),
-            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", -34, -33),
+            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 94, 99),
             (
                 "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-                358,
-                368,
+                514,
+                527,
             ),
             (
                 "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-                -164,
-                -172,
+                -333,
+                -328,
             ),
             (
                 "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
-                33,
-                31,
+                20,
+                28,
             ),
             (
                 "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
-                -30,
-                -28,
+                -42,
+                -42,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1",
-                277,
-                272,
+                327,
+                340,
             ),
             (
                 "r2q1rk1/pp2bppp/2n1bn2/3p4/3P4/2NBBN2/PP3PPP/R2Q1RK1 b - - 0 1",
                 13,
-                13,
+                9,
             ),
-            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -2255, -2247),
-            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 420, 415),
-            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -4888, -4884),
-            ("2kr3r/ppp2ppp/2n5/8/8/2N5/PPP2PPP/2KR3R w - - 0 12", 78, 77),
+            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -2469, -2479),
+            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 486, 476),
+            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -4251, -4245),
+            ("2kr3r/ppp2ppp/2n5/8/8/2N5/PPP2PPP/2KR3R w - - 0 12", 66, 70),
             (
                 "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w - - 0 7",
-                95,
-                95,
+                97,
+                102,
             ),
-            ("8/8/4k3/3p4/3P4/4K3/8/8 w - - 0 1", 12, 12),
-            ("4k3/8/8/2K5/8/8/8/R7 w - - 0 1", 1048, 1036),
-            ("8/8/3k4/8/3K4/8/8/8 w - - 0 1", -14, -14),
-            ("1k6/8/8/8/8/8/8/K7 b - - 0 1", 0, 5),
+            ("8/8/4k3/3p4/3P4/4K3/8/8 w - - 0 1", 27, 26),
+            ("4k3/8/8/2K5/8/8/8/R7 w - - 0 1", 1105, 1110),
+            ("8/8/3k4/8/3K4/8/8/8 w - - 0 1", -41, -40),
+            ("1k6/8/8/8/8/8/8/K7 b - - 0 1", -12, -13),
         ];
         let network = embedded().unwrap();
         let mut gaps = Vec::new();

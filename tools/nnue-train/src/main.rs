@@ -24,7 +24,14 @@
 //!    : N2L et N4L finissaient à la perte de L0 (`tools/README.md`, n° 20) ;
 //!    `--pas` réduit le pas de départ, pour un vrai réglage fin. `--wdl` règle
 //!    le poids du résultat de la partie dans la cible, 0,75 depuis le premier
-//!    réseau sans avoir jamais été mesuré.
+//!    réseau sans avoir jamais été mesuré. Les réglages de la séance C — les
+//!    défauts de l'exemple, jamais mesurés ici (`tools/README.md`, « Les
+//!    réglages ouverts ») — : `--pas-final` le pas final en fraction du pas
+//!    de départ (0,3⁵), `--wdl-final` un poids du résultat qui varie en ligne
+//!    droite jusqu'à cette valeur, `--perte` l'exposant de l'écart (2, 2.5 ou
+//!    3), `--lot` les positions d'un lot — un superlot garde les siennes —,
+//!    `--ply-min` le premier demi-coup gardé de nos données (16). Sans eux,
+//!    la recette de tous nos réseaux au bit près.
 //! 3. **Confronter** le réseau quantifié, rechargé par le chargeur du moteur,
 //!    à ce que l'entraîneur lui-même en dit, position par position. C'est la
 //!    seule vérification de bout en bout que les entrées du moteur sont
@@ -34,7 +41,9 @@
 //! ```text
 //! cargo run --release --features cuda -- [--attendu P:N] [--superlots 40]
 //!     [--sortie checkpoints] [--memoire 1024] [--fils 4] [--depuis DOSSIER]
-//!     [--pas 0.001] [--wdl 0.75] [--melange PART] DOSSIER_OU_FICHIER...
+//!     [--pas 0.001] [--wdl 0.75] [--melange PART] [--pas-final 0.00243]
+//!     [--wdl-final W] [--perte 2] [--lot 16384] [--ply-min 16]
+//!     DOSSIER_OU_FICHIER...
 //! ```
 //!
 //! Un dossier donne tous ses fichiers `.vf` et `.binpack`, triés par nom.
@@ -54,7 +63,7 @@ use bullet_lib::game::formats::bulletformat::ChessBoard;
 use bullet_lib::game::inputs::{Chess768, ChessBucketsMirrored, SparseInputType};
 use bullet_lib::game::outputs::MaterialCount;
 use bullet_lib::nn::optimiser::{AdamW, AdamWParams};
-use bullet_lib::nn::{InitSettings, Shape};
+use bullet_lib::nn::{InitSettings, ModelNode, Shape};
 use bullet_lib::trainer::save::SavedFormat;
 use bullet_lib::trainer::schedule::{TrainingSchedule, TrainingSteps, lr, wdl};
 use bullet_lib::trainer::settings::LocalSettings;
@@ -291,6 +300,69 @@ const INITIAL_LR: f32 = 0.001;
 /// Le poids du résultat de la partie dans la cible, le reste allant à
 /// `sigmoid(score / échelle)` : celui de l'exemple, jamais mesuré ici.
 const WDL: f32 = 0.75;
+/// Le pas final de la décroissance, en fraction du pas de départ : 0,3⁵,
+/// celui de l'exemple, jamais mesuré ici. Calculé comme l'exemple le calcule
+/// plutôt qu'écrit en décimal : `0.002_43` n'est pas le même `f32`, et la
+/// recette par défaut doit rester celle de tous nos réseaux au bit près.
+fn default_final_lr_ratio() -> f32 {
+    0.3f32.powi(5)
+}
+/// Les positions d'un lot, celles de l'exemple. Un superlot en compte toujours
+/// `BATCH_SIZE × BATCHES_PER_SUPERBATCH`, quel que soit `--lot` : ainsi un
+/// nombre de superlots reste un nombre de passes, et les recettes se
+/// comparent.
+const BATCH_SIZE: usize = 16_384;
+const BATCHES_PER_SUPERBATCH: usize = 6104;
+
+/// L'exposant de la perte, `|σ(sortie) − cible|^p` : 2, l'écart au carré de
+/// l'exemple, jamais mesuré ici. bullet prend une fonction sans capture, d'où
+/// une fonction par exposant plutôt qu'un nombre libre.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum LossPower {
+    Two,
+    TwoAndHalf,
+    Three,
+}
+
+impl LossPower {
+    fn parse(text: &str) -> Option<Self> {
+        match text {
+            "2" => Some(Self::Two),
+            "2.5" => Some(Self::TwoAndHalf),
+            "3" => Some(Self::Three),
+            _ => None,
+        }
+    }
+
+    fn value(self) -> f32 {
+        match self {
+            Self::Two => 2.0,
+            Self::TwoAndHalf => 2.5,
+            Self::Three => 3.0,
+        }
+    }
+
+    fn function(self) -> for<'a> fn(ModelNode<'a>, ModelNode<'a>) -> ModelNode<'a> {
+        match self {
+            Self::Two => squared_loss,
+            Self::TwoAndHalf => power_loss_2_5,
+            Self::Three => power_loss_3,
+        }
+    }
+}
+
+/// La perte de tous nos réseaux, le graphe de l'exemple à l'identique.
+fn squared_loss<'a>(output: ModelNode<'a>, target: ModelNode<'a>) -> ModelNode<'a> {
+    output.sigmoid().squared_error(target)
+}
+
+fn power_loss_2_5<'a>(output: ModelNode<'a>, target: ModelNode<'a>) -> ModelNode<'a> {
+    output.sigmoid().power_error(target, 2.5)
+}
+
+fn power_loss_3<'a>(output: ModelNode<'a>, target: ModelNode<'a>) -> ModelNode<'a> {
+    output.sigmoid().power_error(target, 3.0)
+}
 
 /// Les réglages lus sur la ligne de commande.
 struct Options {
@@ -301,7 +373,15 @@ struct Options {
     threads: usize,
     resume: Option<PathBuf>,
     initial_lr: f32,
+    /// `--pas-final` : le pas final, en fraction du pas de départ.
+    final_lr_ratio: f32,
     wdl: f32,
+    /// `--wdl-final` : le poids du résultat au dernier superlot, s'il varie.
+    wdl_end: Option<f32>,
+    loss: LossPower,
+    batch_size: usize,
+    /// `--ply-min` : le premier demi-coup gardé, nos données seulement.
+    min_ply: u32,
     /// `--melange` : la part de Leela, si les deux formats se mêlent.
     leela_share: Option<f64>,
     files: Vec<PathBuf>,
@@ -317,7 +397,12 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
         threads: 4,
         resume: None,
         initial_lr: INITIAL_LR,
+        final_lr_ratio: default_final_lr_ratio(),
         wdl: WDL,
+        wdl_end: None,
+        loss: LossPower::Two,
+        batch_size: BATCH_SIZE,
+        min_ply: Filter::default().min_ply,
         leela_share: None,
         files: Vec::new(),
         format: Format::Viri,
@@ -381,6 +466,51 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
                 }
                 options.wdl = wdl;
             }
+            "--pas-final" => {
+                let ratio: f32 = value("--pas-final")?
+                    .parse()
+                    .map_err(|_| "--pas-final attend un nombre")?;
+                if !(ratio > 0.0 && ratio <= 1.0) {
+                    return Err(format!("--pas-final {ratio} : hors de ]0 ; 1]"));
+                }
+                options.final_lr_ratio = ratio;
+            }
+            "--wdl-final" => {
+                let wdl: f32 = value("--wdl-final")?
+                    .parse()
+                    .map_err(|_| "--wdl-final attend un nombre")?;
+                if !(0.0..=1.0).contains(&wdl) {
+                    return Err(format!("--wdl-final {wdl} : hors de [0 ; 1]"));
+                }
+                options.wdl_end = Some(wdl);
+            }
+            "--perte" => {
+                let text = value("--perte")?;
+                options.loss = LossPower::parse(&text)
+                    .ok_or_else(|| format!("--perte {text} : 2, 2.5 ou 3"))?;
+            }
+            "--lot" => {
+                let size: usize = value("--lot")?
+                    .parse()
+                    .map_err(|_| "--lot attend un entier")?;
+                // Un superlot garde son nombre de positions : le lot doit le
+                // diviser, et rester dans ce qu'une carte tient.
+                let positions = BATCH_SIZE * BATCHES_PER_SUPERBATCH;
+                if !(1_024..=131_072).contains(&size) || !positions.is_multiple_of(size) {
+                    return Err(format!(
+                        "--lot {size} : un diviseur de {positions} entre 1 024 et 131 072"
+                    ));
+                }
+                options.batch_size = size;
+            }
+            "--ply-min" => {
+                options.min_ply = value("--ply-min")?
+                    .parse()
+                    .map_err(|_| "--ply-min attend un entier")?;
+                if options.min_ply > 60 {
+                    return Err(format!("--ply-min {} : au-delà de 60", options.min_ply));
+                }
+            }
             "--melange" => {
                 let share: f64 = value("--melange")?
                     .parse()
@@ -399,6 +529,11 @@ fn parse_options(args: &[String]) -> Result<Options, String> {
         return Err(
             "--attendu compte nos parties .vf ; un binpack n'a pas de compte attendu".into(),
         );
+    }
+    // Le filtre des binpacks est une fonction sans capture, à seize
+    // demi-coups : l'option ne s'appliquerait qu'à une part des données.
+    if options.format != Format::Viri && options.min_ply != Filter::default().min_ply {
+        return Err("--ply-min ne règle que nos données .vf, seules".into());
     }
     Ok(options)
 }
@@ -677,25 +812,42 @@ fn reread_binpacks(files: &[&Path]) -> Result<(), String> {
 }
 
 /// La recette de l'entraînement, hors du GPU pour qu'un test la lise : la
-/// décroissance en cosinus de `--pas` à `--pas × 0,3⁵`, et le poids `--wdl`
-/// du résultat dans la cible.
-fn schedule(options: &Options) -> TrainingSchedule<lr::CosineDecayLR, wdl::ConstantWDL> {
+/// décroissance en cosinus de `--pas` à `--pas × --pas-final` (0,3⁵ par
+/// défaut), le poids `--wdl` du résultat dans la cible — linéaire jusqu'à
+/// `--wdl-final` s'il est donné —, et `--lot` positions par lot.
+///
+/// Le poids passe toujours par `LinearWDL` : sans `--wdl-final`, ses deux
+/// bouts sont égaux, sa pente vaut zéro et chaque superlot reçoit `--wdl` au
+/// bit près — la recette de tous nos réseaux, que `ConstantWDL` portait.
+fn schedule(options: &Options) -> TrainingSchedule<lr::CosineDecayLR, wdl::LinearWDL> {
     TrainingSchedule {
         net_id: net_id(),
         eval_scale: options.format.eval_scale(),
         steps: TrainingSteps {
-            batch_size: 16_384,
-            batches_per_superbatch: 6104,
+            batch_size: options.batch_size,
+            batches_per_superbatch: BATCH_SIZE * BATCHES_PER_SUPERBATCH / options.batch_size,
             start_superbatch: 1,
             end_superbatch: options.superbatches,
         },
-        wdl_scheduler: wdl::ConstantWDL { value: options.wdl },
+        wdl_scheduler: wdl::LinearWDL {
+            start: options.wdl,
+            end: options.wdl_end.unwrap_or(options.wdl),
+        },
         lr_scheduler: lr::CosineDecayLR {
             initial_lr: options.initial_lr,
-            final_lr: options.initial_lr * 0.3f32.powi(5),
+            final_lr: options.initial_lr * options.final_lr_ratio,
             final_superbatch: options.superbatches,
         },
         save_rate: 10,
+    }
+}
+
+/// Le filtre de nos données : celui de `viriformat` par défaut, au premier
+/// demi-coup gardé près.
+fn viri_filter(options: &Options) -> Filter {
+    Filter {
+        min_ply: options.min_ply,
+        ..Filter::default()
     }
 }
 
@@ -744,7 +896,7 @@ where
                 .transpose(),
             SavedFormat::id("l1b").round().quantise::<i16>(qab),
         ])
-        .loss_fn(|output, target| output.sigmoid().squared_error(target))
+        .loss_fn(options.loss.function())
         .build(|builder, stm_inputs, ntm_inputs, output_buckets| {
             let mut l0 = builder.new_affine("l0", 768 * buckets, HIDDEN);
             if buckets > 1 {
@@ -787,11 +939,15 @@ where
     let schedule = schedule(options);
     // Imprimés pour que la sortie gardée de chaque entraînement dise sa recette.
     println!(
-        "  {} superlots, pas {} → {:e}, wdl {}",
+        "  {} superlots, pas {} → {:e}, wdl {} → {}, perte ^{}, lot {}, ply ≥ {}",
         options.superbatches,
         schedule.lr_scheduler.initial_lr,
         schedule.lr_scheduler.final_lr,
-        schedule.wdl_scheduler.value
+        schedule.wdl_scheduler.start,
+        schedule.wdl_scheduler.end,
+        options.loss.value(),
+        schedule.steps.batch_size,
+        options.min_ply
     );
     let settings = LocalSettings {
         threads: options.threads,
@@ -810,7 +966,7 @@ where
                 &paths,
                 options.buffer_mb,
                 options.threads,
-                ViriFilter::Builtin(Filter::default()),
+                ViriFilter::Builtin(viri_filter(options)),
             );
             trainer.run(&schedule, &settings, &loader);
         }
@@ -838,7 +994,7 @@ where
                     &viri,
                     options.buffer_mb / 2,
                     options.threads,
-                    ViriFilter::Builtin(Filter::default()),
+                    ViriFilter::Builtin(viri_filter(options)),
                 ),
                 leela: SfBinpackLoader::new_concat_multiple(
                     &binpacks,
@@ -889,6 +1045,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bullet_lib::trainer::schedule::wdl::WdlScheduler;
     use sfbinpack::CompressedTrainingDataEntryWriter;
     use sfbinpack::chess::color::Color;
     use sfbinpack::chess::coords::Square;
@@ -1106,11 +1263,11 @@ mod tests {
         let recette = schedule(&regle);
         assert_eq!(recette.lr_scheduler.initial_lr, 0.0001);
         assert_eq!(recette.lr_scheduler.final_lr, 0.0001 * 0.3f32.powi(5));
-        assert_eq!(recette.wdl_scheduler.value, 0.3);
+        assert_eq!(recette.wdl_scheduler.blend(0, 1, 40), 0.3);
         assert_eq!(recette.eval_scale, LEELA_SCALE);
         let recette = schedule(&defaut);
         assert_eq!(recette.lr_scheduler.initial_lr, 0.001);
-        assert_eq!(recette.wdl_scheduler.value, 0.75);
+        assert_eq!(recette.wdl_scheduler.blend(0, 1, 40), 0.75);
         assert_eq!(recette.eval_scale, SCALE as f32);
         // Les bornes elles-mêmes passent.
         assert!(parse_options(&args(&["--wdl", "0", "x.vf"])).is_ok());
@@ -1133,6 +1290,166 @@ mod tests {
                 "{refus:?} devait se refuser"
             );
         }
+    }
+
+    /// Les options de la séance C (n° 20, « Les réglages ouverts ») : sans
+    /// elles, la recette de tous nos réseaux AU BIT PRÈS — c'est ce qui permet
+    /// de comparer un réseau neuf à ceux d'avant ; avec elles, ce que
+    /// l'entraînement reçoit vraiment.
+    #[test]
+    fn sans_option_la_recette_de_tous_nos_reseaux() {
+        let args = |list: &[&str]| list.iter().map(|arg| (*arg).to_owned()).collect::<Vec<_>>();
+        let defaut = parse_options(&args(&["x.vf"])).unwrap();
+        let recette = schedule(&defaut);
+        // Le pas final, calculé comme l'écrivait la recette d'avant.
+        assert_eq!(
+            recette.lr_scheduler.final_lr.to_bits(),
+            (0.001f32 * 0.3f32.powi(5)).to_bits()
+        );
+        assert_eq!(
+            (
+                recette.steps.batch_size,
+                recette.steps.batches_per_superbatch
+            ),
+            (16_384, 6104)
+        );
+        // Le poids du résultat, constant au bit près sur tout l'entraînement.
+        for superlot in 1..=40 {
+            assert_eq!(
+                recette.wdl_scheduler.blend(0, superlot, 40).to_bits(),
+                0.75f32.to_bits(),
+                "superlot {superlot}"
+            );
+        }
+        assert_eq!(defaut.loss, LossPower::Two);
+        assert_eq!(
+            LossPower::Two.function() as usize,
+            squared_loss as for<'a> fn(ModelNode<'a>, ModelNode<'a>) -> ModelNode<'a> as usize
+        );
+        let filtre = viri_filter(&defaut);
+        let defaut_viri = Filter::default();
+        assert_eq!(filtre.min_ply, 16);
+        assert_eq!(
+            (
+                filtre.min_pieces,
+                filtre.max_eval,
+                filtre.filter_tactical,
+                filtre.filter_check
+            ),
+            (
+                defaut_viri.min_pieces,
+                defaut_viri.max_eval,
+                defaut_viri.filter_tactical,
+                defaut_viri.filter_check
+            )
+        );
+    }
+
+    #[test]
+    fn les_options_de_la_seance_c_se_reglent_et_se_bornent() {
+        let args = |list: &[&str]| list.iter().map(|arg| (*arg).to_owned()).collect::<Vec<_>>();
+        let regle = parse_options(&args(&[
+            "--superlots",
+            "100",
+            "--pas-final",
+            "0.1",
+            "--wdl",
+            "0.2",
+            "--wdl-final",
+            "0.6",
+            "--perte",
+            "2.5",
+            "--lot",
+            "32768",
+            "--ply-min",
+            "8",
+            "x.vf",
+        ]))
+        .unwrap();
+        let recette = schedule(&regle);
+        assert_eq!(recette.lr_scheduler.final_lr, 0.001 * 0.1);
+        // Le poids part de --wdl et finit à --wdl-final, en ligne droite.
+        assert_eq!(recette.wdl_scheduler.blend(0, 1, 100), 0.2);
+        assert!((recette.wdl_scheduler.blend(0, 100, 100) - 0.6).abs() < 1e-6);
+        let milieu = recette.wdl_scheduler.blend(0, 50, 100);
+        assert!(milieu > 0.39 && milieu < 0.40, "{milieu}");
+        // Un lot deux fois plus gros, deux fois moins de lots : un superlot
+        // garde son nombre de positions, donc un nombre de passes.
+        assert_eq!(
+            (
+                recette.steps.batch_size,
+                recette.steps.batches_per_superbatch
+            ),
+            (32_768, 3052)
+        );
+        assert_eq!(regle.loss, LossPower::TwoAndHalf);
+        assert_eq!(viri_filter(&regle).min_ply, 8);
+        // Chaque exposant a sa fonction, et le nombre que la sortie imprime.
+        let fonctions = [LossPower::Two, LossPower::TwoAndHalf, LossPower::Three]
+            .map(|power| power.function() as usize);
+        assert!(fonctions[0] != fonctions[1] && fonctions[1] != fonctions[2]);
+        assert!(fonctions[0] != fonctions[2]);
+        assert_eq!(
+            [LossPower::Two, LossPower::TwoAndHalf, LossPower::Three].map(LossPower::value),
+            [2.0, 2.5, 3.0]
+        );
+        // Les bornes elles-mêmes passent.
+        for accepte in [
+            ["--pas-final", "1"],
+            ["--wdl-final", "0"],
+            ["--wdl-final", "1"],
+            ["--perte", "2"],
+            ["--perte", "3"],
+            ["--lot", "2048"],
+            ["--lot", "131072"],
+            ["--ply-min", "0"],
+            ["--ply-min", "60"],
+        ] {
+            let mut list = accepte.to_vec();
+            list.push("x.vf");
+            assert!(
+                parse_options(&args(&list)).is_ok(),
+                "{accepte:?} devait passer"
+            );
+        }
+        for refus in [
+            ["--pas-final", "0"],
+            ["--pas-final", "1.01"],
+            ["--pas-final", "NaN"],
+            ["--wdl-final", "-0.01"],
+            ["--wdl-final", "1.01"],
+            ["--wdl-final", "NaN"],
+            ["--perte", "2.2"],
+            ["--perte", "deux"],
+            ["--lot", "1000"],
+            ["--lot", "512"],
+            ["--lot", "262144"],
+            ["--lot", "20000"],
+            ["--ply-min", "61"],
+            ["--ply-min", "-1"],
+        ] {
+            let mut list = refus.to_vec();
+            list.push("x.vf");
+            assert!(
+                parse_options(&args(&list)).is_err(),
+                "{refus:?} devait se refuser"
+            );
+        }
+        // Le premier demi-coup gardé ne règle que nos données : sur un
+        // binpack ou un mélange, il se refuse plutôt que de s'appliquer à moitié.
+        assert!(parse_options(&args(&["--ply-min", "8", "x.binpack"])).is_err());
+        assert!(
+            parse_options(&args(&[
+                "--ply-min",
+                "8",
+                "--melange",
+                "0.3",
+                "x.vf",
+                "y.binpack"
+            ]))
+            .is_err()
+        );
+        assert!(parse_options(&args(&["--ply-min", "16", "x.binpack"])).is_ok());
     }
 
     /// Des résultats tirés, en proportions exactes, d'une sigmoïde d'échelle

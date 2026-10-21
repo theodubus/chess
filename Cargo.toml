@@ -10,7 +10,10 @@ repository = "https://github.com/theodubus/chess"
 authors    = ["theodubus"]
 
 [workspace.lints.rust]
-unsafe_code = "forbid"
+# `deny` et non `forbid` : un seul module peut l'autoriser, le produit
+# scalaire AVX2 de `engine/src/nnue.rs` (Théo, 20 oct. 2026, `CLAUDE.md`,
+# Style). Partout ailleurs, `unsafe` reste refusé.
+unsafe_code = "deny"
 missing_docs = "warn"
 
 [workspace.lints.clippy]
