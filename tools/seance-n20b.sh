@@ -22,7 +22,8 @@
 # Et un troisième, écrit le 21 oct. au soir, après le verdict de N8nw50 contre
 # N8tw50 (+5,18 ± 3,32 : les données de N5l diluent à superlots fixés) :
 #   n8n800 — N8nw50s800, les neuves seules à 800 superlots, le candidat
-#           suivant contre N8tw50s800, qui joue.
+#           suivant contre N8tw50s800, qui joue. Fondu dans la séance C
+#           (Théo, 21 oct.) ; le format reste pour le lancer seul.
 # Relancé après une interruption, il reprend au réseau qui manque et saute
 # ce qui est déjà poussé ; le téléchargement reprend au job qui manque.
 set -uo pipefail
