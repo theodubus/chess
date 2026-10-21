@@ -994,7 +994,7 @@ dernière relève est faite.
 | **N° 20, séance B — la perte tenue à l'écart de N8tw50** | **39523442441** | l'outil à `64a66df` ; N7p4w50, N8tw50, N7p4, sur 38531414161 et 39050360980 (tenus à l'écart, étiquetés par N5l puis par N6r4) puis 38531424497 et 39050368395 (appris) | `nnue-validation.yml` | **RELEVÉE à 2 h 52** — lancée à 2 h 47, finie à 2 h 50 | **dans les deux attendus** : −0,000028 ± 0,000019 sur le jeu ancien, **−0,000589 ± 0,000027** sur le neuf ; il retient moins que N7p4w50 (section « La séance B », paragraphe N8tw50) — *Attendu, écrit avant* : sur le premier jeu, à ± 0,0002 de N7p4w50 ; sur le second, sous N7p4w50 |
 | **N° 20, séance B — la perte tenue à l'écart de N7p4w50** | **39508350034** (39508197862 mort au checkout, le SHA passé court) | l'outil à `49b0ec5` ; N7p4, N7p4w50, N6r4, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **RELEVÉE à 0 h 32** — relancée à 0 h 28, finie à 0 h 30 | **+0,000042 ± 0,000022 contre N7p4 — dans l'attendu** ; tenu − appris +0,000310 contre +0,000416 : il retient un quart de moins (section « La séance B ») — *Attendu, écrit avant* : indiscernable de N7p4, ± 0,0001 |
 | **N° 20 (e) — la sonde de débit à 10 000 nœuds** | **39490138743** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, **10 000 nœuds**, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 22 h 38** — lancée le 20 oct. à 22 h 13, ses attendus poussés avant (`9ff72a0`) ; finie à 22 h 34, EPYC 7763 | **581 positions par seconde (× 0,491), 19,46 % d'écartées, 39,97 % de nulles, 133,0 positions par partie — les quatre dans l'attendu, les nulles au bord** ; ~9,3 M gardées par job au mélange de runners, ~84 jobs appris pour 780 M (section « (e) — le budget de l'étiqueteur ») — *Attendus, écrits avant* : × 0,45 à × 0,56 ; 17 à 23 % ; 34 à 40 % ; 120 à 140 |
-| **N° 20 (e) — la vague 2**, 10 000 nœuds | 39535163549, 39535169844, 39535176816, 39535183711, 39535190198, 39535196745, 39535204229, 39535211952, 39535219017, 39535226038, 39535233006, 39535239336, 39535245704, 39535251890, 39535257823, 39535263726 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **EN VOL** — lancée le 21 oct. à 4 h 49, ses attendus poussés avant (`b21057b`) ; fin vers 10 h 25 | — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 2) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 262 à 322 M gardées |
+| **N° 20 (e) — la vague 2**, 10 000 nœuds | 39535163549, 39535169844, 39535176816, 39535183711, 39535190198, 39535196745, 39535204229, 39535211952, 39535219017, 39535226038, 39535233006, 39535239336, 39535245704, 39535251890, 39535257823, 39535263726 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 10 h 39** — lancée à 4 h 49, ses attendus poussés avant (`b21057b`) ; seize succès finis entre 10 h 20 et 10 h 21 | **237,8 M positions, 165,9 M gardées, tous appris ; 19,45 % d'écartées, 38,50 % de nulles, EPYC 7763 à 584 – 590 : les six chiffres dans l'attendu** ; cumul appris 308,4 M, ~47 jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 2) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 2) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 262 à 322 M gardées |
 | **N° 20 (e) — la vague 1**, 10 000 nœuds | **39493777327** (tenu à l'écart), 39493787774, 39493798320, 39493809476, 39493820297, 39493831080, 39493841672, 39493852340, 39493863591, 39493874159, 39493884870, 39493894271, 39493902078, 39493916776, 39493928679, 39493940533 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 4 h 48** — lancée le 20 oct. à 22 h 39, ses attendus poussés avant (`fbd0196`) ; seize succès finis entre 4 h 09 et 4 h 10 | **215,2 M positions, 150,2 M gardées (142,5 M aux quinze appris), 19,42 % d'écartées, EPYC 7763 à 570 – 598 : dans l'attendu ; nulles 38,58 %, 0,42 point SOUS l'attendu** — la fourchette était plus étroite que la sonde (± 1,33 à 95 %) : faute de méthode, nommée ; ~67 jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 1) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 1) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,5 à 20,5 %, nulles 39,0 à 41,0 % ; 565 à 600 positions par seconde sur un EPYC 7763 |
 | **N° 20, étape A — N7p2 contre N6r4** | **39424657675, 39424661145, 39424664674, 39424667800** | `8603bd3` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 46 et 19 h 51 | **+12,79, +11,05, +19,50 et +15,65 ; +14,74 ± 3,52 en commun, homogènes (p = 0,339)** ; zéro perte au temps. Gain démontré ; N7p4 le recoupe, le match direct tranche pour N7p4 (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **+3 à +12, ~+6** — dépassé ; critère du n° 17 contre N6r4 |
 | **N° 20, étape A — N7p4 contre N6r4** | **39424671016, 39424674757, 39424677788, 39424680763** | `ec97f35` → `0eca96a`, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 20 oct. à 20 h 00** — lancés à 14 h 45 ; finis ENTIERS entre 19 h 47 et 19 h 54 | **+15,40, +21,12, +15,89 et +15,15 ; +16,89 ± 3,55 en commun, homogènes (p = 0,652)** ; zéro perte au temps. **GAIN DÉMONTRÉ, LE MEILLEUR AU POINT** — l'étape A désigne N7p4, `SL=400` ; N6r4w50 le recoupe : match direct (section « Étape A — VERDICT »). — *Attendu, écrit avant* (section « N° 20 », étape A) : **la décision, avec N7p2 contre N6r4** ; critère du n° 17 contre N6r4 |
@@ -10528,6 +10528,43 @@ de runners : **175 à 260 M positions, 120 à 180 M gardées** ; **écartées
 s'écartaient de leur moyenne que de quelques dixièmes ; **565 à 605
 positions par seconde sur un EPYC 7763** ; **le cumul appris, 262 à
 322 M gardées**.
+
+**La vague 2, RELEVÉE le 21 oct. à 10 h 39 — les six chiffres dans leur
+attendu.** Seize succès, finis entre 10 h 20 et 10 h 21, chaque résumé
+nommant `cd6ed79` et `noeuds_par_coup=10000` ; `tools/n20e-jobs.tsv`, la
+vague 2 :
+
+| | vague 2 | vague 1 | attendu, écrit avant |
+|---|---|---|---|
+| positions | **237,8 M** | 215,2 M | 175 à 260 M — dedans |
+| gardées par le filtre | **165,9 M**, tous appris | 150,2 M | 120 à 180 M — dedans |
+| parties écartées, sur les gardées | **19,45 %** (349 325 sur 1 795 949) | 19,42 % | 18,9 à 20,0 % — dedans |
+| nulles, sur les gardées | **38,50 %** | 38,58 % | 38,0 à 39,2 % — dedans |
+| positions par seconde, EPYC 7763 | **584 à 590**, cinq jobs | 570 à 598 | 565 à 605 — dedans |
+| cumul appris | **308,4 M** | 142,5 M | 262 à 322 M — dedans |
+
+- **Deux vagues, le même taux à un dixième près** : écartées 19,42 puis
+  19,45 %, nulles 38,58 puis 38,50 % ; 132,4 positions par partie, 69,8 %
+  gardées par le filtre. À nœuds fixés, le parc de runners ne change que
+  le volume ;
+- **le volume monte de 10 %** par le parc seul : quatre EPYC 9V45 (973 à
+  1 060 positions par seconde) au lieu de deux ; **10,4 M gardées par
+  job**, 9,5 à la vague 1 ;
+- **un second processeur à deux régimes** : le Xeon Platinum 8573C rend
+  579, quand la vague 1 en montrait un à 685 — × 1,18 sous le même nom ;
+  l'EPYC 9V74 garde les siens, 616 sur un runner, 756 à 778 sur cinq.
+  <span>Inférence, confiance faible</span>, la même qu'à la vague 1 : des
+  hôtes différents sous un même nom ;
+- **le compte** : 308,4 M gardées aux 31 jobs appris, 9,95 M par job en
+  moyenne ; 780 M en demandent encore **471,6 M, ~47 jobs** — les vagues 3
+  et 4 pleines, la cinquième dimensionnée au reste plus 10 %.
+
+**La vague 3 — écrite avant de la lancer.** Seize jobs, tous appris, la
+même recette (`cd6ed79`, 10 000 nœuds, 330 minutes). *Attendus* — les deux
+vagues, au parc de runners près : **175 à 260 M positions, 120 à 180 M
+gardées** ; **écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 %** ; **565 à 605
+positions par seconde sur un EPYC 7763** ; **le cumul appris, 428 à
+488 M gardées**.
 
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
