@@ -989,7 +989,7 @@ dernière relève est faite.
 | **N° 20, séance B — N8tw50s800 contre N8tw50**, le doublement de passes | **39552647058, 39552653524, 39552659966, 39552666616** | `c7b4249` (N8tw50s800) → `2115850` (N8tw50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 7 h 59, les attendus poussés avant (`d2b8796`) ; fin attendue vers 13 h 00–13 h 20 | — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +12, ~+7 (section « La séance B », paragraphe N8tw50s800) |
 | **N° 20, séance B — N8tw50 contre N7p4**, le match direct contre le réseau qui joue | **39540594928, 39540601262, 39540607357, 39540613220** | `2115850` (N8tw50) → `7d84860` (N7p4 recommité), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 5 h 48, les attendus poussés avant (`ad56d4b`) ; fin attendue vers 10 h 50–11 h 10 | — *Critère, écrit avant* : **N8tw50 embarque si la borne basse est au-dessus de zéro** ; *attendu* +3 à +16, ~+10 (section « La séance B », « N8tw50 contre N7p4, le match direct ») |
 | **N° 20, séance B — N8tw50 contre N7p4w50** | **39523413909, 39523421083, 39523427998, 39523435015** | `2115850` (N8tw50) → `e37468b` (N7p4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 04** — lancés le 21 oct. à 2 h 47, les attendus poussés avant (`64a66df`) ; finis ENTIERS entre 7 h 50 et 7 h 56, 6,5 s par partie | **+5,46, +10,30, +3,97 et +9,81 ; +7,38 ± 3,40 en commun sur 11 200 parties, homogènes (p = 0,567)** ; zéro perte au temps. **Gain démontré** : N8tw50 devient la référence de la séance B ; l'embarquement se décide contre N7p4, en vol (section « La séance B », « N8tw50 contre N7p4w50 — VERDICT ») — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +12, ~+7 — dedans, au centre |
-| **N° 20, séance B — la perte tenue à l'écart de l'écran du pas** | **39561706463** | l'outil à `4206fa1` ; N6r4w50, N6r4w50pas0005, N6r4w50pas002, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **EN COURS** — lancée le 21 oct. à 9 h 24 | — *Attendu, écrit avant* : à ± 0,0003 de N6r4w50 chacun, le sens inconnu (section « La séance B », « L'écran du pas ») |
+| **N° 20, séance B — la perte tenue à l'écart de l'écran du pas** | **39561706463** | l'outil à `4206fa1` ; N6r4w50, N6r4w50pas0005, N6r4w50pas002, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **RELEVÉE le 21 oct. à 11 h 05** — lancée à 9 h 24, finie à 9 h 25 | **pas 0,0005 +0,000036 ± 0,000018, pas 0,002 +0,000051 ± 0,000018 contre N6r4w50 (0,038535) : dans l'attendu**, les deux un peu derrière ; sur un job appris, +0,000054 et +0,000047. La sonde de B8 relancée à 10 h 45 (la première morte avec le conteneur) : **2,59 et 2,51** ; nœuds par seconde **× 1,000 et × 0,992** — dans l'attendu (« Les mesures hors match de l'écran du pas ») | — *Attendu, écrit avant* : à ± 0,0003 de N6r4w50 chacun, le sens inconnu (section « La séance B », « L'écran du pas ») |
 | **N° 20, séance B — la perte tenue à l'écart de N8tw50s800** | **39552673143** | l'outil à `d2b8796` ; N8tw50, N8tw50s800, N7p4, sur 38531414161 et 39050360980 (tenus à l'écart) puis 38531424497 et 39050368395 (appris) | `nnue-validation.yml` | **RELEVÉE à 8 h 41** — lancée à 7 h 59, finie à 8 h 03 | **−0,000034 ± 0,000017 (ancien), −0,000006 ± 0,000017 (neuf) contre N8tw50 — dans l'attendu ; il ne retient PAS davantage** (tenu − appris +0,000213 et +0,000172), contre l'attendu (section « La séance B », « Les mesures hors match de N8tw50s800 ») — *Attendu, écrit avant* : à ± 0,0003 de N8tw50 sur les deux jeux, plus basse au point ; il retient davantage |
 | **N° 20, séance B — la perte tenue à l'écart de N8tw50** | **39523442441** | l'outil à `64a66df` ; N7p4w50, N8tw50, N7p4, sur 38531414161 et 39050360980 (tenus à l'écart, étiquetés par N5l puis par N6r4) puis 38531424497 et 39050368395 (appris) | `nnue-validation.yml` | **RELEVÉE à 2 h 52** — lancée à 2 h 47, finie à 2 h 50 | **dans les deux attendus** : −0,000028 ± 0,000019 sur le jeu ancien, **−0,000589 ± 0,000027** sur le neuf ; il retient moins que N7p4w50 (section « La séance B », paragraphe N8tw50) — *Attendu, écrit avant* : sur le premier jeu, à ± 0,0002 de N7p4w50 ; sur le second, sous N7p4w50 |
 | **N° 20, séance B — la perte tenue à l'écart de N7p4w50** | **39508350034** (39508197862 mort au checkout, le SHA passé court) | l'outil à `49b0ec5` ; N7p4, N7p4w50, N6r4, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **RELEVÉE à 0 h 32** — relancée à 0 h 28, finie à 0 h 30 | **+0,000042 ± 0,000022 contre N7p4 — dans l'attendu** ; tenu − appris +0,000310 contre +0,000416 : il retient un quart de moins (section « La séance B ») — *Attendu, écrit avant* : indiscernable de N7p4, ± 0,0001 |
@@ -10107,6 +10107,29 @@ faible</span> :
   pente au point. Aucun des deux n'est candidat à embarquer : 100
   superlots sur 1,56 G, loin de N7p4.
 
+**Les mesures hors match de l'écran du pas, RELEVÉES le 21 oct. à 11 h 05 —
+les trois dans leur attendu, sur les deux pas.** La sonde de B8, lancée à
+9 h 23, est morte avec le conteneur à 9 h 25 — les binaires construits,
+aucune partie jouée ; relancée à 10 h 45 sur les mêmes binaires, la
+vitesse ensuite, jamais en même temps :
+
+| | N6r4w50pas0005 | N6r4w50pas002 | attendu, écrit avant |
+|---|---|---|---|
+| sonde de B8 — delta, aspiration | × 2,8, × 2,40 | × 3,5, × 1,80 | |
+| sonde de B8 — le facteur | **2,59** | **2,51** | 2,0 à 3,0 — dedans |
+| nœuds par seconde contre N6r4w50 recommité | **× 1,000**, 5 / 10, p = 1 | **× 0,992**, 6 / 10, p = 0,75 | × 0,97 à × 1,04 — dedans |
+| perte tenue à l'écart (38531414161), contre N6r4w50 | **+0,000036 ± 0,000018** | **+0,000051 ± 0,000018** | ± 0,0003 — dedans |
+| la même, sur un job appris (38531424497) | +0,000054 ± 0,000017 | +0,000047 ± 0,000017 | |
+
+- **Les deux pas perdent un peu, de chaque côté** — N6r4w50 à 0,038535 ;
+  deux à trois écarts-types, le dixième de la fourchette. Le défaut, 0,001,
+  est au fond d'une cuvette plate en perte ; *ce que la perte ne dit pas
+  de la force* (« ce qui compte comme preuve »), les matchs le diront ;
+- **la sonde ne sépare pas les pas** : 2,59 et 2,51, N6r4w50 à 2,44 ; les
+  deux dans la plage du facteur de `main` (2,14 à 3,56), qui reste, et les
+  matchs sont valides tels que lancés ;
+- **la vitesse** : même architecture, rien de démontré.
+
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
 la séance A : les contrôles d'avant (dépôt, 79 jobs anciens et leurs 316
@@ -12709,7 +12732,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 |---|---|---|---|---|
 | **superlots (passes)** | 400 | 100 → 200 +14,74 ; 200 → 400 +9,31 | ~+7 au doublement suivant — <span>confiance faible</span> | N8tw50s800, séance B ; s'il paie, 1 600 |
 | **poids du résultat** (`wdl`) | 0,75 au réseau qui joue (N7p4) ; 0,5 aux réseaux de la séance B | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes | ~+3 au point entre 0,5 et 0,75 à 400 ; l'optimum, inconnu à la recette finale — <span>confiance faible</span> | à la recette finale (séance C) : 0,5 contre 0,75 remesuré, et 0,625 entre les deux |
-| **pas initial** (`--pas`) | 0,001, le défaut de bullet | jamais depuis zéro | inconnue | l'écran ×0,5 et ×2, séance B |
+| **pas initial** (`--pas`) | 0,001, le défaut de bullet | jamais depuis zéro en match ; en perte tenue à l'écart, ×0,5 et ×2 un peu derrière (+0,00004 chacun, 21 oct.) | inconnue — la perte plate autour du défaut | l'écran ×0,5 et ×2 en match, séance B, en vol (relève 14 h 50) |
 | **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; séance C |
 | **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 — `--perte`, écrite le 20 oct. ; séance C |
 | **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; séance C |
