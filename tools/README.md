@@ -13110,7 +13110,31 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 | **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | **derrière la séance B et la composition** — Théo, 20 oct. ; son attendu baisse : le réglage fin sur Leela régresse (−11,42), troisième verdict dans le même sens |
 | **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
 | **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | **protocole écrit le 20 oct. à 22 h 09**, son ordre tenu (B close, (d) relevé) : sonde de débit à 10 000 nœuds, puis vagues de seize jusqu'à 780 M ; E10, E5t, E5v en séance C ; 10 000 ne remplace 5 000 que s'il démontre à temps égal (« (e) — le budget de l'étiqueteur ») |
-| **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) ; **étiquetées par le réseau qui joue** — N8tw50s800, ~+40 sur N6r4 par la chaîne (+16,89, +17,91, +5,43) — : un meilleur étiqueteur paie (+12,76 à volume égal) et une étiquette plus faible dilue (−5,18) ; ce qu'apporte mêler N6r4 et le suivant, inconnu — <span>recommandation du 21 oct., pas une décision de Théo</span> |
+| **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) ; **étiquetées par le réseau qui joue** — N8tw50s800, ~+40 sur N6r4 par la chaîne (+16,89, +17,91, +5,43) — : un meilleur étiqueteur paie (+12,76 à volume égal) et une étiquette plus faible dilue (−5,18) ; ce qu'apporte mêler N6r4 et le suivant, inconnu — **validé par Théo le 21 oct. à 23 h 51** (« *Je valide ton approche* ») : lancé à 5 000 nœuds, le budget en place, dès la clôture de (e). **Le tour de boucle seul rend peu** : ~0,12 Elo de réseau par Elo d'étiqueteur, donc ~+5 au prochain tour (0,12 × ~40) et de moins en moins ensuite — <span>inférence, confiance faible</span> ; le gros vient du volume, des passes et de l'architecture, et le tour est gratuit puisqu'on génère de toute façon |
+
+**La séance C, découpée en trois — proposée et validée le 21 oct. à
+23 h 51** (Théo : « *Je valide ton approche* » ; N8nw50s800 y entre : « *oui on
+peut intégrer la séance à C* »). Le protocole complet, attendus et
+critères, s'écrit à la clôture de (e), la liste des données close.
+- **C1 — les données** (~13 à 16 h de carte) : E10, E5t, E5v — le budget
+  de l'étiqueteur — et N8nw50s800 ; elle fixe les données de la recette ;
+- **C2 — la recette** : le poids du résultat à 0,625 et 0,75 sur la
+  recette finale, le pas final, l'exposant de perte 2,5, le poids
+  variable, le premier demi-coup gardé, la taille de lot — jamais
+  mesurés ; à 100 superlots ils coûtent peu, mais l'optimum du poids a
+  bougé avec les passes : l'arbitrage s'écrit avec le protocole ;
+- **C3 — l'architecture** : 384 et 512 unités, dix seaux de roi au
+  volume d'aujourd'hui, chacun avec ses nœuds par seconde. **1 024
+  unités et plus de seaux de roi viennent après** — Théo, 21 oct. :
+  « *si c'est envisagé et plus pertinent plus tard c'est ok* » — : peu de
+  code (un `HIDDEN`, une table de 32 cases), mais ~×0,66 de nœuds par
+  seconde estimé à 1 024 (~−65 Elo à racheter par l'étalon), ~4 fois la
+  carte par superlot, et chaque seau de roi de plus voit d'autant moins de
+  positions — 4 et 10 ne se séparaient pas à 1,56 G. Chacun sur la marche
+  d'avant : 1 024 si 512 paie nettement, 16 seaux et plus si 10 paie.
+  <span>Inférence, confiance faible</span> : la part du réseau dans le
+  temps d'un nœud, ~17 % à 256, tirée de N5l contre N4 (× 0,90 pour une
+  largeur doublée).
 
 **Les réglages ouverts — rien n'y passe à « résolu »** (Théo, 20 oct. ;
 `CLAUDE.md`, « Par où commencer »). Une valeur validée est une borne
@@ -13131,8 +13155,8 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | `--wdl-final`, écrite le 20 oct. ; séance C |
 | **volume de données** | 4,63 G vus par N8tw50s800 (les 79 jobs du n° 18 et 84 de l'étape B) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais une moitié plus faible dilue : −5,18 ± 3,32** (N8tw50 contre N8nw50) — le volume paie à étiquette égale ou meilleure | ~+7 au doublement suivant — <span>confiance faible</span> | les 11 jobs restants de l'étape B, puis (e) et la génération suivante ; doubler encore demande ~9 G |
 | **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | (e) : vagues à 10 000 nœuds en cours, E10, E5t, E5v en séance C ; **les données de N5l laissées** : N8nw50 +5,18 ± 3,32 contre N8tw50 (21 oct.) — N8nw50s800 le prochain candidat, en séance C (Théo, 21 oct.) |
-| **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17) | inconnue au volume d'aujourd'hui | (c) 384 et 512, puis 1 024 |
-| **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | (c) |
+| **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17), malgré × 0,90 de nœuds par seconde | inconnue au volume d'aujourd'hui | C3 : 384 et 512 ; **1 024 si 512 paie nettement** — un seul `HIDDEN` dans le moteur, mais ~×0,66 de nœuds par seconde estimé et ~4 fois la carte par superlot (Théo, 21 oct. : plus tard) |
+| **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | C3 : 10 au volume d'aujourd'hui ; **16 et plus si 10 paie** — une table de 32 cases, chaque seau voyant d'autant moins de positions (Théo, 21 oct. : plus tard) |
 | **seaux de sortie** | 8, selon le matériel | 1 contre 8 seulement | inconnue | (c) |
 | **couches cachées** | aucune | jamais | inconnue | phase 3, après (c) |
 | **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |
