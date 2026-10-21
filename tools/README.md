@@ -9124,6 +9124,22 @@ L'entrer dans `main` doublerait `reseaux/` (14 Mo, ~18 Mo de plus) pour
 des réseaux qui ne jouent pas : la branche suffit. *Une branche à
 supprimer est une branche que `main` contient en entier* — ce que
 `tools/etat.sh` calcule, et que j'avais d'abord affirmé de tête, à tort.
+<br>**Révisé le 21 oct. 2026 à 13 h 14 — la rejouabilité seule ne retient plus
+une branche de points.** Théo demandait quand on n'aurait plus besoin de
+`reseau/n18-points` et `reseau/n20a-points`. Les trois branches de points
+— n17, n18, n20a : 17,8, 36,5 et 23,7 Mo, chacune un commit hors de
+`main`, que tout clone complet télécharge — ont leur mesure relevée et
+chiffrée ici (38549900154, 39003117564, 39423324257), et **aucune question
+ouverte ne les lit** : les seaux de roi sont tranchés par le volume
+(N6r4) ; l'axe des passes se mesure sur des réseaux entraînés jusqu'au
+bout, puisqu'un point pris au milieu d'un pas cosinus n'est pas un
+entraînement plus court (n° 18, puis l'étape A : le point à 200 de N7p4
++0,00185 contre −0,00008 pour N7p2). Rejouer l'une de ces mesures
+n'éclairerait aucune décision ; un doute sur l'outil se lèverait sur les
+réseaux d'aujourd'hui. **La règle désormais : une branche de points se
+garde tant qu'une mesure ouverte la lit ; relevée, elle est à supprimer**
+— par Théo, le jeton de session ne le peut pas. Les trois le sont depuis
+le 21 oct.
 
 **Ce que la séance mesurera — esquissé ici, détaillé à la relève des
 vagues, avant la séance**, comme au n° 13 :
