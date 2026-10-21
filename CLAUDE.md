@@ -83,15 +83,22 @@ une mesure, pas une préférence.
   un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
   la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
   plus qu'à dégrossir, jamais à trancher.
-- **L'évaluation qui joue est le réseau NNUE embarqué** — **N7p4 depuis le
-  21 oct. 2026** (n° 20, étape A) : la recette de N6r4 au seul nombre de
-  passes près, **400 superlots au lieu de 100** — **+16,89 ± 3,55** contre
-  N6r4, +9,31 ± 3,51 contre N7p2 (200), et devant N6r4w50 — le poids du
-  résultat à 0,5, l'autre axe gagnant, +11,79 contre N6r4 — de
-  **+6,67 ± 3,41** en match direct, 11 200 parties chacun à `8+0,08`. Il
-  joue au facteur des marges de `main`, 2,85, sa sonde mesurant 2,79 dans
-  la plage. Leur composition, 400 superlots au poids 0,5 (N7p4w50), est en
-  match contre lui. Avant lui, **N6r4 du
+- **L'évaluation qui joue est le réseau NNUE embarqué** — **N8tw50s800
+  depuis le 21 oct. 2026** (n° 20, séance B) : 800 superlots au poids du
+  résultat 0,5, sur **deux fois plus de données** — les 79 jobs du n° 18 et
+  84 jobs neufs étiquetés par N6r4, 4,63 G positions — : **+5,43 ± 3,34**
+  contre N8tw50, la même recette à 400 superlots, qui battait N7p4 de
+  **+17,91 ± 3,40** en match direct et N7p4w50, la même recette sur les
+  seules données du n° 18, de +7,38 ± 3,40 — *l'axe des données paie à
+  poids et passes fixés, et doubler les passes paie encore, de moins en
+  moins* —, 11 200 parties chacun à `8+0,08`. Il joue au facteur des
+  marges de `main`, 2,85, sa sonde mesurant 2,85 dans la plage. Avant
+  lui, **N7p4, du 21 oct. au matin** (n° 20, étape A) : la recette de N6r4
+  au seul nombre de passes près, **400 superlots au lieu de 100** —
+  **+16,89 ± 3,55** contre N6r4, +9,31 ± 3,51 contre N7p2 (200), et devant
+  N6r4w50 — le poids du résultat à 0,5, l'autre axe gagnant, +11,79 contre
+  N6r4 — de **+6,67 ± 3,41** en match direct ; sa sonde mesurait 2,79.
+  Leur composition (N7p4w50) ne s'en sépare pas : +3,35 ± 3,41. Avant lui, **N6r4 du
   17 oct. 2026** (n° 18) : 256 unités, huit seaux de sortie et **quatre
   seaux selon la case du roi**, appris sur **1,563 G positions** étiquetées
   par N5l — × 9,8 ses données — : **+98,74 ± 4,27** contre N5l sur
@@ -134,8 +141,8 @@ une mesure, pas une préférence.
   le mieux**. Licence ODbL : **le jour où un réseau entraîné sur elles est
   embarqué, `README.md` porte la mention d'attribution**, comme celui de
   Stockfish — **fait le 2 oct. 2026 avec N2L**, section « Remerciements ».
-  N7p4, qui joue depuis le 21 oct., n'a rien appris d'elles — ni N6r4, N5l
-  ni N4 avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
+  N8tw50s800, qui joue depuis le 21 oct., n'a rien appris d'elles — ni
+  N7p4, N6r4, N5l ni N4 avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
   en ont appris. **Rouvert le 19 oct. (Théo)** : le seul verdict contre
   elles portait sur un « réglage fin » qui ré-entraînait au pas plein un
   réseau de 128 unités, une passe sur un seul fichier. **Le vrai réglage
@@ -248,9 +255,9 @@ une mesure, pas une préférence.
   et l'élagage delta passent par `scaled_margin`, × 2,24 quand un réseau
   joue — **+50,50 ± 5,37 Elo** à `8+0,08` ; la futilité inverse, sondée,
   tient telle quelle. **× 2,85 depuis N5l** (14 oct.), sa sonde le
-  sortant de la plage où le facteur de N2 suffisait — N6r4 (17 oct.) et
-  N7p4 (21 oct.) y jouent aussi, leurs sondes (2,49 et 2,79) dans la
-  plage ; et le facteur qui
+  sortant de la plage où le facteur de N2 suffisait — N6r4 (17 oct.),
+  N7p4 et N8tw50s800 (21 oct.) y jouent aussi, leurs sondes (2,49, 2,79
+  et 2,85) dans la plage ; et le facteur qui
   ramène à la faite main les marges mesurées au réseau est désormais
   SÉPARÉ et figé à 224 (n° 17) — sans quoi changer de réseau aurait changé
   le banc. L'échelle ne se transpose donc pas en bloc : **elle se
@@ -1235,7 +1242,7 @@ pannes, et de refaire ce qu'ils font déjà.
 | `tools/balayage-vivant.sh` | étape du job `Moteur`, à chaque push : échoue si le workflow `Mutation` est endormi ou n'a pas tourné depuis quinze jours. **Le cliquet ne peut pas signaler sa propre absence**, et GitHub endort les workflows planifiés d'un dépôt public après soixante jours sans activité. Remplace une routine hors dépôt qui, le seul mardi où le cliquet a cassé, était passée **avant** le balayage — cron lancé avec 3 h 48 de retard. Éprouvé par `tools/balayage-vivant-test.sh`, dans `verify.sh` et juste avant lui dans la CI : deux défauts injectés, deux attrapés |
 | `.github/workflows/nnue-train.yml` | à chaque push qui touche `engine/src/nnue.rs`, la crate `tools/nnue-train` ou la toolchain : compile le programme d'entraînement NNUE, `--locked`, sans GPU — contre le runtime factice de bullet. Ce programme a son propre espace de travail et ne tourne que sur la machine d'entraînement : sans ce contrôle, un changement de l'API du moteur le casserait en silence, et on ne l'apprendrait que le jour de l'entraînement |
 | `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`), pas automatique : fait jouer un match entre deux commits sur un runner GitHub. C'est le seul moyen de mesurer **à cadence longue** — le conteneur de session est éphémère et un match de plusieurs heures n'y survit pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé — à cadence horloge, une machine plus rapide atteint une profondeur plus grande, donc un autre point de fonctionnement. **Remesuré le 21 sept. 2026 : 58 % d'écart entre deux runners sur le même binaire** (2 067 101 contre 3 268 241 n/s, profondeurs 11 et 12), contre les 25 % relevés le 16. **83 % le 25 sept.** (4 019 409 contre 2 199 922 n/s, profondeurs 13 et 12, les deux jobs de C27). Un verdict reste valide en interne — les deux moteurs partagent la machine — mais deux runs ne se comparent pas sans regarder leurs étalonnages. Voir `tools/README.md` |
-| `.github/workflows/force.yml` | **à la demande**, depuis le 29 sept. 2026 (C13) : le moteur d'un commit contre **Stockfish bridé** (`UCI_LimitStrength`, `UCI_Elo`), installé sur le runner — la seule mesure de force ABSOLUE du dépôt, tous les autres verdicts étant relatifs. **L'échelle se lit au source de Stockfish 16** : ancrée à l'Elo CCRL, étalonnée à 60+0,6, d'où la cadence par défaut ; **épinglé à `ubuntu-24.04` et à Stockfish 16 depuis le 12 oct.** — `ubuntu-latest` passe à Ubuntu 26 le 19 oct., et un autre Stockfish rendrait un chiffre sur une autre échelle : le workflow refuse plutôt que de mesurer ; bridé, il joue exprès des coups sous-optimaux, graine prise à l'horloge. Une estimation, jamais un classement ; au-delà de 90 % ou en deçà de 10 % de score, changer de niveau. **Premier chiffre le 29 sept. : le réseau ~2 850 ± 25, la faite main ~2 630 ± 40** ; **N2 le 30 sept. : ~2 940 ± 30**, +112 ± 42 sur le premier réseau contre le même adversaire ; **N2L le 2 oct. : ~2 950 ± 30**, +10 ± 42 sur N2 pour +67 à +87 contre le jumeau ; **le 7 oct. : ~3 000 ± 33**, +50 ± 44 sur N2L pour ~+96 contre le jumeau — le n° 9, C41, C43 et l'AVX2. **N4 le 13 oct. : ~3 040 ± 36**, +35 ± 49 sur la série du 7 oct. pour ~+52 contre le jumeau — la composition du n° 12 et N4. **N5l le 14 oct. : ~3 085 ± 38** (79,5 %), +47 ± 52 sur N4 pour +30 contre le jumeau ; **le niveau passe à 3100**, N5l mesuré aux deux pour le pont (Théo, 14 oct.) : **~3 069 ± 25 contre 3100** (45,5 %), d'accord à −16 ± 45 — les séries suivantes, à 3100. **N6r4 le 17 oct. : ~3 112 ± 21** (51,7 %), +43 ± 33 sur N5l pour +99 contre le jumeau, sur un runner plus lent (Xeon 8573C, 1,64 M n/s, contre 2,01 M). <s>deux tiers de gains de recherche, qu'il écrase comme le temps</s> **Ce qu'il fait d'un gain de recherche n'est pas mesuré** : 0,13 puis 0,52 au point, chacun à ± 0,45, compatibles avec le temps (~0,16) comme avec les réseaux (~0,6) ; 0,67 le 13 oct., réseau et recherche mêlés, à ± 0,9 — il ne départage rien. **Et il ÉCRASE les écarts, mesuré** : le réseau n'y vaut que +198 ± 50 sur la faite main, contre +330 contre notre jumeau, et six fois plus de temps ne lui rapporte que +40 ± 42 — ses fautes au hasard décident plus que notre profondeur. **Un changement se mesure contre notre jumeau, jamais contre lui.** Voir `tools/README.md`, section C13 |
+| `.github/workflows/force.yml` | **à la demande**, depuis le 29 sept. 2026 (C13) : le moteur d'un commit contre **Stockfish bridé** (`UCI_LimitStrength`, `UCI_Elo`), installé sur le runner — la seule mesure de force ABSOLUE du dépôt, tous les autres verdicts étant relatifs. **L'échelle se lit au source de Stockfish 16** : ancrée à l'Elo CCRL, étalonnée à 60+0,6, d'où la cadence par défaut ; **épinglé à `ubuntu-24.04` et à Stockfish 16 depuis le 12 oct.** — `ubuntu-latest` passe à Ubuntu 26 le 19 oct., et un autre Stockfish rendrait un chiffre sur une autre échelle : le workflow refuse plutôt que de mesurer ; bridé, il joue exprès des coups sous-optimaux, graine prise à l'horloge. Une estimation, jamais un classement ; au-delà de 90 % ou en deçà de 10 % de score, changer de niveau. **Premier chiffre le 29 sept. : le réseau ~2 850 ± 25, la faite main ~2 630 ± 40** ; **N2 le 30 sept. : ~2 940 ± 30**, +112 ± 42 sur le premier réseau contre le même adversaire ; **N2L le 2 oct. : ~2 950 ± 30**, +10 ± 42 sur N2 pour +67 à +87 contre le jumeau ; **le 7 oct. : ~3 000 ± 33**, +50 ± 44 sur N2L pour ~+96 contre le jumeau — le n° 9, C41, C43 et l'AVX2. **N4 le 13 oct. : ~3 040 ± 36**, +35 ± 49 sur la série du 7 oct. pour ~+52 contre le jumeau — la composition du n° 12 et N4. **N5l le 14 oct. : ~3 085 ± 38** (79,5 %), +47 ± 52 sur N4 pour +30 contre le jumeau ; **le niveau passe à 3100**, N5l mesuré aux deux pour le pont (Théo, 14 oct.) : **~3 069 ± 25 contre 3100** (45,5 %), d'accord à −16 ± 45 — les séries suivantes, à 3100. **N6r4 le 17 oct. : ~3 112 ± 21** (51,7 %), +43 ± 33 sur N5l pour +99 contre le jumeau, sur un runner plus lent (Xeon 8573C, 1,64 M n/s, contre 2,01 M). **N7p4 le 21 oct. : ~3 141 ± 20** (55,8 %), +29 ± 29 sur N6r4 pour ~+25 contre le jumeau. <s>deux tiers de gains de recherche, qu'il écrase comme le temps</s> **Ce qu'il fait d'un gain de recherche n'est pas mesuré** : 0,13 puis 0,52 au point, chacun à ± 0,45, compatibles avec le temps (~0,16) comme avec les réseaux (~0,6) ; 0,67 le 13 oct., réseau et recherche mêlés, à ± 0,9 — il ne départage rien. **Et il ÉCRASE les écarts, mesuré** : le réseau n'y vaut que +198 ± 50 sur la faite main, contre +330 contre notre jumeau, et six fois plus de temps ne lui rapporte que +40 ± 42 — ses fautes au hasard décident plus que notre profondeur. **Un changement se mesure contre notre jumeau, jamais contre lui.** Voir `tools/README.md`, section C13 |
 
 **Le cliquet de mutation.** `.github/mutation-baseline.txt` porte le nombre de
 survivants admis par fichier **et la raison écrite de chaque valeur non
