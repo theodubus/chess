@@ -984,6 +984,8 @@ dernière relève est faite.
 | **N° 20 — la séance B, sur la carte de Théo** | — | `tools/seance-n20b.sh tout w50`, depuis une copie, à `main` : N7p4w50, N8tw50, N8tw50s800, N6r4w50pas0005, N6r4w50pas002, N8nw50 | `tools/nnue-train`, les 79 jobs anciens, les 84 premiers neufs | **EN COURS chez Théo depuis le 20 oct. au soir** — l'essai réussi, la séance lancée avant 21 h 22 ; chaque réseau poussé sur `reseau/n20b` dès ses contrôles passés ; N7p4w50 attendu vers 23 h 45–0 h 15, la séance entière vers 11 h–12 h | — *Attendus et comparaisons, écrits avant* (section « La séance B ») |
 | **N° 20 — N6r4w50 contre N7p4**, le match direct entre les axes | **39471565620, 39471574281, 39471583801, 39471592587** | `0f5214b` (N6r4w50) → `ec97f35` (N7p4), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 1 h 22** — lancés à 20 h 04, le critère poussé avant (`6c753e2`) ; finis entiers entre 1 h 03 et 1 h 19, zéro perte au temps | **−9,43, −6,70, −1,74, −8,81 ; −6,67 ± 3,41 en commun, homogènes (p = 0,400)** — **N7p4 EMBARQUÉ**, démontré devant N6r4w50 (section « Étape A — VERDICT ») — *Critère, écrit avant* : N6r4w50 embarque si la borne basse est au-dessus de zéro ; sinon N7p4 ; *attendu* −11 à +2, ~−5 (section « Étape A — VERDICT ») |
 | **N° 20, séance B — N7p4w50 contre N7p4 recommité** | **39508171364, 39508177771, 39508184279, 39508191011** | `e37468b` (N7p4w50) → `7d84860` (N7p4 sur le code d'aujourd'hui), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 5 h 48** — lancés le 21 oct. à 0 h 27, les attendus poussés avant (`49b0ec5`) ; finis ENTIERS entre 5 h 32 et 5 h 36, 6,5 s par partie | **+1,24, +7,07, +7,69 et −2,61 ; +3,35 ± 3,41 en commun sur 11 200 parties, homogènes (p = 0,155)** ; zéro perte au temps. **Rien de démontré (borne basse −0,06) : N7p4 reste** ; le poids du résultat rapporte moins à 400 superlots qu'à 100, démontré (section « La séance B », « N7p4w50 contre N7p4 — VERDICT ») — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +15, ~+9 — dedans, au plancher |
+| **N° 20, séance B — l'écran du pas, N6r4w50pas0005 contre N6r4w50** | *à lancer* | `f7a061a` (pas 0,0005) → `93a3b86` (N6r4w50 recommité), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **À LANCER** — les attendus poussés avant | — *Critère, écrit avant* : un gain démontré fait de ce pas celui de la recette suivante ; *attendu* −10 à +10, sans sens (section « La séance B », « L'écran du pas ») |
+| **N° 20, séance B — l'écran du pas, N6r4w50pas002 contre N6r4w50** | *à lancer* | `811bfe5` (pas 0,002) → `93a3b86`, le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **À LANCER** — les attendus poussés avant | — *Critère, écrit avant* : un gain démontré fait de ce pas celui de la recette suivante ; *attendu* −10 à +10, sans sens (section « La séance B », « L'écran du pas ») |
 | **N° 20, séance B — N8tw50s800 contre N8tw50**, le doublement de passes | **39552647058, 39552653524, 39552659966, 39552666616** | `c7b4249` (N8tw50s800) → `2115850` (N8tw50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 7 h 59, les attendus poussés avant (`d2b8796`) ; fin attendue vers 13 h 00–13 h 20 | — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +12, ~+7 (section « La séance B », paragraphe N8tw50s800) |
 | **N° 20, séance B — N8tw50 contre N7p4**, le match direct contre le réseau qui joue | **39540594928, 39540601262, 39540607357, 39540613220** | `2115850` (N8tw50) → `7d84860` (N7p4 recommité), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 5 h 48, les attendus poussés avant (`ad56d4b`) ; fin attendue vers 10 h 50–11 h 10 | — *Critère, écrit avant* : **N8tw50 embarque si la borne basse est au-dessus de zéro** ; *attendu* +3 à +16, ~+10 (section « La séance B », « N8tw50 contre N7p4, le match direct ») |
 | **N° 20, séance B — N8tw50 contre N7p4w50** | **39523413909, 39523421083, 39523427998, 39523435015** | `2115850` (N8tw50) → `e37468b` (N7p4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 04** — lancés le 21 oct. à 2 h 47, les attendus poussés avant (`64a66df`) ; finis ENTIERS entre 7 h 50 et 7 h 56, 6,5 s par partie | **+5,46, +10,30, +3,97 et +9,81 ; +7,38 ± 3,40 en commun sur 11 200 parties, homogènes (p = 0,567)** ; zéro perte au temps. **Gain démontré** : N8tw50 devient la référence de la séance B ; l'embarquement se décide contre N7p4, en vol (section « La séance B », « N8tw50 contre N7p4w50 — VERDICT ») — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +12, ~+7 — dedans, au centre |
@@ -10070,6 +10072,38 @@ dans l'attendu, sauf la mémoire.**
   passes au lieu de 12,9, en dessous du régime où N7p4 (25,6 passes sur
   1,56 G) retenait +0,000416. <span>Inférence, confiance faible</span> :
   au volume de N8tw50, 800 superlots restent loin de la saturation.
+
+**L'écran du pas, poussé par la séance le 21 oct. à 8 h 18 et 8 h 56,
+intégré à 9 h 23 — conforme.** **N6r4w50pas0005** (pas initial 0,0005, la
+moitié du défaut) et **N6r4w50pas002** (0,002, le double) : la recette de
+N6r4w50 au seul pas près — 100 superlots, poids 0,5, les 79 jobs du
+n° 18, la même liste vérifiée —, relecture exacte (18 435 764 :
+2 328 546 367), confrontations **8 / 24** et **6 / 23** ; leurs réseaux sur
+la branche (`e6044a4`). **Leur référence, N6r4w50 recommité sur le code
+d'aujourd'hui, `93a3b86`** (révoqué par `e6f24e6`) : `0f5214b` précède le
+produit AVX2 ; la même doc et la même confrontation, vérifiées ligne à
+ligne. Candidats **`f7a061a`** (pas 0,0005, révoqué par `db3983e`) et
+**`811bfe5`** (pas 0,002, par `37d1096`), chacun au code de `93a3b86` au
+bit près — seul `nnue.rs` diffère. `verify.sh --rapide` vert sur les deux.
+Pertes d'entraînement au 100ᵉ superlot : 0,019614 et 0,019635.
+
+*Écrit le 21 oct. à 9 h 23, avant de lancer* — <span>inférence, confiance
+faible</span> :
+- **la sonde de B8 : 2,0 à 3,0 chacun** — N6r4w50 mesurait 2,44 ;
+- **les nœuds par seconde, × 0,97 à × 1,04 contre N6r4w50 recommité** —
+  même architecture ;
+- **la perte tenue à l'écart** (38531414161, N6r4w50 en référence) :
+  **à ± 0,0003 chacun, le sens inconnu** ;
+- **les matchs, chacun contre N6r4w50 recommité** (`f7a061a` → `93a3b86`,
+  `811bfe5` → `93a3b86`), quatre jobs de 2 800 parties à `8+0,08`, graine
+  « auto », AVX2 des deux côtés : **−10 à +10 chacun, sans sens attendu**,
+  écrit le 20 oct. au soir. *Critère, écrit avant* : **un gain démontré
+  (borne basse au-dessus de zéro) fait de ce pas celui de la recette
+  suivante** (séance C), et le pas suivant dans le même sens — 0,00025 ou
+  0,004 — entre au registre ; une régression démontrée d'un côté ne dit que
+  ce côté ; rien de démontré des deux : 0,001 reste, le registre note la
+  pente au point. Aucun des deux n'est candidat à embarquer : 100
+  superlots sur 1,56 G, loin de N7p4.
 
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
