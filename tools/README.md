@@ -653,6 +653,7 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-10-20 | **N6r4w50 — le poids du résultat à 0,5**, n° 20 (d), la recette de N6r4 au seul `wdl` près (`0f5214b` contre `0eca96a`, N6r4) | **+11,79 Elo ± 3,52** sur 11 200 parties à `8+0,08`, homogènes (p = 0,835), zéro perte au temps. **Gain démontré, le meilleur au point** ; N6r4w25 le recoupe — match direct |
 | 2026-10-20 | **N6r4w25 — le poids du résultat à 0,25**, n° 20 (d) (`85c88a6` contre `0eca96a`) | **+7,17 Elo ± 3,49**, homogènes (p = 0,864) — gain démontré |
 | 2026-10-20 | **N6r4w25 contre N6r4w50**, le match direct de (d) (`85c88a6` contre `0f5214b`) | **−2,95 Elo ± 3,35** sur 11 200 parties à `8+0,08`, homogènes (p = 0,864), zéro perte au temps — rien de démontré : **N6r4w50 représente (d)**, le second devait démontrer |
+| 2026-10-21 | **N8tw50s800 contre N8tw50 — 800 superlots au lieu de 400 sur 4,63 G**, séance B (`c7b4249` contre `2115850`, le même code) | **+5,43 Elo ± 3,34** sur 11 200 parties à `8+0,08`, homogènes (p = 0,245), zéro perte au temps — **gain démontré : N8tw50s800 EMBARQUÉ** à la place de N8tw50 ; le rendement du doublement décroît (+14,74, +9,31 à 1,56 G) |
 | 2026-10-21 | **N8tw50 contre N7p4 — le match direct contre le réseau qui joue**, séance B (`2115850` contre `7d84860`, le même code) | **+17,91 Elo ± 3,40** sur 11 200 parties à `8+0,08`, homogènes (p = 0,109), zéro perte au temps — **gain démontré : N8tw50 EMBARQUÉ** ; 400 superlots, poids 0,5, 4,63 G positions |
 | 2026-10-21 | **N8tw50 contre N7p4w50 — doubler les données à 400 superlots**, séance B (`2115850` contre `e37468b`, le même code) | **+7,38 Elo ± 3,40** sur 11 200 parties à `8+0,08`, homogènes (p = 0,567), zéro perte au temps — **gain démontré** ; la moitié neuve étiquetée par N6r4 |
 | 2026-10-21 | **N7p4w50 contre N7p4 — le poids 0,5 à 400 superlots**, séance B (`e37468b` contre `7d84860`, le même code) | **+3,35 Elo ± 3,41** sur 11 200 parties à `8+0,08`, homogènes (p = 0,155), zéro perte au temps — rien de démontré : **N7p4 reste** ; le poids rapportait +11,79 à 100 superlots, l'écart (8,4 ± 4,9) est démontré |
@@ -987,10 +988,10 @@ dernière relève est faite.
 | **N° 20, séance B — N7p4w50 contre N7p4 recommité** | **39508171364, 39508177771, 39508184279, 39508191011** | `e37468b` (N7p4w50) → `7d84860` (N7p4 sur le code d'aujourd'hui), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 5 h 48** — lancés le 21 oct. à 0 h 27, les attendus poussés avant (`49b0ec5`) ; finis ENTIERS entre 5 h 32 et 5 h 36, 6,5 s par partie | **+1,24, +7,07, +7,69 et −2,61 ; +3,35 ± 3,41 en commun sur 11 200 parties, homogènes (p = 0,155)** ; zéro perte au temps. **Rien de démontré (borne basse −0,06) : N7p4 reste** ; le poids du résultat rapporte moins à 400 superlots qu'à 100, démontré (section « La séance B », « N7p4w50 contre N7p4 — VERDICT ») — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +15, ~+9 — dedans, au plancher |
 | **N° 20, séance B — l'écran du pas, N6r4w50pas0005 contre N6r4w50** | **39561639865, 39561648457, 39561656404, 39561665150** | `f7a061a` (pas 0,0005) → `93a3b86` (N6r4w50 recommité), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 9 h 23, les attendus poussés avant (`4206fa1`) ; fin attendue vers 14 h 30–14 h 50 | — *Critère, écrit avant* : un gain démontré fait de ce pas celui de la recette suivante ; *attendu* −10 à +10, sans sens (section « La séance B », « L'écran du pas ») |
 | **N° 20, séance B — l'écran du pas, N6r4w50pas002 contre N6r4w50** | **39561673391, 39561681660, 39561689739, 39561698135** | `811bfe5` (pas 0,002) → `93a3b86`, le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 9 h 23, les attendus poussés avant (`4206fa1`) ; fin attendue vers 14 h 30–14 h 50 | — *Critère, écrit avant* : un gain démontré fait de ce pas celui de la recette suivante ; *attendu* −10 à +10, sans sens (section « La séance B », « L'écran du pas ») |
-| **N° 20, séance B — N8tw50s800 contre N8tw50**, le doublement de passes | **39552647058, 39552653524, 39552659966, 39552666616** | `c7b4249` (N8tw50s800) → `2115850` (N8tw50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 7 h 59, les attendus poussés avant (`d2b8796`) ; fin attendue vers 13 h 00–13 h 20 | — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +12, ~+7 (section « La séance B », paragraphe N8tw50s800) |
+| **N° 20, séance B — N8tw50s800 contre N8tw50**, le doublement de passes | **39552647058, 39552653524, 39552659966, 39552666616** | `c7b4249` (N8tw50s800) → `2115850` (N8tw50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 13 h 23** — lancés le 21 oct. à 7 h 59, les attendus poussés avant (`d2b8796`) ; finis ENTIERS entre 12 h 56 et 13 h 12, 6,5 s par partie | **+3,35, +11,79, +2,85 et +3,72 ; +5,43 ± 3,34 en commun sur 11 200 parties, homogènes (p = 0,245)** ; zéro perte au temps. **Gain démontré : N8tw50s800 EMBARQUÉ à la place de N8tw50** (`553e76e`) ; 1 600 superlots, le test suivant (section « La séance B », « N8tw50s800 contre N8tw50 — VERDICT ») — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +12, ~+7 (section « La séance B », paragraphe N8tw50s800) |
 | **N° 20, séance B — N8nw50 contre N7p4w50**, l'étiqueteur à volume égal | **39580170864, 39580178400, 39580185874, 39580193883** | `6a1b1d6` (N8nw50) → `e37468b` (N7p4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **EN COURS** — lancés le 21 oct. à 11 h 51, les attendus poussés avant (`71a9988`) ; fin attendue vers 17 h 00–17 h 15 | — *Critère, écrit avant* : un gain démontré dit que l'étiqueteur paie encore ; aucun embarquement n'en dépend ; *attendu* 0 à +10, ~+4 (section « La séance B », « N8nw50 ») |
 | **N° 20, séance B — la perte tenue à l'écart de N8nw50** | **39580201385** | l'outil à `71a9988` ; N7p4w50, N8tw50, N8nw50, sur 38531414161 et 39050360980 (tenus) puis 38531424497 et 39050368395 (appris) | `nnue-validation.yml` | **RELEVÉE le 21 oct. à 12 h 04** — finie à 11 h 55 ; la sonde et les nœuds par seconde dans le conteneur, finis à 12 h 03 | **Tenu par N6r4 −0,000747 ± 0,000031 : dedans ; tenu par N5l +0,000660 ± 0,000046 : 0,00006 au-dessus. Sonde 2,53, dedans ; n/s × 0,966, p = 0,34 : 0,004 sous la fourchette, rien de séparé** — chacun apprend son étiqueteur ; la perte ne départage pas deux étiqueteurs (« Les mesures hors match de N8nw50 ») | — *Attendus, écrits avant* : −0,0004 à −0,0012 sur le jeu de N6r4, 0 à +0,0006 sur celui de N5l ; sonde 2,3 à 3,3 ; n/s × 0,97 à × 1,04 |
-| **N8tw50 — le crible de mutation avant la fusion** | **39574588694** | `743c6ec` — N8tw50 embarqué (`e9b7dd4`) et sa documentation, tous les fichiers | `Mutation`, entrée `commit`, sur runner | **EN COURS** — lancé le 21 oct. à 11 h 08 ; `search.rs` en 125 à 274 minutes | — *Prédiction, écrite avant* : **163, chaque fichier à son plafond** — `nnue.rs` 2, `search.rs` 48, `eval.rs` 102 : seuls le chemin du réseau et les valeurs de la confrontation changent dans `engine/src/`, comme à l'embarquement de N7p4 (163, exact) |
+| **N8tw50 — le crible de mutation avant la fusion** | **39574588694** | `743c6ec` — N8tw50 embarqué (`e9b7dd4`) et sa documentation, tous les fichiers | `Mutation`, entrée `commit`, sur runner | **EN COURS** — lancé le 21 oct. à 11 h 08 ; `search.rs` en 125 à 274 minutes | — le 21 oct. à 13 h 23, N8tw50s800 a remplacé N8tw50 sur la branche (`553e76e`) : le CODE balayé est le même au bit près, seul le réseau embarqué diffère — le balayage après fusion le confirmera sur le réseau qui joue. *Prédiction, écrite avant* : **163, chaque fichier à son plafond** — `nnue.rs` 2, `search.rs` 48, `eval.rs` 102 : seuls le chemin du réseau et les valeurs de la confrontation changent dans `engine/src/`, comme à l'embarquement de N7p4 (163, exact) |
 | **N° 20, séance B — N8tw50 contre N7p4**, le match direct contre le réseau qui joue | **39540594928, 39540601262, 39540607357, 39540613220** | `2115850` (N8tw50) → `7d84860` (N7p4 recommité), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 11 h 07** — lancés le 21 oct. à 5 h 48, les attendus poussés avant (`ad56d4b`) ; finis ENTIERS entre 10 h 51 et 10 h 58, 6,5 s par partie | **+23,74, +19,88, +12,91 et +15,15 ; +17,91 ± 3,40 en commun sur 11 200 parties, homogènes (p = 0,109)** ; zéro perte au temps. **Gain démontré : N8tw50 EMBARQUÉ** (`e9b7dd4`) ; au-dessus de l'attendu de 1,9, la chaîne par N7p4w50 l'avait sous-estimé (section « La séance B », « N8tw50 contre N7p4 — VERDICT ») — *Critère, écrit avant* : **N8tw50 embarque si la borne basse est au-dessus de zéro** ; *attendu* +3 à +16, ~+10 (section « La séance B », « N8tw50 contre N7p4, le match direct ») |
 | **N° 20, séance B — N8tw50 contre N7p4w50** | **39523413909, 39523421083, 39523427998, 39523435015** | `2115850` (N8tw50) → `e37468b` (N7p4w50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ à 8 h 04** — lancés le 21 oct. à 2 h 47, les attendus poussés avant (`64a66df`) ; finis ENTIERS entre 7 h 50 et 7 h 56, 6,5 s par partie | **+5,46, +10,30, +3,97 et +9,81 ; +7,38 ± 3,40 en commun sur 11 200 parties, homogènes (p = 0,567)** ; zéro perte au temps. **Gain démontré** : N8tw50 devient la référence de la séance B ; l'embarquement se décide contre N7p4, en vol (section « La séance B », « N8tw50 contre N7p4w50 — VERDICT ») — *Critère, écrit avant* : gain démontré si la borne basse est au-dessus de zéro ; *attendu* +3 à +12, ~+7 — dedans, au centre |
 | **N° 20, séance B — la perte tenue à l'écart de l'écran du pas** | **39561706463** | l'outil à `4206fa1` ; N6r4w50, N6r4w50pas0005, N6r4w50pas002, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **RELEVÉE le 21 oct. à 11 h 05** — lancée à 9 h 24, finie à 9 h 25 | **pas 0,0005 +0,000036 ± 0,000018, pas 0,002 +0,000051 ± 0,000018 contre N6r4w50 (0,038535) : dans l'attendu**, les deux un peu derrière ; sur un job appris, +0,000054 et +0,000047. La sonde de B8 relancée à 10 h 45 (la première morte avec le conteneur) : **2,59 et 2,51** ; nœuds par seconde **× 1,000 et × 0,992** — dans l'attendu (« Les mesures hors match de l'écran du pas ») | — *Attendu, écrit avant* : à ± 0,0003 de N6r4w50 chacun, le sens inconnu (section « La séance B », « L'écran du pas ») |
@@ -10078,7 +10079,8 @@ illégal, aucun moteur perdu :
   la confrontation changent dans `engine/src/`) et la série C13 de N8tw50,
   son attendu écrit avant (section C13). **N8tw50s800 contre N8tw50**, en
   vol depuis 7 h 59, devient le match direct contre le réseau qui joue : un
-  gain démontré l'embarque à son tour.
+  gain démontré l'embarque à son tour — **ce qu'il a fait** (« N8tw50s800
+  contre N8tw50 — VERDICT »).
 
 **N8tw50s800, poussé par la séance le 21 oct. à 7 h 37, intégré à 7 h 58
 — conforme.** Les mêmes 163 jobs que N8tw50 (la liste identique, vérifiée),
@@ -10127,6 +10129,43 @@ dans l'attendu, sauf la mémoire.**
   passes au lieu de 12,9, en dessous du régime où N7p4 (25,6 passes sur
   1,56 G) retenait +0,000416. <span>Inférence, confiance faible</span> :
   au volume de N8tw50, 800 superlots restent loin de la saturation.
+
+**N8tw50s800 contre N8tw50 — VERDICT, le 21 oct. à 13 h 23 : +5,43 ± 3,34, gain
+démontré — N8tw50s800 EMBARQUÉ à la place de N8tw50.** Quatre jobs finis
+ENTIERS entre 12 h 56 et 13 h 12, 6,35 à 6,67 s par partie, zéro perte au
+temps, aucun coup illégal :
+
+| job | Elo | pentanomial |
+|---|---|---|
+| 39552647058 | +3,35 ± 6,52 | 31, 229, 846, 270, 24 |
+| 39552653524 | +11,79 ± 6,53 | 20, 222, 834, 291, 33 |
+| 39552659966 | +2,85 ± 6,78 | 31, 251, 815, 270, 33 |
+| 39552666616 | +3,72 ± 6,89 | 29, 260, 803, 268, 40 |
+| **en commun, 11 200 parties** | **+5,43 ± 3,34** | homogènes, p = 0,245 |
+
+- **Critère, écrit avant** : la borne basse, +2,09, est au-dessus de zéro
+  — **le gain est démontré**, et le critère disait la suite : N8tw50
+  ayant embarqué, **N8tw50s800 le remplace** ; **1 600 superlots devient
+  le test suivant** (le registre). Fait à `553e76e` : le `nnue.rs` du
+  candidat `c7b4249`, identique au code d'aujourd'hui hors le réseau, au
+  facteur de `main` (2,85), sa sonde à 2,85 ;
+- **dans l'attendu (+3 à +12, ~+7), sous son centre.** Doubler les passes
+  à 4,63 G rend +5,43 ; à 1,56 G, il rendait +14,74 (100 → 200) puis
+  +9,31 (200 → 400) : **le rendement décroît par doublement, et plus vite
+  qu'à volume moindre il ne le laissait prévoir** — à 25,9 passes, plus
+  près de la saturation que les 12,9 de N8tw50 ne le disaient, sans
+  l'atteindre. <span>Inférence, confiance faible</span> : 1 600 superlots
+  rendrait +2 à +5 ; le registre le classe à sa marge ;
+- **la retenue** (« Les mesures hors match de N8tw50s800 ») : il ne
+  retenait pas davantage par cœur, et il joue mieux — la perte tenue à
+  l'écart le disait un peu plus bas, au point ;
+- **ce qui ne change pas** : le crible lancé à 11 h 08 sur `743c6ec`
+  porte sur le CODE, que N8tw50s800 laisse au bit près — seul le réseau
+  embarqué diffère, et ce qui dépend du réseau dans les tests, la
+  confrontation recopiée, passe `verify.sh`. Le balayage après fusion,
+  sur `main` avec N8tw50s800, le confirme sur le réseau qui joue, à la
+  même prédiction (163). **La série C13 portera sur N8tw50s800**, son
+  attendu réécrit avant de la lancer (section C13).
 
 **L'écran du pas, poussé par la séance le 21 oct. à 8 h 18 et 8 h 56,
 intégré à 9 h 23 — conforme.** **N6r4w50pas0005** (pas initial 0,0005, la
@@ -11982,13 +12021,14 @@ aucun moteur perdu :
 - **un avertissement côté ShallowRed** : un « PV continues after
   fifty-move rule » ; 9 168 « Bestmove does not match… », ceux du bridage.
 
-**N8tw50 — écrit le 21 oct. à 11 h 07, avant de lancer la série**, qui part
-après la fusion de la PR de N8tw50, sur le moteur de `main`, contre
+**N8tw50s800 — écrit le 21 oct. à 13 h 23, avant de lancer la série** — il
+remplace l'attendu écrit pour N8tw50, qui n'a joué aucune série : la série
+part après la fusion de la PR #208, sur le moteur de `main`, contre
 Stockfish 16 bridé à 3100, 60+0,6, 300 parties, le binaire AVX2.
-*Attendu* — <span>inférence, confiance faible</span> : **~3 150, de 3 110
-à 3 190** — N7p4 3 141 ± 20 ; le jumeau mesure +17,91, et l'échelle en
-rend 0,44 à 1,2 au point (N6r4, N7p4), ~0,6 au centre : ~+10, sous le
-bruit d'une série (± 20).
+*Attendu* — <span>inférence, confiance faible</span> : **~3 155, de 3 115
+à 3 200** — N7p4 3 141 ± 20 ; le jumeau mesure +17,91 puis +5,43, ~+23 en
+chaîne, et l'échelle en rend 0,44 à 1,2 au point, ~0,6 au centre : ~+14,
+sous le bruit d'une série (± 20).
 
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
@@ -12829,7 +12869,7 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 | **A — plus de passes** | N7p2 et N7p4 : 200 et 400 superlots sur les 1,563 G anciennes ; N6r4 en avait fait 100 | **VERDICT le 20 oct. : N7p4 +16,89 ± 3,55, N7p2 +14,74 ± 3,52** contre N6r4, **N7p4 +9,31 ± 3,51 contre N7p2** — doubler paie encore ; `SL=400` pour la séance B ; **N7p4 EMBARQUÉ le 21 oct.** — N6r4w50 −6,67 ± 3,41 contre lui en match direct (« Étape A — VERDICT ») |
 | **(a) — le réglage fin sur Leela** | N6r4 affiné 20 superlots sur le binpack, au pas 10⁻⁴ et 2·10⁻⁵ | **FERMÉ le 20 oct.** : **−11,42 ± 3,73** au pas 10⁻⁴, régression démontrée ; −2,45 ± 3,55 au pas 2·10⁻⁵, rien — rien n'embarque (« (a) et (d) — VERDICT ») |
 | **(d) — le poids du résultat** | la recette de N6r4, `wdl` 0,5 et 0,25 au lieu de 0,75 | **VERDICT le 20 oct. : les deux paient** — **+11,79 ± 3,52** à 0,5, +7,17 ± 3,49 à 0,25 ; ils se recoupent : **le match direct relevé le 20 oct. à 23 h 13 — N6r4w25 −2,95 ± 3,35 contre N6r4w50**, rien de démontré : **N6r4w50 représente (d)**, puis **perd le match direct contre N7p4, −6,67 ± 3,41** — N7p4 embarque ; le poids entre à la composition, N7p4w50 en match contre N7p4 depuis le 21 oct. à 0 h 27 (« (a) et (d) — VERDICT », « Étape A — VERDICT ») |
-| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; **la séance ÉCRITE le 20 oct.** (téléchargement, listes, commandes ; N8n et N8t), lancée par Théo le 20 oct. au soir, à 400 superlots : N7p4w50 +3,35 ± 3,41 contre N7p4, rien ; **N8tw50 +7,38 ± 3,40 contre N7p4w50 et +17,91 ± 3,40 contre N7p4 — EMBARQUÉ le 21 oct.** ; N8tw50s800, l'écran du pas et N8nw50 suivent (« La séance B ») |
+| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; **la séance ÉCRITE le 20 oct.** (téléchargement, listes, commandes ; N8n et N8t), lancée par Théo le 20 oct. au soir, à 400 superlots : N7p4w50 +3,35 ± 3,41 contre N7p4, rien ; **N8tw50 +7,38 ± 3,40 contre N7p4w50 et +17,91 ± 3,40 contre N7p4 — EMBARQUÉ le 21 oct.**, puis **N8tw50s800 +5,43 ± 3,34 contre lui — EMBARQUÉ à sa place le même jour** ; l'écran du pas et N8nw50 en vol (« La séance B ») |
 | **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | **derrière la séance B et la composition** — Théo, 20 oct. ; son attendu baisse : le réglage fin sur Leela régresse (−11,42), troisième verdict dans le même sens |
 | **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
 | **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | **protocole écrit le 20 oct. à 22 h 09**, son ordre tenu (B close, (d) relevé) : sonde de débit à 10 000 nœuds, puis vagues de seize jusqu'à 780 M ; E10, E5t, E5v en séance C ; 10 000 ne remplace 5 000 que s'il démontre à temps égal (« (e) — le budget de l'étiqueteur ») |
@@ -12844,15 +12884,15 @@ résultat en était un, jamais mesuré, et valait +11,79.
 
 | réglage | aujourd'hui | ce qui l'a mesuré | marge estimée | prochain test |
 |---|---|---|---|---|
-| **superlots (passes)** | 400 | 100 → 200 +14,74 ; 200 → 400 +9,31 | ~+7 au doublement suivant — <span>confiance faible</span> | N8tw50s800, séance B ; s'il paie, 1 600 |
-| **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N8tw50) et aux réseaux de la séance B ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes | ~+3 au point entre 0,5 et 0,75 à 400 ; l'optimum, inconnu à la recette finale — <span>confiance faible</span> | à la recette finale (séance C) : 0,5 contre 0,75 remesuré, et 0,625 entre les deux |
+| **superlots (passes)** | 800 au réseau qui joue (N8tw50s800, 4,63 G, 25,9 passes) | à 1,56 G : 100 → 200 +14,74 ; 200 → 400 +9,31. **À 4,63 G : 400 → 800 +5,43 ± 3,34** (21 oct.) | +2 à +5 au doublement suivant — <span>confiance faible</span> : le rendement décroît | 1 600 superlots, ~10 h 30 de carte — une séance de Théo |
+| **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N8tw50s800) et aux réseaux de la séance B ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes | ~+3 au point entre 0,5 et 0,75 à 400 ; l'optimum, inconnu à la recette finale — <span>confiance faible</span> | à la recette finale (séance C) : 0,5 contre 0,75 remesuré, et 0,625 entre les deux |
 | **pas initial** (`--pas`) | 0,001, le défaut de bullet | jamais depuis zéro en match ; en perte tenue à l'écart, ×0,5 et ×2 un peu derrière (+0,00004 chacun, 21 oct.) | inconnue — la perte plate autour du défaut | l'écran ×0,5 et ×2 en match, séance B, en vol (relève 14 h 50) |
 | **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; séance C |
 | **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 — `--perte`, écrite le 20 oct. ; séance C |
 | **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; séance C |
 | **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; séance C |
 | **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | `--wdl-final`, écrite le 20 oct. ; séance C |
-| **volume de données** | 4,63 G vus par N8tw50 (les 79 jobs du n° 18 et 84 de l'étape B) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 embarqué à +17,91 ± 3,40 contre N7p4 | ~+7 au doublement suivant — <span>confiance faible</span> | les 11 jobs restants de l'étape B, puis (e) et la génération suivante ; doubler encore demande ~9 G |
+| **volume de données** | 4,63 G vus par N8tw50 (les 79 jobs du n° 18 et 84 de l'étape B) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué | ~+7 au doublement suivant — <span>confiance faible</span> | les 11 jobs restants de l'étape B, puis (e) et la génération suivante ; doubler encore demande ~9 G |
 | **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; le budget, jamais | inconnue | N8nw50 (séance B) ; (e) : la sonde à 10 000 nœuds lancée le 20 oct., E10, E5t, E5v en séance C |
 | **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17) | inconnue au volume d'aujourd'hui | (c) 384 et 512, puis 1 024 |
 | **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | (c) |

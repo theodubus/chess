@@ -83,14 +83,16 @@ une mesure, pas une préférence.
   un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
   la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
   plus qu'à dégrossir, jamais à trancher.
-- **L'évaluation qui joue est le réseau NNUE embarqué** — **N8tw50 depuis
-  le 21 oct. 2026** (n° 20, séance B) : 400 superlots au poids du résultat
-  0,5, sur **deux fois plus de données** — les 79 jobs du n° 18 et 84 jobs
-  neufs étiquetés par N6r4, 4,63 G positions — : **+17,91 ± 3,40** contre
-  N7p4 en match direct, et +7,38 ± 3,40 contre N7p4w50, la même recette
-  sur les seules données du n° 18 — *l'axe des données paie à poids et
-  passes fixés* —, 11 200 parties chacun à `8+0,08`. Il joue au facteur
-  des marges de `main`, 2,85, sa sonde mesurant 2,64 dans la plage. Avant
+- **L'évaluation qui joue est le réseau NNUE embarqué** — **N8tw50s800
+  depuis le 21 oct. 2026** (n° 20, séance B) : 800 superlots au poids du
+  résultat 0,5, sur **deux fois plus de données** — les 79 jobs du n° 18 et
+  84 jobs neufs étiquetés par N6r4, 4,63 G positions — : **+5,43 ± 3,34**
+  contre N8tw50, la même recette à 400 superlots, qui battait N7p4 de
+  **+17,91 ± 3,40** en match direct et N7p4w50, la même recette sur les
+  seules données du n° 18, de +7,38 ± 3,40 — *l'axe des données paie à
+  poids et passes fixés, et doubler les passes paie encore, de moins en
+  moins* —, 11 200 parties chacun à `8+0,08`. Il joue au facteur des
+  marges de `main`, 2,85, sa sonde mesurant 2,85 dans la plage. Avant
   lui, **N7p4, du 21 oct. au matin** (n° 20, étape A) : la recette de N6r4
   au seul nombre de passes près, **400 superlots au lieu de 100** —
   **+16,89 ± 3,55** contre N6r4, +9,31 ± 3,51 contre N7p2 (200), et devant
@@ -139,8 +141,8 @@ une mesure, pas une préférence.
   le mieux**. Licence ODbL : **le jour où un réseau entraîné sur elles est
   embarqué, `README.md` porte la mention d'attribution**, comme celui de
   Stockfish — **fait le 2 oct. 2026 avec N2L**, section « Remerciements ».
-  N8tw50, qui joue depuis le 21 oct., n'a rien appris d'elles — ni N7p4,
-  N6r4, N5l ni N4 avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
+  N8tw50s800, qui joue depuis le 21 oct., n'a rien appris d'elles — ni
+  N7p4, N6r4, N5l ni N4 avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
   en ont appris. **Rouvert le 19 oct. (Théo)** : le seul verdict contre
   elles portait sur un « réglage fin » qui ré-entraînait au pas plein un
   réseau de 128 unités, une passe sur un seul fichier. **Le vrai réglage
@@ -254,8 +256,8 @@ une mesure, pas une préférence.
   joue — **+50,50 ± 5,37 Elo** à `8+0,08` ; la futilité inverse, sondée,
   tient telle quelle. **× 2,85 depuis N5l** (14 oct.), sa sonde le
   sortant de la plage où le facteur de N2 suffisait — N6r4 (17 oct.),
-  N7p4 et N8tw50 (21 oct.) y jouent aussi, leurs sondes (2,49, 2,79 et
-  2,64) dans la plage ; et le facteur qui
+  N7p4 et N8tw50s800 (21 oct.) y jouent aussi, leurs sondes (2,49, 2,79
+  et 2,85) dans la plage ; et le facteur qui
   ramène à la faite main les marges mesurées au réseau est désormais
   SÉPARÉ et figé à 224 (n° 17) — sans quoi changer de réseau aurait changé
   le banc. L'échelle ne se transpose donc pas en bloc : **elle se
