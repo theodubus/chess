@@ -9,6 +9,7 @@
 #   bash tools/seance-n20b.sh essai        # contrôles, téléchargement, essai court
 #   bash tools/seance-n20b.sh              # tout, ~14 h 30 ; le résumé dans ~/seance-n20b/
 #   bash tools/seance-n20b.sh tout ecrit   # le format écrit le 20 oct. à 13 h 25
+#   bash tools/seance-n20b.sh tout n8n800  # N8nw50s800 seul, ~5 h 15
 #
 # Deux formats, l'arbitrage de Théo les départage (tools/README.md, section
 # « N° 20 », « La séance B ») :
@@ -18,6 +19,10 @@
 #           du pas (N6r4w50 aux pas 0,0005 et 0,002, 100 superlots), N8nw50
 #           (les neuves seules, l'étiqueteur — le dernier, qu'on peut couper) ;
 #   ecrit — au poids 0,75 : N8t, N8n ; N7p4, déjà entraîné, sert de troisième.
+# Et un troisième, écrit le 21 oct. au soir, après le verdict de N8nw50 contre
+# N8tw50 (+5,18 ± 3,32 : les données de N5l diluent à superlots fixés) :
+#   n8n800 — N8nw50s800, les neuves seules à 800 superlots, le candidat
+#           suivant contre N8tw50s800, qui joue.
 # Relancé après une interruption, il reprend au réseau qui manque et saute
 # ce qui est déjà poussé ; le téléchargement reprend au job qui manque.
 set -uo pipefail
@@ -37,12 +42,12 @@ ATT_NEUVES=18245052:2299253673
 ATT_TOUT=36680816:4627800040
 
 case "$MODE" in essai | tout) ;; *)
-  echo "usage : $0 [essai|tout] [w50|ecrit]" >&2
+  echo "usage : $0 [essai|tout] [w50|ecrit|n8n800]" >&2
   exit 2
   ;;
 esac
-case "$FORMAT" in w50 | ecrit) ;; *)
-  echo "usage : $0 [essai|tout] [w50|ecrit]" >&2
+case "$FORMAT" in w50 | ecrit | n8n800) ;; *)
+  echo "usage : $0 [essai|tout] [w50|ecrit|n8n800]" >&2
   exit 2
   ;;
 esac
@@ -317,6 +322,9 @@ if [ "$FORMAT" = w50 ]; then
   reseau_b n6r4w50pas002 100 0.5 0.002 --attendu "$ATT_ANCIENNES" "${ANCIENNES[@]}"
   dire "— N8nw50 : les neuves seules — le dernier, qu'on peut couper"
   reseau_b n8nw50 "$SL" 0.5 0.001 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
+elif [ "$FORMAT" = n8n800 ]; then
+  dire "— N8nw50s800 : les neuves seules, 800 superlots — le candidat contre N8tw50s800"
+  reseau_b n8nw50s800 800 0.5 0.001 --attendu "$ATT_NEUVES" "${NEUVES[@]}"
 else
   dire "— N8t : les anciennes et les neuves, 400 superlots, poids 0,75"
   reseau_b n8t "$SL" 0.75 0.001 --attendu "$ATT_TOUT" "${ANCIENNES[@]}" "${NEUVES[@]}"
