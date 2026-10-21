@@ -12030,6 +12030,12 @@ Stockfish 16 bridé à 3100, 60+0,6, 300 parties, le binaire AVX2.
 chaîne, et l'échelle en rend 0,44 à 1,2 au point, ~0,6 au centre : ~+14,
 sous le bruit d'une série (± 20).
 
+**La taille d'une série reste 300 parties** — Théo, 21 oct. à 13 h 31 : « *on
+change pas les parties ou le chiffre absolu, on laisse tel quel* ».
+Départager deux réseaux sur cette échelle demanderait ~2 400 parties par
+série, ~16 jobs de 5 h 30, pour ce qu'un match contre le jumeau tranche en
+quatre ; resserrer le seul chiffre absolu à ± 10, 1 200 parties.
+
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
 **Lancé par Théo le 30 sept.** (« *Ok go pour reco 8* »), sur la
@@ -12884,7 +12890,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 
 | réglage | aujourd'hui | ce qui l'a mesuré | marge estimée | prochain test |
 |---|---|---|---|---|
-| **superlots (passes)** | 800 au réseau qui joue (N8tw50s800, 4,63 G, 25,9 passes) | à 1,56 G : 100 → 200 +14,74 ; 200 → 400 +9,31. **À 4,63 G : 400 → 800 +5,43 ± 3,34** (21 oct.) | +2 à +5 au doublement suivant — <span>confiance faible</span> : le rendement décroît | 1 600 superlots, ~10 h 30 de carte — une séance de Théo |
+| **superlots (passes)** | 800 au réseau qui joue (N8tw50s800, 4,63 G, 25,9 passes) | à 1,56 G : 100 → 200 +14,74 ; 200 → 400 +9,31. **À 4,63 G : 400 → 800 +5,43 ± 3,34** (21 oct.) | +2 à +5 au doublement suivant — <span>confiance faible</span> : le rendement décroît, et moins à 4,63 G qu'à 1,56 G au même nombre de passes (+5,43 contre +9,31) | **en dernier, sur la recette finale** de la séance C (Théo, 21 oct.) : l'optimum des passes bouge avec le volume et la largeur, que la séance C change toutes deux — mesuré aujourd'hui, il serait périmé dès son réseau ; 1 600 superlots, ~10 h 30 de carte |
 | **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N8tw50s800) et aux réseaux de la séance B ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes | ~+3 au point entre 0,5 et 0,75 à 400 ; l'optimum, inconnu à la recette finale — <span>confiance faible</span> | à la recette finale (séance C) : 0,5 contre 0,75 remesuré, et 0,625 entre les deux |
 | **pas initial** (`--pas`) | 0,001, le défaut de bullet | jamais depuis zéro en match ; en perte tenue à l'écart, ×0,5 et ×2 un peu derrière (+0,00004 chacun, 21 oct.) | inconnue — la perte plate autour du défaut | l'écran ×0,5 et ×2 en match, séance B, en vol (relève 14 h 50) |
 | **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; séance C |
