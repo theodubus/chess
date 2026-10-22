@@ -142,12 +142,16 @@ d'un aveu sur la profondeur de recherche.
 > fois plus longtemps (400 passages de lots au lieu de 100) : **+16,9 ± 3,6**
 > contre N6r4, et devant N6r4w50 — le même que N6r4 avec moins de poids au
 > résultat des parties, +11,8 contre N6r4 — de **+6,7 ± 3,4** en match
-> direct. **Celui qui joue depuis le 21 oct.**, N8tw50s800, réunit les
+> direct. N8tw50s800, embarqué le 21 oct. après-midi, réunit les
 > deux et les pousse : le résultat à moitié moins de poids, deux fois plus
 > de positions — 4,63 milliards, la moitié neuve étiquetée par N6r4 — et
 > 800 passages de lots. À 400 passages, la même recette battait N7p4 de
 > **+17,9 ± 3,4** en match direct ; 800 ajoutent **+5,4 ± 3,3**, 11 200
-> parties chacun.
+> parties chacun. **Celui qui joue depuis le 22 oct.**, N9w50s800, garde
+> sa recette et change ses données : toutes celles qu'étiquetait N6r4 —
+> 3,71 milliards de positions, dont un tiers étiquetées à 10 000 nœuds par
+> coup au lieu de 5 000 —, plus aucune de N5l : **+5,2 ± 3,3** contre
+> N8tw50s800, 11 200 parties.
 > L'évaluation faite main reste disponible par
 > `setoption name EvalFile value <none>`.
 
@@ -368,9 +372,9 @@ Leela Chess Zero](https://storage.lczero.org/files/training_data), mises à
 disposition sous l'[Open Database
 License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
 converties au format `.binpack` par des contributeurs de Stockfish (voir
-`tools/README.md`, section n° 7). Le réseau embarqué depuis le 21 oct., N8tw50s800
-— comme N7p4, N6r4, N5l et N4 avant lui —, n'apprend que sur les parties du
-moteur.
+`tools/README.md`, section n° 7). Le réseau embarqué depuis le 22 oct., N9w50s800
+— comme N8tw50s800, N7p4, N6r4, N5l et N4 avant lui —, n'apprend que sur les
+parties du moteur.
 
 ## Licence
 
