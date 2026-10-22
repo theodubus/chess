@@ -1006,7 +1006,8 @@ dernière relève est faite.
 | **N° 20, séance B — la perte tenue à l'écart de N8tw50** | **39523442441** | l'outil à `64a66df` ; N7p4w50, N8tw50, N7p4, sur 38531414161 et 39050360980 (tenus à l'écart, étiquetés par N5l puis par N6r4) puis 38531424497 et 39050368395 (appris) | `nnue-validation.yml` | **RELEVÉE à 2 h 52** — lancée à 2 h 47, finie à 2 h 50 | **dans les deux attendus** : −0,000028 ± 0,000019 sur le jeu ancien, **−0,000589 ± 0,000027** sur le neuf ; il retient moins que N7p4w50 (section « La séance B », paragraphe N8tw50) — *Attendu, écrit avant* : sur le premier jeu, à ± 0,0002 de N7p4w50 ; sur le second, sous N7p4w50 |
 | **N° 20, séance B — la perte tenue à l'écart de N7p4w50** | **39508350034** (39508197862 mort au checkout, le SHA passé court) | l'outil à `49b0ec5` ; N7p4, N7p4w50, N6r4, sur 38531414161 (tenu à l'écart) puis 38531424497 (appris) | `nnue-validation.yml` | **RELEVÉE à 0 h 32** — relancée à 0 h 28, finie à 0 h 30 | **+0,000042 ± 0,000022 contre N7p4 — dans l'attendu** ; tenu − appris +0,000310 contre +0,000416 : il retient un quart de moins (section « La séance B ») — *Attendu, écrit avant* : indiscernable de N7p4, ± 0,0001 |
 | **N° 20 (e) — la sonde de débit à 10 000 nœuds** | **39490138743** | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, **10 000 nœuds**, 20 minutes | `nnue-datagen.yml` | **RELEVÉE à 22 h 38** — lancée le 20 oct. à 22 h 13, ses attendus poussés avant (`9ff72a0`) ; finie à 22 h 34, EPYC 7763 | **581 positions par seconde (× 0,491), 19,46 % d'écartées, 39,97 % de nulles, 133,0 positions par partie — les quatre dans l'attendu, les nulles au bord** ; ~9,3 M gardées par job au mélange de runners, ~84 jobs appris pour 780 M (section « (e) — le budget de l'étiqueteur ») — *Attendus, écrits avant* : × 0,45 à × 0,56 ; 17 à 23 % ; 34 à 40 % ; 120 à 140 |
-| **N° 20 (e) — la vague 5**, 10 000 nœuds, la dernière | 39671053725, 39671057866, 39671061758, 39671065305, 39671069562, 39671073655, 39671077819, 39671081645, 39671086127, 39671089921, 39671093819, 39671097771, 39671101774, 39671105774, 39671109606, 39671113595, 39671117544 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 17 × 330 min | **EN VOL** — lancée le 21 oct. à 22 h 31, ses attendus poussés avant (`016925d`) ; fin vers 4 h 05 | — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 5) : **186 à 276 M positions, 128 à 191 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 755 à 818 M gardées, 780 M au centre |
+| **N° 20 (e) — la vague 5**, 10 000 nœuds, la dernière | 39671053725, 39671057866, 39671061758, 39671065305, 39671069562, 39671073655, 39671077819, 39671081645, 39671086127, 39671089921, 39671093819, 39671097771, 39671101774, 39671105774, 39671109606, 39671113595, 39671117544 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 17 × 330 min | **RELEVÉE le 22 oct. à 4 h 27** — lancée le 21 à 22 h 31, ses attendus poussés avant (`016925d`) ; dix-sept succès finis entre 4 h 02 et 4 h 03 | **249,2 M positions, 174,0 M gardées, tous appris ; 19,46 % d'écartées, 38,51 % de nulles, EPYC 7763 à 569 – 597 : les six chiffres dans l'attendu** ; cumul appris **801,4 M — (e) CLOSE**, 80 jobs (section « (e) — le budget de l'étiqueteur », la vague 5) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 5) : **186 à 276 M positions, 128 à 191 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 755 à 818 M gardées, 780 M au centre |
+| **N° 21 — la vague 1**, étiquetée par N8tw50s800 | 39712871836, 39712878052, 39712884950, 39712891661, 39712898384, 39712905437, 39712913291, 39712920509, 39712927986, 39712934949, 39712941231, 39712947865, 39712955271, 39712961617, 39712967734, 39712973795 — **le premier, 39712871836, tenu à l'écart** | `e20dd6d` (N8tw50s800, `main`), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 22 oct. à 4 h 43**, ses attendus poussés avant (`cb76b50`) ; relève vers 10 h 35 | — *Attendus, écrits avant* (section « N° 21 », la vague 1) : **les seize, 360 à 560 M positions, 245 à 385 M gardées** ; écartées 15 à 24 %, nulles 34 à 38 %, sur les gardées ; **1 190 à 1 310 positions par seconde sur un EPYC 7763** ; hors fourchette, diagnostic avant la vague 2 |
 | **N° 20 (e) — la vague 4**, 10 000 nœuds | 39619535481, 39619539712, 39619543553, 39619548060, 39619552863, 39619556558, 39619560135, 39619564161, 39619568131, 39619572001, 39619576126, 39619581183, 39619585661, 39619590665, 39619595765, 39619599803 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 22 h 27** — lancée à 16 h 44, ses attendus poussés avant (`5a67f02`) ; seize succès finis entre 22 h 15 et 22 h 16 | **223,8 M positions, 156,2 M gardées, tous appris ; 19,46 % d'écartées, 38,54 % de nulles, EPYC 7763 à 573 – 597 : les six chiffres dans l'attendu** ; cumul appris 627,4 M, dix-sept jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 4) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 4) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 591 à 651 M gardées |
 | **N° 20 (e) — la vague 3**, 10 000 nœuds | 39571431656, 39571438951, 39571446996, 39571454666, 39571462070, 39571470003, 39571477657, 39571484787, 39571492260, 39571499559, 39571506756, 39571514470, 39571522147, 39571529991, 39571537661, 39571545662 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 16 h 39** — lancée à 10 h 43, ses attendus poussés avant (`34abd07`) ; seize succès finis entre 16 h 14 et 16 h 15 | **233,1 M positions, 162,7 M gardées, tous appris ; 19,44 % d'écartées, 38,56 % de nulles, EPYC 7763 à 575 – 595 : les six chiffres dans l'attendu** ; cumul appris 471,2 M, ~31 jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 3) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 3) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 428 à 488 M gardées |
 | **N° 20 (e) — la vague 2**, 10 000 nœuds | 39535163549, 39535169844, 39535176816, 39535183711, 39535190198, 39535196745, 39535204229, 39535211952, 39535219017, 39535226038, 39535233006, 39535239336, 39535245704, 39535251890, 39535257823, 39535263726 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 10 h 39** — lancée à 4 h 49, ses attendus poussés avant (`b21057b`) ; seize succès finis entre 10 h 20 et 10 h 21 | **237,8 M positions, 165,9 M gardées, tous appris ; 19,45 % d'écartées, 38,50 % de nulles, EPYC 7763 à 584 – 590 : les six chiffres dans l'attendu** ; cumul appris 308,4 M, ~47 jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 2) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 2) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 262 à 322 M gardées |
@@ -10282,7 +10283,7 @@ recommité (`93a3b86`) :
 conforme.** Le dernier réseau de la séance B : les 84 premiers jobs appris
 de l'étape B seuls — **la liste de N8tw50 moins les 79 du n° 18, vérifiée
 job par job** —, relecture exacte (18 245 052 : 2 299 253 673), 400
-superlots au poids 0,5, 17,4 passes ; confrontation **7 / 12** (admis
+superlots au poids 0,5, **25,5 passes** (17,4 écrit d'abord, compté sur les positions et non les gardées — corrigé le 22 oct.) ; confrontation **7 / 12** (admis
 15 / 50) ; perte d'entraînement au 400ᵉ superlot 0,019267. Le réseau sur la
 branche (`817155f`) ; candidat **`6a1b1d6`** (révoqué par `0c9bf93`), au
 code de N7p4w50 (`e37468b`) au bit près — seul `nnue.rs` diffère.
@@ -10327,7 +10328,7 @@ l'attendu, deux au bord.**
   départage pas deux étiqueteurs : *le match le dira* ;
 - **il retient davantage par cœur** : appris − tenu sur les jobs de N6r4,
   −0,000242, contre −0,000151 pour N8tw50 et −0,000039 pour N7p4w50, qui
-  n'a vu ni l'un ni l'autre — 17,4 passes contre 12,9 ;
+  n'a vu ni l'un ni l'autre — 25,5 passes contre 12,8 (17,4 et 12,9 écrits d'abord ; corrigé le 22 oct.) ;
 - **la sonde** dans la plage du facteur de `main` : le match est valide tel
   que lancé.
 
@@ -10403,17 +10404,49 @@ perte au temps, aucun coup illégal, aucun moteur perdu ; une à cinq
 - **dans l'attendu (−3 à +13, ~+5), au centre** : la chaîne N8nw50 →
   N7p4w50 ← N8tw50 prédisait +5,4 ± 4,8, le direct rend +5,2 ± 3,3 — elle
   tient cette fois, quand celle de N8tw50 contre N7p4 avait manqué de 7 ;
-- **ce que cela dit du volume** : doubler les données payait +7,38 quand
+- <s>**ce que cela dit du volume** : doubler les données payait +7,38 quand
   la moitié ajoutée était MEILLEURE (N8tw50 contre N7p4w50) ; ajouter une
   moitié PLUS FAIBLE à des données meilleures coûte −5,2. *Le volume paie
   à qualité d'étiquette égale ou meilleure ; une étiquette plus faible
-  dilue.* <span>Inférence, confiance moyenne</span> : un point par sens ;
+  dilue.* <span>Inférence, confiance moyenne</span> : un point par sens ;</s>
+  **faux tel qu'écrit — corrigé le 22 oct., plus bas** : le −5,2 mêle
+  l'étiquette et deux fois plus de passes par position ;
 - **N8nw50s800, l'attendu** — <span>inférence, confiance faible</span> :
   contre N8tw50s800, **−3 à +10, ~+3**. N8nw50 est devant N8tw50 de +5,2
   à 400 ; doubler les passes rendait +5,43 à N8t (12,9 → 25,9 passes),
-  et N8n en a déjà 17,4 — son doublement rend moins, ~+2 à +5. La
-  commande : `bash tools/seance-n20b.sh tout n8n800`, ~5 h 15 de carte —
-  **à demander à Théo**, ou à fondre dans la séance C.
+  <s>et N8n en a déjà 17,4 — son doublement rend moins, ~+2 à +5.</s> **N8n
+  en a déjà 25,5, pas 17,4 : il en ferait 51, au-delà de tout ce qui est
+  éprouvé — remplacé en séance C1 par N9w50s800** (22 oct.). La
+  commande seule : `bash tools/seance-n20b.sh tout n8n800`, ~5 h 15 de
+  carte — **fondu dans la séance C** : Théo, 21 oct. à 23 h 30, « *oui on peut
+  intégrer la séance à C* ».
+
+**Corrigé le 22 oct. à 4 h 27 — les passes de N8nw50 étaient mal comptées, et
+la lecture « une étiquette plus faible dilue » n'en découlait pas.** Toutes
+nos passes se comptent sur les positions GARDÉES par le filtre ; celles de
+N8nw50 l'avaient été sur toutes ses positions (2,30 G → 17,4). Sur ses
+1 571,1 M gardées, 400 superlots font **25,5 passes** — autant que N7p4w50
+(25,6) et N8tw50s800 (25,5), **deux fois N8tw50** (12,8). D'où :
+- **N8nw50 contre N7p4w50, +12,76** : volume ET passes égaux — l'étiqueteur
+  seul ; la mesure est propre ;
+- **N8nw50 contre N8tw50, +5,18** : la décision tient — à superlots
+  égaux, les données de N5l prennent des passes aux bonnes — mais le
+  chiffre mêle l'étiquette et deux fois plus de passes par position ;
+- **à passes égales**, par différence des deux matchs directs —
+  N8tw50s800 − N8tw50 = +5,43 ± 3,34, N8nw50 − N8tw50 = +5,18 ± 3,32 — :
+  **N8tw50s800 − N8nw50 = +0,25 ± 4,71**. La moitié étiquetée par N5l
+  n'ajoute rien de mesurable, là où doubler des données de même étiquette
+  à passes égales rendait ~+13 au n° 18 (N6l contre N6m +7,32, puis
+  N6l200 contre N6l +5,49). <span>Inférence, confiance faible</span> : elle
+  annule le gain du volume plutôt qu'elle ne fait perdre ; *ni gain ni
+  perte démontrés — elle coûte du calcul sans rien rendre*, et la séance C
+  la laisse pour cette raison-là ;
+- **N8nw50s800 ferait 51 passes** sur 1,57 G, au-delà de tout ce qui est
+  éprouvé (25,9), et laisserait 0,98 G de données de N6r4 de côté :
+  **remplacé en séance C1 par N9w50s800** — toutes les données de N6r4,
+  2 553 M gardées, 31,3 passes —, à la même carte (section « La séance
+  C1 »). *Faute nommée* : un dénominateur pris pour un autre, la famille
+  de « vérifier le dénominateur » (`CLAUDE.md`).
 
 **Le script, `tools/seance-n20b.sh`, écrit le 20 oct. au soir** — les
 blocs ci-dessous enchaînés d'une traite, comme `tools/seance-n20.sh` pour
@@ -10941,6 +10974,138 @@ positions par seconde sur un EPYC 7763** ; **le cumul appris, 755 à 818 M
 gardées — 780 M atteints au centre**. S'il en manque au relevé, l'écart se
 nomme et la séance C prend ce qu'il y a : quelques pour cent de volume ne
 changent pas la question de (e), posée à volume égal par E5v.
+
+**La vague 5, RELEVÉE le 22 oct. à 4 h 27 — les six chiffres dans leur
+attendu.** Dix-sept succès, finis entre 4 h 02 et 4 h 03, chaque résumé
+nommant `cd6ed79` et `noeuds_par_coup=10000` ; `tools/n20e-jobs.tsv`, la
+vague 5 :
+
+| | vague 5 | vague 4 | attendu, écrit avant |
+|---|---|---|---|
+| positions | **249,2 M** | 223,8 M | 186 à 276 M — dedans |
+| gardées par le filtre | **174,0 M**, tous appris | 156,2 M | 128 à 191 M — dedans |
+| parties écartées, sur les gardées | **19,46 %** (365 744 sur 1 879 488) | 19,46 % | 18,9 à 20,0 % — dedans |
+| nulles, sur les gardées | **38,51 %** | 38,54 % | 38,0 à 39,2 % — dedans |
+| positions par seconde, EPYC 7763 | **569 à 597**, six jobs | 573 à 597 | 565 à 605 — dedans |
+| cumul appris | **801,4 M** | 627,4 M | 755 à 818 M, 780 au centre — dedans |
+
+**(e) — la génération CLOSE, le 22 oct. à 4 h 27.** Cinq vagues, 81 jobs —
+80 appris, un tenu à l'écart (39493777327) — : **1 148,0 M positions,
+801,4 M gardées aux jobs appris** ; écartées 19,42 à 19,46 %, nulles 38,50
+à 38,58 %, 132,5 positions par partie, d'une vague à l'autre. Les
+ensembles de la séance C1, comptés sur les registres et relus à l'octet
+par l'entraîneur (`--attendu parties:positions`) :
+- **E10** — les 80 jobs appris de (e) : 8 662 540 : 1 148 044 133,
+  801,4 M gardées ;
+- **E5v** — les **44** premiers jobs appris de l'étape B
+  (`tools/n20-jobs.tsv`, dans l'ordre de lancement) : 9 402 946 :
+  1 185 033 571, 809,7 M gardées — à un job près, +1,0 % ;
+- **E5t** — les 80 premiers : 1 483,8 M gardées ; **N8nw50 en tient
+  lieu** (84 jobs, 1 571,1 M, déjà entraîné à la même recette) — la
+  section « La séance C1 » dit pourquoi et ce que cela biaise.
+
+#### La séance C1 — écrite le 22 oct. à 4 h 34, avant de la demander
+
+**Ce qu'elle tranche : les données de la recette.** Trois réseaux neufs à
+l'architecture et à la recette de N8tw50s800 — 256 unités, quatre seaux de
+roi, huit de sortie, poids du résultat 0,5, pas 0,001 —, sur la carte de
+Théo, d'une traite, par `tools/seance-n20c.sh` (`essai`, puis `tout`),
+**~10 h 35** ; chacun commité et poussé sur `reseau/n20c` dès qu'il passe
+ses contrôles, le plus probable à embarquer d'abord :
+
+| réseau | données | gardées | superlots | passes | carte |
+|---|---|---|---|---|---|
+| **N9w50s800** | toutes celles de N6r4 : les 94 jobs appris de l'étape B et les 80 de (e) | 2 553,3 M | 800 | 31,3 | ~5 h 15 |
+| **E10w50** | les 80 jobs appris de (e), 10 000 nœuds | 801,4 M | 400 | 49,9 | ~2 h 40 |
+| **E5vw50** | les 44 premiers jobs appris de l'étape B, 5 000 nœuds | 809,7 M | 400 | 49,4 | ~2 h 40 |
+| E5t := **N8nw50** | les 84 premiers de l'étape B — déjà entraîné, `6a1b1d6` | 1 571,1 M | 400 | 25,5 | — |
+
+Les comptes `parties:positions` que l'entraîneur relit à l'octet sont
+sommés sur les registres (`tools/n20-jobs.tsv`, `tools/n20e-jobs.tsv`) et
+écrits dans le script ; les données de N5l n'y sont plus (+0,25 ± 4,71 à
+passes égales, plus haut). *Éprouvé dans un bac à sable* — faux `cargo`,
+faux `gh`, dépôt distant local : l'essai ; la séance entière avec une
+panne simulée sur E10, puis la relance, qui reprend E10 seul et le
+pousse ; une troisième qui ne refait rien ; les trois réseaux sur
+`reseau/n20c`, 174, 80 et 44 dossiers, 800 et 400 superlots, `wdl` 0,5 ;
+un téléchargement interrompu au 40ᵉ job de (e), puis repris ; `gh`
+déconnecté, arrêt avant tout lancement ; un mode inconnu refusé.
+
+**Pourquoi 400 superlots pour E10 et E5v** — (e) renvoyait le choix ici.
+La règle de (e) les veut aux mêmes superlots que E5t, et E5t existe :
+N8nw50, 400 superlots — une carte de 2 h 40 économisée. **E10 contre E5t
+se joue alors à temps de runner ÉGAL et à carte ÉGALE** : c'est la
+décision. Le prix : E10 et E5v passent ~50 fois sur leurs données, au-delà
+des 25,9 éprouvées. Si 50 passes surapprennent, E10 perd contre E5t pour
+cette raison-là — **un biais contre 10 000**, dans le sens où le critère
+penche déjà (le budget en place ne cède qu'à une démonstration). E10 contre
+E5v, à passes égales, n'en est pas touché. <span>Confiance faible sur
+l'ampleur</span> : les seaux de roi du n° 17 portaient la pénalité dès ~6
+passes sur 159 M, quand N7p4 gagnait encore de 12,8 à 25,6 passes sur
+1,56 G ; 50 passes sur 0,8 G n'ont jamais été vues.
+
+**Le biais de E5t := N8nw50** : 84 jobs au lieu de 80, +5,9 % de temps de
+runner pour 5 000 nœuds — ~+0,6 Elo en sa faveur (0,08 doublement × ~7,3,
+le volume à superlots fixés du n° 18), <span>inférence, confiance
+faible</span> ; petit devant ± 3,3, et dans le sens du budget en place.
+
+**Les matchs** — quatre jobs de 2 800 parties chacun, `8+0,08`, le binaire
+AVX2 des deux côtés, fastchess, le livre de 15 000, graine « auto ».
+Chaque candidat sur un commit révoqué aussitôt, au code de `main` au bit
+près et au facteur des marges de `main` (2,85) ; `6a1b1d6` ne diffère de
+`main` que par son réseau (`git diff 6a1b1d6 e20dd6d -- engine/` : le
+réseau inclus, son commentaire et sa confrontation). Lancés à mesure que
+les réseaux arrivent :
+1. **N9w50s800 contre N8tw50s800** (`main`), dès N9. *Attendu* —
+   <span>inférence, confiance faible</span> — **+3 à +13, ~+7** :
+   N8tw50s800 vaut N8nw50 à passes égales (+0,25 ± 4,71) ; N9 en a × 1,62
+   de données de N6r4 à passes voisines (31,3 contre 25,5) ; doubler à
+   passes et étiquette égales rendait ~+12,8 au n° 18 (+7,32 puis +5,49)
+   — le n° 20 n'en a pas de mesure propre, ses doublements changeaient
+   aussi l'étiquette — : 0,70 doublement, ~+5 à +9 au rendement
+   décroissant ; un tiers de ses données à 10 000 nœuds, 0 à +3.
+   **Critère** : borne basse au-dessus de zéro → **N9w50s800 embarqué**,
+   après sa sonde de B8 dans la plage du facteur de `main` (sinon le
+   facteur se règle d'abord, comme pour N5l) ; sinon N8tw50s800 reste ;
+2. **E10w50 contre E5t** (N8nw50, `6a1b1d6`), dès E10 — temps de runner
+   et carte égaux. *Attendu, écrit le 19 oct.* : **−7 à +13**, le signe
+   inconnu ; ~+3 au point, E10 devant E5v de ~+10 et E5t de ~+7.
+   **Critère, écrit le 20 oct.** : **10 000 remplace 5 000 si la borne
+   basse est au-dessus de zéro** ; sinon 5 000 reste. Le registre :
+   20 000 au test suivant si 10 000 démontre, 2 500 si E10 régresse,
+   démontré ;
+3. **E10w50 contre E5vw50**, dès E5v — volume, passes et carte égaux :
+   l'étiquette seule. *Attendu* : **0 à +20, ~+10** — deux fois les
+   nœuds valent un doublement de temps pour l'étiqueteur (~+108 au
+   moteur, l'étalon), × ~0,12 Elo de réseau par Elo d'étiqueteur, ~+13 ;
+   à `wdl` 0,5, le score pèse 50 % de la cible. Ne décide rien : il
+   sépare « le budget ne paie pas » de « il paie, moins que le volume
+   qu'il coûte » ;
+4. **E5t contre E5vw50**, dès E5v — **le volume à étiquette égale**, aux
+   mêmes superlots : × 1,94 de données, 25,5 passes contre 49,4. Un test
+   de plus, gratuit en carte : il dit si le volume paie encore quand
+   l'étiquette ne change pas, ce que le n° 20 n'a pas mesuré — ses deux
+   doublements changeaient aussi l'étiquette. *Attendu* : **+1 à +13,
+   ~+6** — doubler à superlots fixés rendait +7,32 au n° 18, à étiquette
+   égale ; le +7,38 du n° 20 y mêlait une meilleure étiquette. Ne décide
+   rien seul : une borne basse au-dessus de zéro dit que
+   le n° 21 et les tranches suivantes s'empilent avec profit ; rien de
+   démontré, que la marge est dans l'étiquette et l'architecture plus que
+   dans le volume, à ce régime de passes — et C2 et C3 passent devant
+   la génération dans la file. Les matchs 2, 3 et 4 bouclent un
+   triangle : (3) − (2) − (4) doit valoir zéro à ± 5,7 près — un
+   contrôle, pas une mesure.
+
+**Hors match**, pour chacun : la perte tenue à l'écart
+(`nnue_validation.rs`, par `nnue-validation.yml`) sur le job tenu à l'écart
+de l'étape B (39050360980, 5 000 nœuds) et sur celui de (e) (39493777327,
+10 000 nœuds) — un diagnostic, jamais une mesure de force ; N8nw50 compris,
+pour qu'E5v et E5t se lisent sur les mêmes positions. La sonde de B8 pour
+N9, qui peut embarquer. Les nœuds par seconde : la même architecture que
+N8tw50s800, le même calcul — rien à mesurer.
+
+**Ce qui suit** : C2 (la recette) et C3 (l'architecture) s'écrivent au
+verdict de C1, sur les données qu'il fixe — celles de N9 s'il embarque.
 
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
@@ -11630,6 +11795,66 @@ ne coûte rien de mesurable, mais **le fichier prend désormais 78 % de la
 limite de 350 minutes**, où il en prenait 145 à 180 le 12 oct. ; un runner
 deux fois plus lent le couperait. La PR #206 fusionnée à 3 h 31
 (`473c54d`).
+
+### N° 21 — la génération étiquetée par N8tw50s800 : écrite le 22 oct. à 4 h 34, avant de lancer
+
+**Décidée** : la génération suivante, étiquetée par le réseau qui joue, à
+5 000 nœuds — le budget en place —, dès la clôture de (e) ; Théo, 21 oct.
+à 23 h 51 : « *Je valide ton approche* » (« La file », ligne « plus de
+données encore »). **Ce qu'on en attend** : du volume d'abord — la boucle
+seule rend peu, ~0,12 Elo de réseau par Elo d'étiqueteur, ~+5 pour les
+~+40 de N8tw50s800 sur N6r4 (<span>inférence, confiance faible</span>) —,
+et la mesure de ce tour-là, gratuite à volume égal contre l'étape B.
+
+**La recette** : `nnue-datagen.yml` à `e20dd6d` — `main`, N8tw50s800
+embarqué, le produit de sortie en AVX2 compris —, `<embedded>`, **5 000
+nœuds par coup**, graine « auto », un fil par processeur logique, 330
+minutes, `x86-64-v3`. Le même filtre et le même livre d'ouvertures
+aléatoires que l'étape B et (e) : seul l'étiqueteur change.
+
+**Le volume et la règle de fin, écrits avant** : des vagues de seize ; le
+PREMIER job lancé de la vague 1 est tenu à l'écart, désigné avant d'en
+voir le compte. **La tranche se ferme quand les jobs appris atteignent
+1,75 G positions gardées** — la taille de l'étape B, pour que le tour de
+boucle se mesure contre elle à volume égal ; la dernière vague se
+dimensionne au reste plus 10 %, comme en (e). ~6 vagues, ~1,5 jour. La
+génération continue ensuite par tranches : runners en continu. Le registre
+est `tools/n21-jobs.tsv`, créé au relevé de la vague 1 — les colonnes de
+l'étape B, plus `noeuds`.
+
+**Le budget en cours de route** : si E10 démontre en séance C1 avant la
+fin de la tranche, **les vagues suivantes passent à 10 000 nœuds** —
+attendre la tranche suivante coûterait jusqu'à une journée de runners
+au budget démontré moins bon. Le registre porte le budget de chaque
+job ; les vagues à 5 000 restent le témoin du tour de boucle, à volume
+égal sur leur préfixe.
+
+**Pas de sonde de 20 minutes** : le budget et l'architecture sont ceux de
+l'étape B ; seuls le réseau et le produit en AVX2 changent, et les
+attendus de la vague 1 les couvrent — un écart y coûte une vague de
+runners, aucune donnée gardée.
+
+**La vague 1 — attendus**, contre l'étape B (N6r4, `cd6ed79`, le même
+budget) — <span>inférence, confiance faible</span> :
+- **positions par seconde sur un EPYC 7763 : 1 190 à 1 310** — l'étape B
+  en rendait 1 161 à 1 193 ; le produit en AVX2 (−5,09 % de temps au
+  rejeu, « La file, phase 2 — le produit scalaire en AVX2 ») est à `e20dd6d` et pas à `cd6ed79`, et
+  le générateur évalue presque chaque nœud : × 1,00 à × 1,10 ;
+  l'architecture est la même ;
+- **les seize : 360 à 560 M positions, 245 à 385 M gardées** — la vague 1
+  de l'étape B en fit 430,8 M et 294,4 M ; le haut admet le débit et cinq
+  EPYC 9V45 ;
+- **écartées, sur les gardées : 15 à 24 %** — 19,3 % pour N6r4, 15,7 %
+  pour N5l : le filtre lit les unités de l'étiqueteur, et son échelle
+  n'en prédit pas le sens — N5l, au facteur 2,85, écartait MOINS que
+  N6r4 au facteur 2,49 ;
+- **nulles, sur les gardées : 34 à 38 %** — 34,35 % pour N6r4 à 5 000
+  nœuds, 38,5 % à 10 000 : un étiqueteur plus fort en fait davantage, et
+  N8tw50s800 a ~+40 sur N6r4 quand 10 000 nœuds en ont ~+100.
+
+Hors fourchette, on diagnostique avant la vague 2. **Concurrence** : seize
+jobs, plus les matchs de la séance C1 — seize au plus à la fois —, sous la
+limite de quarante.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
@@ -13105,11 +13330,37 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 | **A — plus de passes** | N7p2 et N7p4 : 200 et 400 superlots sur les 1,563 G anciennes ; N6r4 en avait fait 100 | **VERDICT le 20 oct. : N7p4 +16,89 ± 3,55, N7p2 +14,74 ± 3,52** contre N6r4, **N7p4 +9,31 ± 3,51 contre N7p2** — doubler paie encore ; `SL=400` pour la séance B ; **N7p4 EMBARQUÉ le 21 oct.** — N6r4w50 −6,67 ± 3,41 contre lui en match direct (« Étape A — VERDICT ») |
 | **(a) — le réglage fin sur Leela** | N6r4 affiné 20 superlots sur le binpack, au pas 10⁻⁴ et 2·10⁻⁵ | **FERMÉ le 20 oct.** : **−11,42 ± 3,73** au pas 10⁻⁴, régression démontrée ; −2,45 ± 3,55 au pas 2·10⁻⁵, rien — rien n'embarque (« (a) et (d) — VERDICT ») |
 | **(d) — le poids du résultat** | la recette de N6r4, `wdl` 0,5 et 0,25 au lieu de 0,75 | **VERDICT le 20 oct. : les deux paient** — **+11,79 ± 3,52** à 0,5, +7,17 ± 3,49 à 0,25 ; ils se recoupent : **le match direct relevé le 20 oct. à 23 h 13 — N6r4w25 −2,95 ± 3,35 contre N6r4w50**, rien de démontré : **N6r4w50 représente (d)**, puis **perd le match direct contre N7p4, −6,67 ± 3,41** — N7p4 embarque ; le poids entre à la composition, N7p4w50 en match contre N7p4 depuis le 21 oct. à 0 h 27 (« (a) et (d) — VERDICT », « Étape A — VERDICT ») |
-| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; **la séance ÉCRITE le 20 oct.** (téléchargement, listes, commandes ; N8n et N8t), lancée par Théo le 20 oct. au soir, à 400 superlots : N7p4w50 +3,35 ± 3,41 contre N7p4, rien ; **N8tw50 +7,38 ± 3,40 contre N7p4w50 et +17,91 ± 3,40 contre N7p4 — EMBARQUÉ le 21 oct.**, puis **N8tw50s800 +5,43 ± 3,34 contre lui — EMBARQUÉ à sa place le même jour** ; l'écran du pas relevé (0,001 reste) ; **N8nw50 +12,76 ± 3,45 contre N7p4w50**, l'étiqueteur paie ; **N8nw50 +5,18 ± 3,32 contre N8tw50** : les données de N5l diluent, la séance C les laisse ; **N8nw50s800 le prochain candidat** (`tools/seance-n20b.sh tout n8n800`, à demander à Théo) (« La séance B ») |
+| **B — plus de données** | 1,563 G positions neuves, étiquetées par N6r4 ; puis trois réseaux : les anciennes seules, les neuves seules, les deux (3,1 G) | **génération CLOSE le 20 oct. : 1 751,9 M gardées en six vagues** ; **la séance ÉCRITE le 20 oct.** (téléchargement, listes, commandes ; N8n et N8t), lancée par Théo le 20 oct. au soir, à 400 superlots : N7p4w50 +3,35 ± 3,41 contre N7p4, rien ; **N8tw50 +7,38 ± 3,40 contre N7p4w50 et +17,91 ± 3,40 contre N7p4 — EMBARQUÉ le 21 oct.**, puis **N8tw50s800 +5,43 ± 3,34 contre lui — EMBARQUÉ à sa place le même jour** ; l'écran du pas relevé (0,001 reste) ; **N8nw50 +12,76 ± 3,45 contre N7p4w50**, l'étiqueteur paie ; **N8nw50 +5,18 ± 3,32 contre N8tw50** à superlots égaux, **+0,25 ± 4,71 à passes égales** (corrigé le 22 oct.) : les données de N5l ne rendent rien, la séance C les laisse ; **le prochain candidat, N9w50s800, en séance C1** — N8nw50s800 remplacé, il ferait 51 passes (« La séance B », « La séance C1 ») |
 | **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | **derrière la séance B et la composition** — Théo, 20 oct. ; son attendu baisse : le réglage fin sur Leela régresse (−11,42), troisième verdict dans le même sens |
 | **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
-| **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | **protocole écrit le 20 oct. à 22 h 09**, son ordre tenu (B close, (d) relevé) : sonde de débit à 10 000 nœuds, puis vagues de seize jusqu'à 780 M ; E10, E5t, E5v en séance C ; 10 000 ne remplace 5 000 que s'il démontre à temps égal (« (e) — le budget de l'étiqueteur ») |
-| **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) |
+| **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | **protocole écrit le 20 oct. à 22 h 09** ; **génération CLOSE le 22 oct. à 4 h 27 : 801,4 M gardées, 80 jobs en cinq vagues**, chaque vague dans ses attendus ; E10 et E5v en séance C1, E5t := N8nw50 ; 10 000 ne remplace 5 000 que s'il démontre à temps égal (« (e) — le budget de l'étiqueteur », « La séance C1 ») |
+| **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) ; **étiquetées par le réseau qui joue** — N8tw50s800, ~+40 sur N6r4 par la chaîne (+16,89, +17,91, +5,43) — : un meilleur étiqueteur paie (+12,76 à volume égal) et une étiquette plus faible n'ajoute rien à passes égales (+0,25 ± 4,71) ; ce qu'apporte mêler N6r4 et le suivant, inconnu — **validé par Théo le 21 oct. à 23 h 51** (« *Je valide ton approche* ») : **le n° 21, écrit le 22 oct.** — 5 000 nœuds, le budget en place, une tranche de 1,75 G gardées, 10 000 en cours de route si E10 démontre en C1 (« N° 21 ») ; **la vague 1 lancée le 22 oct. à 4 h 43**, seize jobs, le premier tenu à l'écart. **Le tour de boucle seul rend peu** : ~0,12 Elo de réseau par Elo d'étiqueteur, donc ~+5 au prochain tour (0,12 × ~40) et de moins en moins ensuite — <span>inférence, confiance faible</span> ; le gros vient du volume, des passes et de l'architecture, et le tour est gratuit puisqu'on génère de toute façon |
+
+**La séance C, découpée en trois — proposée et validée le 21 oct. à
+23 h 51** (Théo : « *Je valide ton approche* » ; N8nw50s800 y entre : « *oui on
+peut intégrer la séance à C* »). Le protocole complet, attendus et
+critères, s'écrit à la clôture de (e), la liste des données close.
+- **C1 — les données** (~10 h 35 de carte) : E10 et E5v — E5t est
+  N8nw50, déjà entraîné —, le budget de l'étiqueteur, et N9w50s800, le
+  candidat, à la place de N8nw50s800 (corrigé le 22 oct.) ; elle fixe
+  les données de la recette — protocole : « La séance C1 » ;
+- **C2 — la recette** : le poids du résultat à 0,625 et 0,75 sur la
+  recette finale, le pas final, l'exposant de perte 2,5, le poids
+  variable, le premier demi-coup gardé, la taille de lot — jamais
+  mesurés ; à 100 superlots ils coûtent peu, mais l'optimum du poids a
+  bougé avec les passes : l'arbitrage s'écrit avec le protocole ;
+- **C3 — l'architecture** : 384 et 512 unités, dix seaux de roi au
+  volume d'aujourd'hui, chacun avec ses nœuds par seconde. **1 024
+  unités et plus de seaux de roi viennent après** — Théo, 21 oct. :
+  « *si c'est envisagé et plus pertinent plus tard c'est ok* » — : peu de
+  code (un `HIDDEN`, une table de 32 cases), mais ~×0,66 de nœuds par
+  seconde estimé à 1 024 (~−65 Elo à racheter par l'étalon), ~4 fois la
+  carte par superlot, et chaque seau de roi de plus voit d'autant moins de
+  positions — 4 et 10 ne se séparaient pas à 1,56 G. Chacun sur la marche
+  d'avant : 1 024 si 512 paie nettement, 16 seaux et plus si 10 paie.
+  <span>Inférence, confiance faible</span> : la part du réseau dans le
+  temps d'un nœud, ~17 % à 256, tirée de N5l contre N4 (× 0,90 pour une
+  largeur doublée).
 
 **Les réglages ouverts — rien n'y passe à « résolu »** (Théo, 20 oct. ;
 `CLAUDE.md`, « Par où commencer »). Une valeur validée est une borne
@@ -13128,10 +13379,10 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; séance C |
 | **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; séance C |
 | **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | `--wdl-final`, écrite le 20 oct. ; séance C |
-| **volume de données** | 4,63 G vus par N8tw50s800 (les 79 jobs du n° 18 et 84 de l'étape B) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais une moitié plus faible dilue : −5,18 ± 3,32** (N8tw50 contre N8nw50) — le volume paie à étiquette égale ou meilleure | ~+7 au doublement suivant — <span>confiance faible</span> | les 11 jobs restants de l'étape B, puis (e) et la génération suivante ; doubler encore demande ~9 G |
-| **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | (e) : vagues à 10 000 nœuds en cours, E10, E5t, E5v en séance C ; **les données de N5l laissées** : N8nw50 +5,18 ± 3,32 contre N8tw50 (21 oct.) — N8nw50s800 le prochain candidat |
-| **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17) | inconnue au volume d'aujourd'hui | (c) 384 et 512, puis 1 024 |
-| **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | (c) |
+| **volume de données** | 4,63 G vus par N8tw50s800 (les 79 jobs du n° 18 et 84 de l'étape B) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) | ~+7 au doublement suivant — <span>confiance faible</span> | **en séance C1** : N9w50s800 — toute l'étape B et (e), 2,55 G étiquetés par N6r4 — contre N8tw50s800 ; et **le volume à étiquette égale**, E5t contre E5v, que le n° 20 n'a pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») |
+| **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | (e) : vagues à 10 000 nœuds en cours, E10, E5t, E5v en séance C ; **les données de N5l laissées** : −5,18 à superlots égaux, +0,25 ± 4,71 à passes égales — rien (22 oct.) ; le prochain candidat N9w50s800, en séance C1 |
+| **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17), malgré × 0,90 de nœuds par seconde | inconnue au volume d'aujourd'hui | C3 : 384 et 512 ; **1 024 si 512 paie nettement** — un seul `HIDDEN` dans le moteur, mais ~×0,66 de nœuds par seconde estimé et ~4 fois la carte par superlot (Théo, 21 oct. : plus tard) |
+| **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | C3 : 10 au volume d'aujourd'hui ; **16 et plus si 10 paie** — une table de 32 cases, chaque seau voyant d'autant moins de positions (Théo, 21 oct. : plus tard) |
 | **seaux de sortie** | 8, selon le matériel | 1 contre 8 seulement | inconnue | (c) |
 | **couches cachées** | aucune | jamais | inconnue | phase 3, après (c) |
 | **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |

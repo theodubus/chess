@@ -9,7 +9,7 @@
 #   bash tools/seance-n20b.sh essai        # contrôles, téléchargement, essai court
 #   bash tools/seance-n20b.sh              # tout, ~14 h 30 ; le résumé dans ~/seance-n20b/
 #   bash tools/seance-n20b.sh tout ecrit   # le format écrit le 20 oct. à 13 h 25
-#   bash tools/seance-n20b.sh tout n8n800  # N8nw50s800 seul, ~5 h 15
+#   bash tools/seance-n20b.sh tout n8n800  # N8nw50s800 seul — remplacé, voir plus bas
 #
 # Deux formats, l'arbitrage de Théo les départage (tools/README.md, section
 # « N° 20 », « La séance B ») :
@@ -20,9 +20,12 @@
 #           (les neuves seules, l'étiqueteur — le dernier, qu'on peut couper) ;
 #   ecrit — au poids 0,75 : N8t, N8n ; N7p4, déjà entraîné, sert de troisième.
 # Et un troisième, écrit le 21 oct. au soir, après le verdict de N8nw50 contre
-# N8tw50 (+5,18 ± 3,32 : les données de N5l diluent à superlots fixés) :
-#   n8n800 — N8nw50s800, les neuves seules à 800 superlots, le candidat
-#           suivant contre N8tw50s800, qui joue.
+# N8tw50 (+5,18 ± 3,32 à superlots égaux) :
+#   n8n800 — N8nw50s800, les neuves seules à 800 superlots. Remplacé le
+#           22 oct. par N9w50s800, en séance C1 (tools/seance-n20c.sh) :
+#           N8nw50 avait déjà 25,5 passes, pas 17,4 — à 800 il en ferait 51,
+#           et à passes égales les données de N5l ne rendent rien
+#           (+0,25 ± 4,71). Le format reste, pour mémoire ; ne pas le lancer.
 # Relancé après une interruption, il reprend au réseau qui manque et saute
 # ce qui est déjà poussé ; le téléchargement reprend au job qui manque.
 set -uo pipefail
