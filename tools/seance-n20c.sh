@@ -13,16 +13,20 @@
 # E5t, le témoin à temps égal, est N8nw50, déjà entraîné.
 #
 #   bash tools/seance-n20c.sh essai   # contrôles, téléchargement, essai court
-#   bash tools/seance-n20c.sh         # tout, ~10 h 35 ; le résumé dans ~/seance-n20c/
+#   bash tools/seance-n20c.sh         # tout, ~10 h 35 ; le résumé dans seances/n20c/
 #
+# Tout vit sous un seul dossier, `~/shallowred/` (Théo, 22 oct.) : le dépôt
+# `chess/`, les données `donnees/<génération>/`, les journaux `seances/<nom>/`.
+# Le dépôt est celui qui porte ce script, où qu'il soit.
 # Relancé après une interruption, il reprend au réseau qui manque et saute ce
 # qui est déjà poussé ; le téléchargement reprend au job qui manque.
 set -uo pipefail
 
-DEPOT=${DEPOT:-$HOME/chess}
-DONNEES_N20=${DONNEES_N20:-$HOME/nnue-n20}
-DONNEES_N20E=${DONNEES_N20E:-$HOME/nnue-n20e}
-TRAVAIL=${TRAVAIL:-$HOME/seance-n20c}
+RACINE=${RACINE:-$HOME/shallowred}
+DEPOT=${DEPOT:-$(cd "$(dirname "$0")/.." && pwd)}
+DONNEES_N20=${DONNEES_N20:-$RACINE/donnees/n20}
+DONNEES_N20E=${DONNEES_N20E:-$RACINE/donnees/n20e}
+TRAVAIL=${TRAVAIL:-$RACINE/seances/n20c}
 MODE=${1:-tout}
 NN=$DEPOT/tools/nnue-train
 ARCH=768x4hm-256-s8
@@ -88,7 +92,14 @@ mapfile -t APPRIS_N20E < <(awk -F'\t' '$4 == "appris" {print $1}' "$DEPOT/tools/
 verifier "94 jobs de l'étape B au registre" test "${#APPRIS_N20[@]}" -eq 94
 verifier "80 jobs de (e) au registre" test "${#APPRIS_N20E[@]}" -eq 80
 verifier "gh, connecté à GitHub" gh auth status
-mkdir -p "$DONNEES_N20" "$DONNEES_N20E"
+# L'ancien rangement oublié ferait retélécharger 9 Go à côté des données qu'on a.
+if [ ! -d "$DONNEES_N20" ] && [ -d "$HOME/nnue-n20" ]; then
+  dire "ÉCHEC   l'étape B est encore dans ~/nnue-n20 — d'abord : mv ~/nnue-n20 $DONNEES_N20"
+  ECHEC=1
+else
+  mkdir -p "$DONNEES_N20"
+fi
+mkdir -p "$DONNEES_N20E"
 if [ -z "${CUDA_PATH:-}" ] || ! cuda_present >/dev/null 2>&1; then
   export CUDA_PATH=/usr/local/cuda-13.2
   export LD_LIBRARY_PATH=$CUDA_PATH/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
