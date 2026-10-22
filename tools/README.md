@@ -1010,6 +1010,7 @@ dernière relève est faite.
 | **N° 21 — la vague 1**, étiquetée par N8tw50s800 | 39712871836, 39712878052, 39712884950, 39712891661, 39712898384, 39712905437, 39712913291, 39712920509, 39712927986, 39712934949, 39712941231, 39712947865, 39712955271, 39712961617, 39712967734, 39712973795 — **le premier, 39712871836, tenu à l'écart** | `e20dd6d` (N8tw50s800, `main`), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 22 oct. à 10 h 38** — lancée à 4 h 43, ses attendus poussés avant (`cb76b50`) ; seize succès finis entre 10 h 13 et 10 h 14 | **451,7 M positions, 309,1 M gardées (292,7 M aux quinze appris), 18,94 % d'écartées, EPYC 7763 à 1 211 – 1 243 : dans l'attendu ; 33,86 % de nulles, 0,14 point SOUS la fourchette** — systématique, les données saines : la faute est à l'attendu, qui prolongeait au réseau un effet mesuré sur le budget ; la vague 2 part (`tools/n21-jobs.tsv`, section « N° 21 », la vague 1) — *Attendus, écrits avant* (section « N° 21 », la vague 1) : **les seize, 360 à 560 M positions, 245 à 385 M gardées** ; écartées 15 à 24 %, nulles 34 à 38 %, sur les gardées ; **1 190 à 1 310 positions par seconde sur un EPYC 7763** ; hors fourchette, diagnostic avant la vague 2 |
 | **N° 21 — la vague 2**, étiquetée par N8tw50s800 | 39749296414, 39749305541, 39749314764, 39749324025, 39749333154, 39749342521, 39749351549, 39749360363, 39749369366, 39749379083, 39749388273, 39749397973, 39749408427, 39749418573, 39749428507, 39749438175 | `e20dd6d` (N8tw50s800, `main`), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 22 oct. à 16 h 37** — lancée à 10 h 40, ses attendus poussés avant (`4b11866`) ; seize succès finis entre 16 h 09 et 16 h 10 | **461,5 M positions, 315,8 M gardées, tous appris ; 18,90 % d'écartées, 33,86 % de nulles, EPYC 7763 à 1 204 – 1 238 : les six chiffres dans l'attendu** ; cumul appris 608,5 M, ~58 jobs encore pour 1,75 G (`tools/n21-jobs.tsv`, section « N° 21 », la vague 2) — *Attendus, écrits avant* (section « N° 21 », la vague 2) : **380 à 560 M positions, 260 à 385 M gardées** ; écartées 18,7 à 19,2 %, nulles 33,6 à 34,1 % ; **1 200 à 1 255 positions par seconde sur un EPYC 7763** ; le cumul appris 553 à 678 M gardées |
 | **N° 21 — la vague 3**, étiquetée par N8tw50s800 | 39797385982, 39797397382, 39797409730, 39797421439, 39797433162, 39797444961, 39797456792, 39797468310, 39797479505, 39797490242, 39797501596, 39797513095, 39797524653, 39797535467, 39797547345, 39797558816 | `e20dd6d` (N8tw50s800, `main`), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 22 oct. à 16 h 39**, ses attendus poussés avant (`3f38925`) ; relève vers 22 h 25 | — *Attendus, écrits avant* (section « N° 21 », la vague 3) : **380 à 560 M positions, 260 à 385 M gardées** ; écartées 18,7 à 19,2 %, nulles 33,6 à 34,1 % ; **1 200 à 1 255 positions par seconde sur un EPYC 7763** ; le cumul appris 868 à 994 M gardées |
+| **N° 20, séance C1 — N9w50s800 contre N8tw50s800** | **39810606104, 39810618069, 39810630456, 39810642687** | `db1eed9` (N9w50s800) → `c9b5a0d` (N8tw50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **lancés le 22 oct. à 18 h 03**, les attendus poussés avant (« La séance C1 », le 22 oct. à 4 h 34) ; relève vers 23 h 15 | — *Critère, écrit avant* : borne basse au-dessus de zéro → N9w50s800 embarqué, sa sonde de B8 dans la plage ; sinon N8tw50s800 reste ; *attendu* +3 à +13, ~+7 (« La séance C1 ») |
 | **N° 20 (e) — la vague 4**, 10 000 nœuds | 39619535481, 39619539712, 39619543553, 39619548060, 39619552863, 39619556558, 39619560135, 39619564161, 39619568131, 39619572001, 39619576126, 39619581183, 39619585661, 39619590665, 39619595765, 39619599803 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 22 h 27** — lancée à 16 h 44, ses attendus poussés avant (`5a67f02`) ; seize succès finis entre 22 h 15 et 22 h 16 | **223,8 M positions, 156,2 M gardées, tous appris ; 19,46 % d'écartées, 38,54 % de nulles, EPYC 7763 à 573 – 597 : les six chiffres dans l'attendu** ; cumul appris 627,4 M, dix-sept jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 4) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 4) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 591 à 651 M gardées |
 | **N° 20 (e) — la vague 3**, 10 000 nœuds | 39571431656, 39571438951, 39571446996, 39571454666, 39571462070, 39571470003, 39571477657, 39571484787, 39571492260, 39571499559, 39571506756, 39571514470, 39571522147, 39571529991, 39571537661, 39571545662 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 16 h 39** — lancée à 10 h 43, ses attendus poussés avant (`34abd07`) ; seize succès finis entre 16 h 14 et 16 h 15 | **233,1 M positions, 162,7 M gardées, tous appris ; 19,44 % d'écartées, 38,56 % de nulles, EPYC 7763 à 575 – 595 : les six chiffres dans l'attendu** ; cumul appris 471,2 M, ~31 jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 3) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 3) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 428 à 488 M gardées |
 | **N° 20 (e) — la vague 2**, 10 000 nœuds | 39535163549, 39535169844, 39535176816, 39535183711, 39535190198, 39535196745, 39535204229, 39535211952, 39535219017, 39535226038, 39535233006, 39535239336, 39535245704, 39535251890, 39535257823, 39535263726 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 10 h 39** — lancée à 4 h 49, ses attendus poussés avant (`b21057b`) ; seize succès finis entre 10 h 20 et 10 h 21 | **237,8 M positions, 165,9 M gardées, tous appris ; 19,45 % d'écartées, 38,50 % de nulles, EPYC 7763 à 584 – 590 : les six chiffres dans l'attendu** ; cumul appris 308,4 M, ~47 jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 2) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 2) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 262 à 322 M gardées |
@@ -11032,6 +11033,116 @@ pousse ; une troisième qui ne refait rien ; les trois réseaux sur
 `reseau/n20c`, 174, 80 et 44 dossiers, 800 et 400 superlots, `wdl` 0,5 ;
 un téléchargement interrompu au 40ᵉ job de (e), puis repris ; `gh`
 déconnecté, arrêt avant tout lancement ; un mode inconnu refusé.
+
+**N9w50s800 — intégré le 22 oct. à 18 h 03, en match.** Poussé à la main
+sur `reseau/n20c` (`d5365e8`) après le faux refus du contrôle, plus bas.
+Sa sortie relue : **800 superlots, pas 0,001 → 2,43·10⁻⁶, poids du
+résultat 0,5 → 0,5** — la recette de N8tw50s800, perte, lot et ply minimal
+à leurs défauts ; **29 009 129 parties et 3 712 073 002 positions relues à
+l'octet** (l'attendu du script) ; **confrontation 7 / 22** (admis 15 / 50) ;
+311 minutes de carte. Le réseau dans `reseaux/` (`31b902f`), le candidat
+**`db1eed9`** révoqué aussitôt (`33b25cc`), au code de `main` au bit près
+(`git diff c9b5a0d db1eed9 -- engine/` : le seul `nnue.rs` du réseau) et au
+facteur 2,85. **Quatre jobs contre N8tw50s800 (`c9b5a0d`) lancés à 18 h 03**
+— l'attendu et le critère, plus haut : +3 à +13, borne basse au-dessus de
+zéro → embarqué, sa sonde dans la plage.
+
+**N9w50s800, les mesures hors match — écrites le 22 oct. à 18 h 04, avant de
+les lancer.** *Attendus* — <span>inférence, confiance faible</span> :
+- **la sonde de B8 : 2,3 à 3,3**, dans 2,14 à 3,56 — la même architecture
+  et la même recette que N8tw50s800 (2,85), N8nw50 (2,53) ; aucun sens
+  attendu ;
+- **les nœuds par seconde : × 0,97 à × 1,04 contre N8tw50s800** — même
+  architecture, même code ; seuls les poids et donc l'arbre bougent ;
+- **la perte tenue à l'écart contre N8tw50s800** (`nnue-validation.yml`) :
+  sur le job tenu de l'étape B (39050360980, N6r4 à 5 000 nœuds),
+  **−0,0002 à −0,0010** — deux fois plus de positions de N6r4, aucune de
+  N5l ; N8nw50 rendait −0,00075 contre N7p4w50 ; sur celui de (e)
+  (39493777327, N6r4 à 10 000), **−0,0003 à −0,0015** — il en a appris
+  un tiers de ses données ; sur celui du n° 18 (38531414161, N5l), **0 à
+  +0,0008** — il n'en a rien vu. N8nw50 mesuré à côté, pour E5t. Un
+  diagnostic : la perte suit l'étiqueteur, le match décide.
+
+**La perte tenue à l'écart de N9w50s800, RELEVÉE le 22 oct. à 18 h 10 — les
+trois dans l'attendu, les deux de N6r4 au bord bas.** Run 39810867177,
+l'outil à `ed8c2a9`, N8tw50s800 en référence :
+
+| job tenu à l'écart | N9w50s800 | N8nw50, à côté | attendu, écrit avant |
+|---|---|---|---|
+| étape B (39050360980), N6r4 à 5 000 nœuds | **−0,000215 ± 0,000020** | −0,000152 | −0,0002 à −0,0010 — dedans, au bord |
+| (e) (39493777327), N6r4 à 10 000 nœuds | **−0,000348 ± 0,000028** | −0,000212 | −0,0003 à −0,0015 — dedans, au bord |
+| n° 18 (38531414161), N5l | **+0,000650 ± 0,000040** | +0,000723 | 0 à +0,0008 — dedans |
+
+- **Il apprend son étiqueteur** : meilleur que N8tw50s800 sur les deux
+  jeux de N6r4, davantage sur celui de (e), dont il a appris le tiers de
+  ses données ; moins bon sur celui de N5l, qu'il n'a pas vu — l'ordre
+  attendu, plus serré qu'attendu ;
+- **devant N8nw50 partout sur N6r4**, de 0,00006 et 0,00014 : × 1,62 de
+  données de N6r4. Un diagnostic : le match décide.
+
+**La sonde de B8 de N9w50s800, RELEVÉE le 22 oct. à 18 h 37 — lue contre
+N8tw50s800, faute de sa référence d'origine ; il ne demande pas plus
+d'échelle que lui.** Le conteneur de la session a été remplacé dans
+l'après-midi : les journaux de la faite main du 12 oct., référence de toutes
+les sondes depuis, sont perdus avec lui — ils vivaient dans le carnet de
+travail, hors du dépôt. Rejouée ici (40 parties du binaire sondé contre
+lui-même à `8+0,08`, `-srand 20260930`, table de 16 Mio), la faite main ne
+rend pas les mêmes taux — **0,10 % d'élagages delta fautifs au lieu de
+0,40 %, 5,4 % d'itérations hors de la première fenêtre au lieu de 4,1 %** :
+les facteurs absolus ne se comparent plus à ceux d'avant. **Le même
+protocole sur N8tw50s800, le réseau qui joue à 2,85, donne l'étalon** —
+N9w50s800 et lui, mêmes conditions, même faite main :
+
+| | N9w50s800 | N8tw50s800 |
+|---|---|---|
+| élagage delta fautif à × 2,0 / × 2,5 / × 3,0 | **3,54 / 1,63 / 0,74 %** | 4,39 / 1,73 / 0,83 % |
+| itérations hors fenêtre à δ = 25 / 50 / 100 | **13,7 / 8,5 / 4,2 %** | 16,7 / 10,7 / 5,8 % |
+| δ qui égalise la faite main | **80 (× 3,20)** | 110 (× 4,40) |
+
+- **À chaque marge, N9w50s800 se trompe autant ou moins que N8tw50s800** :
+  il ne porte pas des nombres plus grands, il joue au facteur de `main`,
+  2,85, comme lui — le match est valide tel que lancé. <span>Inférence,
+  confiance moyenne</span> : la lecture relative remplace la règle des
+  bornes (2,14 à 3,56), qui supposait la faite main d'origine ;
+- **l'élagage delta ne s'égalise plus** sur cette faite main : à 0,10 %, la
+  cible tombe dans le bruit des grands facteurs, où quelques élagages
+  décident (N8tw50s800 × 5,0, N9w50s800 aucun jusqu'à × 6) ;
+- **à retenir** : une sonde se lit désormais contre le réseau qui joue, dans
+  les mêmes conditions ; la référence d'une mesure se garde dans le dépôt
+  ou un artefact, jamais dans le carnet de travail d'une session. **Fait** :
+  les journaux de la faite main de ce jour, ceux qu'a lus cette sonde, sont
+  dans `tools/references/sonde-b8-faite-main-2026-10-22.tgz` (1 Mo) — à
+  extraire et à passer comme troisième argument de `facteurs.py` ; la
+  sonde suivante n'a plus qu'à mesurer le candidat et le réseau qui joue.
+
+**Les nœuds par seconde de N9w50s800, RELEVÉS le 22 oct. à 18 h 45 — × 0,962
+contre N8tw50s800, 0,008 sous la fourchette au point, rien de séparé.**
+Le rejeu du n° 15 (`rejeu.py`, extrait de `n15-sonde-inference.patch`),
+`--nps`, binaires AVX2, profondeur 10, dix tours, sur un corpus neuf — 20
+parties de N8tw50s800 contre lui-même à `8+0,08`, 2 551 positions — le
+corpus du n° 15 étant perdu avec le conteneur : **× 0,962 (médiane des
+tours), plus lent 8 tours sur 10, p = 0,11** ; attendu × 0,97 à × 1,04.
+Même architecture, même code : seuls les poids, donc l'arbre, changent —
+N8nw50 rendait × 0,966 à côté de N7p4w50, dans le même sens. Le match
+compte ce coût avec le reste : ~−6 Elo au point par l'étalon (0,056
+doublement), <span>inférence, confiance faible</span>.
+
+**Le contrôle du poids refusait un réseau sain — 22 oct., 17 h 52.** N9w50s800
+a fini son entraînement à 17 h 07 (code 0, 311 min), puis le script l'a
+refusé : « *la recette imprimée n'a pas wdl 0.5* ». Le contrôle cherchait
+« , wdl 0.5 » en fin de ligne ; depuis les options de la séance C,
+l'entraîneur imprime « wdl 0.5 → 0.5, perte ^2, lot 16384, ply ≥ 0 ». **Le
+bac à sable ne l'a pas vu parce que son faux `cargo` imprimait l'ancien
+format** — copié de celui de la séance B, écrit avant ces options. *Un
+faux qui imite une sortie doit être confronté à la sortie réelle du jour,
+pas à celle du jour où il a été écrit.* Corrigé : le contrôle lit « , wdl
+0.5 → 0.5, », éprouvé sur la ligne réelle — accepté — et sur un poids ou
+un poids final différents — refusés. E10w50 et E5vw50 tomberont sur le
+même refus pendant cette séance-ci, qui tourne sur l'ancien script ; leurs
+réseaux restent sur le disque. **La reprise** : N9w50s800 publié à la main
+par un arbre de travail séparé, sans toucher à la séance en cours ; à la
+fin de la séance, `git pull` puis `bash tools/seance-n20c.sh` relance
+l'essai, saute les entraînements déjà finis et publie les deux autres.
 
 **Le rangement, depuis le 22 oct.** — Théo : « *on devrait pas mettre tout
 dans un dossier dédié au lieu de en vrac à la racine du dossier perso ?* ».
