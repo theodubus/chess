@@ -208,7 +208,11 @@ controler() { # nom, identifiant, puis des contrôles : pas=X | wdl=X
       dire "  ÉCHEC $nom : la recette imprimée n'a pas le pas ${c#pas=}"
       ok=1
     } ;;
-    wdl=*) grep -q ", wdl ${c#wdl=}\$" "$sortie" || {
+    # Le poids du résultat, constant : « wdl 0.5 → 0.5, » — le format de
+    # l'entraîneur depuis les options de la séance C (début → fin, puis la
+    # perte, le lot, le ply). L'ancien contrôle cherchait « , wdl 0.5 » en fin
+    # de ligne et a refusé N9w50s800 le 22 oct., bien entraîné.
+    wdl=*) grep -Fq ", wdl ${c#wdl=} → ${c#wdl=}, " "$sortie" || {
       dire "  ÉCHEC $nom : la recette imprimée n'a pas wdl ${c#wdl=}"
       ok=1
     } ;;

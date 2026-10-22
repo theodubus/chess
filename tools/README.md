@@ -11033,6 +11033,23 @@ pousse ; une troisième qui ne refait rien ; les trois réseaux sur
 un téléchargement interrompu au 40ᵉ job de (e), puis repris ; `gh`
 déconnecté, arrêt avant tout lancement ; un mode inconnu refusé.
 
+**Le contrôle du poids refusait un réseau sain — 22 oct., 17 h 52.** N9w50s800
+a fini son entraînement à 17 h 07 (code 0, 311 min), puis le script l'a
+refusé : « *la recette imprimée n'a pas wdl 0.5* ». Le contrôle cherchait
+« , wdl 0.5 » en fin de ligne ; depuis les options de la séance C,
+l'entraîneur imprime « wdl 0.5 → 0.5, perte ^2, lot 16384, ply ≥ 0 ». **Le
+bac à sable ne l'a pas vu parce que son faux `cargo` imprimait l'ancien
+format** — copié de celui de la séance B, écrit avant ces options. *Un
+faux qui imite une sortie doit être confronté à la sortie réelle du jour,
+pas à celle du jour où il a été écrit.* Corrigé : le contrôle lit « , wdl
+0.5 → 0.5, », éprouvé sur la ligne réelle — accepté — et sur un poids ou
+un poids final différents — refusés. E10w50 et E5vw50 tomberont sur le
+même refus pendant cette séance-ci, qui tourne sur l'ancien script ; leurs
+réseaux restent sur le disque. **La reprise** : N9w50s800 publié à la main
+par un arbre de travail séparé, sans toucher à la séance en cours ; à la
+fin de la séance, `git pull` puis `bash tools/seance-n20c.sh` relance
+l'essai, saute les entraînements déjà finis et publie les deux autres.
+
 **Le rangement, depuis le 22 oct.** — Théo : « *on devrait pas mettre tout
 dans un dossier dédié au lieu de en vrac à la racine du dossier perso ?* ».
 Tout vit sous `~/shallowred/` : `chess/` le dépôt, `donnees/n18`,
