@@ -11031,6 +11031,23 @@ pousse ; une troisième qui ne refait rien ; les trois réseaux sur
 un téléchargement interrompu au 40ᵉ job de (e), puis repris ; `gh`
 déconnecté, arrêt avant tout lancement ; un mode inconnu refusé.
 
+**Le rangement, depuis le 22 oct.** — Théo : « *on devrait pas mettre tout
+dans un dossier dédié au lieu de en vrac à la racine du dossier perso ?* ».
+Tout vit sous `~/shallowred/` : `chess/` le dépôt, `donnees/n18`,
+`donnees/n20`, `donnees/n20e`, `donnees/leela`, `seances/<nom>` pour les
+journaux. `tools/seance-n20c.sh` prend ces chemins par défaut, prend pour
+dépôt celui qui le porte, et **refuse de démarrer si l'étape B est restée
+à `~/nnue-n20`** — l'oubli ferait retélécharger 9 Go à côté des données
+qu'on a ; éprouvé dans les deux sens. Les scripts des séances finies
+gardent leurs anciens chemins. Ce qui ne sert plus : `~/nnue-vague2`
+(N2, N3), `~/nnue-vague3` (N4, N5) et `~/nnue`, non documenté — la
+première vague, fin septembre, <span>de mémoire, confiance moyenne</span>
+—, qu'aucun réseau à venir ne lit ; les points de sauvegarde des séances
+finies sous `tools/nnue-train/`, leurs réseaux étant tous dans `reseaux/`
+sur `main`. `donnees/n18` (N5l) n'ajoute rien à passes égales
+(+0,25 ± 4,71) et reste téléchargeable jusqu'à la mi-janvier ;
+`donnees/leela` sert encore à (b).
+
 **Pourquoi 400 superlots pour E10 et E5v** — (e) renvoyait le choix ici.
 La règle de (e) les veut aux mêmes superlots que E5t, et E5t existe :
 N8nw50, 400 superlots — une carte de 2 h 40 économisée. **E10 contre E5t
@@ -14419,6 +14436,13 @@ candidat, une partie à la fois, sous les deux arbitres.
 Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
 **vieillissent**, et c'est pourquoi ils sont écrits plutôt que gardés.
 
+- **Les données d'entraînement n'ont qu'une copie passé 90 jours** — les
+  artefacts de `nnue-datagen.yml` portent `retention-days: 90` : ceux du
+  n° 18 expirent vers la mi-janvier 2027, ceux de l'étape B, de (e) et du
+  n° 21 dans les semaines qui suivent. Après, `~/shallowred/donnees/` sur
+  la machine de Théo est la seule copie, et `nnue-validation.yml`, qui
+  télécharge les artefacts, ne peut plus mesurer la perte tenue à l'écart
+  sur un job expiré.
 - **Les runners changent de MODÈLE, pas seulement de vitesse** — relevé le
   24 sept. 2026 : EPYC 7763, EPYC 9V74 et EPYC 9V45 dans la même nuit, de
   2,02 à 4,06 M n/s au banc sur des binaires voisins. Un verdict reste valide
