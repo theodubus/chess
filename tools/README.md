@@ -11115,6 +11115,18 @@ N9w50s800 et lui, mêmes conditions, même faite main :
   extraire et à passer comme troisième argument de `facteurs.py` ; la
   sonde suivante n'a plus qu'à mesurer le candidat et le réseau qui joue.
 
+**Les nœuds par seconde de N9w50s800, RELEVÉS le 22 oct. à 18 h 45 — × 0,962
+contre N8tw50s800, 0,008 sous la fourchette au point, rien de séparé.**
+Le rejeu du n° 15 (`rejeu.py`, extrait de `n15-sonde-inference.patch`),
+`--nps`, binaires AVX2, profondeur 10, dix tours, sur un corpus neuf — 20
+parties de N8tw50s800 contre lui-même à `8+0,08`, 2 551 positions — le
+corpus du n° 15 étant perdu avec le conteneur : **× 0,962 (médiane des
+tours), plus lent 8 tours sur 10, p = 0,11** ; attendu × 0,97 à × 1,04.
+Même architecture, même code : seuls les poids, donc l'arbre, changent —
+N8nw50 rendait × 0,966 à côté de N7p4w50, dans le même sens. Le match
+compte ce coût avec le reste : ~−6 Elo au point par l'étalon (0,056
+doublement), <span>inférence, confiance faible</span>.
+
 **Le contrôle du poids refusait un réseau sain — 22 oct., 17 h 52.** N9w50s800
 a fini son entraînement à 17 h 07 (code 0, 311 min), puis le script l'a
 refusé : « *la recette imprimée n'a pas wdl 0.5* ». Le contrôle cherchait
