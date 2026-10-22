@@ -11162,6 +11162,44 @@ sur `main`. `donnees/n18` (N5l) n'ajoute rien à passes égales
 (+0,25 ± 4,71) et reste téléchargeable jusqu'à la mi-janvier ;
 `donnees/leela` sert encore à (b).
 
+**E10w50 et E5vw50 — intégrés le 22 oct. à 22 h 46.** Publiés par la relance
+du script après la séance (`28f32b2`, `859b4aa` sur `reseau/n20c`), tous
+contrôles passés. Leurs sorties relues :
+
+| | E10w50 | E5vw50 |
+|---|---|---|
+| recette | 400 superlots, pas 0,001 → 2,43·10⁻⁶, poids 0,5 → 0,5, ply ≥ 16 | la même |
+| relu à l'octet | 8 662 540 parties, 1 148 044 133 positions — 80 jobs de (e) | 9 402 946 parties, 1 185 033 571 positions — 44 jobs de l'étape B |
+| confrontation, médian / maximal | **6 / 27** | **7 / 42** (admis 15 / 50) |
+| carte | 9 505 s, 2 h 38 | 9 472 s, 2 h 38 |
+
+Les réseaux dans `reseaux/` (`a3159b4`) ; les candidats **`17fd4e3`**
+(E10w50) et **`c61d721`** (E5vw50), révoqués aussitôt (`3c61732`,
+`14311cc`), au code de `main` au bit près — le seul `nnue.rs` du réseau —
+et au facteur 2,85 ; E5t reste `6a1b1d6` (N8nw50). Les matchs 2, 3 et 4,
+lancés ensemble — leurs attendus et le critère, plus bas, écrits le 19 et
+le 20 oct.
+
+**La perte tenue à l'écart de E10w50 et E5vw50 — écrite avant de la
+lancer.** `nnue-validation.yml`, N8tw50s800 en référence comme pour N9,
+N8nw50 (E5t) et N9w50s800 à côté, sur les trois jobs tenus à l'écart.
+*Attendus* — <span>inférence, confiance faible</span> ; un diagnostic, le
+match décide :
+- **sur celui de (e)** (39493777327, N6r4 à 10 000 nœuds) : **E10w50 le
+  meilleur des cinq, −0,0003 à −0,0012** — il n'a appris que cet
+  étiqueteur-là ; N9w50s800 en rendait −0,000348 avec un tiers de ces
+  données ;
+- **sur celui de l'étape B** (39050360980, N6r4 à 5 000 nœuds) :
+  **E5vw50 derrière N8nw50 de 0 à +0,0003** — moitié moins de données,
+  deux fois plus de passes ; **E10w50 derrière E5vw50 de 0 à +0,0004** —
+  l'étiquette du même réseau à un autre budget ;
+- **sur celui du n° 18** (38531414161, N5l) : E10w50 et E5vw50 **+0,0004
+  à +0,0012**, comme N8nw50 (+0,000723), qui n'en a rien vu non plus ;
+- **le signe du surapprentissage à 50 passes** : E10w50 ou E5vw50 plus
+  mauvais que N8tw50s800 de plus de +0,0005 sur le job de son PROPRE
+  étiqueteur. Il ne déciderait rien, il expliquerait un E10 battu par E5t
+  — le biais écrit plus bas.
+
 **Pourquoi 400 superlots pour E10 et E5v** — (e) renvoyait le choix ici.
 La règle de (e) les veut aux mêmes superlots que E5t, et E5t existe :
 N8nw50, 400 superlots — une carte de 2 h 40 économisée. **E10 contre E5t
