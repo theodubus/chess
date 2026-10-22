@@ -11109,7 +11109,11 @@ N9w50s800 et lui, mêmes conditions, même faite main :
   décident (N8tw50s800 × 5,0, N9w50s800 aucun jusqu'à × 6) ;
 - **à retenir** : une sonde se lit désormais contre le réseau qui joue, dans
   les mêmes conditions ; la référence d'une mesure se garde dans le dépôt
-  ou un artefact, jamais dans le carnet de travail d'une session.
+  ou un artefact, jamais dans le carnet de travail d'une session. **Fait** :
+  les journaux de la faite main de ce jour, ceux qu'a lus cette sonde, sont
+  dans `tools/references/sonde-b8-faite-main-2026-10-22.tgz` (1 Mo) — à
+  extraire et à passer comme troisième argument de `facteurs.py` ; la
+  sonde suivante n'a plus qu'à mesurer le candidat et le réseau qui joue.
 
 **Le contrôle du poids refusait un réseau sain — 22 oct., 17 h 52.** N9w50s800
 a fini son entraînement à 17 h 07 (code 0, 311 min), puis le script l'a
