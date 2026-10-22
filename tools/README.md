@@ -11080,6 +11080,37 @@ l'outil à `ed8c2a9`, N8tw50s800 en référence :
 - **devant N8nw50 partout sur N6r4**, de 0,00006 et 0,00014 : × 1,62 de
   données de N6r4. Un diagnostic : le match décide.
 
+**La sonde de B8 de N9w50s800, RELEVÉE le 22 oct. à 18 h 37 — lue contre
+N8tw50s800, faute de sa référence d'origine ; il ne demande pas plus
+d'échelle que lui.** Le conteneur de la session a été remplacé dans
+l'après-midi : les journaux de la faite main du 12 oct., référence de toutes
+les sondes depuis, sont perdus avec lui — ils vivaient dans le carnet de
+travail, hors du dépôt. Rejouée ici (40 parties du binaire sondé contre
+lui-même à `8+0,08`, `-srand 20260930`, table de 16 Mio), la faite main ne
+rend pas les mêmes taux — **0,10 % d'élagages delta fautifs au lieu de
+0,40 %, 5,4 % d'itérations hors de la première fenêtre au lieu de 4,1 %** :
+les facteurs absolus ne se comparent plus à ceux d'avant. **Le même
+protocole sur N8tw50s800, le réseau qui joue à 2,85, donne l'étalon** —
+N9w50s800 et lui, mêmes conditions, même faite main :
+
+| | N9w50s800 | N8tw50s800 |
+|---|---|---|
+| élagage delta fautif à × 2,0 / × 2,5 / × 3,0 | **3,54 / 1,63 / 0,74 %** | 4,39 / 1,73 / 0,83 % |
+| itérations hors fenêtre à δ = 25 / 50 / 100 | **13,7 / 8,5 / 4,2 %** | 16,7 / 10,7 / 5,8 % |
+| δ qui égalise la faite main | **80 (× 3,20)** | 110 (× 4,40) |
+
+- **À chaque marge, N9w50s800 se trompe autant ou moins que N8tw50s800** :
+  il ne porte pas des nombres plus grands, il joue au facteur de `main`,
+  2,85, comme lui — le match est valide tel que lancé. <span>Inférence,
+  confiance moyenne</span> : la lecture relative remplace la règle des
+  bornes (2,14 à 3,56), qui supposait la faite main d'origine ;
+- **l'élagage delta ne s'égalise plus** sur cette faite main : à 0,10 %, la
+  cible tombe dans le bruit des grands facteurs, où quelques élagages
+  décident (N8tw50s800 × 5,0, N9w50s800 aucun jusqu'à × 6) ;
+- **à retenir** : une sonde se lit désormais contre le réseau qui joue, dans
+  les mêmes conditions ; la référence d'une mesure se garde dans le dépôt
+  ou un artefact, jamais dans le carnet de travail d'une session.
+
 **Le contrôle du poids refusait un réseau sain — 22 oct., 17 h 52.** N9w50s800
 a fini son entraînement à 17 h 07 (code 0, 311 min), puis le script l'a
 refusé : « *la recette imprimée n'a pas wdl 0.5* ». Le contrôle cherchait
