@@ -841,14 +841,13 @@ impl Network {
     }
 }
 
-/// Le réseau que le binaire embarque : N8tw50s800, le n° 20 séance B — le
-/// doublement de passes suivant : la recette de N8tw50 (les 79 jobs du n° 18
-/// et les 84 premiers jobs appris de l'étape B, 4,63 G positions, poids du
-/// résultat 0,5) à 800 superlots au lieu de 400 : `(768 × 4 → 256) × 2 → 1`,
-/// quatre seaux de roi en miroir, huit seaux de sortie, depuis zéro. Entraîné
-/// le 21 oct. 2026. Sa courbe de perte et la sortie complète de
-/// l'entraînement sont à côté de lui, dans `reseaux/`.
-const EMBEDDED: &[u8] = include_bytes!("../../reseaux/n8tw50s800-768x4hm-256-s8-800.bin");
+/// Le réseau que le binaire embarque : E10w50, le n° 20 séance C1 — le
+/// budget de l'étiqueteur : les 80 jobs appris de (e), étiquetés par N6r4 à
+/// 10 000 nœuds, 1,15 G positions, poids du résultat 0,5, 400 superlots :
+/// `(768 × 4 → 256) × 2 → 1`, quatre seaux de roi en miroir, huit seaux de
+/// sortie, depuis zéro. Entraîné le 22 oct. 2026. Sa courbe de perte et la
+/// sortie complète de l'entraînement sont à côté de lui, dans `reseaux/`.
+const EMBEDDED: &[u8] = include_bytes!("../../reseaux/e10w50-768x4hm-256-s8-400.bin");
 
 /// Le réseau embarqué, lu une seule fois et partagé.
 ///
@@ -1798,7 +1797,7 @@ mod tests {
         // La confrontation de l'entraînement du réseau embarqué, rejouée à
         // chaque build : les dix-huit positions, ce qu'en disait le moteur et ce
         // qu'en disait bullet (`trainer.eval(fen) × 400`) au bout de
-        // l'entraînement — relevés dans `reseaux/n8tw50s800-768x4hm-256-s8-800.sortie.txt`.
+        // l'entraînement — relevés dans `reseaux/e10w50-768x4hm-256-s8-400.sortie.txt`.
         // Le seul test qui confronte l'inférence à l'entraîneur sur un VRAI
         // réseau ; ceux d'au-dessus tiennent des réseaux aléatoires.
         //
@@ -1810,58 +1809,58 @@ mod tests {
         const CONFRONTATION: [(&str, i32, i32); 18] = [
             (
                 "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                76,
-                66,
+                84,
+                79,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
-                -231,
-                -243,
+                -148,
+                -158,
             ),
-            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 82, 81),
+            ("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 49, 41),
             (
                 "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1",
-                388,
-                385,
+                278,
+                272,
             ),
             (
                 "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
-                -181,
-                -185,
+                -33,
+                -28,
             ),
             (
                 "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10",
-                42,
-                35,
+                29,
+                26,
             ),
             (
                 "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
-                -46,
-                -55,
+                -37,
+                -41,
             ),
             (
                 "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQkq - 0 1",
-                325,
-                320,
+                239,
+                249,
             ),
             (
                 "r2q1rk1/pp2bppp/2n1bn2/3p4/3P4/2NBBN2/PP3PPP/R2Q1RK1 b - - 0 1",
-                14,
-                15,
+                -8,
+                -9,
             ),
-            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -2507, -2495),
-            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 565, 562),
-            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -4244, -4229),
-            ("2kr3r/ppp2ppp/2n5/8/8/2N5/PPP2PPP/2KR3R w - - 0 12", 53, 58),
+            ("6k1/5ppp/8/8/8/8/5PPP/3R2K1 b - - 0 1", -2422, -2436),
+            ("8/8/8/4k3/8/8/4KP2/8 w - - 0 1", 408, 403),
+            ("8/5pk1/6p1/8/8/1Q6/5PPP/6K1 b - - 0 1", -3784, -3811),
+            ("2kr3r/ppp2ppp/2n5/8/8/2N5/PPP2PPP/2KR3R w - - 0 12", 91, 79),
             (
                 "r1bq1rk1/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 w - - 0 7",
-                126,
-                122,
+                130,
+                121,
             ),
-            ("8/8/4k3/3p4/3P4/4K3/8/8 w - - 0 1", 16, 17),
-            ("4k3/8/8/2K5/8/8/8/R7 w - - 0 1", 953, 958),
-            ("8/8/3k4/8/3K4/8/8/8 w - - 0 1", -47, -45),
-            ("1k6/8/8/8/8/8/8/K7 b - - 0 1", -12, -14),
+            ("8/8/4k3/3p4/3P4/4K3/8/8 w - - 0 1", 17, 19),
+            ("4k3/8/8/2K5/8/8/8/R7 w - - 0 1", 1450, 1441),
+            ("8/8/3k4/8/3K4/8/8/8 w - - 0 1", -11, -14),
+            ("1k6/8/8/8/8/8/8/K7 b - - 0 1", 48, 43),
         ];
         let network = embedded().unwrap();
         let mut gaps = Vec::new();
