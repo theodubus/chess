@@ -11063,6 +11063,23 @@ les lancer.** *Attendus* — <span>inférence, confiance faible</span> :
   +0,0008** — il n'en a rien vu. N8nw50 mesuré à côté, pour E5t. Un
   diagnostic : la perte suit l'étiqueteur, le match décide.
 
+**La perte tenue à l'écart de N9w50s800, RELEVÉE le 22 oct. à 18 h 10 — les
+trois dans l'attendu, les deux de N6r4 au bord bas.** Run 39810867177,
+l'outil à `ed8c2a9`, N8tw50s800 en référence :
+
+| job tenu à l'écart | N9w50s800 | N8nw50, à côté | attendu, écrit avant |
+|---|---|---|---|
+| étape B (39050360980), N6r4 à 5 000 nœuds | **−0,000215 ± 0,000020** | −0,000152 | −0,0002 à −0,0010 — dedans, au bord |
+| (e) (39493777327), N6r4 à 10 000 nœuds | **−0,000348 ± 0,000028** | −0,000212 | −0,0003 à −0,0015 — dedans, au bord |
+| n° 18 (38531414161), N5l | **+0,000650 ± 0,000040** | +0,000723 | 0 à +0,0008 — dedans |
+
+- **Il apprend son étiqueteur** : meilleur que N8tw50s800 sur les deux
+  jeux de N6r4, davantage sur celui de (e), dont il a appris le tiers de
+  ses données ; moins bon sur celui de N5l, qu'il n'a pas vu — l'ordre
+  attendu, plus serré qu'attendu ;
+- **devant N8nw50 partout sur N6r4**, de 0,00006 et 0,00014 : × 1,62 de
+  données de N6r4. Un diagnostic : le match décide.
+
 **Le contrôle du poids refusait un réseau sain — 22 oct., 17 h 52.** N9w50s800
 a fini son entraînement à 17 h 07 (code 0, 311 min), puis le script l'a
 refusé : « *la recette imprimée n'a pas wdl 0.5* ». Le contrôle cherchait
