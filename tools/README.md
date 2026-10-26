@@ -11482,6 +11482,18 @@ des quatre** : `nnue_validation.rs` la calcule sous un poids fixé à 0,75 et
 à l'exposant 2, ce que N9w75s800 a minimisé et pas les autres. Les nœuds
 par seconde : la même architecture, le même calcul — rien à mesurer.
 
+**N9w625s800 — intégré le 26 oct. à 14 h 04, en match.** Poussé par la
+séance à 13 h 41 (`08dc26a` sur `reseau/n20d`), tous contrôles passés.
+Sa sortie relue : la ligne de recette **« 800 superlots, pas 0.001 →
+2.4300007e-6, wdl 0.625 → 0.625, perte ^2, lot 16384, ply ≥ 16 »** ;
+**29 009 129 parties et 3 712 073 002 positions relues à l'octet** — les
+données de N9w50s800 ; **confrontation 4 / 11** ; 18 577 s de carte,
+5 h 10. Le réseau dans `reseaux/`, le candidat **`fcd362f`** révoqué
+aussitôt, au code de `main` au bit près — le seul `nnue.rs` du réseau — et
+au facteur 2,85. **Quatre jobs contre N9w50s800** (`main`, `cf93707`),
+l'attendu et le critère plus haut : −3 à +6, ~+1 ; borne basse au-dessus
+de zéro → candidat à l'embarquement.
+
 **Ce qui suit** : C2c au verdict de C2 ; C3 (l'architecture) sur la recette
 que C2 fixe ; **la tranche du n° 21**, close vers le 27 oct., entre dans
 les données de C3 — le volume paie encore (+8,94 ± 3,32).
