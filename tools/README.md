@@ -11495,6 +11495,44 @@ au facteur 2,85. **Quatre jobs contre N9w50s800** (`main`, `cf93707`),
 l'attendu et le critère plus haut : −3 à +6, ~+1 ; borne basse au-dessus
 de zéro → candidat à l'embarquement.
 
+**N9w625s800 — VERDICT, le 26 oct. à 19 h 56 : −1,86 ± 3,33 contre N9w50s800
+— pas candidat ; le poids reste à 0,5.** Quatre jobs finis ENTIERS entre
+19 h 03 et 19 h 10, 6,37 à 6,53 s par partie, zéro perte au temps, aucun
+coup illégal, aucun moteur perdu ; le premier sur EPYC 7763, 1 960 159 n/s
+au banc, profondeur 14 en 250 ms.
+
+| les quatre jobs | en commun, 11 200 parties | homogénéité | attendu, écrit avant |
+|---|---|---|---|
+| −2,61, −2,48, −1,99, −0,37 | **−1,86 ± 3,33** | p = 0,969 | −3 à +6, ~+1 — dedans, 2,9 sous le point |
+
+Pentanomiaux, dans l'ordre des jobs : 39, 262, 813, 253, 33 ; 23, 261,
+855, 235, 26 ; 34, 254, 832, 254, 26 ; 26, 271, 815, 256, 32.
+
+- **Critère, écrit avant** : la borne basse, −5,19, n'est pas au-dessus de
+  zéro — **N9w625s800 n'est pas candidat**. La borne haute, +1,47, n'est
+  pas sous zéro : aucune régression démontrée non plus ;
+- **ce qu'il dit** : à 31,3 passes, monter le poids de 0,5 à 0,625 ne rend
+  rien de mesurable. La tendance des passes — 0,75 reprenait 8,4 points
+  sur 0,5 entre 6,4 et 25,6 passes — ne se prolonge pas en gain à 800
+  superlots ; elle se prolonge peut-être en ÉGALITÉ, ce que N9w75s800
+  dira. <span>Inférence, confiance moyenne</span> : l'optimum du poids,
+  à cette recette, est plat entre 0,5 et 0,625 ;
+- **le réglage reste ouvert** (« La file », registre) — **déprioritisé** :
+  un gain de +2 passe inaperçu à ± 3,3, et c'était écrit.
+
+**N9w75s800 — intégré le 26 oct. à 19 h 56, en match.** Poussé par la séance
+à 18 h 47 (`1faab0b` sur `reseau/n20d`), tous contrôles passés. Sa sortie
+relue : la ligne de recette **« 800 superlots, pas 0.001 → 2.4300007e-6,
+wdl 0.75 → 0.75, perte ^2, lot 16384, ply ≥ 16 »** ; **29 009 129 parties
+et 3 712 073 002 positions relues à l'octet** — les données de N9w50s800 ;
+**confrontation 7 / 14** ; 18 368 s de carte, 5 h 06. Le réseau dans
+`reseaux/`, le candidat **`331cdad`** révoqué aussitôt, au code de `main`
+au bit près — le seul `nnue.rs` du réseau — et au facteur 2,85. **Quatre
+jobs contre N9w50s800** (`main`, `cf93707`), l'attendu et le critère plus
+haut, écrits avant : −6 à +5, ~−1 ; borne basse au-dessus de zéro →
+candidat à l'embarquement. Le verdict de N9w625s800, tombé avant ce
+lancement, ne change pas l'attendu : il est dans sa fourchette.
+
 **Ce qui suit** : C2c au verdict de C2 ; C3 (l'architecture) sur la recette
 que C2 fixe ; **la tranche du n° 21**, close vers le 27 oct., entre dans
 les données de C3 — le volume paie encore (+8,94 ± 3,32).
@@ -14016,7 +14054,8 @@ critères, s'écrit à la clôture de (e), la liste des données close.
   **ÉCRITE le 26 oct.** (« La séance C2 ») : quatre réseaux à 800
   superlots, chacun contre N9w50s800 — les deux poids (`a`), l'exposant
   2,5 et le poids variable (`b`) ; le pas final, le lot et le premier
-  demi-coup en C2c, au verdict ; **elle attend la carte de Théo** ;
+  demi-coup en C2c, au verdict ; **`a` faite le 26 oct.** :
+  N9w625s800 **−1,86 ± 3,33**, pas candidat ; N9w75s800 en match ;
 - **C3 — l'architecture** : 384 et 512 unités, dix seaux de roi au
   volume d'aujourd'hui, chacun avec ses nœuds par seconde. **1 024
   unités et plus de seaux de roi viennent après** — Théo, 21 oct. :
@@ -14040,7 +14079,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | réglage | aujourd'hui | ce qui l'a mesuré | marge estimée | prochain test |
 |---|---|---|---|---|
 | **superlots (passes)** | 800 au réseau qui joue (N8tw50s800, 4,63 G, 25,9 passes) | à 1,56 G : 100 → 200 +14,74 ; 200 → 400 +9,31. **À 4,63 G : 400 → 800 +5,43 ± 3,34** (21 oct.) | +2 à +5 au doublement suivant — <span>confiance faible</span> : le rendement décroît, et moins à 4,63 G qu'à 1,56 G au même nombre de passes (+5,43 contre +9,31) | **en dernier, sur la recette finale** de la séance C (21 oct., en réponse à une question de Théo — l'ordre, pas une décision de sa part) : l'optimum des passes bouge avec le volume et la largeur, que la séance C change toutes deux — mesuré aujourd'hui, il serait périmé dès son réseau ; 1 600 superlots, ~10 h 30 de carte |
-| **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N8tw50s800) et aux réseaux de la séance B ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes | ~+3 au point entre 0,5 et 0,75 à 400 ; l'optimum, inconnu à la recette finale — <span>confiance faible</span> | **séance C2, écrite le 26 oct.** : 0,625 et 0,75 à 800 superlots, chacun contre N9w50s800 (« La séance C2 », `a`) |
+| **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N9w50s800) et aux réseaux des séances B et C1 ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes. **À 800 (C2, 26 oct.) : 0,625 contre 0,5 −1,86 ± 3,33** | plat entre 0,5 et 0,625 à 800 ; ~0 à ± 2 — <span>confiance moyenne</span> | **0,75 à 800 en match** (N9w75s800) ; ensuite **déprioritisé**, rouvert par une recette qui change les passes ou les données |
 | **pas initial** (`--pas`) | 0,001, le défaut de bullet | **l'écran du 21 oct.** à 100 superlots : ×0,5 → −0,12 ± 3,43 ; ×2 → **−4,90 ± 3,41**, régression démontrée ; la perte tenue à l'écart, plate (+0,00004 des deux côtés), ne le voyait pas | fine — <span>confiance faible</span> : au mieux quelques Elo entre 0,0005 et 0,001 | déprioritisé ; se rouvre avec la recette (lot, largeur), le pas optimal bougeant avec eux |
 | **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; C2c, au verdict de C2 — le sens inconnu, deux réseaux |
 | **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 — `--perte`, écrite le 20 oct. ; **séance C2, `b`** (N9p25s800) |
