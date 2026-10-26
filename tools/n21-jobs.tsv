@@ -1,5 +1,5 @@
 # N° 21 — les jobs de génération étiquetés par N8tw50s800 à e20dd6d (tools/README.md, section « N° 21 »).
-# Lu dans le journal de chaque job (parties, positions, retenues_filtre_defaut) et à l'API (artefact, octets) ; les vagues 1 à 3 le 22 oct. 2026, les vagues 4 et 5 le 26 oct.
+# Lu dans le journal de chaque job (parties, positions, retenues_filtre_defaut) et à l'API (artefact, octets) ; les vagues 1 à 3 le 22 oct. 2026, les vagues 4 à 6 le 26 oct.
 # role : « tenu » = tenu à l'écart (jamais entraîné) ; « appris » = entre dans l'entraînement. noeuds : le budget par coup du job.
 # parties : les parties GARDÉES — les écartées par le filtre d'ouverture n'y sont pas.
 run	artefact	vague	role	noeuds	parties	positions	gardees	octets_zip
@@ -83,3 +83,10 @@ run	artefact	vague	role	noeuds	parties	positions	gardees	octets_zip
 40282951188	12650335689	5	appris	5000	341960	42851664	29307978	154554700
 40282954670	12649149269	5	appris	5000	192730	24152514	16521812	87122046
 40282958457	12648994997	5	appris	5000	253858	31813816	21769433	114746557
+40325845542	12676810112	6	appris	5000	193234	24222536	16574052	87379491
+40325852055	12675446103	6	appris	5000	252845	31694026	21682457	114334671
+40325857859	12675521588	6	appris	5000	331970	41609650	28480212	150059050
+40325863642	12674779322	6	appris	5000	195307	24408885	16690003	88043613
+40325869445	12674439977	6	appris	5000	195395	24451349	16725959	88205398
+40325875016	12676095043	6	appris	5000	183613	22979164	15718086	82899344
+40325880490	12674224488	6	appris	5000	188066	23552063	16110345	84955202
