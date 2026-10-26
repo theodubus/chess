@@ -11402,6 +11402,88 @@ N8tw50s800, le même calcul — rien à mesurer.
 **Ce qui suit** : C2 (la recette) et C3 (l'architecture) s'écrivent au
 verdict de C1, sur les données qu'il fixe — celles de N9 s'il embarque.
 
+#### La séance C2 — écrite le 26 oct. à 8 h 07, avant de la demander
+
+**Ce qu'elle tranche : la recette, sur les données que C1 a fixées.** Quatre
+réseaux à l'architecture et aux données de N9w50s800 — 256 unités, quatre
+seaux de roi, huit de sortie ; les 94 jobs appris de l'étape B et les 80 de
+(e), 3,71 G positions, sur le disque de Théo depuis C1 — et à sa recette,
+**un seul réglage changé chacun** : 800 superlots, pas 0,001 décroissant en
+cosinus jusqu'à × 0,3⁵, lot 16 384, ply ≥ 16. N9w50s800, qui joue, est la
+base : **chacun se mesure contre lui, directement**, sans réseau de base à
+entraîner.
+
+| réseau | le réglage changé | séance | carte |
+|---|---|---|---|
+| **N9w625s800** | poids du résultat 0,625 au lieu de 0,5 | `a` | ~5 h 15 |
+| **N9w75s800** | poids du résultat 0,75 | `a` | ~5 h 15 |
+| **N9p25s800** | exposant de la perte 2,5 au lieu de 2 | `b` | ~5 h 15 |
+| **N9w25a75s800** | poids variable, de 0,25 à 0,75 en ligne droite — 0,5 en moyenne | `b` | ~5 h 15 |
+
+**Pourquoi 800 superlots, et pas un écran à 400** : l'optimum du poids a
+bougé avec les passes — 0,75 perdait 11,79 contre 0,5 à 6,4 passes, 3,35 à
+25,6 — et N9w50s800 en fait 31,3. Un écran à 400 superlots (15,7 passes)
+mesurerait une recette que personne ne jouera, et demanderait une base de
+plus. Le prix : 5 h 15 de carte par réseau au lieu de 2 h 40.
+
+**Pourquoi ces quatre d'abord** (« La file », les réglages ouverts) : le
+poids est le seul réglage de la recette dont on sait qu'il compte (+11,79
+à 100 superlots) et que son optimum bouge ; 0,625 et 0,75 disent dans quel
+sens. L'exposant 2,5 et le poids variable n'ont jamais été mesurés ici, et
+coûtent une option chacun. Le pas final, la taille de lot et le premier
+demi-coup gardé suivent (C2c, écrite au verdict) : leur sens même est
+inconnu, et il y faudrait deux réseaux par réglage.
+
+**Le script** : `tools/seance-n20d.sh` — `essai`, puis `a`, puis `b` (ou
+`tout`, ~21 h). Chaque réseau est poussé sur `reseau/n20d` dès qu'il passe
+ses contrôles, qui lisent la **ligne de recette entière** que l'entraîneur
+imprime : un réglage mal passé ne fait rien planter, il entraîne un autre
+réseau. Le modèle de la ligne retombe à l'octet sur les sorties réelles de
+N9w50s800 et de E10w50 ; le format des quatre variantes — le `{}` d'un
+`f32` : 0.625, 0.75, 0.25, 2.5 — vérifié par un programme Rust au format
+de `tools/nnue-train`. *Éprouvé dans un bac à sable* — faux `cargo` au
+format du jour, faux `gh`, dépôt distant local : l'essai, deux jobs de
+l'étape B manquants et téléchargés ; `a`, puis sa relance, qui ne refait
+rien ; une panne simulée de l'entraîneur sur N9p25s800, puis la relance,
+qui le reprend ; un entraîneur qui ignorerait `--wdl-final`, refusé par la
+ligne de recette ; un mode inconnu, refusé. **Le bac à sable a trouvé un
+défaut** : un réseau refusé restait « déjà fait », et aucune relance ne le
+refaisait. Désormais il est mis de côté, jamais effacé : la relance le
+refait, et s'il était sain — un contrôle faux, comme pour N9w50s800 le
+22 oct. —, il reste publiable à la main.
+
+**Attendus** — chacun contre N9w50s800, quatre jobs de 2 800 parties à
+`8+0,08`, AVX2 des deux côtés, le livre de 15 000, graine « auto », au
+facteur de `main` (2,85) — <span>inférence, confiance faible</span> :
+- **N9w625s800 : −3 à +6, ~+1** — la tendance des passes : de 6,4 à 25,6
+  passes, 0,75 a repris 8,4 points sur 0,5 ; à 31,3, l'écart est petit, et
+  0,625 est entre les deux ;
+- **N9w75s800 : −6 à +5, ~−1** ;
+- **N9p25s800 : −5 à +5, ~0** — jamais mesuré ici ; un exposant plus grand
+  pèse davantage les grosses erreurs ;
+- **N9w25a75s800 : −4 à +6, ~+1** — la même moyenne que N9w50s800 : il
+  apprend d'abord l'évaluation, puis le résultat.
+
+**Critère, écrit avant** : chacun, borne basse au-dessus de zéro →
+**candidat à l'embarquement**, sa sonde de B8 lue contre N9w50s800 dans les
+mêmes conditions ; seul, il embarque. Si les deux poids démontrent, un
+match direct les départage. Si un poids et la perte — ou le poids variable
+— démontrent, leur **composition** s'entraîne et se mesure contre le
+meilleur seul avant d'embarquer : leurs Elo ne s'additionnent jamais sur le
+papier. **La puissance, dite d'avance** : ± 3,3 à 11 200 parties ; un gain
+de +2 passe inaperçu, et c'est accepté parce que c'est écrit — le réglage
+reste ouvert au registre, déprioritisé.
+
+**Hors match** : la perte tenue à l'écart sur les trois jobs tenus à
+l'écart, N9w50s800 en référence — un diagnostic, **et biaisé pour trois
+des quatre** : `nnue_validation.rs` la calcule sous un poids fixé à 0,75 et
+à l'exposant 2, ce que N9w75s800 a minimisé et pas les autres. Les nœuds
+par seconde : la même architecture, le même calcul — rien à mesurer.
+
+**Ce qui suit** : C2c au verdict de C2 ; C3 (l'architecture) sur la recette
+que C2 fixe ; **la tranche du n° 21**, close vers le 27 oct., entre dans
+les données de C3 — le volume paie encore (+8,94 ± 3,32).
+
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
 Théo, le 19 oct. au soir : « *je suis prêt* ». La séance A d'abord, telle
@@ -13794,6 +13876,10 @@ critères, s'écrit à la clôture de (e), la liste des données close.
   variable, le premier demi-coup gardé, la taille de lot — jamais
   mesurés ; à 100 superlots ils coûtent peu, mais l'optimum du poids a
   bougé avec les passes : l'arbitrage s'écrit avec le protocole ;
+  **ÉCRITE le 26 oct.** (« La séance C2 ») : quatre réseaux à 800
+  superlots, chacun contre N9w50s800 — les deux poids (`a`), l'exposant
+  2,5 et le poids variable (`b`) ; le pas final, le lot et le premier
+  demi-coup en C2c, au verdict ; **elle attend la carte de Théo** ;
 - **C3 — l'architecture** : 384 et 512 unités, dix seaux de roi au
   volume d'aujourd'hui, chacun avec ses nœuds par seconde. **1 024
   unités et plus de seaux de roi viennent après** — Théo, 21 oct. :
@@ -13817,13 +13903,13 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | réglage | aujourd'hui | ce qui l'a mesuré | marge estimée | prochain test |
 |---|---|---|---|---|
 | **superlots (passes)** | 800 au réseau qui joue (N8tw50s800, 4,63 G, 25,9 passes) | à 1,56 G : 100 → 200 +14,74 ; 200 → 400 +9,31. **À 4,63 G : 400 → 800 +5,43 ± 3,34** (21 oct.) | +2 à +5 au doublement suivant — <span>confiance faible</span> : le rendement décroît, et moins à 4,63 G qu'à 1,56 G au même nombre de passes (+5,43 contre +9,31) | **en dernier, sur la recette finale** de la séance C (21 oct., en réponse à une question de Théo — l'ordre, pas une décision de sa part) : l'optimum des passes bouge avec le volume et la largeur, que la séance C change toutes deux — mesuré aujourd'hui, il serait périmé dès son réseau ; 1 600 superlots, ~10 h 30 de carte |
-| **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N8tw50s800) et aux réseaux de la séance B ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes | ~+3 au point entre 0,5 et 0,75 à 400 ; l'optimum, inconnu à la recette finale — <span>confiance faible</span> | à la recette finale (séance C) : 0,5 contre 0,75 remesuré, et 0,625 entre les deux |
+| **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N8tw50s800) et aux réseaux de la séance B ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes | ~+3 au point entre 0,5 et 0,75 à 400 ; l'optimum, inconnu à la recette finale — <span>confiance faible</span> | **séance C2, écrite le 26 oct.** : 0,625 et 0,75 à 800 superlots, chacun contre N9w50s800 (« La séance C2 », `a`) |
 | **pas initial** (`--pas`) | 0,001, le défaut de bullet | **l'écran du 21 oct.** à 100 superlots : ×0,5 → −0,12 ± 3,43 ; ×2 → **−4,90 ± 3,41**, régression démontrée ; la perte tenue à l'écart, plate (+0,00004 des deux côtés), ne le voyait pas | fine — <span>confiance faible</span> : au mieux quelques Elo entre 0,0005 et 0,001 | déprioritisé ; se rouvre avec la recette (lot, largeur), le pas optimal bougeant avec eux |
-| **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; séance C |
-| **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 — `--perte`, écrite le 20 oct. ; séance C |
-| **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; séance C |
-| **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; séance C |
-| **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | `--wdl-final`, écrite le 20 oct. ; séance C |
+| **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; C2c, au verdict de C2 — le sens inconnu, deux réseaux |
+| **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 — `--perte`, écrite le 20 oct. ; **séance C2, `b`** (N9p25s800) |
+| **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; C2c |
+| **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; C2c — le sens inconnu, deux réseaux |
+| **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | `--wdl-final`, écrite le 20 oct. ; **séance C2, `b`** : de 0,25 à 0,75 (N9w25a75s800) |
 | **volume de données** | 3,71 G vus par N9w50s800 (les 94 jobs appris de l'étape B et les 80 de (e), tous étiquetés par N6r4) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) ; **N9w50s800 +5,18 ± 3,29 contre N8tw50s800** — N5l retiré, 0,98 G de N6r4 ajoutées, 31 passes au lieu de 25 : trois causes mêlées | ~+7 au doublement suivant — <span>confiance faible</span> | **N9w50s800 EMBARQUÉ le 22 oct.** (séance C1) ; **le volume à étiquette égale paie : +8,94 ± 3,32** (E5t contre E5v, 26 oct.), ce que le n° 20 n'avait pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») |
 | **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | **le budget, mesuré le 26 oct.** (séance C1) : 10 000 nœuds contre 5 000, −1,49 ± 3,38 à volume égal, **−7,38 ± 3,40 à temps de runner égal** — le budget ne paie pas, le volume si (+8,94 ± 3,32) ; **2 500 nœuds, le test suivant** : à volume égal contre 5 000, sur des données du même étiqueteur que le n° 21 ; s'il ne perd rien à l'étiquette, il double le volume au même temps de runner — <span>marge estimée : jusqu'à ~+9 au doublement, confiance faible</span> ; **rang** : à écrire à la clôture de la tranche du n° 21, avant la tranche suivante, dont il fixe le budget ; **les données de N5l laissées** : −5,18 à superlots égaux, +0,25 ± 4,71 à passes égales — rien (22 oct.) ; N9w50s800 embarqué le 22 oct. |
 | **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17), malgré × 0,90 de nœuds par seconde | inconnue au volume d'aujourd'hui | C3 : 384 et 512 ; **1 024 si 512 paie nettement** — un seul `HIDDEN` dans le moteur, mais ~×0,66 de nœuds par seconde estimé et ~4 fois la carte par superlot (Théo, 21 oct. : plus tard) |
