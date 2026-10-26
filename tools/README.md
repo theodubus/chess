@@ -11535,6 +11535,13 @@ haut, écrits avant : −6 à +5, ~−1 ; borne basse au-dessus de zéro →
 candidat à l'embarquement. Le verdict de N9w625s800, tombé avant ce
 lancement, ne change pas l'attendu : il est dans sa fourchette.
 
+**La séance `b` — lancée par Théo le 26 oct. à 20 h 33** (« *ok c'est
+lancé* »), `bash tools/seance-n20d.sh b` au `main` de la PR #222 :
+N9p25s800 puis N9w25a75s800, ~5 h 15 de carte chacun — le premier
+attendu sur `reseau/n20d` vers 1 h 50, le second vers 7 h 05. Chacun
+s'intègre et se mesure contre N9w50s800 comme les deux poids, aux
+attendus et au critère écrits plus haut.
+
 **Ce qui suit** : C2c au verdict de C2 ; C3 (l'architecture) sur la recette
 que C2 fixe ; **la tranche du n° 21**, close vers le 27 oct., entre dans
 les données de C3 — le volume paie encore (+8,94 ± 3,32).
@@ -14144,6 +14151,8 @@ critères, s'écrit à la clôture de (e), la liste des données close.
   2,5 et le poids variable (`b`) ; le pas final, le lot et le premier
   demi-coup en C2c, au verdict ; **`a` faite le 26 oct.** :
   N9w625s800 **−1,86 ± 3,33**, pas candidat ; N9w75s800 en match ;
+  **`b` lancée par Théo le 26 oct. à 20 h 33** — N9p25s800 attendu vers
+  1 h 50, N9w25a75s800 vers 7 h 05 ;
 - **C3 — l'architecture** : 384 et 512 unités, dix seaux de roi au
   volume d'aujourd'hui, chacun avec ses nœuds par seconde. **1 024
   unités et plus de seaux de roi viennent après** — Théo, 21 oct. :
