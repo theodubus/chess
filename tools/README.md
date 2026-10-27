@@ -11580,6 +11580,19 @@ révoqué aussitôt, au code de `main` au bit près et au facteur 2,85.
 haut, écrits avant : −5 à +5, ~0 ; borne basse au-dessus de zéro →
 candidat à l'embarquement.
 
+**N9w25a75s800 — intégré le 27 oct. à 7 h 43, en match ; la séance `b`
+finie.** Poussé par la séance à 7 h 01 (`fd77285` sur `reseau/n20d`),
+tous contrôles passés. Sa sortie relue : la ligne de recette **« 800
+superlots, pas 0.001 → 2.4300007e-6, wdl 0.25 → 0.75, perte ^2, lot
+16384, ply ≥ 16 »**, et l'entraîneur l'annonce de son côté (« *linear
+taper start 0.25 end 0.75* ») ; **29 009 129 parties et 3 712 073 002
+positions relues à l'octet** ; **confrontation 5 / 16** ; 18 995 s de
+carte, 5 h 17. Le réseau dans `reseaux/`, le candidat **`fa28f9a`**
+révoqué aussitôt, au code de `main` au bit près et au facteur 2,85.
+**Quatre jobs contre N9w50s800**, l'attendu et le critère plus haut,
+écrits avant : −4 à +6, ~+1 ; borne basse au-dessus de zéro → candidat
+à l'embarquement. **La carte de Théo est libre** depuis 7 h 01.
+
 **Ce qui suit** : C2c au verdict de C2 ; C3 (l'architecture) sur la recette
 que C2 fixe ; **la tranche du n° 21**, close vers le 27 oct., entre dans
 les données de C3 — le volume paie encore (+8,94 ± 3,32).
