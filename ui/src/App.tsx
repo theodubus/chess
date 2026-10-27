@@ -5,6 +5,7 @@ import GameSetup from "./GameSetup";
 import GameView from "./GameView";
 import Dialog from "./Dialog";
 import ImportPgnDialog from "./ImportPgnDialog";
+import { useBoardFocus } from "./boardFocus";
 import {
   connectDevelopmentEngine,
   analysisEngineFactory,
@@ -44,6 +45,7 @@ export default function App() {
   const [reviewVersion, setReviewVersion] = useState(0);
   const [reviewSide, setReviewSide] = useState<"w" | "b" | "both">("both");
   const [importing, setImporting] = useState(false);
+  const focus = useBoardFocus(screen === "game");
   const candidate = useRef<{
     controller: GameController;
     unsubscribe: () => void;
@@ -247,6 +249,8 @@ export default function App() {
           onNew={goSetup}
           onRematch={() => void start(gameSetup)}
           onReview={openReview}
+          focus={focus.active}
+          onToggleFocus={focus.toggle}
         />
       )}
       {reviewAvailable && (

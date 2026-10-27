@@ -196,6 +196,19 @@ dans l’analyse, sauf dans les dialogues et les champs de saisie.
 On peut le masquer pour revoir la position ; le bouton « Résultat » le réaffiche.
 Parcourir les coups masque aussi cet encart.
 
+### Plein écran
+
+Sur ordinateur, « Plein écran » dans la barre de la partie met la page en
+plein écran, comme F11, et donne au plateau toute la hauteur de l’écran :
+joueurs, pendules et commandes passent dans une colonne à sa droite,
+l’adversaire en haut et soi en bas, au ras du plateau. Mesuré dans Chromium :
+de 472 à 720 pixels de côté à 1366×768, de 744 à 1 032 à 1920×1080, sans
+défilement, le panneau des coups compris. Échap ou « Quitter le plein écran »
+rendent la mise en page habituelle ; le mode survit aux revanches. Un
+navigateur qui refuse le plein écran garde le grand plateau. Le bouton n’est
+pas proposé sur un écran tactile, et la page est inchangée hors de ce mode
+(`src/boardFocus.ts`, règles `html.board-focus` de `src/index.css`).
+
 ### Moteur contre moteur
 
 « Deux moteurs » permet de choisir un moteur UCI pour les Blancs et un autre
