@@ -1,0 +1,100 @@
+name: Pages
+
+# La version web de l'interface : ShallowRed compilé en WebAssembly, publié
+# sur GitHub Pages. Voir ui/README.md, « Version web ».
+#
+# Sur `main`, elle se reconstruit à chaque changement du moteur, du réseau
+# embarqué ou de l'interface, pour rester celle du dépôt. Sur une PR, seuls
+# les fichiers dont dépend la frontière web la font vérifier, sans publier :
+# la couche UCI du moteur, que le pilote `ui/wasm` recopie, et le transport.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "engine/**"
+      - "reseaux/**"
+      - "ui/**"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "engine/src/uci.rs"
+      - "ui/wasm/**"
+      - "ui/src/engine/**"
+      - "ui/vite.config.ts"
+      - "ui/dev/build-wasm.mjs"
+      - "ui/dev/wasm-check.mjs"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Moteur web, identique au binaire
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      # La toolchain épinglée par rust-toolchain.toml, plus la cible du
+      # navigateur : WASI, que le Worker émule (ui/src/engine/web/wasi.ts).
+      - name: Cible WebAssembly
+        run: rustup target add wasm32-wasip1
+      - name: Dépendances verrouillées
+        working-directory: ui
+        run: npm ci
+      - name: Pilote — format, clippy, tests
+        working-directory: ui/wasm
+        run: |
+          cargo fmt --check
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo clippy --locked --target wasm32-wasip1 -- -D warnings
+          cargo test --locked --release
+      - name: Binaire natif, la référence
+        run: cargo build --locked --release --bin shallowred
+      - name: Version web
+        working-directory: ui
+        run: npm run build:pages
+      # La garde de la frontière : mêmes nœuds, scores, variantes et coups
+      # que le binaire, pour chacun des deux modules. Un changement de la
+      # couche UCI du moteur que le pilote n'a pas suivi s'arrête ici.
+      - name: Le moteur web répond comme le binaire
+        working-directory: ui
+        run: npm run check:wasm
+      - name: Artefact Pages
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: ui/dist
+
+  deploy:
+    name: Publier
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Une publication ne s'interrompt pas en cours de route : la suivante
+    # attend son tour.
+    concurrency:
+      group: pages-publication
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

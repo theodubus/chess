@@ -89,6 +89,60 @@ du moteur sélectionné ; aucun support MultiPV n’est requis.
 [Documentation officielle de Stockfish](https://official-stockfish.github.io/docs/stockfish-wiki/Download-and-usage.html)
 pour obtenir un binaire adapté au système. Aucun binaire Stockfish n’est livré dans l’UI.
 
+## Version web (GitHub Pages)
+
+Un chemin de plus, pour essayer sans rien installer : la même interface, avec
+ShallowRed compilé en WebAssembly et exécuté dans le navigateur, ordinateur ou
+téléphone. Publiée par `.github/workflows/pages.yml` à chaque changement du
+moteur, du réseau embarqué ou de l’interface sur `main`. Le chemin principal
+reste le clone du dépôt et `npm run dev`.
+
+**Le moteur ne change pas d’un octet.** La version web n’emploie que son API
+publique, depuis une crate à part, `ui/wasm`, avec son propre espace de
+travail : `cargo build` à la racine ne la voit pas, et le binaire livré ne
+contient rien d’elle. Elle recopie la couche UCI du moteur, sans le fil que
+lance son `go` — un navigateur n’en donne pas à WebAssembly sur GitHub Pages.
+
+**Il cherche le même arbre que le binaire.** `npm run check:wasm`
+(`dev/wasm-check.mjs`) joue un même scénario contre le binaire natif et contre
+chaque module — roques, mat, pat, promotion, répétition, position refusée,
+`perft` — et exige des transcriptions identiques au temps près : nœuds,
+scores, variantes et coups. Le workflow ne publie qu’à cette condition.
+
+**Il y joue moins fort, et la page le dit.** Ce qui manque :
+
+| | binaire | version web |
+|---|---|---|
+| fils de calcul | `Threads`, jusqu’à 1024 | un seul |
+| ponder | oui | non |
+| instructions | AVX2 sur le second binaire | SIMD de WebAssembly, ou rien |
+| autres moteurs, Stockfish compris | par le pont local | non |
+
+Mesuré le 27 oct. 2026, dans Node 22 sur le conteneur de session, cinq paires
+alternées à la profondeur 15 : le binaire de base (sans AVX2) **1,55 M**
+nœuds/s en médiane, le module SIMD **0,97 M** (× 0,62, plus lent cinq fois sur
+cinq), le module sans SIMD **0,45 M**. La page charge le module SIMD quand le
+navigateur le valide — tous depuis 2021, Safari depuis la version 16.4 — et
+l’autre sinon. Un navigateur et un téléphone ne sont pas Node sur un serveur :
+ces chiffres situent les modules entre eux, pas la vitesse chez l’utilisateur.
+
+Le mode `pages` de Vite (`vite.config.ts`) substitue `src/engine/WebEngine.ts`
+à `src/engine/DevelopmentEngine.ts` partout où il est importé : le transport
+reste un seul fichier, et `src/engine/transportContract.ts` fait vérifier par
+TypeScript que le second offre tout ce qu’exporte le premier. Hors de ce mode,
+le build ne contient ni module WebAssembly ni Worker, et l’interface est
+inchangée. Le transport web sert lui-même `isready` pendant une recherche, et
+émule `stop` en remplaçant le Worker (`src/engine/web/webEngine.ts`).
+
+Construire et essayer localement, avec la cible `wasm32-wasip1`
+(`rustup target add wasm32-wasip1`) :
+
+```sh
+npm --prefix ui run build:pages     # les deux modules (dev/build-wasm.mjs), puis le site
+npm --prefix ui run check:wasm      # contre target/release/shallowred
+npm --prefix ui run preview:pages
+```
+
 ## Préparer, jouer, revoir
 
 L’accueil ne montre pas de plateau. Choisir le moteur local, deux joueurs
