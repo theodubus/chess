@@ -3,6 +3,7 @@ import {
   DEFAULT_ANALYSIS_ENGINE,
   listAnalysisEngines,
   addAnalysisEngine,
+  TRANSPORT_LIMITATIONS,
   type AnalysisEngineChoice,
 } from "../engine/DevelopmentEngine";
 
@@ -84,82 +85,88 @@ export default function AnalysisEngineSelect({
           {error}
         </p>
       )}
-      <details>
-        <summary>Ajouter un moteur local</summary>
-        <form
-          className="add-engine-form"
-          onSubmit={async (event) => {
-            event.preventDefault();
-            setAdding(true);
-            setAddError("");
-            setAdded("");
-            try {
-              const engine = await addAnalysisEngine(path.trim());
-              if (!mounted.current) return;
-              setChoices((previous) => [
-                ...previous.filter((item) => item.id !== engine.id),
-                engine,
-              ]);
-              onChange(engine.id);
-              setAdded(`${engine.label} est prêt à être utilisé.`);
-              setPath("");
-            } catch (error) {
-              if (!mounted.current) return;
-              setAddError(
-                error instanceof Error ? error.message : "Moteur refusé.",
-              );
-            } finally {
-              if (mounted.current) setAdding(false);
-            }
-          }}
-        >
-          <label>
-            Chemin du binaire
-            <input
-              name="engine-path"
-              value={path}
-              onChange={(event) => setPath(event.target.value)}
-              placeholder="/chemin/vers/moteur"
-              required
-              disabled={disabled || adding}
-            />
-          </label>
-          <p className="hint">
-            Choisissez un binaire local de confiance : le test exécute ce
-            programme. Son nom, ses réponses UCI, ses évaluations et la légalité
-            de ses coups seront vérifiés avant l’ajout.
-          </p>
-          <button type="submit" disabled={disabled || adding || !path.trim()}>
-            {adding ? "Vérification du moteur…" : "Vérifier et ajouter"}
+      {TRANSPORT_LIMITATIONS ? (
+        <p className="hint">{TRANSPORT_LIMITATIONS.engines}</p>
+      ) : (
+        <>
+          <details>
+            <summary>Ajouter un moteur local</summary>
+            <form
+              className="add-engine-form"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setAdding(true);
+                setAddError("");
+                setAdded("");
+                try {
+                  const engine = await addAnalysisEngine(path.trim());
+                  if (!mounted.current) return;
+                  setChoices((previous) => [
+                    ...previous.filter((item) => item.id !== engine.id),
+                    engine,
+                  ]);
+                  onChange(engine.id);
+                  setAdded(`${engine.label} est prêt à être utilisé.`);
+                  setPath("");
+                } catch (error) {
+                  if (!mounted.current) return;
+                  setAddError(
+                    error instanceof Error ? error.message : "Moteur refusé.",
+                  );
+                } finally {
+                  if (mounted.current) setAdding(false);
+                }
+              }}
+            >
+              <label>
+                Chemin du binaire
+                <input
+                  name="engine-path"
+                  value={path}
+                  onChange={(event) => setPath(event.target.value)}
+                  placeholder="/chemin/vers/moteur"
+                  required
+                  disabled={disabled || adding}
+                />
+              </label>
+              <p className="hint">
+                Choisissez un binaire local de confiance : le test exécute ce
+                programme. Son nom, ses réponses UCI, ses évaluations et la légalité
+                de ses coups seront vérifiés avant l’ajout.
+              </p>
+              <button type="submit" disabled={disabled || adding || !path.trim()}>
+                {adding ? "Vérification du moteur…" : "Vérifier et ajouter"}
+              </button>
+              {adding && (
+                <p role="status" className="hint">
+                  Connexion et recherches de test en cours…
+                </p>
+              )}
+              {addError && (
+                <p role="alert" className="connection-error">
+                  {addError}
+                </p>
+              )}
+              {added && (
+                <p role="status" className="hint">
+                  {added}
+                </p>
+              )}
+            </form>
+          </details>
+          <button
+            className="text-button"
+            aria-busy={loading}
+            disabled={loading || disabled}
+            onClick={() => {
+              setLoading(true);
+              setRefresh((value) => value + 1);
+            }}
+          >
+            {loading ? "Recherche des moteurs…" : "Actualiser les moteurs"}
           </button>
-          {adding && (
-            <p role="status" className="hint">
-              Connexion et recherches de test en cours…
-            </p>
-          )}
-          {addError && (
-            <p role="alert" className="connection-error">
-              {addError}
-            </p>
-          )}
-          {added && (
-            <p role="status" className="hint">
-              {added}
-            </p>
-          )}
-        </form>
-      </details>
-      <button
-        className="text-button"
-        aria-busy={loading}
-        disabled={loading || disabled}
-        onClick={() => {
-          setLoading(true);
-          setRefresh((value) => value + 1);
-        }}
-      >
-        {loading ? "Recherche des moteurs…" : "Actualiser les moteurs"}
-      </button>
+        </>
+      )}
     </div>
   );
 }

@@ -1620,3 +1620,18 @@ dialog:has(.army-editor) { width:min(600px,calc(100vw - 24px)); }
 .engine-lines { margin-top:14px; }
 .engine-lines > summary { cursor:pointer; color:var(--muted,#a8b8ac); }
 .cause-progress { display:flex; gap:8px; align-items:center; font-size:13px; color:#d8bd80; }
+/* Version web (GitHub Pages) : ce que le moteur n'y fait pas. */
+.transport-notice {
+  max-width: 510px;
+  margin: 0 auto 16px;
+  padding: 9px 13px;
+  border: 1px solid #d8bd8033;
+  border-radius: 7px;
+  background: #d8bd800f;
+  color: #c9bd9d;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.transport-notice a {
+  color: #e9cb87;
+}
