@@ -11786,6 +11786,20 @@ suivantes pour semaine pro* ». Une panne en cours de séance ne se
 relancera que la semaine suivante ; les réseaux déjà poussés se mesurent
 sans attendre.
 
+**LANCÉE le 27 oct. à 20 h 07 — `c veille`, son journal relu par Théo.**
+La veille d'abord éprouvée à la main (`CanSuspend` « yes », puis
+`systemctl suspend` et le réveil, sans mot de passe) ; puis, dans
+`resume.txt` : `20:07 ok la veille possible sans mot de passe`, `20:07 ok
+mise en veille bloquée jusqu'à la fin`, `20:08 ok la veille armée`,
+`20:08 lance n9pfbs800`. *Attendu* : N9pfbs800 poussé vers **1 h 25**,
+puis un réseau toutes les ~5 h 15 — <span>confiance faible pour les
+lots</span> : un superlot compte des lots, si bien que 8 192 et 32 768
+positions par lot peuvent en changer la durée — ; la fin vers le 29 oct.
+au matin, puis la veille. **Deux risques matériels, dits à Théo** : la
+batterie — le chargeur branché — et le capot : par défaut
+(`LidSwitchIgnoreInhibited=yes`), logind ignore le blocage de veille quand
+on le rabat, et la séance s'arrêterait.
+
 **La veille en fin de séance — l'option `veille`, écrite le 27 oct. à
 8 h 48.** Théo : « *est ce que c'est possible de mettre dans un script sh
 une mise en veille forcée en fin de séance ?* ». `bash
