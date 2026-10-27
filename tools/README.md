@@ -11811,6 +11811,58 @@ Il n'y a donc rien à composer aujourd'hui. Si N9w25a75s800 gagne, il
 embarque seul ; sa composition avec un gagnant de C2c s'écrira au
 verdict de C2c.
 
+#### La séance C3 — le chiffrage, le 27 oct. à 13 h 36, avant de l'écrire
+
+Pour la semaine du 2 nov., la carte de Théo revenant (« La séance C2c »,
+la dernière de la semaine). **Lu dans le code, pas supposé :**
+- **l'entraîneur lit l'architecture dans les constantes du moteur** —
+  `tools/nnue-train` importe `HIDDEN` et `ARCH` de `shallowred::nnue`, et
+  nomme ses sorties `768x4hm-256-s8` d'après elles. Un réseau de 384 ou
+  512 unités, ou à dix seaux de roi, ne s'entraîne donc qu'**à un commit
+  du moteur qui porte ces constantes** : la séance de C3 bâtit
+  l'entraîneur dans un `git worktree` par architecture, au commit de
+  chacune — jamais en éditant le dépôt pendant qu'elle tourne ;
+- **le moteur tient une autre largeur sans réécriture** : `HIDDEN` est
+  une seule constante, l'accumulateur et ses mises à jour s'en déduisent,
+  le produit scalaire AVX2 traite des registres de seize `i16` — 384 et
+  512 en sont des multiples —, et il se somme par tranches de 256 termes
+  en `i64`, si bien qu'aucune largeur ne déborde (n° 17, étape 1) ;
+- **un test l'arrête, exprès** : la taille de fichier attendue est
+  écrite à la main pour 128 et 256 unités, et toute autre largeur fait
+  `panic!` — « une autre largeur demande son calcul à la main ». Le
+  calcul : `2 × (768 × B × H + H + 8 × (2H + 1))` octets, bourré au
+  multiple de 64, B le nombre de blocs de roi — à faire à la main pour
+  chaque architecture de C3, et à confronter au fichier que bullet écrit ;
+- **la confrontation au CODE de bullet** existe déjà pour les deux
+  dispositions de roi (`les_seaux_du_moteur_sont_ceux_de_bullet`) ; une
+  largeur ne change pas les entrées.
+
+**Les réseaux, et pourquoi une base.** C3 change l'architecture ET le
+volume — la tranche du n° 21 (1,75 G gardées, N8tw50s800) et la partie
+mesurée du n° 22 s'ajoutent aux 3,71 G de N9w50s800. Sans base, le volume
+et l'architecture se mêleraient comme pour N9w50s800 (trois causes). D'où
+**une base à 256 unités et quatre seaux sur les mêmes données**, contre
+laquelle chaque architecture se mesure :
+- **N10** — la recette de N9w50s800, 256 unités, sur toutes les
+  données : ~5 h 15 de carte à 800 superlots ;
+- **N10h384**, **N10h512** — 384 et 512 unités : ~7 h 30 et ~10 h,
+  <span>inférence, confiance faible</span> : le coût d'un superlot suit
+  la couche cachée, ×1,5 et ×2 ;
+- **N10r10** — dix seaux de roi : ~5 h 15.
+~28 h de carte, en deux séances. Chacun avec **ses nœuds par seconde**
+au rejeu, et 384 ou 512 rachètent leur lenteur par l'étalon du temps
+(n° 15 : ~×0,90 de vitesse pour une largeur doublée, à 256 contre 128).
+
+**Ce qui reste à décider avant de l'écrire** :
+- **les données** — avec le n° 22 ou sans, et à quel budget : le verdict
+  de E2.5t contre E5n le dit, et sa séance (~8 h, trois réseaux à 400
+  superlots) passe d'abord. À 7,8 G et 800 superlots, chaque position
+  serait vue ~10 fois au lieu de ~22 : les passes, qui payaient encore
+  à 400 → 800 (+5,43), joueraient contre le volume. <span>Confiance
+  faible</span> sur le sens ; la base N10 le mesure, à recette égale ;
+- **le facteur des marges** (B8) se sonde pour chaque architecture
+  gagnante, comme pour chaque réseau embarqué.
+
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
 Théo, le 19 oct. au soir : « *je suis prêt* ». La séance A d'abord, telle
