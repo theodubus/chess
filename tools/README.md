@@ -13116,7 +13116,8 @@ vagues :
 
 **Après elle** : la séance des trois réseaux (E5n, E2.5v, E2.5t) s'écrit
 pour la carte de Théo, la semaine suivante — il n'a plus de portable
-cette semaine. Les runners, eux, ne s'arrêtent pas : la génération
+cette semaine — <s>s'écrit</s> **écrite le 27 oct. à 19 h 27** (« La
+séance du n° 22 », `tools/seance-n22.sh`). Les runners, eux, ne s'arrêtent pas : la génération
 continue aux deux budgets, en vagues de seize, en attendant le verdict
 qui choisira le budget de la suite — les données servent dans les deux
 cas, le volume payant encore (+8,94 ± 3,32).
@@ -13132,6 +13133,65 @@ les précède — chacun quatre jobs de 2 800 parties à `8+0,08` :
 **Concurrence** : seize jobs, plus les sept de la vague 6 du n° 21
 jusqu'à ~19 h 40, plus les matchs de la séance C2 à venir — sous la
 limite de quarante.
+
+#### La séance du n° 22 — E5n, E2.5t, E2.5v : écrite le 27 oct. à 19 h 27, pour la semaine du 2 nov.
+
+**`tools/seance-n22.sh`**, sur le modèle de `tools/seance-n20d.sh`,
+l'option `veille` comprise. Trois réseaux à la recette de C1 — 256
+unités, quatre seaux de roi, huit de sortie, **400 superlots**, poids du
+résultat 0,5, pas 0,001 —, chacun poussé sur `reseau/n22` dès qu'il
+passe tous ses contrôles :
+- **`e5nw50`** — les 39 jobs appris à 5 000 ; puis
+- **`e25tw50`** — les 38 à 2 500 : la décision, contre le premier ;
+- **`e25vw50`** — les 19 premiers à 2 500 : l'étiquette seule.
+
+Les ensembles sont ceux fixés à la clôture de la partie mesurée — le
+script ne lit du registre que les vagues 1 à 5, si bien que les vagues
+suivantes, ajoutées à `tools/n22-jobs.tsv`, n'y changent rien. **Ses
+contrôles** : ceux des séances C, et la ligne de recette ENTIÈRE —
+`400 superlots, pas 0.001 → 2.4300007e-6, wdl 0.5 → 0.5, perte ^2, lot
+16384, ply ≥ 16`, retrouvée à l'octet dans la sortie de E10w50 ; la
+relecture à l'octet de chaque ensemble (`--attendu`, les sommes du
+registre) ; 152 et 156 fichiers `.vf` ; 20 Go libres sous les données,
+moins ce qui y est déjà. **Éprouvé au bac à sable le 27 oct.**, avec des
+`cargo`, `gh`, `systemd-inhibit`, `busctl` et `systemctl` factices :
+77, 39, 38 et 19 dossiers passés à l'entraîneur, le 19ᵉ étant
+40429538917 ; trois réseaux poussés, puis la veille demandée, le blocage
+levé ; une relance qui saute ce qui est poussé ; une panne au deuxième
+réseau, puis la relance qui ne refait que lui ; une recette refusée, le
+réseau mis de côté ; deux lignes de la vague 6 au registre sans effet
+sur les ensembles ; un mode ou une option inconnus refusés.
+
+**Pour Théo, la semaine du 2 nov.** :
+```sh
+cd ~/shallowred/chess
+git fetch origin && git switch main && git pull --ff-only
+tmux new -s n22 'bash tools/seance-n22.sh tout veille'
+```
+— l'essai court passe d'abord, et rien ne se lance s'il échoue.
+
+*Attendus, écrits avant* — <span>inférence, confiance faible sauf la
+durée</span> :
+- **la durée** : ~2 h 40 par réseau, comme E10w50 et E5vw50 à 400
+  superlots — ~8 h 30, l'essai compris, plus le téléchargement de
+  ~12 Go ;
+- **la confrontation** : le critère, écart médian ≤ 15, maximal ≤ 50 ;
+- **la perte tenue à l'écart** (`nnue-validation.yml`, N9w50s800 en
+  référence, les deux jobs tenus du n° 22, 40326139016 et 40326149256) :
+  **E2.5t sous E5n sur le job à 2 500**, deux fois son volume à sa propre
+  étiquette ; **E5n sous E2.5v sur le job à 5 000**, à volume égal sur sa
+  propre étiquette. Rien n'est attendu contre N9w50s800, deux fois plus
+  de passes sur d'autres étiquettes ; et la perte ne décide rien ;
+- **les matchs** : écrits plus haut — E2.5v contre E5n −6 à +3,
+  E2.5t contre E5n +1 à +12, chacun quatre jobs de 2 800 parties à
+  `8+0,08`, les candidats écrits et révoqués comme ceux de C2.
+
+**Le critère reste celui écrit à l'ouverture du n° 22.** Aucun de ces
+réseaux n'est candidat à l'embarquement — 400 superlots, la moitié des
+passes de N9w50s800 : ils mesurent un budget, pas un réseau.
+**Ensuite, C3** (« La séance C3 — le chiffrage ») : ses données en
+dépendent, et sa base N10, entraînée sur les mêmes, la rend juste dans
+les deux cas.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
@@ -14696,7 +14756,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; **C2c, écrite le 27 oct.** : 8 et 24 (N9y8s800, N9y24s800) |
 | **poids du résultat variable** | constant pendant l'entraînement | **de 0,25 à 0,75 à 800 superlots : −1,99 ± 3,32** contre N9w50s800 (C2, 27 oct.) | ~0 à ± 3 — <span>confiance moyenne</span> | **déprioritisé** ; une autre pente — de 0 à 1, ou décroissante — rouvrirait le réglage |
 | **volume de données** | 3,71 G vus par N9w50s800 (les 94 jobs appris de l'étape B et les 80 de (e), tous étiquetés par N6r4) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) ; **N9w50s800 +5,18 ± 3,29 contre N8tw50s800** — N5l retiré, 0,98 G de N6r4 ajoutées, 31 passes au lieu de 25 : trois causes mêlées | ~+7 au doublement suivant — <span>confiance faible</span> | **N9w50s800 EMBARQUÉ le 22 oct.** (séance C1) ; **le volume à étiquette égale paie : +8,94 ± 3,32** (E5t contre E5v, 26 oct.), ce que le n° 20 n'avait pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») |
-| **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | **le budget, mesuré le 26 oct.** (séance C1) : 10 000 nœuds contre 5 000, −1,49 ± 3,38 à volume égal, **−7,38 ± 3,40 à temps de runner égal** — le budget ne paie pas, le volume si (+8,94 ± 3,32) ; **2 500 nœuds, le test suivant** : à volume égal contre 5 000, sur des données du même étiqueteur que le n° 21 ; s'il ne perd rien à l'étiquette, il double le volume au même temps de runner — <span>marge estimée : jusqu'à ~+9 au doublement, confiance faible</span> ; **écrit le 26 oct. dans le n° 22** : chaque vague moitié à 2 500, moitié à 5 000, étiquetées par N9w50s800 ; E2.5t contre E5n décide (« N° 22 ») ; **les données de N5l laissées** : −5,18 à superlots égaux, +0,25 ± 4,71 à passes égales — rien (22 oct.) ; N9w50s800 embarqué le 22 oct. |
+| **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | **le budget, mesuré le 26 oct.** (séance C1) : 10 000 nœuds contre 5 000, −1,49 ± 3,38 à volume égal, **−7,38 ± 3,40 à temps de runner égal** — le budget ne paie pas, le volume si (+8,94 ± 3,32) ; **2 500 nœuds, le test suivant** : à volume égal contre 5 000, sur des données du même étiqueteur que le n° 21 ; s'il ne perd rien à l'étiquette, il double le volume au même temps de runner — <span>marge estimée : jusqu'à ~+9 au doublement, confiance faible</span> ; **écrit le 26 oct. dans le n° 22** : chaque vague moitié à 2 500, moitié à 5 000, étiquetées par N9w50s800 ; E2.5t contre E5n décide (« N° 22 ») ; **la partie mesurée close le 27 oct.**, 38 et 39 jobs appris, × 2,05 ; **sa séance écrite**, la semaine du 2 nov. (`tools/seance-n22.sh`) ; **les données de N5l laissées** : −5,18 à superlots égaux, +0,25 ± 4,71 à passes égales — rien (22 oct.) ; N9w50s800 embarqué le 22 oct. |
 | **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17), malgré × 0,90 de nœuds par seconde | inconnue au volume d'aujourd'hui | C3 : 384 et 512 ; **1 024 si 512 paie nettement** — un seul `HIDDEN` dans le moteur, mais ~×0,66 de nœuds par seconde estimé et ~4 fois la carte par superlot (Théo, 21 oct. : plus tard) |
 | **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | C3 : 10 au volume d'aujourd'hui ; **16 et plus si 10 paie** — une table de 32 cases, chaque seau voyant d'autant moins de positions (Théo, 21 oct. : plus tard) |
 | **seaux de sortie** | 8, selon le matériel | 1 contre 8 seulement | inconnue | (c) |
