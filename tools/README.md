@@ -11735,26 +11735,34 @@ et le réglage reste ouvert au registre, déprioritisé.
 **Hors match** : la perte tenue à l'écart des six, au bout de la séance,
 ses attendus écrits avant — séparés par étiqueteur, cette fois.
 
-**Lancée par Théo le 27 oct. vers 8 h 11** (« *je lance la séance juste
-après* »), mode `c`, ~32 h. **La dernière séance de la semaine** — Théo,
-même message : « *après ça j'aurais plus de pc portable, tu pourras
-avancer ce qu'il faut et préparer les séances suivantes pour semaine
-pro* ». Une panne en cours de séance ne se relancera donc que la semaine
-suivante ; les réseaux déjà poussés se mesurent sans attendre.
+**Pas lancée le 27 au matin — à lancer le soir.** J'avais inscrit à
+8 h 11 « lancée par Théo » sur la foi de « *je lance la séance juste
+après* » ; Théo, à 8 h 48 : « *le script en cours ne tourne pas, c2c n'a pas
+été lancé* ». Il la lance le soir même, et **c'est la dernière séance de
+la semaine** — même message du matin : « *après ça j'aurais plus de pc
+portable, tu pourras avancer ce qu'il faut et préparer les séances
+suivantes pour semaine pro* ». Une panne en cours de séance ne se
+relancera que la semaine suivante ; les réseaux déjà poussés se mesurent
+sans attendre.
 
-**La mise en veille à la fin** — Théo, le même matin : « *est ce que
-c'est possible de mettre dans un script sh une mise en veille forcée en
-fin de séance ?* ». La séance en cours ne se modifie pas : elle tourne
-déjà, et bash lit son script au fil de l'exécution. Un guetteur à côté
-attend que la session tmux `c2c` se ferme, puis met en veille :
-`tmux new -d -s veille 'while tmux has-session -t c2c 2>/dev/null; do
-sleep 60; done; systemctl suspend'`. Le blocage de veille posé par la
-séance (`systemd-inhibit`) tombe avec elle, avant que le guetteur ne
-demande la veille. La veille sans mot de passe se vérifie par
-`busctl call org.freedesktop.login1 /org/freedesktop/login1
-org.freedesktop.login1.Manager CanSuspend`, qui doit répondre « yes ».
-**Les scripts des séances suivantes la porteront en option**, à la fin
-du script et après la levée du blocage.
+**La veille en fin de séance — l'option `veille`, écrite le 27 oct. à
+8 h 48.** Théo : « *est ce que c'est possible de mettre dans un script sh
+une mise en veille forcée en fin de séance ?* ». `bash
+tools/seance-n20d.sh c veille` : la veille s'arme une fois l'essai court
+réussi — un arrêt pendant les contrôles se lit à l'écran et ne met rien
+en veille —, puis se demande à la sortie, réussie ou non, **après la
+levée du blocage de veille que la séance pose elle-même** : tant qu'il
+tient, `systemctl suspend` serait refusé. Au départ, la séance demande à
+logind si la veille se fera sans mot de passe (`CanSuspend`, « yes ») ;
+sinon elle le dit et va au bout quand même. *Éprouvée au bac à sable*,
+`systemd-inhibit`, `busctl` et `systemctl` factices : `c1 veille` — la
+veille demandée, le blocage déjà levé, vérifié par son PID ; sans
+l'option, aucun appel ; `essai veille`, aucun ; un essai en panne,
+aucun ; logind qui répondrait « challenge » — l'avertissement, puis la
+séance entière ; un second argument inconnu, refusé. Une première
+lecture disait le blocage vivant au moment de la veille : la sonde
+comptait par `pgrep -f`, qui trouvait aussi ma propre ligne de
+commande — refaite par le PID, elle le dit levé.
 
 **La composition de C2, pas oubliée** : elle ne s'entraîne que si
 plusieurs réglages démontrent un gain. À l'écriture de C2c, trois sur
