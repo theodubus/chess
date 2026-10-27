@@ -11851,7 +11851,7 @@ laquelle chaque architecture se mesure :
 - **N10r10** — dix seaux de roi : ~5 h 15.
 ~28 h de carte, en deux séances. Chacun avec **ses nœuds par seconde**
 au rejeu, et 384 ou 512 rachètent leur lenteur par l'étalon du temps
-(n° 15 : ~×0,90 de vitesse pour une largeur doublée, à 256 contre 128).
+(n° 17 : N5l, à 256 unités, rendait ×0,90 de nœuds par seconde contre N4 à 128).
 
 **Ce qui reste à décider avant de l'écrire** :
 - **les données** — avec le n° 22 ou sans, et à quel budget : le verdict
