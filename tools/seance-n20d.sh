@@ -24,6 +24,12 @@
 #   bash tools/seance-n20d.sh b       # la perte et le poids variable, ~10 h 30
 #   bash tools/seance-n20d.sh tout    # a puis b, ~21 h
 #   bash tools/seance-n20d.sh c       # c1, c2 puis c3, ~32 h — ou chacun seul
+#   bash tools/seance-n20d.sh c veille   # puis met la machine en veille
+#
+# `veille` (Théo, 27 oct. : « une mise en veille forcée en fin de séance ») :
+# armée une fois l'essai court réussi — un arrêt pendant les contrôles se lit
+# à l'écran, il ne met rien en veille —, la veille se demande à la sortie,
+# réussie ou non, après la levée du blocage que la séance pose elle-même.
 #
 # Tout vit sous `~/shallowred/` (Théo, 22 oct.) : le dépôt `chess/`, les
 # données `donnees/<génération>/`, les journaux `seances/<nom>/`. Le dépôt est
@@ -37,6 +43,7 @@ DONNEES_N20=${DONNEES_N20:-$RACINE/donnees/n20}
 DONNEES_N20E=${DONNEES_N20E:-$RACINE/donnees/n20e}
 TRAVAIL=${TRAVAIL:-$RACINE/seances/n20d}
 MODE=${1:-tout}
+VEILLE=${2:-}
 NN=$DEPOT/tools/nnue-train
 ARCH=768x4hm-256-s8
 # Parties:positions de chaque ensemble, sommés sur les registres
@@ -44,7 +51,12 @@ ARCH=768x4hm-256-s8
 ATT_N9=29009129:3712073002
 
 case "$MODE" in essai | a | b | tout | c | c1 | c2 | c3) ;; *)
-  echo "usage : $0 [essai|a|b|tout|c|c1|c2|c3]" >&2
+  echo "usage : $0 [essai|a|b|tout|c|c1|c2|c3] [veille]" >&2
+  exit 2
+  ;;
+esac
+case "$VEILLE" in "" | veille) ;; *)
+  echo "usage : $0 [essai|a|b|tout|c|c1|c2|c3] [veille]" >&2
   exit 2
   ;;
 esac
@@ -61,10 +73,19 @@ dire() { printf '%s  %s\n' "$(date '+%d/%m %H:%M')" "$*" | tee -a "$RESUME"; }
 git_d() { git -C "$DEPOT" "$@"; }
 
 INHIBE=
+ARMEE=
 fin() {
-  [ -n "$INHIBE" ] && kill "$INHIBE" 2>/dev/null
+  # Le blocage levé AVANT la veille : tant qu'il tient, elle serait refusée.
+  if [ -n "$INHIBE" ]; then
+    kill "$INHIBE" 2>/dev/null
+    wait "$INHIBE" 2>/dev/null
+  fi
   # Jamais laisser le dépôt sur la branche de rapport.
   [ "$(git_d branch --show-current 2>/dev/null)" = main ] || git_d switch -q main 2>/dev/null
+  if [ -n "$ARMEE" ]; then
+    dire "mise en veille"
+    systemctl suspend || dire "ÉCHEC de la mise en veille — systemctl suspend a refusé"
+  fi
 }
 trap fin EXIT
 
@@ -115,6 +136,16 @@ verifier "CUDA : cudart, nvrtc, cublas sous $CUDA_PATH" cuda_present
 verifier "16 Go libres au moins sous $DONNEES_N20E" place_libre "$DONNEES_N20E"
 verifier "16 Go libres au moins sous $NN" place_libre "$NN"
 verifier "cargo" command -v cargo
+# La veille se demandera sans personne pour taper un mot de passe : seul
+# « yes » la garantit. Un refus n'arrête pas la séance, il se dit.
+if [ "$VEILLE" = veille ]; then
+  if busctl call org.freedesktop.login1 /org/freedesktop/login1 \
+    org.freedesktop.login1.Manager CanSuspend 2>/dev/null | grep -qx 's "yes"'; then
+    dire "ok      la veille possible sans mot de passe"
+  else
+    dire "ATTENTION : la veille demanderait un mot de passe ou est impossible — la séance ira au bout, la machine restera allumée"
+  fi
+fi
 if [ "$ECHEC" != 0 ]; then
   dire "ARRÊT : un contrôle d'avant a échoué, rien n'a été lancé."
   exit 1
@@ -301,6 +332,10 @@ fi
 if [ "$ESSAI" != 0 ]; then
   dire "ARRÊT : l'essai court a échoué, aucun réseau n'a été lancé — m'envoyer $RESUME"
   exit 1
+fi
+if [ "$VEILLE" = veille ]; then
+  ARMEE=1
+  dire "ok      la veille armée : la machine se mettra en veille à la fin de la séance"
 fi
 
 # ---- 3. Les réseaux, chacun poussé dès qu'il a passé ses contrôles.

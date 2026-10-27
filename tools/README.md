@@ -11735,6 +11735,42 @@ et le réglage reste ouvert au registre, déprioritisé.
 **Hors match** : la perte tenue à l'écart des six, au bout de la séance,
 ses attendus écrits avant — séparés par étiqueteur, cette fois.
 
+**Pas lancée le 27 au matin — à lancer le soir.** J'avais inscrit à
+8 h 11 « lancée par Théo » sur la foi de « *je lance la séance juste
+après* » ; Théo, à 8 h 48 : « *le script en cours ne tourne pas, c2c n'a pas
+été lancé* ». Il la lance le soir même, et **c'est la dernière séance de
+la semaine** — même message du matin : « *après ça j'aurais plus de pc
+portable, tu pourras avancer ce qu'il faut et préparer les séances
+suivantes pour semaine pro* ». Une panne en cours de séance ne se
+relancera que la semaine suivante ; les réseaux déjà poussés se mesurent
+sans attendre.
+
+**La veille en fin de séance — l'option `veille`, écrite le 27 oct. à
+8 h 48.** Théo : « *est ce que c'est possible de mettre dans un script sh
+une mise en veille forcée en fin de séance ?* ». `bash
+tools/seance-n20d.sh c veille` : la veille s'arme une fois l'essai court
+réussi — un arrêt pendant les contrôles se lit à l'écran et ne met rien
+en veille —, puis se demande à la sortie, réussie ou non, **après la
+levée du blocage de veille que la séance pose elle-même** : tant qu'il
+tient, `systemctl suspend` serait refusé. Au départ, la séance demande à
+logind si la veille se fera sans mot de passe (`CanSuspend`, « yes ») ;
+sinon elle le dit et va au bout quand même. *Éprouvée au bac à sable*,
+`systemd-inhibit`, `busctl` et `systemctl` factices : `c1 veille` — la
+veille demandée, le blocage déjà levé, vérifié par son PID ; sans
+l'option, aucun appel ; `essai veille`, aucun ; un essai en panne,
+aucun ; logind qui répondrait « challenge » — l'avertissement, puis la
+séance entière ; un second argument inconnu, refusé. Une première
+lecture disait le blocage vivant au moment de la veille : la sonde
+comptait par `pgrep -f`, qui trouvait aussi ma propre ligne de
+commande — refaite par le PID, elle le dit levé.
+
+**La composition de C2, pas oubliée** : elle ne s'entraîne que si
+plusieurs réglages démontrent un gain. À l'écriture de C2c, trois sur
+quatre sont mesurés et aucun ne gagne ; seul N9w25a75s800 reste en vol.
+Il n'y a donc rien à composer aujourd'hui. Si N9w25a75s800 gagne, il
+embarque seul ; sa composition avec un gagnant de C2c s'écrira au
+verdict de C2c.
+
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
 Théo, le 19 oct. au soir : « *je suis prêt* ». La séance A d'abord, telle
