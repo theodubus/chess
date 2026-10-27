@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "node dev/start.mjs",
     "build": "tsc -b && vite build",
+    "build:pages": "node dev/build-wasm.mjs && tsc -b && vite build --mode pages",
+    "preview:pages": "vite preview --mode pages",
+    "check:wasm": "node dev/wasm-check.mjs",
     "lint": "eslint .",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { inspectDevelopmentEngine } from "./engine/DevelopmentEngine";
+import {
+  inspectDevelopmentEngine,
+  TRANSPORT_LIMITATIONS,
+} from "./engine/DevelopmentEngine";
 import type { EngineOptions, EngineCapabilities } from "./engine/options";
 import { logicalCores, threadAdvice } from "./engine/threadAdvice";
 
@@ -79,7 +82,10 @@ export default function EngineSettings({
         </span>
       </label>
       {capabilities && !capabilities.ponder && (
-        <p className="setting-help">Ce moteur ne propose pas cette option.</p>
+        <p className="setting-help">
+          {TRANSPORT_LIMITATIONS?.ponder ??
+            "Ce moteur ne propose pas cette option."}
+        </p>
       )}
       <div className="thread-setting">
         <div className="setting-copy">
@@ -87,7 +93,8 @@ export default function EngineSettings({
           <p className="setting-help" id={`${prefix}-threads-help`}>
             {capabilities?.threads
               ? `Jusqu’à ${max} cœurs logiques. Plus de cœurs sollicite davantage le processeur.`
-              : "Un seul cœur tant que le moteur n’annonce pas cette option."}
+              : (TRANSPORT_LIMITATIONS?.threads ??
+                "Un seul cœur tant que le moteur n’annonce pas cette option.")}
           </p>
         </div>
         <div className="number-stepper">

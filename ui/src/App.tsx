@@ -5,7 +5,11 @@ import GameSetup from "./GameSetup";
 import GameView from "./GameView";
 import Dialog from "./Dialog";
 import ImportPgnDialog from "./ImportPgnDialog";
-import { connectDevelopmentEngine, analysisEngineFactory } from "./engine/DevelopmentEngine";
+import {
+  connectDevelopmentEngine,
+  analysisEngineFactory,
+  TRANSPORT_LIMITATIONS,
+} from "./engine/DevelopmentEngine";
 import {
   evaluationPreference,
   gameTimeControls,
@@ -192,6 +196,12 @@ export default function App() {
           </nav>
         )}
       </header>
+      {screen === "setup" && TRANSPORT_LIMITATIONS && (
+        <p className="transport-notice" role="note">
+          {TRANSPORT_LIMITATIONS.notice}{" "}
+          <a href={TRANSPORT_LIMITATIONS.href}>Version complète</a>
+        </p>
+      )}
       {screen === "setup" && (
         <>
           <GameSetup

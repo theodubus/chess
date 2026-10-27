@@ -1,2 +1,6 @@
 dev/engines.local.json
 dev/engines.local.json.*.tmp
+# La version web (GitHub Pages) : le pilote compilé et ses modules, que
+# `npm run build:pages` reconstruit depuis `wasm/`.
+wasm/target/
+src/engine/web/*.wasm
