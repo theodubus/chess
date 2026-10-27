@@ -11535,12 +11535,48 @@ haut, écrits avant : −6 à +5, ~−1 ; borne basse au-dessus de zéro →
 candidat à l'embarquement. Le verdict de N9w625s800, tombé avant ce
 lancement, ne change pas l'attendu : il est dans sa fourchette.
 
+**N9w75s800 — VERDICT, le 27 oct. à 1 h 53 : −2,95 ± 3,34 contre N9w50s800
+— pas candidat ; la séance `a` CLOSE, le poids reste à 0,5.** Quatre jobs
+finis ENTIERS entre 1 h 01 et 1 h 10, 6,48 à 6,67 s par partie, zéro perte
+au temps, aucun coup illégal, aucun moteur perdu.
+
+| les quatre jobs | en commun, 11 200 parties | homogénéité | attendu, écrit avant |
+|---|---|---|---|
+| −9,43, −1,86, +0,37, −0,87 | **−2,95 ± 3,34** | p = 0,176 | −6 à +5, ~−1 — dedans, 2 sous le point |
+
+Pentanomiaux, dans l'ordre des jobs : 33, 284, 829, 234, 20 ; 26, 279,
+814, 246, 35 ; 31, 268, 798, 273, 30 ; 30, 245, 859, 234, 32.
+
+- **Critère, écrit avant** : la borne basse, −6,29, n'est pas au-dessus de
+  zéro — **pas candidat**. La borne haute, +0,39, frôle zéro sans le
+  franchir : aucune régression démontrée ;
+- **la séance `a`, close** : ni 0,625 (−1,86 ± 3,33) ni 0,75 (−2,95 ±
+  3,34) ne gagnent sur 0,5 à 800 superlots, et les deux points vont dans
+  le même sens, le second plus bas. <span>Inférence, confiance
+  moyenne</span> : l'optimum du poids, à cette recette, est à 0,5 ou en
+  deçà — la tendance des passes, qui rapprochait 0,75 de 0,5 de 6,4 à
+  25,6 passes, s'arrête avant de le dépasser. Le registre garde le
+  réglage, déprioritisé ; **0,375** serait le seul point encore ouvert,
+  et le poids variable (`b`) touche la même région.
+
 **La séance `b` — lancée par Théo le 26 oct. à 20 h 33** (« *ok c'est
 lancé* »), `bash tools/seance-n20d.sh b` au `main` de la PR #222 :
 N9p25s800 puis N9w25a75s800, ~5 h 15 de carte chacun — le premier
 attendu sur `reseau/n20d` vers 1 h 50, le second vers 7 h 05. Chacun
 s'intègre et se mesure contre N9w50s800 comme les deux poids, aux
 attendus et au critère écrits plus haut.
+
+**N9p25s800 — intégré le 27 oct. à 1 h 53, en match.** Poussé par la séance
+à 1 h 44 (`72276f9` sur `reseau/n20d`), tous contrôles passés. Sa sortie
+relue : la ligne de recette **« 800 superlots, pas 0.001 → 2.4300007e-6,
+wdl 0.5 → 0.5, perte ^2.5, lot 16384, ply ≥ 16 »** ; **29 009 129 parties
+et 3 712 073 002 positions relues à l'octet** ; **confrontation 5 / 34**
+— le maximal le plus haut des trois, sous les 50 admis ; 18 788 s de
+carte, 5 h 13. Le réseau dans `reseaux/`, le candidat **`f0db36f`**
+révoqué aussitôt, au code de `main` au bit près et au facteur 2,85.
+**Quatre jobs contre N9w50s800** (`main`), l'attendu et le critère plus
+haut, écrits avant : −5 à +5, ~0 ; borne basse au-dessus de zéro →
+candidat à l'embarquement.
 
 **Ce qui suit** : C2c au verdict de C2 ; C3 (l'architecture) sur la recette
 que C2 fixe ; **la tranche du n° 21**, close vers le 27 oct., entre dans
@@ -14150,7 +14186,8 @@ critères, s'écrit à la clôture de (e), la liste des données close.
   superlots, chacun contre N9w50s800 — les deux poids (`a`), l'exposant
   2,5 et le poids variable (`b`) ; le pas final, le lot et le premier
   demi-coup en C2c, au verdict ; **`a` faite le 26 oct.** :
-  N9w625s800 **−1,86 ± 3,33**, pas candidat ; N9w75s800 en match ;
+  N9w625s800 **−1,86 ± 3,33**, N9w75s800 **−2,95 ± 3,34**, ni l'un ni
+  l'autre candidat — le poids reste à 0,5 ;
   **`b` lancée par Théo le 26 oct. à 20 h 33** — N9p25s800 attendu vers
   1 h 50, N9w25a75s800 vers 7 h 05 ;
 - **C3 — l'architecture** : 384 et 512 unités, dix seaux de roi au
@@ -14176,10 +14213,10 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | réglage | aujourd'hui | ce qui l'a mesuré | marge estimée | prochain test |
 |---|---|---|---|---|
 | **superlots (passes)** | 800 au réseau qui joue (N8tw50s800, 4,63 G, 25,9 passes) | à 1,56 G : 100 → 200 +14,74 ; 200 → 400 +9,31. **À 4,63 G : 400 → 800 +5,43 ± 3,34** (21 oct.) | +2 à +5 au doublement suivant — <span>confiance faible</span> : le rendement décroît, et moins à 4,63 G qu'à 1,56 G au même nombre de passes (+5,43 contre +9,31) | **en dernier, sur la recette finale** de la séance C (21 oct., en réponse à une question de Théo — l'ordre, pas une décision de sa part) : l'optimum des passes bouge avec le volume et la largeur, que la séance C change toutes deux — mesuré aujourd'hui, il serait périmé dès son réseau ; 1 600 superlots, ~10 h 30 de carte |
-| **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N9w50s800) et aux réseaux des séances B et C1 ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes. **À 800 (C2, 26 oct.) : 0,625 contre 0,5 −1,86 ± 3,33** | plat entre 0,5 et 0,625 à 800 ; ~0 à ± 2 — <span>confiance moyenne</span> | **0,75 à 800 en match** (N9w75s800) ; ensuite **déprioritisé**, rouvert par une recette qui change les passes ou les données |
+| **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N9w50s800) et aux réseaux des séances B et C1 ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes. **À 800 (C2, 26 et 27 oct.) : 0,625 contre 0,5 −1,86 ± 3,33 ; 0,75 contre 0,5 −2,95 ± 3,34** | 0,5 ou en deçà à 800 ; au-dessus, rien — <span>confiance moyenne</span> | **déprioritisé** : 0,375 le seul point ouvert ; rouvert par une recette qui change les passes ou les données |
 | **pas initial** (`--pas`) | 0,001, le défaut de bullet | **l'écran du 21 oct.** à 100 superlots : ×0,5 → −0,12 ± 3,43 ; ×2 → **−4,90 ± 3,41**, régression démontrée ; la perte tenue à l'écart, plate (+0,00004 des deux côtés), ne le voyait pas | fine — <span>confiance faible</span> : au mieux quelques Elo entre 0,0005 et 0,001 | déprioritisé ; se rouvre avec la recette (lot, largeur), le pas optimal bougeant avec eux |
 | **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; C2c, au verdict de C2 — le sens inconnu, deux réseaux |
-| **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 — `--perte`, écrite le 20 oct. ; **séance C2, `b`** (N9p25s800) |
+| **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 — `--perte`, écrite le 20 oct. ; **séance C2, `b`** : N9p25s800 **en match depuis le 27 oct.** contre N9w50s800 |
 | **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; C2c |
 | **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; C2c — le sens inconnu, deux réseaux |
 | **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | `--wdl-final`, écrite le 20 oct. ; **séance C2, `b`** : de 0,25 à 0,75 (N9w25a75s800) |
