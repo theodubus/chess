@@ -93,6 +93,8 @@ export default function GameView({
   onNew,
   onRematch,
   onReview,
+  focus = false,
+  onToggleFocus,
 }: {
   controller: GameController;
   showEvaluation: boolean;
@@ -100,6 +102,8 @@ export default function GameView({
   onNew: () => void;
   onRematch: () => void;
   onReview: () => void;
+  focus?: boolean;
+  onToggleFocus?: () => void;
 }) {
   const [orientation, setOrientation] = useState<Color>(
     controller.mode && !controller.isMatch && controller.humanSide === "b" ? "black" : "white",
@@ -163,28 +167,32 @@ export default function GameView({
       aria-label="Partie en cours"
     >
       <div className="board-column">
-        <div className="play-status">
-          <div className="status" role="status">
-            {status}
+        {/* Les deux côtés du plateau : sans effet hors du plein écran, ils y
+            deviennent la colonne à sa droite (`html.board-focus`). */}
+        <div className="play-side play-side-top">
+          <div className="play-status">
+            <div className="status" role="status">
+              {status}
+            </div>
+            <span className="cadence">
+              {controller.clock.balanced
+                ? `${controller.clock.control.initialMs / 60000} + ${controller.clock.control.incrementMs / 1000}`
+                : (["w", "b"] as const)
+                    .map(
+                      (color) =>
+                        `${controller.mode && !controller.isMatch ? (color === controller.humanSide ? "Vous" : "Bot") : color === "w" ? "Blancs" : "Noirs"} ${controller.clock.controls[color].initialMs / 60000} + ${controller.clock.controls[color].incrementMs / 1000}`,
+                    )
+                    .join(" · ")}
+            </span>
           </div>
-          <span className="cadence">
-            {controller.clock.balanced
-              ? `${controller.clock.control.initialMs / 60000} + ${controller.clock.control.incrementMs / 1000}`
-              : (["w", "b"] as const)
-                  .map(
-                    (color) =>
-                      `${controller.mode && !controller.isMatch ? (color === controller.humanSide ? "Vous" : "Bot") : color === "w" ? "Blancs" : "Noirs"} ${controller.clock.controls[color].initialMs / 60000} + ${controller.clock.controls[color].incrementMs / 1000}`,
-                  )
-                  .join(" · ")}
-          </span>
+          <Player
+            controller={controller}
+            captures={captures}
+            balance={balance}
+            showDepth={showDepth && !browsing}
+            color={orientation === "white" ? "b" : "w"}
+          />
         </div>
-        <Player
-          controller={controller}
-          captures={captures}
-          balance={balance}
-          showDepth={showDepth && !browsing}
-          color={orientation === "white" ? "b" : "w"}
-        />
         <div
           className={`board-with-evaluation ${evaluation ? "show-evaluation" : ""}`}
         >
@@ -257,97 +265,109 @@ export default function GameView({
             )}
           </Board>
         </div>
-        <Player
-          controller={controller}
-          captures={captures}
-          balance={balance}
-          showDepth={showDepth && !browsing}
-          color={orientation === "white" ? "w" : "b"}
-        />
-        {controller.premove && !browsing && (
-          <div className="replay-notice" role="status">
-            <span>
-              Prémouvement : {controller.premove.from} → {controller.premove.to}
-              {controller.premove.promotion && " · promotion en dame"}
-            </span>
-            <button
-              className="text-button"
-              onClick={() => controller.cancelPremove()}
-            >
-              Annuler le prémouvement
-            </button>
-          </div>
-        )}
-        {browsing && (
-          <div className="replay-notice" role="status">
-            <span>
-              Relecture · {last ? frenchSan(last.san) : "Position initiale"}
-              {!controller.finished ? controller.clock.runningColor ? " · La pendule continue" : " · Pendules suspendues" : ""}
-            </span>
-            <button
-              className="text-button"
-              onClick={() => navigate(moves.length)}
-            >
-              Revenir à la partie
-            </button>
-          </div>
-        )}
-        <div className="play-controls">
-          <MoveNavigation
-            selected={selected}
-            total={moves.length}
-            onSelect={navigate}
+        <div className="play-side play-side-bottom">
+          <Player
+            controller={controller}
+            captures={captures}
+            balance={balance}
+            showDepth={showDepth && !browsing}
+            color={orientation === "white" ? "w" : "b"}
           />
-          <div className="board-toolbar">
-            <button className="secondary" onClick={() => setOptions(true)}>
-              Options
-            </button>
-            <button
-              className="secondary"
-              aria-expanded={movesOpen}
-              onClick={() => setMovesOpen(!movesOpen)}
-            >
-              Coups{" "}
-              {game.chess.history().length
-                ? `(${game.chess.history().length})`
-                : ""}
-            </button>
-            {controller.finished && (
+          {controller.premove && !browsing && (
+            <div className="replay-notice" role="status">
+              <span>
+                Prémouvement : {controller.premove.from} → {controller.premove.to}
+                {controller.premove.promotion && " · promotion en dame"}
+              </span>
               <button
-                ref={resultButton}
+                className="text-button"
+                onClick={() => controller.cancelPremove()}
+              >
+                Annuler le prémouvement
+              </button>
+            </div>
+          )}
+          {browsing && (
+            <div className="replay-notice" role="status">
+              <span>
+                Relecture · {last ? frenchSan(last.san) : "Position initiale"}
+                {!controller.finished ? controller.clock.runningColor ? " · La pendule continue" : " · Pendules suspendues" : ""}
+              </span>
+              <button
+                className="text-button"
+                onClick={() => navigate(moves.length)}
+              >
+                Revenir à la partie
+              </button>
+            </div>
+          )}
+          <div className="play-controls">
+            <MoveNavigation
+              selected={selected}
+              total={moves.length}
+              onSelect={navigate}
+            />
+            <div className="board-toolbar">
+              <button className="secondary" onClick={() => setOptions(true)}>
+                Options
+              </button>
+              <button
                 className="secondary"
-                onClick={() => {
-                  navigate(moves.length);
-                  setResultDismissed(false);
-                }}
+                aria-expanded={movesOpen}
+                onClick={() => setMovesOpen(!movesOpen)}
               >
-                Résultat
+                Coups{" "}
+                {game.chess.history().length
+                  ? `(${game.chess.history().length})`
+                  : ""}
               </button>
-            )}
-            {!controller.finished && (
-              <>
-              {controller.isMatch && controller.snapshot?.state !== "error" && <button className="secondary" disabled={controller.snapshot?.state === "connecting"}
-                onClick={() => controller.paused ? void controller.reconnect() : controller.pauseMatch()}>
-                {controller.paused ? "Reprendre le match" : "Mettre en pause"}
-              </button>}
-              <button
-                className="text-button danger"
-                onClick={() => setResign(true)}
-              >
-                {controller.isMatch ? "Arrêter le match" : "Abandonner"}
-              </button>
-              </>
-            )}
+              {onToggleFocus && (
+                <button
+                  className="secondary focus-toggle"
+                  aria-pressed={focus}
+                  title="Plein écran, plateau aussi grand que l’écran (Échap pour quitter)"
+                  onClick={onToggleFocus}
+                >
+                  {focus ? "Quitter le plein écran" : "Plein écran"}
+                </button>
+              )}
+              {controller.finished && (
+                <button
+                  ref={resultButton}
+                  className="secondary"
+                  onClick={() => {
+                    navigate(moves.length);
+                    setResultDismissed(false);
+                  }}
+                >
+                  Résultat
+                </button>
+              )}
+              {!controller.finished && (
+                <>
+                {controller.isMatch && controller.snapshot?.state !== "error" && <button className="secondary" disabled={controller.snapshot?.state === "connecting"}
+                  onClick={() => controller.paused ? void controller.reconnect() : controller.pauseMatch()}>
+                  {controller.paused ? "Reprendre le match" : "Mettre en pause"}
+                </button>}
+                <button
+                  className="text-button danger"
+                  onClick={() => setResign(true)}
+                >
+                  {controller.isMatch ? "Arrêter le match" : "Abandonner"}
+                </button>
+                </>
+              )}
+            </div>
           </div>
+          {controller.snapshot?.state === "error" && !controller.finished && (
+            <div className="connection-error">
+              <p>{controller.snapshot.error}</p>
+              <button onClick={() => void controller.reconnect()}>
+                Reconnecter
+              </button>
+            </div>
+          )}
         </div>
-        {controller.snapshot?.state === "error" && !controller.finished && (
-          <div className="connection-error">
-            <p>{controller.snapshot.error}</p>
-            <button onClick={() => void controller.reconnect()}>
-              Reconnecter
-            </button>
-          </div>
-        )}
       </div>
       <aside
         className="game-sidebar"
