@@ -11849,8 +11849,12 @@ et à dix seaux de roi, les 21 tests de `nnue::` passent sauf un,
 embarqué ayant 256 unités et quatre seaux ; c'est le candidat qui
 l'embarquera qui le fera repasser. Et `tools/nnue-train` se construit
 `--locked` à 512 unités ET dix seaux, contre le runtime factice de bullet,
-en 31 s, ses 14 tests verts. Les commits d'architecture se font au `main`
-de la séance, pour porter les options de l'entraîneur de ce jour-là.
+en 31 s, ses 14 tests verts. <s>Les commits d'architecture se font au `main`
+de la séance, pour porter les options de l'entraîneur de ce jour-là.</s>
+**Plus de commit d'architecture** (écrit le même soir) : la séance dérive
+chaque architecture du `main` de son départ, une ligne changée dans un
+worktree — « La séance C3, l'outillage » ; c'est le candidat qui
+l'embarquera qui en fera un commit.
 
 **Les réseaux, et pourquoi une base.** C3 change l'architecture ET le
 volume — la tranche du n° 21 (1,75 G gardées, N8tw50s800) et la partie
@@ -11877,6 +11881,57 @@ au rejeu, et 384 ou 512 rachètent leur lenteur par l'étalon du temps
   faible</span> sur le sens ; la base N10 le mesure, à recette égale ;
 - **le facteur des marges** (B8) se sonde pour chaque architecture
   gagnante, comme pour chaque réseau embarqué.
+
+#### La séance C3, l'outillage — écrit le 27 oct. à 19 h 37, la décision des données en attente
+
+**`tools/seance-c3.sh`**, sur le modèle de `tools/seance-n22.sh`, la
+veille en option : **N10**, **N10r10**, **N10h384**, **N10h512** à la
+recette de N9w50s800 — 800 superlots, poids 0,5, pas 0,001 —, en deux
+modes de ~10 h 30 et ~17 h 30 (`a` : N10 puis N10r10 ; `b` : les deux
+largeurs), ou `tout`. Chacun poussé sur `reseau/c3`.
+
+**L'architecture, sans commit ni dépôt édité.** L'entraîneur lit `HIDDEN`
+et `ARCH` dans le moteur ; la séance fixe donc `main` à son départ, et
+bâtit chaque architecture autre que la base dans un `git worktree` à ce
+`main`, sous `seances/c3/` — **une ligne** de `engine/src/nnue.rs`
+remplacée, et `git diff --numstat` doit rendre exactement « 1 1
+engine/src/nnue.rs », sans quoi rien ne part. L'entraîneur du worktree
+tourne depuis `tools/nnue-train` du dépôt (`cargo run --manifest-path`,
+la cible de compilation partagée, bullet bâti une fois) : ses sorties
+tombent au même endroit que celles de la base. Le message de chaque
+commit de `reseau/c3` porte le SHA de `main` et la substitution — de quoi
+rebâtir l'entraîneur exact. Un worktree laissé à un autre `main` par une
+séance précédente se refait.
+
+**Ses contrôles** — ceux des séances C, plus deux : la ligne de recette
+entière, et **la taille de chaque fichier, calculée à la main** —
+1 581 632, 3 940 928, 2 372 416 et 3 163 200 octets ; un entraîneur bâti
+sur le mauvais arbre écrirait un autre réseau, d'une autre taille et d'un
+autre identifiant. **Deux essais courts** d'un superlot avant tout
+réseau : la base, et N10h512, la plus éloignée d'elle.
+
+**Les données ne sont pas dans le script** : il lit
+`tools/c3-donnees.tsv` — génération, vagues, budget, une ligne par
+ensemble — et refuse de partir sans lui. Le fichier s'écrit au verdict
+de E2.5t contre E5n (« La séance du n° 22 »). Les comptes de la
+relecture se somment sur les registres, colonnes trouvées par leur nom ;
+la place se contrôle sur ce qui manque, × 1,15 l'artefact, plus 8 Go.
+
+**Éprouvé au bac à sable le 27 oct.**, avec des `cargo`, `gh`, `df`,
+`systemd-inhibit`, `busctl` et `systemctl` factices — le faux `cargo`
+lisant `HIDDEN` et les seaux dans l'arbre dont on le bâtit, et écrivant
+un fichier de la taille qu'ils donnent :
+- une décision à n20, n21 et n22 (vagues 1 à 5, 5 000) : 94, 86 et 39
+  jobs, `49520603:6210070070`, la somme refaite à part ; 876 `.vf` ;
+- `tout veille` : les quatre bâtis chacun dans son arbre — 256 et quatre
+  seaux, dix seaux, 384, 512 —, poussés, puis la veille, le blocage levé ;
+  une relance qui saute tout ;
+- un entraîneur bâti sur le dépôt au lieu du worktree : **refusé** à
+  l'essai de N10h512, l'identifiant et la taille faux ;
+- une panne au deuxième réseau, puis `main` avancé et la relance : le
+  worktree refait au nouveau `main`, seul le réseau manquant refait ;
+- la décision absente : refusé, rien de lancé ; trop peu de place : de
+  même.
 
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
