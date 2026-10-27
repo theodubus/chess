@@ -11837,6 +11837,20 @@ la dernière de la semaine). **Lu dans le code, pas supposé :**
   dispositions de roi (`les_seaux_du_moteur_sont_ceux_de_bullet`) ; une
   largeur ne change pas les entrées.
 
+**Fait le 27 oct. à 14 h 05, la CI de la PR #227 en cours** : le test de
+taille porte désormais 384 et 512 unités, calculés à la main —
+592 192 et 789 568 octets bourrés —, la formule ayant d'abord été
+retrouvée sur deux fichiers que bullet a écrits : N9w50s800 (quatre seaux,
+1 581 632 octets) et N6r10 (dix, 3 940 928). **Éprouvé dans un worktree
+jetable, `main` plus la seule constante changée** : à 384 unités, à 512,
+et à dix seaux de roi, les 21 tests de `nnue::` passent sauf un,
+`le_reseau_embarque_evalue_comme_son_entraineur` — attendu, le réseau
+embarqué ayant 256 unités et quatre seaux ; c'est le candidat qui
+l'embarquera qui le fera repasser. Et `tools/nnue-train` se construit
+`--locked` à 512 unités ET dix seaux, contre le runtime factice de bullet,
+en 31 s, ses 14 tests verts. Les commits d'architecture se font au `main`
+de la séance, pour porter les options de l'entraîneur de ce jour-là.
+
 **Les réseaux, et pourquoi une base.** C3 change l'architecture ET le
 volume — la tranche du n° 21 (1,75 G gardées, N8tw50s800) et la partie
 mesurée du n° 22 s'ajoutent aux 3,71 G de N9w50s800. Sans base, le volume

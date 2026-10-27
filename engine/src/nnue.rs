@@ -1051,11 +1051,16 @@ mod tests {
         // 64 suivant — et retrouvé sur les fichiers que bullet a écrits :
         // 2 × (768 × 128 + 128 + 256 + 1) = 197 378 octets, 197 440 bourrés ;
         // 2 × (768 × 256 + 256 + 512 + 1) = 394 754 octets, 394 816 bourrés.
+        // Puis pour C3, le 27 oct. 2026, avant que bullet en écrive un :
+        // 2 × (768 × 384 + 384 + 768 + 1) = 592 130 octets, 592 192 bourrés ;
+        // 2 × (768 × 512 + 512 + 1 024 + 1) = 789 506 octets, 789 568 bourrés.
         // Une autre largeur demande son calcul à la main, pas une formule
         // recopiée du code qu'elle vérifie.
         let expected = match HIDDEN {
             128 => 197_440,
             256 => 394_816,
+            384 => 592_192,
+            512 => 789_568,
             other => panic!("taille à calculer à la main pour {other} unités"),
         };
         assert_eq!(PLAIN.file_bytes(), expected);
