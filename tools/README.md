@@ -11742,6 +11742,20 @@ avancer ce qu'il faut et préparer les séances suivantes pour semaine
 pro* ». Une panne en cours de séance ne se relancera donc que la semaine
 suivante ; les réseaux déjà poussés se mesurent sans attendre.
 
+**La mise en veille à la fin** — Théo, le même matin : « *est ce que
+c'est possible de mettre dans un script sh une mise en veille forcée en
+fin de séance ?* ». La séance en cours ne se modifie pas : elle tourne
+déjà, et bash lit son script au fil de l'exécution. Un guetteur à côté
+attend que la session tmux `c2c` se ferme, puis met en veille :
+`tmux new -d -s veille 'while tmux has-session -t c2c 2>/dev/null; do
+sleep 60; done; systemctl suspend'`. Le blocage de veille posé par la
+séance (`systemd-inhibit`) tombe avec elle, avant que le guetteur ne
+demande la veille. La veille sans mot de passe se vérifie par
+`busctl call org.freedesktop.login1 /org/freedesktop/login1
+org.freedesktop.login1.Manager CanSuspend`, qui doit répondre « yes ».
+**Les scripts des séances suivantes la porteront en option**, à la fin
+du script et après la levée du blocage.
+
 **La composition de C2, pas oubliée** : elle ne s'entraîne que si
 plusieurs réglages démontrent un gain. À l'écriture de C2c, trois sur
 quatre sont mesurés et aucun ne gagne ; seul N9w25a75s800 reste en vol.
