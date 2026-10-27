@@ -1635,3 +1635,88 @@ dialog:has(.army-editor) { width:min(600px,calc(100vw - 24px)); }
 .transport-notice a {
   color: #e9cb87;
 }
+
+/* Plein écran (`html.board-focus`, src/boardFocus.ts). Hors de ce mode, les
+   deux côtés du plateau n'ont pas de boîte, et la page est inchangée. */
+.play-side {
+  display: contents;
+}
+.focus-toggle {
+  display: none;
+}
+/* Un ordinateur : le mode est pensé pour la souris et un écran large. */
+@media (hover: hover) and (pointer: fine) {
+  .focus-toggle {
+    display: inline-block;
+  }
+}
+html.board-focus .app {
+  max-width: none;
+  padding: 16px;
+}
+html.board-focus .app-header {
+  display: none;
+}
+html.board-focus .workspace.play-workspace,
+html.board-focus .workspace.play-workspace.with-history {
+  --board-size: min(calc(100vw - 32px), calc(100dvh - 230px));
+  max-width: var(--board-size);
+}
+/* En paysage, le plateau prend toute la hauteur ; joueurs, pendules et
+   commandes passent dans une colonne à sa droite, l'adversaire en haut et
+   soi en bas, au ras du plateau. */
+@media (min-aspect-ratio: 1/1) {
+  html.board-focus .workspace.play-workspace,
+  html.board-focus .workspace.play-workspace.with-history {
+    --focus-side: clamp(230px, 22vw, 320px);
+    --focus-history: 0px;
+    --board-size: min(
+      calc(100dvh - 32px),
+      calc(100vw - 32px - 24px - var(--focus-side) - var(--focus-history))
+    );
+    max-width: none;
+    grid-template-columns: auto;
+    justify-content: center;
+    gap: 24px;
+  }
+  html.board-focus .workspace.play-workspace.with-history {
+    --focus-history: 264px;
+    grid-template-columns: auto 240px;
+  }
+  html.board-focus .play-workspace .board-column {
+    width: auto;
+    display: grid;
+    grid-template-columns: var(--board-size) var(--focus-side);
+    grid-template-rows: auto 1fr;
+    column-gap: 24px;
+  }
+  html.board-focus .play-workspace .board-with-evaluation {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+  html.board-focus .play-side {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+  html.board-focus .play-side-top {
+    grid-row: 1;
+  }
+  html.board-focus .play-side-bottom {
+    grid-row: 2;
+    justify-content: flex-end;
+  }
+  html.board-focus .play-side-top > .player {
+    order: -1;
+  }
+  html.board-focus .play-side-bottom > .player {
+    order: 1;
+  }
+  html.board-focus .play-workspace .game-sidebar {
+    margin-top: 0;
+    max-height: calc(100dvh - 32px);
+    overflow: auto;
+  }
+}
