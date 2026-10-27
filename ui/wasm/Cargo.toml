@@ -1,0 +1,44 @@
+# Le moteur dans un navigateur, pour la version GitHub Pages de l'interface.
+#
+# Crate À PART, avec son propre espace de travail : le moteur n'en dépend pas,
+# `cargo build` à la racine ne la compile pas, et le binaire livré ne contient
+# pas une ligne d'ici. Elle emploie le moteur comme une bibliothèque, par son
+# API publique, sans rien y changer.
+[package]
+name        = "shallowred-web"
+description = "ShallowRed compilé en WebAssembly, piloté en UCI depuis un Web Worker"
+version     = "0.1.0"
+edition     = "2024"
+license     = "AGPL-3.0-or-later"
+repository  = "https://github.com/theodubus/chess"
+publish     = false
+
+[lib]
+# `cdylib` produit le module WebAssembly ; `rlib` laisse les tests natifs
+# appeler le pilote directement.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+shallowred = { path = "../../engine" }
+# La version exacte du moteur (Cargo.lock de la racine) : une autre version
+# du générateur ferait chercher le moteur web sur une autre base.
+cozy-chess = "=0.3.4"
+
+# Détachée de l'espace de travail de la racine, qui ne la liste pas.
+[workspace]
+
+[lints.rust]
+unsafe_code = "deny"
+missing_docs = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+
+# Le profil du moteur, recopié : un espace de travail ne lit que le sien.
+[profile.release]
+opt-level     = 3
+lto           = "fat"
+codegen-units = 1
+debug         = false
