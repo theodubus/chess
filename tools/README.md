@@ -1015,8 +1015,11 @@ dernière relève est faite.
 | **N° 21 — la vague 6**, la dernière, étiquetée par N8tw50s800 | 40325845542, 40325852055, 40325857859, 40325863642, 40325869445, 40325875016, 40325880490 | `e20dd6d` (N8tw50s800), `<embedded>`, `x86-64-v3`, 5 000 nœuds, graine « auto » | `nnue-datagen.yml`, 7 × 330 min | **RELEVÉE le 26 oct. à 20 h 09** — lancée à 13 h 52, ses attendus poussés avant (`c3ababa`) ; sept succès finis entre 19 h 22 et 19 h 28 | **192,9 M positions, 132,0 M gardées, 18,90 % d'écartées, 33,80 % de nulles ; trois EPYC 7763 à 1 223 – 1 235 ; cumul 1 752,5 M : dans l'attendu sur les six chiffres — la tranche CLOSE**, 86 jobs appris, 9,32 Go, expirant du 20 au 24 janv. 2027 (`tools/n21-jobs.tsv`, section « N° 21 », la vague 6) — *Attendus, écrits avant* (section « N° 21 », la vague 6) : **166 à 245 M positions, 114 à 169 M gardées** ; écartées 18,7 à 19,2 %, nulles 33,6 à 34,1 % ; **1 200 à 1 255 positions par seconde sur un EPYC 7763** ; le cumul appris 1 735 à 1 790 M, la tranche close |
 | **N° 22 — la vague 1**, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40326139016, 40326159197, 40326178425, 40326197199, 40326216300, 40326235887, 40326255482, 40326275285 — **le premier, 40326139016, tenu à l'écart** ; à 5 000 : 40326149256, 40326169066, 40326187716, 40326207064, 40326225716, 40326245784, 40326264834, 40326285104 — **le premier, 40326149256, tenu à l'écart** | `a4a6490` (N9w50s800, `main`), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 26 oct. à 13 h 55**, ses attendus poussés avant (`0884a53`) ; **RELEVÉE le 26 oct. à 20 h 09**, seize succès finis entre 19 h 25 et 19 h 26 | **à 2 500 : 450,4 M positions, 300,7 M gardées, 28,69 % de nulles, EPYC 7763 à 2 443 – 2 455 ; à 5 000 : 268,5 M, 183,9 M, 34,77 %, 1 227 – 1 232 — dans l'attendu ; les écartées dehors, 21,05 et 21,16 %** : l'étiqueteur, mesuré — les mêmes ouvertures donnent 18,46 % sous N8tw50s800 et 21,01 % sous N9w50s800 (`tools/n22-jobs.tsv`, section « N° 22 », la vague 1) — *Attendus, écrits avant* (section « N° 22 », la vague 1) : positions par seconde sur un EPYC 7763, **1 160 à 1 260 à 5 000, 2 250 à 2 700 à 2 500** ; nulles **32,5 à 35,5 %** et **28 à 33,5 %** ; écartées 18 à 20,5 % aux deux ; les huit à 5 000 **190 à 280 M positions, 130 à 195 M gardées**, les huit à 2 500 **350 à 560 M, 240 à 385 M** |
 | **N° 22 — la vague 2**, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40384281825, 40384311626, 40384341727, 40384371950, 40384399623, 40384427982, 40384454924, 40384481802 ; à 5 000 : 40384296512, 40384326782, 40384357557, 40384386334, 40384413719, 40384441631, 40384468370, 40384495348 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 27 oct. à 1 h 55** — lancée le 26 à 20 h 10, ses attendus poussés avant (`8b06aff`) ; seize succès finis entre 1 h 40 et 1 h 42 | **à 2 500 : 498,8 M positions, 333,0 M gardées, 28,71 % de nulles ; à 5 000 : 216,8 M, 148,6 M, 34,84 % ; écartées 21,09 et 21,16 % ; EPYC 7763 à 2 427 – 2 456 et 1 217 – 1 237 ; cumuls 601,4 et 304,2 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 2) — *Attendus, écrits avant* (section « N° 22 », la vague 2) : les huit à 2 500 **380 à 600 M positions, 255 à 400 M gardées**, les huit à 5 000 **200 à 340 M, 137 à 233 M** ; écartées **20,6 à 21,6 %** aux deux ; nulles **28,3 à 29,1 %** et **34,4 à 35,2 %** ; EPYC 7763 **2 380 à 2 520** et **1 200 à 1 260** positions par seconde ; cumul appris **523 à 668 M** et **293 à 389 M** |
-| **N° 22 — la vague 3**, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40429483724, 40429501505, 40429520096, 40429538917, 40429557247, 40429575286, 40429593639, 40429611701 ; à 5 000 : 40429492854, 40429510678, 40429529469, 40429548557, 40429566182, 40429584601, 40429602772, 40429621446 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 27 oct. à 1 h 56**, ses attendus poussés avant (`4b70c07`) ; relève vers 7 h 30 | — *Attendus, écrits avant* (section « N° 22 », la vague 3) : les huit à 2 500 **370 à 650 M positions, 248 à 435 M gardées**, les huit à 5 000 **190 à 340 M, 130 à 233 M** ; écartées **20,8 à 21,5 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 200 à 1 260** positions par seconde ; cumul appris **849 à 1 036 M** et **434 à 537 M** |
-| **N° 20, séance C2 — N9p25s800 contre N9w50s800** | **40429250807, 40429260171, 40429269046, 40429278451** | `f0db36f` (N9p25s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **lancés le 27 oct. à 1 h 54**, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; relève vers 7 h 05 | — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −5 à +5, ~0 (« La séance C2 ») |
+| **N° 22 — la vague 3**, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40429483724, 40429501505, 40429520096, 40429538917, 40429557247, 40429575286, 40429593639, 40429611701 ; à 5 000 : 40429492854, 40429510678, 40429529469, 40429548557, 40429566182, 40429584601, 40429602772, 40429621446 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 27 oct. à 7 h 47** — lancée à 1 h 56, ses attendus poussés avant (`4b70c07`) ; seize succès finis entre 7 h 26 et 7 h 28 | **à 2 500 : 485,7 M positions, 324,3 M gardées, 28,72 % de nulles ; à 5 000 : 225,7 M, 154,6 M, 34,79 % ; écartées 21,07 et 21,23 % ; EPYC 7763 à 2 418 – 2 422 et 1 225 – 1 241 ; cumuls 925,7 et 458,8 M : dans l'attendu sur les douze chiffres** — un Xeon 6973P-C, jamais vu, à 1 738 (`tools/n22-jobs.tsv`, section « N° 22 », la vague 3) — *Attendus, écrits avant* (section « N° 22 », la vague 3) : les huit à 2 500 **370 à 650 M positions, 248 à 435 M gardées**, les huit à 5 000 **190 à 340 M, 130 à 233 M** ; écartées **20,8 à 21,5 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 200 à 1 260** positions par seconde ; cumul appris **849 à 1 036 M** et **434 à 537 M** |
+| **N° 22 — la vague 4**, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40463180250, 40463198427, 40463216501, 40463233753, 40463251385, 40463270372, 40463288169, 40463305356 ; à 5 000 : 40463189795, 40463207448, 40463225134, 40463242604, 40463260691, 40463279378, 40463296881, 40463314132 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 27 oct. à 7 h 47**, ses attendus poussés avant (`fd62cf7`) ; relève vers 13 h 20 | — *Attendus, écrits avant* (section « N° 22 », la vague 4) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 200 à 1 260** positions par seconde ; cumul appris **1 174 à 1 396 M** et **589 à 695 M** |
+| **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
+| **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **lancés le 27 oct. à 7 h 44**, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; relève vers 12 h 55 | — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
+| **N° 20, séance C2 — N9p25s800 contre N9w50s800** | **40429250807, 40429260171, 40429269046, 40429278451** | `f0db36f` (N9p25s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 7 h 45** — lancés à 1 h 54, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 6 h 57 et 7 h 04 | **+0,84 ± 3,28 en commun** (+1,12, +1,12, −1,36, +2,48 ; p = 0,853) — dans l'attendu, **pas candidat** ; l'exposant reste à 2 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −5 à +5, ~0 (« La séance C2 ») |
 | **N° 20, séance C2 — N9w75s800 contre N9w50s800** | **40382312399, 40382323890, 40382335969, 40382347208** | `331cdad` (N9w75s800) → `cf93707` (N9w50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 1 h 55** — lancés le 26 à 19 h 57, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 1 h 01 et 1 h 10 | **−2,95 ± 3,34 en commun** (−9,43, −1,86, +0,37, −0,87 ; p = 0,176) — dans l'attendu, **pas candidat ; la séance `a` close**, le poids reste à 0,5 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −6 à +5, ~−1 (« La séance C2 ») |
 | **N° 20, séance C2 — N9w625s800 contre N9w50s800** | **40327455955, 40327464784, 40327473241, 40327482052** | `fcd362f` (N9w625s800) → `cf93707` (N9w50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 26 oct. à 19 h 56** — lancés à 14 h 04, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 19 h 03 et 19 h 10 | **−1,86 ± 3,33 en commun** (−2,61, −2,48, −1,99, −0,37 ; p = 0,969) — dans l'attendu, **pas candidat** ; le poids reste à 0,5 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −3 à +6, ~+1 (« La séance C2 ») |
 | **N° 20, séance C1 — N9w50s800 contre N8tw50s800** | **39810606104, 39810618069, 39810630456, 39810642687** | `db1eed9` (N9w50s800) → `c9b5a0d` (N8tw50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 22 oct. à 23 h 21** — lancés à 18 h 03, les attendus poussés avant (« La séance C1 », le 22 oct. à 4 h 34) ; finis ENTIERS entre 23 h 04 et 23 h 19, 6,42 à 6,73 s par partie | **+2,11, +2,61, +9,31 et +6,70 ; +5,18 ± 3,29 en commun sur 11 200 parties, homogènes (p = 0,404)** ; zéro perte au temps. **Gain démontré : N9w50s800 EMBARQUÉ** (`562e20f`) (section « La séance C1 », « N9w50s800 contre N8tw50s800 — VERDICT ») — *Critère, écrit avant* : borne basse au-dessus de zéro → N9w50s800 embarqué, sa sonde de B8 dans la plage ; sinon N8tw50s800 reste ; *attendu* +3 à +13, ~+7 (« La séance C1 ») |
@@ -11580,9 +11583,157 @@ révoqué aussitôt, au code de `main` au bit près et au facteur 2,85.
 haut, écrits avant : −5 à +5, ~0 ; borne basse au-dessus de zéro →
 candidat à l'embarquement.
 
-**Ce qui suit** : C2c au verdict de C2 ; C3 (l'architecture) sur la recette
-que C2 fixe ; **la tranche du n° 21**, close vers le 27 oct., entre dans
-les données de C3 — le volume paie encore (+8,94 ± 3,32).
+**N9p25s800 — VERDICT, le 27 oct. à 7 h 45 : +0,84 ± 3,28 contre N9w50s800
+— pas candidat ; l'exposant reste à 2.** Quatre jobs finis ENTIERS entre
+6 h 57 et 7 h 04, 6,47 à 6,63 s par partie, zéro perte au temps, aucun
+coup illégal, aucun moteur perdu.
+
+| les quatre jobs | en commun, 11 200 parties | homogénéité | attendu, écrit avant |
+|---|---|---|---|
+| +1,12, +1,12, −1,36, +2,48 | **+0,84 ± 3,28** | p = 0,853 | −5 à +5, ~0 — dedans, sur le point |
+
+Pentanomiaux, dans l'ordre des jobs : 27, 239, 860, 246, 28 ; 22, 259,
+832, 262, 25 ; 32, 257, 837, 238, 36 ; 24, 246, 850, 246, 34.
+
+- **Critère, écrit avant** : la borne basse, −2,44, n'est pas au-dessus
+  de zéro — **pas candidat**. La borne haute, +4,12 : un gain de cet
+  ordre reste possible et indécelable ici, comme écrit d'avance ;
+- **ce qu'il dit** : peser davantage les grosses erreurs ne rend rien de
+  mesurable à 800 superlots ; le réglage reste au registre,
+  déprioritisé — le seul de C2 au-dessus de zéro au point, sans plus.
+
+**La perte tenue à l'écart des quatre — les attendus, écrits le 27 oct.
+à 7 h 45, avant de la lancer.** `nnue-validation.yml` sur les trois jobs
+tenus à l'écart — 39050360980 (l'étape B), 39493777327 ((e)), 38531414161
+(le n° 18, étiqueté par N5l) —, N9w50s800 en référence. Un diagnostic,
+**biaisé et dit d'avance** : l'outil mesure la perte au poids 0,75 et à
+l'exposant 2. L'échelle connue : 0,5 contre 0,75 rendait −0,00003 et
++0,00004, 0,25 contre 0,75 +0,00032 (N6r4w50, N7p4w50, N6r4w25). Par job
+tenu, contre N9w50s800 — <span>inférence, confiance faible</span> :
+- **N9w625s800 : −0,0001 à +0,0001**, indiscernable ;
+- **N9w75s800 : −0,0002 à +0,00005**, ~−0,00005 — il minimise la cible
+  même que l'outil mesure ;
+- **N9p25s800 : −0,0001 à +0,0004**, ~+0,0001 — il minimise une autre
+  perte ;
+- **N9w25a75s800 : −0,0001 à +0,0002**, ~0 — il finit au poids 0,75.
+
+Les matchs décident ; ce relevé dit seulement si un réseau retient
+autrement — trois sur quatre sont déjà sans gain.
+
+**La perte tenue à l'écart, RELEVÉE le 27 oct. à 7 h 50 — huit lectures sur
+douze dans l'attendu ; le job de N5l dehors pour trois.** Run
+40463028272, l'outil à `a4d92b2`, lancé à 7 h 45, fini à 7 h 48 ; écarts
+à N9w50s800 :
+
+| réseau | étape B (39050360980, N6r4) | (e) (39493777327, N6r4 à 10 000) | n° 18 (38531414161, N5l) | attendu, écrit avant |
+|---|---|---|---|---|
+| N9w625s800 | −0,000021 ± 0,000017 | −0,000049 ± 0,000025 | **+0,000175 ± 0,000018** | −0,0001 à +0,0001 |
+| N9w75s800 | +0,000010 ± 0,000021 | −0,000040 ± 0,000029 | **+0,000318 ± 0,000022** | −0,0002 à +0,00005 |
+| N9p25s800 | +0,000362 ± 0,000022 | **+0,000579 ± 0,000031** | +0,000073 ± 0,000023 | −0,0001 à +0,0004 |
+| N9w25a75s800 | −0,000034 ± 0,000019 | −0,000080 ± 0,000027 | **+0,000246 ± 0,000020** | −0,0001 à +0,0002 |
+
+- **Sur les données de leur étiqueteur** (étape B et (e), N6r4), les
+  trois variantes du poids sont **à égalité avec N9w50s800, à 0,00008
+  près** — l'attendu ; N9w75s800 n'y est pas meilleur, alors qu'il
+  minimise la cible même que l'outil mesure ;
+- **sur le job de N5l, plus le poids du résultat monte, plus la perte
+  monte** : +0,00018 à 0,625, +0,00032 à 0,75 ; le poids variable, qui
+  finit à 0,75, entre les deux. <span>Inférence, confiance
+  moyenne</span> : le résultat d'une partie appartient au moteur qui l'a
+  jouée — N5l joue d'autres parties que N6r4 —, et un réseau qui en
+  apprend davantage généralise moins à celles d'un autre moteur. Les
+  données de N5l ont quitté l'entraînement depuis N9w50s800 ;
+- **N9p25s800 retient autrement** : +0,00036 et +0,00058 sur les données
+  de son étiqueteur — il minimise une autre perte —, et **+0,84 ± 3,28
+  en match** : un écart de perte de cet ordre ne dit rien du jeu. Le
+  dépôt l'avait mesuré dans l'autre sens (`CLAUDE.md`, « cette valeur
+  d'évaluation est meilleure ») ;
+- **les attendus manqués** : je n'avais pas séparé les jobs par
+  étiqueteur — la colonne N5l est celle qui sort, pour les trois poids.
+
+**N9w25a75s800 — intégré le 27 oct. à 7 h 43, en match ; la séance `b`
+finie.** Poussé par la séance à 7 h 01 (`fd77285` sur `reseau/n20d`),
+tous contrôles passés. Sa sortie relue : la ligne de recette **« 800
+superlots, pas 0.001 → 2.4300007e-6, wdl 0.25 → 0.75, perte ^2, lot
+16384, ply ≥ 16 »**, et l'entraîneur l'annonce de son côté (« *linear
+taper start 0.25 end 0.75* ») ; **29 009 129 parties et 3 712 073 002
+positions relues à l'octet** ; **confrontation 5 / 16** ; 18 995 s de
+carte, 5 h 17. Le réseau dans `reseaux/`, le candidat **`fa28f9a`**
+révoqué aussitôt, au code de `main` au bit près et au facteur 2,85.
+**Quatre jobs contre N9w50s800**, l'attendu et le critère plus haut,
+écrits avant : −4 à +6, ~+1 ; borne basse au-dessus de zéro → candidat
+à l'embarquement. **La carte de Théo est libre** depuis 7 h 01.
+
+**Ce qui suit** : C2c, écrite plus bas ; C3 (l'architecture) sur la
+recette que C2 fixe ; **la tranche du n° 21**, close le 26 oct., entre
+dans les données de C3 — le volume paie encore (+8,94 ± 3,32).
+
+#### La séance C2c — écrite le 27 oct. à 7 h 57, avant de la demander
+
+**Pourquoi maintenant, et pas au verdict de N9w25a75s800.** C2 renvoyait
+C2c « au verdict », pour la recette de base. Mais chaque réseau de C2c ne
+change qu'un réglage de N9w50s800 et **se mesure contre lui,
+directement** : son verdict ne dépend d'aucun autre réseau de C2. Si
+N9w25a75s800 gagne, sa composition avec un gagnant de C2c s'entraîne et
+se mesure à part, comme le critère de C2 l'écrit déjà. Attendre coûterait
+six heures d'une carte libre depuis 7 h 01.
+
+**Ce qu'elle tranche : les trois réglages de la recette jamais mesurés**
+(« La file », registre) — le pas final, la taille de lot, le premier
+demi-coup gardé —, **chacun dans les deux sens**, leur sens même étant
+inconnu. Les données, l'architecture et le reste de la recette : ceux de
+N9w50s800.
+
+| réseau | le réglage changé | séance | carte |
+|---|---|---|---|
+| **N9pfbs800** | pas final dix fois plus bas : 0,001 × 0,3⁵ / 10 | `c1` | ~5 h 15 |
+| **N9pfhs800** | pas final dix fois plus haut : 0,001 × 0,3⁵ × 10 | `c1` | ~5 h 15 |
+| **N9l8ks800** | lot de 8 192 positions au lieu de 16 384 — deux fois plus de pas | `c2` | ~5 à 7 h |
+| **N9l32ks800** | lot de 32 768 — deux fois moins de pas | `c2` | ~4 h 30 à 5 h 15 |
+| **N9y8s800** | premier demi-coup gardé à 8 au lieu de 16 | `c3` | ~5 h 15 |
+| **N9y24s800** | premier demi-coup gardé à 24 | `c3` | ~5 h 15 |
+
+Un superlot garde ses ~100 M positions quel que soit le lot ; le pas
+initial reste 0,001 aux deux lots — le pas que le lot appellerait est un
+autre réglage. Au demi-coup 8, toutes les positions enregistrées passent
+le filtre de ply — les parties commencent après 8 à 11 demi-coups au
+hasard ; à 24, les ~8 à 16 premiers demi-coups joués en sortent.
+
+**Le script** : `tools/seance-n20d.sh`, modes `c1`, `c2`, `c3` ou `c`
+(les trois, ~32 h). Chaque réseau est poussé sur `reseau/n20d` dès qu'il
+passe ses contrôles, dont **la ligne de recette entière** — le pas final
+y est le `{:e}` d'un f32, **calculé par un programme Rust** au format
+de `tools/nnue-train` (2.4300002e-7 et 2.4300001e-5), le lot et le ply
+en entiers. *Éprouvé dans le bac à sable de C2*, l'entraîneur factice
+mis au format du jour : `c1` ; `c2` sous un entraîneur qui ignorerait
+`--lot` — **refusé, mis de côté**, puis la relance qui le refait ; `c3`
+avec une panne simulée sur N9y8s800, puis `c`, qui saute les cinq déjà
+poussés et refait le sixième ; un mode inconnu, refusé.
+
+**Attendus** — chacun contre N9w50s800, quatre jobs de 2 800 parties à
+`8+0,08`, AVX2 des deux côtés, le livre de 15 000, graine « auto », au
+facteur de `main` (2,85) — <span>inférence, confiance faible</span> ; C2
+n'a rien démontré sur quatre réglages, et rien ne dit que ceux-ci pèsent
+davantage :
+- **N9pfbs800 : −4 à +4, ~0** — les derniers superlots ne bougent presque
+  plus déjà ;
+- **N9pfhs800 : −6 à +3, ~−1** — finir à un pas plus haut laisse du
+  bruit dans les poids ;
+- **N9l8ks800 : −3 à +5, ~+1** — deux fois plus de pas au même pas ;
+- **N9l32ks800 : −5 à +3, ~−1** ;
+- **N9y8s800 : −5 à +3, ~−1** — les positions des ouvertures tirées au
+  hasard entrent dans l'apprentissage ;
+- **N9y24s800 : −4 à +3, ~−0,5**.
+
+**Critère, écrit avant** : celui de C2 — chacun, borne basse au-dessus de
+zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ;
+si les deux sens d'un réglage démontraient, un match direct ; un gagnant
+de C2c et un de C2 se composent et se mesurent contre le meilleur seul.
+**La puissance, dite d'avance** : ± 3,3 ; un gain de +2 passe inaperçu,
+et le réglage reste ouvert au registre, déprioritisé.
+
+**Hors match** : la perte tenue à l'écart des six, au bout de la séance,
+ses attendus écrits avant — séparés par étiqueteur, cette fois.
 
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
@@ -12689,6 +12840,41 @@ les deux vagues, d'un parc tout en Xeon 8573C à un parc tout en 9V45 :
   **1 200 à 1 260** à 5 000 ;
 - **le cumul appris** : à 2 500, **849 à 1 036 M** gardées ; à 5 000,
   **434 à 537 M**.
+
+**La vague 3, RELEVÉE le 27 oct. à 7 h 47 — les douze chiffres dans leur
+attendu.** Seize succès, finis entre 7 h 26 et 7 h 28, chaque journal
+nommant `a4a6490` et le budget de sa moitié ; `tools/n22-jobs.tsv`, la
+vague 3 :
+
+| | à 2 500 nœuds | à 5 000 nœuds | attendu, écrit avant |
+|---|---|---|---|
+| positions, les huit | **485,7 M** | **225,7 M** | 370 à 650 M ; 190 à 340 M — dedans |
+| gardées, tous appris | **324,3 M** | **154,6 M** | 248 à 435 M ; 130 à 233 M — dedans |
+| parties écartées, sur les gardées | **21,07 %** (20,99 à 21,16) | **21,23 %** (21,08 à 21,47) | 20,8 à 21,5 % — dedans |
+| nulles, sur les gardées | **28,72 %** (28,60 à 28,77) | **34,79 %** (34,64 à 35,00) | 28,4 à 29,0 % ; 34,5 à 35,1 % — dedans |
+| positions par seconde, EPYC 7763 | **2 418 et 2 422**, deux jobs | **1 225 à 1 241**, quatre | 2 400 à 2 500 ; 1 200 à 1 260 — dedans |
+| cumul appris | **925,7 M** | **458,8 M** | 849 à 1 036 M ; 434 à 537 M — dedans |
+
+- **le parc** : à 2 500, cinq 9V74, deux EPYC 7763, un 9V45 ; à 5 000,
+  quatre EPYC 7763, un 9V45, un Xeon 8370C, un Xeon 8573C et **un
+  processeur jamais vu ici, un Xeon 6973P-C — 1 738 positions par
+  seconde** à 5 000, entre le 9V74 et le 9V45 ;
+- **le rapport des volumes appris : × 2,02 après trois vagues** — × 1,68,
+  puis × 1,98 : le tirage du parc s'est moyenné ;
+- 23 jobs appris par budget ; la partie mesurée se ferme à la vague 5,
+  ~39 par budget.
+
+**La vague 4 — écrite avant de la lancer.** Seize jobs, tous appris, la
+même recette, huit par budget en alternance, 2 500 d'abord. *Attendus* —
+les trois vagues, d'un parc tout en Xeon 8573C à un parc tout en 9V45 :
+- **les huit à 2 500 : 370 à 700 M positions, 248 à 470 M gardées** ;
+  **les huit à 5 000 : 190 à 345 M positions, 130 à 236 M gardées** ;
+- **écartées 20,8 à 21,6 %** aux deux budgets ; **nulles 28,4 à 29,0 %**
+  à 2 500, **34,5 à 35,1 %** à 5 000 ;
+- **positions par seconde sur un EPYC 7763 : 2 400 à 2 500** à 2 500,
+  **1 200 à 1 260** à 5 000 ;
+- **le cumul appris** : à 2 500, **1 174 à 1 396 M** gardées ; à 5 000,
+  **589 à 695 M**.
 
 **Les attendus des matchs**, écrits dès maintenant pour qu'aucun relevé ne
 les précède — chacun quatre jobs de 2 800 parties à `8+0,08` :
@@ -14229,6 +14415,9 @@ critères, s'écrit à la clôture de (e), la liste des données close.
   l'autre candidat — le poids reste à 0,5 ;
   **`b` lancée par Théo le 26 oct. à 20 h 33** — N9p25s800 attendu vers
   1 h 50, N9w25a75s800 vers 7 h 05 ;
+- **C2c — le pas final, le lot, le premier demi-coup** : six réseaux,
+  chacun contre N9w50s800 ; **ÉCRITE le 27 oct. à 7 h 57** (« La séance
+  C2c ») ;
 - **C3 — l'architecture** : 384 et 512 unités, dix seaux de roi au
   volume d'aujourd'hui, chacun avec ses nœuds par seconde. **1 024
   unités et plus de seaux de roi viennent après** — Théo, 21 oct. :
@@ -14254,11 +14443,11 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **superlots (passes)** | 800 au réseau qui joue (N8tw50s800, 4,63 G, 25,9 passes) | à 1,56 G : 100 → 200 +14,74 ; 200 → 400 +9,31. **À 4,63 G : 400 → 800 +5,43 ± 3,34** (21 oct.) | +2 à +5 au doublement suivant — <span>confiance faible</span> : le rendement décroît, et moins à 4,63 G qu'à 1,56 G au même nombre de passes (+5,43 contre +9,31) | **en dernier, sur la recette finale** de la séance C (21 oct., en réponse à une question de Théo — l'ordre, pas une décision de sa part) : l'optimum des passes bouge avec le volume et la largeur, que la séance C change toutes deux — mesuré aujourd'hui, il serait périmé dès son réseau ; 1 600 superlots, ~10 h 30 de carte |
 | **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N9w50s800) et aux réseaux des séances B et C1 ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes. **À 800 (C2, 26 et 27 oct.) : 0,625 contre 0,5 −1,86 ± 3,33 ; 0,75 contre 0,5 −2,95 ± 3,34** | 0,5 ou en deçà à 800 ; au-dessus, rien — <span>confiance moyenne</span> | **déprioritisé** : 0,375 le seul point ouvert ; rouvert par une recette qui change les passes ou les données |
 | **pas initial** (`--pas`) | 0,001, le défaut de bullet | **l'écran du 21 oct.** à 100 superlots : ×0,5 → −0,12 ± 3,43 ; ×2 → **−4,90 ± 3,41**, régression démontrée ; la perte tenue à l'écart, plate (+0,00004 des deux côtés), ne le voyait pas | fine — <span>confiance faible</span> : au mieux quelques Elo entre 0,0005 et 0,001 | déprioritisé ; se rouvre avec la recette (lot, largeur), le pas optimal bougeant avec eux |
-| **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; C2c, au verdict de C2 — le sens inconnu, deux réseaux |
-| **fonction de perte** | écart au carré de la sigmoïde | jamais | inconnue | l'exposant 2,5 — `--perte`, écrite le 20 oct. ; **séance C2, `b`** : N9p25s800 **en match depuis le 27 oct.** contre N9w50s800 |
-| **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; C2c |
-| **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; C2c — le sens inconnu, deux réseaux |
-| **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | `--wdl-final`, écrite le 20 oct. ; **séance C2, `b`** : de 0,25 à 0,75 (N9w25a75s800) |
+| **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; **C2c, écrite le 27 oct.** : × 0,1 et × 10 (N9pfbs800, N9pfhs800) |
+| **fonction de perte** | écart au carré de la sigmoïde | **l'exposant 2,5 à 800 superlots : +0,84 ± 3,28** contre N9w50s800 (C2, 27 oct.) | ~0 à ± 3 — <span>confiance moyenne</span> | **déprioritisé** : un autre exposant, ou une autre forme, rouvert par une recette qui change les données |
+| **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; **C2c, écrite le 27 oct.** : 8 192 et 32 768 (N9l8ks800, N9l32ks800) |
+| **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; **C2c, écrite le 27 oct.** : 8 et 24 (N9y8s800, N9y24s800) |
+| **poids du résultat variable** | constant pendant l'entraînement | jamais | inconnue | `--wdl-final`, écrite le 20 oct. ; **séance C2, `b`** : de 0,25 à 0,75, N9w25a75s800 **en match depuis le 27 oct.** contre N9w50s800 |
 | **volume de données** | 3,71 G vus par N9w50s800 (les 94 jobs appris de l'étape B et les 80 de (e), tous étiquetés par N6r4) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) ; **N9w50s800 +5,18 ± 3,29 contre N8tw50s800** — N5l retiré, 0,98 G de N6r4 ajoutées, 31 passes au lieu de 25 : trois causes mêlées | ~+7 au doublement suivant — <span>confiance faible</span> | **N9w50s800 EMBARQUÉ le 22 oct.** (séance C1) ; **le volume à étiquette égale paie : +8,94 ± 3,32** (E5t contre E5v, 26 oct.), ce que le n° 20 n'avait pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») |
 | **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | **le budget, mesuré le 26 oct.** (séance C1) : 10 000 nœuds contre 5 000, −1,49 ± 3,38 à volume égal, **−7,38 ± 3,40 à temps de runner égal** — le budget ne paie pas, le volume si (+8,94 ± 3,32) ; **2 500 nœuds, le test suivant** : à volume égal contre 5 000, sur des données du même étiqueteur que le n° 21 ; s'il ne perd rien à l'étiquette, il double le volume au même temps de runner — <span>marge estimée : jusqu'à ~+9 au doublement, confiance faible</span> ; **écrit le 26 oct. dans le n° 22** : chaque vague moitié à 2 500, moitié à 5 000, étiquetées par N9w50s800 ; E2.5t contre E5n décide (« N° 22 ») ; **les données de N5l laissées** : −5,18 à superlots égaux, +0,25 ± 4,71 à passes égales — rien (22 oct.) ; N9w50s800 embarqué le 22 oct. |
 | **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17), malgré × 0,90 de nœuds par seconde | inconnue au volume d'aujourd'hui | C3 : 384 et 512 ; **1 024 si 512 paie nettement** — un seul `HIDDEN` dans le moteur, mais ~×0,66 de nœuds par seconde estimé et ~4 fois la carte par superlot (Théo, 21 oct. : plus tard) |

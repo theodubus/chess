@@ -10,11 +10,20 @@
 #       n9w75s800     à 0,75 ;
 #   b — n9p25s800     l'exposant de la perte à 2,5 au lieu de 2 ;
 #       n9w25a75s800  le poids variable, de 0,25 à 0,75 — 0,5 en moyenne.
+# Et C2c, écrite le 27 oct. — un réglage de plus par réseau, chacun dans
+# les deux sens, son sens étant inconnu :
+#   c1 — n9pfbs800     le pas final dix fois plus bas (0,3⁵ / 10 du pas initial) ;
+#        n9pfhs800     dix fois plus haut ;
+#   c2 — n9l8ks800    le lot à 8 192 positions au lieu de 16 384 ;
+#        n9l32ks800   à 32 768 ;
+#   c3 — n9y8s800     le premier demi-coup gardé à 8 au lieu de 16 ;
+#        n9y24s800    à 24.
 #
 #   bash tools/seance-n20d.sh essai   # contrôles, données, essai court
 #   bash tools/seance-n20d.sh a       # les deux poids, ~10 h 30
 #   bash tools/seance-n20d.sh b       # la perte et le poids variable, ~10 h 30
 #   bash tools/seance-n20d.sh tout    # a puis b, ~21 h
+#   bash tools/seance-n20d.sh c       # c1, c2 puis c3, ~32 h — ou chacun seul
 #
 # Tout vit sous `~/shallowred/` (Théo, 22 oct.) : le dépôt `chess/`, les
 # données `donnees/<génération>/`, les journaux `seances/<nom>/`. Le dépôt est
@@ -34,8 +43,8 @@ ARCH=768x4hm-256-s8
 # (`tools/n20-jobs.tsv`, `tools/n20e-jobs.tsv`) : l'entraîneur relit à l'octet.
 ATT_N9=29009129:3712073002
 
-case "$MODE" in essai | a | b | tout) ;; *)
-  echo "usage : $0 [essai|a|b|tout]" >&2
+case "$MODE" in essai | a | b | tout | c | c1 | c2 | c3) ;; *)
+  echo "usage : $0 [essai|a|b|tout|c|c1|c2|c3]" >&2
   exit 2
   ;;
 esac
@@ -286,7 +295,7 @@ entrainer essai-n9 --attendu "$ATT_N9" --superlots 1 --sortie essai-n9 "${B_TOUS
   dire "  ÉCHEC essai-n9 : l'entraîneur a rendu une erreur"
 controler essai-n9 "$ARCH-1" pas=0.001 || ESSAI=1
 if [ "$MODE" = essai ]; then
-  if [ "$ESSAI" = 0 ]; then dire "ESSAI RÉUSSI — lancer : bash $0 a (puis b), ou bash $0 tout"; else dire "ESSAI ÉCHOUÉ — m'envoyer $RESUME"; fi
+  if [ "$ESSAI" = 0 ]; then dire "ESSAI RÉUSSI — lancer : bash $0 a (puis b), bash $0 tout, ou bash $0 c"; else dire "ESSAI ÉCHOUÉ — m'envoyer $RESUME"; fi
   exit "$ESSAI"
 fi
 if [ "$ESSAI" != 0 ]; then
@@ -299,20 +308,43 @@ B=0
 git_d fetch -q origin
 deja_pousse() { git_d cat-file -e "origin/reseau/n20d:reseaux/$1-$2.bin" 2>/dev/null; }
 # La ligne que l'entraîneur imprime pour sa recette, au format de
-# `tools/nnue-train` : `{}` d'un f32 pour les poids et l'exposant.
-ligne_recette() { # superlots, wdl, wdl final, exposant
-  printf '  %s superlots, pas 0.001 → 2.4300007e-6, wdl %s → %s, perte ^%s, lot 16384, ply ≥ 16' "$@"
+# `tools/nnue-train` : `{}` d'un f32 pour les poids et l'exposant, `{:e}` du
+# pas final.
+ligne_recette() { # superlots, pas final affiché, wdl, wdl final, exposant, lot, ply
+  printf '  %s superlots, pas 0.001 → %s, wdl %s → %s, perte ^%s, lot %s, ply ≥ %s' "$@"
 }
-reseau_c2() { # nom, wdl, wdl final, exposant — le reste de N9w50s800
-  local nom=$1 w=$2 wf=$3 perte=$4 id=$ARCH-800 args
+# Le pas final que l'entraîneur affichera, `{:e}` de 0,001 × le rapport en
+# f32 — calculé par un programme Rust au format de `tools/nnue-train` le
+# 27 oct. ; un rapport absent de la table arrête la séance plutôt que de
+# contrôler contre une ligne devinée.
+pas_final_affiche() { # rapport, ou « - » pour celui de N9w50s800 (0,3⁵)
+  case "$1" in
+  -) echo 2.4300007e-6 ;;
+  0.000243) echo 2.4300002e-7 ;;
+  0.0243) echo 2.4300001e-5 ;;
+  *) return 1 ;;
+  esac
+}
+# nom, wdl, wdl final, exposant ; puis, pour C2c, le rapport du pas final
+# (« - » : celui de N9w50s800), le lot et le premier demi-coup gardé.
+reseau_c2() {
+  local nom=$1 w=$2 wf=$3 perte=$4 pf=${5:--} lot=${6:-16384} ply=${7:-16} id=$ARCH-800 args affiche
   args=(--superlots 800 --wdl "$w" --pas 0.001)
   [ "$wf" = "$w" ] || args+=(--wdl-final "$wf")
   [ "$perte" = 2 ] || args+=(--perte "$perte")
+  [ "$pf" = - ] || args+=(--pas-final "$pf")
+  [ "$lot" = 16384 ] || args+=(--lot "$lot")
+  [ "$ply" = 16 ] || args+=(--ply-min "$ply")
+  if ! affiche=$(pas_final_affiche "$pf"); then
+    dire "  ÉCHEC $nom : le rapport de pas final $pf n'est pas dans la table de la séance"
+    B=1
+    return
+  fi
   if deja_pousse "$nom" "$id"; then
     dire "déjà poussé  $nom"
   elif ! former "$nom" "$id" "${args[@]}" --attendu "$ATT_N9" --sortie "$nom" "${B_TOUS[@]}" "${E10[@]}"; then
     B=1
-  elif controler "$nom" "$id" pas=0.001 "recette=$(ligne_recette 800 "$w" "$wf" "$perte")"; then
+  elif controler "$nom" "$id" pas=0.001 "recette=$(ligne_recette 800 "$affiche" "$w" "$wf" "$perte" "$lot" "$ply")"; then
     publier "Réseau NNUE du n° 20, séance C2 : $nom — tools/seance-n20d.sh, tous les contrôles passés" \
       "$nom:$id" || B=1
   else
@@ -337,6 +369,25 @@ if [ "$MODE" = b ] || [ "$MODE" = tout ]; then
   reseau_c2 n9p25s800 0.5 0.5 2.5
   dire "— n9w25a75s800 : le poids variable, de 0,25 à 0,75"
   reseau_c2 n9w25a75s800 0.25 0.75 2
+fi
+# C2c : le poids, la perte et le reste de N9w50s800 ; un seul réglage changé.
+if [ "$MODE" = c1 ] || [ "$MODE" = c ]; then
+  dire "— n9pfbs800 : le pas final dix fois plus bas"
+  reseau_c2 n9pfbs800 0.5 0.5 2 0.000243
+  dire "— n9pfhs800 : le pas final dix fois plus haut"
+  reseau_c2 n9pfhs800 0.5 0.5 2 0.0243
+fi
+if [ "$MODE" = c2 ] || [ "$MODE" = c ]; then
+  dire "— n9l8ks800 : le lot à 8 192"
+  reseau_c2 n9l8ks800 0.5 0.5 2 - 8192
+  dire "— n9l32ks800 : le lot à 32 768"
+  reseau_c2 n9l32ks800 0.5 0.5 2 - 32768
+fi
+if [ "$MODE" = c3 ] || [ "$MODE" = c ]; then
+  dire "— n9y8s800 : le premier demi-coup gardé à 8"
+  reseau_c2 n9y8s800 0.5 0.5 2 - 16384 8
+  dire "— n9y24s800 : le premier demi-coup gardé à 24"
+  reseau_c2 n9y24s800 0.5 0.5 2 - 16384 24
 fi
 
 if [ "$B" = 0 ]; then
