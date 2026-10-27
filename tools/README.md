@@ -11735,6 +11735,20 @@ et le réglage reste ouvert au registre, déprioritisé.
 **Hors match** : la perte tenue à l'écart des six, au bout de la séance,
 ses attendus écrits avant — séparés par étiqueteur, cette fois.
 
+**Lancée par Théo le 27 oct. vers 8 h 11** (« *je lance la séance juste
+après* »), mode `c`, ~32 h. **La dernière séance de la semaine** — Théo,
+même message : « *après ça j'aurais plus de pc portable, tu pourras
+avancer ce qu'il faut et préparer les séances suivantes pour semaine
+pro* ». Une panne en cours de séance ne se relancera donc que la semaine
+suivante ; les réseaux déjà poussés se mesurent sans attendre.
+
+**La composition de C2, pas oubliée** : elle ne s'entraîne que si
+plusieurs réglages démontrent un gain. À l'écriture de C2c, trois sur
+quatre sont mesurés et aucun ne gagne ; seul N9w25a75s800 reste en vol.
+Il n'y a donc rien à composer aujourd'hui. Si N9w25a75s800 gagne, il
+embarque seul ; sa composition avec un gagnant de C2c s'écrira au
+verdict de C2c.
+
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
 Théo, le 19 oct. au soir : « *je suis prêt* ». La séance A d'abord, telle
