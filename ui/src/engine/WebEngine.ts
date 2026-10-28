@@ -11,25 +11,41 @@
 import type { Engine, TransportLimitations } from "./Engine";
 import { inspectEngine } from "./inspect";
 import { createWebEngine, type WorkerLike } from "./web/webEngine";
+import {
+  startThreadedEngine,
+  type ThreadWorker,
+} from "./web/threads/threadedEngine.ts";
+import { importedMemoryLimits } from "./web/threads/wasmMemory.ts";
 import standardModule from "./web/shallowred.wasm?url";
 import simdModule from "./web/shallowred-simd.wasm?url";
+import threadsModule from "./web/shallowred-threads.wasm?url";
 
-export const TRANSPORT_LIMITATIONS: TransportLimitations = {
+const REPOSITORY = "https://github.com/theodubus/chess";
+const ENGINES =
+  "Seul ShallowRed est disponible dans la version web : une page ne peut pas lancer un programme installé.";
+
+/**
+ * La voie à fils : le binaire du moteur lui-même, avec sa boucle UCI. Ponder
+ * et cœurs y sont ceux du moteur ; seuls manquent l'AVX2 et la vitesse du
+ * natif.
+ */
+const THREADED: TransportLimitations = {
   notice:
-    "Version web : ShallowRed tourne dans votre navigateur, sur un seul cœur, et y joue moins fort que le moteur installé.",
-  href: "https://github.com/theodubus/chess",
-  ponder:
-    "Indisponible dans la version web : le moteur n’y réfléchit que pendant son propre tour.",
-  threads:
-    "Un seul cœur dans la version web : la page ne peut pas donner plusieurs fils de calcul au moteur.",
-  engines:
-    "Seul ShallowRed est disponible dans la version web : une page ne peut pas lancer un programme installé.",
+    "Version web : ShallowRed tourne dans votre navigateur, sans les instructions AVX2 du moteur installé, et y joue un peu moins fort.",
+  href: REPOSITORY,
+  engines: ENGINES,
 };
 
-export type AnalysisEngineChoice = { id: string; label: string };
-export const DEFAULT_ANALYSIS_ENGINE: AnalysisEngineChoice = {
-  id: "default",
-  label: "ShallowRed",
+/** Le repli, sans mémoire partagée : un seul fil, le ponder par tranches. */
+const SINGLE: TransportLimitations = {
+  notice:
+    "Version web : ShallowRed tourne dans votre navigateur, sur un seul cœur, et y joue moins fort que le moteur installé.",
+  href: REPOSITORY,
+  ponderNote:
+    "Dans ce navigateur, la version web réfléchit pendant votre tour par tranches de 150 ms : moins efficace que le moteur installé, et sa réponse peut attendre jusqu’à 150 ms.",
+  threads:
+    "Un seul cœur dans ce navigateur : il ne donne pas à la page la mémoire partagée qu’exigent plusieurs fils.",
+  engines: ENGINES,
 };
 
 // Le plus petit module qui emploie une instruction SIMD : un navigateur qui
@@ -39,26 +55,57 @@ const SIMD_PROBE = new Uint8Array([
   0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8,
   0, 65, 0, 253, 15, 253, 98, 11,
 ]);
+const SIMD = WebAssembly.validate(SIMD_PROBE);
 
-let compiled: Promise<WebAssembly.Module> | undefined;
+/**
+ * La voie à fils exige une page isolée — `crossOriginIsolated`, que le
+ * service worker de la version web obtient (`pages/coi-sw.js`) — et le
+ * SIMD, avec lequel ce module est compilé.
+ */
+let threaded =
+  SIMD &&
+  typeof SharedArrayBuffer === "function" &&
+  typeof crossOriginIsolated === "boolean" &&
+  crossOriginIsolated;
 
-/** Le module, compilé une fois par page et partagé par tous les Workers. */
-function compileEngine() {
-  compiled ??= (async () => {
-    // Les deux modules cherchent le même arbre ; le SIMD le parcourt environ
-    // deux fois et demie plus vite.
-    const url = WebAssembly.validate(SIMD_PROBE) ? simdModule : standardModule;
-    const response = await fetch(url);
-    if (!response.ok)
-      throw new Error(`Moteur web introuvable (${response.status}).`);
-    return WebAssembly.compile(await response.arrayBuffer());
-  })();
-  // Un échec ne doit pas condamner les tentatives suivantes.
-  compiled.catch(() => {
-    compiled = undefined;
-  });
-  return compiled;
+/**
+ * Ce que la version web ne permet pas. Une liaison vivante : si la voie à
+ * fils échoue au démarrage, le repli prend le relais et les mentions avec
+ * lui, au rendu suivant.
+ */
+export let TRANSPORT_LIMITATIONS: TransportLimitations = threaded
+  ? THREADED
+  : SINGLE;
+
+export type AnalysisEngineChoice = { id: string; label: string };
+export const DEFAULT_ANALYSIS_ENGINE: AnalysisEngineChoice = {
+  id: "default",
+  label: "ShallowRed",
+};
+
+/** Un module, téléchargé et compilé une fois par page. */
+function loader(url: () => string) {
+  let loaded: Promise<{ bytes: Uint8Array; module: WebAssembly.Module }> | undefined;
+  return () => {
+    loaded ??= (async () => {
+      const response = await fetch(url());
+      if (!response.ok)
+        throw new Error(`Moteur web introuvable (${response.status}).`);
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      return { bytes, module: await WebAssembly.compile(bytes) };
+    })();
+    // Un échec ne doit pas condamner les tentatives suivantes.
+    loaded.catch(() => {
+      loaded = undefined;
+    });
+    return loaded;
+  };
 }
+
+// Les deux modules du repli cherchent le même arbre ; le SIMD le parcourt
+// environ deux fois plus vite.
+const loadSingle = loader(() => (SIMD ? simdModule : standardModule));
+const loadThreaded = loader(() => threadsModule);
 
 function spawnWorker(module: WebAssembly.Module): WorkerLike {
   const worker = new Worker(new URL("./web/worker.ts", import.meta.url), {
@@ -68,15 +115,37 @@ function spawnWorker(module: WebAssembly.Module): WorkerLike {
   return worker;
 }
 
+function threadWorker() {
+  return new Worker(new URL("./web/threads/threadWorker.ts", import.meta.url), {
+    type: "module",
+  }) as unknown as ThreadWorker;
+}
+
 export async function connectDevelopmentEngine(
   onFailure: (message: string) => void,
   // Le pont local choisit un moteur par adresse ; il n'y en a qu'un ici.
   _url?: string,
 ): Promise<Engine> {
   void _url;
+  if (threaded) {
+    try {
+      const { bytes, module } = await loadThreaded();
+      return await startThreadedEngine({
+        module,
+        memory: importedMemoryLimits(bytes),
+        createWorker: threadWorker,
+        onFailure,
+      });
+    } catch (error) {
+      // Le repli marche partout : mieux vaut un moteur à un fil qu'aucun.
+      console.warn("Moteur web à plusieurs fils indisponible :", error);
+      threaded = false;
+      TRANSPORT_LIMITATIONS = SINGLE;
+    }
+  }
   let module: WebAssembly.Module;
   try {
-    module = await compileEngine();
+    module = (await loadSingle()).module;
   } catch (error) {
     throw new Error(
       `Le moteur web n’a pas pu être chargé : ${error instanceof Error ? error.message : String(error)}`,

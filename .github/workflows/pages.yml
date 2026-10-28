@@ -20,7 +20,9 @@ on:
   pull_request:
     paths:
       - "engine/src/uci.rs"
+      - "engine/src/main.rs"
       - "ui/wasm/**"
+      - "ui/pages/**"
       - "ui/src/engine/**"
       - "ui/vite.config.ts"
       - "ui/dev/build-wasm.mjs"
@@ -47,10 +49,12 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: ui/package-lock.json
-      # La toolchain épinglée par rust-toolchain.toml, plus la cible du
-      # navigateur : WASI, que le Worker émule (ui/src/engine/web/wasi.ts).
-      - name: Cible WebAssembly
-        run: rustup target add wasm32-wasip1
+      # La toolchain épinglée par rust-toolchain.toml, plus les cibles du
+      # navigateur : WASI, que les Workers émulent — sur un fil pour le repli
+      # (ui/src/engine/web/wasi.ts), à fils pour le binaire du moteur
+      # lui-même (ui/src/engine/web/threads/).
+      - name: Cibles WebAssembly
+        run: rustup target add wasm32-wasip1 wasm32-wasip1-threads
       - name: Dépendances verrouillées
         working-directory: ui
         run: npm ci
@@ -67,8 +71,10 @@ jobs:
         working-directory: ui
         run: npm run build:pages
       # La garde de la frontière : mêmes nœuds, scores, variantes et coups
-      # que le binaire, pour chacun des deux modules. Un changement de la
-      # couche UCI du moteur que le pilote n'a pas suivi s'arrête ici.
+      # que le binaire, pour chacun des trois modules ; pour le module à
+      # fils, en plus, la même annonce d'options, plusieurs fils, le ponder
+      # et `stop`. Un changement de la couche UCI du moteur que le pilote
+      # du repli n'a pas suivi s'arrête ici.
       - name: Le moteur web répond comme le binaire
         working-directory: ui
         run: npm run check:wasm

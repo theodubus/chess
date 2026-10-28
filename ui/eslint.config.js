@@ -12,6 +12,13 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    files: ["pages/**/*.js"],
+    ...js.configs.recommended,
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.serviceworker },
+    },
+  },
+  {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
