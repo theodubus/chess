@@ -41,10 +41,10 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 it("relaie les commandes au Worker et ses lignes à l'interface", () => {
   const { engine, workers, heard } = setup();
-  engine.send("uci");
-  workers[0].say({ line: "uciok" });
-  expect(workers[0].lines()).toEqual(["uci"]);
-  expect(heard).toEqual(["uciok"]);
+  engine.send("isready");
+  workers[0].say({ line: "readyok" });
+  expect(workers[0].lines()).toEqual(["isready"]);
+  expect(heard).toEqual(["readyok"]);
 });
 
 it("répond readyok pendant une recherche, que le Worker ne lirait qu'après", async () => {
@@ -141,4 +141,75 @@ it("quit et dispose libèrent le Worker", async () => {
   expect(workers[0].terminated).toBe(true);
   await engine.dispose();
   expect(() => engine.send("uci")).toThrow("Moteur déconnecté.");
+});
+
+it("annonce le ponder qu'il sert lui-même, juste avant uciok", () => {
+  const { engine, workers, heard } = setup();
+  engine.send("uci");
+  workers[0].say({ line: "id name ShallowRed 0.1.0 web" });
+  workers[0].say({ line: "uciok" });
+  expect(heard).toEqual([
+    "id name ShallowRed 0.1.0 web",
+    "option name Ponder type check default false",
+    "uciok",
+  ]);
+});
+
+it("pondère par tranches, sans jamais rendre le coup d'une tranche", () => {
+  const { engine, workers, heard } = setup();
+  engine.send("position startpos moves e2e4 e7e5 g1f3");
+  engine.send("go ponder wtime 60000 btime 58000 winc 0 binc 0");
+  expect(workers[0].lines().at(-1)).toBe("go movetime 150");
+  workers[0].say({ line: "info depth 12 score cp 20 nodes 1 pv b8c6" });
+  workers[0].say({ line: "bestmove b8c6 ponder f1b5" });
+  expect(workers[0].lines().at(-1)).toBe("go movetime 150");
+  expect(workers[0].lines().filter((l) => l === "go movetime 150")).toHaveLength(2);
+  expect(heard.some((line) => line.startsWith("bestmove"))).toBe(false);
+});
+
+it("ponderhit attend la fin de la tranche, puis lance la vraie recherche", () => {
+  const { engine, workers, heard } = setup();
+  engine.send("go ponder wtime 60000 btime 58000 winc 1000 binc 1000");
+  engine.send("ponderhit");
+  expect(workers[0].lines()).toEqual(["go movetime 150"]);
+  workers[0].say({ line: "bestmove b8c6" });
+  expect(workers[0].lines().at(-1)).toBe(
+    "go wtime 60000 btime 58000 winc 1000 binc 1000",
+  );
+  expect(heard).toEqual([]);
+  workers[0].say({ line: "info depth 19 score cp 22 nodes 9 pv g8f6" });
+  workers[0].say({ line: "bestmove g8f6" });
+  expect(heard).toEqual([
+    "info depth 19 score cp 22 nodes 9 pv g8f6",
+    "bestmove g8f6",
+  ]);
+});
+
+it("stop pendant le ponder rend le coup de la tranche en cours, et rien d'autre", async () => {
+  const { engine, workers, heard } = setup();
+  engine.send("go ponder wtime 60000 btime 58000");
+  engine.send("isready");
+  await settle();
+  expect(heard).toEqual(["readyok"]);
+  engine.send("stop");
+  workers[0].say({ line: "bestmove b8c6" });
+  expect(heard.at(-1)).toBe("bestmove b8c6");
+  expect(workers).toHaveLength(1);
+  expect(workers[0].lines()).toEqual(["go movetime 150"]);
+});
+
+it("un mat trouvé arrête les tranches ; la réponse ne les attend plus", () => {
+  for (const [word, expected] of [
+    ["ponderhit", "go wtime 1000 btime 1000"],
+    ["stop", undefined],
+  ] as const) {
+    const { engine, workers, heard } = setup();
+    engine.send("go ponder wtime 1000 btime 1000");
+    workers[0].say({ line: "info depth 3 score mate 2 nodes 1 pv d8h4" });
+    workers[0].say({ line: "bestmove d8h4" });
+    expect(workers[0].lines()).toEqual(["go movetime 150"]);
+    engine.send(word);
+    if (expected) expect(workers[0].lines().at(-1)).toBe(expected);
+    else expect(heard.at(-1)).toBe("bestmove d8h4");
+  }
 });
