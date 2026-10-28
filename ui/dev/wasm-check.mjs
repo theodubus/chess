@@ -9,15 +9,23 @@
 //
 //   node dev/wasm-check.mjs [binaire natif] [module.wasm …]
 //
-// Par défaut : `target/release/shallowred` et les deux modules que
-// `dev/build-wasm.mjs` dépose dans `src/engine/web/`.
+// Par défaut : `target/release/shallowred` et les trois modules que
+// `dev/build-wasm.mjs` dépose dans `src/engine/web/`. Le module à fils —
+// le binaire du moteur lui-même, sa boucle UCI comprise — se reconnaît à
+// son import `wasi.thread-spawn` ; il tourne ici dans des worker_threads,
+// et à un fil il doit rendre la même transcription. Il annonce en plus les
+// mêmes options que le binaire, et l'on y éprouve ce que lui seul sait
+// faire : plusieurs fils, le ponder, `stop`.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
+import { Worker } from "node:worker_threads";
 import { Chess } from "chess.js";
 import { createWasi } from "../src/engine/web/wasi.ts";
+import { startThreadedEngine } from "../src/engine/web/threads/threadedEngine.ts";
+import { importedMemoryLimits } from "../src/engine/web/threads/wasmMemory.ts";
 
 const root = (path) => fileURLToPath(new URL(path, import.meta.url));
 const [native = root("../../target/release/shallowred"), ...modules] =
@@ -26,6 +34,7 @@ if (!modules.length)
   modules.push(
     root("../src/engine/web/shallowred.wasm"),
     root("../src/engine/web/shallowred-simd.wasm"),
+    root("../src/engine/web/shallowred-threads.wasm"),
   );
 
 const KIWIPETE =
@@ -91,25 +100,153 @@ const finished = (command, line) =>
     ? line.startsWith("Nodes searched")
     : line.startsWith("bestmove");
 
-async function nativeTranscript() {
-  const child = spawn(native, [], { stdio: ["pipe", "pipe", "inherit"] });
-  const lines = createInterface({ input: child.stdout })[Symbol.asyncIterator]();
+/**
+ * Le scénario joué contre un moteur qui répond de façon asynchrone — le
+ * binaire, ou le module à fils : chaque `go` attend son `bestmove`, chaque
+ * autre commande est suivie d'`isready`, pour qu'aucune ne coupe la
+ * précédente.
+ */
+async function asyncTranscript(write, next, label) {
+  write("uci");
+  const identification = [];
+  for (;;) {
+    const line = await next();
+    identification.push(line);
+    if (line === "uciok") break;
+  }
   const transcript = [];
   for (const command of scenario) {
     const isGo = command.startsWith("go");
-    child.stdin.write(`${command}\n${isGo ? "" : "isready\n"}`);
+    write(command);
+    if (!isGo) write("isready");
     const output = [];
     for (;;) {
-      const { value, done } = await lines.next();
-      if (done) throw new Error(`Le binaire s'est arrêté après « ${command} ».`);
+      const value = await next();
+      if (value === undefined)
+        throw new Error(`${label} s'est arrêté après « ${command} ».`);
       if (!isGo && value === "readyok") break;
       output.push(normalise(value));
       if (isGo && finished(command, value)) break;
     }
     transcript.push({ command, output });
   }
+  return { identification, transcript };
+}
+
+async function nativeTranscript() {
+  const child = spawn(native, [], { stdio: ["pipe", "pipe", "inherit"] });
+  const lines = createInterface({ input: child.stdout })[Symbol.asyncIterator]();
+  const result = await asyncTranscript(
+    (command) => child.stdin.write(`${command}\n`),
+    async () => (await lines.next()).value,
+    "Le binaire",
+  );
   child.stdin.end("quit\n");
-  return transcript;
+  return result;
+}
+
+/** Un Worker du moteur à fils dans Node, sous l'interface d'un Worker web. */
+function nodeWorker() {
+  const worker = new Worker(new URL("./wasm-thread-worker.mjs", import.meta.url));
+  const handle = {
+    onmessage: null,
+    onerror: null,
+    postMessage: (message) => worker.postMessage(message),
+    terminate: () => worker.terminate(),
+  };
+  worker.on("message", (data) => handle.onmessage?.({ data }));
+  worker.on("error", (error) => handle.onerror?.({ message: error.message }));
+  return handle;
+}
+
+async function threadedTranscript(path, reference) {
+  const bytes = readFileSync(path);
+  let failure;
+  const engine = await startThreadedEngine({
+    module: await WebAssembly.compile(bytes),
+    memory: importedMemoryLimits(bytes),
+    createWorker: nodeWorker,
+    onFailure: (message) => {
+      failure = message;
+    },
+  });
+  const queue = [];
+  let wake = () => {};
+  engine.onLine((line) => {
+    queue.push(line);
+    wake();
+  });
+  const next = async (ms = 60000) => {
+    const end = Date.now() + ms;
+    while (!queue.length) {
+      if (failure) throw new Error(failure);
+      if (Date.now() > end) return undefined;
+      await new Promise((resolve) => {
+        wake = resolve;
+        setTimeout(resolve, 50);
+      });
+    }
+    return queue.shift();
+  };
+  const result = await asyncTranscript(
+    (command) => engine.send(command),
+    next,
+    "Le module à fils",
+  );
+  // Le même moteur : la même annonce, options comprises.
+  assert.deepEqual(result.identification, reference.identification);
+
+  const search = async (commands, label) => {
+    queue.length = 0;
+    for (const command of commands) engine.send(command);
+    for (;;) {
+      const line = await next(20000);
+      assert.ok(line !== undefined, `${label} : pas de coup`);
+      if (line.startsWith("bestmove")) return line;
+    }
+  };
+  // Plusieurs fils : la recherche n'est plus déterministe, on n'exige qu'un
+  // coup légal (CLAUDE.md de la racine, « Recherche déterministe »).
+  const legal = new Chess();
+  legal.move("e4");
+  for (const threads of [2, 4]) {
+    const line = await search(
+      [
+        `setoption name Threads value ${threads}`,
+        "position startpos moves e2e4",
+        "go movetime 400",
+      ],
+      `${threads} fils`,
+    );
+    const move = line.split(" ")[1];
+    assert.ok(
+      legal.moves({ verbose: true }).some((m) => m.lan === move),
+      `${threads} fils : coup illégal ${move}`,
+    );
+  }
+  // Le ponder : aucun coup avant `ponderhit`, puis un coup.
+  queue.length = 0;
+  engine.send("setoption name Threads value 1");
+  engine.send("position startpos moves e2e4 e7e5");
+  engine.send("go ponder wtime 4000 btime 4000");
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  assert.ok(
+    !queue.some((line) => line.startsWith("bestmove")),
+    "un coup rendu pendant le ponder",
+  );
+  await search(["ponderhit"], "ponderhit");
+  // `stop` interrompt un ponder et une recherche infinie.
+  for (const go of ["go ponder wtime 60000 btime 60000", "go infinite"]) {
+    queue.length = 0;
+    engine.send("position startpos moves d2d4");
+    engine.send(go);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const started = performance.now();
+    await search(["stop"], `stop après ${go}`);
+    assert.ok(performance.now() - started < 1000, `stop trop lent après ${go}`);
+  }
+  await engine.dispose();
+  return result.transcript;
 }
 
 async function wasmTranscript(path) {
@@ -154,18 +291,25 @@ async function wasmTranscript(path) {
 
 const reference = await nativeTranscript();
 for (const path of modules) {
-  const transcript = await wasmTranscript(path);
-  for (const [index, { command, output }] of reference.entries()) {
+  const threaded = WebAssembly.Module.imports(
+    new WebAssembly.Module(readFileSync(path)),
+  ).some((entry) => entry.module === "wasi" && entry.name === "thread-spawn");
+  const transcript = threaded
+    ? await threadedTranscript(path, reference)
+    : await wasmTranscript(path);
+  for (const [index, { command, output }] of reference.transcript.entries()) {
     assert.deepEqual(
       transcript[index].output,
       output,
       `${path} : « ${command} » diffère du binaire`,
     );
   }
-  const searches = reference
+  const searches = reference.transcript
     .flatMap(({ output }) => output)
     .filter((line) => line.startsWith("bestmove")).length;
   console.log(
-    `${path.split("/").at(-1)} : ${scenario.length} commandes, ${searches} recherches, transcription identique au binaire.`,
+    `${path.split("/").at(-1)} : ${scenario.length} commandes, ${searches} recherches, transcription identique au binaire${threaded ? " ; plusieurs fils, ponder et stop éprouvés" : ""}.`,
   );
 }
+// Les Workers du module à fils sont terminés ; rien d'autre ne retient Node.
+process.exit(0);
