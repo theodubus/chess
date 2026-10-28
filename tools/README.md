@@ -1020,11 +1020,13 @@ dernière relève est faite.
 | **N° 22 — la vague 5**, la dernière de la partie mesurée, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40504718842, 40504743692, 40504767135, 40504790368, 40504814242, 40504838472, 40504863368, 40504888481 ; à 5 000 : 40504731802, 40504755345, 40504778745, 40504802427, 40504826550, 40504851146, 40504875811, 40504901617 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 27 oct. à 19 h 20** — lancée à 13 h 34, ses attendus poussés avant (`c443f7c`) ; quinze succès finis entre 19 h 04 et 19 h 05 ; **40504743692 (2 500) perdu avec son runner à 18 h 25**, ni artefact ni journal | **à 2 500, sept jobs : 410,8 M positions, 274,3 M gardées, 28,73 % de nulles ; à 5 000 : 198,5 M, 136,0 M, 34,81 % ; écartées 21,04 et 21,15 % ; EPYC 7763 à 2 423 – 2 471 et 1 183 – 1 240 ; cumuls 1 526,0 et 743,0 M : onze chiffres sur douze dans l'attendu, un job à 1 183 positions par seconde sous la borne de 1 200** — **la partie mesurée CLOSE** : 38 et 39 jobs appris, × 2,05 (`tools/n22-jobs.tsv`, section « N° 22 », la vague 5) — *Attendus, écrits avant* (section « N° 22 », la vague 5) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 200 à 1 260** positions par seconde ; cumul appris **1 500 à 1 722 M** et **737 à 843 M** |
 | **N° 22 — la vague 6**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40559137688, 40559166970, 40559196543, 40559224740, 40559252600, 40559280649, 40559308891, 40559338826 ; à 5 000 : 40559152001, 40559181223, 40559210623, 40559238455, 40559266868, 40559294877, 40559323574, 40559353500 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 28 oct. à 1 h 40** — lancée le 27 à 19 h 22, ses attendus poussés avant (`f0c553a`) ; seize succès finis entre 0 h 51 et 0 h 53 | **à 2 500 : 482,7 M positions, 322,3 M gardées, 28,69 % de nulles ; à 5 000 : 218,6 M, 149,7 M, 34,84 % ; écartées 21,09 et 21,13 % ; EPYC 7763 à 2 404 – 2 457 et 1 211 – 1 236 ; cumuls 1 848,3 et 892,7 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 6) — *Attendus, écrits avant* (section « N° 22 », la vague 6) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **1 774 à 1 996 M** et **873 à 979 M** |
 | **N° 22 — la vague 7**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40610338618, 40610357063, 40610375335, 40610393971, 40610413949, 40610435282, 40610457181, 40610477264 ; à 5 000 : 40610348069, 40610365849, 40610384436, 40610403724, 40610424448, 40610446467, 40610467256, 40610487195 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 28 oct. à 7 h 26** — lancée à 1 h 42, ses attendus poussés avant (`323d9ac`) ; seize succès finis entre 7 h 11 et 7 h 13 | **à 2 500 : 458,4 M positions, 306,1 M gardées, 28,68 % de nulles ; à 5 000 : 249,2 M, 170,7 M, 34,81 % ; écartées 21,10 et 21,22 % ; EPYC 7763 à 2 420 – 2 448 et 1 182 – 1 239 ; cumuls 2 154,4 et 1 063,3 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 7) — *Attendus, écrits avant* (section « N° 22 », la vague 7) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **2 096 à 2 318 M** et **1 023 à 1 129 M** |
-| **N° 22 — la vague 8**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40643888604, 40643906688, 40643924385, 40643942068, 40643959598, 40643976349, 40643993754, 40644012472 ; à 5 000 : 40643897635, 40643915123, 40643933536, 40643950714, 40643967986, 40643984993, 40644002965, 40644021758 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 28 oct. à 7 h 28**, ses attendus poussés avant (`0ff9e05`) ; relève vers 13 h 00 | — *Attendus, écrits avant* (section « N° 22 », la vague 8) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **2 402 à 2 624 M** et **1 193 à 1 299 M** |
+| **N° 22 — la vague 8**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40643888604, 40643906688, 40643924385, 40643942068, 40643959598, 40643976349, 40643993754, 40644012472 ; à 5 000 : 40643897635, 40643915123, 40643933536, 40643950714, 40643967986, 40643984993, 40644002965, 40644021758 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 28 oct. à 13 h 33** — lancée à 7 h 28, ses attendus poussés avant (`0ff9e05`) ; seize succès finis entre 12 h 57 et 12 h 58 | **à 2 500 : 476,5 M positions, 318,1 M gardées, 28,70 % de nulles ; à 5 000 : 226,2 M, 154,9 M, 34,80 % ; écartées 21,10 et 21,13 % ; EPYC 7763 à 2 446 – 2 450 et 1 213 – 1 240 ; cumuls 2 472,5 et 1 218,2 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 8) — *Attendus, écrits avant* (section « N° 22 », la vague 8) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **2 402 à 2 624 M** et **1 193 à 1 299 M** |
+| **N° 22 — la vague 9**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40688799274, 40688815251, 40688832002, 40688849393, 40688866676, 40688883745, 40688900965, 40688918307 ; à 5 000 : 40688807118, 40688824143, 40688840586, 40688857646, 40688875127, 40688892127, 40688909603, 40688927549 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 28 oct. à 13 h 34**, ses attendus poussés avant (`9bbb6b3`) ; relève vers 19 h 05 | — *Attendus, écrits avant* (section « N° 22 », la vague 9) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **2 720 à 2 942 M** et **1 348 à 1 454 M** |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
 | **N° 20, séance C2c — N9pfbs800 contre N9w50s800** | **40610093856, 40610102423, 40610110837, 40610118331** | `ad84d1f` (N9pfbs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 7 h 28** — lancés à 1 h 39, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 6 h 38 et 6 h 47 | **+1,40 ± 3,27 en commun** (−2,73, +2,85, +4,09, +1,36 ; p = 0,463) — dans l'attendu, **pas candidat** (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −4 à +4, ~0 (« La séance C2c ») |
-| **N° 20, séance C2c — N9pfhs800 contre N9w50s800** | **40643606993, 40643615201, 40643623572, 40643631447** | `fd64e31` (N9pfhs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **lancés le 28 oct. à 7 h 24**, les attendus poussés avant (« La séance C2c ») ; relève vers 12 h 45 | — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −6 à +3, ~−1 (« La séance C2c ») |
+| **N° 20, séance C2c — N9pfhs800 contre N9w50s800** | **40643606993, 40643615201, 40643623572, 40643631447** | `fd64e31` (N9pfhs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 13 h 36** — lancés à 7 h 24, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 12 h 24 et 12 h 35 | **−13,13 ± 3,43 en commun** (−10,80, −17,88, −13,66, −10,18 ; p = 0,411) — sous l'attendu, **régression démontrée**, pas candidat ; le pas final reste à 0,3⁵ (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −6 à +3, ~−1 (« La séance C2c ») |
+| **N° 20, séance C2c — N9l8ks800 contre N9w50s800** | **40688068619, 40688078889, 40688089330, 40688099240** | `f5b2243` (N9l8ks800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **lancés le 28 oct. à 13 h 28**, les attendus poussés avant (« La séance C2c ») ; relève vers 18 h 35 | — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −3 à +5, ~+1 (« La séance C2c ») |
 | **N° 20, séance C2 — N9p25s800 contre N9w50s800** | **40429250807, 40429260171, 40429269046, 40429278451** | `f0db36f` (N9p25s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 7 h 45** — lancés à 1 h 54, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 6 h 57 et 7 h 04 | **+0,84 ± 3,28 en commun** (+1,12, +1,12, −1,36, +2,48 ; p = 0,853) — dans l'attendu, **pas candidat** ; l'exposant reste à 2 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −5 à +5, ~0 (« La séance C2 ») |
 | **N° 20, séance C2 — N9w75s800 contre N9w50s800** | **40382312399, 40382323890, 40382335969, 40382347208** | `331cdad` (N9w75s800) → `cf93707` (N9w50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 1 h 55** — lancés le 26 à 19 h 57, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 1 h 01 et 1 h 10 | **−2,95 ± 3,34 en commun** (−9,43, −1,86, +0,37, −0,87 ; p = 0,176) — dans l'attendu, **pas candidat ; la séance `a` close**, le poids reste à 0,5 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −6 à +5, ~−1 (« La séance C2 ») |
 | **N° 20, séance C2 — N9w625s800 contre N9w50s800** | **40327455955, 40327464784, 40327473241, 40327482052** | `fcd362f` (N9w625s800) → `cf93707` (N9w50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 26 oct. à 19 h 56** — lancés à 14 h 04, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 19 h 03 et 19 h 10 | **−1,86 ± 3,33 en commun** (−2,61, −2,48, −1,99, −0,37 ; p = 0,969) — dans l'attendu, **pas candidat** ; le poids reste à 0,5 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −3 à +6, ~+1 (« La séance C2 ») |
@@ -11797,8 +11799,11 @@ La veille d'abord éprouvée à la main (`CanSuspend` « yes », puis
 mise en veille bloquée jusqu'à la fin`, `20:08 ok la veille armée`,
 `20:08 lance n9pfbs800`. *Attendu* : N9pfbs800 poussé vers **1 h 25**,
 puis un réseau toutes les ~5 h 15 — <span>confiance faible pour les
-lots</span> : un superlot compte des lots, si bien que 8 192 et 32 768
-positions par lot peuvent en changer la durée — ; la fin vers le 29 oct.
+lots</span> : <s>un superlot compte des lots, si bien que</s> **un
+superlot compte des POSITIONS, 100 007 936 quel que soit le lot —
+corrigé le 28 oct., la phrase contredisait le tableau plus haut —, mais**
+8 192 et 32 768 positions par lot en changent le nombre de pas, donc
+peut-être la durée — ; la fin vers le 29 oct.
 au matin, puis la veille. **N9pfbs800 poussé à 1 h 25, à la minute** — la recette
 relue (« pas 0.001 → 2.4300002e-7 »), 3 712 073 002 positions relues à
 l'octet, confrontation 8 / 24 ; candidat `ad84d1f` révoqué ; quatre jobs
@@ -11833,6 +11838,48 @@ la durée d'un superlot. **Deux risques matériels, dits à Théo** : la
 batterie — le chargeur branché — et le capot : par défaut
 (`LidSwitchIgnoreInhibited=yes`), logind ignore le blocage de veille quand
 on le rabat, et la séance s'arrêterait.
+
+**N9pfhs800 — VERDICT, le 28 oct. à 13 h 36 : −13,13 ± 3,43, régression
+démontrée.** Quatre jobs finis ENTIERS entre 12 h 24 et 12 h 35, 6,41 à
+6,63 s par partie, zéro perte au temps, aucun coup illégal, aucun moteur
+perdu :
+
+| job | Elo | Ptnml(0-2) |
+|---|---|---|
+| 40643606993 | −10,80 ± 6,78 | 41, 290, 805, 243, 21 |
+| 40643615201 | −17,88 ± 7,11 | 56, 310, 782, 226, 26 |
+| 40643623572 | −13,66 ± 6,84 | 36, 326, 769, 250, 19 |
+| 40643631447 | −10,18 ± 6,73 | 38, 284, 827, 224, 27 |
+| **en commun, 11 200 parties** | **−13,13 ± 3,43** | homogènes, p = 0,411 |
+
+- **sous l'attendu** (−6 à +3, ~−1), de sept Elo sous sa borne basse ;
+  la borne haute, −9,70, sous zéro : **régression démontrée, pas
+  candidat** ;
+- **l'axe du pas final, lu des deux côtés** : × 0,1, +1,40 ± 3,27, rien
+  de démontré ; × 10, −13,13 ± 3,43. **Le pas final reste à 0,3⁵ du pas
+  initial.** <span>Inférence, confiance moyenne</span> : les derniers
+  superlots, au pas le plus bas, ôtent des poids un bruit que le pas
+  haut y laisse — le recuit final compte ; descendre plus bas n'ôte plus
+  rien de visible. Le réglage reste ouvert au registre, déprioritisé : ce
+  qui pourrait encore payer est entre × 0,1 et × 1, une marge fine ;
+- les avertissements de l'arbitre, lus : « PV continues after fifty-move
+  rule », et trois « … after threefold repetition », 4 à 12 par job, des
+  deux côtés (12 côté candidat, 15 côté référence) — le même code de
+  recherche, aucune différence à y chercher.
+
+**N9l8ks800 poussé à 12 h 36 — 5 h 55 après N9pfhs800**, 39 minutes de
+plus que les deux d'avant : la recette relue (« 800 superlots, pas 0.001
+→ 2.4300007e-6, wdl 0.5 → 0.5, perte ^2, lot 8192, ply ≥ 16 »),
+3 712 073 002 positions relues à l'octet, confrontation 10 / 18 ;
+candidat `f5b2243` révoqué ; quatre jobs en vol depuis 13 h 28 (attendu
+−3 à +5). **La durée du lot, mesurée** : un superlot garde ses
+100 007 936 positions, soit **12 208 pas de 8 192 au lieu de 6 104 de
+16 384** ; l'entraînement seul passe de 18 938 à 21 271 s (× 1,12), le
+débit de ~4,09 à ~3,61 M de positions par seconde au dernier superlot.
+**N9l32ks800 attendu vers 17 h 30 à 17 h 55** — <span>confiance
+faible</span> : 3 052 pas par superlot ; si le surcoût va au pas, ~4 h 56
+de séance, d'où 17 h 32 ; si la carte est déjà à son plein débit à
+16 384, 5 h 16, d'où 17 h 52.
 
 **La veille en fin de séance — l'option `veille`, écrite le 27 oct. à
 8 h 48.** Théo : « *est ce que c'est possible de mettre dans un script sh
@@ -13277,6 +13324,36 @@ les sept vagues :
   **1 180 à 1 260** à 5 000 ;
 - **le cumul appris** : à 2 500, **2 402 à 2 624 M** gardées ; à 5 000,
   **1 193 à 1 299 M**.
+
+**La vague 8, RELEVÉE le 28 oct. à 13 h 33 — les douze chiffres dans leur
+attendu.** Seize succès, finis entre 12 h 57 et 12 h 58, chaque journal
+nommant `a4a6490` et le budget de sa moitié ; `tools/n22-jobs.tsv`, la
+vague 8 :
+
+| | à 2 500 nœuds | à 5 000 nœuds | attendu, écrit avant |
+|---|---|---|---|
+| positions, les huit | **476,5 M** | **226,2 M** | 370 à 700 M ; 190 à 345 M — dedans |
+| gardées, tous appris | **318,1 M** | **154,9 M** | 248 à 470 M ; 130 à 236 M — dedans |
+| parties écartées, sur les gardées | **21,10 %** (20,94 à 21,15) | **21,13 %** (21,02 à 21,22) | 20,8 à 21,6 % — dedans |
+| nulles, sur les gardées | **28,70 %** (28,61 à 28,81) | **34,80 %** (34,67 à 34,93) | 28,4 à 29,0 % ; 34,5 à 35,1 % — dedans |
+| positions par seconde, EPYC 7763 | **2 446 et 2 450**, deux jobs | **1 213 à 1 240**, trois | 2 400 à 2 500 ; 1 180 à 1 260 — dedans |
+| cumul appris | **2 472,5 M** | **1 218,2 M** | 2 402 à 2 624 M ; 1 193 à 1 299 M — dedans |
+
+- **le parc** : à 2 500, quatre EPYC 9V74, deux 7763, un 9V45, un Xeon
+  8573C ; à 5 000, trois 9V74, trois 7763, un 9V45, un Xeon 8573C ;
+- 62 et 63 jobs appris ; le rapport des volumes, × 2,03.
+
+**La vague 9 — écrite avant de la lancer.** La même recette, seize jobs,
+huit par budget en alternance, 2 500 d'abord, tous appris. *Attendus* —
+les huit vagues :
+- **les huit à 2 500 : 370 à 700 M positions, 248 à 470 M gardées** ;
+  **les huit à 5 000 : 190 à 345 M positions, 130 à 236 M gardées** ;
+- **écartées 20,8 à 21,6 %** aux deux budgets ; **nulles 28,4 à 29,0 %**
+  à 2 500, **34,5 à 35,1 %** à 5 000 ;
+- **positions par seconde sur un EPYC 7763 : 2 400 à 2 500** à 2 500,
+  **1 180 à 1 260** à 5 000 ;
+- **le cumul appris** : à 2 500, **2 720 à 2 942 M** gardées ; à 5 000,
+  **1 348 à 1 454 M**.
 
 **Après elle** : la séance des trois réseaux (E5n, E2.5v, E2.5t) s'écrit
 pour la carte de Théo, la semaine suivante — il n'a plus de portable
@@ -14888,7 +14965,9 @@ critères, s'écrit à la clôture de (e), la liste des données close.
 - **C2c — le pas final, le lot, le premier demi-coup** : six réseaux,
   chacun contre N9w50s800 ; **ÉCRITE le 27 oct. à 7 h 57** (« La séance
   C2c »), l'option `veille` ajoutée ; Théo la lance le 27 au soir,
-  la dernière séance de la semaine ;
+  la dernière séance de la semaine ; **le pas final, mesuré le 28 oct.** :
+  N9pfbs800 **+1,40 ± 3,27**, N9pfhs800 **−13,13 ± 3,43** — le pas
+  final reste à 0,3⁵ ; le lot et le premier demi-coup, en vol ou à venir ;
 - **C3 — l'architecture** : 384 et 512 unités, dix seaux de roi au
   volume d'aujourd'hui, chacun avec ses nœuds par seconde. **1 024
   unités et plus de seaux de roi viennent après** — Théo, 21 oct. :
@@ -14914,7 +14993,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **superlots (passes)** | 800 au réseau qui joue (N8tw50s800, 4,63 G, 25,9 passes) | à 1,56 G : 100 → 200 +14,74 ; 200 → 400 +9,31. **À 4,63 G : 400 → 800 +5,43 ± 3,34** (21 oct.) | +2 à +5 au doublement suivant — <span>confiance faible</span> : le rendement décroît, et moins à 4,63 G qu'à 1,56 G au même nombre de passes (+5,43 contre +9,31) | **en dernier, sur la recette finale** de la séance C (21 oct., en réponse à une question de Théo — l'ordre, pas une décision de sa part) : l'optimum des passes bouge avec le volume et la largeur, que la séance C change toutes deux — mesuré aujourd'hui, il serait périmé dès son réseau ; 1 600 superlots, ~10 h 30 de carte |
 | **poids du résultat** (`wdl`) | 0,5 au réseau qui joue (N9w50s800) et aux réseaux des séances B et C1 ; 0,75 jusqu'à N7p4 | à 100 superlots : 0,75 → 0 ; 0,5 → +11,79 ; 0,25 → +7,17 ; 0,25 contre 0,5 en direct −2,95 ± 3,35. **À 400 : 0,5 contre 0,75 +3,35 ± 3,41**, l'écart à 100 démontré — l'optimum bouge avec les passes. **À 800 (C2, 26 et 27 oct.) : 0,625 contre 0,5 −1,86 ± 3,33 ; 0,75 contre 0,5 −2,95 ± 3,34** | 0,5 ou en deçà à 800 ; au-dessus, rien — <span>confiance moyenne</span> | **déprioritisé** : 0,375 le seul point ouvert ; rouvert par une recette qui change les passes ou les données |
 | **pas initial** (`--pas`) | 0,001, le défaut de bullet | **l'écran du 21 oct.** à 100 superlots : ×0,5 → −0,12 ± 3,43 ; ×2 → **−4,90 ± 3,41**, régression démontrée ; la perte tenue à l'écart, plate (+0,00004 des deux côtés), ne le voyait pas | fine — <span>confiance faible</span> : au mieux quelques Elo entre 0,0005 et 0,001 | déprioritisé ; se rouvre avec la recette (lot, largeur), le pas optimal bougeant avec eux |
-| **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | jamais | inconnue | `--pas-final`, écrite le 20 oct. ; **C2c, écrite le 27 oct.** : × 0,1 et × 10 (N9pfbs800, N9pfhs800) |
+| **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | **C2c, à 800 superlots, contre N9w50s800 : × 0,1 → +1,40 ± 3,27 (28 oct.) ; × 10 → −13,13 ± 3,43**, régression démontrée | fine — <span>confiance moyenne</span> : en haut, coûteux ; en bas, rien de démontré | **déprioritisé** : entre × 0,1 et × 1 le seul point ouvert, et la forme de la décroissance, jamais touchée ; rouvert par une recette qui change les passes ou le lot |
 | **fonction de perte** | écart au carré de la sigmoïde | **l'exposant 2,5 à 800 superlots : +0,84 ± 3,28** contre N9w50s800 (C2, 27 oct.) | ~0 à ± 3 — <span>confiance moyenne</span> | **déprioritisé** : un autre exposant, ou une autre forme, rouvert par une recette qui change les données |
 | **taille de lot** | 16 384 | jamais | faible — <span>confiance faible</span> | `--lot`, écrite le 20 oct. ; **C2c, écrite le 27 oct.** : 8 192 et 32 768 (N9l8ks800, N9l32ks800) |
 | **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; **C2c, écrite le 27 oct.** : 8 et 24 (N9y8s800, N9y24s800) |
