@@ -22,9 +22,11 @@ export type TransportLimitations = {
   /** Où trouver la version complète. */
   href: string;
   /** Pourquoi la réflexion pendant le tour adverse n'est pas proposée. */
-  ponder: string;
+  ponder?: string;
+  /** Ce qui la distingue de celle du moteur installé, quand elle l'est. */
+  ponderNote?: string;
   /** Pourquoi un seul cœur. */
-  threads: string;
+  threads?: string;
   /** Pourquoi on ne peut ni choisir ni ajouter un autre moteur. */
   engines: string;
 };

@@ -87,6 +87,9 @@ export default function EngineSettings({
             "Ce moteur ne propose pas cette option."}
         </p>
       )}
+      {capabilities?.ponder && TRANSPORT_LIMITATIONS?.ponderNote && (
+        <p className="setting-help">{TRANSPORT_LIMITATIONS.ponderNote}</p>
+      )}
       <div className="thread-setting">
         <div className="setting-copy">
           <label htmlFor={`${prefix}-threads`}>Cœurs de calcul</label>

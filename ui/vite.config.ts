@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
@@ -30,10 +31,38 @@ function webEngineTransport(): Plugin {
   };
 }
 
+/**
+ * L'isolation de la version web : le service worker qui pose COOP et COEP
+ * (`pages/coi-sw.js`), émis à la racine du site, et son enregistrement,
+ * en tête de la page. Sans eux, pas de mémoire partagée, donc pas de
+ * moteur à plusieurs fils sur GitHub Pages.
+ */
+function crossOriginIsolation(): Plugin {
+  const source = (file: string) =>
+    readFileSync(new URL(`./pages/${file}`, import.meta.url), "utf8");
+  return {
+    name: "shallowred-cross-origin-isolation",
+    transformIndexHtml: () => [
+      {
+        tag: "script",
+        children: source("register-coi-sw.js"),
+        injectTo: "head-prepend",
+      },
+    ],
+    generateBundle() {
+      this.emitFile({
+        type: "asset",
+        fileName: "coi-sw.js",
+        source: source("coi-sw.js"),
+      });
+    },
+  };
+}
+
 export default defineConfig(({ mode }) =>
   mode === "pages"
     ? {
-        plugins: [react(), webEngineTransport()],
+        plugins: [react(), webEngineTransport(), crossOriginIsolation()],
         // Adresses relatives : la page vit sous /<dépôt>/ sur GitHub Pages.
         base: "./",
       }

@@ -99,9 +99,10 @@ Si ce n'est plus vrai, c'est un défaut, pas un détail.
 **Un second transport existe depuis le 27 oct. 2026 : la version web**
 (Théo : un chemin de plus pour essayer sans installer, quitte à y jouer moins
 fort ; le pont local reste le chemin principal). `vite build --mode pages`
-substitue `src/engine/WebEngine.ts` — ShallowRed en WebAssembly dans un Web
-Worker — à `src/engine/DevelopmentEngine.ts`, et GitHub Pages la publie
-(`ui/README.md`, « Version web »). Ce que cela demande ici :
+substitue `src/engine/WebEngine.ts` — ShallowRed en WebAssembly, le binaire
+du moteur à plusieurs fils sur une page isolée par un service worker, un
+seul Worker en repli — à `src/engine/DevelopmentEngine.ts`, et GitHub Pages
+la publie (`ui/README.md`, « Version web »). Ce que cela demande ici :
 
 - **un export ajouté à `DevelopmentEngine.ts` en demande un dans
   `WebEngine.ts`** — `npm run typecheck` le refuse sinon
@@ -110,7 +111,10 @@ Worker — à `src/engine/DevelopmentEngine.ts`, et GitHub Pages la publie
   que le pont local déclare `null` : un composant qui en tient compte reste
   identique hors de la version web ;
 - **`ui/wasm` est du Rust qui emploie le moteur**, pas l'inverse : rien dans
-  `engine/` ne s'écrit pour la version web (Théo, même jour).
+  `engine/` ne s'écrit pour la version web (Théo, même jour) ;
+- **la page isolée refuse les ressources d'autres sites** qui ne l'autorisent
+  pas (COEP `require-corp`) : une police ou un script d'un autre domaine
+  casserait la voie à plusieurs fils.
 
 **Pour développer**, écris une implémentation `Engine` qui parle à un pont Node
 d'une trentaine de lignes : il lance le binaire du moteur et relaie

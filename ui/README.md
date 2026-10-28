@@ -97,50 +97,91 @@ téléphone. Publiée par `.github/workflows/pages.yml` à chaque changement du
 moteur, du réseau embarqué ou de l’interface sur `main`. Le chemin principal
 reste le clone du dépôt et `npm run dev`.
 
-**Le moteur ne change pas d’un octet.** La version web n’emploie que son API
-publique, depuis une crate à part, `ui/wasm`, avec son propre espace de
-travail : `cargo build` à la racine ne la voit pas, et le binaire livré ne
-contient rien d’elle. Elle recopie la couche UCI du moteur, sans le fil que
-lance son `go` — un navigateur n’en donne pas à WebAssembly sur GitHub Pages.
+**Le moteur ne change pas d’un octet.** Rien dans `engine/` n’est écrit pour
+le web (Théo, 27 oct. 2026). La page prend l’une de deux voies, au chargement :
 
-**Il cherche le même arbre que le binaire.** `npm run check:wasm`
-(`dev/wasm-check.mjs`) joue un même scénario contre le binaire natif et contre
-chaque module — roques, mat, pat, promotion, répétition, position refusée,
-`perft` — et exige des transcriptions identiques au temps près : nœuds,
-scores, variantes et coups. Le workflow ne publie qu’à cette condition.
-
-**Il y joue moins fort, et la page le dit.** Ce qui manque :
-
-| | binaire | version web |
+| | voie à fils | repli |
 |---|---|---|
-| fils de calcul | `Threads`, jusqu’à 1024 | un seul |
-| ponder | oui | non |
-| instructions | AVX2 sur le second binaire | SIMD de WebAssembly, ou rien |
-| autres moteurs, Stockfish compris | par le pont local | non |
+| quand | navigateur récent, page isolée, SIMD | sinon |
+| le moteur | **le binaire du moteur lui-même**, `engine/src/main.rs`, compilé pour `wasm32-wasip1-threads` — sa boucle UCI comprise | le pilote `ui/wasm`, qui n’emploie que l’API publique du moteur et recopie sa couche UCI |
+| fils de calcul | `Threads`, jusqu’aux cœurs du navigateur | un seul |
+| ponder | celui du moteur | par tranches de 150 ms, moins bon, et la page le dit |
+| `stop` | celui du moteur | émulé : le Worker est remplacé |
 
-Mesuré le 27 oct. 2026, dans Node 22 sur le conteneur de session, cinq paires
-alternées à la profondeur 15 : le binaire de base (sans AVX2) **1,55 M**
-nœuds/s en médiane, le module SIMD **0,97 M** (× 0,62, plus lent cinq fois sur
-cinq), le module sans SIMD **0,45 M**. La page charge le module SIMD quand le
-navigateur le valide — tous depuis 2021, Safari depuis la version 16.4 — et
-l’autre sinon. Un navigateur et un téléphone ne sont pas Node sur un serveur :
-ces chiffres situent les modules entre eux, pas la vitesse chez l’utilisateur.
+**L’isolation.** La mémoire partagée qu’exigent les fils n’est donnée qu’à une
+page servie avec les en-têtes COOP et COEP, que GitHub Pages ne permet pas de
+poser. Un service worker les ajoute lui-même à chaque réponse du site
+(`pages/coi-sw.js`, enregistré en tête de la page par
+`pages/register-coi-sw.js`, en mode `pages` seulement) ; il ne fait rien
+d’autre, ni cache ni réécriture. À la toute première visite, la page se
+recharge une fois pour passer sous son contrôle. Sans service worker —
+navigation privée de Firefox, contexte non sécurisé —, la page reste non
+isolée et prend le repli. Une page isolée refuse les ressources d’autres
+sites qui ne l’autorisent pas : le site n’en charge aucune, et une police ou
+un script d’un autre domaine ajouté un jour devra s’y plier.
+
+**Le moteur à fils** (`src/engine/web/threads/`). Chaque fil du moteur est une
+instance du module dans un Worker, sur la même mémoire partagée.
+
+- L’entrée standard est un anneau en mémoire partagée (`sharedInput.ts`) : le
+  fil UCI y dort comme un processus sur son stdin, et lit `ponderhit` ou `stop`
+  pendant qu’un autre fil cherche.
+- Un Worker ne démarre qu’une fois que son créateur rend la main à sa boucle
+  d’événements, ce que les fils du moteur ne font jamais. La **page** crée donc
+  tous les Workers d’avance — un fil UCI et un pool — et lancer un fil, c’est
+  réserver un Worker libre du pool en mémoire partagée et le réveiller
+  (`threadRuntime.ts`). Le transport agrandit le pool avant de transmettre
+  `setoption name Threads`.
+- L’horloge part d’une origine commune à tous les Workers
+  (`performance.timeOrigin`) : une échéance posée par un fil est lue par un
+  autre.
+- La mémoire partagée prend le plus grand maximum accordé, de 1 Gio à
+  256 Mio : un téléphone refuse parfois d’en réserver autant.
+
+**Le même arbre que le binaire.** `npm run check:wasm` (`dev/wasm-check.mjs`)
+joue un même scénario — roques, mat, pat, promotion, répétition, position
+refusée, `perft` — contre le binaire natif et contre les trois modules, et
+exige des transcriptions identiques au temps près : nœuds, scores, variantes
+et coups. Le module à fils y tourne dans des `worker_threads` de Node
+(`dev/wasm-thread-worker.mjs`) ; il doit en plus annoncer les mêmes options
+que le binaire, jouer un coup légal à deux et quatre fils, ne rendre aucun
+coup pendant un ponder avant `ponderhit`, et s’arrêter sur `stop`. Le
+workflow ne publie qu’à ces conditions.
+
+**Moins fort que le moteur installé, et la page le dit** : ni AVX2, ni la
+vitesse du natif, et sur le repli un seul cœur. Mesuré le 27 oct. 2026, dans
+Node 22 sur le conteneur de session, cinq paires alternées à la profondeur
+15 : le binaire de base (sans AVX2) **1,55 M** nœuds/s en médiane, le module
+SIMD du repli **0,97 M** (× 0,62, plus lent cinq fois sur cinq), le module
+sans SIMD **0,45 M**. Le module à fils, une mesure chacun le 28 oct. :
+**1,1 M** à un fil, **2,3 M** à deux et **4,3 M** à quatre, cumulés sur les
+fils — des nœuds par seconde, pas une force. Un navigateur et un téléphone ne
+sont pas Node sur un serveur : ces chiffres situent les modules entre eux,
+pas la vitesse chez l’utilisateur.
+
+**Le ponder du repli, par tranches** (`src/engine/web/webEngine.ts`). Le Worker
+unique ne lit aucun message pendant une recherche. `go ponder` y devient une
+suite de `go movetime 150` sur la position pariée ; chaque tranche repart de
+la profondeur 1 mais retrouve en 0 à 13 ms, par la table, ce que les
+précédentes ont établi (mesuré sur deux positions). `ponderhit` attend la fin
+de la tranche puis lance la vraie recherche, table chaude ; `stop` attend la
+fin de la tranche. Une itération plus longue qu’une tranche ne s’achève
+jamais : c’est pourquoi il est moins bon.
 
 Le mode `pages` de Vite (`vite.config.ts`) substitue `src/engine/WebEngine.ts`
 à `src/engine/DevelopmentEngine.ts` partout où il est importé : le transport
 reste un seul fichier, et `src/engine/transportContract.ts` fait vérifier par
 TypeScript que le second offre tout ce qu’exporte le premier. Hors de ce mode,
-le build ne contient ni module WebAssembly ni Worker, et l’interface est
-inchangée. Le transport web sert lui-même `isready` pendant une recherche, et
-émule `stop` en remplaçant le Worker (`src/engine/web/webEngine.ts`).
+le build ne contient ni module WebAssembly, ni Worker, ni service worker, et
+l’interface est inchangée.
 
-Construire et essayer localement, avec la cible `wasm32-wasip1`
-(`rustup target add wasm32-wasip1`) :
+Construire et essayer localement, avec les cibles WebAssembly
+(`rustup target add wasm32-wasip1 wasm32-wasip1-threads`) :
 
 ```sh
-npm --prefix ui run build:pages     # les deux modules (dev/build-wasm.mjs), puis le site
+npm --prefix ui run build:pages     # les trois modules (dev/build-wasm.mjs), puis le site
 npm --prefix ui run check:wasm      # contre target/release/shallowred
-npm --prefix ui run preview:pages
+npm --prefix ui run preview:pages   # http://localhost:4173 : le service worker y isole la page
 ```
 
 ## Préparer, jouer, revoir
