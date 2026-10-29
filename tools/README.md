@@ -12072,11 +12072,15 @@ Run 40812060115, l'outil à `eae5141`, lancé à 4 h 25, fini à 4 h 28 ;
   meilleure ») — N9p25s800, à +0,00036, jouait +0,84 —, et cinq points
   rangés au hasard le sont une fois sur 120 ;
 - **une prédiction, écrite avant le verdict de N9y24s800** — <span>inférence,
-  confiance faible</span> : sa perte (+0,00003 à +0,00004) le range entre
-  N9l32ks800 et N9y8s800 ; si l'ordre tient, son match tombe **entre
-  −3,8 et +2,3**. L'attendu de la séance (−4 à +3) le contenait déjà :
-  la prédiction ne dit rien de plus que lui sur la décision — elle
-  éprouve seulement l'ordre.
+  confiance faible</span> : sur les données de N6r4, sa perte (+0,000034
+  et +0,000041) le range entre N9y8s800 (+0,000015, +0,000028) et
+  N9l8ks800 (+0,000055, +0,000066) ; si l'ordre tient, son match tombe
+  **entre −5,4 et −3,8** — sous l'attendu de la séance (−4 à +3), en
+  partie. Sur les données de N5l, il est le plus bas des six (−0,000016) :
+  les deux colonnes ne le rangent pas au même endroit, et c'est celle de
+  N6r4, l'étiqueteur des données apprises, que la prédiction suit. *Une
+  première version de ce paragraphe le rangeait entre N9l32ks800 et
+  N9y8s800 — lu de travers, corrigé à la minute, avant tout verdict.*
 
 **La veille en fin de séance — l'option `veille`, écrite le 27 oct. à
 8 h 48.** Théo : « *est ce que c'est possible de mettre dans un script sh
