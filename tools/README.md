@@ -1024,7 +1024,8 @@ dernière relève est faite.
 | **N° 22 — la vague 9**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40688799274, 40688815251, 40688832002, 40688849393, 40688866676, 40688883745, 40688900965, 40688918307 ; à 5 000 : 40688807118, 40688824143, 40688840586, 40688857646, 40688875127, 40688892127, 40688909603, 40688927549 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 28 oct. à 19 h 16** — lancée à 13 h 34, ses attendus poussés avant (`9bbb6b3`) ; seize succès finis entre 19 h 04 et 19 h 05 | **à 2 500 : 437,1 M positions, 291,9 M gardées, 28,73 % de nulles ; à 5 000 : 212,8 M, 145,8 M, 34,88 % ; écartées 21,05 et 21,24 % ; cumuls 2 764,4 et 1 364,0 M : onze chiffres sur douze dans l'attendu — EPYC 7763 à 2 500 de 2 384 à 2 477, deux jobs sous la borne de 2 400, rien d'autre ne les distingue** ; à 5 000, 1 211 – 1 227 (`tools/n22-jobs.tsv`, section « N° 22 », la vague 9) — *Attendus, écrits avant* (section « N° 22 », la vague 9) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 400 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **2 720 à 2 942 M** et **1 348 à 1 454 M** |
 | **N° 22 — la vague 10**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40743577036, 40743595351, 40743612226, 40743629353, 40743647763, 40743666437, 40743685247, 40743703449 ; à 5 000 : 40743586160, 40743603832, 40743620645, 40743638683, 40743656994, 40743675676, 40743694119, 40743712913 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 29 oct. à 0 h 57** — lancée le 28 à 19 h 16, ses attendus poussés avant (`06c4ad3`) ; seize succès finis entre 0 h 47 et 0 h 48 | **à 2 500 : 468,4 M positions, 312,7 M gardées, 28,73 % de nulles ; à 5 000 : 230,0 M, 157,6 M, 34,79 % ; écartées 21,03 et 21,21 % ; EPYC 7763 à 2 400 (un job) et 1 213 – 1 221 ; cumuls 3 077,1 et 1 521,6 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 10) — *Attendus, écrits avant* (section « N° 22 », la vague 10) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **3 012 à 3 234 M** et **1 494 à 1 600 M** |
 | **N° 22 — la vague 11**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40790912690, 40790924793, 40790938145, 40790950412, 40790961446, 40790973722, 40790985239, 40790996458 ; à 5 000 : 40790918566, 40790931035, 40790944385, 40790955799, 40790967580, 40790979464, 40790990697, 40791001891 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 29 oct. à 6 h 37** — lancée à 0 h 58, ses attendus poussés avant (`32f92b9`) ; seize succès finis entre 6 h 28 et 6 h 29 | **à 2 500 : 410,5 M positions, 274,1 M gardées, 28,71 % de nulles ; à 5 000 : 207,4 M, 142,1 M, 34,82 % ; écartées 21,04 et 21,23 % ; EPYC 7763 à 2 379 – 2 431 et 1 199 – 1 221 ; cumuls 3 351,2 et 1 663,6 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 11) — *Attendus, écrits avant* (section « N° 22 », la vague 11) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **3 325 à 3 548 M** et **1 651 à 1 758 M** |
-| **N° 22 — la vague 12**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40824495112, 40824505748, 40824516991, 40824528369, 40824539799, 40824550660, 40824561537, 40824571963 ; à 5 000 : 40824500448, 40824511181, 40824522836, 40824534032, 40824545484, 40824555972, 40824566496, 40824577025 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 29 oct. à 6 h 37**, ses attendus poussés avant (`9d86342`) ; relève vers 12 h 10 | — *Attendus, écrits avant* (section « N° 22 », la vague 12) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **3 599 à 3 822 M** et **1 793 à 1 900 M** |
+| **N° 22 — la vague 12**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40824495112, 40824505748, 40824516991, 40824528369, 40824539799, 40824550660, 40824561537, 40824571963 ; à 5 000 : 40824500448, 40824511181, 40824522836, 40824534032, 40824545484, 40824555972, 40824566496, 40824577025 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 29 oct. à 12 h 33** — lancée à 6 h 37, ses attendus poussés avant (`9d86342`) ; seize succès finis entre 12 h 08 et 12 h 09 | **à 2 500 : 432,9 M positions, 289,0 M gardées, 28,75 % de nulles ; à 5 000 : 219,5 M, 150,3 M, 34,90 % ; écartées 21,10 et 21,16 % ; EPYC 7763 à 2 379 – 2 419 et 1 191 – 1 209 ; cumuls 3 640,2 et 1 813,9 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 12) — *Attendus, écrits avant* (section « N° 22 », la vague 12) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris **3 599 à 3 822 M** et **1 793 à 1 900 M** |
+| **N° 22 — la vague 13**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40865840848, 40865861288, 40865882422, 40865902572, 40865923625, 40865943980, 40865966885, 40865987967 ; à 5 000 : 40865850072, 40865871375, 40865892365, 40865913125, 40865933706, 40865954660, 40865977583, 40865997870 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 29 oct. à 12 h 30**, ses attendus poussés avant (`f363ef4`) ; relève vers 18 h 05 | — *Attendus, écrits avant* (section « N° 22 », la vague 13) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris celui de la vague 12 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **3 888 à 4 110 M** et **1 944 à 2 050 M** |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
 | **N° 20, séance C2c — N9pfbs800 contre N9w50s800** | **40610093856, 40610102423, 40610110837, 40610118331** | `ad84d1f` (N9pfbs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 7 h 28** — lancés à 1 h 39, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 6 h 38 et 6 h 47 | **+1,40 ± 3,27 en commun** (−2,73, +2,85, +4,09, +1,36 ; p = 0,463) — dans l'attendu, **pas candidat** (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −4 à +4, ~0 (« La séance C2c ») |
@@ -13717,6 +13718,42 @@ les onze vagues :
 - **le cumul appris** : à 2 500, **3 599 à 3 822 M** gardées ; à 5 000,
   **1 793 à 1 900 M**.
 
+**La vague 13 — écrite avant de la lancer**, le 29 oct. à 12 h 29, la
+vague 12 finie et pas encore relevée. La même recette, seize jobs, huit
+par budget en alternance, 2 500 d'abord, tous appris. *Attendus* — les
+douze vagues :
+- **les huit à 2 500 : 370 à 700 M positions, 248 à 470 M gardées** ;
+  **les huit à 5 000 : 190 à 345 M positions, 130 à 236 M gardées** ;
+- **écartées 20,8 à 21,6 %** aux deux budgets ; **nulles 28,4 à 29,0 %**
+  à 2 500, **34,5 à 35,1 %** à 5 000 ;
+- **positions par seconde sur un EPYC 7763 : 2 350 à 2 500** à 2 500,
+  **1 180 à 1 260** à 5 000 ;
+- **le cumul appris** : celui de la vague 12, relevé après ce paragraphe,
+  **plus 248 à 470 M** à 2 500 et **plus 130 à 236 M** à 5 000 — écrit en
+  écart pour ne pas faire attendre les runners la durée d'une relève.
+
+**La vague 12, RELEVÉE le 29 oct. à 12 h 33 — les douze chiffres dans leur
+attendu.** Seize succès, finis entre 12 h 08 et 12 h 09, chaque journal
+nommant `a4a6490` et le budget de sa moitié ; `tools/n22-jobs.tsv`, la
+vague 12 :
+
+| | à 2 500 nœuds | à 5 000 nœuds | attendu, écrit avant |
+|---|---|---|---|
+| positions, les huit | **432,9 M** | **219,5 M** | 370 à 700 M ; 190 à 345 M — dedans |
+| gardées, tous appris | **289,0 M** | **150,3 M** | 248 à 470 M ; 130 à 236 M — dedans |
+| parties écartées, sur les gardées | **21,10 %** (20,97 à 21,17) | **21,16 %** (21,02 à 21,30) | 20,8 à 21,6 % — dedans |
+| nulles, sur les gardées | **28,75 %** (28,62 à 28,85) | **34,90 %** (34,66 à 35,09) | 28,4 à 29,0 % ; 34,5 à 35,1 % — dedans |
+| positions par seconde, EPYC 7763 | **2 379 à 2 419**, cinq jobs | **1 191 à 1 209**, trois | 2 350 à 2 500 ; 1 180 à 1 260 — dedans |
+| cumul appris | **3 640,2 M** | **1 813,9 M** | 3 599 à 3 822 M ; 1 793 à 1 900 M — dedans |
+
+- **le parc** : à 2 500, cinq 7763, deux 9V74 (2 467 et 3 135 — les deux
+  vitesses du même modèle, × 1,27 encore), un 9V45 (4 302) ; à 5 000,
+  trois 7763, deux 9V74 (1 577, 1 580), deux Xeon 8370C (1 077 et 1 152,
+  les plus lents de la vague), un 9V45 (2 092) ;
+- 94 et 95 jobs appris ; le rapport des volumes, × 2,01 ;
+- **l'attendu du cumul de la vague 13 s'en déduit** : à 2 500, **3 888 à
+  4 110 M** ; à 5 000, **1 944 à 2 050 M**.
+
 **Après elle** : la séance des trois réseaux (E5n, E2.5v, E2.5t) s'écrit
 pour la carte de Théo, la semaine suivante — il n'a plus de portable
 cette semaine — <s>s'écrit</s> **écrite le 27 oct. à 19 h 27** (« La
@@ -15450,7 +15487,7 @@ rejeu, puis quatre jobs par candidat.
 | quoi | ce que c'est | où on en est |
 |---|---|---|
 | **le tournoi CCRL — situer le moteur au-delà de Stockfish bridé** | une série contre des moteurs open source classés à la CCRL entre ~3 200 et ~3 500, qui jouent normalement — Stockfish bridé joue exprès des coups faux tirés au hasard et écrase les écarts (+198 au réseau contre lui, +330 contre le jumeau) ; leurs classements lus à la source, `computerchess.org.uk` à autoriser dans le réseau de la session | **inscrit le 29 oct. à 10 h 57, à la demande de Théo** : « *ajoute le tournoi CCRL à la file une fois que le elo le nécessitera vraiment* ». **Déclencheur** : une série de C13 au-delà de **75 % contre 3190**, le plafond de Stockfish 16 (~3 380 ; l'instrument cesse d'être lisible vers ~3 570, 90 %) — ou plus tôt si le chiffre absolu doit être publié. Ne fait gagner aucun Elo : il situe |
-| **le débit de mesure — tester comme Fishtest et OpenBench** | les verdicts sous ~3 Elo : (1) **le rendement par partie**, gratuit — un livre d'ouvertures déséquilibrées, comme celui de Fishtest <span>(de mémoire, confiance moyenne)</span>, et un SPRT **unique** sur le flux mis en commun des vagues, lu par un seul arbitre entre deux vagues — un test séquentiel par groupes, qui n'est pas la faute des N SPRT parallèles (`CLAUDE.md`, « ce changement vaut la peine d'être mesuré ») ; (2) **les cœurs** — un serveur OpenBench (SPRT, SPSA, génération) et des clients : le PC de Théo à l'arrêt, des cœurs loués, une instance partagée de la communauté, ou les runners, dont les conditions excluent une charge « *disproportionate* » (ligne B4) ; (3) **une file automatique** de candidats, sans relève à la main | **inscrit le 29 oct. à 10 h 57**, sur la question de Théo. Le rendement d'abord, mesuré : le livre déséquilibré contre le nôtre sur un effet connu, la variance par paire lue au pentanomial — <span>marge estimée : ×1,5 à ×3 de parties en moins à précision égale, confiance faible</span>. Les cœurs **engagent Théo** — de l'argent, sa machine ou la charge sur son compte GitHub. Ordre de grandeur : un verdict à ± 1 Elo demande ~122 000 parties, ~44 jobs de runner, contre 4 aujourd'hui. **Rang** : après C3 et la phase 4, quand les effets cherchés passent sous ~3 Elo |
+| **le débit de mesure — tester comme Fishtest et OpenBench** | les verdicts sous ~3 Elo : (1) **le rendement par partie**, gratuit — un livre d'ouvertures déséquilibrées, comme celui de Fishtest <span>(de mémoire, confiance moyenne)</span>, et un SPRT **unique** sur le flux mis en commun des vagues, lu par un seul arbitre entre deux vagues — un test séquentiel par groupes, qui n'est pas la faute des N SPRT parallèles (`CLAUDE.md`, « ce changement vaut la peine d'être mesuré ») ; (2) **les cœurs** — un serveur OpenBench (SPRT, SPSA, génération) et des clients : le PC de Théo à l'arrêt, des cœurs loués, une instance partagée de la communauté, ou les runners, dont les conditions excluent une charge « *disproportionate* » (ligne B4) ; (3) **une file automatique** de candidats, sans relève à la main | **inscrit le 29 oct. à 10 h 57**, sur la question de Théo. Le rendement d'abord, mesuré : le livre déséquilibré contre le nôtre sur un effet connu, la variance par paire lue au pentanomial — <span>marge estimée : ×1,5 à ×3 de parties en moins à précision égale, confiance faible</span>. Les cœurs **engagent Théo** — de l'argent, sa machine ou la charge sur son compte GitHub. Ordre de grandeur : un verdict à ± 1 Elo demande ~122 000 parties, ~44 jobs de runner, contre 4 aujourd'hui. **Rang** : après C3 et la phase 4, quand les effets cherchés passent sous ~3 Elo. **Les options chiffrées, et l'approche validée par Théo le 29 oct.** — rien à acheter, le serveur OpenBench sur son MeLE : paragraphe « Le débit de mesure », sous cette phase |
 | **les tables de finale Syzygy** | sonder des tables exactes quand il reste peu de pièces | +2,7 Elo chez Stockfish 15 au réseau (source secondaire) ; reporté |
 | **les ouvertures du générateur** | 8 à 11 demi-coups au hasard, jamais comparés à un livre pour la diversité des données | à écranter le jour où le volume ne paiera plus |
 | **plus de données de Leela** | d'autres fichiers que T60 et T74 | si (a) ou (b) paie |
@@ -15461,6 +15498,122 @@ rejeu, puis quatre jobs par candidat.
 **Sans objet** : B7 phase 2, régler l'évaluation faite main — elle ne joue
 plus. **À chaque réseau embarqué, toujours** : la sonde de B8 (son facteur
 des marges), une série de C13, le balayage de mutation.
+
+**Le débit de mesure — les options chiffrées, et l'approche validée par
+Théo le 29 oct. à 12 h 34.** Unité : un job de runner joue 2 800 parties à
+`8+0,08` en ~5 h, **~560 parties/h**, trois à la fois sur deux cœurs
+physiques — ~187 parties/h par place de jeu. Un verdict à ± 3,3 coûte
+11 200 parties, un verdict à ± 1 ~122 000. Les prix, relevés le 29 oct.
+par des résultats de recherche — `docs.hetzner.com` n'est pas joignable
+depuis la session —, hors TVA, <span>confiance moyenne</span> :
+
+| option | coût | parties/h | verdict ± 3,3 | verdict ± 1 |
+|---|---|---|---|---|
+| runners, 4 jobs (aujourd'hui) | 0 | 2 240 | ~5 h | ~54 h |
+| runners, 8 jobs | 0 | 4 480 | ~2,5 h | ~27 h |
+| PC portable de Théo (8 cœurs supposés, son processeur non relevé) | électricité | 1 300 à 2 800 | 4 à 8,5 h | 44 à 94 h |
+| Hetzner AX42 (8 cœurs) | 97,30 €/mois + 49 € ; « LTD » 77,30 € | 1 300 à 2 800 | 4 à 8,5 h | 44 à 94 h |
+| OVH Rise-S (9700X, 8 cœurs) | ~77 $/mois + 77 $ (page US) | 1 300 à 2 800 | 4 à 8,5 h | 44 à 94 h |
+| Hetzner AX102 (7950X3D, 16 cœurs) | 257,30 €/mois + 129 € ; « LTD » 157,30 € | 2 800 à 5 800 | 2 à 4 h | 21 à 44 h |
+
+La fourchette d'une machine va de « cœurs physiques − 1 » places à
+« processeurs logiques − 1 », le rapport des runners. **Ce qui en sort** :
+en usage raisonnable, les runners jouent autant qu'un AX102, gratuitement ;
+ce qui leur manque est l'automatisation — la file, le SPRT unique, SPSA —,
+pas le débit. **L'approche validée** (Théo : « *Ok je valide l'approche* ») :
+- **rien à acheter** maintenant ;
+- **un serveur OpenBench sur le MeLE Quieter 4C de Théo**, quatre cœurs,
+  déjà en service pour des services web : le serveur ne joue aucune
+  partie ; il lui faut une adresse HTTPS publique et une sauvegarde de sa
+  base. Le lancement des jobs de runner — garder N clients en vie — passe
+  par un cron sur le MeLE ou par un workflow planifié. Un VPS (~8,5 €/mois)
+  seulement si exposer le MeLE pose problème. Un serveur qui dit aux
+  clients quoi compiler fait exécuter du code chez eux : isolé sur les
+  runners, pas sur le portable ;
+- **les clients** : des jobs de runner, et le portable les nuits sans
+  séance ; OpenBench compile par `make`, il faudra un Makefile qui appelle
+  `cargo` — Reckless, en Rust, l'emploie — <span>confiance moyenne</span> ;
+- **louer** seulement si la charge sur GitHub devient disproportionnée, si
+  un test demande plus de deux fils par partie (Lazy SMP, phase 4), ou
+  pour la cadence longue en volume — un 8 cœurs d'abord ;
+- **quand** : au rang de la ligne « le débit de mesure » (phase 7), après
+  C3 et la phase 4.
+
+**Le socle de mémoire de Théo (`theodubus/memory`) — le plan, écrit le
+29 oct.** Théo : « *le but de memory était pour moi d'arrêter de
+m'éparpiller et de tout gérer à un endroit* ». Le socle — un moteur Python
+qui structure la mémoire en couches lisibles par script et fait respecter
+par des hooks, git et la CI ce que ce dépôt ne fait respecter que par le
+jugement — remplacerait `tools/etat.sh`, les hooks et une part de ce
+fichier. **Lu, pas exécuté** le 29 oct., à `edc72e7` (branche
+`ccr-7128ec56-nnvoun`, plus récente que son `main`) :
+- **ce que chess y gagnerait** : une mémoire structurée et bornée —
+  `CLAUDE.md` pèse ~110 Ko, recharge à chaque session, et ce fichier passe
+  16 000 lignes ; un défaut le montre aujourd'hui : la liste « à lire » de
+  `tools/etat.sh` pointe encore vers les verdicts de septembre (C21 à C27),
+  dérivée de la mauvaise source. Puis, appliquées par la machine : le test
+  qui échoue sur le commit d'avant pour un correctif, les tests creux, une
+  valeur attendue changée qui demande Théo, un cliquet sur chaque seuil,
+  le refus des chiffres recopiés ;
+- **les frictions, et ce que Théo en dit** : les fusions, refusées par
+  défaut — « *modifiable dans la politique* » ; le coût des hooks, 6 à
+  16 min par tâche sur la copie de R6 — « *à mesurer après installation* » ;
+  trois agents dans le dépôt — plus vrai, Codex s'est arrêté et la session
+  de l'interface a fini (`CLAUDE.md`, « Structure ») ; premier vrai projet
+  — Théo l'éprouve d'abord sur un autre projet, et y corrige les bugs
+  pour préserver chess ;
+- **l'essai à blanc**, autorisé par Théo : le socle en adoption sur une
+  copie locale de chess, sans dépôt GitHub derrière — rien n'est poussé ;
+  il mesure le temps d'un commit de documentation et de son push, les
+  fusions sous une politique qui les autorise, `tools/etat.sh` à côté de
+  l'état du socle, le nombre d'avertissements ; il couvre ce que seul
+  chess exerce — l'adaptateur Rust, ce fichier, la boucle qui fusionne ;
+- **l'installation : classique, sans BMAD** — <span>confiance moyenne,
+  BMAD lu, pas essayé</span> : avec BMAD, une spec reste au brouillon tant
+  que Théo ne l'approuve pas, contre sa règle « *un test qui vaut le coup
+  n'attend pas de validation* » ; notre unité de travail est une hypothèse
+  mesurée, pas une story, et « La file » planifie déjà ;
+- **quand** : la politique écrite par Théo d'abord (les fusions), puis
+  l'installation réelle entre deux campagnes — de préférence après les
+  verdicts de C3 et avant la phase 4, où ses règles de test paient le
+  plus.
+
+**L'essai à blanc, FAIT le 29 oct. à 12 h 51** — le socle à `edc72e7`, en
+adoption, sur une copie de `main` dans le dossier de travail de la session,
+son `origin` un dépôt nu local : rien n'a quitté le conteneur. Les commits
+et les poussées y sont faits **en humain simulé** (sans `CLAUDECODE`), le
+socle refusant à bon droit le commit d'un agent dont les hooks ne sont pas
+ceux du dépôt ; les décisions du hook de l'agent, rejouées en lui passant
+l'appel d'outil :
+- **l'installation** : 15 s, « TOUT PASSE », deux contrôles en
+  avertissement ; `CLAUDE.md` gardé comme source (42 fichiers le nomment),
+  son budget figé à **134 000 octets**, qui ne pourra que baisser ;
+- **le coût** : un commit, 10 à 13 s ; **une poussée de documentation
+  seule, 3 min 45 s** à cache chaud (4 min 29 s à froid) — la poussée
+  relance `cargo fmt`, `clippy` et les tests dès que l'arbre a changé,
+  même sans un fichier `.rs`, quand `.claude/hooks/verify-on-stop.sh` ne
+  vérifie que si du Rust a bougé : **+8 à +15 min par relève**, à deux à
+  quatre poussées ;
+- **les fusions** : refusées par défaut, **permises** une fois
+  `[irreversible] tools` réécrit sans `merge_pull_request` ; l'agent ne
+  peut pas écrire la politique, refusé ; le lancement d'un workflow par
+  `gh api` n'est pas bloqué ;
+- **deux états au démarrage**, `tools/etat.sh` et celui du socle — le
+  socle le signale, à Théo de n'en garder qu'un ;
+- **`ui/` hors adaptateur** : le socle signale du JavaScript que
+  l'adaptateur Rust ne couvre pas — à déclarer tiers, ou un second
+  adaptateur ;
+- **quatre chemins « inexistants »**, tous légitimes : un dossier de sortie
+  non suivi, `tools/c3-donnees.tsv` à venir (deux fois), et
+  `tools/spsa.py` **barré** — le contrôle ne lit pas `<s>…</s>`, un faux
+  positif du socle ;
+- **deux assertions « tautologiques »** — `best(fen, 4) == best(fen, 4)`
+  et son jumeau de SPSA : des tests de déterminisme, voulus, à annoter
+  `socle: voulu` ;
+- **dix modules « à mesurer »** : les plafonds de
+  `.github/mutation-baseline.txt` ne sont pas repris à l'adoption — à
+  recopier (le socle en garde la liste, `docs/chess/mutation-caps.toml`) ;
+- `socle state` en 0,4 s.
 
 #### L'histoire de l'ordre, et le détail de chaque chantier
 
