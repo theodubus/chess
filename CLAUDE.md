@@ -14,7 +14,10 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
   24 sept. 2026). Ne pas les prendre pour des anomalies, ni les fusionner
   ou les nettoyer. **Des sessions Claude dédiées à l'interface poussent
   aussi des branches `ccr-…`**, pour des correctifs de `ui/` seulement
-  (Théo, 19 oct. 2026) : même règle. **La V1 de l'interface est finie** (Théo, 6 oct. 2026) :
+  (Théo, 19 oct. 2026) : même règle. **Plus personne n'y
+  travaille depuis fin octobre** — Théo, 29 oct. 2026 : Codex s'est arrêté, et
+  la session Claude qui avait repris l'interface a fini pour l'instant ; la
+  règle reste pour leurs branches, s'il en revient. **La V1 de l'interface est finie** (Théo, 6 oct. 2026) :
   on y retouchera peut-être, mais toute retouche de `ui/` est **non
   prioritaire**. **Une version web sur GitHub Pages** (Théo, 27 oct.
   2026) : un chemin de plus, pour essayer sans installer, quitte à y jouer
