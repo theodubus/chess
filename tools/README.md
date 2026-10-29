@@ -12010,12 +12010,37 @@ illégal, aucun moteur perdu :
 **N9y24s800 poussé à 4 h 04 — 5 h 11 après N9y8s800, le dernier de la
 séance** : la recette relue (« 800 superlots, pas 0.001 → 2.4300007e-6,
 wdl 0.5 → 0.5, perte ^2, lot 16384, ply ≥ 24 »), 3 712 073 002 positions
-relues à l'octet — le filtre s'applique au chargement des lots, pas au
-compte —, confrontation 7 / 27 ; l'entraînement seul 18 621 s ;
+relues à l'octet — le même compte aux six réseaux, quel que soit le
+filtre : il est fait avant lui —, confrontation 7 / 27 ; l'entraînement seul 18 621 s ;
 candidat `d9dad07` révoqué ; quatre jobs en vol depuis 4 h 23 (attendu
 −4 à +3). **La séance C2c est finie** : six réseaux poussés, aucune
 panne ; la veille, demandée par le script à sa sortie, ne se voit pas
 d'ici.
+
+**La perte tenue à l'écart des six — les attendus, écrits le 29 oct. à
+4 h 25, avant de la lancer.** `nnue-validation.yml` sur les trois jobs
+tenus à l'écart de C2 — 39050360980 (l'étape B) et 39493777327 ((e)),
+étiquetés par N6r4, 38531414161 (le n° 18), par N5l —, N9w50s800 en
+référence. **Séparés par étiqueteur, cette fois** : à C2, la colonne de
+N5l était celle qui sortait. Deux biais, dits d'avance : l'outil mesure
+au poids 0,75 et à l'exposant 2, et **sous le filtre par défaut** —
+ply ≥ 16 —, si bien que N9y24s800 y est lu sur les demi-coups 16 à 23,
+qu'il n'a jamais appris, et N9y8s800 sans les 8 à 15, qu'il a appris en
+plus. L'échelle connue : à C2, ± 0,00008 sur les données de N6r4 pour
+les poids, +0,00036 à +0,00058 pour l'exposant. Écarts à N9w50s800 —
+<span>inférence, confiance faible</span> :
+
+| réseau | données de N6r4 (deux jobs) | données de N5l (un job) | pourquoi |
+|---|---|---|---|
+| N9pfbs800 (pas final × 0,1) | −0,0001 à +0,0001 | −0,0001 à +0,0001 | les derniers superlots ne bougent presque plus |
+| N9pfhs800 (× 10) | **+0,00005 à +0,0006** | 0 à +0,0006 | le bruit que le pas haut laisse — −13,13 en match |
+| N9l8ks800 (lot 8 192) | −0,0001 à +0,0002 | −0,0001 à +0,0002 | deux fois plus de pas, au même pas |
+| N9l32ks800 (lot 32 768) | −0,0002 à +0,0001 | −0,0002 à +0,0001 | deux fois moins de pas |
+| N9y8s800 (ply ≥ 8) | 0 à +0,0002 | 0 à +0,0002 | moins de passes sur les positions mesurées |
+| N9y24s800 (ply ≥ 24) | **+0,00005 à +0,001** | +0,00005 à +0,001 | ~8 % des positions mesurées jamais apprises |
+
+Les matchs décident ; ce relevé dit seulement si un réseau retient
+autrement.
 
 **La veille en fin de séance — l'option `veille`, écrite le 27 oct. à
 8 h 48.** Théo : « *est ce que c'est possible de mettre dans un script sh
