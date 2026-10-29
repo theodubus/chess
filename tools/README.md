@@ -14457,6 +14457,28 @@ perte au temps, zéro coup illégal, aucun moteur perdu :
 - **aucun avertissement côté ShallowRed** ; 9 178 « Bestmove does not
   match… », ceux du bridage.
 
+**L'écart aux meilleurs — lu le 29 oct. à 10 h 57**, sur la question de
+Théo (« *qu'est ce qui fait qu'un stockfish ou reckless est toujours 300
+elo plus haut* ») :
+- **les chiffres, de sources secondaires** — le site de la CCRL n'est pas
+  joignable depuis le conteneur (`computerchess.org.uk`, refusé par le
+  réseau de la session, vérifié le 29 oct.) : à la CCRL 40/15, Stockfish 19
+  **~3 650**, Reckless 0.9.0 **3 612 à 3 644** selon la source, puis
+  PlentyChess, pawnocchio et Torch à une dizaine d'Elo de Stockfish ;
+- **l'écart à N9w50s800 (~3 153) est donc de ~450 à 500, pas 300** —
+  <span>confiance faible sur le chiffre, moyenne sur l'ordre de
+  grandeur</span> : notre échelle est une CCRL approchée, dont le source de
+  Stockfish 16 ne nomme pas la liste, et Stockfish bridé écrase les écarts ;
+- **le sommet n'est pas un monopole** : quatre moteurs à une dizaine d'Elo
+  de Stockfish, Reckless en Rust et entraîné par bullet, comme celui-ci.
+  <span>Inférence, confiance faible sur l'ordre</span> : ce qui sépare
+  d'eux, c'est d'abord le débit de mesure — des patchs à +1 Elo démontrés
+  sur des centaines de cœurs, quand nos verdicts résolvent ± 3,3 —, puis
+  le réseau — Stockfish ~3 072 unités en première couche, deux couches
+  cachées, <span>de mémoire, confiance moyenne</span> —, le réglage
+  automatique et quinze ans de recherche accumulée ; pas le langage, ni le
+  générateur de coups (`CLAUDE.md`, « Décisions structurantes »).
+
 ### B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à `8+0,08` — gain démontré, FUSIONNÉ
 
 **Lancé par Théo le 30 sept.** (« *Ok go pour reco 8* »), sur la
@@ -15427,6 +15449,8 @@ rejeu, puis quatre jobs par candidat.
 
 | quoi | ce que c'est | où on en est |
 |---|---|---|
+| **le tournoi CCRL — situer le moteur au-delà de Stockfish bridé** | une série contre des moteurs open source classés à la CCRL entre ~3 200 et ~3 500, qui jouent normalement — Stockfish bridé joue exprès des coups faux tirés au hasard et écrase les écarts (+198 au réseau contre lui, +330 contre le jumeau) ; leurs classements lus à la source, `computerchess.org.uk` à autoriser dans le réseau de la session | **inscrit le 29 oct. à 10 h 57, à la demande de Théo** : « *ajoute le tournoi CCRL à la file une fois que le elo le nécessitera vraiment* ». **Déclencheur** : une série de C13 au-delà de **75 % contre 3190**, le plafond de Stockfish 16 (~3 380 ; l'instrument cesse d'être lisible vers ~3 570, 90 %) — ou plus tôt si le chiffre absolu doit être publié. Ne fait gagner aucun Elo : il situe |
+| **le débit de mesure — tester comme Fishtest et OpenBench** | les verdicts sous ~3 Elo : (1) **le rendement par partie**, gratuit — un livre d'ouvertures déséquilibrées, comme celui de Fishtest <span>(de mémoire, confiance moyenne)</span>, et un SPRT **unique** sur le flux mis en commun des vagues, lu par un seul arbitre entre deux vagues — un test séquentiel par groupes, qui n'est pas la faute des N SPRT parallèles (`CLAUDE.md`, « ce changement vaut la peine d'être mesuré ») ; (2) **les cœurs** — un serveur OpenBench (SPRT, SPSA, génération) et des clients : le PC de Théo à l'arrêt, des cœurs loués, une instance partagée de la communauté, ou les runners, dont les conditions excluent une charge « *disproportionate* » (ligne B4) ; (3) **une file automatique** de candidats, sans relève à la main | **inscrit le 29 oct. à 10 h 57**, sur la question de Théo. Le rendement d'abord, mesuré : le livre déséquilibré contre le nôtre sur un effet connu, la variance par paire lue au pentanomial — <span>marge estimée : ×1,5 à ×3 de parties en moins à précision égale, confiance faible</span>. Les cœurs **engagent Théo** — de l'argent, sa machine ou la charge sur son compte GitHub. Ordre de grandeur : un verdict à ± 1 Elo demande ~122 000 parties, ~44 jobs de runner, contre 4 aujourd'hui. **Rang** : après C3 et la phase 4, quand les effets cherchés passent sous ~3 Elo |
 | **les tables de finale Syzygy** | sonder des tables exactes quand il reste peu de pièces | +2,7 Elo chez Stockfish 15 au réseau (source secondaire) ; reporté |
 | **les ouvertures du générateur** | 8 à 11 demi-coups au hasard, jamais comparés à un livre pour la diversité des données | à écranter le jour où le volume ne paiera plus |
 | **plus de données de Leela** | d'autres fichiers que T60 et T74 | si (a) ou (b) paie |
