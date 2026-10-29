@@ -1032,6 +1032,7 @@ dernière relève est faite.
 | **N° 20, séance C2c — N9l32ks800 contre N9w50s800** | **40730461776, 40730473764, 40730486311, 40730498500** | `d610d81` (N9l32ks800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 23 h 10** — lancés à 17 h 53, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 22 h 55 et 22 h 59 | **+2,30 ± 3,33 en commun** (+6,95, −3,60, +3,23, +2,61 ; p = 0,136) — dans l'attendu, **pas candidat** ; l'axe du lot clos, le lot reste à 16 384 (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −5 à +3, ~−1 (« La séance C2c ») |
 | **N° 20, séance C2c — N9y8s800 contre N9w50s800** | **40777759519, 40777769143, 40777778550, 40777788316** | `1158453` (N9y8s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 29 oct. à 4 h 24** — lancés le 28 à 23 h 09, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 4 h 08 et 4 h 19 | **−3,78 ± 3,26 en commun** (−2,48, −0,37, −7,20, −5,09 ; p = 0,472) — dans l'attendu, **régression démontrée de peu**, pas candidat (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −5 à +3, ~−1 (« La séance C2c ») |
 | **N° 20, séance C2c — N9y24s800 contre N9w50s800** | **40811845695, 40811852993, 40811860221, 40811867416** | `d9dad07` (N9y24s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **lancés le 29 oct. à 4 h 23**, les attendus poussés avant (« La séance C2c ») ; relève vers 9 h 30 | — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −4 à +3, ~−0,5 (« La séance C2c ») |
+| **N° 20, séance C2c — la perte tenue à l'écart des six** | **40812060115** | `nnue-validation.yml` à `eae5141`, N9w50s800 en référence, N9pfbs800, N9pfhs800, N9l8ks800, N9l32ks800, N9y8s800, N9y24s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 29 oct. à 4 h 29** — lancée à 4 h 25, ses attendus poussés avant (`eae5141`), finie à 4 h 28 | **Quinze lectures sur dix-huit dans l'attendu** ; N9y24s800 dehors par le bas aux trois (+0,000034, +0,000041, −0,000016) ; sur les données de N6r4, l'ordre des pertes suit celui des cinq matchs déjà jugés (« La séance C2c ») — *Attendus, écrits avant* (« La séance C2c », la perte tenue à l'écart des six), séparés par étiqueteur |
 | **N° 20, séance C2 — N9p25s800 contre N9w50s800** | **40429250807, 40429260171, 40429269046, 40429278451** | `f0db36f` (N9p25s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 7 h 45** — lancés à 1 h 54, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 6 h 57 et 7 h 04 | **+0,84 ± 3,28 en commun** (+1,12, +1,12, −1,36, +2,48 ; p = 0,853) — dans l'attendu, **pas candidat** ; l'exposant reste à 2 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −5 à +5, ~0 (« La séance C2 ») |
 | **N° 20, séance C2 — N9w75s800 contre N9w50s800** | **40382312399, 40382323890, 40382335969, 40382347208** | `331cdad` (N9w75s800) → `cf93707` (N9w50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 1 h 55** — lancés le 26 à 19 h 57, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 1 h 01 et 1 h 10 | **−2,95 ± 3,34 en commun** (−9,43, −1,86, +0,37, −0,87 ; p = 0,176) — dans l'attendu, **pas candidat ; la séance `a` close**, le poids reste à 0,5 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −6 à +5, ~−1 (« La séance C2 ») |
 | **N° 20, séance C2 — N9w625s800 contre N9w50s800** | **40327455955, 40327464784, 40327473241, 40327482052** | `fcd362f` (N9w625s800) → `cf93707` (N9w50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 26 oct. à 19 h 56** — lancés à 14 h 04, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 19 h 03 et 19 h 10 | **−1,86 ± 3,33 en commun** (−2,61, −2,48, −1,99, −0,37 ; p = 0,969) — dans l'attendu, **pas candidat** ; le poids reste à 0,5 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −3 à +6, ~+1 (« La séance C2 ») |
@@ -12041,6 +12042,41 @@ les poids, +0,00036 à +0,00058 pour l'exposant. Écarts à N9w50s800 —
 
 Les matchs décident ; ce relevé dit seulement si un réseau retient
 autrement.
+
+**La perte tenue à l'écart des six, RELEVÉE le 29 oct. à 4 h 29 — quinze
+lectures sur dix-huit dans l'attendu ; N9y24s800 en sort par le bas.**
+Run 40812060115, l'outil à `eae5141`, lancé à 4 h 25, fini à 4 h 28 ;
+écarts à N9w50s800 :
+
+| réseau | étape B (39050360980, N6r4) | (e) (39493777327, N6r4 à 10 000) | n° 18 (38531414161, N5l) | en match |
+|---|---|---|---|---|
+| N9pfbs800 | −0,000023 ± 0,000016 | −0,000008 ± 0,000023 | +0,000001 ± 0,000016 | +1,40 ± 3,27 |
+| N9l32ks800 | −0,000029 ± 0,000017 | −0,000010 ± 0,000024 | +0,000007 ± 0,000017 | +2,30 ± 3,33 |
+| N9y8s800 | +0,000015 ± 0,000017 | +0,000028 ± 0,000025 | +0,000038 ± 0,000017 | −3,78 ± 3,26 |
+| N9y24s800 | **+0,000034 ± 0,000017** | **+0,000041 ± 0,000024** | **−0,000016 ± 0,000018** | en vol |
+| N9l8ks800 | +0,000055 ± 0,000016 | +0,000066 ± 0,000023 | +0,000058 ± 0,000017 | −5,43 ± 3,23, hétérogène |
+| N9pfhs800 | +0,000141 ± 0,000018 | +0,000160 ± 0,000026 | +0,000089 ± 0,000019 | −13,13 ± 3,43 |
+
+- **N9y24s800 retient mieux que je ne l'attendais** : +0,00003 et
+  +0,00004 sur les données de N6r4, sous la borne de +0,00005 ; sur
+  celles de N5l, −0,00002. Les demi-coups 16 à 23, qu'il n'a jamais
+  appris, lui coûtent presque rien — mon « ~8 % des positions » jamais
+  vues ne coûtait pas ce que je supposais ;
+- **sur les données de N6r4, l'ordre des pertes suit celui des matchs**,
+  pour les cinq réseaux déjà jugés : du plus bas au plus haut, N9pfbs800
+  et N9l32ks800 (au-dessus de zéro au point), N9y8s800, N9l8ks800,
+  N9pfhs800 (les trois sous zéro). Sur une seule recette, des réglages
+  d'optimisation — pas, lot, filtre —, où rien d'autre ne change.
+  **Ce n'est pas la règle du dépôt qui tombe** : un écart de perte ne
+  vaut pas un match (`CLAUDE.md`, « cette valeur d'évaluation est
+  meilleure ») — N9p25s800, à +0,00036, jouait +0,84 —, et cinq points
+  rangés au hasard le sont une fois sur 120 ;
+- **une prédiction, écrite avant le verdict de N9y24s800** — <span>inférence,
+  confiance faible</span> : sa perte (+0,00003 à +0,00004) le range entre
+  N9l32ks800 et N9y8s800 ; si l'ordre tient, son match tombe **entre
+  −3,8 et +2,3**. L'attendu de la séance (−4 à +3) le contenait déjà :
+  la prédiction ne dit rien de plus que lui sur la décision — elle
+  éprouve seulement l'ordre.
 
 **La veille en fin de séance — l'option `veille`, écrite le 27 oct. à
 8 h 48.** Théo : « *est ce que c'est possible de mettre dans un script sh
