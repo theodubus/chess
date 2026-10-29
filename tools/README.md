@@ -15578,6 +15578,43 @@ fichier. **Lu, pas exécuté** le 29 oct., à `edc72e7` (branche
   verdicts de C3 et avant la phase 4, où ses règles de test paient le
   plus.
 
+**L'essai à blanc, FAIT le 29 oct. à 12 h 51** — le socle à `edc72e7`, en
+adoption, sur une copie de `main` dans le dossier de travail de la session,
+son `origin` un dépôt nu local : rien n'a quitté le conteneur. Les commits
+et les poussées y sont faits **en humain simulé** (sans `CLAUDECODE`), le
+socle refusant à bon droit le commit d'un agent dont les hooks ne sont pas
+ceux du dépôt ; les décisions du hook de l'agent, rejouées en lui passant
+l'appel d'outil :
+- **l'installation** : 15 s, « TOUT PASSE », deux contrôles en
+  avertissement ; `CLAUDE.md` gardé comme source (42 fichiers le nomment),
+  son budget figé à **134 000 octets**, qui ne pourra que baisser ;
+- **le coût** : un commit, 10 à 13 s ; **une poussée de documentation
+  seule, 3 min 45 s** à cache chaud (4 min 29 s à froid) — la poussée
+  relance `cargo fmt`, `clippy` et les tests dès que l'arbre a changé,
+  même sans un fichier `.rs`, quand `.claude/hooks/verify-on-stop.sh` ne
+  vérifie que si du Rust a bougé : **+8 à +15 min par relève**, à deux à
+  quatre poussées ;
+- **les fusions** : refusées par défaut, **permises** une fois
+  `[irreversible] tools` réécrit sans `merge_pull_request` ; l'agent ne
+  peut pas écrire la politique, refusé ; le lancement d'un workflow par
+  `gh api` n'est pas bloqué ;
+- **deux états au démarrage**, `tools/etat.sh` et celui du socle — le
+  socle le signale, à Théo de n'en garder qu'un ;
+- **`ui/` hors adaptateur** : le socle signale du JavaScript que
+  l'adaptateur Rust ne couvre pas — à déclarer tiers, ou un second
+  adaptateur ;
+- **quatre chemins « inexistants »**, tous légitimes : un dossier de sortie
+  non suivi, `tools/c3-donnees.tsv` à venir (deux fois), et
+  `tools/spsa.py` **barré** — le contrôle ne lit pas `<s>…</s>`, un faux
+  positif du socle ;
+- **deux assertions « tautologiques »** — `best(fen, 4) == best(fen, 4)`
+  et son jumeau de SPSA : des tests de déterminisme, voulus, à annoter
+  `socle: voulu` ;
+- **dix modules « à mesurer »** : les plafonds de
+  `.github/mutation-baseline.txt` ne sont pas repris à l'adoption — à
+  recopier (le socle en garde la liste, `docs/chess/mutation-caps.toml`) ;
+- `socle state` en 0,4 s.
+
 #### L'histoire de l'ordre, et le détail de chaque chantier
 
 **L'ordre des prochains chantiers est DÉCIDÉ — Théo, 23 sept. 2026, au soir** :
