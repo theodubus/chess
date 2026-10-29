@@ -13717,6 +13717,20 @@ les onze vagues :
 - **le cumul appris** : à 2 500, **3 599 à 3 822 M** gardées ; à 5 000,
   **1 793 à 1 900 M**.
 
+**La vague 13 — écrite avant de la lancer**, le 29 oct. à 12 h 29, la
+vague 12 finie et pas encore relevée. La même recette, seize jobs, huit
+par budget en alternance, 2 500 d'abord, tous appris. *Attendus* — les
+douze vagues :
+- **les huit à 2 500 : 370 à 700 M positions, 248 à 470 M gardées** ;
+  **les huit à 5 000 : 190 à 345 M positions, 130 à 236 M gardées** ;
+- **écartées 20,8 à 21,6 %** aux deux budgets ; **nulles 28,4 à 29,0 %**
+  à 2 500, **34,5 à 35,1 %** à 5 000 ;
+- **positions par seconde sur un EPYC 7763 : 2 350 à 2 500** à 2 500,
+  **1 180 à 1 260** à 5 000 ;
+- **le cumul appris** : celui de la vague 12, relevé après ce paragraphe,
+  **plus 248 à 470 M** à 2 500 et **plus 130 à 236 M** à 5 000 — écrit en
+  écart pour ne pas faire attendre les runners la durée d'une relève.
+
 **Après elle** : la séance des trois réseaux (E5n, E2.5v, E2.5t) s'écrit
 pour la carte de Théo, la semaine suivante — il n'a plus de portable
 cette semaine — <s>s'écrit</s> **écrite le 27 oct. à 19 h 27** (« La
