@@ -1030,7 +1030,8 @@ dernière relève est faite.
 | **N° 20, séance C2c — N9pfhs800 contre N9w50s800** | **40643606993, 40643615201, 40643623572, 40643631447** | `fd64e31` (N9pfhs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 13 h 36** — lancés à 7 h 24, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 12 h 24 et 12 h 35 | **−13,13 ± 3,43 en commun** (−10,80, −17,88, −13,66, −10,18 ; p = 0,411) — sous l'attendu, **régression démontrée**, pas candidat ; le pas final reste à 0,3⁵ (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −6 à +3, ~−1 (« La séance C2c ») |
 | **N° 20, séance C2c — N9l8ks800 contre N9w50s800** | **40688068619, 40688078889, 40688089330, 40688099240** | `f5b2243` (N9l8ks800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 19 h 18** — lancés à 13 h 28, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 18 h 26 et 18 h 35 | **−5,43 ± 3,23 en commun, mais HÉTÉROGÈNES** (+1,49, −2,61, −8,32, −12,29 ; p = 0,017) — aucune borne basse au-dessus de zéro, ni en commun ni seule : **pas candidat** ; l'amplitude n'est pas un nombre, l'étalonnage ne l'explique pas (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −3 à +5, ~+1 (« La séance C2c ») |
 | **N° 20, séance C2c — N9l32ks800 contre N9w50s800** | **40730461776, 40730473764, 40730486311, 40730498500** | `d610d81` (N9l32ks800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 23 h 10** — lancés à 17 h 53, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 22 h 55 et 22 h 59 | **+2,30 ± 3,33 en commun** (+6,95, −3,60, +3,23, +2,61 ; p = 0,136) — dans l'attendu, **pas candidat** ; l'axe du lot clos, le lot reste à 16 384 (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −5 à +3, ~−1 (« La séance C2c ») |
-| **N° 20, séance C2c — N9y8s800 contre N9w50s800** | **40777759519, 40777769143, 40777778550, 40777788316** | `1158453` (N9y8s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **lancés le 28 oct. à 23 h 09**, les attendus poussés avant (« La séance C2c ») ; relève vers 4 h 15 | — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −5 à +3, ~−1 (« La séance C2c ») |
+| **N° 20, séance C2c — N9y8s800 contre N9w50s800** | **40777759519, 40777769143, 40777778550, 40777788316** | `1158453` (N9y8s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 29 oct. à 4 h 24** — lancés le 28 à 23 h 09, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 4 h 08 et 4 h 19 | **−3,78 ± 3,26 en commun** (−2,48, −0,37, −7,20, −5,09 ; p = 0,472) — dans l'attendu, **régression démontrée de peu**, pas candidat (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −5 à +3, ~−1 (« La séance C2c ») |
+| **N° 20, séance C2c — N9y24s800 contre N9w50s800** | **40811845695, 40811852993, 40811860221, 40811867416** | `d9dad07` (N9y24s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **lancés le 29 oct. à 4 h 23**, les attendus poussés avant (« La séance C2c ») ; relève vers 9 h 30 | — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −4 à +3, ~−0,5 (« La séance C2c ») |
 | **N° 20, séance C2 — N9p25s800 contre N9w50s800** | **40429250807, 40429260171, 40429269046, 40429278451** | `f0db36f` (N9p25s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 7 h 45** — lancés à 1 h 54, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 6 h 57 et 7 h 04 | **+0,84 ± 3,28 en commun** (+1,12, +1,12, −1,36, +2,48 ; p = 0,853) — dans l'attendu, **pas candidat** ; l'exposant reste à 2 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −5 à +5, ~0 (« La séance C2 ») |
 | **N° 20, séance C2 — N9w75s800 contre N9w50s800** | **40382312399, 40382323890, 40382335969, 40382347208** | `331cdad` (N9w75s800) → `cf93707` (N9w50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 1 h 55** — lancés le 26 à 19 h 57, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 1 h 01 et 1 h 10 | **−2,95 ± 3,34 en commun** (−9,43, −1,86, +0,37, −0,87 ; p = 0,176) — dans l'attendu, **pas candidat ; la séance `a` close**, le poids reste à 0,5 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −6 à +5, ~−1 (« La séance C2 ») |
 | **N° 20, séance C2 — N9w625s800 contre N9w50s800** | **40327455955, 40327464784, 40327473241, 40327482052** | `fcd362f` (N9w625s800) → `cf93707` (N9w50s800, `main`), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 26 oct. à 19 h 56** — lancés à 14 h 04, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 19 h 03 et 19 h 10 | **−1,86 ± 3,33 en commun** (−2,61, −2,48, −1,99, −0,37 ; p = 0,969) — dans l'attendu, **pas candidat** ; le poids reste à 0,5 (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −3 à +6, ~+1 (« La séance C2 ») |
@@ -11982,6 +11983,40 @@ l'entraînement seul 18 869 s ; candidat `1158453` révoqué ; quatre jobs
 en vol depuis 23 h 09 (attendu −5 à +3). **N9y24s800 attendu vers
 4 h 10**, puis la veille.
 
+**N9y8s800 — VERDICT, le 29 oct. à 4 h 24 : −3,78 ± 3,26, régression
+démontrée de peu, pas candidat.** Quatre jobs finis ENTIERS entre 4 h 08
+et 4 h 19, 6,38 à 6,60 s par partie, zéro perte au temps, aucun coup
+illégal, aucun moteur perdu :
+
+| job | Elo | Ptnml(0-2) | runner, nœuds/s au banc, profondeur en 250 ms |
+|---|---|---|---|
+| 40777759519 | −2,48 ± 6,48 | 24, 263, 852, 231, 30 | EPYC 9V74, 1 311 480, 14 |
+| 40777769143 | −0,37 ± 6,61 | 25, 266, 826, 253, 30 | EPYC 9V45, 1 534 782, 15 |
+| 40777778550 | −7,20 ± 6,50 | 23, 293, 828, 231, 25 | EPYC 9V74, 1 282 618, 14 |
+| 40777788316 | −5,09 ± 6,50 | 24, 281, 832, 238, 25 | Xeon 8573C, 1 338 047, 14 |
+| **en commun, 11 200 parties** | **−3,78 ± 3,26** | homogènes, p = 0,472 | |
+
+- **dans l'attendu** (−5 à +3, ~−1), sous son point ; la borne haute,
+  −0,52, sous zéro : **régression démontrée, de peu** ; pas candidat ;
+- <span>inférence, confiance moyenne</span> — l'attendu le disait : les
+  demi-coups 8 à 15 sont les sorties des ouvertures tirées au hasard
+  (8 à 11 demi-coups), des positions que le moteur ne rencontre presque
+  jamais en partie ; les apprendre prend des passes aux autres ;
+- les avertissements de l'arbitre, lus : « PV continues after
+  fifty-move rule » et cinq « … after threefold repetition », 3 à 8 par
+  job, des deux côtés (10 côté candidat, 12 côté référence) — le même
+  code de recherche.
+
+**N9y24s800 poussé à 4 h 04 — 5 h 11 après N9y8s800, le dernier de la
+séance** : la recette relue (« 800 superlots, pas 0.001 → 2.4300007e-6,
+wdl 0.5 → 0.5, perte ^2, lot 16384, ply ≥ 24 »), 3 712 073 002 positions
+relues à l'octet — le filtre s'applique au chargement des lots, pas au
+compte —, confrontation 7 / 27 ; l'entraînement seul 18 621 s ;
+candidat `d9dad07` révoqué ; quatre jobs en vol depuis 4 h 23 (attendu
+−4 à +3). **La séance C2c est finie** : six réseaux poussés, aucune
+panne ; la veille, demandée par le script à sa sortie, ne se voit pas
+d'ici.
+
 **La veille en fin de séance — l'option `veille`, écrite le 27 oct. à
 8 h 48.** Théo : « *est ce que c'est possible de mettre dans un script sh
 une mise en veille forcée en fin de séance ?* ». `bash
@@ -15144,8 +15179,9 @@ critères, s'écrit à la clôture de (e), la liste des données close.
   N9pfbs800 **+1,40 ± 3,27**, N9pfhs800 **−13,13 ± 3,43** — le pas
   final reste à 0,3⁵ ; **le lot** : N9l8ks800 **−5,43 ± 3,23**, quatre
   matchs hétérogènes, N9l32ks800 **+2,30 ± 3,33** — aucun ne gagne, le
-  lot reste à 16 384 ; **le premier demi-coup** : N9y8s800 en match,
-  N9y24s800 vers 4 h 10 le 29 ;
+  lot reste à 16 384 ; **le premier demi-coup** : N9y8s800
+  **−3,78 ± 3,26**, régression démontrée de peu — N9y24s800 en match ;
+  **la séance finie le 29 oct. à 4 h 04**, six réseaux, aucune panne ;
 - **C3 — l'architecture** : 384 et 512 unités, dix seaux de roi au
   volume d'aujourd'hui, chacun avec ses nœuds par seconde. **1 024
   unités et plus de seaux de roi viennent après** — Théo, 21 oct. :
@@ -15174,7 +15210,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **pas final, forme de la décroissance** | initial × 0,3⁵, cosinus | **C2c, à 800 superlots, contre N9w50s800 : × 0,1 → +1,40 ± 3,27 (28 oct.) ; × 10 → −13,13 ± 3,43**, régression démontrée | fine — <span>confiance moyenne</span> : en haut, coûteux ; en bas, rien de démontré | **déprioritisé** : entre × 0,1 et × 1 le seul point ouvert, et la forme de la décroissance, jamais touchée ; rouvert par une recette qui change les passes ou le lot |
 | **fonction de perte** | écart au carré de la sigmoïde | **l'exposant 2,5 à 800 superlots : +0,84 ± 3,28** contre N9w50s800 (C2, 27 oct.) | ~0 à ± 3 — <span>confiance moyenne</span> | **déprioritisé** : un autre exposant, ou une autre forme, rouvert par une recette qui change les données |
 | **taille de lot** | 16 384 | **C2c, à 800 superlots, contre N9w50s800 (28 oct.) : 8 192 → −5,43 ± 3,23 en commun, quatre matchs hétérogènes (p = 0,017) ; 32 768 → +2,30 ± 3,33**, rien de démontré | 0 à +3 vers les grands lots — <span>confiance faible</span> ; 32 768 coûte 4 % de moins à entraîner | **déprioritisé** : 32 768 avec le pas initial qu'il appelle (plus haut), un seul réseau — ou au premier entraînement qui change de lot pour une autre raison (C3) |
-| **filtre des positions** | ply ≥ 16, plus le filtre par défaut | jamais | inconnue | `--ply-min`, écrite le 20 oct. ; **C2c, écrite le 27 oct.** : 8 et 24 (N9y8s800, N9y24s800) |
+| **filtre des positions** | ply ≥ 16, plus le filtre par défaut | **C2c, à 800 superlots, contre N9w50s800 : ply ≥ 8 → −3,78 ± 3,26 (29 oct.), régression démontrée de peu** ; ply ≥ 24 en vol | inconnue au-dessus de 16 | `--ply-min`, écrite le 20 oct. ; **C2c, écrite le 27 oct.** : 8 et 24 (N9y8s800, N9y24s800) ; **8 coûte** ; 24 se relève vers 9 h 30 le 29 |
 | **poids du résultat variable** | constant pendant l'entraînement | **de 0,25 à 0,75 à 800 superlots : −1,99 ± 3,32** contre N9w50s800 (C2, 27 oct.) | ~0 à ± 3 — <span>confiance moyenne</span> | **déprioritisé** ; une autre pente — de 0 à 1, ou décroissante — rouvrirait le réglage |
 | **volume de données** | 3,71 G vus par N9w50s800 (les 94 jobs appris de l'étape B et les 80 de (e), tous étiquetés par N6r4) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) ; **N9w50s800 +5,18 ± 3,29 contre N8tw50s800** — N5l retiré, 0,98 G de N6r4 ajoutées, 31 passes au lieu de 25 : trois causes mêlées | ~+7 au doublement suivant — <span>confiance faible</span> | **N9w50s800 EMBARQUÉ le 22 oct.** (séance C1) ; **le volume à étiquette égale paie : +8,94 ± 3,32** (E5t contre E5v, 26 oct.), ce que le n° 20 n'avait pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») |
 | **l'étiqueteur** | N6r4, 5 000 nœuds | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | **le budget, mesuré le 26 oct.** (séance C1) : 10 000 nœuds contre 5 000, −1,49 ± 3,38 à volume égal, **−7,38 ± 3,40 à temps de runner égal** — le budget ne paie pas, le volume si (+8,94 ± 3,32) ; **2 500 nœuds, le test suivant** : à volume égal contre 5 000, sur des données du même étiqueteur que le n° 21 ; s'il ne perd rien à l'étiquette, il double le volume au même temps de runner — <span>marge estimée : jusqu'à ~+9 au doublement, confiance faible</span> ; **écrit le 26 oct. dans le n° 22** : chaque vague moitié à 2 500, moitié à 5 000, étiquetées par N9w50s800 ; E2.5t contre E5n décide (« N° 22 ») ; **la partie mesurée close le 27 oct.**, 38 et 39 jobs appris, × 2,05 ; **sa séance écrite**, la semaine du 2 nov. (`tools/seance-n22.sh`) ; **les données de N5l laissées** : −5,18 à superlots égaux, +0,25 ± 4,71 à passes égales — rien (22 oct.) ; N9w50s800 embarqué le 22 oct. |
