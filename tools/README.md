@@ -13866,6 +13866,19 @@ vague 15 :
 - **l'attendu du cumul de la vague 16 s'en déduit** : à 2 500, **4 768 à
   4 990 M** ; à 5 000, **2 413 à 2 519 M**.
 
+**La vague 17 — écrite avant de la lancer**, le 30 oct. à 11 h 07, la
+vague 16 finie et pas encore relevée. La même recette, seize jobs, huit
+par budget en alternance, 2 500 d'abord, tous appris. *Attendus* — les
+seize vagues :
+- **les huit à 2 500 : 370 à 700 M positions, 248 à 470 M gardées** ;
+  **les huit à 5 000 : 190 à 345 M positions, 130 à 236 M gardées** ;
+- **écartées 20,8 à 21,6 %** aux deux budgets ; **nulles 28,4 à 29,0 %**
+  à 2 500, **34,5 à 35,1 %** à 5 000 ;
+- **positions par seconde sur un EPYC 7763 : 2 350 à 2 500** à 2 500,
+  **1 180 à 1 260** à 5 000 ;
+- **le cumul appris** : celui de la vague 16, relevé après ce paragraphe,
+  **plus 248 à 470 M** à 2 500 et **plus 130 à 236 M** à 5 000.
+
 **Après elle** : la séance des trois réseaux (E5n, E2.5v, E2.5t) s'écrit
 pour la carte de Théo, la semaine suivante — il n'a plus de portable
 cette semaine — <s>s'écrit</s> **écrite le 27 oct. à 19 h 27** (« La
