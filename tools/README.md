@@ -1030,7 +1030,8 @@ dernière relève est faite.
 | **N° 22 — la vague 15**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 40968537110, 40968555704, 40968573901, 40968591888, 40968610490, 40968627530, 40968644566, 40968661535 ; à 5 000 : 40968546227, 40968564956, 40968582859, 40968601489, 40968619042, 40968636188, 40968653164, 40968669524 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 30 oct. à 5 h 32** — lancée le 29 à 23 h 47, ses attendus poussés avant (`a14ea7b`) ; seize succès finis entre 5 h 18 et 5 h 19 | **à 2 500 : 409,7 M positions, 273,5 M gardées, 28,69 % de nulles ; à 5 000 : 226,2 M, 154,9 M, 34,77 % ; écartées 21,07 et 21,25 % ; EPYC 7763 à 2 369 – 2 418 et 1 195 – 1 208 ; cumuls 4 519,8 et 2 283,1 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 15) — *Attendus, écrits avant* (section « N° 22 », la vague 15) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris celui de la vague 14 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **4 494 à 4 716 M** et **2 258 à 2 364 M** |
 | **N° 22 — la vague 16**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41002935470, 41002949612, 41002963118, 41002977775, 41002991918, 41003005378, 41003018819, 41003031371 ; à 5 000 : 41002942032, 41002956586, 41002970514, 41002984977, 41002998690, 41003012086, 41003024807, 41003037725 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 30 oct. à 11 h 10** — lancée à 5 h 26, ses attendus poussés avant (`dfd0b11`) ; seize succès finis entre 10 h 57 et 10 h 58 | **à 2 500 : 423,7 M positions, 283,0 M gardées, 28,73 % de nulles ; à 5 000 : 208,5 M, 142,8 M, 34,77 % ; écartées 21,13 et 21,23 % ; EPYC 7763 à 2 371 – 2 414 et 1 188 – 1 218 ; cumuls 4 802,8 et 2 425,9 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 16) — *Attendus, écrits avant* (section « N° 22 », la vague 16) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris celui de la vague 15 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **4 768 à 4 990 M** et **2 413 à 2 519 M** |
 | **N° 22 — la vague 17**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41038498010, 41038503392, 41038508460, 41038515601, 41038521982, 41038527496, 41038534089, 41038540629 ; à 5 000 : 41038500682, 41038505893, 41038512243, 41038518785, 41038524932, 41038530645, 41038537520, 41038543178 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 30 oct. à 16 h 48** — lancée à 11 h 08, ses attendus poussés avant (`98c0fc1`) ; seize succès finis entre 16 h 38 et 16 h 39 | **à 2 500 : 564,0 M positions, 376,6 M gardées, 28,76 % de nulles ; à 5 000 : 212,4 M, 145,5 M, 34,86 % ; écartées 21,07 et 21,18 % ; EPYC 7763 à 2 382 et 1 185 – 1 213 ; cumuls 5 179,4 et 2 571,4 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 17) — *Attendus, écrits avant* (section « N° 22 », la vague 17) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris celui de la vague 16 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **5 051 à 5 273 M** et **2 556 à 2 662 M** |
-| **N° 22 — la vague 18**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41083820284, 41083827705, 41083834085, 41083840815, 41083847731, 41083855098, 41083861864, 41083867949 ; à 5 000 : 41083824206, 41083831007, 41083837696, 41083844263, 41083851712, 41083858582, 41083864853, 41083871116 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 30 oct. à 16 h 46**, ses attendus poussés avant (`3ee023a`) ; relève vers 22 h 25 | — *Attendus, écrits avant* (section « N° 22 », la vague 18) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris celui de la vague 17 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **5 427 à 5 649 M** et **2 701 à 2 807 M** |
+| **N° 22 — la vague 18**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41083820284, 41083827705, 41083834085, 41083840815, 41083847731, 41083855098, 41083861864, 41083867949 ; à 5 000 : 41083824206, 41083831007, 41083837696, 41083844263, 41083851712, 41083858582, 41083864853, 41083871116 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 30 oct. à 22 h 29** — lancée à 16 h 46, ses attendus poussés avant (`3ee023a`) ; seize succès finis à 22 h 17 | **à 2 500 : 448,3 M positions, 299,4 M gardées, 28,73 % de nulles ; à 5 000 : 219,0 M, 150,0 M, 34,81 % ; écartées 21,08 et 21,19 % ; cumuls 5 478,7 et 2 721,4 M — dix chiffres sur douze dans l'attendu ; les deux autres, le débit d'un EPYC 7763, chacun HORS de peu par un seul job : 2 347 contre 2 350 et 1 175 contre 1 180, les moyennes à 2 382 et 1 204** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 18) — *Attendus, écrits avant* (section « N° 22 », la vague 18) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris celui de la vague 17 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **5 427 à 5 649 M** et **2 701 à 2 807 M** |
+| **N° 22 — la vague 19**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41131049525, 41131054663, 41131059987, 41131065622, 41131072097, 41131078120, 41131082740, 41131088367 ; à 5 000 : 41131052139, 41131057273, 41131062535, 41131068877, 41131075301, 41131080371, 41131085830, 41131091022 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 30 oct. à 22 h 26**, ses attendus poussés avant (`bd92c82`) ; relève vers 4 h 05 le 31 | — *Attendus, écrits avant* (section « N° 22 », la vague 19) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris celui de la vague 18 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **5 727 à 5 949 M** et **2 851 à 2 957 M** |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
 | **N° 20, séance C2c — N9pfbs800 contre N9w50s800** | **40610093856, 40610102423, 40610110837, 40610118331** | `ad84d1f` (N9pfbs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 7 h 28** — lancés à 1 h 39, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 6 h 38 et 6 h 47 | **+1,40 ± 3,27 en commun** (−2,73, +2,85, +4,09, +1,36 ; p = 0,463) — dans l'attendu, **pas candidat** (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −4 à +4, ~0 (« La séance C2c ») |
@@ -13947,6 +13948,64 @@ vague 17 :
   coup le rendrait complaisant ;
 - **l'attendu du cumul de la vague 18 s'en déduit** : à 2 500, **5 427 à
   5 649 M** ; à 5 000, **2 701 à 2 807 M**.
+
+**La vague 19 — écrite avant de la lancer**, le 30 oct. à 22 h 26, la
+vague 18 finie et pas encore relevée. La même recette, seize jobs, huit
+par budget en alternance, 2 500 d'abord, tous appris. *Attendus* — les
+dix-huit vagues :
+- **les huit à 2 500 : 370 à 700 M positions, 248 à 470 M gardées** ;
+  **les huit à 5 000 : 190 à 345 M positions, 130 à 236 M gardées** ;
+- **écartées 20,8 à 21,6 %** aux deux budgets ; **nulles 28,4 à 29,0 %**
+  à 2 500, **34,5 à 35,1 %** à 5 000 ;
+- **positions par seconde sur un EPYC 7763 : 2 350 à 2 500** à 2 500,
+  **1 180 à 1 260** à 5 000 ;
+- **le cumul appris** : celui de la vague 18, relevé après ce paragraphe,
+  **plus 248 à 470 M** à 2 500 et **plus 130 à 236 M** à 5 000.
+
+**La vague 18, RELEVÉE le 30 oct. à 22 h 29 — dix chiffres sur douze dans
+leur attendu ; les deux autres, le débit d'un EPYC 7763, hors de peu.**
+Seize succès, finis à 22 h 17, chaque journal donnant le budget de sa
+moitié ; les douze derniers lus nomment `a4a6490` — les quatre premiers,
+lus à partir de la ligne du runner, sont partis de la même commande, ce
+commit en entrée ; `tools/n22-jobs.tsv`, la vague 18 :
+
+| | à 2 500 nœuds | à 5 000 nœuds | attendu, écrit avant |
+|---|---|---|---|
+| positions, les huit | **448,3 M** | **219,0 M** | 370 à 700 M ; 190 à 345 M — dedans |
+| gardées, tous appris | **299,4 M** | **150,0 M** | 248 à 470 M ; 130 à 236 M — dedans |
+| parties écartées, sur les gardées | **21,08 %** (20,88 à 21,26) | **21,19 %** (21,03 à 21,30) | 20,8 à 21,6 % — dedans |
+| nulles, sur les gardées | **28,73 %** (28,65 à 28,85) | **34,81 %** (34,75 à 34,87) | 28,4 à 29,0 % ; 34,5 à 35,1 % — dedans |
+| positions par seconde, EPYC 7763 | **2 347 à 2 407**, cinq jobs, moyenne 2 382 | **1 175 à 1 220**, cinq, moyenne 1 204 | 2 350 à 2 500 ; 1 180 à 1 260 — **HORS, chacun par un seul job**, de 3 et de 5 |
+| cumul appris | **5 478,7 M** | **2 721,4 M** | 5 427 à 5 649 M ; 2 701 à 2 807 M — dedans, à 5 000 près du bas |
+
+- **les deux débits hors de l'attendu** : 41083834085 (2 347, à 2 500) et
+  41083851712 (1 175, à 5 000), les plus bas jamais lus sur un 7763 au
+  n° 22 — jusqu'ici 2 369 et 1 182 au plus bas, vagues 1 à 17. Les
+  autres 7763 de la vague sont au milieu de leur plage, et tous les jobs
+  jouent le même binaire. *Inférence, confiance moyenne* : deux hôtes
+  plus lents, pas le générateur. *Fait* : le budget est en nœuds par
+  coup — le débit fixe le volume d'un job, pas son étiquette ; les
+  données de ces deux jobs s'apprennent comme les autres ;
+- **la plage des 7763 a glissé** — lu aux relevés, même binaire : le plus
+  haut 7763 de chaque vague valait, à 2 500, **2 422 à 2 477** aux vagues
+  1 à 9 (médiane 2 456), **2 382 à 2 431** depuis la vague 10 (médiane
+  2 418) ; à 5 000, **1 227 à 1 241**, puis **1 208 à 1 221**. Environ
+  1,5 % en quatre jours. *Inférence, confiance faible* : l'image des
+  runners ou leur charge — rien ne le vérifie ici, et rien n'en dépend
+  que le volume ;
+- **la borne basse descend, comme aux vagues 5 et 9** — et pour la
+  première vague dont l'attendu n'est pas encore écrit : la **20**,
+  celui de la 19 ayant été poussé avant ce relevé. **2 300 à 2 500** à
+  2 500 et **1 150 à 1 260** à 5 000. Elle garde ce qu'elle doit garder :
+  un générateur construit sans AVX2, × 0,81, tomberait vers 1 940 et
+  975 ;
+- **le parc** : à 2 500, cinq 7763, un 9V45 (4 263), un 9V74 (3 134), un
+  Xeon 6973P-C (3 337) ; à 5 000, cinq 7763, un 9V74 (1 580), un 9V45
+  (2 110), un Xeon 8573C (1 353 — une troisième vitesse, après 1 169 à
+  1 214 et 1 416) ;
+- 142 et 143 jobs appris ; le rapport des volumes, × 2,01 ;
+- **l'attendu du cumul de la vague 19 s'en déduit** : à 2 500, **5 727 à
+  5 949 M** ; à 5 000, **2 851 à 2 957 M**.
 
 **Après elle** : la séance des trois réseaux (E5n, E2.5v, E2.5t) s'écrit
 pour la carte de Théo, la semaine suivante — il n'a plus de portable
