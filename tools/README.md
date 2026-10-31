@@ -15669,6 +15669,42 @@ fait tourner la recherche à vide.
 
 ### Ce qui reste à faire, par ordre mesuré
 
+#### Feuille de route — validée par Théo le 31 oct. 2026
+
+<!-- feuille-de-route -->
+Validée par Théo le 31 oct. 2026 (« *ok je valide cet ordre* ») ; le détail
+de chaque ligne est dans « La file », juste dessous. Rien ne s'y fait en
+pilote automatique : une ligne commence quand sa condition est remplie,
+pas parce que des runners sont libres.
+1. Jusqu'au reset de la limite hebdomadaire (~2 nov.) : relèves et doc
+   seulement. Génération du n° 22 en pause après la vague 21.
+2. Phase 4, la recherche, au reset : l'historique borné, puis la LMR
+   modulée et l'élagage par l'historique (rejeu, puis 4 jobs par
+   candidat). Chaque candidat joué aussi sur un livre déséquilibré : sa
+   calibration (« le débit de mesure », point 1).
+3. En parallèle de 2 : l'inférence multicouche écrite dans le moteur,
+   confrontée au code de bullet, prête pour l'entraînement au verdict de C3.
+4. Carte de Théo, semaine du 2 nov. : séance n° 22 (2 500 contre 5 000
+   nœuds, plus un 4ᵉ réseau pour le tour de boucle, à ajouter à
+   `tools/seance-n22.sh`), puis C3 (N10, N10r10, N10h384, N10h512), ~39 h.
+5. Après C3 : embarquer le gagnant (sonde des marges, série C13) ;
+   16 seaux de roi si 10 a payé ; 1 024 et couches cachées si la largeur paie.
+6. Reprendre la génération, étiquetée par le nouveau réseau, au rythme
+   que la carte consomme.
+7. SPSA (réglages post-NNUE) : après le cœur de la phase 4 et le réseau
+   stabilisé ; refait à chaque réseau embarqué.
+8. Le socle : après le pilote de Théo sur son autre projet, un second
+   essai à blanc sur chess, puis l'installation réelle entre deux
+   campagnes. Il ne bloque pas la phase 4.
+9. OpenBench (serveur sur le MeLE, clients : runners et portable) quand
+   les effets cherchés passent sous ~3 Elo.
+10. En dernier : 1 600 superlots sur la recette finale ; la phase 6
+    (ProbCut, multi-cut, razoring).
+11. Sur déclencheur : l'Elo absolu au-delà de 3190 (fourchette grossière
+    contre Stockfish non bridé à tout moment, vrai chiffre contre 3 à 5
+    moteurs classés à ± 150) ; un serveur loué, aux conditions écrites.
+<!-- /feuille-de-route -->
+
 #### La file — réécrite le 20 oct. 2026, dans l'ordre où la faire
 
 Théo, 20 oct. : « *Je valide tous ces points, tout ce qui vaut le coup d'être
@@ -15692,7 +15728,7 @@ reste le gros gisement : chaque marche a payé, N6r4 +98,74 la dernière.
 | **(b) — Leela mêlé à nos données** | depuis zéro, nos données et le binpack dans le même entraînement (`--melange`) | **derrière la séance B et la composition** — Théo, 20 oct. ; son attendu baisse : le réglage fin sur Leela régresse (−11,42), troisième verdict dans le même sens |
 | **la composition** | les gagnants de A, B, (a), (b) et (d) dans un réseau neuf, mesuré à son tour — leurs Elo ne s'additionnent jamais sur le papier | à leurs verdicts |
 | **(e) — le budget de l'étiqueteur** | étiqueter à 10 000 nœuds au lieu de 5 000, ~780 M positions ; à volume égal, puis à temps de runner égal | **protocole écrit le 20 oct. à 22 h 09** ; **génération CLOSE le 22 oct. à 4 h 27 : 801,4 M gardées, 80 jobs en cinq vagues**, chaque vague dans ses attendus ; E10 et E5v entraînés ; **VERDICT le 26 oct.** : E10 contre E5t **−7,38 ± 3,40**, régression démontrée — **5 000 nœuds restent** ; contre E5v −1,49 ± 3,38, l'étiquette à 10 000 ne rend rien ; E5t contre E5v **+8,94 ± 3,32**, le volume paie ; **2 500 nœuds au test suivant**, à volume égal ; 10 000 ne remplace 5 000 que s'il démontre à temps égal (« (e) — le budget de l'étiqueteur », « La séance C1 ») |
-| **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) ; **étiquetées par le réseau qui joue** — N8tw50s800, ~+40 sur N6r4 par la chaîne (+16,89, +17,91, +5,43) — : un meilleur étiqueteur paie (+12,76 à volume égal) et une étiquette plus faible n'ajoute rien à passes égales (+0,25 ± 4,71) ; ce qu'apporte mêler N6r4 et le suivant, inconnu — **validé par Théo le 21 oct. à 23 h 51** (« *Je valide ton approche* ») : **le n° 21, écrit le 22 oct.** — 5 000 nœuds, le budget en place, une tranche de 1,75 G gardées, 10 000 en cours de route si E10 démontre en C1 — il a régressé (−7,38 ± 3,40) : 5 000 jusqu'au bout (« N° 21 ») ; **les vagues 1 à 5 relevées** (1 620,5 M appris ; les nulles de l'étiqueteur, 33,81 à 33,86 % les cinq fois), **la vague 6, la dernière, lancée le 26 oct.** — sept jobs ; **la tranche suivante, le n° 22, écrite le 26 oct.** — étiquetée par N9w50s800, moitié à 2 500 nœuds, moitié à 5 000, le budget mesuré à volume égal et à temps de runner égal (« N° 22 ») ; N9w50s800 embarqué le 22 oct., la tranche garde N8tw50s800 pour étiqueteur (~+0,6 au tour, sous toute mesure). **Le tour de boucle seul rend peu** : ~0,12 Elo de réseau par Elo d'étiqueteur, donc ~+5 au prochain tour (0,12 × ~40) et de moins en moins ensuite — <span>inférence, confiance faible</span> ; le gros vient du volume, des passes et de l'architecture, et le tour est gratuit puisqu'on génère de toute façon |
+| **plus de données encore** | continuer à générer, au budget que (e) désigne : doubler payait encore +7,32 | runners, en continu après (e) ; **étiquetées par le réseau qui joue** — N8tw50s800, ~+40 sur N6r4 par la chaîne (+16,89, +17,91, +5,43) — : un meilleur étiqueteur paie (+12,76 à volume égal) et une étiquette plus faible n'ajoute rien à passes égales (+0,25 ± 4,71) ; ce qu'apporte mêler N6r4 et le suivant, inconnu — **validé par Théo le 21 oct. à 23 h 51** (« *Je valide ton approche* ») : **le n° 21, écrit le 22 oct.** — 5 000 nœuds, le budget en place, une tranche de 1,75 G gardées, 10 000 en cours de route si E10 démontre en C1 — il a régressé (−7,38 ± 3,40) : 5 000 jusqu'au bout (« N° 21 ») ; **les vagues 1 à 5 relevées** (1 620,5 M appris ; les nulles de l'étiqueteur, 33,81 à 33,86 % les cinq fois), **la vague 6, la dernière, lancée le 26 oct.** — sept jobs ; **la tranche suivante, le n° 22, écrite le 26 oct.** — étiquetée par N9w50s800, moitié à 2 500 nœuds, moitié à 5 000, le budget mesuré à volume égal et à temps de runner égal (« N° 22 ») ; N9w50s800 embarqué le 22 oct., la tranche garde N8tw50s800 pour étiqueteur (~+0,6 au tour, sous toute mesure). **Le tour de boucle seul rend peu** : ~0,12 Elo de réseau par Elo d'étiqueteur, donc ~+5 au prochain tour (0,12 × ~40) et de moins en moins ensuite — <span>inférence, confiance faible</span> ; le gros vient du volume, des passes et de l'architecture, et le tour est gratuit puisqu'on génère de toute façon ; **EN PAUSE après la vague 21 du n° 22** (31 oct., question de Théo) : ~14,6 G gardées en stock, ~4 fois ce qu'a vu N9w50s800 — c'est la carte qui borne l'entraînement, plus les données (à 800 superlots, ~4 fois moins de passes par position) ; reprise étiquetée par le réseau de C3, au rythme de la carte (« Feuille de route ») |
 
 **La séance C, découpée en trois — proposée et validée le 21 oct. à
 23 h 51** (Théo : « *Je valide ton approche* » ; N8nw50s800 y entre : « *oui on
@@ -15907,9 +15943,15 @@ fichier. **Lu, pas exécuté** le 29 oct., à `edc72e7` (branche
   n'attend pas de validation* » ; notre unité de travail est une hypothèse
   mesurée, pas une story, et « La file » planifie déjà ;
 - **quand** : la politique écrite par Théo d'abord (les fusions), puis
-  l'installation réelle entre deux campagnes — de préférence après les
-  verdicts de C3 et avant la phase 4, où ses règles de test paient le
-  plus.
+  l'installation réelle entre deux campagnes. <s>de préférence après les
+  verdicts de C3 et avant la phase 4</s> **Corrigé le 31 oct.** : la
+  phase 4 court en parallèle des réseaux et n'attend pas le socle.
+  **Théo, 31 oct.** : le socle a évolué, BMAD retiré et des bugs corrigés.
+  Il l'éprouve d'abord en pilote sur son autre projet ; puis **un second
+  essai à blanc sur chess**, avant l'installation réelle, qui vérifie les
+  frictions du premier : poussée de documentation seule (3 min 45 s),
+  deux états au démarrage, `ui/` hors adaptateur, `<s>` non lu, tests de
+  déterminisme à annoter, plafonds de mutation à reprendre.
 
 **L'essai à blanc, FAIT le 29 oct. à 12 h 51** — le socle à `edc72e7`, en
 adoption, sur une copie de `main` dans le dossier de travail de la session,

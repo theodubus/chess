@@ -44,6 +44,10 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   périmée.
 - Ce qui s'exécute sans qu'on l'appelle : section *Ce qui tourne tout seul*,
   plus bas.
+- **La feuille de route, validée par Théo le 31 oct. 2026** : `tools/README.md`,
+  en tête de « Ce qui reste à faire » — l'ordre des prochains chantiers et
+  leurs conditions, **imprimé par `tools/etat.sh` à chaque reprise**. Rien
+  ne s'y fait en pilote automatique.
 - Ce sur quoi travailler : **la file validée**, `tools/README.md`, section
   *Ce qui reste à faire*, sous-section *La file* — réécrite le 20 oct. 2026
   dans l'ordre où faire, Théo : « *Je valide tous ces points, tout ce qui

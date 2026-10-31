@@ -96,11 +96,22 @@ fi
 # état ne vieillisse.
 #
 # Deux classes, et la distinction est le tout du dispositif :
-#   ÉPISODIQUE  — « EN VOL », « VERDICT » n'existent que quand quelque chose
+#   ÉPISODIQUE  — « EN VOL » n'existe que quand quelque chose
 #                 tourne ou vient d'être tranché. Absentes, elles se taisent :
 #                 un garde-fou qui crie en permanence finit par être ignoré.
 #   STRUCTUREL  — les autres doivent exister. Leur absence est une erreur, et
 #                 c'est le travail du script de la dire.
+# La feuille de route se lit dans tools/README.md, entre ses deux marqueurs,
+# et s'imprime telle quelle : rien n'est recopié ici. Elle remplace la liste
+# de tous les titres « VERDICT », qui renvoyait aux verdicts de septembre —
+# l'état d'aujourd'hui ne s'y lisait plus (Théo, 31 oct. 2026).
+feuille=$(awk '/<!-- feuille-de-route -->/{f=1; next} /<!-- \/feuille-de-route -->/{f=0} f' tools/README.md 2>/dev/null)
+if [ -n "$feuille" ]; then
+  echo "feuille de route (tools/README.md, « Ce qui reste à faire ») :"
+  sed 's/^/  /' <<< "$feuille"
+else
+  echo "!! tools/README.md n'a plus de feuille de route entre ses marqueurs — à corriger"
+fi
 echo "à lire avant de décider quoi faire :"
 
 # TOUS les titres qui correspondent, pas le premier : deux mesures peuvent être
@@ -120,7 +131,6 @@ renvoi() {
 }
 
 renvoi "EN VOL"                    "ce qui tourne en ce moment"                        non
-renvoi "VERDICT"                   "ce qui vient d'être tranché, et la suite"          non
 renvoi "Ce qu.il faut surveiller"  "ce qui vieillit sans que rien ne le signale"       oui
 renvoi "Ce qui reste à faire, par ordre mesuré" ""                                oui
 
