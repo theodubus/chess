@@ -257,7 +257,6 @@ try {
       ),
     );
     await screenshot("01-setup-desktop");
-    await click(".engine-settings summary");
     await waitFor(
       `document.querySelector('input[name="ponder"]')?.disabled === false && document.querySelector('input[name="engine-threads"]')?.disabled === false`,
       "capacités Ponder et Threads du moteur",
@@ -294,7 +293,7 @@ try {
       );
     }
     await setupNumber("engine-threads", threads);
-    await button("Éditer le camp");
+    await button("Modifier la position de départ");
     await waitFor(
       `document.querySelector('.army-squares')`,
       "éditeur du camp adverse",
@@ -313,7 +312,7 @@ try {
       ),
       "armée personnalisée enregistrée",
     );
-    await button("Éditer le camp");
+    await button("Modifier la position de départ");
     await button("Déplacer");
     await click('.army-squares [data-square="b8"]');
     await click('.army-squares [data-square="c6"]');
@@ -451,7 +450,6 @@ try {
     await button("Abandonner");
     await button("Confirmer l’abandon");
     await button("Nouvelle partie");
-    await click(".engine-settings summary");
     await waitFor(
       `document.querySelector('input[name="ponder"]')?.checked`,
       "options conservées pour la prochaine partie",

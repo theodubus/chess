@@ -129,7 +129,7 @@ summary:focus-visible,
   background: #d8bd8014;
 }
 .setup-screen {
-  max-width: 510px;
+  max-width: 880px;
   margin: clamp(16px, 5vh, 56px) auto;
 }
 .setup-intro {
@@ -1719,4 +1719,67 @@ html.board-focus .workspace.play-workspace.with-history {
     max-height: calc(100dvh - 32px);
     overflow: auto;
   }
+}
+
+/* L'écran de préparation à plat (2 nov. 2026) : profils et cadences en
+   grilles pleine largeur, deux cases côte à côte, aucun menu à déplier. */
+.card-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.card-grid.cadence-grid { grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.7fr); }
+.card-grid.profile-grid { row-gap: 18px; padding-top: 6px; }
+.card-grid .choice { padding: 12px 6px; }
+.profile-card { position: relative; display: block; width: 100%; padding: 12px; text-align: left; font-weight: 400; background: #ffffff05; border-color: #ffffff20; color: #d9dfd8; }
+.profile-card strong { display: block; font-size: 13px; color: #eeeae0; }
+.profile-card small { display: block; margin-top: 4px; font-size: 11px; color: #a3b3a8; }
+.profile-card[aria-pressed="true"] { background: #d8bd801c; border-color: #d8bd80; }
+/* L'étiquette chevauche le bord haut de la carte : aucune ligne à elle,
+   aucun vide ; un fond opaque, pour que la bordure ne la traverse pas. */
+.level { position: absolute; top: -9px; right: 10px; padding: 2px 7px; border: 1px solid; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.level-facile { background: #1d3125; color: #8fd4a0; border-color: #6fbf8255; }
+.level-moyen { background: #33291a; color: #eec27a; border-color: #e0a94a55; }
+.level-difficile { background: #38211e; color: #f09a8c; border-color: #e0705f55; }
+.level-abominable { background: #070908; color: #c8cec9; border-color: #ffffff2e; }
+.custom-cadence { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 8px; border: 1px solid #ffffff20; border-radius: 7px; background: #ffffff05; font-size: 12px; color: #a3b3a8; }
+.custom-cadence.active { border-color: #d8bd80; background: #d8bd801c; color: #f0d494; }
+.time-fields { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 13px; color: #b9c7be; }
+.time-fields input { width: 54px; padding: 6px 4px; text-align: center; }
+.player-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.player-box { display: grid; align-content: start; gap: 12px; padding: 14px; border: 1px solid #ffffff16; border-radius: 12px; min-width: 0; }
+.box-title { margin: 0; font-size: 13px; color: #eeeae0; }
+.box-title small { display: block; margin-top: 3px; font-size: 11px; font-weight: 400; color: #a9b8ae; }
+.clock-field { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.clock-value { font-size: 30px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: #eeeae0; }
+.clock-value small { margin-left: 6px; font-size: 15px; font-weight: 500; color: #a9b8ae; }
+.setup-card .clock-field .text-button,
+.setup-card .reset-time,
+.setup-card .advice-line .text-button { margin: 0; padding: 0; font-size: 12px; color: #d8bd80; text-decoration: underline; }
+.setup-card .reset-time { justify-self: end; color: #e9cb87; }
+.clock-editing { display: grid; gap: 10px; padding: 12px; border: 1px solid #d8bd8055; border-radius: 10px; background: #d8bd800a; }
+.clock-editing .setting-help { margin: 0; }
+.clock-actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.clock-actions button { padding: 7px 14px; font-size: 13px; }
+.setup-card .clock-actions .text-button { margin: 0; }
+.setting-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; color: #d9dfd8; }
+.setup-card .setting-line label { display: block; color: #d9dfd8; }
+.engine-settings-body { display: grid; gap: 10px; }
+.engine-settings-body > p { margin: 0; }
+.advice-line { margin: 0; text-align: right; font-size: 11px; color: #96a99c; }
+.setup-card label.setting-switch.trailing { padding: 0; border: 0; background: none; justify-content: space-between; }
+.setup-card label.setting-switch.trailing:has(input:checked) { background: none; }
+.setting-switch.trailing input { left: auto; right: 0; top: 50%; margin-top: -13px; }
+.setting-switch.trailing .setting-copy strong { font-size: 13px; font-weight: 400; color: #d9dfd8; }
+.setting-switch.trailing .setting-help { font-size: 11px; }
+.analysis-engine-choice.compact { gap: 6px; }
+.analysis-engine-choice.compact summary { font-size: 11px; }
+.setup-card .analysis-engine-choice.compact > .text-button { justify-self: start; margin: 0; padding: 0; font-size: 11px; color: #96a99c; text-decoration: underline; }
+.position-entry { display: grid; justify-items: center; gap: 8px; margin: 4px 0 20px; text-align: center; }
+.setup-card .position-link { margin: 0; padding: 6px 10px; background: none; border: 0; color: #e9cb87; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; }
+.position-link::before { content: "✎"; display: inline-block; margin-right: 6px; text-decoration: none; }
+.position-entry .setting-help { margin: 0; }
+.position-sides { width: 100%; max-width: 420px; }
+@media (max-width: 650px) {
+  .card-grid,
+  .card-grid.cadence-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .custom-cadence { grid-column: span 2; flex-direction: row; justify-content: space-between; padding: 10px 14px; }
+  .player-boxes { grid-template-columns: 1fr; }
+  .card-grid .choice { white-space: nowrap; }
 }

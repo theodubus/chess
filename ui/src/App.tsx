@@ -89,7 +89,11 @@ export default function App() {
       initialFen:
         next.opponent === "engine"
           ? handicapPosition(next.handicap, humanSide)
-          : next.opponent === "match" ? matchPosition(next.matchArmies) : undefined,
+          : next.opponent === "match"
+            ? matchPosition(next.matchArmies)
+            : next.humanArmies.w || next.humanArmies.b
+              ? matchPosition(next.humanArmies)
+              : undefined,
       engineOptions: next.engineOptions,
     });
     const activate = () => {
