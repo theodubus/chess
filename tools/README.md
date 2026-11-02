@@ -14231,6 +14231,80 @@ passes de N9w50s800 : ils mesurent un budget, pas un réseau.
 dépendent, et sa base N10, entraînée sur les mêmes, la rend juste dans
 les deux cas.
 
+### N° 23 — l'historique borné (phase 4) : protocole et attendus, écrits le 2 nov. avant de mesurer
+
+**La décision** — la feuille de route validée par Théo le 31 oct., point 2 :
+la phase 4 au reset, l'historique borné d'abord, puis la LMR modulée et
+l'élagage par l'historique — les deux fermés à l'écran du 7 oct. faute
+d'échelle (n° 12, « L'échelle de l'historique n'est pas bornée »).
+
+**Ce qu'est l'historique aujourd'hui** (`search.rs`, lu le 2 nov.) : le
+papillon (`64 × 64`, sans la couleur) et la continuation à un et deux plis
+gagnent `d²` à chaque coupure par un tranquille ; les tranquilles cherchés
+avant le coupeur perdent `d²` (C49) ; une table se divise par deux quand
+une note passe ±800 000. Le papillon se vide à chaque `go`, la
+continuation non (A20). Aucune règle de la recherche ne lit la note, hors
+l'ordre des tranquilles.
+
+**La référence extérieure, lue dans son source** (`sf_16`, `movepick.h` et
+`search.cpp`, 2 nov.) : la gravité `note += b − note·|b|/D` ; le bonus
+`min(336·d − 547, 1561)` ; le plafond 7 183 au papillon, 29 952 à la
+continuation ; la LMR `r −= (2·papillon + trois continuations − 4006) /
+(11124 + …)` ; l'élagage d'un tranquille dont la somme des continuations
+passe sous `−3832·d`, à faible profondeur réduite. Stockfish ne vide pas
+son papillon entre deux coups. À sa profondeur 1, son bonus est négatif :
+la sonde le borne à 1.
+
+**La sonde** — un binaire de MESURE (`N23`, variantes combinables par
+`+`) ; sans elle, `main` au nœud près — le banc à la profondeur 10 rend
+376 089 nœuds des deux côtés :
+- `g:D` — la gravité, plafond `D` aux deux tables, sans division ;
+  `gc:D` — un plafond propre à la continuation ;
+- `lin:A:B:C` — le bonus et le malus valent `clamp(A·d − B, 1, C)` ;
+- `hk` — le papillon conservé d'un `go` à l'autre ;
+- `lmrh:K` — la réduction d'un tranquille diminue de sa note / `K`, ou
+  augmente si elle est négative, bornée à `[0, d − 2]` ;
+- `hp:T` — un tranquille de note sous `−T·d` se saute, profondeur ≤ 4,
+  gardes de la futilité aux frontières ; `hpo:T`, le même en ombre : les
+  sautés comptés, et ceux d'entre eux qui, cherchés, montent `alpha`.
+
+**Le journal** : 60 parties neuves de `main` à `701b609` contre lui-même,
+`8+0,08`, le livre de 15 000, graine 20261102, binaire AVX2 — le journal
+du cinquième écran est perdu avec son conteneur. Rejoué à la profondeur
+10 et 12, deux flux par partie, un par camp, table et historiques
+conservés d'un coup à l'autre (`rejouer.py`, dans la rustine).
+
+**Attendus, écrits avant** — <span>inférence, confiance faible</span>, à
+la profondeur 12, contre `main` :
+- `g:16384` — la borne seule, le bonus de `main` : **± 1 %**. Aux
+  profondeurs jouées, les notes restent loin d'un tel plafond — le banc à
+  la profondeur 10 n'en bouge que de −0,2 % à `g:4096` ;
+- `g:7183+gc:29952+lin:336:547:1561` — les échelles de Stockfish 16, que
+  la suite appellera **G** : **−5 à +8 %**. Le bonus devient grand devant
+  le plafond, l'historique se souvient du récent ;
+- **G+`hk`** : **−3 à +5 %** sur G ; sans gravité, A20 trouvait +4,4 % au
+  papillon conservé ;
+- **G+`lmrh:11000`** : **−10 à +10 %** sur G — moins réduire les bien
+  notés, plus les mal notés ; **G+`lmrh:6000`** : le double de l'effet ;
+- **G+`hp:3832`** : **−1 à −6 %** sur G ; en ombre, **3 à 15 %** des
+  sautés montent `alpha`.
+
+**Ce que l'écran décide** :
+- **un candidat de gravité quel que soit son arbre** — c'est la
+  condition des deux lignes suivantes, et un changement d'ordre ; le
+  plus petit arbre parmi `g:16384`, G et G+`hk`, sauf si un autre ne
+  s'en distingue pas de plus de 1 % : alors le plus simple ;
+- **la LMR modulée** candidate si elle déplace l'arbre de plus de 2 % ;
+- **l'élagage par l'historique** candidat si son économie dépasse dix
+  points d'arbre par point de dégâts — la futilité et l'élagage par
+  compte en achetaient 11 à 15, C40, qui a régressé, 5 ;
+- chaque candidat **joué deux fois** : quatre jobs de 2 800 parties à
+  `8+0,08` sur le livre de 15 000, et les mêmes sur un livre déséquilibré
+  — sa calibration (« le débit de mesure », point 1), écrite avant ses
+  matchs ;
+- une seconde série, si la première l'appelle, se dit **ajoutée après
+  lecture**, avec ses raisons.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
