@@ -1,0 +1,329 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 442243b..dcd6c1d 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -1263,21 +1263,11 @@ impl Search {
+         depth: i32,
+         context: [Option<usize>; 2],
+     ) {
+-        let bonus = depth * depth;
++        let bonus = history_bonus(depth);
+         let target = piece_to(board, mv);
+-        let mut overflow = false;
+         for previous in context.into_iter().flatten() {
+             if let Some(value) = self.continuation.get_mut(previous * PIECE_TO + target) {
+-                *value += bonus;
+-                overflow |= *value > HISTORY_MAX;
+-            }
+-        }
+-        if overflow {
+-            // Même règle que le papillon : diviser toute la table préserve
+-            // l'ordre relatif. Rare — une entrée de continuation ne voit que
+-            // les coupures de son contexte.
+-            for entry in &mut self.continuation {
+-                *entry /= 2;
++                gravity(value, bonus, CONTINUATION_CAP);
+             }
+         }
+ 
+@@ -1290,14 +1280,7 @@ impl Search {
+         }
+         let index = mv.from as usize * 64 + mv.to as usize;
+         if let Some(value) = self.history.get_mut(index) {
+-            *value += bonus;
+-            if *value > HISTORY_MAX {
+-                // Diviser toute la table préserve l'ordre relatif tout en
+-                // laissant de la place aux coupures à venir.
+-                for entry in &mut self.history {
+-                    *entry /= 2;
+-                }
+-            }
++            gravity(value, bonus, BUTTERFLY_CAP);
+         }
+     }
+ 
+@@ -1328,13 +1311,11 @@ impl Search {
+     }
+ 
+     /// LE MALUS D'HISTORIQUE (C49) : à une coupure par un coup tranquille,
+-    /// les tranquilles cherchés avant lui depuis `board` perdent `d²` au
+-    /// papillon et à la continuation, ce que le coupeur gagne. Sans lui,
+-    /// l'historique ne recevait que des bonus : un coup souvent essayé et
+-    /// jamais coupeur gardait sa note, et aucune n'était négative.
+-    ///
+-    /// Même règle de débordement que les bonus, dans l'autre sens : sous
+-    /// `−HISTORY_MAX`, les deux tables se divisent par deux.
++    /// les tranquilles cherchés avant lui depuis `board` perdent au papillon
++    /// et à la continuation ce que le coupeur gagne. Sans lui, l'historique
++    /// ne recevait que des bonus : un coup souvent essayé et jamais coupeur
++    /// gardait sa note, et aucune n'était négative. La gravité le borne
++    /// comme le bonus, dans l'autre sens (n° 23).
+     fn punish_quiets(
+         &mut self,
+         board: &Board,
+@@ -1342,29 +1323,18 @@ impl Search {
+         depth: i32,
+         context: [Option<usize>; 2],
+     ) {
+-        let malus = depth * depth;
+-        let mut overflow = false;
++        let malus = history_bonus(depth);
+         for &mv in tried {
+             let target = piece_to(board, mv);
+             if let Some(value) = self.history.get_mut(mv.from as usize * 64 + mv.to as usize) {
+-                *value -= malus;
+-                overflow |= *value < -HISTORY_MAX;
++                gravity(value, -malus, BUTTERFLY_CAP);
+             }
+             for previous in context.into_iter().flatten() {
+                 if let Some(value) = self.continuation.get_mut(previous * PIECE_TO + target) {
+-                    *value -= malus;
+-                    overflow |= *value < -HISTORY_MAX;
++                    gravity(value, -malus, CONTINUATION_CAP);
+                 }
+             }
+         }
+-        if overflow {
+-            for entry in &mut self.history {
+-                *entry /= 2;
+-            }
+-            for entry in &mut self.continuation {
+-                *entry /= 2;
+-            }
+-        }
+     }
+ 
+     /// La note d'historique d'un coup tranquille.
+@@ -2776,9 +2746,30 @@ const SCORE_CAPTURE: i32 = 4_000_000;
+ const SCORE_PROMOTION: i32 = 2_000_000;
+ const SCORE_KILLER_1: i32 = 1_000_000;
+ const SCORE_KILLER_2: i32 = 900_000;
+-/// Plafond de l'historique, au-delà duquel toutes les valeurs sont divisées par
+-/// deux. Sans cela elles finiraient par déborder et par écraser les paliers.
+-const HISTORY_MAX: i32 = 800_000;
++/// LA GRAVITÉ (n° 23) : une note d'historique s'approche de sa borne sans
++/// jamais la passer — `note += b − note·|b| / plafond`. Sans elle, une note
++/// gagnait `d²` par coupure et ne se divisait qu'à 800 000 : son échelle
++/// grandissait avec la profondeur cherchée, et aucun seuil fixe ne pouvait
++/// la lire (n° 12, « L'échelle de l'historique n'est pas bornée »). Le
++/// plafond est au-dessus du plus grand bonus — la profondeur 127 rend
++/// 16 129 — : la borne se lit sans changer l'ordre des notes moyennes.
++const BUTTERFLY_CAP: i32 = 16_384;
++/// Le plafond de la continuation, le même.
++const CONTINUATION_CAP: i32 = 16_384;
++
++/// Le bonus — et le malus — d'une coupure à la profondeur `depth`.
++fn history_bonus(depth: i32) -> i32 {
++    depth * depth
++}
++
++/// Applique `delta` à une note bornée par `cap`, la gravité comprise. Le
++/// produit passe par 64 bits : `|note| ≤ cap` et `|delta| ≤ cap`, donc
++/// l'amortissement tient sur 32 bits, pas le produit.
++fn gravity(value: &mut i32, delta: i32, cap: i32) {
++    let delta = delta.clamp(-cap, cap);
++    let decay = i64::from(*value) * i64::from(delta.abs()) / i64::from(cap);
++    *value += delta - decay as i32;
++}
+ 
+ /// Les tranquilles cherchés avant une coupure que le malus d'historique
+ /// retient, au plus (C49). Au-delà, rare, les suivants ne sont pas punis.
+@@ -4382,7 +4373,7 @@ mod tests {
+         assert_eq!(s.score_move(&b, killer, 5), s.score_move(&b, autre, 5));
+         // Dans `negamax`, par l'étage des killers, qui passe devant tous les
+         // tranquilles — y compris ceux dont l'historique est meilleur.
+-        s.history[autre.from as usize * 64 + autre.to as usize] = HISTORY_MAX;
++        s.history[autre.from as usize * 64 + autre.to as usize] = BUTTERFLY_CAP;
+         let mut buffer = vec![(NO_MOVE, 0); MAX_MOVES];
+         let mut picker = MovePicker::new(&mut buffer, None, s.killers[3], NO_CONTEXT);
+         assert_eq!(picker.next_move(&s, &b), Some(killer));
+@@ -4435,9 +4426,10 @@ mod tests {
+         let (adverse, notre) = (5, 77);
+         let mut s = search();
+         s.remember_quiet(&b, coup, 2, 3, [Some(adverse), Some(notre)]);
+-        // + d², dans chacun des deux contextes…
+-        assert_eq!(s.continuation[adverse * PIECE_TO + cible], 9);
+-        assert_eq!(s.continuation[notre * PIECE_TO + cible], 9);
++        // Le bonus de la profondeur 3, dans chacun des deux contextes…
++        let bonus = history_bonus(3);
++        assert_eq!(s.continuation[adverse * PIECE_TO + cible], bonus);
++        assert_eq!(s.continuation[notre * PIECE_TO + cible], bonus);
+         // … et nulle part ailleurs : ni pour un autre contexte, ni pour un
+         // autre coup de ces contextes.
+         assert_eq!(s.continuation.iter().filter(|&&v| v != 0).count(), 2);
+@@ -4448,7 +4440,7 @@ mod tests {
+     }
+ 
+     #[test]
+-    fn le_malus_punit_les_tranquilles_essayes_et_deborde_par_le_bas() {
++    fn le_malus_punit_les_tranquilles_essayes_et_reste_borne() {
+         let b = Board::default();
+         let coup = |uci: &str| cozy_chess::util::parse_uci_move(&b, uci).unwrap();
+         let (e4, d4, f3) = (coup("e2e4"), coup("d2d4"), coup("g1f3"));
+@@ -4456,53 +4448,34 @@ mod tests {
+         let (adverse, notre) = (5, 9);
+         let mut s = search();
+         s.punish_quiets(&b, &[e4, d4], 3, [Some(adverse), Some(notre)]);
+-        // −d² au papillon et sous chacun des deux contextes, par coup essayé…
++        // Le malus de la profondeur 3 au papillon et sous chacun des deux
++        // contextes, par coup essayé…
++        let malus = -history_bonus(3);
+         for mv in [e4, d4] {
+             let cible = piece_to(&b, mv);
+-            assert_eq!(s.history[papillon(mv)], -9);
+-            assert_eq!(s.continuation[adverse * PIECE_TO + cible], -9);
+-            assert_eq!(s.continuation[notre * PIECE_TO + cible], -9);
++            assert_eq!(s.history[papillon(mv)], malus);
++            assert_eq!(s.continuation[adverse * PIECE_TO + cible], malus);
++            assert_eq!(s.continuation[notre * PIECE_TO + cible], malus);
+         }
+         // … et à eux seuls : le coup qui n'a pas été essayé n'y perd rien.
+         assert_eq!(s.history[papillon(f3)], 0);
+         assert_eq!(s.history.iter().filter(|&&v| v != 0).count(), 2);
+         assert_eq!(s.continuation.iter().filter(|&&v| v != 0).count(), 4);
+ 
+-        // Le débordement par le bas divise les DEUX tables…
++        // À la borne, le malus n'enfonce plus rien — et ne touche à aucune
++        // autre note : la gravité remplace la division de toute la table.
+         let temoin = 300;
++        let entree = adverse * PIECE_TO + piece_to(&b, e4);
+         let mut t = search();
+-        t.history[papillon(e4)] = -HISTORY_MAX;
++        t.history[papillon(e4)] = -BUTTERFLY_CAP;
+         t.history[papillon(f3)] = 1000;
++        t.continuation[entree] = -CONTINUATION_CAP;
+         t.continuation[temoin] = 1000;
+-        t.punish_quiets(&b, &[e4], 1, NO_CONTEXT);
+-        assert_eq!(t.history[papillon(e4)], (-HISTORY_MAX - 1) / 2);
+-        assert_eq!(t.history[papillon(f3)], 500, "tout le papillon");
+-        assert_eq!(t.continuation[temoin], 500, "et toute la continuation");
+-        // … et la borne est stricte : l'atteindre n'est pas la dépasser.
+-        let mut u = search();
+-        u.history[papillon(e4)] = -HISTORY_MAX + 1;
+-        u.continuation[temoin] = 1000;
+-        u.punish_quiets(&b, &[e4], 1, NO_CONTEXT);
+-        assert_eq!(u.history[papillon(e4)], -HISTORY_MAX);
+-        assert_eq!(u.continuation[temoin], 1000);
+-
+-        // La continuation déborde pour son compte, le papillon restant sous
+-        // la borne : la même règle, dans l'autre table. Le balayage du 7 oct.
+-        // l'a montrée sans test — `&=` pour `|=`, `==` ou `<=` pour `<`.
+-        let entree = adverse * PIECE_TO + piece_to(&b, e4);
+-        let mut v = search();
+-        v.continuation[entree] = -HISTORY_MAX;
+-        v.history[papillon(f3)] = 1000;
+-        v.punish_quiets(&b, &[e4], 1, [Some(adverse), None]);
+-        assert_eq!(v.continuation[entree], (-HISTORY_MAX - 1) / 2);
+-        assert_eq!(v.history[papillon(e4)], 0, "−1 divisé par deux");
+-        assert_eq!(v.history[papillon(f3)], 500, "le papillon aussi");
+-        let mut w = search();
+-        w.continuation[entree] = -HISTORY_MAX + 1;
+-        w.history[papillon(f3)] = 1000;
+-        w.punish_quiets(&b, &[e4], 1, [Some(adverse), None]);
+-        assert_eq!(w.continuation[entree], -HISTORY_MAX);
+-        assert_eq!(w.history[papillon(f3)], 1000, "la borne est stricte");
++        t.punish_quiets(&b, &[e4], 20, [Some(adverse), None]);
++        assert_eq!(t.history[papillon(e4)], -BUTTERFLY_CAP);
++        assert_eq!(t.continuation[entree], -CONTINUATION_CAP);
++        assert_eq!(t.history[papillon(f3)], 1000, "le reste du papillon");
++        assert_eq!(t.continuation[temoin], 1000, "le reste de la continuation");
+     }
+ 
+     #[test]
+@@ -4523,36 +4496,73 @@ mod tests {
+     }
+ 
+     #[test]
+-    fn le_debordement_de_la_continuation_divise_toute_la_table() {
++    fn la_gravite_borne_chaque_note_sans_toucher_aux_autres() {
+         let b = Board::default();
+         let coup = cozy_chess::util::parse_uci_move(&b, "e2e4").unwrap();
+         let cible = piece_to(&b, coup);
++        let papillon = coup.from as usize * 64 + coup.to as usize;
+         let temoin = 300;
+-        // Les deux contextes débordent ensemble : un seul suffit à diviser,
+-        // deux ne s'annulent pas.
++        // À la borne, un bonus ne la passe pas, dans les deux tables et les
++        // deux contextes ; les autres notes n'en savent rien.
+         let mut s = search();
+-        s.continuation[7 * PIECE_TO + cible] = HISTORY_MAX;
+-        s.continuation[8 * PIECE_TO + cible] = HISTORY_MAX;
++        s.history[papillon] = BUTTERFLY_CAP;
++        s.continuation[7 * PIECE_TO + cible] = CONTINUATION_CAP;
++        s.continuation[8 * PIECE_TO + cible] = CONTINUATION_CAP;
+         s.continuation[temoin] = 1000;
+-        s.remember_quiet(&b, coup, 0, 1, [Some(7), Some(8)]);
+-        assert_eq!(s.continuation[7 * PIECE_TO + cible], (HISTORY_MAX + 1) / 2);
+-        assert_eq!(
+-            s.continuation[temoin], 500,
+-            "toute la table, pas la seule entrée"
+-        );
+-        // Un seul contexte qui déborde.
++        s.remember_quiet(&b, coup, 0, 20, [Some(7), Some(8)]);
++        assert_eq!(s.history[papillon], BUTTERFLY_CAP);
++        assert_eq!(s.continuation[7 * PIECE_TO + cible], CONTINUATION_CAP);
++        assert_eq!(s.continuation[8 * PIECE_TO + cible], CONTINUATION_CAP);
++        assert_eq!(s.continuation[temoin], 1000, "une note voisine bouge");
++        // Des milliers de coupures de suite ne la passent pas non plus.
+         let mut t = search();
+-        t.continuation[7 * PIECE_TO + cible] = HISTORY_MAX;
+-        t.continuation[temoin] = 1000;
+-        t.remember_quiet(&b, coup, 0, 1, [Some(7), None]);
+-        assert_eq!(t.continuation[temoin], 500);
+-        // Atteindre HISTORY_MAX n'est pas le dépasser : la borne est stricte,
+-        // comme celle du papillon.
+-        let mut u = search();
+-        u.continuation[7 * PIECE_TO + cible] = HISTORY_MAX - 1;
+-        u.continuation[temoin] = 1000;
+-        u.remember_quiet(&b, coup, 0, 1, [Some(7), None]);
+-        assert_eq!(u.continuation[temoin], 1000);
++        for _ in 0..5_000 {
++            t.remember_quiet(&b, coup, 0, 30, [Some(7), None]);
++        }
++        assert!(t.history[papillon] <= BUTTERFLY_CAP);
++        assert!(t.continuation[7 * PIECE_TO + cible] <= CONTINUATION_CAP);
++        assert!(
++            t.history[papillon] > BUTTERFLY_CAP / 2,
++            "elle s'en approche"
++        );
++    }
++
++    #[test]
++    fn le_bonus_d_historique_suit_la_profondeur_et_se_borne() {
++        assert_eq!(history_bonus(1), 1);
++        assert_eq!(history_bonus(3), 9);
++        assert_eq!(history_bonus(12), 144);
++        // Le plus grand bonus tient sous les deux plafonds : la gravité
++        // borne la note, jamais le bonus.
++        assert!(history_bonus(127) <= BUTTERFLY_CAP);
++        assert!(history_bonus(127) <= CONTINUATION_CAP);
++    }
++
++    #[test]
++    fn la_gravite_amortit_d_autant_que_la_note_est_grande() {
++        // note += b − note·|b|/plafond, au bit près, dans les deux sens.
++        let mut v = 0;
++        gravity(&mut v, 100, 1000);
++        assert_eq!(v, 100, "depuis zéro, le bonus entier");
++        gravity(&mut v, 100, 1000);
++        assert_eq!(v, 190, "100 + 100 − 100·100/1000");
++        gravity(&mut v, -100, 1000);
++        assert_eq!(v, 71, "190 − 100 − 190·100/1000");
++        let mut w = -500;
++        gravity(&mut w, -200, 1000);
++        assert_eq!(w, -600, "−500 − 200 + 500·200/1000");
++        gravity(&mut w, 200, 1000);
++        assert_eq!(w, -280, "−600 + 200 + 600·200/1000");
++        // Un écart plus grand que le plafond se ramène au plafond.
++        let mut x = 0;
++        gravity(&mut x, 5000, 1000);
++        assert_eq!(x, 1000);
++        gravity(&mut x, -5000, 1000);
++        assert_eq!(x, -1000);
++        // Le produit ne déborde pas sur 32 bits.
++        let mut y = 40_000;
++        gravity(&mut y, 60_000, 60_000);
++        assert_eq!(y, 60_000);
+     }
+ 
+     #[test]

@@ -14305,6 +14305,102 @@ la profondeur 12, contre `main` :
 - une seconde série, si la première l'appelle, se dit **ajoutée après
   lecture**, avec ses raisons.
 
+### N° 23, l'écran — RELEVÉ le 2 nov. : deux candidats de gravité et la LMR modulée ; l'élagage par l'historique fermé à nouveau
+
+**Le rejeu** — les 60 parties du journal, 7 030 recherches, à la
+profondeur 10 et 12 : `main` rend **109 814 229** et **278 235 761**
+nœuds, la sonde sans variante les mêmes au nœud près. ~20 s par série à
+la profondeur 10, ~60 s à la 12, quatre processus. **Deux séries** :
+celle du protocole, puis une seconde **ajoutée après lecture de la
+première**, pour trois raisons écrites alors — le dénominateur des
+dégâts manquait à la règle de l'élagage ; la LMR modulée et l'élagage
+n'avaient été mesurés que sur G, quand la base la plus petite est
+G+`hk` ; et l'échelle sous G dérive encore avec la profondeur (la LMR
+modulée change 0,88 % des réductions à la 10, 2,49 % à la 12, à
+`lmrh:11000`).
+
+| variante | l'arbre à 12 (à 10), contre `main` | sur sa base | attendu, écrit avant | lecture |
+|---|---|---|---|---|
+| `g:16384` | **−0,22 %** (+0,98 %) | — | ± 1 % | tient |
+| G | **−0,38 %** (+1,50 %) | — | −5 à +8 % | tient |
+| G+`hk` | **−0,91 %** (+0,12 %) | −0,53 % sur G | −3 à +5 % sur G | tient |
+| G+`lmrh:11000` | +0,97 % (+1,19 %) | **+1,36 %** sur G ; 2,49 % des réductions changées | −10 à +10 % | tient |
+| G+`lmrh:6000` | +3,25 % (+3,78 %) | **+3,64 %** sur G ; 12,4 % changées | le double | tient |
+| G+`hp:3832` | −1,29 % (+0,85 %) | **−0,92 %** sur G ; en ombre, 12,4 % des sautés montent `alpha`, **0,150 %** des montées d'`alpha` détruites | −1 à −6 % ; 3 à 15 % | l'économie juste sous sa plage |
+| G+`hk`+`hp:3832` *(2ᵉ série)* | +0,19 % (+0,60 %) | **+1,11 %** sur G+`hk` ; 0,268 % des montées détruites | — | l'arbre GROSSIT |
+| G+`hk`+`lmrh:6000` *(2ᵉ série)* | −0,91 % (+0,22 %) | **+0,001 %** sur G+`hk` ; **34,6 %** des réductions changées | — | une réallocation |
+
+**Ce que l'écran décide** — avec deux écarts à la règle écrite avant,
+nommés :
+- **l'élagage par l'historique, fermé sous cette forme** — par la règle
+  écrite : 0,92 point d'arbre pour 0,150 point de dégâts, **6,1 par
+  point** à la 12 (9,7 à la 10), sous le seuil de 10 ; sur G+`hk`, l'arbre
+  grossit. *Sous cette forme* : la note y somme le papillon et les deux
+  continuations ; Stockfish ne lit que ses continuations, à une
+  profondeur réduite. Au registre, déprioritisé ;
+- **la gravité, par la règle : `g:16384`** — les trois à moins d'un
+  point du plus petit, donc le plus simple. **Et G+`hk` ajouté après
+  lecture** : `g:16384` ne borne rien aux profondeurs jouées — les notes
+  restent loin de son plafond, et c'est le bonus en `d²`, sans borne, qui
+  fait encore l'échelle ; il ne peut pas servir de base à une règle qui
+  lit la note. G+`hk` a le plus petit arbre et porte la LMR modulée ;
+- **la LMR modulée, candidate contre la règle écrite** — elle demandait
+  « plus de 2 % d'arbre » : sur G+`hk`, `lmrh:6000` change **un tiers**
+  des réductions pour un arbre identique. La règle comptait COMBIEN on
+  cherche quand le changement déplace OÙ — la leçon de C24, mesurée le
+  24 sept., indépendante de ce changement (`CLAUDE.md`, « Une
+  réallocation à temps constant ne se lit pas en plis moyens ») : la
+  règle mesurait la mauvaise chose, et c'est elle qui tombe.
+
+Le journal, la sonde et son rejoueur : `tools/attic/n23-sonde-historique.patch`.
+
+### N° 23 — les candidats C52, C53, C54 : attendus et critère, écrits le 2 nov. avant de lancer
+
+**Les candidats**, chacun au nœud près de sa variante au rejeu à la
+profondeur 10, commité puis révoqué aussitôt, sa rustine à l'attic :
+- **C52** `141fb43` — `g:16384` : la gravité au plafond 16 384 aux deux
+  tables, le bonus `d²` inchangé, plus de division ; le banc inchangé
+  (70 452) ;
+- **C53** `cde63e6` — G+`hk` : bonus `clamp(336·d − 547, 1, 1561)`,
+  plafonds 7 183 et 29 952, le papillon conservé d'un coup à l'autre ;
+  banc 70 845 ;
+- **C54** `822fb74` — C53 et la LMR modulée, `note / 6000` plis, bornée
+  à `[0, d − 2]` ; banc 70 841.
+
+**Le protocole** — celui des écrans du n° 12 : quatre jobs de 2 800
+parties par match, `8+0,08`, graine « auto » chacun, le binaire AVX2 des
+deux côtés, le livre de 15 000. **C52 et C53 contre `0e43fdd`** — leur
+parent, le moteur de `main` au bit près ; **C54 contre C53**, pour isoler
+la LMR modulée de la gravité qui la porte. Douze jobs, lancés ensemble.
+
+**Attendus, écrits avant** — <span>inférence, confiance faible</span> ;
+le coût d'arbre par l'étalon, 1,38 pli par doublement, 60 à 105 Elo par
+pli :
+- **C52** : −0,22 % d'arbre, un gain de ~+0,3 si la décision ne bougeait
+  pas ; la borne ne joue presque jamais ; **−3 à +3, ~0** ;
+- **C53** : −0,91 %, **+1 à +2** à décision égale ; l'ordre des
+  tranquilles devient récent, et Stockfish l'a choisi ; **−5 à +10,
+  ~+2** ;
+- **C54 contre C53** : l'arbre égal ; une réallocation, dont le sens ne
+  se lit pas à l'écran — Stockfish étiquette la sienne « ~25 Elo » dans
+  son source, sur une LMR et une note différentes ; **−8 à +15, ~+4**.
+
+**Critère, écrit avant** — chaque match par la borne basse commune de
+ses quatre jobs, ± 3,3 :
+- **C53 fusionne** si sa borne basse contre `0e43fdd` est au-dessus de
+  zéro ; **C52**, de même, s'il n'est pas sous C53 au point ;
+- **C54 fusionne** — C53 compris — si sa borne basse contre C53 est
+  au-dessus de zéro ET si C53 n'est pas démontré sous `0e43fdd` (sa
+  borne haute au-dessus de zéro) : la LMR modulée n'existe pas sans la
+  gravité qui lui donne son échelle ;
+- **sinon, rien** : C52 et C53 seuls ne valent que comme base de C54,
+  si aucun ne gagne et que C54 ne gagne pas, rien n'entre.
+
+**Le livre déséquilibré** (« Ce que l'écran décide », plus haut) : ses
+matchs suivent dès qu'il existe, son protocole écrit avant eux. Ceux-ci
+partent sans attendre — les runners sont libres, et la calibration ne
+demande pas que les deux séries jouent en même temps.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
