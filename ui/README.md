@@ -357,9 +357,11 @@ remplacer depuis la palette —, l’autre camp restant visible et verrouillé. 
 configuration suit la couleur de son camp, y compris après un tirage aléatoire ;
 la position doit donc valoir dans les deux sens. Annuler conserve la
 configuration précédente ; Réinitialiser restaure l’armée classique. Un roi par
-camp, au plus 16 pièces et 8 pions par camp, aucun pion en dernière rangée, aucun
-chevauchement et aucun roi en échec au départ sont requis. La position et les droits de roque sont conservés dans le
-jeu, le ponder, le PGN et l’analyse. Les pièces retirées ne sont pas comptées
+camp, au plus 8 pions par camp et 32 pièces sur l’échiquier — la limite du
+réseau de ShallowRed, plus aucune par camp (Théo, 2 nov. 2026) —, aucun pion en
+dernière rangée, aucun chevauchement et aucun roi en échec au départ sont
+requis. La position et les droits de roque sont conservés dans le jeu, le
+ponder, le PGN et l’analyse. Les pièces retirées ne sont pas comptées
 comme des captures.
 
 À deux moteurs comme à deux joueurs, le lien propose « Éditer les Blancs » et

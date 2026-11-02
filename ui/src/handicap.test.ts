@@ -94,7 +94,8 @@ it("valide les rois, les pions, les effectifs et protège le camp humain", () =>
   expect(armyError({ ...original, a7: "r", a8: "p" })).toContain(
     "dernière rangée",
   );
-  expect(armyError({ ...original, a6: "n" })).toContain("16 pièces");
+  // Face à un camp complet, une pièce de plus ferait 33 pièces sur l’échiquier.
+  expect(armyError({ ...original, a6: "n" })).toContain("32 pièces");
   expect(armyError({ ...original, a7: "q", a8: "n" })).toBeNull();
   expect(armyError({ ...original, a8: "x" })).toContain("pièce inconnue");
 });
@@ -219,4 +220,19 @@ it("refuse deux camps qui se chevauchent face au moteur, dans un sens comme dans
   expect(localArmiesError(engine, player)).toContain("e4");
   expect(() => localPosition(engine, player, "b")).toThrow();
   expect(localArmiesError(null, null)).toBeNull();
+});
+
+it("n’impose plus de limite par camp, seulement 32 pièces sur l’échiquier", () => {
+  // Vingt pièces d’un côté, douze de l’autre : 32, accepté.
+  const big = defaultArmy();
+  for (const square of ["a6", "b6", "c6", "d6"] as const) big[square] = "n";
+  const small = defaultArmy();
+  for (const square of ["a8", "b8", "c8", "f8"] as const) delete small[square];
+  const armies = { w: big, b: small };
+  expect(matchArmyError(armies)).toBeNull();
+  const chess = new Chess(matchPosition(armies));
+  expect(chess.board().flat().filter(Boolean)).toHaveLength(32);
+  expect(chess.board().flat().filter((piece) => piece?.color === "w")).toHaveLength(20);
+  // Une pièce de plus : 33, refusé.
+  expect(matchArmyError({ w: { ...big, e6: "n" }, b: small })).toContain("32 pièces");
 });
