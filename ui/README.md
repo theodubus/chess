@@ -332,9 +332,17 @@ Entrée valide et Échap annule. Quand les deux temps diffèrent, « Remettre le
 même temps » apparaît dans la seconde case. Ces temps suivent les joueurs, même
 avec les Noirs ou un camp aléatoire, et valent aussi à deux joueurs.
 
-**Les retours en arrière** se règlent dans la case de chaque joueur humain. Le
-réglage est mémorisé, mais reste sans effet tant que la fonction n’existe pas ;
-la case le dit (« bientôt disponible »).
+**Les retours en arrière** se règlent dans la case de chaque joueur humain.
+Pendant la partie, et jamais après sa fin, « ↶ Reprendre mon coup » annule votre
+dernier coup face au moteur, et sa réponse s’il l’a jouée — sa recherche et son
+ponder sont arrêtés ; à deux joueurs, « ↶ Annuler le dernier coup » annule le
+dernier coup joué, si son auteur a droit aux retours. Les coups repris
+disparaissent de l’historique et du PGN. **La pendule** (Théo, 2 nov. 2026) :
+le temps de celui qui reprend reste dépensé, seuls les incréments de ses coups
+repris lui sont retirés — reprendre puis rejouer le même coup ne fait donc rien
+gagner ; l’adversaire retrouve sa pendule d’avant sa réponse, le temps qu’il a
+réfléchi depuis compris. Si le temps qui reste, incréments retirés, est épuisé,
+la pendule tombe (`GameController.takeBack`).
 
 **« Modifier la position de départ »**, centré sous les cases, vaut pour les
 trois modes. Face au moteur, il ouvre un échiquier de préparation : retirer

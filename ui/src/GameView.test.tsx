@@ -77,6 +77,22 @@ it("propose la position de départ dans les trois modes, et les retours aux seul
   expect(render({ opponent: "human", ...other })).toContain("Remettre le même temps que les Blancs");
 });
 
+it("montre la reprise aux seules parties qui y ont droit, et plus après la fin", () => {
+  const props = { showEvaluation: false, onEvaluation: () => {}, onNew: () => {}, onRematch: () => {}, onReview: () => {} };
+  const allowed = new GameController({ takebacks: { w: true, b: false } });
+  const empty = renderToStaticMarkup(<GameView controller={allowed} {...props} />);
+  expect(empty).toContain("Annuler le dernier coup");
+  expect(empty).toMatch(/<button[^>]*disabled=""[^>]*>↶ Annuler le dernier coup/);
+  allowed.move("e2", "e4");
+  expect(renderToStaticMarkup(<GameView controller={allowed} {...props} />))
+    .toMatch(/<button class="secondary takeback"(?![^>]*disabled)[^>]*>↶ Annuler le dernier coup/);
+  allowed.resign();
+  expect(renderToStaticMarkup(<GameView controller={allowed} {...props} />)).not.toContain("↶");
+  const refused = new GameController();
+  refused.move("e2", "e4");
+  expect(renderToStaticMarkup(<GameView controller={refused} {...props} />)).not.toContain("↶");
+});
+
 it("propose l’export PGN dans les coups pendant et après la partie, y compris en relecture", () => {
   const controller = new GameController();
   controller.move("e2", "e4");

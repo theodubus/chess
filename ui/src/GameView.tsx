@@ -331,6 +331,24 @@ export default function GameView({
                   {focus ? "Quitter le plein écran" : "Plein écran"}
                 </button>
               )}
+              {controller.takebackAllowed && !controller.finished && (
+                <button
+                  className="secondary takeback"
+                  disabled={!controller.canTakeBack}
+                  title={
+                    controller.canTakeBack
+                      ? "Votre temps reste dépensé ; l’adversaire retrouve le sien."
+                      : "Aucun coup à reprendre pour un joueur qui a droit aux retours."
+                  }
+                  onClick={() => {
+                    // Une reprise porte sur la partie en cours, pas sur la relecture.
+                    navigate(moves.length);
+                    controller.takeBack();
+                  }}
+                >
+                  ↶ {controller.mode ? "Reprendre mon coup" : "Annuler le dernier coup"}
+                </button>
+              )}
               {controller.finished && (
                 <button
                   ref={resultButton}

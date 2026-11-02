@@ -644,7 +644,7 @@ function PlayerBox({
         <span className="setting-copy">
           <strong>Retours en arrière</strong>
           <span className="setting-help">
-            Annuler son dernier coup · <em>bientôt disponible</em>
+            Reprendre son dernier coup pendant la partie
           </span>
         </span>
         <input

@@ -95,6 +95,13 @@ export default function App() {
               ? matchPosition(next.humanArmies)
               : undefined,
       engineOptions: next.engineOptions,
+      // Face au moteur, seul votre camp a droit aux retours ; en match, personne.
+      takebacks:
+        next.opponent === "engine"
+          ? { w: humanSide === "w" && next.takebacks.player, b: humanSide === "b" && next.takebacks.player }
+          : next.opponent === "human"
+            ? { w: next.takebacks.w, b: next.takebacks.b }
+            : { w: false, b: false },
     });
     const activate = () => {
       if (candidate.current?.controller !== fresh) return;
