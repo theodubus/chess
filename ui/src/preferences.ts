@@ -1,7 +1,7 @@
 import { readHandicap, readMatchArmies, type Handicap, type MatchArmies } from "./handicap";
 import {
   DEFAULT_TIME_CONTROL,
-  parseTimeControl,
+  validTimeControl,
   type TimeControl,
 } from "./GameClock";
 import { DEFAULT_ENGINE_OPTIONS, type EngineOptions } from "./engine/options";
@@ -10,12 +10,26 @@ import type { Side } from "./engine/analysis";
 export type GameSetup = {
   opponent: "engine" | "human" | "match";
   side: Side | "random";
+  /** Le temps de la première case : vous face au moteur, les Blancs sinon. */
   timeControl: TimeControl;
+  /**
+   * Le temps de la seconde case — le moteur, ou les Noirs d'un match comme
+   * de deux joueurs ; `null` quand c'est le même. Le nom date du temps où
+   * seul le moteur pouvait en avoir un autre, et la clé enregistrée aussi.
+   */
   engineTimeControl: TimeControl | null;
   engineOptions: EngineOptions;
   handicap: Handicap;
   matchEngines: Record<Side, { id: string; options: EngineOptions }>;
   matchArmies: MatchArmies;
+  /** La position de départ de deux joueurs, les deux camps modifiables. */
+  humanArmies: MatchArmies;
+  /**
+   * Retours en arrière autorisés, par joueur humain : vous face au moteur,
+   * les Blancs et les Noirs à deux. Enregistrés dès maintenant, sans effet
+   * tant que la fonction n'existe pas.
+   */
+  takebacks: { player: boolean; w: boolean; b: boolean };
 };
 export const DEFAULT_SETUP: GameSetup = {
   opponent: "engine",
@@ -29,6 +43,8 @@ export const DEFAULT_SETUP: GameSetup = {
     w: { id: "default", options: DEFAULT_ENGINE_OPTIONS },
     b: { id: "default", options: DEFAULT_ENGINE_OPTIONS },
   },
+  humanArmies: { w: null, b: null },
+  takebacks: { player: false, w: false, b: false },
 };
 export function readPreference(key: string): string | null {
   try {
@@ -53,12 +69,7 @@ export function evaluationPreference(view: "play" | "review") {
 export function readSetup(): GameSetup {
   try {
     const value = JSON.parse(readPreference("chess-ui.setup") || "null");
-    const timeControl =
-      value?.timeControl &&
-      parseTimeControl(
-        String(value.timeControl.initialMs / 60000),
-        String(value.timeControl.incrementMs / 1000),
-      );
+    const timeControl = validTimeControl(value?.timeControl);
     if (
       timeControl &&
       ["engine", "human", "match"].includes(value.opponent) &&
@@ -67,6 +78,12 @@ export function readSetup(): GameSetup {
       return {
         handicap: readHandicap(value.handicap),
         matchArmies: readMatchArmies(value.matchArmies),
+        humanArmies: readMatchArmies(value.humanArmies),
+        takebacks: {
+          player: value.takebacks?.player === true,
+          w: value.takebacks?.w === true,
+          b: value.takebacks?.b === true,
+        },
         opponent: value.opponent,
         side: value.side,
         timeControl,
@@ -74,12 +91,7 @@ export function readSetup(): GameSetup {
           w: readMatchEngine(value.matchEngines?.w),
           b: readMatchEngine(value.matchEngines?.b),
         },
-        engineTimeControl: value.engineTimeControl
-          ? parseTimeControl(
-              String(value.engineTimeControl.initialMs / 60000),
-              String(value.engineTimeControl.incrementMs / 1000),
-            )
-          : null,
+        engineTimeControl: validTimeControl(value.engineTimeControl),
         engineOptions: {
           ponder: value.engineOptions?.ponder === true,
           threads:
@@ -120,12 +132,11 @@ export function gameTimeControls(
   setup: GameSetup,
   humanSide: Side,
 ): ClockControls {
-  if (setup.opponent === "match") return { w: setup.timeControl, b: setup.engineTimeControl ?? setup.timeControl };
-  const engine =
-    setup.opponent === "engine"
-      ? (setup.engineTimeControl ?? setup.timeControl)
-      : setup.timeControl;
+  const second = setup.engineTimeControl ?? setup.timeControl;
+  // À deux joueurs comme en match, la première case est celle des Blancs ;
+  // face au moteur, c'est la vôtre, quel que soit votre camp.
+  if (setup.opponent !== "engine") return { w: setup.timeControl, b: second };
   return humanSide === "w"
-    ? { w: setup.timeControl, b: engine }
-    : { w: engine, b: setup.timeControl };
+    ? { w: setup.timeControl, b: second }
+    : { w: second, b: setup.timeControl };
 }

@@ -6,7 +6,7 @@ import { frenchSan } from "./review/model";
 import { useEffect, useRef, useState } from "react";
 import type { Color } from "@lichess-org/chessground/types";
 import type { GameController } from "./GameController";
-import { formatTime } from "./GameClock";
+import { describeTimeControl, formatTime } from "./GameClock";
 import Board from "./Board";
 import EvaluationBar from "./EvaluationBar";
 import CapturedPieces from "./CapturedPieces";
@@ -176,11 +176,11 @@ export default function GameView({
             </div>
             <span className="cadence">
               {controller.clock.balanced
-                ? `${controller.clock.control.initialMs / 60000} + ${controller.clock.control.incrementMs / 1000}`
+                ? describeTimeControl(controller.clock.control)
                 : (["w", "b"] as const)
                     .map(
                       (color) =>
-                        `${controller.mode && !controller.isMatch ? (color === controller.humanSide ? "Vous" : "Bot") : color === "w" ? "Blancs" : "Noirs"} ${controller.clock.controls[color].initialMs / 60000} + ${controller.clock.controls[color].incrementMs / 1000}`,
+                        `${controller.mode && !controller.isMatch ? (color === controller.humanSide ? "Vous" : "Bot") : color === "w" ? "Blancs" : "Noirs"} ${describeTimeControl(controller.clock.controls[color])}`,
                     )
                     .join(" · ")}
             </span>
@@ -329,6 +329,24 @@ export default function GameView({
                   onClick={onToggleFocus}
                 >
                   {focus ? "Quitter le plein écran" : "Plein écran"}
+                </button>
+              )}
+              {controller.takebackAllowed && !controller.finished && (
+                <button
+                  className="secondary takeback"
+                  disabled={!controller.canTakeBack}
+                  title={
+                    controller.canTakeBack
+                      ? "Votre temps reste dépensé ; l’adversaire retrouve le sien."
+                      : "Aucun coup à reprendre pour un joueur qui a droit aux retours."
+                  }
+                  onClick={() => {
+                    // Une reprise porte sur la partie en cours, pas sur la relecture.
+                    navigate(moves.length);
+                    controller.takeBack();
+                  }}
+                >
+                  ↶ {controller.mode ? "Reprendre mon coup" : "Annuler le dernier coup"}
                 </button>
               )}
               {controller.finished && (

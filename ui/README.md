@@ -260,10 +260,10 @@ depuis la position classique par défaut, après que **les deux moteurs** ont te
 préparation UCI ; cette préparation ne consomme pas leurs pendules.
 
 Chaque camp possède ses propres options de cœurs et de réflexion pendant le
-tour adverse, vérifiées sur le moteur sélectionné. Valeurs initiales : un cœur
-et réflexion anticipée désactivée. « Cadence différente pour les Noirs » permet
-de déséquilibrer les pendules. Les réglages sont conservés pour la prochaine
-partie et pour « Rejouer ».
+tour adverse, vérifiées sur le moteur sélectionné et visibles dans sa case.
+Valeurs initiales : un cœur et réflexion anticipée désactivée. « modifier », sur
+la pendule d’un camp, déséquilibre les pendules. Les réglages sont conservés pour
+la prochaine partie et pour « Rejouer ».
 
 Le plateau est en mode spectateur : les moteurs jouent automatiquement et les
 coups humains, prémouvements et reprises de coups sont bloqués. L’historique,
@@ -310,37 +310,67 @@ de position. Ils ne changent ni les coups ni le PGN.
 
 ## Cadences et options du moteur
 
-Le volet replié « Position de départ », en bas de la préparation, contient
-« Éditer le camp ». Il ouvre un échiquier de préparation : retirer plusieurs pièces,
-les déplacer en deux clics, ou les remplacer depuis la palette. Le camp humain
-est verrouillé. La configuration suit la couleur du moteur, y compris après
-un tirage aléatoire. Annuler conserve la configuration précédente ; Réinitialiser
-restaure l’armée classique. Un roi par camp, au plus 16 pièces et 8 pions côté
-moteur, aucun pion en dernière rangée et aucun roi en échec au départ sont requis.
-La position et les droits de roque sont conservés dans le jeu, le ponder, le PGN
-et l’analyse. Les pièces retirées ne sont pas comptées comme des captures.
+L’écran de préparation est à plat : aucun menu à déplier pour la cadence, les
+cœurs ou le ponder (Théo, 2 nov. 2026). Sous le mode de jeu viennent les
+profils, la cadence, puis deux cases côte à côte — vous et le moteur, ou les
+Blancs et les Noirs —, l’une sous l’autre sur téléphone.
 
-En mode « Deux moteurs », le même volet propose « Éditer les Blancs » et
+**Les profils** pré-remplissent d’un clic la cadence, le ponder, les cœurs et,
+face au moteur, les retours en arrière ; on lance ensuite par « Jouer ». Quatre
+profils face au moteur, étiquetés de « Facile » à « Abominable », et quatre pour
+deux moteurs ; aucun à deux joueurs. Ils ne touchent ni au camp, ni aux moteurs
+choisis, ni à la position. Leurs « cœurs conseillés » sont résolus sur la
+machine, et la carte affiche le vrai nombre. **Un profil n’est mis en avant
+que tant que les réglages sont exactement les siens** : toucher à l’un d’eux
+l’éteint, retrouver ses valeurs le rallume (`src/profiles.ts`).
+
+**La cadence** : quatre cadences toutes prêtes et une carte « Personnalisée »
+(minutes et incrément), qui règlent les deux camps ensemble. Chaque case affiche
+ensuite son temps comme une pendule ; « modifier » le change **pour ce camp
+seulement**, à la seconde près — de 30 s à 180 min, jusqu’à 60 s d’incrément —,
+Entrée valide et Échap annule. Quand les deux temps diffèrent, « Remettre le
+même temps » apparaît dans la seconde case. Ces temps suivent les joueurs, même
+avec les Noirs ou un camp aléatoire, et valent aussi à deux joueurs.
+
+**Les retours en arrière** se règlent dans la case de chaque joueur humain.
+Pendant la partie, et jamais après sa fin, « ↶ Reprendre mon coup » annule votre
+dernier coup face au moteur, et sa réponse s’il l’a jouée — sa recherche et son
+ponder sont arrêtés ; à deux joueurs, « ↶ Annuler le dernier coup » annule le
+dernier coup joué, si son auteur a droit aux retours. Les coups repris
+disparaissent de l’historique et du PGN. **La pendule** (Théo, 2 nov. 2026) :
+le temps de celui qui reprend reste dépensé, seuls les incréments de ses coups
+repris lui sont retirés — reprendre puis rejouer le même coup ne fait donc rien
+gagner ; l’adversaire retrouve sa pendule d’avant sa réponse, le temps qu’il a
+réfléchi depuis compris. Si le temps qui reste, incréments retirés, est épuisé,
+la pendule tombe (`GameController.takeBack`).
+
+**« Modifier la position de départ »**, centré sous les cases, vaut pour les
+trois modes. Face au moteur, il ouvre un échiquier de préparation : retirer
+plusieurs pièces, les déplacer en deux clics, ou les remplacer depuis la palette.
+Le camp humain est verrouillé. La configuration suit la couleur du moteur, y
+compris après un tirage aléatoire. Annuler conserve la configuration précédente ;
+Réinitialiser restaure l’armée classique. Un roi par camp, au plus 16 pièces et
+8 pions côté moteur, aucun pion en dernière rangée et aucun roi en échec au
+départ sont requis. La position et les droits de roque sont conservés dans le
+jeu, le ponder, le PGN et l’analyse. Les pièces retirées ne sont pas comptées
+comme des captures.
+
+À deux moteurs comme à deux joueurs, le lien propose « Éditer les Blancs » et
 « Éditer les Noirs ». Chaque camp se configure séparément sur la position
 complète ; les pièces adverses sont verrouillées, même si elles ont été déplacées
 dans une configuration précédente. La validation concerne les deux camps
 ensemble : aucun chevauchement, un roi par camp, aucune position initiale en
 échec ou déjà terminée. Les droits de roque suivent les pièces conservées sur
 leurs cases d’origine. La position est mémorisée pour « Rejouer », le PGN et
-l’analyse ; elle reste indépendante du choix des moteurs. « Revenir à la
-position classique » réinitialise les deux camps. Une position personnalisée
-est signalée dans le titre du volet même quand celui-ci reste replié.
+l’analyse, séparément pour chaque mode ; elle reste indépendante du choix des
+moteurs. Une position personnalisée est signalée sous le lien, avec « Revenir
+à la position classique ».
 
-Dans la préparation d’une partie contre le bot, « Donner une cadence différente
-au bot » permet de choisir son temps initial et son incrément indépendamment des
-vôtres. Ces temps suivent les joueurs, même avec les Noirs ou un camp aléatoire.
-Les parties à deux joueurs gardent une cadence commune. Les réglages sont
-mémorisés pour la prochaine partie et pour « Rejouer ».
-
-« Options du moteur » interroge le moteur connecté et propose les fonctions qu’il
+La case d’un moteur interroge le moteur connecté et propose les fonctions qu’il
 annonce par UCI :
 
-- « Réfléchir pendant mon tour » active `Ponder`, désactivé par défaut. Après
+- « Ponder » (« Réfléchit pendant votre tour », ou « pendant le tour adverse »
+  entre deux moteurs) active `Ponder`, désactivé par défaut. Après
   son coup, le moteur peut préparer une réponse au coup qu’il anticipe. Si le
   joueur le choisit, `ponderhit` poursuit cette recherche ; sinon, `stop` et
   l’attente de son `bestmove` précèdent la recherche de la position réelle.
@@ -357,7 +387,8 @@ Les cadences asymétriques sont exportées avec `TimeControl "?"` et les en-têt
 complémentaires `WhiteTimeControl` / `BlackTimeControl`, en secondes, afin de ne
 pas annoncer à tort une cadence commune.
 
-Sous les cœurs, un conseil estime le maximum à utiliser à partir des cœurs
+Sous les cœurs, une ligne « Conseil : N cœurs · appliquer » estime le maximum
+à utiliser — son explication s’affiche au survol —, à partir des cœurs
 **logiques annoncés par le navigateur** et des limites UCI du moteur. Il réserve
 un cœur pour l’interface quand c’est possible. Contre un humain, le ponder ne
 rajoute pas de moteur concurrent. Entre deux moteurs sans ponder, les recherches
@@ -366,7 +397,7 @@ ponder, le conseil partage le budget et réduit encore sa part si l’autre mote
 est déjà réglé plus haut. Sur un ou deux cœurs, les recherches simultanées et
 l’interface doivent partager les ressources.
 
-« Appliquer le conseil » change le réglage uniquement sur demande. Le conseil
+« appliquer » change le réglage uniquement sur demande. Le conseil
 se met à jour avec les options de l’autre camp ; il ne les change pas automatiquement
 et ne constitue pas une mesure de performance. Le navigateur ne permet pas de
 connaître précisément les cœurs physiques, la charge actuelle ou les limites
