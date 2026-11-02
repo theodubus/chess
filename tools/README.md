@@ -14132,13 +14132,27 @@ les précède — chacun quatre jobs de 2 800 parties à `8+0,08` :
   l'étiquette ne rendait rien (−1,49) ; une recherche deux fois plus
   courte peut perdre davantage qu'elle ne gagnait à doubler ;
 - **E2.5t contre E5n** : **+1 à +12, ~+6** — doubler le volume à
-  étiquette égale rendait +8,94, moins ce que l'étiquette perd.
+  étiquette égale rendait +8,94, moins ce que l'étiquette perd ;
+- **E21 contre N8nw50** — le tour de boucle, **écrit le 2 nov. avant
+  tout entraînement** : **0 à +9, ~+5**. La même recette, le même
+  budget (5 000), le même volume gardé (1 752,5 M contre 1 751,9 M) ;
+  seul l'étiqueteur change, N8tw50s800 contre N6r4, ~+40 par la chaîne
+  (+16,89, +17,91, +5,43). Au taux mesuré deux fois, ~0,12 Elo de
+  réseau par Elo d'étiqueteur (0,09 à 0,16 au seul +12,76 ± 3,45 de
+  N8nw50 sur N7p4w50) : +4 à +7 ; élargi vers le bas parce que la
+  chaîne n'est pas additive et que l'étiqueteur cherche à 5 000 nœuds,
+  pas à la pendule. <span>Inférence, confiance faible.</span> **Ce
+  qu'il décide** : si sa borne basse passe zéro, chaque réseau embarqué
+  réétiquette la génération qui suit, et les données des vieux
+  étiqueteurs se remplacent avant de s'empiler ; sinon, le volume seul
+  compte et rien ne presse de régénérer. **La puissance** : à ± 3,3, un
+  vrai +5 passe zéro environ huit fois sur dix.
 
 **Concurrence** : seize jobs, plus les sept de la vague 6 du n° 21
 jusqu'à ~19 h 40, plus les matchs de la séance C2 à venir — sous la
 limite de quarante.
 
-#### La séance du n° 22 — E5n, E2.5t, E2.5v : écrite le 27 oct. à 19 h 27, pour la semaine du 2 nov.
+#### La séance du n° 22 — E5n, E2.5t, E2.5v, et E21 depuis le 2 nov. : écrite le 27 oct. à 19 h 27, pour la semaine du 2 nov.
 
 **`tools/seance-n22.sh`**, sur le modèle de `tools/seance-n20d.sh`,
 l'option `veille` comprise. Trois réseaux à la recette de C1 — 256
@@ -14147,7 +14161,16 @@ résultat 0,5, pas 0,001 —, chacun poussé sur `reseau/n22` dès qu'il
 passe tous ses contrôles :
 - **`e5nw50`** — les 39 jobs appris à 5 000 ; puis
 - **`e25tw50`** — les 38 à 2 500 : la décision, contre le premier ;
-- **`e25vw50`** — les 19 premiers à 2 500 : l'étiquette seule.
+- **`e25vw50`** — les 19 premiers à 2 500 : l'étiquette seule ;
+- **`e21w50`**, **ajouté le 2 nov.** (feuille de route du 31 oct.,
+  point 4) — la tranche du n° 21 entière, 86 jobs à 5 000 étiquetés par
+  N8tw50s800 : **le tour de boucle**, contre N8nw50, la même recette sur
+  l'étape B étiquetée par N6r4. Le dernier : il ne décide pas le budget,
+  il dit comment reprendre la génération. N8nw50 est sorti de
+  l'entraîneur d'avant `00c65d3`, dont les options neuves gardent la
+  recette par défaut — C1 l'a déjà pris pour témoin de E10w50 sur cette
+  base. Ses données vont sous `donnees/n21/`, là où `tools/seance-c3.sh`
+  les reprendra.
 
 Les ensembles sont ceux fixés à la clôture de la partie mesurée — le
 script ne lit du registre que les vagues 1 à 5, si bien que les vagues
@@ -14164,7 +14187,15 @@ moins ce qui y est déjà. **Éprouvé au bac à sable le 27 oct.**, avec des
 levé ; une relance qui saute ce qui est poussé ; une panne au deuxième
 réseau, puis la relance qui ne refait que lui ; une recette refusée, le
 réseau mis de côté ; deux lignes de la vague 6 au registre sans effet
-sur les ensembles ; un mode ou une option inconnus refusés.
+sur les ensembles ; un mode ou une option inconnus refusés. **Le 4ᵉ
+réseau, éprouvé au même bac à sable le 2 nov.**, un faux `df` en plus :
+86 dossiers et `20442765:2561308398` à l'entraîneur, le dernier
+40325880490 ; 344 fichiers `.vf` ; un second essai court, sur le n° 21 ;
+32 Go exigés quand les deux générations partagent un disque — refusé à
+31 —, 20 et 12 sinon — refusé à 15 sous le n° 22 ; une panne de
+`e21w50` après les trois autres, la veille quand même demandée, le
+blocage levé, puis la relance qui saute les trois poussés et ne refait
+que lui.
 
 **Pour Théo, la semaine du 2 nov.** :
 ```sh
@@ -14177,17 +14208,20 @@ tmux new -s n22 'bash tools/seance-n22.sh tout veille'
 *Attendus, écrits avant* — <span>inférence, confiance faible sauf la
 durée</span> :
 - **la durée** : ~2 h 40 par réseau, comme E10w50 et E5vw50 à 400
-  superlots — ~8 h 30, l'essai compris, plus le téléchargement de
-  ~12 Go ;
+  superlots — ~11 h 30 pour les quatre, les deux essais compris, plus
+  le téléchargement de ~12 Go et ~9,3 Go ;
 - **la confrontation** : le critère, écart médian ≤ 15, maximal ≤ 50 ;
 - **la perte tenue à l'écart** (`nnue-validation.yml`, N9w50s800 en
   référence, les deux jobs tenus du n° 22, 40326139016 et 40326149256) :
   **E2.5t sous E5n sur le job à 2 500**, deux fois son volume à sa propre
   étiquette ; **E5n sous E2.5v sur le job à 5 000**, à volume égal sur sa
   propre étiquette. Rien n'est attendu contre N9w50s800, deux fois plus
-  de passes sur d'autres étiquettes ; et la perte ne décide rien ;
+  de passes sur d'autres étiquettes ; et la perte ne décide rien. **E21
+  sous N8nw50 sur le job tenu du n° 21** (39712871836), sa propre
+  étiquette, **au-dessus sur celui de l'étape B** (39050360980) ;
 - **les matchs** : écrits plus haut — E2.5v contre E5n −6 à +3,
-  E2.5t contre E5n +1 à +12, chacun quatre jobs de 2 800 parties à
+  E2.5t contre E5n +1 à +12, E21 contre N8nw50 0 à +9, chacun quatre
+  jobs de 2 800 parties à
   `8+0,08`, les candidats écrits et révoqués comme ceux de C2.
 
 **Le critère reste celui écrit à l'ouverture du n° 22.** Aucun de ces
@@ -15716,8 +15750,9 @@ pas parce que des runners sont libres.
 3. En parallèle de 2 : l'inférence multicouche écrite dans le moteur,
    confrontée au code de bullet, prête pour l'entraînement au verdict de C3.
 4. Carte de Théo, semaine du 2 nov. : séance n° 22 (2 500 contre 5 000
-   nœuds, plus un 4ᵉ réseau pour le tour de boucle, à ajouter à
-   `tools/seance-n22.sh`), puis C3 (N10, N10r10, N10h384, N10h512), ~39 h.
+   nœuds, plus un 4ᵉ réseau pour le tour de boucle, ajouté à
+   `tools/seance-n22.sh` le 2 nov.), puis C3 (N10, N10r10, N10h384,
+   N10h512), ~42 h.
 5. Après C3 : embarquer le gagnant (sonde des marges, série C13) ;
    16 seaux de roi si 10 a payé ; 1 024 et couches cachées si la largeur paie.
 6. Reprendre la génération, étiquetée par le nouveau réseau, au rythme
