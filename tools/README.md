@@ -1034,6 +1034,7 @@ dernière relève est faite.
 | **N° 22 — la vague 19**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41131049525, 41131054663, 41131059987, 41131065622, 41131072097, 41131078120, 41131082740, 41131088367 ; à 5 000 : 41131052139, 41131057273, 41131062535, 41131068877, 41131075301, 41131080371, 41131085830, 41131091022 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 31 oct. à 4 h 09** — lancée le 30 à 22 h 26, ses attendus poussés avant (`bd92c82`) ; seize succès finis à 3 h 57 | **à 2 500 : 456,5 M positions, 304,8 M gardées, 28,72 % de nulles ; à 5 000 : 206,7 M, 141,5 M, 34,82 % ; écartées 21,09 et 21,19 % ; EPYC 7763 à 2 393 – 2 408 et 1 193 – 1 217 ; cumuls 5 783,5 et 2 862,9 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 19) — *Attendus, écrits avant* (section « N° 22 », la vague 19) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris celui de la vague 18 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **5 727 à 5 949 M** et **2 851 à 2 957 M** |
 | **N° 22 — la vague 20**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41162947532, 41162951444, 41162955087, 41162959126, 41162962521, 41162966632, 41162970067, 41162973641 ; à 5 000 : 41162949455, 41162953236, 41162957135, 41162960767, 41162964762, 41162968437, 41162972013, 41162975516 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 31 oct. à 9 h 49** — lancée à 4 h 07, ses attendus poussés avant (`b79b725`) ; seize succès finis entre 9 h 37 et 9 h 38 | **à 2 500 : 514,8 M positions, 343,7 M gardées, 28,78 % de nulles ; à 5 000 : 240,9 M, 165,0 M, 34,80 % ; écartées 21,06 et 21,17 % ; EPYC 7763 à 2 382 – 2 399 et 1 205 – 1 212 ; cumuls 6 127,2 et 3 027,9 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 20) — *Attendus, écrits avant* (section « N° 22 », la vague 20) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 300 à 2 500** et **1 150 à 1 260** positions par seconde — les bornes basses descendues au relevé de la vague 18 ; cumul appris celui de la vague 19 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **6 031 à 6 253 M** et **2 993 à 3 099 M** |
 | **N° 22 — la vague 21**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41186039541, 41186042684, 41186045956, 41186049109, 41186052709, 41186055933, 41186059218, 41186062420 ; à 5 000 : 41186041185, 41186044358, 41186047526, 41186050962, 41186054181, 41186057428, 41186060847, 41186064125 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 31 oct. à 9 h 47**, ses attendus poussés avant (`b768e6c`) ; **RELEVÉE le 31 oct. à 15 h 28 — les douze chiffres dans leur attendu** (section « N° 22 », la vague 21) ; **la dernière : la génération est EN PAUSE après elle**, aucune vague 22 | — *Attendus, écrits avant* (section « N° 22 », la vague 21) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 300 à 2 500** et **1 150 à 1 260** positions par seconde ; cumul appris celui de la vague 20 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **6 375 à 6 597 M** et **3 158 à 3 264 M** |
+| **N° 23 — C52, C53 et C54, l'historique borné et la LMR modulée** | C52 (`141fb43`) contre `0e43fdd` : **41424524575, 41424533128, 41424542152, 41424550122** ; C53 (`cde63e6`) contre `0e43fdd` : **41424558147, 41424567516, 41424575489, 41424583620** ; C54 (`822fb74`) contre C53 : **41424590639, 41424599610, 41424607675, 41424615206** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 12 × 2 800 parties | **lancés le 2 nov. à 10 h 55**, attendus et critère poussés avant (`d1b8159`) ; relève vers 16 h | — *Attendus, écrits avant* (section « N° 23 — les candidats ») : C52 **−3 à +3**, C53 **−5 à +10**, C54 contre C53 **−8 à +15** ; **critère** : C53 si sa borne basse passe zéro, C54 (C53 compris) si la sienne passe zéro contre C53 et que C53 n'est pas démontré sous `main` |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
 | **N° 20, séance C2c — N9pfbs800 contre N9w50s800** | **40610093856, 40610102423, 40610110837, 40610118331** | `ad84d1f` (N9pfbs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 7 h 28** — lancés à 1 h 39, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 6 h 38 et 6 h 47 | **+1,40 ± 3,27 en commun** (−2,73, +2,85, +4,09, +1,36 ; p = 0,463) — dans l'attendu, **pas candidat** (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −4 à +4, ~0 (« La séance C2c ») |
@@ -14132,13 +14133,27 @@ les précède — chacun quatre jobs de 2 800 parties à `8+0,08` :
   l'étiquette ne rendait rien (−1,49) ; une recherche deux fois plus
   courte peut perdre davantage qu'elle ne gagnait à doubler ;
 - **E2.5t contre E5n** : **+1 à +12, ~+6** — doubler le volume à
-  étiquette égale rendait +8,94, moins ce que l'étiquette perd.
+  étiquette égale rendait +8,94, moins ce que l'étiquette perd ;
+- **E21 contre N8nw50** — le tour de boucle, **écrit le 2 nov. avant
+  tout entraînement** : **0 à +9, ~+5**. La même recette, le même
+  budget (5 000), le même volume gardé (1 752,5 M contre 1 751,9 M) ;
+  seul l'étiqueteur change, N8tw50s800 contre N6r4, ~+40 par la chaîne
+  (+16,89, +17,91, +5,43). Au taux mesuré deux fois, ~0,12 Elo de
+  réseau par Elo d'étiqueteur (0,09 à 0,16 au seul +12,76 ± 3,45 de
+  N8nw50 sur N7p4w50) : +4 à +7 ; élargi vers le bas parce que la
+  chaîne n'est pas additive et que l'étiqueteur cherche à 5 000 nœuds,
+  pas à la pendule. <span>Inférence, confiance faible.</span> **Ce
+  qu'il décide** : si sa borne basse passe zéro, chaque réseau embarqué
+  réétiquette la génération qui suit, et les données des vieux
+  étiqueteurs se remplacent avant de s'empiler ; sinon, le volume seul
+  compte et rien ne presse de régénérer. **La puissance** : à ± 3,3, un
+  vrai +5 passe zéro environ huit fois sur dix.
 
 **Concurrence** : seize jobs, plus les sept de la vague 6 du n° 21
 jusqu'à ~19 h 40, plus les matchs de la séance C2 à venir — sous la
 limite de quarante.
 
-#### La séance du n° 22 — E5n, E2.5t, E2.5v : écrite le 27 oct. à 19 h 27, pour la semaine du 2 nov.
+#### La séance du n° 22 — E5n, E2.5t, E2.5v, et E21 depuis le 2 nov. : écrite le 27 oct. à 19 h 27, pour la semaine du 2 nov.
 
 **`tools/seance-n22.sh`**, sur le modèle de `tools/seance-n20d.sh`,
 l'option `veille` comprise. Trois réseaux à la recette de C1 — 256
@@ -14147,7 +14162,16 @@ résultat 0,5, pas 0,001 —, chacun poussé sur `reseau/n22` dès qu'il
 passe tous ses contrôles :
 - **`e5nw50`** — les 39 jobs appris à 5 000 ; puis
 - **`e25tw50`** — les 38 à 2 500 : la décision, contre le premier ;
-- **`e25vw50`** — les 19 premiers à 2 500 : l'étiquette seule.
+- **`e25vw50`** — les 19 premiers à 2 500 : l'étiquette seule ;
+- **`e21w50`**, **ajouté le 2 nov.** (feuille de route du 31 oct.,
+  point 4) — la tranche du n° 21 entière, 86 jobs à 5 000 étiquetés par
+  N8tw50s800 : **le tour de boucle**, contre N8nw50, la même recette sur
+  l'étape B étiquetée par N6r4. Le dernier : il ne décide pas le budget,
+  il dit comment reprendre la génération. N8nw50 est sorti de
+  l'entraîneur d'avant `00c65d3`, dont les options neuves gardent la
+  recette par défaut — C1 l'a déjà pris pour témoin de E10w50 sur cette
+  base. Ses données vont sous `donnees/n21/`, là où `tools/seance-c3.sh`
+  les reprendra.
 
 Les ensembles sont ceux fixés à la clôture de la partie mesurée — le
 script ne lit du registre que les vagues 1 à 5, si bien que les vagues
@@ -14164,7 +14188,15 @@ moins ce qui y est déjà. **Éprouvé au bac à sable le 27 oct.**, avec des
 levé ; une relance qui saute ce qui est poussé ; une panne au deuxième
 réseau, puis la relance qui ne refait que lui ; une recette refusée, le
 réseau mis de côté ; deux lignes de la vague 6 au registre sans effet
-sur les ensembles ; un mode ou une option inconnus refusés.
+sur les ensembles ; un mode ou une option inconnus refusés. **Le 4ᵉ
+réseau, éprouvé au même bac à sable le 2 nov.**, un faux `df` en plus :
+86 dossiers et `20442765:2561308398` à l'entraîneur, le dernier
+40325880490 ; 344 fichiers `.vf` ; un second essai court, sur le n° 21 ;
+32 Go exigés quand les deux générations partagent un disque — refusé à
+31 —, 20 et 12 sinon — refusé à 15 sous le n° 22 ; une panne de
+`e21w50` après les trois autres, la veille quand même demandée, le
+blocage levé, puis la relance qui saute les trois poussés et ne refait
+que lui.
 
 **Pour Théo, la semaine du 2 nov.** :
 ```sh
@@ -14177,17 +14209,20 @@ tmux new -s n22 'bash tools/seance-n22.sh tout veille'
 *Attendus, écrits avant* — <span>inférence, confiance faible sauf la
 durée</span> :
 - **la durée** : ~2 h 40 par réseau, comme E10w50 et E5vw50 à 400
-  superlots — ~8 h 30, l'essai compris, plus le téléchargement de
-  ~12 Go ;
+  superlots — ~11 h 30 pour les quatre, les deux essais compris, plus
+  le téléchargement de ~12 Go et ~9,3 Go ;
 - **la confrontation** : le critère, écart médian ≤ 15, maximal ≤ 50 ;
 - **la perte tenue à l'écart** (`nnue-validation.yml`, N9w50s800 en
   référence, les deux jobs tenus du n° 22, 40326139016 et 40326149256) :
   **E2.5t sous E5n sur le job à 2 500**, deux fois son volume à sa propre
   étiquette ; **E5n sous E2.5v sur le job à 5 000**, à volume égal sur sa
   propre étiquette. Rien n'est attendu contre N9w50s800, deux fois plus
-  de passes sur d'autres étiquettes ; et la perte ne décide rien ;
+  de passes sur d'autres étiquettes ; et la perte ne décide rien. **E21
+  sous N8nw50 sur le job tenu du n° 21** (39712871836), sa propre
+  étiquette, **au-dessus sur celui de l'étape B** (39050360980) ;
 - **les matchs** : écrits plus haut — E2.5v contre E5n −6 à +3,
-  E2.5t contre E5n +1 à +12, chacun quatre jobs de 2 800 parties à
+  E2.5t contre E5n +1 à +12, E21 contre N8nw50 0 à +9, chacun quatre
+  jobs de 2 800 parties à
   `8+0,08`, les candidats écrits et révoqués comme ceux de C2.
 
 **Le critère reste celui écrit à l'ouverture du n° 22.** Aucun de ces
@@ -14196,6 +14231,229 @@ passes de N9w50s800 : ils mesurent un budget, pas un réseau.
 **Ensuite, C3** (« La séance C3 — le chiffrage ») : ses données en
 dépendent, et sa base N10, entraînée sur les mêmes, la rend juste dans
 les deux cas.
+
+### N° 23 — l'historique borné (phase 4) : protocole et attendus, écrits le 2 nov. avant de mesurer
+
+**La décision** — la feuille de route validée par Théo le 31 oct., point 2 :
+la phase 4 au reset, l'historique borné d'abord, puis la LMR modulée et
+l'élagage par l'historique — les deux fermés à l'écran du 7 oct. faute
+d'échelle (n° 12, « L'échelle de l'historique n'est pas bornée »).
+
+**Ce qu'est l'historique aujourd'hui** (`search.rs`, lu le 2 nov.) : le
+papillon (`64 × 64`, sans la couleur) et la continuation à un et deux plis
+gagnent `d²` à chaque coupure par un tranquille ; les tranquilles cherchés
+avant le coupeur perdent `d²` (C49) ; une table se divise par deux quand
+une note passe ±800 000. Le papillon se vide à chaque `go`, la
+continuation non (A20). Aucune règle de la recherche ne lit la note, hors
+l'ordre des tranquilles.
+
+**La référence extérieure, lue dans son source** (`sf_16`, `movepick.h` et
+`search.cpp`, 2 nov.) : la gravité `note += b − note·|b|/D` ; le bonus
+`min(336·d − 547, 1561)` ; le plafond 7 183 au papillon, 29 952 à la
+continuation ; la LMR `r −= (2·papillon + trois continuations − 4006) /
+(11124 + …)` ; l'élagage d'un tranquille dont la somme des continuations
+passe sous `−3832·d`, à faible profondeur réduite. Stockfish ne vide pas
+son papillon entre deux coups. À sa profondeur 1, son bonus est négatif :
+la sonde le borne à 1.
+
+**La sonde** — un binaire de MESURE (`N23`, variantes combinables par
+`+`) ; sans elle, `main` au nœud près — le banc à la profondeur 10 rend
+376 089 nœuds des deux côtés :
+- `g:D` — la gravité, plafond `D` aux deux tables, sans division ;
+  `gc:D` — un plafond propre à la continuation ;
+- `lin:A:B:C` — le bonus et le malus valent `clamp(A·d − B, 1, C)` ;
+- `hk` — le papillon conservé d'un `go` à l'autre ;
+- `lmrh:K` — la réduction d'un tranquille diminue de sa note / `K`, ou
+  augmente si elle est négative, bornée à `[0, d − 2]` ;
+- `hp:T` — un tranquille de note sous `−T·d` se saute, profondeur ≤ 4,
+  gardes de la futilité aux frontières ; `hpo:T`, le même en ombre : les
+  sautés comptés, et ceux d'entre eux qui, cherchés, montent `alpha`.
+
+**Le journal** : 60 parties neuves de `main` à `701b609` contre lui-même,
+`8+0,08`, le livre de 15 000, graine 20261102, binaire AVX2 — le journal
+du cinquième écran est perdu avec son conteneur. Rejoué à la profondeur
+10 et 12, deux flux par partie, un par camp, table et historiques
+conservés d'un coup à l'autre (`rejouer.py`, dans la rustine).
+
+**Attendus, écrits avant** — <span>inférence, confiance faible</span>, à
+la profondeur 12, contre `main` :
+- `g:16384` — la borne seule, le bonus de `main` : **± 1 %**. Aux
+  profondeurs jouées, les notes restent loin d'un tel plafond — le banc à
+  la profondeur 10 n'en bouge que de −0,2 % à `g:4096` ;
+- `g:7183+gc:29952+lin:336:547:1561` — les échelles de Stockfish 16, que
+  la suite appellera **G** : **−5 à +8 %**. Le bonus devient grand devant
+  le plafond, l'historique se souvient du récent ;
+- **G+`hk`** : **−3 à +5 %** sur G ; sans gravité, A20 trouvait +4,4 % au
+  papillon conservé ;
+- **G+`lmrh:11000`** : **−10 à +10 %** sur G — moins réduire les bien
+  notés, plus les mal notés ; **G+`lmrh:6000`** : le double de l'effet ;
+- **G+`hp:3832`** : **−1 à −6 %** sur G ; en ombre, **3 à 15 %** des
+  sautés montent `alpha`.
+
+**Ce que l'écran décide** :
+- **un candidat de gravité quel que soit son arbre** — c'est la
+  condition des deux lignes suivantes, et un changement d'ordre ; le
+  plus petit arbre parmi `g:16384`, G et G+`hk`, sauf si un autre ne
+  s'en distingue pas de plus de 1 % : alors le plus simple ;
+- **la LMR modulée** candidate si elle déplace l'arbre de plus de 2 % ;
+- **l'élagage par l'historique** candidat si son économie dépasse dix
+  points d'arbre par point de dégâts — la futilité et l'élagage par
+  compte en achetaient 11 à 15, C40, qui a régressé, 5 ;
+- chaque candidat **joué deux fois** : quatre jobs de 2 800 parties à
+  `8+0,08` sur le livre de 15 000, et les mêmes sur un livre déséquilibré
+  — sa calibration (« le débit de mesure », point 1), écrite avant ses
+  matchs ;
+- une seconde série, si la première l'appelle, se dit **ajoutée après
+  lecture**, avec ses raisons.
+
+### N° 23, l'écran — RELEVÉ le 2 nov. : deux candidats de gravité et la LMR modulée ; l'élagage par l'historique fermé à nouveau
+
+**Le rejeu** — les 60 parties du journal, 7 030 recherches, à la
+profondeur 10 et 12 : `main` rend **109 814 229** et **278 235 761**
+nœuds, la sonde sans variante les mêmes au nœud près. ~20 s par série à
+la profondeur 10, ~60 s à la 12, quatre processus. **Deux séries** :
+celle du protocole, puis une seconde **ajoutée après lecture de la
+première**, pour trois raisons écrites alors — le dénominateur des
+dégâts manquait à la règle de l'élagage ; la LMR modulée et l'élagage
+n'avaient été mesurés que sur G, quand la base la plus petite est
+G+`hk` ; et l'échelle sous G dérive encore avec la profondeur (la LMR
+modulée change 0,88 % des réductions à la 10, 2,49 % à la 12, à
+`lmrh:11000`).
+
+| variante | l'arbre à 12 (à 10), contre `main` | sur sa base | attendu, écrit avant | lecture |
+|---|---|---|---|---|
+| `g:16384` | **−0,22 %** (+0,98 %) | — | ± 1 % | tient |
+| G | **−0,38 %** (+1,50 %) | — | −5 à +8 % | tient |
+| G+`hk` | **−0,91 %** (+0,12 %) | −0,53 % sur G | −3 à +5 % sur G | tient |
+| G+`lmrh:11000` | +0,97 % (+1,19 %) | **+1,36 %** sur G ; 2,49 % des réductions changées | −10 à +10 % | tient |
+| G+`lmrh:6000` | +3,25 % (+3,78 %) | **+3,64 %** sur G ; 12,4 % changées | le double | tient |
+| G+`hp:3832` | −1,29 % (+0,85 %) | **−0,92 %** sur G ; en ombre, 12,4 % des sautés montent `alpha`, **0,150 %** des montées d'`alpha` détruites | −1 à −6 % ; 3 à 15 % | l'économie juste sous sa plage |
+| G+`hk`+`hp:3832` *(2ᵉ série)* | +0,19 % (+0,60 %) | **+1,11 %** sur G+`hk` ; 0,268 % des montées détruites | — | l'arbre GROSSIT |
+| G+`hk`+`lmrh:6000` *(2ᵉ série)* | −0,91 % (+0,22 %) | **+0,001 %** sur G+`hk` ; **34,6 %** des réductions changées | — | une réallocation |
+
+**Ce que l'écran décide** — avec deux écarts à la règle écrite avant,
+nommés :
+- **l'élagage par l'historique, fermé sous cette forme** — par la règle
+  écrite : 0,92 point d'arbre pour 0,150 point de dégâts, **6,1 par
+  point** à la 12 (9,7 à la 10), sous le seuil de 10 ; sur G+`hk`, l'arbre
+  grossit. *Sous cette forme* : la note y somme le papillon et les deux
+  continuations ; Stockfish ne lit que ses continuations, à une
+  profondeur réduite. Au registre, déprioritisé ;
+- **la gravité, par la règle : `g:16384`** — les trois à moins d'un
+  point du plus petit, donc le plus simple. **Et G+`hk` ajouté après
+  lecture** : `g:16384` ne borne rien aux profondeurs jouées — les notes
+  restent loin de son plafond, et c'est le bonus en `d²`, sans borne, qui
+  fait encore l'échelle ; il ne peut pas servir de base à une règle qui
+  lit la note. G+`hk` a le plus petit arbre et porte la LMR modulée ;
+- **la LMR modulée, candidate contre la règle écrite** — elle demandait
+  « plus de 2 % d'arbre » : sur G+`hk`, `lmrh:6000` change **un tiers**
+  des réductions pour un arbre identique. La règle comptait COMBIEN on
+  cherche quand le changement déplace OÙ — la leçon de C24, mesurée le
+  24 sept., indépendante de ce changement (`CLAUDE.md`, « Une
+  réallocation à temps constant ne se lit pas en plis moyens ») : la
+  règle mesurait la mauvaise chose, et c'est elle qui tombe.
+
+Le journal, la sonde et son rejoueur : `tools/attic/n23-sonde-historique.patch`.
+
+### N° 23 — les candidats C52, C53, C54 : attendus et critère, écrits le 2 nov. avant de lancer
+
+**Les candidats**, chacun au nœud près de sa variante au rejeu à la
+profondeur 10, commité puis révoqué aussitôt, sa rustine à l'attic :
+- **C52** `141fb43` — `g:16384` : la gravité au plafond 16 384 aux deux
+  tables, le bonus `d²` inchangé, plus de division ; le banc inchangé
+  (70 452) ;
+- **C53** `cde63e6` — G+`hk` : bonus `clamp(336·d − 547, 1, 1561)`,
+  plafonds 7 183 et 29 952, le papillon conservé d'un coup à l'autre ;
+  banc 70 845 ;
+- **C54** `822fb74` — C53 et la LMR modulée, `note / 6000` plis, bornée
+  à `[0, d − 2]` ; banc 70 841.
+
+**Le protocole** — celui des écrans du n° 12 : quatre jobs de 2 800
+parties par match, `8+0,08`, graine « auto » chacun, le binaire AVX2 des
+deux côtés, le livre de 15 000. **C52 et C53 contre `0e43fdd`** — leur
+parent, le moteur de `main` au bit près ; **C54 contre C53**, pour isoler
+la LMR modulée de la gravité qui la porte. Douze jobs, lancés ensemble.
+
+**Attendus, écrits avant** — <span>inférence, confiance faible</span> ;
+le coût d'arbre par l'étalon, 1,38 pli par doublement, 60 à 105 Elo par
+pli :
+- **C52** : −0,22 % d'arbre, un gain de ~+0,3 si la décision ne bougeait
+  pas ; la borne ne joue presque jamais ; **−3 à +3, ~0** ;
+- **C53** : −0,91 %, **+1 à +2** à décision égale ; l'ordre des
+  tranquilles devient récent, et Stockfish l'a choisi ; **−5 à +10,
+  ~+2** ;
+- **C54 contre C53** : l'arbre égal ; une réallocation, dont le sens ne
+  se lit pas à l'écran — Stockfish étiquette la sienne « ~25 Elo » dans
+  son source, sur une LMR et une note différentes ; **−8 à +15, ~+4**.
+
+**Critère, écrit avant** — chaque match par la borne basse commune de
+ses quatre jobs, ± 3,3 :
+- **C53 fusionne** si sa borne basse contre `0e43fdd` est au-dessus de
+  zéro ; **C52**, de même, s'il n'est pas sous C53 au point ;
+- **C54 fusionne** — C53 compris — si sa borne basse contre C53 est
+  au-dessus de zéro ET si C53 n'est pas démontré sous `0e43fdd` (sa
+  borne haute au-dessus de zéro) : la LMR modulée n'existe pas sans la
+  gravité qui lui donne son échelle ;
+- **sinon, rien** : C52 et C53 seuls ne valent que comme base de C54,
+  si aucun ne gagne et que C54 ne gagne pas, rien n'entre.
+
+**Le livre déséquilibré** (« Ce que l'écran décide », plus haut) : ses
+matchs suivent dès qu'il existe, son protocole écrit avant eux. Ceux-ci
+partent sans attendre — les runners sont libres, et la calibration ne
+demande pas que les deux séries jouent en même temps.
+
+### N° 23 — le livre déséquilibré : protocole, écrit le 2 nov. avant son pilote et ses matchs
+
+**La question** — « le débit de mesure », point 1 (phase 7, inscrit le
+29 oct.) : un livre d'ouvertures déséquilibrées, comme celui de Fishtest
+<span>(de mémoire, confiance moyenne)</span>, rend-il plus d'information
+par partie que le nôtre ? Chaque ouverture se joue des deux côtés : le
+camp favorisé gagne le plus souvent, et l'information vient des paires où
+l'un des deux moteurs convertit et l'autre non. *Marge estimée à
+l'inscription : × 1,5 à × 3 de parties en moins à précision égale,
+confiance faible.*
+
+**Le livre** :
+- **le réservoir** : 80 000 positions de `bookgen`, 8 demi-coups au
+  hasard, l'évaluation statique faite main à ± 600 au plus, graine
+  20261102 — un autre tirage que `tools/book.epd` ;
+- **la note** : une recherche de `main` à `701b609`, binaire AVX2, le
+  réseau qui joue, profondeur 12, table vidée entre deux positions ; le
+  score du point de vue des Blancs, en unités du réseau ;
+- **le pilote, dans le conteneur** : trois bandes de `|score|`, [150,
+  250), [250, 400) et [400, 600) ; 150 positions tirées au hasard dans
+  chacune, chacune jouée des deux côtés, `main` contre lui-même à
+  `8+0,08` — 300 parties par bande. **La bande retenue** est celle dont
+  le camp favorisé marque le plus près de **75 %** : une victoire sur deux
+  et une nulle sur deux, la cible d'un livre de Fishtest <span>(de
+  mémoire, confiance moyenne)</span> ;
+- **le livre** : 15 000 positions de la bande retenue — toutes si elle en
+  compte moins —, dans un ordre tiré au hasard, `tools/book-desequilibre.epd` ;
+  `match.yml` le prend par l'entrée `livre`, le défaut restant
+  `tools/book.epd`.
+
+**La calibration** — un effet CONNU, joué sur les deux livres : `main`
+contre lui-même, le candidat à `10+0,10` et la référence à `8+0,08` —
+× 1,25 de temps, 0,32 doublement, **~+35 Elo** par l'étalon sur notre
+livre. Deux jobs de 2 800 parties par livre. **La mesure** : par paire,
+`t = (score moyen − ½) / écart type`, lu sur la somme des comptes
+pentanomiaux ; **le rendement** est `(t_déséquilibré / t_équilibré)²` —
+combien de fois moins de paires pour la même précision. Les Elo des deux
+livres ne se comparent pas : un livre déséquilibré change l'échelle, pas
+le signe. Et C53 contre `0e43fdd`, C54 contre C53, quatre jobs chacun sur
+le livre déséquilibré — un second témoin des mêmes effets, lu en signe et
+en `t`.
+
+*Attendus, écrits avant* — <span>inférence, confiance faible</span> :
+- la bande retenue : **[250, 400)** ;
+- **le rendement : × 1,3 à × 3** ;
+- les nulles : **10 à 25 %** des parties, contre ~30 % sur notre livre.
+
+**Ce que la mesure décide** : un rendement au-dessus de × 1,3, borne
+basse comprise, fait du livre déséquilibré **le livre des matchs** à la
+série suivante — une condition de mesure qui change, écrite à sa date,
+jamais au milieu d'une série. En dessous, notre livre reste, et la ligne
+retourne au registre.
 
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
@@ -15716,8 +15974,9 @@ pas parce que des runners sont libres.
 3. En parallèle de 2 : l'inférence multicouche écrite dans le moteur,
    confrontée au code de bullet, prête pour l'entraînement au verdict de C3.
 4. Carte de Théo, semaine du 2 nov. : séance n° 22 (2 500 contre 5 000
-   nœuds, plus un 4ᵉ réseau pour le tour de boucle, à ajouter à
-   `tools/seance-n22.sh`), puis C3 (N10, N10r10, N10h384, N10h512), ~39 h.
+   nœuds, plus un 4ᵉ réseau pour le tour de boucle, ajouté à
+   `tools/seance-n22.sh` le 2 nov.), puis C3 (N10, N10r10, N10h384,
+   N10h512), ~42 h.
 5. Après C3 : embarquer le gagnant (sonde des marges, série C13) ;
    16 seaux de roi si 10 a payé ; 1 024 et couches cachées si la largeur paie.
 6. Reprendre la génération, étiquetée par le nouveau réseau, au rythme

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # La séance du n° 22 sur la carte de Théo, sans surveillance (tools/README.md,
-# section « La séance du n° 22 ») : trois réseaux à la recette de C1 — 256
+# section « La séance du n° 22 ») : quatre réseaux à la recette de C1 — 256
 # unités, quatre seaux de roi, huit de sortie, 400 superlots, poids du
 # résultat 0,5, pas 0,001 —, sur la partie mesurée du n° 22, étiquetée par
 # N9w50s800 ; chacun commité et poussé sur `reseau/n22` dès qu'il passe TOUS
@@ -9,10 +9,14 @@
 #   e25tw50  — les 38 jobs appris à 2 500 nœuds : le budget à temps de runner
 #              égal, la décision ;
 #   e25vw50  — les 19 premiers de ceux-là : le volume gardé de e5nw50 à un job
-#              près, l'étiquette seule.
+#              près, l'étiquette seule ;
+#   e21w50   — la tranche du n° 21 entière, 86 jobs à 5 000 nœuds étiquetés
+#              par N8tw50s800 : le tour de boucle, contre N8nw50 — la même
+#              recette sur l'étape B, étiquetée par N6r4, au même volume
+#              gardé (1 752,5 M contre 1 751,9 M). Ajouté le 2 nov.
 #
 #   bash tools/seance-n22.sh essai          # contrôles, données, essai court
-#   bash tools/seance-n22.sh tout           # les trois, ~8 h 30
+#   bash tools/seance-n22.sh tout           # les quatre, ~11 h 30
 #   bash tools/seance-n22.sh tout veille    # puis met la machine en veille
 #
 # `veille` : celle de tools/seance-n20d.sh — armée une fois l'essai court
@@ -29,6 +33,8 @@ set -uo pipefail
 RACINE=${RACINE:-$HOME/shallowred}
 DEPOT=${DEPOT:-$(cd "$(dirname "$0")/.." && pwd)}
 DONNEES_N22=${DONNEES_N22:-$RACINE/donnees/n22}
+# Le n° 21 là où tools/seance-c3.sh le cherchera : téléchargé une fois.
+DONNEES_N21=${DONNEES_N21:-$RACINE/donnees/n21}
 TRAVAIL=${TRAVAIL:-$RACINE/seances/n22}
 MODE=${1:-tout}
 VEILLE=${2:-}
@@ -40,6 +46,8 @@ ATT_E5N=8731249:1084732803
 ATT_E25T=19863087:2285525972
 ATT_E25V=9775632:1124756878
 ATT_TOUT=28594336:3370258775
+# La tranche du n° 21, sommée sur `tools/n21-jobs.tsv` le 2 nov.
+ATT_E21=20442765:2561308398
 
 usage() {
   echo "usage : $0 [essai|tout] [veille]" >&2
@@ -92,7 +100,7 @@ compte_vf() { # nombre attendu, puis les dossiers
   [ "$(for j in "$@"; do find "$j" -maxdepth 1 -name '*.vf'; done | wc -l)" -eq "$n" ]
 }
 cuda_present() { ls "$CUDA_PATH"/lib64/lib{cudart,nvrtc,cublas}.so; }
-# ~14 Go de données neuves sur le disque, puis trois entraînements.
+# ~14 Go du n° 22 et ~11 Go du n° 21 sur le disque, puis quatre entraînements.
 place_libre() { [ "$(df -Pk "$1" | awk 'NR == 2 {print $4}')" -ge "$2" ]; }
 distante() { [ -n "$(git_d ls-remote --heads origin "$1")" ]; }
 locale() { git_d show-ref --verify --quiet "refs/heads/$1"; }
@@ -109,8 +117,11 @@ mapfile -t A2500 < <(appris 2500)
 mapfile -t A5000 < <(appris 5000)
 verifier "38 jobs appris à 2 500 nœuds au registre, vagues 1 à 5" test "${#A2500[@]}" -eq 38
 verifier "39 jobs appris à 5 000 nœuds au registre, vagues 1 à 5" test "${#A5000[@]}" -eq 39
+# Le n° 21 entier : une tranche close, à 5 000 nœuds d'un bout à l'autre.
+mapfile -t A21 < <(awk -F'\t' '$4 == "appris" && $5 == 5000 {print $1}' "$DEPOT/tools/n21-jobs.tsv" | sort -n)
+verifier "86 jobs appris à 5 000 nœuds au registre du n° 21" test "${#A21[@]}" -eq 86
 verifier "gh, connecté à GitHub" gh auth status
-mkdir -p "$DONNEES_N22"
+mkdir -p "$DONNEES_N22" "$DONNEES_N21"
 if [ -z "${CUDA_PATH:-}" ] || ! cuda_present >/dev/null 2>&1; then
   export CUDA_PATH=/usr/local/cuda-13.2
   export LD_LIBRARY_PATH=$CUDA_PATH/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
@@ -118,8 +129,18 @@ fi
 verifier "CUDA : cudart, nvrtc, cublas sous $CUDA_PATH" cuda_present
 # Ce qui est déjà téléchargé compte : une relance ne demande que le reste.
 DEJA=$(du -sk "$DONNEES_N22" 2>/dev/null | cut -f1)
-verifier "20 Go libres au moins sous $DONNEES_N22, moins ce qui y est déjà" \
-  place_libre "$DONNEES_N22" $((20971520 - ${DEJA:-0}))
+DEJA21=$(du -sk "$DONNEES_N21" 2>/dev/null | cut -f1)
+# ~10,7 Go décompressés pour le n° 21 (9,32 Go d'artefacts) : 12 Go. Sur le
+# même disque que le n° 22, les deux besoins s'additionnent.
+if [ "$(df -P "$DONNEES_N22" | awk 'NR == 2 {print $1}')" = "$(df -P "$DONNEES_N21" | awk 'NR == 2 {print $1}')" ]; then
+  verifier "32 Go libres au moins sous $DONNEES_N22 et $DONNEES_N21, moins ce qui y est déjà" \
+    place_libre "$DONNEES_N22" $((33554432 - ${DEJA:-0} - ${DEJA21:-0}))
+else
+  verifier "20 Go libres au moins sous $DONNEES_N22, moins ce qui y est déjà" \
+    place_libre "$DONNEES_N22" $((20971520 - ${DEJA:-0}))
+  verifier "12 Go libres au moins sous $DONNEES_N21, moins ce qui y est déjà" \
+    place_libre "$DONNEES_N21" $((12582912 - ${DEJA21:-0}))
+fi
 verifier "4 Go libres au moins sous $NN" place_libre "$NN" 4194304
 verifier "cargo" command -v cargo
 # La veille se demandera sans personne pour taper un mot de passe : seul
@@ -164,6 +185,14 @@ if ! telecharger "$DONNEES_N22" "${A2500[@]}" "${A5000[@]}" ||
   exit 1
 fi
 dire "ok      152 + 156 fichiers .vf, $(du -sh "$DONNEES_N22" | cut -f1)"
+dire "— le téléchargement du n° 21 : 86 jobs, ~9,3 Go"
+E21=()
+for r in "${A21[@]}"; do E21+=("$DONNEES_N21/$r"); done
+if ! telecharger "$DONNEES_N21" "${A21[@]}" || ! compte_vf 344 "${E21[@]}"; then
+  dire "ARRÊT : il manque des données du n° 21 (344 fichiers .vf attendus) — relancer reprend où il s'est arrêté."
+  exit 1
+fi
+dire "ok      344 fichiers .vf, $(du -sh "$DONNEES_N21" | cut -f1)"
 
 # E2.5v : les 19 premiers jobs appris à 2 500 — la règle écrite avant, le
 # volume gardé de E5n à un job près (751,0 M contre 743,0 M).
@@ -297,6 +326,11 @@ rm -rf "${NN:?}/essai-n22"
 entrainer essai-n22 --attendu "$ATT_TOUT" --superlots 1 --sortie essai-n22 "${E25T[@]}" "${E5N[@]}" ||
   dire "  ÉCHEC essai-n22 : l'entraîneur a rendu une erreur"
 controler essai-n22 "$ARCH-1" || ESSAI=1
+dire "— l'essai court, sur les 86 jobs du n° 21"
+rm -rf "${NN:?}/essai-n21"
+entrainer essai-n21 --attendu "$ATT_E21" --superlots 1 --sortie essai-n21 "${E21[@]}" ||
+  dire "  ÉCHEC essai-n21 : l'entraîneur a rendu une erreur"
+controler essai-n21 "$ARCH-1" || ESSAI=1
 if [ "$MODE" = essai ]; then
   if [ "$ESSAI" = 0 ]; then dire "ESSAI RÉUSSI — lancer : bash $0 tout (veille)"; else dire "ESSAI ÉCHOUÉ — m'envoyer $RESUME"; fi
   exit "$ESSAI"
@@ -341,6 +375,8 @@ dire "— e25tw50 : les 38 jobs à 2 500 nœuds — le budget à temps de runner
 reseau_e e25tw50 --attendu "$ATT_E25T" "${E25T[@]}"
 dire "— e25vw50 : les 19 premiers à 2 500 — l'étiquette seule, à volume égal"
 reseau_e e25vw50 --attendu "$ATT_E25V" "${E25V[@]}"
+dire "— e21w50 : la tranche du n° 21 entière — le tour de boucle, contre N8nw50"
+reseau_e e21w50 --attendu "$ATT_E21" "${E21[@]}"
 
 if [ "$B" = 0 ]; then
   dire "FIN : ok — les réseaux sur reseau/n22, les sorties dans $NN/*.sortie.txt"
