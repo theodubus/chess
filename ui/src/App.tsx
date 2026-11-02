@@ -1,4 +1,4 @@
-import { handicapPosition, matchPosition } from "./handicap";
+import { localPosition, matchPosition } from "./handicap";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { GameController } from "./GameController";
 import GameSetup from "./GameSetup";
@@ -88,7 +88,7 @@ export default function App() {
       humanSide,
       initialFen:
         next.opponent === "engine"
-          ? handicapPosition(next.handicap, humanSide)
+          ? localPosition(next.handicap, next.playerArmy, humanSide)
           : next.opponent === "match"
             ? matchPosition(next.matchArmies)
             : next.humanArmies.w || next.humanArmies.b

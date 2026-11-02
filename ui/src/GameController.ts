@@ -707,7 +707,15 @@ export class GameController {
       } as Record<Side, number>,
       flagged: null,
     });
-    this.restorePosition();
+    this.game.pending = null;
+    // Le moteur garde sa session, donc sa table et ses historiques : seule
+    // sa recherche, ou son ponder, s'arrête, et son coup est ignoré. Le
+    // relancer à neuf l'aurait fait rejouer à froid, moins profond à temps
+    // égal — un avantage pour celui qui reprend (Théo, 2 nov. 2026).
+    this.predicted = null;
+    if (this.snapshot) this.snapshot = { ...this.snapshot, analysis: null };
+    void this.session?.cancel({ forget: true });
+    this.publish();
     // Une pendule à zéro tombe au premier relevé, comme en partie.
     if (remaining === 0) this.tick();
     return true;

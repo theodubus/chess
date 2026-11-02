@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
+import { defaultArmy } from "./handicap";
 import {
   DEFAULT_SETUP,
   gameTimeControls,
@@ -147,4 +148,13 @@ it("relit les pendules à la seconde, les retours et la position à deux joueurs
   });
   expect(readSetup().takebacks).toEqual({ player: false, w: false, b: false });
   expect(readSetup().humanArmies).toEqual({ w: null, b: null });
+});
+
+it("relit votre camp préparé face au moteur, et l’écarte s’il est invalide", () => {
+  const player = defaultArmy();
+  delete player.d8;
+  vi.stubGlobal("localStorage", { getItem: () => JSON.stringify({ ...DEFAULT_SETUP, playerArmy: player }) });
+  expect(readSetup().playerArmy).toEqual(player);
+  vi.stubGlobal("localStorage", { getItem: () => JSON.stringify({ ...DEFAULT_SETUP, playerArmy: { a1: "k" } }) });
+  expect(readSetup().playerArmy).toBeNull();
 });

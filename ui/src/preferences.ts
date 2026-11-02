@@ -19,7 +19,10 @@ export type GameSetup = {
    */
   engineTimeControl: TimeControl | null;
   engineOptions: EngineOptions;
+  /** Face au moteur : son camp, enregistré sans couleur. */
   handicap: Handicap;
+  /** Face au moteur : votre camp, enregistré de même (Théo, 2 nov. 2026). */
+  playerArmy: Handicap;
   matchEngines: Record<Side, { id: string; options: EngineOptions }>;
   matchArmies: MatchArmies;
   /** La position de départ de deux joueurs, les deux camps modifiables. */
@@ -38,6 +41,7 @@ export const DEFAULT_SETUP: GameSetup = {
   engineTimeControl: null,
   engineOptions: DEFAULT_ENGINE_OPTIONS,
   handicap: null,
+  playerArmy: null,
   matchArmies: { w: null, b: null },
   matchEngines: {
     w: { id: "default", options: DEFAULT_ENGINE_OPTIONS },
@@ -77,6 +81,7 @@ export function readSetup(): GameSetup {
     )
       return {
         handicap: readHandicap(value.handicap),
+        playerArmy: readHandicap(value.playerArmy),
         matchArmies: readMatchArmies(value.matchArmies),
         humanArmies: readMatchArmies(value.humanArmies),
         takebacks: {
