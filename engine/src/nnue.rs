@@ -115,7 +115,37 @@ pub struct Arch {
     /// Le nombre de seaux de sortie, de 1 à 32 : un jeu de poids de sortie
     /// par tranche du nombre de pièces sur l'échiquier.
     pub output_buckets: usize,
+    /// Les couches denses après l'accumulateur. `None` : la sortie lit
+    /// directement les deux accumulateurs activés, comme tous les réseaux
+    /// embarqués jusqu'ici.
+    pub layers: Option<Layers>,
 }
+
+/// Les couches denses d'un réseau multicouche (n° 23, feuille de route du
+/// 31 oct., point 3) : la pile de l'exemple de bullet,
+/// `examples/progression/4_multi_layer.rs` au commit `10e7e82`. Chaque
+/// accumulateur passe par `CReLU`, et ses deux moitiés se multiplient terme
+/// à terme — `HIDDEN / 2` produits par camp, le camp au trait d'abord ;
+/// puis `HIDDEN → l1`, `SCReLU`, `l1 → l2`, `SCReLU`, `l2 → 1`, chaque
+/// couche avec un jeu de poids par seau de sortie. La première est
+/// quantifiée en `i8` par [`QL1`], les deux suivantes restent en flottants,
+/// comme bullet les écrit.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Layers {
+    /// Les sorties de la première couche dense, par seau.
+    pub l1: usize,
+    /// Les sorties de la deuxième, par seau.
+    pub l2: usize,
+}
+
+/// Quantification des poids de la première couche dense d'un réseau
+/// multicouche : `quantise::<i8>(64)` dans l'exemple de bullet.
+pub const QL1: i32 = 64;
+
+/// Les plus grandes couches denses que le moteur sait évaluer : leurs
+/// sorties vivent sur la pile, sans allocation par évaluation.
+const MAX_L1: usize = 64;
+const MAX_L2: usize = 64;
 
 impl Arch {
     /// Le nombre de blocs de [`INPUTS`] entrées : un par seau de roi.
@@ -143,11 +173,32 @@ impl Arch {
         INPUTS * self.input_buckets() * HIDDEN + HIDDEN + self.output_buckets * (2 * HIDDEN + 1)
     }
 
-    /// Taille exacte d'un fichier de ce réseau : les valeurs, puis le
-    /// bourrage de bullet jusqu'au multiple de 64 octets.
+    /// Les octets que bullet écrit avant son bourrage. Sans couches denses :
+    /// les `i16` de [`Arch::values`]. Avec : l'accumulateur en `i16`, la
+    /// première couche dense en `i8`, ses biais et les deux couches
+    /// suivantes en `f32` — `l1w`, `l1b`, `l2w`, `l2b`, `l3w`, `l3b`, dans
+    /// l'ordre de `SavedFormat`.
+    #[must_use]
+    pub const fn bytes(&self) -> usize {
+        let Some(layers) = self.layers else {
+            return 2 * self.values();
+        };
+        let buckets = self.output_buckets;
+        let floats = buckets * layers.l1
+            + buckets * layers.l2 * layers.l1
+            + buckets * layers.l2
+            + buckets * layers.l2
+            + buckets;
+        2 * (INPUTS * self.input_buckets() * HIDDEN + HIDDEN)
+            + buckets * layers.l1 * HIDDEN
+            + 4 * floats
+    }
+
+    /// Taille exacte d'un fichier de ce réseau : ses octets, puis le
+    /// bourrage de bullet jusqu'au multiple de 64.
     #[must_use]
     pub const fn file_bytes(&self) -> usize {
-        (2 * self.values()).div_ceil(64) * 64
+        self.bytes().div_ceil(64) * 64
     }
 
     /// Le bloc d'entrées et le retournement de colonne que choisit le roi de
@@ -233,7 +284,12 @@ pub const KING_BUCKETS_4: [u8; 32] = [
 pub const ARCH: Arch = Arch {
     king_buckets: Some(KING_BUCKETS_4),
     output_buckets: 8,
+    layers: None,
 };
+
+// Une couche dense multiplie les deux moitiés d'un accumulateur : il en
+// faut deux.
+const _: () = assert!(ARCH.layers.is_none() || HIDDEN.is_multiple_of(2));
 
 // Un seau de sortie par tranche du nombre de pièces : de 1 à 32 seaux, le
 // plus haut — 32 pièces — tombant toujours sous `output_buckets`.
@@ -593,7 +649,141 @@ pub struct Network {
     output_weights: Box<[[i16; 2 * HIDDEN]]>,
     /// Un biais de sortie par seau, quantifié par `QA × QB`.
     output_bias: Box<[i16]>,
+    /// Les couches denses d'un réseau multicouche ; `None`, la sortie lit
+    /// les accumulateurs.
+    dense: Option<Dense>,
 }
+
+/// Les poids des couches denses, seau par seau, sortie par sortie : le
+/// format de bullet, chaque matrice transposée en lignes de sortie.
+struct Dense {
+    layers: Layers,
+    /// `[seau][l1][HIDDEN]`, quantifiés par [`QL1`].
+    l1_weights: Box<[i8]>,
+    /// `[seau][l1]`.
+    l1_bias: Box<[f32]>,
+    /// `[seau][l2][l1]`.
+    l2_weights: Box<[f32]>,
+    /// `[seau][l2]`.
+    l2_bias: Box<[f32]>,
+    /// `[seau][l2]`.
+    l3_weights: Box<[f32]>,
+    /// `[seau]`.
+    l3_bias: Box<[f32]>,
+}
+
+/// `SCReLU` : `clamp(x, 0, 1)²`.
+fn screlu(x: f32) -> f32 {
+    let y = x.clamp(0.0, 1.0);
+    y * y
+}
+
+impl Dense {
+    /// Lit les couches denses à la suite de l'accumulateur, et refuse un
+    /// flottant qui n'est pas fini : un NaN ne fait rien planter, il rend
+    /// des évaluations qui ne veulent rien dire.
+    fn read(bytes: &[u8], layers: Layers, buckets: usize) -> Result<Self, String> {
+        if layers.l1 == 0 || layers.l1 > MAX_L1 || layers.l2 == 0 || layers.l2 > MAX_L2 {
+            return Err(format!(
+                "couches denses {} et {} : de 1 à {MAX_L1} et de 1 à {MAX_L2} sorties",
+                layers.l1, layers.l2
+            ));
+        }
+        let l1_count = buckets * layers.l1 * HIDDEN;
+        let (l1, rest) = bytes
+            .split_at_checked(l1_count)
+            .ok_or("couches denses tronquées")?;
+        let (floats, _) = rest.as_chunks::<4>();
+        let mut floats = floats.iter().map(|&b| f32::from_le_bytes(b));
+        let mut take = |n: usize| -> Result<Box<[f32]>, String> {
+            let v: Vec<f32> = floats.by_ref().take(n).collect();
+            if v.len() != n {
+                return Err("couches denses tronquées".to_owned());
+            }
+            if let Some(x) = v.iter().find(|x| !x.is_finite()) {
+                return Err(format!("un poids dense vaut {x}"));
+            }
+            Ok(v.into_boxed_slice())
+        };
+        Ok(Self {
+            layers,
+            l1_weights: l1.iter().map(|&b| b.cast_signed()).collect(),
+            l1_bias: take(buckets * layers.l1)?,
+            l2_weights: take(buckets * layers.l2 * layers.l1)?,
+            l2_bias: take(buckets * layers.l2)?,
+            l3_weights: take(buckets * layers.l2)?,
+            l3_bias: take(buckets)?,
+        })
+    }
+
+    /// La sortie du réseau pour le seau `bucket`, en unités de la sortie de
+    /// bullet — avant `× SCALE`. La première couche se calcule en entiers,
+    /// au produit près : chaque activation est le produit de deux `CReLU`
+    /// quantifiées par `QA`, au plus 65 025, et une tranche de
+    /// [`DOT_CHUNK`] termes tient dans un `i32` (vérifié à la compilation,
+    /// plus bas). Les couches suivantes, dix fois plus petites, en `f32`,
+    /// dans un ordre fixe : le compilateur ne réordonne pas des additions
+    /// flottantes, donc tous les binaires rendent la même évaluation.
+    fn forward(&self, us: &Accumulator, them: &Accumulator, bucket: usize) -> f32 {
+        const HALF: usize = HIDDEN / 2;
+        let crelu = |v: i16| i32::from(v.clamp(0, QA_I16));
+        let mut activations = [0i32; HIDDEN];
+        for (side, accumulator) in [us, them].into_iter().enumerate() {
+            let (low, high) = accumulator.0.split_at(HALF);
+            for (j, (&a, &b)) in low.iter().zip(high).enumerate() {
+                activations[side * HALF + j] = crelu(a) * crelu(b);
+            }
+        }
+        let Layers { l1, l2 } = self.layers;
+        let mut first = [0f32; MAX_L1];
+        let rows = self
+            .l1_weights
+            .as_chunks::<HIDDEN>()
+            .0
+            .iter()
+            .skip(bucket * l1);
+        for ((out, row), &bias) in first[..l1]
+            .iter_mut()
+            .zip(rows)
+            .zip(&self.l1_bias[bucket * l1..])
+        {
+            let mut sum = 0i64;
+            for (a, w) in activations.chunks(DOT_CHUNK).zip(row.chunks(DOT_CHUNK)) {
+                let part: i32 = a.iter().zip(w).map(|(&a, &w)| a * i32::from(w)).sum();
+                sum += i64::from(part);
+            }
+            *out = screlu(sum as f32 / L1_SCALE + bias);
+        }
+        let mut second = [0f32; MAX_L2];
+        let rows = self.l2_weights.chunks_exact(l1).skip(bucket * l2);
+        for ((out, row), &bias) in second[..l2]
+            .iter_mut()
+            .zip(rows)
+            .zip(&self.l2_bias[bucket * l2..])
+        {
+            let mut sum = bias;
+            for (&x, &w) in first[..l1].iter().zip(row) {
+                sum += x * w;
+            }
+            *out = screlu(sum);
+        }
+        let mut output = self.l3_bias[bucket];
+        for (&x, &w) in second[..l2].iter().zip(&self.l3_weights[bucket * l2..]) {
+            output += x * w;
+        }
+        output
+    }
+}
+
+/// Ce qui ramène le produit entier de la première couche dense à l'échelle
+/// de bullet : chaque `CReLU` est quantifiée par `QA`, chaque poids par
+/// [`QL1`].
+const L1_SCALE: f32 = (QA * QA * QL1) as f32;
+
+// Une tranche de `DOT_CHUNK` produits d'activations — au plus `QA²` — par
+// des poids `i8` tient dans un `i32` : la première couche dense ne déborde
+// à aucune largeur, comme le produit de sortie.
+const _: () = assert!(DOT_CHUNK as i64 * 128 * (QA as i64 * QA as i64) <= i32::MAX as i64);
 
 impl Network {
     /// Lit un réseau au format de bullet, et le REFUSE s'il pouvait déborder.
@@ -623,12 +813,26 @@ impl Network {
                 arch.output_buckets,
             ));
         }
-        let (pairs, _) = bytes.as_chunks::<2>();
+        let accumulator_values = INPUTS * arch.input_buckets() * HIDDEN + HIDDEN;
+        let (accumulator_bytes, dense_bytes) = match arch.layers {
+            None => (bytes, &bytes[..0]),
+            Some(_) => bytes.split_at(2 * accumulator_values),
+        };
+        let (pairs, _) = accumulator_bytes.as_chunks::<2>();
         let values: Vec<i16> = pairs.iter().map(|&pair| i16::from_le_bytes(pair)).collect();
         let (weights, rest) = values.split_at(INPUTS * arch.input_buckets() * HIDDEN);
         let (bias, rest) = rest.split_at(HIDDEN);
-        let (output, rest) = rest.split_at(arch.output_buckets * 2 * HIDDEN);
-        let output_bias = &rest[..arch.output_buckets];
+        let (output, output_bias): (&[i16], &[i16]) = match arch.layers {
+            None => {
+                let (output, rest) = rest.split_at(arch.output_buckets * 2 * HIDDEN);
+                (output, &rest[..arch.output_buckets])
+            }
+            Some(_) => (&[], &[]),
+        };
+        let dense = match arch.layers {
+            None => None,
+            Some(layers) => Some(Dense::read(dense_bytes, layers, arch.output_buckets)?),
+        };
 
         let mut king_keys = [[(0, 0); 64]; 2];
         for perspective in Color::ALL {
@@ -648,6 +852,7 @@ impl Network {
                 .map_err(|_| "biais de la couche cachée mal découpés".to_owned())?,
             output_weights: Box::from(output.as_chunks::<{ 2 * HIDDEN }>().0),
             output_bias: Box::from(output_bias),
+            dense,
         };
         network.check_bounds()?;
         Ok(network)
@@ -827,6 +1032,15 @@ impl Network {
     pub fn evaluate(&self, accumulators: &Accumulators, board: &Board) -> i32 {
         let side_to_move = board.side_to_move();
         let bucket = self.output_buckets[board.occupied().len() as usize];
+        if let Some(dense) = &self.dense {
+            let output = dense.forward(
+                &accumulators[side_to_move as usize],
+                &accumulators[!side_to_move as usize],
+                bucket,
+            ) * SCALE as f32;
+            let bound = (MATE_THRESHOLD - 1) as f32;
+            return output.clamp(-bound, bound) as i32;
+        }
         let weights = &self.output_weights[bucket];
         let (ours, theirs) = weights.split_at(HIDDEN);
         let sum = dot(&accumulators[side_to_move as usize].0, ours)
@@ -940,6 +1154,7 @@ pub(crate) mod testing {
     pub(crate) const PLAIN: Arch = Arch {
         king_buckets: None,
         output_buckets: 1,
+        layers: None,
     };
 
     /// Une architecture à seaux, celle de l'exemple de bullet : dix seaux de
@@ -947,6 +1162,7 @@ pub(crate) mod testing {
     pub(crate) const BUCKETED: Arch = Arch {
         king_buckets: Some(KING_BUCKETS_10),
         output_buckets: 8,
+        layers: None,
     };
 
     /// Un réseau aléatoire aux poids d'un réseau entraîné — bornés comme
@@ -1066,6 +1282,211 @@ mod tests {
         assert_eq!(PLAIN.file_bytes(), expected);
         let output = i16::try_from(127 * 128 / HIDDEN).unwrap();
         assert!(plain(&random_values_with(PLAIN, 7, 300, output)).is_ok());
+    }
+
+    /// Une architecture multicouche aux couches de l'exemple de bullet,
+    /// sans seaux de roi : les entrées de [`bullet_features`].
+    const DENSE: Arch = Arch {
+        king_buckets: None,
+        output_buckets: 8,
+        layers: Some(Layers { l1: 16, l2: 32 }),
+    };
+
+    /// Les octets d'un réseau multicouche aléatoire, tel que bullet les
+    /// écrirait : l'accumulateur en `i16`, la première couche dense en
+    /// `i8`, le reste en `f32` dans `[-1, 1]`, puis le bourrage.
+    fn random_dense_file(arch: Arch, seed: u64, hidden: i16) -> Vec<u8> {
+        let layers = arch.layers.unwrap();
+        let mut rng = Rng(seed | 1);
+        let mut bytes: Vec<u8> = (0..INPUTS * arch.input_buckets() * HIDDEN + HIDDEN)
+            .flat_map(|_| rng.spread(hidden).to_le_bytes())
+            .collect();
+        bytes.extend(
+            (0..arch.output_buckets * layers.l1 * HIDDEN)
+                .map(|_| i8::try_from(rng.spread(127)).unwrap().to_le_bytes()[0]),
+        );
+        let floats = arch.output_buckets * (layers.l1 + layers.l2 * layers.l1 + 2 * layers.l2 + 1);
+        bytes.extend(
+            (0..floats).flat_map(|_| (f32::from(rng.spread(1_000)) / 1_000.0).to_le_bytes()),
+        );
+        let pattern = b"bullet";
+        let mut index = 0;
+        while !bytes.len().is_multiple_of(64) {
+            bytes.push(pattern[index % pattern.len()]);
+            index += 1;
+        }
+        bytes
+    }
+
+    #[test]
+    fn un_reseau_multicouche_a_la_taille_que_bullet_ecrit() {
+        // Calculé à la main depuis `SavedFormat`, une seule sortie, 16 puis
+        // 32 unités denses : 2 × (768·H + H) octets d'accumulateur, 16·H
+        // poids `i8`, et 593 flottants — 16 + 16·32 + 32 + 32 + 1 —, soit
+        // 2 372 octets ; bourré au multiple de 64 suivant. Pour H = 256 :
+        // 393 728 + 4 096 + 2 372 = 400 196, 400 256 bourrés.
+        let expected = match HIDDEN {
+            128 => 201_344,
+            256 => 400_256,
+            384 => 599_168,
+            512 => 798_080,
+            1024 => 1_593_728,
+            other => panic!("taille à calculer à la main pour {other} unités"),
+        };
+        let one = Arch {
+            output_buckets: 1,
+            ..DENSE
+        };
+        assert_eq!(one.file_bytes(), expected);
+        let bytes = random_dense_file(one, 11, 300);
+        assert_eq!(bytes.len(), expected);
+        assert!(Network::from_bytes_with(&bytes, one).is_ok());
+        // Un octet de moins : refusé, comme un réseau d'une autre largeur.
+        assert!(Network::from_bytes_with(&bytes[..expected - 64], one).is_err());
+    }
+
+    #[test]
+    fn un_poids_dense_qui_n_est_pas_un_nombre_est_refuse() {
+        let mut bytes = random_dense_file(DENSE, 13, 300);
+        let first_float = 2 * (INPUTS * HIDDEN + HIDDEN) + 8 * 16 * HIDDEN;
+        for bad in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+            bytes[first_float..first_float + 4].copy_from_slice(&bad.to_le_bytes());
+            let error = Network::from_bytes_with(&bytes, DENSE).err().unwrap();
+            assert!(error.contains("dense"), "{error}");
+        }
+        // Le dernier flottant aussi : la lecture va jusqu'au bout.
+        let mut bytes = random_dense_file(DENSE, 13, 300);
+        let last_float = DENSE.bytes() - 4;
+        bytes[last_float..last_float + 4].copy_from_slice(&f32::NAN.to_le_bytes());
+        assert!(Network::from_bytes_with(&bytes, DENSE).is_err());
+        // Et des couches plus grandes que la pile ne les tient.
+        let wide = Arch {
+            layers: Some(Layers {
+                l1: MAX_L1 + 1,
+                l2: 32,
+            }),
+            ..DENSE
+        };
+        let error = Network::from_bytes_with(&vec![0; wide.file_bytes()], wide)
+            .err()
+            .unwrap();
+        assert!(error.contains("couches denses"), "{error}");
+    }
+
+    /// Le calcul de référence d'un réseau multicouche : les octets relus sans
+    /// [`Network`], les entrées de [`bullet_features`], le graphe de
+    /// l'exemple de bullet en `f64` — `CReLU` par `QA`, produit des deux
+    /// moitiés, poids `i8` par `QL1`, `SCReLU`. Rend `sortie × SCALE`
+    /// tronqué, AVANT la borne.
+    fn dense_reference(bytes: &[u8], arch: Arch, board: &Board) -> i64 {
+        let layers = arch.layers.unwrap();
+        let i16_at =
+            |index: usize| f64::from(i16::from_le_bytes([bytes[2 * index], bytes[2 * index + 1]]));
+        let l1_at = 2 * (INPUTS * HIDDEN + HIDDEN);
+        let f32_base = l1_at + arch.output_buckets * layers.l1 * HIDDEN;
+        let f32_at = |index: usize| {
+            let at = f32_base + 4 * index;
+            f64::from(f32::from_le_bytes(bytes[at..at + 4].try_into().unwrap()))
+        };
+        let features = bullet_features(board);
+        let (mut stm, mut ntm) = (vec![0.0; HIDDEN], vec![0.0; HIDDEN]);
+        for unit in 0..HIDDEN {
+            stm[unit] = i16_at(INPUTS * HIDDEN + unit);
+            ntm[unit] = i16_at(INPUTS * HIDDEN + unit);
+            for &(us, them) in &features {
+                stm[unit] += i16_at(us * HIDDEN + unit);
+                ntm[unit] += i16_at(them * HIDDEN + unit);
+            }
+        }
+        let crelu = |x: f64| x.clamp(0.0, 255.0) / 255.0;
+        let half = HIDDEN / 2;
+        let mut input = Vec::with_capacity(HIDDEN);
+        for side in [&stm, &ntm] {
+            for j in 0..half {
+                input.push(crelu(side[j]) * crelu(side[j + half]));
+            }
+        }
+        let screlu = |x: f64| x.clamp(0.0, 1.0).powi(2);
+        let bucket = arch.output_bucket(board.occupied().len() as usize);
+        let (l1, l2) = (layers.l1, layers.l2);
+        let b = arch.output_buckets;
+        let first: Vec<f64> = (0..l1)
+            .map(|o| {
+                let row = (bucket * l1 + o) * HIDDEN;
+                let dot: f64 = (0..HIDDEN)
+                    .map(|j| input[j] * f64::from(bytes[l1_at + row + j].cast_signed()))
+                    .sum();
+                screlu(dot / f64::from(QL1) + f32_at(bucket * l1 + o))
+            })
+            .collect();
+        let l2w = b * l1;
+        let l2b = l2w + b * l2 * l1;
+        let l3w = l2b + b * l2;
+        let l3b = l3w + b * l2;
+        let second: Vec<f64> = (0..l2)
+            .map(|o| {
+                let row = l2w + (bucket * l2 + o) * l1;
+                let dot: f64 = (0..l1).map(|i| first[i] * f32_at(row + i)).sum();
+                screlu(dot + f32_at(l2b + bucket * l2 + o))
+            })
+            .collect();
+        let output: f64 = (0..l2)
+            .map(|i| second[i] * f32_at(l3w + bucket * l2 + i))
+            .sum::<f64>()
+            + f32_at(l3b + bucket);
+        (output * f64::from(SCALE)) as i64
+    }
+
+    #[test]
+    fn la_sortie_multicouche_est_celle_du_calcul_de_reference() {
+        // La première couche se calcule en entiers exacts, les suivantes en
+        // `f32` : la troncature finale peut tomber d'un côté ou de l'autre
+        // d'un entier, pas plus loin.
+        let bound = i64::from(MATE_THRESHOLD - 1);
+        for (seed, hidden) in [(17, 300), (19, 120)] {
+            let bytes = random_dense_file(DENSE, seed, hidden);
+            let network = Network::from_bytes_with(&bytes, DENSE).unwrap();
+            let mut seen = std::collections::HashSet::new();
+            for position in positions() {
+                let expected = dense_reference(&bytes, DENSE, &position).clamp(-bound, bound);
+                let got = i64::from(network.evaluate(&network.refresh(&position), &position));
+                assert!(
+                    (got - expected).abs() <= 1,
+                    "réseau {seed} sur {position} : {got} au lieu de {expected}"
+                );
+                seen.insert(got);
+            }
+            // Des évaluations variées : ni toutes nulles, ni toutes bornées.
+            assert!(seen.len() > 5, "réseau {seed} : {seen:?}");
+        }
+    }
+
+    #[test]
+    fn l_increment_multicouche_egale_le_recalcul() {
+        // L'accumulateur ne sait rien des couches denses : la dérivation par
+        // coup reste celle de tous les réseaux, et l'évaluation qui la lit
+        // retombe sur le recalcul.
+        let network = Network::from_bytes_with(&random_dense_file(DENSE, 23, 300), DENSE).unwrap();
+        let mut checked = 0;
+        for (index, position) in positions().into_iter().enumerate() {
+            if index % 3 != 0 {
+                continue;
+            }
+            let before = network.refresh(&position);
+            for mv in moves_of(&position) {
+                let mut after = before;
+                network.apply_move(&before, &mut after, &position, mv);
+                let mut child = position.clone();
+                child.play_unchecked(mv);
+                assert_eq!(
+                    network.evaluate(&after, &child),
+                    network.evaluate(&network.refresh(&child), &child),
+                    "{mv} sur {position}"
+                );
+                checked += 1;
+            }
+        }
+        assert!(checked >= 500, "coups vérifiés : {checked}");
     }
 
     #[test]
@@ -1562,6 +1983,7 @@ mod tests {
         let plain = Arch {
             king_buckets: None,
             output_buckets: 1,
+            layers: None,
         };
         for king in Square::ALL {
             assert_eq!(plain.king_key(Color::White, king), (0, 0));
@@ -1577,6 +1999,7 @@ mod tests {
         let arch = |output_buckets| Arch {
             king_buckets: None,
             output_buckets,
+            layers: None,
         };
         for pieces in 2..=32 {
             assert_eq!(arch(8).output_bucket(pieces), (pieces - 2) / 4);
@@ -1666,6 +2089,7 @@ mod tests {
         let plain = Arch {
             king_buckets: None,
             output_buckets: 1,
+            layers: None,
         };
         let network = Network::from_bytes_with(
             &file_of_any(&random_values_with(plain, 29, 150, 127)),

@@ -74,7 +74,7 @@ use bullet_lib::value::loader::{SfBinpackLoader, ViriBinpackLoader, ViriFilter};
 use bullet_trainer::reader::DataReader;
 use cozy_chess::Board;
 use sfbinpack::{ChunkReader, read_chunk_into};
-use shallowred::nnue::{ARCH, HIDDEN, Network, QA, QB, SCALE};
+use shallowred::nnue::{ARCH, HIDDEN, Layers, Network, QA, QB, QL1, SCALE};
 
 /// Identifiant des points de sauvegarde : `<sortie>/<identifiant>-<superlot>/`.
 /// Tiré de l'architecture du MOTEUR : un réseau plus large, ou à seaux, ne
@@ -87,6 +87,9 @@ fn net_id() -> String {
     };
     if ARCH.output_buckets > 1 {
         id.push_str(&format!("-s{}", ARCH.output_buckets));
+    }
+    if let Some(Layers { l1, l2 }) = ARCH.layers {
+        id.push_str(&format!("-l{l1}x{l2}"));
     }
     id
 }
@@ -879,36 +882,87 @@ where
     } else {
         SavedFormat::id("l0w")
     };
-    let mut trainer = ValueTrainerBuilder::default()
+    let builder = ValueTrainerBuilder::default()
         .dual_perspective()
         .optimiser(AdamW)
         .inputs(inputs)
-        .output_buckets(MaterialCount::<{ ARCH.output_buckets }>)
-        .save_format(&[
-            feature_weights.round().quantise::<i16>(qa),
-            SavedFormat::id("l0b").round().quantise::<i16>(qa),
-            // Seau de sortie par seau de sortie, `2 × HIDDEN` poids chacun :
-            // la transposée de la matrice de bullet — l'identité à un seul
-            // seau.
-            SavedFormat::id("l1w")
-                .round()
-                .quantise::<i16>(qb)
-                .transpose(),
-            SavedFormat::id("l1b").round().quantise::<i16>(qab),
-        ])
-        .loss_fn(options.loss.function())
-        .build(|builder, stm_inputs, ntm_inputs, output_buckets| {
-            let mut l0 = builder.new_affine("l0", 768 * buckets, HIDDEN);
-            if buckets > 1 {
-                let l0f = builder.new_weights("l0f", Shape::new(HIDDEN, 768), InitSettings::Zeroed);
-                l0.weights = l0.weights + l0f.repeat(buckets);
-            }
-            let l1 = builder.new_affine("l1", 2 * HIDDEN, ARCH.output_buckets);
-            let stm_hidden = l0.forward(stm_inputs).screlu();
-            let ntm_hidden = l0.forward(ntm_inputs).screlu();
-            l1.forward(stm_hidden.concat(ntm_hidden))
-                .select(output_buckets)
-        });
+        .output_buckets(MaterialCount::<{ ARCH.output_buckets }>);
+    let mut trainer = match ARCH.layers {
+        None => builder
+            .save_format(&[
+                feature_weights.round().quantise::<i16>(qa),
+                SavedFormat::id("l0b").round().quantise::<i16>(qa),
+                // Seau de sortie par seau de sortie, `2 × HIDDEN` poids
+                // chacun : la transposée de la matrice de bullet — l'identité
+                // à un seul seau.
+                SavedFormat::id("l1w")
+                    .round()
+                    .quantise::<i16>(qb)
+                    .transpose(),
+                SavedFormat::id("l1b").round().quantise::<i16>(qab),
+            ])
+            .loss_fn(options.loss.function())
+            .build(|builder, stm_inputs, ntm_inputs, output_buckets| {
+                let mut l0 = builder.new_affine("l0", 768 * buckets, HIDDEN);
+                if buckets > 1 {
+                    let l0f =
+                        builder.new_weights("l0f", Shape::new(HIDDEN, 768), InitSettings::Zeroed);
+                    l0.weights = l0.weights + l0f.repeat(buckets);
+                }
+                let l1 = builder.new_affine("l1", 2 * HIDDEN, ARCH.output_buckets);
+                let stm_hidden = l0.forward(stm_inputs).screlu();
+                let ntm_hidden = l0.forward(ntm_inputs).screlu();
+                l1.forward(stm_hidden.concat(ntm_hidden))
+                    .select(output_buckets)
+            }),
+        // LE RÉSEAU MULTICOUCHE (n° 23, feuille de route, point 3) : le
+        // graphe et le format de `examples/progression/4_multi_layer.rs` au
+        // commit épinglé, que `nnue::Layers` relit — l'accumulateur en
+        // `CReLU`, ses deux moitiés multipliées, puis trois couches par seau
+        // de sortie ; la première quantifiée en `i8`, les deux autres en
+        // flottants.
+        Some(Layers { l1: n1, l2: n2 }) => {
+            let ql1 = i16::try_from(QL1).map_err(|_| "QL1 hors d'un i16")?;
+            builder
+                .save_format(&[
+                    feature_weights.round().quantise::<i16>(qa),
+                    SavedFormat::id("l0b").round().quantise::<i16>(qa),
+                    SavedFormat::id("l1w")
+                        .transpose()
+                        .round()
+                        .quantise::<i8>(ql1),
+                    SavedFormat::id("l1b"),
+                    SavedFormat::id("l2w").transpose(),
+                    SavedFormat::id("l2b"),
+                    SavedFormat::id("l3w").transpose(),
+                    SavedFormat::id("l3b"),
+                ])
+                .loss_fn(options.loss.function())
+                .build(|builder, stm_inputs, ntm_inputs, output_buckets| {
+                    let mut l0 = builder.new_affine("l0", 768 * buckets, HIDDEN);
+                    l0.init_with_effective_input_size(32);
+                    if buckets > 1 {
+                        let l0f = builder.new_weights(
+                            "l0f",
+                            Shape::new(HIDDEN, 768),
+                            InitSettings::Zeroed,
+                        );
+                        l0.weights = l0.weights + l0f.repeat(buckets);
+                    }
+                    let l1 = builder.new_affine("l1", HIDDEN, ARCH.output_buckets * n1);
+                    let l2 = builder.new_affine("l2", n1, ARCH.output_buckets * n2);
+                    let l3 = builder.new_affine("l3", n2, ARCH.output_buckets);
+                    let half = HIDDEN / 2;
+                    let ft = |input, start, end| l0.slice(start, end).forward(input).crelu();
+                    let stm_hidden = ft(stm_inputs, 0, half) * ft(stm_inputs, half, HIDDEN);
+                    let ntm_hidden = ft(ntm_inputs, 0, half) * ft(ntm_inputs, half, HIDDEN);
+                    let hidden = stm_hidden.concat(ntm_hidden);
+                    let first = l1.forward(hidden).select(output_buckets).screlu();
+                    let second = l2.forward(first).select(output_buckets).screlu();
+                    l3.forward(second).select(output_buckets)
+                })
+        }
+    };
     if buckets > 1 {
         // La couche d'entrée et le factoriseur bornés chacun à ±0,99 : leur
         // somme reste dans les ±1,98 que la borne d'accumulateur du chargeur
@@ -1094,6 +1148,7 @@ mod tests {
             let arch = Arch {
                 king_buckets: Some(layout),
                 output_buckets: 8,
+                layers: None,
             };
             let inputs = ChessBucketsMirrored::new(layout.map(usize::from));
 
