@@ -268,6 +268,12 @@ une mesure, pas une préférence.
   chaque build** (`le_reseau_embarque_evalue_comme_son_entraineur`) :
   remplacer le réseau demande d'y recopier la confrontation que
   `tools/nnue-train` imprime pour le nouveau, jamais d'assouplir le test.
+  **Un réseau multicouche** (`Arch::layers`, depuis le 2 nov. 2026) : sa
+  première couche dense se calcule en entiers exacts, par les mêmes
+  tranches ; les deux suivantes en `f32`, dans un ordre fixe — jamais de
+  `mul_add` ni de somme réordonnée, sans quoi deux binaires ne rendraient
+  plus la même évaluation, donc plus le même arbre. Un flottant non fini
+  est refusé au chargement.
 - **Une marge écrite en unités d'évaluation se mesure à l'échelle de
   l'évaluation qui joue.** Les marges de la recherche ont été réglées sur la
   faite main ; le réseau porte d'autres nombres — pente 2,40 contre la faite

@@ -14455,6 +14455,56 @@ série suivante — une condition de mesure qui change, écrite à sa date,
 jamais au milieu d'une série. En dessous, notre livre reste, et la ligne
 retourne au registre.
 
+### N° 23 — l'inférence multicouche : écrite le 2 nov., prête pour le verdict de C3
+
+**La décision** — la feuille de route du 31 oct., point 3 : écrire dans
+le moteur l'inférence d'un réseau à couches cachées, confrontée au code de
+bullet, pour qu'un réseau multicouche s'entraîne dès que C3 dit si la
+largeur paie (point 5, « 1 024 et couches cachées »).
+
+**La pile** — celle de l'exemple de bullet, lue au source du commit
+épinglé (`examples/progression/4_multi_layer.rs`, et `select`, qui prend
+le bloc contigu du seau — `crates/compiler/src/model/builder.rs`) :
+l'accumulateur en `CReLU`, ses deux moitiés multipliées terme à terme —
+`HIDDEN / 2` produits par camp, le camp au trait d'abord —, puis
+`HIDDEN → l1` en `SCReLU`, `l1 → l2` en `SCReLU`, `l2 → 1`, un jeu de
+poids par seau de sortie. Le fichier, dans l'ordre de `SavedFormat` :
+l'accumulateur en `i16` par `QA`, la première couche dense en `i8` par
+`QL1` = 64, ses biais et les deux couches suivantes en `f32`, chaque
+matrice transposée en lignes de sortie, puis le bourrage au multiple de
+64 octets.
+
+**Dans le moteur** (`engine/src/nnue.rs`) — `Arch::layers`, `None` pour
+tous les réseaux d'aujourd'hui, l'embarqué compris : le banc et l'arbre
+sont inchangés. La première couche dense se calcule en entiers EXACTS —
+chaque activation au plus `QA²`, chaque tranche de 256 termes tient dans
+un `i32`, vérifié à la compilation ; les deux suivantes en `f32`, dans un
+ordre fixe. Pas encore de SIMD : la vitesse se mesurera sur un vrai réseau,
+contre ce calcul scalaire, qui reste la référence. **Dans l'entraîneur**
+(`tools/nnue-train`) : le graphe et le format de l'exemple quand
+`ARCH.layers` est posé, `l0` initialisé à une taille d'entrée effective de
+32 comme lui ; le nom des points de sauvegarde porte `-l16x32`.
+
+**Les preuves** — quatre tests, chacun éprouvé :
+- la taille du fichier, calculée à la main pour 128 à 1 024 unités ;
+- un flottant non fini refusé, au premier comme au dernier poids, et des
+  couches plus larges que la pile refusées ;
+- **la sortie contre un calcul de référence en `f64`**, qui relit les
+  octets sans passer par `Network` : à ±1 près, sur toutes les positions
+  du jeu de test et deux réseaux aléatoires. Deux fautes injectées — les
+  camps échangés, le biais de la première couche retranché — le font
+  tomber ;
+- l'accumulateur dérivé coup par coup rend la même évaluation que le
+  recalcul.
+
+**Ce qui reste — et qui ne se fait qu'à la carte** : la confrontation à
+bullet lui-même, `trainer.eval × 400` contre le moteur, sur le premier
+réseau multicouche entraîné ; `tools/nnue-train` l'imprime au bout de
+l'entraînement, au critère de tous les réseaux — écart médian ≤ 15,
+maximal ≤ 50. Le calcul de référence ci-dessus suit le graphe de bullet,
+mais c'est une lecture ; seule la confrontation sur un réseau entraîné dit
+que la lecture est juste.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
@@ -15973,6 +16023,8 @@ pas parce que des runners sont libres.
    calibration (« le débit de mesure », point 1).
 3. En parallèle de 2 : l'inférence multicouche écrite dans le moteur,
    confrontée au code de bullet, prête pour l'entraînement au verdict de C3.
+   **Écrite le 2 nov.** (n° 23, « l'inférence multicouche ») : la
+   confrontation à bullet reste à faire, au premier réseau entraîné.
 4. Carte de Théo, semaine du 2 nov. : séance n° 22 (2 500 contre 5 000
    nœuds, plus un 4ᵉ réseau pour le tour de boucle, ajouté à
    `tools/seance-n22.sh` le 2 nov.), puis C3 (N10, N10r10, N10h384,
