@@ -30,12 +30,18 @@ export default function ArmyEditor({
   onSave,
   onClose,
   matchArmies,
+  labels,
 }: {
   initial: Handicap;
   humanSide: Side;
   onSave: (army: Handicap) => void;
   onClose: () => void;
   matchArmies?: MatchArmies;
+  /**
+   * Les mots de l'éditeur, quand la couleur ne nomme pas le camp : face au
+   * moteur, « votre camp » et « le camp du moteur », avant un tirage au sort.
+   */
+  labels?: { title: string; intro: string; of: string };
 }) {
   const [army, setArmy] = useState<Army>(() => ({
     ...(initial ?? defaultArmy()),
@@ -44,6 +50,17 @@ export default function ArmyEditor({
   const [selected, setSelected] = useState<Square | null>(null);
   const [notice, setNotice] = useState("");
   const side = humanSide === "w" ? "b" : "w";
+  const words = labels ?? (matchArmies
+    ? {
+        title: `Éditer le camp des ${side === "w" ? "Blancs" : "Noirs"}`,
+        intro: `Le camp des ${humanSide === "w" ? "Blancs" : "Noirs"} est verrouillé.`,
+        of: `des ${side === "w" ? "Blancs" : "Noirs"}`,
+      }
+    : {
+        title: "Éditer le camp du moteur",
+        intro: "Votre camp est verrouillé. La disposition suivra la couleur du moteur.",
+        of: "du moteur",
+      });
   const currentArmies = matchArmies ? { ...matchArmies, [side]: army } : null;
   const error = currentArmies ? matchArmyError(currentArmies) : armyError(army);
   const opponent = matchArmies?.[humanSide] ?? defaultArmy();
@@ -88,13 +105,10 @@ export default function ArmyEditor({
     setSelected(null);
   }
   return (
-    <Dialog title={matchArmies ? `Éditer le camp des ${side === "w" ? "Blancs" : "Noirs"}` : "Éditer le camp du moteur"} onClose={onClose}>
+    <Dialog title={words.title} onClose={onClose}>
       <div className="army-editor">
         <p>
-          Choisissez un outil, puis cliquez sur une case.{" "}
-          {matchArmies
-            ? `Le camp des ${humanSide === "w" ? "Blancs" : "Noirs"} est verrouillé.`
-            : "Votre camp est verrouillé. La disposition suivra la couleur du moteur."}
+          Choisissez un outil, puis cliquez sur une case. {words.intro}
         </p>
         <div className="army-tools" aria-label="Outils de placement">
           {(["erase", "move"] as const).map((value) => (
@@ -140,7 +154,7 @@ export default function ArmyEditor({
           >
             <div
               className="army-squares"
-              aria-label={matchArmies ? `Position de départ des ${side === "w" ? "Blancs" : "Noirs"}` : "Position de départ du moteur"}
+              aria-label={`Position de départ ${words.of}`}
             >
               {[...ranks].flatMap((rank) =>
                 [...files].map((file) => {
@@ -171,9 +185,9 @@ export default function ArmyEditor({
             (selected
               ? "Choisissez la case de destination."
               : tool === "erase"
-                ? "Cliquez sur les pièces du moteur à retirer."
+                ? `Cliquez sur les pièces ${words.of} à retirer.`
                 : tool === "move"
-                  ? "Choisissez une pièce du moteur à déplacer."
+                  ? `Choisissez une pièce ${words.of} à déplacer.`
                   : `Cliquez pour placer : ${pieceNames[tool].toLowerCase()}.`)}
         </p>
         <div className="army-actions">

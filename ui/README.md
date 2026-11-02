@@ -342,16 +342,23 @@ le temps de celui qui reprend reste dépensé, seuls les incréments de ses coup
 repris lui sont retirés — reprendre puis rejouer le même coup ne fait donc rien
 gagner ; l’adversaire retrouve sa pendule d’avant sa réponse, le temps qu’il a
 réfléchi depuis compris. Si le temps qui reste, incréments retirés, est épuisé,
-la pendule tombe (`GameController.takeBack`).
+la pendule tombe (`GameController.takeBack`). **Le moteur n’est pas relancé** :
+sa recherche ou son ponder s’arrête et son coup est ignoré, mais il garde sa
+session, donc sa table de transposition et ses historiques, comme entre deux coups.
+Le relancer à neuf l’aurait fait rejouer à froid, moins profond à temps égal.
+Seule exception, la version web de repli à un fil, où arrêter une recherche
+remplace le moteur (« Version web ») ; son ponder par tranches, lui, le garde.
 
 **« Modifier la position de départ »**, centré sous les cases, vaut pour les
-trois modes. Face au moteur, il ouvre un échiquier de préparation : retirer
-plusieurs pièces, les déplacer en deux clics, ou les remplacer depuis la palette.
-Le camp humain est verrouillé. La configuration suit la couleur du moteur, y
-compris après un tirage aléatoire. Annuler conserve la configuration précédente ;
-Réinitialiser restaure l’armée classique. Un roi par camp, au plus 16 pièces et
-8 pions côté moteur, aucun pion en dernière rangée et aucun roi en échec au
-départ sont requis. La position et les droits de roque sont conservés dans le
+trois modes. Face au moteur, il propose « Éditer votre camp » et « Éditer le
+camp du moteur » (Théo, 2 nov. 2026) : chacun ouvre un échiquier de
+préparation — retirer plusieurs pièces, les déplacer en deux clics, ou les
+remplacer depuis la palette —, l’autre camp restant visible et verrouillé. Chaque
+configuration suit la couleur de son camp, y compris après un tirage aléatoire ;
+la position doit donc valoir dans les deux sens. Annuler conserve la
+configuration précédente ; Réinitialiser restaure l’armée classique. Un roi par
+camp, au plus 16 pièces et 8 pions par camp, aucun pion en dernière rangée, aucun
+chevauchement et aucun roi en échec au départ sont requis. La position et les droits de roque sont conservés dans le
 jeu, le ponder, le PGN et l’analyse. Les pièces retirées ne sont pas comptées
 comme des captures.
 

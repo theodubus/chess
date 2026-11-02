@@ -294,6 +294,7 @@ try {
     }
     await setupNumber("engine-threads", threads);
     await button("Modifier la position de départ");
+    await button("Éditer le camp du moteur");
     await waitFor(
       `document.querySelector('.army-squares')`,
       "éditeur du camp adverse",
@@ -312,7 +313,7 @@ try {
       ),
       "armée personnalisée enregistrée",
     );
-    await button("Modifier la position de départ");
+    await button("Éditer le camp du moteur");
     await button("Déplacer");
     await click('.army-squares [data-square="b8"]');
     await click('.army-squares [data-square="c6"]');

@@ -66,9 +66,14 @@ it("ne reprend rien après la fin de la partie", () => {
 class ScriptedEngine implements Engine {
   commands: string[] = [];
   private listeners = new Set<(line: string) => void>();
+  constructor(private ponder = false) {}
   send(command: string) {
     this.commands.push(command);
-    if (command === "uci") queueMicrotask(() => this.emit("uciok"));
+    if (command === "uci")
+      queueMicrotask(() => {
+        if (this.ponder) this.emit("option name Ponder type check default false");
+        this.emit("uciok");
+      });
     if (command === "isready") queueMicrotask(() => this.emit("readyok"));
   }
   emit(line: string) {
@@ -91,7 +96,7 @@ afterEach(async () => {
 });
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-async function againstEngine(takeback = true, initialMs = 60_000) {
+async function againstEngine(takeback = true, initialMs = 60_000, ponder = false) {
   let now = 0;
   const engines: ScriptedEngine[] = [];
   const controller = new GameController({
@@ -101,15 +106,17 @@ async function againstEngine(takeback = true, initialMs = 60_000) {
       b: { initialMs: 30_000, incrementMs: 1000 },
     },
     takebacks: { w: takeback, b: false },
+    engineOptions: { ponder, threads: 1 },
   });
   controllers.push(controller);
   await controller.start(async () => {
-    engines.push(new ScriptedEngine());
+    engines.push(new ScriptedEngine(ponder));
     return engines.at(-1)!;
   });
   await flush();
   return {
     controller,
+    engines,
     engine: () => engines.at(-1)!,
     wait: (ms: number) => {
       now += ms;
@@ -118,7 +125,7 @@ async function againstEngine(takeback = true, initialMs = 60_000) {
 }
 
 it("face au moteur : reprend votre coup et sa réponse, et lui rend son temps", async () => {
-  const { controller, engine, wait } = await againstEngine();
+  const { controller, engines, engine, wait } = await againstEngine();
   wait(5000);
   play(controller, "e4"); // Vous : 60 − 5 + 2 = 57 s.
   await flush();
@@ -132,7 +139,10 @@ it("face au moteur : reprend votre coup et sa réponse, et lui rend son temps", 
   expect(controller.game.chess.history()).toEqual([]);
   expect(controller.clock.remaining).toEqual({ w: 53_000, b: 30_000 });
   await flush();
-  // La nouvelle connexion rend la main au joueur, sa pendule repart.
+  // Le moteur n'est pas relancé : même processus, même table, aucun « uci » de plus.
+  expect(engines).toHaveLength(1);
+  expect(engine().commands.filter((command) => command === "uci")).toHaveLength(1);
+  // Votre pendule repart aussitôt, sans pause de reconnexion.
   expect(controller.canMove).toBe(true);
   expect(controller.clock.runningColor).toBe("w");
   wait(1000);
@@ -140,21 +150,30 @@ it("face au moteur : reprend votre coup et sa réponse, et lui rend son temps", 
 });
 
 it("face au moteur : pendant sa recherche, reprend votre seul coup et ignore sa réponse tardive", async () => {
-  const { controller, engine, wait } = await againstEngine();
+  const { controller, engines, engine, wait } = await againstEngine();
   wait(5000);
   play(controller, "e4");
   await flush();
-  const searching = engine();
   wait(1000);
   expect(controller.takeBack()).toBe(true);
   expect(controller.game.chess.history()).toEqual([]);
   expect(controller.clock.remaining).toEqual({ w: 55_000, b: 30_000 });
+  // La recherche est arrêtée, pas le moteur : on attend son coup pour l'ignorer.
+  expect(engine().commands.at(-1)).toBe("stop");
+  expect(controller.canMove).toBe(false);
   const late = new Chess();
   late.move("e4");
   const reply = late.move("e5");
-  searching.emit(`bestmove ${reply.from}${reply.to}`);
+  engine().emit(`bestmove ${reply.from}${reply.to}`);
   await flush();
   expect(controller.game.chess.history()).toEqual([]);
+  expect(engines).toHaveLength(1);
+  expect(controller.canMove).toBe(true);
+  // La partie continue sur la même session : le coup suivant relance une recherche.
+  play(controller, "d4");
+  await flush();
+  expect(engine().commands).toContain("position startpos moves d2d4");
+  expect(engine().commands.at(-1)).toMatch(/^go wtime/);
 });
 
 it("face au moteur : sans droit aux retours, rien n’est repris", async () => {
@@ -181,4 +200,27 @@ it("face au moteur : la pendule tombe si le temps restant, incrément retiré, e
   expect(controller.clock.flagged).toBe("w");
   expect(controller.finished).toBe(true);
   expect(controller.status).toBe("Temps écoulé · Blancs");
+});
+
+it("face au moteur : pendant son ponder, l'arrête sans le relancer", async () => {
+  const { controller, engines, engine } = await againstEngine(true, 60_000, true);
+  play(controller, "e4");
+  await flush();
+  const board = new Chess(controller.game.chess.fen());
+  const reply = board.move("e5");
+  const predicted = board.move("Nf3");
+  engine().emit(`bestmove ${reply.from}${reply.to} ponder ${predicted.from}${predicted.to}`);
+  await flush();
+  expect(engine().commands.at(-1)).toMatch(/^go ponder/);
+  expect(controller.takeBack()).toBe(true);
+  expect(engine().commands.at(-1)).toBe("stop");
+  engine().emit(`bestmove ${predicted.from}${predicted.to}`);
+  await flush();
+  expect(controller.game.chess.history()).toEqual([]);
+  expect(engines).toHaveLength(1);
+  expect(controller.canMove).toBe(true);
+  // Le coup suivant cherche sur la vraie position, sans « ponderhit » orphelin.
+  play(controller, "e4");
+  await flush();
+  expect(engine().commands.at(-1)).toMatch(/^go wtime/);
 });

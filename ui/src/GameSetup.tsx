@@ -15,7 +15,7 @@ import {
   type TimeControl,
 } from "./GameClock";
 import type { GameSetup as Setup } from "./preferences";
-import { matchArmyError } from "./handicap";
+import { localArmies, localArmiesError, matchArmyError } from "./handicap";
 import { logicalCores } from "./engine/threadAdvice";
 import {
   PROFILES,
@@ -55,7 +55,7 @@ export default function GameSetup({
   onReturn?: () => void;
 }) {
   const [setup, setSetup] = useState(initial);
-  const [editingArmy, setEditingArmy] = useState<"local" | Side | null>(null);
+  const [editingArmy, setEditingArmy] = useState<"engine" | "player" | Side | null>(null);
   const [positionOpen, setPositionOpen] = useState(false);
   const [custom, setCustom] = useState(() => draftOf(initial.timeControl));
   const mode = setup.opponent;
@@ -70,10 +70,15 @@ export default function GameSetup({
   };
   const displayError = mode !== "human" ? error : "";
   const armies = mode === "match" ? setup.matchArmies : setup.humanArmies;
+  // Face au moteur, la couleur n'est connue qu'au lancement : l'éditeur
+  // montre la vôtre, ou les Blancs avant un tirage au sort.
+  const humanColor: Side = setup.side === "b" ? "b" : "w";
   const positionError =
-    mode === "engine" ? null : matchArmyError(armies);
+    mode === "engine"
+      ? localArmiesError(setup.handicap, setup.playerArmy)
+      : matchArmyError(armies);
   const customPosition =
-    mode === "engine" ? !!setup.handicap : !!(armies.w || armies.b);
+    mode === "engine" ? !!(setup.handicap || setup.playerArmy) : !!(armies.w || armies.b);
   const valid =
     (mode !== "match" ||
       Object.values(setup.matchEngines).every(
@@ -355,10 +360,8 @@ export default function GameSetup({
               type="button"
               className="position-link"
               disabled={busy}
-              aria-expanded={mode === "engine" ? undefined : positionOpen}
-              onClick={() =>
-                mode === "engine" ? setEditingArmy("local") : setPositionOpen(!positionOpen)
-              }
+              aria-expanded={positionOpen}
+              onClick={() => setPositionOpen(!positionOpen)}
             >
               Modifier la position de départ
             </button>
@@ -372,7 +375,7 @@ export default function GameSetup({
                   onClick={() =>
                     setSetup((current) =>
                       mode === "engine"
-                        ? { ...current, handicap: null }
+                        ? { ...current, handicap: null, playerArmy: null }
                         : mode === "match"
                           ? { ...current, matchArmies: { w: null, b: null } }
                           : { ...current, humanArmies: { w: null, b: null } },
@@ -383,14 +386,27 @@ export default function GameSetup({
                 </button>
               </p>
             )}
-            {mode !== "engine" && positionOpen && (
+            {positionOpen && (
               <div className="choice-row position-sides">
-                <button type="button" className="secondary" disabled={busy} onClick={() => setEditingArmy("w")}>
-                  Éditer les Blancs
-                </button>
-                <button type="button" className="secondary" disabled={busy} onClick={() => setEditingArmy("b")}>
-                  Éditer les Noirs
-                </button>
+                {mode === "engine" ? (
+                  <>
+                    <button type="button" className="secondary" disabled={busy} onClick={() => setEditingArmy("player")}>
+                      Éditer votre camp
+                    </button>
+                    <button type="button" className="secondary" disabled={busy} onClick={() => setEditingArmy("engine")}>
+                      Éditer le camp du moteur
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" className="secondary" disabled={busy} onClick={() => setEditingArmy("w")}>
+                      Éditer les Blancs
+                    </button>
+                    <button type="button" className="secondary" disabled={busy} onClick={() => setEditingArmy("b")}>
+                      Éditer les Noirs
+                    </button>
+                  </>
+                )}
               </div>
             )}
             {positionError && (
@@ -439,27 +455,46 @@ export default function GameSetup({
           )}
           </form>
       </div>
-      {editingArmy && (
+      {(editingArmy === "player" || editingArmy === "engine") && (
+        // Votre camp et celui du moteur s'éditent comme les deux camps d'un
+        // match : l'autre reste visible, verrouillé, tel qu'il a été préparé.
         <ArmyEditor
-          initial={editingArmy === "local" ? setup.handicap : armies[editingArmy]}
-          humanSide={
-            editingArmy === "local"
-              ? setup.side === "b"
-                ? "b"
-                : "w"
-              : editingArmy === "w"
-                ? "b"
-                : "w"
+          initial={editingArmy === "player" ? setup.playerArmy : setup.handicap}
+          humanSide={editingArmy === "player" ? (humanColor === "w" ? "b" : "w") : humanColor}
+          matchArmies={localArmies(setup.handicap, setup.playerArmy, humanColor)}
+          labels={
+            editingArmy === "player"
+              ? {
+                  title: "Éditer votre camp",
+                  intro: "Le camp du moteur est verrouillé. La disposition suivra votre couleur.",
+                  of: "de votre camp",
+                }
+              : {
+                  title: "Éditer le camp du moteur",
+                  intro: "Votre camp est verrouillé. La disposition suivra la couleur du moteur.",
+                  of: "du moteur",
+                }
           }
-          matchArmies={editingArmy === "local" ? undefined : armies}
           onClose={() => setEditingArmy(null)}
           onSave={(army) => {
             setSetup((current) =>
-              editingArmy === "local"
-                ? { ...current, handicap: army }
-                : mode === "match"
-                  ? { ...current, matchArmies: { ...current.matchArmies, [editingArmy]: army } }
-                  : { ...current, humanArmies: { ...current.humanArmies, [editingArmy]: army } },
+              editingArmy === "player" ? { ...current, playerArmy: army } : { ...current, handicap: army },
+            );
+            setEditingArmy(null);
+          }}
+        />
+      )}
+      {(editingArmy === "w" || editingArmy === "b") && (
+        <ArmyEditor
+          initial={armies[editingArmy]}
+          humanSide={editingArmy === "w" ? "b" : "w"}
+          matchArmies={armies}
+          onClose={() => setEditingArmy(null)}
+          onSave={(army) => {
+            setSetup((current) =>
+              mode === "match"
+                ? { ...current, matchArmies: { ...current.matchArmies, [editingArmy]: army } }
+                : { ...current, humanArmies: { ...current.humanArmies, [editingArmy]: army } },
             );
             setEditingArmy(null);
           }}

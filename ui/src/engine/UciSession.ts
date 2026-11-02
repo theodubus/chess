@@ -56,6 +56,8 @@ export class UciSession {
   ponderMove: string | null = null;
   private ponderResult?: Promise<string>;
   private exactAnalysis: SearchInfo | null = null;
+  /** La recherche en cours, ponder compris, pour qu'une annulation l'attende. */
+  private current?: Promise<string>;
 
   constructor(
     private engine: Engine,
@@ -104,12 +106,28 @@ export class UciSession {
 
   async cancelPonder() {
     if (!this.pending?.pondering || !this.ponderResult) return;
+    await this.cancel();
+  }
+
+  /**
+   * Abandonne la recherche en cours, ponder compris : `stop`, puis son coup
+   * est ignoré. La session reste ouverte — le moteur garde sa table de
+   * transposition et ses historiques, comme entre deux coups d'une partie.
+   * Une reprise de coup ne le relance donc pas à froid.
+   * `forget` : oublier aussi l'évaluation affichée.
+   */
+  async cancel({ forget = false } = {}) {
+    if (!this.pending || !this.current) return;
+    const current = this.current;
     this.pending.discard = true;
     this.snapshot.state = "stopping";
+    // Après une reprise, l'évaluation portait sur une ligne abandonnée ;
+    // une prédiction manquée, elle, garde celle de la partie.
+    if (forget) this.snapshot.analysis = null;
     this.armTimeout();
     if (this.phase === "search") this.send("stop");
     // Si isready est encore en vol, readyok annule sans envoyer go.
-    await this.ponderResult;
+    await current.catch(() => "");
     this.ponderResult = undefined;
   }
 
@@ -121,7 +139,7 @@ export class UciSession {
   ): Promise<string> {
     if (this.snapshot.state !== "ready" || this.pending)
       return Promise.reject(new Error("Le moteur n’est pas disponible."));
-    return new Promise((resolve, reject) => {
+    this.current = new Promise<string>((resolve, reject) => {
       this.pending = {
         resolve,
         reject,
@@ -141,6 +159,7 @@ export class UciSession {
       // Cette barrière permet de recevoir un rejet de position avant de lancer go.
       this.send("isready");
     });
+    return this.current;
   }
 
   private armSearchTimeout() {
