@@ -61,7 +61,7 @@ run-name: >-
   ${{ inputs.cadence }}${{ inputs.cadence_candidat && format(' (candidat {0})', inputs.cadence_candidat) || '' }},
   ${{ inputs.parties }} parties, graine ${{ inputs.graine }}, sonde ${{ inputs.sonde }},
   ponder ${{ inputs.ponder }}, fils ${{ inputs.fils_candidat }}/${{ inputs.fils_reference }},
-  ${{ inputs.cpu_candidat }}/${{ inputs.cpu_reference }}
+  ${{ inputs.cpu_candidat }}/${{ inputs.cpu_reference }}${{ inputs.livre != 'tools/book.epd' && format(', livre {0}', inputs.livre) || '' }}
 
 on:
   workflow_dispatch:
@@ -147,6 +147,14 @@ on:
         options:
           - "x86-64-v3"
           - "x86-64"
+      livre:
+        description: "Le livre d'ouvertures. tools/book.epd, les 15 000 positions équilibrées (n° 11), le défaut ; tools/book-desequilibre.epd, le livre déséquilibré du n° 23 — un camp nettement mieux, chaque ouverture jouée des deux côtés. Un choix fermé : le chemin entre dans la ligne de commande de l'arbitre."
+        required: false
+        default: "tools/book.epd"
+        type: choice
+        options:
+          - "tools/book.epd"
+          - "tools/book-desequilibre.epd"
 
 jobs:
   match:
@@ -523,7 +531,7 @@ jobs:
             QT_QPA_PLATFORM=offscreen tools/arbiters/cutechess-cli "${debug[@]}" \
               -engine cmd=/tmp/candidat  name=candidat  proto=uci tc="$tc_cand" "${ponder_cand[@]}" "${fils_c[@]}" \
               -engine cmd=/tmp/reference name=reference proto=uci tc="$tc_ref"  "${ponder_ref[@]}" "${fils_r[@]}" \
-              -openings file=tools/book.epd format=epd order=random \
+              -openings file="${{ inputs.livre }}" format=epd order=random \
               -srand "${{ steps.refs.outputs.graine }}" \
               -games 2 -repeat -rounds "$rondes" \
               -concurrency "$concurrence" \
@@ -542,7 +550,7 @@ jobs:
             -engine cmd=/tmp/candidat  name=candidat  tc="$tc_cand" "${fils_c[@]}"
             -engine cmd=/tmp/reference name=reference tc="$tc_ref"  "${fils_r[@]}"
             -each proto=uci
-            -openings file=tools/book.epd format=epd order=random
+            -openings file="${{ inputs.livre }}" format=epd order=random
             -srand "${{ steps.refs.outputs.graine }}"
             -games 2 -repeat
             -concurrency "$concurrence"
@@ -639,6 +647,7 @@ jobs:
             echo "| référence | \`${{ inputs.reference }}\` → \`${{ steps.refs.outputs.reference }}\` |"
             echo "| cadence | $cadence |"
             echo "| graine des ouvertures | \`${{ steps.refs.outputs.graine }}\` |"
+            echo "| livre | \`${{ inputs.livre }}\` |"
             echo "| ponder | \`${{ inputs.ponder }}\` |"
             echo "| sonde | \`${{ inputs.sonde }}\` |"
             echo "| fils de recherche | candidat ${{ steps.refs.outputs.fils_cand }}, référence ${{ steps.refs.outputs.fils_ref }} |"

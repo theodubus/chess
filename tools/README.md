@@ -14402,6 +14402,59 @@ matchs suivent dès qu'il existe, son protocole écrit avant eux. Ceux-ci
 partent sans attendre — les runners sont libres, et la calibration ne
 demande pas que les deux séries jouent en même temps.
 
+### N° 23 — le livre déséquilibré : protocole, écrit le 2 nov. avant son pilote et ses matchs
+
+**La question** — « le débit de mesure », point 1 (phase 7, inscrit le
+29 oct.) : un livre d'ouvertures déséquilibrées, comme celui de Fishtest
+<span>(de mémoire, confiance moyenne)</span>, rend-il plus d'information
+par partie que le nôtre ? Chaque ouverture se joue des deux côtés : le
+camp favorisé gagne le plus souvent, et l'information vient des paires où
+l'un des deux moteurs convertit et l'autre non. *Marge estimée à
+l'inscription : × 1,5 à × 3 de parties en moins à précision égale,
+confiance faible.*
+
+**Le livre** :
+- **le réservoir** : 80 000 positions de `bookgen`, 8 demi-coups au
+  hasard, l'évaluation statique faite main à ± 600 au plus, graine
+  20261102 — un autre tirage que `tools/book.epd` ;
+- **la note** : une recherche de `main` à `701b609`, binaire AVX2, le
+  réseau qui joue, profondeur 12, table vidée entre deux positions ; le
+  score du point de vue des Blancs, en unités du réseau ;
+- **le pilote, dans le conteneur** : trois bandes de `|score|`, [150,
+  250), [250, 400) et [400, 600) ; 150 positions tirées au hasard dans
+  chacune, chacune jouée des deux côtés, `main` contre lui-même à
+  `8+0,08` — 300 parties par bande. **La bande retenue** est celle dont
+  le camp favorisé marque le plus près de **75 %** : une victoire sur deux
+  et une nulle sur deux, la cible d'un livre de Fishtest <span>(de
+  mémoire, confiance moyenne)</span> ;
+- **le livre** : 15 000 positions de la bande retenue — toutes si elle en
+  compte moins —, dans un ordre tiré au hasard, `tools/book-desequilibre.epd` ;
+  `match.yml` le prend par l'entrée `livre`, le défaut restant
+  `tools/book.epd`.
+
+**La calibration** — un effet CONNU, joué sur les deux livres : `main`
+contre lui-même, le candidat à `10+0,10` et la référence à `8+0,08` —
+× 1,25 de temps, 0,32 doublement, **~+35 Elo** par l'étalon sur notre
+livre. Deux jobs de 2 800 parties par livre. **La mesure** : par paire,
+`t = (score moyen − ½) / écart type`, lu sur la somme des comptes
+pentanomiaux ; **le rendement** est `(t_déséquilibré / t_équilibré)²` —
+combien de fois moins de paires pour la même précision. Les Elo des deux
+livres ne se comparent pas : un livre déséquilibré change l'échelle, pas
+le signe. Et C53 contre `0e43fdd`, C54 contre C53, quatre jobs chacun sur
+le livre déséquilibré — un second témoin des mêmes effets, lu en signe et
+en `t`.
+
+*Attendus, écrits avant* — <span>inférence, confiance faible</span> :
+- la bande retenue : **[250, 400)** ;
+- **le rendement : × 1,3 à × 3** ;
+- les nulles : **10 à 25 %** des parties, contre ~30 % sur notre livre.
+
+**Ce que la mesure décide** : un rendement au-dessus de × 1,3, borne
+basse comprise, fait du livre déséquilibré **le livre des matchs** à la
+série suivante — une condition de mesure qui change, écrite à sa date,
+jamais au milieu d'une série. En dessous, notre livre reste, et la ligne
+retourne au registre.
+
 ### N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18
 
 **Pourquoi maintenant, et ce que cela ne fait pas.** Le n° 19 est décidé
