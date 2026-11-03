@@ -1039,6 +1039,8 @@ dernière relève est faite.
 | **N° 22 — la vague 21**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41186039541, 41186042684, 41186045956, 41186049109, 41186052709, 41186055933, 41186059218, 41186062420 ; à 5 000 : 41186041185, 41186044358, 41186047526, 41186050962, 41186054181, 41186057428, 41186060847, 41186064125 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 31 oct. à 9 h 47**, ses attendus poussés avant (`b768e6c`) ; **RELEVÉE le 31 oct. à 15 h 28 — les douze chiffres dans leur attendu** (section « N° 22 », la vague 21) ; **la dernière : la génération est EN PAUSE après elle**, aucune vague 22 | — *Attendus, écrits avant* (section « N° 22 », la vague 21) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 300 à 2 500** et **1 150 à 1 260** positions par seconde ; cumul appris celui de la vague 20 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **6 375 à 6 597 M** et **3 158 à 3 264 M** |
 | **N° 23 — C52, C53 et C54, l'historique borné et la LMR modulée** | C52 (`141fb43`) contre `0e43fdd` : **41424524575, 41424533128, 41424542152, 41424550122** ; C53 (`cde63e6`) contre `0e43fdd` : **41424558147, 41424567516, 41424575489, 41424583620** ; C54 (`822fb74`) contre C53 : **41424590639, 41424599610, 41424607675, 41424615206** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 12 × 2 800 parties | **RELEVÉS le 2 nov. à 16 h 10** — finis entre 15 h 50 et 16 h 05, aucune perte au temps : C52 **+2,14 ± 3,06**, C53 **+14,40 ± 3,08**, C54 contre C53 **+23,18 ± 3,15** ; **C54 fusionné le 3 nov.**, C53 compris (« N° 23 — VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — les candidats ») : C52 **−3 à +3**, C53 **−5 à +10**, C54 contre C53 **−8 à +15** ; **critère** : C53 si sa borne basse passe zéro, C54 (C53 compris) si la sienne passe zéro contre C53 et que C53 n'est pas démontré sous `main` |
 | **N° 23 — le livre déséquilibré : calibration et témoins** | calibration, `0d2b188` contre lui-même, `10+0,10` contre `8+0,08` — sur le livre de 15 000 : **41589865609, 41589872708** ; sur `tools/book-desequilibre.epd` : **41589879477, 41589885654** ; témoins sur le livre déséquilibré — C53 (`cde63e6`) contre `0e43fdd` : **41589892536, 41589899229, 41589905877, 41589912682** ; C54 (`822fb74`) contre C53 : **41589919053, 41589925508, 41589931538, 41589937796** | graine « auto » chacun, AVX2 des deux côtés | `match.yml`, 12 × 2 800 parties | **EN VOL**, lancés le 3 nov. à 7 h 35 ; ~5 h 30, la calibration près du plafond de 350 min — un job coupé garde une estimation non biaisée | — *Attendus, écrits avant* (section « N° 23 — le livre déséquilibré ») : **rendement × 1,3 à × 3** ; témoins **du même signe** que sur notre livre ; **critère** : le livre déséquilibré devient le livre des matchs à la série suivante si la borne basse du rendement dépasse × 1,3 |
+| **N° 23 — C55 et C56, le diviseur de la LMR modulée** | C55 (`d803666`, 4 000) contre `39334eb` : **41591921375, 41591928709, 41591934984, 41591941166** ; C56 (`98d62bd`, 9 000) contre `39334eb` : **41591947411, 41591953770, 41591960493, 41591967514** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **EN VOL**, lancés le 3 nov. à 7 h 45 ; ~5 h | — *Attendus, écrits avant* (section « N° 23 — C55, C56 ») : C55 **−10 à +10**, C56 **−15 à +3** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; sinon 6 000 reste |
+| **Balayage de mutation de `main` après le multicouche** | **41592047881**, `commit` = `700a8ba` | — | `mutation.yml` | **EN VOL**, lancé le 3 nov. à 7 h 50 — confirme les plafonds, `nnue.rs` attendu à 2 au plus (huit survivants tués à la main le 2 nov.) | — |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
 | **N° 20, séance C2c — N9pfbs800 contre N9w50s800** | **40610093856, 40610102423, 40610110837, 40610118331** | `ad84d1f` (N9pfbs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 7 h 28** — lancés à 1 h 39, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 6 h 38 et 6 h 47 | **+1,40 ± 3,27 en commun** (−2,73, +2,85, +4,09, +1,36 ; p = 0,463) — dans l'attendu, **pas candidat** (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −4 à +4, ~0 (« La séance C2c ») |
@@ -14538,6 +14540,93 @@ rendement attendu, × 1,3 à × 3 — <span>confiance faible</span>. Un
 témoin dont le signe s'inverse ferait du livre un instrument qui
 mesure autre chose que la force, quel que soit son rendement.
 
+### N° 23 — C55, C56 : le diviseur de la LMR modulée — écran, attendus et critère, écrits le 3 nov. avant de lancer
+
+**La question** — le registre des réglages ouverts : le diviseur de la
+note dans la LMR modulée, 6 000 depuis C54, n'a jamais été réglé — un
+seul point, choisi à l'écran parce qu'il changeait un tiers des
+réductions à arbre égal. Les deux voisins prévus : **C55 à 4 000**,
+**C56 à 9 000**, un facteur 1,5 de part et d'autre.
+
+**L'écran** — le rejeu des 60 parties du journal (« N° 23, l'écran »),
+par la sonde, dont `G+hk+lmrh:6000` rend C54 **au nœud près** :
+110 050 848 à la profondeur 10, le binaire de C54 les mêmes, vérifié ce
+jour.
+
+| diviseur | l'arbre à 12 (à 10), contre C54 | réductions changées à 12 (à 10) |
+|---|---|---|
+| **4 000** (C55) | **−6,52 %** (−4,11 %) | 59,4 % (45,1 %) |
+| 6 000 (C54, `main`) | — | 34,6 % (17,9 %) |
+| **9 000** (C56) | **+1,88 %** (+1,01 %) | 9,2 % (3,1 %) |
+
+Ce que l'écran montre, sans rien décider : **la part changée n'est pas
+linéaire en `1/K`** — 9 000 n'en garde qu'un quart, parce que la note
+n'atteint 9 000 qu'en sommant les continuations au papillon, plafonné à
+7 183 ; et **l'arbre suit le côté des notes** — 4 000 l'allège de 6,5 %
+quand 6 000 le laissait égal : sous 6 000, ce sont surtout des notes
+négatives qui franchissent le seuil, et elles réduisent davantage.
+<span>Inférence, confiance faible : la sonde ne compte pas le côté.</span> Banc à la profondeur 7 :
+70 842 et 70 845 ; à la 6, 37 989 pour les deux.
+
+**Les matchs** — chacun contre `main` (`39334eb`, l'arbre de C54),
+quatre jobs de 2 800 parties, `8+0,08`, graine « auto », AVX2 des deux
+côtés, le livre de 15 000 ; mis en commun par
+`tools/mettre-en-commun.sh`. Le livre déséquilibré suivra, à la lecture
+de sa calibration : les douze jobs de celle-ci occupent déjà les
+runners.
+
+*Attendus, écrits avant* — <span>confiance faible</span> :
+- **C55 (4 000) : −10 à +10** — il déplace près de deux fois plus de
+  réductions et rend 6,5 % d'arbre ; le signe ne se déduit ni de l'un
+  ni de l'autre (C54 : arbre égal, +23) ;
+- **C56 (9 000) : −15 à +3** — il ne garde qu'un quart des réductions
+  que C54 déplace ; s'il en garde l'Elo au prorata, il en perd ~17.
+
+**Le critère, écrit avant** :
+- un candidat fusionne si sa borne basse contre `main` passe zéro ; les
+  deux, celui dont le point est le plus haut ;
+- **aucun ne fusionne sinon** : 6 000 reste, et le registre garde la
+  ligne ouverte avec ce que les deux points disent de la pente — le
+  voisin suivant du côté du meilleur point (3 000 ou 7 500), puis le
+  décalage de la note, puis SPSA.
+
+### N° 23 — les échelles de la gravité, à l'écran le 3 nov. : confondues avec le diviseur
+
+**La question** — le registre : les plafonds (7 183, 29 952) et le bonus
+(`clamp(336·d − 547, 1, 1561)`) de C53 viennent de Stockfish 16, jamais
+réglés ici ; prochain test écrit, « × 0,5 et × 2, à l'écran puis quatre
+jobs ». Le rejeu, par la sonde, sur la base de `main` (`G+hk+lmrh:6000`) :
+
+| variante | l'arbre à 12 (à 10), contre `main` | réductions changées à 12 (à 10) |
+|---|---|---|
+| plafonds × 0,5 | −0,32 % (−0,76 %) | 12,8 % (5,2 %) |
+| plafonds × 2 | −4,32 % (−2,99 %) | 52,9 % (35,5 %) |
+| bonus × 0,5 | +2,91 % (−0,04 %) | 11,2 % (3,0 %) |
+| bonus × 2 | **−6,46 %** (−4,47 %) | **57,7 %** (44,5 %) |
+| *pour mémoire : le diviseur à 4 000 (C55)* | *−6,52 % (−4,11 %)* | *59,4 % (45,1 %)* |
+
+**Ce que l'écran montre** — vérifié dans le code, pas supposé : la note
+n'est lue qu'à DEUX endroits, l'ordre des tranquilles et la LMR modulée.
+L'ordre ne dépend pas de l'échelle des notes ; seule la LMR la lit, par
+son diviseur. Les plafonds ET le bonus × 2 ensemble multiplient chaque
+note par deux — la gravité est homogène —, ce qui revient au diviseur
+÷ 2, à l'arrondi des entiers et au bonus plancher (1) près. Les échelles n'ont donc que deux degrés de liberté
+propres : **la mémoire** (le bonus rapporté au plafond, la vitesse à
+laquelle le récent efface l'ancien) et **le poids du papillon contre les
+continuations** (le rapport des plafonds). Tout le reste passe par le
+diviseur. **Et le bonus × 2 rend l'écran du diviseur 4 000 à 0,06 point
+près** : plus de mémoire courte, des notes plus grandes, la LMR les lit
+comme un diviseur plus petit.
+
+**Ce que ça décide** — le test écrit au registre (« × 0,5 et × 2 ») est
+**remplacé avant d'avoir été lancé** : chacune de ses variantes
+remesurerait surtout le diviseur, en vol avec C55 et C56. **Le test
+juste** vient après leur verdict : la mémoire, puis le poids des
+plafonds, chacun avec un diviseur ajusté au rejeu pour que la LMR change
+la même part des réductions que `main` — l'échelle de la LMR tenue,
+le reste libre. Et si l'un des deux voisins du diviseur gagne, il en
+devient la base.
+
 ### N° 23 — l'inférence multicouche : écrite le 2 nov., prête pour le verdict de C3
 
 **La décision** — la feuille de route du 31 oct., point 3 : écrire dans
@@ -16230,8 +16319,8 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |
 | **seuil des ouvertures du générateur** (`OPENING_MAX_SCORE`) | 1 000 en unités d'évaluation, écrit pour la faite main | jamais en force ; son taux suit l'étiqueteur — **18,46 % sous N8tw50s800, 21,01 % sous N9w50s800**, les mêmes 5 000 ouvertures (26 oct., « N° 22 », la vague 1) | inconnue — <span>confiance faible</span> | avec les ouvertures, phase 7 ; jamais en cours de tranche : il change le mélange appris |
 | **marges et constantes de recherche** | réglées à la main ; × 2,85 au réseau (B8) | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA, phase 5, à refaire à chaque réseau |
-| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | 4 000 et 9 000 contre `main`, rejeu puis quatre jobs ; puis le décalage ; puis SPSA |
-| **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | les plafonds × 0,5 et × 2, le bonus × 0,5 et × 2, à l'écran puis quatre jobs ; le papillon vidé à chaque coup, contre conservé |
+| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **EN VOL le 3 nov.** : C55 (4 000) et C56 (9 000) contre `main`, quatre jobs chacun, attendus écrits avant (« N° 23 — C55, C56 ») ; puis le décalage ; puis SPSA |
+| **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | **à l'écran le 3 nov. : confondus avec le diviseur** — la note n'est lue que par l'ordre, invariant d'échelle, et par la LMR ; le bonus × 2 rend l'écran du diviseur 4 000 (« N° 23 — les échelles de la gravité »). **Après C55 et C56** : la mémoire (bonus rapporté au plafond), puis le poids papillon contre continuations, chacun le diviseur ajusté au rejeu pour tenir la part des réductions changées ; le papillon vidé à chaque coup, contre conservé |
 
 **Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
 optimisations pures : même arbre au nœud près, prouvées par le temps au
