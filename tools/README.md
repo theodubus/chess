@@ -14787,6 +14787,37 @@ contre `main` passe zéro — les deux, le plus haut au point ; C59
 n'entre qu'après le traitement du test. **Sinon, `main` reste**, et le
 registre garde la pente.
 
+### N° 23 — le test des extensions singulières : mesuré sur `main` le 3 nov., traitement écrit avant le verdict de C59
+
+**Le test** — `les_extensions_singulieres_allongent_l_arbre` somme les
+nœuds du banc à la profondeur 9, avec et sans les extensions
+singulières (l'extension négative coupée des deux côtés), et asserte que
+l'arbre s'allonge. **Il tombe sous C58 et sous C59**, deux changements
+de la LMR modulée sans rapport avec les extensions.
+
+**La mesure, sur `main` seul** — indépendante des deux candidats :
+
+| profondeur | avec / sans | positions où l'arbre s'allonge |
+|---|---|---|
+| 7 et 8 | 1,000 | 0 sur 6 — le mécanisme n'agit pas encore |
+| **9** | **1,041** | 6 sur 6 |
+| 10 | 1,087 | 5 sur 6 |
+| 11 | 1,261 | 6 sur 6 |
+
+**Ce qu'elle dit** : sur `main`, l'assertion tient, à 4 % de marge —
+**elle ne la condamne pas**, et le test reste tel quel. Mais une marge de
+4 % au total est de l'ordre de ce qu'un réglage de la LMR déplace (C58
+retire 7 % de l'avance sans toucher aux extensions) : le piège nommé
+dans `CLAUDE.md` — un sens asserté sur un échantillon vaut ce que vaut
+sa marge.
+
+**Le traitement, écrit avant le verdict de C59** : si C59 gagne, le test
+passe à la profondeur 11 — la marge de `main` y est six fois plus
+grande — s'il y tient sous C59 ; sinon il ne garde plus que le
+branchement (avec ≠ sans), le sens restant gardé par
+`un_coup_n_est_singulier_que_si_l_exclusion_echoue_sous_la_borne` et ses
+voisins, qui l'assertent sur des positions construites pour lui.
+
 ### N° 23 — le livre déséquilibré : VERDICT, relevé le 3 nov. à 13 h 40 — notre livre reste
 
 **Les douze matchs**, lancés à 7 h 26. Les deux de calibration sur le
