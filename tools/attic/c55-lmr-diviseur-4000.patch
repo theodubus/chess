@@ -1,0 +1,62 @@
+From d803666106e6cedc31f152f1d5c8e019f7073686 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 3 Nov 2026 06:44:18 +0000
+Subject: [PATCH] =?UTF-8?q?C55=20(n=C2=B0=2023)=20:=20le=20diviseur=20de?=
+ =?UTF-8?q?=20la=20LMR=20modul=C3=A9e=20=C3=A0=204=20000=20=E2=80=94=20can?=
+ =?UTF-8?q?didat,=20r=C3=A9voqu=C3=A9=20au=20commit=20suivant?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Banc 70 842 à la profondeur 7, 37 989 à la 6.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_011QmyEJPgm9NaJ5124tmeJj
+---
+ CLAUDE.md            | 2 +-
+ README.md            | 2 +-
+ engine/src/search.rs | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/CLAUDE.md b/CLAUDE.md
+index f903edb..b53b1f4 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -1342,7 +1342,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
+ rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
+ commit.
+ 
+-Référence à la profondeur 7 : 70 841 nœuds.
++Référence à la profondeur 7 : 70 842 nœuds.
+ 
+ Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
+ `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
+diff --git a/README.md b/README.md
+index 3534ab2..5d2ae17 100644
+--- a/README.md
++++ b/README.md
+@@ -331,7 +331,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
+ Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
+ dépend ni de la machine ni de sa charge.
+ 
+-Référence à la profondeur 7 : **70 841** nœuds.
++Référence à la profondeur 7 : **70 842** nœuds.
+ 
+ Ce chiffre est vérifié par la CI — voir
+ [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 7c169af..ecdcd24 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -2784,7 +2784,7 @@ const CONTINUATION_CAP: i32 = 29_952;
+ /// Le diviseur de la note dans la LMR modulée : une note au plafond du
+ /// papillon et des deux continuations, ~67 000, vaut onze plis. Choisi au
+ /// rejeu, où il change un tiers des réductions à arbre égal (n° 23).
+-const LMR_HISTORY_DIVISOR: i32 = 6_000;
++const LMR_HISTORY_DIVISOR: i32 = 4_000;
+ 
+ /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
+ /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
+-- 
+2.43.0
+

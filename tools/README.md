@@ -14538,6 +14538,56 @@ rendement attendu, × 1,3 à × 3 — <span>confiance faible</span>. Un
 témoin dont le signe s'inverse ferait du livre un instrument qui
 mesure autre chose que la force, quel que soit son rendement.
 
+### N° 23 — C55, C56 : le diviseur de la LMR modulée — écran, attendus et critère, écrits le 3 nov. avant de lancer
+
+**La question** — le registre des réglages ouverts : le diviseur de la
+note dans la LMR modulée, 6 000 depuis C54, n'a jamais été réglé — un
+seul point, choisi à l'écran parce qu'il changeait un tiers des
+réductions à arbre égal. Les deux voisins prévus : **C55 à 4 000**,
+**C56 à 9 000**, un facteur 1,5 de part et d'autre.
+
+**L'écran** — le rejeu des 60 parties du journal (« N° 23, l'écran »),
+par la sonde, dont `G+hk+lmrh:6000` rend C54 **au nœud près** :
+110 050 848 à la profondeur 10, le binaire de C54 les mêmes, vérifié ce
+jour.
+
+| diviseur | l'arbre à 12 (à 10), contre C54 | réductions changées à 12 (à 10) |
+|---|---|---|
+| **4 000** (C55) | **−6,52 %** (−4,11 %) | 59,4 % (45,1 %) |
+| 6 000 (C54, `main`) | — | 34,6 % (17,9 %) |
+| **9 000** (C56) | **+1,88 %** (+1,01 %) | 9,2 % (3,1 %) |
+
+Ce que l'écran montre, sans rien décider : **la part changée n'est pas
+linéaire en `1/K`** — 9 000 n'en garde qu'un quart, parce que la note
+n'atteint 9 000 qu'en sommant les continuations au papillon, plafonné à
+7 183 ; et **l'arbre suit le côté des notes** — 4 000 l'allège de 6,5 %
+quand 6 000 le laissait égal : sous 6 000, ce sont surtout des notes
+négatives qui franchissent le seuil, et elles réduisent davantage.
+<span>Inférence, confiance faible : la sonde ne compte pas le côté.</span> Banc à la profondeur 7 :
+70 842 et 70 845 ; à la 6, 37 989 pour les deux.
+
+**Les matchs** — chacun contre `main` (`39334eb`, l'arbre de C54),
+quatre jobs de 2 800 parties, `8+0,08`, graine « auto », AVX2 des deux
+côtés, le livre de 15 000 ; mis en commun par
+`tools/mettre-en-commun.sh`. Le livre déséquilibré suivra, à la lecture
+de sa calibration : les douze jobs de celle-ci occupent déjà les
+runners.
+
+*Attendus, écrits avant* — <span>confiance faible</span> :
+- **C55 (4 000) : −10 à +10** — il déplace près de deux fois plus de
+  réductions et rend 6,5 % d'arbre ; le signe ne se déduit ni de l'un
+  ni de l'autre (C54 : arbre égal, +23) ;
+- **C56 (9 000) : −15 à +3** — il ne garde qu'un quart des réductions
+  que C54 déplace ; s'il en garde l'Elo au prorata, il en perd ~17.
+
+**Le critère, écrit avant** :
+- un candidat fusionne si sa borne basse contre `main` passe zéro ; les
+  deux, celui dont le point est le plus haut ;
+- **aucun ne fusionne sinon** : 6 000 reste, et le registre garde la
+  ligne ouverte avec ce que les deux points disent de la pente — le
+  voisin suivant du côté du meilleur point (3 000 ou 7 500), puis le
+  décalage de la note, puis SPSA.
+
 ### N° 23 — l'inférence multicouche : écrite le 2 nov., prête pour le verdict de C3
 
 **La décision** — la feuille de route du 31 oct., point 3 : écrire dans
@@ -16230,7 +16280,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |
 | **seuil des ouvertures du générateur** (`OPENING_MAX_SCORE`) | 1 000 en unités d'évaluation, écrit pour la faite main | jamais en force ; son taux suit l'étiqueteur — **18,46 % sous N8tw50s800, 21,01 % sous N9w50s800**, les mêmes 5 000 ouvertures (26 oct., « N° 22 », la vague 1) | inconnue — <span>confiance faible</span> | avec les ouvertures, phase 7 ; jamais en cours de tranche : il change le mélange appris |
 | **marges et constantes de recherche** | réglées à la main ; × 2,85 au réseau (B8) | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA, phase 5, à refaire à chaque réseau |
-| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | 4 000 et 9 000 contre `main`, rejeu puis quatre jobs ; puis le décalage ; puis SPSA |
+| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **EN VOL le 3 nov.** : C55 (4 000) et C56 (9 000) contre `main`, quatre jobs chacun, attendus écrits avant (« N° 23 — C55, C56 ») ; puis le décalage ; puis SPSA |
 | **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | les plafonds × 0,5 et × 2, le bonus × 0,5 et × 2, à l'écran puis quatre jobs ; le papillon vidé à chaque coup, contre conservé |
 
 **Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
