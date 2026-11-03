@@ -2786,18 +2786,11 @@ const CONTINUATION_CAP: i32 = 29_952;
 /// rejeu, où il change un tiers des réductions à arbre égal (n° 23).
 const LMR_HISTORY_DIVISOR: i32 = 6_000;
 
-/// Le décalage de la note avant sa division, comme Stockfish 16
-/// (`statScore − 4006`, lu au source de `sf_16`) : il déplace la zone où la
-/// note ne change rien, vers plus de réduction s'il est positif (n° 23).
-const LMR_HISTORY_OFFSET: i32 = -2_000;
-
 /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
 /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
 /// au point de sauter la profondeur restante.
 fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
-    (base - (note - LMR_HISTORY_OFFSET) / LMR_HISTORY_DIVISOR)
-        .min(depth - 2)
-        .max(0)
+    (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
 }
 
 /// Le bonus — et le malus — d'une coupure à la profondeur `depth`.
@@ -4592,16 +4585,11 @@ mod tests {
             (1..=30_000).contains(&k),
             "les bornes ci-dessous supposent k ≤ 30 000"
         );
-        let o = LMR_HISTORY_OFFSET;
-        assert!(
-            o.abs() <= 10_000,
-            "les bornes ci-dessous supposent |o| ≤ 10 000"
-        );
-        assert_eq!(modulated_reduction(3, o, 10), 3);
-        assert_eq!(modulated_reduction(3, o + k, 10), 2);
-        assert_eq!(modulated_reduction(3, o + k - 1, 10), 3);
-        assert_eq!(modulated_reduction(3, o - k, 10), 4);
-        assert_eq!(modulated_reduction(3, o - (k - 1), 10), 3);
+        assert_eq!(modulated_reduction(3, 0, 10), 3);
+        assert_eq!(modulated_reduction(3, k, 10), 2);
+        assert_eq!(modulated_reduction(3, k - 1, 10), 3);
+        assert_eq!(modulated_reduction(3, -k, 10), 4);
+        assert_eq!(modulated_reduction(3, -(k - 1), 10), 3);
         // Bornée : jamais sous zéro, jamais au-delà de d − 2.
         assert_eq!(modulated_reduction(1, 60_000, 10), 0);
         assert_eq!(modulated_reduction(3, -60_000, 6), 4);
