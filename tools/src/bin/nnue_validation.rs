@@ -127,6 +127,7 @@ fn parse_candidate(spec: &str) -> Result<Candidate, String> {
     let arch = Arch {
         king_buckets,
         output_buckets,
+        layers: None,
     };
     let bytes = std::fs::read(path).map_err(|error| format!("{path} : {error}"))?;
     let network =
