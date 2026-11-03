@@ -1,0 +1,104 @@
+From 07562095d052af52cabc6e419ca359798369dfac Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 3 Nov 2026 23:53:48 +0000
+Subject: [PATCH] =?UTF-8?q?C61=20(n=C2=B0=2023)=20:=20la=20m=C3=A9moire=20?=
+ =?UTF-8?q?plus=20courte=20encore=20=E2=80=94=20le=20bonus=20d'historique?=
+ =?UTF-8?q?=20=C3=97=203,=20le=20diviseur=20de=20la=20LMR=20modul=C3=A9e?=
+ =?UTF-8?q?=20=C3=A0=2010=20000=20=E2=80=94=20candidat,=20r=C3=A9voqu?=
+ =?UTF-8?q?=C3=A9=20au=20commit=20suivant?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Le diviseur ajusté au rejeu (33,8 % des réductions modulées contre 34,6 %). Banc 71 310 à la profondeur 7, 38 230 à la 6.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_011QmyEJPgm9NaJ5124tmeJj
+---
+ CLAUDE.md                       |  2 +-
+ README.md                       |  2 +-
+ engine/src/search.rs            | 14 +++++++-------
+ engine/tests/bench_reference.rs |  2 +-
+ 4 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 5b0527b..a9fa504 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -1342,7 +1342,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
+ rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
+ commit.
+ 
+-Référence à la profondeur 7 : 70 841 nœuds.
++Référence à la profondeur 7 : 71 310 nœuds.
+ 
+ Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
+ `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
+diff --git a/README.md b/README.md
+index 3534ab2..87a8fd1 100644
+--- a/README.md
++++ b/README.md
+@@ -331,7 +331,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
+ Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
+ dépend ni de la machine ni de sa charge.
+ 
+-Référence à la profondeur 7 : **70 841** nœuds.
++Référence à la profondeur 7 : **71 310** nœuds.
+ 
+ Ce chiffre est vérifié par la CI — voir
+ [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 7c169af..b4abab7 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -2784,7 +2784,7 @@ const CONTINUATION_CAP: i32 = 29_952;
+ /// Le diviseur de la note dans la LMR modulée : une note au plafond du
+ /// papillon et des deux continuations, ~67 000, vaut onze plis. Choisi au
+ /// rejeu, où il change un tiers des réductions à arbre égal (n° 23).
+-const LMR_HISTORY_DIVISOR: i32 = 6_000;
++const LMR_HISTORY_DIVISOR: i32 = 10_000;
+ 
+ /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
+ /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
+@@ -2795,7 +2795,7 @@ fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
+ 
+ /// Le bonus — et le malus — d'une coupure à la profondeur `depth`.
+ fn history_bonus(depth: i32) -> i32 {
+-    (336 * depth - 547).clamp(1, 1_561)
++    (1008 * depth - 1641).clamp(1, 4_683)
+ }
+ 
+ /// Applique `delta` à une note bornée par `cap`, la gravité comprise. Le
+@@ -4567,11 +4567,11 @@ mod tests {
+     fn le_bonus_d_historique_suit_la_profondeur_et_se_borne() {
+         // Les échelles de Stockfish 16, sa profondeur 1 bornée à 1.
+         assert_eq!(history_bonus(1), 1);
+-        assert_eq!(history_bonus(2), 125);
+-        assert_eq!(history_bonus(3), 461);
+-        assert_eq!(history_bonus(6), 1_469);
+-        assert_eq!(history_bonus(7), 1_561);
+-        assert_eq!(history_bonus(100), 1_561);
++        assert_eq!(history_bonus(2), 375);
++        assert_eq!(history_bonus(3), 1_383);
++        assert_eq!(history_bonus(6), 4_407);
++        assert_eq!(history_bonus(7), 4_683);
++        assert_eq!(history_bonus(100), 4_683);
+         assert!(history_bonus(127) <= BUTTERFLY_CAP);
+     }
+ 
+diff --git a/engine/tests/bench_reference.rs b/engine/tests/bench_reference.rs
+index fbfe1e7..2efd1d3 100644
+--- a/engine/tests/bench_reference.rs
++++ b/engine/tests/bench_reference.rs
+@@ -351,7 +351,7 @@ fn les_milliers_se_regroupent_comme_dans_le_document() {
+ #[test]
+ fn larbre_de_recherche_ne_bouge_pas_en_silence() {
+     const PROFONDEUR: u32 = 6;
+-    const NOEUDS: u64 = 37_989;
++    const NOEUDS: u64 = 38_230;
+ 
+     let noeuds = shallowred::bench::run(PROFONDEUR).unwrap();
+     assert_eq!(
+-- 
+2.43.0
+
