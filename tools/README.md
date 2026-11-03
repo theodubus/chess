@@ -667,6 +667,9 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-11-02 | **C52 — la gravité au plafond 16 384, le bonus `d²` inchangé**, n° 23 (`141fb43` contre `0e43fdd`) | **+2,14 Elo ± 3,06** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable ; attendu −3 à +3. Non fusionné |
 | 2026-11-02 | **C53 — la gravité aux échelles de Stockfish 16, le papillon conservé**, n° 23 (`cde63e6` contre `0e43fdd`) | **+14,40 Elo ± 3,08** sur 11 200 parties à `8+0,08`, homogènes (p = 0,641) — **gain démontré** ; attendu −5 à +10, dépassé ; l'arbre −0,91 % à la profondeur 12. Fusionné avec C54 |
 | 2026-11-02 | **C54 — C53 et la LMR modulée par la note, `note / 6000` plis**, n° 23 (`822fb74` contre `cde63e6`) | **+23,18 Elo ± 3,15** sur 11 200 parties à `8+0,08`, homogènes (p = 0,677) — **gain démontré** ; attendu −8 à +15, dépassé ; **l'arbre inchangé** (+0,001 %), un tiers des réductions déplacées. **Fusionné le 3 nov.** |
+| 2026-11-03 | **C55 — le diviseur de la LMR modulée à 4 000**, n° 23 (`d803666` contre `39334eb`) | **−2,57 Elo ± 2,99** sur 11 200 parties à `8+0,08`, homogènes (p = 0,939) — rien de démontré ; attendu −10 à +10 ; l'arbre −6,5 % à la profondeur 12. Non fusionné |
+| 2026-11-03 | **C56 — le diviseur de la LMR modulée à 9 000**, n° 23 (`98d62bd` contre `39334eb`) | **−7,20 Elo ± 3,07** sur 11 200 parties à `8+0,08`, homogènes (p = 0,604) — **régression démontrée** ; attendu −15 à +3 ; l'arbre +1,9 % à la profondeur 12. Non fusionné |
+| 2026-11-03 | **Le livre déséquilibré — son rendement par paire**, n° 23 : `0d2b188` à `10+0,10` contre `8+0,08`, C53 et C54, sur `tools/book-desequilibre.epd` contre `tools/book.epd` | **× 1,11 [0,85 ; 1,44]** sur trois effets connus, homogènes ; × 0,98 par heure de runner, ses parties durant ~13 % de plus — **ne paie pas**, notre livre reste ; à `8+0,08` |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -1038,9 +1041,10 @@ dernière relève est faite.
 | **N° 22 — la vague 20**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41162947532, 41162951444, 41162955087, 41162959126, 41162962521, 41162966632, 41162970067, 41162973641 ; à 5 000 : 41162949455, 41162953236, 41162957135, 41162960767, 41162964762, 41162968437, 41162972013, 41162975516 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 31 oct. à 9 h 49** — lancée à 4 h 07, ses attendus poussés avant (`b79b725`) ; seize succès finis entre 9 h 37 et 9 h 38 | **à 2 500 : 514,8 M positions, 343,7 M gardées, 28,78 % de nulles ; à 5 000 : 240,9 M, 165,0 M, 34,80 % ; écartées 21,06 et 21,17 % ; EPYC 7763 à 2 382 – 2 399 et 1 205 – 1 212 ; cumuls 6 127,2 et 3 027,9 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 20) — *Attendus, écrits avant* (section « N° 22 », la vague 20) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 300 à 2 500** et **1 150 à 1 260** positions par seconde — les bornes basses descendues au relevé de la vague 18 ; cumul appris celui de la vague 19 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **6 031 à 6 253 M** et **2 993 à 3 099 M** |
 | **N° 22 — la vague 21**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41186039541, 41186042684, 41186045956, 41186049109, 41186052709, 41186055933, 41186059218, 41186062420 ; à 5 000 : 41186041185, 41186044358, 41186047526, 41186050962, 41186054181, 41186057428, 41186060847, 41186064125 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 31 oct. à 9 h 47**, ses attendus poussés avant (`b768e6c`) ; **RELEVÉE le 31 oct. à 15 h 28 — les douze chiffres dans leur attendu** (section « N° 22 », la vague 21) ; **la dernière : la génération est EN PAUSE après elle**, aucune vague 22 | — *Attendus, écrits avant* (section « N° 22 », la vague 21) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 300 à 2 500** et **1 150 à 1 260** positions par seconde ; cumul appris celui de la vague 20 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **6 375 à 6 597 M** et **3 158 à 3 264 M** |
 | **N° 23 — C52, C53 et C54, l'historique borné et la LMR modulée** | C52 (`141fb43`) contre `0e43fdd` : **41424524575, 41424533128, 41424542152, 41424550122** ; C53 (`cde63e6`) contre `0e43fdd` : **41424558147, 41424567516, 41424575489, 41424583620** ; C54 (`822fb74`) contre C53 : **41424590639, 41424599610, 41424607675, 41424615206** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 12 × 2 800 parties | **RELEVÉS le 2 nov. à 16 h 10** — finis entre 15 h 50 et 16 h 05, aucune perte au temps : C52 **+2,14 ± 3,06**, C53 **+14,40 ± 3,08**, C54 contre C53 **+23,18 ± 3,15** ; **C54 fusionné le 3 nov.**, C53 compris (« N° 23 — VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — les candidats ») : C52 **−3 à +3**, C53 **−5 à +10**, C54 contre C53 **−8 à +15** ; **critère** : C53 si sa borne basse passe zéro, C54 (C53 compris) si la sienne passe zéro contre C53 et que C53 n'est pas démontré sous `main` |
-| **N° 23 — le livre déséquilibré : calibration et témoins** | calibration, `0d2b188` contre lui-même, `10+0,10` contre `8+0,08` — sur le livre de 15 000 : **41589865609, 41589872708** ; sur `tools/book-desequilibre.epd` : **41589879477, 41589885654** ; témoins sur le livre déséquilibré — C53 (`cde63e6`) contre `0e43fdd` : **41589892536, 41589899229, 41589905877, 41589912682** ; C54 (`822fb74`) contre C53 : **41589919053, 41589925508, 41589931538, 41589937796** | graine « auto » chacun, AVX2 des deux côtés | `match.yml`, 12 × 2 800 parties | **EN VOL**, lancés le 3 nov. à 7 h 35 ; ~5 h 30, la calibration près du plafond de 350 min — un job coupé garde une estimation non biaisée | — *Attendus, écrits avant* (section « N° 23 — le livre déséquilibré ») : **rendement × 1,3 à × 3** ; témoins **du même signe** que sur notre livre ; **critère** : le livre déséquilibré devient le livre des matchs à la série suivante si la borne basse du rendement dépasse × 1,3 |
-| **N° 23 — C55 et C56, le diviseur de la LMR modulée** | C55 (`d803666`, 4 000) contre `39334eb` : **41591921375, 41591928709, 41591934984, 41591941166** ; C56 (`98d62bd`, 9 000) contre `39334eb` : **41591947411, 41591953770, 41591960493, 41591967514** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **EN VOL**, lancés le 3 nov. à 7 h 45 ; ~5 h | — *Attendus, écrits avant* (section « N° 23 — C55, C56 ») : C55 **−10 à +10**, C56 **−15 à +3** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; sinon 6 000 reste |
-| **Balayage de mutation de `main` après le multicouche** | **41592047881**, `commit` = `700a8ba` | — | `mutation.yml` | **EN VOL**, lancé le 3 nov. à 7 h 50 — confirme les plafonds, `nnue.rs` attendu à 2 au plus (huit survivants tués à la main le 2 nov.) | — |
+| **N° 23 — le livre déséquilibré : calibration et témoins** | calibration, `0d2b188` contre lui-même, `10+0,10` contre `8+0,08` — sur le livre de 15 000 : **41589865609, 41589872708** ; sur `tools/book-desequilibre.epd` : **41589879477, 41589885654** ; témoins sur le livre déséquilibré — C53 (`cde63e6`) contre `0e43fdd` : **41589892536, 41589899229, 41589905877, 41589912682** ; C54 (`822fb74`) contre C53 : **41589919053, 41589925508, 41589931538, 41589937796** | graine « auto » chacun, AVX2 des deux côtés | `match.yml`, 12 × 2 800 parties | **RELEVÉS le 3 nov. à 13 h 40** — la calibration sur le livre déséquilibré coupée au plafond (2 580 et 2 600 parties), aucune perte au temps : rendement **× 1,11 [0,85 ; 1,44]** sur les trois effets, ~× 0,98 par heure — **notre livre reste** ; témoins du même signe (« N° 23 — le livre déséquilibré : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — le livre déséquilibré ») : **rendement × 1,3 à × 3** ; témoins **du même signe** que sur notre livre ; **critère** : le livre déséquilibré devient le livre des matchs à la série suivante si la borne basse du rendement dépasse × 1,3 |
+| **N° 23 — C55 et C56, le diviseur de la LMR modulée** | C55 (`d803666`, 4 000) contre `39334eb` : **41591921375, 41591928709, 41591934984, 41591941166** ; C56 (`98d62bd`, 9 000) contre `39334eb` : **41591947411, 41591953770, 41591960493, 41591967514** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 3 nov. à 13 h 40** — aucune perte au temps : C55 **−2,57 ± 2,99**, C56 **−7,20 ± 3,07** ; aucun ne fusionne, 6 000 reste (« N° 23 — C55, C56 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C55, C56 ») : C55 **−10 à +10**, C56 **−15 à +3** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; sinon 6 000 reste |
+| **N° 23 — C57 et C58, le décalage de la note** | C57 (`71f91f5`, +2 000) contre `6958899` : **41640598310, 41640608379, 41640618264, 41640628262** ; C58 (`13177a7`, −2 000) contre `6958899` : **41640637930, 41640646405, 41640655731, 41640665443** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **EN VOL**, lancés le 3 nov. à 14 h 00 ; ~5 h | — *Attendus, écrits avant* (section « N° 23 — C57, C58 ») : C57 **−8 à +10**, C58 **−10 à +5** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; C58 après le traitement de son test ; sinon 0 reste |
+| **Balayage de mutation de `main` après le multicouche** | **41592047881**, `commit` = `700a8ba` | — | `mutation.yml` | **RELEVÉ le 3 nov. à 13 h 40, vert** — `nnue.rs` 2, à son plafond ; `search.rs` 46 sous 48, plafond resserré ; les autres à leur plafond, total 161 | — |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
 | **N° 20, séance C2c — N9pfbs800 contre N9w50s800** | **40610093856, 40610102423, 40610110837, 40610118331** | `ad84d1f` (N9pfbs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 7 h 28** — lancés à 1 h 39, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 6 h 38 et 6 h 47 | **+1,40 ± 3,27 en commun** (−2,73, +2,85, +4,09, +1,36 ; p = 0,463) — dans l'attendu, **pas candidat** (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −4 à +4, ~0 (« La séance C2c ») |
@@ -14627,6 +14631,135 @@ la même part des réductions que `main` — l'échelle de la LMR tenue,
 le reste libre. Et si l'un des deux voisins du diviseur gagne, il en
 devient la base.
 
+### N° 23 — C55, C56 : VERDICT, relevé le 3 nov. à 13 h 40 — 6 000 reste
+
+**Les huit matchs**, lancés à 7 h 45, finis entre 12 h 42 et 12 h 50,
+2 800 parties chacun, **aucune perte au temps**, 6,32 à 6,49 s par
+partie ; contre `39334eb`, mis en commun par `tools/mettre-en-commun.sh` :
+
+| candidat | les quatre jobs | en commun | attendu, écrit avant |
+|---|---|---|---|
+| **C55**, diviseur 4 000 | −1,49, −3,97, −1,61, −3,23 | **−2,57 ± 2,99**, homogènes (p = 0,939) | −10 à +10 — dedans |
+| **C56**, diviseur 9 000 | −4,47, −6,58, −7,94, −9,81 | **−7,20 ± 3,07**, homogènes (p = 0,604) — **régression démontrée** | −15 à +3 — dedans |
+
+**Le critère, écrit avant** : aucune borne basse ne passe zéro —
+**aucun ne fusionne, 6 000 reste**.
+
+**Ce que ça dit** :
+- **l'optimum est plat autour de 6 000** : une parabole en `log K` par
+  les trois points culmine vers 5 500, à +0,3 au point — <span>inférence,
+  confiance faible : chaque point porte ± 3</span>. Le diviseur seul ne
+  rend plus rien qu'un match de quatre jobs puisse voir : **déprioritisé**
+  au registre ;
+- **9 000 perd 7 Elo en gardant un quart des réductions que C54
+  déplace** — moins que le prorata (~−17, la borne de l'attendu) : les
+  notes les plus grandes portent plus que leur part du gain de C54.
+  <span>Inférence, confiance faible.</span>
+
+**Ensuite** — au registre : le décalage de la note, comme Stockfish, à
+l'écran puis quatre jobs ; la mémoire de la gravité, le diviseur ajusté
+(« les échelles de la gravité », plus haut) ; SPSA pour le reste.
+
+### N° 23 — C57, C58 : le décalage de la note — écran, attendus et critère, écrits le 3 nov. avant de lancer
+
+**La question** — le registre, après le verdict du diviseur : Stockfish
+décale la note avant de la diviser. Son source, lu à `sf_16`
+(`search.cpp`, l. 1173 à 1180) : `statScore = 2 · papillon + cont[0] +
+cont[1] + cont[3] − 4006`, puis `r −= statScore / (11124 + 4740 · (5 <
+d < 22))`. Le décalage y vaut ~0,36 pli ; **à notre échelle, ~2 160**.
+Les deux voisins de notre valeur, 0 : **C57 à +2 000** (`note − 2000`, le
+sens de Stockfish, plus de réduction) et **C58 à −2 000**.
+
+**L'écran** — le rejeu des 60 parties, par une sonde jetable bâtie sur
+`main` et vérifiée contre lui au nœud près (110 050 848 à la profondeur
+10, aucune réduction changée) ; C57 bâti, il rend l'arbre de sa variante
+au nœud près (249 724 606 à la 12) :
+
+| variante | l'arbre à 12, contre `main` | réductions changées |
+|---|---|---|
+| décalage +1 000 | −5,08 % | 7,7 % |
+| **décalage +2 000** (C57) | **−9,42 %** | 15,0 % |
+| décalage +4 000 | −16,60 % | 28,0 % |
+| **décalage −2 000** (C58) | **+7,13 %** | 12,6 % |
+| le diviseur par profondeur de Stockfish, × 1,43 de 6 à 21 | +1,31 % | 10,2 % |
+| le papillon compté double | −8,26 % | 26,1 % |
+| le papillon double, diviseur 7 500 | −5,94 % | 15,2 % |
+
+Ce que l'écran montre : **le décalage pèse bien plus sur l'arbre que le
+diviseur** — ±2 000 déplacent l'arbre de 7 à 9 %, quand 4 000 au lieu
+de 6 000 au diviseur en déplaçaient 6,5. Le diviseur par profondeur et
+le papillon double restent au registre, derrière ce verdict. Banc à la
+profondeur 7 : 70 845 et 70 842 ; à la 6, 37 989 pour les deux.
+
+**Un test tombe sous C58** : `les_extensions_singulieres_allongent_l_arbre`
+asserte un SENS sur le banc à la profondeur 9, et C58 le renverse
+(273 462 nœuds avec, 282 816 sans). La mesure n'en dépend pas — un match
+ne lance aucun test. **Si C58 gagne**, le test se traite avant la
+fusion, par une mesure indépendante du changement (`CLAUDE.md`, « Une
+reformulation justifiée par une mesure INDÉPENDANTE… »), jamais en
+l'assouplissant.
+
+**Les matchs** — chacun contre `main` (`6958899`), quatre jobs de 2 800
+parties, `8+0,08`, graine « auto », AVX2 des deux côtés, le livre de
+15 000 ; mis en commun par `tools/mettre-en-commun.sh`.
+
+*Attendus, écrits avant* — <span>confiance faible</span> :
+- **C57 (+2 000) : −8 à +10** — le sens de Stockfish, 9 % d'arbre en
+  moins ; C55, qui réduisait aussi davantage les mal notés, rendait
+  −2,6 ;
+- **C58 (−2 000) : −10 à +5** — 7 % d'arbre en plus, le sens contraire.
+
+**Le critère, écrit avant** : un candidat fusionne si sa borne basse
+contre `main` passe zéro — les deux, le plus haut au point ; C58 n'entre
+qu'après le traitement de son test. **Sinon, 0 reste**, et le registre
+garde ce que les deux points disent de la pente.
+
+### N° 23 — le livre déséquilibré : VERDICT, relevé le 3 nov. à 13 h 40 — notre livre reste
+
+**Les douze matchs**, lancés à 7 h 26. Les deux de calibration sur le
+livre déséquilibré ont été **coupés par le plafond de 350 minutes**, à
+2 580 et 2 600 parties sur 2 800 — un match à longueur fixe coupé garde
+une estimation non biaisée ; les dix autres finis entre 12 h 58 et
+13 h 11. **Aucune perte au temps.** Chaque effet, par paire, sur les
+deux livres — `t = (score moyen − ½) / écart type`, lu sur la somme des
+comptes pentanomiaux ; IC par rééchantillonnage des paires :
+
+| effet connu | notre livre | le livre déséquilibré | rendement `(t_d / t_e)²` |
+|---|---|---|---|
+| `10+0,10` contre `8+0,08`, `0d2b188` | +26,48 ± 4,10 (5 600 parties), `t` 0,240 | +33,71 ± 4,74 (5 180), `t` 0,275 | **× 1,31** [0,85 ; 2,03] |
+| C53 contre `0e43fdd` | +14,40 ± 3,08 (2 nov.), `t` 0,123 | +16,42 ± 3,36, homogènes, `t` 0,128 | **× 1,09** [0,59 ; 2,01] |
+| C54 contre C53 | +23,18 ± 3,15 (2 nov.), `t` 0,194 | +24,11 ± 3,33, homogènes, `t` 0,190 | **× 0,97** [0,66 ; 1,43] |
+| **les trois, en log, pondérés** | | | **× 1,11 [0,85 ; 1,44]**, homogènes (Q = 1,07, p ≈ 0,59) |
+
+**Le critère, écrit avant** : un rendement au-dessus de × 1,3, borne
+basse comprise — **non rempli**, ni par la calibration seule (0,85), ni
+par les trois effets ensemble (0,85). **Notre livre reste le livre des
+matchs**, et la ligne retourne au registre.
+
+**Et le temps** : une partie du livre déséquilibré dure **~13 % de plus**
+— 7,15 à 7,35 s pour C53 et C54, contre 6,29 à 6,61 s pour les mêmes
+matchs sur notre livre le 2 nov. ; la calibration y a touché le plafond.
+**Par heure de runner, le rendement tombe à ~× 0,98.**
+
+**Les attendus, écrits avant** :
+- le rendement, × 1,3 à × 3 — **manqué**, en dessous ;
+- les nulles, 10 à 25 % — **manqué** : 34 à 36 % sur le livre
+  déséquilibré, contre 46 à 48 % sur le nôtre ; elles baissent d'un
+  quart, pas de moitié ;
+- les témoins du même signe — **tenu** : +16,42 et +24,11 contre +14,40
+  et +23,18, les mêmes effets à l'erreur près.
+
+**Ce que ça dit** — *pourquoi* il ne paie pas n'est pas mesuré. Ce qui
+l'est : le camp favorisé y convertit trop rarement pour que les paires
+1–1 dominent (somme ≠ 1 : 41 % des paires au pilote), et l'adjudication
+de nulle en ramasse une part. Un livre plus déséquilibré — la bande
+[400, 600), jamais jouée — déplacerait ce compromis ; <span>marge
+estimée faible, confiance faible</span>, au registre derrière les autres
+leviers du débit. **Et la calibration rend +26,5 ± 4,1 sur notre livre**,
+sous les ~+35 que l'étalon du 24 sept. prédisait pour × 1,25 de temps —
+un étalon d'une autre base, à quarante jours et d'autres réseaux de
+distance ; noté, pas interprété.
+
 ### N° 23 — l'inférence multicouche : écrite le 2 nov., prête pour le verdict de C3
 
 **La décision** — la feuille de route du 31 oct., point 3 : écrire dans
@@ -16192,7 +16325,10 @@ pas parce que des runners sont libres.
 2. Phase 4, la recherche, au reset : l'historique borné, puis la LMR
    modulée et l'élagage par l'historique (rejeu, puis 4 jobs par
    candidat). Chaque candidat joué aussi sur un livre déséquilibré : sa
-   calibration (« le débit de mesure », point 1).
+   calibration (« le débit de mesure », point 1). **Mesuré le 3 nov. :
+   le livre déséquilibré ne paie pas ici** (× 1,11 [0,85 ; 1,44] de
+   paires, ~× 0,98 par heure de runner) — notre livre reste, les
+   candidats suivants ne s'y jouent plus.
 3. En parallèle de 2 : l'inférence multicouche écrite dans le moteur,
    confrontée au code de bullet, prête pour l'entraînement au verdict de C3.
    **Écrite le 2 nov.** (n° 23, « l'inférence multicouche ») : la
@@ -16321,7 +16457,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |
 | **seuil des ouvertures du générateur** (`OPENING_MAX_SCORE`) | 1 000 en unités d'évaluation, écrit pour la faite main | jamais en force ; son taux suit l'étiqueteur — **18,46 % sous N8tw50s800, 21,01 % sous N9w50s800**, les mêmes 5 000 ouvertures (26 oct., « N° 22 », la vague 1) | inconnue — <span>confiance faible</span> | avec les ouvertures, phase 7 ; jamais en cours de tranche : il change le mélange appris |
 | **marges et constantes de recherche** | réglées à la main ; × 2,85 au réseau (B8) | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA, phase 5, à refaire à chaque réseau |
-| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **EN VOL le 3 nov.** : C55 (4 000) et C56 (9 000) contre `main`, quatre jobs chacun, attendus écrits avant (« N° 23 — C55, C56 ») ; puis le décalage ; puis SPSA |
+| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **C55 (4 000) −2,57 ± 2,99 ; C56 (9 000) −7,20 ± 3,07**, régression démontrée (3 nov., « N° 23 — C55, C56 : VERDICT ») : l'optimum est plat autour de 6 000 — **déprioritisé**, marge ~0 à +2 <span>(confiance faible)</span>. **Le décalage de la note, EN VOL le 3 nov.** : C57 (+2 000) et C58 (−2 000) contre `main`, quatre jobs chacun (« N° 23 — C57, C58 » ; la sonde : `tools/attic/n23-sonde-decalage.patch`) ; puis le diviseur par profondeur et le papillon double, à l'écran le même jour ; puis SPSA |
 | **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | **à l'écran le 3 nov. : confondus avec le diviseur** — la note n'est lue que par l'ordre, invariant d'échelle, et par la LMR ; le bonus × 2 rend l'écran du diviseur 4 000 (« N° 23 — les échelles de la gravité »). **Après C55 et C56** : la mémoire (bonus rapporté au plafond), puis le poids papillon contre continuations, chacun le diviseur ajusté au rejeu pour tenir la part des réductions changées ; le papillon vidé à chaque coup, contre conservé |
 
 **Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
@@ -16374,7 +16510,7 @@ rejeu, puis quatre jobs par candidat.
 | quoi | ce que c'est | où on en est |
 |---|---|---|
 | **le tournoi CCRL — situer le moteur au-delà de Stockfish bridé** | une série contre des moteurs open source classés à la CCRL entre ~3 200 et ~3 500, qui jouent normalement — Stockfish bridé joue exprès des coups faux tirés au hasard et écrase les écarts (+198 au réseau contre lui, +330 contre le jumeau) ; leurs classements lus à la source, `computerchess.org.uk` à autoriser dans le réseau de la session | **inscrit le 29 oct. à 10 h 57, à la demande de Théo** : « *ajoute le tournoi CCRL à la file une fois que le elo le nécessitera vraiment* ». **Déclencheur** : une série de C13 au-delà de **75 % contre 3190**, le plafond de Stockfish 16 (~3 380 ; l'instrument cesse d'être lisible vers ~3 570, 90 %) — ou plus tôt si le chiffre absolu doit être publié. Ne fait gagner aucun Elo : il situe |
-| **le débit de mesure — tester comme Fishtest et OpenBench** | les verdicts sous ~3 Elo : (1) **le rendement par partie**, gratuit — un livre d'ouvertures déséquilibrées, comme celui de Fishtest <span>(de mémoire, confiance moyenne)</span>, et un SPRT **unique** sur le flux mis en commun des vagues, lu par un seul arbitre entre deux vagues — un test séquentiel par groupes, qui n'est pas la faute des N SPRT parallèles (`CLAUDE.md`, « ce changement vaut la peine d'être mesuré ») ; (2) **les cœurs** — un serveur OpenBench (SPRT, SPSA, génération) et des clients : le PC de Théo à l'arrêt, des cœurs loués, une instance partagée de la communauté, ou les runners, dont les conditions excluent une charge « *disproportionate* » (ligne B4) ; (3) **une file automatique** de candidats, sans relève à la main | **inscrit le 29 oct. à 10 h 57**, sur la question de Théo. Le rendement d'abord, mesuré : le livre déséquilibré contre le nôtre sur un effet connu, la variance par paire lue au pentanomial — <span>marge estimée : ×1,5 à ×3 de parties en moins à précision égale, confiance faible</span>. Les cœurs **engagent Théo** — de l'argent, sa machine ou la charge sur son compte GitHub. Ordre de grandeur : un verdict à ± 1 Elo demande ~122 000 parties, ~44 jobs de runner, contre 4 aujourd'hui. **Rang** : après C3 et la phase 4, quand les effets cherchés passent sous ~3 Elo. **Les options chiffrées, et l'approche validée par Théo le 29 oct.** — rien à acheter, le serveur OpenBench sur son MeLE : paragraphe « Le débit de mesure », sous cette phase |
+| **le débit de mesure — tester comme Fishtest et OpenBench** | les verdicts sous ~3 Elo : (1) **le rendement par partie**, gratuit — un livre d'ouvertures déséquilibrées, comme celui de Fishtest <span>(de mémoire, confiance moyenne)</span>, et un SPRT **unique** sur le flux mis en commun des vagues, lu par un seul arbitre entre deux vagues — un test séquentiel par groupes, qui n'est pas la faute des N SPRT parallèles (`CLAUDE.md`, « ce changement vaut la peine d'être mesuré ») ; (2) **les cœurs** — un serveur OpenBench (SPRT, SPSA, génération) et des clients : le PC de Théo à l'arrêt, des cœurs loués, une instance partagée de la communauté, ou les runners, dont les conditions excluent une charge « *disproportionate* » (ligne B4) ; (3) **une file automatique** de candidats, sans relève à la main | **inscrit le 29 oct. à 10 h 57**, sur la question de Théo. Le rendement d'abord, mesuré : le livre déséquilibré contre le nôtre sur un effet connu, la variance par paire lue au pentanomial — <span>marge estimée : ×1,5 à ×3 de parties en moins à précision égale, confiance faible</span>. **MESURÉ le 3 nov. : × 1,11 [0,85 ; 1,44] de paires sur trois effets connus, ~× 0,98 par heure de runner — le livre déséquilibré ne paie pas ici, notre livre reste** (« N° 23 — le livre déséquilibré : VERDICT ») ; restent (2) et (3). Les cœurs **engagent Théo** — de l'argent, sa machine ou la charge sur son compte GitHub. Ordre de grandeur : un verdict à ± 1 Elo demande ~122 000 parties, ~44 jobs de runner, contre 4 aujourd'hui. **Rang** : après C3 et la phase 4, quand les effets cherchés passent sous ~3 Elo. **Les options chiffrées, et l'approche validée par Théo le 29 oct.** — rien à acheter, le serveur OpenBench sur son MeLE : paragraphe « Le débit de mesure », sous cette phase |
 | **les tables de finale Syzygy** | sonder des tables exactes quand il reste peu de pièces | +2,7 Elo chez Stockfish 15 au réseau (source secondaire) ; reporté |
 | **les ouvertures du générateur** | 8 à 11 demi-coups au hasard, jamais comparés à un livre pour la diversité des données | à écranter le jour où le volume ne paiera plus |
 | **plus de données de Leela** | d'autres fichiers que T60 et T74 | si (a) ou (b) paie |
