@@ -1,0 +1,66 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 7c169af..2779ee0 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -1918,7 +1918,19 @@ impl Search {
+                 // moins, un mal noté davantage — la note bornée par la
+                 // gravité, qui a désormais une échelle.
+                 let note = self.quiet_score(mv, piece_to(board, mv), context);
+-                modulated_reduction(self.reduction(depth, index), self.lmr_note(note), depth)
++                let r0 = modulated_reduction(self.reduction(depth, index), self.lmr_note(note), depth);
++                let p = n24();
++                let note2 = note + (p.bfw - 1) * self.history_score(mv) - p.off;
++                let div = match p.ddiv {
++                    Some(k) if depth > 5 && depth < 22 => k,
++                    _ => p.div,
++                };
++                let r1 = (self.reduction(depth, index) - note2 / div).min(depth - 2).max(0);
++                N24C[0].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                if r1 != r0 {
++                    N24C[1].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                }
++                r1
+             } else {
+                 0
+             };
+@@ -2789,6 +2801,23 @@ const LMR_HISTORY_DIVISOR: i32 = 6_000;
+ /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
+ /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
+ /// au point de sauter la profondeur restante.
++#[derive(Clone, Copy)]
++struct N24 { off: i32, div: i32, ddiv: Option<i32>, bfw: i32 }
++fn n24() -> N24 {
++    static V: std::sync::OnceLock<N24> = std::sync::OnceLock::new();
++    *V.get_or_init(|| {
++        let mut v = N24 { off: 0, div: LMR_HISTORY_DIVISOR, ddiv: None, bfw: 1 };
++        for part in std::env::var("N24").unwrap_or_default().split('+').filter(|p| !p.is_empty()) {
++            let mut it = part.split(':');
++            let k = it.next().unwrap_or("");
++            let x: i32 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0);
++            match k { "off" => v.off = x, "div" => v.div = x, "ddiv" => v.ddiv = Some(x), "bfw" => v.bfw = x, _ => panic!("N24 {part}") }
++        }
++        v
++    })
++}
++pub static N24C: [std::sync::atomic::AtomicU64; 2] = [std::sync::atomic::AtomicU64::new(0), std::sync::atomic::AtomicU64::new(0)];
++
+ fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
+     (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
+ }
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index e5c7767..052cce7 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -485,6 +485,12 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                let l = crate::search::N24C[0].swap(0, Relaxed);
++                let c = crate::search::N24C[1].swap(0, Relaxed);
++                send(&format!("info string sonde-n23 lmr={l} lmrh_change={c}"));
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
