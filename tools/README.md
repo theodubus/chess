@@ -16200,7 +16200,8 @@ pas parce que des runners sont libres.
 4. Carte de Théo, semaine du 2 nov. : séance n° 22 (2 500 contre 5 000
    nœuds, plus un 4ᵉ réseau pour le tour de boucle, ajouté à
    `tools/seance-n22.sh` le 2 nov.), puis C3 (N10, N10r10, N10h384,
-   N10h512), ~42 h.
+   N10h512), ~42 h. **Théo dit quand sa carte est prête** (3 nov.) :
+   rien à relancer d'ici là.
 5. Après C3 : embarquer le gagnant (sonde des marges, série C13) ;
    16 seaux de roi si 10 a payé ; 1 024 et couches cachées si la largeur paie.
 6. Reprendre la génération, étiquetée par le nouveau réseau, au rythme
@@ -16209,7 +16210,8 @@ pas parce que des runners sont libres.
    stabilisé ; refait à chaque réseau embarqué.
 8. Le socle : après le pilote de Théo sur son autre projet, un second
    essai à blanc sur chess, puis l'installation réelle entre deux
-   campagnes. Il ne bloque pas la phase 4.
+   campagnes. Il ne bloque pas la phase 4. **Prêt d'ici une à deux
+   semaines au plus** (Théo, 3 nov.), soit vers le 10 à 17 nov.
 9. OpenBench (serveur sur le MeLE, clients : runners et portable) quand
    les effets cherchés passent sous ~3 Elo.
 10. En dernier : 1 600 superlots sur la recette finale ; la phase 6
