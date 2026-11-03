@@ -4577,13 +4577,19 @@ mod tests {
 
     #[test]
     fn la_lmr_modulee_reduit_moins_les_bien_notes() {
-        // Une note de 6 000 vaut un pli de moins, −6 000 un pli de plus ;
-        // la division tronque vers zéro.
+        // Une note égale au diviseur vaut un pli de moins, son opposée un
+        // pli de plus ; la division tronque vers zéro. Écrit en fonction du
+        // diviseur, pour que le régler ne touche qu'une ligne.
+        let k = LMR_HISTORY_DIVISOR;
+        assert!(
+            (1..=30_000).contains(&k),
+            "les bornes ci-dessous supposent k ≤ 30 000"
+        );
         assert_eq!(modulated_reduction(3, 0, 10), 3);
-        assert_eq!(modulated_reduction(3, 6_000, 10), 2);
-        assert_eq!(modulated_reduction(3, 5_999, 10), 3);
-        assert_eq!(modulated_reduction(3, -6_000, 10), 4);
-        assert_eq!(modulated_reduction(3, -5_999, 10), 3);
+        assert_eq!(modulated_reduction(3, k, 10), 2);
+        assert_eq!(modulated_reduction(3, k - 1, 10), 3);
+        assert_eq!(modulated_reduction(3, -k, 10), 4);
+        assert_eq!(modulated_reduction(3, -(k - 1), 10), 3);
         // Bornée : jamais sous zéro, jamais au-delà de d − 2.
         assert_eq!(modulated_reduction(1, 60_000, 10), 0);
         assert_eq!(modulated_reduction(3, -60_000, 6), 4);
