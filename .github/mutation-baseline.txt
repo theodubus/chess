@@ -32,7 +32,7 @@ perft.rs 1
 bench.rs 2
 see.rs 2
 nnue.rs 2
-search.rs 48
+search.rs 46
 eval.rs 102
 
 # ---------------------------------------------------------------------------
@@ -44,6 +44,12 @@ eval.rs 102
 # porte sur LA FORCE DE JEU. Le SPRT juge la seconde catégorie, et aucun test
 # unitaire ne peut trancher à sa place — pire, un test qui fige une valeur
 # d'évaluation empêche le SPRT de la déplacer.
+#
+# search.rs — 46, RESSERRÉ le 3 nov. 2026 : le balayage de `main` à
+#   `700a8ba` (run 41592047881), après C53 et C54 — la gravité de
+#   l'historique et la LMR modulée — et l'inférence multicouche, rend
+#   46 sous le plafond de 48 ; nnue.rs revient à 2, les huit survivants
+#   du multicouche tués le 2 nov. Les autres fichiers à leur plafond.
 #
 # search.rs — 48 et eval.rs — 102, RELEVÉS le 12 oct. 2026 : le balayage
 #   qui a suivi la composition du n° 12 (run 37621126792, `main` à
