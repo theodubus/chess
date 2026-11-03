@@ -66,24 +66,15 @@ function armyShapeError(value: unknown): string | null {
     return "Configuration invalide : pièce inconnue.";
   if (entries.filter(([, piece]) => piece === "k").length !== 1)
     return "Le moteur doit avoir exactement un roi.";
+  if (entries.length > 16) return "Le moteur peut avoir au maximum 16 pièces.";
   if (entries.filter(([, piece]) => piece === "p").length > 8)
     return "Le moteur peut avoir au maximum 8 pions.";
   if (entries.some(([square, piece]) => piece === "p" && square[1] === "8"))
     return "Un pion ne peut pas être sur la dernière rangée.";
   return null;
 }
-/**
- * Plus aucune limite par camp (Théo, 2 nov. 2026), mais 32 pièces au plus
- * sur l'échiquier : ShallowRed ne garantit son réseau que jusque-là — la
- * borne de non-débordement de l'accumulateur, et le seau de sortie,
- * `(pièces − 2) / 4`, qui sortirait de ses huit seaux dès 34 pièces.
- */
-export const MAX_BOARD_PIECES = 32;
 function positionError(fen: string): string | null {
   const chess = new Chess(fen);
-  const pieces = chess.board().flat().filter(Boolean).length;
-  if (pieces > MAX_BOARD_PIECES)
-    return `Au plus ${MAX_BOARD_PIECES} pièces sur l’échiquier, les deux camps ensemble (${pieces} ici) : le moteur n’en évalue pas davantage.`;
   for (const piece of chess.board().flat())
     if (
       piece?.type === "k" &&
