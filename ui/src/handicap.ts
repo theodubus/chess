@@ -64,11 +64,17 @@ function armyShapeError(value: unknown): string | null {
     return "Les pièces d’un camp ne peuvent pas aller sur les deux rangées de départ adverses.";
   if (entries.some(([, piece]) => !["p", "n", "b", "r", "q", "k"].includes(piece)))
     return "Configuration invalide : pièce inconnue.";
+  // Un roi, 16 pièces et 8 pions au plus par camp, aucun pion sur une
+  // rangée de bout : la règle de `cozy-chess` 0.3.4, la bibliothèque de
+  // règles de ShallowRed (`board_is_valid`). Au-delà, le moteur refuse la
+  // position (« FEN invalide ») et garde la précédente : ces limites sont
+  // les siennes, pas un choix de l'interface (vérifié le 3 nov. 2026).
   if (entries.filter(([, piece]) => piece === "k").length !== 1)
-    return "Le moteur doit avoir exactement un roi.";
-  if (entries.length > 16) return "Le moteur peut avoir au maximum 16 pièces.";
+    return "Chaque camp doit avoir exactement un roi.";
+  if (entries.length > 16)
+    return "Un camp a au plus 16 pièces : le moteur refuse toute position au-delà.";
   if (entries.filter(([, piece]) => piece === "p").length > 8)
-    return "Le moteur peut avoir au maximum 8 pions.";
+    return "Un camp a au plus 8 pions : le moteur refuse toute position au-delà.";
   if (entries.some(([square, piece]) => piece === "p" && square[1] === "8"))
     return "Un pion ne peut pas être sur la dernière rangée.";
   return null;

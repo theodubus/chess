@@ -238,7 +238,10 @@ export class UciSession {
     this.log("in", line);
     if (
       line.startsWith("info string ") &&
-      /position ignorée|invalid position|illegal move/i.test(line)
+      // ShallowRed dit « FEN invalide » sans « position ignorée » quand sa
+      // bibliothèque de règles refuse le plateau : il garde alors la
+      // position précédente, et chercherait en silence sur la mauvaise.
+      /position ignorée|FEN invalide|invalid position|illegal move/i.test(line)
     ) {
       this.fail(`Le moteur a refusé la position : ${line.slice(12)}`);
     } else if (line === "uciok" && this.phase === "uci") {
