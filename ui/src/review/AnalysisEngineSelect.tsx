@@ -12,11 +12,14 @@ export default function AnalysisEngineSelect({
   disabled,
   onChange,
   label = "Moteur d’analyse",
+  compact = false,
 }: {
   value: string;
   disabled: boolean;
   onChange: (id: string) => void;
   label?: string;
+  /** Sans libellé visible : la case qui l'accueille nomme déjà le moteur. */
+  compact?: boolean;
 }) {
   const [choices, setChoices] = useState<AnalysisEngineChoice[]>([
     DEFAULT_ANALYSIS_ENGINE,
@@ -58,9 +61,9 @@ export default function AnalysisEngineSelect({
     };
   }, [refresh]);
   return (
-    <div className="analysis-engine-choice">
+    <div className={`analysis-engine-choice ${compact ? "compact" : ""}`}>
       <label>
-        {label}
+        {!compact && label}
         <select
           name="analysis-engine"
           aria-label={label}

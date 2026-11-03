@@ -23,12 +23,15 @@ it("prépare le troisième mode avec deux moteurs et sans réglages de joueur hu
   expect(html).toContain("Deux moteurs");
   expect(html).toContain('aria-label="Moteur des Blancs"');
   expect(html).toContain('aria-label="Moteur des Noirs"');
-  expect(html).toContain("Options des Blancs");
-  expect(html).toContain("Options des Noirs");
   expect(html).toContain("Lancer le match");
-  expect(html).toContain("Cadence différente pour les Noirs");
+  expect(html).toContain("Profils");
+  // Les réglages des deux moteurs sont visibles d’emblée, sans menu à déplier.
+  expect(html.match(/Cœurs de calcul/g)).toHaveLength(2);
+  expect(html.match(/name="ponder"/g)).toHaveLength(2);
+  expect(html).not.toContain("<details><summary>Options");
   expect(html).not.toContain("Votre camp");
-  expect(html).not.toContain("Éditer le camp");
+  expect(html).not.toContain("Retours en arrière");
+  expect(html).not.toContain("Remettre le même temps");
   expect(html).not.toContain("cg-wrap");
 });
 
@@ -53,16 +56,41 @@ it("présente les deux moteurs et les commandes spectateur, avec les indices mas
 });
 afterEach(() => vi.unstubAllGlobals());
 
-it("rend l’édition accessible dans un volet de préparation replié", () => {
-  for (const opponent of ["engine", "match"] as const) {
-    const html = renderToStaticMarkup(<GameSetup initial={{ ...DEFAULT_SETUP, opponent }}
+it("propose la position de départ dans les trois modes, et les retours aux seuls humains", () => {
+  const render = (setup: Partial<typeof DEFAULT_SETUP>) => renderToStaticMarkup(
+    <GameSetup initial={{ ...DEFAULT_SETUP, ...setup }}
       busy={false} error="" onStart={() => {}} onCancel={() => {}} />);
-    expect(html).toContain('<details><summary>Position de départ');
-    expect(html).not.toContain('<legend>Camp du moteur</legend>');
-    if (opponent === "match") {
-      expect(html).toContain("Éditer les Blancs"); expect(html).toContain("Éditer les Noirs");
-    } else expect(html).toContain("Éditer le camp");
-  }
+  for (const opponent of ["engine", "human", "match"] as const)
+    expect(render({ opponent })).toContain("Modifier la position de départ");
+  const engine = render({ opponent: "engine" });
+  expect(engine).toContain("Votre camp");
+  expect(engine.match(/Retours en arrière/g)).toHaveLength(1);
+  for (const level of ["facile", "moyen", "difficile", "abominable"])
+    expect(engine).toContain(`level-${level}`);
+  const human = render({ opponent: "human" });
+  expect(human.match(/Retours en arrière/g)).toHaveLength(2);
+  expect(human).not.toContain("Profils");
+  expect(human).not.toContain("Cœurs de calcul");
+  // Un temps différent pour la seconde case se rattrape d’un clic.
+  const other = { engineTimeControl: { initialMs: 30_000, incrementMs: 0 } };
+  expect(render({ opponent: "engine", ...other })).toContain("Remettre le même temps que vous");
+  expect(render({ opponent: "human", ...other })).toContain("Remettre le même temps que les Blancs");
+});
+
+it("montre la reprise aux seules parties qui y ont droit, et plus après la fin", () => {
+  const props = { showEvaluation: false, onEvaluation: () => {}, onNew: () => {}, onRematch: () => {}, onReview: () => {} };
+  const allowed = new GameController({ takebacks: { w: true, b: false } });
+  const empty = renderToStaticMarkup(<GameView controller={allowed} {...props} />);
+  expect(empty).toContain("Annuler le dernier coup");
+  expect(empty).toMatch(/<button[^>]*disabled=""[^>]*>↶ Annuler le dernier coup/);
+  allowed.move("e2", "e4");
+  expect(renderToStaticMarkup(<GameView controller={allowed} {...props} />))
+    .toMatch(/<button class="secondary takeback"(?![^>]*disabled)[^>]*>↶ Annuler le dernier coup/);
+  allowed.resign();
+  expect(renderToStaticMarkup(<GameView controller={allowed} {...props} />)).not.toContain("↶");
+  const refused = new GameController();
+  refused.move("e2", "e4");
+  expect(renderToStaticMarkup(<GameView controller={refused} {...props} />)).not.toContain("↶");
 });
 
 it("propose l’export PGN dans les coups pendant et après la partie, y compris en relecture", () => {

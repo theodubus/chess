@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest";
+import { defaultArmy } from "./handicap";
 import {
   DEFAULT_SETUP,
   gameTimeControls,
@@ -116,8 +117,44 @@ it("attache les temps aux joueurs après le choix ou le tirage du camp", () => {
     w: setup.timeControl,
     b: setup.engineTimeControl,
   });
+  // À deux joueurs, la seconde case est celle des Noirs, quel que soit le camp.
   expect(gameTimeControls({ ...setup, opponent: "human" }, "b")).toEqual({
     w: setup.timeControl,
-    b: setup.timeControl,
+    b: setup.engineTimeControl,
   });
+  expect(
+    gameTimeControls({ ...setup, opponent: "human", engineTimeControl: null }, "b"),
+  ).toEqual({ w: setup.timeControl, b: setup.timeControl });
+});
+
+it("relit les pendules à la seconde, les retours et la position à deux joueurs", () => {
+  const setup = {
+    ...DEFAULT_SETUP,
+    opponent: "human" as const,
+    timeControl: { initialMs: 135_000, incrementMs: 1000 },
+    engineTimeControl: { initialMs: 30_000, incrementMs: 0 },
+    takebacks: { player: true, w: false, b: true },
+    humanArmies: { w: null, b: null },
+  };
+  vi.stubGlobal("localStorage", { getItem: () => JSON.stringify(setup) });
+  expect(readSetup()).toEqual(setup);
+  vi.stubGlobal("localStorage", {
+    getItem: () =>
+      JSON.stringify({
+        ...setup,
+        takebacks: { player: "true", w: 1 },
+        humanArmies: { w: { a1: "k" }, b: null },
+      }),
+  });
+  expect(readSetup().takebacks).toEqual({ player: false, w: false, b: false });
+  expect(readSetup().humanArmies).toEqual({ w: null, b: null });
+});
+
+it("relit votre camp préparé face au moteur, et l’écarte s’il est invalide", () => {
+  const player = defaultArmy();
+  delete player.d8;
+  vi.stubGlobal("localStorage", { getItem: () => JSON.stringify({ ...DEFAULT_SETUP, playerArmy: player }) });
+  expect(readSetup().playerArmy).toEqual(player);
+  vi.stubGlobal("localStorage", { getItem: () => JSON.stringify({ ...DEFAULT_SETUP, playerArmy: { a1: "k" } }) });
+  expect(readSetup().playerArmy).toBeNull();
 });

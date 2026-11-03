@@ -53,6 +53,63 @@ export function parseTimeControl(
   return { initialMs: duration * 60_000, incrementMs: seconds * 1000 };
 }
 
+/**
+ * Une pendule réglée case par case se compte à la seconde : « 30 s » ne
+ * s'écrit pas en minutes. Mêmes bornes que la carte « Personnalisée » —
+ * de 30 s à 180 min, jusqu'à 60 s d'incrément.
+ */
+export function validTimeControl(value: unknown): TimeControl | null {
+  if (!value || typeof value !== "object") return null;
+  const { initialMs, incrementMs } = value as Partial<TimeControl>;
+  if (
+    initialMs === undefined ||
+    incrementMs === undefined ||
+    !Number.isSafeInteger(initialMs) ||
+    !Number.isSafeInteger(incrementMs) ||
+    initialMs % 1000 !== 0 ||
+    incrementMs % 1000 !== 0 ||
+    initialMs < 30_000 ||
+    initialMs > 10_800_000 ||
+    incrementMs < 0 ||
+    incrementMs > 60_000
+  )
+    return null;
+  return { initialMs, incrementMs };
+}
+
+export function timeControlFromParts(
+  minutes: string,
+  seconds: string,
+  increment: string,
+): TimeControl | null {
+  const parts = [minutes, seconds, increment].map((part) =>
+    /^\d{1,3}$/.test(part.trim()) ? Number(part.trim()) : null,
+  );
+  const [m, s, inc] = parts;
+  if (m === null || s === null || inc === null || s > 59) return null;
+  return validTimeControl({
+    initialMs: (m * 60 + s) * 1000,
+    incrementMs: inc * 1000,
+  });
+}
+
+export function sameTimeControl(a: TimeControl, b: TimeControl) {
+  return a.initialMs === b.initialMs && a.incrementMs === b.incrementMs;
+}
+
+/** « 3 min », « 30 s », « 2 min 15 s + 1 s » : la cadence telle qu'on la dit. */
+export function describeTimeControl(control: TimeControl) {
+  const total = Math.round(control.initialMs / 1000);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  const base = [minutes ? `${minutes} min` : "", seconds ? `${seconds} s` : ""]
+    .filter(Boolean)
+    .join(" ");
+  return control.incrementMs
+    ? `${base} + ${control.incrementMs / 1000} s`
+    : base;
+}
+
 /** Le temps écoulé est mesuré, jamais déduit du nombre de rafraîchissements. */
 export class GameClock {
   private stored: Record<ClockColor, number>;

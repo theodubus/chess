@@ -60,19 +60,21 @@ function armyShapeError(value: unknown): string | null {
   if (!value || typeof value !== "object" || Array.isArray(value))
     return "Configuration invalide.";
   const entries = Object.entries(value);
-  if (
-    entries.some(
-      ([square, piece]) =>
-        !/^[a-h][3-8]$/.test(square) ||
-        !["p", "n", "b", "r", "q", "k"].includes(piece),
-    )
-  )
-    return "Vous pouvez uniquement modifier le camp du moteur, hors de vos deux rangées de départ.";
+  if (entries.some(([square]) => !/^[a-h][3-8]$/.test(square)))
+    return "Les pièces d’un camp ne peuvent pas aller sur les deux rangées de départ adverses.";
+  if (entries.some(([, piece]) => !["p", "n", "b", "r", "q", "k"].includes(piece)))
+    return "Configuration invalide : pièce inconnue.";
+  // Un roi, 16 pièces et 8 pions au plus par camp, aucun pion sur une
+  // rangée de bout : la règle de `cozy-chess` 0.3.4, la bibliothèque de
+  // règles de ShallowRed (`board_is_valid`). Au-delà, le moteur refuse la
+  // position (« FEN invalide ») et garde la précédente : ces limites sont
+  // les siennes, pas un choix de l'interface (vérifié le 3 nov. 2026).
   if (entries.filter(([, piece]) => piece === "k").length !== 1)
-    return "Le moteur doit avoir exactement un roi.";
-  if (entries.length > 16) return "Le moteur peut avoir au maximum 16 pièces.";
+    return "Chaque camp doit avoir exactement un roi.";
+  if (entries.length > 16)
+    return "Un camp a au plus 16 pièces : le moteur refuse toute position au-delà.";
   if (entries.filter(([, piece]) => piece === "p").length > 8)
-    return "Le moteur peut avoir au maximum 8 pions.";
+    return "Un camp a au plus 8 pions : le moteur refuse toute position au-delà.";
   if (entries.some(([square, piece]) => piece === "p" && square[1] === "8"))
     return "Un pion ne peut pas être sur la dernière rangée.";
   return null;
@@ -120,6 +122,25 @@ export function readMatchArmies(value: unknown): MatchArmies {
   const stored = value as Partial<MatchArmies>;
   const armies = { w: stored.w ?? null, b: stored.b ?? null };
   return matchArmyError(armies) ? original : armies;
+}
+/**
+ * Face au moteur, chaque camp peut être modifié : le sien (`player`) et
+ * celui du moteur (`engine`), tous deux enregistrés comme les armées d'un
+ * match, sans couleur. La couleur ne se décide qu'au lancement, après un
+ * éventuel tirage : une position doit donc valoir dans les deux sens.
+ */
+export function localArmies(engine: Handicap, player: Handicap, humanSide: Side): MatchArmies {
+  return humanSide === "w" ? { w: player, b: engine } : { w: engine, b: player };
+}
+export function localArmiesError(engine: Handicap, player: Handicap): string | null {
+  if (!engine && !player) return null;
+  return matchArmyError(localArmies(engine, player, "w")) ?? matchArmyError(localArmies(engine, player, "b"));
+}
+export function localPosition(engine: Handicap, player: Handicap, humanSide: Side): string {
+  if (!player) return handicapPosition(engine, humanSide);
+  const error = localArmiesError(engine, player);
+  if (error) throw new Error(error);
+  return armiesFen(localArmies(engine, player, humanSide));
 }
 export function handicapPosition(handicap: Handicap, humanSide: Side): string {
   if (!handicap) return DEFAULT_POSITION;

@@ -56,6 +56,8 @@ export class GameController {
   private searching = false;
   private predicted: string | null = null;
   readonly engineOptions: EngineOptions;
+  /** Les camps humains qui ont droit aux retours en arrière. */
+  readonly takebacks: Record<Side, boolean>;
   private listeners = new Set<() => void>();
 
   constructor(
@@ -65,12 +67,14 @@ export class GameController {
       now?: () => number;
       humanSide?: Side;
       initialFen?: string;
+      takebacks?: Record<Side, boolean>;
     } = {},
   ) {
     this.game = new LocalGame(options.initialFen);
     this.engineOptions = options.engineOptions ?? DEFAULT_ENGINE_OPTIONS;
     this.clock = new GameClock(options.timeControl, options.now);
     this.humanSide = options.humanSide ?? "w";
+    this.takebacks = options.takebacks ?? { w: false, b: false };
   }
 
   get finished() {
@@ -645,6 +649,76 @@ export class GameController {
     this.redos.push(batch);
     this.clock.restore(batch[0].before);
     this.restorePosition();
+  }
+
+  /** Un joueur humain de cette partie a-t-il droit aux retours ? */
+  get takebackAllowed() {
+    if (this.isMatch) return false;
+    return this.mode ? this.takebacks[this.humanSide] : this.takebacks.w || this.takebacks.b;
+  }
+
+  /**
+   * Les coups qu'une reprise annulerait, le plus ancien d'abord ; vide si
+   * elle n'est pas permise. Face au moteur : votre dernier coup et la
+   * réponse du moteur s'il l'a jouée. À deux : le dernier coup, si son
+   * auteur a droit aux retours. Jamais après la fin de la partie.
+   */
+  private takebackBatch() {
+    if (this.isMatch || this.finished || this.game.pending || this.disposed) return [];
+    if (this.mode) {
+      const last = this.played.map((entry) => entry.color).lastIndexOf(this.humanSide);
+      return this.takebacks[this.humanSide] && last >= 0 ? this.played.slice(last) : [];
+    }
+    const last = this.played.at(-1);
+    return last && this.takebacks[last.color] ? [last] : [];
+  }
+  get canTakeBack() {
+    return this.takebackBatch().length > 0;
+  }
+
+  /**
+   * Reprend un coup (Théo, 2 nov. 2026). Le temps de celui qui reprend
+   * reste dépensé — seuls les incréments de ses coups repris lui sont
+   * retirés, sinon reprendre et rejouer le même coup en ferait gagner en
+   * boucle ; l'adversaire, qui n'a rien demandé, retrouve sa pendule
+   * d'avant sa réponse, ce qu'il a réfléchi depuis compris. Si le temps
+   * qui reste, incréments retirés, est épuisé, la pendule tombe.
+   */
+  takeBack() {
+    this.tick();
+    const batch = this.takebackBatch();
+    if (!batch.length) return false;
+    const first = batch[0];
+    const requester = first.color;
+    const other = requester === "w" ? "b" : "w";
+    const increments =
+      batch.filter((entry) => entry.color === requester).length *
+      this.clock.controls[requester].incrementMs;
+    const remaining = Math.max(0, this.clock.remaining[requester] - increments);
+    this.played.splice(-batch.length);
+    batch.forEach(() => this.game.chess.undo());
+    this.redos = [];
+    this.premove = null;
+    this.clock.restore({
+      ...first.before,
+      remaining: {
+        [requester]: remaining,
+        [other]: first.before.remaining[other],
+      } as Record<Side, number>,
+      flagged: null,
+    });
+    this.game.pending = null;
+    // Le moteur garde sa session, donc sa table et ses historiques : seule
+    // sa recherche, ou son ponder, s'arrête, et son coup est ignoré. Le
+    // relancer à neuf l'aurait fait rejouer à froid, moins profond à temps
+    // égal — un avantage pour celui qui reprend (Théo, 2 nov. 2026).
+    this.predicted = null;
+    if (this.snapshot) this.snapshot = { ...this.snapshot, analysis: null };
+    void this.session?.cancel({ forget: true });
+    this.publish();
+    // Une pendule à zéro tombe au premier relevé, comme en partie.
+    if (remaining === 0) this.tick();
+    return true;
   }
 
   redo() {

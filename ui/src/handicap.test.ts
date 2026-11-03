@@ -8,6 +8,8 @@ import {
   matchPosition,
   matchArmyError,
   readMatchArmies,
+  localArmiesError,
+  localPosition,
 } from "./handicap";
 import { GameController } from "./GameController";
 import { DEFAULT_SETUP, readSetup } from "./preferences";
@@ -87,14 +89,14 @@ it("valide les rois, les pions, les effectifs et protège le camp humain", () =>
   delete noKing.e8;
   expect(armyError(noKing)).toContain("roi");
   expect(armyError({ ...original, e6: "k" })).toContain("roi");
-  expect(armyError({ ...original, a1: "q" })).toContain("camp du moteur");
+  expect(armyError({ ...original, a1: "q" })).toContain("rangées de départ adverses");
   expect(armyError({ ...original, a8: "p" })).toContain("8 pions");
   expect(armyError({ ...original, a7: "r", a8: "p" })).toContain(
     "dernière rangée",
   );
   expect(armyError({ ...original, a6: "n" })).toContain("16 pièces");
   expect(armyError({ ...original, a7: "q", a8: "n" })).toBeNull();
-  expect(armyError({ ...original, a8: "x" })).toContain("camp du moteur");
+  expect(armyError({ ...original, a8: "x" })).toContain("pièce inconnue");
 });
 it("refuse les rois attaqués pour les deux couleurs possibles", () => {
   const army = defaultArmy();
@@ -186,4 +188,35 @@ it("conserve le handicap en recherche, ponder, export, analyse et remise à zér
   } finally {
     await controller.dispose();
   }
+});
+
+it("modifie aussi votre camp face au moteur, quelle que soit votre couleur", () => {
+  const player = defaultArmy();
+  delete player.d8; // votre dame, enregistrée comme si vous aviez les Noirs
+  const engine = defaultArmy();
+  delete engine.a8;
+  for (const human of ["w", "b"] as const) {
+    const chess = new Chess(localPosition(engine, player, human));
+    const own = human === "w" ? "d1" : "d8";
+    const rook = human === "w" ? "a8" : "a1";
+    expect(chess.get(own)).toBeFalsy();
+    expect(chess.get(rook)).toBeFalsy();
+    expect(chess.get(human === "w" ? "d8" : "d1")).toEqual({ type: "q", color: human === "w" ? "b" : "w" });
+    expect(chess.turn()).toBe("w");
+  }
+  // Sans armée personnelle, la position reste celle d'avant.
+  expect(localPosition(engine, null, "w")).toBe(handicapPosition(engine, "w"));
+  expect(localPosition(null, null, "b")).toBe(DEFAULT_POSITION);
+});
+
+it("refuse deux camps qui se chevauchent face au moteur, dans un sens comme dans l'autre", () => {
+  const player = defaultArmy();
+  delete player.e7;
+  player.e5 = "p"; // votre pion avancé de trois cases : e4 avec les Blancs
+  const engine = defaultArmy();
+  delete engine.e7;
+  engine.e4 = "p"; // le pion du moteur descendu en e4 avec les Noirs
+  expect(localArmiesError(engine, player)).toContain("e4");
+  expect(() => localPosition(engine, player, "b")).toThrow();
+  expect(localArmiesError(null, null)).toBeNull();
 });
