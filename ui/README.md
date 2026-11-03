@@ -358,8 +358,12 @@ configuration suit la couleur de son camp, y compris après un tirage aléatoire
 la position doit donc valoir dans les deux sens. Annuler conserve la
 configuration précédente ; Réinitialiser restaure l’armée classique. Un roi par
 camp, au plus 16 pièces et 8 pions par camp, aucun pion en dernière rangée, aucun
-chevauchement et aucun roi en échec au départ sont requis. La position et les droits de roque sont conservés dans le
-jeu, le ponder, le PGN et l’analyse. Les pièces retirées ne sont pas comptées
+chevauchement et aucun roi en échec au départ sont requis. Les trois premières
+règles sont celles de `cozy-chess`, la bibliothèque de règles de ShallowRed :
+au-delà, le moteur refuse la position — vérifié le 3 nov. 2026 —, et
+l’interface traite ce refus comme une erreur, au lieu de laisser le moteur
+chercher sur la position d’avant. La position et les droits de roque sont
+conservés dans le jeu, le ponder, le PGN et l’analyse. Les pièces retirées ne sont pas comptées
 comme des captures.
 
 À deux moteurs comme à deux joueurs, le lien propose « Éditer les Blancs » et

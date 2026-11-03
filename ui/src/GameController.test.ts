@@ -118,10 +118,14 @@ it.each(["e7e4", "0000", "(none)", "incorrect"])(
   },
 );
 
-it("ne lance pas go si le moteur refuse la position", async () => {
+it.each([
+  "info string coup illégal — position ignorée",
+  // Le refus d'un plateau par ShallowRed, tel qu'il l'écrit : sans « position ignorée ».
+  "info string FEN invalide : The board is invalid.",
+])("ne lance pas go si le moteur refuse la position : %s", async (refusal) => {
   const { controller, engine } = await setup();
   controller.move("e2", "e4");
-  engine.emit("info string coup illégal — position ignorée");
+  engine.emit(refusal);
   await vi.waitFor(() => expect(controller.snapshot?.state).toBe("error"));
   expect(engine.commands.some((command) => command.startsWith("go "))).toBe(
     false,
