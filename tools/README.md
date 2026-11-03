@@ -664,6 +664,9 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-10-21 | **N8nw50 contre N8tw50 — les données de N5l à superlots fixés**, séance B, 2,30 G étiquetées par N6r4 contre les mêmes plus 2,33 G par N5l, 400 superlots (`6a1b1d6` contre `2115850`, le même code) | **+5,18 Elo ± 3,32** sur 11 200 parties à `8+0,08`, homogènes (p = 0,793), zéro perte au temps — **gain démontré** : une étiquette plus faible dilue ; la séance C laisse les données de N5l |
 | 2026-10-20 | **N6r4Lb — N6r4 affiné sur Leela au pas 2·10⁻⁵**, n° 20 (a), 20 superlots (`739452f` contre `0eca96a`) | **−2,45 Elo ± 3,55**, homogènes (p = 0,966) — rien de démontré |
 | 2026-10-20 | **N6r4La — N6r4 affiné sur Leela au pas 10⁻⁴**, n° 20 (a) (`89bb3e9` contre `0eca96a`) | **−11,42 Elo ± 3,73**, homogènes (p = 0,450) — **régression démontrée** : le réglage fin sur Leela ne paie pas |
+| 2026-11-02 | **C52 — la gravité au plafond 16 384, le bonus `d²` inchangé**, n° 23 (`141fb43` contre `0e43fdd`) | **+2,14 Elo ± 3,06** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable ; attendu −3 à +3. Non fusionné |
+| 2026-11-02 | **C53 — la gravité aux échelles de Stockfish 16, le papillon conservé**, n° 23 (`cde63e6` contre `0e43fdd`) | **+14,40 Elo ± 3,08** sur 11 200 parties à `8+0,08`, homogènes (p = 0,641) — **gain démontré** ; attendu −5 à +10, dépassé ; l'arbre −0,91 % à la profondeur 12. Fusionné avec C54 |
+| 2026-11-02 | **C54 — C53 et la LMR modulée par la note, `note / 6000` plis**, n° 23 (`822fb74` contre `cde63e6`) | **+23,18 Elo ± 3,15** sur 11 200 parties à `8+0,08`, homogènes (p = 0,677) — **gain démontré** ; attendu −8 à +15, dépassé ; **l'arbre inchangé** (+0,001 %), un tiers des réductions déplacées. **Fusionné le 3 nov.** |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
 supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
@@ -1034,7 +1037,7 @@ dernière relève est faite.
 | **N° 22 — la vague 19**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41131049525, 41131054663, 41131059987, 41131065622, 41131072097, 41131078120, 41131082740, 41131088367 ; à 5 000 : 41131052139, 41131057273, 41131062535, 41131068877, 41131075301, 41131080371, 41131085830, 41131091022 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 31 oct. à 4 h 09** — lancée le 30 à 22 h 26, ses attendus poussés avant (`bd92c82`) ; seize succès finis à 3 h 57 | **à 2 500 : 456,5 M positions, 304,8 M gardées, 28,72 % de nulles ; à 5 000 : 206,7 M, 141,5 M, 34,82 % ; écartées 21,09 et 21,19 % ; EPYC 7763 à 2 393 – 2 408 et 1 193 – 1 217 ; cumuls 5 783,5 et 2 862,9 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 19) — *Attendus, écrits avant* (section « N° 22 », la vague 19) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 350 à 2 500** et **1 180 à 1 260** positions par seconde ; cumul appris celui de la vague 18 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **5 727 à 5 949 M** et **2 851 à 2 957 M** |
 | **N° 22 — la vague 20**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41162947532, 41162951444, 41162955087, 41162959126, 41162962521, 41162966632, 41162970067, 41162973641 ; à 5 000 : 41162949455, 41162953236, 41162957135, 41162960767, 41162964762, 41162968437, 41162972013, 41162975516 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 31 oct. à 9 h 49** — lancée à 4 h 07, ses attendus poussés avant (`b79b725`) ; seize succès finis entre 9 h 37 et 9 h 38 | **à 2 500 : 514,8 M positions, 343,7 M gardées, 28,78 % de nulles ; à 5 000 : 240,9 M, 165,0 M, 34,80 % ; écartées 21,06 et 21,17 % ; EPYC 7763 à 2 382 – 2 399 et 1 205 – 1 212 ; cumuls 6 127,2 et 3 027,9 M : dans l'attendu sur les douze chiffres** (`tools/n22-jobs.tsv`, section « N° 22 », la vague 20) — *Attendus, écrits avant* (section « N° 22 », la vague 20) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 300 à 2 500** et **1 150 à 1 260** positions par seconde — les bornes basses descendues au relevé de la vague 18 ; cumul appris celui de la vague 19 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **6 031 à 6 253 M** et **2 993 à 3 099 M** |
 | **N° 22 — la vague 21**, la génération continue, étiquetée par N9w50s800 — huit jobs à **2 500 nœuds**, huit à **5 000**, lancés en alternance | à 2 500 : 41186039541, 41186042684, 41186045956, 41186049109, 41186052709, 41186055933, 41186059218, 41186062420 ; à 5 000 : 41186041185, 41186044358, 41186047526, 41186050962, 41186054181, 41186057428, 41186060847, 41186064125 — tous appris | `a4a6490` (N9w50s800), `<embedded>`, `x86-64-v3`, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **lancée le 31 oct. à 9 h 47**, ses attendus poussés avant (`b768e6c`) ; **RELEVÉE le 31 oct. à 15 h 28 — les douze chiffres dans leur attendu** (section « N° 22 », la vague 21) ; **la dernière : la génération est EN PAUSE après elle**, aucune vague 22 | — *Attendus, écrits avant* (section « N° 22 », la vague 21) : les huit à 2 500 **370 à 700 M positions, 248 à 470 M gardées**, les huit à 5 000 **190 à 345 M, 130 à 236 M** ; écartées **20,8 à 21,6 %** aux deux ; nulles **28,4 à 29,0 %** et **34,5 à 35,1 %** ; EPYC 7763 **2 300 à 2 500** et **1 150 à 1 260** positions par seconde ; cumul appris celui de la vague 20 **plus 248 à 470 M** et **plus 130 à 236 M**, soit **6 375 à 6 597 M** et **3 158 à 3 264 M** |
-| **N° 23 — C52, C53 et C54, l'historique borné et la LMR modulée** | C52 (`141fb43`) contre `0e43fdd` : **41424524575, 41424533128, 41424542152, 41424550122** ; C53 (`cde63e6`) contre `0e43fdd` : **41424558147, 41424567516, 41424575489, 41424583620** ; C54 (`822fb74`) contre C53 : **41424590639, 41424599610, 41424607675, 41424615206** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 12 × 2 800 parties | **lancés le 2 nov. à 10 h 55**, attendus et critère poussés avant (`d1b8159`) ; relève vers 16 h | — *Attendus, écrits avant* (section « N° 23 — les candidats ») : C52 **−3 à +3**, C53 **−5 à +10**, C54 contre C53 **−8 à +15** ; **critère** : C53 si sa borne basse passe zéro, C54 (C53 compris) si la sienne passe zéro contre C53 et que C53 n'est pas démontré sous `main` |
+| **N° 23 — C52, C53 et C54, l'historique borné et la LMR modulée** | C52 (`141fb43`) contre `0e43fdd` : **41424524575, 41424533128, 41424542152, 41424550122** ; C53 (`cde63e6`) contre `0e43fdd` : **41424558147, 41424567516, 41424575489, 41424583620** ; C54 (`822fb74`) contre C53 : **41424590639, 41424599610, 41424607675, 41424615206** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 12 × 2 800 parties | **RELEVÉS le 2 nov. à 16 h 10** — finis entre 15 h 50 et 16 h 05, aucune perte au temps : C52 **+2,14 ± 3,06**, C53 **+14,40 ± 3,08**, C54 contre C53 **+23,18 ± 3,15** ; **C54 fusionné le 3 nov.**, C53 compris (« N° 23 — VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — les candidats ») : C52 **−3 à +3**, C53 **−5 à +10**, C54 contre C53 **−8 à +15** ; **critère** : C53 si sa borne basse passe zéro, C54 (C53 compris) si la sienne passe zéro contre C53 et que C53 n'est pas démontré sous `main` |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
 | **N° 20, séance C2c — N9pfbs800 contre N9w50s800** | **40610093856, 40610102423, 40610110837, 40610118331** | `ad84d1f` (N9pfbs800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 28 oct. à 7 h 28** — lancés à 1 h 39, les attendus poussés avant (« La séance C2c ») ; finis ENTIERS entre 6 h 38 et 6 h 47 | **+1,40 ± 3,27 en commun** (−2,73, +2,85, +4,09, +1,36 ; p = 0,463) — dans l'attendu, **pas candidat** (« La séance C2c ») — *Critère, écrit avant* : celui de C2 — borne basse au-dessus de zéro → candidat à l'embarquement ; *attendu* −4 à +4, ~0 (« La séance C2c ») |
@@ -14402,6 +14405,50 @@ matchs suivent dès qu'il existe, son protocole écrit avant eux. Ceux-ci
 partent sans attendre — les runners sont libres, et la calibration ne
 demande pas que les deux séries jouent en même temps.
 
+### N° 23 — C52, C53, C54 : VERDICT, relevé le 2 nov. à 16 h 10 — C54 fusionné, C53 compris
+
+**Les douze matchs**, lancés à 10 h 55, finis entre 15 h 50 et 16 h 05,
+2 800 parties chacun, **aucune perte au temps**, 6,29 à 6,61 s par
+partie ; mis en commun par `tools/mettre-en-commun.sh` :
+
+| candidat | contre | les quatre jobs | en commun | attendu, écrit avant |
+|---|---|---|---|---|
+| **C52**, `g:16384` | `0e43fdd` | +8,44, −0,12, +3,35, −3,10 | **+2,14 ± 3,06**, homogènes | −3 à +3 — dedans |
+| **C53**, G+`hk` | `0e43fdd` | +12,17, +12,91, +15,15, +17,39 | **+14,40 ± 3,08**, homogènes (p = 0,641) | −5 à +10 — **dépassé** |
+| **C54**, la LMR modulée | C53 | +25,61, +20,50, +21,74, +24,86 | **+23,18 ± 3,15**, homogènes (p = 0,677) | −8 à +15 — **dépassé** |
+
+**Le critère, écrit avant** : C54 fusionne, C53 compris, si sa borne
+basse contre C53 passe zéro (+20,03) et si C53 n'est pas démontré sous
+`main` (sa borne haute, +17,48) — **les deux clauses tiennent**. C52
+n'entre pas : sa borne basse est sous zéro. **Fusionné le 3 nov.** par
+la révocation de la révocation, après le balayage de mutation du
+candidat — vert, tous les plafonds tenus (run 41468563729). Banc 70 841
+à la profondeur 7. **~+37 Elo sur `main` par la chaîne** (+14,40 puis
++23,18), sans mesure directe.
+
+**Ce que ça dit** :
+- **la borne seule ne fait rien, l'échelle fait tout** : `g:16384` ne
+  touche presque aucune note aux profondeurs jouées, et rend ~0 ; le
+  bonus grand devant le plafond — l'historique qui se souvient du récent
+  — rend +14. *Le gain de C53 n'est pas la borne, c'est la mémoire
+  courte* ; <span>inférence, confiance moyenne</span> — le papillon
+  conservé y est mêlé, et rien ne les sépare ;
+- **la LMR modulée rend +23 à arbre égal** — l'ordre du malus
+  d'historique (+25,3, 7 oct.). Son écran
+  disait « +0,001 % d'arbre » : **le critère écrit avant l'aurait fermée**,
+  et c'est l'écart nommé alors qui l'a gardée (« N° 23, l'écran ») — la
+  leçon de C24, une réallocation ne se lit pas en arbre, rejouée ici en
+  Elo ;
+- **les deux attendus ont été dépassés d'un facteur deux** : le coût
+  d'arbre par l'étalon ne dit rien d'un changement d'ordre ou de
+  réallocation — huitième occurrence au registre « c'est plus fort ».
+
+**Ensuite** — au registre des réglages ouverts (« La file ») : le
+diviseur de la LMR modulée (6 000) et les échelles de la gravité, jamais
+réglés ici ; l'élagage par l'historique sous la forme de Stockfish ; et
+le livre déséquilibré, dont ces deux effets connus deviennent la
+calibration.
+
 ### N° 23 — le livre déséquilibré : protocole, écrit le 2 nov. avant son pilote et ses matchs
 
 **La question** — « le débit de mesure », point 1 (phase 7, inscrit le
@@ -16147,6 +16194,8 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |
 | **seuil des ouvertures du générateur** (`OPENING_MAX_SCORE`) | 1 000 en unités d'évaluation, écrit pour la faite main | jamais en force ; son taux suit l'étiqueteur — **18,46 % sous N8tw50s800, 21,01 % sous N9w50s800**, les mêmes 5 000 ouvertures (26 oct., « N° 22 », la vague 1) | inconnue — <span>confiance faible</span> | avec les ouvertures, phase 7 ; jamais en cours de tranche : il change le mélange appris |
 | **marges et constantes de recherche** | réglées à la main ; × 2,85 au réseau (B8) | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA, phase 5, à refaire à chaque réseau |
+| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | 4 000 et 9 000 contre `main`, rejeu puis quatre jobs ; puis le décalage ; puis SPSA |
+| **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | les plafonds × 0,5 et × 2, le bonus × 0,5 et × 2, à l'écran puis quatre jobs ; le papillon vidé à chaque coup, contre conservé |
 
 **Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
 optimisations pures : même arbre au nœud près, prouvées par le temps au
@@ -16174,9 +16223,9 @@ rejeu, puis quatre jobs par candidat.
 
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
-| **l'historique borné** (« gravité ») | bonus et malus pondérés par `1 − abs(note) / plafond` : l'historique cesse de grandir avec la profondeur cherchée | à écranter en premier : c'est la condition des deux lignes suivantes, et un changement à lui seul — il change l'ordre des coups |
-| **la LMR modulée** | la réduction selon l'historique du coup, le type de nœud (coupure attendue ou non), la variante principale en table — elle ne dépend aujourd'hui que de la profondeur et du rang | après l'historique borné |
-| **l'élagage par l'historique** | sauter les tranquilles mal notés à faible profondeur | après l'historique borné ; fermé à l'écran le 7 oct. faute de lui |
+| **l'historique borné** (« gravité ») | bonus et malus pondérés par `1 − abs(note) / plafond` : l'historique cesse de grandir avec la profondeur cherchée | **FUSIONNÉ le 3 nov.** (n° 23) : C53, aux échelles de Stockfish 16, le papillon conservé — **+14,40 ± 3,08** ; la borne seule (C52) +2,14. Ses échelles au registre des réglages |
+| **la LMR modulée** | la réduction selon l'historique du coup, le type de nœud (coupure attendue ou non), la variante principale en table | **la note : FUSIONNÉE le 3 nov.** (C54, n° 23) — **+23,18 ± 3,15** contre C53, à arbre égal ; son diviseur au registre des réglages. **Restent** : le type de nœud et la variante principale en table, à écranter |
+| **l'élagage par l'historique** | sauter les tranquilles mal notés à faible profondeur | **fermé à l'écran le 2 nov. sous sa forme écrite** (n° 23) : la note entière, profondeur ≤ 4 — 6,1 points d'arbre par point de dégâts, sous le seuil de 10. **La forme de Stockfish reste à écranter** : ses continuations seules, à profondeur réduite |
 | **l'historique de correction, en plusieurs tables** | corriger l'évaluation statique par ce que la recherche a appris, indexé par la structure de pions, le matériel, le coup précédent ; la variante unique de C42 rendait −1,1 ± 3,6 et grossissait l'arbre | après l'historique borné ; à remesurer aussi après SPSA, qui peut retoucher les marges qu'il gêne |
 | **l'historique des captures, rouvert** | fermé à l'écran (plafond +1,6 à +2,8) ; borné, il peut ordonner autrement | bas de la phase |
 | **Lazy SMP au-delà de deux fils, et ses variantes** | décalage de profondeur, coup du meilleur fil, historiques partagés | condition : une machine à plus de deux cœurs physiques ; les runners n'en ont que deux |
