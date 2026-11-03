@@ -2784,7 +2784,7 @@ const CONTINUATION_CAP: i32 = 29_952;
 /// Le diviseur de la note dans la LMR modulée : une note au plafond du
 /// papillon et des deux continuations, ~67 000, vaut onze plis. Choisi au
 /// rejeu, où il change un tiers des réductions à arbre égal (n° 23).
-const LMR_HISTORY_DIVISOR: i32 = 6_000;
+const LMR_HISTORY_DIVISOR: i32 = 10_000;
 
 /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
 /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
@@ -2795,7 +2795,7 @@ fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
 
 /// Le bonus — et le malus — d'une coupure à la profondeur `depth`.
 fn history_bonus(depth: i32) -> i32 {
-    (336 * depth - 547).clamp(1, 1_561)
+    (1008 * depth - 1641).clamp(1, 4_683)
 }
 
 /// Applique `delta` à une note bornée par `cap`, la gravité comprise. Le
@@ -4567,11 +4567,11 @@ mod tests {
     fn le_bonus_d_historique_suit_la_profondeur_et_se_borne() {
         // Les échelles de Stockfish 16, sa profondeur 1 bornée à 1.
         assert_eq!(history_bonus(1), 1);
-        assert_eq!(history_bonus(2), 125);
-        assert_eq!(history_bonus(3), 461);
-        assert_eq!(history_bonus(6), 1_469);
-        assert_eq!(history_bonus(7), 1_561);
-        assert_eq!(history_bonus(100), 1_561);
+        assert_eq!(history_bonus(2), 375);
+        assert_eq!(history_bonus(3), 1_383);
+        assert_eq!(history_bonus(6), 4_407);
+        assert_eq!(history_bonus(7), 4_683);
+        assert_eq!(history_bonus(100), 4_683);
         assert!(history_bonus(127) <= BUTTERFLY_CAP);
     }
 
