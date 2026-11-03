@@ -14590,6 +14590,43 @@ runners.
   voisin suivant du côté du meilleur point (3 000 ou 7 500), puis le
   décalage de la note, puis SPSA.
 
+### N° 23 — les échelles de la gravité, à l'écran le 3 nov. : confondues avec le diviseur
+
+**La question** — le registre : les plafonds (7 183, 29 952) et le bonus
+(`clamp(336·d − 547, 1, 1561)`) de C53 viennent de Stockfish 16, jamais
+réglés ici ; prochain test écrit, « × 0,5 et × 2, à l'écran puis quatre
+jobs ». Le rejeu, par la sonde, sur la base de `main` (`G+hk+lmrh:6000`) :
+
+| variante | l'arbre à 12 (à 10), contre `main` | réductions changées à 12 (à 10) |
+|---|---|---|
+| plafonds × 0,5 | −0,32 % (−0,76 %) | 12,8 % (5,2 %) |
+| plafonds × 2 | −4,32 % (−2,99 %) | 52,9 % (35,5 %) |
+| bonus × 0,5 | +2,91 % (−0,04 %) | 11,2 % (3,0 %) |
+| bonus × 2 | **−6,46 %** (−4,47 %) | **57,7 %** (44,5 %) |
+| *pour mémoire : le diviseur à 4 000 (C55)* | *−6,52 % (−4,11 %)* | *59,4 % (45,1 %)* |
+
+**Ce que l'écran montre** — vérifié dans le code, pas supposé : la note
+n'est lue qu'à DEUX endroits, l'ordre des tranquilles et la LMR modulée.
+L'ordre ne dépend pas de l'échelle des notes ; seule la LMR la lit, par
+son diviseur. Les plafonds ET le bonus × 2 ensemble multiplient chaque
+note par deux — la gravité est homogène —, ce qui revient au diviseur
+÷ 2, à l'arrondi des entiers et au bonus plancher (1) près. Les échelles n'ont donc que deux degrés de liberté
+propres : **la mémoire** (le bonus rapporté au plafond, la vitesse à
+laquelle le récent efface l'ancien) et **le poids du papillon contre les
+continuations** (le rapport des plafonds). Tout le reste passe par le
+diviseur. **Et le bonus × 2 rend l'écran du diviseur 4 000 à 0,06 point
+près** : plus de mémoire courte, des notes plus grandes, la LMR les lit
+comme un diviseur plus petit.
+
+**Ce que ça décide** — le test écrit au registre (« × 0,5 et × 2 ») est
+**remplacé avant d'avoir été lancé** : chacune de ses variantes
+remesurerait surtout le diviseur, en vol avec C55 et C56. **Le test
+juste** vient après leur verdict : la mémoire, puis le poids des
+plafonds, chacun avec un diviseur ajusté au rejeu pour que la LMR change
+la même part des réductions que `main` — l'échelle de la LMR tenue,
+le reste libre. Et si l'un des deux voisins du diviseur gagne, il en
+devient la base.
+
 ### N° 23 — l'inférence multicouche : écrite le 2 nov., prête pour le verdict de C3
 
 **La décision** — la feuille de route du 31 oct., point 3 : écrire dans
@@ -16283,7 +16320,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **seuil des ouvertures du générateur** (`OPENING_MAX_SCORE`) | 1 000 en unités d'évaluation, écrit pour la faite main | jamais en force ; son taux suit l'étiqueteur — **18,46 % sous N8tw50s800, 21,01 % sous N9w50s800**, les mêmes 5 000 ouvertures (26 oct., « N° 22 », la vague 1) | inconnue — <span>confiance faible</span> | avec les ouvertures, phase 7 ; jamais en cours de tranche : il change le mélange appris |
 | **marges et constantes de recherche** | réglées à la main ; × 2,85 au réseau (B8) | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA, phase 5, à refaire à chaque réseau |
 | **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **EN VOL le 3 nov.** : C55 (4 000) et C56 (9 000) contre `main`, quatre jobs chacun, attendus écrits avant (« N° 23 — C55, C56 ») ; puis le décalage ; puis SPSA |
-| **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | les plafonds × 0,5 et × 2, le bonus × 0,5 et × 2, à l'écran puis quatre jobs ; le papillon vidé à chaque coup, contre conservé |
+| **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | **à l'écran le 3 nov. : confondus avec le diviseur** — la note n'est lue que par l'ordre, invariant d'échelle, et par la LMR ; le bonus × 2 rend l'écran du diviseur 4 000 (« N° 23 — les échelles de la gravité »). **Après C55 et C56** : la mémoire (bonus rapporté au plafond), puis le poids papillon contre continuations, chacun le diviseur ajusté au rejeu pour tenir la part des réductions changées ; le papillon vidé à chaque coup, contre conservé |
 
 **Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
 optimisations pures : même arbre au nœud près, prouvées par le temps au
