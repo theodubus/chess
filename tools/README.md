@@ -669,6 +669,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-11-02 | **C54 — C53 et la LMR modulée par la note, `note / 6000` plis**, n° 23 (`822fb74` contre `cde63e6`) | **+23,18 Elo ± 3,15** sur 11 200 parties à `8+0,08`, homogènes (p = 0,677) — **gain démontré** ; attendu −8 à +15, dépassé ; **l'arbre inchangé** (+0,001 %), un tiers des réductions déplacées. **Fusionné le 3 nov.** |
 | 2026-11-03 | **C55 — le diviseur de la LMR modulée à 4 000**, n° 23 (`d803666` contre `39334eb`) | **−2,57 Elo ± 2,99** sur 11 200 parties à `8+0,08`, homogènes (p = 0,939) — rien de démontré ; attendu −10 à +10 ; l'arbre −6,5 % à la profondeur 12. Non fusionné |
 | 2026-11-03 | **C56 — le diviseur de la LMR modulée à 9 000**, n° 23 (`98d62bd` contre `39334eb`) | **−7,20 Elo ± 3,07** sur 11 200 parties à `8+0,08`, homogènes (p = 0,604) — **régression démontrée** ; attendu −15 à +3 ; l'arbre +1,9 % à la profondeur 12. Non fusionné |
+| 2026-11-03 | **C57 — le décalage de la note dans la LMR modulée, +2 000**, n° 23 (`71f91f5` contre `6958899`) | **−0,22 Elo ± 3,02** sur 11 200 parties à `8+0,08`, homogènes (p = 0,467) — rien de démontré ; attendu −8 à +10 ; l'arbre −9,4 % à la profondeur 12. Non fusionné |
+| 2026-11-03 | **C58 — le décalage de la note, −2 000**, n° 23 (`13177a7` contre `6958899`) | **+0,34 Elo ± 3,03** sur 11 200 parties à `8+0,08`, homogènes (p = 0,186) — rien de démontré ; attendu −10 à +5 ; l'arbre +7,1 % à la profondeur 12. Non fusionné |
 | 2026-11-03 | **Le livre déséquilibré — son rendement par paire**, n° 23 : `0d2b188` à `10+0,10` contre `8+0,08`, C53 et C54, sur `tools/book-desequilibre.epd` contre `tools/book.epd` | **× 1,11 [0,85 ; 1,44]** sur trois effets connus, homogènes ; × 0,98 par heure de runner, ses parties durant ~13 % de plus — **ne paie pas**, notre livre reste ; à `8+0,08` |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
@@ -1043,7 +1045,8 @@ dernière relève est faite.
 | **N° 23 — C52, C53 et C54, l'historique borné et la LMR modulée** | C52 (`141fb43`) contre `0e43fdd` : **41424524575, 41424533128, 41424542152, 41424550122** ; C53 (`cde63e6`) contre `0e43fdd` : **41424558147, 41424567516, 41424575489, 41424583620** ; C54 (`822fb74`) contre C53 : **41424590639, 41424599610, 41424607675, 41424615206** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 12 × 2 800 parties | **RELEVÉS le 2 nov. à 16 h 10** — finis entre 15 h 50 et 16 h 05, aucune perte au temps : C52 **+2,14 ± 3,06**, C53 **+14,40 ± 3,08**, C54 contre C53 **+23,18 ± 3,15** ; **C54 fusionné le 3 nov.**, C53 compris (« N° 23 — VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — les candidats ») : C52 **−3 à +3**, C53 **−5 à +10**, C54 contre C53 **−8 à +15** ; **critère** : C53 si sa borne basse passe zéro, C54 (C53 compris) si la sienne passe zéro contre C53 et que C53 n'est pas démontré sous `main` |
 | **N° 23 — le livre déséquilibré : calibration et témoins** | calibration, `0d2b188` contre lui-même, `10+0,10` contre `8+0,08` — sur le livre de 15 000 : **41589865609, 41589872708** ; sur `tools/book-desequilibre.epd` : **41589879477, 41589885654** ; témoins sur le livre déséquilibré — C53 (`cde63e6`) contre `0e43fdd` : **41589892536, 41589899229, 41589905877, 41589912682** ; C54 (`822fb74`) contre C53 : **41589919053, 41589925508, 41589931538, 41589937796** | graine « auto » chacun, AVX2 des deux côtés | `match.yml`, 12 × 2 800 parties | **RELEVÉS le 3 nov. à 13 h 40** — la calibration sur le livre déséquilibré coupée au plafond (2 580 et 2 600 parties), aucune perte au temps : rendement **× 1,11 [0,85 ; 1,44]** sur les trois effets, ~× 0,98 par heure — **notre livre reste** ; témoins du même signe (« N° 23 — le livre déséquilibré : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — le livre déséquilibré ») : **rendement × 1,3 à × 3** ; témoins **du même signe** que sur notre livre ; **critère** : le livre déséquilibré devient le livre des matchs à la série suivante si la borne basse du rendement dépasse × 1,3 |
 | **N° 23 — C55 et C56, le diviseur de la LMR modulée** | C55 (`d803666`, 4 000) contre `39334eb` : **41591921375, 41591928709, 41591934984, 41591941166** ; C56 (`98d62bd`, 9 000) contre `39334eb` : **41591947411, 41591953770, 41591960493, 41591967514** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 3 nov. à 13 h 40** — aucune perte au temps : C55 **−2,57 ± 2,99**, C56 **−7,20 ± 3,07** ; aucun ne fusionne, 6 000 reste (« N° 23 — C55, C56 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C55, C56 ») : C55 **−10 à +10**, C56 **−15 à +3** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; sinon 6 000 reste |
-| **N° 23 — C57 et C58, le décalage de la note** | C57 (`71f91f5`, +2 000) contre `6958899` : **41640598310, 41640608379, 41640618264, 41640628262** ; C58 (`13177a7`, −2 000) contre `6958899` : **41640637930, 41640646405, 41640655731, 41640665443** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **EN VOL**, lancés le 3 nov. à 14 h 00 ; ~5 h | — *Attendus, écrits avant* (section « N° 23 — C57, C58 ») : C57 **−8 à +10**, C58 **−10 à +5** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; C58 après le traitement de son test ; sinon 0 reste |
+| **N° 23 — C57 et C58, le décalage de la note** | C57 (`71f91f5`, +2 000) contre `6958899` : **41640598310, 41640608379, 41640618264, 41640628262** ; C58 (`13177a7`, −2 000) contre `6958899` : **41640637930, 41640646405, 41640655731, 41640665443** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 3 nov. à 19 h 20** — aucune perte au temps : C57 **−0,22 ± 3,02**, C58 **+0,34 ± 3,03** ; aucun ne fusionne, le décalage reste à 0 (« N° 23 — C57, C58 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C57, C58 ») : C57 **−8 à +10**, C58 **−10 à +5** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; C58 après le traitement de son test ; sinon 0 reste |
+| **N° 23 — C59 et C60, la mémoire de la gravité** | C59 (`863fbc5`, mémoire courte) contre `8fa8f20` : **41694799107, 41694809896, 41694820647, 41694831493** ; C60 (`f728e3f`, mémoire longue) contre `8fa8f20` : **41694841197, 41694851401, 41694862515, 41694873666** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **EN VOL**, lancés le 3 nov. à 19 h 33 ; ~5 h | — *Attendus, écrits avant* (section « N° 23 — C59, C60 ») : C59 **−6 à +8**, C60 **−8 à +4** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; C59 après le traitement du test ; sinon `main` reste |
 | **Balayage de mutation de `main` après le multicouche** | **41592047881**, `commit` = `700a8ba` | — | `mutation.yml` | **RELEVÉ le 3 nov. à 13 h 40, vert** — `nnue.rs` 2, à son plafond ; `search.rs` 46 sous 48, plafond resserré ; les autres à leur plafond, total 161 | — |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
@@ -14714,6 +14717,107 @@ contre `main` passe zéro — les deux, le plus haut au point ; C58 n'entre
 qu'après le traitement de son test. **Sinon, 0 reste**, et le registre
 garde ce que les deux points disent de la pente.
 
+### N° 23 — C57, C58 : VERDICT, relevé le 3 nov. à 19 h 20 — le décalage reste à 0
+
+**Les huit matchs**, lancés à 14 h 00, finis entre 18 h 56 et 19 h 09,
+2 800 parties chacun, **aucune perte au temps**, 6,28 à 6,55 s par
+partie ; contre `6958899` :
+
+| candidat | les quatre jobs | en commun | attendu, écrit avant |
+|---|---|---|---|
+| **C57**, décalage +2 000 | −0,99, +4,09, −2,11, −1,86 | **−0,22 ± 3,02**, homogènes (p = 0,467) | −8 à +10 — dedans |
+| **C58**, décalage −2 000 | +6,08, −0,00, −2,11, −2,61 | **+0,34 ± 3,03**, homogènes (p = 0,186) | −10 à +5 — dedans |
+
+**Le critère, écrit avant** : aucune borne basse ne passe zéro —
+**aucun ne fusionne, le décalage reste à 0**. C58 n'avait de toute
+façon pas son test traité.
+
+**Ce que ça dit** : **±2 000 déplacent l'arbre de 7 à 9 % — dans les
+deux sens — pour rien de mesurable**. Après le diviseur (C55, C56), le
+second réglage de la LMR modulée qui ne rend rien autour de la valeur de
+`main` : l'échelle de la modulation est près de son optimum, et ce qui
+reste à y chercher tombe sous ce qu'un match de quatre jobs voit. Le
+décalage est **déprioritisé** au registre. Un point de plus pour « c'est
+plus fort » : ÷1,10 et ×1,07 d'arbre, deux néants.
+
+**Et le test qui tombait sous C58** tombe aussi sous C59, plus bas : le
+sens qu'il asserte bascule sous deux changements sans rapport — il se
+traite sur `main` (« N° 23 — le test des extensions singulières »).
+
+### N° 23 — C59, C60 : la mémoire de la gravité — écran, attendus et critère, écrits le 3 nov. avant de lancer
+
+**La question** — le test écrit après l'écran des échelles (« les
+échelles de la gravité ») : la mémoire de l'historique — le bonus
+rapporté au plafond, la vitesse à laquelle le récent efface l'ancien —,
+**l'échelle de la LMR tenue**. Le bonus × 2 ou × 0,5, plafonds fixes, le
+diviseur de la LMR modulée ajusté au rejeu pour qu'elle module la même
+part des réductions que `main` (34,6 %).
+
+**L'écran** — la sonde n23 (`G+hk`, puis `lin` et `lmrh`), qui rend
+`main` au nœud près ; chaque candidat bâti rend l'arbre de sa variante
+au nœud près (269 701 073 et 275 102 517 à la profondeur 12) :
+
+| variante | diviseur | réductions modulées | l'arbre à 12, contre `main` |
+|---|---|---|---|
+| `main` | 6 000 | 34,6 % | — |
+| bonus × 2 | 6 000 / 8 000 / 9 000 / 11 000 | 57,7 / **34,8** / 27,1 / 16,8 % | −6,46 / **−2,18** / −1,83 / −0,20 % |
+| bonus × 0,5 | 6 000 / 4 000 / 3 000 / 2 200 | 11,2 / **37,5** / 53,5 / 66,1 % | +2,91 / **−0,22** / −2,73 / −6,88 % |
+
+D'où **C59, la mémoire courte** : `clamp(672·d − 1094, 1, 3122)`,
+diviseur 8 000 ; **C60, la mémoire longue** : `clamp(168·d − 274, 1,
+781)`, diviseur 4 000. Banc à la profondeur 7 : 70 843 et 70 716 ; à la
+6, 37 984 et 39 758.
+
+**Un test tombe sous C59** — le même que sous C58,
+`les_extensions_singulieres_allongent_l_arbre` ; C60 passe tous les
+tests. La mesure n'en dépend pas ; le test se traite sur `main`.
+
+**Les matchs** — chacun contre `main` (`8fa8f20`), quatre jobs de 2 800
+parties, `8+0,08`, graine « auto », AVX2 des deux côtés, le livre de
+15 000.
+
+*Attendus, écrits avant* — <span>confiance faible</span> :
+- **C59 (mémoire courte) : −6 à +8** — la mémoire courte a payé une
+  fois (C53, +14,4, contre le plafond seul de C52, +2,1) ; deux fois plus
+  courte, le signe ne se déduit pas ;
+- **C60 (mémoire longue) : −8 à +4** — le sens que C53 a quitté.
+
+**Le critère, écrit avant** : un candidat fusionne si sa borne basse
+contre `main` passe zéro — les deux, le plus haut au point ; C59
+n'entre qu'après le traitement du test. **Sinon, `main` reste**, et le
+registre garde la pente.
+
+### N° 23 — le test des extensions singulières : mesuré sur `main` le 3 nov., traitement écrit avant le verdict de C59
+
+**Le test** — `les_extensions_singulieres_allongent_l_arbre` somme les
+nœuds du banc à la profondeur 9, avec et sans les extensions
+singulières (l'extension négative coupée des deux côtés), et asserte que
+l'arbre s'allonge. **Il tombe sous C58 et sous C59**, deux changements
+de la LMR modulée sans rapport avec les extensions.
+
+**La mesure, sur `main` seul** — indépendante des deux candidats :
+
+| profondeur | avec / sans | positions où l'arbre s'allonge |
+|---|---|---|
+| 7 et 8 | 1,000 | 0 sur 6 — le mécanisme n'agit pas encore |
+| **9** | **1,041** | 6 sur 6 |
+| 10 | 1,087 | 5 sur 6 |
+| 11 | 1,261 | 6 sur 6 |
+
+**Ce qu'elle dit** : sur `main`, l'assertion tient, à 4 % de marge —
+**elle ne la condamne pas**, et le test reste tel quel. Mais une marge de
+4 % au total est de l'ordre de ce qu'un réglage de la LMR déplace (C58
+retire 7 % de l'avance sans toucher aux extensions) : le piège nommé
+dans `CLAUDE.md` — un sens asserté sur un échantillon vaut ce que vaut
+sa marge.
+
+**Le traitement, écrit avant le verdict de C59** : si C59 gagne, le test
+passe à la profondeur 11 — la marge de `main` y est six fois plus
+grande — s'il y tient sous C59 ; sinon il ne garde plus que le
+branchement (avec ≠ sans), le sens restant gardé par
+`un_coup_n_est_singulier_que_si_l_exclusion_echoue_sous_la_borne` et ses
+voisins, qui l'assertent sur des positions construites pour lui.
+
 ### N° 23 — le livre déséquilibré : VERDICT, relevé le 3 nov. à 13 h 40 — notre livre reste
 
 **Les douze matchs**, lancés à 7 h 26. Les deux de calibration sur le
@@ -16457,8 +16561,8 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |
 | **seuil des ouvertures du générateur** (`OPENING_MAX_SCORE`) | 1 000 en unités d'évaluation, écrit pour la faite main | jamais en force ; son taux suit l'étiqueteur — **18,46 % sous N8tw50s800, 21,01 % sous N9w50s800**, les mêmes 5 000 ouvertures (26 oct., « N° 22 », la vague 1) | inconnue — <span>confiance faible</span> | avec les ouvertures, phase 7 ; jamais en cours de tranche : il change le mélange appris |
 | **marges et constantes de recherche** | réglées à la main ; × 2,85 au réseau (B8) | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA, phase 5, à refaire à chaque réseau |
-| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **C55 (4 000) −2,57 ± 2,99 ; C56 (9 000) −7,20 ± 3,07**, régression démontrée (3 nov., « N° 23 — C55, C56 : VERDICT ») : l'optimum est plat autour de 6 000 — **déprioritisé**, marge ~0 à +2 <span>(confiance faible)</span>. **Le décalage de la note, EN VOL le 3 nov.** : C57 (+2 000) et C58 (−2 000) contre `main`, quatre jobs chacun (« N° 23 — C57, C58 » ; la sonde : `tools/attic/n23-sonde-decalage.patch`) ; puis le diviseur par profondeur et le papillon double, à l'écran le même jour ; puis SPSA |
-| **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | **à l'écran le 3 nov. : confondus avec le diviseur** — la note n'est lue que par l'ordre, invariant d'échelle, et par la LMR ; le bonus × 2 rend l'écran du diviseur 4 000 (« N° 23 — les échelles de la gravité »). **Après C55 et C56** : la mémoire (bonus rapporté au plafond), puis le poids papillon contre continuations, chacun le diviseur ajusté au rejeu pour tenir la part des réductions changées ; le papillon vidé à chaque coup, contre conservé |
+| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **C55 (4 000) −2,57 ± 2,99 ; C56 (9 000) −7,20 ± 3,07**, régression démontrée (3 nov., « N° 23 — C55, C56 : VERDICT ») : l'optimum est plat autour de 6 000 — **déprioritisé**, marge ~0 à +2 <span>(confiance faible)</span>. **Le décalage de la note : C57 (+2 000) −0,22 ± 3,02, C58 (−2 000) +0,34 ± 3,03** (3 nov.) — plat lui aussi, **déprioritisé** (« N° 23 — C57, C58 : VERDICT » ; la sonde : `tools/attic/n23-sonde-decalage.patch`). Restent, à l'écran le 3 nov. : le diviseur par profondeur (+1,3 % d'arbre) et le papillon double (−5,9 % au diviseur 7 500) ; puis SPSA |
+| **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | **à l'écran le 3 nov. : confondus avec le diviseur** — la note n'est lue que par l'ordre, invariant d'échelle, et par la LMR ; le bonus × 2 rend l'écran du diviseur 4 000 (« N° 23 — les échelles de la gravité »). **EN VOL le 3 nov. : C59 (mémoire courte, bonus × 2, diviseur 8 000) et C60 (mémoire longue, bonus × 0,5, diviseur 4 000)**, quatre jobs chacun (« N° 23 — C59, C60 ») ; puis le poids papillon contre continuations, le diviseur ajusté au rejeu pour tenir la part des réductions changées ; le papillon vidé à chaque coup, contre conservé |
 
 **Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
 optimisations pures : même arbre au nœud près, prouvées par le temps au
