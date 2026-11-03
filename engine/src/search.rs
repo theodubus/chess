@@ -2784,7 +2784,7 @@ const CONTINUATION_CAP: i32 = 29_952;
 /// Le diviseur de la note dans la LMR modulée : une note au plafond du
 /// papillon et des deux continuations, ~67 000, vaut onze plis. Choisi au
 /// rejeu, où il change un tiers des réductions à arbre égal (n° 23).
-const LMR_HISTORY_DIVISOR: i32 = 6_000;
+const LMR_HISTORY_DIVISOR: i32 = 4_000;
 
 /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
 /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
