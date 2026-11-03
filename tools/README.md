@@ -14502,6 +14502,41 @@ série suivante — une condition de mesure qui change, écrite à sa date,
 jamais au milieu d'une série. En dessous, notre livre reste, et la ligne
 retourne au registre.
 
+**Le pilote, relevé le 3 nov. à 7 h 30** — joué dans le conteneur,
+coupé DEUX fois par un redémarrage : [150, 250) à 207 parties sur 300,
+[250, 400) à 251, [400, 600) jamais joué. `main` contre lui-même,
+`8+0,08`, chaque position des deux côtés :
+
+| bande | parties | camp favorisé | ses victoires | nulles | paires de somme ≠ 1 |
+|---|---|---|---|---|---|
+| [150, 250) | 207 | 65,0 % | 38,6 % | 52,7 % | 55,3 % |
+| **[250, 400)** | 251 | **77,9 %** | 61,0 % | 33,9 % | 40,8 % |
+
+- **la bande retenue : [250, 400)**, comme l'attendu — 77,9 %, à ± ~5
+  points à 95 % de la cible de 75 %. [400, 600) n'aurait été plus près
+  que s'il marquait MOINS que [250, 400) : la note grandit, le score du
+  camp favorisé avec elle ; <span>inférence, confiance élevée</span>,
+  d'où le pilote arrêté là. **L'écart au protocole, nommé** : 207 et 251
+  parties au lieu de 300, ce qui élargit l'intervalle sans changer le
+  classement — 13 points séparent les deux bandes ;
+- **les nulles : 33,9 %**, au-dessus de l'attendu (10 à 25 %) — bien moins
+  que la bande d'en dessous (52,7 %), mais pas moins que notre livre
+  (~30 %) : l'adjudication de nulle (au 40ᵉ coup, huit coups à ± 10)
+  en ramasse une part que le camp favorisé ne convertit pas ;
+- **le livre** : les **11 898** positions de la bande — moins que
+  15 000, donc toutes —, tirées dans l'ordre par la graine 20261102,
+  `tools/book-desequilibre.epd`. Les Blancs y sont favorisés 9 560 fois
+  sur 11 898 : chaque position se jouant des deux côtés, la couleur ne
+  biaise rien.
+
+**Les témoins, attendus écrits avant leur lancement** — C53 contre
+`0e43fdd` et C54 contre C53 sur le livre déséquilibré, quatre jobs
+chacun : **le même signe** que sur notre livre (+14,40 et +23,18), et
+un rapport `(t_déséquilibré / t_équilibré)²` dans la fourchette du
+rendement attendu, × 1,3 à × 3 — <span>confiance faible</span>. Un
+témoin dont le signe s'inverse ferait du livre un instrument qui
+mesure autre chose que la force, quel que soit son rendement.
+
 ### N° 23 — l'inférence multicouche : écrite le 2 nov., prête pour le verdict de C3
 
 **La décision** — la feuille de route du 31 oct., point 3 : écrire dans
