@@ -1343,6 +1343,27 @@ mod tests {
         assert!(Network::from_bytes_with(&bytes, one).is_ok());
         // Un octet de moins : refusé, comme un réseau d'une autre largeur.
         assert!(Network::from_bytes_with(&bytes[..expected - 64], one).is_err());
+
+        // Avec quatre seaux de roi et huit de sortie — où `INPUTS × seaux`
+        // et `INPUTS / seaux` se séparent, ce qu'un seul bloc ne voit pas :
+        // 2 × (768·4·H + H) + 8·16·H + 4 × 8 × 593, soit 6 274·H + 18 976.
+        // Pour H = 256 : 1 625 120, 1 625 152 bourrés.
+        let expected = match HIDDEN {
+            128 => 822_080,
+            256 => 1_625_152,
+            384 => 2_428_224,
+            512 => 3_231_296,
+            1024 => 6_443_584,
+            other => panic!("taille à calculer à la main pour {other} unités"),
+        };
+        let bucketed = Arch {
+            king_buckets: Some(KING_BUCKETS_4),
+            ..DENSE
+        };
+        assert_eq!(bucketed.file_bytes(), expected);
+        let bytes = random_dense_file(bucketed, 12, 300);
+        assert_eq!(bytes.len(), expected);
+        assert!(Network::from_bytes_with(&bytes, bucketed).is_ok());
     }
 
     #[test]
@@ -1359,18 +1380,22 @@ mod tests {
         let last_float = DENSE.bytes() - 4;
         bytes[last_float..last_float + 4].copy_from_slice(&f32::NAN.to_le_bytes());
         assert!(Network::from_bytes_with(&bytes, DENSE).is_err());
-        // Et des couches plus grandes que la pile ne les tient.
-        let wide = Arch {
-            layers: Some(Layers {
-                l1: MAX_L1 + 1,
-                l2: 32,
-            }),
-            ..DENSE
+        // Et des couches plus grandes que la pile ne les tient — ou vides :
+        // chaque borne, de chaque côté, sur des fichiers à zéro de la bonne
+        // taille, que rien d'autre ne refuserait.
+        let sized = |l1, l2| {
+            let arch = Arch {
+                layers: Some(Layers { l1, l2 }),
+                ..DENSE
+            };
+            Network::from_bytes_with(&vec![0; arch.file_bytes()], arch)
         };
-        let error = Network::from_bytes_with(&vec![0; wide.file_bytes()], wide)
-            .err()
-            .unwrap();
-        assert!(error.contains("couches denses"), "{error}");
+        assert!(sized(MAX_L1, MAX_L2).is_ok(), "les plus grandes admises");
+        assert!(sized(1, 1).is_ok(), "les plus petites admises");
+        for (l1, l2) in [(MAX_L1 + 1, 32), (16, MAX_L2 + 1), (0, 32), (16, 0)] {
+            let error = sized(l1, l2).err().unwrap();
+            assert!(error.contains("couches denses"), "{l1} et {l2} : {error}");
+        }
     }
 
     /// Le calcul de référence d'un réseau multicouche : les octets relus sans
@@ -1458,6 +1483,26 @@ mod tests {
             }
             // Des évaluations variées : ni toutes nulles, ni toutes bornées.
             assert!(seen.len() > 5, "réseau {seed} : {seen:?}");
+        }
+    }
+
+    #[test]
+    fn une_sortie_multicouche_est_bornee_hors_des_mats() {
+        // Le biais final de chaque seau à ±1 000 : la sortie vaut ±400 000
+        // et se borne à `MATE_THRESHOLD − 1`, des deux côtés.
+        let bound = MATE_THRESHOLD - 1;
+        for (bias, expected) in [(1_000.0_f32, bound), (-1_000.0, -bound)] {
+            let mut bytes = random_dense_file(DENSE, 31, 300);
+            let last_bias = DENSE.bytes() - 4 * DENSE.output_buckets;
+            for bucket in 0..DENSE.output_buckets {
+                let at = last_bias + 4 * bucket;
+                bytes[at..at + 4].copy_from_slice(&bias.to_le_bytes());
+            }
+            let network = Network::from_bytes_with(&bytes, DENSE).unwrap();
+            for position in positions().into_iter().take(20) {
+                let got = network.evaluate(&network.refresh(&position), &position);
+                assert_eq!(got, expected, "sur {position}");
+            }
         }
     }
 
