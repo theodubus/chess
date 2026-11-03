@@ -14659,6 +14659,60 @@ partie ; contre `39334eb`, mis en commun par `tools/mettre-en-commun.sh` :
 l'écran puis quatre jobs ; la mémoire de la gravité, le diviseur ajusté
 (« les échelles de la gravité », plus haut) ; SPSA pour le reste.
 
+### N° 23 — C57, C58 : le décalage de la note — écran, attendus et critère, écrits le 3 nov. avant de lancer
+
+**La question** — le registre, après le verdict du diviseur : Stockfish
+décale la note avant de la diviser. Son source, lu à `sf_16`
+(`search.cpp`, l. 1173 à 1180) : `statScore = 2 · papillon + cont[0] +
+cont[1] + cont[3] − 4006`, puis `r −= statScore / (11124 + 4740 · (5 <
+d < 22))`. Le décalage y vaut ~0,36 pli ; **à notre échelle, ~2 160**.
+Les deux voisins de notre valeur, 0 : **C57 à +2 000** (`note − 2000`, le
+sens de Stockfish, plus de réduction) et **C58 à −2 000**.
+
+**L'écran** — le rejeu des 60 parties, par une sonde jetable bâtie sur
+`main` et vérifiée contre lui au nœud près (110 050 848 à la profondeur
+10, aucune réduction changée) ; C57 bâti, il rend l'arbre de sa variante
+au nœud près (249 724 606 à la 12) :
+
+| variante | l'arbre à 12, contre `main` | réductions changées |
+|---|---|---|
+| décalage +1 000 | −5,08 % | 7,7 % |
+| **décalage +2 000** (C57) | **−9,42 %** | 15,0 % |
+| décalage +4 000 | −16,60 % | 28,0 % |
+| **décalage −2 000** (C58) | **+7,13 %** | 12,6 % |
+| le diviseur par profondeur de Stockfish, × 1,43 de 6 à 21 | +1,31 % | 10,2 % |
+| le papillon compté double | −8,26 % | 26,1 % |
+| le papillon double, diviseur 7 500 | −5,94 % | 15,2 % |
+
+Ce que l'écran montre : **le décalage pèse bien plus sur l'arbre que le
+diviseur** — ±2 000 déplacent l'arbre de 7 à 9 %, quand 4 000 au lieu
+de 6 000 au diviseur en déplaçaient 6,5. Le diviseur par profondeur et
+le papillon double restent au registre, derrière ce verdict. Banc à la
+profondeur 7 : 70 845 et 70 842 ; à la 6, 37 989 pour les deux.
+
+**Un test tombe sous C58** : `les_extensions_singulieres_allongent_l_arbre`
+asserte un SENS sur le banc à la profondeur 9, et C58 le renverse
+(273 462 nœuds avec, 282 816 sans). La mesure n'en dépend pas — un match
+ne lance aucun test. **Si C58 gagne**, le test se traite avant la
+fusion, par une mesure indépendante du changement (`CLAUDE.md`, « Une
+reformulation justifiée par une mesure INDÉPENDANTE… »), jamais en
+l'assouplissant.
+
+**Les matchs** — chacun contre `main` (`6958899`), quatre jobs de 2 800
+parties, `8+0,08`, graine « auto », AVX2 des deux côtés, le livre de
+15 000 ; mis en commun par `tools/mettre-en-commun.sh`.
+
+*Attendus, écrits avant* — <span>confiance faible</span> :
+- **C57 (+2 000) : −8 à +10** — le sens de Stockfish, 9 % d'arbre en
+  moins ; C55, qui réduisait aussi davantage les mal notés, rendait
+  −2,6 ;
+- **C58 (−2 000) : −10 à +5** — 7 % d'arbre en plus, le sens contraire.
+
+**Le critère, écrit avant** : un candidat fusionne si sa borne basse
+contre `main` passe zéro — les deux, le plus haut au point ; C58 n'entre
+qu'après le traitement de son test. **Sinon, 0 reste**, et le registre
+garde ce que les deux points disent de la pente.
+
 ### N° 23 — le livre déséquilibré : VERDICT, relevé le 3 nov. à 13 h 40 — notre livre reste
 
 **Les douze matchs**, lancés à 7 h 26. Les deux de calibration sur le
@@ -16402,7 +16456,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |
 | **seuil des ouvertures du générateur** (`OPENING_MAX_SCORE`) | 1 000 en unités d'évaluation, écrit pour la faite main | jamais en force ; son taux suit l'étiqueteur — **18,46 % sous N8tw50s800, 21,01 % sous N9w50s800**, les mêmes 5 000 ouvertures (26 oct., « N° 22 », la vague 1) | inconnue — <span>confiance faible</span> | avec les ouvertures, phase 7 ; jamais en cours de tranche : il change le mélange appris |
 | **marges et constantes de recherche** | réglées à la main ; × 2,85 au réseau (B8) | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA, phase 5, à refaire à chaque réseau |
-| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **C55 (4 000) −2,57 ± 2,99 ; C56 (9 000) −7,20 ± 3,07**, régression démontrée (3 nov., « N° 23 — C55, C56 : VERDICT ») : l'optimum est plat autour de 6 000 — **déprioritisé**, marge ~0 à +2 <span>(confiance faible)</span>. **Prochain test : le décalage de la note**, à l'écran puis quatre jobs ; puis SPSA |
+| **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **C55 (4 000) −2,57 ± 2,99 ; C56 (9 000) −7,20 ± 3,07**, régression démontrée (3 nov., « N° 23 — C55, C56 : VERDICT ») : l'optimum est plat autour de 6 000 — **déprioritisé**, marge ~0 à +2 <span>(confiance faible)</span>. **Le décalage de la note, EN VOL le 3 nov.** : C57 (+2 000) et C58 (−2 000) contre `main`, quatre jobs chacun (« N° 23 — C57, C58 ») ; puis le diviseur par profondeur et le papillon double, à l'écran le même jour ; puis SPSA |
 | **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | **à l'écran le 3 nov. : confondus avec le diviseur** — la note n'est lue que par l'ordre, invariant d'échelle, et par la LMR ; le bonus × 2 rend l'écran du diviseur 4 000 (« N° 23 — les échelles de la gravité »). **Après C55 et C56** : la mémoire (bonus rapporté au plafond), puis le poids papillon contre continuations, chacun le diviseur ajusté au rejeu pour tenir la part des réductions changées ; le papillon vidé à chaque coup, contre conservé |
 
 **Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
