@@ -867,8 +867,13 @@ mod tests {
 
     #[test]
     fn une_ouverture_desequilibree_est_ecartee() {
-        // Les Blancs, au trait, ont une dame de plus : au-delà du seuil.
-        let lopsided = board("rnb1kbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        // Les Blancs, au trait, ont une dame et une tour de plus : au-delà
+        // du seuil à toute profondeur. Une dame seule n'y était pas — 991 à
+        // la profondeur 4, 1 027 à la 5 (4 nov. 2026, `main`, faite main) :
+        // le test tenait à la parité de la profondeur que 2 000 nœuds
+        // atteignaient, et un changement de recherche qui ralentissait
+        // l'approfondissement d'un rien le faisait tomber.
+        let lopsided = board("rnb1kbn1/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQq - 0 1");
         assert!(
             play_game(
                 lopsided.clone(),
