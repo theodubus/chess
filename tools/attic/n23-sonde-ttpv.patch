@@ -1,0 +1,204 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 7c169af..eefabd7 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -547,6 +547,7 @@ pub struct Search {
+     /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
+     /// chemin courant.
+     evals: Vec<Option<i32>>,
++    n26_ttpv: Vec<bool>,
+     /// Par ply, le coup EXCLU d'une recherche singulière (C41) : elle cherche
+     /// le nœud sans le coup de la table, pour savoir s'il est seul à tenir.
+     /// Écrit et effacé par le nœud qui teste, au MÊME ply — la recherche
+@@ -654,6 +655,7 @@ impl Search {
+             continuation: vec![0; PIECE_TO * PIECE_TO],
+             moved: vec![None; MAX_PLY + 1],
+             evals: vec![None; MAX_PLY + 1],
++            n26_ttpv: vec![false; MAX_PLY + 1],
+             excluded: vec![None; MAX_PLY + 1],
+             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
+             params: eval::Params::DEFAULT,
+@@ -1639,6 +1641,29 @@ impl Search {
+         // collision de clés Zobrist, astronomiquement rare mais pas impossible.
+         let tt_move = hit.and_then(|hit| hit.mv).filter(|&mv| board.is_legal(mv));
+ 
++        let n26p = n26();
++        let pv_node = i64::from(beta) - i64::from(alpha) > 1;
++        let mut tt_pv = if excluded.is_some() {
++            self.n26_ttpv.get(ply).copied().unwrap_or(false)
++        } else {
++            pv_node || hit.is_some_and(|h| h.pv)
++        };
++        if excluded.is_none()
++            && let Some(slot) = self.n26_ttpv.get_mut(ply)
++        {
++            *slot = tt_pv;
++        }
++        N26C[0].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++        if tt_pv {
++            N26C[1].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++        }
++        let likely_fail_low = !n26p.nolfl
++            && pv_node
++            && tt_move.is_some()
++            && hit.is_some_and(|h| h.bound == Bound::Upper && i32::from(h.depth) >= depth);
++        let n26_scope = !(n26p.nopvn && pv_node) && !(n26p.pvn && !pv_node);
++        let n26_less = if tt_pv && !likely_fail_low && n26_scope { n26p.k } else { 0 };
++
+         // Futilité inverse.
+         //
+         // Le pendant du coup nul, appliqué au nœud lui-même plutôt qu'à son
+@@ -1673,7 +1698,9 @@ impl Search {
+                 .and_then(|p| self.evals.get(p).copied().flatten())
+         };
+         let improving = is_improving(static_eval, back(2), back(4));
+-        if let Some(score) = self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval) {
++        if !(n26p.rfp && tt_pv)
++            && let Some(score) = self.reverse_futility_cut(board, depth, ply, beta, &mut static_eval)
++        {
+             return score;
+         }
+ 
+@@ -1918,7 +1945,13 @@ impl Search {
+                 // moins, un mal noté davantage — la note bornée par la
+                 // gravité, qui a désormais une échelle.
+                 let note = self.quiet_score(mv, piece_to(board, mv), context);
+-                modulated_reduction(self.reduction(depth, index), self.lmr_note(note), depth)
++                let base = modulated_reduction(self.reduction(depth, index), self.lmr_note(note), depth);
++                let r = modulated_reduction(self.reduction(depth, index) - n26_less, self.lmr_note(note), depth);
++                N26C[2].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                if r != base {
++                    N26C[3].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                }
++                r
+             } else {
+                 0
+             };
+@@ -2025,8 +2058,11 @@ impl Search {
+         };
+         // Le résultat d'une recherche singulière n'est pas celui du nœud : il
+         // y manque son meilleur coup.
++        if n26p.prop && best <= original_alpha && ply > 0 {
++            tt_pv = tt_pv || (self.n26_ttpv.get(ply - 1).copied().unwrap_or(false) && depth > 3);
++        }
+         if excluded.is_none() {
+-            self.tt.store(key, best_move, best, depth, bound, ply_i32);
++            self.tt.store_pv(key, best_move, best, depth, bound, ply_i32, tt_pv);
+         }
+ 
+         best
+@@ -2789,6 +2825,23 @@ const LMR_HISTORY_DIVISOR: i32 = 6_000;
+ /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
+ /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
+ /// au point de sauter la profondeur restante.
++#[derive(Clone, Copy)]
++struct N26 { k: i32, nolfl: bool, prop: bool, rfp: bool, nopvn: bool, pvn: bool }
++fn n26() -> N26 {
++    static V: std::sync::OnceLock<N26> = std::sync::OnceLock::new();
++    *V.get_or_init(|| {
++        let mut v = N26 { k: 0, nolfl: false, prop: false, rfp: false, nopvn: false, pvn: false };
++        for part in std::env::var("N26").unwrap_or_default().split('+').filter(|p| !p.is_empty()) {
++            let mut it = part.split(':');
++            let key = it.next().unwrap_or("");
++            let x: i32 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0);
++            match key { "k" => v.k = x, "nolfl" => v.nolfl = true, "prop" => v.prop = true, "rfp" => v.rfp = true, "nopvn" => v.nopvn = true, "pvn" => v.pvn = true, _ => panic!("N26 {part}") }
++        }
++        v
++    })
++}
++pub static N26C: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
++
+ fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
+     (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
+ }
+diff --git a/engine/src/tt.rs b/engine/src/tt.rs
+index 7d8b747..bf7d573 100644
+--- a/engine/src/tt.rs
++++ b/engine/src/tt.rs
+@@ -72,6 +72,8 @@ pub struct Hit {
+     pub depth: i8,
+     /// Ce que le score garantit.
+     pub bound: Bound,
++    /// Sonde N26 : la position a été sur la variante principale.
++    pub pv: bool,
+ }
+ 
+ impl Bound {
+@@ -123,9 +125,14 @@ const MV_SHIFT: u32 = 16;
+ const DEPTH_SHIFT: u32 = 32;
+ const BOUND_SHIFT: u32 = 40;
+ const GEN_SHIFT: u32 = 42;
++const PV_SHIFT: u32 = 50;
+ 
+ /// Empaquette les données d'une entrée.
+ fn pack_data(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8) -> u64 {
++    pack_data_pv(score, mv, depth, bound, generation, false)
++}
++
++fn pack_data_pv(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8, pv: bool) -> u64 {
+     debug_assert!(
+         score.abs() <= crate::eval::MATE,
+         "score hors bornes au stockage : {score}"
+@@ -137,6 +144,7 @@ fn pack_data(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8) -> u6
+         | (u64::from(u8::from_ne_bytes(depth.to_ne_bytes())) << DEPTH_SHIFT)
+         | (bound.to_bits() << BOUND_SHIFT)
+         | (u64::from(generation) << GEN_SHIFT)
++        | (u64::from(pv) << PV_SHIFT)
+ }
+ 
+ /// Opération inverse de [`pack_data`].
+@@ -397,6 +405,7 @@ impl TranspositionTable {
+                 score: score_from_tt(score, ply),
+                 depth,
+                 bound,
++                pv: (data >> PV_SHIFT) & 1 == 1,
+             });
+         }
+         None
+@@ -422,11 +431,26 @@ impl TranspositionTable {
+         depth: i32,
+         bound: Bound,
+         ply: i32,
++    ) {
++        self.store_pv(key, mv, score, depth, bound, ply, false);
++    }
++
++    /// Sonde N26 : `store`, le bit de variante principale en plus.
++    #[allow(clippy::too_many_arguments)]
++    pub fn store_pv(
++        &self,
++        key: u64,
++        mv: Option<Move>,
++        score: i32,
++        depth: i32,
++        bound: Bound,
++        ply: i32,
++        pv: bool,
+     ) {
+         let bucket = &self.buckets[key as usize & self.mask];
+         let generation = self.generation.load(Ordering::Relaxed);
+         let depth = i8::try_from(depth.clamp(0, i32::from(i8::MAX))).unwrap_or(i8::MAX);
+-        let data = |packed| pack_data(score_to_tt(score, ply), packed, depth, bound, generation);
++        let data = |packed| pack_data_pv(score_to_tt(score, ply), packed, depth, bound, generation, pv);
+ 
+         let mut victim = &bucket.entries[0];
+         let mut victim_worth = i32::MAX;
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index e5c7767..7b220e6 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -485,6 +485,14 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                let c: Vec<u64> = crate::search::N26C.iter().map(|a| a.swap(0, Relaxed)).collect();
++                send(&format!(
++                    "info string sonde-n23 noeuds_int={} ttpv={} lmr={} lmr_change={}",
++                    c[0], c[1], c[2], c[3]
++                ));
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
