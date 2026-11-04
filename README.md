@@ -25,7 +25,11 @@ d'un aveu sur la profondeur de recherche.
 > (**+11 ± 3**). Le 7 oct., trois de plus, mesurés un par un puis
 > ensemble : la **fenêtre nulle** (PVS) — rejetée deux fois en septembre,
 > sur un autre moteur —, le **malus d'historique** et l'**extension
-> négative** (**+33 ± 3**).
+> négative** (**+33 ± 3**). Du 2 au 4 nov., quatre de plus : un historique
+> borné par la gravité (**+14 ± 3**), la réduction des coups tardifs
+> modulée par lui (**+23 ± 3**), puis, mesurés un par un et ensemble, une
+> réduction plus forte là où l'on attend une coupure et un **historique de
+> correction** de l'évaluation en plusieurs tables (**+16 ± 3**).
 > L'évaluation
 > est un **réseau NNUE** depuis le 28 sept. 2026 (plus bas), et les marges de
 > la recherche suivent son échelle depuis le 1er oct. — **+50 ± 5 Elo** à
