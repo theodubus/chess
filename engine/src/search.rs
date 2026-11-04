@@ -2969,7 +2969,7 @@ const CORRECTION_SIZE: usize = 1 << 15;
 const CORRECTION_LIMIT: i32 = 1_024;
 
 /// La part de la correction de Stockfish 17.1 qu'on applique, en pour cent.
-const CORRECTION_WEIGHT: i64 = 100;
+const CORRECTION_WEIGHT: i64 = 150;
 
 /// Les clés des tables de correction : la structure de pions ; les
 /// cavaliers et fous des deux camps ; les pièces hors pions de chaque camp,
