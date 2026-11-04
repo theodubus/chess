@@ -547,6 +547,21 @@ pub struct Search {
     /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
     /// chemin courant.
     evals: Vec<Option<i32>>,
+    /// L'HISTORIQUE DE CORRECTION (n° 23) — ce que les recherches ont appris
+    /// de l'erreur de l'évaluation statique, par traits de la position :
+    /// la structure de pions, les pièces mineures, les pièces de chaque camp
+    /// hors pions, chacune par camp au trait, `CORRECTION_SIZE` entrées par
+    /// table ; et la continuation, par les deux coups qui précèdent le nœud.
+    /// Conservé d'un coup à l'autre, vidé par `ucinewgame`, comme la
+    /// continuation des coups. Voir [`Search::correction`].
+    pawn_correction: Vec<i16>,
+    /// Voir `pawn_correction`.
+    minor_correction: Vec<i16>,
+    /// Voir `pawn_correction` : les pièces des Blancs, puis celles des Noirs.
+    non_pawn_correction: Vec<i16>,
+    /// Voir `pawn_correction` : `PIECE_TO²` entrées, l'avant-dernier coup puis
+    /// le dernier.
+    continuation_correction: Vec<i16>,
     /// Par ply, le coup EXCLU d'une recherche singulière (C41) : elle cherche
     /// le nœud sans le coup de la table, pour savoir s'il est seul à tenir.
     /// Écrit et effacé par le nœud qui teste, au MÊME ply — la recherche
@@ -654,6 +669,10 @@ impl Search {
             continuation: vec![0; PIECE_TO * PIECE_TO],
             moved: vec![None; MAX_PLY + 1],
             evals: vec![None; MAX_PLY + 1],
+            pawn_correction: vec![0; 2 * CORRECTION_SIZE],
+            minor_correction: vec![0; 2 * CORRECTION_SIZE],
+            non_pawn_correction: vec![0; 4 * CORRECTION_SIZE],
+            continuation_correction: vec![0; PIECE_TO * PIECE_TO],
             excluded: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
@@ -821,10 +840,86 @@ impl Search {
         }
     }
 
-    /// L'évaluation statique de `board`, cherché au ply `ply` : celle du
-    /// réseau sur les accumulateurs de ce ply quand il y en a un, sinon la
-    /// faite main. Le seul point d'entrée de l'évaluation dans la recherche.
+    /// L'évaluation statique de `board`, cherché au ply `ply`, corrigée de
+    /// ce que les recherches ont appris de son erreur (n° 23). Le seul point
+    /// d'entrée de l'évaluation dans la recherche : élagages, *improving*,
+    /// quiescence, tous lisent l'évaluation corrigée — Stockfish 17.1.
     fn static_eval(&self, board: &Board, ply: usize) -> i32 {
+        corrected(self.raw_eval(board, ply), self.correction(board, ply))
+    }
+
+    /// Ce que l'historique de correction ajoute à l'évaluation de `board`
+    /// au ply `ply`.
+    fn correction(&self, board: &Board, ply: usize) -> i32 {
+        let us = board.side_to_move() as usize;
+        let keys = correction_keys(board);
+        let read = |table: &[i16], index: usize| table.get(index).copied().unwrap_or(0);
+        correction_sum(
+            read(&self.pawn_correction, us * CORRECTION_SIZE + keys.pawn),
+            read(&self.minor_correction, us * CORRECTION_SIZE + keys.minor),
+            [
+                read(
+                    &self.non_pawn_correction,
+                    us * CORRECTION_SIZE + keys.non_pawn[0],
+                ),
+                read(
+                    &self.non_pawn_correction,
+                    (2 + us) * CORRECTION_SIZE + keys.non_pawn[1],
+                ),
+            ],
+            self.continuation_correction_index(ply)
+                .map_or(0, |index| read(&self.continuation_correction, index)),
+        )
+    }
+
+    /// L'entrée de continuation du nœud au ply `ply` : l'avant-dernier coup,
+    /// puis le dernier. Aucune après un coup nul, ni à la racine.
+    fn continuation_correction_index(&self, ply: usize) -> Option<usize> {
+        let last = self.moved.get(ply).copied().flatten()?;
+        let before = self.moved.get(ply.checked_sub(1)?).copied().flatten()?;
+        Some(before * PIECE_TO + last)
+    }
+
+    /// Apprend `bonus` — l'écart signé du résultat à l'évaluation, pondéré
+    /// par la profondeur — dans chaque table, aux poids de Stockfish 17.1.
+    fn update_correction(&mut self, board: &Board, ply: usize, bonus: i32) {
+        let us = board.side_to_move() as usize;
+        let keys = correction_keys(board);
+        let continuation = self.continuation_correction_index(ply);
+        let learn = |table: &mut [i16], index: usize, weight: i32| {
+            if let Some(entry) = table.get_mut(index) {
+                *entry = correction_gravity(*entry, bonus * weight / 128);
+            }
+        };
+        learn(
+            &mut self.pawn_correction,
+            us * CORRECTION_SIZE + keys.pawn,
+            111,
+        );
+        learn(
+            &mut self.minor_correction,
+            us * CORRECTION_SIZE + keys.minor,
+            146,
+        );
+        learn(
+            &mut self.non_pawn_correction,
+            us * CORRECTION_SIZE + keys.non_pawn[0],
+            162,
+        );
+        learn(
+            &mut self.non_pawn_correction,
+            (2 + us) * CORRECTION_SIZE + keys.non_pawn[1],
+            162,
+        );
+        if let Some(index) = continuation {
+            learn(&mut self.continuation_correction, index, 143);
+        }
+    }
+
+    /// L'évaluation statique BRUTE de `board` au ply `ply` : celle du réseau
+    /// sur les accumulateurs de ce ply quand il y en a un, sinon la faite
+    /// main.
+    fn raw_eval(&self, board: &Board, ply: usize) -> i32 {
         let Some(network) = &self.network else {
             return eval::evaluate(board, &self.params);
         };
@@ -871,9 +966,19 @@ impl Search {
         self.killers.fill([0; 2]);
         self.history.fill(0);
         self.continuation.fill(0);
+        self.clear_correction();
         for helper in &mut self.helpers {
             helper.continuation.fill(0);
+            helper.clear_correction();
         }
+    }
+
+    /// Vide l'historique de correction.
+    fn clear_correction(&mut self) {
+        self.pawn_correction.fill(0);
+        self.minor_correction.fill(0);
+        self.non_pawn_correction.fill(0);
+        self.continuation_correction.fill(0);
     }
 
     /// Taux de remplissage de la table, en pour mille.
@@ -1497,15 +1602,37 @@ impl Search {
     /// Negamax avec élagage alpha-bêta.
     ///
     /// Le score rendu est du point de vue du camp au trait dans `board`.
+    /// `negamax` hors de tout type de nœud : la racine, et les tests qui
+    /// cherchent une position comme une racine.
     fn negamax(
+        &mut self,
+        board: &Board,
+        depth: i32,
+        ply: usize,
+        alpha: i32,
+        beta: i32,
+        scratch: &mut [(Move, i32)],
+    ) -> i32 {
+        self.search_node(board, depth, ply, alpha, beta, false, scratch)
+    }
+
+    /// LE TYPE DE NŒUD (n° 23, comme Stockfish 16, `search.cpp`) : un nœud
+    /// de coupure attendu (`cut_node`) est l'enfant d'une recherche réduite
+    /// à fenêtre nulle, ou d'un nœud dont le type s'inverse — la re-recherche
+    /// à profondeur pleine et le coup nul passent `!cut_node`, la variante
+    /// principale `false`, la vérification singulière le type du nœud.
+    #[allow(clippy::too_many_arguments)]
+    fn search_node(
         &mut self,
         board: &Board,
         depth: i32,
         ply: usize,
         mut alpha: i32,
         beta: i32,
+        cut_node: bool,
         scratch: &mut [(Move, i32)],
     ) -> i32 {
+        let pv_node = i64::from(beta) - i64::from(alpha) > 1;
         // Le `ply` d'un nœud est sa distance à la racine, et tout s'y indexe :
         // killers, évaluations d'*improving*, coup précédent, accumulateurs,
         // distance au mat. Le chemin en est la mesure indépendante — chaque
@@ -1711,12 +1838,13 @@ impl Search {
                 *slot = None;
             }
             self.push_null(ply);
-            let score = -self.negamax(
+            let score = -self.search_node(
                 &passed,
                 depth - 1 - null_move_reduction(depth),
                 ply + 1,
                 -beta,
                 -beta + 1,
+                !cut_node,
                 rest,
             );
             self.path.pop();
@@ -1809,7 +1937,15 @@ impl Search {
                 if let Some(slot) = self.excluded.get_mut(ply) {
                     *slot = Some(mv);
                 }
-                let score = self.negamax(board, (depth - 1) / 2, ply, sbeta - 1, sbeta, rest);
+                let score = self.search_node(
+                    board,
+                    (depth - 1) / 2,
+                    ply,
+                    sbeta - 1,
+                    sbeta,
+                    cut_node,
+                    rest,
+                );
                 if let Some(slot) = self.excluded.get_mut(ply) {
                     *slot = None;
                 }
@@ -1918,7 +2054,11 @@ impl Search {
                 // moins, un mal noté davantage — la note bornée par la
                 // gravité, qui a désormais une échelle.
                 let note = self.quiet_score(mv, piece_to(board, mv), context);
-                modulated_reduction(self.reduction(depth, index), self.lmr_note(note), depth)
+                modulated_reduction(
+                    self.reduction(depth, index) + i32::from(cut_node) * LMR_CUT_NODE,
+                    self.lmr_note(note),
+                    depth,
+                )
             } else {
                 0
             };
@@ -1952,12 +2092,25 @@ impl Search {
             } else {
                 (-alpha - 1, -alpha)
             };
-            let mut score = -self.negamax(&child, new_depth - reduction, ply + 1, low, high, rest);
+            // Le type de l'enfant : la variante principale n'en a pas, une
+            // recherche réduite attend une coupure, une recherche pleine à
+            // fenêtre nulle inverse le type du nœud.
+            let full_cut = !(first && pv_node) && !cut_node;
+            let reduced_cut = if reduction > 0 { true } else { full_cut };
+            let mut score = -self.search_node(
+                &child,
+                new_depth - reduction,
+                ply + 1,
+                low,
+                high,
+                reduced_cut,
+                rest,
+            );
             if reduction > 0 && !self.aborted && score > alpha {
-                score = -self.negamax(&child, new_depth, ply + 1, low, high, rest);
+                score = -self.search_node(&child, new_depth, ply + 1, low, high, full_cut, rest);
             }
             if !first && !self.aborted && score > alpha && score < beta {
-                score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
+                score = -self.search_node(&child, new_depth, ply + 1, -beta, -alpha, false, rest);
             }
             first = false;
             self.path.pop();
@@ -2028,6 +2181,17 @@ impl Search {
         if excluded.is_none() {
             self.tt.store(key, best_move, best, depth, bound, ply_i32);
         }
+        // L'erreur de l'évaluation, apprise quand la recherche en dit le
+        // sens : sous l'évaluation sans coupure bêta, au-dessus avec un
+        // meilleur coup. Ni en échec, où il n'y a pas d'évaluation, ni
+        // quand le meilleur coup capture — l'écart y tient au matériel
+        // pris, pas à la position (Stockfish 17.1).
+        if let Some(estimate) = static_eval
+            && !best_move.is_some_and(|mv| captured_piece(board, mv).is_some())
+            && informs_correction(best, estimate, beta, best_move.is_some())
+        {
+            self.update_correction(board, ply, correction_bonus(best, estimate, depth));
+        }
 
         best
     }
@@ -2096,6 +2260,11 @@ impl Search {
                 continue;
             }
 
+            // Le coup qui mène à l'enfant, que lit la continuation de la
+            // correction de son évaluation.
+            if let Some(slot) = self.moved.get_mut(ply + 1) {
+                *slot = Some(piece_to(board, mv));
+            }
             self.push_move(board, mv, ply);
             let mut child = board.clone();
             child.play_unchecked(mv);
@@ -2786,9 +2955,115 @@ const CONTINUATION_CAP: i32 = 29_952;
 /// rejeu, où il change un tiers des réductions à arbre égal (n° 23).
 const LMR_HISTORY_DIVISOR: i32 = 6_000;
 
+/// Plis de réduction en plus aux nœuds de coupure attendus (n° 23 ;
+/// Stockfish 16 en ajoute deux).
+const LMR_CUT_NODE: i32 = 2;
+
 /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
 /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
 /// au point de sauter la profondeur restante.
+/// Les entrées d'une table de correction, par camp au trait.
+const CORRECTION_SIZE: usize = 1 << 15;
+
+/// La borne d'une entrée de correction (Stockfish 17.1).
+const CORRECTION_LIMIT: i32 = 1_024;
+
+/// La part de la correction de Stockfish 17.1 qu'on applique, en pour cent.
+const CORRECTION_WEIGHT: i64 = 100;
+
+/// Les clés des tables de correction : la structure de pions ; les
+/// cavaliers et fous des deux camps ; les pièces hors pions de chaque camp,
+/// roi compris. Chacune ne lit que ses pièces — deux positions qui ne
+/// diffèrent qu'ailleurs partagent l'entrée, c'est ce qu'elle généralise.
+struct CorrectionKeys {
+    pawn: usize,
+    minor: usize,
+    non_pawn: [usize; 2],
+}
+
+/// Voir [`CorrectionKeys`]. Un mélange multiplicatif des bitboards, ses
+/// quinze bits de poids fort.
+fn correction_keys(board: &Board) -> CorrectionKeys {
+    let bb = |color: Color, piece: Piece| board.colored_pieces(color, piece).0;
+    let mix = |boards: &[u64]| -> usize {
+        const K: [u64; 6] = [
+            0x9E37_79B9_7F4A_7C15,
+            0xC2B2_AE3D_27D4_EB4F,
+            0x1656_67B1_9E37_79F9,
+            0xD6E8_FEB8_6659_FD93,
+            0xA076_1D64_78BD_642F,
+            0xE703_7ED1_A0B4_28DB,
+        ];
+        let mut h = 0u64;
+        for (i, (&b, &k)) in boards.iter().zip(K.iter()).enumerate() {
+            h ^= b.wrapping_mul(k).rotate_left(7 * i as u32);
+        }
+        (h.wrapping_mul(0x2545_F491_4F6C_DD1D) >> 49) as usize
+    };
+    let side = |color: Color| {
+        mix(&[
+            bb(color, Piece::Knight),
+            bb(color, Piece::Bishop),
+            bb(color, Piece::Rook),
+            bb(color, Piece::Queen),
+            bb(color, Piece::King),
+        ])
+    };
+    let (white, black) = (Color::White, Color::Black);
+    CorrectionKeys {
+        pawn: mix(&[bb(white, Piece::Pawn), bb(black, Piece::Pawn)]),
+        minor: mix(&[
+            bb(white, Piece::Knight),
+            bb(white, Piece::Bishop),
+            bb(black, Piece::Knight),
+            bb(black, Piece::Bishop),
+        ]),
+        non_pawn: [side(white), side(black)],
+    }
+}
+
+/// Une entrée de correction rapprochée de `bonus`, d'autant moins qu'elle
+/// est déjà près de la borne : la gravité de Stockfish, bornée par
+/// [`CORRECTION_LIMIT`].
+fn correction_gravity(entry: i16, bonus: i32) -> i16 {
+    let bonus = bonus.clamp(-CORRECTION_LIMIT, CORRECTION_LIMIT);
+    let entry = i32::from(entry);
+    let next = entry + bonus - entry * bonus.abs() / CORRECTION_LIMIT;
+    i16::try_from(next.clamp(-CORRECTION_LIMIT, CORRECTION_LIMIT)).unwrap_or(0)
+}
+
+/// La correction d'une évaluation, des entrées de ses tables : les poids de
+/// Stockfish 17.1, ramenés à l'unité d'évaluation par 2¹⁷, puis à
+/// [`CORRECTION_WEIGHT`].
+fn correction_sum(pawn: i16, minor: i16, non_pawn: [i16; 2], continuation: i16) -> i32 {
+    let sum = 7_685 * i64::from(pawn)
+        + 7_495 * i64::from(minor)
+        + 9_144 * (i64::from(non_pawn[0]) + i64::from(non_pawn[1]))
+        + 6_469 * i64::from(continuation);
+    i32::try_from(sum * CORRECTION_WEIGHT / 100 / 131_072).unwrap_or(0)
+}
+
+/// L'évaluation corrigée, jamais un mat.
+fn corrected(raw: i32, correction: i32) -> i32 {
+    raw.saturating_add(correction)
+        .clamp(-(MATE_THRESHOLD - 1), MATE_THRESHOLD - 1)
+}
+
+/// La recherche dit-elle le sens de l'erreur ? Sous l'évaluation sans
+/// coupure bêta — la vraie valeur est au plus `best` —, ou au-dessus avec
+/// un meilleur coup — elle est au moins `best`.
+fn informs_correction(best: i32, estimate: i32, beta: i32, has_move: bool) -> bool {
+    (best < estimate && best < beta) || (best > estimate && has_move)
+}
+
+/// Ce qu'apprend une recherche de profondeur `depth` : l'écart, pondéré
+/// par la profondeur, borné au quart de [`CORRECTION_LIMIT`].
+fn correction_bonus(best: i32, estimate: i32, depth: i32) -> i32 {
+    let raw = (i64::from(best) - i64::from(estimate)) * i64::from(depth) / 8;
+    let limit = i64::from(CORRECTION_LIMIT / 4);
+    i32::try_from(raw.clamp(-limit, limit)).unwrap_or(0)
+}
+
 fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
     (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
 }
@@ -4573,6 +4848,122 @@ mod tests {
         assert_eq!(history_bonus(7), 1_561);
         assert_eq!(history_bonus(100), 1_561);
         assert!(history_bonus(127) <= BUTTERFLY_CAP);
+    }
+
+    #[test]
+    fn chaque_cle_de_correction_ne_lit_que_ses_pieces() {
+        let base = correction_keys(&board("4k3/pp6/2n5/8/8/2N5/PPQ5/4K2R w K - 0 1"));
+        // Une dame des Blancs de plus : ni les pions ni les mineures ne
+        // bougent, les pièces des Blancs oui, celles des Noirs non.
+        let dame = correction_keys(&board("4k3/pp6/2n5/8/8/2N5/PPQ5/3QK2R w K - 0 1"));
+        assert_eq!(dame.pawn, base.pawn);
+        assert_eq!(dame.minor, base.minor);
+        assert_ne!(dame.non_pawn[0], base.non_pawn[0]);
+        assert_eq!(dame.non_pawn[1], base.non_pawn[1]);
+        // Un pion noir de plus : seule la structure de pions.
+        let pion = correction_keys(&board("4k3/ppp5/2n5/8/8/2N5/PPQ5/4K2R w K - 0 1"));
+        assert_ne!(pion.pawn, base.pawn);
+        assert_eq!(pion.minor, base.minor);
+        assert_eq!(pion.non_pawn, base.non_pawn);
+        // Le cavalier noir déplacé : les mineures et les pièces des Noirs.
+        let cavalier = correction_keys(&board("4k3/pp6/8/3n4/8/2N5/PPQ5/4K2R w K - 0 1"));
+        assert_eq!(cavalier.pawn, base.pawn);
+        assert_ne!(cavalier.minor, base.minor);
+        assert_eq!(cavalier.non_pawn[0], base.non_pawn[0]);
+        assert_ne!(cavalier.non_pawn[1], base.non_pawn[1]);
+        // Les mêmes pièces, l'autre camp au trait : les mêmes clés — le camp
+        // choisit la moitié de la table, pas l'entrée.
+        let trait_noir = correction_keys(&board("4k3/pp6/2n5/8/8/2N5/PPQ5/4K2R b K - 0 1"));
+        assert_eq!(trait_noir.pawn, base.pawn);
+        assert_eq!(trait_noir.non_pawn, base.non_pawn);
+        for key in [base.pawn, base.minor, base.non_pawn[0], base.non_pawn[1]] {
+            assert!(key < CORRECTION_SIZE);
+        }
+    }
+
+    #[test]
+    fn la_correction_s_approche_de_sa_borne_sans_la_franchir() {
+        assert_eq!(correction_gravity(0, 100), 100);
+        assert_eq!(correction_gravity(0, -100), -100);
+        // À mi-borne, la moitié du pas.
+        assert_eq!(correction_gravity(512, 100), 512 + 100 - 50);
+        assert_eq!(correction_gravity(-512, -100), -512 - 100 + 50);
+        // Un bonus démesuré est borné avant d'agir.
+        assert_eq!(correction_gravity(0, 5_000), 1_024);
+        let (mut haut, mut bas) = (0, 0);
+        for _ in 0..1_000 {
+            haut = correction_gravity(haut, 256);
+            bas = correction_gravity(bas, -256);
+        }
+        assert!((1_001..=1_024).contains(&haut), "{haut}");
+        assert!((-1_024..=-1_001).contains(&bas), "{bas}");
+    }
+
+    #[test]
+    fn la_correction_somme_ses_tables_a_leurs_poids() {
+        assert_eq!(correction_sum(0, 0, [0, 0], 0), 0);
+        let un = |p: i16, m: i16, w: i16, b: i16, c: i16| correction_sum(p, m, [w, b], c);
+        let attendu =
+            |poids: i64| i32::try_from(poids * 1_024 * CORRECTION_WEIGHT / 100 / 131_072).unwrap();
+        assert_eq!(un(1_024, 0, 0, 0, 0), attendu(7_685));
+        assert_eq!(un(0, 1_024, 0, 0, 0), attendu(7_495));
+        assert_eq!(un(0, 0, 1_024, 0, 0), attendu(9_144));
+        assert_eq!(un(0, 0, 0, 1_024, 0), attendu(9_144));
+        assert_eq!(un(0, 0, 0, 0, 1_024), attendu(6_469));
+        assert_eq!(un(-1_024, 0, 0, 0, 0), -attendu(7_685));
+        assert!(un(1_024, 1_024, 1_024, 1_024, 1_024) > un(1_024, 1_024, 1_024, 1_024, 0));
+    }
+
+    #[test]
+    fn une_evaluation_corrigee_n_annonce_jamais_un_mat() {
+        assert_eq!(corrected(100, 17), 117);
+        assert_eq!(corrected(100, -17), 83);
+        assert_eq!(corrected(MATE_THRESHOLD - 10, 300), MATE_THRESHOLD - 1);
+        assert_eq!(
+            corrected(-(MATE_THRESHOLD - 10), -300),
+            -(MATE_THRESHOLD - 1)
+        );
+    }
+
+    #[test]
+    fn seule_une_recherche_qui_dit_le_sens_corrige() {
+        // Sous l'évaluation, sans coupure bêta : oui ; avec : non.
+        assert!(informs_correction(10, 20, 50, false));
+        assert!(!informs_correction(10, 20, 10, true));
+        assert!(!informs_correction(10, 20, 5, true));
+        // Au-dessus, avec un meilleur coup : oui ; sans : non.
+        assert!(informs_correction(30, 20, 50, true));
+        assert!(!informs_correction(30, 20, 50, false));
+        // Égal : rien à apprendre.
+        assert!(!informs_correction(20, 20, 50, true));
+    }
+
+    #[test]
+    fn le_bonus_de_correction_croit_avec_la_profondeur_et_se_borne() {
+        assert_eq!(correction_bonus(120, 100, 8), 20);
+        assert_eq!(correction_bonus(100, 120, 4), -10);
+        assert_eq!(correction_bonus(10_000, 0, 20), 256);
+        assert_eq!(correction_bonus(-10_000, 0, 20), -256);
+        assert_eq!(correction_bonus(-INFINITY, INFINITY, 127), -256);
+    }
+
+    #[test]
+    fn la_correction_apprise_deplace_l_evaluation_jusqu_a_ucinewgame() {
+        let b = board("r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3");
+        let mut s = search();
+        let brute = s.static_eval(&b, 0);
+        s.update_correction(&b, 0, 256);
+        let haut = s.static_eval(&b, 0);
+        assert!(haut > brute, "{haut} contre {brute}");
+        // Les deux coups qui précèdent le nœud ajoutent leur part.
+        s.moved[1] = Some(piece_to_index(Color::Black, Piece::Knight, Square::C6));
+        s.moved[0] = Some(piece_to_index(Color::White, Piece::Knight, Square::F3));
+        let sans_continuation = s.static_eval(&b, 1);
+        s.update_correction(&b, 1, 256);
+        assert!(s.static_eval(&b, 1) > sans_continuation);
+        s.clear_table();
+        assert_eq!(s.static_eval(&b, 0), brute);
+        assert_eq!(s.static_eval(&b, 1), brute);
     }
 
     #[test]
