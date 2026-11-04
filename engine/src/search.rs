@@ -547,15 +547,6 @@ pub struct Search {
     /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
     /// chemin courant.
     evals: Vec<Option<i32>>,
-    /// L'HISTORIQUE DES CAPTURES (n° 23) : la note d'une capture par la pièce
-    /// qui prend, sa case d'arrivée et le type de la victime, apprise aux
-    /// coupures comme celle des tranquilles — la capture qui coupe gagne,
-    /// les captures cherchées avant elle perdent —, bornée par la gravité.
-    /// Elle départage les captures dans l'ordre des coups, et peut faire
-    /// passer une capture devant une victime plus grosse (voir
-    /// [`CAPTURE_HISTORY_SPAN`]). Conservée d'un coup à l'autre, vidée par
-    /// `ucinewgame`.
-    capture_history: Vec<i32>,
     /// Par ply, le coup EXCLU d'une recherche singulière (C41) : elle cherche
     /// le nœud sans le coup de la table, pour savoir s'il est seul à tenir.
     /// Écrit et effacé par le nœud qui teste, au MÊME ply — la recherche
@@ -663,7 +654,6 @@ impl Search {
             continuation: vec![0; PIECE_TO * PIECE_TO],
             moved: vec![None; MAX_PLY + 1],
             evals: vec![None; MAX_PLY + 1],
-            capture_history: vec![0; PIECE_TO * 6],
             excluded: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
@@ -881,38 +871,8 @@ impl Search {
         self.killers.fill([0; 2]);
         self.history.fill(0);
         self.continuation.fill(0);
-        self.capture_history.fill(0);
         for helper in &mut self.helpers {
             helper.continuation.fill(0);
-            helper.capture_history.fill(0);
-        }
-    }
-
-    /// Ce que l'historique des captures ajoute à la note d'ordonnancement
-    /// de `mv` : [`CAPTURE_HISTORY_SPAN`] vaut une victime de plus. Zéro pour
-    /// un coup qui ne capture pas.
-    fn capture_note(&self, board: &Board, mv: Move) -> i32 {
-        capture_index(board, mv)
-            .and_then(|index| self.capture_history.get(index))
-            .map_or(0, |&note| note * 1_000 / CAPTURE_HISTORY_SPAN)
-    }
-
-    /// Une coupure par `best`, cherché depuis `board` à la profondeur
-    /// `depth` : s'il capture, sa note monte ; celles des captures cherchées
-    /// avant lui sans couper baissent, quel que soit le coup qui coupe
-    /// (Stockfish 16, `update_all_stats`).
-    fn remember_capture_cutoff(&mut self, board: &Board, best: Move, tried: &[Move], depth: i32) {
-        let bonus = history_bonus(depth + 1);
-        let mut learn = |mv: Move, delta: i32| {
-            if let Some(index) = capture_index(board, mv)
-                && let Some(note) = self.capture_history.get_mut(index)
-            {
-                gravity(note, delta, CAPTURE_HISTORY_CAP);
-            }
-        };
-        learn(best, bonus);
-        for &mv in tried {
-            learn(mv, -bonus);
         }
     }
 
@@ -1480,7 +1440,7 @@ impl Search {
                 debug_assert!(count < buffer.len(), "tampon de coups débordé");
                 if count < buffer.len() {
                     let score = if tactical {
-                        tactical_score(board, mv) + self.capture_note(board, mv)
+                        tactical_score(board, mv)
                     } else {
                         let target = piece_to_index(side, piece_moves.piece, mv.to);
                         self.quiet_score(mv, target, context)
@@ -1818,9 +1778,6 @@ impl Search {
         // Les tranquilles réellement cherchés, que punira une coupure (C49).
         let mut tried = [NO_MOVE; MALUS_QUIETS];
         let mut tried_count = 0usize;
-        // Les captures cherchées sans couper, que punit la coupure.
-        let mut captures = [NO_MOVE; MALUS_CAPTURES];
-        let mut captures_count = 0usize;
         // Ni la profondeur ni le drapeau ne changent d'un coup à l'autre.
         let prune_threshold = lmp_threshold(depth, improving);
 
@@ -2019,7 +1976,6 @@ impl Search {
                     alpha = score;
                     self.pv.push(ply, mv);
                     if alpha >= beta {
-                        self.remember_capture_cutoff(board, mv, &captures[..captures_count], depth);
                         // Un coup tranquille qui réfute une variante en réfute
                         // souvent d'autres : on s'en souvient.
                         if quiet {
@@ -2033,12 +1989,6 @@ impl Search {
             // Au-delà de `MALUS_QUIETS` tranquilles, les suivants ne sont plus
             // retenus : `get_mut` tient la borne sans comparaison qu'aucun
             // test n'atteindrait.
-            if captured_piece(board, mv).is_some()
-                && let Some(slot) = captures.get_mut(captures_count)
-            {
-                *slot = mv;
-                captures_count += 1;
-            }
             if quiet && let Some(slot) = tried.get_mut(tried_count) {
                 *slot = mv;
                 tried_count += 1;
@@ -2839,26 +2789,6 @@ const LMR_HISTORY_DIVISOR: i32 = 6_000;
 /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
 /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
 /// au point de sauter la profondeur restante.
-/// La borne d'une note de l'historique des captures (Stockfish 16).
-const CAPTURE_HISTORY_CAP: i32 = 10_692;
-
-/// La note de capture qui vaut une victime de plus dans l'ordre des coups —
-/// les 1 000 points qui séparent deux rangs de [`ORDER_VALUE`]. Une note
-/// au plafond vaut `CAPTURE_HISTORY_CAP / CAPTURE_HISTORY_SPAN` victimes de
-/// plus : assez pour passer devant la victime du rang au-dessus.
-const CAPTURE_HISTORY_SPAN: i32 = 4_585;
-
-/// Les captures cherchées avant une coupure que le malus retient, au plus.
-const MALUS_CAPTURES: usize = 32;
-
-/// L'index de `mv` dans l'historique des captures : la pièce qui prend et
-/// sa case d'arrivée, puis le type de la victime. `None` s'il ne capture
-/// pas.
-fn capture_index(board: &Board, mv: Move) -> Option<usize> {
-    let victim = captured_piece(board, mv)?;
-    Some(piece_to(board, mv) * Piece::NUM + victim as usize)
-}
-
 fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
     (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
 }
@@ -4643,69 +4573,6 @@ mod tests {
         assert_eq!(history_bonus(7), 1_561);
         assert_eq!(history_bonus(100), 1_561);
         assert!(history_bonus(127) <= BUTTERFLY_CAP);
-    }
-
-    #[test]
-    fn l_historique_des_captures_n_indexe_que_les_captures() {
-        let b = board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-        let mv = |text: &str| cozy_chess::util::parse_uci_move(&b, text).unwrap();
-        let prise = |text: &str| capture_index(&b, mv(text));
-        assert_eq!(
-            prise("e2a6"),
-            Some(piece_to(&b, mv("e2a6")) * Piece::NUM + Piece::Bishop as usize)
-        );
-        assert_eq!(
-            prise("e5f7"),
-            Some(piece_to(&b, mv("e5f7")) * Piece::NUM + Piece::Pawn as usize)
-        );
-        assert_eq!(prise("a2a3"), None);
-        // Le roque arrive sur notre tour : ce n'est pas une capture.
-        assert_eq!(prise("e1g1"), None);
-        for text in ["e2a6", "e5f7", "f3f6", "d5e6", "g2h3"] {
-            assert!(prise(text).unwrap() < PIECE_TO * Piece::NUM, "{text}");
-        }
-    }
-
-    #[test]
-    fn une_coupure_note_la_capture_qui_coupe_et_punit_les_precedentes() {
-        let b = board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-        let mv = |text: &str| cozy_chess::util::parse_uci_move(&b, text).unwrap();
-        let mut s = search();
-        let (coupe, avant, tranquille) = (mv("e2a6"), mv("g2h3"), mv("a2a3"));
-        s.remember_capture_cutoff(&b, coupe, &[avant], 6);
-        let note = |s: &Search, m: Move| s.capture_history[capture_index(&b, m).unwrap()];
-        assert_eq!(note(&s, coupe), history_bonus(7));
-        assert_eq!(note(&s, avant), -history_bonus(7));
-        // Un tranquille qui coupe ne gagne rien ici, mais punit quand même —
-        // la gravité comprise : le malus d'une note positive l'emporte.
-        s.remember_capture_cutoff(&b, tranquille, &[coupe], 6);
-        assert_eq!(
-            note(&s, coupe),
-            -(history_bonus(7) * history_bonus(7) / CAPTURE_HISTORY_CAP)
-        );
-        assert_eq!(capture_index(&b, tranquille), None);
-        // La note se borne.
-        for _ in 0..1_000 {
-            s.remember_capture_cutoff(&b, coupe, &[], 20);
-        }
-        assert!(note(&s, coupe) <= CAPTURE_HISTORY_CAP);
-        assert!(note(&s, coupe) > CAPTURE_HISTORY_CAP - 100);
-        s.clear_table();
-        assert_eq!(note(&s, coupe), 0);
-    }
-
-    #[test]
-    fn une_note_de_capture_au_plafond_vaut_une_victime_de_plus() {
-        let b = board("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-        let mv = |text: &str| cozy_chess::util::parse_uci_move(&b, text).unwrap();
-        let mut s = search();
-        let prise = mv("g2h3");
-        assert_eq!(s.capture_note(&b, prise), 0);
-        assert_eq!(s.capture_note(&b, mv("a2a3")), 0);
-        s.capture_history[capture_index(&b, prise).unwrap()] = CAPTURE_HISTORY_SPAN;
-        assert_eq!(s.capture_note(&b, prise), 1_000);
-        s.capture_history[capture_index(&b, prise).unwrap()] = -2 * CAPTURE_HISTORY_SPAN;
-        assert_eq!(s.capture_note(&b, prise), -2_000);
     }
 
     #[test]
