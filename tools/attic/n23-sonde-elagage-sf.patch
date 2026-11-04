@@ -1,0 +1,89 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 7c169af..94272ac 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -1859,6 +1859,29 @@ impl Search {
+             let mut child = board.clone();
+             child.play_unchecked(mv);
+ 
++            let mut n25_shadow = false;
++            if quiet
++                && !in_check
++                && ply > 0
++                && best > -MATE_THRESHOLD
++                && child.checkers().is_empty()
++            {
++                let p = n25();
++                if p.t != 0 {
++                    let target = piece_to(board, mv);
++                    let conts = self.quiet_score(mv, target, context) - self.history_score(mv);
++                    let lmr_depth = depth - 1 - self.reduction(depth, index);
++                    if lmr_depth < p.ld && conts < -p.t * depth {
++                        N25C[0].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                        if p.shadow {
++                            n25_shadow = true;
++                        } else {
++                            continue;
++                        }
++                    }
++                }
++            }
++
+             // Futilité aux nœuds frontières (C39) : un coup tranquille dont
+             // l'évaluation du nœud, plus une marge, n'atteint pas `alpha` se
+             // saute. Compté par l'élagage par compte comme s'il avait été
+@@ -1966,6 +1989,12 @@ impl Search {
+                 return 0;
+             }
+ 
++            if !self.aborted && score > alpha {
++                N25C[2].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                if n25_shadow {
++                    N25C[1].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                }
++            }
+             if score > best {
+                 best = score;
+                 best_move = Some(mv);
+@@ -2789,6 +2818,23 @@ const LMR_HISTORY_DIVISOR: i32 = 6_000;
+ /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
+ /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
+ /// au point de sauter la profondeur restante.
++#[derive(Clone, Copy)]
++struct N25 { t: i32, ld: i32, shadow: bool }
++fn n25() -> N25 {
++    static V: std::sync::OnceLock<N25> = std::sync::OnceLock::new();
++    *V.get_or_init(|| {
++        let mut v = N25 { t: 0, ld: 6, shadow: false };
++        for part in std::env::var("N25").unwrap_or_default().split('+').filter(|p| !p.is_empty()) {
++            let mut it = part.split(':');
++            let k = it.next().unwrap_or("");
++            let x: i32 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0);
++            match k { "t" => v.t = x, "ld" => v.ld = x, "ombre" => v.shadow = true, _ => panic!("N25 {part}") }
++        }
++        v
++    })
++}
++pub static N25C: [std::sync::atomic::AtomicU64; 3] = [std::sync::atomic::AtomicU64::new(0), std::sync::atomic::AtomicU64::new(0), std::sync::atomic::AtomicU64::new(0)];
++
+ fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
+     (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
+ }
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index e5c7767..80ce3b1 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -485,6 +485,13 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                let s = crate::search::N25C[0].swap(0, Relaxed);
++                let m = crate::search::N25C[1].swap(0, Relaxed);
++                let a = crate::search::N25C[2].swap(0, Relaxed);
++                send(&format!("info string sonde-n23 hp_saute={s} hp_monte={m} alpha={a}"));
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
