@@ -1,0 +1,147 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 7c169af..48c7d66 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -547,6 +547,7 @@ pub struct Search {
+     /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
+     /// chemin courant.
+     evals: Vec<Option<i32>>,
++    n28_cap: Vec<i16>,
+     /// Par ply, le coup EXCLU d'une recherche singulière (C41) : elle cherche
+     /// le nœud sans le coup de la table, pour savoir s'il est seul à tenir.
+     /// Écrit et effacé par le nœud qui teste, au MÊME ply — la recherche
+@@ -654,6 +655,7 @@ impl Search {
+             continuation: vec![0; PIECE_TO * PIECE_TO],
+             moved: vec![None; MAX_PLY + 1],
+             evals: vec![None; MAX_PLY + 1],
++            n28_cap: vec![0; PIECE_TO * 6],
+             excluded: vec![None; MAX_PLY + 1],
+             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
+             params: eval::Params::DEFAULT,
+@@ -871,11 +873,37 @@ impl Search {
+         self.killers.fill([0; 2]);
+         self.history.fill(0);
+         self.continuation.fill(0);
++        self.n28_cap.fill(0);
+         for helper in &mut self.helpers {
+             helper.continuation.fill(0);
+         }
+     }
+ 
++    fn n28_index(board: &Board, mv: Move) -> Option<usize> {
++        let victim = captured_piece(board, mv)?;
++        Some(piece_to(board, mv) * 6 + victim as usize)
++    }
++
++    fn n28_order(&self, board: &Board, mv: Move) -> i32 {
++        let p = n28();
++        if p.d == 0 {
++            return 0;
++        }
++        Self::n28_index(board, mv)
++            .and_then(|i| self.n28_cap.get(i))
++            .map_or(0, |&v| i32::from(v) * 1_000 / p.d)
++    }
++
++    fn n28_learn(&mut self, board: &Board, mv: Move, bonus: i32) {
++        if let Some(i) = Self::n28_index(board, mv)
++            && let Some(e) = self.n28_cap.get_mut(i)
++        {
++            let b = bonus.clamp(-10_692, 10_692);
++            let v = i32::from(*e);
++            *e = i16::try_from(v + b - v * b.abs() / 10_692).unwrap_or(0);
++        }
++    }
++
+     /// Taux de remplissage de la table, en pour mille.
+     #[must_use]
+     pub fn table_permille(&self) -> u32 {
+@@ -1440,7 +1468,7 @@ impl Search {
+                 debug_assert!(count < buffer.len(), "tampon de coups débordé");
+                 if count < buffer.len() {
+                     let score = if tactical {
+-                        tactical_score(board, mv)
++                        tactical_score(board, mv) + self.n28_order(board, mv)
+                     } else {
+                         let target = piece_to_index(side, piece_moves.piece, mv.to);
+                         self.quiet_score(mv, target, context)
+@@ -1778,6 +1806,8 @@ impl Search {
+         // Les tranquilles réellement cherchés, que punira une coupure (C49).
+         let mut tried = [NO_MOVE; MALUS_QUIETS];
+         let mut tried_count = 0usize;
++        let mut caps = [NO_MOVE; 32];
++        let mut caps_count = 0usize;
+         // Ni la profondeur ni le drapeau ne changent d'un coup à l'autre.
+         let prune_threshold = lmp_threshold(depth, improving);
+ 
+@@ -1976,6 +2006,19 @@ impl Search {
+                     alpha = score;
+                     self.pv.push(ply, mv);
+                     if alpha >= beta {
++                        if n28().d != 0 {
++                            let b = history_bonus(depth + 1);
++                            if captured_piece(board, mv).is_some() {
++                                self.n28_learn(board, mv, b);
++                                N28C[1].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                                if caps_count == 0 {
++                                    N28C[0].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++                                }
++                            }
++                            for &c in &caps[..caps_count] {
++                                self.n28_learn(board, c, -b);
++                            }
++                        }
+                         // Un coup tranquille qui réfute une variante en réfute
+                         // souvent d'autres : on s'en souvient.
+                         if quiet {
+@@ -1989,6 +2032,10 @@ impl Search {
+             // Au-delà de `MALUS_QUIETS` tranquilles, les suivants ne sont plus
+             // retenus : `get_mut` tient la borne sans comparaison qu'aucun
+             // test n'atteindrait.
++            if captured_piece(board, mv).is_some() && let Some(slot) = caps.get_mut(caps_count) {
++                *slot = mv;
++                caps_count += 1;
++            }
+             if quiet && let Some(slot) = tried.get_mut(tried_count) {
+                 *slot = mv;
+                 tried_count += 1;
+@@ -2789,6 +2836,23 @@ const LMR_HISTORY_DIVISOR: i32 = 6_000;
+ /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
+ /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
+ /// au point de sauter la profondeur restante.
++#[derive(Clone, Copy)]
++struct N28 { d: i32 }
++fn n28() -> N28 {
++    static V: std::sync::OnceLock<N28> = std::sync::OnceLock::new();
++    *V.get_or_init(|| {
++        let mut v = N28 { d: 0 };
++        for part in std::env::var("N28").unwrap_or_default().split('+').filter(|p| !p.is_empty()) {
++            let mut it = part.split(':');
++            let key = it.next().unwrap_or("");
++            let x: i32 = it.next().and_then(|s| s.parse().ok()).unwrap_or(0);
++            match key { "d" => v.d = x, _ => panic!("N28 {part}") }
++        }
++        v
++    })
++}
++pub static N28C: [std::sync::atomic::AtomicU64; 2] = [const { std::sync::atomic::AtomicU64::new(0) }; 2];
++
+ fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
+     (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
+ }
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index e5c7767..cebabee 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -485,6 +485,11 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                let c: Vec<u64> = crate::search::N28C.iter().map(|a| a.swap(0, Relaxed)).collect();
++                send(&format!("info string sonde-n23 coupe_cap_premiere={} coupe_cap={}", c[0], c[1]));
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
