@@ -1,0 +1,191 @@
+From 4ff385aafba9a750dc0b0e4b737986434b0a3bfe Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 4 Nov 2026 05:28:48 +0000
+Subject: [PATCH] =?UTF-8?q?C62=20(n=C2=B0=2023)=20:=20la=20LMR=20selon=20l?=
+ =?UTF-8?q?e=20type=20de=20n=C5=93ud=20=E2=80=94=20un=20pli=20de=20plus=20?=
+ =?UTF-8?q?aux=20n=C5=93uds=20de=20coupure=20attendus=20=E2=80=94=20candid?=
+ =?UTF-8?q?at,=20r=C3=A9voqu=C3=A9=20au=20commit=20suivant?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Le type de nœud porté par search_node comme Stockfish 16 (cutNode) : la recherche réduite attend une coupure, la re-recherche pleine et le coup nul inversent, la variante principale n'en a pas, la vérification singulière garde le type. Sans bonus, main au nœud près. Banc 70 824 à la profondeur 7, 38 196 à la 6.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_011QmyEJPgm9NaJ5124tmeJj
+---
+ CLAUDE.md                       |  2 +-
+ README.md                       |  2 +-
+ engine/src/search.rs            | 64 +++++++++++++++++++++++++++++----
+ engine/tests/bench_reference.rs |  2 +-
+ 4 files changed, 61 insertions(+), 9 deletions(-)
+
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 5b0527b..c86c1bb 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -1342,7 +1342,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
+ rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
+ commit.
+ 
+-Référence à la profondeur 7 : 70 841 nœuds.
++Référence à la profondeur 7 : 70 824 nœuds.
+ 
+ Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
+ `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
+diff --git a/README.md b/README.md
+index 3534ab2..6196e68 100644
+--- a/README.md
++++ b/README.md
+@@ -331,7 +331,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
+ Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
+ dépend ni de la machine ni de sa charge.
+ 
+-Référence à la profondeur 7 : **70 841** nœuds.
++Référence à la profondeur 7 : **70 824** nœuds.
+ 
+ Ce chiffre est vérifié par la CI — voir
+ [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 7c169af..68b6481 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -1497,15 +1497,37 @@ impl Search {
+     /// Negamax avec élagage alpha-bêta.
+     ///
+     /// Le score rendu est du point de vue du camp au trait dans `board`.
++    /// `negamax` hors de tout type de nœud : la racine, et les tests qui
++    /// cherchent une position comme une racine.
+     fn negamax(
++        &mut self,
++        board: &Board,
++        depth: i32,
++        ply: usize,
++        alpha: i32,
++        beta: i32,
++        scratch: &mut [(Move, i32)],
++    ) -> i32 {
++        self.search_node(board, depth, ply, alpha, beta, false, scratch)
++    }
++
++    /// LE TYPE DE NŒUD (n° 23, comme Stockfish 16, `search.cpp`) : un nœud
++    /// de coupure attendu (`cut_node`) est l'enfant d'une recherche réduite
++    /// à fenêtre nulle, ou d'un nœud dont le type s'inverse — la re-recherche
++    /// à profondeur pleine et le coup nul passent `!cut_node`, la variante
++    /// principale `false`, la vérification singulière le type du nœud.
++    #[allow(clippy::too_many_arguments)]
++    fn search_node(
+         &mut self,
+         board: &Board,
+         depth: i32,
+         ply: usize,
+         mut alpha: i32,
+         beta: i32,
++        cut_node: bool,
+         scratch: &mut [(Move, i32)],
+     ) -> i32 {
++        let pv_node = i64::from(beta) - i64::from(alpha) > 1;
+         // Le `ply` d'un nœud est sa distance à la racine, et tout s'y indexe :
+         // killers, évaluations d'*improving*, coup précédent, accumulateurs,
+         // distance au mat. Le chemin en est la mesure indépendante — chaque
+@@ -1711,12 +1733,13 @@ impl Search {
+                 *slot = None;
+             }
+             self.push_null(ply);
+-            let score = -self.negamax(
++            let score = -self.search_node(
+                 &passed,
+                 depth - 1 - null_move_reduction(depth),
+                 ply + 1,
+                 -beta,
+                 -beta + 1,
++                !cut_node,
+                 rest,
+             );
+             self.path.pop();
+@@ -1809,7 +1832,15 @@ impl Search {
+                 if let Some(slot) = self.excluded.get_mut(ply) {
+                     *slot = Some(mv);
+                 }
+-                let score = self.negamax(board, (depth - 1) / 2, ply, sbeta - 1, sbeta, rest);
++                let score = self.search_node(
++                    board,
++                    (depth - 1) / 2,
++                    ply,
++                    sbeta - 1,
++                    sbeta,
++                    cut_node,
++                    rest,
++                );
+                 if let Some(slot) = self.excluded.get_mut(ply) {
+                     *slot = None;
+                 }
+@@ -1918,7 +1949,11 @@ impl Search {
+                 // moins, un mal noté davantage — la note bornée par la
+                 // gravité, qui a désormais une échelle.
+                 let note = self.quiet_score(mv, piece_to(board, mv), context);
+-                modulated_reduction(self.reduction(depth, index), self.lmr_note(note), depth)
++                modulated_reduction(
++                    self.reduction(depth, index) + i32::from(cut_node) * LMR_CUT_NODE,
++                    self.lmr_note(note),
++                    depth,
++                )
+             } else {
+                 0
+             };
+@@ -1952,12 +1987,25 @@ impl Search {
+             } else {
+                 (-alpha - 1, -alpha)
+             };
+-            let mut score = -self.negamax(&child, new_depth - reduction, ply + 1, low, high, rest);
++            // Le type de l'enfant : la variante principale n'en a pas, une
++            // recherche réduite attend une coupure, une recherche pleine à
++            // fenêtre nulle inverse le type du nœud.
++            let full_cut = !(first && pv_node) && !cut_node;
++            let reduced_cut = if reduction > 0 { true } else { full_cut };
++            let mut score = -self.search_node(
++                &child,
++                new_depth - reduction,
++                ply + 1,
++                low,
++                high,
++                reduced_cut,
++                rest,
++            );
+             if reduction > 0 && !self.aborted && score > alpha {
+-                score = -self.negamax(&child, new_depth, ply + 1, low, high, rest);
++                score = -self.search_node(&child, new_depth, ply + 1, low, high, full_cut, rest);
+             }
+             if !first && !self.aborted && score > alpha && score < beta {
+-                score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
++                score = -self.search_node(&child, new_depth, ply + 1, -beta, -alpha, false, rest);
+             }
+             first = false;
+             self.path.pop();
+@@ -2786,6 +2834,10 @@ const CONTINUATION_CAP: i32 = 29_952;
+ /// rejeu, où il change un tiers des réductions à arbre égal (n° 23).
+ const LMR_HISTORY_DIVISOR: i32 = 6_000;
+ 
++/// Plis de réduction en plus aux nœuds de coupure attendus (n° 23 ;
++/// Stockfish 16 en ajoute deux).
++const LMR_CUT_NODE: i32 = 1;
++
+ /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
+ /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
+ /// au point de sauter la profondeur restante.
+diff --git a/engine/tests/bench_reference.rs b/engine/tests/bench_reference.rs
+index fbfe1e7..f3adc1c 100644
+--- a/engine/tests/bench_reference.rs
++++ b/engine/tests/bench_reference.rs
+@@ -351,7 +351,7 @@ fn les_milliers_se_regroupent_comme_dans_le_document() {
+ #[test]
+ fn larbre_de_recherche_ne_bouge_pas_en_silence() {
+     const PROFONDEUR: u32 = 6;
+-    const NOEUDS: u64 = 37_989;
++    const NOEUDS: u64 = 38_196;
+ 
+     let noeuds = shallowred::bench::run(PROFONDEUR).unwrap();
+     assert_eq!(
+-- 
+2.43.0
+
