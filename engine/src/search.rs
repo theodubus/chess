@@ -2957,7 +2957,7 @@ const LMR_HISTORY_DIVISOR: i32 = 6_000;
 
 /// Plis de réduction en plus aux nœuds de coupure attendus (n° 23 ;
 /// Stockfish 16 en ajoute deux).
-const LMR_CUT_NODE: i32 = 3;
+const LMR_CUT_NODE: i32 = 2;
 
 /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
 /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
