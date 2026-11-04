@@ -547,10 +547,6 @@ pub struct Search {
     /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
     /// chemin courant.
     evals: Vec<Option<i32>>,
-    /// Par ply, le nœud a-t-il été sur la variante principale (n° 23) :
-    /// écrit à chaque nœud hors recherche singulière, avant ses enfants ;
-    /// la recherche singulière, au MÊME ply, relit celui de son nœud.
-    tt_pv: Vec<bool>,
     /// Par ply, le coup EXCLU d'une recherche singulière (C41) : elle cherche
     /// le nœud sans le coup de la table, pour savoir s'il est seul à tenir.
     /// Écrit et effacé par le nœud qui teste, au MÊME ply — la recherche
@@ -658,7 +654,6 @@ impl Search {
             continuation: vec![0; PIECE_TO * PIECE_TO],
             moved: vec![None; MAX_PLY + 1],
             evals: vec![None; MAX_PLY + 1],
-            tt_pv: vec![false; MAX_PLY + 1],
             excluded: vec![None; MAX_PLY + 1],
             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
             params: eval::Params::DEFAULT,
@@ -1644,26 +1639,6 @@ impl Search {
         // collision de clés Zobrist, astronomiquement rare mais pas impossible.
         let tt_move = hit.and_then(|hit| hit.mv).filter(|&mv| board.is_legal(mv));
 
-        // LA VARIANTE PRINCIPALE EN TABLE (n° 23). Un nœud cherché sous une
-        // fenêtre pleine est sur la variante principale ; l'entrée qu'il
-        // écrit le dit, et le dit encore quand le nœud se relit — le
-        // drapeau ne s'efface qu'avec l'entrée. Un nœud de fenêtre nulle qui
-        // le trouve a été sur la variante principale : ses coups s'y
-        // réduisent moins (`tt_pv_relief`). Une recherche singulière garde
-        // le drapeau de son nœud, qu'elle cherche privé d'un coup.
-        let pv_node = i64::from(beta) - i64::from(alpha) > 1;
-        let tt_pv = if excluded.is_some() {
-            self.tt_pv.get(ply).copied().unwrap_or(false)
-        } else {
-            pv_node || hit.is_some_and(|hit| hit.pv)
-        };
-        if excluded.is_none()
-            && let Some(slot) = self.tt_pv.get_mut(ply)
-        {
-            *slot = tt_pv;
-        }
-        let pv_relief = tt_pv_relief(tt_pv, pv_node);
-
         // Futilité inverse.
         //
         // Le pendant du coup nul, appliqué au nœud lui-même plutôt qu'à son
@@ -1943,11 +1918,7 @@ impl Search {
                 // moins, un mal noté davantage — la note bornée par la
                 // gravité, qui a désormais une échelle.
                 let note = self.quiet_score(mv, piece_to(board, mv), context);
-                modulated_reduction(
-                    self.reduction(depth, index) - pv_relief,
-                    self.lmr_note(note),
-                    depth,
-                )
+                modulated_reduction(self.reduction(depth, index), self.lmr_note(note), depth)
             } else {
                 0
             };
@@ -2055,8 +2026,7 @@ impl Search {
         // Le résultat d'une recherche singulière n'est pas celui du nœud : il
         // y manque son meilleur coup.
         if excluded.is_none() {
-            self.tt
-                .store(key, best_move, best, depth, bound, ply_i32, tt_pv);
+            self.tt.store(key, best_move, best, depth, bound, ply_i32);
         }
 
         best
@@ -2819,18 +2789,6 @@ const LMR_HISTORY_DIVISOR: i32 = 6_000;
 /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
 /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
 /// au point de sauter la profondeur restante.
-/// Les plis qu'une LMR retire à un nœud de fenêtre nulle qui a été sur la
-/// variante principale (n° 23) : ses coups ont déjà été les meilleurs, une
-/// réduction s'y trompe plus qu'ailleurs. Les nœuds PV eux-mêmes n'en ont
-/// pas : y réduire moins grossit l'arbre de 19,7 % à la profondeur 12, et
-/// C46 n'y achetait rien en ne les réduisant plus du tout.
-const TT_PV_RELIEF: i32 = 1;
-
-/// Voir [`TT_PV_RELIEF`].
-fn tt_pv_relief(tt_pv: bool, pv_node: bool) -> i32 {
-    if tt_pv && !pv_node { TT_PV_RELIEF } else { 0 }
-}
-
 fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
     (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
 }
@@ -3555,7 +3513,6 @@ mod tests {
             score,
             depth,
             bound,
-            pv: false,
         };
         // Profondeur 10 : l'entrée doit valoir au moins 7.
         assert_eq!(
@@ -4616,14 +4573,6 @@ mod tests {
         assert_eq!(history_bonus(7), 1_561);
         assert_eq!(history_bonus(100), 1_561);
         assert!(history_bonus(127) <= BUTTERFLY_CAP);
-    }
-
-    #[test]
-    fn seul_un_ancien_noeud_pv_de_fenetre_nulle_reduit_moins() {
-        assert_eq!(tt_pv_relief(true, false), TT_PV_RELIEF);
-        assert_eq!(tt_pv_relief(true, true), 0);
-        assert_eq!(tt_pv_relief(false, false), 0);
-        assert_ne!(tt_pv_relief(true, false), 0);
     }
 
     #[test]
