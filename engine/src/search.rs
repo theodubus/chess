@@ -1497,15 +1497,37 @@ impl Search {
     /// Negamax avec élagage alpha-bêta.
     ///
     /// Le score rendu est du point de vue du camp au trait dans `board`.
+    /// `negamax` hors de tout type de nœud : la racine, et les tests qui
+    /// cherchent une position comme une racine.
     fn negamax(
+        &mut self,
+        board: &Board,
+        depth: i32,
+        ply: usize,
+        alpha: i32,
+        beta: i32,
+        scratch: &mut [(Move, i32)],
+    ) -> i32 {
+        self.search_node(board, depth, ply, alpha, beta, false, scratch)
+    }
+
+    /// LE TYPE DE NŒUD (n° 23, comme Stockfish 16, `search.cpp`) : un nœud
+    /// de coupure attendu (`cut_node`) est l'enfant d'une recherche réduite
+    /// à fenêtre nulle, ou d'un nœud dont le type s'inverse — la re-recherche
+    /// à profondeur pleine et le coup nul passent `!cut_node`, la variante
+    /// principale `false`, la vérification singulière le type du nœud.
+    #[allow(clippy::too_many_arguments)]
+    fn search_node(
         &mut self,
         board: &Board,
         depth: i32,
         ply: usize,
         mut alpha: i32,
         beta: i32,
+        cut_node: bool,
         scratch: &mut [(Move, i32)],
     ) -> i32 {
+        let pv_node = i64::from(beta) - i64::from(alpha) > 1;
         // Le `ply` d'un nœud est sa distance à la racine, et tout s'y indexe :
         // killers, évaluations d'*improving*, coup précédent, accumulateurs,
         // distance au mat. Le chemin en est la mesure indépendante — chaque
@@ -1711,12 +1733,13 @@ impl Search {
                 *slot = None;
             }
             self.push_null(ply);
-            let score = -self.negamax(
+            let score = -self.search_node(
                 &passed,
                 depth - 1 - null_move_reduction(depth),
                 ply + 1,
                 -beta,
                 -beta + 1,
+                !cut_node,
                 rest,
             );
             self.path.pop();
@@ -1809,7 +1832,15 @@ impl Search {
                 if let Some(slot) = self.excluded.get_mut(ply) {
                     *slot = Some(mv);
                 }
-                let score = self.negamax(board, (depth - 1) / 2, ply, sbeta - 1, sbeta, rest);
+                let score = self.search_node(
+                    board,
+                    (depth - 1) / 2,
+                    ply,
+                    sbeta - 1,
+                    sbeta,
+                    cut_node,
+                    rest,
+                );
                 if let Some(slot) = self.excluded.get_mut(ply) {
                     *slot = None;
                 }
@@ -1918,7 +1949,11 @@ impl Search {
                 // moins, un mal noté davantage — la note bornée par la
                 // gravité, qui a désormais une échelle.
                 let note = self.quiet_score(mv, piece_to(board, mv), context);
-                modulated_reduction(self.reduction(depth, index), self.lmr_note(note), depth)
+                modulated_reduction(
+                    self.reduction(depth, index) + i32::from(cut_node) * LMR_CUT_NODE,
+                    self.lmr_note(note),
+                    depth,
+                )
             } else {
                 0
             };
@@ -1952,12 +1987,25 @@ impl Search {
             } else {
                 (-alpha - 1, -alpha)
             };
-            let mut score = -self.negamax(&child, new_depth - reduction, ply + 1, low, high, rest);
+            // Le type de l'enfant : la variante principale n'en a pas, une
+            // recherche réduite attend une coupure, une recherche pleine à
+            // fenêtre nulle inverse le type du nœud.
+            let full_cut = !(first && pv_node) && !cut_node;
+            let reduced_cut = if reduction > 0 { true } else { full_cut };
+            let mut score = -self.search_node(
+                &child,
+                new_depth - reduction,
+                ply + 1,
+                low,
+                high,
+                reduced_cut,
+                rest,
+            );
             if reduction > 0 && !self.aborted && score > alpha {
-                score = -self.negamax(&child, new_depth, ply + 1, low, high, rest);
+                score = -self.search_node(&child, new_depth, ply + 1, low, high, full_cut, rest);
             }
             if !first && !self.aborted && score > alpha && score < beta {
-                score = -self.negamax(&child, new_depth, ply + 1, -beta, -alpha, rest);
+                score = -self.search_node(&child, new_depth, ply + 1, -beta, -alpha, false, rest);
             }
             first = false;
             self.path.pop();
@@ -2785,6 +2833,10 @@ const CONTINUATION_CAP: i32 = 29_952;
 /// papillon et des deux continuations, ~67 000, vaut onze plis. Choisi au
 /// rejeu, où il change un tiers des réductions à arbre égal (n° 23).
 const LMR_HISTORY_DIVISOR: i32 = 6_000;
+
+/// Plis de réduction en plus aux nœuds de coupure attendus (n° 23 ;
+/// Stockfish 16 en ajoute deux).
+const LMR_CUT_NODE: i32 = 2;
 
 /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
 /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
