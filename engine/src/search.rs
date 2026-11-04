@@ -547,10 +547,6 @@ pub struct Search {
     /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
     /// chemin courant.
     evals: Vec<Option<i32>>,
-    /// Par ply, le nœud a-t-il été sur la variante principale (n° 23) :
-    /// écrit à chaque nœud hors recherche singulière, avant ses enfants ;
-    /// la recherche singulière, au MÊME ply, relit celui de son nœud.
-    tt_pv: Vec<bool>,
     /// L'HISTORIQUE DE CORRECTION (n° 23) — ce que les recherches ont appris
     /// de l'erreur de l'évaluation statique, par traits de la position :
     /// la structure de pions, les pièces mineures, les pièces de chaque camp
@@ -673,7 +669,6 @@ impl Search {
             continuation: vec![0; PIECE_TO * PIECE_TO],
             moved: vec![None; MAX_PLY + 1],
             evals: vec![None; MAX_PLY + 1],
-            tt_pv: vec![false; MAX_PLY + 1],
             pawn_correction: vec![0; 2 * CORRECTION_SIZE],
             minor_correction: vec![0; 2 * CORRECTION_SIZE],
             non_pawn_correction: vec![0; 4 * CORRECTION_SIZE],
@@ -1771,29 +1766,6 @@ impl Search {
         // collision de clés Zobrist, astronomiquement rare mais pas impossible.
         let tt_move = hit.and_then(|hit| hit.mv).filter(|&mv| board.is_legal(mv));
 
-        // LA VARIANTE PRINCIPALE EN TABLE (n° 23). Un nœud cherché sous une
-        // fenêtre pleine est sur la variante principale ; l'entrée qu'il
-        // écrit le dit, et le dit encore quand le nœud se relit — le
-        // drapeau ne s'efface qu'avec l'entrée. Sur un tel nœud, PV ou
-        // ancien PV, les coups se réduisent moins (`tt_pv_relief`) — sauf
-        // au nœud PV que la table donne déjà pour un échec par le bas, à
-        // une profondeur au moins égale (Stockfish 16, `likelyFailLow`).
-        // Une recherche singulière garde le drapeau de son nœud.
-        let tt_pv = if excluded.is_some() {
-            self.tt_pv.get(ply).copied().unwrap_or(false)
-        } else {
-            pv_node || hit.is_some_and(|hit| hit.pv)
-        };
-        if excluded.is_none()
-            && let Some(slot) = self.tt_pv.get_mut(ply)
-        {
-            *slot = tt_pv;
-        }
-        let likely_fail_low = pv_node
-            && tt_move.is_some()
-            && hit.is_some_and(|hit| hit.bound == Bound::Upper && i32::from(hit.depth) >= depth);
-        let pv_relief = tt_pv_relief(tt_pv, likely_fail_low);
-
         // Futilité inverse.
         //
         // Le pendant du coup nul, appliqué au nœud lui-même plutôt qu'à son
@@ -2083,7 +2055,7 @@ impl Search {
                 // gravité, qui a désormais une échelle.
                 let note = self.quiet_score(mv, piece_to(board, mv), context);
                 modulated_reduction(
-                    self.reduction(depth, index) + i32::from(cut_node) * LMR_CUT_NODE - pv_relief,
+                    self.reduction(depth, index) + i32::from(cut_node) * LMR_CUT_NODE,
                     self.lmr_note(note),
                     depth,
                 )
@@ -2207,8 +2179,7 @@ impl Search {
         // Le résultat d'une recherche singulière n'est pas celui du nœud : il
         // y manque son meilleur coup.
         if excluded.is_none() {
-            self.tt
-                .store(key, best_move, best, depth, bound, ply_i32, tt_pv);
+            self.tt.store(key, best_move, best, depth, bound, ply_i32);
         }
         // L'erreur de l'évaluation, apprise quand la recherche en dit le
         // sens : sous l'évaluation sans coupure bêta, au-dessus avec un
@@ -3093,21 +3064,6 @@ fn correction_bonus(best: i32, estimate: i32, depth: i32) -> i32 {
     i32::try_from(raw.clamp(-limit, limit)).unwrap_or(0)
 }
 
-/// Les plis qu'une LMR retire à un nœud qui est ou a été sur la variante
-/// principale (n° 23) : ses coups ont déjà été les meilleurs, une réduction
-/// s'y trompe plus qu'ailleurs.
-const TT_PV_RELIEF: i32 = 1;
-
-/// Voir [`TT_PV_RELIEF`] ; rien au nœud qui échouera vraisemblablement par
-/// le bas.
-fn tt_pv_relief(tt_pv: bool, likely_fail_low: bool) -> i32 {
-    if tt_pv && !likely_fail_low {
-        TT_PV_RELIEF
-    } else {
-        0
-    }
-}
-
 fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
     (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
 }
@@ -3832,7 +3788,6 @@ mod tests {
             score,
             depth,
             bound,
-            pv: false,
         };
         // Profondeur 10 : l'entrée doit valoir au moins 7.
         assert_eq!(
@@ -5009,14 +4964,6 @@ mod tests {
         s.clear_table();
         assert_eq!(s.static_eval(&b, 0), brute);
         assert_eq!(s.static_eval(&b, 1), brute);
-    }
-
-    #[test]
-    fn un_noeud_de_la_variante_principale_reduit_moins_sauf_s_il_va_echouer() {
-        assert_eq!(tt_pv_relief(true, false), TT_PV_RELIEF);
-        assert_eq!(tt_pv_relief(true, true), 0);
-        assert_eq!(tt_pv_relief(false, false), 0);
-        assert_ne!(tt_pv_relief(true, false), 0);
     }
 
     #[test]
