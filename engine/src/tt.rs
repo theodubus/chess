@@ -72,6 +72,10 @@ pub struct Hit {
     pub depth: i8,
     /// Ce que le score garantit.
     pub bound: Bound,
+    /// La position a été sur la variante principale : écrite par un nœud PV,
+    /// ou par un nœud dont l'entrée le disait déjà (n° 23, la variante
+    /// principale en table).
+    pub pv: bool,
 }
 
 impl Bound {
@@ -97,8 +101,9 @@ impl Bound {
 }
 
 /// Répartition des 64 bits de données : score aux bits 0 à 15, coup 16 à 31,
-/// profondeur 32 à 39, borne 40 et 41, génération 42 à 49. Cinquante bits
-/// utilisés sur soixante-quatre ; les quatorze restants sont libres.
+/// profondeur 32 à 39, borne 40 et 41, génération 42 à 49, variante
+/// principale 50. Cinquante et un bits utilisés sur soixante-quatre ; les
+/// treize restants sont libres.
 ///
 /// **Le score n'a pas de décalage**, il occupe les bits de poids faible. Un
 /// décalage nul écrit pour la symétrie se mute en décalage nul dans l'autre
@@ -123,9 +128,10 @@ const MV_SHIFT: u32 = 16;
 const DEPTH_SHIFT: u32 = 32;
 const BOUND_SHIFT: u32 = 40;
 const GEN_SHIFT: u32 = 42;
+const PV_SHIFT: u32 = 50;
 
 /// Empaquette les données d'une entrée.
-fn pack_data(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8) -> u64 {
+fn pack_data(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8, pv: bool) -> u64 {
     debug_assert!(
         score.abs() <= crate::eval::MATE,
         "score hors bornes au stockage : {score}"
@@ -137,6 +143,7 @@ fn pack_data(score: i32, mv: u16, depth: i8, bound: Bound, generation: u8) -> u6
         | (u64::from(u8::from_ne_bytes(depth.to_ne_bytes())) << DEPTH_SHIFT)
         | (bound.to_bits() << BOUND_SHIFT)
         | (u64::from(generation) << GEN_SHIFT)
+        | (u64::from(pv) << PV_SHIFT)
 }
 
 /// Opération inverse de [`pack_data`].
@@ -149,13 +156,18 @@ fn unpack_data(data: u64) -> (i32, u16, i8, Bound, u8) {
     (i32::from(score), mv, depth, bound, generation)
 }
 
+/// Le drapeau de variante principale, lu à part : seul `probe` le rend.
+fn unpack_pv(data: u64) -> bool {
+    (data >> PV_SHIFT) & 1 == 1
+}
+
 /// Les données d'une entrée vierge : profondeur `-1`, que `probe` rejette.
 ///
 /// La clé d'une entrée vierge vaut donc zéro. Une position dont le hash Zobrist
 /// vaut exactement zéro y correspondrait — c'est pourquoi le contrôle de
 /// profondeur reste nécessaire, exactement comme dans la version non atomique.
 fn empty_data() -> u64 {
-    pack_data(0, 0, -1, Bound::Exact, 0)
+    pack_data(0, 0, -1, Bound::Exact, 0, false)
 }
 
 /// Une entrée : deux mots atomiques, seize octets.
@@ -397,6 +409,7 @@ impl TranspositionTable {
                 score: score_from_tt(score, ply),
                 depth,
                 bound,
+                pv: unpack_pv(data),
             });
         }
         None
@@ -414,6 +427,10 @@ impl TranspositionTable {
     /// qui vaut le moins au sens de [`worth`] : une entrée vierge d'abord, puis
     /// la moins profonde, l'ancienneté comptant contre elle. À valeur égale,
     /// la première du seau cède : la table reste déterministe à un fil.
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "une entrée a sept champs, et les grouper ne servirait qu'à cet appel"
+    )]
     pub fn store(
         &self,
         key: u64,
@@ -422,11 +439,21 @@ impl TranspositionTable {
         depth: i32,
         bound: Bound,
         ply: i32,
+        pv: bool,
     ) {
         let bucket = &self.buckets[key as usize & self.mask];
         let generation = self.generation.load(Ordering::Relaxed);
         let depth = i8::try_from(depth.clamp(0, i32::from(i8::MAX))).unwrap_or(i8::MAX);
-        let data = |packed| pack_data(score_to_tt(score, ply), packed, depth, bound, generation);
+        let data = |packed| {
+            pack_data(
+                score_to_tt(score, ply),
+                packed,
+                depth,
+                bound,
+                generation,
+                pv,
+            )
+        };
 
         let mut victim = &bucket.entries[0];
         let mut victim_worth = i32::MAX;
@@ -566,12 +593,39 @@ mod tests {
     fn la_table_rend_ce_quelle_a_stocke() {
         let tt = TranspositionTable::new(1);
         tt.new_search();
-        tt.store(0xDEAD_BEEF, Some(mv("e2e4")), 123, 5, Bound::Exact, 0);
+        tt.store(
+            0xDEAD_BEEF,
+            Some(mv("e2e4")),
+            123,
+            5,
+            Bound::Exact,
+            0,
+            false,
+        );
         let hit = tt.probe(0xDEAD_BEEF, 0).unwrap();
         assert_eq!(hit.mv, Some(mv("e2e4")));
         assert_eq!(hit.score, 123);
         assert_eq!(hit.depth, 5);
         assert_eq!(hit.bound, Bound::Exact);
+    }
+
+    #[test]
+    fn le_drapeau_de_variante_principale_traverse_la_table() {
+        let tt = TranspositionTable::new(1);
+        tt.new_search();
+        tt.store(7, Some(mv("e2e4")), -123, 5, Bound::Upper, 3, true);
+        let hit = tt.probe(7, 3).unwrap();
+        assert!(hit.pv);
+        // Le drapeau ne déborde sur aucun voisin.
+        assert_eq!(hit.mv, Some(mv("e2e4")));
+        assert_eq!(hit.score, -123);
+        assert_eq!(hit.depth, 5);
+        assert_eq!(hit.bound, Bound::Upper);
+        // Réécrit sans lui, il disparaît : ce n'est pas un bit collant.
+        tt.store(7, Some(mv("e2e4")), -123, 5, Bound::Upper, 3, false);
+        assert!(!tt.probe(7, 3).unwrap().pv);
+        tt.store(9, Some(mv("d2d4")), 40, 2, Bound::Exact, 0, false);
+        assert!(!tt.probe(9, 0).unwrap().pv);
     }
 
     #[test]
@@ -584,8 +638,8 @@ mod tests {
     fn une_entree_profonde_nest_pas_ecrasee_par_une_superficielle() {
         let tt = TranspositionTable::new(1);
         tt.new_search();
-        tt.store(7, Some(mv("e2e4")), 100, 8, Bound::Exact, 0);
-        tt.store(7, Some(mv("d2d4")), 200, 2, Bound::Exact, 0);
+        tt.store(7, Some(mv("e2e4")), 100, 8, Bound::Exact, 0, false);
+        tt.store(7, Some(mv("d2d4")), 200, 2, Bound::Exact, 0, false);
         assert_eq!(
             tt.probe(7, 0).unwrap().depth,
             8,
@@ -597,9 +651,9 @@ mod tests {
     fn une_entree_dune_recherche_anterieure_est_remplacable() {
         let tt = TranspositionTable::new(1);
         tt.new_search();
-        tt.store(7, Some(mv("e2e4")), 100, 8, Bound::Exact, 0);
+        tt.store(7, Some(mv("e2e4")), 100, 8, Bound::Exact, 0, false);
         tt.new_search();
-        tt.store(7, Some(mv("d2d4")), 200, 2, Bound::Exact, 0);
+        tt.store(7, Some(mv("d2d4")), 200, 2, Bound::Exact, 0, false);
         assert_eq!(tt.probe(7, 0).unwrap().depth, 2);
     }
 
@@ -607,8 +661,8 @@ mod tests {
     fn un_coup_connu_nest_pas_efface_par_une_entree_sans_coup() {
         let tt = TranspositionTable::new(1);
         tt.new_search();
-        tt.store(7, Some(mv("e2e4")), 100, 4, Bound::Exact, 0);
-        tt.store(7, None, 50, 6, Bound::Upper, 0);
+        tt.store(7, Some(mv("e2e4")), 100, 4, Bound::Exact, 0, false);
+        tt.store(7, None, 50, 6, Bound::Upper, 0, false);
         assert_eq!(tt.probe(7, 0).unwrap().mv, Some(mv("e2e4")));
     }
 
@@ -616,7 +670,7 @@ mod tests {
     fn vider_la_table_efface_tout() {
         let tt = TranspositionTable::new(1);
         tt.new_search();
-        tt.store(7, Some(mv("e2e4")), 100, 4, Bound::Exact, 0);
+        tt.store(7, Some(mv("e2e4")), 100, 4, Bound::Exact, 0, false);
         tt.clear();
         assert!(tt.probe(7, 0).is_none());
         assert_eq!(tt.permille_used(), 0);
@@ -639,7 +693,7 @@ mod tests {
         let remplir = |debut: u64, fin: u64| {
             for index in debut..fin {
                 let cle = index / par_seau + index % par_seau * seaux;
-                tt.store(cle, None, 0, 1, Bound::Exact, 0);
+                tt.store(cle, None, 0, 1, Bound::Exact, 0, false);
             }
         };
         remplir(0, echantillon / 2);
@@ -684,7 +738,7 @@ mod tests {
             "les deux clés doivent bien entrer en collision"
         );
 
-        tt.store(une, Some(mv("e2e4")), 100, 5, Bound::Exact, 0);
+        tt.store(une, Some(mv("e2e4")), 100, 5, Bound::Exact, 0, false);
         assert!(tt.probe(une, 0).is_some(), "la clé stockée répond");
         assert!(
             tt.probe(autre, 0).is_none(),
@@ -697,7 +751,7 @@ mod tests {
         // Profondeur zéro est une profondeur valide — c'est celle de la
         // quiescence. Seule la profondeur négative marque une entrée vierge.
         let tt = TranspositionTable::new(1);
-        tt.store(7, Some(mv("d2d4")), 12, 0, Bound::Exact, 0);
+        tt.store(7, Some(mv("d2d4")), 12, 0, Bound::Exact, 0, false);
         let hit = tt.probe(7, 0).unwrap();
         assert_eq!(hit.depth, 0);
         assert_eq!(hit.score, 12);
@@ -709,8 +763,8 @@ mod tests {
         // sens-ci, remplacer le `&&` du refus par `||` passait inaperçu : une
         // position n'aurait plus jamais été réécrite dans la même recherche.
         let tt = TranspositionTable::new(1);
-        tt.store(9, Some(mv("a2a3")), 10, 1, Bound::Exact, 0);
-        tt.store(9, Some(mv("h2h4")), 99, 5, Bound::Lower, 0);
+        tt.store(9, Some(mv("a2a3")), 10, 1, Bound::Exact, 0, false);
+        tt.store(9, Some(mv("h2h4")), 99, 5, Bound::Lower, 0, false);
 
         let hit = tt.probe(9, 0).unwrap();
         assert_eq!(hit.depth, 5, "la profonde l'emporte");
@@ -746,6 +800,7 @@ mod tests {
                 profondeur as i32,
                 Bound::Exact,
                 0,
+                false,
             );
         }
         assert_eq!(kept(&tt, &cles[..4]), [true; 4]);
@@ -761,9 +816,17 @@ mod tests {
         tt.new_search();
         let cles = same_bucket(&tt);
         for (&cle, profondeur) in cles[..4].iter().zip([9, 2, 7, 8]) {
-            tt.store(cle, Some(mv("e2e4")), 10, profondeur, Bound::Exact, 0);
+            tt.store(
+                cle,
+                Some(mv("e2e4")),
+                10,
+                profondeur,
+                Bound::Exact,
+                0,
+                false,
+            );
         }
-        tt.store(cles[4], Some(mv("d2d4")), -30, 1, Bound::Upper, 0);
+        tt.store(cles[4], Some(mv("d2d4")), -30, 1, Bound::Upper, 0, false);
         assert_eq!(kept(&tt, &cles), [true, false, true, true, true]);
         let hit = tt.probe(cles[4], 0).unwrap();
         assert_eq!((hit.depth, hit.score, hit.mv), (1, -30, Some(mv("d2d4"))));
@@ -791,14 +854,22 @@ mod tests {
         tt.new_search();
         let cles = same_bucket(&tt);
         for (&cle, profondeur) in cles[..4].iter().zip([4, 4, 9, 9]) {
-            tt.store(cle, Some(mv("e2e4")), 10, profondeur, Bound::Exact, 0);
+            tt.store(
+                cle,
+                Some(mv("e2e4")),
+                10,
+                profondeur,
+                Bound::Exact,
+                0,
+                false,
+            );
         }
         assert_eq!(
             slots(&tt, cles[0]),
             cles[..4],
             "les vierges se prennent dans l'ordre"
         );
-        tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0);
+        tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0, false);
         assert_eq!(slots(&tt, cles[0]), [cles[4], cles[1], cles[2], cles[3]]);
         assert_eq!(kept(&tt, &cles), [false, true, true, true, true]);
     }
@@ -811,14 +882,22 @@ mod tests {
         let tt = TranspositionTable::new(1);
         let cles = same_bucket(&tt);
         tt.new_search();
-        tt.store(cles[0], Some(mv("e2e4")), 10, 20, Bound::Exact, 0);
+        tt.store(cles[0], Some(mv("e2e4")), 10, 20, Bound::Exact, 0, false);
         for _ in 0..3 {
             tt.new_search();
         }
         for (&cle, profondeur) in cles[1..4].iter().zip([5, 6, 7]) {
-            tt.store(cle, Some(mv("e2e4")), 10, profondeur, Bound::Exact, 0);
+            tt.store(
+                cle,
+                Some(mv("e2e4")),
+                10,
+                profondeur,
+                Bound::Exact,
+                0,
+                false,
+            );
         }
-        tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0);
+        tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0, false);
         assert_eq!(kept(&tt, &cles), [false, true, true, true, true]);
     }
 
@@ -832,12 +911,20 @@ mod tests {
         let tt = TranspositionTable::new(1);
         let cles = same_bucket(&tt);
         tt.new_search();
-        tt.store(cles[0], Some(mv("e2e4")), 10, 12, Bound::Exact, 0);
+        tt.store(cles[0], Some(mv("e2e4")), 10, 12, Bound::Exact, 0, false);
         tt.new_search();
         for (&cle, profondeur) in cles[1..4].iter().zip([3, 9, 10]) {
-            tt.store(cle, Some(mv("e2e4")), 10, profondeur, Bound::Exact, 0);
+            tt.store(
+                cle,
+                Some(mv("e2e4")),
+                10,
+                profondeur,
+                Bound::Exact,
+                0,
+                false,
+            );
         }
-        tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0);
+        tt.store(cles[4], Some(mv("d2d4")), 0, 1, Bound::Exact, 0, false);
         assert_eq!(kept(&tt, &cles), [true, false, true, true, true]);
     }
 
@@ -847,8 +934,8 @@ mod tests {
         // du `<` qui refuse garderait le résultat périmé.
         let tt = TranspositionTable::new(1);
         tt.new_search();
-        tt.store(7, Some(mv("e2e4")), 10, 5, Bound::Upper, 0);
-        tt.store(7, Some(mv("d2d4")), 20, 5, Bound::Exact, 0);
+        tt.store(7, Some(mv("e2e4")), 10, 5, Bound::Upper, 0, false);
+        tt.store(7, Some(mv("d2d4")), 20, 5, Bound::Exact, 0, false);
         let hit = tt.probe(7, 0).unwrap();
         assert_eq!(
             (hit.score, hit.mv, hit.bound),
@@ -866,10 +953,18 @@ mod tests {
         let tt = TranspositionTable::new(1);
         let cles = same_bucket(&tt);
         for (&cle, profondeur) in cles[..4].iter().zip([3, 5, 6, 7]) {
-            tt.store(cle, Some(mv("e2e4")), 50, profondeur, Bound::Exact, 0);
+            tt.store(
+                cle,
+                Some(mv("e2e4")),
+                50,
+                profondeur,
+                Bound::Exact,
+                0,
+                false,
+            );
         }
         let autre = cles[4];
-        tt.store(autre, None, 20, 4, Bound::Exact, 0);
+        tt.store(autre, None, 20, 4, Bound::Exact, 0, false);
 
         let hit = tt.probe(autre, 0).unwrap();
         assert_eq!(
