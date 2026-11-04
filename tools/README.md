@@ -1051,6 +1051,7 @@ dernière relève est faite.
 | **N° 23 — C57 et C58, le décalage de la note** | C57 (`71f91f5`, +2 000) contre `6958899` : **41640598310, 41640608379, 41640618264, 41640628262** ; C58 (`13177a7`, −2 000) contre `6958899` : **41640637930, 41640646405, 41640655731, 41640665443** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 3 nov. à 19 h 20** — aucune perte au temps : C57 **−0,22 ± 3,02**, C58 **+0,34 ± 3,03** ; aucun ne fusionne, le décalage reste à 0 (« N° 23 — C57, C58 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C57, C58 ») : C57 **−8 à +10**, C58 **−10 à +5** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; C58 après le traitement de son test ; sinon 0 reste |
 | **N° 23 — C59 et C60, la mémoire de la gravité** | C59 (`863fbc5`, mémoire courte) contre `8fa8f20` : **41694799107, 41694809896, 41694820647, 41694831493** ; C60 (`f728e3f`, mémoire longue) contre `8fa8f20` : **41694841197, 41694851401, 41694862515, 41694873666** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 4 nov. à 0 h 50** — aucune perte au temps : C59 **+2,48 ± 3,08**, C60 **−5,03 ± 3,00** (régression démontrée) ; `main` reste (« N° 23 — C59, C60 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C59, C60 ») : C59 **−6 à +8**, C60 **−8 à +4** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; C59 après le traitement du test ; sinon `main` reste |
 | **N° 23 — C61, la mémoire plus courte encore** | C61 (`0756209`, bonus × 3, diviseur 10 000) contre `864c15a` : **41743128038, 41743135933, 41743143628, 41743151028, 41743158647, 41743165635, 41743173717, 41743181213** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 4 nov. à 6 h 25** — aucune perte au temps ; **+1,66 ± 2,16**, non homogènes (le job 7 à −8,69, inexpliqué) ; `main` reste, la mémoire déprioritisée (« N° 23 — C61 : VERDICT ») | — *Attendu, écrit avant* (section « N° 23 — C61 ») : **−3 à +6** ; **critère** : fusionne si sa borne basse sur les huit jobs passe zéro, son test traité d'abord ; sinon `main` reste et la mémoire est déprioritisée |
+| **N° 23 — C62 et C63, la LMR selon le type de nœud** | C62 (`4ff385a`, un pli aux nœuds de coupure) contre `8b845b5` : **à lancer** ; C63 (`2b449ee`, deux plis) contre `8b845b5` : **à lancer** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **EN VOL** | — *Attendus, écrits avant* (section « N° 23 — C62, C63 ») : C62 **−4 à +6**, C63 **−5 à +8** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; C63 après le traitement de son test ; sinon `main` reste |
 | **Balayage de mutation de `main` après le multicouche** | **41592047881**, `commit` = `700a8ba` | — | `mutation.yml` | **RELEVÉ le 3 nov. à 13 h 40, vert** — `nnue.rs` 2, à son plafond ; `search.rs` 46 sous 48, plafond resserré ; les autres à leur plafond, total 161 | — |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
@@ -14902,6 +14903,52 @@ sauter* — <span>inférence, confiance moyenne</span>. La LMR modulée, qui
 les réduit au lieu de les sauter, a déjà pris la part de ce signal qui
 paie.
 
+### N° 23 — C62, C63 : la LMR selon le type de nœud — écran, attendus et critère, écrits le 4 nov. avant de lancer
+
+**La technique** — lue au source de `sf_16` (`search.cpp`) : chaque nœud
+porte un drapeau, `cutNode`, « on y attend une coupure », et la LMR y
+réduit de **deux plis de plus** (`if (cutNode) r += 2`). Le drapeau se
+propage ainsi : la recherche réduite d'un coup attend une coupure ; sa
+re-recherche à profondeur pleine et fenêtre nulle prend l'inverse du
+parent ; la recherche de la variante principale n'en attend pas ; le
+coup nul prend l'inverse du parent ; la vérification singulière garde
+celui du parent. **Le portage** : `negamax` garde sa signature et appelle
+`search_node`, qui porte `cut_node` ; le nœud PV se lit à la fenêtre
+(`beta − alpha > 1`). Au bonus 0, **`main` au nœud près** — le portage
+ne déplace rien tant que le bonus est nul.
+
+**L'écran** — l'arbre à la profondeur 12, au rejeu des 60 parties du
+n° 23 (7 030 recherches, table et historiques conservés), contre
+`main` (275 709 552 nœuds) :
+
+| candidat | bonus aux nœuds de coupure | l'arbre à 12 |
+|---|---|---|
+| C62 (`4ff385a`) | 1 pli | 272 938 132, **−1,01 %** |
+| C63 (`2b449ee`) | 2 plis — Stockfish 16 | 269 275 781, **−2,33 %** |
+
+Banc : C62 70 824 à la profondeur 7, 38 196 à la 6 ; C63 70 814 et
+38 203. **C63 fait tomber `les_extensions_singulieres_allongent_l_arbre`**,
+comme C58, C59 et C61 ; C62 le laisse passer. Le traitement écrit avant
+le verdict de C59 vaut pour lui (« N° 23 — le test des extensions
+singulières »).
+
+**Le match** — quatre jobs de 2 800 parties par candidat contre `main`
+(`8b845b5`), `8+0,08`, graine « auto », AVX2, le livre de 15 000.
+
+*Attendus, écrits avant* — <span>confiance faible</span> : C62 **−4 à
++6**, C63 **−5 à +8**. Converti par l'étalon, l'arbre seul vaudrait
++1,5 et +3,5 ; mais la technique déplace les réductions — elle touche la
+fenêtre et l'ordre où l'on se trompe, la classe où l'étalon s'est
+trompé de 15 à 40 Elo au cinquième écran —, et la LMR modulée réduit
+déjà davantage les coups mal notés, qui sont souvent ceux d'un nœud de
+coupure.
+
+**Le critère, écrit avant** : fusionne celui dont la borne basse contre
+`main` passe zéro — les deux, le plus haut au point ; C63 après le
+traitement de son test. Sinon `main` reste, le bonus entre au registre
+des réglages ouverts avec ses deux points, et la ligne suivante de la
+file — la variante principale en table — se prend.
+
 ### N° 23 — le test des extensions singulières : mesuré sur `main` le 3 nov., traitement écrit avant le verdict de C59
 
 **Le test** — `les_extensions_singulieres_allongent_l_arbre` somme les
@@ -16712,7 +16759,7 @@ rejeu, puis quatre jobs par candidat.
 | quoi | ce que c'est | où on en est, et ce qui l'attend |
 |---|---|---|
 | **l'historique borné** (« gravité ») | bonus et malus pondérés par `1 − abs(note) / plafond` : l'historique cesse de grandir avec la profondeur cherchée | **FUSIONNÉ le 3 nov.** (n° 23) : C53, aux échelles de Stockfish 16, le papillon conservé — **+14,40 ± 3,08** ; la borne seule (C52) +2,14. Ses échelles au registre des réglages |
-| **la LMR modulée** | la réduction selon l'historique du coup, le type de nœud (coupure attendue ou non), la variante principale en table | **la note : FUSIONNÉE le 3 nov.** (C54, n° 23) — **+23,18 ± 3,15** contre C53, à arbre égal ; son diviseur au registre des réglages. **Restent** : le type de nœud et la variante principale en table, à écranter |
+| **la LMR modulée** | la réduction selon l'historique du coup, le type de nœud (coupure attendue ou non), la variante principale en table | **la note : FUSIONNÉE le 3 nov.** (C54, n° 23) — **+23,18 ± 3,15** contre C53, à arbre égal ; son diviseur au registre des réglages. **Restent** : le type de nœud — **écranté le 4 nov., en match** (C62, C63 ; « N° 23 — C62, C63 ») — et la variante principale en table |
 | **l'élagage par l'historique** | sauter les tranquilles mal notés à faible profondeur | **fermé à l'écran le 2 nov. sous sa forme écrite** (n° 23) : la note entière, profondeur ≤ 4 — 6,1 points d'arbre par point de dégâts, sous le seuil de 10. **Et sous la forme de Stockfish 16 le 4 nov.** — les continuations seules, `lmrDepth < 6` : 4,1 par point au seuil 2 500, rien d'arbre aux seuils 3 832 et 6 000 (« N° 23 — l'élagage par l'historique, la forme de Stockfish 16 »). **La forme de Stockfish reste à écranter** : ses continuations seules, à profondeur réduite |
 | **l'historique de correction, en plusieurs tables** | corriger l'évaluation statique par ce que la recherche a appris, indexé par la structure de pions, le matériel, le coup précédent ; la variante unique de C42 rendait −1,1 ± 3,6 et grossissait l'arbre | après l'historique borné ; à remesurer aussi après SPSA, qui peut retoucher les marges qu'il gêne |
 | **l'historique des captures, rouvert** | fermé à l'écran (plafond +1,6 à +2,8) ; borné, il peut ordonner autrement | bas de la phase |
