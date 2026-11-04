@@ -1,0 +1,198 @@
+diff --git a/engine/src/search.rs b/engine/src/search.rs
+index 7c169af..8558aa7 100644
+--- a/engine/src/search.rs
++++ b/engine/src/search.rs
+@@ -547,6 +547,10 @@ pub struct Search {
+     /// enfants, donc ses entrées des plis au-dessus sont toujours celles du
+     /// chemin courant.
+     evals: Vec<Option<i32>>,
++    n27_pawn: Vec<i16>,
++    n27_minor: Vec<i16>,
++    n27_np: Vec<i16>,
++    n27_cont: Vec<i16>,
+     /// Par ply, le coup EXCLU d'une recherche singulière (C41) : elle cherche
+     /// le nœud sans le coup de la table, pour savoir s'il est seul à tenir.
+     /// Écrit et effacé par le nœud qui teste, au MÊME ply — la recherche
+@@ -654,6 +658,10 @@ impl Search {
+             continuation: vec![0; PIECE_TO * PIECE_TO],
+             moved: vec![None; MAX_PLY + 1],
+             evals: vec![None; MAX_PLY + 1],
++            n27_pawn: vec![0; 2 * N27_SIZE],
++            n27_minor: vec![0; 2 * N27_SIZE],
++            n27_np: vec![0; 4 * N27_SIZE],
++            n27_cont: vec![0; PIECE_TO * PIECE_TO],
+             excluded: vec![None; MAX_PLY + 1],
+             scratch: vec![(NO_MOVE, 0); MAX_PLY * MAX_MOVES],
+             params: eval::Params::DEFAULT,
+@@ -825,6 +833,88 @@ impl Search {
+     /// réseau sur les accumulateurs de ce ply quand il y en a un, sinon la
+     /// faite main. Le seul point d'entrée de l'évaluation dans la recherche.
+     fn static_eval(&self, board: &Board, ply: usize) -> i32 {
++        let raw = self.static_eval_raw(board, ply);
++        let p = n27();
++        if !p.on {
++            return raw;
++        }
++        let c = self.n27_correction(board, ply);
++        N27C[0].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++        N27C[1].fetch_add(u64::from(c.unsigned_abs()), std::sync::atomic::Ordering::Relaxed);
++        (raw + c).clamp(-(MATE_THRESHOLD - 1), MATE_THRESHOLD - 1)
++    }
++
++    fn n27_keys(board: &Board) -> [usize; 4] {
++        let bb = |c: Color, pc: Piece| board.colored_pieces(c, pc).0;
++        let mix = |v: &[u64]| -> usize {
++            const K: [u64; 6] = [
++                0x9E37_79B9_7F4A_7C15,
++                0xC2B2_AE3D_27D4_EB4F,
++                0x1656_67B1_9E37_79F9,
++                0xD6E8_FEB8_6659_FD93,
++                0xA076_1D64_78BD_642F,
++                0xE703_7ED1_A0B4_28DB,
++            ];
++            let mut h = 0u64;
++            for (i, &b) in v.iter().enumerate() {
++                h ^= b.wrapping_mul(K[i]).rotate_left(i as u32 * 7);
++            }
++            (h.wrapping_mul(0x2545_F491_4F6C_DD1D) >> 49) as usize
++        };
++        let w = Color::White;
++        let b = Color::Black;
++        [
++            mix(&[bb(w, Piece::Pawn), bb(b, Piece::Pawn)]),
++            mix(&[bb(w, Piece::Knight), bb(w, Piece::Bishop), bb(b, Piece::Knight), bb(b, Piece::Bishop)]),
++            mix(&[bb(w, Piece::Knight), bb(w, Piece::Bishop), bb(w, Piece::Rook), bb(w, Piece::Queen), bb(w, Piece::King)]),
++            mix(&[bb(b, Piece::Knight), bb(b, Piece::Bishop), bb(b, Piece::Rook), bb(b, Piece::Queen), bb(b, Piece::King)]),
++        ]
++    }
++
++    fn n27_cont_index(&self, ply: usize) -> Option<usize> {
++        let m1 = self.moved.get(ply).copied().flatten()?;
++        let m2 = self.moved.get(ply.checked_sub(1)?).copied().flatten()?;
++        Some(m2 * PIECE_TO + m1)
++    }
++
++    fn n27_correction(&self, board: &Board, ply: usize) -> i32 {
++        let p = n27();
++        let us = board.side_to_move() as usize;
++        let [pk, mk, wk, bk] = Self::n27_keys(board);
++        let g = |v: &Vec<i16>, i: usize| i64::from(v.get(i).copied().unwrap_or(0));
++        let pcv = g(&self.n27_pawn, us * N27_SIZE + pk);
++        let micv = g(&self.n27_minor, us * N27_SIZE + mk);
++        let wn = g(&self.n27_np, us * N27_SIZE + wk);
++        let bn = g(&self.n27_np, (2 + us) * N27_SIZE + bk);
++        let cnt = self.n27_cont_index(ply).map_or(0, |i| g(&self.n27_cont, i));
++        let mut v = 0i64;
++        if p.p { v += 7685 * pcv; }
++        if p.m { v += 7495 * micv; }
++        if p.n { v += 9144 * (wn + bn); }
++        if p.c { v += 6469 * cnt; }
++        i32::try_from(v * i64::from(p.w) / 100 / 131_072).unwrap_or(0)
++    }
++
++    fn n27_update(&mut self, board: &Board, ply: usize, bonus: i32) {
++        let p = n27();
++        let us = board.side_to_move() as usize;
++        let [pk, mk, wk, bk] = Self::n27_keys(board);
++        let grav = |e: &mut i16, b: i32| {
++            let b = b.clamp(-1024, 1024);
++            let v = i32::from(*e);
++            *e = i16::try_from(v + b - v * b.abs() / 1024).unwrap_or(0);
++        };
++        if p.p && let Some(e) = self.n27_pawn.get_mut(us * N27_SIZE + pk) { grav(e, bonus * 111 / 128); }
++        if p.m && let Some(e) = self.n27_minor.get_mut(us * N27_SIZE + mk) { grav(e, bonus * 146 / 128); }
++        if p.n {
++            if let Some(e) = self.n27_np.get_mut(us * N27_SIZE + wk) { grav(e, bonus * 162 / 128); }
++            if let Some(e) = self.n27_np.get_mut((2 + us) * N27_SIZE + bk) { grav(e, bonus * 162 / 128); }
++        }
++        if p.c && let Some(i) = self.n27_cont_index(ply) && let Some(e) = self.n27_cont.get_mut(i) { grav(e, bonus * 143 / 128); }
++        N27C[2].fetch_add(1, std::sync::atomic::Ordering::Relaxed);
++    }
++
++    fn static_eval_raw(&self, board: &Board, ply: usize) -> i32 {
+         let Some(network) = &self.network else {
+             return eval::evaluate(board, &self.params);
+         };
+@@ -871,6 +961,10 @@ impl Search {
+         self.killers.fill([0; 2]);
+         self.history.fill(0);
+         self.continuation.fill(0);
++        self.n27_pawn.fill(0);
++        self.n27_minor.fill(0);
++        self.n27_np.fill(0);
++        self.n27_cont.fill(0);
+         for helper in &mut self.helpers {
+             helper.continuation.fill(0);
+         }
+@@ -2028,6 +2122,15 @@ impl Search {
+         if excluded.is_none() {
+             self.tt.store(key, best_move, best, depth, bound, ply_i32);
+         }
++        if n27().on
++            && let Some(se) = static_eval
++            && !in_check
++            && !best_move.is_some_and(|mv| captured_piece(board, mv).is_some())
++            && ((best < se && best < beta) || (best > se && best_move.is_some()))
++        {
++            let bonus = ((best - se) * depth / 8).clamp(-256, 256);
++            self.n27_update(board, ply, bonus);
++        }
+ 
+         best
+     }
+@@ -2096,6 +2199,9 @@ impl Search {
+                 continue;
+             }
+ 
++            if let Some(slot) = self.moved.get_mut(ply + 1) {
++                *slot = Some(piece_to(board, mv));
++            }
+             self.push_move(board, mv, ply);
+             let mut child = board.clone();
+             child.play_unchecked(mv);
+@@ -2789,6 +2895,29 @@ const LMR_HISTORY_DIVISOR: i32 = 6_000;
+ /// La réduction d'un tranquille, modulée par sa note : `note / diviseur`
+ /// plis de moins, ou de plus si elle est négative ; jamais sous zéro, ni
+ /// au point de sauter la profondeur restante.
++const N27_SIZE: usize = 32_768;
++#[derive(Clone, Copy)]
++struct N27 { on: bool, p: bool, m: bool, n: bool, c: bool, w: i32 }
++fn n27() -> N27 {
++    static V: std::sync::OnceLock<N27> = std::sync::OnceLock::new();
++    *V.get_or_init(|| {
++        let mut v = N27 { on: false, p: true, m: true, n: true, c: true, w: 100 };
++        for part in std::env::var("N27").unwrap_or_default().split('+').filter(|p| !p.is_empty()) {
++            let mut it = part.split(':');
++            let key = it.next().unwrap_or("");
++            let arg = it.next().unwrap_or("");
++            match key {
++                "on" => v.on = true,
++                "t" => { v.on = true; v.p = arg.contains('p'); v.m = arg.contains('m'); v.n = arg.contains('n'); v.c = arg.contains('c'); }
++                "w" => v.w = arg.parse().unwrap_or(100),
++                _ => panic!("N27 {part}"),
++            }
++        }
++        v
++    })
++}
++pub static N27C: [std::sync::atomic::AtomicU64; 3] = [const { std::sync::atomic::AtomicU64::new(0) }; 3];
++
+ fn modulated_reduction(base: i32, note: i32, depth: i32) -> i32 {
+     (base - note / LMR_HISTORY_DIVISOR).min(depth - 2).max(0)
+ }
+diff --git a/engine/src/uci.rs b/engine/src/uci.rs
+index e5c7767..b643cd2 100644
+--- a/engine/src/uci.rs
++++ b/engine/src/uci.rs
+@@ -485,6 +485,11 @@ impl Engine {
+             });
+ 
+             let ponder = best.and_then(|mv| search.ponder_move(position.board(), mv));
++            {
++                use std::sync::atomic::Ordering::Relaxed;
++                let c: Vec<u64> = crate::search::N27C.iter().map(|a| a.swap(0, Relaxed)).collect();
++                send(&format!("info string sonde-n23 evals={} abs_corr={} maj={}", c[0], c[1], c[2]));
++            }
+             send(&bestmove_line(position.board(), best, ponder));
+             search
+         }));
