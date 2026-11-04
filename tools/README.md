@@ -681,6 +681,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-11-04 | **C66 — la variante principale en table : deux plis de moins aux anciens nœuds PV de fenêtre nulle**, n° 23 (`552338f` contre `e0762bf`) | **+0,68 Elo ± 3,06** sur 11 200 parties à `8+0,08`, **non homogènes** (p = 0,027, sans effet sur la décision) — pas d'effet décelable ; attendu −8 à +6. Non fusionné |
 | 2026-11-04 | **C67 — l'historique de correction en plusieurs tables, la forme de Stockfish 17.1** : pions, mineures, hors pions par camp, continuation, n° 23 (`4feae50` contre `e0762bf`) | **+14,22 Elo ± 3,26** sur 11 200 parties à `8+0,08`, homogènes (p = 0,455) — **gain démontré**, pour +14,85 % d'arbre ; attendu −10 à +12. Entre par la composition des gagnants du n° 23 |
 | 2026-11-04 | **C68 — l'historique de correction en plusieurs tables, à mi-poids**, n° 23 (`77c0003` contre `e0762bf`) | **+11,26 Elo ± 3,16** sur 11 200 parties à `8+0,08`, homogènes (p = 0,427) — gain démontré, sous C67 au point ; attendu −8 à +10. Non retenu |
+| 2026-11-04 | **C69 — l'historique des captures, rouvert : une victime de plus pour une note de 10 692**, n° 23 (`b3d4500` contre `e0762bf`) | **−0,71 Elo ± 3,02** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable, pour −4,90 % d'arbre ; attendu −2 à +10. Non fusionné |
+| 2026-11-04 | **C70 — l'historique des captures au rapport de Stockfish 16 : une victime pour une note de 4 585**, n° 23 (`7f9b3e2` contre `e0762bf`) | **−1,30 Elo ± 3,02** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable, pour −4,07 % d'arbre ; attendu −3 à +9. Non fusionné |
 | 2026-11-03 | **Le livre déséquilibré — son rendement par paire**, n° 23 : `0d2b188` à `10+0,10` contre `8+0,08`, C53 et C54, sur `tools/book-desequilibre.epd` contre `tools/book.epd` | **× 1,11 [0,85 ; 1,44]** sur trois effets connus, homogènes ; × 0,98 par heure de runner, ses parties durant ~13 % de plus — **ne paie pas**, notre livre reste ; à `8+0,08` |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
@@ -1061,7 +1063,8 @@ dernière relève est faite.
 | **N° 23 — C62 et C63, la LMR selon le type de nœud** | C62 (`4ff385a`, un pli aux nœuds de coupure) contre `8b845b5` : **41780122935, 41780128944, 41780135497, 41780142383** ; C63 (`2b449ee`, deux plis) contre `8b845b5` : **41780149552, 41780156058, 41780162570, 41780169137** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 4 nov. à 11 h 55** — aucune perte au temps : C62 **+3,29 ± 3,06**, C63 **+5,06 ± 3,02**, homogènes ; **C63 gagne**, il entre par la composition des quatre lignes (« N° 23 — C62, C63 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C62, C63 ») : C62 **−4 à +6**, C63 **−5 à +8** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; C63 après le traitement de son test ; sinon `main` reste |
 | **N° 23 — C64, C65, C66, la variante principale en table** | C64 (`9a310ba`, un pli hors nœuds PV), C65 (`905a5c9`, un pli partout), C66 (`552338f`, deux plis hors nœuds PV), contre `e0762bf` — C64 : **41783418495, 41783424954, 41783431960, 41783438580** ; C65 : **41783445289, 41783451925, 41783458242, 41783465081** ; C66 : **41783471435, 41783477996, 41783484724, 41783491053** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 12 × 2 800 parties | **RELEVÉS le 4 nov. à 12 h 30** — aucune perte au temps : C64 **−0,71 ± 3,04**, C65 **+2,79 ± 3,09**, C66 **+0,68 ± 3,06** (non homogènes, sans effet sur la décision) ; **aucun ne fusionne**, `main` reste (« N° 23 — C64, C65, C66 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C64, C65, C66 ») : C64 **−4 à +6**, C66 **−8 à +6**, C65 **−25 à +8** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — plusieurs, le plus haut au point ; C66 après le traitement de son test ; un gagnant ici et un de C62/C63 se composent avant d'entrer |
 | **N° 23 — C67 et C68, l'historique de correction en plusieurs tables** | C67 (`4feae50`, les poids de Stockfish 17.1) : **41785796407, 41785802686, 41785809200, 41785815714** ; C68 (`77c0003`, à mi-poids) : **41785822583, 41785829593, 41785836731, 41785843168** ; contre `e0762bf` | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 4 nov. à 12 h 55** — aucune perte au temps : C67 **+14,22 ± 3,26**, C68 **+11,26 ± 3,16**, homogènes ; **C67 gagne**, il entre par la composition (« N° 23 — C67, C68 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C67, C68 ») : C67 **−10 à +12**, C68 **−8 à +10** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; les gagnants des trois lignes se composent avant d'entrer |
-| **N° 23 — C69 et C70, l'historique des captures, rouvert** | C69 (`b3d4500`, une victime pour une note de 10 692) : **41788255168, 41788261484, 41788267945, 41788274921** ; C70 (`7f9b3e2`, de 4 585) : **41788281622, 41788288103, 41788294568, 41788302028** ; contre `e0762bf` | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **EN VOL** — lancés le 4 nov. à 7 h 51, fin attendue vers 13 h ; trente-six matchs ensemble, un en file au départ | — *Attendus, écrits avant* (section « N° 23 — C69, C70 ») : C69 **−2 à +10**, C70 **−3 à +9** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; les gagnants des quatre lignes se composent avant d'entrer |
+| **N° 23 — C69 et C70, l'historique des captures, rouvert** | C69 (`b3d4500`, une victime pour une note de 10 692) : **41788255168, 41788261484, 41788267945, 41788274921** ; C70 (`7f9b3e2`, de 4 585) : **41788281622, 41788288103, 41788294568, 41788302028** ; contre `e0762bf` | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 4 nov. à 13 h 05** — aucune perte au temps : C69 **−0,71 ± 3,02**, C70 **−1,30 ± 3,02**, homogènes ; **aucun ne fusionne**, `main` reste (« N° 23 — C69, C70 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C69, C70 ») : C69 **−2 à +10**, C70 **−3 à +9** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; les gagnants des quatre lignes se composent avant d'entrer |
+| **N° 23 — C71, la composition des gagnants (C63 + C67)** | C71 (`3f47f79`) contre `e0762bf` : **à lancer** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 × 2 800 parties | **EN VOL** | — *Attendu, écrit avant* (section « N° 23 — C71 ») : **+12 à +22, ~+17** ; **critère** : fusionne si sa borne basse passe zéro ET si son point n'est pas sous +9,7 (C67 seul moins les ± 4,5 des deux mesures) ; sinon C67 entre seul et C63 se remesure par-dessus |
 | **Balayage de mutation de `main` après le multicouche** | **41592047881**, `commit` = `700a8ba` | — | `mutation.yml` | **RELEVÉ le 3 nov. à 13 h 40, vert** — `nnue.rs` 2, à son plafond ; `search.rs` 46 sous 48, plafond resserré ; les autres à leur plafond, total 161 | — |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
@@ -15229,6 +15232,71 @@ quatre lignes de la phase 4 (C62 à C70) se composent et se mesurent
 ensemble contre `main` avant d'entrer. Sinon `main` reste, et
 l'historique des captures retourne au registre avec ses points.
 
+### N° 23 — C69, C70 : VERDICT, relevé le 4 nov. à 13 h 05 — aucun ne passe, `main` reste
+
+**Les huit matchs**, lancés le 4 nov. à 7 h 51, finis entre 12 h 47 et
+12 h 58, 2 800 parties chacun, **aucune perte au temps**, 6,32 à 6,56 s
+par partie ; contre `e0762bf` :
+
+| candidat | les quatre jobs | en commun | homogénéité | attendu |
+|---|---|---|---|---|
+| C69, une victime pour une note de 10 692 | −6,58, +0,99, +3,35, −0,62 | **−0,71 ± 3,02** | p = 0,111 | −2 à +10 |
+| C70, de 4 585 — le rapport de Stockfish 16 | −3,97, −1,49, −0,87, +1,12 | **−1,30 ± 3,02** | p = 0,624 | −3 à +9 |
+
+**Le critère, écrit avant** : aucune borne basse ne passe zéro —
+**aucun ne fusionne, `main` reste**, et l'historique des captures
+retourne au registre. **L'arbre retiré ne s'est pas acheté** : −4,90 et
+−4,07 %, +7,8 et +6,4 par l'étalon, et rien au jeu — le contraire exact
+de C67, qui grossit l'arbre de 15 % et rend +14. *Un changement d'ordre
+des captures déplace aussi ce que la quiescence et l'échange statique
+coupent* ; <span>inférence, confiance faible</span> : la première capture
+portait déjà 92 à 96 % des coupures, et ce qu'on gagne ailleurs ne
+change pas la décision. Deux formes du n° 9 et deux d'aujourd'hui sans
+gain : **déprioritisé**.
+
+### N° 23 — C71 : la composition des gagnants, C63 et C67 — protocole, attendu et critère, écrits le 4 nov. avant de lancer
+
+**Les gagnants des quatre lignes** : **C63** (la LMR, deux plis de plus
+aux nœuds de coupure, +5,06 ± 3,02) et **C67** (l'historique de
+correction en plusieurs tables, +14,22 ± 3,26) ; aucun pour la variante
+principale en table (C64 à C66) ni pour l'historique des captures (C69,
+C70).
+
+**Le candidat** : C71 (`3f47f79`), C63 et C67 composés sur `main` par
+leurs deux écritures, sans arbitrage de code — des insertions voisines
+seulement. L'arbre à la profondeur 12, au rejeu : **310 784 810,
++12,72 %** — C63 seul −2,33 %, C67 seul +14,85 % : les deux arbres se
+composent presque exactement (+12,52 attendu par l'addition). Banc 77 429
+à la profondeur 7, 38 481 à la 6. **Le test des extensions singulières**,
+que C63 seul faisait tomber à la profondeur 9, **y passe** : le traitement
+écrit d'avance n'a pas à s'appliquer. Tous les tests passent.
+
+**Le match** — quatre jobs de 2 800 parties contre `main` (`e0762bf`,
+le moteur des deux membres), `8+0,08`, graine « auto », AVX2, le livre
+de 15 000.
+
+**Attendu, écrit avant** — <span>inférence, confiance faible</span> :
+- **majorant**, la somme des gains seuls : **+19,28 ± 4,45** ;
+- les compositions du dépôt ont rendu 80 % (n° 12) et 91 % (n° 9) de
+  cette somme ; ici les deux membres touchent des objets distincts — la
+  réduction, l'évaluation —, mais C67 corrige l'évaluation que la LMR de
+  C63 n'emploie pas, et la futilité que C63 ne touche pas :
+  **+12 à +22, ~+17**.
+
+**Le critère, écrit avant** : **C71 fusionne si sa borne basse est
+au-dessus de zéro, ET si son point n'est pas démontré sous son meilleur
+membre** — C67, +14,22 ± 3,26 contre le même moteur : sous **+9,7**,
+l'écart à C67 dépasse les ± 4,5 des deux mesures, et la composition ferait
+moins bien que C67 seul. Alors **C67 entre seul**, sur son propre verdict,
+et C63 se remesure par-dessus, quatre jobs, critère écrit avant.
+**Puissance** : à ± 3,1, un vrai +17 passe les deux clauses presque
+toujours ; un vrai +12, la seconde trois fois sur quatre.
+
+**À l'entrée** : le bonus aux nœuds de coupure et le poids de la
+correction restent au registre (trois plis ; × 1,5) ; C65, la variante
+principale en table sous la forme de Stockfish, se remesure sur la base
+qui porte C63.
+
 ### N° 23 — le test des extensions singulières : mesuré sur `main` le 3 nov., traitement écrit avant le verdict de C59
 
 **Le test** — `les_extensions_singulieres_allongent_l_arbre` somme les
@@ -17048,7 +17116,7 @@ rejeu, puis quatre jobs par candidat.
 | **la LMR modulée** | la réduction selon l'historique du coup, le type de nœud (coupure attendue ou non), la variante principale en table | **la note : FUSIONNÉE le 3 nov.** (C54, n° 23) — **+23,18 ± 3,15** contre C53, à arbre égal ; son diviseur au registre des réglages. **Le type de nœud : C63 gagne le 4 nov.** — deux plis de plus aux nœuds de coupure, **+5,06 ± 3,02** ; un pli +3,29 ± 3,06 (« N° 23 — C62, C63 : VERDICT ») ; il entre par la composition ; **son bonus au registre**, trois plis à essayer, la pente montant encore. **Reste** et la variante principale en table : **aucun des trois ne passe le 4 nov.** — C64 −0,71, C65 (la forme de Stockfish) +2,79, C66 +0,68, chacun ± 3,1 (« N° 23 — C64, C65, C66 : VERDICT ») ; au registre, à reprendre sur la base qui portera C63 ; la futilité inverse aux nœuds `ttPv` fermée à l'écran |
 | **l'élagage par l'historique** | sauter les tranquilles mal notés à faible profondeur | **fermé à l'écran le 2 nov. sous sa forme écrite** (n° 23) : la note entière, profondeur ≤ 4 — 6,1 points d'arbre par point de dégâts, sous le seuil de 10. **Et sous la forme de Stockfish 16 le 4 nov.** — les continuations seules, `lmrDepth < 6` : 4,1 par point au seuil 2 500, rien d'arbre aux seuils 3 832 et 6 000 (« N° 23 — l'élagage par l'historique, la forme de Stockfish 16 »). **La forme de Stockfish reste à écranter** : ses continuations seules, à profondeur réduite |
 | **l'historique de correction, en plusieurs tables** | corriger l'évaluation statique par ce que la recherche a appris, indexé par la structure de pions, le matériel, le coup précédent ; la variante unique de C42 rendait −1,1 ± 3,6 et grossissait l'arbre | **C67 gagne le 4 nov. : +14,22 ± 3,26** (la forme de Stockfish 17.1, +14,85 % d'arbre) ; à mi-poids, C68 +11,26 ± 3,16 (« N° 23 — C67, C68 : VERDICT ») ; il entre par la composition ; **son poids au registre des réglages** ; à remesurer aussi après SPSA, qui peut retoucher les marges qu'il gêne |
-| **l'historique des captures, rouvert** | fermé à l'écran (plafond +1,6 à +2,8) ; borné, il peut ordonner autrement | **écranté le 4 nov., en match** : l'arbre −4 à −5 % sur la base d'aujourd'hui, trois à quatre fois le n° 9 — C69 et C70 (« N° 23 — C69, C70 ») |
+| **l'historique des captures, rouvert** | fermé à l'écran (plafond +1,6 à +2,8) ; borné, il peut ordonner autrement | **aucun gain le 4 nov.** : C69 −0,71, C70 −1,30, chacun ± 3,0, pour −4 à −5 % d'arbre (« N° 23 — C69, C70 : VERDICT ») — **déprioritisé** : deux formes au n° 9, deux aujourd'hui, l'arbre retiré ne s'achète pas |
 | **Lazy SMP au-delà de deux fils, et ses variantes** | décalage de profondeur, coup du meilleur fil, historiques partagés | condition : une machine à plus de deux cœurs physiques ; les runners n'en ont que deux |
 
 **Phase 5 — le réglage (runners), le réseau et la recherche stabilisés.**
