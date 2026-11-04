@@ -16787,10 +16787,13 @@ pas parce que des runners sont libres.
    candidats suivants ne s'y jouent plus. **Le cœur fait le 4 nov.** :
    l'historique borné et la LMR modulée fusionnés (~+37 par la chaîne),
    leurs réglages plats autour de `main` (diviseur, décalage, mémoire),
-   l'élagage par l'historique fermé sous deux formes. Restent, dans
-   l'ordre de la file : la LMR selon le type de nœud et la variante
-   principale en table, l'historique de correction en plusieurs tables,
-   l'historique des captures.
+   l'élagage par l'historique fermé sous deux formes. **Les quatre
+   lignes restantes écrantées et en match le 4 nov. au matin**, neuf
+   candidats contre `main` : la LMR selon le type de nœud (C62, C63), la
+   variante principale en table (C64 à C66), l'historique de correction
+   en plusieurs tables (C67, C68), l'historique des captures rouvert
+   (C69, C70 — l'arbre −4 à −5 %, trois à quatre fois le n° 9). Puis la
+   composition des gagnants contre `main`, et la phase 4 est close.
 3. En parallèle de 2 : l'inférence multicouche écrite dans le moteur,
    confrontée au code de bullet, prête pour l'entraînement au verdict de C3.
    **Écrite le 2 nov.** (n° 23, « l'inférence multicouche ») : la
