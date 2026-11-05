@@ -2209,6 +2209,20 @@ impl Search {
         ply: usize,
         scratch: &mut [(Move, i32)],
     ) -> i32 {
+        // Le coup qui a mené ici, que lit la continuation de la correction,
+        // confronté à la position elle-même : la quiescence n'empile rien sur
+        // le chemin, et la garde du ply de `search_node` ne la voit pas. Son
+        // `ply + 1` en `ply * 1` — survivant du balayage du 4 nov. 2026 —
+        // écrasait le coup du nœud par celui de l'enfant, et laissait à
+        // l'enfant le coup d'un cousin, sans qu'aucun arbre ne bouge aux
+        // profondeurs du banc.
+        #[cfg(test)]
+        if let Some(index) = self.moved.get(ply).copied().flatten() {
+            assert!(
+                piece_to_lands(board, index),
+                "le coup noté au ply {ply} ({index}) n'a pas mené à {board}"
+            );
+        }
         self.pv.clear(ply);
         self.nodes += 1;
         if self.should_abort() {
@@ -2594,6 +2608,27 @@ fn piece_to(board: &Board, mv: Move) -> usize {
         board.piece_on(mv.from).unwrap_or(Piece::Pawn),
         mv.to,
     )
+}
+
+/// `index` — un [`piece_to_index`] — peut-il être le coup qui vient de mener
+/// à `board` ? Le camp qui l'a joué n'a plus le trait, et sa pièce est sur la
+/// case d'arrivée. Deux exceptions, que seule la lecture de la case
+/// manquerait : un pion promu y a changé de nature, et le roque, codé
+/// roi-prend-tour, y a laissé la case de sa tour — un coup de roi ne se juge
+/// donc qu'à son camp.
+#[cfg(test)]
+fn piece_to_lands(board: &Board, index: usize) -> bool {
+    let side = Color::ALL[index / (6 * 64)];
+    let piece = Piece::ALL[index / 64 % 6];
+    let to = Square::index(index % 64);
+    if side == board.side_to_move() {
+        return false;
+    }
+    match piece {
+        Piece::King => true,
+        Piece::Pawn => board.color_on(to) == Some(side),
+        _ => board.color_on(to) == Some(side) && board.piece_on(to) == Some(piece),
+    }
 }
 
 /// La pièce réellement capturée par un coup, s'il y en a une.
@@ -5379,6 +5414,81 @@ mod tests {
         s.path_base = Some(0);
         s.path.push(b.hash());
         s.negamax(&b, 1, 1, -INFINITY, INFINITY, &mut ardoise());
+    }
+
+    #[test]
+    fn la_continuation_de_la_correction_range_chaque_paire_dans_sa_table() {
+        // Deux coups, une entrée à eux : chaque paire tombe dans la table, et
+        // deux paires ne partagent jamais la leur. Un index hors table ne
+        // ferait rien planter — la lecture rend zéro, l'écriture se tait —,
+        // et la correction perdrait sa continuation sans bruit : le `+` en
+        // `-`, survivant du balayage du 4 nov. 2026, envoyait hors table
+        // toute paire dont le premier coup vaut zéro.
+        let mut s = search();
+        let mut vues = std::collections::HashSet::new();
+        for avant in (0..PIECE_TO).step_by(37).chain([PIECE_TO - 1]) {
+            for dernier in (0..PIECE_TO).step_by(41).chain([PIECE_TO - 1]) {
+                s.moved[0] = Some(avant);
+                s.moved[1] = Some(dernier);
+                let index = s.continuation_correction_index(1);
+                let Some(index) = index else {
+                    panic!("deux coups notés sans entrée : {avant}, {dernier}");
+                };
+                assert!(
+                    index < s.continuation_correction.len(),
+                    "{avant}, {dernier} : {index} hors table"
+                );
+                assert!(vues.insert(index), "{avant}, {dernier} : {index} partagé");
+            }
+        }
+    }
+
+    #[test]
+    fn le_coup_note_se_lit_sur_la_position_qu_il_a_produite() {
+        let joue = |fen: &str, uci: &str| {
+            let avant = board(fen);
+            let mv = cozy_chess::util::parse_uci_move(&avant, uci).unwrap();
+            let mut apres = avant.clone();
+            apres.play(mv);
+            (piece_to(&avant, mv), apres)
+        };
+        // Une capture, la pièce sur sa case.
+        let (index, b) = joue(
+            "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+            "f3e5",
+        );
+        assert!(piece_to_lands(&b, index));
+        // Le même coup ne mène pas à la position d'avant, ni à celle d'un
+        // autre coup.
+        let (_, ailleurs) = joue(
+            "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+            "f1c4",
+        );
+        assert!(!piece_to_lands(&ailleurs, index));
+        assert!(!piece_to_lands(
+            &board("r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3"),
+            index
+        ));
+        // La promotion change la pièce, la prise en passant vide une autre
+        // case, le roque laisse vide la case de sa tour.
+        let (index, b) = joue("8/1P2k3/8/8/8/8/8/4K3 w - - 0 1", "b7b8q");
+        assert!(piece_to_lands(&b, index));
+        let (index, b) = joue("4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 1", "e5d6");
+        assert!(piece_to_lands(&b, index));
+        let (index, b) = joue("4k3/8/8/8/8/8/8/4K2R w K - 0 1", "e1g1");
+        assert!(piece_to_lands(&b, index));
+    }
+
+    #[test]
+    #[should_panic(expected = "n'a pas mené à")]
+    fn un_coup_perime_en_quiescence_fait_tomber_la_recherche() {
+        // Ce que faisait la quiescence qui notait au mauvais ply : l'enfant
+        // lit le coup qu'un cousin avait laissé, ici un cavalier qui n'est
+        // pas sur sa case.
+        let mut s = search();
+        let b = board("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
+        s.moved[1] = Some(piece_to_index(Color::White, Piece::Knight, Square::F3));
+        s.quiescence(&b, -INFINITY, INFINITY, 1, &mut ardoise());
     }
 
     #[test]

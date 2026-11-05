@@ -45,6 +45,34 @@ eval.rs 102
 # unitaire ne peut trancher à sa place — pire, un test qui fige une valeur
 # d'évaluation empêche le SPRT de la déplacer.
 #
+# search.rs — 46, TENU le 5 nov. 2026 : le balayage de `main` à
+#   `03746f9` (run 41878189509), après C71 — la LMR selon le type de nœud
+#   et l'historique de correction en plusieurs tables —, rend 48 contre 46
+#   (860 attrapés, 43 expirés) : cinq survivants neufs, trois anciens
+#   disparus avec le code que C71 a réécrit.
+#   Deux tués par des tests, l'un et l'autre aux invariants :
+#     · `before * PIECE_TO + last` en `-` (`continuation_correction_index`) :
+#       toute paire dont le premier coup vaut zéro sortait de la table, et
+#       la correction perdait sa continuation sans bruit —
+#       `la_continuation_de_la_correction_range_chaque_paire_dans_sa_table` ;
+#     · le `ply + 1` du coup noté par la quiescence en `ply * 1` — la
+#       famille du coup nul (issue #142) : la quiescence n'empile rien sur
+#       le chemin, et la garde du ply ne la voyait pas. Elle confronte
+#       désormais le coup noté à la position qu'il a produite
+#       (`piece_to_lands`), et les tests du banc, du réseau et de la
+#       recherche tombent sur le mutant — injecté à la main, en release.
+#   Trois notés, de force de jeu :
+#     · `!cut_node` en `cut_node` à l'appel du coup nul, et
+#       `reduction > 0` en `< 0` au type de l'enfant réduit — le type de
+#       nœud ne décide que de la réduction de ses petits-enfants, que le
+#       banc ne voit pas à 6 ni à 7 ; un choix de Stockfish que le SPRT a
+#       jugé (C63), pas une règle ;
+#     · `7 * i` en `7 + i` dans `correction_keys` : une autre rotation
+#       par table, un autre mélange aussi bon — rien de déterministe ne
+#       distingue deux constantes de hachage aux profondeurs du banc.
+#   Prédiction au prochain balayage : 46 — un de moins possible, un
+#   expiré qui se résout ; un de plus non.
+#
 # search.rs — 46, RESSERRÉ le 3 nov. 2026 : le balayage de `main` à
 #   `700a8ba` (run 41592047881), après C53 et C54 — la gravité de
 #   l'historique et la LMR modulée — et l'inférence multicouche, rend
