@@ -684,6 +684,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-11-04 | **C69 — l'historique des captures, rouvert : une victime de plus pour une note de 10 692**, n° 23 (`b3d4500` contre `e0762bf`) | **−0,71 Elo ± 3,02** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable, pour −4,90 % d'arbre ; attendu −2 à +10. Non fusionné |
 | 2026-11-04 | **C70 — l'historique des captures au rapport de Stockfish 16 : une victime pour une note de 4 585**, n° 23 (`7f9b3e2` contre `e0762bf`) | **−1,30 Elo ± 3,02** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable, pour −4,07 % d'arbre ; attendu −3 à +9. Non fusionné |
 | 2026-11-04 | **C71 — la composition de C63 et C67** : la LMR selon le type de nœud et l'historique de correction en plusieurs tables, n° 23 (`3f47f79` contre `e0762bf`) | **+16,02 Elo ± 3,17** sur 11 200 parties à `8+0,08`, non homogènes (p = 0,031), chaque job passant seul — **gain démontré, FUSIONNÉ** ; attendu +12 à +22, 83 % de la somme de ses membres |
+| 2026-11-05 | **C72 — trois plis de plus aux nœuds de coupure attendus, au lieu de deux**, n° 23 (`84d51c8` contre `03746f9`) | **−0,09 Elo ± 3,10** sur 11 200 parties à `8+0,08`, homogènes (p = 0,436) — pas d'effet décelable, pour +1,46 % d'arbre ; attendu −3 à +4. Non fusionné |
+| 2026-11-05 | **C73 — le poids de l'historique de correction × 1,5**, n° 23 (`55816c7` contre `03746f9`) | **−5,96 Elo ± 3,09** sur 11 200 parties à `8+0,08`, homogènes (p = 0,860) — **régression démontrée**, pour +3,47 % d'arbre ; attendu −3 à +5, manqué par le bas. Non fusionné |
 | 2026-11-03 | **Le livre déséquilibré — son rendement par paire**, n° 23 : `0d2b188` à `10+0,10` contre `8+0,08`, C53 et C54, sur `tools/book-desequilibre.epd` contre `tools/book.epd` | **× 1,11 [0,85 ; 1,44]** sur trois effets connus, homogènes ; × 0,98 par heure de runner, ses parties durant ~13 % de plus — **ne paie pas**, notre livre reste ; à `8+0,08` |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
@@ -1066,7 +1068,8 @@ dernière relève est faite.
 | **N° 23 — C67 et C68, l'historique de correction en plusieurs tables** | C67 (`4feae50`, les poids de Stockfish 17.1) : **41785796407, 41785802686, 41785809200, 41785815714** ; C68 (`77c0003`, à mi-poids) : **41785822583, 41785829593, 41785836731, 41785843168** ; contre `e0762bf` | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 4 nov. à 12 h 55** — aucune perte au temps : C67 **+14,22 ± 3,26**, C68 **+11,26 ± 3,16**, homogènes ; **C67 gagne**, il entre par la composition (« N° 23 — C67, C68 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C67, C68 ») : C67 **−10 à +12**, C68 **−8 à +10** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; les gagnants des trois lignes se composent avant d'entrer |
 | **N° 23 — C69 et C70, l'historique des captures, rouvert** | C69 (`b3d4500`, une victime pour une note de 10 692) : **41788255168, 41788261484, 41788267945, 41788274921** ; C70 (`7f9b3e2`, de 4 585) : **41788281622, 41788288103, 41788294568, 41788302028** ; contre `e0762bf` | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 8 × 2 800 parties | **RELEVÉS le 4 nov. à 13 h 05** — aucune perte au temps : C69 **−0,71 ± 3,02**, C70 **−1,30 ± 3,02**, homogènes ; **aucun ne fusionne**, `main` reste (« N° 23 — C69, C70 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C69, C70 ») : C69 **−2 à +10**, C70 **−3 à +9** ; **critère** : fusionne celui dont la borne basse contre `main` passe zéro — les deux, le plus haut au point ; les gagnants des quatre lignes se composent avant d'entrer |
 | **N° 23 — C71, la composition des gagnants (C63 + C67)** | C71 (`3f47f79`) contre `e0762bf` : **41826185481, 41826193857, 41826203153, 41826212189** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 × 2 800 parties | **RELEVÉS le 4 nov. à 18 h 25** — aucune perte au temps : **+16,02 ± 3,17**, non homogènes (p = 0,031) mais chaque job passe seul ; **FUSIONNÉ** (« N° 23 — C71 : VERDICT ») | — *Attendu, écrit avant* (section « N° 23 — C71 ») : **+12 à +22, ~+17** ; **critère** : fusionne si sa borne basse passe zéro ET si son point n'est pas sous +9,7 (C67 seul moins les ± 4,5 des deux mesures) ; sinon C67 entre seul et C63 se remesure par-dessus |
-| **N° 23 — C72, C73, C74, les réglages de la phase 4 sur `main`** | contre `03746f9` — C72 (`84d51c8`) : **41880430119, 41880439801, 41880450127, 41880460804** ; C73 (`55816c7`) : **41880469995, 41880479497, 41880489688, 41880499153** ; C74 (`ffc469c`) : **41880507624, 41880516058, 41880525114, 41880534202, 41880542284, 41880551205, 41880559592, 41880568950** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 + 4 + 8 × 2 800 parties | **EN VOL** — lancés le 4 nov. à 18 h 47, fin attendue vers 23 h 55 | — *Attendus, écrits avant* (section « N° 23 — C72, C73, C74 ») : C72 **−3 à +4**, C73 **−3 à +5**, C74 **−4 à +8** ; **critère** : fusionne celui dont la borne basse passe zéro ; plusieurs, composés et mesurés avant d'entrer |
+| **N° 23 — C72, C73, C74, les réglages de la phase 4 sur `main`** | contre `03746f9` — C72 (`84d51c8`) : **41880430119, 41880439801, 41880450127, 41880460804** ; C73 (`55816c7`) : **41880469995, 41880479497, 41880489688, 41880499153** ; C74 (`ffc469c`) : **41880507624, 41880516058, 41880525114, 41880534202, 41880542284, 41880551205, 41880559592, 41880568950** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 + 4 + 8 × 2 800 parties | **RELEVÉS le 5 nov. à 0 h 50** — finis entre 23 h 32 et 23 h 48, aucune perte au temps : C72 **−0,09 ± 3,10**, C73 **−5,96 ± 3,09**, régression démontrée, C74 **+1,05 ± 2,40** à sept jobs ; **41880559592 a perdu son runner** à 22 h 21, sans résumé — **relancé à 0 h 46** (tentative 2), il ne décide que s'il rend +10,6 ou plus ; **aucun ne passe, `main` reste** (« N° 23 — C72, C73, C74 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C72, C73, C74 ») : C72 **−3 à +4**, C73 **−3 à +5**, C74 **−4 à +8** ; **critère** : fusionne celui dont la borne basse passe zéro ; plusieurs, composés et mesurés avant d'entrer |
+| **Balayage de mutation de `main` après C71** | **41878189509**, `commit` = `03746f9` | — | `mutation.yml` | **RELEVÉ le 5 nov. à 0 h 50, ROUGE** — lancé le 4 nov. à 18 h 31 ; `search.rs` **48 contre 46** (860 attrapés, 43 expirés, 41 inviables), les neuf autres à leur plafond, total 163 | cinq survivants neufs, trois anciens disparus : **deux tués par des tests** aux invariants — l'index de la continuation de la correction, le coup noté par la quiescence —, **trois notés** au plafond, qui reste à 46 (`.github/mutation-baseline.txt`, commit `d33fbb5`) ; **le balayage de contrôle, 41938141752** sur `e76cf9b`, lancé le 5 nov. à 1 h 01 — *prédiction, écrite avant* : **161**, `search.rs` 46, un de moins possible, un de plus non |
 | **Balayage de mutation de `main` après le multicouche** | **41592047881**, `commit` = `700a8ba` | — | `mutation.yml` | **RELEVÉ le 3 nov. à 13 h 40, vert** — `nnue.rs` 2, à son plafond ; `search.rs` 46 sous 48, plafond resserré ; les autres à leur plafond, total 161 | — |
 | **N° 20, séance C2 — la perte tenue à l'écart des quatre** | **40463028272** | `nnue-validation.yml` à `a4d92b2`, N9w50s800 en référence, N9w625s800, N9w75s800, N9p25s800, N9w25a75s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 27 oct. à 7 h 50** — lancée à 7 h 45, ses attendus poussés avant (`a4d92b2`), finie à 7 h 48 | **Huit lectures sur douze dans l'attendu** : sur les données de N6r4, les poids à égalité avec N9w50s800 à 0,00008 près, N9p25s800 +0,00036 et +0,00058 ; sur le job de N5l, la perte monte avec le poids (+0,00018, +0,00032) — trois dehors ; un diagnostic, les matchs décident (« La séance C2 ») — *Attendus, écrits avant* (« La séance C2 ») : N9w625s800 −0,0001 à +0,0001 ; N9w75s800 −0,0002 à +0,00005 ; N9p25s800 −0,0001 à +0,0004 ; N9w25a75s800 −0,0001 à +0,0002 |
 | **N° 20, séance C2 — N9w25a75s800 contre N9w50s800** | **40462840387, 40462849236, 40462858043, 40462866873** | `fa28f9a` (N9w25a75s800) → `cf93707` (N9w50s800, le code de `main` au bit près), `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` (2,85) | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉ le 27 oct. à 13 h 31** — lancés à 7 h 44, les attendus poussés avant (« La séance C2 », `47fdd4d`) ; finis ENTIERS entre 12 h 42 et 12 h 45 | **−1,99 ± 3,32 en commun** (−5,34, −6,95, +2,11, +2,23 ; p = 0,219) — dans l'attendu, **pas candidat ; C2 close, aucun des quatre ne gagne** (« La séance C2 ») — *Critère, écrit avant* : borne basse au-dessus de zéro → candidat à l'embarquement, sa sonde de B8 lue contre N9w50s800 ; *attendu* −4 à +6, ~+1 (« La séance C2 ») |
@@ -15361,6 +15364,53 @@ ailleurs ce que l'un relâche.
 avant d'entrer, comme C71. Sinon `main` reste, et chaque réglage garde
 sa valeur au registre, déprioritisé si son point est sous +2.
 
+### N° 23 — C72, C73, C74 : VERDICT, relevé le 5 nov. à 0 h 50 — aucun ne passe, `main` reste
+
+**Les seize matchs**, lancés le 4 nov. à 18 h 47, finis entre 23 h 32 et
+23 h 48, 2 800 parties chacun, **aucune perte au temps**, 6,09 à 6,42 s
+par partie ; contre `03746f9`. **Un job perdu** : 41880559592, le
+septième de C74, a perdu son runner à 22 h 21 en pleine partie (« *The
+hosted runner lost communication with the server* », lu dans ses
+annotations), sans résumé ni journal — la panne du n° 13, indépendante
+du résultat. **Relancé à 0 h 46** (tentative 2, même graine : la
+première n'a rien joué de compté), parce que le plan en écrivait huit.
+
+| candidat | les jobs | en commun | homogénéité | attendu |
+|---|---|---|---|---|
+| C72, trois plis aux nœuds de coupure | −3,72, −1,24, +1,49, +3,10 | **−0,09 ± 3,10** | p = 0,436 | −3 à +4 |
+| C73, le poids de la correction × 1,5 | −5,58, −4,22, −7,69, −6,33 | **−5,96 ± 3,09** | p = 0,860 | −3 à +5 — **sous l'attendu** |
+| C74, C65 sur C71, sept jobs sur huit | +6,08, +1,86, −3,35, −1,12, +2,23, −0,00, +1,61 | **+1,05 ± 2,40** | p = 0,386 | −4 à +8 |
+
+**Le critère, écrit avant** : aucune borne basse ne passe zéro — C74,
+la plus haute, −1,35 — **aucun ne fusionne, `main` reste**. Le huitième
+job de C74 ne change la décision que s'il rend **+10,6 ou plus** : à
+l'effet mesuré, un job à ± 6,4 y arrive ~0,2 % des fois. Il se relève
+pour compléter le compte, pas parce qu'on l'attend.
+
+**Ce que les trois points disent** :
+- **C72 — plat de deux à trois plis.** De un à deux, +1,8 ; de deux à
+  trois, −0,1, pour +1,46 % d'arbre. Le bonus aux nœuds de coupure est à
+  son plateau : **déprioritisé**, à reprendre par SPSA.
+- **C73 — une régression démontrée**, borne haute −2,87, chacun des
+  quatre jobs sous zéro. De mi-poids à plein poids, +3 ; de plein à
+  × 1,5, **−6**. L'optimum est autour du plein poids — les poids de
+  Stockfish 17.1. <span>Inférence, confiance faible</span> : une
+  correction trop forte suit le bruit des dernières recherches plus que
+  l'erreur de l'évaluation. **Déprioritisé** : × 0,75 et × 1,25 les
+  seuls points ouverts, marge ~0 à +2.
+- **C74 — la variante principale en table ne rend rien, même sur la
+  base qui porte la réduction aux nœuds de coupure** : +1,05 pour
+  +27,82 % d'arbre, contre +2,79 pour +25,6 % sur l'ancienne base.
+  L'attendu supposait que l'un rendait ce que l'autre réduisait ; la
+  mesure ne le voit pas. **Déprioritisé**, la quatrième forme sans
+  gain.
+
+**Les réglages de la phase 4 sont tous à leur plateau** — le diviseur
+et le décalage de la note, la mémoire de la gravité, le bonus aux nœuds
+de coupure, le poids de la correction : chacun plat ou perdant d'un pas
+de part et d'autre de `main`. Ce qui reste à y chercher, quelques Elo,
+revient à SPSA, qui les réglera ensemble.
+
 ### N° 23 — le test des extensions singulières : mesuré sur `main` le 3 nov., traitement écrit avant le verdict de C59
 
 **Le test** — `les_extensions_singulieres_allongent_l_arbre` somme les
@@ -17020,6 +17070,9 @@ pas parce que des runners sont libres.
    l'historique des captures sans gain. **La phase 4 est close**, ~+53
    par la chaîne ; ses réglages au registre — le bonus aux nœuds de
    coupure, le poids de la correction, C65 sur la base qui porte C63.
+   **Mesurés le 5 nov., aucun ne passe** : trois plis −0,09, le poids
+   × 1,5 −5,96 (régression), C65 sur C71 +1,05 — tous déprioritisés ;
+   les réglages de la phase 4 sont à leur plateau, le reste à SPSA.
 3. En parallèle de 2 : l'inférence multicouche écrite dans le moteur,
    confrontée au code de bullet, prête pour l'entraînement au verdict de C3.
    **Écrite le 2 nov.** (n° 23, « l'inférence multicouche ») : la
@@ -17149,9 +17202,9 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **seuil des ouvertures du générateur** (`OPENING_MAX_SCORE`) | 1 000 en unités d'évaluation, écrit pour la faite main | jamais en force ; son taux suit l'étiqueteur — **18,46 % sous N8tw50s800, 21,01 % sous N9w50s800**, les mêmes 5 000 ouvertures (26 oct., « N° 22 », la vague 1) | inconnue — <span>confiance faible</span> | avec les ouvertures, phase 7 ; jamais en cours de tranche : il change le mélange appris |
 | **marges et constantes de recherche** | réglées à la main ; × 2,85 au réseau (B8) | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA, phase 5, à refaire à chaque réseau |
 | **LMR modulée — le diviseur de la note** | 6 000 : une note de 6 000 vaut un pli (C54) | à l'écran : 11 000 change 2,5 % des réductions, 6 000 un tiers ; **C54 +23,18 ± 3,15** contre C53 (2 nov.) | +3 à +10 — <span>confiance faible</span> : un seul point, et Stockfish décale la note (−4 006) avant de la diviser | **C55 (4 000) −2,57 ± 2,99 ; C56 (9 000) −7,20 ± 3,07**, régression démontrée (3 nov., « N° 23 — C55, C56 : VERDICT ») : l'optimum est plat autour de 6 000 — **déprioritisé**, marge ~0 à +2 <span>(confiance faible)</span>. **Le décalage de la note : C57 (+2 000) −0,22 ± 3,02, C58 (−2 000) +0,34 ± 3,03** (3 nov.) — plat lui aussi, **déprioritisé** (« N° 23 — C57, C58 : VERDICT » ; la sonde : `tools/attic/n23-sonde-decalage.patch`). Restent, à l'écran le 3 nov. : le diviseur par profondeur (+1,3 % d'arbre) et le papillon double (−5,9 % au diviseur 7 500) ; puis SPSA |
-| **LMR — le bonus aux nœuds de coupure** (n° 23) | 2 plis (C63), dans `main` depuis le 4 nov. (C71) | **C62 (1 pli) +3,29 ± 3,06 ; C63 (2 plis) +5,06 ± 3,02** contre `main` (4 nov., « N° 23 — C62, C63 : VERDICT ») | +0 à +3 au pli suivant — <span>confiance faible</span> : la pente de 1 à 2 plis est de +1,8, à ± 4,3 | 3 plis, quatre jobs contre `main` — à l'écran sur C71 : +1,46 % d'arbre |
-| **LMR — le relâchement aux nœuds de la variante principale en table** (n° 23) | 0 : pas de bit `ttPv` | **C64 (un pli, anciens nœuds PV) −0,71 ± 3,04 ; C66 (deux plis) +0,68 ± 3,06 ; C65 (un pli partout, la forme de Stockfish) +2,79 ± 3,09**, pour +2,1, +7,5 et +25,6 % d'arbre (4 nov., « N° 23 — C64, C65, C66 : VERDICT ») | 0 à +4 — <span>confiance faible</span> : seule la forme complète rend quelque chose au point | C65 sur `main`, qui porte C63 depuis le 4 nov. : +27,82 % d'arbre à l'écran ; huit jobs — Stockfish les emploie ensemble |
-| **l'historique de correction — son poids et ses tables** (n° 23) | les poids de Stockfish 17.1 (C67), dans `main` depuis le 4 nov. (C71) | **C68 (mi-poids) +11,26 ± 3,16 ; C67 (plein poids) +14,22 ± 3,26** contre `main` (4 nov., « N° 23 — C67, C68 : VERDICT ») ; à l'écran, le double poids +21 % d'arbre, la continuation retirée +17,7 % | +0 à +5 au poids × 1,5 — <span>confiance faible</span> : la pente de mi-poids à plein est de +3, à ± 4,5 | le poids × 1,5 contre `main`, quatre jobs — à l'écran sur C71 : +3,47 % d'arbre ; puis chaque table retirée une à une ; puis SPSA, qui prendra aussi la règle d'apprentissage |
+| **LMR — le bonus aux nœuds de coupure** (n° 23) | 2 plis (C63), dans `main` depuis le 4 nov. (C71) | **C62 (1 pli) +3,29 ± 3,06 ; C63 (2 plis) +5,06 ± 3,02** contre `main` (4 nov., « N° 23 — C62, C63 : VERDICT ») | ~0 à +2 — <span>confiance faible</span> : plat de 2 à 3 plis | **C72 (3 plis) −0,09 ± 3,10** contre `main`, pour +1,46 % d'arbre (5 nov., « N° 23 — C72, C73, C74 : VERDICT ») — le plateau : **déprioritisé**, à reprendre par SPSA |
+| **LMR — le relâchement aux nœuds de la variante principale en table** (n° 23) | 0 : pas de bit `ttPv` | **C64 (un pli, anciens nœuds PV) −0,71 ± 3,04 ; C66 (deux plis) +0,68 ± 3,06 ; C65 (un pli partout, la forme de Stockfish) +2,79 ± 3,09**, pour +2,1, +7,5 et +25,6 % d'arbre (4 nov., « N° 23 — C64, C65, C66 : VERDICT ») | ~0 à +2 — <span>confiance faible</span> | **C74 (C65 sur C71) +1,05 ± 2,40** à sept jobs sur huit, pour +27,82 % d'arbre (5 nov., « N° 23 — C72, C73, C74 : VERDICT ») — la base qui porte C63 n'y change rien : **déprioritisé**, la quatrième forme sans gain ; le huitième job relancé |
+| **l'historique de correction — son poids et ses tables** (n° 23) | les poids de Stockfish 17.1 (C67), dans `main` depuis le 4 nov. (C71) | **C68 (mi-poids) +11,26 ± 3,16 ; C67 (plein poids) +14,22 ± 3,26** contre `main` (4 nov., « N° 23 — C67, C68 : VERDICT ») ; à l'écran, le double poids +21 % d'arbre, la continuation retirée +17,7 % | ~0 à +2 — <span>confiance faible</span> : de mi-poids à plein +3, de plein à × 1,5 −6 | **C73 (× 1,5) −5,96 ± 3,09**, régression démontrée (5 nov., « N° 23 — C72, C73, C74 : VERDICT ») : l'optimum est autour du plein poids — **déprioritisé** ; × 0,75 et × 1,25 les seuls points ouverts ; puis chaque table retirée une à une ; puis SPSA, qui prendra aussi la règle d'apprentissage |
 | **gravité de l'historique — plafonds et bonus** | 7 183 au papillon, 29 952 à la continuation, bonus `clamp(336·d − 547, 1, 1561)` — Stockfish 16, jamais réglés ici ; le papillon conservé | **C53 +14,40 ± 3,08** (2 nov.) ; le plafond 16 384 au bonus `d²`, +2,14 | +2 à +8 — <span>confiance faible</span> | **à l'écran le 3 nov. : confondus avec le diviseur** — la note n'est lue que par l'ordre, invariant d'échelle, et par la LMR ; le bonus × 2 rend l'écran du diviseur 4 000 (« N° 23 — les échelles de la gravité »). **la mémoire, mesurée le 3 nov.** : bonus × 0,5 **−5,03 ± 3,00**, × 2 **+2,48 ± 3,08** (« N° 23 — C59, C60 : VERDICT ») ; × 3 **+1,66 ± 2,16**, huit jobs non homogènes (« N° 23 — C61 : VERDICT ») — un plateau de quelques Elo côté mémoire courte, rien de démontré : **déprioritisé**, à reprendre par SPSA avec le diviseur ; puis le poids papillon contre continuations, le diviseur ajusté au rejeu pour tenir la part des réductions changées ; le papillon vidé à chaque coup, contre conservé |
 
 **Phase 2 — la vitesse (conteneur, en parallèle de la phase 1).** Des
