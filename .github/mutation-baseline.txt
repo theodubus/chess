@@ -48,7 +48,7 @@ eval.rs 102
 # search.rs — 46, TENU le 5 nov. 2026 : le balayage de `main` à
 #   `03746f9` (run 41878189509), après C71 — la LMR selon le type de nœud
 #   et l'historique de correction en plusieurs tables —, rend 48 contre 46
-#   (843 attrapés, 43 expirés) : cinq survivants neufs, trois anciens
+#   (860 attrapés, 43 expirés) : cinq survivants neufs, trois anciens
 #   disparus avec le code que C71 a réécrit.
 #   Deux tués par des tests, l'un et l'autre aux invariants :
 #     · `before * PIECE_TO + last` en `-` (`continuation_correction_index`) :
