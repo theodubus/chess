@@ -72,6 +72,16 @@ eval.rs 102
 #       distingue deux constantes de hachage aux profondeurs du banc.
 #   Prédiction au prochain balayage : 46 — un de moins possible, un
 #   expiré qui se résout ; un de plus non.
+#   LE CONTRÔLE la manque d'un (run 41938141752, `e76cf9b`, 5 nov.) :
+#   47, total 162 pour 161 prédits. Les deux visés sont tués ; revient un
+#   ancien, `ply > 0` en `ply >= 0` dans `search_node` — la garde « pas de
+#   coupure par la table à la racine », un invariant de CLAUDE.md que
+#   rien ne gardait : survivant le 3 nov., absent le 4 (attrapé par
+#   hasard ou expiré, le résumé ne le dit pas), revenu le 5. Tué le
+#   5 nov. par `la_table_ne_coupe_jamais_a_la_racine`, avec son témoin au
+#   ply 1, injecté à la main en release. Prédiction : 46 — et la
+#   prédiction manquée dit qu'un survivant clignote : une hausse d'un
+#   seul, sur un mutant déjà vu, se lit d'abord comme lui.
 #
 # search.rs — 46, RESSERRÉ le 3 nov. 2026 : le balayage de `main` à
 #   `700a8ba` (run 41592047881), après C53 et C54 — la gravité de
