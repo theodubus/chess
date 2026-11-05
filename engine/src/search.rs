@@ -5492,6 +5492,34 @@ mod tests {
     }
 
     #[test]
+    fn la_table_ne_coupe_jamais_a_la_racine() {
+        // Il y faut un coup à jouer, pas seulement un score. Une entrée exacte,
+        // plus profonde que la recherche, porte un score que rien d'autre ne
+        // rendrait : la racine cherche quand même, et laisse une variante. Le
+        // `ply > 0` en `ply >= 0` — survivant des balayages du 3 et du 5 nov.
+        // 2026, jamais gardé par un test — rendait ce score sans coup ; en
+        // partie, une racine déjà vue plus profond au coup d'avant.
+        let b = Board::default();
+        let bidon = 777;
+        let mut racine = search();
+        racine.tt.store(b.hash(), None, bidon, 100, Bound::Exact, 0);
+        let score = racine.negamax(&b, 2, 0, -INFINITY, INFINITY, &mut ardoise());
+        assert_ne!(score, bidon, "la racine a rendu le score de la table");
+        assert!(
+            !racine.pv.line().is_empty(),
+            "la racine n'a rendu aucun coup"
+        );
+        // Témoin : au ply 1, la même entrée coupe — elle est donc lisible, et
+        // c'est la garde de la racine qui la refuse.
+        let mut interieur = search();
+        interieur
+            .tt
+            .store(b.hash(), None, bidon, 100, Bound::Exact, 1);
+        let score = interieur.negamax(&b, 2, 1, -INFINITY, INFINITY, &mut ardoise());
+        assert_eq!(score, bidon);
+    }
+
+    #[test]
     fn la_racine_se_cherche_a_sa_profondeur_meme_sans_coup_de_la_table() {
         // L'IIR retranche un pli à un nœud sans coup de la table — jamais à la
         // racine, où l'itération doit chercher la profondeur qu'elle annonce.
