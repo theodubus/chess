@@ -17084,7 +17084,10 @@ pas parce que des runners sont libres.
    nœuds, plus un 4ᵉ réseau pour le tour de boucle, ajouté à
    `tools/seance-n22.sh` le 2 nov.), puis C3 (N10, N10r10, N10h384,
    N10h512), ~42 h. **Théo dit quand sa carte est prête** (3 nov.) :
-   rien à relancer d'ici là.
+   rien à relancer d'ici là. **Carte prête le 5 nov. au matin** (Théo) :
+   la séance n° 22 donnée, ~11 h 30 ; puis ses trois matchs sur les
+   runners (~5 h), la décision des données de C3 (`tools/c3-donnees.tsv`),
+   et la séance C3.
 5. Après C3 : embarquer le gagnant (sonde des marges, série C13) ;
    16 seaux de roi si 10 a payé ; 1 024 et couches cachées si la largeur paie.
 6. Reprendre la génération, étiquetée par le nouveau réseau, au rythme
