@@ -12336,6 +12336,63 @@ un fichier de la taille qu'ils donnent :
 - la décision absente : refusé, rien de lancé ; trop peu de place : de
   même.
 
+#### La séance C3, les données — l'option C, choisie par Théo le 6 nov. à 8 h
+
+**La décision** — Théo : « *Ok pour C* ». Quatre options lui avaient été
+posées au verdict du n° 22 (« La séance du n° 22 — E2.5v et E21 :
+VERDICT ») :
+- **A′** — n20, n20e, n21 et les vagues 1 à 5 du n° 22, aux deux
+  budgets : 9,64 G positions, déjà sur sa machine ;
+- **A″** — n21 et les vagues 1 à 5 : 5,9 G, déjà sur sa machine ;
+- **B** — A′ et les vagues 6 à 21 : 20,5 G, 39,5 Go d'artefacts à
+  télécharger ;
+- **C — B sans n20 ni n20e**, sans les étiquettes de N6r4 : 16,8 G, les
+  mêmes 39,5 Go. C'était l'option recommandée dans le récap, et c'est
+  celle que Théo a retenue.
+
+**Pourquoi sans N6r4** : à volume égal, l'étiquette d'un réseau plus fort
+paie — N6r4 sur N5l +12,76, le tour de boucle +10,15 (E21). Et la moitié
+étiquetée par N5l n'ajoutait rien à passes égales (+0,25 ± 4,71) ; à
+superlots égaux, elle prenait des passes aux bonnes étiquettes (−5,18).
+<span>Inférence, confiance moyenne</span> : les étiquettes de N6r4, deux
+réseaux en arrière, feraient de même.
+
+**`tools/c3-donnees.tsv`** : `n21 * *` et `n22 * *`, soit les 86 et 333
+jobs appris. Les trois jobs tenus à l'écart (un du n° 21, deux du n° 22)
+restent à la validation. En tout, **419 jobs, 141 284 632 parties et
+16 809 185 651 positions** — c'est l'`--attendu` de l'entraîneur. Il y a
+11,35 G positions gardées, donc les 800 superlots (80,0 G positions) font
+**~7 passes**, contre 31 pour N9w50s800. Les passes payaient encore à
+400 → 800 (+5,43), d'où une mise en garde, <span>confiance faible</span>
+sur le sens : ici, le volume se paie en passes. La base N10 mesure
+l'ensemble — volume, étiqueteurs et passes mêlés — contre N9w50s800, et
+1 600 superlots restent au bout de la feuille de route.
+
+**Éprouvé au bac à sable le 6 nov.**, sur un clone, avec `gh`, `df` et
+`cargo` factices. Le dossier de données y était dans l'état où la séance
+n° 22 l'a laissé : n21 entier, plus les 77 jobs appris des vagues 1 à 5.
+- Les deux lignes sont lues : 86 et 333 jobs.
+- 256 jobs sont téléchargés, aucun de ceux déjà présents.
+- 1 676 `.vf`.
+- L'entraîneur est appelé sur les 419 dossiers, avec `--attendu
+  141284632:16809185651`.
+- La place : 39 Go d'artefacts, donc **~54 Go libres exigés**
+  (52 726 498 Kio, refusé à 52 000 000, accepté à 53 000 000). Ils
+  s'ajoutent aux ~25 Go déjà présents.
+
+**Le lecteur de bullet tient 1 676 fichiers** — lu dans son source au
+commit épinglé (`viribinpack.rs`, `read_interleave`). Il compte d'abord
+les parties de chaque fichier. Ensuite, il tire un fichier au hasard,
+pondéré par ce qui lui reste, l'ouvre, y lit seize parties et le
+referme : jamais plus d'un fichier ouvert à la fois.
+
+**Ce qui change, c'est l'accès disque.** ~70 Go sont lus par blocs de
+seize parties, à des points aléatoires. Aucun réseau n'en avait lu plus
+de ~17 (N9w50s800, n20 et n20e). <span>Inférence, confiance
+faible</span> : sans effet sur un SSD, un goulot sur un disque dur. La
+séance n° 22 tenait ~24 s par superlot à 256 unités, soit ~5 h 15 pour
+N10 à 800 superlots. Un N10 nettement plus long désignerait le disque.
+
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
 Théo, le 19 oct. au soir : « *je suis prêt* ». La séance A d'abord, telle
@@ -14359,7 +14416,8 @@ l'écart le disait déjà, chacun sous l'autre sur sa propre étiquette.
   étiquetée par N5l n'ajoutait rien à passes égales (+0,25 ± 4,71) et
   prenait des passes aux bonnes à superlots égaux (−5,18). D'où une
   troisième option pour C3, sans les étiquettes de N6r4 — la décision
-  revient à Théo, qui en paie le téléchargement.
+  revient à Théo, qui en paie le téléchargement. **Choisie le 6 nov. :
+  l'option C** (« La séance C3, les données »).
 
 ### N° 23 — l'historique borné (phase 4) : protocole et attendus, écrits le 2 nov. avant de mesurer
 
@@ -17182,8 +17240,10 @@ pas parce que des runners sont libres.
    et la séance C3. **La séance n° 22 faite le 5 nov.**, ses quatre
    réseaux sans une panne : **2 500 nœuds remplacent 5 000** (E2.5t
    +5,77 ± 3,34), l'étiquette seule ne se sépare pas (E2.5v −1,55), **le
-   tour de boucle paie** (E21 +10,15 ± 3,33). Les données de C3 attendent
-   Théo : elles fixent son téléchargement.
+   tour de boucle paie** (E21 +10,15 ± 3,33). **Les données de C3
+   choisies par Théo le 6 nov.** : l'option C, n21 et les 21 vagues du
+   n° 22 sans les étiquettes de N6r4, 16,8 G positions, 39 Go à
+   télécharger (« La séance C3, les données ») — la séance C3 donnée.
 5. Après C3 : embarquer le gagnant (sonde des marges, série C13) ;
    16 seaux de roi si 10 a payé ; 1 024 et couches cachées si la largeur paie.
 6. Reprendre la génération, étiquetée par le nouveau réseau, au rythme
@@ -17294,7 +17354,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **taille de lot** | 16 384 | **C2c, à 800 superlots, contre N9w50s800 (28 oct.) : 8 192 → −5,43 ± 3,23 en commun, quatre matchs hétérogènes (p = 0,017) ; 32 768 → +2,30 ± 3,33**, rien de démontré | 0 à +3 vers les grands lots — <span>confiance faible</span> ; 32 768 coûte 4 % de moins à entraîner | **déprioritisé** : 32 768 avec le pas initial qu'il appelle (plus haut), un seul réseau — ou au premier entraînement qui change de lot pour une autre raison (C3) |
 | **filtre des positions** | ply ≥ 16, plus le filtre par défaut | **C2c, à 800 superlots, contre N9w50s800 (29 oct.) : ply ≥ 8 → −3,78 ± 3,26 ; ply ≥ 24 → −4,37 ± 3,37** — les deux régressions démontrées, de peu | fine — <span>confiance moyenne</span> : 16 est entre deux coûts | **déprioritisé** : 12 et 20 les seuls points ouverts ; rouvert par d'autres ouvertures du générateur (phase 7), qui déplacent les demi-coups tirés au hasard |
 | **poids du résultat variable** | constant pendant l'entraînement | **de 0,25 à 0,75 à 800 superlots : −1,99 ± 3,32** contre N9w50s800 (C2, 27 oct.) | ~0 à ± 3 — <span>confiance moyenne</span> | **déprioritisé** ; une autre pente — de 0 à 1, ou décroissante — rouvrirait le réglage |
-| **volume de données** | 3,71 G vus par N9w50s800 (les 94 jobs appris de l'étape B et les 80 de (e), tous étiquetés par N6r4) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) ; **N9w50s800 +5,18 ± 3,29 contre N8tw50s800** — N5l retiré, 0,98 G de N6r4 ajoutées, 31 passes au lieu de 25 : trois causes mêlées | ~+7 au doublement suivant — <span>confiance faible</span> | **N9w50s800 EMBARQUÉ le 22 oct.** (séance C1) ; **le volume à étiquette égale paie : +8,94 ± 3,32** (E5t contre E5v, 26 oct.), ce que le n° 20 n'avait pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») |
+| **volume de données** | 3,71 G vus par N9w50s800 (les 94 jobs appris de l'étape B et les 80 de (e), tous étiquetés par N6r4) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) ; **N9w50s800 +5,18 ± 3,29 contre N8tw50s800** — N5l retiré, 0,98 G de N6r4 ajoutées, 31 passes au lieu de 25 : trois causes mêlées | ~+7 au doublement suivant — <span>confiance faible</span> | **N9w50s800 EMBARQUÉ le 22 oct.** (séance C1) ; **le volume à étiquette égale paie : +8,94 ± 3,32** (E5t contre E5v, 26 oct.), ce que le n° 20 n'avait pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») ; **C3 sur l'option C** (Théo, 6 nov.) : n21 et les 21 vagues du n° 22, 16,81 G positions, ~7 passes à 800 superlots — sa base N10 contre N9w50s800, volume, étiqueteurs et passes mêlés (« La séance C3, les données ») |
 | **l'étiqueteur** | N9w50s800, **2 500 nœuds depuis le 6 nov.** (5 000 avant) | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | **le budget, mesuré le 26 oct.** (séance C1) : 10 000 nœuds contre 5 000, −1,49 ± 3,38 à volume égal, **−7,38 ± 3,40 à temps de runner égal** — le budget ne paie pas, le volume si (+8,94 ± 3,32) ; **2 500 nœuds, le test suivant** : à volume égal contre 5 000, sur des données du même étiqueteur que le n° 21 ; s'il ne perd rien à l'étiquette, il double le volume au même temps de runner — <span>marge estimée : jusqu'à ~+9 au doublement, confiance faible</span> ; **écrit le 26 oct. dans le n° 22** : chaque vague moitié à 2 500, moitié à 5 000, étiquetées par N9w50s800 ; E2.5t contre E5n décide (« N° 22 ») ; **la partie mesurée close le 27 oct.**, 38 et 39 jobs appris, × 2,05 ; **sa séance écrite**, la semaine du 2 nov. (`tools/seance-n22.sh`) ; **les données de N5l laissées** : −5,18 à superlots égaux, +0,25 ± 4,71 à passes égales — rien (22 oct.) ; N9w50s800 embarqué le 22 oct. ; **VERDICT le 6 nov. : E2.5t +5,77 ± 3,34 contre E5n**, non homogène, aucun job contre — **2 500 nœuds remplacent 5 000** pour les tranches suivantes ; **1 250 au test suivant**, à temps de runner égal contre 2 500 (« La séance du n° 22 — E2.5t contre E5n : VERDICT ») |
 | **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17), malgré × 0,90 de nœuds par seconde | inconnue au volume d'aujourd'hui | C3 : 384 et 512 ; **1 024 si 512 paie nettement** — un seul `HIDDEN` dans le moteur, mais ~×0,66 de nœuds par seconde estimé et ~4 fois la carte par superlot (Théo, 21 oct. : plus tard) |
 | **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | C3 : 10 au volume d'aujourd'hui ; **16 et plus si 10 paie** — une table de 32 cases, chaque seau voyant d'autant moins de positions (Théo, 21 oct. : plus tard) |
@@ -18472,6 +18532,26 @@ Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
   la machine de Théo est la seule copie, et `nnue-validation.yml`, qui
   télécharge les artefacts, ne peut plus mesurer la perte tenue à l'écart
   sur un job expiré.
+  <br>**Relevé à l'API le 6 nov. 2026** : 703 artefacts `nnue-`, 85,7 Go.
+  Par génération, avec la date d'expiration du dernier artefact :
+  - n18 : 8,5 Go, au 14 janv. 2027 ;
+  - n20 : 9,3 Go, au 18 janv. ;
+  - n20e : 4,2 Go, au 19 janv. ;
+  - n21 : 9,3 Go, au 24 janv. ;
+  - n22 : 52,0 Go, au 29 janv. ;
+  - 25 artefacts hors registre (sondes et vagues de septembre et du
+    7 oct.) : 2,4 Go.
+
+  **Ce stockage ne coûte rien et n'occupe aucun quota.** Le source de la
+  documentation de facturation (`github/docs`,
+  `content/billing/concepts/product-billing/github-actions.md`, lu le
+  6 nov.) ne mesure le stockage que « *For private repositories* ». Le
+  dépôt est public, et il porte 86,5 Go d'artefacts quand le quota de
+  GitHub Free est de 500 Mo, sans qu'aucun envoi ait été refusé. Théo
+  demandait s'il fallait supprimer les données des anciens réseaux : une
+  suppression ne libère rien de facturé, elle est irréversible, et elle
+  couperait la perte tenue à l'écart sur les jobs supprimés. Tout
+  disparaît de toute façon fin janvier.
 - **Les runners changent de MODÈLE, pas seulement de vitesse** — relevé le
   24 sept. 2026 : EPYC 7763, EPYC 9V74 et EPYC 9V45 dans la même nuit, de
   2,02 à 4,06 M n/s au banc sur des binaires voisins. Un verdict reste valide
