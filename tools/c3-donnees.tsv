@@ -1,0 +1,11 @@
+# Les données de C3 (tools/seance-c3.sh), une ligne par ensemble :
+# génération, vagues (« 1-5 » ou « * »), budget de nœuds (« 5000 » ou « * »),
+# séparés par une tabulation ; seuls les jobs appris entrent, lus dans
+# tools/<génération>-jobs.tsv — les jobs tenus à l'écart restent à la validation.
+#
+# L'option C, choisie par Théo le 6 nov. 2026 (« Ok pour C ») : les données
+# étiquetées par N8tw50s800 (n21) et par N9w50s800 (n22, ses 21 vagues, aux
+# deux budgets) — sans celles de N6r4 (n20, n20e). Pourquoi, dans
+# tools/README.md, « La séance C3, les données ».
+n21	*	*
+n22	*	*
