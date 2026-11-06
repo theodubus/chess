@@ -688,6 +688,8 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-11-05 | **C73 — le poids de l'historique de correction × 1,5**, n° 23 (`55816c7` contre `03746f9`) | **−5,96 Elo ± 3,09** sur 11 200 parties à `8+0,08`, homogènes (p = 0,860) — **régression démontrée**, pour +3,47 % d'arbre ; attendu −3 à +5, manqué par le bas. Non fusionné |
 | 2026-11-05 | **C74 — la variante principale en table, la forme de Stockfish 16, reportée sur `main` qui porte C63** (C65 sur C71), n° 23 (`ffc469c` contre `03746f9`) | **+1,61 Elo ± 2,23** sur 22 400 parties à `8+0,08`, huit jobs homogènes (p = 0,451), un relancé après la perte de son runner — rien de démontré, pour +27,82 % d'arbre ; attendu −4 à +8. Non fusionné |
 | 2026-11-06 | **E2.5t contre E5n — le budget de l'étiqueteur à temps de runner égal**, n° 22 : 2 500 nœuds contre 5 000, à 400 superlots (`2478c91` contre `339c179`) | **+5,77 Elo ± 3,34** sur 11 200 parties à `8+0,08`, **non homogènes** (p = 0,008 ; les deux EPYC 9V74 à +15 et +8, les deux 7763 à zéro) — gain démontré en commun, aucun job ne contredit ; attendu +1 à +12. **2 500 remplace 5 000** pour les tranches suivantes |
+| 2026-11-06 | **E2.5v contre E5n — l'étiquette à 2 500 contre 5 000, à volume égal**, n° 22, à 400 superlots (`5936201` contre `339c179`) | **−1,55 Elo ± 3,40** sur 11 200 parties à `8+0,08`, non homogènes (p = 0,016, quatre EPYC 7763) — pas d'effet décelable ; attendu −6 à +3. Le gain de E2.5t est le volume |
+| 2026-11-06 | **E21 contre N8nw50 — le tour de boucle** : la tranche du n° 21 étiquetée par N8tw50s800 contre l'étape B étiquetée par N6r4, même volume et même recette, n° 22 (`2634f81` contre `06d0473`) | **+10,15 Elo ± 3,33** sur 11 200 parties à `8+0,08`, homogènes (p = 0,682) — **gain démontré**, au-dessus de l'attendu (0 à +9) : un meilleur étiqueteur rend un meilleur réseau à volume égal |
 | 2026-11-03 | **Le livre déséquilibré — son rendement par paire**, n° 23 : `0d2b188` à `10+0,10` contre `8+0,08`, C53 et C54, sur `tools/book-desequilibre.epd` contre `tools/book.epd` | **× 1,11 [0,85 ; 1,44]** sur trois effets connus, homogènes ; × 0,98 par heure de runner, ses parties durant ~13 % de plus — **ne paie pas**, notre livre reste ; à `8+0,08` |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
@@ -1072,9 +1074,9 @@ dernière relève est faite.
 | **N° 23 — C71, la composition des gagnants (C63 + C67)** | C71 (`3f47f79`) contre `e0762bf` : **41826185481, 41826193857, 41826203153, 41826212189** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 × 2 800 parties | **RELEVÉS le 4 nov. à 18 h 25** — aucune perte au temps : **+16,02 ± 3,17**, non homogènes (p = 0,031) mais chaque job passe seul ; **FUSIONNÉ** (« N° 23 — C71 : VERDICT ») | — *Attendu, écrit avant* (section « N° 23 — C71 ») : **+12 à +22, ~+17** ; **critère** : fusionne si sa borne basse passe zéro ET si son point n'est pas sous +9,7 (C67 seul moins les ± 4,5 des deux mesures) ; sinon C67 entre seul et C63 se remesure par-dessus |
 | **N° 23 — C72, C73, C74, les réglages de la phase 4 sur `main`** | contre `03746f9` — C72 (`84d51c8`) : **41880430119, 41880439801, 41880450127, 41880460804** ; C73 (`55816c7`) : **41880469995, 41880479497, 41880489688, 41880499153** ; C74 (`ffc469c`) : **41880507624, 41880516058, 41880525114, 41880534202, 41880542284, 41880551205, 41880559592, 41880568950** | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 + 4 + 8 × 2 800 parties | **RELEVÉS le 5 nov. à 0 h 50** — finis entre 23 h 32 et 23 h 48, aucune perte au temps : C72 **−0,09 ± 3,10**, C73 **−5,96 ± 3,09**, régression démontrée, C74 **+1,61 ± 2,23** à huit jobs — **41880559592 a perdu son runner** à 22 h 21, sans résumé, **relancé à 0 h 46** (tentative 2), fini à 5 h 40 : +5,58 ; **aucun ne passe, `main` reste** (« N° 23 — C72, C73, C74 : VERDICT ») | — *Attendus, écrits avant* (section « N° 23 — C72, C73, C74 ») : C72 **−3 à +4**, C73 **−3 à +5**, C74 **−4 à +8** ; **critère** : fusionne celui dont la borne basse passe zéro ; plusieurs, composés et mesurés avant d'entrer |
 | **N° 22 — E2.5t contre E5n, le budget de l'étiqueteur à temps de runner égal** | **42096910633, 42096924398, 42096937549, 42096951976** — E2.5t (`2478c91`, e25tw50 embarqué) contre E5n (`339c179`, e5nw50), chacun révoqué aussitôt, sur `main` à `ded5b34` | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 × 2 800 parties | **RELEVÉS le 6 nov. à 2 h** — finis entre 1 h 40 et 1 h 43, aucune perte au temps : +15,27, +7,82, −0,12, +0,12 ; en commun **+5,77 ± 3,34**, non homogènes (p = 0,008 ; les deux EPYC 9V74 au-dessus, les deux 7763 à zéro) ; **le critère passe, aucun job ne le contredit — 2 500 nœuds remplacent 5 000** (« La séance du n° 22 — E2.5t contre E5n : VERDICT ») | — *Attendu, écrit avant* (« La séance du n° 22 ») : **+1 à +12** ; **critère** (« N° 22 », écrit le 26 oct.) : 2 500 remplace 5 000 pour les tranches suivantes si la borne basse passe zéro |
-| **N° 22 — E2.5v contre E5n, l'étiquette à 2 500 à volume égal** | **42120738392, 42120749751, 42120760142, 42120771056** — E2.5v (`5936201`, e25vw50 embarqué) contre E5n (`339c179`), révoqués aussitôt, sur `main` à `ded5b34` | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 × 2 800 parties | **EN VOL** — lancés le 5 nov. à 23 h 20 ; e25vw50 poussé par la séance à 23 h 07, tous contrôles passés, confrontation 7 et 15, intégré à `reseaux/` | — *Attendu, écrit avant* (« La séance du n° 22 ») : **−6 à +3** ; **critère** (« N° 22 ») : si E2.5v régresse, démontré, sans que E2.5t gagne, les données à 2 500 n'entrent pas |
+| **N° 22 — E2.5v contre E5n, l'étiquette à 2 500 à volume égal** | **42120738392, 42120749751, 42120760142, 42120771056** — E2.5v (`5936201`, e25vw50 embarqué) contre E5n (`339c179`), révoqués aussitôt, sur `main` à `ded5b34` | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 × 2 800 parties | **RELEVÉS le 6 nov. à 7 h 20** — finis entre 4 h 11 et 4 h 19, aucune perte au temps, les quatre sur EPYC 7763 : −2,36, −6,70, +7,82, −4,96 ; en commun **−1,55 ± 3,40**, non homogènes (p = 0,016) — rien de démontré, aucun job ne régresse démontré (« La séance du n° 22 — E2.5v et E21 : VERDICT ») | — *Attendu, écrit avant* (« La séance du n° 22 ») : **−6 à +3** ; **critère** (« N° 22 ») : si E2.5v régresse, démontré, sans que E2.5t gagne, les données à 2 500 n'entrent pas |
 | **N° 22 — la perte tenue à l'écart de E5n, E2.5t, E2.5v** | **42120782285** | `nnue-validation.yml` sur la branche, N9w50s800 en référence ; les jobs tenus du n° 22, 40326139016 et 40326149256 | 1 job | **RELEVÉE le 5 nov. à 23 h 30** — lancée à 23 h 20, finie à 23 h 24 | **Les deux attendus tiennent.** Sur le job à 2 500 (32,3 M gardées) : N9w50s800 0,044264, E5n 0,044247, **E2.5t 0,044095**, E2.5v 0,044195 — E2.5t sous E5n de 0,000152, à ± 0,000016 près. Sur le job à 5 000 (28,3 M) : N9w50s800 0,037869, **E5n 0,037810**, E2.5t 0,037891, E2.5v 0,038009 — E5n sous E2.5v de 0,000199. Chacun sous l'autre sur sa propre étiquette, et E2.5t davantage sur la sienne (0,000152) que E5n sur la sienne (0,000081) : le volume. Contre N9w50s800, tous à moins de 0,00018. *Attendus, écrits avant* : E2.5t sous E5n sur le job à 2 500, E5n sous E2.5v sur le job à 5 000 ; la perte ne décide rien |
-| **N° 22 — E21 contre N8nw50, le tour de boucle** | **42141094026, 42141102369, 42141110902, 42141119294** — E21 (`2634f81`, e21w50 embarqué, sur `main` à `9659698`) contre le témoin N8nw50 (`06d0473`, sur `ded5b34` — le même code moteur), révoqués aussitôt | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 × 2 800 parties | **EN VOL** — lancés le 6 nov. à 2 h 05 ; e21w50 poussé par la séance à 1 h 45, tous contrôles passés, confrontation 6 et 26 | — *Attendu, écrit avant* (« La séance du n° 22 ») : **0 à +9** ; il ne décide pas le budget, il dit comment reprendre la génération |
+| **N° 22 — E21 contre N8nw50, le tour de boucle** | **42141094026, 42141102369, 42141110902, 42141119294** — E21 (`2634f81`, e21w50 embarqué, sur `main` à `9659698`) contre le témoin N8nw50 (`06d0473`, sur `ded5b34` — le même code moteur), révoqués aussitôt | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000 | `match.yml`, 4 × 2 800 parties | **RELEVÉS le 6 nov. à 7 h 20** — finis entre 6 h 54 et 7 h 01, aucune perte au temps : +7,57, +12,91, +11,17, +8,94 ; en commun **+10,15 ± 3,33**, homogènes (p = 0,682) — **le tour de boucle paie**, au-dessus de l'attendu (« La séance du n° 22 — E2.5v et E21 : VERDICT ») | — *Attendu, écrit avant* (« La séance du n° 22 ») : **0 à +9** ; il ne décide pas le budget, il dit comment reprendre la génération |
 | **N° 22 — la perte tenue à l'écart de E21** | **42141127868** | `nnue-validation.yml` sur la branche, N8nw50 en référence ; le job tenu du n° 21 (39712871836) et celui de l'étape B (39050360980) | 1 job | **RELEVÉE le 6 nov. à 2 h 10** — finie à 2 h 04 | **Les deux attendus tiennent.** Sur le job tenu du n° 21 (16,4 M gardées) : N8nw50 0,037473, **E21 0,037159** — sous lui de 0,000314 ± 0,000022 ; sur celui de l'étape B (16,0 M) : N8nw50 0,037301, E21 0,037476 — au-dessus de 0,000175 ± 0,000027. Chacun sous l'autre sur sa propre étiquette ; la perte ne décide rien |
 | **Balayage de mutation de `main` après C71** | **41878189509**, `commit` = `03746f9` | — | `mutation.yml` | **RELEVÉ le 5 nov. à 0 h 50, ROUGE** — lancé le 4 nov. à 18 h 31 ; `search.rs` **48 contre 46** (860 attrapés, 43 expirés, 41 inviables), les neuf autres à leur plafond, total 163 | cinq survivants neufs, trois anciens disparus : **deux tués par des tests** aux invariants — l'index de la continuation de la correction, le coup noté par la quiescence —, **trois notés** au plafond, qui reste à 46 (`.github/mutation-baseline.txt`, commit `d33fbb5`) ; **le balayage de contrôle, 41938141752** sur `e76cf9b`, lancé le 5 nov. à 1 h 01 — *prédiction, écrite avant* : **161**, `search.rs` 46, un de moins possible, un de plus non ; **RELEVÉ le 5 nov. à 7 h 00 : 162, `search.rs` 47 — la prédiction manquée d'un** (`search.rs` en 5 h 37) : les deux visés tués, mais revient un ancien survivant, `ply > 0` en `ply >= 0` à la coupure par la table — **la garde de la racine, un invariant que rien ne gardait**, absent du balayage du 4 nov. ; tué le même jour par `la_table_ne_coupe_jamais_a_la_racine`, avec un témoin au ply 1 ; le plafond reste à 46, la raison écrite |
 | **Balayage de mutation de `main` après le multicouche** | **41592047881**, `commit` = `700a8ba` | — | `mutation.yml` | **RELEVÉ le 3 nov. à 13 h 40, vert** — `nnue.rs` 2, à son plafond ; `search.rs` 46 sous 48, plafond resserré ; les autres à leur plafond, total 161 | — |
@@ -14321,6 +14323,44 @@ volume égal (en vol, attendu −6 à +3) ; E21 contre N8nw50, le tour de
 boucle (en vol, attendu 0 à +9) ; puis **les données de C3**
 (`tools/c3-donnees.tsv`), qui en dépendent.
 
+#### La séance du n° 22 — E2.5v et E21 : VERDICT, relevé le 6 nov. à 7 h 20 — l'étiquette ne se sépare pas, le tour de boucle paie
+
+**E2.5v contre E5n** — l'étiquette à 2 500 contre 5 000, **à volume
+égal** (`5936201` contre `339c179`) ; quatre jobs lancés le 5 nov. à
+23 h 20, finis le 6 entre 4 h 11 et 4 h 19, **aucune perte au temps** ;
+**les quatre sur EPYC 7763**, profondeur 13 : −2,36, −6,70, **+7,82**,
+−4,96. En commun **−1,55 ± 3,40** sur 11 200 parties, **non homogènes**
+(p = 0,016 ; le job 3 contre le job 2, z = 2,96) — dans l'attendu (−6 à
++3). **Rien de démontré** : aucun job ne met sa borne haute sous zéro
+(le plus bas, −6,70 ± 6,93). *À volume égal, l'étiquette à 2 500 ne se
+distingue pas de celle à 5 000* : le gain de E2.5t est le volume, comme
+la perte tenue à l'écart le disait. Et **cette hétérogénéité-ci vient de
+quatre runners du même modèle**, à la même profondeur : elle affaiblit
+l'explication par le processeur avancée pour E2.5t.
+
+**E21 contre N8nw50** — le tour de boucle : la tranche du n° 21,
+étiquetée par N8tw50s800, contre l'étape B étiquetée par N6r4, au même
+volume gardé et à la même recette (`2634f81` contre `06d0473`, le même
+code moteur) ; quatre jobs lancés le 6 nov. à 2 h 05, finis entre 6 h 54
+et 7 h 01, **aucune perte au temps** — 7763, 9V74, 7763, 7763, tous à la
+profondeur 14 : +7,57, +12,91, +11,17, +8,94. En commun **+10,15 ± 3,33**
+sur 11 200 parties, **homogènes** (p = 0,682) — **au-dessus de l'attendu**
+(0 à +9). **Le tour de boucle paie, démontré** : un étiqueteur meilleur de
+~+40 (N8tw50s800 sur N6r4, par la chaîne) rend +10 au réseau à volume
+égal — le même ordre que N6r4 sur N5l (+12,76, n° 20). La perte tenue à
+l'écart le disait déjà, chacun sous l'autre sur sa propre étiquette.
+
+**Ce que cela dit pour la suite** :
+- **la génération** reprend étiquetée par le réseau qui joue, à 2 500
+  nœuds (feuille de route, point 6) ;
+- **les données de C3** : les étiquettes de N6r4 (n20, n20e) valent
+  ~10 de moins que celles de N8tw50s800 à volume égal, et celles de
+  N9w50s800 (n22) au moins autant de mieux, par la même pente ; la moitié
+  étiquetée par N5l n'ajoutait rien à passes égales (+0,25 ± 4,71) et
+  prenait des passes aux bonnes à superlots égaux (−5,18). D'où une
+  troisième option pour C3, sans les étiquettes de N6r4 — la décision
+  revient à Théo, qui en paie le téléchargement.
+
 ### N° 23 — l'historique borné (phase 4) : protocole et attendus, écrits le 2 nov. avant de mesurer
 
 **La décision** — la feuille de route validée par Théo le 31 oct., point 2 :
@@ -17139,7 +17179,11 @@ pas parce que des runners sont libres.
    rien à relancer d'ici là. **Carte prête le 5 nov. au matin** (Théo) :
    la séance n° 22 donnée, ~11 h 30 ; puis ses trois matchs sur les
    runners (~5 h), la décision des données de C3 (`tools/c3-donnees.tsv`),
-   et la séance C3.
+   et la séance C3. **La séance n° 22 faite le 5 nov.**, ses quatre
+   réseaux sans une panne : **2 500 nœuds remplacent 5 000** (E2.5t
+   +5,77 ± 3,34), l'étiquette seule ne se sépare pas (E2.5v −1,55), **le
+   tour de boucle paie** (E21 +10,15 ± 3,33). Les données de C3 attendent
+   Théo : elles fixent son téléchargement.
 5. Après C3 : embarquer le gagnant (sonde des marges, série C13) ;
    16 seaux de roi si 10 a payé ; 1 024 et couches cachées si la largeur paie.
 6. Reprendre la génération, étiquetée par le nouveau réseau, au rythme
