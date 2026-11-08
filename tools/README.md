@@ -12362,11 +12362,37 @@ jobs appris. Les trois jobs tenus à l'écart (un du n° 21, deux du n° 22)
 restent à la validation. En tout, **419 jobs, 141 284 632 parties et
 16 809 185 651 positions** — c'est l'`--attendu` de l'entraîneur. Il y a
 11,35 G positions gardées, donc les 800 superlots (80,0 G positions) font
-**~7 passes**, contre 31 pour N9w50s800. Les passes payaient encore à
-400 → 800 (+5,43), d'où une mise en garde, <span>confiance faible</span>
-sur le sens : ici, le volume se paie en passes. La base N10 mesure
-l'ensemble — volume, étiqueteurs et passes mêlés — contre N9w50s800, et
-1 600 superlots restent au bout de la feuille de route.
+**~7 passes**, contre 31 pour N9w50s800 : le même temps de carte, le
+même nombre d'exemples vus (80 G), sur ~4,4 fois plus de positions
+distinctes. Les passes se déduisent des superlots et du volume ; elles ne
+coûtent rien par elles-mêmes.
+
+**Corrigé le 8 nov., à la question de Théo** (« *pourquoi on fait plus
+que 7 passes au lieu de 31 ?* »). La mise en garde écrite d'abord, « le
+volume se paie en passes », s'appuyait sur 400 → 800 superlots (+5,43).
+Elle confondait deux axes : ce +5,43 mesure deux fois plus de CALCUL sur
+les mêmes données, pas moins de données au même calcul. À calcul égal, la
+question est : plus de positions vues moins souvent, ou moins de
+positions vues plus souvent. Elle a été mesurée, et le volume a gagné
+chaque fois :
+- N6l contre N6m, à 100 superlots, ~6,4 passes contre ~13 — le régime de
+  C3 — : **+7,32 ± 3,53** ;
+- E5t contre E5vw50, à 400 superlots, ~26 passes contre ~51 :
+  **+8,94 ± 3,32** ;
+- N8tw50 contre N7p4w50, à 400 superlots : +7,38 ± 3,40, mêlé à
+  l'étiqueteur.
+
+La seule perte à calcul égal, −5,18, venait d'étiquettes plus faibles
+(N5l) — ce que l'option C écarte. Le poids du résultat, le seul réglage de
+la recette dont on sait qu'il compte, était déjà meilleur à 0,5 vers 6,4
+passes (+11,79 contre 0,75). Les autres réglages (C2c) ont été mesurés à
+31 passes, et leur optimum peut bouger un peu à 7 — <span>confiance
+faible</span>, quelques Elo au plus : aucun n'a gagné d'un pas de chaque
+côté.
+<span>Inférence, confiance moyenne</span> : moins saturé, le réseau
+gagnera probablement plus à 1 600 superlots qu'à 31 passes — une raison
+d'avancer ce test, pas de retenir des données. La base N10 mesure
+l'ensemble contre N9w50s800 : volume et étiqueteurs, mêlés.
 
 **Éprouvé au bac à sable le 6 nov.**, sur un clone, avec `gh`, `df` et
 `cargo` factices. Le dossier de données y était dans l'état où la séance
@@ -17354,7 +17380,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **taille de lot** | 16 384 | **C2c, à 800 superlots, contre N9w50s800 (28 oct.) : 8 192 → −5,43 ± 3,23 en commun, quatre matchs hétérogènes (p = 0,017) ; 32 768 → +2,30 ± 3,33**, rien de démontré | 0 à +3 vers les grands lots — <span>confiance faible</span> ; 32 768 coûte 4 % de moins à entraîner | **déprioritisé** : 32 768 avec le pas initial qu'il appelle (plus haut), un seul réseau — ou au premier entraînement qui change de lot pour une autre raison (C3) |
 | **filtre des positions** | ply ≥ 16, plus le filtre par défaut | **C2c, à 800 superlots, contre N9w50s800 (29 oct.) : ply ≥ 8 → −3,78 ± 3,26 ; ply ≥ 24 → −4,37 ± 3,37** — les deux régressions démontrées, de peu | fine — <span>confiance moyenne</span> : 16 est entre deux coûts | **déprioritisé** : 12 et 20 les seuls points ouverts ; rouvert par d'autres ouvertures du générateur (phase 7), qui déplacent les demi-coups tirés au hasard |
 | **poids du résultat variable** | constant pendant l'entraînement | **de 0,25 à 0,75 à 800 superlots : −1,99 ± 3,32** contre N9w50s800 (C2, 27 oct.) | ~0 à ± 3 — <span>confiance moyenne</span> | **déprioritisé** ; une autre pente — de 0 à 1, ou décroissante — rouvrirait le réglage |
-| **volume de données** | 3,71 G vus par N9w50s800 (les 94 jobs appris de l'étape B et les 80 de (e), tous étiquetés par N6r4) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) ; **N9w50s800 +5,18 ± 3,29 contre N8tw50s800** — N5l retiré, 0,98 G de N6r4 ajoutées, 31 passes au lieu de 25 : trois causes mêlées | ~+7 au doublement suivant — <span>confiance faible</span> | **N9w50s800 EMBARQUÉ le 22 oct.** (séance C1) ; **le volume à étiquette égale paie : +8,94 ± 3,32** (E5t contre E5v, 26 oct.), ce que le n° 20 n'avait pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») ; **C3 sur l'option C** (Théo, 6 nov.) : n21 et les 21 vagues du n° 22, 16,81 G positions, ~7 passes à 800 superlots — sa base N10 contre N9w50s800, volume, étiqueteurs et passes mêlés (« La séance C3, les données ») |
+| **volume de données** | 3,71 G vus par N9w50s800 (les 94 jobs appris de l'étape B et les 80 de (e), tous étiquetés par N6r4) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) ; **N9w50s800 +5,18 ± 3,29 contre N8tw50s800** — N5l retiré, 0,98 G de N6r4 ajoutées, 31 passes au lieu de 25 : trois causes mêlées | ~+7 au doublement suivant — <span>confiance faible</span> | **N9w50s800 EMBARQUÉ le 22 oct.** (séance C1) ; **le volume à étiquette égale paie : +8,94 ± 3,32** (E5t contre E5v, 26 oct.), ce que le n° 20 n'avait pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») ; **C3 sur l'option C** (Théo, 6 nov.) : n21 et les 21 vagues du n° 22, 16,81 G positions, ~7 passes à 800 superlots au lieu de 31, le même calcul : à calcul égal, plus de données a gagné chaque fois (N6l +7,32 à ~6 passes, E5t +8,94) — sa base N10 contre N9w50s800, volume et étiqueteurs mêlés (« La séance C3, les données ») |
 | **l'étiqueteur** | N9w50s800, **2 500 nœuds depuis le 6 nov.** (5 000 avant) | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | **le budget, mesuré le 26 oct.** (séance C1) : 10 000 nœuds contre 5 000, −1,49 ± 3,38 à volume égal, **−7,38 ± 3,40 à temps de runner égal** — le budget ne paie pas, le volume si (+8,94 ± 3,32) ; **2 500 nœuds, le test suivant** : à volume égal contre 5 000, sur des données du même étiqueteur que le n° 21 ; s'il ne perd rien à l'étiquette, il double le volume au même temps de runner — <span>marge estimée : jusqu'à ~+9 au doublement, confiance faible</span> ; **écrit le 26 oct. dans le n° 22** : chaque vague moitié à 2 500, moitié à 5 000, étiquetées par N9w50s800 ; E2.5t contre E5n décide (« N° 22 ») ; **la partie mesurée close le 27 oct.**, 38 et 39 jobs appris, × 2,05 ; **sa séance écrite**, la semaine du 2 nov. (`tools/seance-n22.sh`) ; **les données de N5l laissées** : −5,18 à superlots égaux, +0,25 ± 4,71 à passes égales — rien (22 oct.) ; N9w50s800 embarqué le 22 oct. ; **VERDICT le 6 nov. : E2.5t +5,77 ± 3,34 contre E5n**, non homogène, aucun job contre — **2 500 nœuds remplacent 5 000** pour les tranches suivantes ; **1 250 au test suivant**, à temps de runner égal contre 2 500 (« La séance du n° 22 — E2.5t contre E5n : VERDICT ») |
 | **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17), malgré × 0,90 de nœuds par seconde | inconnue au volume d'aujourd'hui | C3 : 384 et 512 ; **1 024 si 512 paie nettement** — un seul `HIDDEN` dans le moteur, mais ~×0,66 de nœuds par seconde estimé et ~4 fois la carte par superlot (Théo, 21 oct. : plus tard) |
 | **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | C3 : 10 au volume d'aujourd'hui ; **16 et plus si 10 paie** — une table de 32 cases, chaque seau voyant d'autant moins de positions (Théo, 21 oct. : plus tard) |
