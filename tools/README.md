@@ -16457,6 +16457,41 @@ illégal :
   rule » — la signature connue de C31 ; 8 003 « Bestmove does not match »,
   ceux du bridage.
 
+**La suite, contre des moteurs classés — lu sur le site de la CCRL le
+9 nov.** (l'hôte autorisé par Théo le même jour). Théo vise le 40/15 et
+les compétitions longues : « *je vise d'être bon en 40/15 et autres
+compétitions prestigieuses in fine* ». **La CCRL tient une liste par
+cadence**, et chaque moteur y a sa propre note : 40/15, Blitz (2'+1"),
+40/2 FRC, Chess324, DFRC. Les échelles ne se recopient pas d'une liste à
+l'autre : Stockfish 19 vaut 3 650 en 40/15 (4 CPU), 3 803 en Blitz
+(8 CPU). **Les conditions de la 40/15**, lues sur sa page « about » :
+- 40 coups en 15 minutes, répétés, sur un Intel i7-4770k ;
+- la cadence équivalente d'une autre machine se fixe au banc de
+  Stockfish 10 ;
+- ponder coupé, livres de 12 coups au plus ;
+- table de hachage de 256 ou 512 Mo pour tous ;
+- tables de finales à 4, 5 ou 6 pièces.
+
+**Ce qui en découle** :
+- la mesure se lit sur la liste 40/15, aux notes à 1 CPU (on joue
+  monofil) ;
+- elle se joue à l'équivalent 40/15 du runner, recalé au banc de
+  Stockfish 10 comme le fait la CCRL. La valeur de référence du
+  i7-4770k n'est pas sur la page : elle reste à trouver ;
+- <span>inférence, confiance faible</span> : ~25 à 35 minutes par partie,
+  ~35 parties par job. Quatre adversaires à ~200 parties chacun
+  demandent ~24 jobs, pour ~± 20. **Une mesure d'étape**, à chaque réseau
+  embarqué, jamais un verdict : un changement se mesure contre le
+  jumeau ;
+- notre place sur cette échelle est inconnue. 3 190 est l'échelle de
+  Stockfish 16 bridé, dont le source ne nomme pas la liste CCRL
+  d'ancrage. La première série éclaire donc large, puis les adversaires
+  se resserrent à ± 150 ;
+- **candidats relevés le 9 nov.** dans la 40/15 (open source, 1 CPU),
+  à vérifier — nombre de parties, version épinglée, compilation sous
+  Linux : Demolito 2021-10-04 (3 153), Simbelmyne 1.10.0 (3 192),
+  Svart 6 (3 240), Zevra 2.7 (3 278), Odonata 1.1.0 (3 301).
+
 **L'écart aux meilleurs — lu le 29 oct. à 10 h 57**, sur la question de
 Théo (« *qu'est ce qui fait qu'un stockfish ou reckless est toujours 300
 elo plus haut* ») :
