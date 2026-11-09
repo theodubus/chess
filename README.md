@@ -42,10 +42,13 @@ d'un aveu sur la profondeur de recherche.
 > techniques que tous les manuels recommandent. Il gagne toutes ses parties
 > contre un adversaire jouant au hasard.
 >
-> **Force absolue, estimée le 26 oct. 2026 : ~3 153 ± 25** sur l'échelle
+> **Force absolue, estimée le 9 nov. 2026 : ~3 190 ± 24** sur l'échelle
 > `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
-> 300 parties à cette cadence contre Stockfish bridé à 3100 (57,5 %), avec
-> N9w50s800, le réseau embarqué le 22 oct., binaire AVX2. Le 21 oct., avec
+> 300 parties à cette cadence contre Stockfish bridé à 3100 (62,7 %), avec
+> N9w50s800, le réseau embarqué le 22 oct., et la recherche de la phase 4,
+> binaire AVX2. **3 190 est le sommet de cette échelle** : la mesure
+> suivante se fait contre des moteurs classés. Le 26 oct., avec N9w50s800
+> et la recherche d'alors, **~3 153 ± 25** (57,5 %). Le 21 oct., avec
 > N8tw50s800, **~3 127 ± 24** (53,8 %) ; le matin même, avec N7p4,
 > **~3 141 ± 20** (55,8 %). Le 17 oct., avec
 > N6r4, **~3 112 ± 21** (51,7 %). Le 14 oct., avec
@@ -56,7 +59,8 @@ d'un aveu sur la profondeur de recherche.
 > zéro, quand notre jumeau en mesure ~+52 puis +30 ; le suivant, +43 ± 33,
 > s'en sépare, quand le jumeau mesure +99 ; puis +29 ± 29, quand il
 > mesure ~+25 ; puis −14 ± 31, quand il mesure ~+23 ; puis +26 ± 35,
-> quand il mesure +5 : cette échelle écrase les écarts. À 79,5 %, le niveau est passé à 3100, N5l mesuré aux deux
+> quand il mesure +5 ; puis +37 ± 35, quand il mesure ~+53 : cette
+> échelle écrase les écarts. À 79,5 %, le niveau est passé à 3100, N5l mesuré aux deux
 > pour faire le pont ; les séries suivantes se mesurent à 3100. Le 2 oct., **~2 950 ± 30** ; N2 **~2 940 ± 30** (30 sept.), le
 > premier réseau **~2 850 ± 25** (600 parties, 29 sept.), **l'évaluation
 > faite main ~2 630 ± 40**. Une estimation, pas un classement :
