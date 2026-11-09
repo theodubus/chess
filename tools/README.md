@@ -16509,9 +16509,39 @@ l'autre : Stockfish 19 vaut 3 650 en 40/15 (4 CPU), 3 803 en Blitz
   d'ancrage. La première série éclaire donc large, puis les adversaires
   se resserrent à ± 150 ;
 - **candidats relevés le 9 nov.** dans la 40/15 (open source, 1 CPU),
-  à vérifier — nombre de parties, version épinglée, compilation sous
-  Linux : Demolito 2021-10-04 (3 153), Simbelmyne 1.10.0 (3 192),
-  Svart 6 (3 240), Zevra 2.7 (3 278), Odonata 1.1.0 (3 301).
+  avec leur nombre de parties — une note sur plus de 1 500 parties se lit
+  à ± 8 à 11. Restent à vérifier : la version épinglée et la compilation
+  sous Linux.
+
+  | moteur | Elo | parties |
+  |---|---|---|
+  | Demolito 2021-10-04 | 3 153 ± 11 | 1 781 |
+  | Simbelmyne 1.10.0 | 3 192 ± 8 | 3 751 |
+  | Dark Toga 1.1 | 3 210 ± 10 | 2 233 |
+  | Svart 6 | 3 240 ± 11 | 1 846 |
+  | DanaSah 9.1 | 3 252 ± 8 | 3 730 |
+  | Cadie 2.1 | 3 259 ± 10 | 2 076 |
+  | Publius 1.1 | 3 290 ± 12 | 1 369 |
+  | Nalwald 19 | 3 299 ± 11 | 1 686 |
+  | Mr Bob 1.3.0 | 3 313 ± 10 | 2 152 |
+
+  Zevra 2.7 (676 parties, ± 17) et Odonata 1.1.0 (1 081, ± 14) sortent
+  de la liste courte : leurs notes sont moins sûres ;
+- **la référence du banc** : Stockfish 10, `bench` sur le i7-4770k,
+  **3 939 338 nœuds en 2 054 ms** (1 917 886 n/s). La source est
+  secondaire : deux fils de TalkChess, par des testeurs de la CCRL, lus
+  par le moteur de recherche le 9 nov. ; confiance moyenne. Le nombre de
+  nœuds se vérifie en compilant Stockfish 10 : il signe la version. Le
+  temps, lui, appartient à la machine ;
+- **le 4 fils, plus tard** (Théo, 9 nov. : « *on fera ça plus tard* ») :
+  sa machine porte **8 cœurs physiques, 16 fils** (Intel Core i7 de 11ᵉ
+  génération, un portable selon lui ; le modèle exact reste à vérifier).
+  Cela suffit à un match à 4 fils contre 4, une partie à la fois — 4
+  cœurs pour le moteur qui réfléchit, le reste pour l'arbitre. D'abord
+  notre mise à l'échelle en fils, 4 contre 1 à `8+0,08`, une nuit ; puis,
+  éventuellement, la note 4CPU. Un portable peut brider sa fréquence sous
+  charge prolongée : symétrique pour les deux moteurs, mais à surveiller
+  contre une échelle extérieure.
 
 **L'écart aux meilleurs — lu le 29 oct. à 10 h 57**, sur la question de
 Théo (« *qu'est ce qui fait qu'un stockfish ou reckless est toujours 300
