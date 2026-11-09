@@ -16543,6 +16543,29 @@ l'autre : Stockfish 19 vaut 3 650 en 40/15 (4 CPU), 3 803 en Blitz
   charge prolongée : symétrique pour les deux moteurs, mais à surveiller
   contre une échelle extérieure.
 
+**L'outil — `.github/workflows/classes.yml`, écrit le 9 nov.** Théo :
+« *Tu as déjà modifié le protocole de mesure ou tu attendais mon
+approbation ?* » — ni l'un ni l'autre : il n'était pas écrit. Il l'est.
+
+- **Les adversaires** : Demolito 2021-10-04, Simbelmyne 1.10.0, Cadie 2.1
+  et Mr Bob 1.3.0. Ce sont ceux de la liste courte dont le dépôt porte le
+  tag que la CCRL a noté, relevé par `git ls-remote` le 9 nov. Chacun est
+  construit à ce tag, son SHA vérifié, par la recette de son auteur.
+- **Hors de la liste courte** : Svart 6 n'a aucun tag. DanaSah et Dark
+  Toga n'ont pas de dépôt public. Publius 1.1 ne se construit que sous
+  Visual Studio. Nalwald 19 demande Nim.
+- **La cadence** : l'équivalent 40/15 du runner. Stockfish 10 fait son
+  `bench` autant de fois à la fois que de parties, la machine étant
+  chargée comme pendant le match ; ses 3 939 338 nœuds sont exigés ; la
+  cadence vaut 40 coups en `900 × temps / 2 054` secondes.
+- **Le jeu** : une partie par cœur PHYSIQUE, table de 256 Mo, un fil, le
+  livre du dépôt.
+- **L'estimation** : la note de l'adversaire plus l'écart. La marge
+  compose celle du match et celle de la note.
+- **L'essai de la chaîne** : une autre cadence la vérifie en quelques
+  minutes — construction, banc, parties —, sans chiffre lisible sur la
+  liste.
+
 **L'écart aux meilleurs — lu le 29 oct. à 10 h 57**, sur la question de
 Théo (« *qu'est ce qui fait qu'un stockfish ou reckless est toujours 300
 elo plus haut* ») :

@@ -1,0 +1,296 @@
+# Mesure la force ABSOLUE du moteur contre un moteur CLASSÉ par la CCRL,
+# non bridé, sur un runner GitHub (C13, la suite — `tools/README.md`).
+#
+# # Pourquoi ce workflow, et pas `force.yml`
+#
+# `force.yml` joue contre Stockfish 16 bridé, dont l'échelle s'arrête à 3 190
+# et qui écrase les écarts par ses fautes tirées au hasard. Le 9 nov. 2026, la
+# série de la phase 4 a atteint ce sommet (~3 190 ± 24). La suite se mesure
+# contre des moteurs qui jouent normalement et dont la CCRL publie la note.
+#
+# # La cadence suit la liste dont on lit les notes
+#
+# Une note CCRL 40/15 ne vaut qu'à 40/15 : 40 coups en 15 minutes, répétés,
+# sur un Intel i7-4770k. La CCRL fixe la cadence équivalente d'une autre
+# machine au banc de Stockfish 10. Ce workflow fait de même :
+# - il construit Stockfish 10 (tag `sf_10`), lance son `bench` sur le runner
+#   AUTANT DE FOIS EN MÊME TEMPS QUE DE PARTIES À LA FOIS — la machine chargée
+#   comme pendant le match ;
+# - il exige 3 939 338 nœuds, la signature de la version ;
+# - il met la cadence à 40 coups en `900 × temps du runner / 2 054` secondes,
+#   2 054 ms étant le temps de référence du i7-4770k (source secondaire, deux
+#   fils de TalkChess de testeurs de la CCRL, lue le 9 nov. 2026 ; confiance
+#   moyenne).
+# Une autre cadence (`cadence` ≠ `ccrl-40/15`) sert à éprouver la chaîne en
+# quelques minutes ; son chiffre ne se lit pas sur l'échelle de la liste.
+#
+# # Les conditions de la CCRL, lues sur sa page « about » le 9 nov. 2026
+#
+# Ponder coupé, livres de 12 coups au plus (le livre du dépôt en est un),
+# table de hachage de 256 Mo pour tous, un fil. Les tables de finales ne
+# sont pas reproduites : aucun des deux moteurs n'en reçoit.
+#
+# # Les adversaires
+#
+# Chacun est construit depuis son dépôt, AU TAG que la CCRL a noté, et le SHA
+# de ce tag est vérifié : un tag déplacé rendrait un autre moteur sous le même
+# nom, et une note qui n'est pas la sienne. La note et son intervalle sont
+# ceux de la liste 40/15 du 7 nov. 2026, à 1 CPU.
+name: Moteurs classés
+
+on:
+  workflow_dispatch:
+    inputs:
+      moteur:
+        description: "Commit, branche ou tag du moteur mesuré"
+        type: string
+        default: "main"
+      adversaire:
+        description: "Moteur classé — sa note CCRL 40/15 à 1 CPU (7 nov. 2026)"
+        type: choice
+        options:
+          - demolito
+          - simbelmyne
+          - cadie
+          - mrbob
+        default: simbelmyne
+      cadence:
+        description: "ccrl-40/15 : l'équivalent 40/15 du runner, fixé au banc de Stockfish 10. Toute autre valeur est passée telle quelle à fastchess (essai de la chaîne)"
+        type: string
+        default: "ccrl-40/15"
+      parties:
+        description: "Nombre de parties (pair). À l'équivalent 40/15, ~20 tiennent dans un job"
+        type: string
+        default: "20"
+      graine:
+        description: "Graine des ouvertures (auto : le numéro du run)"
+        type: string
+        default: "auto"
+      cpu:
+        description: "Jeu d'instructions du moteur mesuré"
+        type: choice
+        options:
+          - x86-64-v3
+          - x86-64
+        default: x86-64-v3
+
+permissions:
+  contents: read
+
+jobs:
+  mesurer:
+    name: Contre un moteur classé
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Résoudre les entrées
+        id: entrees
+        shell: bash
+        run: |
+          set -euo pipefail
+          ref="${{ inputs.moteur }}"
+          sha=$(git rev-parse --verify --quiet "${ref}^{commit}" || true)
+          [ -n "$sha" ] || sha=$(git rev-parse --verify --quiet "origin/${ref}^{commit}" || true)
+          if [ -z "$sha" ]; then
+            echo "::error::moteur introuvable : « $ref »" >&2
+            exit 1
+          fi
+          parties="${{ inputs.parties }}"
+          if ! [[ "$parties" =~ ^[1-9][0-9]*$ ]] || [ $((parties % 2)) -ne 0 ]; then
+            echo "::error::nombre de parties illisible ou impair : « $parties »" >&2
+            exit 1
+          fi
+          graine="${{ inputs.graine }}"
+          [ "$graine" = "auto" ] && graine="${{ github.run_id }}"
+          # Dépôt, tag, SHA du tag, nom et note CCRL 40/15 à 1 CPU (liste du
+          # 7 nov. 2026), et nombre de parties de cette note.
+          case "${{ inputs.adversaire }}" in
+            demolito)   ligne="lucasart/demolito|20211004|5b0da457adc5053d4c968198cb6e36a6af131933|Demolito 2021-10-04|3153|11|1781" ;;
+            simbelmyne) ligne="sroelants/simbelmyne|v1.10.0|025efdbac0181f803725a84b5a6b37ca20590240|Simbelmyne 1.10.0|3192|8|3751" ;;
+            cadie)      ligne="mwyngaarden/cadie|v2.1|2817354b6c70700de266bd7d1ae16e5333eb6e4f|Cadie 2.1|3259|10|2076" ;;
+            mrbob)      ligne="bobsquared/mr_bob_chess|v1.3.0|8921255fb75ecbafaa8f5fec4ae3365490b78ac9|Mr Bob 1.3.0|3313|10|2152" ;;
+            *) echo "::error::adversaire inconnu" >&2; exit 1 ;;
+          esac
+          IFS='|' read -r depot tag tagsha nom note marge effectif <<<"$ligne"
+          {
+            echo "moteur=$sha"
+            echo "parties=$parties"
+            echo "graine=$graine"
+            echo "depot=$depot"
+            echo "tag=$tag"
+            echo "tagsha=$tagsha"
+            echo "nom=$nom"
+            echo "note=$note"
+            echo "marge=$marge"
+            echo "effectif=$effectif"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Construire le moteur
+        shell: bash
+        run: |
+          set -euo pipefail
+          git worktree add --detach /tmp/wt-moteur "${{ steps.entrees.outputs.moteur }}"
+          ( cd /tmp/wt-moteur && RUSTFLAGS="-C target-cpu=${{ inputs.cpu }}" cargo build --release --bin shallowred )
+          cp /tmp/wt-moteur/target/release/shallowred /tmp/moteur
+
+      # Au tag noté, son SHA vérifié ; la recette de construction de l'auteur,
+      # au jeu d'instructions du runner.
+      - name: Construire l'adversaire
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone -q --depth 1 --branch "${{ steps.entrees.outputs.tag }}" \
+            "https://github.com/${{ steps.entrees.outputs.depot }}" /tmp/adv
+          vu=$(git -C /tmp/adv rev-parse HEAD)
+          if [ "$vu" != "${{ steps.entrees.outputs.tagsha }}" ]; then
+            echo "::error::le tag ${{ steps.entrees.outputs.tag }} pointe sur $vu, pas sur ${{ steps.entrees.outputs.tagsha }}" >&2
+            exit 1
+          fi
+          case "${{ inputs.adversaire }}" in
+            demolito)   ( cd /tmp/adv/src && make CC=gcc EXE=demolito ) && cp /tmp/adv/src/demolito /tmp/adversaire ;;
+            simbelmyne) ( cd /tmp/adv && make openbench EXE=simbelmyne-bin ) && cp /tmp/adv/simbelmyne-bin /tmp/adversaire ;;
+            cadie)      ( cd /tmp/adv/src && make release CXX=g++ ) && cp /tmp/adv/src/bin/release/cadie /tmp/adversaire ;;
+            mrbob)      ( cd /tmp/adv/src && make ) && cp /tmp/adv/bob /tmp/adversaire ;;
+          esac
+          # Un moteur qui ne déclare pas `Hash` l'ignorerait en silence.
+          uci=$( { printf 'uci\n'; sleep 3; printf 'quit\n'; } | timeout 20 /tmp/adversaire || true)
+          echo "$uci" | head -3
+          echo "$uci" | grep -q '^uciok' \
+            || { echo "::error::l'adversaire ne répond pas uciok" >&2; exit 1; }
+          echo "$uci" | grep -qi '^option name Hash ' \
+            || { echo "::error::l'adversaire ne déclare pas Hash" >&2; exit 1; }
+
+      - name: Arbitre
+        run: tools/setup-arbiters.sh
+
+      # La machine chargée comme pendant le match : autant de bancs à la fois
+      # que de parties, une partie par cœur PHYSIQUE.
+      - name: Étalonner la cadence
+        id: etalon
+        shell: bash
+        run: |
+          set -euo pipefail
+          physiques=$(lscpu -p=CORE,SOCKET | grep -v '^#' | sort -u | wc -l)
+          modele=$(lscpu | awk -F: '/^Model name/ {sub(/^ +/, "", $2); print $2; exit}')
+          concurrence=$physiques
+          [ "$concurrence" -ge 1 ] || concurrence=1
+          git clone -q --depth 1 --branch sf_10 https://github.com/official-stockfish/Stockfish /tmp/sf10
+          ( cd /tmp/sf10/src && make -j"$(nproc)" build ARCH=x86-64-bmi2 COMP=gcc >/dev/null )
+          for i in $(seq "$concurrence"); do
+            ( /tmp/sf10/src/stockfish bench > "/tmp/banc-$i.txt" 2>&1 ) &
+          done
+          wait
+          somme=0
+          for i in $(seq "$concurrence"); do
+            noeuds=$(awk -F: '/^Nodes searched/ {gsub(/ /, "", $2); print $2}' "/tmp/banc-$i.txt")
+            temps=$(awk -F: '/^Total time/ {gsub(/ /, "", $2); print $2}' "/tmp/banc-$i.txt")
+            if [ "$noeuds" != "3939338" ]; then
+              echo "::error::Stockfish 10 rend $noeuds nœuds au banc, 3939338 attendus" >&2
+              exit 1
+            fi
+            somme=$((somme + temps))
+          done
+          temps=$((somme / concurrence))
+          if [ "${{ inputs.cadence }}" = "ccrl-40/15" ]; then
+            secondes=$(awk -v t="$temps" 'BEGIN { printf "%.0f", 900 * t / 2054 }')
+            tc="40/$secondes"
+          else
+            tc="${{ inputs.cadence }}"
+          fi
+          sortie=$(/tmp/moteur bench 10)
+          nps=$(echo "$sortie" | awk '/Nodes\/second/ {print $NF}')
+          {
+            echo "concurrence=$concurrence"
+            echo "banc=$temps"
+            echo "tc=$tc"
+            echo "nps=$nps"
+            echo "topologie=$(nproc) processeurs logiques, $physiques cœurs physiques — $modele"
+          } >> "$GITHUB_OUTPUT"
+          echo "banc de Stockfish 10 : $temps ms (référence 2054) — cadence $tc"
+
+      - name: Jouer
+        shell: bash
+        run: |
+          set -euo pipefail
+          rondes=$(( ${{ steps.entrees.outputs.parties }} / 2 ))
+          tools/arbiters/fastchess \
+            -engine cmd=/tmp/moteur name=shallowred \
+            -engine cmd=/tmp/adversaire name="${{ inputs.adversaire }}" \
+            -each proto=uci tc="${{ steps.etalon.outputs.tc }}" option.Hash=256 option.Threads=1 \
+            -openings file=tools/book.epd format=epd order=random \
+            -srand "${{ steps.entrees.outputs.graine }}" \
+            -games 2 -repeat -rounds "$rondes" \
+            -concurrency "${{ steps.etalon.outputs.concurrence }}" \
+            -draw movenumber=40 movecount=8 score=10 \
+            -resign movecount=4 score=600 twosided=true \
+            | tee /tmp/match.log
+
+      - name: Résumé
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "## Contre ${{ steps.entrees.outputs.nom }} — CCRL 40/15, 1 CPU : ${{ steps.entrees.outputs.note }} ± ${{ steps.entrees.outputs.marge }} (${{ steps.entrees.outputs.effectif }} parties)"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| moteur | \`${{ inputs.moteur }}\` → \`${{ steps.entrees.outputs.moteur }}\`, \`${{ inputs.cpu }}\` |"
+            echo "| adversaire | \`${{ steps.entrees.outputs.depot }}\` au tag \`${{ steps.entrees.outputs.tag }}\` (\`${{ steps.entrees.outputs.tagsha }}\`) |"
+            echo "| cadence | \`${{ steps.etalon.outputs.tc }}\` — demandée \`${{ inputs.cadence }}\` |"
+            echo "| banc de Stockfish 10, chargé | ${{ steps.etalon.outputs.banc }} ms (référence du i7-4770k : 2054) |"
+            echo "| parties à la fois | ${{ steps.etalon.outputs.concurrence }} |"
+            echo "| topologie du runner | ${{ steps.etalon.outputs.topologie }} |"
+            echo "| nœuds/s au bench du moteur | ${{ steps.etalon.outputs.nps }} |"
+            echo "| graine des ouvertures | \`${{ steps.entrees.outputs.graine }}\` |"
+            echo
+            echo '### Score'
+            echo
+            echo '```'
+            grep -E "^(Elo|LOS|Games|Ptnml|Results)" /tmp/match.log | tail -5 \
+              || echo "aucun résultat lisible — voir le journal"
+            echo '```'
+            ligne=$(grep -E '^Elo: ' /tmp/match.log | tail -1 || true)
+            if [ -n "$ligne" ] && [ "${{ inputs.cadence }}" = "ccrl-40/15" ]; then
+              ecart=$(echo "$ligne" | awk '{print $2}')
+              marge=$(echo "$ligne" | awk '{print $4}' | tr -d ',')
+              echo
+              echo "**Estimation sur la liste CCRL 40/15** : ${{ steps.entrees.outputs.note }} + ($ecart ± $marge)" \
+                   "= **$(awk -v n="${{ steps.entrees.outputs.note }}" -v d="$ecart" 'BEGIN { printf "%.0f", n + d }')" \
+                   "± $(awk -v a="$marge" -v b="${{ steps.entrees.outputs.marge }}" 'BEGIN { printf "%.0f", sqrt(a*a + b*b) }')**" \
+                   "— la marge compose celle du match et celle de la note de l'adversaire."
+            elif [ -n "$ligne" ]; then
+              echo
+              echo "> Cadence d'essai : le chiffre ne se lit pas sur l'échelle de la liste."
+            fi
+            anomalies=$(grep -cE 'loses on time|makes an illegal move|disconnects|connection stalls' \
+              /tmp/match.log 2>/dev/null || true)
+            anomalies=${anomalies:-0}
+            echo
+            if [ "$anomalies" -gt 0 ]; then
+              echo "> **$anomalies ANOMALIE(S)** — perte au temps, coup illégal ou moteur perdu."
+            else
+              echo "> Aucune perte au temps, aucun coup illégal, aucun moteur perdu."
+            fi
+            echo
+            echo '### Avertissements de l’arbitre — par nature et par moteur'
+            echo
+            echo '```'
+            grep -E '^Warning;' /tmp/match.log \
+              | sed -E 's/ - move [^ ]+ from / | /' | sort | uniq -c | sort -rn \
+              || echo "aucun avertissement"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Journal complet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: classes-log
+          path: /tmp/match.log
+          retention-days: 30
