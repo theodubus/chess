@@ -153,9 +153,18 @@ jobs:
           fi
           case "${{ inputs.adversaire }}" in
             demolito)   ( cd /tmp/adv/src && make CC=gcc EXE=demolito ) && cp /tmp/adv/src/demolito /tmp/adversaire ;;
-            simbelmyne) ( cd /tmp/adv && make openbench EXE=simbelmyne-bin ) && cp /tmp/adv/simbelmyne-bin /tmp/adversaire ;;
+            # Simbelmyne 1.10.0 (août 2024) passe `-Cinline-threshold`, que les
+            # rustc récents refusent : le Rust stable de sa sortie, 1.80.0, où
+            # l'option était encore acceptée — sans toucher à sa recette.
+            simbelmyne) rustup toolchain install 1.80.0 --profile minimal >/dev/null \
+                          && ( cd /tmp/adv && RUSTUP_TOOLCHAIN=1.80.0 make openbench EXE=simbelmyne-bin ) \
+                          && cp /tmp/adv/simbelmyne-bin /tmp/adversaire ;;
             cadie)      ( cd /tmp/adv/src && make release CXX=g++ ) && cp /tmp/adv/src/bin/release/cadie /tmp/adversaire ;;
-            mrbob)      ( cd /tmp/adv/src && make ) && cp /tmp/adv/bob /tmp/adversaire ;;
+            # Mr Bob 1.3.0 tient `strcmp` et `memset` d'inclusions transitives
+            # que g++ 13 ne fait plus : <cstring> pré-inclus, sans effet sur le
+            # code engendré.
+            mrbob)      ( cd /tmp/adv/src && sed -i 's/^OBCXXFLAGS := /OBCXXFLAGS := -include cstring /' Makefile && make ) \
+                          && cp /tmp/adv/bob /tmp/adversaire ;;
           esac
           # Un moteur qui ne déclare pas `Hash` l'ignorerait en silence.
           uci=$( { printf 'uci\n'; sleep 3; printf 'quit\n'; } | timeout 20 /tmp/adversaire || true)
