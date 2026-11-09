@@ -16566,6 +16566,31 @@ approbation ?* » — ni l'un ni l'autre : il n'était pas écrit. Il l'est.
   minutes — construction, banc, parties —, sans chiffre lisible sur la
   liste.
 
+**L'essai de la chaîne, le 9 nov. au matin** — quatre runs de 4 parties à
+`8+0,08`, un par adversaire.
+- **Demolito et Cadie** passent du premier coup (42586886456,
+  42586893879).
+- **Simbelmyne et Mr Bob** échouent à la construction, chacun sur un
+  compilateur plus récent que celui de son auteur :
+  - Simbelmyne passe `-Cinline-threshold`, que le rustc du runner refuse.
+    Il est désormais construit au Rust stable de sa sortie, 1.80.0, sans
+    toucher à sa recette ;
+  - Mr Bob tient `strcmp` et `memset` d'inclusions que g++ 13 ne fait
+    plus. `<cstring>` est désormais pré-inclus, sans effet sur le code
+    engendré.
+- **Relancés, les deux passent** (42587324200, 42587328263).
+- **Aucune perte au temps ni coup illégal.** Les quatre scores ne se
+  lisent pas : 4 parties, à une cadence d'essai.
+
+Le banc de Stockfish 10, chargé de deux bancs à la fois, rend 1 853 ms
+(EPYC 7763), 1 307 ms (EPYC 9V45) et 1 943 ms (Xeon 8370C). L'équivalent
+40/15 vaut donc 812, 573 et 851 s pour 40 coups : la cadence suit bien
+chaque runner. **Le coût se corrige** — <span>inférence, confiance
+faible</span> : à ~10 à 14 minutes par camp et par 40 coups, une partie
+dure ~30 à 45 minutes, soit ~15 à 20 parties par job. Quatre adversaires
+à 200 parties demandent alors ~45 jobs, deux vagues de runners. Le
+premier job réel le chiffrera.
+
 **L'écart aux meilleurs — lu le 29 oct. à 10 h 57**, sur la question de
 Théo (« *qu'est ce qui fait qu'un stockfish ou reckless est toujours 300
 elo plus haut* ») :
