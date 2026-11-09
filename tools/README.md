@@ -16473,8 +16473,29 @@ l'autre : Stockfish 19 vaut 3 650 en 40/15 (4 CPU), 3 803 en Blitz
 - tables de finales à 4, 5 ou 6 pièces.
 
 **Ce qui en découle** :
-- la mesure se lit sur la liste 40/15, aux notes à 1 CPU (on joue
-  monofil) ;
+- la mesure se lit sur la liste 40/15, aux notes à 1 CPU. La raison n'est
+  pas que le moteur joue monofil : Lazy SMP existe, et +42,16 ± 9,23 à deux
+  fils contre le jumeau (B6). C'est le runner, quatre processeurs logiques
+  pour **deux cœurs physiques** (mesuré le 23 sept.). Une note « 4CPU » de
+  la CCRL suppose quatre vrais cœurs d'un i7-4770k ; ponder coupé, un seul
+  moteur réfléchit à la fois, donc **quatre cœurs physiques et un pour
+  l'arbitre** suffiraient. Pas sur nos runners : sur la machine de Théo ou
+  un serveur loué (feuille de route, point 11). Cette mesure-là dirait
+  aussi notre mise à l'échelle en fils, jamais mesurée au-delà de deux,
+  qui pèse dans les compétitions à plusieurs cœurs. Question de Théo,
+  9 nov. : « *pas pertinent de jouer sur 4 fils […] et contre les moteurs
+  4cpu ?* » ;
+- **la cadence suit la liste dont on lit les notes**, comme pour Stockfish
+  bridé. Son `UCI_Elo` a été étalonné à 60+0,6 : il ne veut rien dire à
+  une autre cadence, d'où nos séries à 60+0,6. Une note CCRL 40/15 ne veut
+  rien dire hors du 40/15, et la lire à 60+0,6 mêlerait à notre chiffre
+  l'écart de mise à l'échelle entre nous et chaque adversaire — « un
+  verdict appartient à sa cadence ». Deux paires sont cohérentes :
+  40/15 avec la liste 40/15, ou 2'+1" avec la liste Blitz. Théo vise le
+  40/15, d'où le 40/15 aux étapes ; la Blitz reste possible, moins chère,
+  pour un point intermédiaire. Question de Théo, 9 nov. : « *stockfish
+  s'étalonne en 60 +0.6 pas en 40/15, pourquoi nous on devrait mesurer
+  force absolue en 40/15 ?* » ;
 - elle se joue à l'équivalent 40/15 du runner, recalé au banc de
   Stockfish 10 comme le fait la CCRL. La valeur de référence du
   i7-4770k n'est pas sur la page : elle reste à trouver ;
