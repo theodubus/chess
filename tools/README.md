@@ -690,6 +690,9 @@ joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
 | 2026-11-06 | **E2.5t contre E5n — le budget de l'étiqueteur à temps de runner égal**, n° 22 : 2 500 nœuds contre 5 000, à 400 superlots (`2478c91` contre `339c179`) | **+5,77 Elo ± 3,34** sur 11 200 parties à `8+0,08`, **non homogènes** (p = 0,008 ; les deux EPYC 9V74 à +15 et +8, les deux 7763 à zéro) — gain démontré en commun, aucun job ne contredit ; attendu +1 à +12. **2 500 remplace 5 000** pour les tranches suivantes |
 | 2026-11-06 | **E2.5v contre E5n — l'étiquette à 2 500 contre 5 000, à volume égal**, n° 22, à 400 superlots (`5936201` contre `339c179`) | **−1,55 Elo ± 3,40** sur 11 200 parties à `8+0,08`, non homogènes (p = 0,016, quatre EPYC 7763) — pas d'effet décelable ; attendu −6 à +3. Le gain de E2.5t est le volume |
 | 2026-11-06 | **E21 contre N8nw50 — le tour de boucle** : la tranche du n° 21 étiquetée par N8tw50s800 contre l'étape B étiquetée par N6r4, même volume et même recette, n° 22 (`2634f81` contre `06d0473`) | **+10,15 Elo ± 3,33** sur 11 200 parties à `8+0,08`, homogènes (p = 0,682) — **gain démontré**, au-dessus de l'attendu (0 à +9) : un meilleur étiqueteur rend un meilleur réseau à volume égal |
+| 2026-11-09 | **N10 contre N9w50s800 — la base de C3 contre le réseau qui joue** : n21 et les 21 vagues du n° 22, 16,8 G positions, 800 superlots (`a1848b2` contre `bb172c4`) | **+8,87 Elo ± 3,20** sur 11 200 parties à `8+0,08`, homogènes (p = 0,692) — les quatre jobs au-dessus de zéro ; sous l'attendu (+10 à +25), de peu |
+| 2026-11-09 | **N10r10 contre N10 — dix seaux de roi au volume de C3** (`e547ce2` contre `a1848b2`) | **+14,77 Elo ± 3,27** sur 11 200 parties à `8+0,08`, homogènes (p = 0,111) — les quatre jobs au-dessus de zéro ; au-dessus de l'attendu (−3 à +10) : **dix seaux remplacent quatre** |
+| 2026-11-09 | **C13 — la série de la phase 4**, N9w50s800 et la recherche de `main` (`7dd523c`) contre Stockfish 16 bridé à 3100, 60+0,6 | 142 − 66 − 92, 62,7 % : **~3 190 ± 24**, +37 ± 35 sur la série du 26 oct. — au-dessus de l'attendu (3 160 à 3 181) |
 | 2026-11-03 | **Le livre déséquilibré — son rendement par paire**, n° 23 : `0d2b188` à `10+0,10` contre `8+0,08`, C53 et C54, sur `tools/book-desequilibre.epd` contre `tools/book.epd` | **× 1,11 [0,85 ; 1,44]** sur trois effets connus, homogènes ; × 0,98 par heure de runner, ses parties durant ~13 % de plus — **ne paie pas**, notre livre reste ; à `8+0,08` |
 
 **Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
@@ -1098,9 +1101,9 @@ dernière relève est faite.
 | **N° 20, séance C1 — E5t contre E5vw50** | **39851770131, 39851775754, 39851781007, 39851786526** | `6a1b1d6` (N8nw50) → `c61d721` (E5vw50), le même code au bit près, `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le facteur de `main` | 4 × 2 800, fastchess, le livre de 15 000 | **RELEVÉS le 26 oct. à 7 h 57** — finis ENTIERS le 23 entre 3 h 45 et 3 h 57 | **+8,81, +7,32, +6,58, +13,03 ; +8,94 ± 3,32 en commun, homogènes (p = 0,533)** : le volume paie à étiquette égale ; le triangle −3,05, dans ± 5,7 — ne décide rien seul : le volume à étiquette égale ; *attendu* +1 à +13, ~+6 ; le triangle (3) − (2) − (4) doit valoir zéro à ± 5,7 près (« La séance C1 », match 4) |
 | **balayage de mutation après la PR #218** — N9w50s800 embarqué | **40282962274** | `main` à `a4a6490` | un job par fichier, puis `Verdict` | **RELEVÉ le 26 oct. à 13 h 51** — lancé à 7 h 58, le `Verdict` vert à 11 h 08 | **163, exact : chaque fichier à son plafond** ; `search.rs` en 190 minutes, 54 % de la limite de 350 — *Prédiction, écrite avant* (« La séance C1 », le verdict de N9w50s800, `1942dd7`) : **163**, chaque fichier à son plafond — seuls le chemin du réseau et la confrontation changent dans `engine/src/`, comme aux embarquements de N7p4 et N8tw50s800 (163, exact) |
 | **C13 — la série de N9w50s800** | **40282964416** | `main` après la PR #218 (`a4a6490`), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 26 oct. à 13 h 51** — lancée à 7 h 58, finie à 13 h 31 ; EPYC 7763, 1,91 M n/s, profondeur 14 | **129 − 84 − 87, 57,5 % : 3 153 ± 25, dedans, au-dessus du centre** ; +26 ± 35 sur N8tw50s800 à la même échelle, pour +5,18 contre le jumeau ; zéro perte au temps, aucun avertissement côté ShallowRed (section C13, « N9w50s800, RELEVÉ ») — *Attendu, écrit avant* (section C13, « N9w50s800 — écrit le 22 oct. », `1942dd7`) — <span>inférence, confiance faible</span> : **~3 135, de 3 095 à 3 180** — N8tw50s800 3 127 ± 24 ; le jumeau mesure +5,18, l'échelle en rend +2 à +6 |
-| **C13 — la série de la phase 4** (question de Théo, 8 nov.) | **42536770738** | `main` à `7dd523c` — N9w50s800, le même réseau, avec la phase 4 (C54, C71), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **LANCÉE le 9 nov. à 0 h 46** — fin vers 6 h 30 | — *Attendu, écrit avant* : un gain de RECHERCHE seul depuis la série du 26 oct., **~+53 contre le jumeau** par la chaîne (C53 +14,40, C54 +23,18, C71 +16,02). C13 l'écrase d'un facteur mal connu — 0,13 et 0,52 au point, ± 0,45 chacun —, d'où **~+7 à +28, soit ~3 160 à ~3 181**, ~58 à 61 % contre 3100. L'écart à la série du 26 oct. se lit à ± 35 : <span>inférence</span>, il a peu de chances (~20 % à +20) de se démontrer. Elle ne décide rien. Ce qu'elle apporte : le chiffre absolu à jour, et un troisième point du facteur pour un gain de recherche PUR — le même réseau des deux côtés. |
-| **C3 — N10 contre N9w50s800, la base contre le réseau qui joue** | **42541131664, 42541134062, 42541136465, 42541139034** — N10 (`a1848b2`, n10 embarqué) contre `main` (`bb172c4`), révoqué aussitôt | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000, le facteur de `main` (2,85) | `match.yml`, 4 × 2 800 parties | **LANCÉS le 9 nov. à 1 h 37** — fin vers 6 h 40 | — *Attendu, écrit avant* — <span>inférence, confiance faible</span> : **+10 à +25, ~+18**. À calcul égal, ~4,4 fois plus de positions distinctes, soit ~2 doublements à +7 à +9 chacun (N6l, E5t) ; les étiquettes de N8tw50s800 et N9w50s800 au lieu de N6r4 (E21 +10,15 à volume égal) — le haut de la fourchette si elles s'ajoutent au volume. **Critère** : le réseau embarqué au verdict de C3 est le meilleur de C3 dont la borne basse contre N9w50s800 est au-dessus de zéro, lu job par job et en commun ; puis sa sonde des marges et sa série C13 |
-| **C3 — N10r10 contre N10, dix seaux de roi au volume de C3** | **42541141712, 42541144164, 42541146819, 42541149404** — N10r10 (`e547ce2`) contre N10 (`a1848b2`), révoqués aussitôt | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000, le facteur de `main` (2,85) | `match.yml`, 4 × 2 800 parties | **LANCÉS le 9 nov. à 1 h 37** — fin vers 6 h 40 | — *Attendu, écrit avant* — <span>inférence, confiance faible</span> : **−3 à +10, ~+4**. Dix contre quatre seaux valaient −75 à 159 M positions (n° 17), +0,34 ± 3,59 à 1,56 G (n° 18) ; la pente suit le volume, et C3 en a ~7 fois plus. **Critère** : dix seaux remplacent quatre si la borne basse est au-dessus de zéro ; seize seaux entrent alors au registre (feuille de route, point 5) |
+| **C13 — la série de la phase 4** (question de Théo, 8 nov.) | **42536770738** | `main` à `7dd523c` — N9w50s800, le même réseau, avec la phase 4 (C54, C71), contre Stockfish 16 bridé à **3100**, 60+0,6, graine « auto », le binaire AVX2 | 300, fastchess | **RELEVÉE le 9 nov. à 6 h 50** — finie à 6 h 03 ; EPYC 9V74, 1 244 150 n/s, profondeur 14 ; 142 − 66 − 92, 62,7 %, +90,0 ± 24,5 : **~3 190 ± 24**, au-dessus de l'attendu ; +37 ± 35 sur la série du 26 oct. (« C13 — la force absolue », « La phase 4 ») | — *Attendu, écrit avant* : un gain de RECHERCHE seul depuis la série du 26 oct., **~+53 contre le jumeau** par la chaîne (C53 +14,40, C54 +23,18, C71 +16,02). C13 l'écrase d'un facteur mal connu — 0,13 et 0,52 au point, ± 0,45 chacun —, d'où **~+7 à +28, soit ~3 160 à ~3 181**, ~58 à 61 % contre 3100. L'écart à la série du 26 oct. se lit à ± 35 : <span>inférence</span>, il a peu de chances (~20 % à +20) de se démontrer. Elle ne décide rien. Ce qu'elle apporte : le chiffre absolu à jour, et un troisième point du facteur pour un gain de recherche PUR — le même réseau des deux côtés. |
+| **C3 — N10 contre N9w50s800, la base contre le réseau qui joue** | **42541131664, 42541134062, 42541136465, 42541139034** — N10 (`a1848b2`, n10 embarqué) contre `main` (`bb172c4`), révoqué aussitôt | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000, le facteur de `main` (2,85) | `match.yml`, 4 × 2 800 parties | **RELEVÉS le 9 nov. à 6 h 50** — finis entre 6 h 28 et 6 h 35, aucune perte au temps : +12,41, +8,07, +7,69, +7,32 ; en commun **+8,87 ± 3,20**, homogènes (p = 0,692) — **N10 bat N9w50s800**, sous l'attendu de peu (« C3 — N10 et N10r10 : VERDICT ») | — *Attendu, écrit avant* — <span>inférence, confiance faible</span> : **+10 à +25, ~+18**. À calcul égal, ~4,4 fois plus de positions distinctes, soit ~2 doublements à +7 à +9 chacun (N6l, E5t) ; les étiquettes de N8tw50s800 et N9w50s800 au lieu de N6r4 (E21 +10,15 à volume égal) — le haut de la fourchette si elles s'ajoutent au volume. **Critère** : le réseau embarqué au verdict de C3 est le meilleur de C3 dont la borne basse contre N9w50s800 est au-dessus de zéro, lu job par job et en commun ; puis sa sonde des marges et sa série C13 |
+| **C3 — N10r10 contre N10, dix seaux de roi au volume de C3** | **42541141712, 42541144164, 42541146819, 42541149404** — N10r10 (`e547ce2`) contre N10 (`a1848b2`), révoqués aussitôt | `8+0,08`, graine « auto » chacun, AVX2 des deux côtés, le livre de 15 000, le facteur de `main` (2,85) | `match.yml`, 4 × 2 800 parties | **RELEVÉS le 9 nov. à 6 h 50** — finis entre 6 h 25 et 6 h 33, aucune perte au temps : +15,52, +11,05, +21,49, +11,05 ; en commun **+14,77 ± 3,27**, homogènes (p = 0,111) — **dix seaux remplacent quatre**, au-dessus de l'attendu (« C3 — N10 et N10r10 : VERDICT ») | — *Attendu, écrit avant* — <span>inférence, confiance faible</span> : **−3 à +10, ~+4**. Dix contre quatre seaux valaient −75 à 159 M positions (n° 17), +0,34 ± 3,59 à 1,56 G (n° 18) ; la pente suit le volume, et C3 en a ~7 fois plus. **Critère** : dix seaux remplacent quatre si la borne basse est au-dessus de zéro ; seize seaux entrent alors au registre (feuille de route, point 5) |
 | **N° 20, séance C1 — la perte tenue à l'écart de E10w50 et E5vw50** | **39851791827** | `nnue-validation.yml` à `7d0a227`, N8tw50s800 en référence, E10w50, E5vw50, N8nw50, N9w50s800 ; les jobs tenus 39050360980, 39493777327, 38531414161 | 1 job | **RELEVÉE le 22 oct. à 22 h 55** — lancée à 22 h 46, ses attendus poussés avant (`7d0a227`) | **Quatre lectures sur cinq dans l'attendu** : sur (e), E10w50 −0,000337, à égalité avec N9w50s800 (−0,000348) et non devant ; sur l'étape B, E5vw50 +0,000092 derrière N8nw50, E10w50 à égalité avec E5vw50 (−0,000004, au bord) ; aucun surapprentissage visible à 50 passes ; un diagnostic, les matchs décident (« La séance C1 ») — *Attendus, écrits avant* (« La séance C1 », E10w50 et E5vw50) : E10w50 le meilleur sur (e), −0,0003 à −0,0012 ; sur l'étape B, E5vw50 derrière N8nw50 de 0 à +0,0003 et E10w50 derrière E5vw50 de 0 à +0,0004 ; un diagnostic, le match décide |
 | **N° 20 (e) — la vague 4**, 10 000 nœuds | 39619535481, 39619539712, 39619543553, 39619548060, 39619552863, 39619556558, 39619560135, 39619564161, 39619568131, 39619572001, 39619576126, 39619581183, 39619585661, 39619590665, 39619595765, 39619599803 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 22 h 27** — lancée à 16 h 44, ses attendus poussés avant (`5a67f02`) ; seize succès finis entre 22 h 15 et 22 h 16 | **223,8 M positions, 156,2 M gardées, tous appris ; 19,46 % d'écartées, 38,54 % de nulles, EPYC 7763 à 573 – 597 : les six chiffres dans l'attendu** ; cumul appris 627,4 M, dix-sept jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 4) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 4) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 591 à 651 M gardées |
 | **N° 20 (e) — la vague 3**, 10 000 nœuds | 39571431656, 39571438951, 39571446996, 39571454666, 39571462070, 39571470003, 39571477657, 39571484787, 39571492260, 39571499559, 39571506756, 39571514470, 39571522147, 39571529991, 39571537661, 39571545662 | `cd6ed79` (N6r4), `<embedded>`, `x86-64-v3`, 10 000 nœuds, graine « auto » | `nnue-datagen.yml`, 16 × 330 min | **RELEVÉE le 21 oct. à 16 h 39** — lancée à 10 h 43, ses attendus poussés avant (`34abd07`) ; seize succès finis entre 16 h 14 et 16 h 15 | **233,1 M positions, 162,7 M gardées, tous appris ; 19,44 % d'écartées, 38,56 % de nulles, EPYC 7763 à 575 – 595 : les six chiffres dans l'attendu** ; cumul appris 471,2 M, ~31 jobs encore pour 780 M (`tools/n20e-jobs.tsv`, section « (e) — le budget de l'étiqueteur », la vague 3) — *Attendus, écrits avant* (section « (e) — le budget de l'étiqueteur », la vague 3) : **175 à 260 M positions, 120 à 180 M gardées** ; écartées 18,9 à 20,0 %, nulles 38,0 à 39,2 % ; 565 à 605 positions par seconde sur un EPYC 7763 ; le cumul appris 428 à 488 M gardées |
@@ -12422,6 +12425,54 @@ faible</span> : sans effet sur un SSD, un goulot sur un disque dur. La
 séance n° 22 tenait ~24 s par superlot à 256 unités, soit ~5 h 15 pour
 N10 à 800 superlots. Un N10 nettement plus long désignerait le disque.
 
+#### C3 — N10 et N10r10 : VERDICT, relevé le 9 nov. à 6 h 50 — la base bat N9w50s800, dix seaux de roi passent devant
+
+**La séance, mode `a`**, lancée par Théo le 8 nov. : N10 et N10r10 poussés
+sur `reseau/c3`, tous contrôles passés — confrontation (médian, maximal)
+6 et 22, puis 3 et 10. Intégrés à `reseaux/` et écrits en candidats
+révoqués aussitôt : N10 (`a1848b2`), N10r10 (`e547ce2`, la seule ligne
+`KING_BUCKETS_10` en plus). Huit jobs de 2 800 parties à `8+0,08`, lancés
+le 9 nov. à 1 h 37, finis entre 6 h 25 et 6 h 35, **aucune perte au
+temps** :
+
+| match | job | runner | n/s au banc | profondeur | Elo |
+|---|---|---|---|---|---|
+| N10 contre N9w50s800 | 42541131664 | Xeon 8573C | 1 310 226 | 14 | +12,41 ± 6,46 |
+| | 42541134062 | EPYC 7763 | 1 061 171 | 14 | +8,07 ± 6,57 |
+| | 42541136465 | EPYC 9V45 | 1 501 789 | 15 | +7,69 ± 6,12 |
+| | 42541139034 | EPYC 7763 | 1 082 327 | 14 | +7,32 ± 6,43 |
+| N10r10 contre N10 | 42541141712 | EPYC 9V74 | 1 048 318 | 14 | +15,52 ± 6,76 |
+| | 42541144164 | Xeon 8573C | 1 198 950 | 14 | +11,05 ± 6,45 |
+| | 42541146819 | Xeon 8573C | 1 393 642 | 14 | +21,49 ± 6,45 |
+| | 42541149404 | Xeon 8573C | 1 155 898 | 14 | +11,05 ± 6,48 |
+
+Pentanomiaux, dans l'ordre des jobs — N10 : 20, 217, 834, 301, 28 ; 23,
+228, 846, 267, 36 ; 20, 209, 878, 275, 18 ; 20, 231, 849, 270, 30.
+N10r10 : 22, 217, 820, 296, 45 ; 22, 217, 837, 298, 26 ; 14, 195, 831,
+324, 36 ; 22, 217, 841, 290, 30.
+
+- **N10 contre N9w50s800 : +8,87 ± 3,20**, homogènes (p = 0,692), les
+  quatre bornes basses au-dessus de zéro. **Sous l'attendu** (+10 à +25),
+  de peu. Le volume et les meilleurs étiqueteurs paient à calcul égal,
+  moins que leur somme ne le promettait : <span>inférence, confiance
+  faible</span> — les deux effets se recouvrent, ou le régime de ~7 passes
+  en garde une part pour 1 600 superlots ;
+- **N10r10 contre N10 : +14,77 ± 3,27**, homogènes (p = 0,111), les quatre
+  bornes basses au-dessus de zéro. **Au-dessus de l'attendu** (−3 à +10).
+  Les seaux de roi suivent le volume, comme le n° 18 le laissait voir :
+  ~−75 à 159 M positions, +0,34 à 1,56 G, +14,77 à 11,35 G gardées. **Dix
+  seaux remplacent quatre** ; **seize seaux entrent au registre**, comme
+  écrit ;
+- **par la chaîne, N10r10 contre N9w50s800 : ~+23,6 ± 4,6** —
+  <span>inférence, deux intervalles composés</span>.
+
+**Le critère, écrit avant** : le réseau embarqué est le meilleur de C3 dont
+la borne basse contre N9w50s800 est au-dessus de zéro. **N10r10 en tête,
+la décision attend le mode `b`** — N10h384 et N10h512, sur la carte de
+Théo, chacun mesuré contre N10. Si une largeur paie aussi, sa composition
+avec dix seaux demande un réseau de plus ; sinon N10r10 s'embarque, avec
+sa sonde des marges et sa série C13, à 3190.
+
 #### (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander
 
 Théo, le 19 oct. au soir : « *je suis prêt* ». La séance A d'abord, telle
@@ -16381,6 +16432,31 @@ perte au temps, zéro coup illégal, aucun moteur perdu :
 - **aucun avertissement côté ShallowRed** ; 9 178 « Bestmove does not
   match… », ceux du bridage.
 
+**La phase 4, RELEVÉE le 9 nov. à 6 h 50 — au-dessus de l'attendu, au
+sommet de l'échelle.** Run 42536770738, sur la question de Théo (« *on a
+fait des améliorations qui ont augmenté le elo depuis la dernière mesure
+de force absolue non ?* ») : le même réseau, N9w50s800, avec la recherche
+de `main` à `7dd523c` — la phase 4, ~+53 contre le jumeau par la chaîne.
+Lancée le 9 nov. à 0 h 46, finie à 6 h 03 ; zéro perte au temps, zéro coup
+illégal :
+
+| série | runner — bench, profondeur en 250 ms | score | écart | estimation | attendu, écrit avant |
+|---|---|---|---|---|---|
+| la phase 4 (`7dd523c`), AVX2, contre **3100** — 42536770738 | EPYC 9V74 — 1 244 150 n/s, 14 | 142 − 66 − 92, 62,7 % | +90,0 ± 24,5 | **3 190 ± 24** | 3 160 à 3 181 : **au-dessus** |
+
+- **sur la série du 26 oct.** : **+37 ± 35**, la borne basse à +2 — à
+  peine démontré. Le facteur de l'échelle pour un gain de recherche PUR,
+  le même réseau des deux côtés : **0,70 ± 0,66** au point. Troisième
+  point, après 0,13 et 0,52 ; aucun ne se sépare des autres ;
+- **le sommet de l'échelle** : 3 190 est le plus haut `UCI_Elo` de
+  Stockfish 16. Le déclencheur de la feuille de route (point 11, « au-delà
+  de 3190 ») est atteint : la série suivante se joue à **3190**, et au-delà
+  de 90 % contre lui — la règle de `force.yml` —, il faudra des
+  adversaires classés ;
+- **un avertissement côté ShallowRed**, « PV continues after fifty-move
+  rule » — la signature connue de C31 ; 8 003 « Bestmove does not match »,
+  ceux du bridage.
+
 **L'écart aux meilleurs — lu le 29 oct. à 10 h 57**, sur la question de
 Théo (« *qu'est ce qui fait qu'un stockfish ou reckless est toujours 300
 elo plus haut* ») :
@@ -17273,6 +17349,11 @@ pas parce que des runners sont libres.
    choisies par Théo le 6 nov.** : l'option C, n21 et les 21 vagues du
    n° 22 sans les étiquettes de N6r4, 16,8 G positions, 39 Go à
    télécharger (« La séance C3, les données ») — la séance C3 donnée.
+   **Le mode `a` relevé le 9 nov.** : N10 +8,87 ± 3,20 contre N9w50s800,
+   **N10r10 +14,77 ± 3,27 contre N10 — dix seaux remplacent quatre**
+   (« C3 — N10 et N10r10 : VERDICT ») ; le mode `b` (384, 512) en cours
+   chez Théo. Et la série C13 de la phase 4 : ~3 190 ± 24, le sommet de
+   l'échelle (point 11).
 5. Après C3 : embarquer le gagnant (sonde des marges, série C13) ;
    16 seaux de roi si 10 a payé ; 1 024 et couches cachées si la largeur paie.
 6. Reprendre la génération, étiquetée par le nouveau réseau, au rythme
@@ -17386,7 +17467,7 @@ résultat en était un, jamais mesuré, et valait +11,79.
 | **volume de données** | 3,71 G vus par N9w50s800 (les 94 jobs appris de l'étape B et les 80 de (e), tous étiquetés par N6r4) | doubler : +7,32 à 100 superlots (n° 18) ; **+7,38 ± 3,40 à 400** (N8tw50 contre N7p4w50) ; N8tw50 +17,91 ± 3,40 contre N7p4, puis N8tw50s800 embarqué ; **mais la moitié étiquetée par N5l n'ajoute rien à passes égales : +0,25 ± 4,71** (N8tw50s800 contre N8nw50, par différence, 22 oct.) ; à superlots égaux elle prend des passes aux bonnes (−5,18) ; **N9w50s800 +5,18 ± 3,29 contre N8tw50s800** — N5l retiré, 0,98 G de N6r4 ajoutées, 31 passes au lieu de 25 : trois causes mêlées | ~+7 au doublement suivant — <span>confiance faible</span> | **N9w50s800 EMBARQUÉ le 22 oct.** (séance C1) ; **le volume à étiquette égale paie : +8,94 ± 3,32** (E5t contre E5v, 26 oct.), ce que le n° 20 n'avait pas mesuré ; puis le n° 21 (« La séance C1 », « N° 21 ») ; **C3 sur l'option C** (Théo, 6 nov.) : n21 et les 21 vagues du n° 22, 16,81 G positions, ~7 passes à 800 superlots au lieu de 31, le même calcul : à calcul égal, plus de données a gagné chaque fois (N6l +7,32 à ~6 passes, E5t +8,94) — sa base N10 contre N9w50s800, volume et étiqueteurs mêlés (« La séance C3, les données ») |
 | **l'étiqueteur** | N9w50s800, **2 500 nœuds depuis le 6 nov.** (5 000 avant) | l'étiqueteur seul +5,52 (n° 18) ; **à volume égal et 400 superlots, N6r4 sur N5l +12,76 ± 3,45** (N8nw50, 21 oct.) ; le budget, jamais | ~0,12 Elo de réseau par Elo d'étiqueteur au point, deux mesures — <span>confiance faible</span> | **le budget, mesuré le 26 oct.** (séance C1) : 10 000 nœuds contre 5 000, −1,49 ± 3,38 à volume égal, **−7,38 ± 3,40 à temps de runner égal** — le budget ne paie pas, le volume si (+8,94 ± 3,32) ; **2 500 nœuds, le test suivant** : à volume égal contre 5 000, sur des données du même étiqueteur que le n° 21 ; s'il ne perd rien à l'étiquette, il double le volume au même temps de runner — <span>marge estimée : jusqu'à ~+9 au doublement, confiance faible</span> ; **écrit le 26 oct. dans le n° 22** : chaque vague moitié à 2 500, moitié à 5 000, étiquetées par N9w50s800 ; E2.5t contre E5n décide (« N° 22 ») ; **la partie mesurée close le 27 oct.**, 38 et 39 jobs appris, × 2,05 ; **sa séance écrite**, la semaine du 2 nov. (`tools/seance-n22.sh`) ; **les données de N5l laissées** : −5,18 à superlots égaux, +0,25 ± 4,71 à passes égales — rien (22 oct.) ; N9w50s800 embarqué le 22 oct. ; **VERDICT le 6 nov. : E2.5t +5,77 ± 3,34 contre E5n**, non homogène, aucun job contre — **2 500 nœuds remplacent 5 000** pour les tranches suivantes ; **1 250 au test suivant**, à temps de runner égal contre 2 500 (« La séance du n° 22 — E2.5t contre E5n : VERDICT ») |
 | **largeur** | 256 unités | 128 → 256 : N5l devant N5s de ~15 (n° 17), malgré × 0,90 de nœuds par seconde | inconnue au volume d'aujourd'hui | C3 : 384 et 512 ; **1 024 si 512 paie nettement** — un seul `HIDDEN` dans le moteur, mais ~×0,66 de nœuds par seconde estimé et ~4 fois la carte par superlot (Théo, 21 oct. : plus tard) |
-| **seaux de roi** | 4 | 4 contre 10 à 1,56 G : +0,34 ± 3,59 | à revoir au double de données | C3 : 10 au volume d'aujourd'hui ; **16 et plus si 10 paie** — une table de 32 cases, chaque seau voyant d'autant moins de positions (Théo, 21 oct. : plus tard) |
+| **seaux de roi** | 4 au réseau qui joue ; **10 au candidat de C3** | 4 contre 10 à 1,56 G : +0,34 ± 3,59 ; **à 11,35 G gardées (C3, 9 nov.) : N10r10 +14,77 ± 3,27 contre N10** | +5 à +10 vers 16 — <span>confiance faible</span> | **10 paie au volume de C3 : 16 est le test suivant**, après le verdict de C3 ; et **16 et plus si 10 paie** — une table de 32 cases, chaque seau voyant d'autant moins de positions (Théo, 21 oct. : plus tard) |
 | **seaux de sortie** | 8, selon le matériel | 1 contre 8 seulement | inconnue | (c) |
 | **couches cachées** | aucune | jamais | inconnue | phase 3, après (c) |
 | **ouvertures du générateur** | 8 à 11 demi-coups au hasard | jamais | inconnue | phase 7 |
