@@ -7,12 +7,17 @@
 #   n10      — 256 unités, quatre seaux de roi, huit de sortie : la base ;
 #   n10r10   — dix seaux de roi ;
 #   n10h384  — 384 unités ;
-#   n10h512  — 512 unités.
+#   n10h512  — 512 unités ;
+#   n10r10h512 — la composition, dix seaux de roi ET 512 unités (mode `c`,
+#                ajouté le 10 nov. 2026 : 512 unités +32,57 et dix seaux
+#                +14,77 contre N10, chacun seul — tools/README.md, « C3 —
+#                N10h384 et N10h512 : VERDICT »).
 # Chacun commité et poussé sur `reseau/c3` dès qu'il passe TOUS ses contrôles.
 #
 #   bash tools/seance-c3.sh essai          # contrôles, données, deux essais courts
 #   bash tools/seance-c3.sh a              # n10 puis n10r10
 #   bash tools/seance-c3.sh b              # n10h384 puis n10h512
+#   bash tools/seance-c3.sh c veille       # n10r10h512, la composition
 #   bash tools/seance-c3.sh tout veille    # les quatre, puis la veille
 #
 # L'ENTRAÎNEUR LIT L'ARCHITECTURE DANS LE MOTEUR : `tools/nnue-train` importe
@@ -43,10 +48,10 @@ NN=$DEPOT/tools/nnue-train
 DECISION=$DEPOT/tools/c3-donnees.tsv
 
 usage() {
-  echo "usage : $0 [essai|a|b|tout] [veille]" >&2
+  echo "usage : $0 [essai|a|b|c|tout] [veille]" >&2
   exit 2
 }
-case "$MODE" in essai | a | b | tout) ;; *) usage ;; esac
+case "$MODE" in essai | a | b | c | tout) ;; *) usage ;; esac
 case "$VEILLE" in "" | veille) ;; *) usage ;; esac
 mkdir -p "$TRAVAIL"
 
@@ -83,18 +88,27 @@ transformation() {
   n10r10) echo 's/^    king_buckets: Some(KING_BUCKETS_4),$/    king_buckets: Some(KING_BUCKETS_10),/' ;;
   n10h384) echo 's/^pub const HIDDEN: usize = 256;$/pub const HIDDEN: usize = 384;/' ;;
   n10h512) echo 's/^pub const HIDDEN: usize = 256;$/pub const HIDDEN: usize = 512;/' ;;
+  n10r10h512) echo 's/^    king_buckets: Some(KING_BUCKETS_4),$/    king_buckets: Some(KING_BUCKETS_10),/;s/^pub const HIDDEN: usize = 256;$/pub const HIDDEN: usize = 512;/' ;;
   esac
 }
+# Le nombre de lignes que la transformation doit changer — une par
+# substitution, et pas une de plus.
+lignes() { case "$1" in n10r10h512) echo 2 ;; *) echo 1 ;; esac; }
 identifiant() {
   case "$1" in
   n10) echo 768x4hm-256-s8 ;; n10r10) echo 768x10hm-256-s8 ;;
   n10h384) echo 768x4hm-384-s8 ;; n10h512) echo 768x4hm-512-s8 ;;
+  n10r10h512) echo 768x10hm-512-s8 ;;
   esac
 }
 taille() { # 1 581 632 et 3 940 928 retrouvés sur N9w50s800 et N6r10
   case "$1" in
   n10) echo 1581632 ;; n10r10) echo 3940928 ;;
   n10h384) echo 2372416 ;; n10h512) echo 3163200 ;;
+  # 2 × (768 × 10 × 512 + 512 + 8 × 1 025) = 7 881 744, 7 881 792 bourrés ;
+  # calculé à la main le 10 nov. 2026, la formule retrouvée sur N10r10 et
+  # N10h512, que bullet a écrits.
+  n10r10h512) echo 7881792 ;;
   esac
 }
 
@@ -216,7 +230,7 @@ fi
 # ---- 2. L'arbre d'une architecture : la base est le dépôt ; les autres, un
 # worktree à BASE, une ligne changée — et rien d'autre, vérifié.
 arbre() { # nom → imprime le dossier dont l'entraîneur sera bâti
-  local nom=$1 t wt
+  local nom=$1 t wt n
   t=$(transformation "$nom")
   if [ "$t" = - ]; then
     echo "$DEPOT"
@@ -234,9 +248,10 @@ arbre() { # nom → imprime le dossier dont l'entraîneur sera bâti
   fi
   git -C "$wt" checkout -q -- engine/src/nnue.rs >/dev/null &&
     sed -i "$t" "$wt/engine/src/nnue.rs" || return 1
-  # Exactement une ligne remplacée, dans ce seul fichier.
-  [ "$(git -C "$wt" diff --numstat)" = "$(printf '1\t1\tengine/src/nnue.rs')" ] || {
-    echo "le worktree de $nom ne diffère pas de main d'une seule ligne" >&2
+  # Exactement les lignes de la transformation, dans ce seul fichier.
+  n=$(lignes "$nom")
+  [ "$(git -C "$wt" diff --numstat)" = "$(printf '%s\t%s\tengine/src/nnue.rs' "$n" "$n")" ] || {
+    echo "le worktree de $nom ne diffère pas de main d'exactement $n ligne(s)" >&2
     return 1
   }
   echo "$wt"
@@ -329,7 +344,9 @@ publier() { # message, puis nom:identifiant
 # ---- 3. Les essais courts : la base et la plus éloignée d'elle, n10h512 —
 # l'arbre d'une architecture se bâtit, et ce qu'il écrit a sa taille.
 ESSAI=0
-for nom in n10 n10h512; do
+ESSAIS="n10 n10h512"
+[ "$MODE" = c ] && ESSAIS="n10 n10r10h512"
+for nom in $ESSAIS; do
   dire "— l'essai court de $nom"
   if ! wt=$(arbre "$nom"); then
     dire "  ÉCHEC essai-$nom : l'arbre de $nom n'a pas pu être préparé"
@@ -400,6 +417,10 @@ if [ "$MODE" = a ] || [ "$MODE" = tout ]; then
   reseau n10
   dire "— n10r10 : dix seaux de roi"
   reseau n10r10
+fi
+if [ "$MODE" = c ]; then
+  dire "— n10r10h512 : dix seaux de roi et 512 unités"
+  reseau n10r10h512
 fi
 if [ "$MODE" = b ] || [ "$MODE" = tout ]; then
   dire "— n10h384 : 384 unités"
