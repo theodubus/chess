@@ -12477,6 +12477,18 @@ Théo, chacun mesuré contre N10. Si une largeur paie aussi, sa composition
 avec dix seaux demande un réseau de plus ; sinon N10r10 s'embarque, avec
 sa sonde des marges et sa série C13, à 3190.
 
+**L'outil des candidats — `tools/candidat-reseau.py`, rangé au dépôt le
+11 nov.** Il vivait dans le conteneur de la session depuis le n° 22, et un
+changement de session l'aurait effacé. `python3 tools/candidat-reseau.py
+<dépôt> <base> "<doc>" [largeur=N] [seaux=10]` : le réseau de
+`reseaux/<base>.bin` devient l'embarqué. Le bloc de doc d'`EMBEDDED` est
+remplacé, et la table `CONFRONTATION` est recopiée de la section « 3. Le
+moteur contre l'entraîneur » de sa sortie. L'outil refuse si cette section
+n'a pas ses 18 lignes, ou si son critère n'est pas tenu. `largeur` et
+`seaux` changent les deux lignes d'architecture, chacune exactement une
+fois. Ensuite : `cargo fmt`, les tests `nnue` en release, commit, révocation.
+Éprouvé le 11 nov. sur N10h512 avec `largeur=512 seaux=10`.
+
 #### C3 — N10h384 et N10h512 : VERDICT, relevé le 10 nov. à 3 h 50 — la largeur paie, nettement
 
 **La séance, mode `b`**, lancée par Théo le 9 nov. : N10h384 et N10h512
@@ -17569,6 +17581,20 @@ pas parce que des runners sont libres.
    essai à blanc sur chess, puis l'installation réelle entre deux
    campagnes. Il ne bloque pas la phase 4. **Prêt d'ici une à deux
    semaines au plus** (Théo, 3 nov.), soit vers le 10 à 17 nov.
+   **Utilisable le 11 nov.** (Théo), et son plan : la transition faite
+   par une session sur Fable 5.2 (des crédits à sa sortie) ; un essai à
+   blanc d'abord, avec retours à la session du socle ; puis
+   l'installation réelle, avec le passage des anciens fichiers de
+   mémoire aux nouveaux ; puis la feuille de route et le mode opératoire
+   remis en question ; puis le retour sur Opus. **Recommandé le 11 nov.**
+   (avis de la session, pas une décision de Théo) : l'essai à blanc tout
+   de suite, il ne touche ni `main` ni ce qui est en vol ; l'installation
+   réelle quand rien n'est en vol — après l'embarquement du gagnant de
+   C3. Elle se juge à des contrôles mécaniques écrits avant :
+   `tools/verify.sh` complet vert, `tools/etat.sh` qui imprime encore la
+   feuille de route et ses renvois, les hooks chargés
+   (`tools/verify-hooks.sh`), le carnet relié, et l'inventaire des faits
+   de l'ancienne mémoire retrouvés dans la nouvelle.
 9. OpenBench (serveur sur le MeLE, clients : runners et portable) quand
    les effets cherchés passent sous ~3 Elo.
 10. En dernier : 1 600 superlots sur la recette finale ; la phase 6
