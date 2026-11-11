@@ -73,6 +73,25 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   des points de recap (au même titre que n'importe quelle action humaine
   nécessaire)* ». `tools/etat.sh` calcule les branches concernées à chaque
   reprise.
+- **Le socle est installé depuis le 11 nov. 2026** — sa section, en fin de
+  fichier, entre ses marqueurs (J-2026-11-11-B). **Là où elle contredit le
+  reste de ce fichier, ce que Théo a tranché ce jour-là vaut** (D-0002) :
+  **l'agent fusionne lui-même ses pull requests à CI verte**, comme avant —
+  la section dit par défaut que l'humain fusionne, et c'est une ligne de la
+  politique, écrite par Théo, qui lève le refus du hook ; **`ui/` est
+  déclaré tiers** : aucun contrôle du socle ne le juge, ce qui prolonge la
+  règle de « Structure » ; **le balayage de mutation reste celui de chess**
+  (`.github/workflows/mutation.yml` et son cliquet, plus bas), le socle n'en
+  pose pas ; **les branches de réseaux et celles des autres agents se
+  gardent**, jamais proposées à la suppression ; et **ce fichier ne gardera
+  que les règles de travail** — le premier sujet est de déplacer le carnet
+  de bord vers la mémoire. L'adaptateur du socle est propre à chess
+  (`.socle/adapter.toml`) : avec `--fast`, `socle verify` lance les étapes
+  de `tools/verify.sh --rapide` ; sans, celles du job « Moteur » de la CI.
+  **Ce que ces décisions ne tranchent pas reste ouvert, et se pose avec
+  Théo** : les deux états imprimés au démarrage (`tools/etat.sh` et celui
+  du socle), les deux commandes de vérification, les deux hooks de fin de
+  tour.
 
 ## Décisions structurantes
 

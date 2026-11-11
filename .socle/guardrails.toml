@@ -53,7 +53,7 @@ disposable = ["proto/"]
 # scripts) : aucun contrôle ne les juge, ni ses mises à jour. Un motif qui
 # couvrirait un fichier du socle, de la mémoire ou de la politique est
 # refusé. En ajouter un assouplit : une décision humaine.
-paths = []
+paths = ["ui/**"]
 
 [tooling]
 # Tout fichier qui correspond doit être nommé dans un document.
