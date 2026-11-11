@@ -11,6 +11,16 @@
             "statusMessage": "vérification de l'arbre"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && python3 .socle/socle hook stop",
+            "timeout": 600,
+            "statusMessage": "contrôles de fin de tour"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -23,6 +33,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Bash|Write|Edit|MultiEdit|NotebookEdit|AskUserQuestion|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && python3 .socle/socle hook pre-tool-use",
+            "timeout": 20
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -33,6 +53,16 @@
             "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && tools/etat.sh",
             "timeout": 15,
             "statusMessage": "état du travail en cours"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"${CLAUDE_PROJECT_DIR:-.}\" && python3 .socle/socle hook session-start",
+            "timeout": 300,
+            "statusMessage": "état dérivé du projet"
           }
         ]
       }
