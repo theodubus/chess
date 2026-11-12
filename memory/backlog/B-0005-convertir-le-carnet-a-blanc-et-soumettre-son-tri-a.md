@@ -29,3 +29,4 @@ son adresse est dans le sujet B-0003.
 - [x] le rapport chiffré de la conversion est écrit au journal
 - [x] les deux essais sur branche jetable sont faits, leur résultat écrit
 - [x] le traitement des références mortes et des copies est dit, et posé en demande s'il assouplit un garde-fou
+- [ ] les constats de la revue du script sont traités (J-2026-11-12-L) : le bandeau du carnet converti et compté, le compte de mots dans le script

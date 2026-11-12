@@ -16,12 +16,13 @@ est prête ; il donnera lui-même le prompt d'installation.
 Où en est le travail : la branche de développement porte la sortie du
 mode adoption (B-0001) et la conversion à blanc du carnet (B-0005),
 poussées, **sans pull request ouverte**. La revue du script de
-conversion n'est pas encore traitée.
+conversion est revenue, ses constats notés et pas encore traités.
 
 ## Prochaines étapes
 
-À la reprise, dans l'ordre : traiter la revue du script
-(`tools/carnet-vers-md.py`) ; ouvrir la pull request et la fusionner à CI
+À la reprise, dans l'ordre : traiter les cinq constats de la revue du
+script `tools/carnet-vers-md.py` (J-2026-11-12-L), dont le bandeau du
+carnet, qu'il ne convertit pas ; ouvrir la pull request et la fusionner à CI
 verte ; clore B-0001 puis B-0005 ; poser le journal du carnet (B-0006),
 public sans tri (D-0007) ; puis ses autres rubriques (B-0007) et
 `CLAUDE.md` en trois lots (B-0008 à B-0010).
