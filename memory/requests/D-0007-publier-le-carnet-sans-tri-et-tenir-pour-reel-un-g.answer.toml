@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0007-publier-le-carnet-sans-tri-et-tenir-pour-reel-un-g.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-12"
+canal = "conversation"
+citation = "Carnet public : oui c'est ça \nIl reste beaucoup a faire côté adoption socle ? (Transfert mémoire, etc)\nOk pour le seuil de 10 elo"
+empreinte = "sha256:cfe8125f4e51058ff5975b8b8d3ef3fc9a993fe9b820d19abf181cf66fc7ca7a"

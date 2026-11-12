@@ -19,8 +19,7 @@ branche des réseaux de la séance d'architecture ; il attend l'adoption
 L'ordre se tient au backlog. Après B-0001 : la conversion à blanc du
 carnet (B-0005), puis son journal (B-0006), ses autres rubriques (B-0007)
 et `CLAUDE.md` en trois lots (B-0008 à B-0010). Le carnet devient public
-(D-0006) ; « sans tri » est la lecture de l'agent, que Théo confirme
-avant toute publication (B-0032). À préparer en demande pour Théo : ce que le démarrage
+sans tri, confirmé par Théo (D-0007). À préparer en demande pour Théo : ce que le démarrage
 imprime (B-0002) et les deux hooks de fin de tour (B-0004), qui touchent
 un fichier qu'il détient.
 

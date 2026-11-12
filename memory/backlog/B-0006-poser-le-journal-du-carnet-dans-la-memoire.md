@@ -5,8 +5,8 @@
 
 Deuxième lot du déplacement du carnet (B-0003) : son journal, 207 entrées
 datées du 12 sept. au 10 nov. 2026, passe dans le journal de la mémoire,
-un fichier par mois, entier si Théo confirme que « carnet public » veut
-dire sans tri (D-0006, B-0032) : rien ne se publie avant. Les entrées gardent leurs identifiants : aucun ne tombe sur un
+un fichier par mois, entier : Théo a confirmé le 12 nov. 2026 que le
+carnet se publie sans tri (D-0007). Les entrées gardent leurs identifiants : aucun ne tombe sur un
 identifiant d'ici, le journal du socle commençant le 11 nov. Deux entrées
 du carnet n'ont pas d'identifiant et vont avec son contexte historique.
 Rien ne change dans `CLAUDE.md`.
