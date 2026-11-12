@@ -9,26 +9,29 @@ L'adoption du socle, entière, avant tout travail sur le moteur : Théo, le
 12 nov. 2026 (D-0006, D-0008). Le jalon B-0031 dit ce que « finie » veut
 dire.
 
-**En pause à la demande de Théo** (J-2026-11-12-K) : ne rien relancer
-avant son signal, pour économiser de l'usage. Une mise à jour du socle
-est prête ; il donnera lui-même le prompt d'installation.
-
-Où en est le travail : la branche de développement porte la sortie du
-mode adoption (B-0001) et la conversion à blanc du carnet (B-0005),
-poussées, **sans pull request ouverte**. La revue du script de
-conversion est revenue, ses constats notés et pas encore traités.
+Reprise le 12 nov. au soir, sur le signal de Théo (J-2026-11-12-M). La
+branche de développement porte la sortie du mode adoption (B-0001) et la
+conversion à blanc du carnet (B-0005), la revue de son script traitée
+(J-2026-11-12-N) : ce lot part en pull request, fusionnée à CI verte.
 
 ## Prochaines étapes
 
-À la reprise, dans l'ordre : traiter les cinq constats de la revue du
-script `tools/carnet-vers-md.py` (J-2026-11-12-L), dont le bandeau du
-carnet, qu'il ne convertit pas ; ouvrir la pull request et la fusionner à CI
-verte ; clore B-0001 puis B-0005 ; poser le journal du carnet (B-0006),
-public sans tri (D-0007) ; puis ses autres rubriques (B-0007) et
-`CLAUDE.md` en trois lots (B-0008 à B-0010).
+Dans l'ordre :
 
-Attend Théo : la demande sur les hooks en double du démarrage et de la
-fin de tour (D-0009), que B-0002 et B-0004 attendent.
+1. Fusionner la pull request du lot, puis clore B-0001 et B-0005.
+2. Mettre à jour le socle, par le prompt que la session du socle a écrit
+   et que Théo a donné (J-2026-11-12-M, son texte entier), sur la branche
+   repartie de la branche par défaut. Sa demande sur les fichiers
+   protégés attendra Théo.
+3. Faire le changement de D-0009, que Théo a validée dans la conversation
+   (J-2026-11-12-M) : sa réponse se consigne par la commande du socle
+   dans le même push que le changement, pas avant ; et Théo attend de
+   l'agent les commandes à lancer sur son ordinateur. B-0002 et B-0004 en
+   dépendent.
+4. Poser le journal du carnet (B-0006), public sans tri (D-0007), en
+   refaisant les essais des contrôles sur les fichiers posés ; puis ses
+   autres rubriques (B-0007) et `CLAUDE.md` en trois lots (B-0008 à
+   B-0010).
 
 Le registre des réglages ouverts n'est écrit que dans `tools/README.md`,
 sous-section « La file ». Les données d'entraînement expirent chez GitHub

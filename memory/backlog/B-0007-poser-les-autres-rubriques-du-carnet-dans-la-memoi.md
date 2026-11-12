@@ -11,9 +11,14 @@ son backlog arbitré se confrontent au backlog d'ici, et ce qui reste à
 faire y entre ; son protocole de travail et sa liste « à ne pas faire » se
 confrontent à `CLAUDE.md`, où ne va que ce qui n'y est pas déjà.
 
+S'y ajoute ce que la page porte hors de ses rubriques, que la conversion
+rend depuis le 12 nov. 2026 (J-2026-11-12-N) : son bandeau, 51 Ko, le fil
+daté de ses points d'état ; sa navigation ; son pied.
+
 ## Fait quand
 
 - [ ] chaque rubrique du carnet est posée, ou archivée au journal avec un renvoi
+- [ ] de même le bandeau, la navigation et le pied de la page
 - [ ] chaque arbitrage est une décision de la mémoire
 - [ ] `memory/canonical.md` reste sous son budget
 - [ ] la première condition de fin de B-0003, sur les entrées du carnet, est cochée

@@ -18160,13 +18160,27 @@ de déplacer le carnet de bord vers la mémoire, puis s'en va. Le carnet est
 un artefact claude.ai, une page HTML ; `python3 -I tools/carnet-vers-md.py
 <carnet.html> <dossier de sortie>` en rend le journal au format du journal
 de la mémoire, un fichier par mois coupé au budget, les entrées les plus
-anciennes d'abord et leurs identifiants gardés, et chaque autre rubrique
-dans son fichier. Il n'écrit que dans le dossier de sortie, jamais dans la
-mémoire : poser ses fichiers est le travail des lots suivants.
+anciennes d'abord et leurs identifiants gardés, chaque autre rubrique
+dans son fichier, et de même ce que la page porte hors de ses rubriques :
+son bandeau, sa navigation, son pied. Il n'écrit que dans le dossier de
+sortie, jamais dans la mémoire : poser ses fichiers est le travail des
+lots suivants.
 
-Ce qui le tient : le compte de mots de chaque rubrique, confronté à celui
-de la source. Un tableau imbriqué dans une définition avait d'abord été
-perdu, 74 mots sur 87 354 ; rien d'autre ne l'aurait montré.
+Ce qui le tient : un contrôle de fidélité qu'il lance lui-même à chaque
+conversion, et qui lui fait rendre le code 1. Tout le texte que la page
+affiche doit se trouver dans un fichier écrit, et dans un seul ; et les
+caractères de mot de la source de chaque fichier doivent s'y retrouver
+tous, dans l'ordre, une fois mis à part ce que la conversion ajoute — la
+cible d'un lien, le numéro d'un item, l'identifiant d'une entrée. Il ne
+voit ni la ponctuation ni la mise en forme.
+
+Pourquoi il est dans le script : le premier contrôle était un compte de
+mots lancé à la main, qui ne regardait que les rubriques. Il avait bien
+montré un tableau perdu dans une définition, 74 mots ; il ne pouvait pas
+voir que le bandeau de la page, 6 % de son texte, ne sortait dans aucun
+fichier, et c'est une revue qui l'a dit. Le contrôle d'aujourd'hui a été
+éprouvé le 12 nov. 2026 en plantant des pertes dans des copies du script :
+deux passaient d'abord à tort, et l'ont fait reprendre deux fois.
 
 ### Paralléliser les matchs — ce qui marche et ce qui ne marche pas
 
