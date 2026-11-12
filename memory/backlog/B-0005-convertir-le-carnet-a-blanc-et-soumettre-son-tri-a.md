@@ -26,6 +26,6 @@ son adresse est dans le sujet B-0003.
 
 ## Fait quand
 
-- [ ] le rapport chiffré de la conversion est écrit au journal
-- [ ] les deux essais sur branche jetable sont faits, leur résultat écrit
-- [ ] le traitement des références mortes et des copies est dit, et posé en demande s'il assouplit un garde-fou
+- [x] le rapport chiffré de la conversion est écrit au journal
+- [x] les deux essais sur branche jetable sont faits, leur résultat écrit
+- [x] le traitement des références mortes et des copies est dit, et posé en demande s'il assouplit un garde-fou

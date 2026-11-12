@@ -18153,6 +18153,21 @@ script, et que le script **rend un état non vide** — un script devenu muet ne
 se verrait pas, on croirait simplement qu'il n'y a rien à dire. C'est la même
 raison qui fait exister `verify-hooks.sh` lui-même.
 
+### `tools/carnet-vers-md.py` — le carnet de bord converti en Markdown
+
+Un outil de l'adoption du socle, écrit le 12 nov. 2026 : il sert le temps
+de déplacer le carnet de bord vers la mémoire, puis s'en va. Le carnet est
+un artefact claude.ai, une page HTML ; `python3 -I tools/carnet-vers-md.py
+<carnet.html> <dossier de sortie>` en rend le journal au format du journal
+de la mémoire, un fichier par mois coupé au budget, les entrées les plus
+anciennes d'abord et leurs identifiants gardés, et chaque autre rubrique
+dans son fichier. Il n'écrit que dans le dossier de sortie, jamais dans la
+mémoire : poser ses fichiers est le travail des lots suivants.
+
+Ce qui le tient : le compte de mots de chaque rubrique, confronté à celui
+de la source. Un tableau imbriqué dans une définition avait d'abord été
+perdu, 74 mots sur 87 354 ; rien d'autre ne l'aurait montré.
+
 ### Paralléliser les matchs — ce qui marche et ce qui ne marche pas
 
 **On ne parallélise PAS un SPRT.** Un test séquentiel tire ses taux d'erreur
