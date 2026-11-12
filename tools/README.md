@@ -17516,6 +17516,9 @@ fait tourner la recherche à vide.
 #### Feuille de route — validée par Théo le 31 oct. 2026
 
 <!-- feuille-de-route -->
+**Remplacée le 12 nov. 2026 par le backlog de la mémoire**, qui seul fait
+foi (`python3 .socle/socle state`) : ce texte n'est plus tenu, et reste
+le temps que son retrait soit décidé.
 Validée par Théo le 31 oct. 2026 (« *ok je valide cet ordre* ») ; le détail
 de chaque ligne est dans « La file », juste dessous. Rien ne s'y fait en
 pilote automatique : une ligne commence quand sa condition est remplie,

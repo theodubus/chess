@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0004-cadrer-la-feuille-de-route-de-chess-et-le-deplacem.md, dont l'empreinte suit.
+reponse = "valider"
+texte = "Précision : des réseaux plus larges (entraînements plus longs, ou même à terme la location d'un serveur) sont possibles si le gain est réel, mais non prioritaires s'il est marginal."
+par = "Théo"
+date = "2026-11-12"
+canal = "conversation"
+citation = "D0004 : je valide toute les hypothèses avec une précision : des réseaux plus larges (entraînements plus long ou meme a terme location serveur) est possible si le gain est réel, mais non prioritaire s'il est marginal"
+empreinte = "sha256:8ddd66d4d26ed006372afdbe4451da459f6d14b0f2acfcf88b6a56039cc61702"

@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0003 — Déplacer le carnet de bord vers la mémoire
 
-> statut : ouvert · origine : D-0002 · lu : backlog@2b2f5dc4
+> statut : ouvert · origine : D-0002 · forme : jalon · après : D-0004, B-0005, B-0006, B-0007, B-0008, B-0009, B-0010 · priorité : haute · lu : backlog@2b2f5dc4
 
 La décision 4 de Théo (D-0002) : `CLAUDE.md` garde sa marge de budget à
 l'installation, et **le premier sujet de chess** est de déplacer le carnet
@@ -22,6 +22,17 @@ Deux contradictions avec la section du socle se règlent ici, en resserrant
 le texte de chess : le titre « Ce qui tourne tout seul », présent deux
 fois, et les deux commandes de vérification, `tools/verify.sh` et celle du
 socle, qui lancent les mêmes étapes en rapide.
+
+## Le découpage, validé par Théo le 12 nov. 2026
+
+Théo a décidé que le carnet devient public **après tri** (D-0005), et dit
+avoir validé le découpage proposé. Six lots, dans cet ordre, chacun un
+sujet : la conversion à blanc et le tri soumis à Théo (B-0005) ; le
+journal du carnet (B-0006) ; ses autres rubriques (B-0007) ; puis
+`CLAUDE.md` en trois lots, le budget baissé à chacun (B-0008, B-0009,
+B-0010). La sortie du mode adoption (B-0001) précède le premier. La
+documentation des outils n'est pas touchée. Ce sujet-ci se clôt par
+l'inventaire : chaque fait de l'ancienne mémoire retrouvé dans la nouvelle.
 
 ## Fait quand
 

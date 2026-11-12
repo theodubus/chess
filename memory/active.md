@@ -15,10 +15,16 @@ sont dans `tools/README.md`, feuille de route, point 4, et section « C3 ».
 
 ## Prochaines étapes
 
-L'ordre se tient au backlog. Ce que la session suivante trouve en
-arrivant : les questions de départ, auxquelles Théo répond dans la
-conversation (D-0001) ; la sortie de deux contrôles du mode adoption
-(B-0001), petite et à faire tôt ; la feuille de route à poser dans la
-mémoire avec Théo (B-0002) ; le carnet de bord à déplacer vers la mémoire,
-premier sujet de chess (B-0003) ; les deux hooks de fin de tour à trancher
-(B-0004).
+L'ordre se tient au backlog, où la feuille de route et le découpage du
+carnet sont posés depuis le 12 nov. 2026 (J-2026-11-12-D) ; l'ancienne
+feuille de route de `tools/README.md` n'est plus tenue. Les réponses de
+Théo qui les fondent : D-0001, D-0004, D-0005, son texte au journal.
+
+Ce qui vient : la sortie du mode adoption (B-0001), puis la conversion à
+blanc du carnet et son tri soumis à Théo (B-0005) ; rien du carnet ne se
+publie avant sa réponse sur le tri. Le réseau N10r10h512 se mesure dès que
+Théo signale la fin de son entraînement (B-0011, B-0012). Les données
+expirent chez GitHub à partir du 14 janv. 2027 (B-0026).
+
+Livraison, confirmée par Théo : cette branche de développement, une seule
+pull request ouverte à la fois, fusionnée par l'agent à CI verte.

@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0001-questions-de-depart.md, dont l'empreinte suit.
+reponse = "reponses"
+texte = ""
+par = "Théo"
+date = "2026-11-12"
+canal = "conversation"
+citation = "D0001 :\n1. Construire le meilleur moteur d'échecs possible (qu'on construit nous meme, il ne s'agit d'aller cloner stockfish et d'améliorer ce clone, on peut reimplementer et tester des techniques connues et trouvées par d'autres moteurs mais notre moteur est indépendant : nos tests, notre démarche, nos implémentations)\n2. Non\n3. Oui\n4. Ta recommandation\n5. Le moteur/dépôt est (déjà) en agpl, autre que ça, pas de limite connue"
+empreinte = "sha256:00459e798101f3159e8a7ebfc2a6a59cabf28ef0926f4fc796c9bdb5163bc5f2"
