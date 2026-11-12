@@ -9,16 +9,16 @@ L'adoption du socle, entière, avant tout travail sur le moteur : Théo, le
 12 nov. 2026 (D-0006, D-0008). Le jalon B-0031 dit ce que « finie » veut
 dire.
 
-Reprise le 12 nov. au soir, sur le signal de Théo (J-2026-11-12-M). La
-branche de développement porte la sortie du mode adoption (B-0001) et la
-conversion à blanc du carnet (B-0005), la revue de son script traitée
-(J-2026-11-12-N) : ce lot part en pull request, fusionnée à CI verte.
+Reprise le 12 nov. au soir, sur le signal de Théo (J-2026-11-12-M). Le
+deuxième lot est fusionné, B-0001 et B-0005 clos (J-2026-11-12-O). En
+cours : la mise à jour du socle, sur la branche repartie de la branche
+par défaut.
 
 ## Prochaines étapes
 
 Dans l'ordre :
 
-1. Fusionner la pull request du lot, puis clore B-0001 et B-0005.
+1. Fait : le lot fusionné, B-0001 et B-0005 clos.
 2. Mettre à jour le socle, par le prompt que la session du socle a écrit
    et que Théo a donné (J-2026-11-12-M, son texte entier), sur la branche
    repartie de la branche par défaut. Sa demande sur les fichiers
