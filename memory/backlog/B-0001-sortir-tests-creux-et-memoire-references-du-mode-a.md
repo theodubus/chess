@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0001 — Sortir tests.creux et memoire.references du mode adoption
 
-> statut : ouvert · origine : J-2026-11-12-A · lu : backlog@e3b0c442
+> statut : en-cours · origine : J-2026-11-12-A · lu : backlog@e3b0c442
 
 L'installation en mode adoption a mis deux contrôles en avertissement,
 `tests.creux` et `memoire.references`, à la clé `warn_only` de
@@ -29,7 +29,7 @@ seulement : le banc et l'arbre ne changent pas.
 
 ## Fait quand
 
-- [ ] les deux chemins de `tools/README.md` ne sont plus signalés
-- [ ] les deux assertions de déterminisme sont marquées voulues, avec leur raison
-- [ ] `warn_only` ne nomme plus ni `tests.creux` ni `memoire.references`
+- [x] les deux chemins de `tools/README.md` ne sont plus signalés
+- [x] les deux assertions de déterminisme sont marquées voulues, avec leur raison
+- [x] `warn_only` ne nomme plus ni `tests.creux` ni `memoire.references`
 - [ ] la CI du socle passe sans aucun avertissement d'adoption

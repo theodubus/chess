@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0006-rendre-le-carnet-public-sans-tri-et-finir-l-adopti.md, dont l'empreinte suit.
+reponse = "reponses-libres"
+texte = ""
+par = "Théo"
+date = "2026-11-12"
+canal = "conversation"
+citation = "J'ai changé d'avis, carnet public \nRegistre des réglages ouvert note qq part ailleurs que le backlog ?\nle reseau c est entraîné et poussé mais on ne le traite pas maintenant, on fini l'adoption du socle et de la memoire etc avant de reprendre les travaux sur chess"
+empreinte = "sha256:ee291f5d72b15941baaec74104c93b17cb78c201dcedaddb5493af855e8bf7f2"

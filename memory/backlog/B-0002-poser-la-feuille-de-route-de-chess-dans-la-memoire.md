@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0002 — Poser la feuille de route de chess dans la mémoire
 
-> statut : ouvert · origine : J-2026-11-12-A · lu : backlog@1251a4e3 · après : D-0004
+> statut : ouvert · origine : J-2026-11-12-A · lu : backlog@1251a4e3 · après : D-0009, D-0004
 
 La feuille de route de chess, validée par Théo le 31 oct. 2026, vit encore
 dans `tools/README.md`, en tête de « Ce qui reste à faire », avec la file
@@ -32,6 +32,10 @@ réglages ouverts et la longue traîne de la file (les tables de finale, les
 ouvertures du générateur, l'analyse à plusieurs variantes), qui restent des
 tableaux de référence de `tools/README.md` ; un test n'y devient un sujet
 que le jour où il est décidé.
+
+Le registre des réglages ouverts n'est écrit qu'à cet endroit, juste sous
+l'ancienne feuille de route : la mention « plus tenue » ne le couvre pas,
+et le retrait de la feuille de route ne l'emporte pas.
 
 Reste l'ancien texte, que `tools/etat.sh` imprime encore à chaque
 démarrage : le retirer change ce script et son test, et ce que le

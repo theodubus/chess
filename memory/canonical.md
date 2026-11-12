@@ -21,3 +21,13 @@ qui n'a plus à être lu à chaque fois s'archive dans le journal.
 ## F-0004 — Le dépôt a un README
 
 > statut : mesuré · preuve : fichier:README.md · source : audit d'initialisation · date : 2026-11-11
+
+## F-0005 — Les données d'entraînement gardées par GitHub expirent du 14 au 29 janv. 2027
+
+> statut : mesuré · preuve : fichier:tools/README.md · source : relevé à l'API de GitHub le 6 nov. 2026, section « Ce qu'il faut surveiller » · date : 2026-11-06
+
+Par génération, la date du dernier artefact : n° 18 le 14 janv., n° 20 le
+18, sa suite le 19, n° 21 le 24, n° 22 le 29. Passé ces dates, la machine
+de Théo porte la seule copie. Dire avant le 14 janv. ce qui sert encore
+et ce qui se copie est le sujet B-0026 ; il attend l'adoption du socle,
+mais se fait quoi qu'il en soit à partir du 15 déc. 2026.

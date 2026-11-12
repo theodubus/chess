@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0008-sortir-du-jalon-de-l-adoption-les-trois-lots-du-fi.md, dont l'empreinte suit.
+reponse = "refuser"
+texte = ""
+par = "Théo"
+date = "2026-11-12"
+canal = "conversation"
+citation = "Non, je veux inclure toute l'adoption du socle avant de continuer le travail, pas d'avancées avant, tous les efforts se focus sur l'adoption jusqu'à ce qu'elle soit terminée"
+empreinte = "sha256:546b3248cc30c6b6feeea322d32e989f42cc2966e6d1bc26a533ec17b8f11015"

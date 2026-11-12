@@ -4071,7 +4071,8 @@ colle dans le MÊME terminal, dans l'ordre :
    cd ~/chess
    git status
    ```
-   Des fichiers « non suivis » ne gênent pas — `tools/nnue-train/checkpoints/`
+   Des fichiers « non suivis » ne gênent pas — le dossier `checkpoints` de
+   `tools/nnue-train/`, qui n'existe que sur la machine d'entraînement,
    porte le point de sauvegarde de N0 : le garder. Des fichiers « modifiés »,
    si : s'arrêter et le dire. Puis :
    ```sh
@@ -17887,8 +17888,8 @@ l'appel d'outil :
   adaptateur ;
 - **quatre chemins « inexistants »**, tous légitimes : un dossier de sortie
   non suivi, `tools/c3-donnees.tsv` à venir (deux fois), et
-  `tools/spsa.py` **barré** — le contrôle ne lit pas `<s>…</s>`, un faux
-  positif du socle ;
+  le script Python de SPSA, **barré** dans ce fichier — le contrôle ne
+  lisait pas `<s>…</s>`, un faux positif du socle d'alors ;
 - **deux assertions « tautologiques »** — `best(fen, 4) == best(fen, 4)`
   et son jumeau de SPSA : des tests de déterminisme, voulus, à annoter
   `socle: voulu` ;
@@ -18151,6 +18152,35 @@ la détection elle-même, quatre fautes injectées, quatre attrapées.
 script, et que le script **rend un état non vide** — un script devenu muet ne
 se verrait pas, on croirait simplement qu'il n'y a rien à dire. C'est la même
 raison qui fait exister `verify-hooks.sh` lui-même.
+
+### `tools/carnet-vers-md.py` — le carnet de bord converti en Markdown
+
+Un outil de l'adoption du socle, écrit le 12 nov. 2026 : il sert le temps
+de déplacer le carnet de bord vers la mémoire, puis s'en va. Le carnet est
+un artefact claude.ai, une page HTML ; `python3 -I tools/carnet-vers-md.py
+<carnet.html> <dossier de sortie>` en rend le journal au format du journal
+de la mémoire, un fichier par mois coupé au budget, les entrées les plus
+anciennes d'abord et leurs identifiants gardés, chaque autre rubrique
+dans son fichier, et de même ce que la page porte hors de ses rubriques :
+son bandeau, sa navigation, son pied. Il n'écrit que dans le dossier de
+sortie, jamais dans la mémoire : poser ses fichiers est le travail des
+lots suivants.
+
+Ce qui le tient : un contrôle de fidélité qu'il lance lui-même à chaque
+conversion, et qui lui fait rendre le code 1. Tout le texte que la page
+affiche doit se trouver dans un fichier écrit, et dans un seul ; et les
+caractères de mot de la source de chaque fichier doivent s'y retrouver
+tous, dans l'ordre, une fois mis à part ce que la conversion ajoute — la
+cible d'un lien, le numéro d'un item, l'identifiant d'une entrée. Il ne
+voit ni la ponctuation ni la mise en forme.
+
+Pourquoi il est dans le script : le premier contrôle était un compte de
+mots lancé à la main, qui ne regardait que les rubriques. Il avait bien
+montré un tableau perdu dans une définition, 74 mots ; il ne pouvait pas
+voir que le bandeau de la page, 6 % de son texte, ne sortait dans aucun
+fichier, et c'est une revue qui l'a dit. Le contrôle d'aujourd'hui a été
+éprouvé le 12 nov. 2026 en plantant des pertes dans des copies du script :
+deux passaient d'abord à tort, et l'ont fait reprendre deux fois.
 
 ### Paralléliser les matchs — ce qui marche et ce qui ne marche pas
 

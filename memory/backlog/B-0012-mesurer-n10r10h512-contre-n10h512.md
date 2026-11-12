@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0012 — Mesurer N10r10h512 contre N10h512
 
-> statut : ouvert · origine : J-2026-11-12-B · après : B-0011 · lu : backlog@4625b88c
+> statut : ouvert · origine : J-2026-11-12-B · après : B-0011, B-0031 · lu : backlog@4625b88c
 
 Les dix seaux de roi paient-ils encore à 512 unités ? Le protocole,
 l'attendu écrit avant (+3 à +18, vers +10, confiance faible) et le critère

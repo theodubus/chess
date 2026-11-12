@@ -458,6 +458,7 @@ param SINGULAR_MARGIN 10 3 30 2
     #[test]
     fn un_tirage_est_deterministe_signe_et_borne() {
         let state = State::parse(ETAT).unwrap();
+        // socle: voulu — déterminisme : le même état et le même job rendent le même tirage.
         assert_eq!(draw(&state, 3), draw(&state, 3));
         let signs: Vec<Vec<i64>> = (0..16)
             .map(|j| draw(&state, j).rows.iter().map(|r| r.1).collect())
