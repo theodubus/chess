@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0002-les-six-decisions-de-theo-pour-l-installation-du-s.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-11"
+canal = "conversation"
+citation = "## Mes décisions, déjà prises (Théo, 11 novembre)\n\nConsigne-les dans la mémoire du projet une fois le socle posé, avec ce texte comme citation. Ne les rouvre pas ; pose une demande pour tout ce qu'elles ne couvrent pas.\n\n1. L'adaptateur : celui de chess, propre au projet, donné à l'installeur en fichier. Je le validerai en le lisant dans la pull request.\n2. Le dossier ui/ est déclaré tiers : aucun contrôle du socle ne le juge, et les commits des autres agents qui ne touchent que lui n'ont pas à porter la trace des hooks.\n3. L'agent fusionne lui-même ses pull requests à CI verte, comme aujourd'hui sur chess. J'ajoute moi-même la ligne de politique qui le permet.\n4. Le fichier d'instructions (CLAUDE.md) garde sa marge de budget à l'installation. Le premier sujet de chess sera de déplacer le carnet de bord vers la mémoire : CLAUDE.md ne gardera que les règles de travail.\n5. Le balayage de mutation de chess (mutation.yml) est gardé tel quel. Celui du socle n'est pas posé pour l'instant.\n6. Les branches de réseaux (reseau/…) et celles des autres agents sont à garder : elles ne doivent jamais être proposées à la suppression."
+empreinte = "sha256:2a9f4cf52fdaf5d002a45c20960ea0ac2bb662abc4f295849307a4ec71481e7b"

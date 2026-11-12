@@ -1,0 +1,194 @@
+# Adaptateur de chess, propre au projet — à valider par Théo en le lisant
+# dans la pull request d'installation (sa décision du 11 nov. 2026).
+#
+# L'adaptateur Rust maintenu du socle, plus ce qui est propre à chess. Avec
+# `--fast`, `socle verify` lance ce que lance `tools/verify.sh --rapide` ;
+# sans `--fast`, ce que lance le job « Moteur » de `.github/workflows/ci.yml`,
+# plus l'auto-test des hooks de chess, que seul `tools/verify.sh` complet
+# lançait. Chaque étape a été relue contre ces deux fichiers le 11 nov. 2026.
+#
+# Rien ici ne décrit `ui/` : ce dossier est déclaré tiers (même décision), et
+# sa crate `ui/wasm` n'est donc ni dans les sources, ni dans le code, ni dans
+# les tests.
+
+language = "rust"
+name = "Rust (cargo) — chess"
+maintained = false
+# `tools/nnue-train` a son propre espace de travail : `cargo test --workspace`
+# ne le lance pas, `.github/workflows/nnue-train.yml` le compile. Il compte
+# comme source, pas comme code à nommer par un test ni comme tests à rejouer.
+sources = ["engine/src/**/*.rs", "tools/src/**/*.rs", "tools/nnue-train/src/**/*.rs"]
+
+# La version vient de `rust-toolchain.toml`, qui la fige, composants compris :
+# la même étape que `ci.yml`, sans repli sur `stable`.
+ci_setup = """
+      - name: Toolchain Rust
+        run: |
+          rustup show active-toolchain
+          rustc --version && cargo --version
+"""
+
+[capabilities.format]
+command = "cargo fmt --all -- --check"
+fast = true
+
+[capabilities.lint]
+command = "cargo clippy --all-targets --all-features -- -D warnings"
+fast = true
+
+[capabilities.build]
+absent = "couverte par `lint` : clippy compile toutes les cibles, tests compris"
+replacement = "capacité `lint`"
+
+[capabilities.tests]
+command = "cargo test --workspace"
+fast = true
+
+[capabilities.mutation]
+# Décision de Théo du 11 nov. 2026 : le balayage de chess est gardé tel quel,
+# celui du socle n'est pas posé. Un job par fichier, `--profile mutants`, le
+# mardi ; son cliquet vit dans `.github/mutation-baseline.txt`, avec la raison
+# écrite de chaque plafond, et `engine/tests/couverture_mutation.rs` exige
+# chaque fichier d'`engine/src/` dans le plafond comme dans la matrice.
+absent = "le balayage de mutation de chess est gardé tel quel, celui du socle n'est pas posé (Théo, 11 nov. 2026)"
+replacement = "`.github/workflows/mutation.yml`, son verdict `.github/mutation-verdict.sh` et son cliquet `.github/mutation-baseline.txt`"
+
+[capabilities.coverage]
+absent = "signal secondaire, jamais un garde-fou : chess juge par la mutation et par le SPRT"
+replacement = "le balayage de mutation de chess, `.github/workflows/mutation.yml`"
+
+[capabilities.regression]
+# Un test d'intégration d'`engine/tests/` se pose tel quel sur le commit
+# parent, et se rejoue en release : ces tests-là jouent des parties et des
+# perft, trop lents en debug. Un test unitaire vit dans le module qu'il
+# teste : sur le parent ne s'appliquent que ses lignes de test, puis
+# `module_command` le lance par son nom.
+command = "cargo test --release {test_args}"
+test_arg = "--test {stem}"
+test_paths = ["engine/tests/*.rs"]
+# Ce qui, dans la sortie, dit que le test ne s'est pas chargé sur le parent (une
+# compilation cassée, un import manquant) : il y échoue pour une autre raison
+# que le défaut corrigé.
+load_error = '(?m)^error\[E\d{4}\]:|^error: could not compile\b'
+module_command = "cargo test --workspace -- {names}"
+
+[code]
+# Le code dont une fonction publique, ajoutée ou modifiée, doit être nommée
+# par un test (`tests.code-teste`) : une fonction sans `pub` est privée, elle
+# se teste par les fonctions publiques qui l'appellent ; les aides d'un
+# module `tests` le sont donc aussi.
+paths = ["engine/src/**/*.rs", "tools/src/**/*.rs"]
+private = '^\s*(?:async\s+)?(?:unsafe\s+)?fn\s'
+
+[tests]
+paths = ["engine/tests/**/*.rs", "engine/src/**/*.rs", "tools/src/**/*.rs"]
+function = '^\s*(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?(?:unsafe\s+)?fn\s+(\w+)'
+attribute = '^\s*#\['
+comment = '^\s*//'
+# Un commentaire de bloc : un mot qui y figure n'appelle ni n'affirme rien.
+block_comment = '''/\*[\s\S]*?\*/'''
+line_comment = '//.*$'
+marker_attribute = '#\[(?:\w+::)*test\b'
+test_module = '^\s*#\[cfg\(test\)\]'
+block = "braces"
+assertion = '\b(?:assert|assert_eq|assert_ne|debug_assert\w*|panic|unreachable|assert_matches)!|#\[should_panic'
+ignore = '#\[ignore\b'
+ignore_reason = '#\[ignore\s*=\s*"[^"]{3,}"\s*\]'
+tautology = [
+  'assert(?:_eq)?!\(\s*([^,()]+(?:\([^()]*\))?)\s*(?:,|==)\s*\1\s*[,)]',
+  'assert!\(\s*true\s*\)',
+]
+
+# ---------------------------------------------------------------------------
+# Étapes propres à chess. Les rapides, dans l'ordre de `tools/verify.sh
+# --rapide` : avec les trois capacités ci-dessus, ce sont ses douze étapes.
+# ---------------------------------------------------------------------------
+
+[[steps]]
+name = "verdict de mutation (auto-test)"
+command = ".github/mutation-verdict-test.sh"
+fast = true
+
+[[steps]]
+name = "références de mesure"
+command = "tools/ref-test.sh"
+fast = true
+
+[[steps]]
+name = "mise en commun"
+command = "tools/mettre-en-commun-test.sh"
+fast = true
+
+[[steps]]
+name = "paires"
+command = "tools/paires-test.sh"
+fast = true
+
+[[steps]]
+name = "plis appariés"
+command = "tools/plis-test.sh"
+fast = true
+
+[[steps]]
+name = "balayage vivant"
+command = "tools/balayage-vivant-test.sh"
+fast = true
+
+[[steps]]
+name = "état calculé"
+command = 'tools/etat.sh | grep -q "non fusionné dans main"'
+fast = true
+
+[[steps]]
+name = "état calculé, branches"
+command = "tools/etat-test.sh"
+fast = true
+
+[[steps]]
+name = "deux binaires, la comparaison"
+command = "tools/binaires-test.sh"
+fast = true
+
+# ---------------------------------------------------------------------------
+# Les lentes, dans l'ordre du job « Moteur » de `ci.yml` : la CI du socle et
+# `socle verify` sans `--fast` les lancent, la fin de tour et le push non.
+# ---------------------------------------------------------------------------
+
+# L'étape « Le balayage de mutation tourne-t-il encore ? » de `ci.yml`, à
+# l'identique : une API injoignable — hors de GitHub Actions, toujours — ne
+# fait qu'avertir ; seul un balayage réellement arrêté fait échouer.
+[[steps]]
+name = "le balayage de mutation tourne-t-il encore"
+command = '''
+api="repos/${GITHUB_REPOSITORY:-}/actions/workflows/mutation.yml"
+if ! etat=$(gh api "$api" --jq .state) \
+  || ! derniere=$(gh api "$api/runs?per_page=1" --jq '.workflow_runs[0].created_at // ""'); then
+  echo "API GitHub injoignable : contrôle du balayage de mutation sauté"
+  exit 0
+fi
+tools/balayage-vivant.sh "$etat" "$derniere"
+'''
+
+[[steps]]
+name = "tests (release)"
+command = "cargo test --workspace --release"
+
+[[steps]]
+name = "critères d'acceptation"
+command = "cargo test --workspace --release -- --ignored"
+timeout = 5400
+
+[[steps]]
+name = "bench"
+command = "cargo run --release --bin shallowred -- bench 4"
+
+[[steps]]
+name = "deux binaires, le même arbre"
+command = "tools/binaires.sh dist"
+timeout = 5400
+
+# Dans `tools/verify.sh` complet, pas dans le job « Moteur » : l'auto-test des
+# hooks de chess, qui restent en place à côté de ceux du socle.
+[[steps]]
+name = "hooks de chess"
+command = "tools/verify-hooks.sh"
