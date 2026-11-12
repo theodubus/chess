@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0015 — Écrire le skill du projet « embarquer un réseau »
 
-> statut : ouvert · origine : J-2026-11-12-B · priorité : basse · lu : backlog@08823cae
+> statut : ouvert · origine : J-2026-11-12-B · priorité : basse · après : B-0031 · lu : backlog@08823cae
 
 Embarquer un réseau s'est fait une dizaine de fois, par les mêmes étapes
 dites à trois endroits de `CLAUDE.md` et de `tools/README.md` : la sonde

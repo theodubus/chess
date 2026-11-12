@@ -4071,7 +4071,8 @@ colle dans le MÊME terminal, dans l'ordre :
    cd ~/chess
    git status
    ```
-   Des fichiers « non suivis » ne gênent pas — `tools/nnue-train/checkpoints/`
+   Des fichiers « non suivis » ne gênent pas — le dossier `checkpoints` de
+   `tools/nnue-train/`, qui n'existe que sur la machine d'entraînement,
    porte le point de sauvegarde de N0 : le garder. Des fichiers « modifiés »,
    si : s'arrêter et le dire. Puis :
    ```sh
@@ -17887,8 +17888,8 @@ l'appel d'outil :
   adaptateur ;
 - **quatre chemins « inexistants »**, tous légitimes : un dossier de sortie
   non suivi, `tools/c3-donnees.tsv` à venir (deux fois), et
-  `tools/spsa.py` **barré** — le contrôle ne lit pas `<s>…</s>`, un faux
-  positif du socle ;
+  le script Python de SPSA, **barré** dans ce fichier — le contrôle ne
+  lisait pas `<s>…</s>`, un faux positif du socle d'alors ;
 - **deux assertions « tautologiques »** — `best(fen, 4) == best(fen, 4)`
   et son jumeau de SPSA : des tests de déterminisme, voulus, à annoter
   `socle: voulu` ;

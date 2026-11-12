@@ -33,6 +33,10 @@ ouvertures du générateur, l'analyse à plusieurs variantes), qui restent des
 tableaux de référence de `tools/README.md` ; un test n'y devient un sujet
 que le jour où il est décidé.
 
+Le registre des réglages ouverts n'est écrit qu'à cet endroit, juste sous
+l'ancienne feuille de route : la mention « plus tenue » ne le couvre pas,
+et le retrait de la feuille de route ne l'emporte pas.
+
 Reste l'ancien texte, que `tools/etat.sh` imprime encore à chaque
 démarrage : le retirer change ce script et son test, et ce que le
 démarrage lance est un réglage que Théo détient.

@@ -4287,6 +4287,7 @@ mod tests {
     #[test]
     fn la_recherche_est_deterministe() {
         let fen = "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 0 1";
+        // socle: voulu — déterminisme : à un fil, deux recherches identiques rendent le même coup.
         assert_eq!(best(fen, 4), best(fen, 4));
     }
 

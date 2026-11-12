@@ -25,9 +25,9 @@ socle, qui lancent les mêmes étapes en rapide.
 
 ## Le découpage, validé par Théo le 12 nov. 2026
 
-Théo a décidé que le carnet devient public **après tri** (D-0005), et dit
-avoir validé le découpage proposé. Six lots, dans cet ordre, chacun un
-sujet : la conversion à blanc et le tri soumis à Théo (B-0005) ; le
+Théo a décidé que le carnet devient public, d'abord après un tri (D-0005),
+puis sans tri (D-0006), et dit avoir validé le découpage proposé. Six
+lots, dans cet ordre, chacun un sujet : la conversion à blanc (B-0005) ; le
 journal du carnet (B-0006) ; ses autres rubriques (B-0007) ; puis
 `CLAUDE.md` en trois lots, le budget baissé à chacun (B-0008, B-0009,
 B-0010). La sortie du mode adoption (B-0001) précède le premier. La

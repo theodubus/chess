@@ -110,4 +110,4 @@ spec_paths = ["memory/decisions/**"]
 [adoption]
 # Contrôles en échec sur l'existant, passés en avertissement. En retirer un
 # durcit (libre) ; en ajouter un assouplit (demande validée).
-warn_only = ["tests.creux", "memoire.references"]
+warn_only = []

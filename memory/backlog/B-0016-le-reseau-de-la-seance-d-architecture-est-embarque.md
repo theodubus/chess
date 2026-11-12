@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0016 — Le réseau de la séance d'architecture est embarqué et situé
 
-> statut : ouvert · origine : D-0004 · forme : jalon · après : B-0012, B-0013, B-0014 · lu : backlog@07c7ceca
+> statut : ouvert · origine : D-0004 · forme : jalon · après : B-0012, B-0013, B-0014, B-0031 · lu : backlog@07c7ceca
 
 Premier jalon du moteur après le socle. Il clôt la séance d'architecture
 ouverte le 6 nov. 2026 : son dernier réseau mesuré, le gagnant embarqué,
