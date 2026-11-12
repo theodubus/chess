@@ -49,6 +49,7 @@ paths = [
 # rien. `tools` remplace la liste des outils externes du moteur.
 # bash = ['\bterraform\s+apply\b', ...]
 # tools = ['mcp__github__merge_pull_request', ...]
+tools = ['mcp__github__(delete_file|create_repository|fork_repository|create_release|push_files|create_or_update_file|enable_pr_auto_merge)']
 
 [agents]
 # Claude Code est l'agent outillé de hooks ; les autres agents restent
@@ -65,7 +66,7 @@ markers = ['(?im)^co-authored-by:.*\bclaude\b', '(?im)^socle-agent:']
 # repo_url = "https://github.com/organisation/projet"
 # Branches distantes jamais proposées à la suppression, même contenues dans la
 # branche par défaut (celles d'un autre agent, par exemple).
-keep_branches = []
+keep_branches = ["reseau/**", "codex/**", "ccr-*"]
 # Le nom de l'humain, qui signe les réponses que l'agent relaie (`--by` par
 # défaut) ; l'installeur le prend dans git.
 name = "Théo"
