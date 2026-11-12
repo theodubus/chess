@@ -15,10 +15,13 @@ sont dans `tools/README.md`, feuille de route, point 4, et section « C3 ».
 
 ## Prochaines étapes
 
-L'ordre se tient au backlog. Ce que la session suivante trouve en
-arrivant : les questions de départ, auxquelles Théo répond dans la
-conversation (D-0001) ; la sortie de deux contrôles du mode adoption
-(B-0001), petite et à faire tôt ; la feuille de route à poser dans la
-mémoire avec Théo (B-0002) ; le carnet de bord à déplacer vers la mémoire,
-premier sujet de chess (B-0003) ; les deux hooks de fin de tour à trancher
-(B-0004).
+L'ordre se tient au backlog. La feuille de route (B-0002) et le carnet de
+bord (B-0003) attendent les réponses de Théo aux questions de cadrage
+(D-0004) : l'avis de l'agent sur la feuille de route et le découpage
+proposé pour le carnet sont au journal (J-2026-11-12-B). Rien du carnet ne
+bouge avant sa réponse sur ce qui devient public. Les questions de départ
+attendent toujours (D-0001).
+
+Sans attendre Théo : la sortie de deux contrôles du mode adoption
+(B-0001), petite, qui précède tout déplacement de contenu. À préparer en
+demande : les deux hooks de fin de tour (B-0004).

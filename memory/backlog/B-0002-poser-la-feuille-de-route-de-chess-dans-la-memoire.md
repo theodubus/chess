@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0002 — Poser la feuille de route de chess dans la mémoire
 
-> statut : ouvert · origine : J-2026-11-12-A · lu : backlog@1251a4e3
+> statut : ouvert · origine : J-2026-11-12-A · lu : backlog@1251a4e3 · après : D-0004
 
 La feuille de route de chess, validée par Théo le 31 oct. 2026, vit encore
 dans `tools/README.md`, en tête de « Ce qui reste à faire », avec la file

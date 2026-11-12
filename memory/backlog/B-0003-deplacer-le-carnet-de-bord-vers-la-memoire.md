@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0003 — Déplacer le carnet de bord vers la mémoire
 
-> statut : ouvert · origine : D-0002 · lu : backlog@2b2f5dc4
+> statut : ouvert · origine : D-0002 · lu : backlog@2b2f5dc4 · après : D-0004
 
 La décision 4 de Théo (D-0002) : `CLAUDE.md` garde sa marge de budget à
 l'installation, et **le premier sujet de chess** est de déplacer le carnet
