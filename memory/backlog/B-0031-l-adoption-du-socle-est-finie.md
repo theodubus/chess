@@ -8,6 +8,11 @@ avant de reprendre les travaux sur le moteur (D-0006). Ce jalon dit ce
 que « finie » veut dire, et tout le travail du moteur l'attend : la mesure
 du réseau N10r10h512, déjà entraîné et poussé, comprise.
 
+L'inventaire des données d'entraînement (B-0026) attend ce jalon, mais
+elles expirent chez GitHub à partir du 14 janv. 2027 (F-0005) : si le
+jalon n'est pas clos le 15 déc. 2026, l'inventaire se fait quand même, et
+Théo en est prévenu.
+
 ## Fait quand
 
 - [ ] aucun contrôle du socle n'est plus en mode d'avertissement (B-0001)

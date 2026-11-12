@@ -1,5 +1,5 @@
 <!-- socle: couche=backlog zone=publique -->
-# B-0005 — Convertir le carnet à blanc et soumettre son tri à Théo
+# B-0005 — Convertir le carnet à blanc
 
 > statut : ouvert · origine : D-0006 · après : B-0001 · priorité : haute · lu : backlog@cbe441c1
 

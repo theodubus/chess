@@ -19,13 +19,15 @@ branche des réseaux de la séance d'architecture ; il attend l'adoption
 L'ordre se tient au backlog. Après B-0001 : la conversion à blanc du
 carnet (B-0005), puis son journal (B-0006), ses autres rubriques (B-0007)
 et `CLAUDE.md` en trois lots (B-0008 à B-0010). Le carnet devient public
-sans tri (D-0006). À préparer en demande pour Théo : ce que le démarrage
+(D-0006) ; « sans tri » est la lecture de l'agent, que Théo confirme
+avant toute publication (B-0032). À préparer en demande pour Théo : ce que le démarrage
 imprime (B-0002) et les deux hooks de fin de tour (B-0004), qui touchent
 un fichier qu'il détient.
 
 Le registre des réglages ouverts n'est écrit que dans `tools/README.md`,
 sous-section « La file ». Les données d'entraînement expirent chez GitHub
-à partir du 14 janv. 2027 (B-0026).
+à partir du 14 janv. 2027 (F-0005) : leur inventaire (B-0026) se fait au
+plus tard à partir du 15 déc. 2026, adoption finie ou non.
 
 Livraison, confirmée par Théo : une branche de développement, une seule
 pull request ouverte à la fois, fusionnée par l'agent à CI verte.
