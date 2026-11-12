@@ -15,13 +15,19 @@ sont dans `tools/README.md`, feuille de route, point 4, et section « C3 ».
 
 ## Prochaines étapes
 
-L'ordre se tient au backlog. La feuille de route (B-0002) et le carnet de
-bord (B-0003) attendent les réponses de Théo aux questions de cadrage
-(D-0004) : l'avis de l'agent sur la feuille de route et le découpage
-proposé pour le carnet sont au journal (J-2026-11-12-B). Rien du carnet ne
-bouge avant sa réponse sur ce qui devient public. Les questions de départ
-attendent toujours (D-0001).
+L'ordre se tient au backlog. Théo a répondu le 12 nov. aux questions de
+départ (D-0001) et validé les hypothèses de cadrage (D-0004) : ses textes
+et ce qu'ils tranchent sont au journal (J-2026-11-12-C), l'avis sur la
+feuille de route à l'entrée d'avant (J-2026-11-12-B). Aucun chantier n'est
+commencé, à sa demande.
 
-Sans attendre Théo : la sortie de deux contrôles du mode adoption
-(B-0001), petite, qui précède tout déplacement de contenu. À préparer en
-demande : les deux hooks de fin de tour (B-0004).
+Restent à lui faire dire, posés dans la conversation : la seconde copie
+des données, le carnet rendu public (tel quel ou trié, et le sort de son
+lien), et la lecture de sa réponse sur le mode de livraison. Rien du
+carnet ne bouge avant.
+
+Ensuite, à son signal : poser la feuille de route au backlog (B-0002), un
+sujet par étape, selon les hypothèses validées ; lui soumettre en demande
+le découpage du carnet (B-0003) ; B-0001 avant tout déplacement ; les deux
+hooks de fin de tour en demande (B-0004). Cette branche n'est pas encore
+sur `main` : une session neuve n'y verrait pas ces réponses.
