@@ -5,28 +5,34 @@ Réécrit au fil du travail et borné. Ce qui en sort s'archive dans le journal.
 
 ## En cours
 
-L'adoption du socle, à finir avant tout travail sur le moteur : Théo, le
-12 nov. 2026 (D-0006, son texte au journal, J-2026-11-12-E). Le jalon
-B-0031 dit ce que « finie » veut dire. En cours : la sortie de deux
-contrôles du mode adoption (B-0001).
+L'adoption du socle, entière, avant tout travail sur le moteur : Théo, le
+12 nov. 2026 (D-0006, D-0008). Le jalon B-0031 dit ce que « finie » veut
+dire.
 
-Rien n'est en vol. Le réseau N10r10h512 est entraîné et poussé sur la
-branche des réseaux de la séance d'architecture ; il attend l'adoption
-(B-0012).
+**En pause à la demande de Théo** (J-2026-11-12-K) : ne rien relancer
+avant son signal, pour économiser de l'usage. Une mise à jour du socle
+est prête ; il donnera lui-même le prompt d'installation.
+
+Où en est le travail : la branche de développement porte la sortie du
+mode adoption (B-0001) et la conversion à blanc du carnet (B-0005),
+poussées, **sans pull request ouverte**. La revue du script de
+conversion n'est pas encore traitée.
 
 ## Prochaines étapes
 
-L'ordre se tient au backlog. Après B-0001 : la conversion à blanc du
-carnet (B-0005), puis son journal (B-0006), ses autres rubriques (B-0007)
-et `CLAUDE.md` en trois lots (B-0008 à B-0010). Le carnet devient public
-sans tri, confirmé par Théo (D-0007). À préparer en demande pour Théo : ce que le démarrage
-imprime (B-0002) et les deux hooks de fin de tour (B-0004), qui touchent
-un fichier qu'il détient.
+À la reprise, dans l'ordre : traiter la revue du script
+(`tools/carnet-vers-md.py`) ; ouvrir la pull request et la fusionner à CI
+verte ; clore B-0001 puis B-0005 ; poser le journal du carnet (B-0006),
+public sans tri (D-0007) ; puis ses autres rubriques (B-0007) et
+`CLAUDE.md` en trois lots (B-0008 à B-0010).
+
+Attend Théo : la demande sur les hooks en double du démarrage et de la
+fin de tour (D-0009), que B-0002 et B-0004 attendent.
 
 Le registre des réglages ouverts n'est écrit que dans `tools/README.md`,
 sous-section « La file ». Les données d'entraînement expirent chez GitHub
-à partir du 14 janv. 2027 (F-0005) : leur inventaire (B-0026) se fait au
-plus tard à partir du 15 déc. 2026, adoption finie ou non.
+à partir du 14 janv. 2027 (F-0005, B-0026).
 
 Livraison, confirmée par Théo : une branche de développement, une seule
-pull request ouverte à la fois, fusionnée par l'agent à CI verte.
+pull request ouverte à la fois, fusionnée par l'agent à CI verte, tous
+les contrôles finis, par la méthode « merge ».
