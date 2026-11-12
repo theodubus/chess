@@ -15,19 +15,16 @@ sont dans `tools/README.md`, feuille de route, point 4, et section « C3 ».
 
 ## Prochaines étapes
 
-L'ordre se tient au backlog. Théo a répondu le 12 nov. aux questions de
-départ (D-0001) et validé les hypothèses de cadrage (D-0004) : ses textes
-et ce qu'ils tranchent sont au journal (J-2026-11-12-C), l'avis sur la
-feuille de route à l'entrée d'avant (J-2026-11-12-B). Aucun chantier n'est
-commencé, à sa demande.
+L'ordre se tient au backlog, où la feuille de route et le découpage du
+carnet sont posés depuis le 12 nov. 2026 (J-2026-11-12-D) ; l'ancienne
+feuille de route de `tools/README.md` n'est plus tenue. Les réponses de
+Théo qui les fondent : D-0001, D-0004, D-0005, son texte au journal.
 
-Restent à lui faire dire, posés dans la conversation : la seconde copie
-des données, le carnet rendu public (tel quel ou trié, et le sort de son
-lien), et la lecture de sa réponse sur le mode de livraison. Rien du
-carnet ne bouge avant.
+Ce qui vient : la sortie du mode adoption (B-0001), puis la conversion à
+blanc du carnet et son tri soumis à Théo (B-0005) ; rien du carnet ne se
+publie avant sa réponse sur le tri. Le réseau N10r10h512 se mesure dès que
+Théo signale la fin de son entraînement (B-0011, B-0012). Les données
+expirent chez GitHub à partir du 14 janv. 2027 (B-0026).
 
-Ensuite, à son signal : poser la feuille de route au backlog (B-0002), un
-sujet par étape, selon les hypothèses validées ; lui soumettre en demande
-le découpage du carnet (B-0003) ; B-0001 avant tout déplacement ; les deux
-hooks de fin de tour en demande (B-0004). Cette branche n'est pas encore
-sur `main` : une session neuve n'y verrait pas ces réponses.
+Livraison, confirmée par Théo : cette branche de développement, une seule
+pull request ouverte à la fois, fusionnée par l'agent à CI verte.

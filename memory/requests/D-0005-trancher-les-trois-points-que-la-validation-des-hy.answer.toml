@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0005-trancher-les-trois-points-que-la-validation-des-hy.md, dont l'empreinte suit.
+reponse = "reponses-libres"
+texte = ""
+par = "Théo"
+date = "2026-11-12"
+canal = "conversation"
+citation = "1. Public après tri\n2. Sans hypothèses (sauf si elles ne servent plus a rien dans ce cas pas de copie)\n3. Oui\n\nMaintenant que j'ai validé tes recommandations de feuille de route et découpage, ça ne vaut pas des elements de backlogs ou on dit tout ça ?"
+empreinte = "sha256:222d6cdc25b336edf3be0ea26d065ec5eb5ccc7c74d0d17a3328d896b2b192b5"
