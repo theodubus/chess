@@ -114,7 +114,7 @@ C'est la seule condition de sortie de ce fichier.
   `git ls-remote`. Le contrôle qui tranche une alarme de ce type est
   `git log origin/main..HEAD` — vide veut dire que `main` porte déjà tout, donc
   que rien n'est en risque.
-  <br>**Tenu par** : `tools/ref.sh` pour la forme 1, et `tools/etat.sh` pour la forme 2 — il imprime `git log origin/main..HEAD` à chaque reprise.
+  <br>**Tenu par** : `tools/ref.sh` pour la forme 1, et `.socle/engine/socle/state.py` pour la forme 2 — l'état du socle imprime à chaque reprise ce que la base ne porte pas, `base : origin/main — non fusionné`, comme le faisait `tools/etat.sh` jusqu'au 13 nov. 2026 (D-0009).
 
 - **Un chiffre de référence écrit en prose vieillit en silence.** La section
   *Commandes* a annoncé `702 612 nœuds` pendant deux journées de travail alors

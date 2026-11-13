@@ -15,7 +15,9 @@
 # l'état reparaisse après chaque compactage : le document qui disait « où on
 # en est » manquait au moment précis où la mémoire venait d'être perdue. Depuis
 # l'adoption du socle, c'est l'état du socle (`python3 .socle/socle state`)
-# qui s'imprime au démarrage, et il calcule aussi ce que ce script imprime.
+# qui s'imprime au démarrage : la branche, ce qui n'est pas fusionné, et les
+# branches à faire supprimer, hors celles que la politique garde (ce script,
+# lui, n'exclut que celles de Codex : B-0036).
 # Théo a validé de ne garder que lui (D-0009) ; la feuille de route, les
 # renvois et l'adresse du carnet, qui n'étaient qu'ici, sont partis avec.
 #

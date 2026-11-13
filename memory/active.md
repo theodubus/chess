@@ -14,20 +14,21 @@ En cours : le changement de D-0009, que Théo a validée. Sa réponse et la
 part de l'agent partent ensemble sur la branche de développement :
 `tools/etat.sh` allégé, l'ancienne feuille de route remplacée par un
 renvoi, `tools/verify-hooks.sh` qui passe avant le geste de Théo comme
-après. **Théo fera son geste ce soir, 13 nov.** (son message de 8 h 10,
-J-2026-11-13-C) : les commandes sont au sujet B-0034.
+après, sauf deux cas qui exigent l'absence des anciens hooks : la CI est
+rouge jusqu'au geste de Théo, exprès. **Théo fera son geste ce soir,
+13 nov.** (son message de 8 h 10, J-2026-11-13-C) : les commandes sont au
+sujet B-0034.
 
 ## Prochaines étapes
 
 Dans l'ordre :
 
 1. Pousser la part de l'agent, ouvrir la pull request, donner à Théo le
-   lien de B-0034. Ne pas la fusionner avant son commit.
+   lien de B-0034. Sa CI est rouge jusqu'au commit de Théo : c'est voulu.
 2. Quand Théo a poussé : vérifier que son commit ne retire que les deux
-   blocs et porte son approbation ; ajouter à `tools/verify-hooks.sh` les
-   cas qui exigent l'absence des deux anciens hooks ; clore B-0002,
-   B-0004 et B-0034, cocher leur case de B-0031 ; fusionner à CI verte.
-   S'il a répondu sur B-0035, le faire dans le même lot.
+   blocs et porte son approbation ; clore B-0002, B-0004 et B-0034,
+   cocher leur case de B-0031 ; fusionner à CI verte. S'il a répondu sur
+   B-0035, le faire dans le même lot.
 3. Poser le journal du carnet (B-0006), public sans tri (D-0007), en
    refaisant les essais des contrôles sur les fichiers posés ; puis ses
    autres rubriques, le bandeau compris (B-0007) ; puis `CLAUDE.md` en

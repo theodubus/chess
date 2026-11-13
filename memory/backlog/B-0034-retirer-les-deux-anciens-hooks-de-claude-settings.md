@@ -9,7 +9,10 @@ protégé : seul Théo le change, puis l'approuve. La part de l'agent est
 poussée avant ce geste, sur la branche `claude/feuille-de-route-et-carnet` :
 `tools/etat.sh` allégé, l'ancienne feuille de route remplacée par un
 renvoi, `tools/verify-hooks.sh` qui cherche les hooks du socle où qu'ils
-soient déclarés. Ses cas passent avant le geste comme après.
+soient déclarés. Deux de ses cas exigent l'absence des deux anciens
+hooks : la CI reste rouge jusqu'à ce commit de Théo, ce qui empêche de
+fusionner une documentation qui les dit déjà partis. Rejoués sur une
+copie qui porte le fichier d'après le geste, les seize cas passent.
 
 ## Les commandes
 

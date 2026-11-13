@@ -17520,8 +17520,9 @@ Remplacée le 12 nov. 2026 par le backlog de la mémoire, qui seul fait foi :
 `python3 .socle/socle state` en calcule le prochain jalon et les sujets
 prêts, et `memory/backlog/` porte chaque sujet. L'ancien texte, validé par
 Théo le 31 oct. 2026, a été retiré d'ici le 13 nov. (D-0009) ; il se relit
-dans l'historique de git, au commit 88da289. Le registre des réglages
-ouverts, lui, reste juste dessous, dans « La file ».
+dans l'historique de git, au commit 88da289 : c'est lui que désignent les
+renvois « feuille de route, point N » de ce fichier et du code. Le
+registre des réglages ouverts, lui, reste juste dessous, dans « La file ».
 
 #### La file — réécrite le 20 oct. 2026, dans l'ordre où la faire
 
@@ -18038,7 +18039,8 @@ et sa sortie entrait dans le contexte du modèle au démarrage, à la reprise,
 après `/clear` et après chaque compactage.
 
 **Depuis le 13 nov., c'est l'état du socle qui s'imprime à ces moments-là**
-(`python3 .socle/socle state`), et il calcule aussi ce qu'imprime `etat.sh`.
+(`python3 .socle/socle state`) : la branche, ce qui n'est pas fusionné, et
+les branches à faire supprimer, hors celles que la politique garde.
 Théo a validé de ne garder que lui (D-0009) : la feuille de route, que le
 backlog de la mémoire remplace, les renvois vers ce fichier et l'adresse du
 carnet, qui n'étaient que dans `etat.sh`, sont partis avec. Le script reste,
