@@ -11,18 +11,24 @@ dire.
 
 Reprise le 12 nov. au soir, sur le signal de Théo (J-2026-11-12-M). Le
 deuxième lot est fusionné, B-0001 et B-0005 clos (J-2026-11-12-O). En
-cours : la mise à jour du socle, sur la branche repartie de la branche
-par défaut.
+cours : la mise à jour du socle (J-2026-11-13-A). Elle est installée,
+commitée et poussée, dans la pull request de la branche de développement ;
+la CI du socle y refuse ses 26 fichiers protégés tant que Théo n'a pas
+répondu à D-0010. À sa validation : consigner sa réponse par la commande
+du socle et au journal, repasser la porte du prompt en relançant les
+étapes rapides, donner les trois durées, fusionner à CI verte sauf s'il
+veut fusionner lui-même, puis rendre le compte rendu pour la session du
+socle. Le skill de reprise à jour s'applique : deux réveils par tour qui
+agit, retirés à la fin du tour.
 
 ## Prochaines étapes
 
 Dans l'ordre :
 
 1. Fait : le lot fusionné, B-0001 et B-0005 clos.
-2. Mettre à jour le socle, par le prompt que la session du socle a écrit
-   et que Théo a donné (J-2026-11-12-M, son texte entier), sur la branche
-   repartie de la branche par défaut. Sa demande sur les fichiers
-   protégés attendra Théo.
+2. En cours : la mise à jour du socle, par le prompt que la session du
+   socle a écrit et que Théo a donné (J-2026-11-12-M, son texte entier).
+   Elle attend la réponse de Théo à D-0010.
 3. Faire le changement de D-0009, que Théo a validée dans la conversation
    (J-2026-11-12-M) : sa réponse se consigne par la commande du socle
    dans le même push que le changement, pas avant ; et Théo attend de

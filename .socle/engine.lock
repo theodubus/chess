@@ -3,6 +3,6 @@
 version = "0.2.0"
 mode = "projet"
 engine_dir = ".socle/engine"
-fingerprint = "sha256:22c06532721c147b03e5bd768234fe9e02c04d1bf1da02b800a4058377ebc58d"
+fingerprint = "sha256:1f074ed0672d47204c6c90f8e263c1ee18d02d2654bdf693648a7ce4743633d2"
 files = 93
 format = 3
