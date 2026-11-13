@@ -78,9 +78,9 @@ etape "plis appariés"             tools/plis-test.sh
 # `balayage-vivant.sh` ne tombe qu'après des semaines sans balayage ; sans cas
 # fabriqués, sa branche d'échec ne s'exécuterait jamais avant d'être utile.
 etape "balayage vivant"           tools/balayage-vivant-test.sh
-# `etat.sh` s'exécute à chaque démarrage et après chaque compactage, sa
-# sortie entrant dans le contexte du modèle. Un script devenu MUET ne se
-# verrait pas — on croirait simplement qu'il n'y a rien à dire.
+# `etat.sh`, lancé à la main, imprime l'état calculé depuis git. Un script
+# devenu MUET ne se verrait pas — on croirait simplement qu'il n'y a rien à
+# dire.
 etape "état calculé"              bash -c 'tools/etat.sh | grep -q "non fusionné dans main"'
 # Sa ligne des branches à faire supprimer se tait presque toujours : sur des
 # dépôts fabriqués, elle doit parler quand il le faut, et seulement alors.

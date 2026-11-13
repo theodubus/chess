@@ -6,7 +6,7 @@
 #
 # Deux questions distinctes, et le script répond aux deux.
 #
-#   1. Les SCRIPTS font-ils ce qu'ils annoncent ? — onze cas ci-dessous.
+#   1. Les SCRIPTS font-ils ce qu'ils annoncent ? — les cas ci-dessous.
 #   2. Claude Code les a-t-il CHARGÉS ? — un script ne peut pas le dire de
 #      lui-même, puisqu'il ne tourne que s'il a été chargé. Chaque
 #      déclenchement réel laisse donc une trace datée dans
@@ -41,7 +41,7 @@ LANCES=0
 # Nombre de cas attendus. Un cas qui disparaît doit faire échouer le script :
 # c'est arrivé une fois, un `>/dev/null` mal placé ayant redirigé le `printf`
 # de cette fonction en même temps que la commande, et trois cas se sont tus.
-ATTENDUS=14
+ATTENDUS=16
 
 cas() {
   local nom="$1"; shift
@@ -73,10 +73,19 @@ echo
 
 echo "  configuration"
 cas "settings.json est du JSON valide"        jq -e . .claude/settings.json
-cas "un hook Stop est déclaré"                jq -e '.hooks.Stop[0].hooks[0].command' .claude/settings.json
-cas "un hook PreToolUse est déclaré"          jq -e '.hooks.PreToolUse[0].hooks[0].command' .claude/settings.json
-cas "un hook SessionStart est déclaré"        jq -e '.hooks.SessionStart[0].hooks[0].command' .claude/settings.json
-cas "il lance tools/etat.sh"                  bash -c 'jq -re ".hooks.SessionStart[0].hooks[0].command" .claude/settings.json | grep -q "tools/etat.sh"'
+# Depuis D-0009 (13 nov. 2026), le démarrage et la fin de tour n'ont plus que
+# les hooks du socle ; chess garde le sien avant chaque outil. Chaque cas
+# cherche son hook dans toute la liste de son moment, jamais à une place :
+# un ordre de déclaration n'est pas une règle. Les deux derniers exigent
+# l'absence des anciens : ils échouent tant que Théo n'a pas retiré leurs
+# blocs (B-0034), ce qui empêche de fusionner une documentation qui les dit
+# déjà partis.
+cas "la fin de tour lance les contrôles du socle" bash -c 'jq -re ".hooks.Stop[].hooks[].command" .claude/settings.json | grep -q "socle hook stop"'
+cas "avant chaque outil, les refus du socle"  bash -c 'jq -re ".hooks.PreToolUse[].hooks[].command" .claude/settings.json | grep -q "socle hook pre-tool-use"'
+cas "le démarrage lance l'état du socle"      bash -c 'jq -re ".hooks.SessionStart[].hooks[].command" .claude/settings.json | grep -q "socle hook session-start"'
+cas "avant chaque outil, le refus du SHA"     bash -c 'jq -re ".hooks.PreToolUse[].hooks[].command" .claude/settings.json | grep -q "no-fabricated-sha.sh"'
+cas "le démarrage ne lance plus tools/etat.sh" bash -c '! jq -re ".hooks.SessionStart[].hooks[].command" .claude/settings.json | grep -q "tools/etat.sh"'
+cas "la fin de tour n'a plus l'ancien hook"   bash -c '! jq -re ".hooks.Stop[].hooks[].command" .claude/settings.json | grep -q "verify-on-stop.sh"'
 cas "tools/etat.sh rend un état non vide"     bash -c 'tools/etat.sh | grep -q "non fusionné dans main"'
 cas "les deux scripts sont exécutables"       bash -c '[[ -x .claude/hooks/verify-on-stop.sh && -x .claude/hooks/no-fabricated-sha.sh ]]'
 cas "leur syntaxe est correcte"               bash -c 'bash -n .claude/hooks/verify-on-stop.sh && bash -n .claude/hooks/no-fabricated-sha.sh'
@@ -105,7 +114,8 @@ echo
 echo "  les hooks se sont-ils déclenchés pour de vrai ?"
 TRACE=".claude/hooks-fired.log"
 if [[ -s "$TRACE" ]]; then
-  echo "    OUI — Claude Code les a chargés et exécutés."
+  echo "    OUI — Claude Code a chargé et exécuté le hook de chess."
+  echo "    (ceux du socle tracent dans .git/socle/hooks.log, que « socle state » compte)"
   echo "    dernier déclenchement : $(tail -1 "$TRACE")"
   echo "    déclenchements enregistrés : $(grep -c '' "$TRACE")"
 else

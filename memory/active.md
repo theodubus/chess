@@ -9,29 +9,26 @@ L'adoption du socle, entière, avant tout travail sur le moteur : Théo, le
 12 nov. 2026 (D-0006, D-0008). Le jalon B-0031 dit ce que « finie » veut
 dire.
 
-La mise à jour du socle (J-2026-11-13-A) : Théo a validé D-0010 le
-13 nov. (J-2026-11-13-B), sa réponse est poussée avec elle, et la porte
-du prompt passe. La pull request de la branche de développement attend
-sa CI : à CI verte, tous les contrôles finis, l'agent la fusionne par la
-méthode « merge », le SHA de tête lu par git, puis la branche repart de
-la branche par défaut. Théo a demandé de se préparer à un compactage :
-rien d'autre n'est lancé.
+La mise à jour du socle est fusionnée (pull request 292, J-2026-11-13-C).
+En cours : le changement de D-0009, que Théo a validée. Sa réponse et la
+part de l'agent partent ensemble sur la branche de développement :
+`tools/etat.sh` allégé, l'ancienne feuille de route remplacée par un
+renvoi, `tools/verify-hooks.sh` qui passe avant le geste de Théo comme
+après, sauf deux cas qui exigent l'absence des anciens hooks : la CI est
+rouge jusqu'au geste de Théo, exprès. **Théo fera son geste ce soir,
+13 nov.** (son message de 8 h 10, J-2026-11-13-C) : les commandes sont au
+sujet B-0034.
 
 ## Prochaines étapes
 
 Dans l'ordre :
 
-1. Fusionner la pull request de la mise à jour à CI verte.
-2. Faire le changement de D-0009, que Théo a validée dans la conversation
-   (J-2026-11-12-M) : alléger `tools/etat.sh`, remplacer l'ancienne
-   feuille de route de `tools/README.md` par un renvoi, ajouter les tests
-   d'intégration aux chemins de code des garde-fous, faire suivre
-   `tools/verify-hooks.sh`. Sa réponse se consigne par la commande du
-   socle dans le même push que ce changement. Puis donner à Théo les
-   commandes à lancer sur son ordinateur : retirer de
-   `.claude/settings.json` le premier bloc de `SessionStart` et le
-   premier de `Stop`, approuver le fichier, commiter, pousser. Cela clôt
-   B-0002 et B-0004.
+1. Pousser la part de l'agent, ouvrir la pull request, donner à Théo le
+   lien de B-0034. Sa CI est rouge jusqu'au commit de Théo : c'est voulu.
+2. Quand Théo a poussé : vérifier que son commit ne retire que les deux
+   blocs et porte son approbation ; clore B-0002, B-0004 et B-0034,
+   cocher leur case de B-0031 ; fusionner à CI verte. S'il a répondu sur
+   B-0035, le faire dans le même lot.
 3. Poser le journal du carnet (B-0006), public sans tri (D-0007), en
    refaisant les essais des contrôles sur les fichiers posés ; puis ses
    autres rubriques, le bandeau compris (B-0007) ; puis `CLAUDE.md` en
