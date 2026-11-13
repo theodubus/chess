@@ -15,7 +15,7 @@ Théo en est prévenu.
 
 ## Fait quand
 
-- [ ] aucun contrôle du socle n'est plus en mode d'avertissement (B-0001)
+- [x] aucun contrôle du socle n'est plus en mode d'avertissement (B-0001)
 - [ ] le carnet de bord est dans la mémoire, et `CLAUDE.md` ne porte que des règles (B-0003)
 - [ ] l'ancienne feuille de route est retirée de `tools/README.md`, et ce que le démarrage imprime est décidé (B-0002)
 - [ ] les deux hooks de fin de tour sont tranchés (B-0004)
