@@ -4,29 +4,23 @@
 #
 #   tools/etat.sh
 #
-# Lancé par le hook `SessionStart` déclaré dans `.claude/settings.json`, dont
-# la sortie entre dans le contexte du modèle.
+# Un outil à lancer à la main : la branche, ce qui n'est pas fusionné, les
+# branches distantes à faire supprimer par Théo, et l'écart entre code et
+# documentation. **Tout ce qui est imprimé ici est dérivé de git.** Rien
+# n'est recopié, donc rien ne peut vieillir.
 #
-# Pourquoi ce script existe
+# Pourquoi il n'est plus lancé au démarrage
 #
-# `CLAUDE.md` est réinjecté après chaque compactage ; le carnet de bord, qui
-# porte « où on en est », ne l'est pas. **Le document qui dit l'état est donc
-# absent au moment précis où la mémoire vient d'être perdue.** Le 22 sept. 2026
-# un engagement pris en prose — « j'attaque B9, je te reviens avec son coût
-# monothread » — a disparu exactement comme ça : ni fiche, ni journal, ni
-# `tools/README.md` ne le portaient.
+# Du 22 sept. au 13 nov. 2026, le hook `SessionStart` le lançait, pour que
+# l'état reparaisse après chaque compactage : le document qui disait « où on
+# en est » manquait au moment précis où la mémoire venait d'être perdue. Depuis
+# l'adoption du socle, c'est l'état du socle (`python3 .socle/socle state`)
+# qui s'imprime au démarrage, et il calcule aussi ce que ce script imprime.
+# Théo a validé de ne garder que lui (D-0009) ; la feuille de route, les
+# renvois et l'adresse du carnet, qui n'étaient qu'ici, sont partis avec.
 #
-# `SessionStart` se déclenche au démarrage, à la reprise, après `/clear` **et
-# après chaque compactage**. C'est le seul point d'accroche qui tombe au bon
-# moment.
-#
-# **Tout ce qui est imprimé ici est dérivé de git.** Rien n'est recopié, donc
-# rien ne peut vieillir — c'est la seule forme d'état que ce dépôt tienne pour
-# fiable, après avoir payé le chiffre de bench périmé, le renvoi par position,
-# et un « fait vérifié » sur des branches distantes devenu faux en un jour.
-#
-# Ce script ne doit JAMAIS empêcher une session de démarrer : pas de `set -e`,
-# et tout échec se traduit par une ligne en moins, jamais par un code non nul.
+# Ce script ne doit JAMAIS échouer : pas de `set -e`, et tout échec se
+# traduit par une ligne en moins, jamais par un code non nul.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -87,58 +81,4 @@ if [ -n "$modifies" ]; then
   if [ "$rs" -gt 0 ] && [ "$md" -eq 0 ]; then
     echo "  ^ du code a changé et aucune documentation. Vérifier que c'est voulu."
   fi
-fi
-
-# Les renvois sont DÉRIVÉS du fichier, jamais recopiés. La première version
-# nommait « § EN VOL » en dur ; la section a été renommée au verdict de C21 et
-# le pointeur a survécu, parfaitement lisible, en désignant le vide. C'est le
-# piège du renvoi par position, dans le script même qui existe pour qu'aucun
-# état ne vieillisse.
-#
-# Deux classes, et la distinction est le tout du dispositif :
-#   ÉPISODIQUE  — « EN VOL » n'existe que quand quelque chose
-#                 tourne ou vient d'être tranché. Absentes, elles se taisent :
-#                 un garde-fou qui crie en permanence finit par être ignoré.
-#   STRUCTUREL  — les autres doivent exister. Leur absence est une erreur, et
-#                 c'est le travail du script de la dire.
-# La feuille de route se lit dans tools/README.md, entre ses deux marqueurs,
-# et s'imprime telle quelle : rien n'est recopié ici. Elle remplace la liste
-# de tous les titres « VERDICT », qui renvoyait aux verdicts de septembre —
-# l'état d'aujourd'hui ne s'y lisait plus (Théo, 31 oct. 2026).
-feuille=$(awk '/<!-- feuille-de-route -->/{f=1; next} /<!-- \/feuille-de-route -->/{f=0} f' tools/README.md 2>/dev/null)
-if [ -n "$feuille" ]; then
-  echo "feuille de route (tools/README.md, « Ce qui reste à faire ») :"
-  sed 's/^/  /' <<< "$feuille"
-else
-  echo "!! tools/README.md n'a plus de feuille de route entre ses marqueurs — à corriger"
-fi
-echo "à lire avant de décider quoi faire :"
-
-# TOUS les titres qui correspondent, pas le premier : deux mesures peuvent être
-# en vol à la fois (C22 et B9 l'ont été le 23 sept. 2026), et la première
-# version n'en montrait qu'une — un état calculé qui CACHE une mesure en vol.
-renvoi() {
-  local motif="$1" quoi="$2" obligatoire="$3"
-  local titres
-  titres=$(grep -E "^#{2,4} .*$motif" tools/README.md 2>/dev/null | sed -E 's/^#+ //')
-  if [ -n "$titres" ]; then
-    while IFS= read -r titre; do
-      echo "  tools/README.md § « $titre »${quoi:+ — $quoi}"
-    done <<< "$titres"
-  elif [ "$obligatoire" = oui ]; then
-    echo "  !! tools/README.md n'a plus de section « $motif » — renvoi à corriger"
-  fi
-}
-
-renvoi "EN VOL"                    "ce qui tourne en ce moment"                        non
-renvoi "Ce qu.il faut surveiller"  "ce qui vieillit sans que rien ne le signale"       oui
-renvoi "Ce qui reste à faire, par ordre mesuré" ""                                oui
-
-# Le carnet est privé et hors du dépôt (décision de Théo) : son adresse vit
-# dans un fichier local ignoré par git, pour que le pointeur soit mécanique
-# sans que le dépôt porte le lien.
-if [ -f .claude/carnet.local ]; then
-  echo "  carnet de bord : $(head -1 .claude/carnet.local)"
-else
-  echo "  carnet de bord : adresse non configurée (.claude/carnet.local absent)"
 fi

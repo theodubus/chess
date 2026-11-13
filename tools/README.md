@@ -17514,99 +17514,14 @@ fait tourner la recherche à vide.
 
 ### Ce qui reste à faire, par ordre mesuré
 
-#### Feuille de route — validée par Théo le 31 oct. 2026
+#### Feuille de route
 
-<!-- feuille-de-route -->
-**Remplacée le 12 nov. 2026 par le backlog de la mémoire**, qui seul fait
-foi (`python3 .socle/socle state`) : ce texte n'est plus tenu, et reste
-le temps que son retrait soit décidé.
-Validée par Théo le 31 oct. 2026 (« *ok je valide cet ordre* ») ; le détail
-de chaque ligne est dans « La file », juste dessous. Rien ne s'y fait en
-pilote automatique : une ligne commence quand sa condition est remplie,
-pas parce que des runners sont libres.
-1. Jusqu'au reset de la limite hebdomadaire (~2 nov.) : relèves et doc
-   seulement. Génération du n° 22 en pause après la vague 21.
-2. Phase 4, la recherche, au reset : l'historique borné, puis la LMR
-   modulée et l'élagage par l'historique (rejeu, puis 4 jobs par
-   candidat). Chaque candidat joué aussi sur un livre déséquilibré : sa
-   calibration (« le débit de mesure », point 1). **Mesuré le 3 nov. :
-   le livre déséquilibré ne paie pas ici** (× 1,11 [0,85 ; 1,44] de
-   paires, ~× 0,98 par heure de runner) — notre livre reste, les
-   candidats suivants ne s'y jouent plus. **Le cœur fait le 4 nov.** :
-   l'historique borné et la LMR modulée fusionnés (~+37 par la chaîne),
-   leurs réglages plats autour de `main` (diviseur, décalage, mémoire),
-   l'élagage par l'historique fermé sous deux formes. **Les quatre
-   lignes restantes écrantées et en match le 4 nov. au matin**, neuf
-   candidats contre `main` : la LMR selon le type de nœud (C62, C63), la
-   variante principale en table (C64 à C66), l'historique de correction
-   en plusieurs tables (C67, C68), l'historique des captures rouvert
-   (C69, C70 — l'arbre −4 à −5 %, trois à quatre fois le n° 9).
-   **Composés et FUSIONNÉS le 4 nov. au soir** : C63 et C67,
-   **+16,02 ± 3,17** ensemble (C71) ; la variante principale en table et
-   l'historique des captures sans gain. **La phase 4 est close**, ~+53
-   par la chaîne ; ses réglages au registre — le bonus aux nœuds de
-   coupure, le poids de la correction, C65 sur la base qui porte C63.
-   **Mesurés le 5 nov., aucun ne passe** : trois plis −0,09, le poids
-   × 1,5 −5,96 (régression), C65 sur C71 +1,61 — tous déprioritisés ;
-   les réglages de la phase 4 sont à leur plateau, le reste à SPSA.
-3. En parallèle de 2 : l'inférence multicouche écrite dans le moteur,
-   confrontée au code de bullet, prête pour l'entraînement au verdict de C3.
-   **Écrite le 2 nov.** (n° 23, « l'inférence multicouche ») : la
-   confrontation à bullet reste à faire, au premier réseau entraîné.
-4. Carte de Théo, semaine du 2 nov. : séance n° 22 (2 500 contre 5 000
-   nœuds, plus un 4ᵉ réseau pour le tour de boucle, ajouté à
-   `tools/seance-n22.sh` le 2 nov.), puis C3 (N10, N10r10, N10h384,
-   N10h512), ~42 h. **Théo dit quand sa carte est prête** (3 nov.) :
-   rien à relancer d'ici là. **Carte prête le 5 nov. au matin** (Théo) :
-   la séance n° 22 donnée, ~11 h 30 ; puis ses trois matchs sur les
-   runners (~5 h), la décision des données de C3 (`tools/c3-donnees.tsv`),
-   et la séance C3. **La séance n° 22 faite le 5 nov.**, ses quatre
-   réseaux sans une panne : **2 500 nœuds remplacent 5 000** (E2.5t
-   +5,77 ± 3,34), l'étiquette seule ne se sépare pas (E2.5v −1,55), **le
-   tour de boucle paie** (E21 +10,15 ± 3,33). **Les données de C3
-   choisies par Théo le 6 nov.** : l'option C, n21 et les 21 vagues du
-   n° 22 sans les étiquettes de N6r4, 16,8 G positions, 39 Go à
-   télécharger (« La séance C3, les données ») — la séance C3 donnée.
-   **Le mode `a` relevé le 9 nov.** : N10 +8,87 ± 3,20 contre N9w50s800,
-   **N10r10 +14,77 ± 3,27 contre N10 — dix seaux remplacent quatre**
-   (« C3 — N10 et N10r10 : VERDICT ») ; le mode `b` (384, 512) en cours
-   chez Théo. Et la série C13 de la phase 4 : ~3 190 ± 24, le sommet de
-   l'échelle (point 11). **Le mode `b` relevé le 10 nov.** : **512 unités
-   +32,57 ± 3,30, 384 +24,86 ± 3,25 contre N10** — la largeur paie
-   (« C3 — N10h384 et N10h512 : VERDICT ») ; la composition N10r10h512
-   (mode `c`, ~16 h de carte) avant d'embarquer.
-5. Après C3 : embarquer le gagnant (sonde des marges, série C13) ;
-   16 seaux de roi si 10 a payé ; 1 024 et couches cachées si la largeur paie.
-6. Reprendre la génération, étiquetée par le nouveau réseau, au rythme
-   que la carte consomme.
-7. SPSA (réglages post-NNUE) : après le cœur de la phase 4 et le réseau
-   stabilisé ; refait à chaque réseau embarqué.
-8. Le socle : après le pilote de Théo sur son autre projet, un second
-   essai à blanc sur chess, puis l'installation réelle entre deux
-   campagnes. Il ne bloque pas la phase 4. **Prêt d'ici une à deux
-   semaines au plus** (Théo, 3 nov.), soit vers le 10 à 17 nov.
-   **Utilisable le 11 nov.** (Théo), et son plan : la transition faite
-   par une session sur Fable 5.2 (des crédits à sa sortie) ; un essai à
-   blanc d'abord, avec retours à la session du socle ; puis
-   l'installation réelle, avec le passage des anciens fichiers de
-   mémoire aux nouveaux ; puis la feuille de route et le mode opératoire
-   remis en question ; puis le retour sur Opus. **Recommandé le 11 nov.**
-   (avis de la session, pas une décision de Théo) : l'essai à blanc tout
-   de suite, il ne touche ni `main` ni ce qui est en vol ; l'installation
-   réelle quand rien n'est en vol — après l'embarquement du gagnant de
-   C3. Elle se juge à des contrôles mécaniques écrits avant :
-   `tools/verify.sh` complet vert, `tools/etat.sh` qui imprime encore la
-   feuille de route et ses renvois, les hooks chargés
-   (`tools/verify-hooks.sh`), le carnet relié, et l'inventaire des faits
-   de l'ancienne mémoire retrouvés dans la nouvelle.
-9. OpenBench (serveur sur le MeLE, clients : runners et portable) quand
-   les effets cherchés passent sous ~3 Elo.
-10. En dernier : 1 600 superlots sur la recette finale ; la phase 6
-    (ProbCut, multi-cut, razoring).
-11. Sur déclencheur : l'Elo absolu au-delà de 3190 (fourchette grossière
-    contre Stockfish non bridé à tout moment, vrai chiffre contre 3 à 5
-    moteurs classés à ± 150) ; un serveur loué, aux conditions écrites.
-<!-- /feuille-de-route -->
+Remplacée le 12 nov. 2026 par le backlog de la mémoire, qui seul fait foi :
+`python3 .socle/socle state` en calcule le prochain jalon et les sujets
+prêts, et `memory/backlog/` porte chaque sujet. L'ancien texte, validé par
+Théo le 31 oct. 2026, a été retiré d'ici le 13 nov. (D-0009) ; il se relit
+dans l'historique de git, au commit 88da289. Le registre des réglages
+ouverts, lui, reste juste dessous, dans « La file ».
 
 #### La file — réécrite le 20 oct. 2026, dans l'ordre où la faire
 
@@ -18111,19 +18026,23 @@ plus sur le code, c'est-à-dire la faute exacte de la table de l'attic.
 844 à 731 lignes. J'avais surestimé, et le chiffre annoncé valait la peine
 d'être corrigé plutôt qu'oublié.
 
-### `tools/etat.sh` — l'état calculé, injecté à chaque reprise
+### `tools/etat.sh` — l'état calculé, à lancer à la main
 
 `CLAUDE.md` est réinjecté après chaque compactage ; **le carnet de bord, non.**
-Le document qui porte « où on en est » est donc absent au moment précis où la
-mémoire vient d'être perdue. Le 22 sept. 2026, un engagement pris en prose —
+Le document qui portait « où on en est » manquait donc au moment précis où la
+mémoire venait d'être perdue. Le 22 sept. 2026, un engagement pris en prose —
 *« j'attaque B9, je te reviens avec son coût monothread »* — a disparu
 exactement comme ça : ni fiche, ni journal, ni ce fichier ne le portaient.
+Du 22 sept. au 13 nov. 2026, le hook `SessionStart` lançait donc `etat.sh`,
+et sa sortie entrait dans le contexte du modèle au démarrage, à la reprise,
+après `/clear` et après chaque compactage.
 
-Le hook `SessionStart` déclaré dans `.claude/settings.json` lance `etat.sh`, et
-sa sortie **entre dans le contexte du modèle**. `SessionStart` se déclenche au
-démarrage, à la reprise, après `/clear` **et après chaque compactage** — c'est
-le seul point d'accroche du système qui tombe au bon moment (`PreToolUse`
-contraint mais n'injecte rien ; `Stop` et `PostToolUse` non plus).
+**Depuis le 13 nov., c'est l'état du socle qui s'imprime à ces moments-là**
+(`python3 .socle/socle state`), et il calcule aussi ce qu'imprime `etat.sh`.
+Théo a validé de ne garder que lui (D-0009) : la feuille de route, que le
+backlog de la mémoire remplace, les renvois vers ce fichier et l'adresse du
+carnet, qui n'étaient que dans `etat.sh`, sont partis avec. Le script reste,
+comme outil à lancer à la main.
 
 **Tout ce qu'il imprime est dérivé de git**, donc rien ne peut y vieillir :
 branche, arbre propre ou non, `git log origin/main..HEAD`, et le nombre de
@@ -18132,26 +18051,20 @@ de documentation** : il ne prescrit rien, il constate — *« 6 fichiers de code
 et 0 de documentation » est un fait, « il faudrait documenter » est une
 consigne qu'on oublie.*
 
-L'adresse du carnet vit dans `.claude/carnet.local`, ignoré par git : le
-pointeur est mécanique sans que le dépôt porte le lien, le carnet restant privé
-et hors du dépôt.
-
 **Et les branches distantes à faire supprimer par Théo, depuis le 5 oct.
 2026.** Une branche que `main` contient en entier se supprime sans rien
 perdre, mais pas d'ici : le jeton de session ne peut pas supprimer une
 référence distante (vérifié le 22 sept., section D5). Théo a demandé qu'on
 les lui signale à chaque point de récap, comme toute action humaine
-nécessaire ; `etat.sh` les calcule donc à chaque reprise, sur les références
-du dernier `fetch` — jamais `main`, ni la branche de travail, ni celles de
-Codex (`codex/…`), qui appartiennent à un autre agent. La ligne se tait
-quand il n'y a rien à supprimer : c'est pourquoi `tools/etat-test.sh`
-l'éprouve sur des dépôts fabriqués, dans `verify.sh` — chaque exclusion et
-la détection elle-même, quatre fautes injectées, quatre attrapées.
+nécessaire ; `etat.sh` les calcule sur les références du dernier `fetch` —
+jamais `main`, ni la branche de travail, ni celles de Codex (`codex/…`), qui
+appartiennent à un autre agent. La ligne se tait quand il n'y a rien à
+supprimer : c'est pourquoi `tools/etat-test.sh` l'éprouve sur des dépôts
+fabriqués, dans `verify.sh` — chaque exclusion et la détection elle-même,
+quatre fautes injectées, quatre attrapées.
 
-`tools/verify-hooks.sh` vérifie que le hook est déclaré, qu'il lance bien ce
-script, et que le script **rend un état non vide** — un script devenu muet ne
-se verrait pas, on croirait simplement qu'il n'y a rien à dire. C'est la même
-raison qui fait exister `verify-hooks.sh` lui-même.
+`tools/verify.sh` vérifie que le script **rend un état non vide** : un script
+devenu muet ne se verrait pas, on croirait simplement qu'il n'y a rien à dire.
 
 ### `tools/carnet-vers-md.py` — le carnet de bord converti en Markdown
 

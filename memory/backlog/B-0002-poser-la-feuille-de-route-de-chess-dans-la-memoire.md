@@ -45,5 +45,5 @@ démarrage lance est un réglage que Théo détient.
 
 - [x] Théo a revu la feuille de route et son ordre
 - [x] chaque chantier retenu est un sujet du backlog, dans cet ordre
-- [ ] Théo a dit ce que devient `tools/etat.sh` au démarrage
-- [ ] le texte de la feuille de route dans `tools/README.md` est remplacé par un renvoi, `tools/etat.sh` et son test suivis
+- [x] Théo a dit ce que devient `tools/etat.sh` au démarrage
+- [x] le texte de la feuille de route dans `tools/README.md` est remplacé par un renvoi, `tools/etat.sh` et son test suivis

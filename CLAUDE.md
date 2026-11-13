@@ -34,9 +34,11 @@ Ce fichier dit **comment** travailler : invariants, ce qui compte comme preuve,
 pièges déjà payés. Il ne dit pas **où on en est**.
 
 - **L'état du travail en cours est imprimé automatiquement au démarrage et
-  après chaque compactage** par `tools/etat.sh` — branche, commits non
-  fusionnés, écart code/documentation, et où lire la suite. Il est calculé,
-  jamais recopié. S'il n'apparaît pas, le lancer à la main.
+  après chaque compactage** par le socle (`python3 .socle/socle state`, sa
+  section en fin de fichier) — branche, commits non fusionnés, CI, backlog,
+  ce qui revient à Théo. Il est calculé, jamais recopié. `tools/etat.sh`,
+  qui le faisait du 22 sept. au 13 nov. 2026, reste un outil à lancer à la
+  main (D-0009).
 - L'état du moteur : `README.md`, en tête.
 - Les verdicts SPRT, avec leurs effectifs, leurs bornes **et leur cadence** :
   `tools/README.md`, section *Mesures de référence*. Le compteur n'est pas
@@ -44,10 +46,12 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   périmée.
 - Ce qui s'exécute sans qu'on l'appelle : section *Ce qui tourne tout seul*,
   plus bas.
-- **La feuille de route, validée par Théo le 31 oct. 2026** : `tools/README.md`,
-  en tête de « Ce qui reste à faire » — l'ordre des prochains chantiers et
-  leurs conditions, **imprimé par `tools/etat.sh` à chaque reprise**. Rien
-  ne s'y fait en pilote automatique.
+- **La feuille de route est le backlog de la mémoire**, depuis le 12 nov.
+  2026 : l'état en calcule le prochain jalon et les sujets prêts. Celle que
+  Théo avait validée le 31 oct. est retirée de `tools/README.md` (D-0009).
+  Rien ne s'y fait en pilote automatique.
+- Ce qui vieillit sans que rien ne le signale : `tools/README.md`, section
+  « Ce qu'il faut surveiller — et que rien ne signalera tout seul ».
 - Ce sur quoi travailler : **la file validée**, `tools/README.md`, section
   *Ce qui reste à faire*, sous-section *La file* — réécrite le 20 oct. 2026
   dans l'ordre où faire, Théo : « *Je valide tous ces points, tout ce qui
@@ -71,8 +75,8 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   que le jeton de session ne peut pas supprimer. Théo, 5 oct. 2026 :
   « *Quand il y a des branches à supprimer, n'hésite pas à m'en informer lors
   des points de recap (au même titre que n'importe quelle action humaine
-  nécessaire)* ». `tools/etat.sh` calcule les branches concernées à chaque
-  reprise.
+  nécessaire)* ». L'état du socle calcule les branches concernées à chaque
+  reprise, hors celles que la politique garde.
 - **Le socle est installé depuis le 11 nov. 2026** — sa section, en fin de
   fichier, entre ses marqueurs (J-2026-11-11-B). **Là où elle contredit le
   reste de ce fichier, ce que Théo a tranché ce jour-là vaut** (D-0002) :
@@ -88,10 +92,10 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   de bord vers la mémoire. L'adaptateur du socle est propre à chess
   (`.socle/adapter.toml`) : avec `--fast`, `socle verify` lance les étapes
   de `tools/verify.sh --rapide` ; sans, celles du job « Moteur » de la CI.
-  **Ce que ces décisions ne tranchent pas reste ouvert, et se pose avec
-  Théo** : les deux états imprimés au démarrage (`tools/etat.sh` et celui
-  du socle), les deux commandes de vérification, les deux hooks de fin de
-  tour.
+  Les deux états imprimés au démarrage et les deux hooks de fin de tour,
+  Théo les a tranchés le 12 nov. : seuls ceux du socle restent (D-0009).
+  **Reste ouvert, et se pose avec Théo** : les deux commandes de
+  vérification.
 
 ## Décisions structurantes
 
@@ -1273,8 +1277,8 @@ pannes, et de refaire ce qu'ils font déjà.
 | où | quoi |
 |---|---|
 | `.claude/settings.json` | déclare les hooks ci-dessous |
-| `tools/etat.sh` | lancé par le hook `SessionStart`, dont la sortie **entre dans le contexte**. `SessionStart` se déclenche au démarrage, à la reprise, après `/clear` **et après chaque compactage** — le seul point d'accroche qui tombe au moment où la mémoire vient d'être perdue. Tout ce qu'il imprime est **dérivé de git**, donc rien ne peut y vieillir. Il porte aussi le signal de documentation : « N fichiers `.rs` et zéro `.md` depuis `main` » est un fait, là où « il faudrait documenter » est une consigne qu'on oublie ; et, depuis le 5 oct. 2026, les branches distantes que `main` contient en entier, à faire supprimer par Théo (`tools/etat-test.sh`) |
-| `.claude/hooks/verify-on-stop.sh` | refuse de finir un tour si `verify.sh --rapide` échoue et que des `.rs` ont changé. Passe après trois échecs d'affilée, avec un avertissement : un blocage qu'on ne sait pas lever vaut moins qu'un avertissement qu'on lit |
+| `tools/etat.sh` | **à la main** depuis le 13 nov. 2026 (D-0009) ; le hook `SessionStart` le lançait depuis le 22 sept., et c'est désormais l'état du socle qui s'imprime au démarrage, à la reprise, après `/clear` et après chaque compactage. Tout ce qu'il imprime est **dérivé de git**, donc rien ne peut y vieillir : la branche, ce qui n'est pas fusionné, le signal de documentation — « N fichiers `.rs` et zéro `.md` depuis `main` » est un fait, là où « il faudrait documenter » est une consigne qu'on oublie — et les branches distantes que `main` contient en entier, à faire supprimer par Théo (`tools/etat-test.sh`) |
+| `.claude/hooks/verify-on-stop.sh` | **plus déclaré** depuis D-0009 (13 nov. 2026) : la fin de tour n'a plus que le hook du socle, qui lance les mêmes étapes, ne les relance pas sur un arbre déjà vérifié, et compte les tests d'intégration comme du code. Il refusait de finir un tour si `verify.sh --rapide` échouait et que des `.rs` avaient changé, et passait après trois échecs d'affilée, avec un avertissement : un blocage qu'on ne sait pas lever vaut moins qu'un avertissement qu'on lit. Le script reste, éprouvé par `tools/verify-hooks.sh`, jusqu'à ce que Théo décide de son retrait |
 | `.claude/hooks/no-fabricated-sha.sh` | refuse un SHA de 40 caractères qui n'est pas un objet du dépôt alors que son préfixe de 7 en est un — la signature d'un SHA complété de tête |
 | `tools/mettre-en-commun-test.sh` | éprouve `tools/mettre-en-commun.sh`, dans `verify.sh`. Son premier cas est une **vérité terrain** — la formule pentanomiale doit retomber sur ce que fastchess a imprimé, et elle y retombe à 0,003 Elo près. Sa branche précieuse est le **refus** de réunir des matchs qui se contredisent, qui ne sert qu'en cas de problème |
 | `tools/ref-test.sh` | éprouve `tools/ref.sh` sur des dépôts fabriqués, dans `verify.sh`, en une demi-seconde et sans compiler. La branche qui compte dans `ref.sh` est son **refus** de construire sur une référence git périmée — elle ne s'exécute qu'en cas de catastrophe, donc sans ce test elle ne serait jamais vérifiée. Même argument que le verdict de mutation |

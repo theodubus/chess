@@ -30,9 +30,9 @@ dist/
 # Trace de déclenchement des hooks (voir tools/verify-hooks.sh)
 /.claude/hooks-fired.log
 
-# Adresse du carnet de bord — privé, hors dépôt par décision de Théo.
-# Lu par tools/etat.sh pour que le pointeur soit mécanique sans que le dépôt
-# porte le lien.
+# Adresse du carnet de bord, que tools/etat.sh imprimait jusqu'au 13 nov.
+# 2026 (D-0009). Plus lue ; gardée ignorée, pour qu'une copie locale ne
+# parte pas dans un commit.
 /.claude/carnet.local
 
 # Trace locale des hooks du socle (voir CLAUDE.md)
