@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0005 — Convertir le carnet à blanc
 
-> statut : ouvert · origine : D-0006 · après : B-0001 · priorité : haute · lu : backlog@cbe441c1
+> statut : fait · origine : D-0006 · après : B-0001 · priorité : haute · ref : commit:e582c99aefd4da346901c979fd5fc8c281e93b76 · lu : backlog@cbe441c1
 
 Premier lot du déplacement du carnet de bord (B-0003). Théo a décidé le
 12 nov. 2026 que le carnet devient **public, sans tri** (D-0006, qui
