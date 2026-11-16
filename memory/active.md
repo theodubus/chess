@@ -22,6 +22,11 @@ mémoire (B-0003).
 Dans l'ordre :
 
 1. Le journal du carnet est posé (B-0006, J-2026-11-16-C) : le livrer.
+   L'extension du test des chiffres du banc aux demandes et aux décisions
+   (D-0014, B-0037) est écrite et éprouvée, mais non commitée : elle
+   change deux tests, et attend que Théo les valide par leur nom
+   (D-0015). Validée, elle part sur la même pull request ; sans réponse,
+   la pull request se fusionne sans elle (J-2026-11-16-E).
 2. Puis ses autres rubriques, le bandeau, la navigation, le pied et les
    deux entrées sans identifiant compris (B-0007) ; puis `CLAUDE.md` en
    trois lots (B-0008 à B-0010), le budget baissé à chaque lot. Clore

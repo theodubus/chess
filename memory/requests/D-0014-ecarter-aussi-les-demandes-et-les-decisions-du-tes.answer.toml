@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0014-ecarter-aussi-les-demandes-et-les-decisions-du-tes.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-16"
+canal = "conversation"
+citation = "oui, écarte aussi les demandes et décisions"
+empreinte = "sha256:84d1c2b41da63a43ff4b4de03505f80db99f3e75aa7fd86d077a05038cbcda86"
