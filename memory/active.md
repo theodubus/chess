@@ -9,30 +9,24 @@ L'adoption du socle, entière, avant tout travail sur le moteur : Théo, le
 12 nov. 2026 (D-0006, D-0008). Le jalon B-0031 dit ce que « finie » veut
 dire.
 
-La mise à jour du socle est fusionnée (pull request 292, J-2026-11-13-C).
-En cours : le changement de D-0009, que Théo a validée. Sa réponse et la
-part de l'agent partent ensemble sur la branche de développement :
-`tools/etat.sh` allégé, l'ancienne feuille de route remplacée par un
-renvoi, `tools/verify-hooks.sh` qui passe avant le geste de Théo comme
-après, sauf deux cas qui exigent l'absence des anciens hooks : la CI est
-rouge jusqu'au geste de Théo, exprès. **Théo fera son geste ce soir,
-13 nov.** (son message de 8 h 10, J-2026-11-13-C) : les commandes sont au
-sujet B-0034.
+**Théo, le 16 nov. 2026 : on finit ici l'adoption, et la mise à jour du
+socle vient ensuite** (J-2026-11-16-A). Il a fait son geste de D-0009 le
+16 nov. (commit b32ec8a, approuvé par D-0011) ; la pull request de D-0009
+attend sa CI, puis la clôture de B-0002, B-0004 et B-0034 et sa fusion.
 
 ## Prochaines étapes
 
 Dans l'ordre :
 
-1. Pousser la part de l'agent, ouvrir la pull request, donner à Théo le
-   lien de B-0034. Sa CI est rouge jusqu'au commit de Théo : c'est voulu.
-2. Quand Théo a poussé : vérifier que son commit ne retire que les deux
-   blocs et porte son approbation ; clore B-0002, B-0004 et B-0034,
-   cocher leur case de B-0031 ; fusionner à CI verte. S'il a répondu sur
-   B-0035, le faire dans le même lot.
-3. Poser le journal du carnet (B-0006), public sans tri (D-0007), en
+1. À CI verte sur le commit de Théo : clore B-0002, B-0004 et B-0034,
+   cocher leurs cases de B-0031, pousser, puis fusionner à CI verte.
+   B-0035 attend la réponse de Théo.
+2. Poser le journal du carnet (B-0006), public sans tri (D-0007), en
    refaisant les essais des contrôles sur les fichiers posés ; puis ses
    autres rubriques, le bandeau compris (B-0007) ; puis `CLAUDE.md` en
-   trois lots (B-0008 à B-0010), le budget baissé à chaque lot.
+   trois lots (B-0008 à B-0010), le budget baissé à chaque lot. Clore
+   B-0003 par l'inventaire, puis le jalon B-0031.
+3. Ensuite seulement, la mise à jour du socle (Théo, 16 nov.).
 
 Le skill de reprise s'applique : deux réveils par tour qui agit, retirés
 à la fin du tour. Le registre des réglages ouverts n'est écrit que dans

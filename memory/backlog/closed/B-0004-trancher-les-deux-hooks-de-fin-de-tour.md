@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0004 — Trancher les deux hooks de fin de tour
 
-> statut : ouvert · origine : J-2026-11-12-A · lu : backlog@925d483c · après : D-0009
+> statut : fait · origine : J-2026-11-12-A · ref : commit:b32ec8a77fe4d433d597b0e6605bda2c8322c472 · lu : backlog@925d483c · après : D-0009
 
 Depuis l'installation, deux hooks de fin de tour lancent les mêmes douze
 étapes : celui de chess, `.claude/hooks/verify-on-stop.sh`, qui lance
@@ -41,4 +41,4 @@ Théo sur `.claude/settings.json` (B-0034).
 ## Fait quand
 
 - [x] Théo a choisi : garder les deux hooks, ou n'en garder qu'un et fermer le trou des tests d'intégration
-- [ ] `.claude/settings.json` et l'adaptateur disent ce choix
+- [x] `.claude/settings.json` et l'adaptateur disent ce choix
