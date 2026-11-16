@@ -3,9 +3,9 @@
 
 > statut : ouvert · origine : J-2026-11-16-E · après : B-0037 · priorité : basse · lu : backlog@72bb7d4e
 
-Le test des chiffres du banc (`engine/tests/bench_reference.rs`) écartera,
-si Théo valide D-0015, trois couches gelées de la mémoire : le journal,
-les demandes et les décisions. Le format du socle en connaît deux autres,
+Le test des chiffres du banc (`engine/tests/bench_reference.rs`) écarte,
+depuis D-0015, trois couches gelées de la mémoire : le journal, les
+demandes et les décisions. Le format du socle en connaît deux autres,
 que le test lirait.
 
 - Les archives, sous memory/archives : « documents archivés tels quels (cadrage…), non

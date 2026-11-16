@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0037 — Écarter les demandes et les décisions du test des chiffres du banc
 
-> statut : ouvert · origine : J-2026-11-16-D · après : D-0013, D-0015 · lu : backlog@880d2ed1
+> statut : fait · origine : J-2026-11-16-D · ref : J-2026-11-16-F · après : D-0013, D-0015 · lu : backlog@880d2ed1
 
 Le test des chiffres de référence du banc (`engine/tests/bench_reference.rs`)
 parcourt tous les fichiers Markdown du dépôt. Il en écarte le journal de la
@@ -27,4 +27,4 @@ test : c'est à Théo de le décider.
 ## Fait quand
 
 - [x] Théo a dit si les demandes et les décisions sont écartées à leur tour
-- [ ] le test et ses cas suivent sa réponse, ou le sujet est abandonné sur elle
+- [x] le test et ses cas suivent sa réponse, ou le sujet est abandonné sur elle

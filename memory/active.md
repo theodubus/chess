@@ -21,17 +21,19 @@ mémoire (B-0003).
 
 Dans l'ordre :
 
-1. Le journal du carnet est posé (B-0006, J-2026-11-16-C) : le livrer.
-   L'extension du test des chiffres du banc aux demandes et aux décisions
-   (D-0014, B-0037) est écrite et éprouvée, mais non commitée : elle
-   change deux tests, et attend que Théo les valide par leur nom
-   (D-0015). Validée, elle part sur la même pull request ; sans réponse,
-   la pull request se fusionne sans elle (J-2026-11-16-E).
+1. Le journal du carnet est posé (B-0006, J-2026-11-16-C), et le test
+   des chiffres du banc écarte les couches gelées de la mémoire (D-0013,
+   D-0014, D-0015) : les livrer, pull request 295.
 2. Puis ses autres rubriques, le bandeau, la navigation, le pied et les
    deux entrées sans identifiant compris (B-0007) ; puis `CLAUDE.md` en
    trois lots (B-0008 à B-0010), le budget baissé à chaque lot. Clore
    B-0003 par l'inventaire, puis le jalon B-0031.
 3. Ensuite seulement, la mise à jour du socle (Théo, 16 nov.).
+
+**Les liens donnés à Théo se présentent en Markdown**, entre crochets le
+texte qui nomme ce qu'ils désignent (D-0015, la pull request 295), puis
+l'adresse entre parenthèses ; jamais une adresse brute (Théo, 16 nov.
+2026, J-2026-11-16-F).
 
 Le skill de reprise s'applique : deux réveils par tour qui agit, retirés
 à la fin du tour. Le registre des réglages ouverts n'est écrit que dans

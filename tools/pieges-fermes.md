@@ -127,7 +127,7 @@ C'est la seule condition de sortie de ce fichier.
   deux, en critère d'acceptation. **Conséquence assumée** : tout changement de
   l'arbre de recherche rend la CI rouge tant que la ligne n'est pas corrigée.
   C'est l'effet recherché ; le message d'échec donne le chiffre à recopier.
-  <br>**Tenu par** : `engine/tests/bench_reference.rs`, qui balaie tout le dépôt, hors le journal de la mémoire, en ajout seul (D-0013).
+  <br>**Tenu par** : `engine/tests/bench_reference.rs`, qui balaie tout le dépôt, hors les couches gelées de la mémoire : le journal, en ajout seul, les demandes et les décisions (D-0013, D-0014).
 
 - **Un critère d'acceptation `#[ignore]` est invisible au cliquet de
   mutation.** `cargo mutants` exécute `cargo test`, donc jamais `--ignored` :

@@ -955,8 +955,9 @@ une mesure, pas une préférence.
   ne l'a pas vu, parce que personne n'avait cherché si le chiffre existait
   ailleurs. La deuxième balayait une **liste écrite à la main**, ce qui laissait
   encore mon jugement décider de la couverture ; celle d'aujourd'hui parcourt
-  **tout le dépôt** — hors le journal de la mémoire, qui porte de l'histoire
-  datée (D-0013) —, donc un fichier Markdown créé demain est couvert sans que
+  **tout le dépôt** — hors les couches gelées de la mémoire, journal,
+  demandes et décisions, qui portent de l'histoire datée (D-0013,
+  D-0014) —, donc un fichier Markdown créé demain est couvert sans que
   personne y pense. **Avant d'écrire un garde-fou, chercher toutes les copies
   de ce qu'il garde** : `grep` sur la valeur, pas sur le fichier qu'on a en
   tête.
