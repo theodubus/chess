@@ -94,8 +94,11 @@ if [[ $RAPIDE -eq 0 ]]; then
   etape "tests (release)"         cargo test --workspace --release
   etape "critères d'acceptation"  cargo test --workspace --release -- --ignored
   etape "bench"                   cargo run --release --bin shallowred -- bench 7
-  # Pas en mode rapide : c'est celui que le hook Stop lance, et l'auto-test
-  # invoque ce même hook. La récursion s'arrête là.
+  # Pas en mode rapide : l'adaptateur du socle (`.socle/adapter.toml`) recopie
+  # les étapes de `--rapide` pour sa vérification rapide et range celle-ci
+  # parmi les lentes ; la déplacer romprait l'accord des deux listes. Jusqu'au
+  # 16 nov. 2026, une raison de plus : l'ancien hook de fin de tour lançait
+  # `--rapide`, et l'auto-test lançait ce hook.
   etape "hooks"                   tools/verify-hooks.sh
 fi
 

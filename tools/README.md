@@ -481,8 +481,9 @@ tools/mutants.sh --file engine/src/tt.rs -j4
 
 Le workflow qui l'exécute est `.github/workflows/mutation.yml` ; son verdict
 est rendu par `.github/mutation-verdict.sh`, éprouvé par
-`.github/mutation-verdict-test.sh`. Le reste de l'outillage automatique — les
-deux hooks de `.claude/` et leur auto-test `tools/verify-hooks.sh` — est
+`.github/mutation-verdict-test.sh`. Le reste de l'outillage automatique — le
+hook de chess, `.claude/hooks/no-fabricated-sha.sh`, et l'auto-test des hooks,
+`tools/verify-hooks.sh` — est
 décrit dans `CLAUDE.md`, section « Ce qui tourne tout seul ».
 
 **Toujours passer par `tools/mutants.sh`, jamais par `cargo mutants` nu.** Il
@@ -17790,8 +17791,9 @@ l'appel d'outil :
 - **le coût** : un commit, 10 à 13 s ; **une poussée de documentation
   seule, 3 min 45 s** à cache chaud (4 min 29 s à froid) — la poussée
   relance `cargo fmt`, `clippy` et les tests dès que l'arbre a changé,
-  même sans un fichier `.rs`, quand `.claude/hooks/verify-on-stop.sh` ne
-  vérifie que si du Rust a bougé : **+8 à +15 min par relève**, à deux à
+  même sans un fichier `.rs`, quand l'ancien hook de fin de tour de chess,
+  retiré depuis (D-0012), ne vérifiait que si du Rust avait bougé : **+8 à
+  +15 min par relève**, à deux à
   quatre poussées ;
 - **les fusions** : refusées par défaut, **permises** une fois
   `[irreversible] tools` réécrit sans `merge_pull_request` ; l'agent ne

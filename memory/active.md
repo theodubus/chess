@@ -10,17 +10,18 @@ L'adoption du socle, entière, avant tout travail sur le moteur : Théo, le
 dire.
 
 **Théo, le 16 nov. 2026 : on finit ici l'adoption, et la mise à jour du
-socle vient ensuite** (J-2026-11-16-A). Il a fait son geste de D-0009 le
-16 nov. (commit b32ec8a, approuvé par D-0011) ; la pull request de D-0009
-attend sa CI, puis la clôture de B-0002, B-0004 et B-0034 et sa fusion.
+socle vient ensuite** (J-2026-11-16-A). D-0009 est faite et fusionnée
+(pull request 293, J-2026-11-16-B) ; B-0002, B-0004 et B-0034 sont clos,
+et l'ancien script de fin de tour est retiré (D-0012, B-0035). Reste la
+seule condition ouverte du jalon B-0031 : le carnet de bord dans la
+mémoire (B-0003).
 
 ## Prochaines étapes
 
 Dans l'ordre :
 
-1. À CI verte sur le commit de Théo : clore B-0002, B-0004 et B-0034,
-   cocher leurs cases de B-0031, pousser, puis fusionner à CI verte.
-   B-0035 attend la réponse de Théo.
+1. Livrer le retrait de l'ancien script de fin de tour, relu sans
+   contexte, sur la branche repartie de `main`.
 2. Poser le journal du carnet (B-0006), public sans tri (D-0007), en
    refaisant les essais des contrôles sur les fichiers posés ; puis ses
    autres rubriques, le bandeau compris (B-0007) ; puis `CLAUDE.md` en

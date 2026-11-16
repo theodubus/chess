@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0034 — Retirer les deux anciens hooks de .claude/settings.json
 
-> statut : ouvert · origine : J-2026-11-13-C · pour : humain · priorité : haute · lu : backlog@ee2b0d3d
+> statut : fait · origine : J-2026-11-13-C · ref : commit:d734a1ce60cfd28b25a7cb4a6956a027550a184f · pour : humain · priorité : haute · lu : backlog@ee2b0d3d
 
 Théo a validé D-0009 : ne garder, au démarrage et en fin de tour, que les
 hooks du socle. Le fichier qui les déclare, `.claude/settings.json`, est
@@ -36,7 +36,7 @@ git push
 
 - `git diff --stat` : `.claude/settings.json`, 20 lignes retirées, aucune
   ajoutée. Ce sont les deux blocs, celui qui lance `tools/etat.sh` et celui
-  qui lance `.claude/hooks/verify-on-stop.sh`. L'agent a rejoué la commande
+  qui lance .claude/hooks/verify-on-stop.sh (retiré le 16 nov., D-0012). L'agent a rejoué la commande
   sur une copie du fichier le 13 nov. : rien d'autre ne bouge.
 - `socle approve` répond qu'une demande d'approbation est « écrite et
   validée », avec sa réponse, sous `memory/requests/` ; le `git add` les
@@ -45,10 +45,10 @@ git push
   push lancent les contrôles rapides : quelques minutes.
 
 À la main, sans la commande `python3 -c` : dans la liste `Stop`, retirer
-le bloc dont la commande finit par `.claude/hooks/verify-on-stop.sh`, et
+le bloc dont la commande finit par .claude/hooks/verify-on-stop.sh, et
 dans la liste `SessionStart`, celui dont la commande finit par
 `tools/etat.sh`, avec leur virgule.
 
 ## Fait quand
 
-- [ ] le commit de Théo est sur la branche, et la CI du socle passe
+- [x] le commit de Théo est sur la branche, et la CI du socle passe

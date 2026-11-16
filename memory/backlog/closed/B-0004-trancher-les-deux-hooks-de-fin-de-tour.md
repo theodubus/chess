@@ -4,7 +4,7 @@
 > statut : fait · origine : J-2026-11-12-A · ref : commit:b32ec8a77fe4d433d597b0e6605bda2c8322c472 · lu : backlog@925d483c · après : D-0009
 
 Depuis l'installation, deux hooks de fin de tour lancent les mêmes douze
-étapes : celui de chess, `.claude/hooks/verify-on-stop.sh`, qui lance
+étapes : celui de chess, .claude/hooks/verify-on-stop.sh (retiré le 16 nov., D-0012), qui lance
 `tools/verify.sh --rapide`, et celui du socle. Mesuré le 12 nov. 2026 sur
 le conteneur de la session, un `.rs` modifié : 123 s pour le premier,
 122 s pour le second ; relancé sur le même arbre, celui du socle ne prend
