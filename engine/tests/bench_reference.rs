@@ -16,7 +16,10 @@
 //! La deuxième version balayait une **liste écrite à la main**. C'était encore
 //! mon jugement qui décidait de la couverture — la faute exacte qu'elle devait
 //! empêcher. **Le contrôle parcourt maintenant tout le dépôt** : un fichier
-//! Markdown créé demain est couvert sans que personne ait à y penser.
+//! Markdown créé demain est couvert sans que personne ait à y penser. Seules en
+//! sont écartées les couches gelées de la mémoire — le journal (D-0013), les
+//! demandes et les décisions (D-0014) : un chiffre qu'elles portent est une
+//! trace datée, que rien ne peut mettre à jour.
 //!
 //! Un chiffre de référence faux est **pire qu'absent** : il sert de point de
 //! comparaison à la session suivante, qui croit mesurer une régression là où
@@ -39,12 +42,29 @@ use std::path::{Path, PathBuf};
 
 use shallowred::bench;
 
+/// Les couches gelées de la mémoire, relatives à la racine du dépôt : écartées
+/// du parcours.
+///
+/// Le journal est en ajout seul : une entrée publiée ne se réécrit plus. Une
+/// demande est gelée dès sa réponse, qui porte l'empreinte de son texte, et le
+/// corps d'une décision l'est aussi ; chaque couche est écartée entière, une
+/// demande encore en attente comprise. Un chiffre du bench qu'elles portent est
+/// une trace datée, juste le jour où elle a été écrite, et le contrôle ne
+/// pourrait l'exiger à jour qu'en réécrivant l'histoire, ce que le socle
+/// refuse. Le 16 nov. 2026, le journal du carnet importé y a fait tomber le
+/// contrôle : une entrée racontait la conception de ce test en citant la forme
+/// de son marqueur. Théo a choisi d'écarter le journal (D-0013), puis les
+/// demandes et les décisions (D-0014), après que le contrôle eut refusé une
+/// demande pour la même raison ; le reste de la mémoire reste parcouru.
+const GELEES: [&str; 3] = ["memory/journal", "memory/requests", "memory/decisions"];
+
 /// Tous les fichiers Markdown du dépôt, chemin relatif et chemin absolu.
 ///
 /// Parcours explicite plutôt que liste : c'est ce qui retire la couverture du
 /// contrôle de mon jugement. `target/` et les répertoires cachés sont écartés —
 /// ils ne portent pas de documentation, seulement des artefacts de compilation
-/// et l'historique git.
+/// et l'historique git —, et les couches gelées de la mémoire, qui portent de
+/// l'histoire (voir [`GELEES`]).
 fn documents(root: &Path) -> Vec<(String, PathBuf)> {
     let mut trouves = Vec::new();
     let mut a_visiter = vec![root.to_path_buf()];
@@ -61,6 +81,12 @@ fn documents(root: &Path) -> Vec<(String, PathBuf)> {
                 continue;
             }
             if chemin.is_dir() {
+                if chemin
+                    .strip_prefix(root)
+                    .is_ok_and(|r| GELEES.iter().any(|g| r == Path::new(g)))
+                {
+                    continue;
+                }
                 a_visiter.push(chemin);
             } else if chemin.extension().is_some_and(|e| e == "md") {
                 let relatif = chemin
@@ -362,5 +388,114 @@ fn larbre_de_recherche_ne_bouge_pas_en_silence() {
          référence de la profondeur 7 dans CLAUDE.md et README.md, que le test \
          `les_references_du_bench_dans_la_doc_sont_a_jour` vérifie. Sinon, \
          c'est une régression."
+    );
+}
+
+#[test]
+fn le_parcours_ecarte_les_couches_gelees_et_rien_d_autre() {
+    // Sur le dépôt réel : le journal et les demandes existent et portent des
+    // fichiers Markdown, sans quoi ce test ne prouverait rien ; aucun fichier
+    // d'une couche gelée n'est parcouru ; le reste de la mémoire l'est.
+    let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/.."));
+    fn tous_les_md(dossier: &Path, racine: &Path, trouves: &mut Vec<String>) {
+        let Ok(entrees) = std::fs::read_dir(dossier) else {
+            return;
+        };
+        for entree in entrees.flatten() {
+            let chemin = entree.path();
+            if chemin.is_dir() {
+                tous_les_md(&chemin, racine, trouves);
+            } else if chemin.extension().is_some_and(|e| e == "md") {
+                let relatif = chemin.strip_prefix(racine).unwrap().display().to_string();
+                trouves.push(relatif);
+            }
+        }
+    }
+    let mut memoire = Vec::new();
+    tous_les_md(&root.join("memory"), root, &mut memoire);
+    // Les trois couches, écrites ici en toutes lettres et non lues dans
+    // `GELEES` : un cas qui tirerait ses attendus de la constante qu'il garde
+    // resterait vrai si on la raccourcissait.
+    let gelee = |n: &str| {
+        ["memory/journal/", "memory/requests/", "memory/decisions/"]
+            .iter()
+            .any(|g| n.starts_with(g))
+    };
+    for g in ["memory/journal", "memory/requests"] {
+        assert!(
+            memoire.iter().any(|n| n.starts_with(&format!("{g}/"))),
+            "{g} sans fichier Markdown : le test ne prouve rien"
+        );
+    }
+
+    let docs = documents(root);
+    let noms: Vec<&str> = docs.iter().map(|(nom, _)| nom.as_str()).collect();
+    assert!(
+        !noms.iter().any(|n| gelee(n)),
+        "une couche gelée a été parcourue : {noms:?}"
+    );
+
+    // « Rien d'autre » : chaque fichier Markdown de la mémoire hors des couches
+    // gelées, trouvé par un parcours indépendant de celui du test, est
+    // parcouru. Une exclusion trop large, tous les dossiers de la mémoire par
+    // exemple, ferait tomber ce cas ; celle de tout dossier nommé `journal`,
+    // le cas de l'arbre fabriqué, plus bas.
+    let attendus: Vec<&String> = memoire.iter().filter(|n| !gelee(n)).collect();
+    assert!(
+        attendus.iter().any(|n| n.matches('/').count() > 1),
+        "aucun fichier en sous-dossier de la mémoire hors des couches gelées : le cas ne prouve rien"
+    );
+    for attendu in attendus {
+        assert!(
+            noms.contains(&attendu.as_str()),
+            "{attendu} n'est plus parcouru : l'exclusion déborde des couches gelées"
+        );
+    }
+}
+
+#[test]
+fn une_ligne_illisible_n_est_refusee_que_hors_des_couches_gelees() {
+    // Sur un arbre fabriqué : la même ligne marquée et illisible, dans un
+    // fichier ordinaire, dans trois autres dossiers nommés comme les couches
+    // gelées, et dans chaque couche gelée de la mémoire. Les quatre premières
+    // sont lues, et refusées ; les autres ne sont jamais lues : une couche
+    // s'écarte par son chemin, jamais par son seul nom.
+    let root = std::env::temp_dir().join(format!("bench-reference-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(&root).unwrap();
+    let ligne = "référence à la profondeur <n> : <nombre> nœuds\n";
+    std::fs::write(root.join("README.md"), ligne).unwrap();
+    for d in ["autre/journal", "autre/requests", "autre/decisions"] {
+        std::fs::create_dir_all(root.join(d)).unwrap();
+        std::fs::write(root.join(d).join("notes.md"), ligne).unwrap();
+    }
+    // Les trois couches en toutes lettres, comme dans le cas précédent.
+    for g in ["memory/journal", "memory/requests", "memory/decisions"] {
+        std::fs::create_dir_all(root.join(g)).unwrap();
+        std::fs::write(root.join(g).join("trace.md"), ligne).unwrap();
+    }
+
+    let docs = documents(&root);
+    let noms: Vec<&str> = docs.iter().map(|(nom, _)| nom.as_str()).collect();
+    let lus: Vec<bool> = docs
+        .iter()
+        .map(|(nom, chemin)| references(nom, &std::fs::read_to_string(chemin).unwrap()).is_err())
+        .collect();
+    std::fs::remove_dir_all(&root).unwrap();
+
+    assert_eq!(
+        noms,
+        [
+            "README.md",
+            "autre/decisions/notes.md",
+            "autre/journal/notes.md",
+            "autre/requests/notes.md"
+        ],
+        "parcourus : {noms:?}"
+    );
+    assert_eq!(
+        lus,
+        [true, true, true, true],
+        "la ligne illisible hors des couches gelées doit être refusée"
     );
 }

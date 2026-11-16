@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0013-exclure-le-journal-de-la-memoire-du-test-des-chiff.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-16"
+canal = "conversation"
+citation = "1, exclus le journal du test"
+empreinte = "sha256:a4fd518a64933535b73a09cdd6109c765571426a80c4ce3a700d8921ec918042"
