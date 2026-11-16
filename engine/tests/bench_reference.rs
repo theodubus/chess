@@ -39,12 +39,24 @@ use std::path::{Path, PathBuf};
 
 use shallowred::bench;
 
+/// Le journal de la mémoire, relatif à la racine du dépôt : écarté du parcours.
+///
+/// Il est en ajout seul : une entrée publiée ne se réécrit plus. Un chiffre du
+/// bench qu'il porte est une trace datée, juste le jour où elle a été écrite,
+/// et le contrôle ne pourrait l'exiger à jour qu'en réécrivant l'histoire, ce
+/// que le socle refuse. Le 16 nov. 2026, le journal du carnet importé y a fait
+/// tomber le contrôle : une entrée racontait la conception de ce test en citant
+/// la forme de son marqueur. Théo a choisi de l'écarter (D-0013) ; tout le reste
+/// de la mémoire reste parcouru.
+const JOURNAL: &str = "memory/journal";
+
 /// Tous les fichiers Markdown du dépôt, chemin relatif et chemin absolu.
 ///
 /// Parcours explicite plutôt que liste : c'est ce qui retire la couverture du
 /// contrôle de mon jugement. `target/` et les répertoires cachés sont écartés —
 /// ils ne portent pas de documentation, seulement des artefacts de compilation
-/// et l'historique git.
+/// et l'historique git —, et le journal de la mémoire, qui porte de l'histoire
+/// (voir [`JOURNAL`]).
 fn documents(root: &Path) -> Vec<(String, PathBuf)> {
     let mut trouves = Vec::new();
     let mut a_visiter = vec![root.to_path_buf()];
@@ -61,6 +73,12 @@ fn documents(root: &Path) -> Vec<(String, PathBuf)> {
                 continue;
             }
             if chemin.is_dir() {
+                if chemin
+                    .strip_prefix(root)
+                    .is_ok_and(|r| r == Path::new(JOURNAL))
+                {
+                    continue;
+                }
                 a_visiter.push(chemin);
             } else if chemin.extension().is_some_and(|e| e == "md") {
                 let relatif = chemin
@@ -362,5 +380,63 @@ fn larbre_de_recherche_ne_bouge_pas_en_silence() {
          référence de la profondeur 7 dans CLAUDE.md et README.md, que le test \
          `les_references_du_bench_dans_la_doc_sont_a_jour` vérifie. Sinon, \
          c'est une régression."
+    );
+}
+
+#[test]
+fn le_parcours_ecarte_le_journal_de_la_memoire_et_rien_d_autre() {
+    // Sur le dépôt réel : le journal existe et porte des fichiers Markdown,
+    // sans quoi ce test ne prouverait rien ; aucun n'est parcouru ; le reste
+    // de la mémoire l'est toujours.
+    let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/.."));
+    let journal = root.join(JOURNAL);
+    let dans_le_journal = std::fs::read_dir(&journal)
+        .unwrap()
+        .flatten()
+        .filter(|e| e.path().extension().is_some_and(|x| x == "md"))
+        .count();
+    assert!(
+        dans_le_journal > 0,
+        "{} sans fichier Markdown : le test ne prouve rien",
+        journal.display()
+    );
+
+    let docs = documents(root);
+    let noms: Vec<&str> = docs.iter().map(|(nom, _)| nom.as_str()).collect();
+    assert!(
+        !noms.iter().any(|n| n.starts_with("memory/journal/")),
+        "le journal a été parcouru : {noms:?}"
+    );
+    assert!(
+        noms.contains(&"memory/active.md"),
+        "le reste de la mémoire n'est plus parcouru : {noms:?}"
+    );
+}
+
+#[test]
+fn une_ligne_illisible_n_est_refusee_que_hors_du_journal() {
+    // Sur un arbre fabriqué : la même ligne marquée et illisible, dans un
+    // fichier ordinaire et dans le journal. Seule la première est lue, et
+    // refusée ; la seconde n'est jamais lue.
+    let root = std::env::temp_dir().join(format!("bench-reference-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir_all(root.join(JOURNAL)).unwrap();
+    let ligne = "référence à la profondeur <n> : <nombre> nœuds\n";
+    std::fs::write(root.join("README.md"), ligne).unwrap();
+    std::fs::write(root.join(JOURNAL).join("2026-09.md"), ligne).unwrap();
+
+    let docs = documents(&root);
+    let noms: Vec<&str> = docs.iter().map(|(nom, _)| nom.as_str()).collect();
+    let lus: Vec<bool> = docs
+        .iter()
+        .map(|(nom, chemin)| references(nom, &std::fs::read_to_string(chemin).unwrap()).is_err())
+        .collect();
+    std::fs::remove_dir_all(&root).unwrap();
+
+    assert_eq!(noms, ["README.md"], "parcourus : {noms:?}");
+    assert_eq!(
+        lus,
+        [true],
+        "la ligne illisible hors du journal doit être refusée"
     );
 }
