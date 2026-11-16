@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0002 — Poser la feuille de route de chess dans la mémoire
 
-> statut : ouvert · origine : J-2026-11-12-A · lu : backlog@1251a4e3 · après : D-0009, D-0004
+> statut : fait · origine : J-2026-11-12-A · ref : commit:447d50a4b8e934b0f04555eb772039ac338833fc · lu : backlog@1251a4e3 · après : D-0009, D-0004
 
 La feuille de route de chess, validée par Théo le 31 oct. 2026, vit encore
 dans `tools/README.md`, en tête de « Ce qui reste à faire », avec la file
@@ -45,5 +45,5 @@ démarrage lance est un réglage que Théo détient.
 
 - [x] Théo a revu la feuille de route et son ordre
 - [x] chaque chantier retenu est un sujet du backlog, dans cet ordre
-- [ ] Théo a dit ce que devient `tools/etat.sh` au démarrage
-- [ ] le texte de la feuille de route dans `tools/README.md` est remplacé par un renvoi, `tools/etat.sh` et son test suivis
+- [x] Théo a dit ce que devient `tools/etat.sh` au démarrage
+- [x] le texte de la feuille de route dans `tools/README.md` est remplacé par un renvoi, `tools/etat.sh` et son test suivis

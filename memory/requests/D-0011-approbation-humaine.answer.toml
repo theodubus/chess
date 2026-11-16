@@ -1,0 +1,8 @@
+# Réponse humaine, écrite par l'humain lui-même (`socle answer`).
+# Elle porte sur le texte exact de D-0011-approbation-humaine.md, dont l'empreinte suit.
+reponse = "valider"
+texte = "D-0009 : ne garder au démarrage et en fin de tour que les hooks du socle"
+par = "Théo"
+date = "2026-11-16"
+canal = "terminal"
+empreinte = "sha256:7056187da8314add3b6a476d5b58f95ef776b86487dd8ca7793153267da90ab8"

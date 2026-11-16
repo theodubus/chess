@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0009-ne-garder-au-demarrage-et-en-fin-de-tour-que-les-h.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-13"
+canal = "conversation"
+citation = "Sinon aussi je valide D0009, tu me donneras les commandes à exécuter sur l'ordinateur pour faire le changement le moment venu"
+empreinte = "sha256:a603905022f0d13ec167313606c989c957fc13c6737237840810d63df5043e35"
