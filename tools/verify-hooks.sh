@@ -41,7 +41,7 @@ LANCES=0
 # Nombre de cas attendus. Un cas qui disparaît doit faire échouer le script :
 # c'est arrivé une fois, un `>/dev/null` mal placé ayant redirigé le `printf`
 # de cette fonction en même temps que la commande, et trois cas se sont tus.
-ATTENDUS=16
+ATTENDUS=15
 
 cas() {
   local nom="$1"; shift
@@ -87,8 +87,8 @@ cas "avant chaque outil, le refus du SHA"     bash -c 'jq -re ".hooks.PreToolUse
 cas "le démarrage ne lance plus tools/etat.sh" bash -c '! jq -re ".hooks.SessionStart[].hooks[].command" .claude/settings.json | grep -q "tools/etat.sh"'
 cas "la fin de tour n'a plus l'ancien hook"   bash -c '! jq -re ".hooks.Stop[].hooks[].command" .claude/settings.json | grep -q "verify-on-stop.sh"'
 cas "tools/etat.sh rend un état non vide"     bash -c 'tools/etat.sh | grep -q "non fusionné dans main"'
-cas "les deux scripts sont exécutables"       bash -c '[[ -x .claude/hooks/verify-on-stop.sh && -x .claude/hooks/no-fabricated-sha.sh ]]'
-cas "leur syntaxe est correcte"               bash -c 'bash -n .claude/hooks/verify-on-stop.sh && bash -n .claude/hooks/no-fabricated-sha.sh'
+cas "le script du hook est exécutable"       bash -c '[[ -x .claude/hooks/no-fabricated-sha.sh ]]'
+cas "sa syntaxe est correcte"                 bash -c 'bash -n .claude/hooks/no-fabricated-sha.sh'
 
 echo
 echo "  hook « SHA fabriqué »"
@@ -101,16 +101,6 @@ cas "une commande sans hexadécimal passe"     sha_muet '{"tool_input":{"command
 cas "un SHA fabriqué imbriqué est refusé"     sha_refuse "{\"tool_input\":{\"a\":{\"b\":[\"$FAUX\"]}}}"
 
 echo
-echo "  hook « arbre cassé »"
-MODIFIES="$(git diff --name-only HEAD -- '*.rs'; git ls-files --others --exclude-standard -- '*.rs')"
-if [[ -z "$MODIFIES" ]]; then
-  cas "aucun .rs modifié : le hook se tait"   bash -c '[[ -z "$(echo "{}" | .claude/hooks/verify-on-stop.sh)" ]]'
-  echo "    (le chemin « .rs modifiés » n'est pas testable ici : aucun ne l'est)"
-else
-  cas "des .rs modifiés : le hook agit"       bash -c 'SHALLOWRED_HOOK_SELFTEST=1 .claude/hooks/verify-on-stop.sh | grep -q AUTOTEST'
-fi
-
-echo
 echo "  les hooks se sont-ils déclenchés pour de vrai ?"
 TRACE=".claude/hooks-fired.log"
 if [[ -s "$TRACE" ]]; then
@@ -120,8 +110,8 @@ if [[ -s "$TRACE" ]]; then
   echo "    déclenchements enregistrés : $(grep -c '' "$TRACE")"
 else
   echo "    PAS ENCORE — aucune trace dans $TRACE."
-  echo "    Soit Claude Code ne les a pas chargés, soit aucune session ne s'est"
-  echo "    terminée depuis. Les hooks d'un .claude/ créé APRÈS le démarrage"
+  echo "    Soit Claude Code ne l'a pas chargé, soit aucun outil n'a été appelé"
+  echo "    depuis. Les hooks d'un .claude/ créé APRÈS le démarrage"
   echo "    d'une session ne sont pas chargés par cette session-là ; une session"
   echo "    démarrée ensuite les trouve en place. Relancer ce script dans une"
   echo "    nouvelle session tranche."

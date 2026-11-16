@@ -3,7 +3,7 @@
 
 > statut : ouvert · origine : J-2026-11-13-C · priorité : basse · après : B-0034 · lu : backlog@8b95067e
 
-Après le geste de Théo (B-0034), `.claude/hooks/verify-on-stop.sh` n'est
+Après le geste de Théo (B-0034), .claude/hooks/verify-on-stop.sh (retiré le 16 nov., D-0012) n'est
 plus déclaré : le hook de fin de tour du socle lance les mêmes étapes. Le
 script reste, et `tools/verify-hooks.sh` l'éprouve encore. Le retirer
 change deux cas de ce test, qui vérifient que les scripts de hook sont
@@ -14,5 +14,5 @@ que les deux blocs de `.claude/settings.json` et les cas qui en dépendent.
 
 ## Fait quand
 
-- [ ] Théo a dit s'il retire le script
-- [ ] le script et ses cas sont retirés, ou le sujet est abandonné sur sa réponse
+- [x] Théo a dit s'il retire le script
+- [x] le script et ses cas sont retirés, ou le sujet est abandonné sur sa réponse

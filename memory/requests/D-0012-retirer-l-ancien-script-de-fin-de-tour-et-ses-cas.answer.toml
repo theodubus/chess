@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0012-retirer-l-ancien-script-de-fin-de-tour-et-ses-cas.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-16"
+canal = "conversation"
+citation = "ok retire l'ancien script de fin de tour"
+empreinte = "sha256:7b89a46393ba4588f3b551ecc49091f10c99f57d0575d9bd9ade39f48751e8f5"

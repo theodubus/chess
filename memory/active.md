@@ -20,7 +20,9 @@ Dans l'ordre :
 
 1. À CI verte sur le commit de Théo : clore B-0002, B-0004 et B-0034,
    cocher leurs cases de B-0031, pousser, puis fusionner à CI verte.
-   B-0035 attend la réponse de Théo.
+   Fait pour B-0002 et B-0004. Puis, sur la branche repartie de `main` :
+   clore B-0034, et le retrait de l'ancien script de fin de tour que
+   Théo a validé (D-0012, B-0035), relu avant le push.
 2. Poser le journal du carnet (B-0006), public sans tri (D-0007), en
    refaisant les essais des contrôles sur les fichiers posés ; puis ses
    autres rubriques, le bandeau compris (B-0007) ; puis `CLAUDE.md` en
