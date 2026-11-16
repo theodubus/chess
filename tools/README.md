@@ -481,8 +481,9 @@ tools/mutants.sh --file engine/src/tt.rs -j4
 
 Le workflow qui l'exécute est `.github/workflows/mutation.yml` ; son verdict
 est rendu par `.github/mutation-verdict.sh`, éprouvé par
-`.github/mutation-verdict-test.sh`. Le reste de l'outillage automatique — les
-deux hooks de `.claude/` et leur auto-test `tools/verify-hooks.sh` — est
+`.github/mutation-verdict-test.sh`. Le reste de l'outillage automatique — le
+hook de chess, `.claude/hooks/no-fabricated-sha.sh`, et l'auto-test des hooks,
+`tools/verify-hooks.sh` — est
 décrit dans `CLAUDE.md`, section « Ce qui tourne tout seul ».
 
 **Toujours passer par `tools/mutants.sh`, jamais par `cargo mutants` nu.** Il

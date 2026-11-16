@@ -76,10 +76,10 @@ cas "settings.json est du JSON valide"        jq -e . .claude/settings.json
 # Depuis D-0009 (13 nov. 2026), le démarrage et la fin de tour n'ont plus que
 # les hooks du socle ; chess garde le sien avant chaque outil. Chaque cas
 # cherche son hook dans toute la liste de son moment, jamais à une place :
-# un ordre de déclaration n'est pas une règle. Les deux derniers exigent
-# l'absence des anciens : ils échouent tant que Théo n'a pas retiré leurs
-# blocs (B-0034), ce qui empêche de fusionner une documentation qui les dit
-# déjà partis.
+# un ordre de déclaration n'est pas une règle. Les deux cas « ne … plus »
+# exigent l'absence des anciens, que Théo a retirés le 16 nov. (B-0034) :
+# ils échouaient jusque-là, ce qui empêchait de fusionner une documentation
+# qui les disait déjà partis.
 cas "la fin de tour lance les contrôles du socle" bash -c 'jq -re ".hooks.Stop[].hooks[].command" .claude/settings.json | grep -q "socle hook stop"'
 cas "avant chaque outil, les refus du socle"  bash -c 'jq -re ".hooks.PreToolUse[].hooks[].command" .claude/settings.json | grep -q "socle hook pre-tool-use"'
 cas "le démarrage lance l'état du socle"      bash -c 'jq -re ".hooks.SessionStart[].hooks[].command" .claude/settings.json | grep -q "socle hook session-start"'
@@ -103,18 +103,20 @@ cas "un SHA fabriqué imbriqué est refusé"     sha_refuse "{\"tool_input\":{\"
 echo
 echo "  les hooks se sont-ils déclenchés pour de vrai ?"
 TRACE=".claude/hooks-fired.log"
-if [[ -s "$TRACE" ]]; then
+# Seul le hook d'avant chaque outil écrit encore cette trace. L'ancien hook de
+# fin de tour, retiré le 16 nov. 2026 (D-0012), y a laissé des lignes « Stop »
+# qui ne prouvent plus rien : on ne compte que les siennes.
+VUS="$(grep 'PreToolUse' "$TRACE" 2>/dev/null)"
+if [[ -n "$VUS" ]]; then
   echo "    OUI — Claude Code a chargé et exécuté le hook de chess."
   echo "    (ceux du socle tracent dans .git/socle/hooks.log, que « socle state » compte)"
-  echo "    dernier déclenchement : $(tail -1 "$TRACE")"
-  echo "    déclenchements enregistrés : $(grep -c '' "$TRACE")"
+  echo "    dernier déclenchement : $(tail -1 <<< "$VUS")"
+  echo "    déclenchements enregistrés : $(grep -c '' <<< "$VUS")"
 else
-  echo "    PAS ENCORE — aucune trace dans $TRACE."
-  echo "    Soit Claude Code ne l'a pas chargé, soit aucun outil n'a été appelé"
-  echo "    depuis. Les hooks d'un .claude/ créé APRÈS le démarrage"
-  echo "    d'une session ne sont pas chargés par cette session-là ; une session"
-  echo "    démarrée ensuite les trouve en place. Relancer ce script dans une"
-  echo "    nouvelle session tranche."
+  echo "    PAS ENCORE — aucune trace du hook d'avant chaque outil dans $TRACE."
+  echo "    Soit Claude Code ne l'a pas chargé, soit aucun appel à Bash, Edit,"
+  echo "    Write ou aux outils GitHub n'a eu lieu depuis. Relancer ce script"
+  echo "    après un tel appel tranche."
 fi
 
 echo
