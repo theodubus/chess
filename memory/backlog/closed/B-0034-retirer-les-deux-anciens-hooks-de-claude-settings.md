@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0034 — Retirer les deux anciens hooks de .claude/settings.json
 
-> statut : ouvert · origine : J-2026-11-13-C · pour : humain · priorité : haute · lu : backlog@ee2b0d3d
+> statut : fait · origine : J-2026-11-13-C · ref : commit:d734a1ce60cfd28b25a7cb4a6956a027550a184f · pour : humain · priorité : haute · lu : backlog@ee2b0d3d
 
 Théo a validé D-0009 : ne garder, au démarrage et en fin de tour, que les
 hooks du socle. Le fichier qui les déclare, `.claude/settings.json`, est
@@ -51,4 +51,4 @@ dans la liste `SessionStart`, celui dont la commande finit par
 
 ## Fait quand
 
-- [ ] le commit de Théo est sur la branche, et la CI du socle passe
+- [x] le commit de Théo est sur la branche, et la CI du socle passe

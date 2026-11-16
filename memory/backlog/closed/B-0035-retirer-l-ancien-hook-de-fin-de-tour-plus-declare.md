@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0035 — Retirer l'ancien hook de fin de tour, plus déclaré
 
-> statut : ouvert · origine : J-2026-11-13-C · priorité : basse · après : B-0034 · lu : backlog@8b95067e
+> statut : fait · origine : J-2026-11-13-C · ref : J-2026-11-16-B · priorité : basse · après : B-0034 · lu : backlog@8b95067e
 
 Après le geste de Théo (B-0034), .claude/hooks/verify-on-stop.sh (retiré le 16 nov., D-0012) n'est
 plus déclaré : le hook de fin de tour du socle lance les mêmes étapes. Le
