@@ -16,7 +16,9 @@
 //! La deuxième version balayait une **liste écrite à la main**. C'était encore
 //! mon jugement qui décidait de la couverture — la faute exacte qu'elle devait
 //! empêcher. **Le contrôle parcourt maintenant tout le dépôt** : un fichier
-//! Markdown créé demain est couvert sans que personne ait à y penser.
+//! Markdown créé demain est couvert sans que personne ait à y penser. Seul le
+//! journal de la mémoire en est écarté (D-0013) : il est en ajout seul, et un
+//! chiffre qu'il porte est une trace datée, que rien ne peut mettre à jour.
 //!
 //! Un chiffre de référence faux est **pire qu'absent** : il sert de point de
 //! comparaison à la session suivante, qui croit mesurer une régression là où
@@ -407,22 +409,54 @@ fn le_parcours_ecarte_le_journal_de_la_memoire_et_rien_d_autre() {
         !noms.iter().any(|n| n.starts_with("memory/journal/")),
         "le journal a été parcouru : {noms:?}"
     );
+
+    // « Rien d'autre » : chaque fichier Markdown de la mémoire hors du
+    // journal, trouvé par un parcours indépendant de celui du test, est
+    // parcouru. Une exclusion trop large, tous les dossiers de la mémoire par
+    // exemple, ferait tomber ce cas ; celle de tout dossier nommé `journal`,
+    // le cas de l'arbre fabriqué, plus bas.
+    fn tous_les_md(dossier: &Path, racine: &Path, trouves: &mut Vec<String>) {
+        for entree in std::fs::read_dir(dossier).unwrap().flatten() {
+            let chemin = entree.path();
+            if chemin.is_dir() {
+                tous_les_md(&chemin, racine, trouves);
+            } else if chemin.extension().is_some_and(|e| e == "md") {
+                let relatif = chemin.strip_prefix(racine).unwrap().display().to_string();
+                trouves.push(relatif);
+            }
+        }
+    }
+    let mut memoire = Vec::new();
+    tous_les_md(&root.join("memory"), root, &mut memoire);
+    let attendus: Vec<&String> = memoire
+        .iter()
+        .filter(|n| !n.starts_with("memory/journal/"))
+        .collect();
     assert!(
-        noms.contains(&"memory/active.md"),
-        "le reste de la mémoire n'est plus parcouru : {noms:?}"
+        attendus.iter().any(|n| n.matches('/').count() > 1),
+        "aucun fichier en sous-dossier de la mémoire hors du journal : le cas ne prouve rien"
     );
+    for attendu in attendus {
+        assert!(
+            noms.contains(&attendu.as_str()),
+            "{attendu} n'est plus parcouru : l'exclusion déborde du journal"
+        );
+    }
 }
 
 #[test]
 fn une_ligne_illisible_n_est_refusee_que_hors_du_journal() {
     // Sur un arbre fabriqué : la même ligne marquée et illisible, dans un
-    // fichier ordinaire et dans le journal. Seule la première est lue, et
-    // refusée ; la seconde n'est jamais lue.
+    // fichier ordinaire, dans un autre dossier nommé `journal`, et dans le
+    // journal de la mémoire. Les deux premières sont lues, et refusées ; la
+    // dernière n'est jamais lue.
     let root = std::env::temp_dir().join(format!("bench-reference-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&root);
     std::fs::create_dir_all(root.join(JOURNAL)).unwrap();
     let ligne = "référence à la profondeur <n> : <nombre> nœuds\n";
     std::fs::write(root.join("README.md"), ligne).unwrap();
+    std::fs::create_dir_all(root.join("autre/journal")).unwrap();
+    std::fs::write(root.join("autre/journal/notes.md"), ligne).unwrap();
     std::fs::write(root.join(JOURNAL).join("2026-09.md"), ligne).unwrap();
 
     let docs = documents(&root);
@@ -433,10 +467,14 @@ fn une_ligne_illisible_n_est_refusee_que_hors_du_journal() {
         .collect();
     std::fs::remove_dir_all(&root).unwrap();
 
-    assert_eq!(noms, ["README.md"], "parcourus : {noms:?}");
+    assert_eq!(
+        noms,
+        ["README.md", "autre/journal/notes.md"],
+        "parcourus : {noms:?}"
+    );
     assert_eq!(
         lus,
-        [true],
+        [true, true],
         "la ligne illisible hors du journal doit être refusée"
     );
 }
