@@ -18,7 +18,10 @@ jour du socle passe avant eux ; seule exception, l'inventaire des
 données d'entraînement (B-0026) si son échéance approche. Dans l'ordre :
 
 1. Finir les sujets d'adoption encore ouverts : B-0036 et B-0038, et
-   B-0039, qui demande une décision de Théo.
+   B-0039, qui demande une décision de Théo. S'y ajoute la transition de
+   `tools/README.md` selon le socle (Théo, 17 nov., D-0017,
+   J-2026-11-17-AC), la feuille de route résiduelle retirée, son
+   découpage à soumettre à Théo avant d'écrire.
 2. La mise à jour du socle, avec Théo. La marge du budget de `CLAUDE.md`
    n'est que d'environ 600 octets ; si la section du socle grossit, le
    relever demandera une demande validée.
