@@ -18,7 +18,7 @@ daté de ses points d'état ; sa navigation ; son pied.
 ## Fait quand
 
 - [ ] chaque rubrique du carnet est posée, ou archivée au journal avec un renvoi
-- [ ] de même le bandeau, la navigation et le pied de la page
+- [x] de même le bandeau, la navigation et le pied de la page (J-2026-11-17-B, J-2026-11-17-D)
 - [x] chaque arbitrage est une décision de la mémoire (J-2026-11-17-A)
 - [ ] `memory/canonical.md` reste sous son budget
 - [ ] la première condition de fin de B-0003, sur les entrées du carnet, est cochée
