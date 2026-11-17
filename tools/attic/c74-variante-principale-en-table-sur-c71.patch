@@ -22,18 +22,18 @@ Claude-Session: https://claude.ai/code/session_011QmyEJPgm9NaJ5124tmeJj
  5 files changed, 185 insertions(+), 37 deletions(-)
 
 diff --git a/CLAUDE.md b/CLAUDE.md
-index f0b7077..55caaa3 100644
+index 3140eac..93862e4 100644
 --- a/CLAUDE.md
 +++ b/CLAUDE.md
-@@ -1342,7 +1342,7 @@ l'inscrire dans le plafond avec sa raison, pas dans une liste de tâches — un
- rapport de mutation vieillit vite, ses numéros de ligne dérivent au premier
- commit.
+@@ -1246,7 +1246,7 @@
+ aux règles du jeu et aux invariants de recherche ; noter le reste dans le
+ plafond, avec sa raison, jamais dans une liste de tâches.
  
 -Référence à la profondeur 7 : 77 429 nœuds.
 +Référence à la profondeur 7 : 85 156 nœuds.
  
- Ce chiffre est **vérifié par la CI**, ici et dans `README.md` — voir
- `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant que
+ Ce chiffre est **vérifié par la CI**, ici comme dans `README.md`, par
+ `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant
 diff --git a/README.md b/README.md
 index 795469e..2616cf4 100644
 --- a/README.md

@@ -484,7 +484,7 @@ est rendu par `.github/mutation-verdict.sh`, éprouvé par
 `.github/mutation-verdict-test.sh`. Le reste de l'outillage automatique — le
 hook de chess, `.claude/hooks/no-fabricated-sha.sh`, et l'auto-test des hooks,
 `tools/verify-hooks.sh` — est
-décrit dans `CLAUDE.md`, section « Ce qui tourne tout seul ».
+décrit dans `CLAUDE.md`, section « Les dispositifs de chess ».
 
 **Toujours passer par `tools/mutants.sh`, jamais par `cargo mutants` nu.** Il
 prend un verrou exclusif et efface `mutants.out/` avant de partir. Le

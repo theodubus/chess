@@ -23,9 +23,19 @@
 
 use std::path::{Path, PathBuf};
 
+/// Les couches gelées de la mémoire : le journal, les demandes et les
+/// décisions portent de l'histoire datée, pas la documentation d'un outil.
+/// Le 17 nov. 2026, l'ancienne section de `CLAUDE.md` qui liste les
+/// dispositifs a été archivée telle quelle au journal (B-0009) : parcouru,
+/// le journal nommait encore chaque dispositif, et en retirer un de
+/// `CLAUDE.md` laissait ce test vert. Écartées par leur chemin, jamais par
+/// leur seul nom, comme dans `bench_reference.rs`.
+const GELEES: [&str; 3] = ["memory/journal", "memory/requests", "memory/decisions"];
+
 /// Les fichiers de documentation du dépôt, parcourus et non énumérés à la
 /// main : une liste écrite à la main laisserait mon jugement décider de la
-/// couverture, ce qui est la faute même que ce test doit empêcher.
+/// couverture, ce qui est la faute même que ce test doit empêcher. Les
+/// couches gelées de la mémoire n'en sont pas (voir [`GELEES`]).
 fn documents(root: &Path) -> Vec<(String, String)> {
     let mut trouves = Vec::new();
     let mut a_visiter = vec![root.to_path_buf()];
@@ -42,6 +52,12 @@ fn documents(root: &Path) -> Vec<(String, String)> {
                 // caché n'est pas de la documentation — sauf `.github`, qui
                 // porte le plafond de mutation et ses explications.
                 if nom == "target" || (nom.starts_with('.') && nom != ".github") {
+                    continue;
+                }
+                if chemin
+                    .strip_prefix(root)
+                    .is_ok_and(|r| GELEES.iter().any(|g| r == Path::new(g)))
+                {
                     continue;
                 }
                 a_visiter.push(chemin);
@@ -175,4 +191,50 @@ fn le_controle_voit_les_dispositifs_quil_doit_voir() {
             "{attendu} devrait être vu par le contrôle ; vus : {noms:?}"
         );
     }
+}
+
+#[test]
+fn les_couches_gelees_de_la_memoire_ne_documentent_rien() {
+    // Sur un arbre fabriqué : un nom de dispositif écrit dans un fichier
+    // ordinaire, dans trois dossiers nommés comme les couches gelées hors de
+    // la mémoire, dans le reste de la mémoire, et dans chaque couche gelée.
+    // Seules les couches gelées sont écartées : une couche s'écarte par son
+    // chemin, jamais par son seul nom. Les trois couches sont écrites ici en
+    // toutes lettres, et non lues dans `GELEES` : un cas qui tirerait ses
+    // attendus de la constante qu'il garde resterait vrai si on la
+    // raccourcissait.
+    let root = std::env::temp_dir().join(format!("outillage-documente-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    let ecrire = |relatif: &str| {
+        let chemin = root.join(relatif);
+        std::fs::create_dir_all(chemin.parent().unwrap()).unwrap();
+        std::fs::write(&chemin, format!("{relatif} nomme sonde.sh\n")).unwrap();
+    };
+    let lus_attendus = [
+        "README.md",
+        "autre/journal/notes.md",
+        "autre/requests/notes.md",
+        "autre/decisions/notes.md",
+        "memory/active.md",
+        "memory/backlog/B-0001.md",
+    ];
+    let ecartes = [
+        "memory/journal/2026-11.md",
+        "memory/requests/D-0001.md",
+        "memory/decisions/ADR-0001.md",
+    ];
+    for relatif in lus_attendus.iter().chain(&ecartes) {
+        ecrire(relatif);
+    }
+
+    let docs = documents(&root);
+    std::fs::remove_dir_all(&root).unwrap();
+    let mut lus: Vec<String> = docs
+        .iter()
+        .map(|(_, texte)| texte.split(' ').next().unwrap().to_owned())
+        .collect();
+    lus.sort();
+    let mut attendus: Vec<String> = lus_attendus.iter().map(|s| (*s).to_owned()).collect();
+    attendus.sort();
+    assert_eq!(lus, attendus, "parcourus : {lus:?}");
 }
