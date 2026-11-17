@@ -12,7 +12,7 @@ moins, d'où le renvoi obligatoire. `CLAUDE.md` doit continuer de nommer
 
 ## Fait quand
 
-- [ ] chaque piège de `CLAUDE.md` tient en trois lignes au plus et cite son récit
-- [ ] aucun piège n'a disparu : leur compte avant et après est écrit au journal
-- [ ] le budget de `CLAUDE.md` est baissé à sa taille nouvelle
+- [x] chaque piège de `CLAUDE.md` tient en trois lignes au plus et cite son récit (J-2026-11-17-T)
+- [x] aucun piège n'a disparu : leur compte avant et après est écrit au journal (J-2026-11-17-U)
+- [x] le budget de `CLAUDE.md` est baissé à sa taille nouvelle
 - [ ] `tools/verify.sh` passe
