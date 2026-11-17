@@ -31,3 +31,14 @@ Par génération, la date du dernier artefact : n° 18 le 14 janv., n° 20 le
 de Théo porte la seule copie. Dire avant le 14 janv. ce qui sert encore
 et ce qui se copie est le sujet B-0026 ; il attend l'adoption du socle,
 mais se fait quoi qu'il en soit à partir du 15 déc. 2026.
+
+## F-0006 — Les six positions perft de référence ont été vérifiées deux fois indépendamment, et engine/tests/perft.rs les exige
+
+> statut : mesuré · preuve : fichier:engine/tests/perft.rs · source : état canonique du carnet, « Acquis solide unique », et sa rubrique perft (J-2026-11-17-B) · date : 2026-09-12
+
+Le 12 sept. 2026, les six positions perft de référence ont été vérifiées
+deux fois, indépendamment : 26 valeurs par python-chess 1.10.0, avec un
+aller-retour exact de chaque FEN, puis les profondeurs 5 et 6 par
+`cozy-chess`. Aucune divergence avec les valeurs publiées. Le test
+`engine/tests/perft.rs` exige ces valeurs, avec l'aller-retour des six
+FEN ; c'est le seul juge de la génération de coups.
