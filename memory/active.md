@@ -5,33 +5,21 @@ Réécrit au fil du travail et borné. Ce qui en sort s'archive dans le journal.
 
 ## En cours
 
-L'adoption du socle, entière, avant tout travail sur le moteur : Théo, le
-12 nov. 2026 (D-0006, D-0008). Le jalon B-0031 dit ce que « finie » veut
-dire.
-
-**Théo, le 16 nov. 2026 : on finit ici l'adoption, et la mise à jour du
-socle vient ensuite** (J-2026-11-16-A). D-0009 est faite et fusionnée
-(pull request 293, J-2026-11-16-B) ; B-0002, B-0004 et B-0034 sont clos,
-l'ancien script de fin de tour est retiré (D-0012, B-0035, pull request
-294), et le journal du carnet est posé (B-0006, pull request 295), le test
-des chiffres du banc écartant les couches gelées de la mémoire (D-0013 à
-D-0015). Le 17 nov., le reste du carnet est dans la mémoire (B-0007,
-J-2026-11-17-L, pull request 296) : ses arbitrages en décisions,
-ADR-0001 à ADR-0025, le reste archivé au journal. Reste la seule condition ouverte du jalon
-B-0031 : `CLAUDE.md` réduit aux règles de travail (B-0003). Ses quatre
-premières sections le sont (B-0008, pull request 297, J-2026-11-17-P), ses
-sections sur la preuve et les dispositifs aussi (B-0009, pull request 298,
-J-2026-11-17-S), et ses pièges de mesure (B-0010, pull request 299,
-J-2026-11-17-V).
+**L'adoption du socle est finie** : le jalon B-0031 est clos le 17 nov.
+2026 (J-2026-11-17-Z). Le carnet de bord est dans la mémoire, et
+`CLAUDE.md` ne porte plus que des règles de travail, 64 Ko pour un budget
+de 65 000 octets (B-0003, pull requests 295 à 300).
 
 ## Prochaines étapes
 
-Dans l'ordre :
-
-1. `CLAUDE.md`, le budget baissé à chaque lot : B-0008, B-0009 et
-   B-0010 sont fusionnés ; reste B-0040. Clore B-0003 par l'inventaire,
-   puis le jalon B-0031.
-2. Ensuite seulement, la mise à jour du socle (Théo, 16 nov.).
+1. La mise à jour du socle, comme Théo l'a dit le 16 nov.
+   (J-2026-11-16-A) : à faire avec lui. La marge du budget de `CLAUDE.md`
+   n'est que d'environ 600 octets ; si la section du socle grossit, le
+   relever demandera une demande validée.
+2. Puis le travail du moteur, que le jalon retenait, dont la mesure du
+   réseau N10r10h512. L'inventaire des données d'entraînement (B-0026)
+   est à faire avant le 14 janv. 2027, date à laquelle elles commencent
+   d'expirer chez GitHub (F-0005).
 
 **Les liens donnés à Théo se présentent en Markdown**, entre crochets le
 texte qui nomme ce qu'ils désignent (D-0015, la pull request 295), puis
