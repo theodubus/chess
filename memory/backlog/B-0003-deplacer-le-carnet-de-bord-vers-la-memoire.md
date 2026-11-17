@@ -36,7 +36,7 @@ l'inventaire : chaque fait de l'ancienne mémoire retrouvé dans la nouvelle.
 
 ## Fait quand
 
-- [ ] les entrées du carnet sont dans la mémoire, ou archivées avec un renvoi
+- [x] les entrées du carnet sont dans la mémoire, ou archivées avec un renvoi (J-2026-11-17-L)
 - [ ] `CLAUDE.md` ne porte plus que des règles de travail
 - [ ] le budget de `CLAUDE.md` est baissé à sa nouvelle taille
 - [ ] les tests de chess qui lisent la documentation passent toujours
