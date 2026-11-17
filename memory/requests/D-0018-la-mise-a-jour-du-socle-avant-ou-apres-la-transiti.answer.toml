@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0018-la-mise-a-jour-du-socle-avant-ou-apres-la-transiti.md, dont l'empreinte suit.
+reponse = "apres"
+texte = ""
+par = "Théo"
+date = "2026-11-17"
+canal = "conversation"
+citation = "Non on mets a jour le socle après cette transition, ça sera plus clean de mettre a jour le socle depuis un repo conforme a une version antérieure du socle plutot qu'un repo d'une version antérieure mais meme pas totalement transitionné \n\nOn fait deja tous les sujets restants puis ensuite mise à jour du socle"
+empreinte = "sha256:cbf9162bb14d6695b68ca98b4b87b00a4246153e5699056c8cbe6af6185157bd"

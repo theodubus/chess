@@ -16,8 +16,8 @@
 # en est » manquait au moment précis où la mémoire venait d'être perdue. Depuis
 # l'adoption du socle, c'est l'état du socle (`python3 .socle/socle state`)
 # qui s'imprime au démarrage : la branche, ce qui n'est pas fusionné, et les
-# branches à faire supprimer, hors celles que la politique garde (ce script,
-# lui, n'exclut que celles de Codex : B-0036).
+# branches à faire supprimer, hors celles que la politique garde, comme ce
+# script depuis B-0036.
 # Théo a validé de ne garder que lui (D-0009) ; la feuille de route, les
 # renvois et l'adresse du carnet, qui n'étaient qu'ici, sont partis avec.
 #
@@ -55,21 +55,47 @@ fi
 # nécessaire : une consigne en prose s'oublie au premier compactage, une ligne
 # calculée à chaque reprise non. Calculé sur les références du dernier
 # `fetch`, donc une branche supprimée depuis peut encore y figurer. Jamais
-# `main`, ni la branche de travail, ni celles de Codex (`codex/…`), qui
-# appartiennent à un autre agent (`CLAUDE.md`, Structure).
-a_supprimer=""
+# `main`, ni la branche de travail, ni celles que la politique garde
+# (`[human] keep_branches` de `.socle/policy.toml`), qui appartiennent à un
+# autre agent ou portent des réseaux (D-0002).
+#
+# Les motifs se lisent dans la politique, et se comparent par la fonction
+# même du socle (`correspond`, `*` ne traversant pas `/`) : recopiés ici, ils
+# ont divergé une fois déjà, ce script n'excluant que `codex/…` quand la
+# politique gardait aussi `reseau/…` et `ccr-…` (B-0036). Si le filtre
+# échoue — politique illisible, socle absent, `python3` absent ou sans
+# `tomllib` —, la ligne le dit avec la dernière ligne de l'erreur, au lieu
+# de proposer des branches gardées ou d'en accuser une cause devinée.
+candidates=""
 while IFS= read -r ref; do
   nom=${ref#origin/}
   case "$nom" in
-    origin|HEAD|main|"$branche"|codex/*) continue ;;
+    origin|HEAD|main|"$branche") continue ;;
   esac
   absents=$(git rev-list --count "origin/main..$ref" 2>/dev/null) || continue
   if [ "$absents" = "0" ]; then
-    a_supprimer="$a_supprimer $nom"
+    candidates="$candidates$nom"$'\n'
   fi
 done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin 2>/dev/null)
-if [ -n "$a_supprimer" ]; then
-  echo "à faire supprimer par Théo — contenues dans main, selon le dernier fetch :$a_supprimer"
+if [ -n "$candidates" ]; then
+  if filtre=$(printf '%s' "$candidates" | python3 -c '
+import sys, tomllib
+from pathlib import Path
+racine = Path(sys.argv[1])
+sys.path.insert(0, str(racine / ".socle" / "engine"))
+from socle.utils import correspond
+politique = tomllib.loads((racine / ".socle" / "policy.toml").read_text(encoding="utf-8"))
+garder = politique.get("human", {}).get("keep_branches", [])
+for nom in sys.stdin.read().split():
+    if not correspond(nom, garder):
+        print(nom)
+' "$ROOT" 2>&1); then
+    if [ -n "$filtre" ]; then
+      echo "à faire supprimer par Théo — contenues dans main, selon le dernier fetch : $(echo $filtre)"
+    fi
+  else
+    echo "branches à faire supprimer : non calculées, le filtre de la politique a échoué : $(printf '%s\n' "$filtre" | tail -n 1)"
+  fi
 fi
 
 # Le signal de documentation. Il ne PRESCRIT rien — il constate, et c'est ce

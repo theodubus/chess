@@ -5,21 +5,28 @@ Réécrit au fil du travail et borné. Ce qui en sort s'archive dans le journal.
 
 ## En cours
 
-**L'adoption du socle est finie** : le jalon B-0031 est clos le 17 nov.
-2026 (J-2026-11-17-Z). Le carnet de bord est dans la mémoire, et
-`CLAUDE.md` ne porte plus que des règles de travail, 64 Ko pour un budget
-de 65 000 octets (B-0003, pull requests 295 à 300).
+**L'adoption reprend pour la documentation** (jalon B-0041). Le jalon
+B-0031 est clos le 17 nov. 2026 (J-2026-11-17-Z) : le carnet de bord est
+dans la mémoire, et `CLAUDE.md` ne porte plus que des règles, 64 Ko pour
+un budget de 65 000 octets. Le même jour, Théo a fait entrer
+`tools/README.md` et le `README.md` de la racine dans l'adoption (D-0017,
+J-2026-11-17-AC), et placé la mise à jour du socle après eux (D-0018,
+J-2026-11-17-AD).
 
 ## Prochaines étapes
 
-1. La mise à jour du socle, comme Théo l'a dit le 16 nov.
-   (J-2026-11-16-A) : à faire avec lui. La marge du budget de `CLAUDE.md`
-   n'est que d'environ 600 octets ; si la section du socle grossit, le
-   relever demandera une demande validée.
-2. Puis le travail du moteur, que le jalon retenait, dont la mesure du
-   réseau N10r10h512. L'inventaire des données d'entraînement (B-0026)
-   est à faire avant le 14 janv. 2027, date à laquelle elles commencent
-   d'expirer chez GitHub (F-0005).
+Dans l'ordre que Théo a fixé (D-0016, D-0018), et que le backlog porte :
+
+1. Le jalon B-0041 : B-0036 et B-0038 ; la demande sur le transport
+   (B-0039) ; la feuille de route résiduelle retirée (B-0042) ; le
+   découpage de la transition soumis à Théo avant d'écrire, sur un
+   inventaire mesuré (B-0043), puis ses lots.
+2. La mise à jour du socle, avec Théo (B-0044). La marge du budget de
+   `CLAUDE.md` n'est que d'environ 600 octets ; si la section du socle
+   grossit, le relever demandera une demande validée.
+3. Puis le travail du moteur, dont la mesure du réseau N10r10h512
+   (B-0012). B-0026 passe devant si son échéance approche : les données
+   commencent d'expirer chez GitHub le 14 janv. 2027 (F-0005).
 
 **Les liens donnés à Théo se présentent en Markdown**, entre crochets le
 texte qui nomme ce qu'ils désignent (D-0015, la pull request 295), puis

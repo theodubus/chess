@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0033 — Faire comparer les nœuds au test de déterminisme de la recherche
 
-> statut : ouvert · origine : J-2026-11-12-H · après : B-0031 · lu : backlog@1b79ad04
+> statut : ouvert · origine : J-2026-11-12-H · après : B-0044 · lu : backlog@1b79ad04
 
 Le test `la_recherche_est_deterministe` de `engine/src/search.rs` compare
 le coup rendu par deux recherches identiques, à la profondeur 4, sur une

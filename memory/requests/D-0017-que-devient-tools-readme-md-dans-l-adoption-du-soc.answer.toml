@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0017-que-devient-tools-readme-md-dans-l-adoption-du-soc.md, dont l'empreinte suit.
+reponse = "C"
+texte = ""
+par = "Théo"
+date = "2026-11-17"
+canal = "conversation"
+citation = "Pour readme de tools on fait C, on doit etre conforme au socle, chaque info de memoire a sa place, meme si ça doit prendre plus de temps, on fait la transition correctement \n(Et retirer aussi la feuille de route residuelle)"
+empreinte = "sha256:edf5d92c58cc5b75662c87648fa30ff6f0241196487fe41ed3ebfed4ff71a9e9"

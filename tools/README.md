@@ -18061,11 +18061,16 @@ perdre, mais pas d'ici : le jeton de session ne peut pas supprimer une
 référence distante (vérifié le 22 sept., section D5). Théo a demandé qu'on
 les lui signale à chaque point de récap, comme toute action humaine
 nécessaire ; `etat.sh` les calcule sur les références du dernier `fetch` —
-jamais `main`, ni la branche de travail, ni celles de Codex (`codex/…`), qui
-appartiennent à un autre agent. La ligne se tait quand il n'y a rien à
-supprimer : c'est pourquoi `tools/etat-test.sh` l'éprouve sur des dépôts
-fabriqués, dans `verify.sh` — chaque exclusion et la détection elle-même,
-quatre fautes injectées, quatre attrapées.
+jamais `main`, ni la branche de travail, ni celles que la politique garde
+(`[human] keep_branches` de `.socle/policy.toml` : un autre agent, les
+réseaux). Il lit les motifs dans la politique et les compare par la
+fonction du socle, depuis le 17 nov. 2026 ; avant, il n'excluait que
+`codex/…` (B-0036). La ligne se tait quand il n'y a rien à supprimer :
+c'est pourquoi `tools/etat-test.sh` l'éprouve sur des dépôts fabriqués,
+dans `verify.sh`, avec leur propre politique : la détection, chaque
+exclusion, pour chaque forme de motif un témoin voisin qui doit rester
+signalé, une politique vide qui doit tout proposer, et un filtre en échec
+qui doit le dire avec sa cause.
 
 `tools/verify.sh` vérifie que le script **rend un état non vide** : un script
 devenu muet ne se verrait pas, on croirait simplement qu'il n'y a rien à dire.

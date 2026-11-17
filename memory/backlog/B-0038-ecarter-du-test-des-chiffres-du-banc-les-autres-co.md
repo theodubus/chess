@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0038 — Écarter du test des chiffres du banc les autres couches gelées que le format connaît
 
-> statut : ouvert · origine : J-2026-11-16-E · après : B-0037 · priorité : basse · lu : backlog@72bb7d4e
+> statut : ouvert · origine : J-2026-11-16-E · après : B-0037, B-0043 · priorité : basse · lu : backlog@72bb7d4e
 
 Le test des chiffres du banc (`engine/tests/bench_reference.rs`) écarte,
 depuis D-0015, trois couches gelées de la mémoire : le journal, les
@@ -19,7 +19,9 @@ que le test lirait.
 Ni l'un ni l'autre n'existe aujourd'hui, et la mémoire privée n'est pas
 configurée. Le jour où l'un apparaît, l'écarter assouplit encore le test :
 c'est à Théo de le décider, et le relevé de la relecture qui l'a trouvé
-(J-2026-11-16-E) en est l'origine.
+(J-2026-11-16-E) en est l'origine. La transition de `tools/README.md`
+pourrait poser les premières archives : la question se tranche avec son
+découpage (B-0043).
 
 ## Fait quand
 
