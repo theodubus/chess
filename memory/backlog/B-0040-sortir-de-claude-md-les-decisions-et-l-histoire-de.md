@@ -20,8 +20,8 @@ Ce qu'ils portent encore, qui n'est pas une règle :
 Même méthode que B-0008 : une décision va dans une décision de la mémoire,
 le récit au journal, `CLAUDE.md` garde la règle et le renvoi, et un script
 vérifie qu'aucun fait chiffré retiré ne se perd. La marge du budget de
-`CLAUDE.md` étant mince (132 000 octets), ce lot passe avant tout ajout
-qui la ferait déborder.
+`CLAUDE.md` étant mince (112 000 octets depuis B-0009), ce lot passe
+avant tout ajout qui la ferait déborder.
 
 ## Fait quand
 

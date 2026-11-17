@@ -20,4 +20,4 @@ Changer la valeur attendue de l'un d'eux demande une validation de Théo.
 - [x] ces deux sections ne portent plus que des règles et la liste des dispositifs (J-2026-11-17-R)
 - [x] chaque fait chiffré retiré se retrouve dans la mémoire ou dans `tools/README.md`, vérifié par un script
 - [x] le budget de `CLAUDE.md` est baissé à sa taille nouvelle
-- [x] `tools/verify.sh` passe sans qu'aucune valeur attendue d'un test ait changé, ou la demande qui l'autorise est répondue (par `socle verify`, qui lance les mêmes étapes)
+- [x] `tools/verify.sh` passe sans qu'aucune valeur attendue d'un test ait changé, ou la demande qui l'autorise est répondue (par `socle verify`, qui lance ces étapes à peu de chose près : le banc à la profondeur 4 au lieu de 7, plus les deux binaires et le balayage vivant)
