@@ -5,7 +5,7 @@
 
 ## Contexte
 
-Décision de Théo sur la version web, portée jusqu'au 17 nov. 2026 par la section « Structure » de `CLAUDE.md`, posée ici quand cette section a été réduite à ses règles, au quatrième lot du déplacement du carnet. Le texte d'avant est archivé au journal.
+Décision de Théo sur la version web, portée jusqu'au 17 nov. 2026 par la section « Structure » de `CLAUDE.md`, posée ici quand cette section a été réduite à ses règles, au quatrième lot du déplacement du carnet. Le texte d'avant est archivé au journal (J-2026-11-17-N@60675684).
 
 ## Décision
 

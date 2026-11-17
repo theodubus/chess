@@ -29,7 +29,8 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   Théo, et l'index des décisions. Il est calculé, jamais recopié.
   `tools/etat.sh` reste un outil à lancer à la main (D-0009).
 - **Les décisions du projet** vivent dans `memory/decisions/`, chacune avec
-  ses raisons ; ce fichier n'en garde que la règle et le renvoi.
+  ses raisons ; les sections déjà réduites de ce fichier n'en gardent que la
+  règle et le renvoi.
 - L'état du moteur : `README.md`, en tête. Le réseau qui joue et son
   facteur des marges : `memory/canonical.md` (F-0007, F-0008).
 - Les verdicts SPRT, avec leurs effectifs, leurs bornes **et leur cadence** :
@@ -307,8 +308,9 @@ l'histoire de leur mise en place et ses mesures sont au journal
   terrain sans un écart.
   **Ne pas la réécrire de tête** : le roque en notation roi-prend-tour et la
   prise en passant sont exactement les cas qu'on rate.
-- **Génération par étapes**, le `MovePicker` : les captures d'abord, arrêt
-  sur coupure bêta, les coups tranquilles seulement si nécessaire.
+- **Génération par étapes**, le `MovePicker` : le coup de la table, puis
+  les captures et promotions, puis les killers, et les coups tranquilles
+  seulement si aucune coupure bêta n'est venue avant.
   **Toucher à l'ordre des coups déplace l'arbre**, même un simple
   changement de tri : un SPRT, pas `timing.sh`.
 - **Coup compacté sur 16 bits pour le stockage** — `tt::pack_move`. La

@@ -64,6 +64,8 @@ sections de `CLAUDE.md` d'avant le 17 nov. (J-2026-11-17-N).
 Les marges de la recherche écrites en unités d'évaluation passent par
 `scaled_margin`, multipliées par `NETWORK_MARGIN_PERCENT` / 100 quand un
 réseau joue : 285, soit 2,85, depuis N5l (14 oct. 2026). Le facteur
-appartient au réseau : chaque réseau embarqué depuis l'a sondé dans la
-plage, N9w50s800 compris, lu contre N8tw50s800. La faite main garde ses
-marges au bit près.
+appartient au réseau : N6r4, N7p4 et N8tw50s800 l'ont sondé dans la
+plage. La sonde de N9w50s800 n'a pu être lue que contre N8tw50s800, les
+journaux de la faite main de référence étant perdus : il ne s'y montre
+pas plus fautif à aucune marge (`tools/README.md`, « La sonde de B8 de
+N9w50s800 »). La faite main garde ses marges au bit près.
