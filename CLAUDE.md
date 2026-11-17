@@ -9,23 +9,13 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 - `ui/` — TypeScript. **Chantier parallèle, avec son propre `ui/CLAUDE.md`
   qui fait autorité sous `ui/`.** Rien de ce fichier-ci ne s'y applique :
   une interface n'a pas de force de jeu, donc ni SPRT, ni perft, ni bench.
-  **Un autre agent, Codex, y travaille en parallèle** sur ses propres branches
-  (`codex/…`) et leurs PR : c'est normal, et ça ne touche qu'à `ui/` (Théo,
-  24 sept. 2026). Ne pas les prendre pour des anomalies, ni les fusionner
-  ou les nettoyer. **Des sessions Claude dédiées à l'interface poussent
-  aussi des branches `ccr-…`**, pour des correctifs de `ui/` seulement
-  (Théo, 19 oct. 2026) : même règle. **Elles ont repris le 2 nov., et
-  c'est voulu** — Théo, 3 nov. 2026 : « *sessions voulues* » (PR #255,
-  #257, #258) ; Codex, lui, reste arrêté depuis fin octobre (Théo,
-  29 oct.), la règle tenant pour ses branches s'il en revient. **La V1 de l'interface est finie** (Théo, 6 oct. 2026) :
-  on y retouchera peut-être, mais toute retouche de `ui/` est **non
-  prioritaire**. **Une version web sur GitHub Pages** (Théo, 27 oct.
-  2026) : un chemin de plus, pour essayer sans installer, quitte à y jouer
-  moins fort — « *l'ajout de cette fonctionnalité ne doit absolument pas
-  impacter ni le fonctionnement ni la performance du moteur* ». Elle prend
-  le binaire du moteur compilé tel quel pour `wasm32-wasip1-threads` et, en
-  repli, `ui/wasm`, qui n'emploie que l'API publique du moteur ; rien dans
-  `engine/` ne s'écrit pour elle.
+  **D'autres agents y poussent leurs branches**, `codex/…` et `ccr-…` : ne
+  pas les prendre pour des anomalies, ni les fusionner, ni les nettoyer
+  (ADR-0026). **Toute retouche de `ui/` est non prioritaire**, sa V1 étant
+  finie (ADR-0027). **La version web** prend le binaire du moteur compilé
+  tel quel pour `wasm32-wasip1-threads` et, en repli, `ui/wasm`, qui
+  n'emploie que l'API publique du moteur : **rien dans `engine/` ne s'écrit
+  pour elle** (ADR-0028).
 - `tools/` — arbitres de match, livre d'ouvertures, SPRT. Voir `tools/README.md`.
 
 ## Par où commencer, sans contexte
@@ -33,189 +23,95 @@ TypeScript qui pilote n'importe quel moteur UCI, y compris celui-ci.
 Ce fichier dit **comment** travailler : invariants, ce qui compte comme preuve,
 pièges déjà payés. Il ne dit pas **où on en est**.
 
-- **L'état du travail en cours est imprimé automatiquement au démarrage et
-  après chaque compactage** par le socle (`python3 .socle/socle state`, sa
-  section en fin de fichier) — branche, commits non fusionnés, CI, backlog,
-  ce qui revient à Théo. Il est calculé, jamais recopié. `tools/etat.sh`,
-  qui le faisait du 22 sept. au 13 nov. 2026, reste un outil à lancer à la
-  main (D-0009).
-- L'état du moteur : `README.md`, en tête.
+- **L'état du travail en cours s'imprime au démarrage et après chaque
+  compactage** (`python3 .socle/socle state`, section du socle en fin de
+  fichier) : branche, commits non fusionnés, CI, backlog, ce qui revient à
+  Théo, et l'index des décisions. Il est calculé, jamais recopié.
+  `tools/etat.sh` reste un outil à lancer à la main (D-0009).
+- **Les décisions du projet** vivent dans `memory/decisions/`, chacune avec
+  ses raisons ; les sections déjà réduites de ce fichier n'en gardent que la
+  règle et le renvoi.
+- L'état du moteur : `README.md`, en tête. Le réseau qui joue et son
+  facteur des marges : `memory/canonical.md` (F-0007, F-0008).
 - Les verdicts SPRT, avec leurs effectifs, leurs bornes **et leur cadence** :
   `tools/README.md`, section *Mesures de référence*. Le compteur n'est pas
-  recopié ici : il vit dans le tableau, et une prose qui le duplique naît
-  périmée.
+  recopié ici : il vit dans le tableau.
 - Ce qui s'exécute sans qu'on l'appelle : section *Ce qui tourne tout seul*,
   plus bas.
-- **La feuille de route est le backlog de la mémoire**, depuis le 12 nov.
-  2026 : l'état en calcule le prochain jalon et les sujets prêts. Celle que
-  Théo avait validée le 31 oct. est retirée de `tools/README.md` (D-0009).
+- **La feuille de route est le backlog de la mémoire** (D-0009) : l'état
+  en calcule le prochain jalon et les sujets prêts.
   Rien ne s'y fait en pilote automatique.
 - Ce qui vieillit sans que rien ne le signale : `tools/README.md`, section
   [« Ce qu'il faut surveiller »](tools/README.md#ce-quil-faut-surveiller--et-que-rien-ne-signalera-tout-seul) ;
   un lien, dont le socle vérifie l'ancre à chaque contrôle.
 - Ce sur quoi travailler : **la file validée**, `tools/README.md`, section
-  *Ce qui reste à faire*, sous-section [*La file*](tools/README.md#la-file--réécrite-le-20-oct-2026-dans-lordre-où-la-faire) — réécrite le 20 oct. 2026
-  dans l'ordre où faire, Théo : « *Je valide tous ces points, tout ce qui
-  vaut le coup d'être testé* » ; « *Le but absolu est la perf* ». **Un test
-  qui vaut le coup n'attend pas de validation** — Théo, 20 oct. : « *as tu
-  vraiment besoin de ma validation ? j'ai dit plein de fois que tout ce qui
-  vaut le coup d'être testé doit être testé* ». Il entre dans la file à son
-  rang — marge estimée contre coût — et se signale au récap suivant. Ce
-  qui se demande encore : ce qui engage Théo hors du test lui-même, et ce
-  qui rouvrirait une décision structurante.
-  **Aucun réglage n'est « résolu » parce qu'une valeur a été validée** —
-  Théo, 20 oct. : « *il ne faut jamais considérer le point comme résolu si
-  on a juste testé et validé une implémentation* » ; « *au pire, on
-  dépriorise les nouveaux tests si la marge à chercher est fine* ». Une
-  valeur validée est une borne basse, pas un optimum, et l'optimum bouge
-  quand la base change. Chaque réglage vit dans le registre des réglages
-  ouverts (`tools/README.md`, « La file ») : sa valeur, ce qui l'a mesuré,
-  la marge estimée, le prochain test, son rang.
-- **Ce qui revient à Théo se dit à chaque point de récap** — toute action
-  humaine nécessaire, et en particulier les branches distantes à supprimer,
-  que le jeton de session ne peut pas supprimer. Théo, 5 oct. 2026 :
-  « *Quand il y a des branches à supprimer, n'hésite pas à m'en informer lors
-  des points de recap (au même titre que n'importe quelle action humaine
-  nécessaire)* ». L'état du socle calcule les branches concernées à chaque
-  reprise, hors celles que la politique garde.
-- **Le socle est installé depuis le 11 nov. 2026** — sa section, en fin de
-  fichier, entre ses marqueurs (J-2026-11-11-B). **Là où elle contredit le
-  reste de ce fichier, ce que Théo a tranché ce jour-là vaut** (D-0002) :
-  **l'agent fusionne lui-même ses pull requests à CI verte**, comme avant —
-  la section dit par défaut que l'humain fusionne, et c'est une ligne de la
-  politique, écrite par Théo, qui lève le refus du hook ; **`ui/` est
-  déclaré tiers** : aucun contrôle du socle ne le juge, ce qui prolonge la
-  règle de « Structure » ; **le balayage de mutation reste celui de chess**
-  (`.github/workflows/mutation.yml` et son cliquet, plus bas), le socle n'en
-  pose pas ; **les branches de réseaux et celles des autres agents se
-  gardent**, jamais proposées à la suppression ; et **ce fichier ne gardera
-  que les règles de travail** — le premier sujet est de déplacer le carnet
-  de bord vers la mémoire. L'adaptateur du socle est propre à chess
-  (`.socle/adapter.toml`) : avec `--fast`, `socle verify` lance les étapes
-  de `tools/verify.sh --rapide` ; sans, celles du job « Moteur » de la CI.
-  Les deux états imprimés au démarrage et les deux hooks de fin de tour,
-  Théo les a tranchés le 12 nov. : seuls ceux du socle restent (D-0009).
-  **Reste ouvert, et se pose avec Théo** : les deux commandes de
-  vérification.
+  *Ce qui reste à faire*, sous-section [*La file*](tools/README.md#la-file--réécrite-le-20-oct-2026-dans-lordre-où-la-faire).
+  **Un test qui vaut le coup n'attend pas de validation** : il entre dans
+  la file à son rang, marge estimée contre coût, et se signale au récap
+  suivant. Ce qui se demande encore : ce qui engage Théo hors du test
+  lui-même, et ce qui rouvrirait une décision structurante. **Aucun réglage
+  n'est « résolu » parce qu'une valeur a été validée** : c'est une borne
+  basse, et chaque réglage vit dans le registre des réglages ouverts de la
+  file (ADR-0032).
+- **Ce qui revient à Théo se dit à chaque point de récap**, en particulier
+  les branches distantes à supprimer, que le jeton de session ne peut pas
+  supprimer (ADR-0033) ; l'état du socle les calcule, hors celles que la
+  politique garde.
+- **Le socle est installé** (J-2026-11-11-B). Là où
+  sa section, en fin de fichier, contredit le reste de ce fichier, ce que
+  Théo a tranché ce jour-là vaut (D-0002) : **l'agent fusionne lui-même ses
+  pull requests à CI verte** ; **`ui/` est déclaré tiers**, aucun contrôle
+  du socle ne le juge ; **le balayage de mutation reste celui de chess** ;
+  **les branches de réseaux et celles des autres agents se gardent** ; et
+  **ce fichier ne garde que les règles de travail**. L'adaptateur du socle
+  est propre à chess (`.socle/adapter.toml`) : avec `--fast`, `socle
+  verify` lance les étapes de `tools/verify.sh --rapide` ; sans, celles du
+  job « Moteur » de la CI.
 
 ## Décisions structurantes
 
 Ces points sont tranchés. Les rouvrir demande un fait technique nouveau —
-une mesure, pas une préférence.
+une mesure, pas une préférence. Chacun vit dans sa décision de la mémoire,
+avec ses raisons ; l'histoire des réseaux embarqués et les mesures qui
+accompagnaient ces lignes sont au journal (J-2026-11-17-N).
 
-- **Génération de coups : `cozy-chess`**, pas un générateur maison. Mesuré : le
-  générateur pèse 2 à 10 % du coût d'un nœud de recherche, donc en écrire un
-  n'achèterait pas de performance mesurable.
-- **Copy-make, pas make/unmake.** `cozy-chess` n'expose pas d'`unmake` et les
-  champs de son `Board` sont privés. Un `Board` fait 104 octets : la copie est
-  bon marché. **Mesuré le 14 sept. 2026 : le copy-make pèse 7,2 % du temps
-  d'un nœud de recherche.** Et il ne ferme pas la porte à NNUE — voir la
-  contrainte d'architecture correspondante.
-- **La cible est la force GÉNÉRALE, pas la force en blitz.** Théo,
-  16 sept. 2026 : « *à terme je veux que le moteur soit fort en général, pas
-  que en blitz.* » Ce n'est pas une nuance de confort : les douze premiers
-  verdicts du projet ont été rendus à `1+0,01`, où le moteur atteint la
-  profondeur 8,5 — et l'un d'eux **change de signe** à `8+0,08`. **Une mesure
-  de force appartient à sa cadence** ; mesurer court revient à optimiser pour
-  un régime qui n'est pas la cible. Conséquence : la cadence d'un verdict est
-  la plus longue à laquelle on obtienne encore un verdict, et `1+0,01` ne sert
-  plus qu'à dégrossir, jamais à trancher.
-- **L'évaluation qui joue est le réseau NNUE embarqué** — **N9w50s800
-  depuis le 22 oct. 2026** (n° 20, séance C1) : la recette de N8tw50s800
-  sur **toutes les données étiquetées par N6r4** — les 94 jobs appris de
-  l'étape B à 5 000 nœuds et les 80 de (e) à 10 000, 3,71 G positions,
-  plus aucune de N5l — : **+5,18 ± 3,29** contre N8tw50s800, 11 200
-  parties à `8+0,08`. Il joue au facteur des marges de `main`, 2,85 : sa
-  sonde, lue contre N8tw50s800 — la faite main de référence perdue avec un
-  conteneur —, ne demande pas plus d'échelle. Avant lui, **N8tw50s800, du
-  21 oct.** (n° 20, séance B) : 800 superlots au poids du
-  résultat 0,5, sur **deux fois plus de données** — les 79 jobs du n° 18 et
-  84 jobs neufs étiquetés par N6r4, 4,63 G positions — : **+5,43 ± 3,34**
-  contre N8tw50, la même recette à 400 superlots, qui battait N7p4 de
-  **+17,91 ± 3,40** en match direct et N7p4w50, la même recette sur les
-  seules données du n° 18, de +7,38 ± 3,40 — *l'axe des données paie à
-  poids et passes fixés, et doubler les passes paie encore, de moins en
-  moins* —, 11 200 parties chacun à `8+0,08`, au facteur des marges de
-  `main`, 2,85, sa sonde mesurant 2,85 dans la plage. Avant
-  lui, **N7p4, du 21 oct. au matin** (n° 20, étape A) : la recette de N6r4
-  au seul nombre de passes près, **400 superlots au lieu de 100** —
-  **+16,89 ± 3,55** contre N6r4, +9,31 ± 3,51 contre N7p2 (200), et devant
-  N6r4w50 — le poids du résultat à 0,5, l'autre axe gagnant, +11,79 contre
-  N6r4 — de **+6,67 ± 3,41** en match direct ; sa sonde mesurait 2,79.
-  Leur composition (N7p4w50) ne s'en sépare pas : +3,35 ± 3,41. Avant lui, **N6r4 du
-  17 oct. 2026** (n° 18) : 256 unités, huit seaux de sortie et **quatre
-  seaux selon la case du roi**, appris sur **1,563 G positions** étiquetées
-  par N5l — × 9,8 ses données — : **+98,74 ± 4,27** contre N5l sur
-  11 200 parties à `8+0,08`. Le volume a renversé les seaux de roi : à dix
-  seaux, +97,30 ± 4,26, et le match direct ne sépare rien (+0,34 ± 3,59) —
-  à force égale, le plus rapide et le plus léger. Sans seaux de roi, le même
-  volume rend +76,99 ± 4,00 ; l'étiqueteur seul +5,52 ± 3,97 ; doubler les
-  données (+7,32) et doubler les passes (+5,49) paient encore, démontrés —
-  d'où le n° 20. Il joue au facteur des marges de `main`, 2,85, sa sonde
-  mesurant 2,49 dans la plage. Avant lui, **N5l du 14 oct.** (n° 17) : les données de N4, un réseau deux fois plus
-  large (256 unités) et huit seaux de sortie selon le matériel, son propre
-  facteur des marges (2,85) — **+30,29 ± 3,95** contre N4 sur 11 200
-  parties à `8+0,08`, malgré × 0,90 de nœuds par seconde. Les mêmes
-  données avec des seaux de ROI régressent : **−58,91 ± 4,45** à quatre
-  seaux, **−133,59 ± 4,93** à dix — sur 159 M de positions, ils
-  n'apprennent pas ce qu'ils retiennent : **mesuré le 14 oct.** sur un job
-  qu'aucun n'avait vu, l'ordre de leurs pertes s'inverse (`nnue_validation.rs`,
-  n° 18 — bullet n'a pas de jeu de validation) ; leurs points de
-  sauvegarde portent la pénalité dès ~6 passes, et aucune perte tenue à
-  l'écart ne remonte en 25. *La largeur paie, les seaux de roi demandent
-  le volume — pas moins de durée.* N4 (13 oct., n° 13) : une vague neuve,
-  étiquetée par le moteur du 7 oct., seule et depuis zéro — **+46,98 ± 4,16** contre N2 et
-  **+5,43 ± 4,23** contre N4L, la même vague puis les données de Leela,
-  qui valait **+14,08 ± 3,74** contre N2L ; ~12 000 parties chacun, à
-  `8+0,08`. *Sur nos meilleures données, l'étage de Leela ne paie plus.*
-  N2L (2 oct., n° 7, levier 4) fermait trois
-  marches, chacune mesurée contre la précédente sur 6 000 parties —
-  **+115,74 ± 6,98** pour des étiquettes du moteur au réseau,
-  **+50,09 ± 6,12** pour deux fois plus de positions, **+16,40 ± 6,20**
-  pour N2 ré-entraîné sur les données de Leela (L0, ces données seules
-  depuis zéro : +10,02 ± 6,19).
-  Le premier réseau (A21, 28 sept.) valait **+330,61 ± 19,21** contre la
-  faite main. La faite main reste — `EvalFile <none>` —, et c'est elle
-  qu'évaluent le banc (`Search::new`) et les tests de recherche, **pas celle
-  qui joue** : voir « c'est plus rapide ».
-- **Les données de Leela Chess Zero sont admises** pour entraîner le réseau.
-  Théo, 29 sept. 2026 : « *ok pour license et le fait qu'on utilise leurs
-  données, mon but est d'avoir le meilleur moteur possible* » — nos données
-  seules, les leurs seules ou les nôtres puis les leurs, **selon ce qui mesure
-  le mieux**. Licence ODbL : **le jour où un réseau entraîné sur elles est
-  embarqué, `README.md` porte la mention d'attribution**, comme celui de
-  Stockfish — **fait le 2 oct. 2026 avec N2L**, section « Remerciements ».
-  N9w50s800, qui joue depuis le 22 oct., n'a rien appris d'elles — ni
-  N8tw50s800, N7p4, N6r4, N5l ni N4 avant lui ; la mention reste, parce que `reseaux/` garde N2L et N4L, qui
-  en ont appris. **Rouvert le 19 oct. (Théo)** : le seul verdict contre
-  elles portait sur un « réglage fin » qui ré-entraînait au pas plein un
-  réseau de 128 unités, une passe sur un seul fichier. **Le vrai réglage
-  fin, mesuré le 20 oct. : il régresse** — N6r4 affiné 20 superlots sur
-  Leela, **−11,42 ± 3,73** au pas 10⁻⁴, rien de démontré à 2·10⁻⁵ ;
-  troisième verdict dans le même sens. Restent à tester le mélange avec
-  nos données, et les architectures plus grandes nourries de ce mélange
-  (`tools/README.md`, n° 20, « (a) et (d) — VERDICT »).
-  Plan et faits vérifiés : `tools/README.md`, section n° 7.
-- **UCI est l'unique frontière** entre le moteur et le reste du monde.
-- **Deux binaires livrés, et la mesure se fait sur le binaire AVX2.** Théo,
-  6 oct. 2026 : « *on livrera deux binaires selon AVX2 ou non* ». `x86-64`
-  tourne partout ; `x86-64-v3` cherche le MÊME arbre — le code est entier —
-  **× 1,235 plus vite au réseau** (mesuré le 6 oct., 20 paires sur 20), et
-  **+32,23 ± 4,84 Elo** à `8+0,08` contre le binaire de base (7 oct., 6 000
-  parties) — l'étalon du temps en prédisait +32,8.
-  `match.yml`, `force.yml` et, depuis le 7 oct., `nnue-datagen.yml` — les
-  mêmes parties à l'octet — bâtissent en v3 par défaut ; en local,
-  `cargo build --release` et `ref.sh` restent au jeu de base, pour que les
-  deux binaires d'une comparaison locale soient bâtis pareil. **Un verdict
-  d'avant le 6 oct. au soir a été rendu sur le binaire de base et le livre
-  de 500** : il ne se compare pas à un verdict d'après sans le dire.
-  **Pour Windows et macOS aussi** — Théo, 7 oct. 2026 : « *tu peux faire
-  pour windows et macOS si c'est pas trop compliqué* » : les deux mêmes
-  binaires sous Windows et sur Mac Intel, le seul natif sur Apple Silicon.
-  **La CI exige le même arbre sur les quatre systèmes** : un binaire qui en
-  chercherait un autre serait un autre moteur sous le même nom, et les
-  matchs, qui ne jouent que sous Linux, ne le verraient pas.
-- **Licence AGPL-3.0-or-later** sur tout le dépôt.
+- **Génération de coups : `cozy-chess`**, pas un générateur maison
+  (ADR-0008) : le générateur pèse peu dans le coût d'un nœud de recherche,
+  et en écrire un n'achèterait pas de performance mesurable.
+- **Copy-make, pas make/unmake** (ADR-0005). `cozy-chess` n'expose pas
+  d'`unmake` et les champs de son `Board` sont privés ; un `Board` est
+  petit, et sa copie bon marché. Elle ne ferme pas la porte à NNUE : voir
+  les contraintes d'architecture.
+- **La cible est la force GÉNÉRALE, pas la force en blitz** (ADR-0029).
+  **Une mesure de force appartient à sa cadence** ; mesurer court revient
+  à optimiser pour un régime qui n'est pas la cible. La cadence d'un
+  verdict est la plus longue à laquelle on obtienne encore un verdict, et
+  `1+0,01` ne sert plus qu'à dégrossir, jamais à trancher.
+- **L'évaluation qui joue est le réseau NNUE embarqué** (F-0007), à son
+  facteur des marges (F-0008). La faite main reste — `EvalFile <none>` —,
+  et c'est elle qu'évaluent le banc (`Search::new`) et les tests de
+  recherche, **pas celle qui joue** : voir « c'est plus rapide ».
+- **Les données de Leela Chess Zero sont admises** pour entraîner le
+  réseau, selon ce qui mesure le mieux (ADR-0030). Licence ODbL : **le jour
+  où un réseau entraîné sur elles est embarqué, `README.md` porte la
+  mention d'attribution**, comme celui de Stockfish ; elle y est, section
+  « Remerciements », et reste tant que `reseaux/` garde un réseau qui en a
+  appris. Plan et mesures : `tools/README.md`,
+  n° 7 et n° 20.
+- **UCI est l'unique frontière** entre le moteur et le reste du monde
+  (ADR-0004).
+- **Deux binaires livrés, et la mesure se fait sur le binaire AVX2**
+  (ADR-0031). `x86-64` tourne partout ; `x86-64-v3` cherche le MÊME arbre,
+  plus vite. `match.yml`, `force.yml` et `nnue-datagen.yml` bâtissent en
+  v3 par défaut ; en local, `cargo build --release` et `ref.sh` restent au
+  jeu de base, pour que les deux binaires d'une comparaison locale soient
+  bâtis pareil. **Un verdict d'avant le 6 oct. 2026 au soir a été rendu sur
+  le binaire de base et le livre de 500** : il ne se compare pas à un
+  verdict d'après sans le dire. **La CI exige le même arbre sur les quatre
+  systèmes** : un binaire qui en chercherait un autre serait un autre
+  moteur sous le même nom, et les matchs, qui ne jouent que sous Linux, ne
+  le verraient pas.
+- **Licence AGPL-3.0-or-later** sur tout le dépôt (ADR-0007, ADR-0025).
 
 ## Invariants du moteur
 
@@ -394,78 +290,36 @@ une mesure, pas une préférence.
 
 ## Contraintes d'architecture
 
-À respecter dès maintenant : chacune coûte cher en rétrofit.
+À respecter : chacune coûte cher en rétrofit. Toutes sont en place ;
+l'histoire de leur mise en place et ses mesures sont au journal
+(J-2026-11-17-N).
 
-- **Drapeau d'arrêt atomique** consulté par la recherche — déjà en place, c'est
-  ce qui rend `stop` et `go infinite` corrects.
-- **Pile de clés Zobrist** pour la détection de répétition — déjà en place dans
-  `Position`.
-- **Pile d'accumulateurs NNUE par ply** — **en place depuis le 26 sept. 2026**
-  (A21, étape 2) : `Search::accumulators`, la racine recalculée, tout le reste
-  DÉRIVÉ par le parent juste avant de descendre — coups, captures de
-  quiescence, coup nul. La dérivation vit dans `engine/src/nnue.rs`, seule
-  copie ; `nnue_probe.rs` l'emploie. L'accumulateur
-  pèse 1 à 4 Ko : il ne peut pas être copié par nœud — mais il n'a pas à
-  l'être. Il vit dans une pile indexée par ply appartenant à `Search`, jamais
-  dans le `Board`, et le copy-make ne l'y oblige pas.
-  **Vérifié le 14 sept. 2026, pas supposé** : `tools/src/bin/nnue_probe.rs`
-  dérive les modifications de l'accumulateur du seul plateau parent et du coup,
-  sans rien demander au `play_unchecked` opaque de `cozy-chess`. La dérivation
-  est confrontée à la vérité terrain sur 283 677 coups — 3 255 roques, 48
-  prises en passant, 13 628 promotions — sans un seul écart, et coûte **2,8 %
-  du temps d'un nœud**. Ne pas réécrire cette dérivation de tête le jour venu :
-  le roque en notation roi-prend-tour et la prise en passant sont exactement
-  les cas qu'on rate.
-- **Génération par étapes** — **pas en place, et mesurée le 22 sept. 2026 :
-  plafond 11,5 % du temps, soit 0,21 pli.** `negamax` génère 26,42 coups par
-  nœud et en cherche 3,97 — 85 % du travail est jeté, et 49 % des nœuds ne
-  cherchent aucun coup tranquille. Mais l'ordonnancement ne pèse que **26,2 %
-  du temps** (mesuré par doublement, 0/24 paires, p = 0,0000), et c'est
-  `negamax` qui en porte 83,8 %, pas la quiescence. **Ce n'est pas non plus
-  une optimisation pure** : le tri est `sort_unstable_by_key`, et passer au
-  tri stable déplace déjà l'arbre de 4,1 % — donc un SPRT, pas `timing.sh`,
-  pour un effet six fois plus petit que la pendule. Chiffres dans
-  `tools/README.md`, code à l'attic. `ordered_moves` remplit d'un
-  bloc une tranche de l'ardoise (`buffer: &mut [(Move, i32)]`, une par ply,
-  allouée une seule fois avec la recherche) puis la trie entièrement ; seul le
-  **filtre tactique** de la quiescence existe (`tactical_only`, qui restreint
-  les destinations par un `AND` de bitboards). La génération par étapes
-  proprement dite — produire les captures, s'arrêter sur coupure bêta, ne
-  générer les coups tranquilles que si nécessaire — <s>reste entièrement à
-  faire</s> **est écrite depuis le 24 sept. 2026 (A18, le `MovePicker`)** et
-  **FUSIONNÉE le même jour : +23,10 ± 6,39 Elo à `8+0,08`**, 5 740 parties,
-  gain démontré. Hors partie, 10 à 14 % plus rapide par nœud, l'arbre
-  inchangé ; en partie, n/s × 1,09 et +0,17 ± 0,07 pli. Protocole, critère et
-  verdict dans `tools/README.md`, section A18.
-- **Coup compacté sur 16 bits pour le stockage** — en place, `tt::pack_move`.
-  La valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
-- **Table de transposition partagée, le jour où la recherche devient
-  parallèle.** **Le jour est venu le 24 sept. 2026** : Lazy SMP (B6) la
-  partage entre fils par un `Arc`, et l'option `Threads` vaut 1 par défaut. **En place depuis le 23 sept. 2026 (B9)** : entrées atomiques,
-  `store` prend `&self`, la table se partage entre fils. <s>Pas en place, et
-  c'est le seul endroit du dépôt où le design actuel bloque une
-  fonctionnalité déjà prévue : `store` prend `&mut self`, ce qui est
-  inexprimable quand plusieurs threads écrivent dans la même table.</s>
-  Historique, gardé pour ses raisons :
-  Le passage à des entrées atomiques (XOR clé/données, qui rend détectable une
-  entrée déchirée sans verrou) est une réécriture contenue de `tt.rs` plus un
-  changement de signature qui traverse `search.rs`.
-  <br>**Écrit et mesuré le 23 sept. 2026, fusionné le même jour** — capacité
-  −1,27 ± 6,34 Elo à `8+0,08`, pas d'effet décelable. Trois
-  résultats. **La réécriture est neutre, prouvée** : à capacité forcée égale,
-  le banc rend 114 028 et 635 210, exactement la référence, avec des empreintes
-  différentes. **Les accès atomiques ne coûtent rien, ils RAPPORTENT** :
-  −4,3 % de temps à la profondeur 10, 15 paires sur 20, p = 0,0192 — la fiche
-  disait le coût « plat », ce qui parlait du *rétrofit*, et personne n'avait
-  vérifié la vitesse monothread ; elle monte. **Le confondant est levé, troisième coin
-  mesuré** : l'empaquetage seul vaut **−4,0 %** (33/44, p = 0,0013), les
-  **atomiques seules −0,2 %** (8/20, p = 0,65). *Le gain est entièrement
-  l'empaquetage ; les accès atomiques ne coûtent rien*, et les deux viennent
-  donc ensemble sans surcoût. Cohérence interne : −4,0 puis −0,2 composent
-  −4,2 contre −4,3 mesuré. Enfin
-  **l'effet de CAPACITÉ est un autre changement** : l'entrée passant de 24 à
-  16 octets, la table double à mémoire constante, et cela demande un SPRT.
-  Chiffres dans `tools/README.md`.
+- **Drapeau d'arrêt atomique** consulté par la recherche : c'est ce qui
+  rend `stop` et `go infinite` corrects.
+- **Pile de clés Zobrist** pour la détection de répétition, dans `Position`.
+- **Pile d'accumulateurs NNUE par ply** : `Search::accumulators`, la racine
+  recalculée, tout le reste DÉRIVÉ par le parent juste avant de descendre
+  — coups, captures de quiescence, coup nul. L'accumulateur pèse 1 à 4 Ko :
+  il ne se copie pas par nœud, il vit dans une pile indexée par ply qui
+  appartient à `Search`, jamais dans le `Board`. La dérivation vit dans
+  `engine/src/nnue.rs`, seule copie, et `nnue_probe.rs` l'emploie : elle
+  part du seul plateau parent et du coup, sans rien demander au
+  `play_unchecked` opaque de `cozy-chess`, et a été confrontée à la vérité
+  terrain sans un écart.
+  **Ne pas la réécrire de tête** : le roque en notation roi-prend-tour et la
+  prise en passant sont exactement les cas qu'on rate.
+- **Génération par étapes**, le `MovePicker` : le coup de la table, puis
+  les captures et promotions, puis les killers, et les coups tranquilles
+  seulement si aucune coupure bêta n'est venue avant.
+  **Toucher à l'ordre des coups déplace l'arbre**, même un simple
+  changement de tri : un SPRT, pas `timing.sh`.
+- **Coup compacté sur 16 bits pour le stockage** — `tt::pack_move`. La
+  valeur zéro code `a1a1`, jamais légal, et sert de marqueur d'absence.
+- **Table de transposition partagée entre fils** : entrées atomiques,
+  `store` prend `&self`, et Lazy SMP la partage par un `Arc` ; l'option
+  `Threads` vaut 1 par défaut. **Changer la taille d'une
+  entrée change la capacité de la table, donc l'arbre** : un SPRT, jamais
+  `timing.sh` seul.
 
 ## Ce qui compte comme preuve
 
