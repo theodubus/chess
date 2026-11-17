@@ -59,11 +59,13 @@ sections de `CLAUDE.md` d'avant le 17 nov. (J-2026-11-17-N).
 
 ## F-0008 — Le facteur des marges du réseau qui joue vaut 2,85
 
-> statut : mesuré · preuve : fichier:engine/src/search.rs · source : `CLAUDE.md`, « Invariants du moteur » et « Décisions structurantes » · date : 2026-10-14
+> statut : mesuré · preuve : fichier:engine/src/search.rs, J-2026-11-17-X · source : `CLAUDE.md`, « Invariants du moteur » et « Décisions structurantes » · date : 2026-10-14
 
-Les marges de la recherche écrites en unités d'évaluation passent par
-`scaled_margin`, multipliées par `NETWORK_MARGIN_PERCENT` / 100 quand un
-réseau joue : 285, soit 2,85, depuis N5l (14 oct. 2026). Le facteur
+L'aspiration et l'élagage delta passent par `scaled_margin`, multipliés
+par `NETWORK_MARGIN_PERCENT` / 100 quand un réseau joue : 285, soit 2,85,
+depuis N5l (14 oct. 2026). La futilité et la marge singulière, mesurées au
+réseau, passent par `network_margin` ; la futilité inverse ne passe par
+aucune des deux. Le facteur
 appartient au réseau : N6r4, N7p4 et N8tw50s800 l'ont sondé dans la
 plage. La sonde de N9w50s800 n'a pu être lue que contre N8tw50s800, les
 journaux de la faite main de référence étant perdus : il ne s'y montre

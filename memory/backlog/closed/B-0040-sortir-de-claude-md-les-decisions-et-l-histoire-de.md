@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0040 — Sortir de CLAUDE.md les décisions et l'histoire des Invariants du moteur et du Style
 
-> statut : ouvert · origine : J-2026-11-17-O · après : B-0010 · lu : backlog@c791ed30
+> statut : fait · origine : J-2026-11-17-O · ref : J-2026-11-17-X · après : B-0010 · lu : backlog@c791ed30
 
 La relecture de B-0008 (J-2026-11-17-O) l'a relevé : les lots prévus pour
 `CLAUDE.md` (B-0008 à B-0010) ne couvrent ni « Invariants du moteur » ni
@@ -25,6 +25,6 @@ avant tout ajout qui la ferait déborder.
 
 ## Fait quand
 
-- [ ] « Invariants du moteur » et « Style » ne portent plus ni décision sans renvoi, ni histoire
-- [ ] chaque fait chiffré retiré se retrouve dans la mémoire ou dans `tools/README.md`, vérifié par un script
-- [ ] le budget de `CLAUDE.md` est baissé à sa taille nouvelle
+- [x] « Invariants du moteur » et « Style » ne portent plus ni décision sans renvoi, ni histoire (J-2026-11-17-X)
+- [x] chaque fait chiffré retiré se retrouve dans la mémoire ou dans `tools/README.md`, vérifié par un script
+- [x] le budget de `CLAUDE.md` est baissé à sa taille nouvelle
