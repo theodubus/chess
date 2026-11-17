@@ -501,26 +501,34 @@ celles-ci, sont au journal (J-2026-11-17-F).
 - **L'état d'un système extérieur se lit, il ne se déduit pas** : une CI
   verte se constate sur son run, jamais d'un `cargo test` local
   (J-2026-09-13-C).
-- **Une position d'échecs écrite dans un test a été exécutée**, jamais
-  dérivée de tête (J-2026-09-13-B).
+- **Une position d'échecs n'entre dans un test qu'après avoir été
+  exécutée** : construite de tête, elle se vérifie d'abord en l'exécutant
+  (J-2026-09-13-B).
 - **Une mesure qui s'avère fausse se corrige, et l'erreur se garde** au
   journal, avec la raison qui la rendait raisonnable.
-- **Une mesure en cours, ou bon marché à lancer, ne se prédit pas : elle
-  s'attend.** Une prédiction réfutée vingt minutes plus tard n'informe de
-  rien.
-- **Avant d'écrire un niveau de confiance, nommer ce qui donnerait tort.**
-  Si c'est la mesure qui tourne, le niveau est du bruit ; si rien ne se
-  nomme, il est arbitraire (J-2026-09-14-A).
-- **« Ça tourne encore, rien à ajouter » est une réponse complète.**
-  Combler une attente fabrique des affirmations sans artefact : Théo a
-  fait ajouter ce déclencheur le 16 sept. 2026, les trois précédents
-  n'ayant pas tenu (J-2026-09-16-C).
+- **Une prédiction ne tient pas lieu de mesure.** Une mesure qui tourne,
+  ou qu'il ne coûte presque rien de lancer, s'attend : quand sa
+  réfutation peut tomber dans vingt minutes, la prédire n'apporte rien,
+  quelle qu'en soit l'issue. Un niveau de confiance nomme ce qui lui
+  donnerait tort : si c'est la mesure qui tourne, il est du bruit ; si
+  rien ne se nomme, il est arbitraire (J-2026-09-14-A). L'attendu écrit
+  *avant* de lancer une mesure, avec sa confiance, pour être confronté à
+  son résultat, est un autre geste, et il reste la règle (« Ce qui
+  compte comme preuve », le critère écrit avant de lancer).
+- **« Ça tourne encore, rien à ajouter » est une réponse complète**,
+  suivie des deux lignes de fin du socle quand le tour a agi. Combler une
+  attente fabrique des affirmations sans artefact. Ce déclencheur a été
+  ajouté le 16 sept. 2026, après une relecture demandée par Théo, quand
+  les règles de la prédiction, écrites le 14, n'avaient pas tenu
+  (J-2026-09-16-C).
 - **Dans une synthèse, une affirmation sur l'état d'un système ou sur un
   résultat à venir renvoie à un artefact regardé dans le même tour**, ou
-  ne s'écrit pas. Les quatre premières erreurs du projet sont nées dans
-  une synthèse destinée à Théo, jamais dans le code. Aucune de ces règles
-  ne se certifie seule : elles étaient écrites le 16 sept., et c'est une
-  relecture demandée par Théo qui a rattrapé la faute.
+  ne s'écrit pas : la synthèse est le lieu où l'on généralise.
+
+**Ces règles ne se certifient pas elles-mêmes.** Le 16 sept. 2026,
+celles de la prédiction étaient écrites depuis deux jours et ont été
+enfreintes : c'est une relecture demandée par Théo, pas une règle, qui a
+rattrapé la faute (J-2026-09-16-C).
 
 ## Pièges de mesure, appris à nos dépens
 
