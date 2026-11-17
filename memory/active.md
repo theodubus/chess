@@ -12,14 +12,19 @@ de 65 000 octets (B-0003, pull requests 295 à 300).
 
 ## Prochaines étapes
 
-1. La mise à jour du socle, comme Théo l'a dit le 16 nov.
-   (J-2026-11-16-A) : à faire avec lui. La marge du budget de `CLAUDE.md`
+**Théo, 17 nov. 2026 (D-0016, J-2026-11-17-AB)** : aucun sujet
+d'adoption ne reste ouvert avant de reprendre les travaux, et la mise à
+jour du socle passe avant eux ; seule exception, l'inventaire des
+données d'entraînement (B-0026) si son échéance approche. Dans l'ordre :
+
+1. Finir les sujets d'adoption encore ouverts : B-0036 et B-0038, et
+   B-0039, qui demande une décision de Théo.
+2. La mise à jour du socle, avec Théo. La marge du budget de `CLAUDE.md`
    n'est que d'environ 600 octets ; si la section du socle grossit, le
    relever demandera une demande validée.
-2. Puis le travail du moteur, que le jalon retenait, dont la mesure du
-   réseau N10r10h512. L'inventaire des données d'entraînement (B-0026)
-   est à faire avant le 14 janv. 2027, date à laquelle elles commencent
-   d'expirer chez GitHub (F-0005).
+3. Puis le travail du moteur, dont la mesure du réseau N10r10h512.
+   B-0026 est à faire avant le 14 janv. 2027, date à laquelle les
+   données commencent d'expirer chez GitHub (F-0005).
 
 **Les liens donnés à Théo se présentent en Markdown**, entre crochets le
 texte qui nomme ce qu'ils désignent (D-0015, la pull request 295), puis

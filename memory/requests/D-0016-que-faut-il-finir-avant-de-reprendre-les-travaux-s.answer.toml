@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0016-que-faut-il-finir-avant-de-reprendre-les-travaux-s.md, dont l'empreinte suit.
+reponse = "adoption-d-abord"
+texte = ""
+par = "Théo"
+date = "2026-11-17"
+canal = "conversation"
+citation = "B0036 38 et 39 sont faits ? On peut se les finir \n\nOn fera la mise a jour du socle avant de reprendre les travaux, je veux plus aucun sujet d'adoption du socle non fait avant de reprendre les travaux (sauf le sujet des donnees d'entrainement si on arrive a la deadline)"
+empreinte = "sha256:f93c1f761a925f095c02adbc054721e806315c009e2b11124563b67a89cc51f2"
