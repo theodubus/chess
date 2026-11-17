@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0036 — Exclure de tools/etat.sh les branches que la politique garde
 
-> statut : ouvert · origine : J-2026-11-13-C · priorité : basse · lu : backlog@70293e4a
+> statut : fait · origine : J-2026-11-13-C · ref : J-2026-11-17-AE · priorité : basse · lu : backlog@70293e4a
 
 `tools/etat.sh` propose à la suppression les branches distantes que
 `main` contient en entier, mais n'en exclut que celles de Codex
@@ -19,4 +19,4 @@ motif, chacun avec son témoin.
 
 ## Fait quand
 
-- [ ] `tools/etat.sh` n'exclut que ce que la politique garde, ni plus ni moins, et `tools/etat-test.sh` le prouve
+- [x] `tools/etat.sh` n'exclut que ce que la politique garde, ni plus ni moins, et `tools/etat-test.sh` le prouve

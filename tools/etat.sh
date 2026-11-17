@@ -62,8 +62,10 @@ fi
 # Les motifs se lisent dans la politique, et se comparent par la fonction
 # même du socle (`correspond`, `*` ne traversant pas `/`) : recopiés ici, ils
 # ont divergé une fois déjà, ce script n'excluant que `codex/…` quand la
-# politique gardait aussi `reseau/…` et `ccr-…` (B-0036). Si la politique ne
-# se lit pas, la ligne le dit au lieu de proposer des branches gardées.
+# politique gardait aussi `reseau/…` et `ccr-…` (B-0036). Si le filtre
+# échoue — politique illisible, socle absent, `python3` absent ou sans
+# `tomllib` —, la ligne le dit avec la dernière ligne de l'erreur, au lieu
+# de proposer des branches gardées ou d'en accuser une cause devinée.
 candidates=""
 while IFS= read -r ref; do
   nom=${ref#origin/}
@@ -76,7 +78,7 @@ while IFS= read -r ref; do
   fi
 done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin 2>/dev/null)
 if [ -n "$candidates" ]; then
-  if a_supprimer=$(printf '%s' "$candidates" | python3 -c '
+  if filtre=$(printf '%s' "$candidates" | python3 -c '
 import sys, tomllib
 from pathlib import Path
 racine = Path(sys.argv[1])
@@ -87,12 +89,12 @@ garder = politique.get("human", {}).get("keep_branches", [])
 for nom in sys.stdin.read().split():
     if not correspond(nom, garder):
         print(nom)
-' "$ROOT" 2>/dev/null); then
-    if [ -n "$a_supprimer" ]; then
-      echo "à faire supprimer par Théo — contenues dans main, selon le dernier fetch : $(echo $a_supprimer)"
+' "$ROOT" 2>&1); then
+    if [ -n "$filtre" ]; then
+      echo "à faire supprimer par Théo — contenues dans main, selon le dernier fetch : $(echo $filtre)"
     fi
   else
-    echo "branches à faire supprimer : non calculées, la politique (.socle/policy.toml) ne se lit pas"
+    echo "branches à faire supprimer : non calculées, le filtre de la politique a échoué : $(printf '%s\n' "$filtre" | tail -n 1)"
   fi
 fi
 

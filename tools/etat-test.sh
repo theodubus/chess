@@ -16,10 +16,13 @@
 # argument que `tools/ref-test.sh` : une branche de script qui ne s'exécute
 # qu'à l'occasion s'éprouve sur des cas fabriqués.
 #
-# Chaque motif de la politique a son cas et son témoin, un nom voisin qui ne
-# correspond pas et doit être signalé : sans témoin, un motif trop large
-# passerait. Une politique fabriquée, qui ne garde plus Codex, prouve que les
-# motifs se lisent dans la politique et non dans le script (B-0036).
+# Le dépôt fabriqué porte sa propre politique, des motifs de chaque forme
+# (`**` et `*`), et non une copie de la vraie : Théo peut changer la sienne
+# sans faire tomber ce test. Chaque motif a son cas et son témoin, un nom
+# voisin qui ne correspond pas et doit être signalé : sans témoin, un motif
+# trop large passerait. Une politique vide doit proposer chaque branche
+# gardée : c'est ce qui prouve qu'aucun motif n'est resté recopié dans le
+# script (B-0036). La vraie politique, enfin, doit se lire.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -35,8 +38,8 @@ export GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@test
 
 # Un distant nu, peuplé depuis une source : `main`, une branche fusionnée,
 # une branche en cours, la branche de travail, fusionnée elle aussi, et pour
-# chaque motif de la politique réelle une branche gardée et son témoin, tous
-# fusionnés.
+# chaque motif de la politique fabriquée une branche gardée et son témoin,
+# tous fusionnés.
 GARDEES=(codex/ui reseau/n10 ccr-abc)
 TEMOINS=(codex-ui reseau-n10 ccr-a/b)
 git init -q --bare -b main "$ATELIER/distant.git"
@@ -55,7 +58,9 @@ git init -q -b main "$ATELIER/source"
 git clone -q "$ATELIER/distant.git" "$ATELIER/travail"
 mkdir -p "$ATELIER/travail/tools" "$ATELIER/travail/.socle"
 cp "$ROOT/tools/etat.sh" "$ATELIER/travail/tools/etat.sh"
-cp "$ROOT/.socle/policy.toml" "$ATELIER/travail/.socle/policy.toml"
+POLITIQUE='[human]
+keep_branches = ["reseau/**", "codex/**", "ccr-*"]'
+echo "$POLITIQUE" > "$ATELIER/travail/.socle/policy.toml"
 ln -s "$ROOT/.socle/engine" "$ATELIER/travail/.socle/engine"
 git -C "$ATELIER/travail" switch -q claude/travail
 
@@ -66,21 +71,6 @@ liste_de() {
   ligne=$(grep 'à faire supprimer par Théo' <<<"$1" || true)
   echo " ${ligne##*:} "
 }
-
-# Un motif ajouté à la politique sans son cas ici passerait sans être
-# éprouvé : chaque motif doit garder au moins une branche de GARDEES.
-sans_cas=$(python3 -c '
-import sys, tomllib
-from pathlib import Path
-sys.path.insert(0, sys.argv[1] + "/.socle/engine")
-from socle.utils import correspond
-pol = tomllib.loads(Path(sys.argv[1], ".socle/policy.toml").read_text(encoding="utf-8"))
-for motif in pol.get("human", {}).get("keep_branches", []):
-    if not any(correspond(g, [motif]) for g in sys.argv[2:]):
-        print(motif)
-' "$ROOT" "${GARDEES[@]}")
-if [ -z "$sans_cas" ]; then ok "chaque motif de la politique a son cas"
-else rate "chaque motif de la politique a son cas" "motifs sans cas : $sans_cas"; fi
 
 sortie=$(cd "$ATELIER/travail" && bash tools/etat.sh 2>&1)
 liste=$(liste_de "$sortie")
@@ -101,23 +91,47 @@ for i in "${!GARDEES[@]}"; do
   else rate "son témoin $t, hors du motif, l'est" "$sortie"; fi
 done
 
-# Les motifs viennent de la politique : qu'elle ne garde plus Codex, et
-# Codex est proposé ; qu'elle garde autre chose, et cette chose ne l'est pas.
-printf '[human]\nkeep_branches = ["reseau/**", "ccr-*", "codex-*"]\n' > "$ATELIER/travail/.socle/policy.toml"
+# Les motifs viennent de la politique : vide, elle laisse proposer chaque
+# branche gardée — un motif resté recopié dans le script en garderait une ;
+# qu'elle garde autre chose, et cette chose ne l'est plus.
+echo '[human]
+keep_branches = []' > "$ATELIER/travail/.socle/policy.toml"
 sortie=$(cd "$ATELIER/travail" && bash tools/etat.sh 2>&1)
 liste=$(liste_de "$sortie")
-if [[ "$liste" == *" codex/ui "* && "$liste" != *"codex-ui"* ]]; then
-  ok "les motifs se lisent dans la politique, pas dans le script"
-else rate "les motifs se lisent dans la politique, pas dans le script" "$sortie"; fi
+for g in "${GARDEES[@]}"; do
+  if [[ "$liste" == *" $g "* ]]; then ok "politique vide : $g est proposée"
+  else rate "politique vide : $g est proposée" "$sortie"; fi
+done
+echo '[human]
+keep_branches = ["codex-*"]' > "$ATELIER/travail/.socle/policy.toml"
+sortie=$(cd "$ATELIER/travail" && bash tools/etat.sh 2>&1)
+liste=$(liste_de "$sortie")
+if [[ "$liste" != *"codex-ui"* && "$liste" == *" codex/ui "* ]]; then
+  ok "un motif nouveau de la politique est suivi"
+else rate "un motif nouveau de la politique est suivi" "$sortie"; fi
 
-# Une politique illisible : la ligne le dit, et le script n'échoue pas.
+# La vraie politique se lit : la ligne n'annonce pas un filtre en échec.
+cp "$ROOT/.socle/policy.toml" "$ATELIER/travail/.socle/policy.toml"
+sortie=$(cd "$ATELIER/travail" && bash tools/etat.sh 2>&1)
+if ! grep -q 'non calculées' <<<"$sortie"; then ok "la vraie politique se lit"
+else rate "la vraie politique se lit" "$sortie"; fi
+
+# Un filtre en échec se dit, avec sa cause, sans rien proposer ni échouer :
+# une politique illisible, puis le socle absent.
 echo 'keep_branches = [' > "$ATELIER/travail/.socle/policy.toml"
 if sortie=$(cd "$ATELIER/travail" && bash tools/etat.sh 2>&1) \
-  && grep -q 'non calculées, la politique' <<<"$sortie" \
+  && grep -q 'non calculées.*TOMLDecodeError' <<<"$sortie" \
   && ! grep -q 'à faire supprimer par Théo' <<<"$sortie"; then
   ok "une politique illisible se dit, sans rien proposer ni échouer"
 else rate "une politique illisible se dit, sans rien proposer ni échouer" "$sortie"; fi
-cp "$ROOT/.socle/policy.toml" "$ATELIER/travail/.socle/policy.toml"
+echo "$POLITIQUE" > "$ATELIER/travail/.socle/policy.toml"
+rm "$ATELIER/travail/.socle/engine"
+if sortie=$(cd "$ATELIER/travail" && bash tools/etat.sh 2>&1) \
+  && grep -q "non calculées.*No module named 'socle'" <<<"$sortie" \
+  && ! grep -q 'à faire supprimer par Théo' <<<"$sortie"; then
+  ok "un socle absent se dit comme tel, sans accuser la politique"
+else rate "un socle absent se dit comme tel, sans accuser la politique" "$sortie"; fi
+ln -s "$ROOT/.socle/engine" "$ATELIER/travail/.socle/engine"
 
 # Plus rien à supprimer : la ligne se tait, au lieu de crier à vide.
 git -C "$ATELIER/source" push -q origin --delete fusionnee "${TEMOINS[@]}" 2>/dev/null
