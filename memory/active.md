@@ -17,10 +17,10 @@ J-2026-11-17-AD).
 
 Dans l'ordre que Théo a fixé (D-0016, D-0018), et que le backlog porte :
 
-1. Le jalon B-0041 : B-0036 et B-0038 ; la demande sur le transport
-   (B-0039) ; la feuille de route résiduelle retirée (B-0042) ; le
-   découpage de la transition soumis à Théo avant d'écrire, sur un
-   inventaire mesuré (B-0043), puis ses lots.
+1. Le jalon B-0041 : B-0036, B-0039 et B-0042 sont faits ; reste le
+   découpage de la transition (B-0043), soumis à Théo en D-0020 et
+   réécrit le 17 nov. selon la nature et l'usage de chaque information,
+   puis ses lots ; B-0038 se tranche avec lui.
 2. La mise à jour du socle, avec Théo (B-0044). La marge du budget de
    `CLAUDE.md` n'est que d'environ 600 octets ; si la section du socle
    grossit, le relever demandera une demande validée.
@@ -28,6 +28,11 @@ Dans l'ordre que Théo a fixé (D-0016, D-0018), et que le backlog porte :
    (B-0012). B-0026 passe devant si son échéance approche : les données
    commencent d'expirer chez GitHub le 24 déc. 2026 (F-0005, corrigé le
    17 nov., J-2026-11-17-AG).
+
+**Le découpage de la documentation range chaque information selon sa
+nature et l'usage qu'on en aura** (Théo, 17 nov. 2026, J-2026-11-17-AJ) :
+ce dont le travail futur dépend ne finit pas seul au journal, moins lu que
+le chantier actif, le backlog ou les faits.
 
 **Les liens donnés à Théo se présentent en Markdown**, entre crochets le
 texte qui nomme ce qu'ils désignent (D-0015, la pull request 295), puis

@@ -1,7 +1,7 @@
 <!-- socle: couche=decisions zone=publique -->
 # ADR-0010 — A8 : Transport : desktop, WebAssembly local, ou moteur distant ? (Question ouverte)
 
-> statut : proposée · date : 2026-09-12 · lu : decisions@b329ae82
+> statut : abandonnée · date : 2026-09-12 · ref : ADR-0041, D-0019 · lu : decisions@b329ae82
 
 ## Contexte
 

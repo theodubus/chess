@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0019-clore-la-question-du-transport-entre-l-interface-e.md, dont l'empreinte suit.
+reponse = "valider"
+texte = "Théo a écrit « constater » : la demande définit la réponse valider comme l'option constater."
+par = "Théo"
+date = "2026-11-17"
+canal = "conversation"
+citation = "D0019 constater"
+empreinte = "sha256:0c9113d80f7fc95a2bb5bc1c788889151a1a4f148a7776735f9057fff39d3b68"

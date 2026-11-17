@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0039 — Faire clore par Théo la question du transport entre l'interface et le moteur (ADR-0010)
 
-> statut : ouvert · origine : J-2026-11-17-G · priorité : basse · lu : backlog@d70d5c02
+> statut : fait · origine : J-2026-11-17-G · ref : D-0019, ADR-0041 · priorité : basse · lu : backlog@d70d5c02
 
 A8, le transport entre l'interface et le moteur (application de bureau,
 WebAssembly local, ou moteur distant), est resté ouvert au carnet :
@@ -20,4 +20,4 @@ de Théo est attendue de toute façon.
 
 ## Fait quand
 
-- [ ] Théo a tranché le transport, et ADR-0010 est close en conséquence
+- [x] Théo a tranché le transport, et ADR-0010 est close en conséquence
