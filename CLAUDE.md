@@ -115,6 +115,9 @@ accompagnaient ces lignes sont au journal (J-2026-11-17-N).
 
 ## Invariants du moteur
 
+Les règles que le code doit tenir. Les mesures qui les ont fondées et
+l'histoire de certaines sont au journal (J-2026-11-17-W).
+
 - **Le roque se convertit à la frontière UCI.** `cozy-chess` emploie la notation
   roi-prend-tour (`e1h1`) pour supporter le Chess960 ; UCI attend `e1g1`. Toute
   entrée passe par `cozy_chess::util::parse_uci_move`, toute sortie par
@@ -132,18 +135,15 @@ accompagnaient ces lignes sont au journal (J-2026-11-17-N).
   négation rend l'alternance structurelle au lieu de dépendre d'un `if`.
 - **Scores de mat = `±(MATE - ply)`.** Bornes d'initialisation = `i32::MIN + 1`,
   jamais un nombre rond choisi avant les scores de mat.
-- **Recherche déterministe.** Aucun hasard non seedé, jamais. Le tirage au sort
-  conservé comme adversaire de référence est seedé par le hash Zobrist.
-  **Nuance depuis la table de transposition** : le résultat dépend désormais de
-  l'état de la table, donc de l'historique de la recherche. Même position *et*
-  même table donnent le même coup ; même position seule ne suffit plus. C'est
-  le comportement normal d'un moteur, pas une entorse à l'invariant.
-  **Seconde nuance, depuis Lazy SMP (B6)** : à plus d'un fil, l'ordonnanceur
-  décide qui écrit le premier dans la table, et deux recherches identiques ne
-  rendent plus le même arbre. **Un fil — le défaut, le banc, les tests de
-  score — reste déterministe au nœud près.** Un test à plusieurs fils
-  n'asserte jamais un arbre ni un score, seulement ce qui tient quel que soit
-  l'ordre : un coup légal, un arrêt, un compte de nœuds.
+- **Recherche déterministe.** Aucun hasard non seedé, jamais ; le tirage au
+  sort conservé comme adversaire de référence est seedé par le hash Zobrist.
+  Le résultat dépend aussi de la table et des historiques, gardés d'un `go`
+  à l'autre et vidés par `ucinewgame` : même position, même table et mêmes
+  historiques donnent le même coup. **À un fil — le défaut, le banc, les tests de
+  score —, la recherche est déterministe au nœud près** ; à plusieurs,
+  l'ordonnanceur décide qui écrit le premier dans la table, et un test
+  n'asserte que ce qui tient quel que soit l'ordre : un coup légal, un
+  arrêt, un compte de nœuds.
 - **Un fil auxiliaire ne décide rien et s'arrête avec la recherche
   principale, panique comprise.** Il cherche la même position sur la même
   table, sans pendule ni rapport ; seul le fil principal rend le coup. Son
@@ -158,13 +158,10 @@ accompagnaient ces lignes sont au journal (J-2026-11-17-N).
   d'une table de transposition.
 - **Une fenêtre ne promet jamais plus qu'un mat atteignable.** À l'entrée de
   `negamax`, hors racine, `alpha` et `beta` se bornent à `-MATE + ply` et
-  `MATE - ply - 1` — l'élagage par distance au mat. Sans lui, une borne
-  héritée d'un ply moins profond remontait comme un SCORE dès qu'un retour de
-  borne la rendait — la quiescence rend `alpha` quand rien ne l'améliore — et
-  `score_to_tt` la poussait hors de ±MATE : **1,82 % des recherches en
-  partie** stockaient un score non représentable (C27, 25 sept. 2026).
-  `une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage` tombe sur l'ancien
-  code dans les deux profils.
+  `MATE - ply - 1`, l'élagage par distance au mat. Sans lui, une borne
+  héritée d'un ply moins profond remonte comme un score, et `score_to_tt`
+  la pousse hors de ±MATE (C27).
+  `une_borne_de_mat_heritee_ne_sort_jamais_de_la_plage` le garde.
 - **Les entrées du réseau NNUE sont celles de l'entraîneur, au commit qu'on
   épingle.** Une case retournée d'un seul côté ne fait rien planter : elle
   entraîne un réseau sur d'autres positions que celles qu'il évaluera, et
@@ -177,42 +174,32 @@ accompagnaient ces lignes sont au journal (J-2026-11-17-N).
 - **Un réseau qui pourrait déborder est refusé au chargement, et une
   évaluation n'annonce jamais un mat.** `Network::from_bytes` borne
   l'accumulateur sur 32 pièces, et chaque poids de sortie à `i16::MAX / QA`
-  = 128 — la condition du produit sur seize bits que le compilateur
-  vectorise (n° 16) ; le produit scalaire se somme en `i32` par tranches
-  de 256 termes — une assertion à la COMPILATION vérifie qu'une tranche
-  tient —, puis en `i64` : aucune largeur ne le fait déborder (n° 17,
-  étape 1) ; la sortie
-  est bornée à `MATE_THRESHOLD - 1`, et une position morte vaut zéro, réseau
-  ou non. Un réseau refusé par `EvalFile` laisse l'évaluation telle qu'elle
-  était, et le dit. **Le réseau embarqué se rejoue contre son entraîneur à
-  chaque build** (`le_reseau_embarque_evalue_comme_son_entraineur`) :
-  remplacer le réseau demande d'y recopier la confrontation que
-  `tools/nnue-train` imprime pour le nouveau, jamais d'assouplir le test.
-  **Un réseau multicouche** (`Arch::layers`, depuis le 2 nov. 2026) : sa
-  première couche dense se calcule en entiers exacts, par les mêmes
-  tranches ; les deux suivantes en `f32`, dans un ordre fixe — jamais de
-  `mul_add` ni de somme réordonnée, sans quoi deux binaires ne rendraient
-  plus la même évaluation, donc plus le même arbre. Un flottant non fini
-  est refusé au chargement.
+  = 128, la condition du produit sur seize bits que le compilateur
+  vectorise ; le produit scalaire se somme en `i32` par tranches de 256
+  termes, dont une assertion à la COMPILATION vérifie qu'une tranche
+  tient, puis en `i64`. La sortie est bornée à `MATE_THRESHOLD - 1`, et
+  une position morte vaut zéro, réseau ou non. Un réseau refusé par
+  `EvalFile` laisse l'évaluation telle qu'elle était, et le dit. **Le
+  réseau embarqué se rejoue contre son entraîneur à chaque build**
+  (`le_reseau_embarque_evalue_comme_son_entraineur`) : remplacer le réseau
+  demande d'y recopier la confrontation que `tools/nnue-train` imprime
+  pour le nouveau, jamais d'assouplir le test. **Un réseau multicouche**
+  (`Arch::layers`) calcule sa première couche dense en entiers exacts, par
+  les mêmes tranches, et les deux suivantes en `f32` dans un ordre fixe —
+  jamais de `mul_add` ni de somme réordonnée, sans quoi deux binaires ne
+  chercheraient plus le même arbre. Un flottant non fini est refusé au
+  chargement.
 - **Une marge écrite en unités d'évaluation se mesure à l'échelle de
-  l'évaluation qui joue.** Les marges de la recherche ont été réglées sur la
-  faite main ; le réseau porte d'autres nombres — pente 2,40 contre la faite
-  main, mesurée là où la futilité tranche. B8, 30 sept. 2026 : l'aspiration
-  et l'élagage delta passent par `scaled_margin`, × 2,24 quand un réseau
-  joue — **+50,50 ± 5,37 Elo** à `8+0,08` ; la futilité inverse, sondée,
-  tient telle quelle. **× 2,85 depuis N5l** (14 oct.), sa sonde le
-  sortant de la plage où le facteur de N2 suffisait — N6r4 (17 oct.),
-  N7p4 et N8tw50s800 (21 oct.) y jouent aussi, leurs sondes (2,49, 2,79
-  et 2,85) dans la plage, puis N9w50s800 (22 oct.), sa sonde lue contre
-  N8tw50s800 et pas plus fautive à aucune marge ; et le facteur qui
-  ramène à la faite main les marges mesurées au réseau est désormais
-  SÉPARÉ et figé à 224 (n° 17) — sans quoi changer de réseau aurait changé
-  le banc. L'échelle ne se transpose donc pas en bloc : **elle se
-  mesure, marge par marge** (`tools/attic/b8-sonde-marges.patch`). **Le
-  facteur appartient au réseau** : en embarquer un autre demande de relancer
-  la sonde, et une marge nouvelle en unités d'évaluation passe par elle. La
-  faite main garde ses marges au bit près — le banc et les tests de
-  recherche n'en voient rien.
+  l'évaluation qui joue**, marge par marge, jamais en bloc
+  (`tools/attic/b8-sonde-marges.patch`). L'aspiration et l'élagage delta
+  passent par `scaled_margin`, au facteur du réseau qui joue (F-0008) ; la
+  futilité et la marge singulière, mesurées au réseau, par `network_margin`,
+  qui les ramène à la faite main par un facteur séparé et figé à 224, sans
+  quoi changer de réseau changerait le banc ; **la futilité inverse, sondée,
+  tient telle quelle**.
+  **Le facteur appartient au réseau** : en embarquer un autre demande de
+  relancer la sonde, et une marge nouvelle en unités d'évaluation passe
+  par elle. La faite main garde ses marges au bit près.
 - **Pas de coupure par la table à la racine.** Il y faut un coup à jouer, pas
   seulement un score.
 - **Une itération d'approfondissement interrompue est jetée**, jamais acceptée :
@@ -231,18 +218,17 @@ accompagnaient ces lignes sont au journal (J-2026-11-17-N).
   viendrait d'un coup qu'on n'a pas le droit de jouer.
 - **Une répétition ne se cherche jamais au-delà du dernier coup nul.** Même
   raison : deux coups nuls de suite recréent la position de départ, au même
-  trait, et la recherche y voyait une nulle — **87,8 % des répétitions
-  qu'elle détectait**, mesuré en partie le 23 sept. 2026 (C23). La borne vit
-  dans `null_marks`, posée au coup nul et retirée au retour : une marque
-  oubliée couperait la fenêtre sur une position étrangère et ferait manquer
-  de VRAIES répétitions, sans qu'aucun autre test ne bronche.
+  trait, et la recherche y voyait une nulle — la plupart des répétitions
+  qu'elle détectait (C23). La borne vit dans `null_marks`, posée au coup nul
+  et retirée au retour : une marque oubliée couperait la fenêtre sur une
+  position étrangère et ferait manquer de vraies répétitions, sans qu'aucun
+  autre test ne bronche.
 - **Le `ply` d'un nœud est sa distance à la racine, et le chemin le mesure.**
   Killers, *improving*, coup précédent, accumulateurs et distance au mat
   s'y indexent ; un appel récursif qui le décale ne fait rien planter, il
   déplace l'arbre — ou rien du tout, quand l'élagage masque ce qu'il
   déplace. **`negamax` le confronte en test à la longueur du chemin**
-  (`path_base`) : deux bancs figés de suite avaient cessé de voir l'appel du
-  coup nul en `ply * 1` — A18, puis C32 (issue #142).
+  (`path_base`), parce qu'un banc figé cesse parfois de le voir.
 - **Une réduction de coup tardif se rattrape toujours.** Si la recherche
   réduite dépasse `alpha`, on recommence à profondeur pleine — sans quoi un bon
   coup mal classé serait perdu. On ne réduit jamais les captures, les
@@ -530,27 +516,17 @@ journal sous le même titre (J-2026-11-17-T).
 
 - Tests écrits en même temps que le code, pas après.
 - Pas d'`unwrap()` ni d'`expect()` hors des tests — la lint les signale.
-- Pas d'`unsafe` : la lint l'interdit — **sauf le SIMD de l'inférence**.
-  Théo, 20 oct. 2026 : « *Si annuler cette décision augmente l'elo long
-  terme, je le fais. Le but absolu est la perf* ». Les conditions, écrites
-  le même jour : confiné à UN module de `engine/src/nnue.rs` qui porte
-  `#[allow(unsafe_code)]` — la lint de l'espace de travail passe alors de
-  `forbid` à `deny`, pour que tout le reste refuse encore —, chaque bloc
-  derrière la détection du jeu d'instructions à l'exécution ou la cible de
-  compilation, et **confronté en test à la version scalaire**, qui reste :
-  même évaluation à l'unité près, donc même arbre. Il entre s'il rend du
-  temps à arbre identique (rejeu, test des signes), comme le chemin A du
-  n° 16. **En place depuis le 20 oct. 2026** : le module `avx2` du produit
-  scalaire de la sortie, **−5,09 % de temps** à arbre identique (120
-  tours, IC −6,07 à −4,11) — le compilateur ne sortait de la forme scalaire
-  que des registres de 128 bits (`tools/README.md`, « La file, phase 2 — le
-  produit scalaire en AVX2 »).
+- Pas d'`unsafe` : la lint l'interdit — **sauf le SIMD de l'inférence**
+  (ADR-0039), confiné à UN module de `engine/src/nnue.rs` qui porte
+  `#[allow(unsafe_code)]` — la lint passe de `forbid` à `deny` pour que
+  tout le reste refuse encore —, chaque bloc derrière la détection du jeu
+  d'instructions ou la cible de compilation, **confronté en test à la
+  version scalaire**, qui reste, et entré seulement s'il rend du temps à
+  arbre identique.
 - Commentaires en français, code et identifiants en anglais.
-- **Les heures s'écrivent à l'heure de Paris** — messages, carnet,
-  documentation (Théo, 6 oct. 2026). Celles d'avant cette date, dans le dépôt
-  comme dans le carnet, sont en UTC, l'horloge du conteneur : deux heures de
-  moins que Paris jusqu'au 25 oct., une ensuite. Seuls les horodatages des
-  rappels programmés restent en UTC, l'API l'exige.
+- **Les heures s'écrivent à l'heure de Paris** (ADR-0040) — messages,
+  journal, documentation. Celles d'avant le 6 oct. 2026 sont en UTC ; les
+  horodatages des rappels programmés aussi, l'API l'exige.
 - Un commentaire explique **pourquoi**, pas **quoi**. Les techniques non
   évidentes (magic bitboards, encodage des coups, conventions UCI) se
   documentent : une session future doit pouvoir reprendre sans tout redécouvrir.
