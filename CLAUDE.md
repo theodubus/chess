@@ -489,6 +489,47 @@ une mesure, pas une préférence.
 | « ce réglage était mauvais, pas la technique » | **Une bissection par le paramètre, pas une intuition** — et la bissection appartient elle aussi à sa cadence. L'élagage par compte de coups a été bissecté à `1+0,01` : seuil `6 + d²` → **−25,2 Elo**, seuil `12 + d²` → **−12,6**, le coût suivant le **risque mesuré** (3,8 % puis 2,0 % des montées d'`alpha` détruites, × 0,53 pour × 0,50, droite par l'origine). J'en avais conclu « il n'y a pas de seuil qui paie sur ce moteur ». **Réfuté le 21 sept. 2026** : à `8+0,08`, sur la base post-C19, les deux seuils sont **H1** — +22,85 ± 9,88 et +17,24 ± 8,51. La bissection était juste, la généralisation ne l'était pas. **Deux points ferment une question que zéro point laisserait ouverte — mais ils ne la ferment qu'à leur cadence.** |
 | « j'ai mesuré le mécanisme, donc je sais » | **Vérifier le dénominateur.** Avant d'écrire LMP j'ai mesuré la part des *coups tranquilles* élagués : 58 % au seuil 6, 40 % au seuil 12, compromis monotone sans genou — d'où « seul un SPRT peut choisir ». En **nœuds**, qui sont ce qui achète de la profondeur, le seuil 12 garde **96 %** de l'économie du seuil 6 : le genou est net. Un chiffre vrai qui répond à une autre question. **Et le dénominateur peut être un ENSEMBLE, pas seulement une grandeur** — 23 sept. 2026 : l'écart entre les deux pendules rend « +60 ms en notre faveur » moyenné sur tous les coups, et **−6 ms** moyenné sur les seuls coups où les deux camps en ont joué autant. Le reste est un artefact de comptage de coups. |
 
+## Avant d'affirmer
+
+Repris du protocole du carnet de bord le 17 nov. 2026 (B-0007) : les
+règles qui ne figuraient pas encore ici. Les autres, et l'histoire de
+celles-ci, sont au journal (J-2026-11-17-F).
+
+- **Une expérience dit ce qu'elle mesure avant de tourner**, et l'on
+  vérifie que ce qu'elle mesure contient bien le phénomène visé. Son
+  résultat et son interprétation s'écrivent séparément.
+- **L'état d'un système extérieur se lit, il ne se déduit pas** : une CI
+  verte se constate sur son run, jamais d'un `cargo test` local
+  (J-2026-09-13-C).
+- **Une position d'échecs n'entre dans un test qu'après avoir été
+  exécutée** : construite de tête, elle se vérifie d'abord en l'exécutant
+  (J-2026-09-13-B).
+- **Une mesure qui s'avère fausse se corrige, et l'erreur se garde** au
+  journal, avec la raison qui la rendait raisonnable.
+- **Une prédiction ne tient pas lieu de mesure.** Une mesure qui tourne,
+  ou qu'il ne coûte presque rien de lancer, s'attend : quand sa
+  réfutation peut tomber dans vingt minutes, la prédire n'apporte rien,
+  quelle qu'en soit l'issue. Un niveau de confiance nomme ce qui lui
+  donnerait tort : si c'est la mesure qui tourne, il est du bruit ; si
+  rien ne se nomme, il est arbitraire (J-2026-09-14-A). L'attendu écrit
+  *avant* de lancer une mesure, avec sa confiance, pour être confronté à
+  son résultat, est un autre geste, et il reste la règle (« Ce qui
+  compte comme preuve », le critère écrit avant de lancer).
+- **« Ça tourne encore, rien à ajouter » est une réponse complète**,
+  suivie des deux lignes de fin du socle quand le tour a agi. Combler une
+  attente fabrique des affirmations sans artefact. Ce déclencheur a été
+  ajouté le 16 sept. 2026, après une relecture demandée par Théo, quand
+  les règles de la prédiction, écrites le 14, n'avaient pas tenu
+  (J-2026-09-16-C).
+- **Dans une synthèse, une affirmation sur l'état d'un système ou sur un
+  résultat à venir renvoie à un artefact regardé dans le même tour**, ou
+  ne s'écrit pas : la synthèse est le lieu où l'on généralise.
+
+**Ces règles ne se certifient pas elles-mêmes.** Le 16 sept. 2026,
+celles de la prédiction étaient écrites depuis deux jours et ont été
+enfreintes : c'est une relecture demandée par Théo, pas une règle, qui a
+rattrapé la faute (J-2026-09-16-C).
+
 ## Pièges de mesure, appris à nos dépens
 
 - **Un verdict appartient à sa cadence, et le signe peut changer avec elle.**
