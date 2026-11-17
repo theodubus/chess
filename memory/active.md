@@ -26,7 +26,8 @@ Dans l'ordre que Théo a fixé (D-0016, D-0018), et que le backlog porte :
    grossit, le relever demandera une demande validée.
 3. Puis le travail du moteur, dont la mesure du réseau N10r10h512
    (B-0012). B-0026 passe devant si son échéance approche : les données
-   commencent d'expirer chez GitHub le 14 janv. 2027 (F-0005).
+   commencent d'expirer chez GitHub le 24 déc. 2026 (F-0005, corrigé le
+   17 nov., J-2026-11-17-AG).
 
 **Les liens donnés à Théo se présentent en Markdown**, entre crochets le
 texte qui nomme ce qu'ils désignent (D-0015, la pull request 295), puis
@@ -35,8 +36,8 @@ l'adresse entre parenthèses ; jamais une adresse brute (Théo, 16 nov.
 
 Le skill de reprise s'applique : deux réveils par tour qui agit, retirés
 à la fin du tour. Le registre des réglages ouverts n'est écrit que dans
-`tools/README.md`, sous-section « La file ». Les données d'entraînement
-expirent chez GitHub à partir du 14 janv. 2027 (F-0005, B-0026).
+`tools/README.md`, sous-section « Les réglages ouverts ». Les données d'entraînement
+expirent chez GitHub à partir du 24 déc. 2026 (F-0005, B-0026).
 
 Livraison, confirmée par Théo : une branche de développement, une seule
 pull request ouverte à la fois, fusionnée par l'agent à CI verte, tous
