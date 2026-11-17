@@ -399,12 +399,12 @@ journal sous le même titre (J-2026-11-17-T).
 - **Un verdict appartient à sa cadence, et le signe peut changer avec
   elle.** Nommer la cadence de chaque verdict ; un budget tiré d'un verdict
   à `1+0,01` n'est qu'un majorant. (J-2026-11-17-T)
-- **La ressource TOTALE consommée n'est pas l'ALLOCATION par unité** : une
-  ressource partagée entre les coups sature, et une réallocation à total
-  constant a deux côtés. (J-2026-11-17-T)
+- **La ressource TOTALE consommée n'est pas l'ALLOCATION par unité** : elle
+  sature, une réallocation a deux côtés, et l'attendu se calcule si
+  l'instrument existe. (J-2026-11-17-T)
 - **Une réallocation à temps constant ne se lit pas en plis moyens**, mais
-  par l'accord avec un oracle à temps plat, jamais avec la
-  base. (J-2026-11-17-T)
+  par l'accord avec un oracle, jamais avec la base ; l'Elo d'un pli d'accord
+  appartient à la règle qui l'achète. (J-2026-11-17-T)
 - **Une comparaison entre réglages qui CHANGENT le déroulement n'est pas
   appariée** : convertir par une grandeur appariée, ou brider la
   phase. (J-2026-11-17-T)
@@ -450,13 +450,13 @@ journal sous le même titre (J-2026-11-17-T).
 - **Un cache de structure de pions ne paie pas sur ce moteur** : ne pas le
   réessayer sans changer de mécanisme. (J-2026-11-17-T)
 - **Une propriété générale assertée sur UNE position passe par chance** : la
-  compter sur un échantillon, redimensionné quand sa marge
-  s'érode. (J-2026-11-17-T)
+  compter sur un échantillon, la borner qualitativement, jamais par un taux,
+  et redimensionner l'échantillon si sa marge s'érode. (J-2026-11-17-T)
 - **Une reformulation justifiée par une mesure INDÉPENDANTE du changement
   n'est pas de l'accommodement** (ADR-0038). (J-2026-11-17-T)
 - **Quand un réglage fait tomber un test, deux réponses seulement sont
-  honnêtes** : reformuler le test, ou contraindre la valeur ; jamais
-  l'assouplir. (J-2026-11-17-T)
+  honnêtes** : reformuler un test qui mesurait autre chose, contraindre la
+  valeur s'il avait raison ; jamais l'assouplir. (J-2026-11-17-T)
 - **Ne jamais faire tourner deux matchs en même temps SUR UNE MÊME MACHINE**
   (ADR-0037) : cœurs par partie × concurrence ≤ cœurs − 1, ce que
   `match.yml` applique. (J-2026-11-17-T)
@@ -464,15 +464,16 @@ journal sous le même titre (J-2026-11-17-T).
   bruit** : nommer ce qu'on désigne, jamais le compter ni le
   situer. (J-2026-11-17-T)
 - **Un changement de TESTS déplace le plafond de mutation**, un changement
-  d'arbre aussi, dans tout fichier que lit le banc :
-  remesurer. (J-2026-11-17-T)
+  d'ARBRE aussi, jusque dans des FICHIERS qu'il ne touche pas ; un mutant
+  qui échappe deux fois appelle un test d'invariant. (J-2026-11-17-T)
 - **Un mutant « de réglage » n'est hors de portée des tests que si rien de
-  DÉTERMINISTE ne dépend du réglage** (ADR-0035). (J-2026-11-17-T)
+  DÉTERMINISTE ne dépend du réglage** (ADR-0035) : 98 survivants d'`eval.rs`
+  s'attrapaient par un nombre de nœuds. (J-2026-11-17-T)
 - **Un garde-fou peut être correct et garder la mauvaise chose** : quelle
   est sa source de vérité, et est-ce la bonne ? (J-2026-11-17-T)
 - **Une assertion qui ne s'est jamais déclenchée ne prouve rien si aucun
-  test n'atteint l'état qu'elle garde** ; un compteur de passages non plus,
-  et il se borne des deux côtés. (J-2026-11-17-T)
+  test n'atteint l'état qu'elle garde** ; un compteur (A21) non plus : les
+  paramètres d'un test décident de ses chemins. (J-2026-11-17-T)
 - **Un garde-fou qui ne couvre qu'une copie d'un chiffre dupliqué ne garde
   rien** : `grep` sur la valeur pour trouver toutes les
   copies. (J-2026-11-17-T)
@@ -488,7 +489,8 @@ journal sous le même titre (J-2026-11-17-T).
   rien : compter les paires gagnantes, et un test des
   signes. (J-2026-11-17-T)
 - **Un mutant sans effet logique qui se dit « attrapé » est un signal, pas
-  un succès** : souvent un test instable. (J-2026-11-17-T)
+  un succès** : une garde tenue par UN fil ne tient que si ce fil
+  tourne. (J-2026-11-17-T)
 - **Un mutant équivalent est souvent du code mort** : se demander si la
   branche est atteignable, et écrire une règle une seule
   fois. (J-2026-11-17-T)
@@ -507,15 +509,18 @@ journal sous le même titre (J-2026-11-17-T).
 - **Une sonde qui prend pour oracle le code qu'elle mesure en hérite les
   fautes** : vérifier ce code sur les cas qu'il détecte. (J-2026-11-17-T)
 - **Un contrefactuel d'ORDRE est biaisé vers l'ordre joué** : un plafond et
-  un minorant, pas un classement. (J-2026-11-17-T)
+  un minorant, pas un classement ; un total de coûts emboîtés est une union,
+  jamais une somme. (J-2026-11-17-T)
 - **Un changement de recherche se mesure sur un commit RÉVOQUÉ aussitôt** :
-  au verdict, révoquer la révocation. (J-2026-11-17-T)
+  fusion en `merge`, pour que son SHA reste atteignable ; au verdict,
+  révoquer la révocation. (J-2026-11-17-T)
 - **Contrôler la vraisemblance avant d'inscrire un chiffre** : un rapport
   rond, nul ou démesuré dit un protocole cassé. (J-2026-11-17-T)
 - **Les arbitres impriment un score courant après chaque partie** : lire la
   dernière ligne, jamais la première. (J-2026-11-17-T)
 - **Un livre d'ouvertures est une condition de validité**, pas un agrément ;
-  une graine le permute sans l'agrandir. (J-2026-11-17-T)
+  des graines distinctes restent la règle, mais une graine permute le livre
+  sans l'agrandir. (J-2026-11-17-T)
 - **Des pièges de ce fichier sont partis dans `tools/pieges-fermes.md`**,
   chacun tenu par un dispositif qui le rend inexprimable. Ceux qui restent
   ci-dessus, seul le jugement les protège ; si un dispositif disparaît, son

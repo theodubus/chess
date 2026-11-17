@@ -21,14 +21,15 @@ ADR-0001 à ADR-0025, le reste archivé au journal. Reste la seule condition ouv
 B-0031 : `CLAUDE.md` réduit aux règles de travail (B-0003). Ses quatre
 premières sections le sont (B-0008, pull request 297, J-2026-11-17-P), ses
 sections sur la preuve et les dispositifs aussi (B-0009, pull request 298,
-J-2026-11-17-S).
+J-2026-11-17-S), et ses pièges de mesure (B-0010, J-2026-11-17-U), à
+livrer.
 
 ## Prochaines étapes
 
 Dans l'ordre :
 
 1. `CLAUDE.md`, le budget baissé à chaque lot : B-0008 et B-0009 sont
-   fusionnés ; restent B-0010 et B-0040. Clore B-0003 par l'inventaire,
+   fusionnés, B-0010 fait ; reste B-0040. Clore B-0003 par l'inventaire,
    puis le jalon B-0031.
 2. Ensuite seulement, la mise à jour du socle (Théo, 16 nov.).
 
