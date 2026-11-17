@@ -24,8 +24,9 @@ B-0031 : `CLAUDE.md` réduit aux règles de travail (B-0003).
 
 Dans l'ordre :
 
-1. `CLAUDE.md` en trois lots (B-0008 à B-0010), le budget baissé à chaque
-   lot. Clore B-0003 par l'inventaire, puis le jalon B-0031.
+1. `CLAUDE.md` en trois lots, le budget baissé à chaque lot : B-0008 est
+   fait (J-2026-11-17-O), à livrer ; restent B-0009 et B-0010. Clore B-0003
+   par l'inventaire, puis le jalon B-0031.
 2. Ensuite seulement, la mise à jour du socle (Théo, 16 nov.).
 
 **Les liens donnés à Théo se présentent en Markdown**, entre crochets le

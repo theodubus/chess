@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0008 — Sortir de CLAUDE.md la structure, les décisions et l'architecture
 
-> statut : ouvert · origine : D-0002 · après : B-0007 · lu : backlog@d5b3b261
+> statut : fait · origine : D-0002 · ref : J-2026-11-17-O · après : B-0007 · lu : backlog@d5b3b261
 
 Quatrième lot (B-0003), le premier qui touche `CLAUDE.md` : ses sections
 « Structure », « Par où commencer », « Décisions structurantes » et
@@ -14,5 +14,5 @@ journal, le réseau qui joue et son facteur des marges dans un fait ;
 
 - [x] ces quatre sections ne portent plus ni verdict, ni histoire, ni état (J-2026-11-17-O)
 - [x] chaque fait chiffré retiré se retrouve dans la mémoire ou dans `tools/README.md`, vérifié par un script (J-2026-11-17-O)
-- [ ] le budget de `CLAUDE.md` dans `.socle/guardrails.toml` est baissé à sa taille nouvelle
-- [ ] `tools/verify.sh` passe, les tests qui lisent la documentation compris
+- [x] le budget de `CLAUDE.md` dans `.socle/guardrails.toml` est baissé à sa taille nouvelle
+- [x] `tools/verify.sh` passe, les tests qui lisent la documentation compris
