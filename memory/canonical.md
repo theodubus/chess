@@ -42,3 +42,28 @@ aller-retour exact de chaque FEN, puis les profondeurs 5 et 6 par
 `cozy-chess`. Aucune divergence avec les valeurs publiées. Le test
 `engine/tests/perft.rs` exige ces valeurs, avec l'aller-retour des six
 FEN ; c'est le seul juge de la génération de coups.
+
+## F-0007 — L'évaluation qui joue est le réseau embarqué N9w50s800, depuis le 22 oct. 2026
+
+> statut : mesuré · preuve : fichier:engine/src/nnue.rs · source : `CLAUDE.md`, « Décisions structurantes », jusqu'au 17 nov. 2026 · date : 2026-10-22
+
+Le binaire embarque `reseaux/n9w50s800-768x4hm-256-s8-800.bin` (constante
+`EMBEDDED` d'`engine/src/nnue.rs`) : `(768 × 4 → 256) × 2 → 1`, quatre
+seaux de roi en miroir, huit seaux de sortie, appris sur 3,71 G positions
+étiquetées par N6r4. Il a battu N8tw50s800 de +5,18 ± 3,29 Elo sur
+11 200 parties à `8+0,08` (`tools/README.md`, n° 20, séance C1).
+L'évaluation faite main reste (`EvalFile <none>`) : c'est elle
+qu'évaluent le banc et les tests de recherche, pas celle qui joue. Les
+réseaux qui l'ont précédé sont au journal, avec les quatre premières
+sections de `CLAUDE.md` d'avant le 17 nov. (J-2026-11-17-N).
+
+## F-0008 — Le facteur des marges du réseau qui joue vaut 2,85
+
+> statut : mesuré · preuve : fichier:engine/src/search.rs · source : `CLAUDE.md`, « Invariants du moteur » et « Décisions structurantes » · date : 2026-10-14
+
+Les marges de la recherche écrites en unités d'évaluation passent par
+`scaled_margin`, multipliées par `NETWORK_MARGIN_PERCENT` / 100 quand un
+réseau joue : 285, soit 2,85, depuis N5l (14 oct. 2026). Le facteur
+appartient au réseau : chaque réseau embarqué depuis l'a sondé dans la
+plage, N9w50s800 compris, lu contre N8tw50s800. La faite main garde ses
+marges au bit près.

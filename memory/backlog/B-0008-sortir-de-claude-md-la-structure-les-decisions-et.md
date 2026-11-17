@@ -12,7 +12,7 @@ journal, le réseau qui joue et son facteur des marges dans un fait ;
 
 ## Fait quand
 
-- [ ] ces quatre sections ne portent plus ni verdict, ni histoire, ni état
-- [ ] chaque fait chiffré retiré se retrouve dans la mémoire ou dans `tools/README.md`, vérifié par un script
+- [x] ces quatre sections ne portent plus ni verdict, ni histoire, ni état (J-2026-11-17-O)
+- [x] chaque fait chiffré retiré se retrouve dans la mémoire ou dans `tools/README.md`, vérifié par un script (J-2026-11-17-O)
 - [ ] le budget de `CLAUDE.md` dans `.socle/guardrails.toml` est baissé à sa taille nouvelle
 - [ ] `tools/verify.sh` passe, les tests qui lisent la documentation compris
