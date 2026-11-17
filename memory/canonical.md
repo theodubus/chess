@@ -22,15 +22,18 @@ qui n'a plus à être lu à chaque fois s'archive dans le journal.
 
 > statut : mesuré · preuve : fichier:README.md · source : audit d'initialisation · date : 2026-11-11
 
-## F-0005 — Les données d'entraînement gardées par GitHub expirent du 14 au 29 janv. 2027
+## F-0005 — Les données d'entraînement gardées par GitHub expirent du 24 déc. 2026 au 29 janv. 2027
 
-> statut : mesuré · preuve : fichier:tools/README.md · source : relevé à l'API de GitHub le 6 nov. 2026, section « Ce qu'il faut surveiller » · date : 2026-11-06
+> statut : mesuré · preuve : J-2026-11-17-AG · source : relevé à l'API de GitHub le 17 nov. 2026, workflow `nnue-datagen.yml` · date : 2026-11-17
 
-Par génération, la date du dernier artefact : n° 18 le 14 janv., n° 20 le
-18, sa suite le 19, n° 21 le 24, n° 22 le 29. Passé ces dates, la machine
-de Théo porte la seule copie. Dire avant le 14 janv. ce qui sert encore
-et ce qui se copie est le sujet B-0026 ; il attend l'adoption du socle,
-mais se fait quoi qu'il en soit à partir du 15 déc. 2026.
+Par génération, la date du dernier artefact : la première vague d'A21
+le 24 déc. 2026, la vague au réseau du 29 sept. le 28 déc., le n° 13 le
+5 janv. 2027, puis le n° 18 le 14 janv., le n° 20 le 18, sa suite le 19,
+le n° 21 le 24, le n° 22 le 29. Passé ces dates, la machine de Théo porte
+la seule copie. Dire avant chacune ce qui sert encore et ce qui se copie
+est le sujet B-0026 ; il attend la mise à jour du socle, sauf si son
+échéance approche (D-0016). Le relevé du 6 nov. ne comptait que les
+générations n° 18 à n° 22 (J-2026-11-17-AG).
 
 ## F-0006 — Les six positions perft de référence ont été vérifiées deux fois indépendamment, et engine/tests/perft.rs les exige
 

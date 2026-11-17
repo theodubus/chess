@@ -44,15 +44,15 @@ pièges déjà payés. Il ne dit pas **où on en est**.
 - Ce qui vieillit sans que rien ne le signale : `tools/README.md`, section
   [« Ce qu'il faut surveiller »](tools/README.md#ce-quil-faut-surveiller--et-que-rien-ne-signalera-tout-seul) ;
   un lien, dont le socle vérifie l'ancre à chaque contrôle.
-- Ce sur quoi travailler : **la file validée**, `tools/README.md`, section
-  *Ce qui reste à faire*, sous-section [*La file*](tools/README.md#la-file--réécrite-le-20-oct-2026-dans-lordre-où-la-faire).
-  **Un test qui vaut le coup n'attend pas de validation** : il entre dans
-  la file à son rang, marge estimée contre coût, et se signale au récap
-  suivant. Ce qui se demande encore : ce qui engage Théo hors du test
+- Ce sur quoi travailler : **les sujets prêts du backlog**, que l'état
+  calcule. **Un test qui vaut le coup n'attend pas de validation** : il
+  entre au backlog à son rang, marge estimée contre coût, et se signale au
+  récap suivant. Ce qui se demande encore : ce qui engage Théo hors du test
   lui-même, et ce qui rouvrirait une décision structurante. **Aucun réglage
   n'est « résolu » parce qu'une valeur a été validée** : c'est une borne
-  basse, et chaque réglage vit dans le registre des réglages ouverts de la
-  file (ADR-0032).
+  basse, et chaque réglage vit dans le
+  [registre des réglages ouverts](tools/README.md#les-réglages-ouverts)
+  (ADR-0032).
 - **Ce qui revient à Théo se dit à chaque point de récap**, en particulier
   les branches distantes à supprimer, que le jeton de session ne peut pas
   supprimer (ADR-0033) ; l'état du socle les calcule, hors celles que la
