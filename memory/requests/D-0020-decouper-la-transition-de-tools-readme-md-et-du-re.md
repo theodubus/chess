@@ -5,31 +5,37 @@
 
 ## Décision demandée
 
-Où ranger les récits de mesures et les verdicts que `tools/README.md` et le `README.md` de la racine portent encore : au journal de la mémoire, une entrée par section, ou dans des fichiers d'archives ; le reste du plan, ci-dessous, va avec la réponse.
+Comment ranger ce que `tools/README.md` et le `README.md` de la racine portent encore, chaque information selon sa nature et l'usage qu'on en aura, pour que l'agent ne perde pas de vue ce dont le travail dépend.
 
 ## Contexte
 
 **Le projet.** ShallowRed est un moteur d'échecs en Rust, qui parle UCI (le protocole standard entre une interface d'échecs et un moteur), avec une interface en TypeScript ; le dépôt est à toi. L'agent qui écrit cette demande est l'assistant qui travaille sur le moteur et sa mémoire.
 
-**Le chantier.** Le socle est l'outillage installé le 11 nov. 2026 qui tient la mémoire du projet en fichiers, dans `memory/`, en couches (des faits vérifiés, des décisions, un journal daté, un backlog, des demandes comme celle-ci), et vérifie leurs règles à chaque commit. Le 17 nov., tu as demandé de finir de l'adopter avant de reprendre le moteur, en scindant `tools/README.md` pour que « chaque info de memoire a sa place, meme si ça doit prendre plus de temps », puis de mettre le socle à jour depuis un dépôt conforme : où chaque information est dans la couche que le socle prévoit. La feuille de route qui restait dans `tools/README.md` en est déjà sortie : chaque ligne ouverte est au backlog, ou dans la « longue traîne » des idées non décidées, gardée au journal et hors du backlog comme tu l'as validé le 12 nov. Dans la même conversation, tu as demandé si le `README.md` de la racine ne méritait pas le même traitement : il suit.
+**Le chantier.** Le socle, installé le 11 nov. 2026, tient la mémoire du projet en fichiers, dans `memory/`, en couches, et vérifie leurs règles à chaque commit. Le 17 nov., tu as demandé de finir de l'adopter avant de reprendre le moteur, en scindant `tools/README.md` pour que « chaque info de memoire a sa place », puis de mettre le socle à jour ; le `README.md` de la racine suit. La feuille de route qui restait dans `tools/README.md` en est sortie : chaque ligne ouverte est au backlog, ou dans la « longue traîne » des idées non décidées, que tu as voulue hors du backlog le 12 nov.
 
-**La question.** Ces deux fichiers mêlent la documentation des outils à 1,5 Mo de récits de mesures. Le choix de leur place est long à défaire en travail (chaque renvoi à reprendre), jamais en information, puisque le texte part entier.
+**La question.** Ces fichiers mêlent la documentation des outils à 1,5 Mo de récits de mesures. Une première version de cette demande les rangeait surtout par volume ; tu as demandé, avant de répondre, si elle séparait bien les choses selon leur nature et l'usage qu'on en aura, le journal étant moins lu que le chantier actif ou le backlog. Elle ne le faisait pas assez : verser les récits entiers au journal y enterrait des faits et des procédures dont le travail dépend. Voici le rangement corrigé.
 
-L'inventaire, mesuré section par section le 17 nov., et le plan commun aux deux réponses :
+**Ce que l'agent voit, et quand.** À chaque démarrage, sont injectés l'état calculé, le chantier actif, les faits (`memory/canonical.md`) et `CLAUDE.md`. Les skills, procédures écrites dans `.claude/skills/`, se chargent quand la tâche correspond à leur description. Le backlog donne le travail prêt. Le journal, lui, ne se lit qu'à la demande : par l'identifiant qu'un fait, une décision ou un renvoi cite, ou par une recherche. Ce qui guide le travail futur doit donc être dans une des premières couches ; le journal garde le pourquoi et le comment d'hier.
 
-| partie | taille | où elle va |
-|---|---|---|
-| documentation des outils : arbitres de matchs, livre d'ouvertures, binaires, scripts | 47 Ko | reste ; ses passages de mesures datées partent, la règle reste |
-| le tableau des verdicts (« Mesures de référence ») : chaque match entre deux versions du moteur, son écart en Elo, son nombre de parties, sa cadence | 50 Ko | **au choix** ; les quelques chiffres sur lesquels des règles s'appuient encore (l'Elo d'un doublement du temps de réflexion, le budget de parties d'un match) deviennent des faits vérifiés |
-| récits des chantiers, de septembre à novembre, numérotés (« n° 9 », « C13 ») : protocoles écrits avant de mesurer, verdicts, lectures des résultats | 1,26 Mo | **au choix** |
-| gestion du temps, autres récits de fin de fichier | 80 Ko | **au choix** |
-| registre des réglages ouverts : chaque valeur réglable du réseau d'évaluation et de la recherche, ce qui l'a mesurée, son gain possible, son prochain test | 13 Ko | deux faits vérifiés (réseau, recherche), une ligne par réglage, chaque prochain test renvoyant à un sujet du backlog ; l'histoire de chaque mesure au même endroit que les récits. Les faits passent de 4,7 à environ 12 Ko, sous leur plafond de 16 Ko pour le fichier entier |
-| « Ce qu'il faut surveiller » | 12 Ko | ce qui touche les outils reste ; ce qui touche l'état du projet (expirations, déclencheurs) devient fait ou sujet daté |
-| `README.md` : son bloc « Statut » et des mesures dans ses sections | 11 Ko sur 21 | un statut de dix lignes au présent, qui renvoie aux faits ; restent la ligne du banc (le nombre de nœuds de référence, qu'un test vérifie) et la mention d'attribution que la licence des données de Leela Chess Zero impose |
+**Le rangement, par nature :**
 
-**Les renvois.** Une trentaine de fichiers renvoient à ces sections par leur nom. Une table des anciens renvois, gardée dans `tools/README.md`, nommerait chaque section partie et sa nouvelle place : elle garde vivants les renvois qu'on ne réécrit pas (messages de commit, entrées passées du journal, qui ne se modifient plus, et quatre workflows de CI, que seul toi peux approuver) ; les autres se réécrivent. Rien ne te reviendra pour les workflows.
+| nature | exemples tirés de ces fichiers | où | quand l'agent le voit |
+|---|---|---|---|
+| règle de travail | « un verdict appartient à sa cadence » | `CLAUDE.md`, déjà | à chaque session |
+| mode d'emploi d'un outil | les arbitres de matchs, `match.yml`, le livre d'ouvertures | reste dans `tools/README.md` | quand on se sert de l'outil |
+| procédure qui se refait | lancer une séance d'entraînement sur ta carte, relever un match, mettre des matchs en commun, embarquer un réseau | un skill par procédure | chargé au moment de la refaire |
+| fait dont le travail dépend | l'Elo d'un doublement du temps de réflexion, la part du réseau dans le temps d'un nœud, le stock de données d'entraînement, l'état de chaque réseau | un fait vérifié, avec sa preuve | à chaque démarrage |
+| réglage ouvert | les 23 valeurs réglables du réseau et de la recherche, avec leur marge et leur prochain test | deux faits, une ligne par réglage | à chaque démarrage |
+| travail décidé | la mesure du réseau à 512 unités | le backlog, déjà | l'état le calcule |
+| idée non décidée | les tables de finale, `MultiPV`, la gestion du temps par un réseau : une quinzaine | un fait qui les liste, une ligne chacune, avec le renvoi à son récit | à chaque démarrage |
+| histoire : protocoles écrits avant de mesurer, verdicts, relèves, raisonnements | 1,3 Mo, dont le tableau des verdicts | le journal, une entrée par section, texte tel quel ; une table des anciens renvois dans `tools/README.md` mène de chaque ancien titre à son entrée | quand un fait ou une recherche y mène |
+| `README.md` de la racine | le bloc « Statut », des mesures dans les sections | un statut de dix lignes au présent, qui renvoie aux faits ; restent la ligne du banc, qu'un test vérifie, et la mention d'attribution de Leela | lu par qui découvre le dépôt |
 
-**L'ordre**, chaque lot relu par un relecteur sans contexte, en pull request, fusionné par l'agent quand la CI est verte : le `README.md` (petit, le plus lu) ; le registre (ce dont le travail du moteur se sert) ; les récits, en quatre ou cinq lots par période ; puis le tableau des verdicts, la table des renvois et les renvois de `CLAUDE.md`, qui ont besoin de toutes les places nouvelles. Un script relève chaque chiffre du texte d'avant et le retrouve après : fait pour `CLAUDE.md` le 17 nov., 218 chiffres, tous retrouvés. Supposé : trois à cinq sessions, le moteur à l'arrêt d'ici là.
+**La méthode, lot par lot.** Avant d'archiver une section, l'agent en extrait les faits, les procédures et les idées, et les pose à leur place ; seul le reste part au journal, entier. La relecture sans contexte de chaque lot vérifie l'extraction : un fait ou une procédure sans place bloque le lot. Un script relève chaque chiffre du texte d'avant et le retrouve après, comme pour `CLAUDE.md` le 17 nov. (218 chiffres, tous retrouvés).
+
+**La limite à connaître.** Les faits ont un plafond de 16 Ko pour le fichier entier ; ils en font 4,7. Les réglages en prendront environ 7, les idées 2 ; les faits extraits des récits pourraient le dépasser. Si c'est le cas, l'agent te demandera de relever ce plafond, à part : c'est un garde-fou, que seul toi peux assouplir.
+
+**L'ordre**, chaque lot en pull request fusionnée à CI verte : le registre et la liste des idées, qui sont le plus utiles au travail ; le `README.md` ; les récits, en quatre ou cinq lots par période, chacun avec son extraction ; puis les verdicts, la table des renvois et les renvois de `CLAUDE.md`. Supposé : quatre à six sessions, le moteur à l'arrêt d'ici là.
 
 ## Éléments cités
 
@@ -37,8 +43,8 @@ L'inventaire, mesuré section par section le 17 nov., et le plan commun aux deux
 - B-0041@c39b6981 — le jalon qui réunit les derniers sujets de l'adoption.
 - B-0038@258d2161 — la question laissée à toi : écarter les archives du test des chiffres du banc, le jour où il en existe.
 - D-0017@79902ee8 — ta décision du 17 nov. de scinder `tools/README.md` selon le socle.
+- D-0004@07480d37 — tes hypothèses validées du 12 nov., dont la huitième : seul un test décidé devient un sujet du backlog.
 - ADR-0030@65596e0a — l'admission des données de Leela, et la mention d'attribution qu'elle impose au `README.md`.
-- D-0019@3cbac288 — ta demande en attente sur le transport entre l'interface et le moteur, l'autre tâche ouverte du jalon.
 
 Le suffixe après `@` est l'empreinte de la version lue de chaque entrée.
 
@@ -46,27 +52,29 @@ Le suffixe après `@` est l'empreinte de la version lue de chaque entrée.
 
 - [`tools/README.md`](https://github.com/theodubus/chess/blob/7aff607154c1f91d5057adf78c79606768c36270/tools/README.md) : la table des matières suffit à voir le mélange.
 - [`README.md`, son bloc « Statut »](https://github.com/theodubus/chess/blob/7aff607154c1f91d5057adf78c79606768c36270/README.md) : les 166 premières lignes.
-- [`memory/canonical.md`, les faits](https://github.com/theodubus/chess/blob/7aff607154c1f91d5057adf78c79606768c36270/memory/canonical.md) : la forme d'un fait.
+- [`memory/canonical.md`, les faits](https://github.com/theodubus/chess/blob/7aff607154c1f91d5057adf78c79606768c36270/memory/canonical.md) : la forme d'un fait, injecté à chaque démarrage.
 
 ## Options
 
-- `journal` — la réponse `valider`. Chaque section part, telle quelle, en une entrée du journal datée du jour du lot, comme les 70 Ko sortis de `CLAUDE.md` le 17 nov. ; une section plus grosse qu'un fichier de journal (plafond de 80 Ko) se découpe par sous-section — les deux plus grosses sont « N° 20 » (225 Ko) et « Ce qui est en vol le 23 sept. » (238 Ko). Retrouver un verdict dans six mois : la table des renvois donne l'identifiant, `socle show` affiche l'entrée, et les contrôles vérifient que chaque renvoi désigne une entrée qui existe. Le journal n'est pas chargé au démarrage : son volume ne pèse que sur la recherche. Effort : huit lots environ, une vingtaine de fichiers de journal de plus. Risque : faible, le texte part tel quel et chaque chiffre est relevé. Réversible : le texte reste entier ; le remettre ailleurs coûte de reprendre les renvois.
-- `archives` — chaque famille de sections part, telle quelle, en un fichier d'un dossier d'archives à créer dans `memory/`, que le format du socle prévoit pour les « documents archivés tels quels » et que les contrôles ne lisent pas ; une entrée de journal par lot le dit. Retrouver un verdict : la table des renvois donne le fichier, puis une recherche dans ce fichier. Effort : cinq lots environ. Deux prix : aucun renvoi vers une archive n'est vérifié ; et le test des chiffres du banc, qui exige que chaque document citant la ligne du banc donne le nombre de nœuds actuel, lirait les anciens nombres des archives et tomberait. Il faudrait l'en écarter, comme il écarte déjà le journal ; c'est l'assouplir, sans risque réel pour un texte figé, et répondre `archives` vaut ton accord (B-0038). Réversible de même : les archives se versent au journal en reprenant les renvois.
+- `valider` — le rangement ci-dessus. Effort : neuf lots environ ; une vingtaine de fichiers de journal de plus, quelques skills, une vingtaine de faits. Risque : faible, chaque chiffre est relevé et chaque extraction relue. Réversible : le texte reste entier au journal ; changer une place coûte de reprendre ses renvois.
+- `idees-au-backlog` — le même, mais chaque idée non décidée devient un sujet du backlog de priorité basse au lieu d'une ligne d'un fait. C'est revenir sur ta huitième hypothèse du 12 nov. ; l'état les listerait alors parmi les sujets prêts. Effort et risque égaux ; réversible de même.
+- `archives` — le même, mais l'histoire va en quelques fichiers d'archives sous `memory/`, que le format du socle prévoit pour les « documents archivés tels quels » et que les contrôles ne lisent pas, au lieu du journal. Un peu moins de lots ; aucun renvoi vers une archive n'est vérifié, et le test des chiffres du banc, qui exige le nombre de nœuds actuel dans chaque document qui cite la ligne du banc, devrait les ignorer, ce qui l'assouplit : répondre `archives` vaut ton accord (B-0038). Réversible : les archives se versent au journal en reprenant les renvois.
 
 ## Conséquences
 
-- Si tu valides (`journal`) : les lots s'enchaînent dans l'ordre dit, chaque fusion signalée au récap ; B-0038, sans archives à écarter, est abandonné.
-- Si tu réponds `archives` : même ordre, archives à la place des entrées ; le test du banc écarte les archives, et B-0038 est fait.
-- Si une ligne du tableau ou l'ordre ne te va pas : réponds `refuser` en la nommant ; la demande est réécrite avec ton changement.
-- Sans réponse : la transition ne commence pas ; la mise à jour du socle et la reprise du moteur attendent.
+- Si tu valides : les lots s'enchaînent dans l'ordre dit, chaque fusion signalée au récap ; B-0038, sans archives, est abandonné.
+- Si tu réponds `idees-au-backlog` ou `archives` : même ordre, avec cette variante.
+- Si une ligne du rangement ne te va pas : réponds `refuser` en la nommant ; la demande est réécrite.
+- Sans réponse : rien de la transition ne commence ; la mise à jour du socle et la reprise du moteur attendent.
 
 ## Recommandation
 
-`journal`, c'est la réponse `valider` : chaque section citable par un identifiant que les contrôles vérifient, sans assouplir aucun test. Vérifié : les tailles, par un script sur le fichier de ce jour ; les plafonds, lus dans les garde-fous du socle ; l'archivage tel quel au journal, déjà fait pour `CLAUDE.md`. Supposé : le nombre de lots et de sessions.
+`valider`. Vérifié : ce qui est injecté au démarrage et ce qui ne l'est pas, lu dans la section du socle de `CLAUDE.md` ; les tailles, par un script sur le fichier de ce jour ; les plafonds, lus dans les garde-fous du socle ; l'archivage tel quel au journal, déjà fait pour `CLAUDE.md`. Supposé : le nombre de lots, de faits et de skills, que l'extraction dira section par section.
 
 ## Réponses possibles
 
-- `valider` — l'option `journal` : les lots s'enchaînent comme dit.
-- `archives` — l'option `archives`, et les archives écartées du test du banc.
-- `refuser` — une ligne du plan ou l'ordre ne va pas : la nommer.
+- `valider` — le rangement par nature : les lots s'enchaînent comme dit.
+- `idees-au-backlog` — le même, les idées non décidées en sujets du backlog.
+- `archives` — le même, l'histoire en archives, écartées du test du banc.
+- `refuser` — une ligne du rangement ne va pas : la nommer.
 - `contexte-insuffisant` — la demande revient à l'agent, qui la réécrit en une demande qui la remplace.
