@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0003 — Déplacer le carnet de bord vers la mémoire
 
-> statut : ouvert · origine : D-0002 · forme : jalon · après : D-0004, B-0005, B-0006, B-0007, B-0008, B-0009, B-0010, B-0040 · priorité : haute · lu : backlog@2b2f5dc4
+> statut : fait · origine : D-0002 · ref : J-2026-11-17-Z · forme : jalon · après : D-0004, B-0005, B-0006, B-0007, B-0008, B-0009, B-0010, B-0040 · priorité : haute · lu : backlog@2b2f5dc4
 
 La décision 4 de Théo (D-0002) : `CLAUDE.md` garde sa marge de budget à
 l'installation, et **le premier sujet de chess** est de déplacer le carnet
@@ -37,6 +37,6 @@ l'inventaire : chaque fait de l'ancienne mémoire retrouvé dans la nouvelle.
 ## Fait quand
 
 - [x] les entrées du carnet sont dans la mémoire, ou archivées avec un renvoi (J-2026-11-17-L)
-- [ ] `CLAUDE.md` ne porte plus que des règles de travail
-- [ ] le budget de `CLAUDE.md` est baissé à sa nouvelle taille
-- [ ] les tests de chess qui lisent la documentation passent toujours
+- [x] `CLAUDE.md` ne porte plus que des règles de travail (J-2026-11-17-Z)
+- [x] le budget de `CLAUDE.md` est baissé à sa nouvelle taille
+- [x] les tests de chess qui lisent la documentation passent toujours (CI de la pull request 300)
