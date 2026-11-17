@@ -19,15 +19,17 @@ D-0015). Le 17 nov., le reste du carnet est dans la mémoire (B-0007,
 J-2026-11-17-L, pull request 296) : ses arbitrages en décisions,
 ADR-0001 à ADR-0025, le reste archivé au journal. Reste la seule condition ouverte du jalon
 B-0031 : `CLAUDE.md` réduit aux règles de travail (B-0003). Ses quatre
-premières sections le sont (B-0008, pull request 297, J-2026-11-17-P).
+premières sections le sont (B-0008, pull request 297, J-2026-11-17-P), ses
+sections sur la preuve et les dispositifs aussi (B-0009, J-2026-11-17-R),
+à livrer.
 
 ## Prochaines étapes
 
 Dans l'ordre :
 
-1. `CLAUDE.md`, le budget baissé à chaque lot : B-0008 est fait et
-   fusionné ; restent B-0009 (en cours), B-0010 et B-0040. Clore B-0003
-   par l'inventaire, puis le jalon B-0031.
+1. `CLAUDE.md`, le budget baissé à chaque lot : B-0008 est fusionné,
+   B-0009 fait ; restent B-0010 et B-0040. Clore B-0003 par
+   l'inventaire, puis le jalon B-0031.
 2. Ensuite seulement, la mise à jour du socle (Théo, 16 nov.).
 
 **Les liens donnés à Théo se présentent en Markdown**, entre crochets le
