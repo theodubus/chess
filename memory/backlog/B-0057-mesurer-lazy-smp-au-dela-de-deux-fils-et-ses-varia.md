@@ -13,6 +13,16 @@ machine à plus de deux cœurs physiques, que les runners de GitHub n'ont
 pas. Inférence de l'agent, confiance moyenne : ces variantes servent la
 diversité entre fils, sous-évaluée à deux fils.
 
+Le jeu à quatre fils, Théo l'a remis à plus tard le 9 nov. 2026 (« *on
+fera ça plus tard* », J-2026-11-18-AE). Sa machine porte 8 cœurs
+physiques et 16 fils, un Intel Core i7 de 11ᵉ génération, un portable
+selon lui, le modèle exact à vérifier : assez pour un match à quatre fils
+contre quatre, une partie à la fois. D'abord notre mise à l'échelle, 4
+fils contre 1 à `8+0,08` ; puis, éventuellement, la note 4CPU de la
+CCRL. Un portable peut brider sa fréquence sous une charge longue :
+symétrique pour les deux moteurs, à surveiller contre une échelle
+extérieure.
+
 ## Fait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)

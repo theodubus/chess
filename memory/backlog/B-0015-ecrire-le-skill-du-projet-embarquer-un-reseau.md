@@ -10,6 +10,11 @@ mutation, les séries de force. Une procédure qui se refait s'écrit en
 skill, dans le dossier des skills du projet, sans le préfixe du socle.
 Le skill dit comment faire ; il ne recopie ni chiffre ni verdict.
 
+Depuis B-0048, les textes d'origine sont au journal : la sonde des marges
+et ses règles de lecture, B8 (J-2026-11-18-AF) ; le protocole des séries
+de force, C13 (J-2026-11-18-AE). Les séries ont leur skill,
+`situer-le-moteur` : celui-ci l'appelle, sans le recopier.
+
 ## Fait quand
 
 - [ ] le skill existe et passe le contrôle des skills
