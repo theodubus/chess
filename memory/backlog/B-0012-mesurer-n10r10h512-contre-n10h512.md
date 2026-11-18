@@ -3,15 +3,29 @@
 
 > statut : ouvert · origine : J-2026-11-12-B · après : B-0011, B-0044 · lu : backlog@4625b88c
 
-Les dix seaux de roi paient-ils encore à 512 unités ? Le protocole,
-l'attendu écrit avant (+3 à +18, vers +10, confiance faible) et le critère
-sont dans `tools/README.md`, section « C3 — N10h384 et N10h512 : VERDICT » :
-le réseau intégré par `tools/candidat-reseau.py`, candidat révoqué
-aussitôt, quatre travaux de 2 800 parties à `8+0,08` par
-`.github/workflows/match.yml`.
+Les dix seaux de roi paient-ils encore à 512 unités ? Écrit le 10 nov.
+2026, au verdict des largeurs, avant le match (J-2026-11-18-CS) :
+
+- **le candidat** : N10r10h512, poussé par `tools/seance-c3.sh` sur la
+  branche `reseau/c3` (`4c15e0c`), 7 881 792 octets, la taille calculée à
+  la main ; intégré à `reseaux/`, puis embarqué sur un commit révoqué
+  aussitôt par `tools/candidat-reseau.py` avec `largeur=512 seaux=10` ;
+- **la référence** : N10h512, candidat `745d569`, au même code au bit
+  près — `git diff` sur `engine/` ne porte que `nnue.rs` ; sinon il se
+  recommite sur le code du jour ;
+- **le match** : quatre travaux de 2 800 parties à `8+0,08` par
+  `.github/workflows/match.yml`, binaire AVX2 des deux côtés, réunis par
+  `tools/mettre-en-commun.sh`, relevés par le skill `rendre-un-verdict` ;
+- **l'attendu**, écrit avant : +3 à +18, vers +10, confiance faible — les
+  seaux suivant le volume comme à 256 unités, où dix contre quatre rendait
+  +14,77 ± 3,27 (J-2026-11-18-CR) ;
+- **le critère**, écrit avant la séance (J-2026-11-18-CR) : le réseau
+  embarqué est le meilleur de la séance d'architecture dont la borne basse
+  contre N9w50s800 est au-dessus de zéro ; entre ces deux-là, leur match
+  direct le dit, et B-0013 l'embarque.
 
 ## Fait quand
 
 - [ ] les quatre travaux sont relevés, leurs avertissements lus
-- [ ] le verdict est écrit dans `tools/README.md`, avec son intervalle et son homogénéité
+- [ ] le verdict est écrit au journal, avec son intervalle et son homogénéité
 - [ ] le gagnant des deux réseaux est nommé

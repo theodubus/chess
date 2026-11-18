@@ -38,6 +38,9 @@ des embarquements d'octobre 2026, dont le journal garde les récits.
   dépôt, `-srand 20260930`, même table, chacun avec `SONDE_B8` pointé sur
   son propre dossier.
 - Zéro perte au temps, zéro anomalie, sinon la sonde ne se lit pas.
+- Rien d'autre ne tourne dans le conteneur pendant la sonde, la mesure des
+  nœuds par seconde surtout, qui se fait après ; une sonde coupée se
+  relance sur les mêmes binaires.
 - **La faite main ne se rejoue pas** : ses journaux de référence sont
   `tools/references/sonde-b8-faite-main-2026-10-22.tgz`, à extraire. Une
   référence de mesure se garde dans le dépôt, jamais dans un dossier de

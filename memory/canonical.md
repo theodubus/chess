@@ -48,13 +48,13 @@ FEN ; c'est le seul juge de la génération de coups.
 
 ## F-0007 — L'évaluation qui joue est le réseau embarqué N9w50s800, depuis le 22 oct. 2026
 
-> statut : mesuré · preuve : fichier:engine/src/nnue.rs · source : `CLAUDE.md`, « Décisions structurantes », jusqu'au 17 nov. 2026 · date : 2026-10-22
+> statut : mesuré · preuve : fichier:engine/src/nnue.rs, J-2026-11-18-CL · source : `CLAUDE.md`, « Décisions structurantes », jusqu'au 17 nov. 2026 · date : 2026-10-22
 
 Le binaire embarque `reseaux/n9w50s800-768x4hm-256-s8-800.bin` (constante
 `EMBEDDED` d'`engine/src/nnue.rs`) : `(768 × 4 → 256) × 2 → 1`, quatre
 seaux de roi en miroir, huit seaux de sortie, appris sur 3,71 G positions
 étiquetées par N6r4. Il a battu N8tw50s800 de +5,18 ± 3,29 Elo sur
-11 200 parties à `8+0,08` (`tools/README.md`, n° 20, séance C1).
+11 200 parties à `8+0,08` (J-2026-11-18-CL).
 L'évaluation faite main reste (`EvalFile <none>`) : c'est elle
 qu'évaluent le banc et les tests de recherche, pas celle qui joue. Les
 réseaux qui l'ont précédé sont au journal, avec les quatre premières
