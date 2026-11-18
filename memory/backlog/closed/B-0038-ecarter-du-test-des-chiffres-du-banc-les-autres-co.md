@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0038 — Écarter du test des chiffres du banc les autres couches gelées que le format connaît
 
-> statut : ouvert · origine : J-2026-11-16-E · après : B-0037, B-0043 · priorité : basse · lu : backlog@72bb7d4e
+> statut : abandonné · origine : J-2026-11-16-E · ref : D-0022 · après : B-0037, B-0043 · priorité : basse · lu : backlog@72bb7d4e
 
 Le test des chiffres du banc (`engine/tests/bench_reference.rs`) écarte,
 depuis D-0015, trois couches gelées de la mémoire : le journal, les
@@ -34,3 +34,9 @@ parcourt les dossiers). La question est posée à Théo en séance.
 ## Fait quand
 
 - [ ] Théo a dit si la mémoire privée est écartée du test, le jour où elle existe, et le test le fait, ou le sujet est abandonné
+
+## Abandonné
+
+Le 18 nov. 2026, Théo : chess n'aura pas de mémoire privée, tout y est
+public (D-0022). Les archives ne viendront pas non plus (D-0020). Il n'y a
+plus rien à écarter du test.

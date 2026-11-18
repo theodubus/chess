@@ -4,7 +4,7 @@
 > statut : ouvert · origine : J-2026-11-17-AF · après : B-0065 · priorité : basse · lu : backlog@c40befb4
 
 Idée non décidée de la longue traîne : sa première étape est la décision
-de la tester ou de l'abandonner (B-0065, D-0020). L'agent ne s'y met pas avant.
+de la tester ou de l'abandonner (B-0065, D-0020, D-0021). L'agent ne s'y met pas avant.
 
 Un réseau qui fixe le budget d'un coup selon la pendule et la position :
 question de Théo, 6 oct. 2026. Avis de l'agent, pas une décision : petit
@@ -16,5 +16,5 @@ et chiffrer le plafond.
 
 ## Fait quand
 
-- [ ] Théo a décidé de la tester, ou de l'abandonner
+- [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : le plafond chiffré par la sonde, et la suite décidée sur ce chiffre

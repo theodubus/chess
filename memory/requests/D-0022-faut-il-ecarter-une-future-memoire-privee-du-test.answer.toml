@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0022-faut-il-ecarter-une-future-memoire-privee-du-test.md, dont l'empreinte suit.
+reponse = "non"
+texte = ""
+par = "Théo"
+date = "2026-11-18"
+canal = "conversation"
+citation = "Mémoire privée : je comprends pas le sujet, il n'y aura pas de memoire privée au final sur chess (tout est deja en public de toute facon actuellement)"
+empreinte = "sha256:1c1cc003c6edef04e9ba7694a138bf7673ad69d96a6621f92888d2ab611a517d"

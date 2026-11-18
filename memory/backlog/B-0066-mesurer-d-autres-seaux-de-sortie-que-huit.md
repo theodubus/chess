@@ -4,7 +4,7 @@
 > statut : ouvert · origine : J-2026-11-18-B · après : B-0065 · priorité : basse · lu : backlog@bc169f2b
 
 Idée non décidée : sa première étape est la décision de la tester ou de
-l'abandonner (B-0065, D-0020). L'agent ne s'y met pas avant.
+l'abandonner (B-0065, D-0020, D-0021). L'agent ne s'y met pas avant.
 
 Les seaux de sortie du réseau, huit selon le matériel restant, n'ont été
 comparés qu'à un seul ; aucune autre valeur n'a été mesurée (F-0009).
@@ -14,5 +14,5 @@ relevé.
 
 ## Fait quand
 
-- [ ] Théo a décidé de la tester, ou de l'abandonner
+- [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : un réseau à d'autres seaux mesuré contre le réseau qui joue
