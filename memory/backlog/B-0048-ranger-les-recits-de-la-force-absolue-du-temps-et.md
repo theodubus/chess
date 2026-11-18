@@ -3,7 +3,7 @@
 
 > statut : ouvert · origine : D-0020 · après : B-0047 · lu : backlog@285016e5
 
-Lot de la transition (D-0020) : les sections de C13, B8 et C27 à C31, la gestion du temps et le temps de l'adversaire, et les récits de fin de fichier, de « B9 — écrit et mesuré » à « C19 » (177 Ko).
+Lot de la transition (D-0020) : les sections de C13, B8 et C27 à C31, la gestion du temps et le temps de l'adversaire, et les récits de fin de fichier, de « B9 — écrit et mesuré » à « C19 » (177 Ko), avec la note « B9 ne se valide PAS par « nœuds identiques » », restée sous « Ce qui reste à faire ».
 
 Le protocole C13 dit encore d'inscrire chaque série de force « au
 `README.md`, en tête » : la consigne se réécrit vers F-0011 (relecture de
