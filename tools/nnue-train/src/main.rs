@@ -25,8 +25,8 @@
 //!    `--pas` réduit le pas de départ, pour un vrai réglage fin. `--wdl` règle
 //!    le poids du résultat de la partie dans la cible, 0,75 depuis le premier
 //!    réseau sans avoir jamais été mesuré. Les réglages de la séance C — les
-//!    défauts de l'exemple, jamais mesurés ici (`tools/README.md`, « Les
-//!    réglages ouverts ») — : `--pas-final` le pas final en fraction du pas
+//!    défauts de l'exemple, jamais mesurés ici (les réglages ouverts du
+//!    réseau, F-0009 dans `memory/canonical.md`) — : `--pas-final` le pas final en fraction du pas
 //!    de départ (0,3⁵), `--wdl-final` un poids du résultat qui varie en ligne
 //!    droite jusqu'à cette valeur, `--perte` l'exposant de l'écart (2, 2.5 ou
 //!    3), `--lot` les positions d'un lot — un superlot garde les siennes —,
@@ -1347,7 +1347,7 @@ mod tests {
         }
     }
 
-    /// Les options de la séance C (n° 20, « Les réglages ouverts ») : sans
+    /// Les options de la séance C (n° 20 ; les réglages ouverts, F-0009) : sans
     /// elles, la recette de tous nos réseaux AU BIT PRÈS — c'est ce qui permet
     /// de comparer un réseau neuf à ceux d'avant ; avec elles, ce que
     /// l'entraînement reçoit vraiment.

@@ -4,8 +4,8 @@
 > statut : ouvert · origine : J-2026-11-12-B · après : B-0013 · lu : backlog@cd7dff8a
 
 Le budget de l'étiqueteur est passé de 5 000 à 2 500 nœuds le 6 nov. 2026
-(+5,77 ± 3,34 à temps de runner égal). Le test suivant, inscrit au
-registre des réglages ouverts : 1 250 nœuds contre 2 500, à temps de
+(+5,77 ± 3,34 à temps de runner égal). Le test suivant, inscrit aux
+réglages ouverts du réseau (F-0009) : 1 250 nœuds contre 2 500, à temps de
 runner égal, sur des données étiquetées par le réseau embarqué.
 
 ## Fait quand

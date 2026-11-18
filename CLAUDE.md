@@ -50,9 +50,8 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   récap suivant. Ce qui se demande encore : ce qui engage Théo hors du test
   lui-même, et ce qui rouvrirait une décision structurante. **Aucun réglage
   n'est « résolu » parce qu'une valeur a été validée** : c'est une borne
-  basse, et chaque réglage vit dans le
-  [registre des réglages ouverts](tools/README.md#les-réglages-ouverts)
-  (ADR-0032).
+  basse, et chaque réglage vit dans les faits des réglages ouverts,
+  F-0009 et F-0010 (ADR-0032).
 - **Ce qui revient à Théo se dit à chaque point de récap**, en particulier
   les branches distantes à supprimer, que le jeton de session ne peut pas
   supprimer (ADR-0033) ; l'état du socle les calcule, hors celles que la
