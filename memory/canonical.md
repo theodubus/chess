@@ -77,7 +77,7 @@ N9w50s800 »). La faite main garde ses marges au bit près.
 
 ## F-0009 — Les réglages ouverts du réseau : chaque valeur, sa borne mesurée, sa marge, son prochain test
 
-> statut : mesuré · preuve : J-2026-11-18-B · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du 21 oct. au 10 nov. 2026 · date : 2026-11-18
+> statut : mesuré · preuve : J-2026-11-18-B, J-2026-11-18-BE · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du 21 oct. au 10 nov. 2026 · date : 2026-11-18
 
 Aucun n'est résolu : une valeur validée est une borne basse (ADR-0032).
 Matchs à `8+0,08`, ± à 95 % ; marges estimées, confiance faible sauf (m),
@@ -101,16 +101,15 @@ moyenne. L'histoire de chaque mesure : J-2026-11-18-B.
 | couches cachées | aucune | jamais | inconnue | B-0021 |
 | ouvertures du générateur | 8 à 11 demi-coups au hasard | jamais | inconnue | B-0059 |
 | seuil des ouvertures | 1 000 (`OPENING_MAX_SCORE`) | jamais en force ; son taux suit l'étiqueteur, 21 % sous N9w50s800 | inconnue | avec B-0059 ; jamais en cours de tranche |
+| adjudication du générateur | gain à 2 000 tenu huit demi-coups (`WIN_ADJ_SCORE`), nulle à 400 demi-coups | au réseau N0 seulement : 0,50 % des adjugées finissaient autrement, jouées au bout (n° 7) ; l'échelle a changé depuis (F-0008) | inconnue | à resonder avant la génération suivante (B-0024) |
 
 ## F-0010 — Les réglages ouverts de la recherche : chaque valeur, sa borne mesurée, sa marge, son prochain test
 
-> statut : mesuré · preuve : J-2026-11-18-B, J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y, J-2026-11-18-AH, J-2026-11-18-AI, J-2026-11-18-AJ, J-2026-11-18-R · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23, du 2 au 5 nov. 2026, ceux du temps, C21 à C26, et ceux de la table et du ponder, en septembre · date : 2026-11-18
+> statut : mesuré · preuve : J-2026-11-18-B, J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y, J-2026-11-18-AH, J-2026-11-18-AI, J-2026-11-18-AJ, J-2026-11-18-R, J-2026-11-18-BM, J-2026-11-18-BO · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23, du 2 au 5 nov. 2026, ceux du temps, C21 à C26, et ceux de la table et du ponder, en septembre · date : 2026-11-18
 
 Mêmes conventions que F-0009, sauf la cadence nommée. Le facteur des
-marges du réseau : F-0008. Les verdicts du temps, de C21 à C26, sont au
-journal (J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y), ceux de la table
-et du ponder aussi (J-2026-11-18-AJ, J-2026-11-18-AH, J-2026-11-18-AI,
-J-2026-11-18-R).
+marges du réseau : F-0008. Chaque verdict est au journal, sous les
+preuves de ce fait.
 
 | réglage | valeur | ce qui la borne | marge | ensuite |
 |---|---|---|---|---|
@@ -118,6 +117,7 @@ J-2026-11-18-R).
 | diviseur de la note de la LMR | 6 000 | 4 000 −2,57, 9 000 −7,20 ; le décalage ± 2 000 plat (± 3,0) | ~0 à +2 | le diviseur par profondeur, le papillon double, à l'écran ; puis SPSA |
 | bonus de la LMR aux nœuds de coupure | 2 plis | contre la base sans bonus, 1 pli +3,29, 2 plis +5,06 ; 3 plis contre 2 −0,09 (± 3,1) | ~0 à +2 | SPSA |
 | relâchement de la LMR en variante principale | aucun | quatre formes sans gain démontré : la plus haute +2,79 ± 3,09 (C65) ; sur la base actuelle +1,61 ± 2,23 (C74) | ~0 à +2 | déprioritisé |
+| marge singulière (`SINGULAR_MARGIN`) | 10·d, dès la profondeur 8 | sans extension contre 10·d +10,66 ± 3,43 (C41) et 20·d +1,13 (C41b), soit 20·d ~−9,5 ; 5·d contre 10·d +2,69 ± 3,41 (C44) ; livre de 500, N2L | ~0 à +3 vers 5·d | rouvrable au livre de 15 000 ; SPSA |
 | historique de correction | poids de Stockfish 17.1 | × 1,5 −5,96 ± 3,09 ; mi-poids +11,26 contre +14,22 au plein | ~0 à +2 | × 0,75 et × 1,25 ; chaque table retirée ; SPSA |
 | gravité de l'historique | plafonds 7 183 et 29 952, bonus `clamp(336·d − 547, 1, 1561)` | bonus × 0,5 −5,03, × 2 +2,48 (± 3,0) | quelques Elo | SPSA avec le diviseur ; papillon contre continuations |
 | diviseur de la pendule (`MOVES_TO_GO_DEFAUT`) | 12 | 30 → 12 +19,13 ± 6,31 (C21) ; 12 sature une allocation plate, 10 alloue moins | ~0 : saturé | une allocation inégale, pas un autre diviseur |
@@ -166,7 +166,7 @@ moteur, elle ne départage pas deux réseaux voisins. D'où la règle de
 
 ## F-0013 — La quiescence ne teste pas la nulle après une parade tranquille : le correctif est écrit, arrêté par son critère
 
-> statut : mesuré · preuve : J-2026-11-18-AG · source : C31, deux matchs de 3 000 parties à `8+0,08`, relevés le 30 sept. 2026 · date : 2026-09-30
+> statut : mesuré · preuve : J-2026-11-18-AG, J-2026-11-18-BU · source : C31, deux matchs de 3 000 parties à `8+0,08`, relevés le 30 sept. 2026 · date : 2026-09-30
 
 `negamax` teste la nulle par règle à chaque nœud ; la quiescence ne la
 teste pas, et une parade tranquille, en échec, peut atteindre le centième
@@ -178,7 +178,11 @@ tests et sept défauts injectés, est la rustine
 `tools/attic/c31-nulle-quiescence.patch` : −2,43 ± 5,36 en commun, mais la
 borne haute d'un des deux matchs à −0,27, d'où l'arrêt par le critère d'un
 correctif de règle. Il n'est pas démontré coûteux. Le remesurer demande
-un fait technique neuf, jamais une seconde chance.
+un fait technique neuf, jamais une seconde chance. Les échecs tranquilles
+en quiescence (C51, −10,77 ± 3,40) traversaient ces nulles, treize fois
+plus d'avertissements que la référence ; leur régression vient de l'arbre
+(+30,7 %), ce que la cécité leur coûte n'est pas mesuré, et ils ne se
+rouvrent qu'avec la nulle en quiescence, mesurés ensemble.
 
 ## F-0014 — La relation de budget : parties × Elo ≈ 59 256 sur dix-huit SPRT, et elle tient aux deux cadences mesurées
 

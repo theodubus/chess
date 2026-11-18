@@ -13,7 +13,10 @@ Le skill dit comment faire ; il ne recopie ni chiffre ni verdict.
 Depuis B-0048, les textes d'origine sont au journal : la sonde des marges
 et ses règles de lecture, B8 (J-2026-11-18-AF) ; le protocole des séries
 de force, C13 (J-2026-11-18-AE). Les séries ont leur skill,
-`situer-le-moteur` : celui-ci l'appelle, sans le recopier.
+`situer-le-moteur`, et la sonde le sien, `sonder-les-marges` (B-0049) :
+celui-ci les appelle, sans les recopier ; l'embarquement lui-même — le
+candidat qui ne change que le réseau, révoqué aussitôt, son match — se lit
+aux récits du n° 7 et du n° 13 (J-2026-11-18-BE, J-2026-11-18-BY).
 
 ## Fait quand
 

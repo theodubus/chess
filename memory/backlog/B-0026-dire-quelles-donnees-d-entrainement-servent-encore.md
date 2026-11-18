@@ -15,6 +15,12 @@ d'architecture n'a appris que les générations n° 21 et n° 22 ; les
 générations d'avant, étiquetées par des réseaux plus faibles, ont été
 laissées de côté.
 
+Les générations d'avant le n° 18 n'ont pas de registre `tools/*-jobs.tsv` :
+leurs runs, leurs comptes et le K qui regénère chaque job (K = parties +
+écartées, la même graine) sont au journal — la première vague d'A21
+(J-2026-11-18-BD), la vague au réseau du n° 7 (J-2026-11-18-BE), celle du
+n° 13 (J-2026-11-18-BY).
+
 Théo a mis le moteur derrière l'adoption du socle (D-0006), puis
 derrière la transition de la documentation et la mise à jour du socle
 (D-0016, D-0018) : ce sujet les attend aussi, sauf si son échéance

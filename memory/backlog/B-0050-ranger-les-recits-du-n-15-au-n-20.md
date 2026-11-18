@@ -8,8 +8,10 @@ Lot de la transition (D-0020) : les sections de « N° 15 à 19 » à « N° 20 
 La méthode est celle de B-0047 : faits, procédures et idées extraits et
 posés à leur place d'abord, le reste au journal, chaque chiffre retrouvé.
 
-Les sondes des marges de ces réseaux suivent la règle écrite dans
-B-0049 : leur procédure s'écrit en skill avant que leurs récits partent.
+La sonde des marges et la séance d'entraînement ont leur skill depuis
+B-0049, `sonder-les-marges` et `preparer-une-seance` : ce que ces récits
+en disent de plus, les scripts `tools/seance-*.sh` compris, s'y ajoute
+avant qu'ils partent.
 
 ## Fait quand
 
