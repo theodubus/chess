@@ -56,21 +56,36 @@ récits.
 - Hors fourchette, on diagnostique avant la vague. Un attendu dérivé d'un
   échantillon porte au moins l'incertitude de cet échantillon : une
   fourchette plus étroite que la sonde qui la fonde se fera franchir par
-  le bruit.
+  le bruit. **Un attendu se tire du même axe** : ce qu'a fait un budget
+  plus long ne dit pas ce que fera un réseau plus fort.
+- **Un seuil en unités d'évaluation suit l'échelle de l'étiqueteur** — le
+  seuil d'ouverture, l'adjudication. Le taux d'écartées qui bouge à
+  l'étiqueteur neuf se diagnostique dans le conteneur, `nnue-datagen` à
+  graine fixe sur les MÊMES ouvertures, seul le réseau changé ;
+  l'adjudication, que les compteurs du générateur ne séparent pas du mat,
+  demande la rustine `tools/attic/n7-sonde-adjudication.patch` (B-0024).
 
 ## 3. Les vagues
 
 - **Seize jobs à la fois au plus sur tout le compte** (D-0004) : la
   génération partage ce plafond avec les matchs, SPSA et le balayage de
   mutation du mardi, et une vague se dimensionne à ce qui tourne déjà.
-  Une vague ne part qu'après le relevé de la précédente.
+  Chaque vague s'écrit avant de partir, et part après le relevé de la
+  précédente : un chiffre hors de sa fourchette se diagnostique avant la
+  suivante. Une fois le régime stable sur plusieurs vagues, la suivante
+  peut partir dès que la précédente est FINIE, avant son relevé, son
+  cumul attendu écrit en écart à celui qu'on relèvera.
 - **Chaque vague s'écrit avant** : positions, gardées, écartées, nulles,
   débit sur le processeur le plus courant, cumul — pour seize jobs, et à
   proportion s'il en manque.
 - **La relève** : chaque résumé nomme le commit et le budget ; les cinq
   chiffres contre leurs attendus ; l'image du runner, lue dans le journal
   d'un job ; le reste à générer, divisé par le rendement du jour, donne les
-  vagues restantes.
+  vagues restantes. Une borne que la dispersion des runners franchit se
+  descend pour la première vague dont l'attendu n'est pas encore écrit,
+  avec sa raison, et
+  jamais au-delà de ce qu'elle doit garder (un binaire sans AVX2, par
+  exemple).
 - **Le débit appartient à l'hôte, pas au nom du processeur** : un même
   modèle peut rendre d'un quart à un tiers de plus d'un runner à l'autre. À
   nœuds fixés, le processeur ne change que le volume, jamais les parties ;

@@ -10,10 +10,17 @@ essai de chaîne. Il attendait un réseau « stabilisé » ; il se joue dès le
 réseau de la séance embarqué, sur les runners pendant que la carte
 entraîne : hypothèse de l'agent validée par Théo le 12 nov. 2026 (D-0004), notée « supposée ». Les réglages de la phase 4 laissés à leur plateau
 (le bonus aux nœuds de coupure, le poids de la correction, la mémoire de
-l'historique) y entrent.
+l'historique) y entrent ; le bonus aux nœuds de coupure, deux plis
+entiers, s'y exprime en fraction de pli ou reste aux matchs, sans quoi sa
+perturbation d'une unité vaudrait la moitié de sa valeur (« Régler par
+SPSA »).
 
 Jamais mesurés : son coût en parties, et ce qu'un réglage garde d'un
-réseau au suivant. Cette campagne les mesure.
+réseau au suivant. Cette campagne les mesure. Ce que fait l'outillage, et
+pourquoi des réglages à la compilation : `tools/README.md`, « Régler par
+SPSA ». Le commentaire de `reglage!` (`engine/src/search.rs`) nomme encore
+le pilote d'après son ancien nom en Python, devenu `tools/src/bin/spsa.rs` : à corriger
+avec la campagne.
 
 ## Fait quand
 
