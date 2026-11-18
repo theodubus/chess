@@ -19,10 +19,18 @@ Les dix seaux de roi paient-ils encore à 512 unités ? Écrit le 10 nov.
 - **l'attendu**, écrit avant : +3 à +18, vers +10, confiance faible — les
   seaux suivant le volume comme à 256 unités, où dix contre quatre rendait
   +14,77 ± 3,27 (J-2026-11-18-CR) ;
-- **le critère**, écrit avant la séance (J-2026-11-18-CR) : le réseau
-  embarqué est le meilleur de la séance d'architecture dont la borne basse
-  contre N9w50s800 est au-dessus de zéro ; entre ces deux-là, leur match
-  direct le dit, et B-0013 l'embarque.
+- **le critère du match**, écrit le 18 nov. 2026, avant lui, sur le modèle
+  des précédents (J-2026-11-18-CE) : **N10r10h512 passe devant si la borne
+  basse de l'intervalle mis en commun est au-dessus de zéro ; sinon
+  N10h512**, en tête au point des largeurs. Un écart positif non démontré
+  ne suffit pas : la composition doit démontrer ;
+- **le critère de la séance**, écrit avant elle (J-2026-11-18-CR) — le
+  réseau embarqué bat N9w50s800, borne basse au-dessus de zéro —, se juge
+  ensuite par le match direct du gagnant contre N9w50s800, dans B-0013,
+  jamais par une chaîne de matchs ;
+- **la perte tenue à l'écart** des deux réseaux, et l'ordre qu'elle
+  prédit, écrits avant le match : le premier point de B-0071, quatre
+  minutes de runner, qui ne décide rien.
 
 ## Fait quand
 

@@ -91,8 +91,10 @@ séances de septembre à novembre 2026, dont le journal garde les récits.
     branche reste commitée en local.
 - **Sinon, des blocs à coller dans le même terminal, dans l'ordre** :
   le dépôt à jour (`git pull --ff-only`, s'arrêter sur un fichier modifié) ;
-  CUDA dans ce terminal ; les données ; l'essai court ; le vrai, en une
-  chaîne qui s'arrête au premier échec (`set -o pipefail`) ; rapporter.
+  CUDA dans ce terminal ; les données ; l'essai court ; le vrai, ses
+  commandes enchaînées par `&&` pour qu'un échec arrête la suite, et
+  `set -o pipefail` pour que le `tee` qui garde la sortie ne masque pas
+  l'échec de l'entraînement ; rapporter.
   Chaque bloc dit ce qu'il doit afficher, et quand s'arrêter et le dire.
 - Les points de sauvegarde à garder, s'il y en a, sur une branche à part
   (`reseau/<nom>-points`).

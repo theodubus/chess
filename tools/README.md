@@ -598,9 +598,10 @@ lisent dans le workflow ; ce qui suit est ce qu'aucune entrée ne dit.
   sur les gardées. Il dit aussi le commit et le budget de nœuds, et les
   positions que le filtre par défaut de l'entraîneur garde
   (`retenues_filtre_defaut`), le volume qui compte pour les passes.
-- **Le débit appartient au processeur du runner** et se prévoit par la
-  vague précédente sur le même modèle, pas par un job court ni par le
-  conteneur.
+- **Le débit appartient à l'hôte du runner** : il se prévoit par la vague
+  précédente sur le même modèle de processeur, à un quart ou un tiers
+  près — un même nom couvre des hôtes différents —, jamais par le
+  conteneur. À nœuds fixés, il ne change que le volume, pas les parties.
 - **Les artefacts ne se lisent pas depuis une session** — le proxy refuse
   l'hôte où GitHub les dépose — ; ils se relisent sur la machine
   d'entraînement, dont la relecture confronte les comptes aux résumés. Ils
@@ -662,17 +663,24 @@ au-dessus de celle du bout. La courbe de bullet, `log.txt`, n'est pas une
 perte de validation — une moyenne sur le flux entrelacé, prise avant
 chaque mise à jour — ; la perte sur des positions jamais apprises est
 celle de `nnue-validation.yml`, un diagnostic (« Ce que `tools/src/bin/`
-contient »). Sans option de recette, l'entraîneur rend celle de tous nos
-réseaux au bit près, et l'imprime en tête de sa sortie.
+contient »). Les défauts des options de la recette sont ceux de l'exemple
+de bullet, pas la recette qui joue : le poids du résultat vaut 0,75 par
+défaut, quand la recette qui joue est à `--wdl 0.5` depuis la séance B du
+n° 20 (F-0009). Chaque entraînement imprime sa recette en tête de sa sortie,
+et les scripts de séance la contrôlent ligne entière.
 
 **Un réseau devient candidat** par `tools/candidat-reseau.py <dépôt>
 <base> "<doc>" [largeur=N] [seaux=10]` : le réseau de `reseaux/<base>.bin`
 devient l'embarqué, le bloc de doc d'`EMBEDDED` est remplacé, et la table
 `CONFRONTATION` du test recopiée de la section « 3. Le moteur contre
 l'entraîneur » de sa sortie ; l'outil refuse si cette section n'a pas ses
-18 lignes ou si son critère n'est pas tenu. `largeur` et `seaux` changent
-les deux lignes d'architecture, chacune exactement une fois. Ensuite :
-`cargo fmt`, les tests `nnue` en release, le commit, sa révocation.
+18 lignes ou si son critère n'est pas tenu. Il ne sait passer que de
+l'architecture de N9w50s800 à une autre : `largeur=N` remplace la ligne
+`HIDDEN = 256`, et refuse si elle a déjà changé ; `seaux=10` passe de
+quatre à dix seaux de roi. **Toute autre option, ou une autre valeur de
+`seaux`, est ignorée sans le dire** (B-0072) : seuls les tests `nnue` en
+release, qui chargent le réseau embarqué, le rattrapent. Ensuite :
+`cargo fmt`, ces tests, le commit, sa révocation.
 
 **La machine de Théo** (Ubuntu, RTX 3050, pilote qui plafonne à CUDA
 13.2) ; la procédure d'une séance est le skill `preparer-une-seance` :
@@ -767,6 +775,14 @@ conteneur, et se garde alors dans le dépôt.
   rejeu, l'écart apparié d'un tour à l'autre vaut ~5 % ; vingt tours ne
   résolvent qu'un effet de ~3 %, cent vingt détectent −1,5 % quatre fois
   sur cinq et −2 % presque toujours.
+- **Une optimisation de l'inférence se lit d'abord au code machine** :
+  `objdump` du binaire AVX2, avant et après, en comptant dans chaque
+  fonction chaude — `Network::evaluate`, `Network::apply_move`,
+  `refresh_side` — les instructions que le changement doit faire
+  apparaître ou disparaître (`vpmulld`, `vpmullw`, `vpmaddwd`) et la
+  largeur de leurs registres (`xmm` 128 bits, `ymm` 256 bits) ; l'attendu
+  s'écrit avant. C'est ainsi qu'on a vu le compilateur caler le produit de
+  sortie sur 128 bits, ce qui a mené à ADR-0039.
 - **Un compte d'opérations ne prédit pas un temps**, même à arbre
   identique : le cache des recalculs épargnait 65 % des lignes de ses
   recalculs et n'a rien rendu, ces lignes se lisant dans 1,5 Mo de poids ;
@@ -1113,7 +1129,10 @@ est au journal, tel quel, sous son titre d'origine. Ce qui en reste utile
 est à sa place — les réglages du réseau dans F-0009, les procédures dans
 les skills `preparer-une-seance`, `lancer-une-generation`,
 `sonder-les-marges` et `rendre-un-verdict`, la documentation des outils
-plus haut. Un ancien renvoi vers l'une d'elles se suit ici :
+plus haut. Un ancien renvoi vers l'une d'elles se suit ici ; un renvoi au
+n° 20 entier désigne J-2026-11-18-CF et ses sous-sections, de
+J-2026-11-18-CG à J-2026-11-18-CU, et de même pour le n° 15 à 19
+(J-2026-11-18-CB, puis CC) et le n° 18 (J-2026-11-18-CD, puis CE) :
 
 - « N° 15 à 19 — la chaîne du réseau : DÉCIDÉE le 13 oct. 2026 » — J-2026-11-18-CB
 - « N° 17 — VERDICT, 14 oct. 2026 : N5l +30,29 ± 3,95 Elo à `8+0,08` contre N4 — EMBARQUÉ ; N5s +15,58 ± 3,87 ; les seaux de roi régressent, N5r4 −58,91 ± 4,45 et N5r10 −133,59 ± 4,93 » — J-2026-11-18-CC

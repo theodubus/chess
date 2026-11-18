@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0020 — Entraîner un réseau à seize seaux de roi
 
-> statut : ouvert · origine : D-0004 · après : B-0013 · lu : backlog@0ba26f9c
+> statut : ouvert · origine : D-0004 · après : B-0013, B-0072 · lu : backlog@0ba26f9c
 
 Premier des trois axes d'architecture, le moins cher : dix seaux de roi
 ont rendu +14,77 ± 3,27 au volume de la séance, seize sont le pas suivant

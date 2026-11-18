@@ -19,7 +19,10 @@ aussi des architectures à données fixées, une séance de plusieurs réseaux
 lancerait d'abord le match du premier de l'ordre, quatre minutes de
 runner pour ordonner des heures de match ; jamais un verdict. Son test le
 moins cher : les pertes de N10r10h512 et de N10h512, et l'ordre qu'elles
-prédisent, écrits avant leur match (B-0012).
+prédisent, écrits avant leur match. Il ne coûte presque rien et ne se
+reprend pas après coup : l'agent l'a mis dans B-0012 le 18 nov. 2026, sans
+attendre B-0065. Un seul couple de réseaux vaut un point, à une chance
+sur deux au hasard ; la décision de la règle en demande davantage.
 
 ## Fait quand
 

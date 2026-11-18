@@ -15,19 +15,24 @@ récits.
 
 ## 1. Écrire avant de lancer
 
-- **La recette, une seule pour toute la génération** : le commit de
-  l'étiqueteur, nommé, son réseau embarqué (`<embedded>`), le budget de
-  nœuds, la graine « auto », un fil par processeur logique, la durée, le
-  binaire AVX2. Un étiqueteur ou un budget changé en route mêle deux
-  générations dans une seule : la tranche entière se fait au même commit.
-  `git log` sur `engine/src` dit ce que l'étiqueteur change au générateur.
+- **La recette, écrite entière** : le commit de l'étiqueteur, nommé, son
+  réseau embarqué (`<embedded>`), le budget de nœuds, la graine « auto »,
+  un fil par processeur logique, la durée, le binaire AVX2. Un étiqueteur
+  ou un budget qui change sans avoir été écrit avant mêle deux générations
+  dans une seule. Ce qui varie exprès se dit d'avance : deux budgets
+  comparés dans la même tranche s'alternent dans chaque vague, pour tirer
+  le même parc de runners, et le registre porte le budget de chaque job ;
+  un changement de budget en cours de route s'écrit avec la condition qui
+  le déclenche. `git log` sur `engine/src` dit ce que l'étiqueteur change
+  au générateur.
 - **Le volume visé, et la règle de fin** : la génération s'arrête à la
   vague dont le cumul atteint le volume — la vague entière —, ou la
   dernière vague se dimensionne au reste plus 10 %. Rien ne s'y choisit au
   vu d'un résultat.
-- **Le job tenu à l'écart** : le PREMIER job lancé de la vague 1, désigné
-  avant d'en voir le compte ; il ne s'entraîne jamais et sert à la perte
-  tenue à l'écart (`nnue-validation.yml`).
+- **Le job tenu à l'écart** : le PREMIER job lancé de la vague 1 — de
+  chaque budget, s'il y en a plusieurs —, désigné avant d'en voir le
+  compte ; il ne s'entraîne jamais et sert à la perte tenue à l'écart
+  (`nnue-validation.yml`).
 - **Les témoins** d'une comparaison se tirent, quand ils le peuvent, d'une
   génération déjà faite au même étiqueteur — à temps de runner égal (les
   J premiers jobs) et à volume égal : ils ne coûtent rien.
@@ -37,10 +42,15 @@ récits.
 
 ## 2. La sonde de vingt minutes
 
-- Un job court sur un processeur nommé, dès que l'étiqueteur ou le budget
-  change. **Ses attendus, écrits avant**, chacun contre la sonde précédente
-  sur le MÊME modèle de processeur : positions par seconde, parties
-  écartées par le filtre d'ouverture, nulles, positions par partie.
+- Un job court sur un processeur nommé, quand le générateur change d'une
+  façon que la génération précédente ne prédit pas : un budget jamais
+  employé, une architecture d'étiqueteur nouvelle. Un étiqueteur neuf de
+  même architecture et au même budget peut s'en passer, et le dire : les
+  attendus de la vague 1 en tiennent lieu, et un écart y coûte une vague
+  de diagnostic, aucune donnée gardée. **Les attendus de la sonde, écrits
+  avant**, chacun contre la sonde précédente sur le MÊME modèle de
+  processeur : positions par seconde, parties écartées par le filtre
+  d'ouverture, nulles, positions par partie.
 - **Les écartées se rapportent aux parties GARDÉES** : le résumé compte les
   deux à part.
 - Hors fourchette, on diagnostique avant la vague. Un attendu dérivé d'un
@@ -50,8 +60,10 @@ récits.
 
 ## 3. Les vagues
 
-- **Seize jobs à la fois au plus** (D-0004) ; une vague ne part qu'après le
-  relevé de la précédente.
+- **Seize jobs à la fois au plus sur tout le compte** (D-0004) : la
+  génération partage ce plafond avec les matchs, SPSA et le balayage de
+  mutation du mardi, et une vague se dimensionne à ce qui tourne déjà.
+  Une vague ne part qu'après le relevé de la précédente.
 - **Chaque vague s'écrit avant** : positions, gardées, écartées, nulles,
   débit sur le processeur le plus courant, cumul — pour seize jobs, et à
   proportion s'il en manque.
@@ -60,7 +72,7 @@ récits.
   d'un job ; le reste à générer, divisé par le rendement du jour, donne les
   vagues restantes.
 - **Le débit appartient à l'hôte, pas au nom du processeur** : un même
-  modèle peut rendre un tiers de plus ou de moins d'un runner à l'autre. À
+  modèle peut rendre d'un quart à un tiers de plus d'un runner à l'autre. À
   nœuds fixés, le processeur ne change que le volume, jamais les parties ;
   un débit hors fourchette avec des taux dans les leurs n'est pas une faute
   du générateur.

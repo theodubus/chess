@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0050 — Ranger les récits du n° 15 au n° 20
 
-> statut : ouvert · origine : D-0020 · après : B-0049 · lu : backlog@285016e5
+> statut : fait · origine : D-0020 · ref : J-2026-11-18-CX · après : B-0049 · lu : backlog@285016e5
 
 Lot de la transition (D-0020) : les sections de « N° 15 à 19 » à « N° 20 », et les deux récits titrés « La file, phase 2 » (378 Ko).
 
@@ -15,5 +15,5 @@ avant qu'ils partent.
 
 ## Fait quand
 
-- [ ] faits, procédures et idées de ces sections à leur place, vérifiés par la relecture sans contexte
-- [ ] ces sections hors de `tools/README.md`, le reste au journal, chaque chiffre retrouvé
+- [x] faits, procédures et idées de ces sections à leur place, vérifiés par la relecture sans contexte
+- [x] ces sections hors de `tools/README.md`, le reste au journal, chaque chiffre retrouvé
