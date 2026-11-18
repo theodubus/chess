@@ -13,7 +13,11 @@ entraîne : hypothèse de l'agent validée par Théo le 12 nov. 2026 (D-0004), n
 l'historique) y entrent.
 
 Jamais mesurés : son coût en parties, et ce qu'un réglage garde d'un
-réseau au suivant. Cette campagne les mesure.
+réseau au suivant. Cette campagne les mesure. Ce que fait l'outillage, et
+pourquoi des réglages à la compilation : `tools/README.md`, « Régler par
+SPSA ». Le commentaire de `reglage!` (`engine/src/search.rs`) nomme encore
+le pilote d'après son ancien nom en Python, devenu `tools/src/bin/spsa.rs` : à corriger
+avec la campagne.
 
 ## Fait quand
 

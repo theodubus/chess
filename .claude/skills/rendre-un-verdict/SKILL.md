@@ -34,6 +34,15 @@ mesure ») ; ce skill en est la procédure, celle des relèves de septembre
 - Plusieurs jobs à longueur fixe se réunissent par
   `tools/mettre-en-commun.sh`, qui refuse des matchs qui se contredisent ;
   jamais plusieurs SPRT lus au premier qui franchit sa borne.
+- **Un groupe non homogène** : son amplitude n'est plus un nombre, et le
+  critère se lit job par job autant que sur l'ensemble — il tient si
+  l'ensemble le passe et qu'aucun job ne le contredit. L'écart se cherche
+  (le runner, son étalonnage) et se dit inexpliqué s'il l'est. **Un job ne
+  se retire jamais après avoir vu son score** ; un groupe trop serré se
+  contrôle aussi, graines et vecteurs distincts.
+- **Un job perdu** (runner perdu, sans résumé) se relance à la même graine
+  si le plan en écrivait N, rien n'en ayant été compté ; avant, calculer
+  si ce qui manque peut encore changer la décision, et le dire.
 - Le critère écrit avant s'applique tel quel, **sans le déplacer après
   avoir vu le chiffre**. Un SPRT expiré n'est ni un verdict ni à
   reprendre : il dimensionne le match suivant.

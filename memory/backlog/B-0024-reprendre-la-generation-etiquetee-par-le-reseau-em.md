@@ -8,7 +8,11 @@ que la carte consomme. Elle reste en pause tant que c'est vrai, et les
 runners ne portent jamais plus de seize travaux à la fois : hypothèse de l'agent validée par Théo le 12 nov. 2026 (D-0004), notée « supposée ».
 Elle reprend par une tranche de taille écrite d'avance, au budget que le
 test à 1 250 nœuds aura désigné, quand un entraînement prévu demande plus
-de positions que le stock n'en porte.
+de positions que le stock n'en porte. Elle s'étiquette par le réseau qui
+joue parce que le tour de boucle paie : à volume, budget et recette
+égaux, les données d'un étiqueteur ~+40 plus fort ont rendu +10,15 ±
+3,33 au réseau (J-2026-11-18-DD) ; les données d'un vieil étiqueteur se
+remplacent avant de s'empiler.
 
 Avant la tranche, l'adjudication du générateur se resonde à l'échelle de
 l'étiqueteur du jour : elle n'a été mesurée qu'au réseau N0 (F-0009), par
