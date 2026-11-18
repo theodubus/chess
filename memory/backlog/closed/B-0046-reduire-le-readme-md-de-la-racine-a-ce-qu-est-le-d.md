@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0046 — Réduire le README.md de la racine à ce qu'est le dépôt
 
-> statut : ouvert · origine : D-0020 · après : B-0045 · lu : backlog@285016e5
+> statut : fait · origine : D-0020 · ref : J-2026-11-18-D · après : B-0045 · lu : backlog@285016e5
 
 Deuxième lot (D-0020). Le bloc « Statut » du `README.md` de la racine
 (11 Ko de mesures et d'histoire) devient un statut de dix lignes au
@@ -11,5 +11,5 @@ la mention d'attribution de Leela (ADR-0030).
 
 ## Fait quand
 
-- [ ] le `README.md` ne porte plus de mesures ni d'histoire, hors la ligne du banc et les remerciements
-- [ ] ce qui en sort est à sa place, chaque chiffre retrouvé
+- [x] le `README.md` ne porte plus de mesures ni d'histoire, hors la ligne du banc et les remerciements
+- [x] ce qui en sort est à sa place, chaque chiffre retrouvé

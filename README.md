@@ -5,171 +5,26 @@ Un moteur d'échecs UCI écrit en Rust, et l'interface qui va avec.
 Le nom est un contrepied de Deep Blue, doublé de la couleur de la rouille et
 d'un aveu sur la profondeur de recherche.
 
-> Statut : **recherche et évaluation en place, monofil par défaut** —
-> plusieurs fils par l'option `Threads` (Lazy SMP, 24 sept. 2026 : deux fils
-> valent **+42 ± 9 Elo** contre un à `8+0,08`, voir `tools/README.md`). Negamax avec
-> élagage alpha-bêta, approfondissement itératif, quiescence, table de
-> transposition et ordonnancement des coups — générés par étapes depuis le
-> 24 sept., **+23 ± 6 Elo** à `8+0,08`, et notés sachant les deux coups qui
-> les précèdent depuis le 25 sept., **+12,6 ± 4,4** —, plus **des élagages avancés
-> mesurés un par un** — coup nul, réduction des coups tardifs, fenêtres
-> d'aspiration, élagage delta en quiescence, futilité inverse, l'élagage par
-> **échange statique** en quiescence et l'**élagage par compte de coups**.
-> Le 5 oct. 2026, six de plus, mesurés un par un puis ensemble : la
-> réduction du coup nul croît avec la profondeur (**+41 ± 5 Elo** à
-> `8+0,08`), puis, en un groupe mesuré contre ce moteur, la garde du coup nul,
-> la réduction itérative interne, *improving* dans l'élagage par compte,
-> l'échange statique dans la recherche principale et la futilité aux nœuds
-> frontières (**+52 ± 4**). Le 6 oct., les **extensions singulières** : le
-> coup de la table gagne un pli quand aucun autre n'approche son score
-> (**+11 ± 3**). Le 7 oct., trois de plus, mesurés un par un puis
-> ensemble : la **fenêtre nulle** (PVS) — rejetée deux fois en septembre,
-> sur un autre moteur —, le **malus d'historique** et l'**extension
-> négative** (**+33 ± 3**). Du 2 au 4 nov., quatre de plus : un historique
-> borné par la gravité (**+14 ± 3**), la réduction des coups tardifs
-> modulée par lui (**+23 ± 3**), puis, mesurés un par un et ensemble, une
-> réduction plus forte là où l'on attend une coupure et un **historique de
-> correction** de l'évaluation en plusieurs tables (**+16 ± 3**).
-> L'évaluation
-> est un **réseau NNUE** depuis le 28 sept. 2026 (plus bas), et les marges de
-> la recherche suivent son échelle depuis le 1er oct. — **+50 ± 5 Elo** à
-> `8+0,08` ; celle faite main
-> couvre matériel, tables piece-square, paire de fous, mobilité, sécurité du
-> roi, structure de pions et colonnes de tours.
-> Chaque changement de recherche passe par un **SPRT** ; les verdicts, leurs
-> effectifs et leur cadence sont dans `tools/README.md`. Plusieurs sont
-> **négatifs** et ont fait retirer le changement mesuré — y compris des
-> techniques que tous les manuels recommandent. Il gagne toutes ses parties
-> contre un adversaire jouant au hasard.
->
-> **Force absolue, estimée le 9 nov. 2026 : ~3 190 ± 24** sur l'échelle
-> `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL et ajustée à 60+0,6 —
-> 300 parties à cette cadence contre Stockfish bridé à 3100 (62,7 %), avec
-> N9w50s800, le réseau embarqué le 22 oct., et la recherche de la phase 4,
-> binaire AVX2. **3 190 est le sommet de cette échelle** : la mesure
-> suivante se fait contre des moteurs classés. Le 26 oct., avec N9w50s800
-> et la recherche d'alors, **~3 153 ± 25** (57,5 %). Le 21 oct., avec
-> N8tw50s800, **~3 127 ± 24** (53,8 %) ; le matin même, avec N7p4,
-> **~3 141 ± 20** (55,8 %). Le 17 oct., avec
-> N6r4, **~3 112 ± 21** (51,7 %). Le 14 oct., avec
-> N5l, **~3 069 ± 25** contre 3100 (45,5 %) et **~3 085 ± 38** contre 2850
-> (79,5 %) — les deux niveaux d'accord à −16 ± 45. Le 13 oct., avec N4, **~3 040 ± 36** ; le
-> 7 oct., avant la composition du n° 12 et N4, **~3 000 ± 33**. Les écarts
-> d'une série à l'autre — +35 ± 49, puis +47 ± 52 — ne se séparent pas de
-> zéro, quand notre jumeau en mesure ~+52 puis +30 ; le suivant, +43 ± 33,
-> s'en sépare, quand le jumeau mesure +99 ; puis +29 ± 29, quand il
-> mesure ~+25 ; puis −14 ± 31, quand il mesure ~+23 ; puis +26 ± 35,
-> quand il mesure +5 ; puis +37 ± 35, quand il mesure ~+53 : cette
-> échelle écrase les écarts. À 79,5 %, le niveau est passé à 3100, N5l mesuré aux deux
-> pour faire le pont ; les séries suivantes se mesurent à 3100. Le 2 oct., **~2 950 ± 30** ; N2 **~2 940 ± 30** (30 sept.), le
-> premier réseau **~2 850 ± 25** (600 parties, 29 sept.), **l'évaluation
-> faite main ~2 630 ± 40**. Une estimation, pas un classement :
-> l'adversaire se trompe exprès, et le moteur jouait sur un runner à deux
-> cœurs physiques, trois parties à la fois. Protocole et réserves :
-> `tools/README.md`, section C13.
->
-> **Réserve, mesurée le 16 sept. 2026 :** les premiers verdicts du projet ont
-> tous été rendus à la cadence `1+0,01`, où le moteur atteint la profondeur
-> médiane 8,5. **Un verdict appartient à sa cadence**, et la revalidation à
-> cadence longue le montre sous deux formes. Le **signe change** : l'élagage
-> par compte de coups, au seuil 6, passe de −21,6 à +15,3 entre `1+0,01` et
-> `8+0,08` (p = 0,0013) ; le seuil 12 bascule lui aussi. La **magnitude se multiplie** : les
-> fenêtres d'aspiration valent 2,7 fois plus au régime profond (−18,9 → −51,6
-> au retrait, p ≈ 0,0004), et sécurité du roi + structure de pions + colonnes
-> de tours 2,5 fois plus (+14,9 annoncé, **−37,5 ± 13,4 au retrait** le
-> 22 sept.). Même sens à chaque fois : *mesurer court sous-estime ce dont la
-> valeur croît avec la profondeur*.
->
-> **Mais un acquis peut fondre par EMPILEMENT, et c'est mesuré depuis le
-> 22 sept. :** l'élagage delta en quiescence valait **+32,5 Elo** à `1+0,01` ;
-> remesuré à `8+0,08` sur une base qui a gagné l'échange statique entre-temps,
-> son retrait ne coûte plus que **−1,5 ± 7,8**, sans verdict. Les deux coupent
-> les mêmes captures au même endroit. Il reste dans le moteur — rien
-> n'autorise à le retirer — mais il ne vaut plus ce qui est écrit.
->
-> **Deux gains mesurés à `8+0,08` :** l'élagage par **échange statique** en
-> quiescence — les captures qui perdent du matériel n'y sont plus examinées —
-> vaut **+33,59 Elo ± 12,00** sur 1608 parties, et **+18,84 ± 15,41** sur 960
-> parties à `30+0,3` : positif aux deux cadences, sans inversion. Puis
-> l'**élagage par compte de coups**, **+22,85 ± 9,88** sur 2436 parties —
-> **la même technique avait été rejetée deux fois à `1+0,01`** (−25,2 et
-> −12,6). C'est la démonstration la plus nette de la réserve ci-dessus.
->
-> **La gestion du temps entre dans les acquis mesurés, le 23 sept. 2026.**
-> Le moteur s'alloue `restant / movestogo` par coup, avec une échéance douce
-> qui lui interdit d'entamer une itération qu'il ne finira pas. Le diviseur
-> par défaut passe de trente à douze : **+19,13 ± 6,31 Elo à `8+0,08` sur
-> 6 000 parties**, deux matchs à longueur fixe mis en commun, zéro perte au
-> temps. Le SPRT qui avait expiré en chemin rendait +14,59 — *un test
-> séquentiel interrompu minore, et c'est ici sa première confirmation*.
-> **Le diviseur a atteint sa limite** : le plafond d'une allocation plate vaut
-> `(pendule + coups × inc) / coups`, et le balayage y butte déjà. Aller plus
-> loin demande une allocation **inégale**, pas un autre réglage.
-> **Premier pas le 24 sept. : laisser finir l'itération entamée** au lieu de
-> la jeter — **+44,6 ± 6,2 Elo** à `8+0,08`, sans chercher plus profond en
-> moyenne : le temps va aux positions difficiles, où l'itération dure.
-> **Puis, le même jour, s'arrêter plus tard quand le coup vient de changer**
-> et plus tôt quand il tient depuis sept itérations — **+7,9 ± 6,1 Elo**
-> à `8+0,08`, zéro perte au temps. **Et il ne s'affame plus avant un
-> contrôle à coups comptés** (quarante coups en X) : un coup ne dépense
-> plus la pendule des suivants — à `40/8`, +2,4 ± 6,0 Elo, zéro perte au
-> temps, un correctif fusionné au titre de la règle.
->
-> **Il sait pondérer depuis le 23 sept. 2026** — réfléchir pendant le temps
-> de l'adversaire, sur le coup qu'il prévoit — mais seulement si l'interface
-> l'active : l'option `Ponder` est désactivée par défaut, comme chez
-> Stockfish, Ethereal et Leela. Désactivé, rien ne change, au nœud près et en
-> vitesse. **Activé, il vaut +67,6 ± 9,2 Elo à `8+0,08` contre lui-même**
-> (2 700 parties, zéro perte au temps) : la prévision y tombe juste sur 70 %
-> des coups, et il cherche 0,94 pli plus profond. Contre un autre adversaire
-> le chiffre change — prévoir un jumeau est le cas le plus facile. Et sur les
-> machines de mesure, qui n'ont que deux cœurs physiques, le camp qui pondère
-> prend 3 à 5 % de vitesse à l'autre : 3 à 10 Elo de ce chiffre en viennent
-> (estimation, mesurée le 23 sept.).
->
-> **Il évalue par un réseau NNUE depuis le 28 sept. 2026** — `(768 → 128) × 2
-> → 1`, entraîné par bullet sur des positions de ses propres parties et
-> embarqué dans le binaire. Le premier valait **+330,6 ± 19,2 Elo** à
-> `8+0,08` contre l'évaluation faite main (2 000 parties, zéro perte au
-> temps). Le suivant, N2, entraîné sur 249,5 millions de positions
-> étiquetées par le moteur au réseau, l'a dépassé en deux marches, chacune
-> mesurée contre la précédente sur 6 000 parties : **+115,7 ± 7,0**, puis
-> **+50,1 ± 6,1**. N2L, N2 ré-entraîné sur des données de Leela Chess Zero
-> (voir « Remerciements »), valait **+16,4 ± 6,2** contre N2 le 2 oct.
-> N4, le 13 oct., apprend sur 242 millions de positions neuves,
-> étiquetées par le moteur du 7 oct. : **+47,0 ± 4,2** contre N2, et
-> **+5,4 ± 4,2** contre N4L, le même ré-entraîné sur les données de
-> Leela — sur ces positions-là, l'étage de Leela ne paie plus. **Celui qui
-> a joué du 14 au 17 oct.**, N5l, apprend sur les mêmes données avec deux
-> fois plus d'unités (256) et huit jeux de poids de sortie selon le
-> matériel : **+30,3 ± 4,0** contre N4 sur 11 200 parties. Des seaux selon
-> la case du roi, sur ces mêmes données, régressaient nettement : ils
-> demandaient plus de positions. **Celui qui joue depuis le 17 oct.**,
-> N6r4, les a eues : 1,563 milliard de positions étiquetées par N5l, quatre
-> seaux de roi — **+98,7 ± 4,3** contre N5l sur 11 200 parties. N7p4,
-> embarqué le 21 oct. au matin, apprend sur les mêmes positions quatre
-> fois plus longtemps (400 passages de lots au lieu de 100) : **+16,9 ± 3,6**
-> contre N6r4, et devant N6r4w50 — le même que N6r4 avec moins de poids au
-> résultat des parties, +11,8 contre N6r4 — de **+6,7 ± 3,4** en match
-> direct. N8tw50s800, embarqué le 21 oct. après-midi, réunit les
-> deux et les pousse : le résultat à moitié moins de poids, deux fois plus
-> de positions — 4,63 milliards, la moitié neuve étiquetée par N6r4 — et
-> 800 passages de lots. À 400 passages, la même recette battait N7p4 de
-> **+17,9 ± 3,4** en match direct ; 800 ajoutent **+5,4 ± 3,3**, 11 200
-> parties chacun. **Celui qui joue depuis le 22 oct.**, N9w50s800, garde
-> sa recette et change ses données : toutes celles qu'étiquetait N6r4 —
-> 3,71 milliards de positions, dont un tiers étiquetées à 10 000 nœuds par
-> coup au lieu de 5 000 —, plus aucune de N5l : **+5,2 ± 3,3** contre
-> N8tw50s800, 11 200 parties.
-> L'évaluation faite main reste disponible par
-> `setoption name EvalFile value <none>`.
+> **Statut.** Un moteur UCI complet : recherche negamax alpha-bêta en
+> approfondissement itératif, avec quiescence, table de transposition,
+> génération des coups par étapes, et des élagages, réductions et
+> extensions entrés chacun sur le verdict d'un match, seuls ou en groupe.
+> Un fil par
+> défaut, plusieurs par l'option `Threads` (Lazy SMP). L'évaluation qui
+> joue est un réseau NNUE embarqué dans le binaire, appris sur les parties
+> du moteur ; l'évaluation faite main reste disponible par
+> `setoption name EvalFile value <none>`. La pendule se répartit selon le
+> temps restant et la stabilité du coup ; `Ponder` existe, éteint par
+> défaut. Le réseau qui joue et la force absolue estimée sont des faits de
+> la mémoire du projet, F-0007 et F-0011, dans
+> [`memory/canonical.md`](memory/canonical.md).
 
 ## Structure
 
 | Dossier | Contenu | Statut |
 |---|---|---|
 | `engine/` | Moteur UCI en Rust | Recherche et évaluation — un fil par défaut, plusieurs par l'option `Threads` |
-| `ui/` | Interface TypeScript | **En chantier, mené séparément** — consignes dans `ui/CLAUDE.md` |
+| `ui/` | Interface TypeScript | V1 finie, menée séparément (ADR-0027) — consignes dans `ui/CLAUDE.md` |
 | `tools/` | Arbitres, livre d'ouvertures, SPRT | Opérationnel |
 
 Le moteur et l'interface ne communiquent que par le protocole UCI sur
@@ -210,17 +65,14 @@ demande au compilateur d'employer **toutes les instructions du processeur qui
 compile** — AVX2 et au-delà sur un processeur récent. Les boucles du réseau
 (mises à jour de l'accumulateur, produit de sortie) traitent alors deux fois
 plus de valeurs par instruction, sans une ligne de code : c'est le compilateur
-qui vectorise. **Mesuré le 26 sept.** (`tools/README.md`, A21, étape 2) : le
-nœud au réseau passe de 483 à 415 ns, soit environ 16 % de nœuds en plus par
-seconde ; le nœud fait main ne bouge pas. Une seule machine et un réseau
-aléatoire de même architecture : un ordre de grandeur, pas un verdict.
+qui vectorise.
 
 **Le prix** : le binaire ne tourne plus que sur des processeurs qui ont ces
 instructions — copié sur une machine plus ancienne, il s'arrête au démarrage
 (« illegal instruction »). `native` désigne la machine qui compile : un tel
 binaire ne se distribue pas.
 
-**Le dépôt livre donc deux binaires** (Théo, 6 oct. 2026) : celui de base, qui
+**Le dépôt livre donc deux binaires** (ADR-0031) : celui de base, qui
 tourne partout, et un binaire **AVX2** compilé pour `x86-64-v3` — le jeu
 d'instructions commun aux processeurs x86 depuis Intel Haswell (2013) et AMD
 Zen (2017), hors certains Pentium, Celeron et Atom :
@@ -235,19 +87,16 @@ de chaque commit de `main` en artefact — ceux de Linux, de Windows et des deux
 sortes de Mac (ci-dessous).
 
 Il cherche **le même arbre** que celui de base — le code est entier, le
-compilateur ne change que la façon de calculer —, **× 1,235 plus vite** avec
-le réseau qui joue (mesuré le 6 oct., 20 paires sur 20, `tools/README.md`,
-A21). S'il s'arrête au démarrage, la machine n'a pas l'AVX2 : prendre celui de
-base. **Les matchs du dépôt se jouent avec le binaire AVX2 depuis le 6 oct.** ;
-leurs deux camps sont toujours compilés de la même façon, donc ce choix ne
-fausse aucun verdict. **Ce qu'il rapporte, mesuré le 7 oct.** : le même
-commit, AVX2 contre base, **+32,23 ± 4,84 Elo** à `8+0,08` sur 6 000 parties
-— exactement ce que vaut 23,5 % de temps en plus.
+compilateur ne change que la façon de calculer —, **plus vite** avec le
+réseau qui joue (ADR-0031 ; la mesure : J-2026-11-18-D). S'il s'arrête au démarrage, la machine n'a pas l'AVX2 :
+prendre celui de base. **Les matchs du dépôt se jouent avec le binaire
+AVX2** ; leurs deux camps sont toujours compilés de la même façon, donc ce
+choix ne fausse aucun verdict.
 
 ### Windows et macOS
 
 Le même script tourne sous **Windows** — dans Git Bash, avec Rust et Python
-installés — et sous **macOS** (Théo, 7 oct. 2026). Il y construit :
+installés — et sous **macOS**. Il y construit :
 
 | système | binaires |
 |---|---|
@@ -270,9 +119,8 @@ $env:RUSTFLAGS = "-C target-cpu=x86-64-v3"; cargo build --release    # PowerShel
 
 `x86-64-v3` plutôt que `native` : `native` prend tout ce qu'a le processeur
 qui compile, l'AVX-512 compris là où il existe, et l'AVX-512 n'a rien
-rapporté ici — × 0,95 de nœuds par seconde, mesuré le 6 oct.
-(`tools/README.md`, A21). `x86-64-v3` est exactement le binaire que mesurent
-les matchs du dépôt.
+rapporté ici (la mesure : J-2026-11-18-D). `x86-64-v3` est exactement le binaire que mesurent les matchs
+du dépôt.
 
 **La CI construit les binaires des quatre systèmes** — Linux, Windows, Mac
 Intel, Mac Apple Silicon — à chaque PR et à chaque commit de `main`, et
@@ -317,8 +165,7 @@ vérifie le comportement.
 tools/mutants.sh --file engine/src/tt.rs
 ```
 
-Trop lent pour bloquer une pull request — 982 mutants, environ une heure — donc
-hebdomadaire : le workflow `Mutation` tourne le mardi et confronte le résultat
+Trop lent pour bloquer une pull request, donc hebdomadaire : le workflow `Mutation` tourne le mardi et confronte le résultat
 au plafond de [`.github/mutation-baseline.txt`](.github/mutation-baseline.txt),
 qui porte aussi la raison de chaque valeur non nulle. Le cliquet casse à la
 hausse et se contente de signaler la baisse.
@@ -342,9 +189,7 @@ dépend ni de la machine ni de sa charge.
 Référence à la profondeur 7 : **77 429** nœuds.
 
 Ce chiffre est vérifié par la CI — voir
-[`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
-longtemps annoncé `8 432 521`, la valeur d'avant l'élagage par coup nul, sans
-que rien ne le signale.
+[`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs).
 
 ## Mesurer la force
 
@@ -356,18 +201,16 @@ tools/sprt.sh /tmp/candidat /tmp/reference
 Le test séquentiel s'arrête dès que les données suffisent à trancher. Détail
 dans [`tools/README.md`](tools/README.md).
 
-**Chaque verdict porte sa cadence**, table complète dans
-[`tools/README.md`](tools/README.md). Les deux extrêmes disent l'essentiel de
-la méthode : la table de transposition vaut **+164,3 Elo ± 31,3**, et la
-recherche à variante principale — qui est dans tous les manuels — a été
-**rejetée à −10,9 Elo** sur 4214 parties. Une technique standard entre par le
-SPRT comme toutes les autres.
+**Chaque verdict porte sa cadence**, et une technique standard entre par le
+SPRT comme toutes les autres, parfois pour en être rejetée. Les verdicts :
+[`tools/README.md`, « Mesures de référence »](tools/README.md#mesures-de-référence).
 
 ## Dépendances
 
 La génération de coups s'appuie sur [`cozy-chess`](https://crates.io/crates/cozy-chess).
-Ce choix est mesuré, pas idéologique : le générateur pèse 2 à 10 % du coût d'un
-nœud de recherche, donc en écrire un n'achèterait pas de performance mesurable.
+Ce choix est mesuré, pas idéologique (ADR-0008) : le générateur pèse peu dans
+le coût d'un nœud de recherche, et en écrire un n'achèterait pas de performance
+mesurable.
 
 ⚠️ `cozy-chess` emploie la notation roi-prend-tour pour le roque (`e1h1`) afin de
 supporter le Chess960, alors qu'UCI attend `e1g1`. La conversion est faite à la
