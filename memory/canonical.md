@@ -116,3 +116,18 @@ Mêmes conventions que F-0009. Le facteur des marges du réseau : F-0008.
 | relâchement de la LMR en variante principale | aucun | quatre formes sans gain démontré : la plus haute +2,79 ± 3,09 (C65) ; sur la base actuelle +1,61 ± 2,23 (C74) | ~0 à +2 | déprioritisé |
 | historique de correction | poids de Stockfish 17.1 | × 1,5 −5,96 ± 3,09 ; mi-poids +11,26 contre +14,22 au plein | ~0 à +2 | × 0,75 et × 1,25 ; chaque table retirée ; SPSA |
 | gravité de l'historique | plafonds 7 183 et 29 952, bonus `clamp(336·d − 547, 1, 1561)` | bonus × 0,5 −5,03, × 2 +2,48 (± 3,0) | quelques Elo | SPSA avec le diviseur ; papillon contre continuations |
+
+## F-0011 — La force absolue estimée du moteur : ~3 190 ± 24 au 9 nov. 2026, le sommet de l'échelle de Stockfish bridé
+
+> statut : mesuré · preuve : J-2026-11-18-D · source : `force.yml`, 300 parties à 60+0,6 contre Stockfish 16 bridé à 3100, relevées le 9 nov. 2026 · date : 2026-11-09
+
+~3 190 ± 24 sur l'échelle `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL
+et ajustée à 60+0,6 : 62,7 % contre le niveau 3100, avec N9w50s800 et la
+recherche du n° 23, binaire AVX2, sur un runner à deux cœurs physiques,
+trois parties à la fois. Une estimation, pas un classement : l'adversaire
+se trompe exprès, et cette échelle écrase les écarts (un changement se
+mesure contre notre jumeau, jamais contre elle). 3 190 est son sommet :
+la mesure suivante se fait contre des moteurs classés par la CCRL
+(`classes.yml`, B-0014). Les séries d'avant, depuis l'évaluation faite
+main (~2 630 ± 40), sont au journal avec le `README.md` d'alors
+(J-2026-11-18-D).
