@@ -17,10 +17,10 @@ J-2026-11-17-AD).
 
 Dans l'ordre que Théo a fixé (D-0016, D-0018), et que le backlog porte :
 
-1. Le jalon B-0041 : B-0036, B-0039 et B-0042 sont faits ; reste le
-   découpage de la transition (B-0043), soumis à Théo en D-0020 et
-   réécrit le 17 nov. selon la nature et l'usage de chaque information,
-   puis ses lots ; B-0038 se tranche avec lui.
+1. Le jalon B-0041 : les huit lots de la transition, B-0045 à B-0052,
+   dans l'ordre (D-0020, J-2026-11-18-A) ; chaque lot extrait faits,
+   procédures et idées avant d'archiver, et les idées non décidées
+   deviennent des sujets dont la première case est la décision de Théo.
 2. La mise à jour du socle, avec Théo (B-0044). La marge du budget de
    `CLAUDE.md` n'est que d'environ 600 octets ; si la section du socle
    grossit, le relever demandera une demande validée.

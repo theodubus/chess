@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0038 — Écarter du test des chiffres du banc les autres couches gelées que le format connaît
 
-> statut : ouvert · origine : J-2026-11-16-E · après : B-0037, B-0043 · priorité : basse · lu : backlog@72bb7d4e
+> statut : abandonné · origine : J-2026-11-16-E · ref : D-0020 · après : B-0037, B-0043 · priorité : basse · lu : backlog@72bb7d4e
 
 Le test des chiffres du banc (`engine/tests/bench_reference.rs`) écarte,
 depuis D-0015, trois couches gelées de la mémoire : le journal, les
@@ -26,3 +26,9 @@ découpage (B-0043).
 ## Fait quand
 
 - [ ] Théo a dit si les archives et la mémoire privée sont écartées, le jour où l'une existe, ou le sujet est abandonné
+
+## Abandonné
+
+Le 18 nov. 2026 : Théo a choisi que l'histoire de la documentation aille
+au journal, pas en archives (D-0020) ; aucune archive n'est prévue, et la
+mémoire privée n'est pas configurée. Rien à écarter du test.

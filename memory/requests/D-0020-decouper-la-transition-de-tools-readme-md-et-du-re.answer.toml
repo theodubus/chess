@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0020-decouper-la-transition-de-tools-readme-md-et-du-re.md, dont l'empreinte suit.
+reponse = "idees-au-backlog"
+texte = "Avec la décision de Théo comme première case de chaque sujet d'idée ; l'agent a recommandé cette solution dans la conversation avant que la réponse vaille."
+par = "Théo"
+date = "2026-11-18"
+canal = "conversation"
+citation = "idée non décidée au backlog permet de se les garder sans se polluer le contexte a chaque fois en attendant non ? \n\nPuis on peut se mettre dans les tickets en question le fait de decider de le faire \n\nSi avec ça tu recommande cette solution, alors idees-au-backlog"
+empreinte = "sha256:6fe501f8ddc65658b11315386ea16c81a086cd1d15dc1b71d956e58431171251"

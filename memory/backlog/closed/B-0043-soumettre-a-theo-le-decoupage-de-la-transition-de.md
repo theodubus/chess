@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0043 — Soumettre à Théo le découpage de la transition de tools/README.md et du README.md
 
-> statut : ouvert · origine : D-0017 · après : D-0018 · lu : backlog@3ba4e231
+> statut : fait · origine : D-0017 · ref : D-0020 · après : D-0018 · lu : backlog@3ba4e231
 
 La transition de `tools/README.md` (D-0017) et du `README.md` de la
 racine touche 1,5 Mo de texte et une cinquantaine de fichiers qui y
@@ -30,6 +30,6 @@ section par section, et non de tête.
 
 ## Fait quand
 
-- [ ] l'inventaire de `tools/README.md` et du `README.md` est fait, section par section
-- [ ] la demande du découpage est posée, et Théo y a répondu
-- [ ] les lots de la transition sont au backlog, comme tâches du jalon B-0041
+- [x] l'inventaire de `tools/README.md` et du `README.md` est fait, section par section
+- [x] la demande du découpage est posée, et Théo y a répondu
+- [x] les lots de la transition sont au backlog, comme tâches du jalon B-0041
