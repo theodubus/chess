@@ -8,7 +8,8 @@ d'un aveu sur la profondeur de recherche.
 > **Statut.** Un moteur UCI complet : recherche negamax alpha-bêta en
 > approfondissement itératif, avec quiescence, table de transposition,
 > génération des coups par étapes, et des élagages, réductions et
-> extensions entrés un par un, chacun mesuré par un SPRT. Un fil par
+> extensions entrés chacun sur le verdict d'un match, seuls ou en groupe.
+> Un fil par
 > défaut, plusieurs par l'option `Threads` (Lazy SMP). L'évaluation qui
 > joue est un réseau NNUE embarqué dans le binaire, appris sur les parties
 > du moteur ; l'évaluation faite main reste disponible par
@@ -87,7 +88,7 @@ sortes de Mac (ci-dessous).
 
 Il cherche **le même arbre** que celui de base — le code est entier, le
 compilateur ne change que la façon de calculer —, **plus vite** avec le
-réseau qui joue. S'il s'arrête au démarrage, la machine n'a pas l'AVX2 :
+réseau qui joue (ADR-0031 ; la mesure : J-2026-11-18-D). S'il s'arrête au démarrage, la machine n'a pas l'AVX2 :
 prendre celui de base. **Les matchs du dépôt se jouent avec le binaire
 AVX2** ; leurs deux camps sont toujours compilés de la même façon, donc ce
 choix ne fausse aucun verdict.
@@ -118,7 +119,7 @@ $env:RUSTFLAGS = "-C target-cpu=x86-64-v3"; cargo build --release    # PowerShel
 
 `x86-64-v3` plutôt que `native` : `native` prend tout ce qu'a le processeur
 qui compile, l'AVX-512 compris là où il existe, et l'AVX-512 n'a rien
-rapporté ici. `x86-64-v3` est exactement le binaire que mesurent les matchs
+rapporté ici (la mesure : J-2026-11-18-D). `x86-64-v3` est exactement le binaire que mesurent les matchs
 du dépôt.
 
 **La CI construit les binaires des quatre systèmes** — Linux, Windows, Mac
@@ -202,7 +203,7 @@ dans [`tools/README.md`](tools/README.md).
 
 **Chaque verdict porte sa cadence**, et une technique standard entre par le
 SPRT comme toutes les autres, parfois pour en être rejetée. Les verdicts :
-[`tools/README.md`](tools/README.md), « Mesures de référence ».
+[`tools/README.md`, « Mesures de référence »](tools/README.md#mesures-de-référence).
 
 ## Dépendances
 

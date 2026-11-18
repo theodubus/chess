@@ -15,4 +15,4 @@ le crible puis le balayage de mutation.
 - [ ] le réseau est sur `main`, sa confrontation à l'entraîneur dans le test
 - [ ] son facteur des marges est mesuré par la sonde, et écrit
 - [ ] le balayage de mutation d'après la fusion est à son plafond
-- [ ] `README.md` et la mémoire disent quel réseau joue
+- [ ] la mémoire dit quel réseau joue (F-0007), et les remerciements du `README.md` suivent ADR-0030

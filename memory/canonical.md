@@ -119,7 +119,7 @@ Mêmes conventions que F-0009. Le facteur des marges du réseau : F-0008.
 
 ## F-0011 — La force absolue estimée du moteur : ~3 190 ± 24 au 9 nov. 2026, le sommet de l'échelle de Stockfish bridé
 
-> statut : mesuré · preuve : J-2026-11-18-D · source : `force.yml`, 300 parties à 60+0,6 contre Stockfish 16 bridé à 3100, relevées le 9 nov. 2026 · date : 2026-11-09
+> statut : mesuré · preuve : J-2026-11-18-D · source : `force.yml`, run 42536770738, 300 parties à 60+0,6 contre Stockfish 16 bridé à 3100, relevées le 9 nov. 2026 (`tools/README.md`, C13, « La phase 4 ») · date : 2026-11-09
 
 ~3 190 ± 24 sur l'échelle `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL
 et ajustée à 60+0,6 : 62,7 % contre le niveau 3100, avec N9w50s800 et la
@@ -127,7 +127,9 @@ recherche du n° 23, binaire AVX2, sur un runner à deux cœurs physiques,
 trois parties à la fois. Une estimation, pas un classement : l'adversaire
 se trompe exprès, et cette échelle écrase les écarts (un changement se
 mesure contre notre jumeau, jamais contre elle). 3 190 est son sommet :
-la mesure suivante se fait contre des moteurs classés par la CCRL
-(`classes.yml`, B-0014). Les séries d'avant, depuis l'évaluation faite
+reste une série au niveau 3190 (`force.yml`), puis la mesure se fait
+contre des moteurs classés par la CCRL (`classes.yml`), au prochain
+réseau embarqué (B-0014). Chaque série relevée met ce fait à jour, plus le
+`README.md`. Les séries d'avant, depuis l'évaluation faite
 main (~2 630 ± 40), sont au journal avec le `README.md` d'alors
 (J-2026-11-18-D).

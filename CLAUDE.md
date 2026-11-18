@@ -31,8 +31,9 @@ pièges déjà payés. Il ne dit pas **où on en est**.
 - **Les décisions du projet** vivent dans `memory/decisions/`, chacune avec
   ses raisons ; les sections déjà réduites de ce fichier n'en gardent que la
   règle et le renvoi.
-- L'état du moteur : `README.md`, en tête. Le réseau qui joue et son
-  facteur des marges : `memory/canonical.md` (F-0007, F-0008).
+- L'état du moteur : `README.md`, en tête. Le réseau qui joue, son
+  facteur des marges et la force absolue : `memory/canonical.md` (F-0007,
+  F-0008, F-0011).
 - Les verdicts SPRT, avec leurs effectifs, leurs bornes **et leur cadence** :
   `tools/README.md`, section *Mesures de référence*. Le compteur n'est pas
   recopié ici : il vit dans le tableau.

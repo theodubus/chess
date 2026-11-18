@@ -13,6 +13,6 @@ de chaque réseau embarqué, hypothèse de l'agent validée par Théo le 12 nov.
 
 ## Fait quand
 
-- [ ] la série à 3190 est relevée et écrite
+- [ ] la série à 3190 est relevée et écrite dans F-0011, pas dans le `README.md`
 - [ ] la série contre les moteurs classés est relevée : une note sur la liste 40/15, avec sa marge
 - [ ] le match à 60+0,6 est relevé, son Elo écrit à côté de celui de `8+0,08`
