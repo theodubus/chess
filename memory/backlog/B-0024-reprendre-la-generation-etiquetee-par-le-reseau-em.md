@@ -10,7 +10,13 @@ Elle reprend par une tranche de taille écrite d'avance, au budget que le
 test à 1 250 nœuds aura désigné, quand un entraînement prévu demande plus
 de positions que le stock n'en porte.
 
+Avant la tranche, l'adjudication du générateur se resonde à l'échelle de
+l'étiqueteur du jour : elle n'a été mesurée qu'au réseau N0 (F-0009), par
+la rustine `tools/attic/n7-sonde-adjudication.patch` (relecture de
+B-0049).
+
 ## Fait quand
 
+- [ ] l'adjudication du générateur est resondée à l'échelle de l'étiqueteur
 - [ ] la taille de la tranche et sa raison sont écrites avant de lancer
 - [ ] la tranche est close, chaque vague dans ses attendus

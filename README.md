@@ -224,7 +224,7 @@ Leela Chess Zero](https://storage.lczero.org/files/training_data), mises à
 disposition sous l'[Open Database
 License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
 converties au format `.binpack` par des contributeurs de Stockfish (voir
-`tools/README.md`, section n° 7). Le réseau embarqué depuis le 22 oct., N9w50s800
+`tools/README.md`, « Entraîner un réseau »). Le réseau embarqué depuis le 22 oct., N9w50s800
 — comme N8tw50s800, N7p4, N6r4, N5l et N4 avant lui —, n'apprend que sur les
 parties du moteur.
 

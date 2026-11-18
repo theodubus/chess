@@ -80,18 +80,23 @@ journal garde les récits.
 ## 5. La relève et la composition
 
 - Chaque candidat se relève par le skill `rendre-un-verdict`.
-- **Plusieurs gagnants contre la même base** : le meilleur entre seul ; les
-  autres forment un groupe, composé sur le `main` qui le porte, et mesuré
-  contre lui.
+- **Plusieurs gagnants contre la même base** se composent TOUS ensemble sur
+  un `main` dont le moteur est cette base au bit près, et le groupe se
+  mesure contre ce `main` : ses membres et lui partagent alors leur base,
+  et leurs points se comparent (n° 12, n° 23).
 - Avant le match du groupe : son arbre contre le produit des arbres de ses
   membres seuls, et **le groupe privé de chaque membre**, rejoué. Un membre
   dont la part d'arbre tombe sous la moitié de sa part seul est absorbé :
   un match de retrait le mesure si le groupe passe.
-- **Le critère du groupe** : borne basse commune au-dessus de zéro, et son
-  point pas démontré sous celui de son meilleur membre seul ; sinon,
-  bissection par famille ou par paires, critère écrit avant. Le
-  recouvrement d'arbre ne mesure pas le recouvrement de décision : un
+- **Le critère du groupe**, écrit avant : borne basse commune au-dessus de
+  zéro, ET son point pas démontré sous celui de son meilleur membre seul ;
+  sinon, bissection par paires ou par famille, ou le meilleur entre seul.
+  Le recouvrement d'arbre ne mesure pas le recouvrement de décision : un
   groupe sans membre absorbé peut rester sous-additif.
+- **La variante du n° 9**, quand un gagnant est entré seul d'abord : le
+  groupe des autres se mesure contre le `main` qui le porte, et seule la
+  borne basse s'y lit — son point et les gains seuls n'ont plus la même
+  base (`CLAUDE.md`, « un verdict appartient à sa base »).
 
 ## 6. Inscrire
 

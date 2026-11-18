@@ -48,8 +48,8 @@ Le candidat a été mesuré sur un commit révoqué aussitôt, fusionné en
 `merge` pour que son SHA reste atteignable.
 
 - **Plusieurs gagnants contre la même base** ne s'additionnent pas sur le
-  papier : seul le meilleur entre, et les autres se remesurent ensemble,
-  par une composition, contre la base qui le porte.
+  papier : ils se remesurent ensemble, par une composition, avant
+  d'entrer ; sa procédure est celle du skill `passer-a-l-ecran`.
 - **Un conflit** avec ce qui a fusionné entre-temps ne se résout pas en
   gardant tout par défaut : si les deux changements touchent la même
   décision de recherche, leur somme n'a jamais été mesurée, et elle se

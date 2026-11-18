@@ -575,8 +575,10 @@ lisent dans le workflow ; ce qui suit est ce qu'aucune entrée ne dit.
   drapeaux que les deux cases ne donnent pas. **Le filtre se fait au
   chargement**, pas à l'écriture — positions en échec, coups tactiques,
   premiers demi-coups —, si bien qu'un autre filtre ne demande pas de
-  regénérer. `viriformat` compte le demi-coup depuis la FEN de chaque
-  partie, qui commence APRÈS ses coups tirés au hasard.
+  regénérer. `viriformat` compte le demi-coup par le numéro de coup que
+  pose la FEN de chaque partie, enregistrée APRÈS ses coups tirés au
+  hasard : son filtre par défaut, rien avant le seizième, retire donc les
+  demi-coups 8 à 15 réellement joués (F-0009, « filtre des positions »).
 - **Une partie est une fonction pure** de la graine, de son numéro, du
   budget de nœuds et de l'évaluation qui étiquette, au commit donné :
   table vidée à chaque partie, un fil par recherche. Un job joue les
@@ -622,7 +624,9 @@ message suffit au diagnostic :
 
 **Les données** : des `.vf` posés directement dans les dossiers donnés au
 programme, pas dans un sous-dossier ; ou un `.binpack` de Stockfish, lu par
-le chargeur de bullet, jamais mêlé à des `.vf` dans un même entraînement.
+le chargeur de bullet. Les deux formats n'ont pas la même échelle de scores
+et ne se mêlent que sur demande, par `--melange PART` : PART des positions
+vues viennent des binpacks, ramenées à notre échelle (n° 20).
 Le seul binpack employé, `training_data.binpack` — des parties de Leela
 Chess Zero, extraites d'une archive `training_data.7z` du Drive que nomme
 le wiki de l'entraîneur de Stockfish (page « Training datasets » de
@@ -637,8 +641,8 @@ est `storage.lczero.org` (ADR-0030).
 sauvegarde, celui qui porte `optimiser_state/` : le réseau quantifié seul
 ne suffit pas. **Les dossiers de sortie se gardent** sur la machine.
 
-**Une séance, sur la machine de Théo** (Ubuntu, RTX 3050, pilote qui
-plafonne à CUDA 13.2) :
+**La machine de Théo** (Ubuntu, RTX 3050, pilote qui plafonne à CUDA
+13.2) ; la procédure d'une séance est le skill `preparer-une-seance` :
 - **CUDA** : le toolkit ne doit pas dépasser la « CUDA Version » que
   `nvidia-smi` prête au pilote — bullet compile ses noyaux par NVRTC en
   PTX, que le pilote recompile, et un pilote refuse un PTX plus récent que
@@ -1017,8 +1021,9 @@ depuis le 18 nov. (B-0049), une entrée par section, texte tel quel. C'est
 là que mènent les renvois à « A21 » et ses étapes (J-2026-11-18-BD), « N° 7 » et « Levier 4 » (J-2026-11-18-BE), « N° 9 » (l'écran) (J-2026-11-18-BF), « N° 9, premier écran » (J-2026-11-18-BG), « deuxième écran » (J-2026-11-18-BH), « troisième écran » (J-2026-11-18-BI), « N° 9, la composition » (J-2026-11-18-BJ), son verdict (J-2026-11-18-BK), « quatrième écran » (J-2026-11-18-BL), son verdict (J-2026-11-18-BM), « C43 et C44 » (J-2026-11-18-BN), leur verdict (J-2026-11-18-BO), « N° 10 » (J-2026-11-18-BP), son verdict (J-2026-11-18-BQ), « N° 12, le cinquième écran » (J-2026-11-18-BR), son relevé (J-2026-11-18-BS), « les candidats C45 à C51 » (J-2026-11-18-BT), leur verdict (J-2026-11-18-BU), « N° 12, la composition » (J-2026-11-18-BV), son arbre (J-2026-11-18-BW), son verdict (J-2026-11-18-BX), « N° 13 », N4 et N4L (J-2026-11-18-BY).
 
 Ce qu'elles portaient d'utile est à sa place : les procédures, dans les
-skills `sonder-les-marges` (`.claude/skills/sonder-les-marges/SKILL.md`)
-et `passer-a-l-ecran` (`.claude/skills/passer-a-l-ecran/SKILL.md`) ; la
+skills `sonder-les-marges` (`.claude/skills/sonder-les-marges/SKILL.md`),
+`passer-a-l-ecran` (`.claude/skills/passer-a-l-ecran/SKILL.md`) et
+`preparer-une-seance` (`.claude/skills/preparer-une-seance/SKILL.md`) ; la
 documentation du générateur et de l'entraînement, dans « Générer les
 données NNUE » et « Entraîner un réseau » ; les runs des générations
 d'avant le n° 18, et de quoi les regénérer, désignés dans B-0026 ; deux
