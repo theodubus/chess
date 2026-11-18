@@ -40,8 +40,8 @@ l'adresse entre parenthèses ; jamais une adresse brute (Théo, 16 nov.
 2026, J-2026-11-16-F).
 
 Le skill de reprise s'applique : deux réveils par tour qui agit, retirés
-à la fin du tour. Le registre des réglages ouverts n'est écrit que dans
-`tools/README.md`, sous-section « Les réglages ouverts ». Les données d'entraînement
+à la fin du tour. Les réglages ouverts sont deux faits, F-0009 (réseau) et F-0010
+(recherche). Les données d'entraînement
 expirent chez GitHub à partir du 24 déc. 2026 (F-0005, B-0026).
 
 Livraison, confirmée par Théo : une branche de développement, une seule
