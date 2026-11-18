@@ -96,8 +96,8 @@ accompagnaient ces lignes sont au journal (J-2026-11-17-N).
   où un réseau entraîné sur elles est embarqué, `README.md` porte la
   mention d'attribution**, comme celui de Stockfish ; elle y est, section
   « Remerciements », et reste tant que `reseaux/` garde un réseau qui en a
-  appris. Plan et mesures : `tools/README.md`,
-  n° 7 et n° 20.
+  appris. Plan et mesures : le n° 7 au journal
+  (J-2026-11-18-BE), le n° 20 dans `tools/README.md`.
 - **UCI est l'unique frontière** entre le moteur et le reste du monde
   (ADR-0004).
 - **Deux binaires livrés, et la mesure se fait sur le binaire AVX2**
