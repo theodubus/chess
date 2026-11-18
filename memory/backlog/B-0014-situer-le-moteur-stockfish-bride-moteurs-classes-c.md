@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0014 — Situer le moteur : Stockfish bridé, moteurs classés, cadence longue
 
-> statut : ouvert · origine : D-0004 · après : B-0013 · lu : backlog@de17c023
+> statut : ouvert · origine : D-0004 · après : B-0013, B-0068 · lu : backlog@de17c023
 
 Trois mesures absolues du moteur qui porte le nouveau réseau. La série
 contre Stockfish bridé à 3190 (`.github/workflows/force.yml`), dernière
