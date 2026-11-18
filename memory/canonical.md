@@ -104,11 +104,13 @@ moyenne. L'histoire de chaque mesure : J-2026-11-18-B.
 
 ## F-0010 — Les réglages ouverts de la recherche : chaque valeur, sa borne mesurée, sa marge, son prochain test
 
-> statut : mesuré · preuve : J-2026-11-18-B, J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23, du 2 au 5 nov. 2026, et ceux du temps, C21 à C26, en septembre · date : 2026-11-18
+> statut : mesuré · preuve : J-2026-11-18-B, J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y, J-2026-11-18-AH, J-2026-11-18-AI, J-2026-11-18-AJ, J-2026-11-18-R · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23, du 2 au 5 nov. 2026, ceux du temps, C21 à C26, et ceux de la table et du ponder, en septembre · date : 2026-11-18
 
 Mêmes conventions que F-0009, sauf la cadence nommée. Le facteur des
 marges du réseau : F-0008. Les verdicts du temps, de C21 à C26, sont au
-journal (J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y).
+journal (J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y), ceux de la table
+et du ponder aussi (J-2026-11-18-AJ, J-2026-11-18-AH, J-2026-11-18-AI,
+J-2026-11-18-R).
 
 | réglage | valeur | ce qui la borne | marge | ensuite |
 |---|---|---|---|---|
@@ -121,10 +123,12 @@ journal (J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y).
 | diviseur de la pendule (`MOVES_TO_GO_DEFAUT`) | 12 | 30 → 12 +19,13 ± 6,31 (C21) ; 12 sature une allocation plate, 10 alloue moins | ~0 : saturé | une allocation inégale, pas un autre diviseur |
 | douces par stabilité du coup (`SOFT_PERMILLE`) | 1 825, 885, 513, 257 ‰ | la règle +7,87 ± 6,08 contre C24 (C25) ; échelle calibrée au temps moyen de C24 | inconnue | SPSA |
 | réserve avant un contrôle (`CONTROL_RESERVE_PERCENT`) | 50 % | correctif entré au titre de la règle : +2,43 ± 6,01, à `40/8` (C26) | inconnue | aucun test décidé |
+| table (`DEFAULT_SIZE_MB`, seaux) | 64 Mio ; seaux de quatre, la moins utile cède (profondeur − 8 × âge) | la pression de 60+0,6, reproduite à 2 Mio, −19,42 ± 5,78 (C28) ; 16 → 64 Mio +2,90 ± 5,72 (C30) ; les seaux +30,13 ± 5,60 sous cette pression, +1,85 ± 5,51 au défaut (C29) | ~0 à `8+0,08` ; 40/15 reste sous pression | aucun test décidé |
+| temps quand `Ponder` est permis | rien de plus | ponder d'un camp +67,63 ± 9,19 contre le jumeau, p = 0,659 ; il finissait à `2+0,02` avec 604 ms contre 283 | 16 à 28 Elo | B-0067 |
 
 ## F-0011 — La force absolue estimée du moteur : ~3 190 ± 24 au 9 nov. 2026, le sommet de l'échelle de Stockfish bridé
 
-> statut : mesuré · preuve : J-2026-11-18-D · source : `force.yml`, run 42536770738, 300 parties à 60+0,6 contre Stockfish 16 bridé à 3100, relevées le 9 nov. 2026 (`tools/README.md`, C13, « La phase 4 ») · date : 2026-11-09
+> statut : mesuré · preuve : J-2026-11-18-D, J-2026-11-18-AE · source : `force.yml`, run 42536770738, 300 parties à 60+0,6 contre Stockfish 16 bridé à 3100, relevées le 9 nov. 2026 (C13, « La phase 4 », au journal) · date : 2026-11-09
 
 ~3 190 ± 24 sur l'échelle `UCI_Elo` de Stockfish 16, ancrée à l'Elo CCRL
 et ajustée à 60+0,6 : 62,7 % contre le niveau 3100, avec N9w50s800 et la
@@ -134,7 +138,60 @@ se trompe exprès, et cette échelle écrase les écarts (un changement se
 mesure contre notre jumeau, jamais contre elle). 3 190 est son sommet :
 reste une série au niveau 3190 (`force.yml`), puis la mesure se fait
 contre des moteurs classés par la CCRL (`classes.yml`), au prochain
-réseau embarqué (B-0014). Chaque série relevée met ce fait à jour, plus le
-`README.md`. Les séries d'avant, depuis l'évaluation faite
-main (~2 630 ± 40), sont au journal avec le `README.md` d'alors
-(J-2026-11-18-D).
+réseau embarqué (B-0014), par le skill `situer-le-moteur`. Chaque série
+relevée met ce fait à jour, et le `README.md` n'en porte plus le chiffre.
+Ce que cette échelle fait d'un écart : F-0012. Les séries d'avant, depuis l'évaluation faite
+main (~2 630 ± 40), sont au journal, avec le `README.md` d'alors
+(J-2026-11-18-D) et le protocole C13 qui les relevait (J-2026-11-18-AE).
+
+## F-0012 — L'échelle de Stockfish bridé écrase les écarts : elle situe le moteur, elle ne mesure aucun changement
+
+> statut : mesuré · preuve : J-2026-11-18-AE · source : les séries de `force.yml` du 29 sept. au 9 nov. 2026 (C13), et `src/search.cpp` de Stockfish 16 au tag `sf_16` · date : 2026-11-09
+
+Stockfish bridé (`UCI_LimitStrength`) choisit son coup à profondeur fixe,
+`1 + level` (8 à `UCI_Elo` 2600, 12 à 2850, 17 à 3100), puis joue par
+moments un coup sous-optimal tiré au hasard : sa force ne dépend ni de la
+cadence ni de la machine, la nôtre si, et un runner lent nous
+sous-estime. Ce qu'il rend d'un écart mesuré contre notre jumeau, au
+point : de 0,44 à 1,6 pour quatre réseaux, et deux autres sous le bruit
+d'une série (−0,6 et ~5) ; 0,52 et 0,70 ± 0,66 pour deux gains de
+recherche ou de vitesse ; de 0,13 à 1,2 pour trois mélanges ; et
++40 ± 42 pour six fois plus de temps, là où l'auto-jeu en promet ~250.
+Aucun de ces points ne se sépare des autres : le facteur n'est pas
+mesuré. Deux ponts entre les niveaux 2850 et 3100
+s'accordent (+52 ± 48, −16 ± 45) : les séries se comparent d'un niveau à
+l'autre. Une série de 300 parties tient ± 20 à ± 40 : elle situe le
+moteur, elle ne départage pas deux réseaux voisins. D'où la règle de
+`CLAUDE.md` : un changement se mesure contre notre jumeau.
+
+## F-0013 — La quiescence ne teste pas la nulle après une parade tranquille : le correctif est écrit, arrêté par son critère
+
+> statut : mesuré · preuve : J-2026-11-18-AG · source : C31, deux matchs de 3 000 parties à `8+0,08`, relevés le 30 sept. 2026 · date : 2026-09-30
+
+`negamax` teste la nulle par règle à chaque nœud ; la quiescence ne la
+teste pas, et une parade tranquille, en échec, peut atteindre le centième
+demi-coup ou répéter une position du chemin : l'enfant est évalué comme
+si la partie continuait. Signature : les avertissements « PV continues
+after fifty-move rule » et « … after threefold repetition » côté
+ShallowRed, environ un pour 1 000 parties à `8+0,08`. Le correctif, trois
+tests et sept défauts injectés, est la rustine
+`tools/attic/c31-nulle-quiescence.patch` : −2,43 ± 5,36 en commun, mais la
+borne haute d'un des deux matchs à −0,27, d'où l'arrêt par le critère d'un
+correctif de règle. Il n'est pas démontré coûteux. Le remesurer demande
+un fait technique neuf, jamais une seconde chance.
+
+## F-0014 — La relation de budget : parties × Elo ≈ 59 256 sur dix-huit SPRT, et elle tient aux deux cadences mesurées
+
+> statut : mesuré · preuve : J-2026-11-18-AV · source : les dix-huit SPRT du projet jusqu'au 22 sept. 2026, `parties × Elo` de chacun · date : 2026-09-22
+
+`parties × Elo` vaut 59 256 en médiane sur dix-huit SPRT, de 45 933 à
+80 178 : un budget estimé se lit à ± 50 %. Elle ne suit pas la cadence,
+à `1+0,01` et `8+0,08` : quatre techniques mesurées aux deux rendent des
+rapports de 0,85 à 1,12, quand leur Elo change d'un facteur 2,5 et
+parfois de signe. Réserve : seule l'une des quatre paires, le retrait de
+l'aspiration (1,04), est un contrôle apparié, les autres changeant de base
+entre les deux mesures ; et deux cadences ne disent rien d'une
+troisième. Elle dimensionne un match par l'Elo attendu à SA
+cadence ; tiré d'un verdict à `1+0,01`, ce budget n'est qu'un majorant.
+Elle ne vaut pas pour un SPRT coupé par le plafond, dont l'effectif n'est
+pas choisi par l'effet.

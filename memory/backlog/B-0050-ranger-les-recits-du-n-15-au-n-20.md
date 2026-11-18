@@ -8,6 +8,9 @@ Lot de la transition (D-0020) : les sections de « N° 15 à 19 » à « N° 20 
 La méthode est celle de B-0047 : faits, procédures et idées extraits et
 posés à leur place d'abord, le reste au journal, chaque chiffre retrouvé.
 
+Les sondes des marges de ces réseaux suivent la règle écrite dans
+B-0049 : leur procédure s'écrit en skill avant que leurs récits partent.
+
 ## Fait quand
 
 - [ ] faits, procédures et idées de ces sections à leur place, vérifiés par la relecture sans contexte

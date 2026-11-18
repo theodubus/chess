@@ -10,6 +10,11 @@ réseau embarqué : la sonde des marges, qui mesure son facteur ; la
 confrontation à l'entraîneur, recopiée dans le test du réseau embarqué ;
 le crible puis le balayage de mutation.
 
+Tant que le skill de B-0015 n'existe pas, la sonde se mène par sa
+rustine, `tools/attic/b8-sonde-marges.patch`, et ses lecteurs ; ses
+règles de lecture sont au journal (B8, J-2026-11-18-AF) et dans les
+récits des embarquements, que B-0049 et B-0050 rangent en skill.
+
 ## Fait quand
 
 - [ ] le réseau est sur `main`, sa confrontation à l'entraîneur dans le test
