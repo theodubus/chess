@@ -4,7 +4,7 @@
 > statut : ouvert · origine : J-2026-11-17-AF · après : B-0065 · priorité : basse · lu : backlog@c40befb4
 
 Idée non décidée de la longue traîne : sa première étape est la décision
-de la tester ou de l'abandonner (B-0065, D-0020). L'agent ne s'y met pas avant.
+de la tester ou de l'abandonner (B-0065, D-0020, D-0021). L'agent ne s'y met pas avant.
 
 Les ouvertures du générateur de données sont 8 à 11 demi-coups au hasard,
 jamais comparées à un livre pour la diversité des données (file,
@@ -15,5 +15,5 @@ positions.
 
 ## Fait quand
 
-- [ ] Théo a décidé de la tester, ou de l'abandonner
+- [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : la diversité comparée, puis un réseau mesuré sur les données neuves

@@ -9,14 +9,14 @@ et n'est donc jamais « prête » avant d'avoir été tranchée. C'est le
 verrou que l'état calcule, sans s'afficher à chaque récap comme le ferait
 un sujet `pour : humain`.
 
-Quand ce sujet devient prêt, après la mise à jour du socle, l'agent pose
-une seule demande qui les présente toutes, chacune avec sa marge estimée
-et son coût ; selon la réponse, une idée retenue perd ce sujet de ses
-`après`, une idée écartée est abandonnée avec sa référence. Qui tranche :
-Théo, tel que D-0020 a été consigné ; il a été interrogé le 18 nov. sur
-la lecture inverse (l'agent tranche, marge contre coût, et ne lui demande
-que ce qui l'engage, ADR-0032), sans réponse encore.
+Quand ce sujet devient prêt, après la mise à jour du socle, l'agent
+tranche chaque idée lui-même, comme tout test (Théo, 18 nov. 2026,
+D-0021) : elle vaut d'être testée si sa marge estimée vaut son coût
+(ADR-0032) ; il ne demande à Théo que ce qui l'engage, sa carte, une
+machine, une dépense, ou ce qui rouvrirait une décision structurante.
+Une idée retenue perd ce sujet de ses `après` et prend son rang ; une idée
+écartée est abandonnée, avec sa raison.
 
 ## Fait quand
 
-- [ ] chaque idée est retenue ou abandonnée, avec sa référence
+- [ ] chaque idée est retenue ou abandonnée, avec sa raison

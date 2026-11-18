@@ -4,7 +4,7 @@
 > statut : ouvert · origine : J-2026-11-18-F · après : B-0065 · priorité : basse · lu : backlog@6a468181
 
 Idée non décidée : sa première étape est la décision de la tester ou de
-l'abandonner (B-0065, D-0020). L'agent ne s'y met pas avant.
+l'abandonner (B-0065, D-0020, D-0021). L'agent ne s'y met pas avant.
 
 Quand `Ponder` est activé, une prévision juste rend au moteur le temps de
 réflexion déjà passé sur le coup adverse ; le budget, proportionnel à ce
@@ -18,5 +18,5 @@ en blitz. Relevé dans les récits du ponder, au rangement de septembre
 
 ## Fait quand
 
-- [ ] Théo a décidé de la tester, ou de l'abandonner
+- [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : le supplément réglé à la sonde, puis un match en `les-deux`

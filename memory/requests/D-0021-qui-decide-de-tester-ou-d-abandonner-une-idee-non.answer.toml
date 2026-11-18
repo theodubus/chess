@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0021-qui-decide-de-tester-ou-d-abandonner-une-idee-non.md, dont l'empreinte suit.
+reponse = "l-agent"
+texte = ""
+par = "Théo"
+date = "2026-11-18"
+canal = "conversation"
+citation = "Qui tranche les idées : l'agent decide si ça vaut le coup d'etre testé, comme avant"
+empreinte = "sha256:053142ebd185da358d949afe442b14376b83f90aaeca2c3e6b768bb18faee4f4"
