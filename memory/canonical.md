@@ -77,7 +77,7 @@ N9w50s800 »). La faite main garde ses marges au bit près.
 
 ## F-0009 — Les réglages ouverts du réseau : chaque valeur, sa borne mesurée, sa marge, son prochain test
 
-> statut : mesuré · preuve : J-2026-11-18-B · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts de juillet à novembre 2026 · date : 2026-11-18
+> statut : mesuré · preuve : J-2026-11-18-B · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du 21 oct. au 10 nov. 2026 · date : 2026-11-18
 
 Aucun n'est résolu : une valeur validée est une borne basse (ADR-0032).
 Matchs à `8+0,08`, ± à 95 % ; marges estimées, confiance faible sauf (m),
@@ -87,7 +87,7 @@ moyenne. L'histoire de chaque mesure : J-2026-11-18-B.
 |---|---|---|---|---|
 | superlots | 800 | 400 → 800 +5,43 ± 3,34 à 4,63 G | +2 à +5 au doublement | 1 600, en dernier (B-0028) |
 | poids du résultat | 0,5 | 0,625 −1,86, 0,75 −2,95 (± 3,3) | rien au-dessus (m) | 0,375 ; rouvert si passes ou données changent |
-| pas initial | 0,001 | × 2 −4,90 ± 3,41 ; × 0,5 −0,12 | quelques Elo | rouvert avec le lot ou la largeur |
+| pas initial | 0,001 | à 100 superlots seulement : × 2 −4,90 ± 3,41 ; × 0,5 −0,12 | quelques Elo | rouvert avec le lot ou la largeur |
 | pas final | × 0,3⁵, cosinus | × 0,1 +1,40, × 10 −13,13 (± 3,4) | fine (m) | entre × 0,1 et × 1 ; la forme, jamais touchée |
 | perte | écart au carré | exposant 2,5 +0,84 ± 3,28 | ~0 ± 3 (m) | rouvert si les données changent |
 | taille de lot | 16 384 | 8 192 −5,43, 32 768 +2,30 (± 3,3) | 0 à +3 vers les grands | 32 768 avec son pas |
@@ -97,14 +97,14 @@ moyenne. L'histoire de chaque mesure : J-2026-11-18-B.
 | étiqueteur | N9w50s800, 2 500 nœuds | 2 500 contre 5 000 +5,77 ± 3,34 ; 10 000 −7,38 à temps égal | jusqu'à ~+9 au doublement | 1 250 nœuds (B-0023) |
 | largeur | 256 ; 512 au candidat | 384 +24,86, 512 +32,57 contre 256 (± 3,3) | +3 à +8 au pas suivant | B-0012, puis B-0022 |
 | seaux de roi | 4 ; 10 au candidat | 10 contre 4 +14,77 ± 3,27 à 11,35 G | +5 à +10 vers 16 | B-0020 |
-| seaux de sortie | 8, selon le matériel | 1 contre 8 seulement | inconnue | aucun test décidé |
+| seaux de sortie | 8, selon le matériel | 1 contre 8 seulement | inconnue | B-0066 |
 | couches cachées | aucune | jamais | inconnue | B-0021 |
 | ouvertures du générateur | 8 à 11 demi-coups au hasard | jamais | inconnue | B-0059 |
 | seuil des ouvertures | 1 000 (`OPENING_MAX_SCORE`) | jamais en force ; son taux suit l'étiqueteur, 21 % sous N9w50s800 | inconnue | avec B-0059 ; jamais en cours de tranche |
 
 ## F-0010 — Les réglages ouverts de la recherche : chaque valeur, sa borne mesurée, sa marge, son prochain test
 
-> statut : mesuré · preuve : J-2026-11-18-B · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23 et de B8 · date : 2026-11-18
+> statut : mesuré · preuve : J-2026-11-18-B · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23, du 2 au 5 nov. 2026 · date : 2026-11-18
 
 Mêmes conventions que F-0009. Le facteur des marges du réseau : F-0008.
 
@@ -112,7 +112,7 @@ Mêmes conventions que F-0009. Le facteur des marges du réseau : F-0008.
 |---|---|---|---|---|
 | marges et constantes | à la main, au facteur du réseau | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA (B-0017), refait à chaque réseau |
 | diviseur de la note de la LMR | 6 000 | 4 000 −2,57, 9 000 −7,20 ; le décalage ± 2 000 plat (± 3,0) | ~0 à +2 | le diviseur par profondeur, le papillon double, à l'écran ; puis SPSA |
-| bonus de la LMR aux nœuds de coupure | 2 plis | 1 pli +3,29 ; 3 plis −0,09 (± 3,1) | ~0 à +2 | SPSA |
-| relâchement de la LMR en variante principale | aucun | quatre formes sans gain ; la meilleure +1,61 ± 2,23 | ~0 à +2 | aucun test décidé |
+| bonus de la LMR aux nœuds de coupure | 2 plis | contre la base sans bonus, 1 pli +3,29, 2 plis +5,06 ; 3 plis contre 2 −0,09 (± 3,1) | ~0 à +2 | SPSA |
+| relâchement de la LMR en variante principale | aucun | quatre formes sans gain démontré : la plus haute +2,79 ± 3,09 (C65) ; sur la base actuelle +1,61 ± 2,23 (C74) | ~0 à +2 | déprioritisé |
 | historique de correction | poids de Stockfish 17.1 | × 1,5 −5,96 ± 3,09 ; mi-poids +11,26 contre +14,22 au plein | ~0 à +2 | × 0,75 et × 1,25 ; chaque table retirée ; SPSA |
 | gravité de l'historique | plafonds 7 183 et 29 952, bonus `clamp(336·d − 547, 1, 1561)` | bonus × 0,5 −5,03, × 2 +2,48 (± 3,0) | quelques Elo | SPSA avec le diviseur ; papillon contre continuations |

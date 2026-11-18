@@ -1,10 +1,10 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0060 — Faire fixer le budget d'un coup par un réseau
 
-> statut : ouvert · origine : J-2026-11-17-AF · après : B-0044 · priorité : basse · lu : backlog@c40befb4
+> statut : ouvert · origine : J-2026-11-17-AF · après : B-0065 · priorité : basse · lu : backlog@c40befb4
 
-Idée non décidée de la longue traîne : sa première étape est ta décision,
-Théo, de la tester ou de l'abandonner (D-0020). L'agent ne s'y met pas avant.
+Idée non décidée de la longue traîne : sa première étape est la décision
+de la tester ou de l'abandonner (B-0065, D-0020). L'agent ne s'y met pas avant.
 
 Un réseau qui fixe le budget d'un coup selon la pendule et la position :
 question de Théo, 6 oct. 2026. Avis de l'agent, pas une décision : petit

@@ -1,10 +1,10 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0059 — Comparer les ouvertures du générateur à un livre
 
-> statut : ouvert · origine : J-2026-11-17-AF · après : B-0044 · priorité : basse · lu : backlog@c40befb4
+> statut : ouvert · origine : J-2026-11-17-AF · après : B-0065 · priorité : basse · lu : backlog@c40befb4
 
-Idée non décidée de la longue traîne : sa première étape est ta décision,
-Théo, de la tester ou de l'abandonner (D-0020). L'agent ne s'y met pas avant.
+Idée non décidée de la longue traîne : sa première étape est la décision
+de la tester ou de l'abandonner (B-0065, D-0020). L'agent ne s'y met pas avant.
 
 Les ouvertures du générateur de données sont 8 à 11 demi-coups au hasard,
 jamais comparées à un livre pour la diversité des données (file,

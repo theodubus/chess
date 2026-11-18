@@ -17523,15 +17523,16 @@ feuille de route, validée par Théo le 31 oct. 2026, en est partie le
 désignent les renvois « feuille de route, point N » de ce fichier et du
 code. Le 17 nov. (D-0017), en sont partis aussi les phases de « La file »,
 réécrite le 20 oct., et le tableau des chantiers de « L'histoire de
-l'ordre » : chaque ligne encore ouverte est au backlog, ou dans la longue
-traîne, qui n'y entre que le jour où un test est décidé (D-0004). Leur
+l'ordre » : chaque ligne encore ouverte est au backlog, les idées non
+décidées comprises, qui y attendent leur décision (D-0020, B-0065). Leur
 texte est au journal (J-2026-11-17-AF, J-2026-11-17-AI) : c'est lui que
 désignent les renvois « La file », « phase N » et « L'histoire de
 l'ordre » plus haut dans ce fichier, sauf les deux récits titrés « La
-file, phase 2 », restés en place. Les réglages ouverts sont depuis le
-18 nov. deux faits de la mémoire, F-0009 (réseau) et F-0010 (recherche) ;
-le texte de leur ancienne section, que désignent les renvois « Les
-réglages ouverts » et « le registre » plus haut, est au journal
+file, phase 2 », restés en place, et ceux qui citent le registre ou les
+réglages ouverts. Ceux-là sont depuis le 18 nov. deux faits de la
+mémoire, F-0009 (réseau) et F-0010 (recherche), et le texte de leur
+ancienne section, que désignent les renvois « Les réglages ouverts » et
+« le registre » plus haut, même accolés à « La file », est au journal
 (J-2026-11-18-B).
 
 #### B9 ne se valide PAS par « nœuds identiques » — mesuré le 22 sept. 2026
