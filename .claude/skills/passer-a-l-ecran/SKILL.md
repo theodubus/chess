@@ -53,22 +53,22 @@ journal garde les récits.
 - Un seuil sur une grandeur sans échelle (un historique non borné) est une
   dérive, pas un réglage : il agit d'autant plus que la recherche est
   profonde.
-- **Avant de régler une échelle, lire dans le code où la grandeur est
-  lue** : une règle qui ne dépend que de l'ordre des notes n'en voit pas
-  l'échelle, et une variante d'échelle se mesure à échelle TENUE des
-  règles qui la lisent — leur diviseur ajusté au rejeu pour qu'elles
-  changent la même part de leurs décisions —, sans quoi elle remesure ce
-  diviseur.
+- **Avant de régler une échelle, lire où la grandeur est lue** : une
+  variante d'échelle se mesure à échelle TENUE des règles qui la lisent —
+  leur diviseur ajusté au rejeu pour la même part de décisions changées —,
+  sans quoi elle remesure ce diviseur.
 
 ## 4. Ce que l'écran décide
 
 - **Le protocole écrit avant tient, et ses écarts se nomment** : une
-  seconde série se dit ajoutée après lecture de la première, avec ses
-  raisons ; une règle de l'écran qui mesure la mauvaise chose — un seuil
-  d'arbre devant une variante qui change OÙ l'on cherche à arbre égal —
-  tombe, nommée, sur une mesure indépendante du changement ; un test du
-  registre que l'écran montre confondu avec un autre se remplace avant
-  d'être lancé.
+  seconde série, ajoutée après lecture, avec ses raisons ; une règle de
+  l'écran qui mesure la mauvaise chose — un seuil d'arbre devant une
+  variante qui change OÙ l'on cherche — tombe, nommée, sur une mesure
+  indépendante du changement.
+- **Une technique d'élagage** se ferme à l'écran sous **dix points d'arbre
+  économisés par point de dégâts** (les montées d'`alpha` qu'elle
+  détruit) : la futilité et l'élagage par compte en achetaient 11 à 15,
+  et C40, qui a régressé, 5.
 - **Fermé sans match** : un mécanisme qui n'agit pas, une variante qui ne
   déplace pas l'arbre, des dégâts sans économie, un plafond sous ce qu'un
   match trancherait (`parties × Elo`, F-0014). Une technique dont
@@ -86,18 +86,19 @@ journal garde les récits.
   tous deux : le meilleur au point. Un candidat qui n'existe que porté par
   un autre — une LMR qui lit l'échelle que pose une gravité — se mesure
   contre lui, et entre avec lui si son gain est démontré ET que son
-  porteur n'est pas démontré sous `main`.
-- **Sa puissance, dite d'avance** : quatre jobs de 3 000 parties à
-  `8+0,08`, ± 3,5 environ ; ce qu'un vrai +5 a de chances de passer. Un
-  effet attendu de +2 à +3 n'y montre son signe qu'une fois sur deux :
-  huit jobs, ou le dire.
+  porteur n'est pas démontré sous `main` ; si la chaîne des deux ne
+  démontre pas un gain sur `main`, la paire se mesure d'abord contre lui.
+- **Sa puissance, dite d'avance** : quatre jobs de 2 800 parties à
+  `8+0,08`, ± 3,0 à 3,5 ; ce qu'un vrai +5 a de chances de passer — huit
+  fois sur dix environ. Un vrai +2 n'y passe la borne qu'une fois sur
+  quatre ou cinq, un +3 moins d'une fois sur deux ; à huit jobs, environ
+  deux fois plus souvent, ce qui reste un tirage : le dire avant.
 - **Un test de nœuds qui tombe** sous un candidat : la mesure qui le juge
   se fait SANS le changement, sur un échantillon de positions de parties,
   avant toute reformulation (`CLAUDE.md`, « Pièges de mesure »), et son
-  traitement s'écrit avant le verdict. Un test qui asserte un sens sur le
-  banc à marge mince tombe sous des changements sans rapport : celui des
-  extensions singulières, sous quatre réglages de la LMR, en est le
-  précédent (son traitement, écrit d'avance : J-2026-11-18-EF).
+  traitement s'écrit avant le verdict — le précédent : le test des
+  extensions singulières, à marge mince, tombé sous cinq changements sans
+  rapport (J-2026-11-18-EF).
 
 ## 5. La relève et la composition
 
@@ -110,6 +111,9 @@ journal garde les récits.
   membres seuls, et **le groupe privé de chaque membre**, rejoué. Un membre
   dont la part d'arbre tombe sous la moitié de sa part seul est absorbé :
   un match de retrait le mesure si le groupe passe.
+- **Son attendu** : les compositions du dépôt ont rendu de 80 à 91 % de la
+  somme des gains de leurs membres (n° 9, n° 12, C71) ; la somme est un
+  majorant.
 - **Le critère du groupe**, écrit avant : borne basse commune au-dessus de
   zéro, ET son point pas démontré sous celui de son meilleur membre seul ;
   sinon, bissection par paires ou par famille, ou le meilleur entre seul.

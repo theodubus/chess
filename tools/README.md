@@ -518,21 +518,23 @@ runners ».
 main qui filtre a changé depuis. Il se régénère au code de `4695941`. Un livre
 se cite donc avec le commit qui l'a tiré, pas seulement avec sa graine.
 
-**Le livre déséquilibré**, `tools/book-desequilibre.epd` (n° 23, 3 nov.
-2026) : 11 898 positions de `bookgen`, 8 demi-coups, graine 20261102,
-gardées quand une recherche de `main` à la profondeur 12, au réseau qui
-jouait, les cotait entre 250 et 400 en valeur absolue — la bande où le
-camp favorisé marquait le plus près de 75 %, mesuré par un pilote. Chaque
-position se joue des deux côtés. `match.yml` le prend par son entrée
-`livre`. **Il ne mesure pas mieux** : sur trois effets connus, il rendait
-× 1,11 [0,85 ; 1,44] de précision par paire, et ses parties durent ~13 %
-de plus ; notre livre reste celui des matchs.
-
 Il est **indispensable**, pas décoratif : ShallowRed est déterministe, donc
 sans livre toutes les parties d'un match seraient la même partie et
 l'échantillon serait de taille un. Le tirage est seedé — même graine, même
 livre — parce qu'un livre régénéré différemment invaliderait toute comparaison
 avec les mesures antérieures.
+
+**Le livre déséquilibré**, `tools/book-desequilibre.epd` (n° 23, 3 nov.
+2026), ne dépend pas que d'une graine : un réservoir de 80 000 positions
+de `bookgen`, 8 demi-coups, graine 20261102, filtre statique à ± 600 ;
+puis une recherche de `main` à `701b609`, profondeur 12, au réseau qui
+jouait, qui garde les 11 898 positions cotées entre 250 et 400 en valeur
+absolue — la bande où le camp favorisé marquait le plus près de 75 %,
+mesuré par un pilote. Chaque position se joue des deux côtés.
+`match.yml` le prend par son entrée `livre`. **Il ne mesure pas mieux** :
+sur trois effets connus, il rendait × 1,11 [0,85 ; 1,44] de précision par
+paire, et ses parties durent ~13 % de plus ; notre livre reste celui des
+matchs.
 
 ## `nnue-probe` — le pari architectural de NNUE
 
@@ -814,11 +816,14 @@ qu'aucun des trois ne dit ; la campagne elle-même est B-0017.
   valeur illisible ou hors du type arrête la compilation. Une option se
   lirait à chaque nœud et pourrait se régler de travers en silence ; le
   prix est un binaire par camp, une minute de compilation par job.
-- **Des marges, pas des seuils de profondeur** : SPSA perturbe chaque
-  paramètre de ± c, et un seuil entier de plage 3 à 8 ne se perturbe que
-  d'un pli, 20 à 30 % d'un coup, où le bruit et l'arrondi dominent.
-  `NETWORK_MARGIN_PERCENT` reste figé : il multiplie l'aspiration et
-  l'élagage delta, qui se règlent eux-mêmes.
+- **Des grandeurs à plage large** : SPSA perturbe chaque paramètre de
+  ± c, et un entier de petite plage — un seuil de profondeur de 3 à 8,
+  un bonus de deux plis — ne se perturbe que d'une unité, 20 à 50 % d'un
+  coup, où le bruit et l'arrondi dominent. `LMP_BASE`, de 2 à 14, en est
+  la limite dans la première passe ; une grandeur plus étroite s'y
+  exprime en fraction, comme la LMR en centièmes de pli, ou reste aux
+  matchs. `NETWORK_MARGIN_PERCENT` reste figé : il multiplie l'aspiration
+  et l'élagage delta, qui se règlent eux-mêmes.
 - **Une manche** : chaque job tire une perturbation de l'état, construit
   les deux camps `θ + c·Δ` et `θ − c·Δ`, arrondis et bornés à leur plage,
   refuse s'ils sont le même binaire, et les fait jouer en paires
@@ -831,8 +836,9 @@ qu'aucun des trois ne dit ; la campagne elle-même est B-0017.
   appartient à sa cadence comme un verdict.
 - **Le budget s'écrit avant** : jamais mesuré ici ; les moteurs amateurs
   publient de l'ordre de 20 000 à 80 000 parties pour une dizaine de
-  paramètres, à cadence courte (de mémoire) ; à `8+0,08`, un runner joue
-  ~1 500 parties par heure.
+  paramètres, à cadence courte (de mémoire) ; à `8+0,08`, un job joue
+  ~550 parties par heure — 2 800 en ~5 h aux matchs du n° 23 —, ~3 750 au
+  plus sous le plafond de 350 minutes.
 - **Le verdict reste un match** : le `θ` final est un candidat comme un
   autre, sur un commit révoqué aussitôt, mesuré par `match.yml` contre
   `main`, son critère écrit avant. SPSA prédit bien sur son propre bruit,

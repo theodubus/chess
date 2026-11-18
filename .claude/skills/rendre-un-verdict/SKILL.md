@@ -36,7 +36,9 @@ mesure ») ; ce skill en est la procédure, celle des relèves de septembre
   jamais plusieurs SPRT lus au premier qui franchit sa borne.
 - **Un groupe non homogène** : son amplitude n'est plus un nombre, et le
   critère se lit job par job autant que sur l'ensemble — il tient si
-  l'ensemble le passe et qu'aucun job ne le contredit. L'écart se cherche
+  l'ensemble le passe et qu'aucun job ne le contredit, un job contredisant
+  un gain quand sa borne haute est sous zéro (une régression, quand sa
+  borne basse est au-dessus). L'écart se cherche
   (le runner, son étalonnage) et se dit inexpliqué s'il l'est. **Un job ne
   se retire jamais après avoir vu son score** ; un groupe trop serré se
   contrôle aussi, graines et vecteurs distincts.
