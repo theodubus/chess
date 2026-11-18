@@ -39,6 +39,12 @@ mesure ») ; ce skill en est la procédure, celle des relèves de septembre
   reprendre : il dimensionne le match suivant.
 - Le verdict se dit avec son effectif, ses bornes et **sa cadence**, et
   contre quelle base.
+- **Deux candidats mesurés contre la même base** ne se départagent pas par
+  la différence de leurs écarts, ni par une chaîne de matchs : leur match
+  direct, apparié, fait foi, et celui qui n'est pas en tête au point doit y
+  démontrer pour passer devant. Trois matchs qui bouclent un triangle se
+  contrôlent : leur somme orientée tombe à zéro, à l'incertitude composée
+  près.
 - Contrôler la vraisemblance avant de l'inscrire : un rapport rond, nul ou
   démesuré dit un protocole cassé.
 

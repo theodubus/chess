@@ -3,9 +3,11 @@
 
 > statut : ouvert · origine : J-2026-11-12-B · après : B-0012 · lu : backlog@be9e95a6
 
-Le meilleur de N10r10h512 et de N10h512 devient le réseau qui joue, selon
-le critère écrit avant la séance : sa borne basse contre le réseau
-embarqué aujourd'hui, N9w50s800, est au-dessus de zéro. Comme à chaque
+Le meilleur de N10r10h512 et de N10h512 (B-0012) devient le réseau qui
+joue, selon le critère écrit avant la séance : sa borne basse contre le
+réseau embarqué aujourd'hui, N9w50s800, est au-dessus de zéro — lue sur
+leur match direct, quatre travaux de 2 800 parties à `8+0,08`, jamais
+déduite d'une chaîne de matchs. Comme à chaque
 réseau embarqué : la sonde des marges, qui mesure son facteur ; la
 confrontation à l'entraîneur, recopiée dans le test du réseau embarqué ;
 le crible puis le balayage de mutation.
@@ -14,6 +16,7 @@ La sonde se mène par le skill `sonder-les-marges`, écrit avec B-0049.
 
 ## Fait quand
 
+- [ ] son match direct contre N9w50s800 est relevé, sa borne basse au-dessus de zéro
 - [ ] le réseau est sur `main`, sa confrontation à l'entraîneur dans le test
 - [ ] son facteur des marges est mesuré par la sonde, et écrit
 - [ ] le balayage de mutation d'après la fusion est à son plafond

@@ -16,7 +16,13 @@ de force, C13 (J-2026-11-18-AE). Les séries ont leur skill,
 `situer-le-moteur`, et la sonde le sien, `sonder-les-marges` (B-0049) :
 celui-ci les appelle, sans les recopier ; l'embarquement lui-même — le
 candidat qui ne change que le réseau, révoqué aussitôt, son match — se lit
-aux récits du n° 7 et du n° 13 (J-2026-11-18-BE, J-2026-11-18-BY).
+aux récits du n° 7 et du n° 13 (J-2026-11-18-BE, J-2026-11-18-BY), et à
+ceux du n° 20 (J-2026-11-18-CH, J-2026-11-18-CJ, J-2026-11-18-CL) : le
+candidat au code de sa référence au bit près, recommité sinon ; le match
+direct quand deux gains se recoupent ; les nœuds par seconde au rejeu,
+après la sonde. L'outil des candidats est dans `tools/README.md`,
+« Entraîner un réseau », et le rejeu dans « Vérifier, et mesurer un
+temps ».
 
 ## Fait quand
 
