@@ -33,10 +33,10 @@ index 3140eac..dadfb78 100644
  Ce chiffre est **vérifié par la CI**, ici comme dans `README.md`, par
  `engine/tests/bench_reference.rs`. Le laisser périmé casse le build autant
 diff --git a/README.md b/README.md
-index 795469e..45addd4 100644
+index 507d8d6..f34cfd6 100644
 --- a/README.md
 +++ b/README.md
-@@ -335,7 +335,7 @@ sortie se termine par `Nodes/second` et deux commits se comparent par un `diff`.
+@@ -186,7 +186,7 @@
  Le **nombre de nœuds** est la mesure utile, parce qu'il est déterministe : il ne
  dépend ni de la machine ni de sa charge.
  
@@ -44,7 +44,7 @@ index 795469e..45addd4 100644
 +Référence à la profondeur 7 : **77 508** nœuds.
  
  Ce chiffre est vérifié par la CI — voir
- [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs). Il a
+ [`engine/tests/bench_reference.rs`](engine/tests/bench_reference.rs).
 diff --git a/engine/src/search.rs b/engine/src/search.rs
 index 15e3dee..08e76fa 100644
 --- a/engine/src/search.rs
