@@ -104,9 +104,11 @@ moyenne. L'histoire de chaque mesure : J-2026-11-18-B.
 
 ## F-0010 — Les réglages ouverts de la recherche : chaque valeur, sa borne mesurée, sa marge, son prochain test
 
-> statut : mesuré · preuve : J-2026-11-18-B · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23, du 2 au 5 nov. 2026 · date : 2026-11-18
+> statut : mesuré · preuve : J-2026-11-18-B, J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23, du 2 au 5 nov. 2026, et ceux du temps, C21 à C26, en septembre · date : 2026-11-18
 
-Mêmes conventions que F-0009. Le facteur des marges du réseau : F-0008.
+Mêmes conventions que F-0009, sauf la cadence nommée. Le facteur des
+marges du réseau : F-0008. Les verdicts du temps, de C21 à C26, sont au
+journal (J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y).
 
 | réglage | valeur | ce qui la borne | marge | ensuite |
 |---|---|---|---|---|
@@ -116,6 +118,9 @@ Mêmes conventions que F-0009. Le facteur des marges du réseau : F-0008.
 | relâchement de la LMR en variante principale | aucun | quatre formes sans gain démontré : la plus haute +2,79 ± 3,09 (C65) ; sur la base actuelle +1,61 ± 2,23 (C74) | ~0 à +2 | déprioritisé |
 | historique de correction | poids de Stockfish 17.1 | × 1,5 −5,96 ± 3,09 ; mi-poids +11,26 contre +14,22 au plein | ~0 à +2 | × 0,75 et × 1,25 ; chaque table retirée ; SPSA |
 | gravité de l'historique | plafonds 7 183 et 29 952, bonus `clamp(336·d − 547, 1, 1561)` | bonus × 0,5 −5,03, × 2 +2,48 (± 3,0) | quelques Elo | SPSA avec le diviseur ; papillon contre continuations |
+| diviseur de la pendule (`MOVES_TO_GO_DEFAUT`) | 12 | 30 → 12 +19,13 ± 6,31 (C21) ; 12 sature une allocation plate, 10 alloue moins | ~0 : saturé | une allocation inégale, pas un autre diviseur |
+| douces par stabilité du coup (`SOFT_PERMILLE`) | 1 825, 885, 513, 257 ‰ | la règle +7,87 ± 6,08 contre C24 (C25) ; échelle calibrée au temps moyen de C24 | inconnue | SPSA |
+| réserve avant un contrôle (`CONTROL_RESERVE_PERCENT`) | 50 % | correctif entré au titre de la règle : +2,43 ± 6,01, à `40/8` (C26) | inconnue | aucun test décidé |
 
 ## F-0011 — La force absolue estimée du moteur : ~3 190 ± 24 au 9 nov. 2026, le sommet de l'échelle de Stockfish bridé
 

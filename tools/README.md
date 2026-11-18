@@ -273,8 +273,12 @@ sondes de profondeur.
 - **La topologie du runner** entre dans l'étalonnage et le résumé :
   processeurs logiques, cœurs physiques, fils par cœur, modèle.
 
-`tools/plis.sh` rend le rapport des n/s des seuls coups partis d'un `go`,
-et un intervalle de Student plutôt que 1,96, juste à vingt parties.
+`tools/plis.sh <journal>` rend les plis réellement gagnés par partie,
+appariés, sur la sortie de cutechess `-debug all` : le rapport des n/s des
+seuls coups partis d'un `go`, et un intervalle de Student plutôt que 1,96,
+juste à vingt parties. `tools/plis-test.sh` l'éprouve dans `verify.sh` :
+un témoin fabriqué qui doit rendre zéro, le ponder jeté qui ne doit pas
+compter, les refus.
 
 ## Ce que `tools/src/bin/` contient
 
@@ -773,7 +777,8 @@ Les sections de C21 à A20, les relèves de septembre 2026 et le registre
 (B-0047), une entrée par section, de J-2026-11-18-G à J-2026-11-18-AA :
 c'est là que mènent les renvois à « C21 », « C22 », « C23 », « B9 —
 VERDICT », « Ponder — VERDICT », « Calibrer l'Elo par pli », « B6 »,
-« A18 », « C24 », « C25 », « C26 », « L'allocation inégale », « A20 » et
+« Vol de CPU du ponder sur runner », « A18 », « C24 », « C25 », « C26 »,
+« L'allocation inégale », « A20 » et
 « Ce qui est EN VOL le 23 sept. ». La procédure de leurs relèves est le
 skill `rendre-un-verdict` (`.claude/skills/rendre-un-verdict/SKILL.md`).
 

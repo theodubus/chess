@@ -4,7 +4,7 @@
 > statut : ouvert · origine : D-0020 · après : B-0044 · priorité : basse · lu : backlog@bc169f2b
 
 Les idées non décidées sont au backlog (D-0020, réponse
-`idees-au-backlog`), B-0053 à B-0064, B-0066 et B-0067 ; chacune attend ce sujet,
+`idees-au-backlog`), B-0053 à B-0064 et B-0066 ; chacune attend ce sujet,
 et n'est donc jamais « prête » avant d'avoir été tranchée. C'est le
 verrou que l'état calcule, sans s'afficher à chaque récap comme le ferait
 un sujet `pour : humain`.

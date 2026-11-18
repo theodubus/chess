@@ -1,22 +1,21 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0067 — Dépenser le temps que le ponder rembourse
 
-> statut : ouvert · origine : J-2026-11-18-F · après : B-0065 · priorité : basse · lu : backlog@6a468181
+> statut : ouvert · origine : J-2026-11-18-R · après : B-0044 · lu : backlog@6a468181
 
-Idée non décidée : sa première étape est la décision de la tester ou de
-l'abandonner (B-0065, D-0020, D-0021). L'agent ne s'y met pas avant.
+Un chantier que Théo a gardé au backlog : « on oublie pas le reste »
+(24 sept. 2026, ADR-0016), puis le remboursement du ponder « garde sa
+place » (25 sept., ADR-0017). Ce n'est donc pas une idée en attente de
+décision.
 
 Quand `Ponder` est activé, une prévision juste rend au moteur le temps de
 réflexion déjà passé sur le coup adverse ; le budget, proportionnel à ce
 qui reste, ne le dépense pas avant la fin de partie. Le réglage se cherche
 d'abord à la sonde (le supplément qui ramène la pendule dépensée par coup
-à celle de la référence), puis par un match en `les-deux`. Ordre de
-grandeur écrit le 23 sept. 2026, confiance faible : ~0,27 pli, soit 6 à
-32 Elo. Il ne sert que là où le ponder est permis : la CCRL le désactive
-en blitz. Relevé dans les récits du ponder, au rangement de septembre
-(B-0047).
+à celle de la référence), puis par un match en `les-deux`. Marge
+estimée par l'étalonnage du 24 sept. : 16 à 28 Elo (ADR-0015), mais
+seulement là où le ponder est permis ; la CCRL le désactive en blitz.
 
 ## Fait quand
 
-- [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
-- [ ] si testée : le supplément réglé à la sonde, puis un match en `les-deux`
+- [ ] le supplément réglé à la sonde, puis un match en `les-deux`, son verdict rendu
