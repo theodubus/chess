@@ -78,7 +78,7 @@ moyenne. L'histoire de chaque mesure : J-2026-11-18-B.
 
 ## F-0010 — Les réglages ouverts de la recherche : chaque valeur, sa borne mesurée, sa marge, son prochain test
 
-> statut : mesuré · preuve : J-2026-11-18-B, J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y, J-2026-11-18-AH, J-2026-11-18-AI, J-2026-11-18-AJ, J-2026-11-18-R, J-2026-11-18-BM, J-2026-11-18-BO · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23, du 2 au 5 nov. 2026, ceux du temps, C21 à C26, et ceux de la table et du ponder, en septembre · date : 2026-11-18
+> statut : mesuré · preuve : J-2026-11-23-S, J-2026-11-18-B, J-2026-11-18-H, J-2026-11-18-X, J-2026-11-18-Y, J-2026-11-18-AH, J-2026-11-18-AI, J-2026-11-18-AJ, J-2026-11-18-R, J-2026-11-18-BM, J-2026-11-18-BO · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du n° 23, du 2 au 5 nov. 2026, ceux du temps, C21 à C26, et ceux de la table et du ponder, en septembre · date : 2026-11-18
 
 Mêmes conventions que F-0009, sauf la cadence nommée. Le facteur des
 marges du réseau : F-0008. Chaque verdict est au journal, sous les
@@ -87,6 +87,7 @@ preuves de ce fait.
 | réglage | valeur | ce qui la borne | marge | ensuite |
 |---|---|---|---|---|
 | marges et constantes | à la main, au facteur du réseau | une par une, à leur verdict | +30 à +134 publiés ailleurs, auto-déclarés | SPSA (B-0017), refait à chaque réseau |
+| seuil de l'élagage par compte (`LMP_BASE`) | `6 + d²` | 6 : +22,85 ± 9,88 (C17, H1) ; 12 : +17,24 ± 8,51, H1 non retenu (sept. 2026, base d'avant le réseau) | inconnue | un changement d'une constante ; SPSA |
 | diviseur de la note de la LMR | 6 000 | 4 000 −2,57, 9 000 −7,20 ; le décalage ± 2 000 plat (± 3,0) | ~0 à +2 | le diviseur par profondeur, le papillon double, à l'écran ; puis SPSA |
 | bonus de la LMR aux nœuds de coupure | 2 plis | contre la base sans bonus, 1 pli +3,29, 2 plis +5,06 ; 3 plis contre 2 −0,09 (± 3,1) | ~0 à +2 | SPSA |
 | relâchement de la LMR en variante principale | aucun | quatre formes sans gain démontré : la plus haute +2,79 ± 3,09 (C65) ; sur la base actuelle +1,61 ± 2,23 (C74) | ~0 à +2 | déprioritisé |

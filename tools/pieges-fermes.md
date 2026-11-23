@@ -47,8 +47,7 @@ C'est la seule condition de sortie de ce fichier.
   supprimé la branche, et la première exécution de `match.yml` a échoué sur
   `fatal: invalid reference: 498a01a`. Une rustine versionnée ne peut pas subir
   ça — elle survit aux squashs, aux suppressions de branche et aux politiques
-  de collecte. Voir `tools/attic/README.md`, « La règle » : quand y déposer une
-  rustine.
+  de collecte. Voir `tools/attic/README.md`, « Ce que le dossier garde ».
   <br>**Fusionner en `merge` et non en `squash`** reste préférable, pour garder
   l'historique lisible — les PR #1 à #5 l'avaient fait. Mais ce n'est plus ce
   qui protège le code retiré, et c'était une mauvaise fondation : *la

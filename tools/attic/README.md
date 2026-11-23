@@ -29,7 +29,7 @@ réseau.
 | `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | `git apply --check` : **non** depuis la génération par étapes (A18, 24 sept. 2026) — elle s'insère dans la note des captures de `score_move`, déplacée dans `tactical_score`. Elle s'appliquait jusque-là SUR l'élagage en quiescence ; la remesurer demande de la porter sur l'étage tactique |
 | `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | `git apply --check` : **non** depuis la génération par étapes (A18, 24 sept. 2026) — elle instrumente la boucle de `negamax`, qui tire désormais ses coups du `MovePicker`. Elle s'appliquait directement sur `main` de la fusion de C17 à A18 ; la rejouer demande de la porter |
 | `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. Le dimensionnement a été suivi d'un match, voir ci-dessous | `git apply --check` : **non** — échoue sur `engine/src/search.rs:837` depuis la fusion de C17. La sonde reste lisible ; la rejouer demande de la porter |
-| `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 ; empilée sur PVS, elle réduisait son économie de nœuds de 6,3 % à 3,7 % et faisait échouer le test de la fenêtre nulle (J-2026-11-23-S) | `git apply --check` : **non** — C22 est entré dans `main` le 24 sept. et déplace le contexte de `negamax` où elle s'insère. À porter comme C22 l'a été, le jour où on la remesure |
+| `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 ; empilée sur la rustine PVS de septembre (C12, pas le PVS de `main`), elle réduisait l'économie de nœuds de celle-ci de 6,3 % à 3,7 %, et le test de fenêtre nulle de cette rustine y échouait par l'instabilité de fenêtre déjà présente (8,3 % des paris), non par un défaut de C18 (J-2026-11-23-S) | `git apply --check` : **non** — C22 est entré dans `main` le 24 sept. et déplace le contexte de `negamax` où elle s'insère. À porter comme C22 l'a été, le jour où on la remesure |
 | `c12-pvs-2026-09-21.patch` | PVS réécrit à la main sur le moteur post-C19 et post-LMP | **−0,82 Elo ± 8,19**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | `git apply --check` : **non** — écrite sur `main` d'avant le groupe du n° 9 (C33, C34, C36, C38, C39), qui en change le contexte dans `search.rs` ; elle se rejoue sur `f8babf0`. Elle avait été **reportée le 26 sept. 2026** sur l'inférence NNUE, qui ajoutait ses propres champs de test là où elle s'ancre : `git apply --3way`, deux conflits de contexte, et les mêmes lignes ajoutées et retirées, vérifié en comparant leurs multiensembles. **Son test `la_fenetre_nulle_rend_le_meme_score_que_la_fenetre_pleine` échouait sur `main`** — déjà sur `bfe92fb`, AVANT ce report, vérifié : qu'elle s'applique n'en faisait pas un candidat prêt à mesurer |
 | `d6-sonde-ordonnancement.patch` | sonde : que peut épargner un générateur par étapes ? | **pas un changement** — 85 % des coups générés par `negamax` ne sont jamais cherchés, mais l'ordonnancement ne pèse que 26,2 % du temps. Plafond **11,5 %**, soit **0,21 pli** | `git apply --check` : **non** — son objet est écrit : la génération par étapes (A18, 24 sept. 2026) a réécrit `ordered_moves` et la boucle de `negamax` qu'elle instrumente. Sa mesure reste celle qui a dimensionné A18, et se rejoue sur `d01183d` |
 | `d6-sonde-pendule.patch` | sonde : que reste-t-il sur la pendule, et que vaut chaque raffinement de B2 ? | **pas un changement** — **46,9 % de la pendule inutilisée** en fin de partie, soit ~1,36 pli. « S'arrêter tôt sur un coup stable » **réfuté** aux deux cadences | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
@@ -135,32 +135,19 @@ git apply --check tools/attic/c17-lmp.patch   # toujours, avant d'appliquer
 git apply         tools/attic/c17-lmp.patch
 ```
 
-## La règle
+## Ce que le dossier garde
 
-**Une rustine ici n'autorise rien.** Le protocole ne change pas : ce qui rentre
-passe par un SPRT, à la cadence la plus longue qui rende encore un verdict.
-Ce répertoire garantit seulement qu'on ne réécrira pas de mémoire un code déjà
-écrit, testé et mesuré — et que la question restera rouvrable quand elle est
-rouverte.
+**Une rustine ici n'autorise rien** : ce qui rentre dans `main` passe par un
+match, à la cadence la plus longue qui rende encore un verdict. Le dossier
+garantit seulement qu'on ne réécrira pas de mémoire un code déjà écrit,
+testé et mesuré, et que la question restera rouvrable.
 
-Y ajouter une rustine quand, et seulement quand, un rejet est **conditionnel**
-et que la documentation nomme la condition. Un rejet sans condition n'a rien à
-faire ici : il se referme.
-
-**Et jamais un candidat de RETRAIT rejeté.** Les campagnes de revalidation (D5)
-construisent des branches qui retirent un acquis pour le remesurer ; quand le
-verdict est `H0` — l'acquis paie toujours — il n'y a rien à conserver, puisque
-le code est resté dans `main`. C'est l'inverse exact de la raison d'être de ce
-répertoire : on garde ici ce que le dépôt n'a plus. Les candidats
-`mesure/sans-aspiration` (16 sept.) et `mesure/d5-trois-termes` (22 sept.) n'y
-figurent donc pas, et leur absence n'est pas un oubli. Ce qu'il faut pour les
-reconstruire tient dans la ligne de verdict : le commit de référence, le commit
-candidat, et le nombre de nœuds du banc — qui vérifie qu'on a bien reconstruit
-le même binaire.
-
-**Un candidat de retrait NON TRANCHÉ, lui, se dépose** — et c'est pourquoi
-`d5-retrait-delta.patch` est dans la table ci-dessus sans contredire la règle.
-L'exclusion vise les candidats **rejetés** : quand `H0` est accepté, l'acquis
-paie et le code est resté dans `main`, donc il n'y a rien à garder. Le SPRT de
-delta a **expiré sans verdict** : la question reste ouverte, quelqu'un voudra
-la reprendre, et refaire le diff de tête coûterait plus que de le lire.
+Il garde la rustine de chaque candidat mesuré, fusionné ou non, et de
+chaque sonde ; la règle de dépôt vit dans les skills `passer-a-l-ecran`
+(à la création) et `rendre-un-verdict` (au verdict). **Jamais un candidat
+de retrait rejeté** : quand l'acquis paie toujours, son code est resté dans
+`main`, et sa ligne de verdict porte de quoi rebâtir le même binaire — la
+référence, le candidat, les nœuds du banc —, ce qu'un retrait de septembre
+n'avait pas (J-2026-11-23-S). **Un retrait non tranché, si** : c'est
+pourquoi `d5-retrait-delta.patch` est au registre, son match ayant expiré
+sans verdict.

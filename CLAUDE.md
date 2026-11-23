@@ -370,8 +370,9 @@ celles-ci, sont au journal (J-2026-11-17-F).
   résultat à venir renvoie à un artefact regardé dans le même tour**, ou
   ne s'écrit pas : la synthèse est le lieu où l'on généralise.
 
-**Ces règles ne se certifient pas elles-mêmes** : une relecture demandée
-par Théo, pas une règle, a rattrapé la première faute (J-2026-09-16-C).
+**Ces règles ne se certifient pas elles-mêmes** : celles de la prédiction,
+écrites deux jours plus tôt, ont été enfreintes, et c'est une relecture
+demandée par Théo, pas une règle, qui l'a rattrapé (J-2026-09-16-C).
 
 ## Pièges de mesure, appris à nos dépens
 
