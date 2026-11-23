@@ -104,3 +104,9 @@ Puis, dans l'ordre :
   son prochain test. Aucun réglage n'est résolu (ADR-0032).
 - Le sujet du backlog qui portait la mesure se clôt avec cette entrée pour
   référence, ou attend le match suivant que le verdict dimensionne.
+- **La ligne du candidat au registre de `tools/attic/`** reçoit son
+  verdict, fusionné ou non : sa rustine y est déposée dès sa création
+  (skill `passer-a-l-ecran`), avec celle de chaque sonde. Un candidat de
+  retrait rejeté ne s'y dépose pas, son code étant resté dans `main` ; sa
+  ligne de verdict porte alors la référence, le candidat et les nœuds du
+  banc, de quoi rebâtir le même binaire. Un retrait non tranché s'y dépose.

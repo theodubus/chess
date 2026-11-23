@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0025-ou-garder-une-seconde-copie-des-donnees-d-entraine.md, dont l'empreinte suit.
+reponse = "disque"
+texte = "Seules les générations qui servent encore (n° 20, (e), n° 21, n° 22) vont sur un disque dur de Théo ; l'agent le lui rappelle."
+par = "Théo"
+date = "2026-11-23"
+canal = "conversation"
+citation = "Pour les donnees d'entraînement qui servent encore (et uniquement celles ci, on garde pas les donnees par plaisir de les garder), je les stockerai sur un disque dur, rappelle le moi plus tard"
+empreinte = "sha256:ae34f5a7111364f709b1fb775296fb52e1153f0df48e4fc357cdc4b5afcf4e56"

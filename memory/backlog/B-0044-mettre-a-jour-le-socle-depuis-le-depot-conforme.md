@@ -18,6 +18,12 @@ reprend quand il dira le socle prêt, par un essai à blanc refait sur la
 publication qu'il nommera ; celui du 23 nov. et ses constats sont
 J-2026-11-23-N.
 
+La marge de `CLAUDE.md`, au 23 nov. 2026 : 64 014 octets pour un plafond
+de 65 000, quand la section du socle grossira de 1 244 à cette
+publication-là, soit ~260 octets à resserrer de plus. Les trois récits que
+D-0024 comptait pour « environ 1 Ko » n'en ont rendu que 412 (B-0078,
+J-2026-11-23-T) : le chiffre de la demande était une estimation fausse.
+
 ## Fait quand
 
 - [ ] le socle est à la version que Théo a choisie, et tous les contrôles passent

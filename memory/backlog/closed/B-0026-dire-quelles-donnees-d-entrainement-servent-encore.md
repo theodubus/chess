@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0026 — Dire quelles données d'entraînement servent encore, avant leur expiration
 
-> statut : ouvert · origine : D-0005 · priorité : haute · lu : backlog@b87fe472
+> statut : fait · origine : D-0005 · priorité : haute · ref : J-2026-11-23-R · lu : backlog@b87fe472
 
 Les données que GitHub garde expirent entre le 24 déc. 2026 et le 29 janv.
 2027 (F-0005, corrigé le 17 nov. : les générations antérieures au n° 18
@@ -37,5 +37,5 @@ expirent les 24 et 28 déc. (J-2026-11-23-O).
 ## Fait quand
 
 - [x] chaque génération est dite « sert encore » ou « ne sert plus », avec sa raison et sa date d'expiration (J-2026-11-23-Q)
-- [ ] pour celles qui servent : la demande d'une seconde copie est posée à Théo, avec le volume, les lieux possibles et leur coût, et il y a répondu (D-0025, posée le 23 nov.)
-- [ ] chaque génération tranchée avant sa propre date : le 24 déc. 2026 pour la première
+- [x] pour celles qui servent : la demande d'une seconde copie est posée à Théo, avec le volume, les lieux possibles et leur coût, et il y a répondu (D-0025, `disque` ; la copie : B-0077)
+- [x] chaque génération tranchée avant sa propre date : le 24 déc. 2026 pour la première (toutes le 23 nov., J-2026-11-23-Q et J-2026-11-23-R)
