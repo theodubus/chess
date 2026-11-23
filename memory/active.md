@@ -5,19 +5,22 @@ Réécrit au fil du travail et borné. Ce qui en sort s'archive dans le journal.
 
 ## En cours
 
-**La transition de la documentation est finie** (jalon B-0041, le
-23 nov. 2026, J-2026-11-23-K) : `tools/README.md` ne porte plus que la
-documentation des outils et la table des anciens renvois, le reste au
-journal, aux faits, aux skills et au backlog. Vient la mise à jour du
-socle, avec Théo (B-0044, D-0018).
+**La mise à jour du socle attend Théo** (B-0044) : la demande D-0024,
+poussée le 23 nov. 2026, propose la publication du 23 nov. (8fbc2d7) et
+approuve d'avance les 60 fichiers protégés qu'a produits un essai à
+blanc. L'installeur, lancé sur le dépôt, a été refusé par l'outil de
+permissions de la session : ne pas le relancer avant la réponse de Théo
+(J-2026-11-23-N). La transition de la documentation est finie (jalon
+B-0041, J-2026-11-23-K).
 
 ## Prochaines étapes
 
 Dans l'ordre que Théo a fixé (D-0016, D-0018), et que le backlog porte :
 
-1. La mise à jour du socle, avec Théo (B-0044). La marge du budget de
-   `CLAUDE.md` n'est que d'environ 600 octets ; si la section du socle
-   grossit, le relever demandera une demande validée.
+1. La mise à jour du socle, à la réponse de Théo (B-0044, D-0024) :
+   la section du socle grossit de 1 244 octets, et `CLAUDE.md` se
+   resserre d'environ 1 Ko de récits datés envoyés au journal ; le
+   plafond du chantier actif passe à 3 740 octets.
 2. Puis le travail du moteur, dont la mesure du réseau N10r10h512
    (B-0012). B-0026 passe devant si son échéance approche : les données
    commencent d'expirer chez GitHub le 24 déc. 2026 (F-0005, corrigé le
