@@ -633,8 +633,9 @@ d'un candidat révoqué — sans jamais ouvrir d'issue, le cliquet gardant
 `main`.
 
 **Sa durée** : `search.rs` seul en prend 145 à 180 minutes et plus, pour
-une limite de job de 350 ; au-delà de ~300, découper par `--shard`, le
-verdict sommant les morceaux. C'est un débit de compilation, qui ne dit
+une limite de job de 350 ; au-delà de ~300, il faudra le découper par
+`cargo mutants --shard`, ce que ni `mutation.yml` ni le verdict, qui lit un
+résumé par fichier, ne savent encore faire (B-0075). C'est un débit de compilation, qui ne dit
 rien de la vitesse de recherche d'un runner. **Un nombre de nœuds par
 seconde appartient à son binaire autant qu'à sa machine** : une ligne
 d'étalonnage ne compare que des runs du même binaire, quand la profondeur

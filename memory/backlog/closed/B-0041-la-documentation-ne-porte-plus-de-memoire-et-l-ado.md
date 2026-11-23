@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0041 — La documentation ne porte plus de mémoire, et l'adoption du socle est finie
 
-> statut : ouvert · origine : D-0017 · forme : jalon · après : B-0036, B-0038, B-0039, B-0042, B-0043, B-0045, B-0046, B-0047, B-0048, B-0049, B-0050, B-0051, B-0052 · priorité : haute · lu : backlog@d56945ee
+> statut : fait · origine : D-0017 · ref : J-2026-11-23-K · forme : jalon · après : B-0036, B-0038, B-0039, B-0042, B-0043, B-0045, B-0046, B-0047, B-0048, B-0049, B-0050, B-0051, B-0052 · priorité : haute · lu : backlog@d56945ee
 
 Théo, le 17 nov. 2026 : aucun sujet d'adoption du socle ne reste ouvert
 avant de reprendre les travaux (D-0016) ; `tools/README.md` se scinde
@@ -19,6 +19,6 @@ B-0045 à B-0052, dans l'ordre que Théo a validé (D-0020).
 
 ## Fait quand
 
-- [ ] `tools/README.md` ne porte plus que la documentation des outils, le reste à sa place dans la mémoire, chaque renvoi suivi
-- [ ] le `README.md` de la racine ne porte plus de mesures ni d'histoire, hors la ligne du banc et les remerciements
-- [ ] les sujets d'adoption B-0036, B-0038 et B-0039 sont clos
+- [x] `tools/README.md` ne porte plus que la documentation des outils, le reste à sa place dans la mémoire, chaque renvoi suivi
+- [x] le `README.md` de la racine ne porte plus de mesures ni d'histoire, hors la ligne du banc et les remerciements
+- [x] les sujets d'adoption B-0036, B-0038 et B-0039 sont clos

@@ -110,12 +110,14 @@ ou un run et une mesure locale, ne se comparent qu'après lecture de leurs
   le banc, pas les parties. La profondeur en partie se mesure par la sonde
   (plus bas).
 
-**Ce qu'un job peut trancher.** À `8+0,08`, une partie prend de 5,6 à 6,6 s
-de job à concurrence 3 selon le moteur, et le plafond de 350 minutes en
-tient de 3 000 à 3 750 : par la relation de budget (F-0014), un job tranche
-les effets de ~17 Elo et plus, et un SPRT plus fin expire. À `30+0,3`, un
-job rend ~960 parties, ± 15 Elo : en demander 900. Un budget tiré d'un
-verdict à `1+0,01` n'est qu'un majorant.
+**Ce qu'un job peut trancher.** À `8+0,08`, depuis que les moteurs usent
+leur pendule (C21), une partie prend de 6,4 à 7,25 s de job à concurrence
+3, et le plafond de 350 minutes en tient de 2 900 à 3 200 : par la
+relation de budget (F-0014), un job tranche les effets de ~20 Elo et plus,
+et un SPRT plus fin expire. À `30+0,3`, un job rendait ~960 parties avant
+C21 ; il en rendra moins, ~740 à 830 par le même rapport (inférence,
+jamais remesuré) : en demander 700. Un budget tiré d'un verdict à `1+0,01` n'est qu'un
+majorant.
 
 **Un match à longueur fixe coupé par le plafond reste exploitable** :
 l'arrêt dépend de l'horloge, pas des résultats, et l'estimateur n'est pas
@@ -745,9 +747,11 @@ par `.github/mutation-verdict.sh`, que `.github/mutation-verdict-test.sh`
 dispositifs de chess ».
 
 **Toujours passer par `tools/mutants.sh`, jamais par `cargo mutants` nu.** Il
-prend un verrou exclusif et efface `mutants.out/` avant de partir : deux
-balayages lancés l'un sur l'autre écriraient dans le même dossier, et ses
-survivants mêleraient deux versions du code. Il plafonne aussi la mémoire de
+prend un verrou exclusif — deux balayages lancés l'un sur l'autre
+écriraient dans le même dossier, et ses survivants mêleraient deux
+versions du code — et range le rapport précédent sous `mutants.out.old/`
+avant de partir, plutôt que de l'effacer : la liste nominative des
+survivants d'un fichier qu'on ne remesure pas n'est nulle part ailleurs. Il plafonne aussi la mémoire de
 chaque processus de test à 4 Gio, comme le workflow : un mutant qui alloue
 sans fin meurt sur son allocation et compte attrapé, au lieu de tuer le
 runner.
@@ -824,9 +828,6 @@ lui, la condition de sortie que le fichier s'écrit à lui-même — *si un de c
 dispositifs disparaît, son piège revient* — ne serait qu'une affirmation de
 plus sur le code, c'est-à-dire la faute exacte de la table de l'attic.
 
-<s>Gain annoncé : ~200 lignes.</s> **Gain réel : 113** — `CLAUDE.md` passe de
-844 à 731 lignes. J'avais surestimé, et le chiffre annoncé valait la peine
-d'être corrigé plutôt qu'oublié.
 
 ## `tools/etat.sh` — l'état calculé, à lancer à la main
 
@@ -1073,14 +1074,32 @@ chaque section portait d'utile est à sa place : les synthèses des lots le
 disent (J-2026-11-18-AB, J-2026-11-18-BB, J-2026-11-18-BZ,
 J-2026-11-18-CX, J-2026-11-18-EJ et J-2026-11-23-K).
 
-Trois renvois désignent plus qu'une section :
+Les renvois qui désignent plus qu'une section, ou une section par un autre
+nom que son titre :
 
-- « La file », ses phases et « la feuille de route résiduelle » :
-  J-2026-11-17-AF ; « L'histoire de l'ordre » : J-2026-11-17-AI ;
-- « Les réglages ouverts » et « le registre » : J-2026-11-18-B, devenus
-  F-0009 et F-0010 ;
-- « feuille de route, point N » : la feuille de route du 31 oct. 2026,
-  au commit 88da289, que le backlog de la mémoire remplace (D-0009).
+- « N° 15 à 19 » entier : J-2026-11-18-CB, puis son verdict du n° 17,
+  J-2026-11-18-CC ; « N° 18 » entier : J-2026-11-18-CD, puis son verdict,
+  J-2026-11-18-CE ;
+- « N° 20 » entier : J-2026-11-18-CF, puis ses sous-sections, de
+  J-2026-11-18-CG à J-2026-11-18-CU — les étapes A et B, les séances B,
+  C1, C2, C2c et C3, (e), (a) et (d) ;
+- « N° 22 » entier : J-2026-11-18-DA, puis sa séance, de J-2026-11-18-DB à
+  J-2026-11-18-DD ; « N° 23 » entier : de J-2026-11-18-DE à
+  J-2026-11-18-EH ;
+- « La file » et ses phases : J-2026-11-17-AF ; « L'histoire de
+  l'ordre » : J-2026-11-17-AI ; « Les réglages ouverts » et « le
+  registre » : J-2026-11-18-B, devenus F-0009 et F-0010 ;
+- « feuille de route, point N », et « Ce qui reste à faire, par ordre
+  mesuré » tel que les ADR et les workflows de septembre à novembre le
+  citent : la feuille de route du 31 oct. 2026, au commit 88da289, que le
+  backlog de la mémoire remplace (D-0009), puis J-2026-11-17-AF et
+  J-2026-11-17-AI ; son dernier résidu, du 23 nov. : J-2026-11-23-I ;
+- « Le ponder » et « La pendule de l'adversaire » : J-2026-11-18-AN ;
+  « la cause de l'érosion de delta » : J-2026-11-18-AS ; « Levier 4 » :
+  J-2026-11-18-BE ; les « deuxième », « troisième » et « quatrième
+  écran » du n° 9 : J-2026-11-18-BH, J-2026-11-18-BI et J-2026-11-18-BL ;
+  « C43 et C44 » : J-2026-11-18-BN ; « les candidats C45 à C51 » :
+  J-2026-11-18-BT.
 
 | titre d'origine | au journal |
 |---|---|
@@ -1217,3 +1236,4 @@ Trois renvois désignent plus qu'une section :
 | Mesures de référence | J-2026-11-23-H |
 | Ce qui reste à faire, par ordre mesuré | J-2026-11-23-I |
 | Ce qu'il faut surveiller — et que rien ne signalera tout seul | J-2026-11-23-J |
+| tools/pieges-fermes.md — le gain annoncé | J-2026-11-23-L |
