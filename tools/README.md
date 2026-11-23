@@ -228,7 +228,7 @@ ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 `engine/tests/outillage_documente.rs` exige que chaque binaire soit nommé
 dans une doc. Le premier empêche la compilation accidentelle d'une sonde, le
 second le binaire qui dort sans que personne sache ce qu'il fait ; aucun ne
-remplace l'autre, et les deux ont été éprouvés dans les deux sens.
+remplace l'autre. Le premier a été éprouvé dans les deux sens.
 
 ## Vérifier que l'arbitre est fiable
 
@@ -337,7 +337,8 @@ comprise.
 
 ## Le livre d'ouvertures
 
-`book.epd` — **15 000 positions** (n° 11, ADR-0034), 8 demi-coups, écart d'évaluation ≤ 80 centièmes de pion
+`book.epd` — **15 000 positions**, la décision de Théo du 6 oct. 2026 (n° 11,
+J-2026-10-06-F), 8 demi-coups, écart d'évaluation ≤ 80 centièmes de pion
 au filtre de l'évaluation faite main. Régénérable au code de `ab44f2a` :
 
 ```sh
@@ -706,7 +707,7 @@ nouvellement non couvert.
 
 Le verdict est un script, `.github/mutation-verdict.sh`, et non des lignes de
 YAML : un script ne s'exécutant qu'une fois par semaine sur un runner ne serait
-jamais vérifié. `.github/mutation-verdict-test.sh` l'éprouve sur huit cas
+jamais vérifié. `.github/mutation-verdict-test.sh` l'éprouve sur des cas
 fabriqués, et tourne dans `tools/verify.sh` comme dans la CI.
 
 **Ce que le balayage ne mesure pas** : la force de jeu. Un survivant portant
@@ -775,8 +776,8 @@ de la mémoire, un fichier par mois coupé au budget, les entrées les plus
 anciennes d'abord et leurs identifiants gardés, chaque autre rubrique
 dans son fichier, et de même ce que la page porte hors de ses rubriques :
 son bandeau, sa navigation, son pied. Il n'écrit que dans le dossier de
-sortie, jamais dans la mémoire : poser ses fichiers est le travail des
-lots suivants.
+sortie, jamais dans la mémoire : poser ses fichiers était le travail des
+lots du déplacement.
 
 Ce qui le tient : un contrôle de fidélité qu'il lance lui-même à chaque
 conversion, et qui lui fait rendre le code 1. Tout le texte que la page
@@ -840,8 +841,8 @@ dit, pas subi**. `mettre-en-commun.sh` compare les matchs deux à deux par un
 test en `z` et **refuse de conclure en silence** quand le plus grand écart
 est trop rare sous un seul effet : il rend la probabilité du plus grand
 écart sous l'étendue studentisée à `k` matchs, et refuse sous 4,55 %, le
-niveau de `z > 2` à deux matchs. Un seuil fixe en `z` refuserait à tort, à
-quatre matchs, près d'une fois sur cinq sous un seul effet : un
+niveau de `z > 2` à deux matchs. Le seuil d'avant, `z > 2` fixe, refusait à
+tort, à quatre matchs, près d'une fois sur cinq sous un seul effet : un
 avertissement qui crie au loup cesse d'être lu. Calcul confronté à une
 intégrale et un tirage indépendants du script
 (`tools/mettre-en-commun-test.sh`).
@@ -928,8 +929,8 @@ un verdict :
   deux fils sans ponder passe, deux fils plus un camp qui pondère non.
 
 `option.Threads` passe **par moteur, jamais dans `-each`**, qui écraserait les
-valeurs des moteurs comme il le fait de `tc=`. `match.yml` a douze entrées,
-sous la limite de vingt-cinq de `workflow_dispatch`. Ses trois refus sont
+valeurs des moteurs comme il le fait de `tc=`. `match.yml` reste
+sous la limite de vingt-cinq entrées de `workflow_dispatch`. Ses trois refus sont
 éprouvés en rejouant les étapes en local, avec un moteur témoin qui déclare
 `Threads` et journalise ce qu'il reçoit, sous les deux arbitres.
 
