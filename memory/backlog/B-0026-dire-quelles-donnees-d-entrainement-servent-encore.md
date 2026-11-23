@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0026 — Dire quelles données d'entraînement servent encore, avant leur expiration
 
-> statut : ouvert · origine : D-0005 · priorité : haute · après : B-0044 · lu : backlog@b87fe472
+> statut : ouvert · origine : D-0005 · priorité : haute · lu : backlog@b87fe472
 
 Les données que GitHub garde expirent entre le 24 déc. 2026 et le 29 janv.
 2027 (F-0005, corrigé le 17 nov. : les générations antérieures au n° 18
@@ -29,11 +29,10 @@ couperait la perte tenue à l'écart sur les jobs supprimés.
 
 Théo a mis le moteur derrière l'adoption du socle (D-0006), puis
 derrière la transition de la documentation et la mise à jour du socle
-(D-0016, D-0018) : ce sujet les attend aussi, sauf si son échéance
-approche — l'exception que Théo a faite (D-0016). Sa date, elle, ne bouge
-pas ; si la mise à jour n'est pas faite à la mi-décembre 2026, le dire à
-Théo et faire ce sujet quand même, en commençant par les générations qui
-expirent les 24 et 28 déc.
+(D-0016, D-0018), ce sujet excepté si son échéance approche (D-0016). Le
+23 nov. 2026, il a remis la mise à jour, le socle n'étant pas prêt
+(D-0024) : ce sujet passe devant, en commençant par les générations qui
+expirent les 24 et 28 déc. (J-2026-11-23-O).
 
 ## Fait quand
 

@@ -6,45 +6,18 @@ Un fait ne change qu'avec une référence de preuve nouvelle ; réfuté, il est
 barré et conservé. Lue à chaque session : elle reste sous son budget, et ce
 qui n'a plus à être lu à chaque fois s'archive dans le journal.
 
-## F-0001 — Le projet se construit avec cargo (Rust)
-
-> statut : mesuré · preuve : fichier:Cargo.toml · source : audit d'initialisation · date : 2026-11-11
-
-## F-0002 — Le dépôt a 392 fonction(s) de test, dans 21 fichier(s), dont `engine/src/bench.rs`
-
-> statut : mesuré · preuve : fichier:engine/src/bench.rs · source : audit d'initialisation · date : 2026-11-11
-
-## F-0003 — Workflows GitHub du projet, qui jugent un push de branche ou une pull request : 4 (`ci.yml`, `nnue-train.yml`, `pages.yml`, `ui.yml`) ; autres (à la main, planifiés, autre événement) : 7 (`classes.yml`, `force.yml`, `match.yml`, `mutation.yml`, `nnue-datagen.yml`, `nnue-validation.yml`, `spsa.yml`)
-
-> statut : mesuré · preuve : fichier:.github/workflows/ci.yml · source : audit d'initialisation · date : 2026-11-11
-
-## F-0004 — Le dépôt a un README
-
-> statut : mesuré · preuve : fichier:README.md · source : audit d'initialisation · date : 2026-11-11
-
 ## F-0005 — Les données d'entraînement gardées par GitHub expirent du 24 déc. 2026 au 29 janv. 2027
 
-> statut : mesuré · preuve : J-2026-11-17-AG · source : relevé à l'API de GitHub le 17 nov. 2026, workflow `nnue-datagen.yml` · date : 2026-11-17
+> statut : mesuré · preuve : J-2026-11-17-AG, J-2026-11-23-O · source : relevé à l'API de GitHub le 17 nov. 2026, workflow `nnue-datagen.yml` · date : 2026-11-17
 
 Par génération, la date du dernier artefact : la première vague d'A21
 le 24 déc. 2026, la vague au réseau du 29 sept. le 28 déc., le n° 13 le
 5 janv. 2027, puis le n° 18 le 14 janv., le n° 20 le 18, sa suite le 19,
 le n° 21 le 24, le n° 22 le 29. Passé ces dates, la machine de Théo porte
 la seule copie. Dire avant chacune ce qui sert encore et ce qui se copie
-est le sujet B-0026 ; il attend la mise à jour du socle, sauf si son
-échéance approche (D-0016). Le relevé du 6 nov. ne comptait que les
+est le sujet B-0026, ouvert le 23 nov., la mise à jour du socle étant
+remise (D-0024). Le relevé du 6 nov. ne comptait que les
 générations n° 18 à n° 22 (J-2026-11-17-AG).
-
-## F-0006 — Les six positions perft de référence ont été vérifiées deux fois indépendamment, et engine/tests/perft.rs les exige
-
-> statut : mesuré · preuve : fichier:engine/tests/perft.rs · source : état canonique du carnet, « Acquis solide unique », et sa rubrique perft (J-2026-11-17-B) · date : 2026-09-12
-
-Le 12 sept. 2026, les six positions perft de référence ont été vérifiées
-deux fois, indépendamment : 26 valeurs par python-chess 1.10.0, avec un
-aller-retour exact de chaque FEN, puis les profondeurs 5 et 6 par
-`cozy-chess`. Aucune divergence avec les valeurs publiées. Le test
-`engine/tests/perft.rs` exige ces valeurs, avec l'aller-retour des six
-FEN ; c'est le seul juge de la génération de coups.
 
 ## F-0007 — L'évaluation qui joue est le réseau embarqué N9w50s800, depuis le 22 oct. 2026
 
@@ -77,7 +50,7 @@ marges au bit près.
 
 ## F-0009 — Les réglages ouverts du réseau : chaque valeur, sa borne mesurée, sa marge, son prochain test
 
-> statut : mesuré · preuve : J-2026-11-18-B, J-2026-11-18-BE · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du 21 oct. au 10 nov. 2026 · date : 2026-11-18
+> statut : mesuré · preuve : J-2026-11-18-B, J-2026-11-18-BE, J-2026-11-18-DD · source : la section « Les réglages ouverts » de `tools/README.md`, les verdicts du 21 oct. au 10 nov. 2026 · date : 2026-11-18
 
 Aucun n'est résolu : une valeur validée est une borne basse (ADR-0032).
 Matchs à `8+0,08`, ± à 95 % ; marges estimées, confiance faible sauf (m),
@@ -94,7 +67,7 @@ moyenne. L'histoire de chaque mesure : J-2026-11-18-B.
 | filtre des positions | ply ≥ 16 | 8 −3,78, 24 −4,37 (± 3,3) | fine (m) | 12 et 20 |
 | poids variable | constant | 0,25 → 0,75 −1,99 ± 3,32 | ~0 ± 3 (m) | une autre pente |
 | volume | 3,71 G vues au réseau qui joue | doubler +7,38 ± 3,40 ; à étiquette égale +8,94 ± 3,32 | ~+7 au doublement | chaque séance ; B-0024 |
-| étiqueteur | N9w50s800, 2 500 nœuds | 2 500 contre 5 000 +5,77 ± 3,34 ; 10 000 −7,38 à temps égal | jusqu'à ~+9 au doublement | 1 250 nœuds (B-0023) |
+| étiqueteur | N9w50s800, 2 500 nœuds | 2 500 contre 5 000 +5,77 ± 3,34 ; 10 000 −7,38 à temps égal ; le meilleur réseau, ~+40 sur le précédent, +10,15 ± 3,33 à volume égal (tour de boucle) | jusqu'à ~+9 au doublement | 1 250 nœuds (B-0023) |
 | largeur | 256 ; 512 au candidat | 384 +24,86, 512 +32,57 contre 256 (± 3,3) | +3 à +8 au pas suivant | B-0012, puis B-0022 |
 | seaux de roi | 4 ; 10 au candidat | 10 contre 4 +14,77 ± 3,27 à 11,35 G | +5 à +10 vers 16 | B-0020 |
 | seaux de sortie | 8, selon le matériel | 1 contre 8 seulement | inconnue | B-0066 |
@@ -199,3 +172,15 @@ troisième. Elle dimensionne un match par l'Elo attendu à SA
 cadence ; tiré d'un verdict à `1+0,01`, ce budget n'est qu'un majorant.
 Elle ne vaut pas pour un SPRT coupé par le plafond, dont l'effectif n'est
 pas choisi par l'effet.
+
+## F-0015 — Doubler le temps vaut +107,7 ± 8,2 Elo et +1,38 ± 0,28 pli à 8+0,08 : un pli vaut 60 à 105 Elo
+
+> statut : mesuré · preuve : J-2026-11-18-T, J-2026-09-22-F · source : l'étalon du 24 sept. 2026, `16+0,16` contre `8+0,08`, deux matchs sur runner et une sonde des plis ; `CLAUDE.md`, « Ce qui compte comme preuve », jusqu'au 23 nov. 2026 · date : 2026-09-24
+
+L'unité commune des chantiers est le pli : un gain de vitesse ou de temps
+s'y convertit, 1,36 pli par doublement de temps en conteneur, stable sur
+quatre doublements (J-2026-09-22-F). L'étalon les convertit en Elo :
+`16+0,16` contre `8+0,08`, exactement un doublement, rend +107,7 ± 8,2 Elo
+et +1,38 ± 0,28 pli, soit 60 à 105 Elo par pli, bornes croisées.
+L'incertitude vient presque toute des plis (± 20 %). Le binaire de base et
+le livre de 500 d'alors : un étalon d'avant le 6 oct. 2026 (ADR-0031).

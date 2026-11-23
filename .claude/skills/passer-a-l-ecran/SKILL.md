@@ -78,7 +78,7 @@ journal garde les récits.
   l'arbre de sa variante au rejeu à la profondeur 10 ; commité puis révoqué
   aussitôt, sa rustine à l'attic, `verify.sh` vert.
 - **Son attendu, en deux termes** : le coût de l'arbre à décision égale, lu
-  par l'étalon (`CLAUDE.md`, « ce chantier passe avant cet autre ») — un
+  par l'étalon (F-0015) — un
   majorant si l'arbre rétrécit —, et un terme de décision, un pari souvent
   du même ordre, qui fait le signe. Les écrire séparément.
 - **Son critère**, celui d'une technique ajoutée : gain si la borne basse

@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0024-mettre-a-jour-le-socle-a-sa-publication-du-23-nov.md, dont l'empreinte suit.
+reponse = "attendre"
+texte = "Pas maintenant : le socle a encore des correctifs à recevoir, il n'est pas prêt. B-0044 reste ouvert ; l'agent passe aux données qui expirent."
+par = "Théo"
+date = "2026-11-23"
+canal = "conversation"
+citation = "D0024 Non, il reste des correctifs a faire, le socle n'est pas pret encore"
+empreinte = "sha256:c35fe79b98bfaa734bc860d9e3c1dda3927cfa3f085e9492caa1c2542f4ee08b"
