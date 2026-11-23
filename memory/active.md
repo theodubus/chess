@@ -5,15 +5,15 @@ Réécrit au fil du travail et borné. Ce qui en sort s'archive dans le journal.
 
 ## En cours
 
-**Les données d'entraînement** (B-0026) : dire, génération par
-génération, ce qui sert encore, avant chaque date d'expiration (F-0005),
-la première le 24 déc. 2026. La mise à jour du socle est remise : Théo
+**Les données d'entraînement** (B-0026) : l'inventaire est fait
+(J-2026-11-23-Q) ; n° 20, (e), n° 21 et n° 22 servent, 75 Go, et la
+seconde copie attend Théo (D-0025), avant le 18 janv. 2027. La mise à jour du socle est remise : Théo
 dira quand le socle sera prêt (D-0024, B-0044 bloqué, J-2026-11-23-O).
 
 ## Prochaines étapes
 
-1. B-0026, en commençant par les générations qui expirent les 24 et
-   28 déc. ; puis la demande de seconde copie de ce qui sert.
+1. B-0026 : la seconde copie que Théo choisira (D-0025), puis la
+   vérification de chaque artefact copié.
 2. La mise à jour du socle, quand Théo le dira (B-0044) : l'essai à blanc
    se refait sur sa publication ; celui du 23 nov. est J-2026-11-23-N.
 3. Puis le travail du moteur, dont la mesure du réseau N10r10h512

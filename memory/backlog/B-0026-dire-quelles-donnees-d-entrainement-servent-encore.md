@@ -36,6 +36,6 @@ expirent les 24 et 28 déc. (J-2026-11-23-O).
 
 ## Fait quand
 
-- [ ] chaque génération est dite « sert encore » ou « ne sert plus », avec sa raison et sa date d'expiration
-- [ ] pour celles qui servent : la demande d'une seconde copie est posée à Théo, avec le volume, les lieux possibles et leur coût, et il y a répondu
+- [x] chaque génération est dite « sert encore » ou « ne sert plus », avec sa raison et sa date d'expiration (J-2026-11-23-Q)
+- [ ] pour celles qui servent : la demande d'une seconde copie est posée à Théo, avec le volume, les lieux possibles et leur coût, et il y a répondu (D-0025, posée le 23 nov.)
 - [ ] chaque génération tranchée avant sa propre date : le 24 déc. 2026 pour la première
