@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0052 — Ranger les verdicts, poser la table des anciens renvois, et finir tools/README.md
 
-> statut : ouvert · origine : D-0020 · après : B-0051 · lu : backlog@285016e5
+> statut : fait · origine : D-0020 · ref : J-2026-11-23-K · après : B-0051 · lu : backlog@285016e5
 
 Dernier lot (D-0020). Le tableau des verdicts (« Mesures de
 référence ») part au journal, figé à sa date, les verdicts dont une règle
@@ -14,5 +14,5 @@ nouvelles.
 
 ## Fait quand
 
-- [ ] `tools/README.md` ne porte plus que la documentation des outils et la table des anciens renvois
-- [ ] chaque renvoi de `CLAUDE.md` et des fichiers vivants pointe une place qui existe
+- [x] `tools/README.md` ne porte plus que la documentation des outils et la table des anciens renvois
+- [x] chaque renvoi de `CLAUDE.md` et des fichiers vivants pointe une place qui existe

@@ -41,7 +41,9 @@ mesure ») ; ce skill en est la procédure, celle des relèves de septembre
   borne basse est au-dessus). L'écart se cherche
   (le runner, son étalonnage) et se dit inexpliqué s'il l'est. **Un job ne
   se retire jamais après avoir vu son score** ; un groupe trop serré se
-  contrôle aussi, graines et vecteurs distincts.
+  contrôle aussi, graines et vecteurs distincts. Sous un seul effet, un
+  groupe sur vingt-deux environ est refusé : des refus plus fréquents, d'une
+  mesure à l'autre, disent autre chose que le hasard (B-0074).
 - **Un job perdu** (runner perdu, sans résumé) se relance à la même graine
   si le plan en écrivait N, rien n'en ayant été compté ; avant, calculer
   si ce qui manque peut encore changer la décision, et le dire.
@@ -97,8 +99,6 @@ Puis, dans l'ordre :
 
 - Au journal, une entrée datée : le critère, les jobs avec leurs runs, le
   verdict avec effectif, bornes et cadence, et ce qu'il décide.
-- Tant que `tools/README.md` garde son tableau « Mesures de référence »,
-  une ligne y entre aussi.
 - Un réglage mesuré met à jour sa ligne des réglages ouverts (F-0009,
   F-0010), ou en ouvre une : sa valeur, la mesure qui la borne, sa marge,
   son prochain test. Aucun réglage n'est résolu (ADR-0032).

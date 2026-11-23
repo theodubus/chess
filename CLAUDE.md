@@ -34,17 +34,19 @@ pièges déjà payés. Il ne dit pas **où on en est**.
 - L'état du moteur : `README.md`, en tête. Le réseau qui joue, son
   facteur des marges et la force absolue : `memory/canonical.md` (F-0007,
   F-0008, F-0011).
-- Les verdicts SPRT, avec leurs effectifs, leurs bornes **et leur cadence** :
-  `tools/README.md`, section *Mesures de référence*. Le compteur n'est pas
-  recopié ici : il vit dans le tableau.
+- Les verdicts, avec leurs effectifs, leurs bornes **et leur cadence** :
+  au journal, chacun dans son entrée ; le tableau qui les réunissait
+  jusqu'au 23 nov. 2026, figé, est J-2026-11-23-H.
 - Ce qui s'exécute sans qu'on l'appelle : section *Les dispositifs de
   chess*, plus bas, et celle du socle, en fin de fichier.
 - **La feuille de route est le backlog de la mémoire** (D-0009) : l'état
   en calcule le prochain jalon et les sujets prêts.
   Rien ne s'y fait en pilote automatique.
-- Ce qui vieillit sans que rien ne le signale : `tools/README.md`, section
-  [« Ce qu'il faut surveiller »](tools/README.md#ce-quil-faut-surveiller--et-que-rien-ne-signalera-tout-seul) ;
-  un lien, dont le socle vérifie l'ancre à chaque contrôle.
+- Ce qui vieillit sans que rien ne le signale n'a plus de liste à part
+  depuis le 23 nov. 2026 : chaque point est là où il sert — l'expiration
+  des données (F-0005, B-0026), l'étalonnage d'un runner (`tools/README.md`,
+  « Mesurer à cadence longue »), la durée du balayage de mutation (« Sa
+  durée », plus bas) ; l'ancienne liste est J-2026-11-23-J.
 - Ce sur quoi travailler : **les sujets prêts du backlog**, que l'état
   calcule. **Un test qui vaut le coup n'attend pas de validation** : il
   entre au backlog à son rang, marge estimée contre coût, et se signale au
@@ -310,7 +312,7 @@ l'histoire de leur mise en place et ses mesures sont au journal
 ## Ce qui compte comme preuve
 
 Chaque ligne dit la preuve qu'exige une affirmation. Les verdicts sont
-dans `tools/README.md`, section *Mesures de référence* ; le texte d'avant,
+au journal, le tableau d'avant le 23 nov. 2026 en J-2026-11-23-H ; le texte d'avant,
 avec les mesures qui fondaient ces règles, est archivé au journal
 (J-2026-11-17-Q), et le relevé des rapports de nœuds y suit
 (J-2026-11-17-R).
@@ -631,8 +633,9 @@ d'un candidat révoqué — sans jamais ouvrir d'issue, le cliquet gardant
 `main`.
 
 **Sa durée** : `search.rs` seul en prend 145 à 180 minutes et plus, pour
-une limite de job de 350 ; au-delà, découper par `--shard` (`tools/README.md`,
-« Ce qu'il faut surveiller »). C'est un débit de compilation, qui ne dit
+une limite de job de 350 ; au-delà de ~300, il faudra le découper par
+`cargo mutants --shard`, ce que ni `mutation.yml` ni le verdict, qui lit un
+résumé par fichier, ne savent encore faire (B-0075). C'est un débit de compilation, qui ne dit
 rien de la vitesse de recherche d'un runner. **Un nombre de nœuds par
 seconde appartient à son binaire autant qu'à sa machine** : une ligne
 d'étalonnage ne compare que des runs du même binaire, quand la profondeur

@@ -21,6 +21,12 @@ leurs runs, leurs comptes et le K qui regénère chaque job (K = parties +
 (J-2026-11-18-BD), la vague au réseau du n° 7 (J-2026-11-18-BE), celle du
 n° 13 (J-2026-11-18-BY).
 
+Les garder chez GitHub ne coûte rien : la documentation de facturation ne
+mesure le stockage des artefacts que pour un dépôt privé, et celui-ci,
+public, en portait 86,5 Go le 6 nov. 2026 sans qu'un envoi ait été refusé
+(J-2026-11-23-J). Les supprimer avant leur date ne libérerait rien, et
+couperait la perte tenue à l'écart sur les jobs supprimés.
+
 Théo a mis le moteur derrière l'adoption du socle (D-0006), puis
 derrière la transition de la documentation et la mise à jour du socle
 (D-0016, D-0018) : ce sujet les attend aussi, sauf si son échéance
