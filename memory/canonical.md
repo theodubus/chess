@@ -62,7 +62,7 @@ sections de `CLAUDE.md` d'avant le 17 nov. (J-2026-11-17-N).
 
 ## F-0008 — Le facteur des marges du réseau qui joue vaut 2,85
 
-> statut : mesuré · preuve : fichier:engine/src/search.rs, J-2026-11-17-X · source : `CLAUDE.md`, « Invariants du moteur » et « Décisions structurantes » · date : 2026-10-14
+> statut : mesuré · preuve : fichier:engine/src/search.rs, J-2026-11-17-X, J-2026-11-18-CL · source : `CLAUDE.md`, « Invariants du moteur » et « Décisions structurantes » · date : 2026-10-14
 
 L'aspiration et l'élagage delta passent par `scaled_margin`, multipliés
 par `NETWORK_MARGIN_PERCENT` / 100 quand un réseau joue : 285, soit 2,85,
@@ -72,8 +72,8 @@ aucune des deux. Le facteur
 appartient au réseau : N6r4, N7p4 et N8tw50s800 l'ont sondé dans la
 plage. La sonde de N9w50s800 n'a pu être lue que contre N8tw50s800, les
 journaux de la faite main de référence étant perdus : il ne s'y montre
-pas plus fautif à aucune marge (`tools/README.md`, « La sonde de B8 de
-N9w50s800 »). La faite main garde ses marges au bit près.
+pas plus fautif à aucune marge (J-2026-11-18-CL). La faite main garde ses
+marges au bit près.
 
 ## F-0009 — Les réglages ouverts du réseau : chaque valeur, sa borne mesurée, sa marge, son prochain test
 

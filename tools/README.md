@@ -86,172 +86,49 @@ valeurs démontrées pour ce projet.
 
 ## Mesurer à cadence longue
 
-Le conteneur de session est éphémère : un processus de fond n'y survit pas à
-une mise en veille, et un match de plusieurs heures meurt sans trace. C'est
-pourquoi les douze premiers verdicts du projet sont tous à `1+0,01` — **une
-contrainte d'outillage prise pour une préférence**.
+Le conteneur de session est éphémère : un match de plusieurs heures y meurt
+sans trace. `.github/workflows/match.yml` mesure sur un runner GitHub :
+`workflow_dispatch`, deux commits et la cadence en entrée, six heures de
+plafond, et un résumé lisible dans l'onglet Actions sans ouvrir le journal.
+Le nom de chaque run porte ses entrées, que l'API ne rend pas.
 
-`.github/workflows/match.yml` lève la contrainte : `workflow_dispatch`, deux
-commits en entrée, la cadence en entrée, six heures de plafond, et un résumé
-lisible dans l'onglet Actions sans ouvrir le journal. **Le nom de chaque run
-porte ses entrées** depuis le 30 sept. 2026 : l'API ne les rend pas, et deux
-runs déclenchés ensemble ne se distinguaient qu'une fois finis.
+**Lire d'abord l'étalonnage**, en tête du résumé. À cadence horloge, une
+machine plus lente atteint une profondeur plus faible, donc un autre point
+de fonctionnement. Les runners varient de plus de moitié d'un modèle de
+processeur à l'autre, et d'un hôte à l'autre sous le même nom. Un verdict
+reste valide en interne, les deux moteurs partageant la machine ; deux runs,
+ou un run et une mesure locale, ne se comparent qu'après lecture de leurs
+étalonnages.
 
-**Lire d'abord l'étalonnage.** À cadence horloge, une machine plus lente
-atteint une profondeur plus faible — donc un autre point de fonctionnement,
-exactement la variable qu'on cherche à contrôler. Le job mesure ses propres
-nœuds/seconde et les inscrit en tête.
+- **Un nombre de nœuds par seconde appartient à son binaire autant qu'à sa
+  machine** : une ligne d'étalonnage ne compare que des runs du même
+  binaire. La profondeur atteinte en 250 ms se lit d'une version à l'autre :
+  c'est le point de fonctionnement.
+- **L'étalonnage mesure un banc SEUL.** À concurrence 3 sur deux cœurs
+  physiques, les moteurs cherchent moins profond en partie : symétrique,
+  donc aucun verdict ne se fausse, mais « profondeur 12 à `8+0,08` » décrit
+  le banc, pas les parties. La profondeur en partie se mesure par la sonde
+  (plus bas).
 
-**Mesuré le 16 sept. 2026**, au bench à la profondeur 10, même code moteur :
+**Ce qu'un job peut trancher.** À `8+0,08`, une partie prend de 5,6 à 6,6 s
+de job à concurrence 3 selon le moteur, et le plafond de 350 minutes en
+tient de 3 000 à 3 750 : par la relation de budget (F-0014), un job tranche
+les effets de ~17 Elo et plus, et un SPRT plus fin expire. À `30+0,3`, un
+job rend ~960 parties, ± 15 Elo : en demander 900. Un budget tiré d'un
+verdict à `1+0,01` n'est qu'un majorant.
 
-| où | nœuds/s | profondeur en 250 ms | écart au conteneur |
-|---|---|---|---|
-| conteneur de session, 8 relevés | 2 280 655 – 2 396 011 | — | — (étendue 5 %) |
-| runner `1000002315` | 2 507 861 | 10 | **+8 %** |
-| runner `1000002292` | 2 563 044 | *(sonde cassée)* | **+11 %** |
-| runner `1000002314` | 2 668 474 | 10 | **+15 %** |
-| runner `1000002313` | 3 139 691 | **11** | **+35 %** |
+**Un match à longueur fixe coupé par le plafond reste exploitable** :
+l'arrêt dépend de l'horloge, pas des résultats, et l'estimateur n'est pas
+biaisé. Un SPRT expiré, non : sa règle d'arrêt dépend des données, il ne se
+prolonge ni ne se tronque. **Pour un effet plus petit**, des matchs à
+longueur fixe sur plusieurs jobs, graines distinctes, mis en commun
+(« Paralléliser les matchs »).
 
-Le runner est plus **rapide** que le conteneur — de **+8 à +35 %, médiane
-~+13 %** — et il varie de **25 % d'un runner à l'autre** là où le conteneur ne
-varie que de 5 %. **Le 3,14 M est l'extrême, pas la norme**, et c'est pourquoi
-deux points ne suffisaient pas à le dire.
-
-### Remesuré le 21 sept. 2026 — la dispersion est plus large, et un piège apparaît
-
-**Deux runners, le MÊME binaire (`6bf13fa`), le même jour :**
-
-| où | nœuds/s | profondeur en 250 ms |
-|---|---|---|
-| conteneur de session, 3 relevés | 1 579 651 – 1 641 338 | — |
-| runner `1000002450` (match C12) | **2 067 101** | 11 |
-| runner `1000002435` (match C18) | **3 268 241** | **12** |
-
-**58 % d'écart entre les deux runners** (× 1,581), contre les 25 % inscrits
-ci-dessus. La dispersion est donc plus large que le projet ne le croyait, et
-c'est la **troisième** fois que ce chiffre est révisé — après « deux fois plus
-lent », puis « ±10 % », puis « 25 % ».
-
-**Et le piège, qui est neuf.** Le conteneur rendait 2 280 655 – 2 396 011 n/s
-le 16 sept. et 1 579 651 – 1 641 338 aujourd'hui : **−32 %**. La machine n'a
-pas ralenti — **C19 et C17 ont rendu chaque nœud plus cher.** Un nombre de
-nœuds par seconde appartient donc à SON BINAIRE autant qu'à sa machine.
-
-> **Une ligne d'étalonnage ne compare que des runs du même binaire.** Croiser
-> l'étalonnage d'un run de septembre avec celui d'un run d'aujourd'hui compare
-> deux moteurs et une machine à la fois, et le résultat ne veut rien dire. La
-> profondeur atteinte en 250 ms, elle, reste directement lisible : c'est le
-> point de fonctionnement réel, quelle que soit la version.
-
-C'est la même famille que « vérifier le dénominateur » : un chiffre vrai,
-mesuré correctement, qui ne répond pas à la question qu'on lui pose.
-
-**La sonde de profondeur suit bien la vitesse** : 10 à 2,51 et 2,67 M n/s,
-**11** à 3,14 M. Première validation qu'elle mesure ce qu'elle prétend. Traduit dans la
-seule unité qui compte — le projet a mesuré **1,36 pli par doublement de
-temps** — cela vaut **+0,2 à +0,6 ply** : un verdict rendu en CI siège un
-demi-ply plus profond que la même cadence nominale mesurée ici. À comparer aux
-**4 plies** qui ont inversé le verdict de l'élagage par compte de coups.
-
-Le point de fonctionnement transfère donc en gros, mais la marge n'est pas
-négligeable : **ne pas comparer un verdict CI à un verdict local sans regarder
-les deux étalonnages.** En revanche **un verdict reste valide en interne quoi
-qu'il arrive** — les deux moteurs partagent la machine, donc sa vitesse ne
-biaise pas la comparaison ; elle ne déplace que le point de fonctionnement.
-
-### Ce qu'un seul job peut trancher
-
-**Mesuré le 16 sept. 2026**, sur le SPRT d'aspiration à `8+0,08` : 1154 parties
-en 1 h 47 min 13 s de jeu, soit **5,57 s par partie** à concurrence 3. Le
-plafond du job est de 350 minutes, dont ~70 s de mise en place, donc
-**~3 750 parties au maximum**.
-
-Croisé avec la relation de budget du projet (`parties × Elo`, médiane 59 256
-sur dix-huit SPRT — voir plus bas) :
-
-> **Un job à `8+0,08` tranche les effets de ~17 Elo et plus. En dessous, il
-> expire sans verdict.**
-
-L'aspiration (−51,6) a tranché en 1154 parties, C19 (+33,6) en 1608.
-
-**L'Elo qu'on met dans cette division appartient lui aussi à une cadence.** Ces
-lignes portaient que les trois termes d'évaluation, « +14,9 », tombaient *juste
-sous la ligne* : 59 500 ÷ 14,9 = 3 993 parties, au-dessus du plafond de 3 750,
-donc un job qui expire sans verdict. **Mesuré le 22 sept. : verdict rendu en
-1 580 parties** — parce que l'effet à cette cadence-là ne vaut pas +14,9 mais
-**+37,5**, et que 59 500 ÷ 37,5 = 1 585. La relation de budget n'était pas en
-cause ; son **entrée** l'était.
-
-> **Un budget de job estimé depuis un verdict à `1+0,01` est un MAJORANT, pas
-> une estimation.** Tout ce dont la valeur croît avec la profondeur tranchera
-> plus vite qu'annoncé. Ne jamais renoncer à un match à cadence longue sur la
-> seule foi d'un effet mesuré court.
-
-**Et à `30+0,3`, un job ne tient pas mille parties.** Mesuré le 16 sept. sur le
-contrôle de cadence de C19 : **960 parties sur 1000** avant le plafond de
-350 minutes, soit ~21,9 s par partie à concurrence 3. L'intervalle rendu est de
-**± 15,4 Elo**.
-
-> **Un job à `30+0,3` rend ~960 parties à longueur fixe, soit ± 15 Elo.**
-> Demander 1000 parties expire ; en demander 900 tient avec de la marge.
-
-Un match à longueur fixe coupé par le plafond du job **reste exploitable** :
-l'arrêt dépend de l'horloge, pas des résultats, donc l'estimateur n'est pas
-biaisé. C'est exactement ce qui distingue ce cas d'un **SPRT** expiré, dont la
-règle d'arrêt dépend des données et qu'on ne peut ni prolonger ni tronquer sans
-perdre ses taux d'erreur.
-
-**Ce qu'on fait quand l'effet est trop petit** : des matchs à **longueur fixe**
-sur plusieurs jobs, graines d'ouvertures distinctes, puis mise en commun. Les
-échantillons sont indépendants, donc c'est valide ; ça rend une **estimation
-d'Elo à intervalle resserré** et non un verdict SPRT — exactement le protocole
-qui a servi à établir l'effet de cadence. Ne pas tenter de « reprendre » un
-SPRT expiré : un test séquentiel interrompu puis prolongé n'a plus ses taux
-d'erreur.
-
-**La profondeur de la sonde prime sur les nœuds/s.** Les nœuds/s sont un
-indice de vitesse, la profondeur est le point de fonctionnement lui-même.
-La sonde a longtemps rendu 4 au lieu de 11 — le piège du `stdin` refermé,
-consigné plus bas — ce qui est la raison pour laquelle les nœuds/s ont servi
-de substitut. Elle est réparée : s'en servir.
-
-> **Comment je me suis trompé.** J'ai d'abord annoncé « un runner est deux
-> fois plus lent », extrapolé d'un débit de *compilation*. Corrigé en
-> « ±10 %, donc ça transfère » — sur la foi d'**un seul runner**. C'est
-> caractériser une variance à partir d'un point, la même faute que
-> « sept exécutions ne suffisent pas à comparer deux temps », appliquée
-> cette fois à la machine au lieu du binaire.
-
-### Le résultat qui a motivé tout ça
-
-**La cadence peut inverser un verdict.** Mêmes binaires, même livre, **même
-graine d'ouvertures**, même adjudication, même estimateur — 1000 parties à
-longueur fixe de chaque côté. Seule la cadence change :
-
-| protocole | Elo | IC 95 % |
-|---|---|---|
-| `1+0,01`, SPRT, 2030 parties | −25,20 | [−36,8 ; −13,6] |
-| `1+0,01`, longueur fixe, 1000 | **−21,57** | [−38,3 ; −4,9] |
-| `8+0,08`, longueur fixe, 1000 | **+15,30** | [+0,2 ; +30,4] |
-
-Écart dû à la cadence : **+36,87 Elo**, z = 3,21, **p = 0,0013**, intervalles
-disjoints. Le biais d'arrêt du SPRT — qui s'arrête quand les données sont
-extrêmes — ne vaut que **3,6 Elo** : ce n'était pas l'explication.
-
-**Ce que ça impose.** Inscrire la cadence à côté de chaque verdict. Ne jamais
-comparer deux verdicts de cadences différentes. Et se demander, avant de
-conclure, si la cadence de mesure ressemble au régime où le moteur jouera.
-
-Profondeur médiane atteinte selon le temps par coup, mesurée le 16 sept. 2026
-sur douze positions de vraies parties :
-
-| temps par coup | profondeur médiane |
-|---|---|
-| **1+0,01** — la cadence des douze verdicts | **8,5** |
-| ~4+0,04 | 11,5 |
-| 8+0,08 — le défaut de `sprt.sh`, jamais utilisé | 12,5 |
-| ~15+0,15 | 14,0 |
-| ~30+0,3 | **17,0** |
+**La cadence appartient au verdict** (`CLAUDE.md`, « Ce qui compte comme
+preuve ») : la profondeur médiane atteinte valait 8,5 à `1+0,01`, 12,5 à
+`8+0,08` et 17 à `30+0,3`, mesurée le 16 sept. 2026 sur douze positions de
+parties. Les mesures de vitesse des runners et le récit qui a fondé ces
+règles sont au journal (J-2026-11-23-B à J-2026-11-23-E).
 
 ### Une cadence par moteur, et la sonde
 
@@ -844,42 +721,36 @@ qu'aucun des trois ne dit ; la campagne elle-même est B-0017.
   `main`, son critère écrit avant. SPSA prédit bien sur son propre bruit,
   et rien d'autre.
 
-## Tests de mutation — mesuré le 15 sept. 2026
+## Tests de mutation
 
 `cargo mutants` altère le code une mutation à la fois et vérifie que la suite
-de tests s'en aperçoit. C'est la seule défense mécanique contre un test creux.
-
-**Le coût, mesuré et non estimé** — le dépôt entier, **1233 mutants en 55
-minutes** avec `-j4`. Le moteur seul en produit **986**. Le chiffre annoncé ici
-jusqu'au 15 sept. 2026 — « environ 70 minutes pour tout, 55 pour le moteur » —
-était une extrapolation depuis un seul petit fichier, et elle était fausse dans
-les deux termes : 55 minutes valaient pour *tout*, pas pour le moteur.
-
-**La conclusion** — trop lent pour un pas de CI bloquant. Un contrôle d'une
-heure qui bloque une pull request finit par être contourné, et c'est le motif
-de désarmement déjà rencontré deux fois sur ce projet. Il tourne donc en
-**tâche hebdomadaire** : workflow `Mutation`, mardi 00:00 UTC, un job par
-fichier en parallèle.
+de tests s'en aperçoit : la seule défense mécanique contre un test creux. Le
+moteur en produit plus d'un millier, et `engine/src/search.rs` seul
+demande des heures de runner : bien trop pour bloquer une pull request — un
+contrôle qui bloque une heure finit par être contourné. Il tourne donc
+chaque semaine : workflow `Mutation`, mardi 00:00 UTC, un job par fichier
+en parallèle ; sa durée par fichier, `CLAUDE.md`, « Sa durée ».
 
 ```sh
-cargo install cargo-mutants --locked      # 1 min 11 s
+cargo install cargo-mutants --locked
 cargo mutants --list                      # décompte, instantané
 tools/mutants.sh --file engine/src/tt.rs -j4
 ```
 
-Le workflow qui l'exécute est `.github/workflows/mutation.yml` ; son verdict
-est rendu par `.github/mutation-verdict.sh`, éprouvé par
-`.github/mutation-verdict-test.sh`. Le reste de l'outillage automatique — le
-hook de chess, `.claude/hooks/no-fabricated-sha.sh`, et l'auto-test des hooks,
-`tools/verify-hooks.sh` — est
-décrit dans `CLAUDE.md`, section « Les dispositifs de chess ».
+Il tourne par `.github/workflows/mutation.yml`, et son verdict est rendu
+par `.github/mutation-verdict.sh`, que `.github/mutation-verdict-test.sh`
+éprouve. Le reste de l'outillage automatique — le hook de chess,
+`.claude/hooks/no-fabricated-sha.sh`, et l'auto-test des hooks,
+`tools/verify-hooks.sh` — est décrit dans `CLAUDE.md`, section « Les
+dispositifs de chess ».
 
 **Toujours passer par `tools/mutants.sh`, jamais par `cargo mutants` nu.** Il
-prend un verrou exclusif et efface `mutants.out/` avant de partir. Le
-15 sept. 2026, deux balayages lancés l'un sur l'autre ont écrit dans le même
-`mutants.out/` : `missed.txt` mêlait les survivants de deux versions du code,
-avec des numéros de ligne d'un fichier qui n'existait plus. Le verrou rend la
-faute inexprimable au lieu de la confier à la vigilance.
+prend un verrou exclusif et efface `mutants.out/` avant de partir : deux
+balayages lancés l'un sur l'autre écriraient dans le même dossier, et ses
+survivants mêleraient deux versions du code. Il plafonne aussi la mémoire de
+chaque processus de test à 4 Gio, comme le workflow : un mutant qui alloue
+sans fin meurt sur son allocation et compte attrapé, au lieu de tuer le
+runner.
 
 ### Le cliquet
 
@@ -905,17 +776,6 @@ un défaut — le SPRT en juge déjà, et aucun test unitaire ne peut trancher �
 place. `tools/` est hors du balayage pour la même raison : ce sont des
 utilitaires hors ligne, dont la fiabilité se juge par `crosscheck.sh`.
 
-**Ce qu'il a trouvé au premier essai**, sur le plus petit fichier, choisi au
-hasard : **6 mutants survivants sur 29**. Dont le plus instructif — inverser
-`==` en `!=` dans `repetitions` ne fait tomber aucun des sept tests de
-`position.rs`. Vérifié en inversant réellement l'opérateur. La raison est
-arithmétique : après quatre demi-coups la fenêtre examinée contient deux
-entrées dont exactement une égale au hash cherché, donc les deux opérateurs
-comptent 1. **Le test était satisfait par coïncidence.**
-
-C'est exactement la classe de faute que ni la relecture ni la CI n'attrapent,
-et elle portait sur la détection de nulle par répétition.
-
 ## Vérifier l'échange statique
 
 ```sh
@@ -938,352 +798,7 @@ clouages absolus, 2 échecs à la découverte, **aucune autre cause**. C'est la
 limite par construction d'un échange statique, caractérisée et verrouillée par
 un test.
 
-## Mesures de référence
-
-**La cadence fait partie du verdict.** Elle est inscrite sur chaque ligne, et
-deux verdicts de cadences différentes ne se comparent pas — un même binaire a
-rendu −21,6 Elo à `1+0,01` et +15,3 à `8+0,08`. Les lignes sans mention
-contraire sont à `1+0,01`, la cadence historique du projet, **où le moteur ne
-joue qu'à la profondeur 8,5 alors que la cible est la force générale.**
-
-| date | changement | verdict |
-|---|---|---|
-| 2026-09-13 | C9 (table de transposition, killers, historique) contre pré-C9 | **H1 accepté** — +164,3 Elo ± 31,3 sur 488 parties, cadence 1+0,01 |
-| 2026-09-13 | Élagage par coup nul contre C10 | **H1 accepté** — +75,1 Elo ± 19,7 sur 864 parties, cadence 1+0,01 |
-| 2026-09-13 | Réduction des coups tardifs (LMR) contre le coup nul | **H1 accepté** — +69,1 Elo ± 18,3 sur 892 parties, cadence 1+0,01 |
-| 2026-09-14 | Fenêtres d'aspiration contre LMR | **H1 accepté** — +29,7 Elo ± 11,9 sur 2042 parties, cadence 1+0,01 |
-| 2026-09-14 | Recherche à variante principale (PVS) contre les fenêtres d'aspiration | **H0 accepté** — **−10,9 Elo ± 7,9** sur 4214 parties, cadence 1+0,01. Changement retiré. |
-| 2026-09-14 | Mobilité dans l'évaluation | **H1 accepté** — +62,6 Elo ± 17,2 sur 942 parties, cadence 1+0,01 |
-| 2026-09-14 | Sécurité du roi, structure de pions et tours sur colonne ouverte, valeurs conventionnelles | **H1 accepté** — +14,9 Elo ± 8,2 sur 4474 parties, cadence 1+0,01 |
-| 2026-09-14 | Les mêmes termes, valeurs réglées par ajustement Texel | **H0 accepté** — **−10,0 Elo ± 8,3** sur 5128 parties, cadence 1+0,01. Réglage retiré. |
-| 2026-09-14 | Élagage delta en quiescence | **H1 accepté** — +32,5 Elo ± 12,3 sur 1822 parties, cadence 1+0,01 |
-| 2026-09-15 | Futilité inverse | **H1 accepté** — +24,3 Elo ± 10,7 sur 2524 parties, cadence 1+0,01 |
-| 2026-09-16 | Matériel insuffisant (C20) | **pas de SPRT** — correction d'une évaluation fausse d'un résultat certain, jugée par des tests. Prouvée contre `python-chess` : 0 écart / 37 806 positions. L'arbitre adjuge lui-même ces nulles, donc un match n'aurait rien vu. |
-| 2026-09-16 | Élagage par compte de coups (LMP), seuil `6 + d²` | **H0 accepté** — **−25,2 Elo ± 11,6** sur 2030 parties, cadence 1+0,01. Changement retiré. |
-| 2026-09-16 | Le même, seuil `12 + d²` (bissection) | **H0 accepté** — **−12,6 Elo ± 8,7** sur 3932 parties, cadence 1+0,01. Changement retiré. |
-| 2026-09-16 | **Le même seuil `6 + d²`, à `8+0,08` au lieu de `1+0,01`** | **+15,30 Elo ± 15,08** sur 1000 parties à longueur fixe. **Le signe s'inverse.** Contrôle à `1+0,01`, même protocole : **−21,57 ± 16,71**. Écart +36,9 Elo, z = 3,21, **p = 0,0013**. Voir ci-dessous. |
-| 2026-09-16 | **Retrait des fenêtres d'aspiration (D5), à `8+0,08`** | **H0 accepté** — **−51,56 Elo ± 15,67** sur 1154 parties, bornes `[-5, 0]`. Étalonnage du runner : 2 668 474 n/s, profondeur 10. **L'aspiration paie toujours, et bien plus qu'annoncé.** |
-| 2026-09-16 | Le même retrait, à `1+0,01` | **H0 accepté** — **−18,91 Elo ± 9,22** sur 3274 parties, bornes `[-5, 0]`. Étalonnage : 2 507 861 n/s, profondeur 10. |
-| 2026-09-16 | **Élagage par échange statique en quiescence (C19), à `8+0,08`** | **H1 accepté** — **+33,59 Elo ± 12,00** sur 1608 parties, LLR 2,95 contre 2,94, 54,82 % de score, LOS 100 %. Étalonnage : 3 110 423 n/s, profondeur 11 en 250 ms. 2 h 31 de match. |
-| 2026-09-16 | **Le même, à `30+0,3`** | **+18,84 Elo ± 15,41** sur **960 parties** à longueur fixe, LOS 99,19 %. Même graine d'ouvertures, donc apparié au précédent. Étalonnage : 2 557 547 n/s, profondeur 10 — **runner 18 % plus lent que celui du verdict ci-dessus**. |
-| 2026-09-21 | **C18 — extension d'échec, à `8+0,08`** | **PAS UN GAIN — −5,01 Elo ± 8,11**, 3400 parties à longueur fixe, 49,28 % de score, LOS 11,3 %, Ptnml [130, 351, 761, 354, 104]. [run 35613044990](https://github.com/theodubus/chess/actions/runs/35613044990), candidat `4f881aa` contre `6bf13fa`, graine 20260913. Étalonnage : **3 268 241 n/s, profondeur 12** — le plus rapide des runners mesurés à ce jour. L'intervalle contient zéro et le point estimé est négatif. **Non fusionné**, code dans `tools/attic/c18-extension-echec.patch`. Banc du candidat : 131 977 nœuds (×1,16). |
-| 2026-09-21 | **C12 — PVS réécrit, à `8+0,08`** | **PAS UN GAIN NON PLUS, mais plus du tout un coût — −0,82 Elo ± 8,19**, 3400 parties à longueur fixe, 49,88 % de score, LOS 42,2 %, Ptnml [130, 319, 810, 311, 130]. [run 35616375595](https://github.com/theodubus/chess/actions/runs/35616375595), candidat `35548f2` contre `6bf13fa`, graine 20260913. Étalonnage : **2 067 101 n/s, profondeur 11**. **Non fusionné**, code dans `tools/attic/c12-pvs-2026-09-21.patch`. Banc du candidat : 106 820 nœuds (÷1,07). |
-| 2026-09-21 | **LMP seuil `6 + d²` (C17), à `8+0,08`, sur la base post-C19** | **H1 accepté** — **+22,85 Elo ± 9,88** sur 2436 parties, LLR 2,95, 53,28 % de score, LOS 100 %. Étalonnage : 2 508 824 n/s, profondeur 11. 3 h 47 de match. **Retenu.** |
-| 2026-09-21 | **Le même, seuil `12 + d²`** | **H1 accepté** — **+17,24 Elo ± 8,51** sur 3368 parties, LLR 2,96, 52,48 % de score. Étalonnage : 2 579 292 n/s, profondeur 11. 5 h 09 de match. |
-| 2026-09-22 | **D5 — retrait des trois termes d'évaluation (sécurité du roi, structure de pions, tours sur colonne ouverte), à `8+0,08`** | **H0 accepté** — **−37,53 Elo ± 13,40** sur 1580 parties, bornes `[-5, 0]`, LLR −2,95, 44,62 % de score, LOS 0,00 %, Ptnml [121, 155, 344, 113, 57]. [run 35692850670](https://github.com/theodubus/chess/actions/runs/35692850670), candidat `adcbd14` contre `091e75e`, graine 20260913. Étalonnage : **2 177 503 n/s, profondeur 11**. 2 h 32 de match. **Les trois termes valent 2,5 fois le +14,9 mesuré à `1+0,01`.** Banc du candidat : 88 495 nœuds (÷ 1,29). |
-| 2026-09-22 | **D5 — retrait de l'élagage delta, à `8+0,08`** | **PAS DE VERDICT — SPRT tué par le plafond du job** à 3 738 parties. Retrait : **−1,49 Elo ± 7,83**, IC `[−9,3 ; +6,3]`, 49,79 % de score, **LLR 0,06 sur ±2,94**, Ptnml [141, 373, 851, 369, 135]. [run 35714977914](https://github.com/theodubus/chess/actions/runs/35714977914), candidat `cbaa8d4` contre `a57c835`, bornes `[-5, 0]`, graine 20260913. Étalonnage : **2 324 708 n/s, profondeur 12**. **Ne pas lire comme un verdict** : un SPRT arrêté par l'horloge est conditionné à n'avoir pas touché ses bornes, donc biaisé vers zéro. Ce qui est établi, c'est que l'effet n'a **rien à voir avec les +32,5 Elo** du verdict de `1+0,01` — celui-là aurait tranché vers 1 825 parties. L'élagage **reste dans `main`**. Banc du candidat : 138 458 nœuds (× 1,21). |
-| 2026-09-16 | Échange statique dans l'**ordonnancement** (C19, première moitié) | **PAS DE SPRT, changement retiré.** Effet mesuré sous le seuil de résolution d'un job (~17 Elo) et de signe estimé négatif. Bissection du palier et mesures dans `tools/attic/c19-see-ordering.patch`. |
-| 2026-09-23 | **C21 — défaut de `movestogo` de 30 à 12, à `8+0,08`** | **+19,13 Elo ± 6,31** sur 6 000 parties à longueur fixe, deux matchs mis en commun, zéro perte au temps. **Fusionné.** Le SPRT qui l'avait précédé avait expiré à +14,59 ± 8,31 — un minorant, et c'en était un. Section « C21 — VERDICT ». |
-| 2026-09-24 | **C22 sur C23 — le test de nulle avant la quiescence, sans les fausses nulles, à `8+0,08`** | **+3,98 ± 6,26** en commun sur 5 758 parties — mais deux matchs hétérogènes, **+10,86 ± 8,91** et **−2,90 ± 8,80** (z = 2,15, runners étalonnés à 0,3 % près). Aucune borne haute sous zéro dans aucune lecture : **FUSIONNÉ au titre de la règle**, aucun gain revendiqué. Avertissements « PV continues after » : 85 et 94 à la référence, 4 et 3 au candidat. Section « C22 sur C23 — VERDICT ». |
-| 2026-09-24 | **Calibration — un doublement de temps, même binaire, `16+0,16` contre `8+0,08`** | **+107,74 Elo ± 8,19** sur 3 800 parties à longueur fixe (deux matchs homogènes, z = 0,19 ; +108,54 et +106,94), zéro anomalie ; **+1,38 ± 0,28 pli** en partie (sonde de 100 parties). **Soit 60 à 105 Elo par pli** à `8+0,08`, bornes croisées. Étalonnages : EPYC 7763 2 192 324 n/s et EPYC 9V74 2 020 660 n/s, profondeur 12 |
-| 2026-09-24 | **B6 — Lazy SMP, deux fils contre un, même binaire (`65d0b03`), à `8+0,08`** | **+42,16 Elo ± 9,23** sur 2 700 parties à longueur fixe — trois matchs homogènes (+35,64, +49,36, +41,50 ; \|z\| ≤ 1,19), une partie à la fois, zéro anomalie — **contre notre jumeau monofil**. Borne basse > 0 : **deux fils rapportent**, sur le critère écrit avant, et dans l'attendu écrit avant les matchs (+24 à +59). Converti par l'étalon : **0,31 à 0,86 pli** ; la sonde en mesurait +0,48 ± 0,08 en partie |
-| 2026-09-24 | **A18 — génération par étapes (`087edb8`) contre son parent (`d01183d`), à `8+0,08`** | **+23,10 Elo ± 6,39** sur 5 740 parties à longueur fixe — deux matchs homogènes (+27,81 et +18,36 ; z = 1,45), zéro anomalie. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant, au haut de l'attendu écrit avant (+6 à +25). La sonde en mesurait n/s × 1,09 et +0,17 ± 0,07 pli : **70 à 295 Elo par pli**, bornes croisées |
-| 2026-09-24 | **C24 — laisser finir l'itération entamée (`7274844`) contre son parent (`7fc5959`), à `8+0,08`** | **+44,64 Elo ± 6,24** sur 5 760 parties à longueur fixe — deux matchs homogènes (+45,01 et +44,27 ; z = 0,12), deux runners différents, zéro anomalie. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant. **Profondeur moyenne inchangée** (sonde : −0,00 ± 0,09 pli) : des deux lectures écrites avant le match, celle des plis moyens (+2 à +7) tombe, celle de l'accord avec l'oracle (+39 à +68) tient |
-| 2026-09-24 | **C25 — une échéance douce par stabilité du coup, la dure à 3 budgets (`41d590f`), contre son parent (`910a6c9`), à `8+0,08`** | **+7,87 Elo ± 6,08** sur 5 740 parties à longueur fixe — deux matchs homogènes (+8,45 et +7,29 ; z = 0,19), deux runners différents, zéro perte au temps. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant. **Sous l'attendu** (+12 à +25, converti au taux de C24) : **22 à 46 Elo par pli d'accord** au point, contre ~69 pour C24 — l'écran surestime davantage une règle qui cible les coups instables, ce que sa réserve disait |
-| 2026-09-25 | **C26 — la dure bornée à l'approche d'un contrôle annoncé (`6daf7d7`) contre son parent (`4620495`), à `40/8`** | **+2,43 Elo ± 6,01** sur 6 000 parties à longueur fixe — deux matchs homogènes (+4,98 et −0,12 ; z = 0,83), zéro perte au temps. **Correctif** : aucune borne haute sous zéro, **FUSIONNÉ au titre de la règle** — le mécanisme mesuré en partie (5,3 % de cycles affamés avant, aucun après), dans l'attendu écrit avant (0 à +5), sous la puissance dite d'avance (± 6). Première mesure du projet à une cadence à coups comptés ; sans `movestogo`, rien ne change |
-| 2026-09-25 | **A20 — l'historique de continuation, conservé d'un coup à l'autre (`54e6c60`), contre son parent (`a08af76`), à `8+0,08`** | **+12,56 Elo ± 4,35** sur 11 620 parties à longueur fixe — quatre matchs homogènes (+14,26, +11,75, +15,83, +8,45 ; plus grand écart z = 1,17), deux Xeon 8370C et deux EPYC 7763, profondeur 12 partout, zéro perte au temps. Borne basse > 0 : **gain démontré, FUSIONNÉ** sur le critère écrit avant, dans l'attendu écrit avant (0 à +15) et **au-dessus de ce que l'arbre seul promettait** (+4 à +7, pour −3,1 % de nœuds) : le canal des décisions est positif. Première mesure du projet à quatre jobs, sur une puissance calculée avant |
-| 2026-09-25 | **C27 — l'élagage par distance au mat (`bb6e4c0`) contre son parent (`3aa5986`), à `8+0,08`** | **−3,56 Elo ± 5,97** sur 5 760 parties à longueur fixe — deux matchs homogènes (−1,92 et −5,22 ; z = 0,54), zéro perte au temps. **Correctif** : aucune borne haute sous zéro (+2,41 en commun, +6,24 et +3,50 par match), **FUSIONNÉ au titre de la règle** — le mécanisme mesuré en partie (1,82 % des recherches stockaient un score hors de ±MATE), l'attendu écrit avant (0 à +3) dans l'intervalle, sous la puissance dite d'avance (± 6) |
-| 2026-09-23 | **Vol de CPU du ponder sur runner — deux sondes de 60 parties, à `8+0,08`** | **r = 0,948** (rapport des n/s 0,950 en ponder, 1,002 au témoin) ≥ 0,93 : **le verdict du ponder tient**, sur la règle écrite avant. Vol estimé 3 à 5 % de vitesse, 3 à 10 Elo des +67,63. **Topologie : 2 cœurs physiques, 2 fils par cœur (AMD EPYC 7763)**. [run 35933841290](https://github.com/theodubus/chess/actions/runs/35933841290), [run 35933844087](https://github.com/theodubus/chess/actions/runs/35933844087). Section « Vol de CPU du ponder sur runner — VERDICT ». |
-| 2026-09-23 | **C22 — le test de nulle avant l'aiguillage vers la quiescence, à `8+0,08`** | **−10,44 Elo ± 6,34** sur 5 760 parties — **régression, non fusionné**, arrêté par son critère écrit avant. 92 % des nulles qu'il ajoutait à l'horizon étaient fausses (C23) : **remesuré sur C23, en vol**. Section « C22 — VERDICT ». |
-| 2026-09-23 | **B9 — effet de capacité de la table à entrées atomiques, à `8+0,08`** | **−1,27 Elo ± 6,34** sur 5 740 parties — pas d'effet décelable. **Fusionné au titre de l'infrastructure** (la table se partage entre fils ; −4,3 % de temps déjà prouvé). Section « B9 — VERDICT ». |
-| 2026-09-23 | **Ponder activé pour un seul camp, même binaire, à `8+0,08`** | **+67,63 Elo ± 9,19** sur 2 700 parties (cutechess, une partie à la fois), zéro anomalie — **contre notre jumeau**, donc un chiffre qui appartient à son adversaire. Le ponder reste désactivé par défaut ; l'interface l'active. Section « Ponder — VERDICT ». |
-| 2026-09-23 | **C23 — la fenêtre de répétition bornée au dernier coup nul, à `8+0,08`** | **+2,65 Elo ± 6,40** sur 5 760 parties — pas d'effet décelable, **fusionné au titre de la règle** : 87,8 % des répétitions que voyait la recherche étaient fausses. Section « C23 — VERDICT ». |
-| 2026-09-29 | **C28 — la table sous pression : 2 Mio (`cdd5ba4`) contre 16 (`068ee1a`), à `8+0,08`** — la pression de la table de 16 Mio à 60+0,6, reproduite | **−19,42 Elo ± 5,78** sur 6 000 parties à longueur fixe — deux matchs homogènes (−19,59 et −19,24, z = −0,06), Xeon 6973P-C et EPYC 7763, zéro perte au temps. **Coût démontré** : le critère écrit avant ouvre les deux leviers, les seaux et la taille. La sonde (100 parties, EPYC 9V74) : la petite table fait × 1,063 de n/s et cherche −0,44 ± 0,11 pli moins profond — ~44 Elo par pli perdu, sous l'étalon du temps |
-| 2026-09-30 | **N° 7 — N1 contre N0** : le réseau entraîné sur des données étiquetées par le moteur AU RÉSEAU, 120,9 M positions (`c430fe5` contre `be9f65e`) | **+115,74 Elo ± 6,98** sur 6 000 parties à `8+0,08`, deux matchs homogènes (z = 0,65), zéro perte au temps. **Gain démontré** — l'attendu, 0 à +40, réfuté par le haut |
-| 2026-09-30 | **N° 7 — N2 contre N1** : les mêmes étiquettes, deux fois plus de positions, 249,5 M (`af62e48` contre `c430fe5`) | **+50,09 Elo ± 6,12** sur 6 000 parties à `8+0,08`, homogènes (z = −0,62). **Gain démontré, N2 joue** depuis `d28f886` — l'attendu, 0 à +25, réfuté par le haut |
-| 2026-09-30 | **N° 7 — N3 contre N2** : la couche cachée à 256 au lieu de 128, les mêmes données (`eddab38` contre `af62e48`) | **−28,79 Elo ± 5,99** sur 6 000 parties à `8+0,08`, homogènes (z = −1,76). **Écarté** : × 0,785 de nœuds par seconde dans le conteneur, ~−38 Elo par l'étalon — la qualité ne paie pas la vitesse |
-| 2026-09-30 | **C29 — les seaux, sous pression** : quatre entrées par ligne de cache, la moins utile cède, contre la case unique — 2 Mio des deux côtés (`2d44626` contre `cdd5ba4`) | **+30,13 Elo ± 5,60** sur 6 000 parties à `8+0,08`, gain démontré dans chaque job (+36,62 et +23,66, z = 2,27, même runner). **FUSIONNÉ** (`fc2c9cf`) ; la sonde : +0,54 ± 0,10 pli à vitesse égale — 38 à 81 Elo par pli regagné par la table |
-| 2026-09-30 | **C29 — les seaux, au défaut** : 16 Mio, où la table n'est pas pressée (`90ac6e3` contre `d78b422`) | **+1,85 Elo ± 5,51** sur 6 000 parties à `8+0,08`, homogènes (z = −0,87) : aucune régression démontrée — la condition de la fusion ; la sonde : n/s × 0,990, +0,03 ± 0,13 pli |
-| 2026-09-30 | **C30 — la table par défaut à 64 Mio au lieu de 16**, là où elle n'est pas pressée (`94c07ad` contre `4699e63`) | **+2,90 Elo ± 5,72** sur 6 000 parties à `8+0,08`, homogènes (z = −1,11), zéro perte au temps. **Aucun coût démontré : le défaut passe à 64 Mio** (`428a1e5`) ; la sonde : n/s × 0,979, −0,08 ± 0,10 pli |
-| 2026-09-30 | **C31 — la nulle par règle testée après une parade tranquille, dans la quiescence** (`5d8c68c` contre `1638d26`) | **−2,43 Elo ± 5,36** sur 6 000 parties à `8+0,08`, homogènes de justesse (z = −1,99) ; **le match 1 seul, −7,88 ± 7,61, borne haute −0,27**. **ARRÊTÉ PAR SON CRITÈRE** — correctif de règle, « fusion sauf si la borne haute est sous zéro, en commun comme sur chaque match » : une lecture la met sous zéro. Zéro perte au temps ; avertissements de nulle : 0 pour le candidat, 5 pour la référence |
-| 2026-09-30 | **B8 — l'aspiration et l'élagage delta à l'échelle du réseau** : leurs marges × 2,24 quand un réseau joue, la faite main inchangée (`791e6e4` contre `7305c8a`) | **+50,50 Elo ± 5,37** sur 6 000 parties à `8+0,08`, homogènes (z = −0,13), zéro perte au temps. **Gain démontré, FUSIONNÉ** — l'attendu, 0 à +25, réfuté par le haut. Banc inchangé : la faite main garde ses marges |
-| 2026-10-02 | **N2L — N2 ré-entraîné sur les données de Leela**, levier 4 du n° 7 (`5764f2b` contre `4526a2c`) | **+16,40 Elo ± 6,20** sur 6 000 parties à `8+0,08`, homogènes (z = −0,20), zéro perte au temps. **Gain démontré, EMBARQUÉ** — le meilleur des deux réseaux du levier ; attendu 0 à +60 |
-| 2026-10-02 | **L0 — les données de Leela seules, depuis zéro**, levier 4 du n° 7 (`3349f53` contre `4526a2c`) | **+10,02 Elo ± 6,19** sur 6 000 parties à `8+0,08`, homogènes (z = 0,46), zéro perte au temps. Gain démontré, sous N2L : non embarqué ; attendu −40 à +40 |
-| 2026-10-05 | **C32 — la réduction du coup nul croît avec la profondeur, 3 + d/3**, n° 9 (`4270eef` contre `18a3805`) | **+40,90 Elo ± 5,34** sur 6 000 parties à `8+0,08`, homogènes (z = 0,54), zéro perte au temps. **Gain démontré, FUSIONNÉ** — le meilleur au point du premier écran ; attendu 0 à +40, majorant par l'arbre +36 à +63 |
-| 2026-10-05 | **C32b — la même, 3 + d/4**, n° 9 (`b52e0d3` contre `18a3805`) | **+38,31 Elo ± 5,24** sur 6 000 parties à `8+0,08`, homogènes (z = 0,33). Gain démontré, sous C32 : non retenu ; attendu 0 à +35 |
-| 2026-10-05 | **C33 — le coup nul seulement si l'évaluation atteint bêta**, n° 9 (`94e84bb` contre `18a3805`) | **+11,12 Elo ± 3,68** sur 12 000 parties à `8+0,08` — l'amplitude hétérogène, de +4,5 à +20,4 selon le job, le signe non. Gain démontré, contre la base d'avant C32 : **au groupe de la composition** ; attendu 0 à +10 |
-| 2026-10-05 | **C34 — la réduction itérative interne**, n° 9 (`99178f5` contre `18a3805`) | **+7,50 Elo ± 3,69** sur 12 000 parties à `8+0,08`. Gain démontré, contre la base d'avant C32 : **au groupe de la composition** ; attendu −10 à +10 |
-| 2026-10-05 | **C38 — l'échange statique dans la recherche principale** : une capture qui perd plus de 100 × la profondeur se saute, à la profondeur ≤ 6, n° 9 (`5b5c13e` contre `18a3805`) | **+9,61 Elo ± 3,71** sur 12 000 parties à `8+0,08`, homogènes à quatre matchs (p = 0,062). Gain démontré, contre la base d'avant C32 : **au groupe de la composition** ; attendu 0 à +15 |
-| 2026-10-05 | **C36 — *improving* dans l'élagage par compte** : son seuil à moitié quand la position ne s'améliore pas, n° 9 (`fd501a8` contre `18a3805`) | **+5,65 Elo ± 3,75** sur 12 000 parties à `8+0,08`, homogènes (p = 0,18). Gain démontré, contre la base d'avant C32 : **au groupe de la composition** ; attendu −10 à +15 |
-| 2026-10-05 | **C37 — *improving* dans LMR** : un pli de réduction de plus quand la position ne s'améliore pas, n° 9 (`cefbcfb` contre `18a3805`) | **+0,75 Elo ± 3,69** sur 12 000 parties à `8+0,08` — aucun effet décelable, pour −16,6 % d'arbre : **non fusionné** ; attendu 0 à +20 |
-| 2026-10-05 | **C35 — *improving* dans la futilité inverse** : une profondeur de marge de moins quand la position s'améliore, n° 9 (`d0513da` contre `18a3805`) | **−8,51 Elo ± 3,76** sur 12 000 parties à `8+0,08`, borne haute −4,75 : **régression démontrée, non fusionné** — pour −16,9 % d'arbre, celui de C37 ; attendu −10 à +20 |
-| 2026-10-05 | **C39 — la futilité aux nœuds frontières** : à la profondeur ≤ 6, un coup tranquille qui ne donne pas échec se saute quand l'évaluation du nœud plus `140 + 20·d`, en unités du réseau, n'atteint pas `alpha`, n° 9 (`dfda892` contre `18a3805`) | **+23,72 Elo ± 3,75** sur 12 000 parties à `8+0,08` — l'amplitude hétérogène, de +16,2 à +31,4 selon le job (p = 0,029), le signe non : chaque job passe seul. Gain démontré, contre la base d'avant C32 : **au groupe de la composition** ; attendu 0 à +35 |
-| 2026-10-05 | **Le groupe du n° 9 — C33, C34, C36, C38 et C39 composés sur C32** : la garde du coup nul, la réduction itérative interne, *improving* dans l'élagage par compte, l'échange statique dans la recherche principale, la futilité aux nœuds frontières (`415f560` contre `dec4672`) | **+52,22 Elo ± 3,61** sur 12 000 parties à `8+0,08`, homogènes (p = 0,684), zéro perte au temps. **Gain démontré, FUSIONNÉ** — 91 % de la somme des gains seuls, l'arbre −49,3 % à la profondeur 12 ; attendu +20 à +55 |
-| 2026-10-06 | **C40 — l'échange statique des tranquilles** : un coup tranquille qui perd plus de `20·d²` à l'échange se saute, à la profondeur ≤ 8, n° 9 (`63c9678` contre `f537d33`) | **−4,26 Elo ± 3,49** sur 12 000 parties à `8+0,08`, homogènes (p = 0,450). **Régression démontrée** — borne haute −0,77, −0,3 corrigée de la réutilisation du livre ; non fusionné ; attendu 0 à +12 |
-| 2026-10-06 | **C41 — les extensions singulières à 10·d** : dès la profondeur 8, le coup de la table gagne un pli quand aucun autre n'atteint `score − 10·d` à mi-profondeur, n° 9 (`8bb4265` contre `f537d33`) | **+10,66 Elo ± 3,43** sur 12 000 parties à `8+0,08`, homogènes (p = 0,326), zéro perte au temps. **Gain démontré, FUSIONNÉ** — seul gain du quatrième écran, donc sa composition ; l'arbre +17,7 % à la profondeur 12 ; attendu −25 à +20 |
-| 2026-10-06 | **C41b — les mêmes à 20·d**, n° 9 (`a23ffa1` contre `f537d33`) | **+1,13 Elo ± 3,40** sur 12 000 parties à `8+0,08` — **hétérogènes** (p = 0,039), le runner le plus rapide à −6,37 ; aucune lecture ne passe le critère. Pas d'effet décelable ; attendu −15 à +20 |
-| 2026-10-06 | **C42 — l'historique de correction** : la moyenne mobile, par structure de pions, de l'écart entre le résultat d'une recherche et l'évaluation brute, n° 9 (`c9c2df3` contre `f537d33`) | **−1,13 Elo ± 3,61** sur 12 000 parties à `8+0,08`, homogènes (p = 0,853). Pas d'effet décelable, non fusionné ; attendu −15 à +15 |
-| 2026-10-06 | **C43 — un pion qui reprend en promouvant, dans `see`** : la boucle d'échange compte le gain de la promotion (+880), correctif de règle (`d69d2ed` contre `b6d41d7`, `main` avec C41) | **+0,87 Elo ± 4,63** sur 6 000 parties à `8+0,08`, homogènes (p = 0,787) ; aucune borne haute sous zéro, ni l'ensemble ni un match : **FUSIONNÉ au titre de la règle** ; attendu 0 |
-| 2026-10-07 | **N° 10 — le binaire AVX2** : le même commit (`ea8f3af`), compilé pour `x86-64-v3` contre `x86-64` — même arbre, × 1,235 de nœuds par seconde | **+32,23 Elo ± 4,84** sur 6 000 parties à `8+0,08`, homogènes (p = 0,619) — **gain démontré** ; l'étalon du temps prédisait +32,8 (0,305 doublement × 107,7) ; attendu ~+33, +15 à +45 |
-| 2026-10-06 | **C44 — la marge singulière à 5·d**, le pas suivant de la bissection, n° 9 (`6ddd08c` contre `b6d41d7`, `main` avec C41 à 10·d) | **+2,69 Elo ± 3,41** sur 12 000 parties à `8+0,08`, homogènes (p = 0,486). Pas de gain démontré, borne basse −0,72 : **la bissection s'arrête, la marge reste à 10·d** — pour un arbre +17,1 % à la profondeur 12 ; attendu −15 à +10 |
-| 2026-10-07 | **C45 — la fenêtre nulle (PVS), sur la base d'aujourd'hui** : le premier coup sous la fenêtre pleine, les suivants sous `(alpha, alpha + 1)`, n° 12 (`4db9356` contre `9c73f99`) | **+11,67 Elo ± 3,38** sur 12 000 parties à `8+0,08`, homogènes (p = 0,549), zéro perte au temps. **Gain démontré — à la composition** ; l'arbre +3,2 % à la profondeur 12 ; attendu −12 à +8, dépassé. Le même changement rendait −0,8 ± 8,2 le 21 sept., sur une autre base |
-| 2026-10-07 | **C46 — C45 et les nœuds PV** : ni la table, ni la futilité inverse, ni le coup nul n'y coupent, n° 12 (`7134c9f` contre `9c73f99`) | **+9,56 Elo ± 3,38** sur 12 000 parties à `8+0,08`, homogènes (p = 0,424). Gain démontré, sous C45 au point : non retenu ; l'arbre +17,1 % ; attendu −30 à +10 |
-| 2026-10-07 | **C47 — l'extension négative** : quand la recherche d'exclusion atteint `sbeta` et que la table promet la coupure, le coup de la table se cherche un pli plus court, n° 12 (`de87273` contre `9c73f99`) | **+3,91 Elo ± 3,28** sur 12 000 parties à `8+0,08`, homogènes (p = 0,343). **Gain démontré — à la composition**, borne basse +0,63 ; l'arbre −8,3 % ; attendu −5 à +15 |
-| 2026-10-07 | **C48 — la double extension** : un coup singulier dont l'exclusion échoue sous `sbeta − 12` gagne deux plis, une fois par chemin, n° 12 (`b395bea` contre `9c73f99`) | **+0,20 Elo ± 3,31** sur 12 000 parties à `8+0,08`, homogènes (p = 0,695). Pas d'effet décelable, non fusionné ; l'arbre +5,3 % ; attendu −10 à +10 |
-| 2026-10-07 | **C49 — le malus d'historique** : à une coupure par un tranquille, les tranquilles cherchés avant lui perdent `d²` au papillon et à la continuation, n° 12 (`98a2b1c` contre `9c73f99`) | **+25,32 Elo ± 3,26** sur 12 000 parties à `8+0,08`, homogènes (p = 0,534). **Gain démontré — à la composition** ; l'arbre −3,8 % ; attendu −3 à +10, dépassé |
-| 2026-10-07 | **C50 — la décroissance des cinquante coups** : l'évaluation statique × `(200 − c) / 200`, n° 12 (`af73ff5` contre `9c73f99`) | **−0,00 Elo ± 3,26** sur 12 000 parties à `8+0,08`, homogènes (p = 0,512). Pas d'effet décelable, non fusionné ; l'arbre +1,7 % ; attendu −5 à +5 |
-| 2026-10-07 | **C51 — les échecs tranquilles au premier pli de la quiescence**, n° 12 (`7bc0e61` contre `9c73f99`) | **−10,77 Elo ± 3,40** sur 12 000 parties à `8+0,08`, homogènes (p = 0,862) : **régression démontrée**, non fusionné ; l'arbre +30,7 % ; 157 avertissements de l'arbitre côté candidat, 12 côté référence ; attendu −50 à +5 |
-| 2026-10-07 | **La composition du n° 12 — C45, C47 et C49 sur `main`** : la fenêtre nulle, l'extension négative et le malus d'historique (`ff8d4bb` contre `7d9faef`) | **+32,55 Elo ± 3,36** sur 12 000 parties à `8+0,08`, homogènes (p = 0,244), zéro perte au temps. **Gain démontré, FUSIONNÉ** — au-dessus de C49 seul de +7,2 ± 4,7, 80 % de la somme des gains seuls ; l'arbre −9,65 % à la profondeur 12 ; attendu +25 à +48 |
-| 2026-10-13 | **N4L — N4 ré-entraîné sur les données de Leela**, n° 13 : la recette de N2L sur la vague au moteur du 7 oct. (`06b0ed2` contre `017068c`, N2L sur le même code) | **+14,08 Elo ± 3,74** sur 12 000 parties à `8+0,08`, homogènes (p = 0,055), zéro perte au temps. **Gain démontré, EMBARQUÉ** ; attendu −10 à +30, ~+8 |
-| 2026-10-13 | **N4 — la vague au moteur du 7 oct. seule, depuis zéro**, n° 13 : l'étiqueteur (`5a425a8` contre `827b9c1`, N2 sur le même code) | **+46,98 Elo ± 4,16** sur 11 980 parties à `8+0,08` — un job coupé au plafond à 2 980 —, homogènes (p = 0,282), zéro perte au temps. Ne décidait rien ; attendu 0 à +60, ~+25 |
-| 2026-10-13 | **N4 contre N4L** — la même vague, avec ou sans l'étage de Leela, n° 13 (`5a425a8` contre `06b0ed2`, le même code) | **+5,43 Elo ± 4,23** sur 11 200 parties à `8+0,08`, homogènes (p = 0,890), zéro perte au temps. **Gain démontré, borne basse +1,2 : N4 EMBARQUÉ** à la place de N4L ; attendu −10 à +35, ~+12 |
-| 2026-10-14 | **N5l — 256 unités, huit seaux de sortie**, n° 17, les données de N4, son facteur des marges 2,85 (`f6ddfed` contre `6a71964`, N4) | **+30,29 Elo ± 3,95** sur 11 200 parties à `8+0,08`, hétérogènes (p = 0,001 : le runner 9V45 à +43, les trois 7763 à +26,07 ± 4,61, homogènes). **Gain démontré, le meilleur — N5l EMBARQUÉ** ; attendu −5 à +20, dépassé |
-| 2026-10-14 | **N5s — 128 unités, huit seaux de sortie**, n° 17 (`a684ee1` contre `6a71964`) | **+15,58 Elo ± 3,87** sur 11 200 parties à `8+0,08`, homogènes (p = 0,364). Gain démontré, sous N5l sans recoupement ; attendu +3 à +15, au bord |
-| 2026-10-14 | **N5r4 — 256 unités, quatre seaux de roi, huit de sortie**, n° 17 (`7496db3` contre `6a71964`) | **−58,91 Elo ± 4,45** sur 11 200 parties à `8+0,08`, homogènes (p = 0,187). **Régression** ; attendu +10 à +40, manqué de ~70 |
-| 2026-10-14 | **N5r10 — 256 unités, dix seaux de roi, huit de sortie**, n° 17, facteur 3,38 (`d3fe59d` contre `6a71964`) | **−133,59 Elo ± 4,93** sur 11 200 parties à `8+0,08`, hétérogènes (p = 0,009), chaque job sous −120. **Régression** ; attendu −10 à +40, manqué de ~145 |
-| 2026-10-17 | **N6r4 — quatre seaux de roi sur 1,563 G positions**, n° 18, étiquetées par N5l, au facteur de `main` 2,85 (`cd6ed79` contre `2648fb1`, N5l) | **+98,74 Elo ± 4,27** sur 11 200 parties à `8+0,08`, quatre matchs homogènes (p = 0,457), zéro perte au temps. **EMBARQUÉ** — le meilleur au point, et N6r10 ne démontre rien devant lui |
-| 2026-10-17 | **N6r10 — dix seaux de roi**, n° 18 (`04727b5` contre `2648fb1`) | **+97,30 Elo ± 4,26**, homogènes (p = 0,531) ; **contre N6r4 : +0,34 ± 3,59**, quatre matchs hétérogènes (p = 0,026), les runners ne l'expliquant pas — rien de démontré |
-| 2026-10-17 | **N6l — le volume sans seaux de roi**, n° 18 (`e769992` contre `2648fb1`) | **+76,99 Elo ± 4,00**, homogènes (p = 0,113) |
-| 2026-10-17 | **N6v — l'étiqueteur seul**, n° 18, 155,8 M positions à 40 superlots (`6844597` contre `2648fb1`) | **+5,52 Elo ± 3,97**, homogènes — démontré de justesse |
-| 2026-10-17 | **N6l contre N6m — doubler les données**, n° 18, à 100 superlots (`0edbe22` contre `e769992`, signe opposé) | **+7,32 Elo ± 3,53**, homogènes — **la pente démontrée positive** |
-| 2026-10-17 | **N6l200 contre N6l — doubler les passes**, n° 18 (`8416e67` contre `e769992`) | **+5,49 Elo ± 3,55**, homogènes — démontré |
-| 2026-10-20 | **N7p4 — 400 superlots**, n° 20 étape A, la recette de N6r4 au seul nombre de passes près (`ec97f35` contre `0eca96a`, N6r4) | **+16,89 Elo ± 3,55** sur 11 200 parties à `8+0,08`, homogènes (p = 0,652), zéro perte au temps. **Gain démontré, le meilleur au point** ; contre N7p2 **+9,31 ± 3,51** — doubler encore les passes paie |
-| 2026-10-20 | **N7p2 — 200 superlots**, n° 20 étape A (`8603bd3` contre `0eca96a`) | **+14,74 Elo ± 3,52**, homogènes (p = 0,339) — gain démontré, sous N7p4 en match direct |
-| 2026-10-20 | **N6r4w50 — le poids du résultat à 0,5**, n° 20 (d), la recette de N6r4 au seul `wdl` près (`0f5214b` contre `0eca96a`, N6r4) | **+11,79 Elo ± 3,52** sur 11 200 parties à `8+0,08`, homogènes (p = 0,835), zéro perte au temps. **Gain démontré, le meilleur au point** ; N6r4w25 le recoupe — match direct |
-| 2026-10-20 | **N6r4w25 — le poids du résultat à 0,25**, n° 20 (d) (`85c88a6` contre `0eca96a`) | **+7,17 Elo ± 3,49**, homogènes (p = 0,864) — gain démontré |
-| 2026-10-20 | **N6r4w25 contre N6r4w50**, le match direct de (d) (`85c88a6` contre `0f5214b`) | **−2,95 Elo ± 3,35** sur 11 200 parties à `8+0,08`, homogènes (p = 0,864), zéro perte au temps — rien de démontré : **N6r4w50 représente (d)**, le second devait démontrer |
-| 2026-10-21 | **L'écran du pas — N6r4w50 au pas 0,002 contre 0,001**, séance B (`811bfe5` contre `93a3b86`, le même code) | **−4,90 Elo ± 3,41** sur 11 200 parties à `8+0,08`, homogènes (p = 0,689), zéro perte au temps — **régression démontrée** ; le défaut 0,001 reste |
-| 2026-10-21 | **L'écran du pas — N6r4w50 au pas 0,0005 contre 0,001**, séance B (`f7a061a` contre `93a3b86`, le même code) | **−0,12 Elo ± 3,43** sur 11 200 parties à `8+0,08`, homogènes (p = 0,298), zéro perte au temps — rien de démontré |
-| 2026-10-21 | **N8tw50s800 contre N8tw50 — 800 superlots au lieu de 400 sur 4,63 G**, séance B (`c7b4249` contre `2115850`, le même code) | **+5,43 Elo ± 3,34** sur 11 200 parties à `8+0,08`, homogènes (p = 0,245), zéro perte au temps — **gain démontré : N8tw50s800 EMBARQUÉ** à la place de N8tw50 ; le rendement du doublement décroît (+14,74, +9,31 à 1,56 G) |
-| 2026-10-21 | **N8tw50 contre N7p4 — le match direct contre le réseau qui joue**, séance B (`2115850` contre `7d84860`, le même code) | **+17,91 Elo ± 3,40** sur 11 200 parties à `8+0,08`, homogènes (p = 0,109), zéro perte au temps — **gain démontré : N8tw50 EMBARQUÉ** ; 400 superlots, poids 0,5, 4,63 G positions |
-| 2026-10-21 | **N8tw50 contre N7p4w50 — doubler les données à 400 superlots**, séance B (`2115850` contre `e37468b`, le même code) | **+7,38 Elo ± 3,40** sur 11 200 parties à `8+0,08`, homogènes (p = 0,567), zéro perte au temps — **gain démontré** ; la moitié neuve étiquetée par N6r4 |
-| 2026-10-21 | **N7p4w50 contre N7p4 — le poids 0,5 à 400 superlots**, séance B (`e37468b` contre `7d84860`, le même code) | **+3,35 Elo ± 3,41** sur 11 200 parties à `8+0,08`, homogènes (p = 0,155), zéro perte au temps — rien de démontré : **N7p4 reste** ; le poids rapportait +11,79 à 100 superlots, l'écart (8,4 ± 4,9) est démontré |
-| 2026-10-21 | **N6r4w50 contre N7p4**, le match direct entre les axes (`0f5214b` contre `ec97f35`) | **−6,67 Elo ± 3,41** sur 11 200 parties à `8+0,08`, homogènes (p = 0,400), zéro perte au temps — **N7p4 démontré devant, EMBARQUÉ** : trois fois plus de passes rendent plus que le poids du résultat à 0,5 |
-| 2026-10-21 | **N8nw50 contre N7p4w50 — l'étiqueteur à volume égal**, séance B, N6r4 contre N5l, 2,30 G contre 2,33 G positions à 400 superlots (`6a1b1d6` contre `e37468b`, le même code) | **+12,76 Elo ± 3,45** sur 11 200 parties à `8+0,08`, homogènes (p = 0,817), zéro perte au temps — **gain démontré** : l'étiqueteur paie encore, 0,13 Elo de réseau par Elo d'étiqueteur (0,11 au n° 18) |
-| 2026-10-21 | **N8nw50 contre N8tw50 — les données de N5l à superlots fixés**, séance B, 2,30 G étiquetées par N6r4 contre les mêmes plus 2,33 G par N5l, 400 superlots (`6a1b1d6` contre `2115850`, le même code) | **+5,18 Elo ± 3,32** sur 11 200 parties à `8+0,08`, homogènes (p = 0,793), zéro perte au temps — **gain démontré** : une étiquette plus faible dilue ; la séance C laisse les données de N5l |
-| 2026-10-20 | **N6r4Lb — N6r4 affiné sur Leela au pas 2·10⁻⁵**, n° 20 (a), 20 superlots (`739452f` contre `0eca96a`) | **−2,45 Elo ± 3,55**, homogènes (p = 0,966) — rien de démontré |
-| 2026-10-20 | **N6r4La — N6r4 affiné sur Leela au pas 10⁻⁴**, n° 20 (a) (`89bb3e9` contre `0eca96a`) | **−11,42 Elo ± 3,73**, homogènes (p = 0,450) — **régression démontrée** : le réglage fin sur Leela ne paie pas |
-| 2026-11-02 | **C52 — la gravité au plafond 16 384, le bonus `d²` inchangé**, n° 23 (`141fb43` contre `0e43fdd`) | **+2,14 Elo ± 3,06** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable ; attendu −3 à +3. Non fusionné |
-| 2026-11-02 | **C53 — la gravité aux échelles de Stockfish 16, le papillon conservé**, n° 23 (`cde63e6` contre `0e43fdd`) | **+14,40 Elo ± 3,08** sur 11 200 parties à `8+0,08`, homogènes (p = 0,641) — **gain démontré** ; attendu −5 à +10, dépassé ; l'arbre −0,91 % à la profondeur 12. Fusionné avec C54 |
-| 2026-11-02 | **C54 — C53 et la LMR modulée par la note, `note / 6000` plis**, n° 23 (`822fb74` contre `cde63e6`) | **+23,18 Elo ± 3,15** sur 11 200 parties à `8+0,08`, homogènes (p = 0,677) — **gain démontré** ; attendu −8 à +15, dépassé ; **l'arbre inchangé** (+0,001 %), un tiers des réductions déplacées. **Fusionné le 3 nov.** |
-| 2026-11-03 | **C55 — le diviseur de la LMR modulée à 4 000**, n° 23 (`d803666` contre `39334eb`) | **−2,57 Elo ± 2,99** sur 11 200 parties à `8+0,08`, homogènes (p = 0,939) — rien de démontré ; attendu −10 à +10 ; l'arbre −6,5 % à la profondeur 12. Non fusionné |
-| 2026-11-03 | **C56 — le diviseur de la LMR modulée à 9 000**, n° 23 (`98d62bd` contre `39334eb`) | **−7,20 Elo ± 3,07** sur 11 200 parties à `8+0,08`, homogènes (p = 0,604) — **régression démontrée** ; attendu −15 à +3 ; l'arbre +1,9 % à la profondeur 12. Non fusionné |
-| 2026-11-03 | **C57 — le décalage de la note dans la LMR modulée, +2 000**, n° 23 (`71f91f5` contre `6958899`) | **−0,22 Elo ± 3,02** sur 11 200 parties à `8+0,08`, homogènes (p = 0,467) — rien de démontré ; attendu −8 à +10 ; l'arbre −9,4 % à la profondeur 12. Non fusionné |
-| 2026-11-03 | **C58 — le décalage de la note, −2 000**, n° 23 (`13177a7` contre `6958899`) | **+0,34 Elo ± 3,03** sur 11 200 parties à `8+0,08`, homogènes (p = 0,186) — rien de démontré ; attendu −10 à +5 ; l'arbre +7,1 % à la profondeur 12. Non fusionné |
-| 2026-11-03 | **C59 — la mémoire courte : le bonus d'historique × 2, le diviseur de la LMR modulée à 8 000**, n° 23 (`863fbc5` contre `8fa8f20`) | **+2,48 Elo ± 3,08** sur 11 200 parties à `8+0,08`, homogènes (p = 0,903) — rien de démontré ; attendu −6 à +8 ; l'arbre −2,2 % à la profondeur 12. Non fusionné |
-| 2026-11-03 | **C60 — la mémoire longue : le bonus × 0,5, le diviseur à 4 000**, n° 23 (`f728e3f` contre `8fa8f20`) | **−5,03 Elo ± 3,00** sur 11 200 parties à `8+0,08`, homogènes — **régression démontrée** ; attendu −8 à +4 ; l'arbre −0,2 % à la profondeur 12. Non fusionné |
-| 2026-11-04 | **C61 — la mémoire plus courte encore : le bonus × 3, le diviseur à 10 000**, n° 23 (`0756209` contre `864c15a`) | **+1,66 Elo ± 2,16** sur 22 400 parties à `8+0,08`, huit jobs **non homogènes** (p = 0,009 ; un job à −8,69, inexpliqué) — rien de démontré ; attendu −3 à +6. Non fusionné |
-| 2026-11-04 | **C62 — la LMR selon le type de nœud : un pli de plus aux nœuds de coupure attendus**, n° 23 (`4ff385a` contre `8b845b5`) | **+3,29 Elo ± 3,06** sur 11 200 parties à `8+0,08`, homogènes (p = 0,181) — gain démontré, sous C63 au point ; attendu −4 à +6. Non retenu |
-| 2026-11-04 | **C63 — la LMR selon le type de nœud : deux plis de plus aux nœuds de coupure attendus (Stockfish 16)**, n° 23 (`2b449ee` contre `8b845b5`) | **+5,06 Elo ± 3,02** sur 11 200 parties à `8+0,08`, homogènes (p = 0,835) — **gain démontré** ; attendu −5 à +8. Entre par la composition des gagnants du n° 23 |
-| 2026-11-04 | **C64 — la variante principale en table : un pli de moins aux anciens nœuds PV de fenêtre nulle**, n° 23 (`9a310ba` contre `e0762bf`) | **−0,71 Elo ± 3,04** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable ; attendu −4 à +6. Non fusionné |
-| 2026-11-04 | **C65 — la variante principale en table, la forme de Stockfish 16 : un pli de moins à tout nœud qui est ou a été PV**, n° 23 (`905a5c9` contre `e0762bf`) | **+2,79 Elo ± 3,09** sur 11 200 parties à `8+0,08`, homogènes — rien de démontré, pour +25,6 % d'arbre ; attendu −25 à +8. Non fusionné |
-| 2026-11-04 | **C66 — la variante principale en table : deux plis de moins aux anciens nœuds PV de fenêtre nulle**, n° 23 (`552338f` contre `e0762bf`) | **+0,68 Elo ± 3,06** sur 11 200 parties à `8+0,08`, **non homogènes** (p = 0,027, sans effet sur la décision) — pas d'effet décelable ; attendu −8 à +6. Non fusionné |
-| 2026-11-04 | **C67 — l'historique de correction en plusieurs tables, la forme de Stockfish 17.1** : pions, mineures, hors pions par camp, continuation, n° 23 (`4feae50` contre `e0762bf`) | **+14,22 Elo ± 3,26** sur 11 200 parties à `8+0,08`, homogènes (p = 0,455) — **gain démontré**, pour +14,85 % d'arbre ; attendu −10 à +12. Entre par la composition des gagnants du n° 23 |
-| 2026-11-04 | **C68 — l'historique de correction en plusieurs tables, à mi-poids**, n° 23 (`77c0003` contre `e0762bf`) | **+11,26 Elo ± 3,16** sur 11 200 parties à `8+0,08`, homogènes (p = 0,427) — gain démontré, sous C67 au point ; attendu −8 à +10. Non retenu |
-| 2026-11-04 | **C69 — l'historique des captures, rouvert : une victime de plus pour une note de 10 692**, n° 23 (`b3d4500` contre `e0762bf`) | **−0,71 Elo ± 3,02** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable, pour −4,90 % d'arbre ; attendu −2 à +10. Non fusionné |
-| 2026-11-04 | **C70 — l'historique des captures au rapport de Stockfish 16 : une victime pour une note de 4 585**, n° 23 (`7f9b3e2` contre `e0762bf`) | **−1,30 Elo ± 3,02** sur 11 200 parties à `8+0,08`, homogènes — pas d'effet décelable, pour −4,07 % d'arbre ; attendu −3 à +9. Non fusionné |
-| 2026-11-04 | **C71 — la composition de C63 et C67** : la LMR selon le type de nœud et l'historique de correction en plusieurs tables, n° 23 (`3f47f79` contre `e0762bf`) | **+16,02 Elo ± 3,17** sur 11 200 parties à `8+0,08`, non homogènes (p = 0,031), chaque job passant seul — **gain démontré, FUSIONNÉ** ; attendu +12 à +22, 83 % de la somme de ses membres |
-| 2026-11-05 | **C72 — trois plis de plus aux nœuds de coupure attendus, au lieu de deux**, n° 23 (`84d51c8` contre `03746f9`) | **−0,09 Elo ± 3,10** sur 11 200 parties à `8+0,08`, homogènes (p = 0,436) — pas d'effet décelable, pour +1,46 % d'arbre ; attendu −3 à +4. Non fusionné |
-| 2026-11-05 | **C73 — le poids de l'historique de correction × 1,5**, n° 23 (`55816c7` contre `03746f9`) | **−5,96 Elo ± 3,09** sur 11 200 parties à `8+0,08`, homogènes (p = 0,860) — **régression démontrée**, pour +3,47 % d'arbre ; attendu −3 à +5, manqué par le bas. Non fusionné |
-| 2026-11-05 | **C74 — la variante principale en table, la forme de Stockfish 16, reportée sur `main` qui porte C63** (C65 sur C71), n° 23 (`ffc469c` contre `03746f9`) | **+1,61 Elo ± 2,23** sur 22 400 parties à `8+0,08`, huit jobs homogènes (p = 0,451), un relancé après la perte de son runner — rien de démontré, pour +27,82 % d'arbre ; attendu −4 à +8. Non fusionné |
-| 2026-11-06 | **E2.5t contre E5n — le budget de l'étiqueteur à temps de runner égal**, n° 22 : 2 500 nœuds contre 5 000, à 400 superlots (`2478c91` contre `339c179`) | **+5,77 Elo ± 3,34** sur 11 200 parties à `8+0,08`, **non homogènes** (p = 0,008 ; les deux EPYC 9V74 à +15 et +8, les deux 7763 à zéro) — gain démontré en commun, aucun job ne contredit ; attendu +1 à +12. **2 500 remplace 5 000** pour les tranches suivantes |
-| 2026-11-06 | **E2.5v contre E5n — l'étiquette à 2 500 contre 5 000, à volume égal**, n° 22, à 400 superlots (`5936201` contre `339c179`) | **−1,55 Elo ± 3,40** sur 11 200 parties à `8+0,08`, non homogènes (p = 0,016, quatre EPYC 7763) — pas d'effet décelable ; attendu −6 à +3. Le gain de E2.5t est le volume |
-| 2026-11-06 | **E21 contre N8nw50 — le tour de boucle** : la tranche du n° 21 étiquetée par N8tw50s800 contre l'étape B étiquetée par N6r4, même volume et même recette, n° 22 (`2634f81` contre `06d0473`) | **+10,15 Elo ± 3,33** sur 11 200 parties à `8+0,08`, homogènes (p = 0,682) — **gain démontré**, au-dessus de l'attendu (0 à +9) : un meilleur étiqueteur rend un meilleur réseau à volume égal |
-| 2026-11-09 | **N10 contre N9w50s800 — la base de C3 contre le réseau qui joue** : n21 et les 21 vagues du n° 22, 16,8 G positions, 800 superlots (`a1848b2` contre `bb172c4`) | **+8,87 Elo ± 3,20** sur 11 200 parties à `8+0,08`, homogènes (p = 0,692) — les quatre jobs au-dessus de zéro ; sous l'attendu (+10 à +25), de peu |
-| 2026-11-09 | **N10r10 contre N10 — dix seaux de roi au volume de C3** (`e547ce2` contre `a1848b2`) | **+14,77 Elo ± 3,27** sur 11 200 parties à `8+0,08`, homogènes (p = 0,111) — les quatre jobs au-dessus de zéro ; au-dessus de l'attendu (−3 à +10) : **dix seaux remplacent quatre** |
-| 2026-11-09 | **C13 — la série de la phase 4**, N9w50s800 et la recherche de `main` (`7dd523c`) contre Stockfish 16 bridé à 3100, 60+0,6 | 142 − 66 − 92, 62,7 % : **~3 190 ± 24**, +37 ± 35 sur la série du 26 oct. — au-dessus de l'attendu (3 160 à 3 181) |
-| 2026-11-10 | **N10h384 contre N10 — 384 unités au volume de C3** (`1844dbe` contre `a1848b2`) | **+24,86 Elo ± 3,25** sur 11 200 parties à `8+0,08`, homogènes (p = 0,412) — les quatre jobs au-dessus de zéro ; au-dessus de l'attendu (−5 à +12) |
-| 2026-11-10 | **N10h512 contre N10 — 512 unités au volume de C3** (`745d569` contre `a1848b2`) | **+32,57 Elo ± 3,30** sur 11 200 parties à `8+0,08`, homogènes (p = 0,694) — les quatre jobs au-dessus de zéro ; au-dessus de l'attendu (−8 à +15) |
-| 2026-11-03 | **Le livre déséquilibré — son rendement par paire**, n° 23 : `0d2b188` à `10+0,10` contre `8+0,08`, C53 et C54, sur `tools/book-desequilibre.epd` contre `tools/book.epd` | **× 1,11 [0,85 ; 1,44]** sur trois effets connus, homogènes ; × 0,98 par heure de runner, ses parties durant ~13 % de plus — **ne paie pas**, notre livre reste ; à `8+0,08` |
-
-**Ce que D5 a trouvé, et ce n'est pas ce qu'elle cherchait.** La fiche
-supposait une *érosion* : un acquis mesuré tôt, à une cadence courte et sur une
-base pauvre, devait valoir moins une fois empilé avec les mécanismes venus
-après. **Trois acquis remesurés : deux valent PLUS, et le troisième a bel et
-bien fondu.**
-
-| acquis | verdict d'origine | remesuré à `8+0,08` | rapport |
-|---|---|---|---|
-| fenêtres d'aspiration | +29,7 (`1+0,01`) | **−51,56 ± 15,67** au retrait | **× 2,7** |
-| sécurité du roi + structure de pions + tours sur colonne ouverte | +14,9 (`1+0,01`) | **−37,53 ± 13,40** au retrait | **× 2,5** |
-| **élagage delta en quiescence** | +32,5 (`1+0,01`) | **−1,49 ± 7,83** au retrait, **sans verdict** | **~ × 0,05** |
-
-Pour l'aspiration le contrôle est apparié : le même retrait, mesuré aux deux
-cadences le même jour, rend −18,91 à `1+0,01` contre −51,56 à `8+0,08`,
-z = 3,52, **p ≈ 0,0004**, intervalles disjoints.
-
-> **Pour les trois termes, la cadence et la BASE ont changé ensemble.** Le
-> +14,9 date du 14 sept., avant l'élagage delta, la futilité inverse, l'échange
-> statique en quiescence et l'élagage par compte de coups ; le −37,53 est
-> mesuré au-dessus de tous. Les deux causes sont donc **confondues**, et ce
-> point ne peut pas être attribué à la cadence seule. Les séparer demanderait
-> un contrôle apparié à `1+0,01` sur la base actuelle — un job de plus, pour
-> une question d'imputation et non de décision. *La décision, elle, ne dépend
-> pas de l'imputation : les termes restent, et ils valent plus cher qu'écrit.*
-
-**La cadence change le verdict, et les deux formes sont mesurées** : elle
-**inverse un signe** (LMP au seuil 6, −21,6 → +15,3 ; le seuil 12 bascule
-aussi) ou **multiplie une magnitude** (aspiration × 2,7, trois termes × 2,5).
-
-> <s>Le sens ne s'est jamais inversé — *mesurer court sous-estime ce dont la
-> valeur croît avec la profondeur*.</s> **Nuancé le 22 sept. 2026 : un acquis
-> a perdu de la valeur en étant remesuré.** L'élagage delta passe de +32,5 à
-> un effet indistinguable de zéro.
->
-> **Mais ce point n'est PAS un contre-exemple à la règle de cadence, et il ne
-> faut pas le compter comme tel.** Les deux causes y sont confondues, comme
-> pour les trois termes : entre les deux mesures, la cadence a changé ET la
-> base a gagné l'échange statique, qui coupe les mêmes objets au même endroit.
-> L'écran en nœuds impute la moitié de l'écart à ce recouvrement.
-> <span><strong>Inférence, confiance moyenne</strong> : ce que ce point réfute
-> est « aucun acquis remesuré n'a perdu de valeur », pas « mesurer court
-> sous-estime ». Le séparer demanderait un contrôle apparié à `1+0,01` sur la
-> base actuelle — et cette fois l'imputation changerait quelque chose, parce
-> qu'elle dirait si l'érosion vient de l'empilement ou du régime.</span>
-
-### Les récits de septembre 2026 — au journal
-
-Les sections de C21 à A20, les relèves de septembre 2026 et le registre
-« Les jobs » de tous les runs de match, sont au journal depuis le 18 nov.
-(B-0047), une entrée par section, de J-2026-11-18-G à J-2026-11-18-AA :
-c'est là que mènent les renvois à « C21 », « C22 », « C23 », « B9 —
-VERDICT », « Ponder — VERDICT », « Calibrer l'Elo par pli », « B6 »,
-« Vol de CPU du ponder sur runner », « A18 », « C24 », « C25 », « C26 »,
-« L'allocation inégale », « A20 » et
-« Ce qui est EN VOL le 23 sept. ». La procédure de leurs relèves est le
-skill `rendre-un-verdict` (`.claude/skills/rendre-un-verdict/SKILL.md`).
-
-### Les récits de la force absolue, du temps et de fin de fichier — au journal
-
-Les sections de C13 à C27, la note « B9 ne se valide PAS », la gestion du
-temps, le temps de l'adversaire et les récits de fin de fichier, de
-« B9 — écrit et mesuré » à C19, sont au journal depuis le 18 nov.
-(B-0048), une entrée par section, texte tel quel. C'est là que mènent les
-renvois à « C13 » (J-2026-11-18-AE), « B8 » (J-2026-11-18-AF), « C31 » (J-2026-11-18-AG), « C30 » (J-2026-11-18-AH), « C29 » (J-2026-11-18-AI), « C28 » (J-2026-11-18-AJ), « C27 » (J-2026-11-18-AK), « B9 ne se valide PAS » (J-2026-11-18-AL), « La gestion du temps : NON, ce n'est pas clos » (J-2026-11-18-AM), « Réfléchir sur le temps de l'adversaire », « Le ponder » et « La pendule de l'adversaire » (J-2026-11-18-AN), « B9 — écrit et mesuré » (J-2026-11-18-AO), « Trois chantiers, une seule unité » (J-2026-11-18-AP), « D5 a trouvé son érosion » (J-2026-11-18-AQ), « L'érosion se cherche d'abord en nœuds » (J-2026-11-18-AR), « la cause de l'érosion de delta » (J-2026-11-18-AS), « Le SPRT de retrait de l'élagage delta » (J-2026-11-18-AT), « Ce que l'écran en nœuds avait annoncé » (J-2026-11-18-AU), « La relation de budget » (J-2026-11-18-AV), « C18 » (J-2026-11-18-AW), « D2 clos sans match » (J-2026-11-18-AX), « C17 » (J-2026-11-18-AY), « C17 rouvert » (J-2026-11-18-AZ), « C19 » (J-2026-11-18-BA).
-
-Ce qu'elles portaient d'utile est à sa place : la force relevée et ce que
-l'échelle de Stockfish bridé fait d'un écart, F-0011 et F-0012 ; la
-procédure d'une série, le skill `situer-le-moteur`
-(`.claude/skills/situer-le-moteur/SKILL.md`) ; le défaut que C31 laisse sur
-`main`, F-0013 ; la relation de budget, F-0014 ; la table et le ponder,
-deux lignes de F-0010 ; et la documentation de `force.yml`,
-`classes.yml`, `tools/paires.sh` et `tools/lire-journal.sh`, dans
-« Situer le moteur » et « Pondérer, et lire le dialogue d'un match ».
-
-### Les récits d'A21 au n° 13 — au journal
-
-Les sections d'A21 au n° 13, septembre et octobre 2026, sont au journal
-depuis le 18 nov. (B-0049), une entrée par section, texte tel quel. C'est
-là que mènent les renvois à « A21 » et ses étapes (J-2026-11-18-BD), « N° 7 » et « Levier 4 » (J-2026-11-18-BE), « N° 9 » (l'écran) (J-2026-11-18-BF), « N° 9, premier écran » (J-2026-11-18-BG), « deuxième écran » (J-2026-11-18-BH), « troisième écran » (J-2026-11-18-BI), « N° 9, la composition » (J-2026-11-18-BJ), son verdict (J-2026-11-18-BK), « quatrième écran » (J-2026-11-18-BL), son verdict (J-2026-11-18-BM), « C43 et C44 » (J-2026-11-18-BN), leur verdict (J-2026-11-18-BO), « N° 10 » (J-2026-11-18-BP), son verdict (J-2026-11-18-BQ), « N° 12, le cinquième écran » (J-2026-11-18-BR), son relevé (J-2026-11-18-BS), « les candidats C45 à C51 » (J-2026-11-18-BT), leur verdict (J-2026-11-18-BU), « N° 12, la composition » (J-2026-11-18-BV), son arbre (J-2026-11-18-BW), son verdict (J-2026-11-18-BX), « N° 13 », N4 et N4L (J-2026-11-18-BY).
-
-Ce qu'elles portaient d'utile est à sa place : les procédures, dans les
-skills `sonder-les-marges` (`.claude/skills/sonder-les-marges/SKILL.md`),
-`passer-a-l-ecran` (`.claude/skills/passer-a-l-ecran/SKILL.md`) et
-`preparer-une-seance` (`.claude/skills/preparer-une-seance/SKILL.md`) ; la
-documentation du générateur et de l'entraînement, dans « Générer les
-données NNUE » et « Entraîner un réseau » ; les runs des générations
-d'avant le n° 18, et de quoi les regénérer, désignés dans B-0026 ; deux
-réglages, l'adjudication du générateur (F-0009) et la marge singulière
-(F-0010) ; et ce que les échecs tranquilles en quiescence doivent à la
-nulle qu'elle ne teste pas (F-0013).
-
-### Les récits du n° 15 au n° 20 — au journal
-
-Ces sections ont quitté ce fichier le 18 nov. 2026 (B-0050) : leur texte
-est au journal, tel quel, sous son titre d'origine. Ce qui en reste utile
-est à sa place — les réglages du réseau dans F-0009, les procédures dans
-les skills `preparer-une-seance`, `lancer-une-generation`,
-`sonder-les-marges` et `rendre-un-verdict`, la documentation des outils
-plus haut. Un ancien renvoi vers l'une d'elles se suit ici ; un renvoi au
-n° 20 entier désigne J-2026-11-18-CF et ses sous-sections, de
-J-2026-11-18-CG à J-2026-11-18-CU, et de même pour le n° 15 à 19
-(J-2026-11-18-CB, puis CC) et le n° 18 (J-2026-11-18-CD, puis CE) :
-
-- « N° 15 à 19 — la chaîne du réseau : DÉCIDÉE le 13 oct. 2026 » — J-2026-11-18-CB
-- « N° 17 — VERDICT, 14 oct. 2026 : N5l +30,29 ± 3,95 Elo à `8+0,08` contre N4 — EMBARQUÉ ; N5s +15,58 ± 3,87 ; les seaux de roi régressent, N5r4 −58,91 ± 4,45 et N5r10 −133,59 ± 4,93 » — J-2026-11-18-CC
-- « N° 18 — le volume de données : DÉCIDÉ le 14 oct. 2026, écrit avant de lancer » — J-2026-11-18-CD
-- « N° 18 — VERDICT, 17 oct. 2026 : N6r4 +98,74 ± 4,27 et N6r10 +97,30 ± 4,26 Elo à `8+0,08` contre N5l, N6l +76,99 ± 4,00 — les seaux de roi passent devant, un match direct les départage ; doubler les données paie encore (+7,32 ± 3,53) » — J-2026-11-18-CE
-- « N° 20 — plus de passes, plus de données : DÉCIDÉ le 17 oct. 2026, écrit avant de lancer » — J-2026-11-18-CF
-- « Étape A — plus de passes, sur la carte de Théo, sans donnée neuve » — J-2026-11-18-CG
-- « Étape A — VERDICT, 20 oct. 2026 : plus de passes paie encore — N7p4 +16,89 ± 3,55 et N7p2 +14,74 ± 3,52 contre N6r4 à `8+0,08`, N7p4 +9,31 ± 3,51 contre N7p2 ; la séance B à 400 superlots » — J-2026-11-18-CH
-- « Étape B — plus de données, sur les runners, étiquetées par W » — J-2026-11-18-CI
-- « La séance B — après le volume » — J-2026-11-18-CJ
-- « (e) — le budget de l'étiqueteur : écrit le 20 oct. à 22 h 09, avant de lancer » — J-2026-11-18-CK
-- « La séance C1 — écrite le 22 oct. à 4 h 34, avant de la demander » — J-2026-11-18-CL
-- « La séance C2 — écrite le 26 oct. à 8 h 07, avant de la demander » — J-2026-11-18-CM
-- « La séance C2c — écrite le 27 oct. à 7 h 57, avant de la demander » — J-2026-11-18-CN
-- « La séance C3 — le chiffrage, le 27 oct. à 13 h 36, avant de l'écrire » — J-2026-11-18-CO
-- « La séance C3, l'outillage — écrit le 27 oct. à 19 h 37, la décision des données en attente » — J-2026-11-18-CP
-- « La séance C3, les données — l'option C, choisie par Théo le 6 nov. à 8 h » — J-2026-11-18-CQ
-- « C3 — N10 et N10r10 : VERDICT, relevé le 9 nov. à 6 h 50 — la base bat N9w50s800, dix seaux de roi passent devant » — J-2026-11-18-CR
-- « C3 — N10h384 et N10h512 : VERDICT, relevé le 10 nov. à 3 h 50 — la largeur paie, nettement » — J-2026-11-18-CS
-- « (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander » — J-2026-11-18-CT
-- « (a) et (d) — VERDICT, 20 oct. 2026 : le poids du résultat paie — N6r4w50 +11,79 ± 3,52 et N6r4w25 +7,17 ± 3,49 contre N6r4 à `8+0,08`, un match direct les départage ; le réglage fin sur Leela ne paie pas — N6r4La −11,42 ± 3,73, N6r4Lb −2,45 ± 3,55 » — J-2026-11-18-CU
-- « La file, phase 2 — le cache des recalculs : écrit le 20 oct. 2026, mesuré avant d'en écrire l'attendu » — J-2026-11-18-CV
-- « La file, phase 2 — le produit scalaire en AVX2 : écrit le 20 oct. 2026, le mécanisme lu au code machine » — J-2026-11-18-CW
-
-### Les récits du n° 21 au n° 23 et du n° 19 — au journal
-
-Ces sections ont quitté ce fichier le 18 nov. 2026 (B-0051) : leur texte
-est au journal, tel quel, sous son titre d'origine. Ce qui en reste utile
-est à sa place — les réglages dans F-0009 et F-0010, les procédures dans
-les skills `lancer-une-generation`, `passer-a-l-ecran` et
-`rendre-un-verdict`, l'outillage dans « Régler par SPSA » et « Le livre
-d'ouvertures », plus haut. Un ancien renvoi vers l'une d'elles se suit
-ici ; un renvoi au n° 22 entier désigne J-2026-11-18-DA et ses trois
-sous-sections, de J-2026-11-18-DB à J-2026-11-18-DD, et un renvoi au
-n° 23 entier, les sections de J-2026-11-18-DE à J-2026-11-18-EH :
-
-- « N° 21 — la génération étiquetée par N8tw50s800 : écrite le 22 oct. à 4 h 34, avant de lancer » — J-2026-11-18-CZ
-- « N° 22 — la tranche étiquetée par N9w50s800, et le budget à 2 500 nœuds : écrite le 26 oct. à 13 h 54, avant de lancer » — J-2026-11-18-DA
-- « La séance du n° 22 — E5n, E2.5t, E2.5v, et E21 depuis le 2 nov. : écrite le 27 oct. à 19 h 27, pour la semaine du 2 nov. » — J-2026-11-18-DB
-- « La séance du n° 22 — E2.5t contre E5n : VERDICT, relevé le 6 nov. à 2 h — 2 500 nœuds remplacent 5 000 » — J-2026-11-18-DC
-- « La séance du n° 22 — E2.5v et E21 : VERDICT, relevé le 6 nov. à 7 h 20 — l'étiquette ne se sépare pas, le tour de boucle paie » — J-2026-11-18-DD
-- « N° 23 — l'historique borné (phase 4) : protocole et attendus, écrits le 2 nov. avant de mesurer » — J-2026-11-18-DE
-- « N° 23, l'écran — RELEVÉ le 2 nov. : deux candidats de gravité et la LMR modulée ; l'élagage par l'historique fermé à nouveau » — J-2026-11-18-DF
-- « N° 23 — les candidats C52, C53, C54 : attendus et critère, écrits le 2 nov. avant de lancer » — J-2026-11-18-DG
-- « N° 23 — C52, C53, C54 : VERDICT, relevé le 2 nov. à 16 h 10 — C54 fusionné, C53 compris » — J-2026-11-18-DH
-- « N° 23 — le livre déséquilibré : protocole, écrit le 2 nov. avant son pilote et ses matchs » — J-2026-11-18-DI
-- « N° 23 — C55, C56 : le diviseur de la LMR modulée — écran, attendus et critère, écrits le 3 nov. avant de lancer » — J-2026-11-18-DJ
-- « N° 23 — les échelles de la gravité, à l'écran le 3 nov. : confondues avec le diviseur » — J-2026-11-18-DK
-- « N° 23 — C55, C56 : VERDICT, relevé le 3 nov. à 13 h 40 — 6 000 reste » — J-2026-11-18-DL
-- « N° 23 — C57, C58 : le décalage de la note — écran, attendus et critère, écrits le 3 nov. avant de lancer » — J-2026-11-18-DM
-- « N° 23 — C57, C58 : VERDICT, relevé le 3 nov. à 19 h 20 — le décalage reste à 0 » — J-2026-11-18-DN
-- « N° 23 — C59, C60 : la mémoire de la gravité — écran, attendus et critère, écrits le 3 nov. avant de lancer » — J-2026-11-18-DO
-- « N° 23 — C59, C60 : VERDICT, relevé le 4 nov. à 0 h 50 — la mémoire longue perd, la courte n'est pas démontrée » — J-2026-11-18-DP
-- « N° 23 — C61 : la mémoire plus courte encore — attendus et critère, écrits le 4 nov. avant de lancer » — J-2026-11-18-DQ
-- « N° 23 — C61 : VERDICT, relevé le 4 nov. à 6 h 25 — `main` reste, la mémoire déprioritisée » — J-2026-11-18-DR
-- « N° 23 — l'élagage par l'historique, la forme de Stockfish 16 : fermé à l'écran le 4 nov. » — J-2026-11-18-DS
-- « N° 23 — C62, C63 : la LMR selon le type de nœud — écran, attendus et critère, écrits le 4 nov. avant de lancer » — J-2026-11-18-DT
-- « N° 23 — C62, C63 : VERDICT, relevé le 4 nov. à 11 h 55 — C63 gagne, il entre par la composition » — J-2026-11-18-DU
-- « N° 23 — C64, C65, C66 : la variante principale en table — écran, attendus et critère, écrits le 4 nov. avant de lancer » — J-2026-11-18-DV
-- « N° 23 — C64, C65, C66 : VERDICT, relevé le 4 nov. à 12 h 30 — aucun ne passe, `main` reste » — J-2026-11-18-DW
-- « N° 23 — C67, C68 : l'historique de correction en plusieurs tables — écran, attendus et critère, écrits le 4 nov. avant de lancer » — J-2026-11-18-DX
-- « N° 23 — C67, C68 : VERDICT, relevé le 4 nov. à 12 h 55 — C67 gagne, +14,22, il entre par la composition » — J-2026-11-18-DY
-- « N° 23 — C69, C70 : l'historique des captures, rouvert — écran, attendus et critère, écrits le 4 nov. avant de lancer » — J-2026-11-18-DZ
-- « N° 23 — C69, C70 : VERDICT, relevé le 4 nov. à 13 h 05 — aucun ne passe, `main` reste » — J-2026-11-18-EA
-- « N° 23 — C71 : la composition des gagnants, C63 et C67 — protocole, attendu et critère, écrits le 4 nov. avant de lancer » — J-2026-11-18-EB
-- « N° 23 — C71 : VERDICT, relevé le 4 nov. à 18 h 25 — +16,02 ± 3,17, FUSIONNÉ ; la phase 4 est close » — J-2026-11-18-EC
-- « N° 23 — C72, C73, C74 : les réglages de la phase 4 sur `main` — attendus et critère, écrits le 4 nov. avant de lancer » — J-2026-11-18-ED
-- « N° 23 — C72, C73, C74 : VERDICT, relevé le 5 nov. à 0 h 50 — aucun ne passe, `main` reste » — J-2026-11-18-EE
-- « N° 23 — le test des extensions singulières : mesuré sur `main` le 3 nov., traitement écrit avant le verdict de C59 » — J-2026-11-18-EF
-- « N° 23 — le livre déséquilibré : VERDICT, relevé le 3 nov. à 13 h 40 — notre livre reste » — J-2026-11-18-EG
-- « N° 23 — l'inférence multicouche : écrite le 2 nov., prête pour le verdict de C3 » — J-2026-11-18-EH
-- « N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18 » — J-2026-11-18-EI
-
-### Ce qui reste à faire, par ordre mesuré
-
-Ce qui reste à faire vit au backlog de la mémoire, qui seul fait foi :
-`python3 .socle/socle state` en calcule le prochain jalon et les sujets
-prêts, et `memory/backlog/` porte chaque sujet (D-0009). L'ancienne
-feuille de route, validée par Théo le 31 oct. 2026, en est partie le
-13 nov. : elle se relit au commit 88da289 de git, et c'est elle que
-désignent les renvois « feuille de route, point N » de ce fichier et du
-code. Le 17 nov. (D-0017), en sont partis aussi les phases de « La file »,
-réécrite le 20 oct., et le tableau des chantiers de « L'histoire de
-l'ordre » : chaque ligne encore ouverte est au backlog, les idées non
-décidées comprises, qui y attendent leur décision (D-0020, B-0065). Leur
-texte est au journal (J-2026-11-17-AF, J-2026-11-17-AI) : c'est lui que
-désignent les renvois « La file », « phase N » et « L'histoire de
-l'ordre » plus haut dans ce fichier, sauf les deux récits titrés « La
-file, phase 2 », restés en place, et ceux qui citent le registre ou les
-réglages ouverts. Ceux-là sont depuis le 18 nov. deux faits de la
-mémoire, F-0009 (réseau) et F-0010 (recherche), et le texte de leur
-ancienne section, que désignent les renvois « Les réglages ouverts » et
-« le registre » plus haut, même accolés à « La file », est au journal
-(J-2026-11-18-B).
-
-### `tools/pieges-fermes.md` — les pièges qu'un code de sortie tient désormais
+## `tools/pieges-fermes.md` — les pièges qu'un code de sortie tient désormais
 
 `CLAUDE.md` est injecté en entier à chaque session **et après chaque
 compactage**. Sa section *Pièges de mesure* en faisait 510 lignes sur 844 —
@@ -1313,7 +828,7 @@ plus sur le code, c'est-à-dire la faute exacte de la table de l'attic.
 844 à 731 lignes. J'avais surestimé, et le chiffre annoncé valait la peine
 d'être corrigé plutôt qu'oublié.
 
-### `tools/etat.sh` — l'état calculé, à lancer à la main
+## `tools/etat.sh` — l'état calculé, à lancer à la main
 
 `CLAUDE.md` est réinjecté après chaque compactage ; **le carnet de bord, non.**
 Le document qui portait « où on en est » manquait donc au moment précis où la
@@ -1359,7 +874,7 @@ qui doit le dire avec sa cause.
 `tools/verify.sh` vérifie que le script **rend un état non vide** : un script
 devenu muet ne se verrait pas, on croirait simplement qu'il n'y a rien à dire.
 
-### `tools/carnet-vers-md.py` — le carnet de bord converti en Markdown
+## `tools/carnet-vers-md.py` — le carnet de bord converti en Markdown
 
 Un outil de l'adoption du socle, écrit le 12 nov. 2026 : il sert le temps
 de déplacer le carnet de bord vers la mémoire, puis s'en va. Le carnet est
@@ -1388,7 +903,7 @@ fichier, et c'est une revue qui l'a dit. Le contrôle d'aujourd'hui a été
 éprouvé le 12 nov. 2026 en plantant des pertes dans des copies du script :
 deux passaient d'abord à tort, et l'ont fait reprendre deux fois.
 
-### Paralléliser les matchs — ce qui marche et ce qui ne marche pas
+## Paralléliser les matchs — ce qui marche et ce qui ne marche pas
 
 **On ne parallélise PAS un SPRT.** Un test séquentiel tire ses taux d'erreur
 d'une règle d'arrêt **unique** appliquée à un flux **unique**. Deux façons de
@@ -1408,7 +923,7 @@ particulier de ce principe.
 sans rien casser** : effectif connu d'avance, estimation non biaisée, aucune
 règle d'arrêt à préserver. C'est ce que fait `tools/mettre-en-commun.sh`.
 
-#### Ce que ça achète, chiffré sur ce projet
+### Ce que ça achète, chiffré sur ce projet
 
 Le SPRT expiré de C21 a rendu **± 8,31 Elo sur 3 240 parties**. L'intervalle
 décroît en `1/√n`, donc en empilant des jobs de ~3 300 parties :
@@ -1425,7 +940,7 @@ empruntée. **Réserve** : « séparer de zéro » est plus faible que la barre
 habituelle du projet, qui est `H1` sur des bornes `[0, 5]` — pour écarter la
 borne haute il faut que l'effet dépasse l'intervalle **plus 5**.</span>
 
-#### Le piège propre à la mise en commun, et il est sérieux
+### Le piège propre à la mise en commun, et il est sérieux
 
 **Deux runners GitHub varient de 58 % en vitesse** — 2 067 101 contre
 3 268 241 n/s sur le même binaire — soit environ **un demi-pli** de profondeur
@@ -1468,7 +983,7 @@ l'information bouge. Deux dispositifs, aux deux bouts :
 plutôt que rappelée : au lancement on ne tient qu'une intention, à la mise en
 commun on tient les données.*
 
-#### L'outil
+### L'outil
 
 ```sh
 tools/mettre-en-commun.sh "97,284,766,332,141" "100,290,750,340,150"
@@ -1488,7 +1003,7 @@ l'ordre des matchs ne change rien, que le refus se déclenche sur des matchs
 contradictoires, et que la dernière ligne d'un journal est bien celle qui est
 lue. Le test tourne dans `tools/verify.sh`.
 
-### La concurrence d'un match se DÉDUIT des cœurs qu'occupe une partie
+## La concurrence d'un match se DÉDUIT des cœurs qu'occupe une partie
 
 Question de Théo, 23 sept. 2026 — *les cas où l'on ne peut plus jouer à la
 concurrence maximale*. La règle « jamais deux matchs sur une même machine »
@@ -1546,110 +1061,159 @@ en local : les trois refus, et un moteur témoin qui déclare `Threads` et
 journalise ce qu'il reçoit — `setoption name Threads value 2` au seul
 candidat, une partie à la fois, sous les deux arbitres.
 
-### Ce qu'il faut surveiller — et que rien ne signalera tout seul
+## Les anciens renvois — au journal
 
-Un garde-fou attrape ce qui casse. Ces points-ci ne cassent rien : ils
-**vieillissent**, et c'est pourquoi ils sont écrits plutôt que gardés.
+Ce fichier portait, jusqu'au 23 nov. 2026, les récits des chantiers, la
+feuille de route, les réglages ouverts et le tableau des verdicts. Ils
+sont partis de la transition (D-0020), chaque section au journal de la
+mémoire, texte tel quel. Un ancien renvoi — « `tools/README.md`, section
+« … » », dans le code, un commit, un registre, une rustine ou le journal
+lui-même — se suit par cette table, son titre d'origine en tête. Ce que
+chaque section portait d'utile est à sa place : les synthèses des lots le
+disent (J-2026-11-18-AB, J-2026-11-18-BB, J-2026-11-18-BZ,
+J-2026-11-18-CX, J-2026-11-18-EJ et J-2026-11-23-K).
 
-- **Les données d'entraînement n'ont qu'une copie passé 90 jours** — les
-  artefacts de `nnue-datagen.yml` portent `retention-days: 90` : ceux du
-  n° 18 expirent vers la mi-janvier 2027, ceux de l'étape B, de (e) et du
-  n° 21 dans les semaines qui suivent. Après, `~/shallowred/donnees/` sur
-  la machine de Théo est la seule copie, et `nnue-validation.yml`, qui
-  télécharge les artefacts, ne peut plus mesurer la perte tenue à l'écart
-  sur un job expiré.
-  <br>**Relevé à l'API le 6 nov. 2026** : 703 artefacts `nnue-`, 85,7 Go.
-  Par génération, avec la date d'expiration du dernier artefact :
-  - n18 : 8,5 Go, au 14 janv. 2027 ;
-  - n20 : 9,3 Go, au 18 janv. ;
-  - n20e : 4,2 Go, au 19 janv. ;
-  - n21 : 9,3 Go, au 24 janv. ;
-  - n22 : 52,0 Go, au 29 janv. ;
-  - 25 artefacts hors registre (sondes et vagues de septembre et du
-    7 oct.) : 2,4 Go.
+Trois renvois désignent plus qu'une section :
 
-  **Ce stockage ne coûte rien et n'occupe aucun quota.** Le source de la
-  documentation de facturation (`github/docs`,
-  `content/billing/concepts/product-billing/github-actions.md`, lu le
-  6 nov.) ne mesure le stockage que « *For private repositories* ». Le
-  dépôt est public, et il porte 86,5 Go d'artefacts quand le quota de
-  GitHub Free est de 500 Mo, sans qu'aucun envoi ait été refusé. Théo
-  demandait s'il fallait supprimer les données des anciens réseaux : une
-  suppression ne libère rien de facturé, elle est irréversible, et elle
-  couperait la perte tenue à l'écart sur les jobs supprimés. Tout
-  disparaît de toute façon fin janvier.
-- **Les runners changent de MODÈLE, pas seulement de vitesse** — relevé le
-  24 sept. 2026 : EPYC 7763, EPYC 9V74 et EPYC 9V45 dans la même nuit, de
-  2,02 à 4,06 M n/s au banc sur des binaires voisins. Un verdict reste valide
-  en interne ; deux runs ne se comparent qu'après lecture de leurs
-  étalonnages, et un chiffre de vitesse ne se recopie jamais d'un run à
-  l'autre.
-- **La durée du balayage de `search.rs` monte avec le fichier** — 107
-  minutes le 6 oct., 145 à 164 le 7, coupé à 180 le 12 oct. (781 mutants sur
-  817). La limite du job est passée à 350 minutes, sous les six heures d'un
-  runner hébergé. Rien ne signalera qu'elle s'approche : un job coupé rend un
-  résumé INCOMPLET et un verdict « illisible », pas une alerte de durée. Au
-  premier job au-delà de ~300 minutes, découper le fichier par
-  `cargo mutants --shard`, le verdict sommant les morceaux — le plafond ne
-  monte plus.
-- **L'image des runners change le 19 oct. 2026** — `ubuntu-latest` passe à
-  Ubuntu 26 (annonce de `actions/runner-images`, issue 14748, lue le 12 oct.
-  dans les annotations des jobs de génération du 7). Le moteur n'en bouge
-  pas : la toolchain Rust est épinglée (`rust-toolchain.toml`), et un
-  match oppose deux binaires sur la même machine. **Ce que le runner
-  installe lui-même, si** : le compilateur et Qt6 qui construisent les
-  arbitres (`tools/setup-arbiters.sh`), et l'adversaire de C13, que `apt`
-  fournit. `force.yml` est donc épinglé à `ubuntu-24.04` depuis le 12 oct.,
-  et **refuse tout Stockfish autre que 16** : l'échelle de `UCI_Elo`
-  appartient à sa version, et une autre rendrait un chiffre plausible et
-  incomparable. Les autres workflows restent sur `ubuntu-latest` : le
-  premier match d'après le 19 se lit en vérifiant que ses arbitres se sont
-  construits et que son étalonnage tombe dans la plage connue.
-- **Le livre, réutilisé** — mesuré le 1er oct. 2026, sur les deux matchs de
-  B8, dont les pentanomiaux sortaient presque identiques. `tools/book.epd`
-  porte **500 ouvertures** ; fastchess (`60d7a7a`, `opening_book.cpp` et
-  `base_scheduler.hpp`, lus) le mélange UNE fois à la graine, puis le
-  parcourt en boucle, une ouverture par paire. Un match de 3 000 parties joue
-  donc chaque ouverture **trois fois**, et deux matchs « à graines
-  distinctes » jouent **les mêmes 500**, dans un autre ordre. Ce que cela
-  coûte, mesuré sur les deux tiers de chaque journal que l'API sert
-  (rondes 511 à 1 500) : les scores de paire d'une même ouverture sont
-  **presque indépendants** — r = 0,070 et −0,034 dans un match (490 et 489
-  couples), r = 0,035 entre les deux (1 958 couples ; l'ordre reproduit au
-  source, et vérifié contre un vrai run de fastchess à la même graine) ;
-  témoins, ouvertures différentes : 0,005, 0,012, −0,022. Les parties ne se
-  recopient pas — même paire d'issues 22 à 25 % des fois, contre 10 à 12 %.
-  La ressemblance des deux totaux de B8 est une coïncidence : sur la fenêtre
-  lue, leurs pentanomiaux diffèrent normalement (499 et 483 paires à un point).
-  <span>Inférence, confiance moyenne</span> : à ρ ≈ 0,03, l'effet de grappe
-  élargit un intervalle mis en commun de **~7 %** (variance × 1,14), de ~18 %
-  au plus plausible (ρ = 0,08) ; le ± de fastchess le suppose nul. **Ça ne
-  compte qu'au ras d'une borne — et une lecture y est tombée** : la borne
-  haute du match 1 de C31, −0,27, passe au-dessus de zéro à ρ = 0,07, pas à
-  ρ = 0,02 ; ρ n'est pas assez connu pour trancher, et C31 reste tel que son
-  critère l'a lu. **Le remède est un livre plus grand** — `bookgen` le tire
-  —, ce qui change une condition de mesure : proposé, pas fait.
-  **Recalculé le 6 oct. pour plus de jobs**, la question de Théo l'imposant
-  (`CLAUDE.md`, « ce changement vaut la peine d'être mesuré ») : l'effet de
-  grappe croît avec le nombre de paires par ouverture, `1 + (m − 1)·ρ`. À
-  ρ = 0,03 : quatre jobs, 12 paires par ouverture, variance × 1,33 — le ± de
-  fastchess y est 15 % trop étroit, et toutes les mesures du n° 9 en ont
-  quatre (aucune n'était assez près de sa borne pour en changer) ; vingt
-  jobs × 2,8 ; soixante × 6,4, ± 2,4 réel pour ± 0,96 affiché. À ρ = 0,08,
-  le double. **Le livre plus grand devient la condition de « plus de
-  runners »** : ~5 000 ouvertures pour vingt jobs, ~15 000 pour soixante.
+- « La file », ses phases et « la feuille de route résiduelle » :
+  J-2026-11-17-AF ; « L'histoire de l'ordre » : J-2026-11-17-AI ;
+- « Les réglages ouverts » et « le registre » : J-2026-11-18-B, devenus
+  F-0009 et F-0010 ;
+- « feuille de route, point N » : la feuille de route du 31 oct. 2026,
+  au commit 88da289, que le backlog de la mémoire remplace (D-0009).
 
-| quoi | quand ça devient actionnable | pourquoi aucun test ne le dira |
-|---|---|---|
-| **l'estimation de durée de `match.yml`** | <s>le jour où C21 fusionne</s> **C21 a fusionné le 23 sept.** — reste à relire la durée au **premier match où les DEUX moteurs portent C21** | le facteur **EST** le gaspillage de pendule. Mesuré : 0,75 avec deux moteurs d'avant, **0,85** avec un seul moteur C21, ~0,95 extrapolé pour deux. La notice « les deux matchs historiques ont fait 25 % de plus » deviendra alors fausse. **Le résumé de `match.yml` imprime désormais les s/partie** : la relecture ne demande plus de calcul |
-| <s>`mesure/d5-delta` sur le distant</s> | **FAIT le 23 sept.** — supprimée par Théo ; son code est à l'attic | <s>le jeton de session ne peut pas supprimer une référence distante</s> |
-| **le déclencheur de B8** | maintenant | sa **lettre** est satisfaite (C12 clos, C18 décidé), son **esprit** non (C17, C19, C21 sont entrés depuis). Ça demande une re-spécification, pas une mesure — donc personne ne peut la calculer |
-| <s>`attack_dump.rs` et `see_check.rs`</s> | **FAIT le 23 sept.** — `tools/Cargo.toml` porte `autobins = false` et les deux y sont déclarés (voir `CLAUDE.md`) | <s>autodécouverts par cargo, non déclarés</s> |
-| <s>une routine hebdomadaire HORS dépôt, « ShallowRed — verdict du balayage par mutation »</s> | **FAIT le 23 sept. au soir** — supprimée, **remplacée** par `tools/balayage-vivant.sh` dans la CI | **Vérifiée avant d'être jugée, et c'était pire qu'un doublon.** Les quatre issues « mutation » viennent toutes du job `Verdict` ; aucune d'elle. Le 22 sept., seul mardi où le cliquet a cassé sur `main`, GitHub a lancé le cron de 00:00 avec **3 h 48 de retard** : la routine de 03:00 a lu l'exécution précédente et s'est tue. Elle avait pourtant **une** fonction que rien d'autre ne tenait — dire que le balayage ne tourne plus, ce que GitHub provoque sur un dépôt public après soixante jours sans activité. C'est cette fonction-là qui est entrée dans le dépôt, testée |
-| **la profondeur EN PARTIE à concurrence 3 sur deux cœurs physiques** | avant de comparer un point de fonctionnement à un autre — cadence, runner, conteneur | l'étalonnage mesure un banc SEUL sur la machine ; trois moteurs sur deux cœurs physiques (SMT, mesuré le 23 sept.) cherchent moins profond. Symétrique, donc aucun verdict ne se fausse — mais « profondeur 12 à `8+0,08` » décrit le banc, pas les parties. Se mesure par la profondeur non appariée des coups d'un témoin joué à concurrence 3 contre celle de la sonde témoin, sur des runners au banc voisin |
-| **le banc et `tools/timing.sh` évaluent À LA MAIN, le moteur joue avec le réseau** | depuis le 28 sept. 2026 — au premier changement dont on voudra mesurer la vitesse, ou l'arbre qu'on joue | `Search::new` évalue à la main, et c'est voulu : la référence du banc, ses tests et le crible d'`eval.rs` en dépendent. Mais un changement de l'inférence NNUE ne s'y voit pas, et un rapport de nœuds s'y lit sur l'arbre de la faite main, pas sur celui qu'on joue. Tout reste vert, et la mesure porte sur un autre moteur |
-| **les artefacts des données NNUE expirent** | la première vague le **24 déc. 2026**, la vague au réseau le **28 déc. 2026** — les télécharger avant, là où elles serviront | GitHub les supprime sans prévenir. Les regénérer reste possible — le générateur au même commit et les K de chaque run (sections A21 et n° 7) — mais coûte leurs heures de runner : 22 h pour la première vague, 44 h pour la seconde |
-| le plafond de mutation | mardi 00:00 UTC | le cliquet casse à la hausse tout seul — mais **un changement de TESTS le déplace autant qu'un changement de code**, et la règle écrite ne visait que le code |
-| **les avertissements « PV continues after fifty-move rule / threefold repetition » côté ShallowRed** | à chaque relève de `match.yml` ou de `force.yml` : ils sont la **signature connue de C31** (F-0013), non fusionné — ~1 pour 1 000 parties à `8+0,08` (5 en 6 000 côté référence), 2 en 300 à 60+0,6. Une hausse nette serait un fait neuf ; d'AUTRES natures d'avertissement, un défaut neuf | la relève les lit, rien d'autre : ils ne font échouer aucun job, et le 29 sept. ils ont été relevés sans être lus (`CLAUDE.md`) |
-| **les refus d'homogénéité à quatre jobs** | à chaque relève à quatre jobs : **deux sur sept le 5 oct.** (C33, C39), ce qui n'arrive que 3,7 fois sur cent sous un seul effet — et le livre partagé les rend plus rares, pas plus fréquents (section n° 9, troisième écran). Un troisième rendrait le hasard intenable : chercher alors ce qui varie d'un runner à l'autre PENDANT le match, que l'étalonnage du début ne voit pas | `mettre-en-commun.sh` refuse chaque mesure, mais rien ne compte les refus d'une mesure à l'autre ; et aucun verdict n'en dépend tant que chaque job passe seul |
-| **les tests « … retire des nœuds » encore comptés sur le banc, ou sur une position** | au prochain changement d'arbre qui en fait tomber un — ou avant, par la sonde sur `main` | `la_futilite_aux_noeuds_frontieres_retire_des_noeuds` (C39, qui entre avec le groupe) somme les six positions du banc, la forme dont la bascule vient d'être mesurée à ~3 % par changement d'arbre pour ses deux voisins ; `lelagage_delta_retire_des_noeuds` s'asserte sur une seule. Ni l'un ni l'autre n'est tombé — et le jour où l'un tombe, on accusera le changement plutôt que la formulation. **Et les sommes sur trente-six positions vieillissent avec leur marge** (7 oct.) : celle de la futilité inverse est tombée sous la composition du n° 12, la marge fondue à 3 % sur `main` — reformulée sur le branchement ; celle de l'élagage par compte garde la sienne, 0,65 sur ses positions, aucune bascule sur 200 000 tirages. La sonde de chacune, à l'attic, se relance après tout changement d'arbre qui touche ce qu'elle garde |
+| titre d'origine | au journal |
+|---|---|
+| C21 — le SPRT a EXPIRÉ, et il a rendu un chiffre quand même | J-2026-11-18-G |
+| C21 — VERDICT, 23 sept. 2026 : +19,13 ± 6,31 Elo à 8+0,08 sur 6 000 parties | J-2026-11-18-H |
+| Ce qui est EN VOL le 23 sept. — l'ordre des relèves, des fusions et des conflits — en-tête et suites | J-2026-11-18-I |
+| Ce qui est EN VOL le 23 sept. — l'ordre des relèves, des fusions et des conflits — Les jobs, tranche 1 | J-2026-11-18-J |
+| Ce qui est EN VOL le 23 sept. — l'ordre des relèves, des fusions et des conflits — Les jobs, tranche 2 | J-2026-11-18-K |
+| Ce qui est EN VOL le 23 sept. — l'ordre des relèves, des fusions et des conflits — Les jobs, tranche 3 | J-2026-11-18-L |
+| Ce qui est EN VOL le 23 sept. — l'ordre des relèves, des fusions et des conflits — Les jobs, tranche 4 | J-2026-11-18-M |
+| C22 — VERDICT, 23 sept. 2026 : −10,44 ± 6,34 Elo à 8+0,08 — régression, non fusionné, à remesurer sur C23 | J-2026-11-18-N |
+| C23 — VERDICT, 23 sept. 2026 : +2,65 ± 6,40 Elo à 8+0,08 — pas d'effet décelable, FUSIONNÉ au titre de la règle | J-2026-11-18-O |
+| C22 sur C23 — VERDICT, 24 sept. 2026 : aucune borne haute sous zéro, FUSIONNÉ au titre de la règle — deux matchs… | J-2026-11-18-P |
+| B9 — VERDICT, 23 sept. 2026 : capacité −1,27 ± 6,34 Elo à 8+0,08 — pas d'effet décelable, FUSIONNÉ | J-2026-11-18-Q |
+| Ponder — VERDICT, 23 sept. 2026 : +67,63 ± 9,19 Elo à 8+0,08 contre notre jumeau — l'activer rapporte | J-2026-11-18-R |
+| Vol de CPU du ponder sur runner — VERDICT, 23 sept. 2026 : r = 0,948, le verdict du ponder tient — et les runners… | J-2026-11-18-S |
+| Calibrer l'Elo par pli — VERDICT, 24 sept. 2026 : un doublement vaut +107,7 ± 8,2 Elo et +1,38 ± 0,28 pli, soit 60 à… | J-2026-11-18-T |
+| B6 — Lazy SMP — VERDICT, 24 sept. 2026 : +42,16 ± 9,23 Elo à deux fils contre un, à 8+0,08 — deux fils rapportent | J-2026-11-18-U |
+| A18 — génération par étapes — VERDICT, 24 sept. 2026 : +23,10 ± 6,39 Elo à 8+0,08 — gain démontré, FUSIONNÉ | J-2026-11-18-V |
+| C24 — laisser finir l'itération — VERDICT, 24 sept. 2026 : +44,64 ± 6,24 Elo à 8+0,08 — gain démontré, FUSIONNÉ ; la… | J-2026-11-18-W |
+| C25 — la répartition par la stabilité — VERDICT, 24 sept. 2026 : +7,87 ± 6,08 Elo à 8+0,08 — gain démontré, FUSIONNÉ… | J-2026-11-18-X |
+| C26 — la dure à l'approche d'un contrôle à coups comptés — VERDICT, 25 sept. 2026 : +2,43 ± 6,01 Elo à 40/8, aucune… | J-2026-11-18-Y |
+| L'allocation inégale — l'écran du 24 sept. 2026 : 18,7 % du temps était jeté, et laisser finir l'itération rapporte… | J-2026-11-18-Z |
+| A20 — raffinements d'ordonnancement — VERDICT, 25 sept. 2026 : +12,56 ± 4,35 Elo à 8+0,08 — la continuation… | J-2026-11-18-AA |
+| C13 — la force absolue : le protocole, écrit le 29 sept. avant de mesurer | J-2026-11-18-AE |
+| B8 — les marges à l'échelle du réseau — VERDICT, 30 sept. 2026 : +50,50 ± 5,37 Elo à 8+0,08 — gain démontré, FUSIONNÉ | J-2026-11-18-AF |
+| C31 — la nulle après une parade tranquille, dans la quiescence — VERDICT, 30 sept. 2026 : −2,43 ± 5,36 Elo à 8+0,08, la… | J-2026-11-18-AG |
+| C30 — la taille par défaut — VERDICT, 30 sept. 2026 : +2,90 ± 5,72 Elo à 8+0,08 — aucun coût démontré, le défaut passe à 64 Mio | J-2026-11-18-AH |
+| C29 — les seaux — VERDICT, 30 sept. 2026 : +30,13 ± 5,60 Elo sous pression, +1,85 ± 5,51 au défaut, à 8+0,08 — FUSIONNÉ | J-2026-11-18-AI |
+| C28 — la table sous pression : 2 Mio contre 16 à 8+0,08 — VERDICT, 29 sept. 2026 : −19,42 ± 5,78 Elo, la pression de 60+0,6 coûte | J-2026-11-18-AJ |
+| C27 — une borne de mat hors plage stockée dans la table — VERDICT, 25 sept. 2026 : −3,56 ± 5,97 Elo à 8+0,08, aucune… | J-2026-11-18-AK |
+| B9 ne se valide PAS par « nœuds identiques » — mesuré le 22 sept. 2026 | J-2026-11-18-AL |
+| La gestion du temps : NON, ce n'est pas clos — état au 23 sept. 2026 | J-2026-11-18-AM |
+| Réfléchir sur le temps de l'adversaire, et lire sa pendule | J-2026-11-18-AN |
+| B9 — écrit et mesuré le 23 sept. 2026 — état d'AVANT la fusion, gardé pour ses chiffres | J-2026-11-18-AO |
+| Trois chantiers, une seule unité — mesuré le 22 sept. 2026 | J-2026-11-18-AP |
+| D5 a trouvé son érosion, et elle était là où le mécanisme la plaçait | J-2026-11-18-AQ |
+| L'érosion se cherche d'abord en nœuds — mesuré le 22 sept. 2026 | J-2026-11-18-AR |
+| Et la cause de l'érosion de delta est mesurée, pas supposée | J-2026-11-18-AS |
+| Le SPRT de retrait de l'élagage delta a EXPIRÉ — et c'est un résultat | J-2026-11-18-AT |
+| Ce que l'écran en nœuds avait annoncé — un point, pas une règle | J-2026-11-18-AU |
+| La relation de budget, sur dix-huit points | J-2026-11-18-AV |
+| C18 : la réserve de la fiche est juste, et deux fois plutôt qu'une | J-2026-11-18-AW |
+| D2 clos sans match : le gatage sur non-PV vaut environ 1 Elo | J-2026-11-18-AX |
+| C17 : LMP paie à la cadence qui tranche, et il avait été rejeté deux fois | J-2026-11-18-AY |
+| C17 rouvert : ce que LMP élague, et ce que C19 n'a pas changé | J-2026-11-18-AZ |
+| C19 : la cadence n'a PAS inversé ce verdict, et c'est un résultat | J-2026-11-18-BA |
+| A21 — NNUE : la génération des données — écran écrit le 25 sept. 2026 | J-2026-11-18-BD |
+| N° 7 — un meilleur réseau : le plan, écrit le 29 sept. avant de mesurer | J-2026-11-18-BE |
+| N° 9 — les techniques de recherche absentes : l'écran, écrit le 5 oct. avant de mesurer | J-2026-11-18-BF |
+| N° 9, premier écran — VERDICT, 5 oct. 2026 : C32 +40,90 ± 5,34 Elo à 8+0,08 — FUSIONNÉ ; C32b, C33 et C34 gagnent aussi | J-2026-11-18-BG |
+| N° 9, deuxième écran — VERDICT, 5 oct. 2026 : C38 +9,61 ± 3,71 et C36 +5,65 ± 3,75 au groupe ; C37 +0,75 ± 3,69 sans… | J-2026-11-18-BH |
+| N° 9, troisième écran — VERDICT, 5 oct. 2026 : C39 +23,72 ± 3,75 Elo à 8+0,08 — au groupe ; l'amplitude hétérogène, le signe non | J-2026-11-18-BI |
+| N° 9, la composition — le groupe, attendu et critère écrits le 5 oct. avant de mesurer | J-2026-11-18-BJ |
+| N° 9, la composition — VERDICT, 5 oct. 2026 : le groupe +52,22 ± 3,61 Elo à 8+0,08 — FUSIONNÉ | J-2026-11-18-BK |
+| N° 9, quatrième écran — protocole et attendus, écrits le 6 oct. avant de mesurer | J-2026-11-18-BL |
+| N° 9, quatrième écran — VERDICT, 6 oct. 2026 : C41 +10,66 ± 3,43 Elo à 8+0,08 — FUSIONNÉ ; C40 −4,26 ± 3,49, régression… | J-2026-11-18-BM |
+| N° 9, après le quatrième écran — C43 et C44 : protocole et attendus, écrits le 6 oct. avant de mesurer | J-2026-11-18-BN |
+| N° 9, après le quatrième écran — VERDICT, 6 oct. 2026 : C43 +0,87 ± 4,63, FUSIONNÉ au titre de la règle ; C44 +2,69 ±… | J-2026-11-18-BO |
+| N° 10 — deux binaires, et le match qui chiffre l'AVX2 : protocole et attendu, écrits le 6 oct. avant de mesurer | J-2026-11-18-BP |
+| N° 10 — VERDICT, 7 oct. 2026 : +32,23 ± 4,84 Elo à 8+0,08 — l'AVX2 rapporte, gain démontré ; l'étalon du temps l'avait prédit | J-2026-11-18-BQ |
+| N° 12, le cinquième écran — protocole et attendus, écrits le 6 oct. avant de mesurer | J-2026-11-18-BR |
+| N° 12, le cinquième écran — RELEVÉ, 7 oct. 2026 : sept candidats ; le multi-cut, le razoring, l'élagage et la réduction… | J-2026-11-18-BS |
+| N° 12 — les candidats C45 à C51 : attendus et critère, écrits le 7 oct. avant de lancer | J-2026-11-18-BT |
+| N° 12, le cinquième écran — VERDICT, 7 oct. 2026 : C49 +25,32 ± 3,26, C45 +11,67 ± 3,38 et C47 +3,91 ± 3,28 à la… | J-2026-11-18-BU |
+| N° 12, la composition — C45, C47 et C49 : le candidat, et un test qui tombe — règle écrite le 7 oct. avant de mesurer | J-2026-11-18-BV |
+| N° 12, la composition — l'arbre au rejeu, attendu et critère écrits le 7 oct. avant de mesurer | J-2026-11-18-BW |
+| N° 12, la composition — VERDICT, 7 oct. 2026 : C45 + C47 + C49 +32,55 ± 3,36 Elo à 8+0,08 — FUSIONNÉ | J-2026-11-18-BX |
+| N° 13 — le réseau : une vague de données au moteur d'aujourd'hui, écrite le 7 oct. avant de la lancer | J-2026-11-18-BY |
+| N° 15 à 19 — la chaîne du réseau : DÉCIDÉE le 13 oct. 2026 | J-2026-11-18-CB |
+| N° 17 — VERDICT, 14 oct. 2026 : N5l +30,29 ± 3,95 Elo à 8+0,08 contre N4 — EMBARQUÉ ; N5s +15,58 ± 3,87 ; les seaux de… | J-2026-11-18-CC |
+| N° 18 — le volume de données : DÉCIDÉ le 14 oct. 2026, écrit avant de lancer | J-2026-11-18-CD |
+| N° 18 — VERDICT, 17 oct. 2026 : N6r4 +98,74 ± 4,27 et N6r10 +97,30 ± 4,26 Elo à 8+0,08 contre N5l, N6l +76,99 ± 4,00 —… | J-2026-11-18-CE |
+| N° 20 — plus de passes, plus de données : DÉCIDÉ le 17 oct. 2026, écrit avant de lancer | J-2026-11-18-CF |
+| Étape A — plus de passes, sur la carte de Théo, sans donnée neuve | J-2026-11-18-CG |
+| Étape A — VERDICT, 20 oct. 2026 : plus de passes paie encore — N7p4 +16,89 ± 3,55 et N7p2 +14,74 ± 3,52 contre N6r4 à… | J-2026-11-18-CH |
+| Étape B — plus de données, sur les runners, étiquetées par W | J-2026-11-18-CI |
+| La séance B — après le volume | J-2026-11-18-CJ |
+| (e) — le budget de l'étiqueteur : écrit le 20 oct. à 22 h 09, avant de lancer | J-2026-11-18-CK |
+| La séance C1 — écrite le 22 oct. à 4 h 34, avant de la demander | J-2026-11-18-CL |
+| La séance C2 — écrite le 26 oct. à 8 h 07, avant de la demander | J-2026-11-18-CM |
+| La séance C2c — écrite le 27 oct. à 7 h 57, avant de la demander | J-2026-11-18-CN |
+| La séance C3 — le chiffrage, le 27 oct. à 13 h 36, avant de l'écrire | J-2026-11-18-CO |
+| La séance C3, l'outillage — écrit le 27 oct. à 19 h 37, la décision des données en attente | J-2026-11-18-CP |
+| La séance C3, les données — l'option C, choisie par Théo le 6 nov. à 8 h | J-2026-11-18-CQ |
+| C3 — N10 et N10r10 : VERDICT, relevé le 9 nov. à 6 h 50 — la base bat N9w50s800, dix seaux de roi passent devant | J-2026-11-18-CR |
+| C3 — N10h384 et N10h512 : VERDICT, relevé le 10 nov. à 3 h 50 — la largeur paie, nettement | J-2026-11-18-CS |
+| (a) et (d) — la séance, écrite le 19 oct. à 20 h 14, avant de la demander | J-2026-11-18-CT |
+| (a) et (d) — VERDICT, 20 oct. 2026 : le poids du résultat paie — N6r4w50 +11,79 ± 3,52 et N6r4w25 +7,17 ± 3,49 contre… | J-2026-11-18-CU |
+| La file, phase 2 — le cache des recalculs : écrit le 20 oct. 2026, mesuré avant d'en écrire l'attendu | J-2026-11-18-CV |
+| La file, phase 2 — le produit scalaire en AVX2 : écrit le 20 oct. 2026, le mécanisme lu au code machine | J-2026-11-18-CW |
+| N° 21 — la génération étiquetée par N8tw50s800 : écrite le 22 oct. à 4 h 34, avant de lancer | J-2026-11-18-CZ |
+| N° 22 — la tranche étiquetée par N9w50s800, et le budget à 2 500 nœuds : écrite le 26 oct. à 13 h 54, avant de lancer | J-2026-11-18-DA |
+| La séance du n° 22 — E5n, E2.5t, E2.5v, et E21 depuis le 2 nov. : écrite le 27 oct. à 19 h 27, pour la semaine du 2 nov. | J-2026-11-18-DB |
+| La séance du n° 22 — E2.5t contre E5n : VERDICT, relevé le 6 nov. à 2 h — 2 500 nœuds remplacent 5 000 | J-2026-11-18-DC |
+| La séance du n° 22 — E2.5v et E21 : VERDICT, relevé le 6 nov. à 7 h 20 — l'étiquette ne se sépare pas, le tour de boucle paie | J-2026-11-18-DD |
+| N° 23 — l'historique borné (phase 4) : protocole et attendus, écrits le 2 nov. avant de mesurer | J-2026-11-18-DE |
+| N° 23, l'écran — RELEVÉ le 2 nov. : deux candidats de gravité et la LMR modulée ; l'élagage par l'historique fermé à nouveau | J-2026-11-18-DF |
+| N° 23 — les candidats C52, C53, C54 : attendus et critère, écrits le 2 nov. avant de lancer | J-2026-11-18-DG |
+| N° 23 — C52, C53, C54 : VERDICT, relevé le 2 nov. à 16 h 10 — C54 fusionné, C53 compris | J-2026-11-18-DH |
+| N° 23 — le livre déséquilibré : protocole, écrit le 2 nov. avant son pilote et ses matchs | J-2026-11-18-DI |
+| N° 23 — C55, C56 : le diviseur de la LMR modulée — écran, attendus et critère, écrits le 3 nov. avant de lancer | J-2026-11-18-DJ |
+| N° 23 — les échelles de la gravité, à l'écran le 3 nov. : confondues avec le diviseur | J-2026-11-18-DK |
+| N° 23 — C55, C56 : VERDICT, relevé le 3 nov. à 13 h 40 — 6 000 reste | J-2026-11-18-DL |
+| N° 23 — C57, C58 : le décalage de la note — écran, attendus et critère, écrits le 3 nov. avant de lancer | J-2026-11-18-DM |
+| N° 23 — C57, C58 : VERDICT, relevé le 3 nov. à 19 h 20 — le décalage reste à 0 | J-2026-11-18-DN |
+| N° 23 — C59, C60 : la mémoire de la gravité — écran, attendus et critère, écrits le 3 nov. avant de lancer | J-2026-11-18-DO |
+| N° 23 — C59, C60 : VERDICT, relevé le 4 nov. à 0 h 50 — la mémoire longue perd, la courte n'est pas démontrée | J-2026-11-18-DP |
+| N° 23 — C61 : la mémoire plus courte encore — attendus et critère, écrits le 4 nov. avant de lancer | J-2026-11-18-DQ |
+| N° 23 — C61 : VERDICT, relevé le 4 nov. à 6 h 25 — main reste, la mémoire déprioritisée | J-2026-11-18-DR |
+| N° 23 — l'élagage par l'historique, la forme de Stockfish 16 : fermé à l'écran le 4 nov. | J-2026-11-18-DS |
+| N° 23 — C62, C63 : la LMR selon le type de nœud — écran, attendus et critère, écrits le 4 nov. avant de lancer | J-2026-11-18-DT |
+| N° 23 — C62, C63 : VERDICT, relevé le 4 nov. à 11 h 55 — C63 gagne, il entre par la composition | J-2026-11-18-DU |
+| N° 23 — C64, C65, C66 : la variante principale en table — écran, attendus et critère, écrits le 4 nov. avant de lancer | J-2026-11-18-DV |
+| N° 23 — C64, C65, C66 : VERDICT, relevé le 4 nov. à 12 h 30 — aucun ne passe, main reste | J-2026-11-18-DW |
+| N° 23 — C67, C68 : l'historique de correction en plusieurs tables — écran, attendus et critère, écrits le 4 nov. avant de lancer | J-2026-11-18-DX |
+| N° 23 — C67, C68 : VERDICT, relevé le 4 nov. à 12 h 55 — C67 gagne, +14,22, il entre par la composition | J-2026-11-18-DY |
+| N° 23 — C69, C70 : l'historique des captures, rouvert — écran, attendus et critère, écrits le 4 nov. avant de lancer | J-2026-11-18-DZ |
+| N° 23 — C69, C70 : VERDICT, relevé le 4 nov. à 13 h 05 — aucun ne passe, main reste | J-2026-11-18-EA |
+| N° 23 — C71 : la composition des gagnants, C63 et C67 — protocole, attendu et critère, écrits le 4 nov. avant de lancer | J-2026-11-18-EB |
+| N° 23 — C71 : VERDICT, relevé le 4 nov. à 18 h 25 — +16,02 ± 3,17, FUSIONNÉ ; la phase 4 est close | J-2026-11-18-EC |
+| N° 23 — C72, C73, C74 : les réglages de la phase 4 sur main — attendus et critère, écrits le 4 nov. avant de lancer | J-2026-11-18-ED |
+| N° 23 — C72, C73, C74 : VERDICT, relevé le 5 nov. à 0 h 50 — aucun ne passe, main reste | J-2026-11-18-EE |
+| N° 23 — le test des extensions singulières : mesuré sur main le 3 nov., traitement écrit avant le verdict de C59 | J-2026-11-18-EF |
+| N° 23 — le livre déséquilibré : VERDICT, relevé le 3 nov. à 13 h 40 — notre livre reste | J-2026-11-18-EG |
+| N° 23 — l'inférence multicouche : écrite le 2 nov., prête pour le verdict de C3 | J-2026-11-18-EH |
+| N° 19 — le réglage automatique (SPSA) : l'outillage, écrit pendant les vagues du n° 18 | J-2026-11-18-EI |
+| Mesurer à cadence longue | J-2026-11-23-B |
+| Remesuré le 21 sept. 2026 — la dispersion est plus large, et un piège apparaît | J-2026-11-23-C |
+| Ce qu'un seul job peut trancher | J-2026-11-23-D |
+| Le résultat qui a motivé tout ça | J-2026-11-23-E |
+| Tests de mutation — mesuré le 15 sept. 2026 | J-2026-11-23-F |
+| Le cliquet — ce que le premier balayage a trouvé | J-2026-11-23-G |
+| Mesures de référence | J-2026-11-23-H |
+| Ce qui reste à faire, par ordre mesuré | J-2026-11-23-I |
+| Ce qu'il faut surveiller — et que rien ne signalera tout seul | J-2026-11-23-J |

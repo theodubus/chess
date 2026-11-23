@@ -5,27 +5,20 @@ Réécrit au fil du travail et borné. Ce qui en sort s'archive dans le journal.
 
 ## En cours
 
-**L'adoption reprend pour la documentation** (jalon B-0041). Le jalon
-B-0031 est clos le 17 nov. 2026 (J-2026-11-17-Z) : le carnet de bord est
-dans la mémoire, et `CLAUDE.md` ne porte plus que des règles, 64 Ko pour
-un budget de 65 000 octets. Le même jour, Théo a fait entrer
-`tools/README.md` et le `README.md` de la racine dans l'adoption (D-0017,
-J-2026-11-17-AC), et placé la mise à jour du socle après eux (D-0018,
-J-2026-11-17-AD).
+**La transition de la documentation est finie** (jalon B-0041, le
+23 nov. 2026, J-2026-11-23-K) : `tools/README.md` ne porte plus que la
+documentation des outils et la table des anciens renvois, le reste au
+journal, aux faits, aux skills et au backlog. Vient la mise à jour du
+socle, avec Théo (B-0044, D-0018).
 
 ## Prochaines étapes
 
 Dans l'ordre que Théo a fixé (D-0016, D-0018), et que le backlog porte :
 
-1. Le jalon B-0041 : les huit lots de la transition, B-0045 à B-0052,
-   dans l'ordre (D-0020, J-2026-11-18-A) ; chaque lot extrait faits,
-   procédures et idées avant d'archiver, et les idées non décidées
-   deviennent des sujets derrière B-0065, que l'agent tranche lui-même
-   après la mise à jour du socle (D-0021).
-2. La mise à jour du socle, avec Théo (B-0044). La marge du budget de
+1. La mise à jour du socle, avec Théo (B-0044). La marge du budget de
    `CLAUDE.md` n'est que d'environ 600 octets ; si la section du socle
    grossit, le relever demandera une demande validée.
-3. Puis le travail du moteur, dont la mesure du réseau N10r10h512
+2. Puis le travail du moteur, dont la mesure du réseau N10r10h512
    (B-0012). B-0026 passe devant si son échéance approche : les données
    commencent d'expirer chez GitHub le 24 déc. 2026 (F-0005, corrigé le
    17 nov., J-2026-11-17-AG).

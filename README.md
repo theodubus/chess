@@ -202,8 +202,8 @@ Le test séquentiel s'arrête dès que les données suffisent à trancher. Déta
 dans [`tools/README.md`](tools/README.md).
 
 **Chaque verdict porte sa cadence**, et une technique standard entre par le
-SPRT comme toutes les autres, parfois pour en être rejetée. Les verdicts :
-[`tools/README.md`, « Mesures de référence »](tools/README.md#mesures-de-référence).
+SPRT comme toutes les autres, parfois pour en être rejetée. Les verdicts
+sont au journal de la mémoire, `memory/journal/`, chacun dans son entrée.
 
 ## Dépendances
 
