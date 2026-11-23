@@ -104,3 +104,8 @@ Puis, dans l'ordre :
   son prochain test. Aucun réglage n'est résolu (ADR-0032).
 - Le sujet du backlog qui portait la mesure se clôt avec cette entrée pour
   référence, ou attend le match suivant que le verdict dimensionne.
+- **Un candidat non fusionné** dont le rejet tient à une condition que le
+  verdict nomme (une cadence, une base, un réglage voisin) se dépose en
+  rustine dans `tools/attic/`, avec sa ligne au registre ; un rejet sans
+  condition se referme, et un retrait rejeté ne se dépose jamais. La règle
+  et ses cas : `tools/attic/README.md`, « La règle ».

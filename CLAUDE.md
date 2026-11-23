@@ -365,18 +365,13 @@ celles-ci, sont au journal (J-2026-11-17-F).
   compte comme preuve », le critère écrit avant de lancer).
 - **« Ça tourne encore, rien à ajouter » est une réponse complète**,
   suivie des deux lignes de fin du socle quand le tour a agi. Combler une
-  attente fabrique des affirmations sans artefact. Ce déclencheur a été
-  ajouté le 16 sept. 2026, après une relecture demandée par Théo, quand
-  les règles de la prédiction, écrites le 14, n'avaient pas tenu
-  (J-2026-09-16-C).
+  attente fabrique des affirmations sans artefact (J-2026-09-16-C).
 - **Dans une synthèse, une affirmation sur l'état d'un système ou sur un
   résultat à venir renvoie à un artefact regardé dans le même tour**, ou
   ne s'écrit pas : la synthèse est le lieu où l'on généralise.
 
-**Ces règles ne se certifient pas elles-mêmes.** Le 16 sept. 2026,
-celles de la prédiction étaient écrites depuis deux jours et ont été
-enfreintes : c'est une relecture demandée par Théo, pas une règle, qui a
-rattrapé la faute (J-2026-09-16-C).
+**Ces règles ne se certifient pas elles-mêmes** : une relecture demandée
+par Théo, pas une règle, a rattrapé la première faute (J-2026-09-16-C).
 
 ## Pièges de mesure, appris à nos dépens
 
@@ -552,15 +547,13 @@ tools/mutants.sh --file engine/src/tt.rs   # balayage par mutation, sous verrou
 tools/binaires.sh [dossier]                # les deux binaires livrés, comparés
 ```
 
-**Vérifier par `tools/verify.sh`, jamais en lisant la sortie de `cargo test`.**
-Le 14 sept. 2026, un test échouait et je ne l'ai pas vu : j'avais filtré la
-sortie sur « test result » et sommé les totaux. La ligne disait `FAILED`, la
-somme disait 81, et j'ai lu la somme. **Un code de sortie ne se lit pas de
-travers.** Le script exécute toutes les étapes même après un échec — découvrir
-trois problèmes d'un coup coûte moins cher que trois allers-retours.
-**Et jamais à travers un tube** : `verify.sh | tail && git commit` rend le
-code de `tail`, toujours zéro — le 14 oct. 2026, un commit est parti ainsi
-sur un clippy rouge. Rediriger vers un fichier, puis lire `$?`.
+**Vérifier par `tools/verify.sh`, jamais en lisant la sortie de `cargo test`** :
+un filtre sur « test result » et une somme des totaux ont déjà masqué un
+`FAILED`. **Un code de sortie ne se lit pas de travers.** Le script exécute
+toutes les étapes même après un échec — découvrir trois problèmes d'un coup
+coûte moins cher que trois allers-retours. **Et jamais à travers un tube** :
+`verify.sh | tail && git commit` rend le code de `tail`, toujours zéro.
+Rediriger vers un fichier, puis lire `$?`. Les deux incidents : J-2026-11-23-T.
 
 **Deux portes, les mêmes étapes.** `python3 .socle/socle verify --fast`
 lance celles de `tools/verify.sh --rapide`, et c'est elle qu'emploient le

@@ -12,10 +12,9 @@ ne l'est pas.
 
 Un rejet conditionnel se rouvre. Encore faut-il retrouver le code.
 
-La pratique était de désigner le commit : *« le code retiré reste lisible dans
-`15028fa` »*. **Elle a cassé le 16 sept. 2026** — une fusion en squash a
-supprimé la branche, et `498a01a` est devenu introuvable ; la première
-exécution de `match.yml` a échoué dessus.
+Désigner le commit du code retiré ne suffit pas : une fusion en `squash`, ou
+la suppression d'une branche, le rend introuvable (le récit :
+`tools/pieges-fermes.md`).
 
 Un fichier versionné ne peut pas subir ça. Il survit aux squashs, aux
 suppressions de branche, aux politiques de collecte, et se lit sans accès
@@ -30,7 +29,7 @@ réseau.
 | `c19-see-ordering.patch` | échange statique dans l'ordonnancement des coups | **pas de SPRT** — effet mesuré sous le seuil de résolution d'un job (~17 Elo), signe estimé négatif | `git apply --check` : **non** depuis la génération par étapes (A18, 24 sept. 2026) — elle s'insère dans la note des captures de `score_move`, déplacée dans `tactical_score`. Elle s'appliquait jusque-là SUR l'élagage en quiescence ; la remesurer demande de la porter sur l'étage tactique |
 | `d2-sonde-pv.patch` | sonde : les dégâts de LMP sont-ils sur l'épine PV ? | **pas un changement** — c'est la mesure qui a clos D2 sans match. 3,79 % des dégâts sur l'épine, soit ~1 Elo | `git apply --check` : **non** depuis la génération par étapes (A18, 24 sept. 2026) — elle instrumente la boucle de `negamax`, qui tire désormais ses coups du `MovePicker`. Elle s'appliquait directement sur `main` de la fusion de C17 à A18 ; la rejouer demande de la porter |
 | `c18-sonde-echec.patch` | sonde : que resterait-il à gagner à une extension d'échec ? | **pas un changement** — 1,39 % de l'arbre, et 77 % des nœuds en échec sont déjà en quiescence. Le dimensionnement a été suivi d'un match, voir ci-dessous | `git apply --check` : **non** — échoue sur `engine/src/search.rs:837` depuis la fusion de C17. La sonde reste lisible ; la rejouer demande de la porter |
-| `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | `git apply --check` : **non** — C22 est entré dans `main` le 24 sept. et déplace le contexte de `negamax` où elle s'insère. À porter comme C22 l'a été, le jour où on la remesure |
+| `c18-extension-echec.patch` | extension d'échec, bornée par le ply | **−5,01 Elo ± 8,11**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 ; empilée sur PVS, elle réduisait son économie de nœuds de 6,3 % à 3,7 % et faisait échouer le test de la fenêtre nulle (J-2026-11-23-S) | `git apply --check` : **non** — C22 est entré dans `main` le 24 sept. et déplace le contexte de `negamax` où elle s'insère. À porter comme C22 l'a été, le jour où on la remesure |
 | `c12-pvs-2026-09-21.patch` | PVS réécrit à la main sur le moteur post-C19 et post-LMP | **−0,82 Elo ± 8,19**, 3400 parties à longueur fixe, `8+0,08`, 21 sept. 2026 | `git apply --check` : **non** — écrite sur `main` d'avant le groupe du n° 9 (C33, C34, C36, C38, C39), qui en change le contexte dans `search.rs` ; elle se rejoue sur `f8babf0`. Elle avait été **reportée le 26 sept. 2026** sur l'inférence NNUE, qui ajoutait ses propres champs de test là où elle s'ancre : `git apply --3way`, deux conflits de contexte, et les mêmes lignes ajoutées et retirées, vérifié en comparant leurs multiensembles. **Son test `la_fenetre_nulle_rend_le_meme_score_que_la_fenetre_pleine` échouait sur `main`** — déjà sur `bfe92fb`, AVANT ce report, vérifié : qu'elle s'applique n'en faisait pas un candidat prêt à mesurer |
 | `d6-sonde-ordonnancement.patch` | sonde : que peut épargner un générateur par étapes ? | **pas un changement** — 85 % des coups générés par `negamax` ne sont jamais cherchés, mais l'ordonnancement ne pèse que 26,2 % du temps. Plafond **11,5 %**, soit **0,21 pli** | `git apply --check` : **non** — son objet est écrit : la génération par étapes (A18, 24 sept. 2026) a réécrit `ordered_moves` et la boucle de `negamax` qu'elle instrumente. Sa mesure reste celle qui a dimensionné A18, et se rejoue sur `d01183d` |
 | `d6-sonde-pendule.patch` | sonde : que reste-t-il sur la pendule, et que vaut chaque raffinement de B2 ? | **pas un changement** — **46,9 % de la pendule inutilisée** en fin de partie, soit ~1,36 pli. « S'arrêter tôt sur un coup stable » **réfuté** aux deux cadences | `git apply --check` : **oui**, sur `main` — elle n'ajoute qu'un fichier |
@@ -136,133 +135,6 @@ git apply --check tools/attic/c17-lmp.patch   # toujours, avant d'appliquer
 git apply         tools/attic/c17-lmp.patch
 ```
 
-**`c12-pvs.patch` ne s'applique plus**, et c'est normal : elle date d'avant
-l'ardoise de coups, l'élagage delta et la futilité inverse. Elle reste **un
-document**, pas un bouton — la lire pour retrouver la structure, la porter à la
-main. C'est vérifié, pas supposé : `git apply --check` échoue sur
-`engine/src/search.rs:215`.
-
-## Les deux étaient rouvertes ; aucune ne l'est plus
-
-**C17 est CLOS par une acceptation — la seule du répertoire.** <s>Il manque un
-SPRT à cadence longue, pas du travail d'écriture.</s> Ce SPRT a été acheté le
-21 sept. 2026 : **+22,85 ± 9,88 sur 2436 parties à `8+0,08`, H1**, et le seuil 6
-est **fusionné dans `main`** par la PR&nbsp;#21. Le rejet conditionnel a été levé
-dans le seul sens qui ferme une question — par une mesure au régime visé.
-
-**Conséquence sur la rustine, et elle est exactement inversée.** Tant que C17
-était retiré, `c17-lmp.patch` s'appliquait ; maintenant que son code est dans
-`main`, **elle n'y applique plus**. Le projet garde ici « ce que le dépôt n'a
-plus » : une rustine qui cesse de s'appliquer parce que son code est entré n'a
-plus de raison d'être un bouton. Elle reste comme **document** — le seuil `12 +
-d²`, lui aussi H1 (+17,24 ± 8,51) et non retenu, est toujours un `sed` d'un
-caractère, mais sur le `LMP_BASE` de `main` désormais, pas sur cette rustine.
-
-### Trois lignes de la table étaient fausses, et rien ne les gardait
-
-**Vérifié le 22 sept. 2026 par `git apply --check` sur les sept rustines**, pas
-relu : `c17-lmp.patch` et `c18-sonde-echec.patch` étaient annoncées applicables
-et ne l'étaient plus, et la condition « APRÈS `c17-lmp.patch` » de
-`d2-sonde-pv.patch` était devenue fausse. Les trois ont la **même cause
-unique** : la fusion de C17 a déplacé `engine/src/search.rs` sous elles.
-
-C'est le piège du renvoi périmé, dans sa forme la plus coûteuse : ce répertoire
-existe pour qu'on ne réécrive pas de mémoire un code déjà écrit, et une colonne
-« s'applique sur `main` ? » fausse envoie précisément faire ce travail-là.
-**La source de vérité de cette colonne n'est pas la relecture, c'est
-`git apply --check`** — une commande, sept secondes :
-
-```sh
-for p in tools/attic/*.patch; do
-  git apply --check "$p" 2>/dev/null && echo "applique  $p" || echo "échoue    $p"
-done
-```
-
-**À relancer après toute fusion qui touche `engine/src/`**, et à inscrire dans
-la table. Aucun dispositif ne le fait aujourd'hui.
-
-### C12 est clos le 21 septembre 2026, et cette fois sans condition
-
-**Mesuré à la cadence cible, sur la base post-C19 et post-LMP, code réécrit à
-la main : −0,82 Elo ± 8,19** sur 3400 parties. L'intervalle `[−9,0 ; +7,4]`
-est centré sur zéro.
-
-Ce chiffre **corrige le premier plus qu'il ne le confirme**. PVS n'est pas un
-coût de 11 Elo : c'est un **néant**. Son économie de nœuds (÷1,07) et son coût
-de re-recherche s'annulent, et il ne reste rien.
-
-Et les deux motifs de réouverture sont épuisés :
-
-- **par son rôle** — réfuté le 21 sept. au matin : l'épine PV porte 3,79 % des
-  montées d'`alpha` que LMP détruit, soit ~1 Elo ;
-- **par la cadence** — mesuré le 21 sept. au soir : à `8+0,08`, zéro.
-
-**Il n'y a plus de condition nommée, donc plus rien à rouvrir.** La rustine
-reste ici parce qu'elle a coûté du travail et qu'un futur changement de la
-recherche pourrait un jour lui redonner de la matière à couper — mais ce serait
-une question neuve, pas la réouverture de celle-ci.
-
-<details><summary>Le raisonnement d'avant, conservé</summary>
-
-**C12 — <s>par son rôle</s> par la cadence.** <s>Dans les moteurs forts, LMP et
-la futilité ne s'appliquent qu'aux nœuds hors variante principale, et cette
-distinction, c'est PVS qui la crée.</s> **Ce motif est RÉFUTÉ depuis le
-21 sept. 2026** : la sonde `d2-sonde-pv.patch` a mesuré que l'épine PV porte
-**3,79 % des montées d'`alpha` que LMP détruit**, donc que ce gatage vaut ~1 Elo
-sur les 23 que LMP rapporte. Le mécanisme existe — une coupe sur l'épine est
-4,8 fois plus dangereuse qu'ailleurs — et il est un ordre de grandeur trop petit
-pour ce qu'il devait expliquer.
-
-Le motif qui reste, et il est plus fort, est **la cadence**. PVS a été rejeté à
-`1+0,01` (−10,89 ± 7,91), pré-D1. LMP, rejeté DEUX fois à la même cadence, est
-accepté deux fois à `8+0,08`. L'écart que PVS aurait à combler est trois fois
-plus petit que celui qu'a comblé LMP.
-
-**Une raison fausse bloque le bon chantier la prochaine fois** : elle aurait
-fait acheter un SPRT sur la paire PVS + LMP, six heures pour répondre à une
-question déjà close.
-
-</details>
-
-## Ce qui a été mesuré SUR une combinaison, et qui ne tient dans aucune rustine
-
-Le 21 sept. 2026, une branche `mesure/c18-c12-ensemble` a porté les deux
-rustines C18 et C12 en même temps, pour compter les nœuds des quatre coins.
-Elle ne contient aucun code propre et n'a donc pas de rustine à elle — mais
-elle a rendu deux faits que sa suppression effacerait, et qu'une session qui
-rouvrirait l'une des deux fiches redécouvrirait à ses frais.
-
-| arbre | nœuds au banc, profondeur 7 |
-|---|---|
-| `main` | 114 028 |
-| + C18 seul | 131 977 (× 1,157) |
-| + C12 seul | 106 820 (÷ 1,067) |
-| **+ les deux** | **127 108** |
-
-**Les deux mécanismes ne sont pas indépendants.** Le produit des deux rapports
-prédit 123 634 ; la mesure rend **127 108, soit +2,8 %**. Autrement dit
-**l'économie de nœuds de PVS tombe de 6,3 % à 3,7 % en présence de
-l'extension d'échec** : l'extension allonge les lignes forcées, où la fenêtre
-nulle a le moins à couper. *(Vérifié par exécution le 22 sept. 2026, avant de
-supprimer la branche — pas recopié d'un souvenir.)*
-
-**Et la combinaison casse un test que C12 apporte et fait passer.**
-`la_fenetre_nulle_rend_le_meme_score_que_la_fenetre_pleine` naît avec la
-rustine PVS et passe sur `mesure/c12-pvs` ; empilée sous C18, elle échoue avec
-**52 contre 51** sur
-`r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 1`. *(Les deux
-exécutions faites le 22 sept. 2026, l'une après l'autre.)*
-
-Ce n'est pas une régression de C18 : c'est l'**instabilité de fenêtre déjà
-mesurée** — sur `main`, sans une ligne de PVS, le score d'un pari diffère de
-celui de la fenêtre pleine dans **8,3 %** des cas, mesuré sur 153 positions et
-trois paris chacune, élagage par compte désactivé comme dans le test — à
-laquelle un second changement d'arbre donne une occasion de plus de se
-manifester. **Une propriété qu'un test assertait sur UNE position redevient
-fausse dès qu'on empile**, et c'est le piège que le dépôt a déjà payé sur les
-gardes d'aspiration : un contrôle qui suppose une propriété doit la COMPTER
-sur un échantillon.
-
 ## La règle
 
 **Une rustine ici n'autorise rien.** Le protocole ne change pas : ce qui rentre
@@ -286,37 +158,9 @@ reconstruire tient dans la ligne de verdict : le commit de référence, le commi
 candidat, et le nombre de nœuds du banc — qui vérifie qu'on a bien reconstruit
 le même binaire.
 
-**Vérifié le 23 sept. 2026, et le paragraphe ci-dessus était vrai d'un cas sur
-deux.** `d5-trois-termes` porte bien ses trois éléments (candidat `adcbd14`,
-référence `091e75e`, banc 88 495) ; **`sans-aspiration` n'en porte aucun** — sa
-ligne de verdict ne donne que l'Elo, l'effectif et l'étalonnage. Le
-reconstruire reste trivial (retirer l'aspiration de `main`), mais **rien ne
-permettrait de vérifier qu'on a rebâti le même binaire**. C'est une perte
-réelle et petite, inscrite plutôt que passée sous silence ; elle ne se répare
-pas, le commit étant collecté.
-
 **Un candidat de retrait NON TRANCHÉ, lui, se dépose** — et c'est pourquoi
 `d5-retrait-delta.patch` est dans la table ci-dessus sans contredire la règle.
 L'exclusion vise les candidats **rejetés** : quand `H0` est accepté, l'acquis
 paie et le code est resté dans `main`, donc il n'y a rien à garder. Le SPRT de
 delta a **expiré sans verdict** : la question reste ouverte, quelqu'un voudra
 la reprendre, et refaire le diff de tête coûterait plus que de le lire.
-
-### Ce que la suppression des branches `mesure/*` a réellement coûté
-
-**Aucun code de production.** Vérifié branche par branche le 23 sept. 2026 :
-
-| branche supprimée | ce qu'elle portait | récupérable ? |
-|---|---|---|
-| `mesure/c12-pvs` | changement | **oui** — `c12-pvs.patch` et `c12-pvs-2026-09-21.patch` |
-| `mesure/c18-extensions-echec` | changement | **oui** — `c18-extension-echec.patch` |
-| `mesure/c18-c12-ensemble` | combinaison des deux | **oui** — appliquer les deux rustines ; ses nœuds sont dans la table ci-dessus |
-| `mesure/sans-aspiration` | retrait, **H0** | le code est dans `main` ; **le handle de vérification manque** |
-| `mesure/d5-trois-termes` | retrait, **H0** | le code est dans `main` ; SHA et banc inscrits |
-| `mesure/see-instrumentation` | **sonde** pour C19 | **non — le code est perdu.** Ses RÉSULTATS survivent dans la fiche C19 (57,2 % des captures notées paient un appel à `see`, et les nœuds des trois paliers). Elle aurait dû être une rustine : c'est la règle « une sonde jetable vit dans sa rustine », écrite *après* |
-
-**Et la raison pour laquelle rien n'est récupérable est mesurée, pas
-supposée** : `git fetch origin adcbd14` rend `INATTEIGNABLE`. **Aucune branche
-`mesure/*` n'a jamais eu de pull request** — vérifié sur les trente-huit PR du
-dépôt — donc `refs/pull/N/head` ne les protégeait pas, et leurs commits ont été
-collectés.

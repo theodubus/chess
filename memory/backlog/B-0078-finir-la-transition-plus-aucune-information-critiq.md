@@ -25,6 +25,6 @@ pièges) restent verts.
 
 ## Fait quand
 
-- [ ] chaque document du périmètre est lu en entier, et chaque passage qui n'y est pas à sa place est rangé selon sa nature, l'histoire au journal tel quel
-- [ ] `tools/attic/README.md` ne garde que son registre et ce qui décrit le dossier ; ce dont une décision dépend (une condition de réouverture, une règle) est là où le travail le lit
+- [x] chaque document du périmètre est lu en entier, et chaque passage qui n'y est pas à sa place est rangé selon sa nature, l'histoire au journal tel quel (J-2026-11-23-V)
+- [x] `tools/attic/README.md` ne garde que son registre et ce qui décrit le dossier ; ce dont une décision dépend (une condition de réouverture, une règle) est là où le travail le lit (J-2026-11-23-S, le skill `rendre-un-verdict`)
 - [ ] un relecteur sans contexte, à qui l'on demande de chercher une procédure ou une information critique restée dans un de ces documents, n'en trouve aucune

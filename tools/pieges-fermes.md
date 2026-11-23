@@ -47,8 +47,8 @@ C'est la seule condition de sortie de ce fichier.
   supprimé la branche, et la première exécution de `match.yml` a échoué sur
   `fatal: invalid reference: 498a01a`. Une rustine versionnée ne peut pas subir
   ça — elle survit aux squashs, aux suppressions de branche et aux politiques
-  de collecte. Voir `tools/attic/README.md` : quand y déposer une rustine, et
-  pourquoi celle de PVS ne s'applique plus.
+  de collecte. Voir `tools/attic/README.md`, « La règle » : quand y déposer une
+  rustine.
   <br>**Fusionner en `merge` et non en `squash`** reste préférable, pour garder
   l'historique lisible — les PR #1 à #5 l'avaient fait. Mais ce n'est plus ce
   qui protège le code retiré, et c'était une mauvaise fondation : *la
@@ -62,7 +62,7 @@ C'est la seule condition de sortie de ce fichier.
   rend `INATTEIGNABLE` — leurs commits sont collectés pour de bon. *Un filet de
   sécurité vérifié sur un cas ne se généralise pas sans sa condition
   d'application.* Ce que la suppression a coûté, branche par branche, est
-  inventorié dans `tools/attic/README.md` : aucun code de production, une sonde
+  inventorié au journal (J-2026-11-23-S) : aucun code de production, une sonde
   perdue, un handle de vérification manquant ; et **le push d'étiquettes est
   refusé sur ce dépôt** (403 avec le jeton de session), ce qui interdisait
   la solution évidente. **Troisième limite du même jeton, vérifiée le
