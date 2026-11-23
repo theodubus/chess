@@ -218,15 +218,16 @@ frontière UCI ; ne jamais afficher un `Move` brut.
 
 ## Remerciements
 
-Les réseaux NNUE N2L et N4L — embarqués du 2 au 13 oct. 2026, et conservés
-dans `reseaux/` — sont entraînés sur des [données fournies par le projet
+Les réseaux NNUE de `reseaux/` qui ont appris sur des [données fournies par
+le projet
 Leela Chess Zero](https://storage.lczero.org/files/training_data), mises à
 disposition sous l'[Open Database
 License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
 converties au format `.binpack` par des contributeurs de Stockfish (voir
-`tools/README.md`, « Entraîner un réseau »). Le réseau embarqué depuis le 22 oct., N9w50s800
-— comme N8tw50s800, N7p4, N6r4, N5l et N4 avant lui —, n'apprend que sur les
-parties du moteur.
+`tools/README.md`, « Entraîner un réseau ») — sont N2L et N4L, embarqués du 2
+au 13 oct. 2026, et L0, N6r4la et N6r4lb, qui ne l'ont jamais été. Les réseaux
+embarqués de N4 à N9w50s800, qui joue depuis le 22 oct. 2026, n'ont appris
+que sur les parties du moteur.
 
 ## Licence
 

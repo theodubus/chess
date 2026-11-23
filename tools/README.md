@@ -42,19 +42,16 @@ tools/ref.sh origin/main /tmp/reference      # construit la référence
 tools/sprt.sh /tmp/candidat /tmp/reference
 ```
 
-`tools/ref.sh <commit|branche|tag> [sortie]` remplace la recette manuelle qui
-occupait cette place, et pour la même raison que `timing.sh` remplace un
-chronomètre à la main : **construire une référence est un geste de quatre
-lignes dans lequel ce dépôt a payé quatre pièges distincts**, tous écrits dans
-`CLAUDE.md`, aucun encadré par du code. `match.yml` faisait déjà tout cela
-correctement sur un runner ; le chemin local n'avait rien — la faute B10, celle
-du garde-fou qui ne couvre qu'une copie.
+`tools/ref.sh <commit|branche|tag> [sortie]` construit une référence locale
+comme `match.yml` le fait sur un runner : **un geste de quatre lignes où ce
+dépôt a payé quatre pièges distincts**, chacun fermé par ce que le script
+impose.
 
 | ce que le script impose | le piège qu'il ferme |
 |---|---|
-| `git fetch --prune`, jamais `git fetch <remote> <branche>` | une référence de suivi survit à la suppression de sa branche après fusion et désigne le commit d'*avant* — deux fausses alarmes le 22 sept. 2026 |
-| confrontation de la résolution locale à `git ls-remote`, et **refus** de construire si elles diffèrent | `origin/main` figé onze commits en arrière dans le clone : binaire neuf, code juste, **arbre trois fois trop gros**. C'est le seul des quatre qui a faussé une mesure publiée |
-| `git worktree add --detach`, jamais `git stash` | le stash emporte *tout* le travail non committé, outils de mesure compris. Le 13 sept. 2026 il avait remisé la conversion de `bench` de perft vers la recherche, et la mesure « avant » comptait des nœuds de perft |
+| `git fetch --prune`, jamais `git fetch <remote> <branche>` | une référence de suivi survit à la suppression de sa branche après fusion et désigne le commit d'*avant* |
+| confrontation de la résolution locale à `git ls-remote`, et **refus** de construire si elles diffèrent | une référence locale figée en arrière dans le clone : binaire neuf, code juste, **arbre faux** |
+| `git worktree add --detach`, jamais `git stash` | le stash emporte *tout* le travail non committé, outils de mesure compris, et fait mesurer autre chose que ce qu'on croit |
 | `cp` et non `cp -p`, et l'empreinte md5 imprimée | les dates préservées font juger les sources à jour par cargo, qui ne recompile rien : on mesure deux fois le même binaire et le rapport rend exactement 1,00 |
 
 Nommer une branche veut dire « ce qu'elle porte **maintenant** ». Pour
@@ -65,16 +62,11 @@ explicite, et ça ne déclenche pas le contrôle de fraîcheur.
 nu et un clone dont la branche locale reste en arrière — et tourne dans
 `tools/verify.sh` pour une demi-seconde, sans compiler quoi que ce soit. Sans
 lui, la branche qui compte ne s'exécuterait qu'en cas de catastrophe, donc
-jamais en conditions vérifiables : c'est l'argument de
-`.github/mutation-verdict-test.sh`, qui avait trouvé une faute à sa première
-exécution. Éprouvé en le faisant échouer : `if false` à la place du contrôle de
-fraîcheur fait tomber deux cas.
+jamais en conditions vérifiables.
 
-`sprt.sh` et `timing.sh` refusent désormais deux binaires d'empreinte
-identique. Le contrôle existait sur le runner depuis la création de
-`match.yml` et manquait en local ; c'était la même faute, un cran plus haut —
-*un garde-fou qui ne couvre qu'une copie ne garde rien* vaut pour les
-garde-fous comme pour les chiffres.
+`sprt.sh` et `timing.sh` refusent deux binaires d'empreinte identique, comme
+`match.yml` sur le runner : *un garde-fou qui ne couvre qu'une copie ne garde
+rien*.
 
 Le test séquentiel s'arrête dès que les données suffisent et rend
 `H1 was accepted` (le changement est bon) ou `H0 was accepted` (il ne l'est
@@ -231,38 +223,12 @@ ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 | `see_check.rs` | confronte l'échange statique à un oracle par force brute. Il a trouvé un **bug du manuel** au premier passage — 27 valeurs fausses sur 771 |
 | `attack_dump.rs` | confronte la géométrie d'attaque de `see::least_valuable_attacker` à `python-chess`, case par case |
 
-> **Ce répertoire était le trou d'un garde-fou, et il l'a laissé passer deux
-> fois.** `outillage_documente.rs` balayait `tools/` pour les `.sh`
-> **uniquement**, donc il n'a jamais regardé les binaires. Le 22 sept. 2026,
-> trois sondes jetables y ont été déposées : **cargo découvre `src/bin/*.rs`
-> tout seul**, donc elles ont été compilées sans être ni déclarées dans
-> `tools/Cargo.toml` ni documentées — et l'arbre a cessé de compiler dès que
-> l'instrumentation qu'elles importaient a été retirée. En bouchant le trou on
-> découvre que **cinq des six binaires n'étaient nommés nulle part**, dont
-> `attack_dump.rs` depuis sa création.
->
-> Même famille que Q4, où `see.rs` est resté cinq jours hors du cliquet de
-> mutation : *le garde-fou était correct et gardait le mauvais ensemble*. La
-> question n'est pas « ce dispositif marche-t-il ? » mais **« quelle est sa
-> source de vérité, et est-ce la bonne ? »** — ici le répertoire que cargo
-> compile, jamais la liste qu'on a en tête.
->
-> **`attack_dump.rs` et `see_check.rs` vivaient par autodécouverte** jusqu'au
-> 23 sept. 2026, contrairement aux quatre autres. Ils sont désormais déclarés,
-> et surtout `tools/Cargo.toml` porte **`autobins = false`** : un fichier
-> déposé dans `src/bin/` **n'est plus compilé tant qu'il n'a pas sa section
-> `[[bin]]`**. Déposer une sonde redevient un acte délibéré, et l'oublier ne
-> coûte plus un arbre cassé — ce qui est précisément arrivé le 22 sept.
->
-> Éprouvé dans les deux sens : un fichier délibérément non compilable laisse
-> le build vert tant qu'il n'est pas déclaré, et rend deux erreurs dès qu'il
-> l'est. Le second sens compte autant que le premier — un mécanisme qui avale
-> tout passerait le premier test sans rien garder.
->
-> **Les deux dispositifs sont complémentaires, aucun ne remplace l'autre** :
-> `autobins = false` empêche la compilation accidentelle,
-> `engine/tests/outillage_documente.rs` empêche le binaire qui dort sans que
-> personne sache ce qu'il fait.
+**`tools/Cargo.toml` porte `autobins = false`** : un fichier déposé dans
+`src/bin/` n'est compilé qu'avec sa section `[[bin]]`, et
+`engine/tests/outillage_documente.rs` exige que chaque binaire soit nommé
+dans une doc. Le premier empêche la compilation accidentelle d'une sonde, le
+second le binaire qui dort sans que personne sache ce qu'il fait ; aucun ne
+remplace l'autre. Le premier a été éprouvé dans les deux sens.
 
 ## Vérifier que l'arbitre est fiable
 
@@ -340,10 +306,10 @@ tools/binaires.sh --empreinte <binaire>
 ```
 
 Construit `shallowred` (`x86-64`, le jeu de base) et `shallowred-avx2`
-(`x86-64-v3`) — la décision de Théo du 6 oct. 2026, n° 10 — sur un
+(`x86-64-v3`) — ADR-0031 — sur un
 processeur x86-64 : Linux, Windows sous Git Bash (`.exe`), Mac Intel ; sur un
-processeur ARM 64 bits, Mac Apple Silicon ou Linux ARM, le seul binaire natif
-— Théo, 7 oct. 2026 : « *tu peux faire pour windows et macOS* ». **Deux
+processeur ARM 64 bits, Mac Apple Silicon ou Linux ARM, le seul binaire
+natif. **Deux
 binaires du même code ne sont le même moteur que s'ils cherchent le même
 arbre** : le code est entier, donc ils le cherchent aujourd'hui, mais un
 calcul flottant entré demain dans la recherche laisserait au compilateur le
@@ -363,10 +329,6 @@ système »). Un binaire qui chercherait un autre arbre sous Windows serait un
 autre moteur sous le même nom, et les matchs, qui ne jouent que sous Linux,
 ne le verraient pas. Sur `main`, les binaires des quatre systèmes partent en
 artefact — en archive tar hors Windows, qui garde le droit d'exécution.
-**Éprouvé dès la première exécution, le 7 oct.** (run 37584441814) : le banc
-à 90 646 et les six positions au réseau, nœuds et coup, identiques sous Linux,
-Windows, Mac Intel et Apple Silicon ; l'AVX2 lue par `/proc/cpuinfo` sous Git
-Bash et par `sysctl` sur Mac Intel, et comparée sur les deux.
 
 Sa branche précieuse, le refus, est éprouvée par `tools/binaires-test.sh` sur
 des moteurs fabriqués — dans `verify.sh` et la CI ; une faute injectée — la
@@ -375,8 +337,8 @@ comprise.
 
 ## Le livre d'ouvertures
 
-`book.epd` — **15 000 positions depuis le 6 oct. 2026** (n° 11, décidé par
-Théo le même jour), 8 demi-coups, écart d'évaluation ≤ 80 centièmes de pion
+`book.epd` — **15 000 positions**, la décision de Théo du 6 oct. 2026 (n° 11,
+J-2026-10-06-F), 8 demi-coups, écart d'évaluation ≤ 80 centièmes de pion
 au filtre de l'évaluation faite main. Régénérable au code de `ab44f2a` :
 
 ```sh
@@ -391,11 +353,10 @@ tire 1 500 distinctes, deux jobs n'en partagent que 150 en moyenne, et la
 variance reste sous ~× 1,15 jusqu'à soixante jobs — la condition de « plus de
 runners ».
 
-**« Même graine, même livre » ne tient qu'à évaluation égale** — vérifié le
-6 oct. 2026 : le livre de 500 positions du 13 sept. n'est plus reproductible,
-`bookgen 500 8 80` n'en retrouve que 439 sur 500, parce que l'évaluation faite
-main qui filtre a changé depuis. Il se régénère au code de `4695941`. Un livre
-se cite donc avec le commit qui l'a tiré, pas seulement avec sa graine.
+**« Même graine, même livre » ne tient qu'à évaluation égale** : l'évaluation
+faite main qui filtre change avec le code, et un livre ne se régénère qu'au
+commit qui l'a tiré (celui de 500 positions du 13 sept., à `4695941`). Un
+livre se cite donc avec ce commit, pas seulement avec sa graine.
 
 Il est **indispensable**, pas décoratif : ShallowRed est déterministe, donc
 sans livre toutes les parties d'un match seraient la même partie et
@@ -434,23 +395,10 @@ supplémentaire, puis avec la dérivation, chacun protégé par `black_box`, et
 l'on lit le ralentissement. C'est plus honnête qu'une boucle serrée, dont la
 localité de cache n'a rien à voir avec celle d'une recherche.
 
-Résultat du 14 septembre 2026, rapporté au coût d'un vrai nœud de recherche
-(316,8 ns, mesuré par `bench 7` sur la même machine) :
-
-| | coût marginal | part d'un nœud |
-|---|---|---|
-| copy-make | 22,8 ns | **7,2 %** |
-| dérivation du delta NNUE | 9,0 ns | **2,8 %** |
-
-283 677 coups vérifiés, dont 3 255 roques, 48 prises en passant et 13 628
-promotions. Aucun écart. **Conclusion : ni le copy-make ni `cozy-chess` ne
-plafonnent le projet du côté de NNUE.**
-
-Deux pièges rencontrés en écrivant cet outil, et qui valent d'être retenus.
-Rapporter le coût au parcours d'arbre nu plutôt qu'à un vrai nœud de recherche
-donnait +71 % et +28 % — des chiffres vrais répondant à une autre question.
-Et la première version allouait un `Vec` par nœud : la dérivation semblait
-coûter 25,8 ns au lieu de 9,0, soit 2,8 fois son prix réel.
+Sa mesure du 14 sept. 2026, rapportée à un vrai nœud de recherche :
+copy-make 7,2 % d'un nœud, dérivation du delta NNUE 2,8 %, sur 283 677 coups
+vérifiés sans un écart — ni le copy-make ni `cozy-chess` ne plafonnent le
+projet du côté de NNUE (ADR-0005, ADR-0008).
 
 ## Générer les données NNUE — `nnue-datagen.yml`
 
@@ -625,11 +573,6 @@ debug et release, les critères d'acceptation et le bench. `--rapide` s'arrête
 aux trois premiers. Il n'interrompt pas à la première faute : il les exécute
 toutes et les rapporte ensemble.
 
-> **Pourquoi** — le 14 sept. 2026, un test échouait en debug et personne ne
-> l'a vu : la sortie de `cargo test` avait été filtrée sur « test result » puis
-> sommée. La ligne disait `FAILED`, la somme disait 81. Lire une sortie de
-> test, c'est se donner une occasion de la lire de travers.
-
 `tools/timing.sh <candidat> <référence> [paires]` compare deux **vitesses**.
 Il impose les trois choses qu'on oublie :
 
@@ -638,11 +581,6 @@ Il impose les trois choses qu'on oublie :
 2. il mesure à la **profondeur 10**, jamais 7, où le bruit domine ;
 3. il **refuse de conclure sous vingt paires** et rend un **test des signes**,
    au lieu d'une comparaison de médianes à l'œil.
-
-> **Pourquoi** — deux fautes, les deux évitables. Un balayage de tailles de
-> cache lu à la profondeur 7, dont les chiffres non monotones étaient du bruit
-> pur. Et une conclusion tirée de sept exécutions : 5 gagnantes sur 7 et
-> −1,2 %. Le même changement, sur 22 paires, donnait 19 sur 22 et −2,1 %.
 
 **Lequel employer.** `sprt.sh` juge un changement de **décision** — la
 recherche explore un autre arbre. `timing.sh` juge une **optimisation pure** —
@@ -769,10 +707,8 @@ nouvellement non couvert.
 
 Le verdict est un script, `.github/mutation-verdict.sh`, et non des lignes de
 YAML : un script ne s'exécutant qu'une fois par semaine sur un runner ne serait
-jamais vérifié. `.github/mutation-verdict-test.sh` l'éprouve sur huit cas
-fabriqués, et tourne dans `tools/verify.sh` comme dans la CI. Il a trouvé une
-faute dès sa première exécution — `attendu[nom]` dans un `$(( ))` évalue la clé
-en arithmétique et rend 0, donc l'écart affiché était toujours faux.
+jamais vérifié. `.github/mutation-verdict-test.sh` l'éprouve sur des cas
+fabriqués, et tourne dans `tools/verify.sh` comme dans la CI.
 
 **Ce que le balayage ne mesure pas** : la force de jeu. Un survivant portant
 sur une valeur d'évaluation, une marge d'élagage ou l'ordre des coups n'est pas
@@ -804,89 +740,44 @@ un test.
 
 ## `tools/pieges-fermes.md` — les pièges qu'un code de sortie tient désormais
 
-`CLAUDE.md` est injecté en entier à chaque session **et après chaque
-compactage**. Sa section *Pièges de mesure* en faisait 510 lignes sur 844 —
-et la documentation de Claude Code est explicite : *« longer files consume more
-context and reduce adherence »*, avec une cible sous 200 lignes par fichier.
-
-Les pièges qui en sont sortis l'ont été sur un critère unique, et c'est celui
-du projet : **une règle écrite se contourne, un code de sortie non.** Un piège
-que `ref.sh`, `timing.sh`, `sprt.sh`, `mutants.sh`, `bench_reference.rs`,
-`rustines_attic.rs`, le banc à la profondeur 6 ou le plafond calculé de
-`match.yml` rendent *inexprimable* n'a pas besoin d'être relu à chaque
-session ; il a besoin d'être trouvable le jour où le dispositif se déclenche.
-
-**Chacun est sorti ENTIER**, jamais coupé en deux : une règle d'un côté et sa
-preuve de l'autre, ce sont deux copies qui dérivent. Ceux qui restent dans
-`CLAUDE.md` sont ceux que **seul le jugement protège** — la cadence qui possède
-le verdict, le dénominateur, la ressource totale confondue avec l'allocation
-par unité — et ce sont les plus chers.
-
+L'archive des pièges qu'un dispositif rend inexprimables, chacun entier avec
+sa preuve ; son en-tête dit son critère d'entrée et sa condition de sortie.
 `engine/tests/pieges_fermes.rs` vérifie que chaque piège archivé nomme un
-dispositif **qui existe**, et que `CLAUDE.md` nomme toujours l'archive. Sans
-lui, la condition de sortie que le fichier s'écrit à lui-même — *si un de ces
-dispositifs disparaît, son piège revient* — ne serait qu'une affirmation de
-plus sur le code, c'est-à-dire la faute exacte de la table de l'attic.
-
+dispositif qui existe, et que `CLAUDE.md` nomme toujours l'archive.
 
 ## `tools/etat.sh` — l'état calculé, à lancer à la main
 
-`CLAUDE.md` est réinjecté après chaque compactage ; **le carnet de bord, non.**
-Le document qui portait « où on en est » manquait donc au moment précis où la
-mémoire venait d'être perdue. Le 22 sept. 2026, un engagement pris en prose —
-*« j'attaque B9, je te reviens avec son coût monothread »* — a disparu
-exactement comme ça : ni fiche, ni journal, ni ce fichier ne le portaient.
-Du 22 sept. au 13 nov. 2026, le hook `SessionStart` lançait donc `etat.sh`,
-et sa sortie entrait dans le contexte du modèle au démarrage, à la reprise,
-après `/clear` et après chaque compactage.
-
-**Depuis le 13 nov., c'est l'état du socle qui s'imprime à ces moments-là**
-(`python3 .socle/socle state`) : la branche, ce qui n'est pas fusionné, et
-les branches à faire supprimer, hors celles que la politique garde.
-Théo a validé de ne garder que lui (D-0009) : la feuille de route, que le
-backlog de la mémoire remplace, les renvois vers ce fichier et l'adresse du
-carnet, qui n'étaient que dans `etat.sh`, sont partis avec. Le script reste,
-comme outil à lancer à la main.
-
-**Tout ce qu'il imprime est dérivé de git**, donc rien ne peut y vieillir :
-branche, arbre propre ou non, `git log origin/main..HEAD`, et le nombre de
-fichiers `.rs` contre `.md` modifiés depuis `main`. Ce dernier est le **signal
-de documentation** : il ne prescrit rien, il constate — *« 6 fichiers de code
-et 0 de documentation » est un fait, « il faudrait documenter » est une
-consigne qu'on oublie.*
-
-**Et les branches distantes à faire supprimer par Théo, depuis le 5 oct.
-2026.** Une branche que `main` contient en entier se supprime sans rien
-perdre, mais pas d'ici : le jeton de session ne peut pas supprimer une
-référence distante (vérifié le 22 sept., section D5). Théo a demandé qu'on
-les lui signale à chaque point de récap, comme toute action humaine
-nécessaire ; `etat.sh` les calcule sur les références du dernier `fetch` —
-jamais `main`, ni la branche de travail, ni celles que la politique garde
-(`[human] keep_branches` de `.socle/policy.toml` : un autre agent, les
-réseaux). Il lit les motifs dans la politique et les compare par la
-fonction du socle, depuis le 17 nov. 2026 ; avant, il n'excluait que
-`codex/…` (B-0036). La ligne se tait quand il n'y a rien à supprimer :
-c'est pourquoi `tools/etat-test.sh` l'éprouve sur des dépôts fabriqués,
-dans `verify.sh`, avec leur propre politique : la détection, chaque
-exclusion, pour chaque forme de motif un témoin voisin qui doit rester
-signalé, une politique vide qui doit tout proposer, et un filtre en échec
-qui doit le dire avec sa cause.
+Un état **dérivé de git**, donc rien n'y vieillit : branche, arbre propre ou
+non, `git log origin/main..HEAD`, et le nombre de fichiers `.rs` contre `.md`
+modifiés depuis `main`, le **signal de documentation**, qui constate sans
+rien prescrire. Et les branches distantes que `main` contient en entier, à
+faire supprimer par Théo, le jeton de session ne pouvant pas supprimer une
+référence distante (ADR-0033) : jamais `main`, ni la branche de travail, ni
+celles que la politique garde (`[human] keep_branches` de
+`.socle/policy.toml`, comparées par la fonction du socle). La ligne se tait
+quand il n'y a rien à supprimer : `tools/etat-test.sh` l'éprouve sur des
+dépôts fabriqués, dans `verify.sh`, avec leur propre politique — la
+détection, chaque exclusion, un témoin voisin par forme de motif, une
+politique vide qui doit tout proposer, un filtre en échec qui doit dire sa
+cause. Au démarrage, c'est l'état du socle qui s'imprime depuis le 13 nov.
+2026 (D-0009) : ce script se lance à la main.
 
 `tools/verify.sh` vérifie que le script **rend un état non vide** : un script
 devenu muet ne se verrait pas, on croirait simplement qu'il n'y a rien à dire.
 
 ## `tools/carnet-vers-md.py` — le carnet de bord converti en Markdown
 
-Un outil de l'adoption du socle, écrit le 12 nov. 2026 : il sert le temps
-de déplacer le carnet de bord vers la mémoire, puis s'en va. Le carnet est
+Un outil de l'adoption du socle, qui a servi à déplacer le carnet de bord
+vers la mémoire ; le déplacement est fait, et son retrait est un sujet du
+backlog (B-0079). Le carnet est
 un artefact claude.ai, une page HTML ; `python3 -I tools/carnet-vers-md.py
 <carnet.html> <dossier de sortie>` en rend le journal au format du journal
 de la mémoire, un fichier par mois coupé au budget, les entrées les plus
 anciennes d'abord et leurs identifiants gardés, chaque autre rubrique
 dans son fichier, et de même ce que la page porte hors de ses rubriques :
 son bandeau, sa navigation, son pied. Il n'écrit que dans le dossier de
-sortie, jamais dans la mémoire : poser ses fichiers est le travail des
-lots suivants.
+sortie, jamais dans la mémoire : poser ses fichiers était le travail des
+lots du déplacement.
 
 Ce qui le tient : un contrôle de fidélité qu'il lance lui-même à chaque
 conversion, et qui lui fait rendre le code 1. Tout le texte que la page
@@ -896,13 +787,8 @@ tous, dans l'ordre, une fois mis à part ce que la conversion ajoute — la
 cible d'un lien, le numéro d'un item, l'identifiant d'une entrée. Il ne
 voit ni la ponctuation ni la mise en forme.
 
-Pourquoi il est dans le script : le premier contrôle était un compte de
-mots lancé à la main, qui ne regardait que les rubriques. Il avait bien
-montré un tableau perdu dans une définition, 74 mots ; il ne pouvait pas
-voir que le bandeau de la page, 6 % de son texte, ne sortait dans aucun
-fichier, et c'est une revue qui l'a dit. Le contrôle d'aujourd'hui a été
-éprouvé le 12 nov. 2026 en plantant des pertes dans des copies du script :
-deux passaient d'abord à tort, et l'ont fait reprendre deux fois.
+Il est dans le script parce qu'un compte de mots lancé à la main ne voyait
+que les rubriques, et pas le texte hors d'elles.
 
 ## Paralléliser les matchs — ce qui marche et ce qui ne marche pas
 
@@ -953,17 +839,13 @@ moyenner sur une plage de machines ressemble davantage à « la force générale
 qu'un point unique, qui est la cible déclarée du projet — mais **ça doit être
 dit, pas subi**. `mettre-en-commun.sh` compare les matchs deux à deux par un
 test en `z` et **refuse de conclure en silence** quand le plus grand écart
-est trop rare sous un seul effet. <s>Au-delà de `z = 2`.</s> **Seuil
-recalibré le 5 oct. 2026** : `z = 2` fixe valait un refus sur vingt-deux à
-DEUX matchs, mais à quatre il y a six paires, et le plus grand de six `z`
-dépasse 2 près d'une fois sur cinq quand tous mesurent le même effet — le
-seuil a refusé C34, C36 et C38 ce jour-là, à tort, et un avertissement qui
-crie au loup cesse d'être lu. Le script rend désormais la probabilité du
-plus grand écart sous l'étendue studentisée à `k` matchs, et refuse sous
-4,55 %, le niveau qu'avait `z > 2` à deux matchs : **à deux matchs, la
-décision est celle d'avant** ; à quatre, C33 (`z = 3,02`, p = 0,013) reste
-refusé. Calcul confronté à une intégrale et un tirage indépendants du
-script (`tools/mettre-en-commun-test.sh`).
+est trop rare sous un seul effet : il rend la probabilité du plus grand
+écart sous l'étendue studentisée à `k` matchs, et refuse sous 4,55 %, le
+niveau de `z > 2` à deux matchs. Le seuil d'avant, `z > 2` fixe, refusait à
+tort, à quatre matchs, près d'une fois sur cinq sous un seul effet : un
+avertissement qui crie au loup cesse d'être lu. Calcul confronté à une
+intégrale et un tirage indépendants du script
+(`tools/mettre-en-commun-test.sh`).
 
 **Et les graines doivent différer — ce n'est plus une règle à retenir.**
 Mêmes binaires plus même graine donnent les mêmes parties coup pour coup :
@@ -1006,19 +888,17 @@ lue. Le test tourne dans `tools/verify.sh`.
 
 ## La concurrence d'un match se DÉDUIT des cœurs qu'occupe une partie
 
-Question de Théo, 23 sept. 2026 — *les cas où l'on ne peut plus jouer à la
-concurrence maximale*. La règle « jamais deux matchs sur une même machine »
-en est le cas particulier ; la règle générale est une inégalité, et deux
-chantiers déjà dans la file la franchissent.
+La règle « jamais deux matchs sur une même machine » en est le cas
+particulier ; la règle générale est une inégalité.
 
 > **cœurs occupés par une partie × concurrence ≤ cœurs du runner − 1**
 >
 > Le cœur de réserve est pour l'arbitre et le système : un moteur qui attend
 > un cœur perd du temps de pendule, et le perd de façon asymétrique.
 
-| ce que font les moteurs | cœurs par partie | concurrence sur 4 processeurs logiques — **2 cœurs physiques**, mesuré le 23 sept. |
+| ce que font les moteurs | cœurs par partie | concurrence sur 4 processeurs logiques — **2 cœurs physiques** |
 |---|---|---|
-| monofil, sans ponder — **tout ce qui a été mesuré jusqu'ici** | 1 (un seul moteur réfléchit à la fois) | **3** |
+| monofil, sans ponder | 1 (un seul moteur réfléchit à la fois) | **3** |
 | un camp pondère (mesure du ponder) | 2 | **1** |
 | Lazy SMP à `T` fils, sans ponder (B6) | `T` — le plus grand des deux camps | `⌊3 / T⌋` : **1** dès `T = 2` |
 | Lazy SMP à `T` fils ET ponder | `T` + `T` | **impossible** à `T ≥ 2` sur 4 cœurs |
@@ -1029,17 +909,12 @@ candidat** (biais vers l'hypothèse), Lazy SMP en vole **au candidat
 lui-même**, dont les fils se disputent les cœurs (biais contre). *Dans les
 deux cas le verdict ne vaut rien.*
 
-**Ce qui la rend aujourd'hui inexprimable, et ce qui ne le fait pas.**
-<s>`match.yml` calcule `concurrence = nproc − 1` et ne connaît ni fils ni
-ponder.</s> **Depuis le 23 sept., `match.yml` dérive la concurrence de
-l'inégalité** — deux cœurs par partie dès que quelqu'un pondère — et refuse de
-lancer quand elle ne tient pas. <s>**Les fils, non** : le jour où un match passe
-`option.Threads`, le nombre de cœurs par partie devient `T` et la même ligne
-doit le savoir. C'est une étape de B6, écrite dans sa liste, pas une
-précaution à retenir.</s> **Les fils aussi depuis le 24 sept.** — première étape
-de B6. Deux entrées, `fils_candidat` et `fils_reference` (1 par défaut) ; la
-partie occupe le plus gros des deux camps sans ponder, leur somme avec ; et
-deux refus de plus, chacun pour un zéro qui se lirait comme un verdict :
+**`match.yml` dérive la concurrence de l'inégalité**, et refuse de lancer
+quand elle ne tient pas : deux cœurs par partie dès que quelqu'un pondère ;
+pour les fils, deux entrées, `fils_candidat` et `fils_reference` (1 par
+défaut), la partie occupant le plus gros des deux camps sans ponder, leur
+somme avec. Et deux refus de plus, chacun pour un zéro qui se lirait comme
+un verdict :
 
 - **un moteur qui ne DÉCLARE pas `Threads`** en réponse à `uci`. Le protocole
   veut qu'une option inconnue soit ignorée en silence — ce moteur le fait —,
@@ -1054,13 +929,10 @@ deux refus de plus, chacun pour un zéro qui se lirait comme un verdict :
   deux fils sans ponder passe, deux fils plus un camp qui pondère non.
 
 `option.Threads` passe **par moteur, jamais dans `-each`**, qui écraserait les
-valeurs des moteurs comme il le fait de `tc=`. **Douze entrées** : GitHub en
-admet vingt-cinq par `workflow_dispatch` depuis le 4 déc. 2025 — vérifié à la
-source (changelog GitHub) avant d'ajouter la onzième, et au contact : la
-première sonde à deux fils est partie avec les douze. Éprouvé en rejouant les étapes
-en local : les trois refus, et un moteur témoin qui déclare `Threads` et
-journalise ce qu'il reçoit — `setoption name Threads value 2` au seul
-candidat, une partie à la fois, sous les deux arbitres.
+valeurs des moteurs comme il le fait de `tc=`. `match.yml` reste
+sous la limite de vingt-cinq entrées de `workflow_dispatch`. Ses trois refus sont
+éprouvés en rejouant les étapes en local, avec un moteur témoin qui déclare
+`Threads` et journalise ce qu'il reçoit, sous les deux arbitres.
 
 ## Les anciens renvois — au journal
 

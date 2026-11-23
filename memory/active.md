@@ -14,7 +14,9 @@ pourtant dit de TOUT faire en ce qui concerne la transition) »
 
 ## Prochaines étapes
 
-1. B-0078, puis sa relecture sans contexte.
+1. B-0078 : les procédures et les faits des 25 points de
+   J-2026-11-23-X (le skill « lancer un match » d'abord) ; les faits
+   attendent la réponse de Théo sur le plafond de `memory/canonical.md`.
 2. Rappeler à Théo, à chaque récap, la copie sur disque des données qui
    servent encore (B-0077, avant le 18 janv. 2027).
 3. La mise à jour du socle, quand Théo la dira prête (B-0044, D-0024) ;
