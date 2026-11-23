@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0023-relever-le-plafond-de-la-memoire-canonique-de-16-0.md, dont l'empreinte suit.
+reponse = "refuser"
+texte = "Critère de Théo appliqué par l'agent (J-2026-11-23-O) : cinq faits ne sont pas utiles à cet endroit, donc le plafond reste à 16 000 octets et canonical.md se réduit ; les deux mesures y entrent à la place des cinq faits archivés."
+par = "Théo"
+date = "2026-11-23"
+canal = "conversation"
+citation = "Canonical ne contient que des choses utiles à cet endroit ? Si oui allonger le seuil, si non, réduire canonical pour faire de la place"
+empreinte = "sha256:158352cd70041e03a4ee801d12e3937535158575cd435d425f73bb79aae4e4c8"
