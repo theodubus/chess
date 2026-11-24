@@ -56,8 +56,9 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   F-0009 et F-0010 (ADR-0032).
 - **Ce qui revient à Théo se dit à chaque point de récap**, en particulier
   les branches distantes à supprimer, que le jeton de session ne peut pas
-  supprimer (ADR-0033), ni pousser une étiquette (403, J-2026-09-22-E) ; l'état du socle les calcule, hors celles que la
-  politique garde.
+  supprimer (ADR-0033) et que l'état du socle calcule, hors celles que la
+  politique garde ; ce jeton ne peut pas non plus pousser une étiquette
+  (403, J-2026-09-22-E).
 - **Le socle est installé** (J-2026-11-11-B). Là où
   sa section, en fin de fichier, contredit le reste de ce fichier, ce que
   Théo a tranché ce jour-là vaut (D-0002) : **l'agent fusionne lui-même ses

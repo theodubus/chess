@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0078 — Finir la transition : plus aucune information critique ni procédure dans un README ou un document d'outil
 
-> statut : ouvert · origine : J-2026-11-23-R · priorité : haute · lu : backlog@f779427f
+> statut : fait · origine : J-2026-11-23-R · priorité : haute · ref : J-2026-11-24-H · lu : backlog@f779427f
 
 Théo, le 23 nov. 2026 : « Si c'est des infos critiques / protocoles clés
 perdus dans de vulgaires readme ou trucs du genre alors c'est que tu n'as
@@ -27,4 +27,4 @@ pièges) restent verts.
 
 - [x] chaque document du périmètre est lu en entier, et chaque passage qui n'y est pas à sa place est rangé selon sa nature, l'histoire au journal tel quel (l'attic et `CLAUDE.md`, J-2026-11-23-V ; les 25 points de J-2026-11-23-X, J-2026-11-23-Z, J-2026-11-24-B et J-2026-11-24-D ; les sept résidus du balayage final, J-2026-11-24-H)
 - [x] `tools/attic/README.md` ne garde que son registre et ce qui décrit le dossier ; ce dont une décision dépend (une condition de réouverture, une règle) est là où le travail le lit (J-2026-11-23-S, J-2026-11-23-W, les skills `rendre-un-verdict` et `passer-a-l-ecran`)
-- [ ] un relecteur sans contexte, à qui l'on demande de chercher une procédure ou une information critique restée dans un de ces documents, n'en trouve aucune (premier passage : sept résidus, traités, J-2026-11-24-H ; reste un second passage sur l'arbre corrigé)
+- [x] un relecteur sans contexte, à qui l'on demande de chercher une procédure ou une information critique restée dans un de ces documents, n'en trouve aucune (premier passage : sept résidus, traités ; second passage : aucune, cinq renvois périmés corrigés ; J-2026-11-24-H)

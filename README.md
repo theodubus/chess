@@ -88,7 +88,7 @@ sortes de Mac (ci-dessous).
 
 Il cherche **le même arbre** que celui de base — le code est entier, le
 compilateur ne change que la façon de calculer —, **plus vite** avec le
-réseau qui joue (ADR-0031 ; la mesure : J-2026-11-18-D). S'il s'arrête au démarrage, la machine n'a pas l'AVX2 :
+réseau qui joue (ADR-0031 ; les mesures : J-2026-11-18-BD, J-2026-11-18-BQ). S'il s'arrête au démarrage, la machine n'a pas l'AVX2 :
 prendre celui de base. **Les matchs du dépôt se jouent avec le binaire
 AVX2** ; leurs deux camps sont toujours compilés de la même façon, donc ce
 choix ne fausse aucun verdict.
@@ -119,7 +119,7 @@ $env:RUSTFLAGS = "-C target-cpu=x86-64-v3"; cargo build --release    # PowerShel
 
 `x86-64-v3` plutôt que `native` : `native` prend tout ce qu'a le processeur
 qui compile, l'AVX-512 compris là où il existe, et l'AVX-512 n'a rien
-rapporté ici (la mesure : J-2026-11-18-D). `x86-64-v3` est exactement le binaire que mesurent les matchs
+rapporté ici, au réseau de 128 unités (la mesure : J-2026-11-18-BD ; à remesurer au réseau plus large, B-0070). `x86-64-v3` est exactement le binaire que mesurent les matchs
 du dépôt.
 
 **La CI construit les binaires des quatre systèmes** — Linux, Windows, Mac
@@ -226,8 +226,7 @@ License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
 converties au format `.binpack` par des contributeurs de Stockfish (voir
 `tools/README.md`, « Entraîner un réseau ») — sont N2L et N4L, embarqués du 2
 au 13 oct. 2026, et L0, N6r4la et N6r4lb, qui ne l'ont jamais été. Les autres
-réseaux embarqués, de N4 au réseau qui joue, n'ont appris que sur les
-parties du moteur.
+réseaux embarqués n'ont appris que sur les parties du moteur.
 
 ## Licence
 

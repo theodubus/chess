@@ -103,5 +103,5 @@ récits.
   la seule source des listes et des comptes `--attendu` des séances.
 - **Au journal**, une entrée par vague ou par génération : les attendus,
   les runs, le relevé, ce qui en sort.
-- La génération close, son étiqueteur, son volume et son expiration vont
-  là où B-0026 tient les générations qui servent encore.
+- La génération close : son expiration va à F-0005 ; si elle sert encore,
+  elle entre dans la liste de copie de B-0077, avec son volume.

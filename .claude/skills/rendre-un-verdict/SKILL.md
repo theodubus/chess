@@ -102,9 +102,9 @@ Puis, dans l'ordre :
 ## 4. Inscrire le verdict, fusionné ou non
 
 - Au journal, une entrée datée : le critère, les jobs avec leurs runs, le
-  verdict avec effectif, bornes et cadence, le livre par son commit et non
-  sa seule graine (un livre ne se régénère qu'au commit qui l'a tiré), et
-  ce qu'il décide.
+  verdict avec effectif, bornes et cadence, le livre par son fichier et le
+  commit qui l'a tiré (il ne se régénère qu'à ce commit, et la graine du
+  match ne fait que le permuter), et ce qu'il décide.
 - Un réglage mesuré met à jour sa ligne des réglages ouverts (F-0009,
   F-0010), ou en ouvre une : sa valeur, la mesure qui la borne, sa marge,
   son prochain test. Aucun réglage n'est résolu (ADR-0032).

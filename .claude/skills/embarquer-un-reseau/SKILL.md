@@ -61,9 +61,9 @@ systèmes. La version web se republie seule (`pages.yml`).
 - **Les faits** : F-0007 (le réseau qui joue, ses données, son verdict),
   F-0008 si le facteur change ou se confirme ; une ligne de F-0009 si le
   réseau tranche un réglage de l'entraînement.
-- **Le `README.md`** : ses « Remerciements » nomment chaque réseau qui a
-  appris sur les données de Leela (ADR-0030) ; un tel réseau, embarqué,
-  s'y ajoute, et la phrase sur les autres se récrit.
+- **Le `README.md`** : ses « Remerciements » nomment chaque réseau de
+  `reseaux/` qui a appris sur les données de Leela, embarqué ou non
+  (ADR-0030) ; un tel réseau embarqué y dit depuis quand.
 - **Le balayage de mutation après la fusion** (`mutation.yml`,
   `workflow_dispatch`), sa prédiction écrite avant : chaque fichier à son
   plafond quand seul le réseau a changé, les tests de recherche et le banc
