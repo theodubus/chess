@@ -228,3 +228,28 @@ plus grand.
 à 350 ; 218 le 10 nov., 264 le 17. Il monte avec le fichier, sans alerte :
 un job coupé rend un verdict illisible. Au-delà de ~300, le découper par
 `cargo mutants --shard` (B-0075, que Théo applique).
+
+## F-0020 — La machine qui entraîne : celle de Théo, RTX 3050, CUDA plafonné à 13.2
+
+> statut : mesuré · preuve : J-2026-09-28-B, J-2026-10-22-B, fichier:tools/seance-c3.sh · source : `tools/README.md`, « Entraîner un réseau », jusqu'au 24 nov. 2026 · date : 2026-09-28
+
+Ubuntu, une RTX 3050 pour portable de 4 Go, pilote 595.91.07 : CUDA 13.2
+au plus, que `nvidia-smi` rend. Un toolkit 13.4 était installé ; le 13.2,
+posé à côté, a suffi. Bullet compile ses noyaux en PTX, que le pilote
+recompile : qu'un pilote refuse un PTX plus récent que lui est la règle de
+CUDA, non éprouvée ici. Un portable : le chargeur peut être débranché, et
+le blocage de veille d'une séance ne couvre pas le capot rabattu, que
+logind ignore par défaut (`LidSwitchIgnoreInhibited=yes`, lu, non
+éprouvé). Tout sous `~/shallowred/` (consigne de Théo, 22 oct.) :
+`chess/`, `donnees/<génération>`, `seances/<nom>`.
+
+## F-0021 — La dispersion du rejeu : 4,7 % par tour apparié ; cent vingt tours séparent ~1 %
+
+> statut : mesuré · preuve : J-2026-10-20-D, J-2026-10-20-E · source : `tools/README.md`, « Vérifier, et mesurer un temps », jusqu'au 24 nov. 2026 · date : 2026-10-20
+
+Au rejeu (`tools/sonde-inference/rejeu.py`), dans le conteneur de
+session, l'écart de temps entre deux binaires au même arbre varie de
+4,7 % d'un tour apparié à l'autre : vingt tours ne résolvent que ~3 %.
+Cent vingt rendent ± 0,9 à 1,0 % : le produit en AVX2, −5,09 %, IC −6,07
+à −4,11 ; le cache des recalculs, +0,46 %, IC −0,42 à +1,34. Une autre
+machine ou un autre réseau se remesure.
