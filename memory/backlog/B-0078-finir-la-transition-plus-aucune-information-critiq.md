@@ -25,6 +25,6 @@ pièges) restent verts.
 
 ## Fait quand
 
-- [ ] chaque document du périmètre est lu en entier, et chaque passage qui n'y est pas à sa place est rangé selon sa nature, l'histoire au journal tel quel (fait pour l'attic et `CLAUDE.md`, J-2026-11-23-V ; des 25 points de J-2026-11-23-X, l'histoire et `carnet-vers-md.py` sont faits, J-2026-11-23-Z et B-0079 ; les matchs, le livre et la durée du balayage aussi, J-2026-11-24-B ; l'inférence, la machine de Théo, l'embarquement, SPSA et le plafond de mutation d'un fichier neuf, J-2026-11-24-D ; reste à cocher après la relecture du troisième critère)
+- [x] chaque document du périmètre est lu en entier, et chaque passage qui n'y est pas à sa place est rangé selon sa nature, l'histoire au journal tel quel (l'attic et `CLAUDE.md`, J-2026-11-23-V ; les 25 points de J-2026-11-23-X, J-2026-11-23-Z, J-2026-11-24-B et J-2026-11-24-D ; les sept résidus du balayage final, J-2026-11-24-H)
 - [x] `tools/attic/README.md` ne garde que son registre et ce qui décrit le dossier ; ce dont une décision dépend (une condition de réouverture, une règle) est là où le travail le lit (J-2026-11-23-S, J-2026-11-23-W, les skills `rendre-un-verdict` et `passer-a-l-ecran`)
-- [ ] un relecteur sans contexte, à qui l'on demande de chercher une procédure ou une information critique restée dans un de ces documents, n'en trouve aucune
+- [ ] un relecteur sans contexte, à qui l'on demande de chercher une procédure ou une information critique restée dans un de ces documents, n'en trouve aucune (premier passage : sept résidus, traités, J-2026-11-24-H ; reste un second passage sur l'arbre corrigé)

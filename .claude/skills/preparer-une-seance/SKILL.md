@@ -105,7 +105,8 @@ les récits.
 - Les points de sauvegarde à garder, s'il y en a, sur une branche à part
   (`reseau/<nom>-points`).
 - Les liens des artefacts, s'il faut les télécharger à la main, avec leur
-  date d'expiration.
+  date d'expiration : par `gh run download` ou un navigateur connecté, et
+  chacun décompressé dans son dossier, `unzip` n'ouvrant qu'une archive.
 - **Une séance n'est lancée que quand Théo le dit**, pas sur l'annonce
   qu'il va la lancer.
 

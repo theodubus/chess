@@ -174,8 +174,8 @@ C'est la seule condition de sortie de ce fichier.
   <br>**Et l'estimation reste délibérément non calibrée**, alors que deux
   matchs donnent un facteur 0,77 stable. Ce facteur **est** le gaspillage de
   pendule — un moteur qui laisse 48 % de son horloge finit ses parties plus
-  vite que la cadence nominale — donc C21 le fera dériver vers 1 en
-  fusionnant. *Une constante qu'un chantier en cours invalide ne s'écrit pas.*
+  vite que la cadence nominale — donc C21, alors en cours, devait le
+  faire dériver vers 1. *Une constante qu'un chantier en cours invalide ne s'écrit pas.*
   <br>**Tenu par** : `.github/workflows/match.yml`, dont le plafond est calculé depuis la cadence.
 
 - **Un mutant qui fuit tue son runner au lieu d'être compté.** Le 20 oct.

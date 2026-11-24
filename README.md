@@ -225,9 +225,9 @@ disposition sous l'[Open Database
 License](https://opendatacommons.org/licenses/odbl/odbl-10.txt) (ODbL) —
 converties au format `.binpack` par des contributeurs de Stockfish (voir
 `tools/README.md`, « Entraîner un réseau ») — sont N2L et N4L, embarqués du 2
-au 13 oct. 2026, et L0, N6r4la et N6r4lb, qui ne l'ont jamais été. Les réseaux
-embarqués de N4 à N9w50s800, qui joue depuis le 22 oct. 2026, n'ont appris
-que sur les parties du moteur.
+au 13 oct. 2026, et L0, N6r4la et N6r4lb, qui ne l'ont jamais été. Les autres
+réseaux embarqués, de N4 au réseau qui joue, n'ont appris que sur les
+parties du moteur.
 
 ## Licence
 
