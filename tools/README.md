@@ -797,8 +797,8 @@ règle d'arrêt à préserver. C'est ce que fait `tools/mettre-en-commun.sh`.
 
 ### Ce que ça achète
 
-L'intervalle décroît en `1/√n` : ce qu'un job et quatre jobs tranchent à
-`8+0,08` est dans F-0016. « Séparer de zéro » est plus faible que la barre
+L'intervalle d'un match à longueur fixe décroît en `1/√n` : ce qu'un job et
+quatre jobs rendent à `8+0,08` est dans F-0016. « Séparer de zéro » est plus faible que la barre
 habituelle du projet, `H1` sur des bornes `[0, 5]` : pour écarter la borne
 haute, l'effet doit dépasser l'intervalle plus 5.
 

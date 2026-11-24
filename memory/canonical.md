@@ -188,24 +188,27 @@ le livre de 500 d'alors : un étalon d'avant le 6 oct. 2026 (ADR-0031).
 
 ## F-0016 — Ce qu'un job de match.yml tient selon la cadence
 
-> statut : mesuré · preuve : J-2026-11-23-B, J-2026-11-23-H · source : `tools/README.md` jusqu'au 24 nov. 2026, les verdicts du n° 23 · date : 2026-11-06
+> statut : mesuré · preuve : J-2026-11-24-A, J-2026-11-23-E, J-2026-11-23-H, fichier:.github/workflows/match.yml · source : `tools/README.md` jusqu'au 24 nov. 2026, les verdicts du n° 23 · date : 2026-11-06
 
 À `8+0,08`, concurrence 3, depuis C21 : 6,4 à 7,25 s par partie, 2 900 à
-3 200 parties sous le plafond de 350 minutes ; un job tranche ~20 Elo et
-plus, quatre jobs de 2 800 parties ± 3,0 à 3,5 (en 1/√n). À `30+0,3`, en
-demander 700 (~740 à 830, déduit, jamais remesuré). `force.yml` : 300
-parties à 60+0,6. Profondeur médiane en partie (16 sept.) : 8,5, 12,5 et
-17 à `1+0,01`, `8+0,08` et `30+0,3`.
+3 200 parties sous le plafond de 350 minutes. À longueur fixe, un job rend
+± 6 à 8 Elo, quatre jobs (11 200 parties) ± 3,1 à 4,0, en 1/√n ; un SPRT
+d'un job tranche ~20 Elo et plus (F-0014). À `30+0,3`, en demander 700
+(~740 à 830, déduit, jamais remesuré). `force.yml` : 300 parties à
+60+0,6. Profondeur médiane d'une recherche à froid sur douze positions de
+parties, binaire de septembre : 8,5, 12,5 et 17 à `1+0,01`, `8+0,08` et
+`30+0,3` ; en partie, elle se mesure par la sonde.
 
-## F-0017 — Les runners changent de modèle : 2,0 à 4,1 M n/s au banc
+## F-0017 — Les runners changent de modèle d'un job à l'autre
 
-> statut : mesuré · preuve : J-2026-11-23-J, J-2026-11-23-H · source : les étalonnages de `match.yml`, sept. à nov. 2026 · date : 2026-11-06
+> statut : mesuré · preuve : J-2026-11-23-J, J-2026-11-23-H, J-2026-11-18-J, J-2026-11-18-AE · source : les étalonnages de `match.yml` et `force.yml`, sept. à nov. 2026 · date : 2026-11-06
 
-EPYC 7763, 9V74 et 9V45, Xeon 8370C et 6973P-C, d'un job à l'autre : de
-2,02 à 4,06 M n/s au banc la même nuit, la profondeur en 250 ms de 10 à
-12 ; deux cœurs physiques, deux fils par cœur. Un match sur un seul
-modèle peut s'écarter (N5l : +43 sur un 9V45, +26 sur trois 7763). Des
-n/s ne se comparent qu'au même binaire.
+EPYC 7763, 9V74 et 9V45, Xeon 8370C et 6973P-C ; deux cœurs physiques,
+deux fils par cœur. Au binaire de septembre, sans réseau : 2,02 à 4,06 M
+n/s au banc la même nuit, profondeur 10 à 12 en 250 ms. Avec le réseau,
+octobre et novembre : 1,57 à 3,04 M n/s, profondeur 13 à 16. Un match sur
+un seul modèle peut s'écarter (N5l : +43 sur un 9V45, +26 sur trois 7763).
+Des n/s ne se comparent qu'au même binaire.
 
 ## F-0018 — Le livre de 15 000 ouvertures tient jusqu'à soixante jobs
 
@@ -221,7 +224,7 @@ plus grand.
 
 > statut : mesuré · preuve : J-2026-11-23-J, run 42767998423, run 44035126032 · source : les jobs « Mutation — search.rs », lus à l'API le 24 nov. 2026 · date : 2026-11-17
 
-107 minutes le 6 oct., 180 (coupé) le 12, 218 le 10 nov., 264 le 17, pour
-une limite de 350. Il monte avec le fichier, sans alerte : un job coupé
-rend un verdict illisible. Au-delà de ~300, le découper par
+107 minutes le 6 oct., coupé à 180 le 12, la limite d'alors, passée depuis
+à 350 ; 218 le 10 nov., 264 le 17. Il monte avec le fichier, sans alerte :
+un job coupé rend un verdict illisible. Au-delà de ~300, le découper par
 `cargo mutants --shard` (B-0075, que Théo applique).
