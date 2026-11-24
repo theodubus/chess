@@ -50,6 +50,10 @@ mesure ») ; ce skill en est la procédure, celle des relèves de septembre
 - Le critère écrit avant s'applique tel quel, **sans le déplacer après
   avoir vu le chiffre**. Un SPRT expiré n'est ni un verdict ni à
   reprendre : il dimensionne le match suivant.
+- **Un match à longueur fixe coupé par le plafond** reste lisible sur
+  l'effectif joué : l'arrêt dépend de l'horloge, pas des résultats, et
+  l'estimateur n'est pas biaisé. Un SPRT coupé, non : sa règle d'arrêt
+  dépend des données, il ne se prolonge ni ne se tronque.
 - Le verdict se dit avec son effectif, ses bornes et **sa cadence**, et
   contre quelle base.
 - **Deux candidats mesurés contre la même base** ne se départagent pas par

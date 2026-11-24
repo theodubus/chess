@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0027-relever-le-plafond-de-memory-canonical-md-a-20-000.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-23"
+canal = "conversation"
+citation = "Valider pour le plafond"
+empreinte = "sha256:6c815b19829608c3fec95a9b38ff7acd1186973cf5b32ee6528cfa3b1b956c87"

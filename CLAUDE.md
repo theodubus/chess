@@ -44,9 +44,8 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   Rien ne s'y fait en pilote automatique.
 - Ce qui vieillit sans que rien ne le signale n'a plus de liste à part
   depuis le 23 nov. 2026 : chaque point est là où il sert — l'expiration
-  des données (F-0005, B-0026), l'étalonnage d'un runner (`tools/README.md`,
-  « Mesurer à cadence longue »), la durée du balayage de mutation (« Sa
-  durée », plus bas) ; l'ancienne liste est J-2026-11-23-J.
+  des données (F-0005, B-0026), l'étalonnage d'un runner (F-0017), la durée du
+  balayage de mutation (F-0019) ; l'ancienne liste est J-2026-11-23-J.
 - Ce sur quoi travailler : **les sujets prêts du backlog**, que l'état
   calcule. **Un test qui vaut le coup n'attend pas de validation** : il
   entre au backlog à son rang, marge estimée contre coût, et se signale au
@@ -327,7 +326,7 @@ avec les mesures qui fondaient ces règles, est archivé au journal
 | « l'arbitre de mesure est fiable » | `tools/crosscheck.sh` : deux arbitres indépendants jouent le même match et s'accordent. À relancer après toute modification de la couche UCI. |
 | « ce verdict vaut pour le moteur qu'on livrera » | **Nommer la cadence de chaque verdict, et ne jamais comparer deux verdicts de cadences différentes** : la cadence peut inverser un verdict. Mêmes binaires, même livre, même graine, l'élagage par compte de coups valait −21,57 ± 16,71 Elo à `1+0,01` et +15,30 ± 15,08 à `8+0,08`, pour une profondeur médiane de 8,5 contre 12,5 (16 sept. 2026). Mesurer long passe par `.github/workflows/match.yml` ; la cible est la force générale (ADR-0029). |
 | « ce chantier passe avant cet autre » | **Une unité commune : les plis.** Un gain de vitesse ou de temps s'y convertit, et l'étalon convertit les plis en Elo (F-0015). **Une conversion par un point unique porte l'incertitude des deux mesures qui la composent : écrire l'intervalle, jamais le point.** Une réallocation à temps constant ne se lit pas en plis moyens (« Pièges de mesure »). |
-| « ce changement vaut la peine d'être mesuré » | **Un budget estimé** : `parties × Elo` ≈ 59 256, médiane de dix-huit SPRT (F-0014), qui ne dépend pas de la cadence ; il se lit à ± 50 % — +30 Elo ≈ 2 000 parties, +5 ≈ 11 900, +2 ≈ 29 600. **Un budget estimé depuis un verdict à `1+0,01` est un majorant : ne jamais renoncer à un match sur cette base.** Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. À `8+0,08`, un job de `match.yml` tranche ~20 Elo et plus ; en dessous, **des matchs à longueur fixe sur plusieurs jobs, mis en commun par `tools/mettre-en-commun.sh` — jamais plusieurs SPRT**, dont l'arrêt au premier qui franchit sa borne multiplie le risque de première espèce par leur nombre. Plus de runners pour les petits effets (ADR-0034), pourvu que le livre suffise : il a 15 000 ouvertures. |
+| « ce changement vaut la peine d'être mesuré » | **Un budget estimé** : `parties × Elo` ≈ 59 256, médiane de dix-huit SPRT (F-0014), qui ne dépend pas de la cadence ; il se lit à ± 50 % — +30 Elo ≈ 2 000 parties, +5 ≈ 11 900, +2 ≈ 29 600. **Un budget estimé depuis un verdict à `1+0,01` est un majorant : ne jamais renoncer à un match sur cette base.** Préférer ce qui achète de l'Elo contre du code plutôt que contre du temps de match. À `8+0,08`, un job de `match.yml` tranche ~20 Elo et plus (F-0016) ; en dessous, **des matchs à longueur fixe sur plusieurs jobs, mis en commun par `tools/mettre-en-commun.sh` — jamais plusieurs SPRT**, dont l'arrêt au premier qui franchit sa borne multiplie le risque de première espèce par leur nombre. Plus de runners pour les petits effets (ADR-0034), pourvu que le livre suffise (F-0018). |
 | « ce correctif de règle ne dégrade pas le jeu » | **Trois choses, et pas un gain** : des tests qui **échouent sur l'ancien code** et passent sur le nouveau, chacun avec un témoin ; le mécanisme **mesuré en régime réel** ; un match dont le critère est **écrit avant de lancer** — fusion sauf si la borne haute de l'intervalle est sous zéro, lue sur chaque match comme sur l'ensemble. **Dire la puissance d'avance.** À effet nul, deux matchs lus chacun à 95 % arrêtent un correctif environ une fois sur vingt : c'est le prix de la règle, et on ne le rembourse pas en remesurant sans fait neuf. |
 | « ce réseau est celui qu'a entraîné bullet » | Le réseau quantifié, chargé par le moteur, contre `trainer.eval(fen) × 400` de bullet, sur des positions variées : `tools/nnue-train` le fait lui-même au bout de l'entraînement. **Critère : écart médian ≤ 15 centièmes, maximal ≤ 50.** Un écart de l'ordre de l'évaluation elle-même dit des entrées mal indexées : un réseau mal branché ne fait rien planter, il joue mal. |
 | « c'est plus rapide » | `cargo run --release --bin shallowred -- bench`, même machine, avant et après : **le nombre de nœuds d'abord**, qui est déterministe, puis le temps par `tools/timing.sh`. **Le banc évalue à la main, le moteur joue avec le réseau** : un changement de l'inférence NNUE ne s'y voit pas, et un banc qui emploie le réseau reste à écrire. |
@@ -626,10 +625,10 @@ celle qui est déjà ouverte. `workflow_dispatch` accepte deux entrées :
 d'un candidat révoqué — sans jamais ouvrir d'issue, le cliquet gardant
 `main`.
 
-**Sa durée** : `search.rs` seul en prend 145 à 180 minutes et plus, pour
-une limite de job de 350 ; au-delà de ~300, il faudra le découper par
-`cargo mutants --shard`, ce que ni `mutation.yml` ni le verdict, qui lit un
-résumé par fichier, ne savent encore faire (B-0075). C'est un débit de compilation, qui ne dit
+**Sa durée** monte vers la limite du job (F-0019) ; au-delà de ~300
+minutes, il faudra découper `search.rs` par `cargo mutants --shard`, ce que
+ni `mutation.yml` ni le verdict, qui lit un résumé par fichier, ne savent
+encore faire (B-0075). C'est un débit de compilation, qui ne dit
 rien de la vitesse de recherche d'un runner. **Un nombre de nœuds par
 seconde appartient à son binaire autant qu'à sa machine** : une ligne
 d'étalonnage ne compare que des runs du même binaire, quand la profondeur
