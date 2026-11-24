@@ -221,12 +221,12 @@ plus grand.
 
 ## F-0019 — Le balayage de search.rs : 264 minutes sur 350 le 17 nov. 2026
 
-> statut : mesuré · preuve : J-2026-11-23-J, run 42767998423, run 44035126032 · source : les jobs « Mutation — search.rs », lus à l'API le 24 nov. 2026 · date : 2026-11-17
+> statut : mesuré · preuve : J-2026-11-23-J, J-2026-11-24-L, run 42767998423, run 44035126032 · source : les jobs « Mutation — search.rs », lus à l'API le 24 nov. 2026 · date : 2026-11-17
 
 107 minutes le 6 oct., coupé à 180 le 12, la limite d'alors, passée depuis
 à 350 ; 218 le 10 nov., 264 le 17. Il monte avec le fichier, sans alerte :
 un job coupé rend un verdict illisible. Au-delà de ~300, le découper par
-`cargo mutants --shard` (B-0075, que Théo applique).
+`cargo mutants --shard` (B-0075).
 
 ## F-0020 — La machine qui entraîne : celle de Théo, RTX 3050, CUDA plafonné à 13.2
 

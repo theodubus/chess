@@ -17,8 +17,7 @@ Elle ne tient plus :
 
 `tools/README.md`, « Tests de mutation », dit seulement que la question
 est ouverte, et renvoie ici. La phrase d'origine vit aussi en commentaire
-de `.github/workflows/mutation.yml`, que l'agent n'écrit pas : à faire
-corriger par Théo, comme B-0075.
+de `.github/workflows/mutation.yml` : à corriger avec elle.
 
 Le coût se mesure d'abord : `cargo mutants --list` sur `tools/` donne le
 nombre de mutants, et la durée d'un job s'en estime par F-0019.
