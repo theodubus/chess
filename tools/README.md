@@ -90,7 +90,7 @@ de fonctionnement. Les runners varient de plus de moitié d'un modèle de
 processeur à l'autre, et d'un hôte à l'autre sous le même nom. Un verdict
 reste valide en interne, les deux moteurs partageant la machine ; deux runs,
 ou un run et une mesure locale, ne se comparent qu'après lecture de leurs
-étalonnages.
+étalonnages. Les modèles et les plages relevés : F-0017.
 
 - **Un nombre de nœuds par seconde appartient à son binaire autant qu'à sa
   machine** : une ligne d'étalonnage ne compare que des runs du même
@@ -102,27 +102,17 @@ ou un run et une mesure locale, ne se comparent qu'après lecture de leurs
   le banc, pas les parties. La profondeur en partie se mesure par la sonde
   (plus bas).
 
-**Ce qu'un job peut trancher.** À `8+0,08`, depuis que les moteurs usent
-leur pendule (C21), une partie prend de 6,4 à 7,25 s de job à concurrence
-3, et le plafond de 350 minutes en tient de 2 900 à 3 200 : par la
-relation de budget (F-0014), un job tranche les effets de ~20 Elo et plus,
-et un SPRT plus fin expire. À `30+0,3`, un job rendait ~960 parties avant
-C21 ; il en rendra moins, ~740 à 830 par le même rapport (inférence,
-jamais remesuré) : en demander 700. Un budget tiré d'un verdict à `1+0,01` n'est qu'un
-majorant.
-
-**Un match à longueur fixe coupé par le plafond reste exploitable** :
-l'arrêt dépend de l'horloge, pas des résultats, et l'estimateur n'est pas
-biaisé. Un SPRT expiré, non : sa règle d'arrêt dépend des données, il ne se
-prolonge ni ne se tronque. **Pour un effet plus petit**, des matchs à
-longueur fixe sur plusieurs jobs, graines distinctes, mis en commun
-(« Paralléliser les matchs »).
+**Ce qu'un job tient selon la cadence, et ce qu'il tranche** : F-0016 ; un
+SPRT plus fin que ~20 Elo expire avant la fin du job. **Pour un effet plus
+petit**, des matchs à longueur fixe sur plusieurs jobs, graines distinctes,
+mis en commun (« Paralléliser les matchs »). Préparer un match : le skill
+`lancer-un-match` ; le lire, et lire un match coupé par le plafond : le skill
+`rendre-un-verdict`.
 
 **La cadence appartient au verdict** (`CLAUDE.md`, « Ce qui compte comme
-preuve ») : la profondeur médiane atteinte valait 8,5 à `1+0,01`, 12,5 à
-`8+0,08` et 17 à `30+0,3`, mesurée le 16 sept. 2026 sur douze positions de
-parties. Les mesures de vitesse des runners et le récit qui a fondé ces
-règles sont au journal (J-2026-11-23-B à J-2026-11-23-E).
+preuve ») ; la profondeur atteinte à chaque cadence est dans F-0016. Le
+récit qui a fondé ces règles est au journal (J-2026-11-23-B à
+J-2026-11-23-E).
 
 ### Une cadence par moteur, et la sonde
 
@@ -345,13 +335,9 @@ au filtre de l'évaluation faite main. Régénérable au code de `ab44f2a` :
 cargo run --release --bin bookgen -- 15000 8 80 > tools/book.epd
 ```
 
-**Pourquoi 15 000.** À 500, un match de 3 000 parties jouait chaque ouverture
-trois fois, et tous les matchs les mêmes : les paires d'une même ouverture
-sont corrélées (ρ ≈ 0,03, « Le livre, réutilisé »), et la variance d'une mise
-en commun valait × 1,33 à quatre jobs, × 6,4 à soixante. À 15 000, un job en
-tire 1 500 distinctes, deux jobs n'en partagent que 150 en moyenne, et la
-variance reste sous ~× 1,15 jusqu'à soixante jobs — la condition de « plus de
-runners ».
+**Pourquoi 15 000** : à 500, tous les matchs rejouaient les mêmes
+ouvertures, dont les paires sont corrélées ; ce que la taille achète à la
+mise en commun, et jusqu'où elle tient, est dans F-0018.
 
 **« Même graine, même livre » ne tient qu'à évaluation égale** : l'évaluation
 faite main qui filtre change avec le code, et un livre ne se régénère qu'au
@@ -653,9 +639,8 @@ qu'aucun des trois ne dit ; la campagne elle-même est B-0017.
   appartient à sa cadence comme un verdict.
 - **Le budget s'écrit avant** : jamais mesuré ici ; les moteurs amateurs
   publient de l'ordre de 20 000 à 80 000 parties pour une dizaine de
-  paramètres, à cadence courte (de mémoire) ; à `8+0,08`, un job joue
-  ~550 parties par heure — 2 800 en ~5 h aux matchs du n° 23 —, ~3 750 au
-  plus sous le plafond de 350 minutes.
+  paramètres, à cadence courte (de mémoire) ; ce qu'un job tient à `8+0,08`
+  est dans F-0016.
 - **Le verdict reste un match** : le `θ` final est un candidat comme un
   autre, sur un commit révoqué aussitôt, mesuré par `match.yml` contre
   `main`, son critère écrit avant. SPSA prédit bien sur son propre bruit,
@@ -810,22 +795,12 @@ particulier de ce principe.
 sans rien casser** : effectif connu d'avance, estimation non biaisée, aucune
 règle d'arrêt à préserver. C'est ce que fait `tools/mettre-en-commun.sh`.
 
-### Ce que ça achète, chiffré sur ce projet
+### Ce que ça achète
 
-Le SPRT expiré de C21 a rendu **± 8,31 Elo sur 3 240 parties**. L'intervalle
-décroît en `1/√n`, donc en empilant des jobs de ~3 300 parties :
-
-| jobs | parties | intervalle attendu | effet que ça sépare de zéro |
-|---|---|---|---|
-| 1 | ~3 300 | **± 8,2** | > 8,2 Elo |
-| 2 | ~6 600 | **± 5,8** | > 5,8 |
-| 4 | ~13 200 | **± 4,1** | > 4,1 |
-| 8 | ~26 400 | **± 2,9** | > 2,9 |
-
-<span>Ces chiffres viennent d'une mesure de ce dépôt, pas d'une constante
-empruntée. **Réserve** : « séparer de zéro » est plus faible que la barre
-habituelle du projet, qui est `H1` sur des bornes `[0, 5]` — pour écarter la
-borne haute il faut que l'effet dépasse l'intervalle **plus 5**.</span>
+L'intervalle décroît en `1/√n` : ce qu'un job et quatre jobs tranchent à
+`8+0,08` est dans F-0016. « Séparer de zéro » est plus faible que la barre
+habituelle du projet, `H1` sur des bornes `[0, 5]` : pour écarter la borne
+haute, l'effet doit dépasser l'intervalle plus 5.
 
 ### Le piège propre à la mise en commun, et il est sérieux
 
