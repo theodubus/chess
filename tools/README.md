@@ -694,31 +694,6 @@ cause. Au démarrage, c'est l'état du socle qui s'imprime depuis le 13 nov.
 `tools/verify.sh` vérifie que le script **rend un état non vide** : un script
 devenu muet ne se verrait pas, on croirait simplement qu'il n'y a rien à dire.
 
-## `tools/carnet-vers-md.py` — le carnet de bord converti en Markdown
-
-Un outil de l'adoption du socle, qui a servi à déplacer le carnet de bord
-vers la mémoire ; le déplacement est fait, et son retrait est un sujet du
-backlog (B-0079). Le carnet est
-un artefact claude.ai, une page HTML ; `python3 -I tools/carnet-vers-md.py
-<carnet.html> <dossier de sortie>` en rend le journal au format du journal
-de la mémoire, un fichier par mois coupé au budget, les entrées les plus
-anciennes d'abord et leurs identifiants gardés, chaque autre rubrique
-dans son fichier, et de même ce que la page porte hors de ses rubriques :
-son bandeau, sa navigation, son pied. Il n'écrit que dans le dossier de
-sortie, jamais dans la mémoire : poser ses fichiers était le travail des
-lots du déplacement.
-
-Ce qui le tient : un contrôle de fidélité qu'il lance lui-même à chaque
-conversion, et qui lui fait rendre le code 1. Tout le texte que la page
-affiche doit se trouver dans un fichier écrit, et dans un seul ; et les
-caractères de mot de la source de chaque fichier doivent s'y retrouver
-tous, dans l'ordre, une fois mis à part ce que la conversion ajoute — la
-cible d'un lien, le numéro d'un item, l'identifiant d'une entrée. Il ne
-voit ni la ponctuation ni la mise en forme.
-
-Il est dans le script parce qu'un compte de mots lancé à la main ne voyait
-que les rubriques, et pas le texte hors d'elles.
-
 ## Paralléliser les matchs — ce qui marche et ce qui ne marche pas
 
 **On ne parallélise PAS un SPRT.** Un test séquentiel tire ses taux d'erreur
