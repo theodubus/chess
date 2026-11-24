@@ -31,14 +31,16 @@ est décrit dans `tools/README.md`, « Vérifier, et mesurer un temps ».
   (`xmm` 128 bits, `ymm` 256). L'attendu s'écrit avant ; c'est ainsi qu'on
   a vu le compilateur caler le produit de sortie sur 128 bits (ADR-0039).
 - **Un compte d'opérations ne prédit pas un temps**, même à arbre
-  identique : le cache des recalculs épargnait 65 % des lignes et n'a rien
-  rendu, ses lignes se lisant dans 1,5 Mo de poids ; le produit en AVX2 a
-  rendu ce que son compte promettait, ses données déjà en cache.
+  identique : une boucle qui attend la mémoire ne rend rien de ses
+  instructions épargnées, une boucle en cache rend ce que son compte
+  promet — le cache des recalculs et le produit en AVX2, J-2026-10-20-E.
 
 ## 3. Le rejeu
 
 - **L'outil** : `tools/sonde-inference/rejeu.py`, qu'apporte
-  `tools/attic/n15-sonde-inference.patch` et qui s'en extrait seul. Il
+  `tools/attic/n15-sonde-inference.patch`, et qui
+  s'en extrait seul par `git apply --include='tools/sonde-inference/*'`, la
+  rustine entière ne s'appliquant plus sur `engine/src/nnue.rs`. Il
   rejoue un corpus de parties à profondeur fixe, table conservée, compare
   deux binaires en paires, refuse si leurs arbres diffèrent et rend un test
   des signes ; `--nps` compare deux arbres différents, ceux d'un réseau
@@ -49,9 +51,9 @@ est décrit dans `tools/README.md`, « Vérifier, et mesurer un temps ».
 - **Le corpus** : une vingtaine de parties du moteur qui joue contre
   lui-même à `8+0,08`, en notation UCI. Perdu avec un conteneur, il se
   refait, et se garde alors dans le dépôt.
-- **La puissance, écrite avant** : l'écart apparié d'un tour à l'autre
-  vaut ~5 % ; vingt tours ne résolvent qu'un effet de ~3 %, cent vingt
-  détectent −1,5 % quatre fois sur cinq et −2 % presque toujours.
+- **La puissance, écrite avant**, par la dispersion du rejeu (F-0021) :
+  le nombre de tours se choisit pour que l'intervalle attendu sépare
+  l'effet visé de zéro.
 - Rien d'autre ne tourne dans le conteneur pendant le rejeu.
 
 ## 4. Inscrire
@@ -59,6 +61,7 @@ est décrit dans `tools/README.md`, « Vérifier, et mesurer un temps ».
 - Au journal : l'attendu au code machine et au temps, le corpus, les
   tours, le test des signes, la décision.
 - La part du réseau dans le temps d'un nœud n'est pas un fait : celle du
-  n° 15 (16,8 % sur un réseau de 128 unités) est périmée par trois
-  changements depuis. Elle se remesure par la rustine du n° 15 portée sur
+  n° 15 (16,8 % sur un réseau de 128 unités) est périmée par quatre
+  changements depuis — le chemin A du n° 16, le produit en AVX2, deux pas
+  d'architecture. Elle se remesure par la rustine du n° 15 portée sur
   le code du jour quand un chantier en dépend (B-0018, B-0070).

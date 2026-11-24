@@ -554,7 +554,8 @@ s'applique évite des heures de match pour un chiffre déjà connu.
 **Le temps de l'évaluation qui joue** ne se lit pas par `timing.sh`, dont
 le banc évalue à la main (B-0055), mais au rejeu :
 `tools/sonde-inference/rejeu.py`, apporté par
-`tools/attic/n15-sonde-inference.patch`, dont il s'extrait seul. Il rejoue
+`tools/attic/n15-sonde-inference.patch`, dont il s'extrait seul
+(`git apply --include='tools/sonde-inference/*'`). Il rejoue
 un corpus de parties (PGN en notation UCI) à profondeur fixe, table
 conservée, compare deux binaires en paires, refuse si leurs arbres
 diffèrent et rend un test des signes ; `--nps` compare les nœuds par

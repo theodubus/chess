@@ -23,10 +23,12 @@ du n° 7 au n° 20, au journal. Ce skill appelle les skills `sonder-les-marges`,
   `le_reseau_embarque_evalue_comme_son_entraineur` recopiée de la sortie.
   Il ignore sans le dire une option qu'il ne connaît pas (B-0072) : **les
   tests `nnue` en release**, qui chargent le réseau embarqué, sont les
-  seuls à le rattraper, et passent avant le commit.
+  seuls à le rattraper, et passent avant le commit, après
+  `cargo fmt -p shallowred` (le script le demande en tête).
 - **Au code de sa référence au bit près** : `git diff` sur `engine/` ne
-  montre que `engine/src/nnue.rs` ; une référence plus ancienne que le code
-  du jour se recommite sur lui. Une architecture neuve se mesure contre une
+  montre que `engine/src/nnue.rs`, plus `NETWORK_MARGIN_PERCENT`
+  (`engine/src/search.rs`) si le candidat porte son facteur ; une
+  référence plus ancienne que le code du jour se recommite sur lui. Une architecture neuve se mesure contre une
   base entraînée sur les mêmes données (skill `preparer-une-seance`).
 - Le commit, puis sa révocation aussitôt, fusionnés en `merge`.
 
@@ -37,6 +39,11 @@ du n° 7 au n° 20, au journal. Ce skill appelle les skills `sonder-les-marges`,
 - **Les nœuds par seconde au rejeu** (skill `mesurer-l-inference`,
   `--nps`) : un réseau plus large coûte du temps, et l'attendu du match
   en tient compte.
+- **Le crible de mutation**, quand le code d'`engine/` change avec le
+  réseau — une largeur, des seaux, une architecture : `mutation.yml` par
+  `workflow_dispatch`, entrée `commit` sur le candidat, sa prédiction
+  écrite avant. Un réseau seul, au code de `main` au bit près, n'en
+  demande pas (N8tw50s800, N9w50s800).
 - **Le match** (skill `lancer-un-match`) : contre le réseau qui joue, à
   `8+0,08`, son attendu et son critère écrits avant ; deux réseaux
   candidats contre la même base se départagent par leur match direct.
@@ -54,10 +61,13 @@ systèmes. La version web se republie seule (`pages.yml`).
 - **Les faits** : F-0007 (le réseau qui joue, ses données, son verdict),
   F-0008 si le facteur change ou se confirme ; une ligne de F-0009 si le
   réseau tranche un réglage de l'entraînement.
-- **Les données de Leela** : un réseau qui en a appris garde la mention
-  d'attribution du `README.md` (ADR-0030).
-- **Le balayage de mutation** (`mutation.yml`, `workflow_dispatch`) : un
-  changement de réseau déplace les plafonds qui dépendent d'un arbre.
+- **Le `README.md`** : ses « Remerciements » nomment le réseau qui joue
+  et chaque réseau qui a appris sur les données de Leela (ADR-0030) : la
+  phrase se récrit à chaque embarquement.
+- **Le balayage de mutation après la fusion** (`mutation.yml`,
+  `workflow_dispatch`), sa prédiction écrite avant : chaque fichier à son
+  plafond quand seul le réseau a changé, les tests de recherche et le banc
+  évaluant à la main ; sinon, ce qu'a rendu le crible.
 - **La force absolue** (skill `situer-le-moteur`) : une série, puis F-0011.
 - **Les données** : le réseau qui joue devient l'étiqueteur des
   générations suivantes (B-0024).

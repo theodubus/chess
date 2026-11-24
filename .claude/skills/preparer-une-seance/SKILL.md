@@ -9,8 +9,9 @@ La carte de Théo est la seule qui entraîne, et chaque séance lui coûte du
 temps : elle se prépare entière d'avance, se lance sans surveillance, et
 s'arrête d'elle-même sur la moindre faute. Ce que font les outils —
 `tools/nnue-train`, les données de Leela — est dans `tools/README.md`,
-« Entraîner un réseau » ; la machine de Théo est F-0020 ; ce skill est la procédure des
-séances de septembre à novembre 2026, dont le journal garde les récits.
+« Entraîner un réseau » ; la machine de Théo est F-0020 ; ce skill est la
+procédure des séances de septembre à novembre 2026, dont le journal garde
+les récits.
 
 ## 1. Écrire la séance avant de la demander
 
@@ -69,15 +70,17 @@ séances de septembre à novembre 2026, dont le journal garde les récits.
 - **Un script `tools/seance-<nom>.sh`**, sur le modèle du dernier, qui dit
   son usage en tête, un mode `essai` puis le vrai :
   - **avant tout** : le dépôt sans fichier modifié et à jour, les données
-    comptées, `gh` connecté, la place ; CUDA (F-0020) : le toolkit sous
-    le plafond du pilote, `CUDA_PATH` et `LD_LIBRARY_PATH` sur lui,
-    `libcudart`, `libnvrtc`, `libcublas` ; Rust par `rustup`, jamais
-    `apt` ; un seul écart et rien ne part ;
+    comptées, `gh` connecté, la place ; `CUDA_PATH`, à défaut le toolkit
+    de F-0020, jamais plus récent que le pilote, et `LD_LIBRARY_PATH` sur
+    lui — sinon le moteur peut charger la `libnvrtc` d'un autre —, ses
+    `libcudart`, `libnvrtc` et `libcublas` ; `cargo`, que Théo installe
+    par `rustup`, seul à lire la toolchain épinglée, jamais par `apt` ; un
+    seul écart et rien ne part ;
   - **les données** téléchargées depuis le registre, chaque job dans un
     dossier temporaire renommé une fois complet, pour reprendre au job qui
     manque ;
   - **l'essai court** (`--superlots 1`) relit chaque octet des données
-    avant le premier réseau ;
+    avant le premier réseau, et sa durée annonce celle du vrai ;
   - **chaque réseau contrôlé** — `RÉSEAU PRÊT` au bon chemin, la
     confrontation, la relecture sur `--attendu`, **la ligne de recette
     entière** que l'entraîneur imprime : un réglage mal passé ne fait rien
@@ -86,8 +89,9 @@ séances de septembre à novembre 2026, dont le journal garde les récits.
   - **un réseau refusé est mis de côté, jamais effacé** : la relance le
     refait, et s'il était sain, il reste publiable à la main ;
   - relancé, il reprend au réseau qui manque et saute ce qui est poussé ;
-    il bloque la mise en veille pendant qu'il tourne, la demande à la fin
-    si Théo l'a voulu, tourne sur une copie de lui-même s'il change de
+    il bloque la mise en veille pendant qu'il tourne — ni le chargeur
+    débranché ni le capot rabattu n'y sont couverts, ce qui se dit à Théo
+    (F-0020) —, la demande à la fin si Théo l'a voulu, tourne sur une copie de lui-même s'il change de
     commit, et rend le dépôt sur `main` en sortant, quoi qu'il arrive ;
   - un push qui demanderait un mot de passe échoue sans bloquer : la
     branche reste commitée en local.
@@ -119,8 +123,5 @@ séances de septembre à novembre 2026, dont le journal garde les récits.
   dits d'avance — l'outil mesure sous la cible et le filtre par défaut. Un
   diagnostic : elle suit l'étiqueteur, et l'écart entre tenu et appris dit
   ce que le réseau retient. Elle n'a jamais décidé un match.
-- **Chaque réseau devient un candidat** par `tools/candidat-reseau.py`, au
-  code de sa référence au bit près (`git diff` sur `engine/` : le seul
-  `nnue.rs`), révoqué aussitôt ; une référence plus ancienne que le code
-  du jour se recommite sur lui.
+- **Chaque réseau devient un candidat** : le skill `embarquer-un-reseau`.
 - Au journal, une entrée ; puis la suite écrite au point 1.

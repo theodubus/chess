@@ -22,7 +22,7 @@ concurrence d'un match »). Ce skill en est la procédure.
   temps (ADR-0036), et `tools/timing.sh` ne vaut que pour la faite main
   (`CLAUDE.md`, « c'est plus rapide »). Sinon, un match.
 - **Un réseau candidat** passe d'abord par le skill `sonder-les-marges` ;
-  son embarquement suit B-0015.
+  son embarquement suit le skill `embarquer-un-reseau`.
 - **Un commit révoqué aussitôt**, fusionné en `merge` pour que son SHA
   reste atteignable ; sa rustine à l'attic, sa ligne au registre de
   `tools/attic/README.md` ; `tools/verify.sh` vert, son code de sortie lu

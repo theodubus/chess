@@ -1,6 +1,6 @@
 ---
 name: rendre-un-verdict
-description: Relever les jobs d'un match de mesure entre deux commits du moteur (match.yml) et en rendre le verdict, dans l'ordre qui ne laisse rien passer, puis fusionner ou non le candidat et inscrire le verdict. À utiliser quand les jobs d'un tel match sont finis, avant d'en dire le moindre chiffre. Pas pour embarquer un réseau, qui a sa propre procédure (B-0015).
+description: Relever les jobs d'un match de mesure entre deux commits du moteur (match.yml) et en rendre le verdict, dans l'ordre qui ne laisse rien passer, puis fusionner ou non le candidat et inscrire le verdict. À utiliser quand les jobs d'un tel match sont finis, avant d'en dire le moindre chiffre. Pour un réseau candidat aussi, que le skill embarquer-un-reseau y conduit et dont il dit la suite.
 ---
 
 # Rendre le verdict d'un match
