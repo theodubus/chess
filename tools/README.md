@@ -504,37 +504,14 @@ l'architecture de N9w50s800 à une autre : `largeur=N` remplace la ligne
 `HIDDEN = 256`, et refuse si elle a déjà changé ; `seaux=10` passe de
 quatre à dix seaux de roi. **Toute autre option, ou une autre valeur de
 `seaux`, est ignorée sans le dire** (B-0072) : seuls les tests `nnue` en
-release, qui chargent le réseau embarqué, le rattrapent. Ensuite :
-`cargo fmt`, ces tests, le commit, sa révocation.
+release, qui chargent le réseau embarqué, le rattrapent. La suite, de ces
+tests au match puis à l'embarquement : le skill `embarquer-un-reseau`.
 
-**La machine de Théo** (Ubuntu, RTX 3050, pilote qui plafonne à CUDA
-13.2) ; la procédure d'une séance est le skill `preparer-une-seance` :
-- **CUDA** : le toolkit ne doit pas dépasser la « CUDA Version » que
-  `nvidia-smi` prête au pilote — bullet compile ses noyaux par NVRTC en
-  PTX, que le pilote recompile, et un pilote refuse un PTX plus récent que
-  lui. `CUDA_PATH` ET `LD_LIBRARY_PATH` désignent ce toolkit (sans le
-  second, l'exécution peut charger la `libnvrtc` d'un autre), et
-  `$CUDA_PATH/lib64` doit porter `libcudart.so`, `libnvrtc.so` et
-  `libcublas.so` ;
-- **Rust** par `rustup`, jamais par `apt` : seul `rustup` lit la toolchain
-  que le dépôt épingle ;
-- **les artefacts** se téléchargent depuis un navigateur connecté à GitHub,
-  ou par `gh run download`, puis se décompressent un par un, chacun dans
-  son dossier — `unzip` n'ouvre qu'une archive par appel ;
-- **un essai court d'abord** (`--superlots 1`) traverse les trois temps en
-  quelques minutes ; sa durée annonce celle du vrai ;
-- **rapporter**, sur une branche `reseau/<nom>` : le réseau quantifié, la
-  courbe de perte de bullet (`log.txt`) et la sortie du programme, sous
-  `reseaux/` ;
-- **le rangement**, depuis le 22 oct. 2026 à la demande de Théo : tout sous
-  `~/shallowred/` — `chess/` le dépôt, `donnees/<génération>`,
-  `seances/<nom>` pour les journaux —, les chemins par défaut des
-  scripts ;
-- **un portable** : une séance bloque la mise en veille tant qu'elle
-  tourne, et la demande à la fin avec l'option `veille`, si logind l'accorde
-  sans mot de passe (`CanSuspend`). Le blocage ne couvre ni le chargeur
-  débranché ni le capot rabattu : par défaut, logind l'ignore au capot
-  (`LidSwitchIgnoreInhibited=yes`).
+**La machine de Théo**, ses limites et son rangement : F-0020. Ce qu'une
+séance vérifie avant tout, et sa procédure : le skill `preparer-une-seance`.
+Les artefacts se téléchargent par `gh run download` ou depuis un navigateur
+connecté à GitHub, puis se décompressent un par un, chacun dans son
+dossier : `unzip` n'ouvre qu'une archive par appel.
 
 Depuis le n° 20, les séances s'enchaînent par les scripts `tools/seance-*.sh`,
 qui se lancent sans surveillance et disent leur usage en tête ; le
@@ -576,33 +553,13 @@ s'applique évite des heures de match pour un chiffre déjà connu.
 
 **Le temps de l'évaluation qui joue** ne se lit pas par `timing.sh`, dont
 le banc évalue à la main (B-0055), mais au rejeu :
-`tools/sonde-inference/rejeu.py`, le pilote qu'apporte
-`tools/attic/n15-sonde-inference.patch` — il ne dépend pas du code que la
-rustine double, et s'en extrait seul. Il rejoue un corpus de parties (PGN
-en notation UCI) à profondeur fixe, table conservée, compare deux binaires
-en paires, refuse si leurs arbres diffèrent et rend un test des signes ;
-`--nps` compare les nœuds par seconde de deux arbres différents, ceux d'un
-réseau candidat. Son corpus se refait — une vingtaine de parties du moteur
-qui joue contre lui-même à `8+0,08` — quand il a été perdu avec un
-conteneur, et se garde alors dans le dépôt.
-
-- **La puissance s'écrit avant**, pour un temps comme pour un Elo : au
-  rejeu, l'écart apparié d'un tour à l'autre vaut ~5 % ; vingt tours ne
-  résolvent qu'un effet de ~3 %, cent vingt détectent −1,5 % quatre fois
-  sur cinq et −2 % presque toujours.
-- **Une optimisation de l'inférence se lit d'abord au code machine** :
-  `objdump` du binaire AVX2, avant et après, en comptant dans chaque
-  fonction chaude — `Network::evaluate`, `Network::apply_move`,
-  `refresh_side` — les instructions que le changement doit faire
-  apparaître ou disparaître (`vpmulld`, `vpmullw`, `vpmaddwd`) et la
-  largeur de leurs registres (`xmm` 128 bits, `ymm` 256 bits) ; l'attendu
-  s'écrit avant. C'est ainsi qu'on a vu le compilateur caler le produit de
-  sortie sur 128 bits, ce qui a mené à ADR-0039.
-- **Un compte d'opérations ne prédit pas un temps**, même à arbre
-  identique : le cache des recalculs épargnait 65 % des lignes de ses
-  recalculs et n'a rien rendu, ces lignes se lisant dans 1,5 Mo de poids ;
-  le produit scalaire en AVX2 a rendu ce que son compte promettait, ses
-  données déjà en cache.
+`tools/sonde-inference/rejeu.py`, apporté par
+`tools/attic/n15-sonde-inference.patch`, dont il s'extrait seul. Il rejoue
+un corpus de parties (PGN en notation UCI) à profondeur fixe, table
+conservée, compare deux binaires en paires, refuse si leurs arbres
+diffèrent et rend un test des signes ; `--nps` compare les nœuds par
+seconde de deux arbres différents. La procédure, son corpus et sa
+puissance : le skill `mesurer-l-inference`.
 
 ## Régler par SPSA — `spsa.yml`
 
@@ -610,7 +567,7 @@ conteneur, et se garde alors dans le dépôt.
 par SPSA, sur les runners ; `tools/src/bin/spsa.rs` en est le pilote, et
 `tools/spsa/n19.txt` l'état de départ de la première passe, ses
 paramètres, leurs plages et leurs perturbations. Ce qui suit est ce
-qu'aucun des trois ne dit ; la campagne elle-même est B-0017.
+qu'aucun des trois ne dit.
 
 - **Des réglages à la compilation, jamais des options UCI.** Une constante
   réglable s'écrit `reglage!` dans `engine/src/search.rs` : sans sa
@@ -619,14 +576,6 @@ qu'aucun des trois ne dit ; la campagne elle-même est B-0017.
   valeur illisible ou hors du type arrête la compilation. Une option se
   lirait à chaque nœud et pourrait se régler de travers en silence ; le
   prix est un binaire par camp, une minute de compilation par job.
-- **Des grandeurs à plage large** : SPSA perturbe chaque paramètre de
-  ± c, et un entier de petite plage — un seuil de profondeur de 3 à 8,
-  un bonus de deux plis — ne se perturbe que d'une unité, 20 à 50 % d'un
-  coup, où le bruit et l'arrondi dominent. `LMP_BASE`, de 2 à 14, en est
-  la limite dans la première passe ; une grandeur plus étroite s'y
-  exprime en fraction, comme la LMR en centièmes de pli, ou reste aux
-  matchs. `NETWORK_MARGIN_PERCENT` reste figé : il multiplie l'aspiration
-  et l'élagage delta, qui se règlent eux-mêmes.
 - **Une manche** : chaque job tire une perturbation de l'état, construit
   les deux camps `θ + c·Δ` et `θ − c·Δ`, arrondis et bornés à leur plage,
   refuse s'ils sont le même binaire, et les fait jouer en paires
@@ -635,16 +584,9 @@ qu'aucun des trois ne dit ; la campagne elle-même est B-0017.
   lancer un `workflow_dispatch`** — éprouvé le 14 oct. 2026 : la chaîne
   tient sans la session, chaque manche recevant l'état de la précédente
   par `etat_run` et le moteur par un SHA figé à la première.
-- **La cadence du réglage est celle de la mesure**, `8+0,08` : un réglage
-  appartient à sa cadence comme un verdict.
-- **Le budget s'écrit avant** : jamais mesuré ici ; les moteurs amateurs
-  publient de l'ordre de 20 000 à 80 000 parties pour une dizaine de
-  paramètres, à cadence courte (de mémoire) ; ce qu'un job tient à `8+0,08`
-  est dans F-0016.
-- **Le verdict reste un match** : le `θ` final est un candidat comme un
-  autre, sur un commit révoqué aussitôt, mesuré par `match.yml` contre
-  `main`, son critère écrit avant. SPSA prédit bien sur son propre bruit,
-  et rien d'autre.
+- **La campagne** — le choix des paramètres et de leurs plages, la
+  cadence, le budget, le verdict — se règle dans sa spécification,
+  B-0017 ; elle deviendra un skill à la deuxième.
 
 ## Tests de mutation
 

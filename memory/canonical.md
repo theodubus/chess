@@ -228,3 +228,14 @@ plus grand.
 à 350 ; 218 le 10 nov., 264 le 17. Il monte avec le fichier, sans alerte :
 un job coupé rend un verdict illisible. Au-delà de ~300, le découper par
 `cargo mutants --shard` (B-0075, que Théo applique).
+
+## F-0020 — La machine qui entraîne : celle de Théo, RTX 3050, CUDA plafonné à 13.2
+
+> statut : mesuré · preuve : J-2026-11-18-CX, fichier:tools/seance-c3.sh · source : `tools/README.md`, « Entraîner un réseau », jusqu'au 24 nov. 2026 ; la consigne de Théo du 22 oct. 2026 · date : 2026-10-22
+
+Ubuntu, une RTX 3050 dont le pilote plafonne à CUDA 13.2 : bullet compile
+ses noyaux en PTX, qu'un pilote refuse plus récent que lui, donc le
+toolkit ne dépasse pas la « CUDA Version » de `nvidia-smi`. Un portable :
+une séance bloque la veille, mais logind ignore ce blocage au capot
+rabattu. Tout sous `~/shallowred/` (Théo, 22 oct.) : `chess/`,
+`donnees/<génération>`, `seances/<nom>`.

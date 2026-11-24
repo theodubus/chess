@@ -8,8 +8,8 @@ description: Préparer une séance d'entraînement de réseaux NNUE sur la carte
 La carte de Théo est la seule qui entraîne, et chaque séance lui coûte du
 temps : elle se prépare entière d'avance, se lance sans surveillance, et
 s'arrête d'elle-même sur la moindre faute. Ce que font les outils —
-`tools/nnue-train`, la machine de Théo, les données de Leela — est dans
-`tools/README.md`, « Entraîner un réseau » ; ce skill est la procédure des
+`tools/nnue-train`, les données de Leela — est dans `tools/README.md`,
+« Entraîner un réseau » ; la machine de Théo est F-0020 ; ce skill est la procédure des
 séances de septembre à novembre 2026, dont le journal garde les récits.
 
 ## 1. Écrire la séance avant de la demander
@@ -69,8 +69,10 @@ séances de septembre à novembre 2026, dont le journal garde les récits.
 - **Un script `tools/seance-<nom>.sh`**, sur le modèle du dernier, qui dit
   son usage en tête, un mode `essai` puis le vrai :
   - **avant tout** : le dépôt sans fichier modifié et à jour, les données
-    comptées, `gh` connecté, les bibliothèques de CUDA, la place ; un seul
-    écart et rien ne part ;
+    comptées, `gh` connecté, la place ; CUDA (F-0020) : le toolkit sous
+    le plafond du pilote, `CUDA_PATH` et `LD_LIBRARY_PATH` sur lui,
+    `libcudart`, `libnvrtc`, `libcublas` ; Rust par `rustup`, jamais
+    `apt` ; un seul écart et rien ne part ;
   - **les données** téléchargées depuis le registre, chaque job dans un
     dossier temporaire renommé une fois complet, pour reprendre au job qui
     manque ;
