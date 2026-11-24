@@ -14,11 +14,10 @@ tronqué.
 
 ## Prochaines étapes
 
-1. B-0079 : retirer `tools/carnet-vers-md.py`, le dernier reste du carnet.
-2. Rappeler à Théo, à chaque récap, la copie sur disque des données qui
+1. Rappeler à Théo, à chaque récap, la copie sur disque des données qui
    servent encore (B-0077, avant le 18 janv. 2027), et B-0075, urgent.
-3. La mise à jour du socle, quand Théo la dira prête (B-0044, D-0024).
-4. Puis le travail du moteur, dont la mesure du réseau N10r10h512
+2. La mise à jour du socle, quand Théo la dira prête (B-0044, D-0024).
+3. Puis le travail du moteur, dont la mesure du réseau N10r10h512
    (B-0012), dans l'ordre que Théo a fixé (D-0016, D-0018).
 
 **Le découpage de la documentation range chaque information selon sa
