@@ -31,9 +31,9 @@
 # 0,003 Elo près.
 #
 # **Et il refuse de conclure en silence quand les matchs se contredisent.**
-# Deux runners GitHub varient de 58 % en vitesse, donc de ~un demi-pli en
-# profondeur atteinte — et ce dépôt a mesuré qu'un pli peut INVERSER un
-# verdict. Mettre en commun deux matchs joués à des points de fonctionnement
+# La vitesse des runners GitHub va du simple au double (F-0017), soit de
+# l'ordre d'un pli de profondeur atteinte (F-0015) — et ce dépôt a mesuré
+# qu'un pli peut INVERSER un verdict. Mettre en commun deux matchs joués à des points de fonctionnement
 # différents moyenne deux régimes ; le script le dit au lieu de le cacher.
 # Le seuil porte sur la PROBABILITÉ du plus grand écart, pas sur un `z` fixe :
 # à quatre matchs il y a six paires, et un `z` fixe y crierait au loup.
@@ -181,9 +181,10 @@ END {
   if (p < seuil) {
     print "ATTENTION — les matchs ne mesurent pas le meme effet."
     print "Mettre en commun MOYENNE deux regimes au lieu den mesurer un seul."
-    print "Lire letalonnage de chaque run : deux runners varient de 58 % en"
-    print "vitesse, soit ~un demi-pli, et un pli peut INVERSER un verdict sur"
-    print "ce moteur. Rapporter les matchs separement, ou expliquer lecart."
+    print "Lire letalonnage de chaque run : la vitesse des runners va du simple"
+    print "au double (F-0017), soit de lordre dun pli (F-0015), et un pli peut"
+    print "INVERSER un verdict sur ce moteur. Rapporter les matchs separement,"
+    print "ou expliquer lecart."
     exit 2
   }
   print "homogenes : la mise en commun mesure bien un seul effet."

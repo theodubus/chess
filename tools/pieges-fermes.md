@@ -171,11 +171,13 @@ C'est la seule condition de sortie de ce fichier.
   pu jouer. *Un dommage statistique réel pour réparer un affichage est un
   mauvais échange* : le plafond est posé à 1,5 × l'estimation, et une notice
   dit ce que le job atteint.
-  <br>**Et l'estimation reste délibérément non calibrée**, alors que deux
-  matchs donnent un facteur 0,77 stable. Ce facteur **est** le gaspillage de
-  pendule — un moteur qui laisse 48 % de son horloge finit ses parties plus
-  vite que la cadence nominale — donc C21 le fera dériver vers 1 en
-  fusionnant. *Une constante qu'un chantier en cours invalide ne s'écrit pas.*
+  <br>**Et l'estimation est restée délibérément non calibrée**, alors que
+  deux matchs donnaient un facteur 0,77 stable. Ce facteur **était** le
+  gaspillage de pendule — un moteur qui laisse 48 % de son horloge finit
+  ses parties plus vite que la cadence nominale — donc C21, alors en cours,
+  devait le faire dériver vers 1 : il a valu 0,97 avec les deux moteurs
+  de C21, le 23 sept. 2026 (le commentaire de `match.yml`). *Une constante
+  qu'un chantier en cours invalide ne s'écrit pas.*
   <br>**Tenu par** : `.github/workflows/match.yml`, dont le plafond est calculé depuis la cadence.
 
 - **Un mutant qui fuit tue son runner au lieu d'être compté.** Le 20 oct.

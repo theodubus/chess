@@ -79,7 +79,8 @@ Au journal, une entrée datée, avant le premier job :
 
 ## 5. Après le lancement
 
-- L'entrée du journal reçoit les runs, leur graine et l'heure de départ ;
+- L'entrée du journal reçoit les runs, leur graine, le livre et l'heure
+  de départ ;
   la fin attendue, par F-0016.
 - Un contrôle programmé à la fin attendue, puis le relevé par le skill
   `rendre-un-verdict` : rien ne se lit avant que tous les jobs aient fini.

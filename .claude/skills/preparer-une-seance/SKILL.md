@@ -7,11 +7,9 @@ description: Préparer une séance d'entraînement de réseaux NNUE sur la carte
 
 La carte de Théo est la seule qui entraîne, et chaque séance lui coûte du
 temps : elle se prépare entière d'avance, se lance sans surveillance, et
-s'arrête d'elle-même sur la moindre faute. Ce que font les outils —
-`tools/nnue-train`, les données de Leela — est dans `tools/README.md`,
-« Entraîner un réseau » ; la machine de Théo est F-0020 ; ce skill est la
-procédure des séances de septembre à novembre 2026, dont le journal garde
-les récits.
+s'arrête d'elle-même sur la moindre faute. Les outils sont décrits dans
+`tools/README.md`, « Entraîner un réseau », la machine de Théo dans
+F-0020 ; les récits des séances, depuis septembre 2026, au journal.
 
 ## 1. Écrire la séance avant de la demander
 
@@ -105,7 +103,8 @@ les récits.
 - Les points de sauvegarde à garder, s'il y en a, sur une branche à part
   (`reseau/<nom>-points`).
 - Les liens des artefacts, s'il faut les télécharger à la main, avec leur
-  date d'expiration.
+  date d'expiration : par `gh run download` ou un navigateur connecté, et
+  chacun décompressé dans son dossier, `unzip` n'ouvrant qu'une archive.
 - **Une séance n'est lancée que quand Théo le dit**, pas sur l'annonce
   qu'il va la lancer.
 
@@ -116,7 +115,8 @@ les récits.
   celui qu'a entraîné bullet ») ; sinon le réseau ne se mesure pas.
 - La durée et les pertes, confrontées à leurs attendus.
 - Les réseaux, leur courbe de perte et la sortie du programme sont sous
-  `reseaux/`, intégrés depuis la branche de Théo.
+  `reseaux/`, intégrés depuis la branche de Théo ; un réseau appris sur les
+  données de Leela entre aux « Remerciements » du `README.md` (ADR-0030).
 - **La perte tenue à l'écart** (`nnue-validation.yml`) : le contrôle des
   positions gardées du registre au chiffre près, des écarts appariés à une
   référence, des attendus écrits par étiqueteur du job tenu, et les biais

@@ -44,7 +44,7 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   Rien ne s'y fait en pilote automatique.
 - Ce qui vieillit sans que rien ne le signale n'a plus de liste à part
   depuis le 23 nov. 2026 : chaque point est là où il sert — l'expiration
-  des données (F-0005, B-0026), l'étalonnage d'un runner (F-0017), la durée du
+  des données (F-0005, B-0077), l'étalonnage d'un runner (F-0017), la durée du
   balayage de mutation (F-0019) ; l'ancienne liste est J-2026-11-23-J.
 - Ce sur quoi travailler : **les sujets prêts du backlog**, que l'état
   calcule. **Un test qui vaut le coup n'attend pas de validation** : il
@@ -56,8 +56,9 @@ pièges déjà payés. Il ne dit pas **où on en est**.
   F-0009 et F-0010 (ADR-0032).
 - **Ce qui revient à Théo se dit à chaque point de récap**, en particulier
   les branches distantes à supprimer, que le jeton de session ne peut pas
-  supprimer (ADR-0033) ; l'état du socle les calcule, hors celles que la
-  politique garde.
+  supprimer (ADR-0033) et que l'état du socle calcule, hors celles que la
+  politique garde ; ce jeton ne peut pas non plus pousser une étiquette
+  (403, J-2026-09-22-E).
 - **Le socle est installé** (J-2026-11-11-B). Là où
   sa section, en fin de fichier, contredit le reste de ce fichier, ce que
   Théo a tranché ce jour-là vaut (D-0002) : **l'agent fusionne lui-même ses
@@ -619,11 +620,8 @@ Le verdict est un script et non du YAML, pour pouvoir être éprouvé :
 `.github/mutation-verdict-test.sh` tourne dans `tools/verify.sh` comme
 dans la CI. **L'alerte ne dépend d'aucun lecteur extérieur** : le job
 `Verdict` ouvre lui-même une issue quand le cliquet casse, ou commente
-celle qui est déjà ouverte. `workflow_dispatch` accepte deux entrées :
-`simuler_une_alerte`, qui force l'échec pour éprouver l'issue, et
-`commit`, qui balaie un SHA au lieu de la tête de la branche — le crible
-d'un candidat révoqué — sans jamais ouvrir d'issue, le cliquet gardant
-`main`.
+celle qui est déjà ouverte. Ses entrées de `workflow_dispatch` :
+`tools/README.md`, « Tests de mutation ».
 
 **Sa durée** monte vers la limite du job (F-0019) ; au-delà de ~300
 minutes, il faudra découper `search.rs` par `cargo mutants --shard`, ce que

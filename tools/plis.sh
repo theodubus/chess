@@ -49,7 +49,7 @@
 #   ne pondère pas —, alors que la référence cherche PENDANT que le candidat
 #   pondère. Même binaire, même machine, mêmes parties : le rapport dit ce que
 #   le ponder vole à l'adversaire, sans comparer deux runners dont la vitesse
-#   varie de 22 à 58 %. Un coup joué sur `ponderhit` mêle les deux régimes et
+#   va du simple au double (F-0017). Un coup joué sur `ponderhit` mêle les deux régimes et
 #   en est exclu. Sans ponder, le rapport est un témoin : il doit valoir ~1.
 #   **Il porte un confondant de quelques pour cent**, et il faut le savoir
 #   avant de le lire : chez le camp qui pondère, les coups partis d'un `go`

@@ -8,15 +8,14 @@ qui n'a plus à être lu à chaque fois s'archive dans le journal.
 
 ## F-0005 — Les données d'entraînement gardées par GitHub expirent du 24 déc. 2026 au 29 janv. 2027
 
-> statut : mesuré · preuve : J-2026-11-17-AG, J-2026-11-23-O · source : relevé à l'API de GitHub le 17 nov. 2026, workflow `nnue-datagen.yml` · date : 2026-11-17
+> statut : mesuré · preuve : J-2026-11-17-AG, J-2026-11-23-O, J-2026-11-23-Q, J-2026-11-23-R · source : relevé à l'API de GitHub le 17 nov. 2026, workflow `nnue-datagen.yml` · date : 2026-11-17
 
 Par génération, la date du dernier artefact : la première vague d'A21
 le 24 déc. 2026, la vague au réseau du 29 sept. le 28 déc., le n° 13 le
 5 janv. 2027, puis le n° 18 le 14 janv., le n° 20 le 18, sa suite le 19,
 le n° 21 le 24, le n° 22 le 29. Passé ces dates, la machine de Théo porte
-la seule copie. Dire avant chacune ce qui sert encore et ce qui se copie
-est le sujet B-0026, ouvert le 23 nov., la mise à jour du socle étant
-remise (D-0024). Le relevé du 6 nov. ne comptait que les
+la seule copie. Ce qui sert encore a été dit le 23 nov. (B-0026) ; sa
+copie sur un disque de Théo, avant le 18 janv. 2027, est B-0077 (D-0025). Le relevé du 6 nov. ne comptait que les
 générations n° 18 à n° 22 (J-2026-11-17-AG).
 
 ## F-0007 — L'évaluation qui joue est le réseau embarqué N9w50s800, depuis le 22 oct. 2026

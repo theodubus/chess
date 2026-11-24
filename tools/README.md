@@ -12,7 +12,7 @@ mesure fausse passerait inaperçue. Deux bugs de cette famille sont apparus
 pendant le développement : l'encodage du roque, et un `quit` qui interrompait
 la recherche.
 
-D'où **deux arbitres indépendants** (arbitrage A14) :
+D'où **deux arbitres indépendants** (ADR-0009) :
 
 | | rôle |
 |---|---|
@@ -205,8 +205,8 @@ ce que `engine/tests/outillage_documente.rs` confronte au répertoire.
 |---|---|
 | `bookgen.rs` | génère le livre d'ouvertures EPD, de façon reproductible. Sans livre, le moteur étant déterministe, toutes les parties d'un match sont la même partie |
 | `datagen.rs` | produit le corpus `FEN;résultat` de l'ajustement Texel, étiqueté par le **résultat de la partie** et jamais par le score de l'évaluation. Sert aussi à tirer des positions de vraies parties pour toute sonde |
-| `tune.rs` | l'ajustement Texel lui-même. Son verdict a été **rejeté** (−9,96 Elo) ; l'outil reste parce qu'il resservira avec un corpus plus grand |
-| `nnue_probe.rs` | le benchmark obligatoire de B4 : ce que coûtent le copy-make (7,2 %) et la dérivation du delta d'accumulateur NNUE (2,8 %) en part du temps d'un nœud |
+| `tune.rs` | l'ajustement Texel lui-même. Son verdict a été **rejeté** : −9,96 Elo contre la base, quand les mêmes termes aux valeurs conventionnelles rendaient +14,92, soit 25 de moins (J-2026-09-14-F) ; l'outil reste parce qu'il resservira avec un corpus plus grand |
+| `nnue_probe.rs` | le benchmark obligatoire de B4 : ce que coûtent le copy-make et la dérivation du delta d'accumulateur NNUE en part du temps d'un nœud |
 | `nnue_datagen.rs` | les données d'entraînement NNUE (A21) : parties d'auto-jeu à nœuds fixes, au format `viriformat` que lit bullet, **écrit par la crate de référence** et jamais réimplémenté. Lancé sur runner par `.github/workflows/nnue-datagen.yml`, un artefact par job. **Étiquette par le réseau embarqué depuis le 29 sept.** (`--eval`, n° 7) ; `--eval '<none>'` regénère les données d'A21 |
 | `nnue_validation.rs` | la perte de l'entraîneur sur des positions qu'il n'a PAS apprises (n° 18) — bullet `10e7e82` n'a pas de jeu de validation, lu au source. Les positions et les étiquettes de l'entraîneur, dépliées par `viriformat` sous son filtre par défaut ; chaque réseau QUANTIFIÉ évalué par le code du moteur ; la position confrontée pièce à pièce à son étiquette avant d'être comptée ; intervalle par partie, écarts appariés. Lancé sur runner par `.github/workflows/nnue-validation.yml`, qui télécharge les artefacts de `nnue-datagen.yml`. **Un diagnostic — apprendre ou retenir —, jamais une mesure de force** |
 | `spsa.rs` | le pilote du réglage automatique (n° 19) : l'arithmétique de SPSA par manches — l'état (valeurs, plages, paires jouées), le tirage des perturbations d'un job, la lecture du résultat de fastchess, la mise à jour. Ne joue aucune partie : `.github/workflows/spsa.yml` construit les deux camps par les variables `SR_*` que lisent les `reglage!` de `engine/src/search.rs`, fait jouer fastchess, agrège et enchaîne les manches. Ses tests portent une **vérité terrain** — sur des parties simulées autour d'un optimum connu, SPSA doit s'en rapprocher, et ne s'en rapproche pas quand le signal est nul. L'état de la première passe : `tools/spsa/n19.txt` |
@@ -341,8 +341,7 @@ mise en commun, et jusqu'où elle tient, est dans F-0018.
 
 **« Même graine, même livre » ne tient qu'à évaluation égale** : l'évaluation
 faite main qui filtre change avec le code, et un livre ne se régénère qu'au
-commit qui l'a tiré (celui de 500 positions du 13 sept., à `4695941`). Un
-livre se cite donc avec ce commit, pas seulement avec sa graine.
+commit qui l'a tiré (celui de 500 positions du 13 sept., à `4695941`).
 
 Il est **indispensable**, pas décoratif : ShallowRed est déterministe, donc
 sans livre toutes les parties d'un match seraient la même partie et
@@ -381,10 +380,10 @@ supplémentaire, puis avec la dérivation, chacun protégé par `black_box`, et
 l'on lit le ralentissement. C'est plus honnête qu'une boucle serrée, dont la
 localité de cache n'a rien à voir avec celle d'une recherche.
 
-Sa mesure du 14 sept. 2026, rapportée à un vrai nœud de recherche :
-copy-make 7,2 % d'un nœud, dérivation du delta NNUE 2,8 %, sur 283 677 coups
-vérifiés sans un écart — ni le copy-make ni `cozy-chess` ne plafonnent le
-projet du côté de NNUE (ADR-0005, ADR-0008).
+Sa mesure du 14 sept. 2026 a fermé la question d'ADR-0005 et d'ADR-0008 :
+ni le copy-make ni `cozy-chess` ne plafonnent le projet du côté de NNUE
+(J-2026-09-14-C). Ses chiffres, d'avant le réseau, ne valent que pour leur
+date.
 
 ## Générer les données NNUE — `nnue-datagen.yml`
 
@@ -434,7 +433,9 @@ lisent dans le workflow ; ce qui suit est ce qu'aucune entrée ne dit.
   génération a sa ligne dans `tools/<génération>-jobs.tsv`, son rôle
   compris : `tenu`, le premier job lancé, que l'entraînement ne voit
   jamais et que `nnue-validation.yml` relit, ou `appris` ; les
-  générations d'avant, et de quoi les regénérer, sont dans B-0026.
+  générations d'avant n'ont pas de registre : leurs runs, leurs comptes
+  et de quoi les regénérer sont au journal (J-2026-11-18-BD,
+  J-2026-11-18-BE, J-2026-11-18-BY).
 
 Une génération se mène par vagues, selon le skill `lancer-une-generation`.
 
@@ -509,9 +510,6 @@ tests au match puis à l'embarquement : le skill `embarquer-un-reseau`.
 
 **La machine de Théo**, ses limites et son rangement : F-0020. Ce qu'une
 séance vérifie avant tout, et sa procédure : le skill `preparer-une-seance`.
-Les artefacts se téléchargent par `gh run download` ou depuis un navigateur
-connecté à GitHub, puis se décompressent un par un, chacun dans son
-dossier : `unzip` n'ouvre qu'une archive par appel.
 
 Depuis le n° 20, les séances s'enchaînent par les scripts `tools/seance-*.sh`,
 qui se lancent sans surveillance et disent leur usage en tête ; le
@@ -607,7 +605,10 @@ tools/mutants.sh --file engine/src/tt.rs -j4
 
 Il tourne par `.github/workflows/mutation.yml`, et son verdict est rendu
 par `.github/mutation-verdict.sh`, que `.github/mutation-verdict-test.sh`
-éprouve. Le reste de l'outillage automatique — le hook de chess,
+éprouve. `workflow_dispatch` accepte deux entrées : `simuler_une_alerte`,
+qui force l'échec pour éprouver l'issue, et `commit`, qui balaie un SHA au
+lieu de la tête de la branche — le crible d'un candidat révoqué — sans
+jamais ouvrir d'issue, le cliquet gardant `main`. Le reste de l'outillage automatique — le hook de chess,
 `.claude/hooks/no-fabricated-sha.sh`, et l'auto-test des hooks,
 `tools/verify-hooks.sh` — est décrit dans `CLAUDE.md`, section « Les
 dispositifs de chess ».
@@ -641,8 +642,8 @@ fabriqués, et tourne dans `tools/verify.sh` comme dans la CI.
 **Ce que le balayage ne mesure pas** : la force de jeu. Un survivant portant
 sur une valeur d'évaluation, une marge d'élagage ou l'ordre des coups n'est pas
 un défaut — le SPRT en juge déjà, et aucun test unitaire ne peut trancher à sa
-place. `tools/` est hors du balayage pour la même raison : ce sont des
-utilitaires hors ligne, dont la fiabilité se juge par `crosscheck.sh`.
+place. `tools/` est hors du balayage ; la raison écrite le 15 sept. 2026
+ne tient plus, et la question est ouverte (B-0080).
 
 ## Vérifier l'échange statique
 
@@ -661,10 +662,10 @@ découvertes et de la légalité sans qu'on ait à les réécrire.
 dériver de tête. Quatre des huit premiers tests de `see.rs` étaient faux pour
 l'avoir été.
 
-**Écart mesuré le 16 sept. 2026 : 20 sur 4 623 captures, soit 0,43 %** — 18
-clouages absolus, 2 échecs à la découverte, **aucune autre cause**. C'est la
-limite par construction d'un échange statique, caractérisée et verrouillée par
-un test.
+**Les clouages absolus et les échecs à la découverte** sont la limite par
+construction d'un échange statique : sur l'échantillon mesuré, aucune
+autre cause (J-2026-11-17-J). Elle est caractérisée et verrouillée par un
+test.
 
 ## `tools/pieges-fermes.md` — les pièges qu'un code de sortie tient désormais
 
@@ -741,15 +742,16 @@ règle d'arrêt à préserver. C'est ce que fait `tools/mettre-en-commun.sh`.
 ### Ce que ça achète
 
 L'intervalle d'un match à longueur fixe décroît en `1/√n` : ce qu'un job et
-quatre jobs rendent à `8+0,08` est dans F-0016. « Séparer de zéro » est plus faible que la barre
-habituelle du projet, `H1` sur des bornes `[0, 5]` : pour écarter la borne
-haute, l'effet doit dépasser l'intervalle plus 5.
+quatre jobs rendent à `8+0,08` est dans F-0016. Il tranche en séparant
+l'effet de zéro ; un SPRT, par défaut, entre les bornes `[0, 5]`, une
+barre plus haute : pour écarter la borne haute, l'effet doit dépasser
+l'intervalle plus 5.
 
 ### Le piège propre à la mise en commun, et il est sérieux
 
-**Deux runners GitHub varient de 58 % en vitesse** — 2 067 101 contre
-3 268 241 n/s sur le même binaire — soit environ **un demi-pli** de profondeur
-atteinte. Et ce dépôt a mesuré qu'**un pli peut INVERSER un verdict**.
+**Deux runners GitHub ne vont pas à la même vitesse** (F-0017), et
+l'écart se lit en plis de profondeur atteinte (F-0015) ; or ce dépôt a
+mesuré qu'**un pli peut INVERSER un verdict**.
 
 Mettre en commun deux matchs joués sur des runners très différents **moyenne
 donc deux points de fonctionnement**. Ce n'est pas nécessairement mauvais —
