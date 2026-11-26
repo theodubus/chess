@@ -15,4 +15,4 @@ la tâche se clôt sans rien changer.
 ## Fait quand
 
 - [ ] D-0030 répondue ; si validée, `python3 .socle/socle check` accepte le changement en la citant
-- [ ] si validée, `tools/verify.sh` passe et `git grep "CLAUDE.md" -- engine/tests` ne rend plus que des mentions datées ou d'étiquette
+- [ ] si validée, `tools/verify.sh` passe, et plus aucun message d'échec des trois tests ne renvoie à `CLAUDE.md` ; l'assertion qui exige qu'il existe (`le_parcours_trouve_la_documentation_du_depot`) reste, seule à faire tomber un test s'il disparaît

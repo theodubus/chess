@@ -13,3 +13,5 @@ toucher les mêmes paragraphes de `CLAUDE.md` en même temps.
 ### Passe 1 — 2026-11-26
 
 Commits : 7b0178c..c834bb0
+
+- Ouvre : rien (aucun bloquant, huit écartés : J-2026-11-26-M)
