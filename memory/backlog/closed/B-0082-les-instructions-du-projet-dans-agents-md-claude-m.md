@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0082 — Les instructions du projet dans AGENTS.md, CLAUDE.md réduit à son import
 
-> statut : ouvert · origine : J-2026-11-26-E · lu : backlog@b1503ac2
+> statut : fait · origine : J-2026-11-26-E · ref : J-2026-11-26-Q · lu : backlog@b1503ac2
 
 Théo a validé D-0029 le 26 nov. 2026 : les instructions de travail du
 projet passent dans un `AGENTS.md`, lu par tout agent, et `CLAUDE.md` ne
@@ -45,5 +45,5 @@ s'adaptent.
 
 ## Satisfait quand
 
-- [ ] un agent qui ne lit qu'AGENTS.md y trouve toutes les instructions du projet, et Claude Code les charge toujours par `CLAUDE.md`
+- [x] Claude Code charge toutes les instructions du projet par `CLAUDE.md`, qui importe `AGENTS.md` (la sonde de J-2026-11-26-O ; restreint à Claude Code par C-0005@198919fb, J-2026-11-26-Q)
 - [x] les garde-fous qui lisaient les instructions les lisent là où elles sont, et le prouvent par un test qui échoue si elles n'y sont plus (J-2026-11-26-K)
