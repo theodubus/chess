@@ -219,14 +219,16 @@ la variance d'une mise en commun reste sous ~× 1,15 jusqu'à soixante jobs
 (× 6,4 avec le livre de 500) : la condition d'ADR-0034. Au-delà, un livre
 plus grand.
 
-## F-0019 — Le balayage de search.rs : 264 minutes sur 350 le 17 nov. 2026
+## F-0019 — Le balayage de search.rs : 208 à 264 minutes sur 350 en novembre 2026, puis deux morceaux
 
-> statut : mesuré · preuve : J-2026-11-23-J, J-2026-11-24-L, run 42767998423, run 44035126032 · source : les jobs « Mutation — search.rs », lus à l'API le 24 nov. 2026 · date : 2026-11-17
+> statut : mesuré · preuve : J-2026-11-23-J, J-2026-11-24-L, J-2026-11-26-F, run 42767998423, run 44035126032, run 45359852119 · source : les jobs « Mutation — search.rs », lus à l'API le 24 et le 26 nov. 2026 · date : 2026-11-24
 
 107 minutes le 6 oct., coupé à 180 le 12, la limite d'alors, passée depuis
-à 350 ; 218 le 10 nov., 264 le 17. Il monte avec le fichier, sans alerte :
-un job coupé rend un verdict illisible. Au-delà de ~300, le découper par
-`cargo mutants --shard` (B-0075).
+à 350 ; 218 le 10 nov., 264 le 17, 208 le 24 : l'écart d'une semaine à
+l'autre suit le runner (F-0017) autant que le fichier. Un job coupé rend un
+résumé `INCOMPLET` : le verdict casse et ouvre une issue, mais la mesure du
+fichier est perdue. Depuis T-0003, `search.rs` se balaie en deux morceaux ;
+leur durée se relève au premier balayage qui les porte.
 
 ## F-0020 — La machine qui entraîne : celle de Théo, RTX 3050, CUDA plafonné à 13.2
 

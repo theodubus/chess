@@ -576,7 +576,7 @@ au journal (J-2026-11-17-Q).
 | `engine/tests/rustines_attic.rs` | critère d'acceptation : confronte la colonne « s'applique sur `main` ? » de `tools/attic/README.md` au vrai `git apply --check`, **dans les deux sens** — une rustine non déclarée et une déclaration sans rustine échouent autant qu'un verdict faux. `#[ignore]` parce qu'il lance `git` : aucun mutant d'`engine/src/` ne peut changer si une rustine s'applique |
 | `engine/tests/pieges_fermes.rs` | confronte `tools/pieges-fermes.md` au dépôt : **chaque piège archivé doit nommer un dispositif qui existe**, et l'archive doit rester nommée dans `CLAUDE.md`. Sans lui, un piège dont le dispositif disparaît resterait archivé comme « tenu » |
 | `engine/tests/outillage_documente.rs` | exige que chaque dispositif soit **nommé avec son extension** dans une doc : scripts de `tools/`, workflows, hooks et binaires de `tools/src/bin/`, énumérés par répertoire et par extension, jamais nom par nom |
-| `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier, puis le job `Verdict` |
+| `.github/workflows/mutation.yml` | mardi 00:00 UTC : balayage par mutation, un job par fichier ou par morceau d'un fichier long, puis le job `Verdict` |
 | `tools/binaires.sh` | dans la CI, à chaque push : construit les deux binaires livrés, `x86-64` et `x86-64-v3`, et **refuse de les rendre s'ils ne cherchent pas le même arbre**, banc fait main et réseau. Sur une PR et sur `main`, de même sous Windows, sur Mac Intel et sur Apple Silicon, et le job « Le même arbre sur chaque système » exige la même empreinte sur les quatre (ADR-0031) ; sur `main`, il les publie en artefact. Éprouvé par `tools/binaires-test.sh`, dans `verify.sh` et la CI |
 | `tools/balayage-vivant.sh` | étape du job `Moteur`, à chaque push : échoue si le workflow `Mutation` est endormi ou n'a pas tourné depuis quinze jours. **Le cliquet ne peut pas signaler sa propre absence**, et GitHub endort les workflows planifiés d'un dépôt public après soixante jours sans activité. Éprouvé par `tools/balayage-vivant-test.sh`, dans `verify.sh` et la CI |
 | `.github/workflows/nnue-train.yml` | à chaque push qui touche `engine/src/nnue.rs`, la crate `tools/nnue-train` ou la toolchain : compile le programme d'entraînement NNUE, `--locked`, sans GPU, contre le runtime factice de bullet. Ce programme a son propre espace de travail : sans ce contrôle, un changement de l'API du moteur le casserait en silence, et on ne l'apprendrait que le jour de l'entraînement |
@@ -611,10 +611,10 @@ dans la CI. **L'alerte ne dépend d'aucun lecteur extérieur** : le job
 celle qui est déjà ouverte. Ses entrées de `workflow_dispatch` :
 `tools/README.md`, « Tests de mutation ».
 
-**Sa durée** monte vers la limite du job (F-0019) ; au-delà de ~300
-minutes, il faudra découper `search.rs` par `cargo mutants --shard`, ce que
-ni `mutation.yml` ni le verdict, qui lit un résumé par fichier, ne savent
-encore faire (B-0075). C'est un débit de compilation, qui ne dit
+**Sa durée** monte avec le fichier vers la limite du job (F-0019) :
+`search.rs` se balaie en deux morceaux, `cargo mutants --shard`, que le
+verdict somme et refuse incomplets ; un autre fichier qui approche de la
+limite se découpe de même. C'est un débit de compilation, qui ne dit
 rien de la vitesse de recherche d'un runner. **Un nombre de nœuds par
 seconde appartient à son binaire autant qu'à sa machine** : une ligne
 d'étalonnage ne compare que des runs du même binaire, quand la profondeur

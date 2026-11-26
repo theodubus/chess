@@ -595,7 +595,9 @@ moteur en produit plus d'un millier, et `engine/src/search.rs` seul
 demande des heures de runner : bien trop pour bloquer une pull request — un
 contrôle qui bloque une heure finit par être contourné. Il tourne donc
 chaque semaine : workflow `Mutation`, mardi 00:00 UTC, un job par fichier
-en parallèle ; sa durée par fichier, `CLAUDE.md`, « Sa durée ».
+en parallèle — par morceau pour un fichier trop long, `search.rs 0/2` dans
+la matrice, le verdict sommant les morceaux ; sa durée par fichier,
+`CLAUDE.md`, « Sa durée ».
 
 ```sh
 cargo install cargo-mutants --locked

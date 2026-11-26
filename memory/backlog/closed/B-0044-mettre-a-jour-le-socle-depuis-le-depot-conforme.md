@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0044 — Mettre à jour le socle, depuis le dépôt conforme
 
-> statut : ouvert · origine : D-0018 · lu : backlog@e26e05e9
+> statut : fait · origine : D-0018 · ref : J-2026-11-26-D · lu : backlog@e26e05e9
 
 Théo, le 17 nov. 2026 : « On fait deja tous les sujets restants puis
 ensuite mise à jour du socle » (D-0018, J-2026-11-17-AD). La mise à jour
@@ -30,4 +30,4 @@ et Théo fusionne lui-même la pull request (J-2026-11-26-A).
 
 ## Satisfait quand
 
-- [ ] le socle est à la version que Théo a choisie, et tous les contrôles passent
+- [x] le socle est à la version que Théo a choisie, et tous les contrôles passent (T-0001, J-2026-11-26-D)

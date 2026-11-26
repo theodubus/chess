@@ -51,13 +51,15 @@ fn sources(root: &Path) -> Vec<String> {
     trouves
 }
 
-/// La liste `fichier:` de la matrice du workflow.
+/// Les entrées de la liste `fichier:` de la matrice du workflow, telles
+/// qu'écrites : `search.rs 0/2` pour un morceau, `tt.rs` pour un fichier
+/// balayé d'un seul job.
 ///
 /// Un analyseur YAML complet serait une dépendance pour lire neuf lignes. Ce
 /// qu'on cherche est une clé dont le nom est exactement `fichier`, suivie
 /// d'entrées de liste : tout autre découpage du fichier ferait échouer le
 /// contrôle de cohérence plus bas, qui est là pour ça.
-fn matrice(root: &Path) -> Vec<String> {
+fn entrees_de_matrice(root: &Path) -> Vec<String> {
     let texte = std::fs::read_to_string(root.join(".github/workflows/mutation.yml")).unwrap();
     let mut entrees = Vec::new();
     let mut dedans = false;
@@ -77,6 +79,74 @@ fn matrice(root: &Path) -> Vec<String> {
         }
     }
     entrees
+}
+
+/// Les fichiers que la matrice balaie : le nom de chaque entrée, sans son
+/// morceau.
+fn matrice(root: &Path) -> Vec<String> {
+    entrees_de_matrice(root)
+        .iter()
+        .filter_map(|e| e.split_whitespace().next().map(str::to_string))
+        .collect()
+}
+
+/// Ce qui empêche les entrées de la matrice de couvrir chaque fichier une
+/// fois et une seule. Un fichier découpé (`search.rs k/n`, par
+/// `cargo mutants --shard`) doit lister ses morceaux `0/n` à `n-1/n`, chacun
+/// une fois, d'un seul découpage, sans entrée entière à côté ; un fichier
+/// entier, une seule entrée.
+///
+/// **Le verdict refuse déjà un morceau manquant**, mais le mardi suivant,
+/// sur un runner : ce contrôle le refuse au commit qui écrit la matrice.
+fn morceaux_incoherents(entrees: &[String]) -> Vec<String> {
+    /// Les entrées d'un fichier : entières, et ses morceaux (k, n).
+    #[derive(Default)]
+    struct Entrees {
+        entieres: usize,
+        morceaux: Vec<(usize, usize)>,
+    }
+    let mut par_fichier: std::collections::BTreeMap<&str, Entrees> = Default::default();
+    let mut fautes = Vec::new();
+    for entree in entrees {
+        let mut mots = entree.split_whitespace();
+        let Some(nom) = mots.next() else { continue };
+        let ligne = par_fichier.entry(nom).or_default();
+        match (mots.next(), mots.next()) {
+            (None, _) => ligne.entieres += 1,
+            (Some(morceau), None) => {
+                let lu = morceau
+                    .split_once('/')
+                    .and_then(|(k, n)| Some((k.parse().ok()?, n.parse().ok()?)));
+                match lu {
+                    Some((k, n)) if n >= 2 && k < n => ligne.morceaux.push((k, n)),
+                    _ => fautes.push(format!(
+                        "`{entree}` : morceau illisible, attendu k/n, k < n, n ≥ 2"
+                    )),
+                }
+            }
+            _ => fautes.push(format!("`{entree}` : un fichier et un morceau au plus")),
+        }
+    }
+    for (nom, Entrees { entieres, morceaux }) in &par_fichier {
+        if *entieres > 0 && !morceaux.is_empty() {
+            fautes.push(format!("{nom} : entier et découpé à la fois"));
+        } else if *entieres > 1 {
+            fautes.push(format!("{nom} : {entieres} entrées entières"));
+        }
+        let Some(&(_, n)) = morceaux.first() else {
+            continue;
+        };
+        if morceaux.iter().any(|&(_, autre)| autre != n) {
+            fautes.push(format!("{nom} : morceaux de deux découpages"));
+            continue;
+        }
+        let mut ks: Vec<usize> = morceaux.iter().map(|&(k, _)| k).collect();
+        ks.sort_unstable();
+        if ks != (0..n).collect::<Vec<_>>() {
+            fautes.push(format!("{nom} : morceaux {ks:?}, attendus 0 à {}", n - 1));
+        }
+    }
+    fautes
 }
 
 /// Les noms de fichier du plafond, dans l'ordre où ils y figurent.
@@ -197,4 +267,45 @@ fn le_controle_lit_bien_les_deux_listes() {
     // rend l'exemption vérifiable plutôt que déclarée.
     assert!(!porte_du_code(&root, "lib.rs"), "lib.rs porte du code ?");
     assert!(porte_du_code(&root, "see.rs"), "see.rs n'en porte pas ?");
+}
+
+#[test]
+fn la_matrice_couvre_chaque_fichier_une_fois() {
+    let entrees = entrees_de_matrice(&racine());
+    let fautes = morceaux_incoherents(&entrees);
+    assert!(
+        fautes.is_empty(),
+        "la matrice de `.github/workflows/mutation.yml` ne couvre pas chaque \
+         fichier une fois et une seule :\n  {}\n\nUn fichier découpé liste \
+         `<fichier> 0/n` à `<fichier> n-1/n`, chacun une fois : le verdict \
+         somme ses morceaux, et un morceau manquant se lirait comme un \
+         fichier mieux couvert.",
+        fautes.join("\n  ")
+    );
+}
+
+#[test]
+fn le_controle_des_morceaux_refuse_une_matrice_fausse() {
+    // Le contrôle ci-dessus passe sur une matrice juste ; il faut aussi
+    // qu'il casse sur une fausse, sans quoi il passerait en ne lisant rien.
+    let liste = |l: &[&str]| l.iter().map(|e| e.to_string()).collect::<Vec<_>>();
+    assert!(morceaux_incoherents(&liste(&["a.rs 0/2", "a.rs 1/2", "b.rs"])).is_empty());
+    assert!(morceaux_incoherents(&liste(&["a.rs", "b.rs"])).is_empty());
+    for fausse in [
+        &["a.rs 0/2"][..],                         // un morceau manque
+        &["a.rs 1/2"][..],                         // le premier manque
+        &["a.rs 0/2", "a.rs 1/3"][..],             // deux découpages
+        &["a.rs 0/2", "a.rs 0/2", "a.rs 1/2"][..], // un morceau doublé
+        &["a.rs", "a.rs 0/2", "a.rs 1/2"][..],     // entier et découpé
+        &["a.rs", "a.rs"][..],                     // entier deux fois
+        &["a.rs 0/1"][..],                         // un découpage en un
+        &["a.rs 2/2", "a.rs 1/2"][..],             // k hors de 0..n
+        &["a.rs x/2"][..],                         // illisible
+        &["a.rs 0/2 1/2"][..],                     // deux morceaux en une entrée
+    ] {
+        assert!(
+            !morceaux_incoherents(&liste(fausse)).is_empty(),
+            "matrice fausse acceptée : {fausse:?}"
+        );
+    }
 }
