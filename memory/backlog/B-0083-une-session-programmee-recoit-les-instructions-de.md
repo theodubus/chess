@@ -22,6 +22,9 @@ conteneur de la session qui crée, pris à son démarrage, est supposé
 socle, protégés : une correction passe par lui ou par la plateforme, ce
 qu'il faut d'abord trancher.
 
+Théo l'envoie au socle avec son troisième retour (D-0032@157f0d8e) :
+la correction viendra par une mise à jour du socle.
+
 ## Satisfait quand
 
 - [ ] une session réveillée par une passation programmée démarre sur la tête que nomme sa passation, constaté au reflog d'une passation réelle

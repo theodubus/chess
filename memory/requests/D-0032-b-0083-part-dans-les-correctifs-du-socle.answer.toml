@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0032-b-0083-part-dans-les-correctifs-du-socle.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-26"
+canal = "conversation"
+citation = "Et oui il part dans les correctifs du socle"
+empreinte = "sha256:952ddf0bd5ef54f3abc3bfc427bd4c570b14be522078f5d48df712f7a12d4c73"
