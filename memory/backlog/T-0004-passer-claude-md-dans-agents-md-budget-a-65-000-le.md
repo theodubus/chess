@@ -41,6 +41,6 @@ d'ici ne charge aucun `CLAUDE.md`.
 
 ## Fait quand
 
-- [ ] `tools/verify.sh` passe, les trois tests lisant AGENTS.md
+- [x] `tools/verify.sh` passe, les trois tests lisant AGENTS.md
 - [x] `python3 .socle/socle check` passe, le budget d'AGENTS.md à 65 000
 - [ ] une session neuve de Claude Code reçoit les instructions par l'import
