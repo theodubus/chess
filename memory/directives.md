@@ -28,3 +28,13 @@ l'humain, une demande qu'il a validée, lève une consigne.
 En réponse au point 3 de D-0005 : « Je lis le défaut de la demande : une
 branche de développement, une seule pull request ouverte à la fois, que je
 fusionne moi-même à CI verte (ta décision du 11 nov.). C'est bien ça ? »
+
+## C-0004 — La feuille de route demandée se donne au format court
+
+> statut : en vigueur · source : J-2026-11-26-I · date : 2026-11-26
+
+> « Non format court roadmap »
+
+En réponse à la feuille de route donnée au format Markdown
+(`python3 .socle/socle roadmap --format markdown`) : quand Théo demande la suite, la
+réponse colle la sortie de `python3 .socle/socle roadmap`, sans `--format markdown`.
