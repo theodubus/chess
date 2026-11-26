@@ -46,4 +46,4 @@ s'adaptent.
 ## Satisfait quand
 
 - [ ] un agent qui ne lit qu'AGENTS.md y trouve toutes les instructions du projet, et Claude Code les charge toujours par `CLAUDE.md`
-- [ ] les garde-fous qui lisaient les instructions les lisent là où elles sont, et le prouvent par un test qui échoue si elles n'y sont plus
+- [x] les garde-fous qui lisaient les instructions les lisent là où elles sont, et le prouvent par un test qui échoue si elles n'y sont plus (J-2026-11-26-K)

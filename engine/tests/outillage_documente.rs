@@ -163,7 +163,7 @@ fn chaque_dispositif_automatique_est_nomme_dans_la_documentation() {
         "dispositif(s) qu'aucun fichier de documentation ne nomme :\n  {}\n\n\
          Un dispositif que la documentation ne nomme pas est un dispositif que \
          la session suivante prendra pour une panne, ou refera. Ajouter son nom \
-         de fichier à CLAUDE.md, README.md ou tools/README.md, avec ce qu'il \
+         de fichier à AGENTS.md, README.md ou tools/README.md, avec ce qu'il \
          fait et pourquoi il existe.",
         orphelins.join("\n  ")
     );

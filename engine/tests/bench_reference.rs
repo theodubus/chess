@@ -388,7 +388,7 @@ fn larbre_de_recherche_ne_bouge_pas_en_silence() {
         "l'arbre de recherche a changé : {noeuds} nœuds à la profondeur \
          {PROFONDEUR} au lieu de {NOEUDS}.\n\n\
          Si le changement est délibéré, recopier {noeuds} ici ET corriger la \
-         référence de la profondeur 7 dans CLAUDE.md et README.md, que le test \
+         référence de la profondeur 7 dans AGENTS.md et README.md, que le test \
          `les_references_du_bench_dans_la_doc_sont_a_jour` vérifie. Sinon, \
          c'est une régression."
     );

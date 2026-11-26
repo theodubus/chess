@@ -66,7 +66,7 @@ fn chaque_piege_archive_nomme_un_dispositif_qui_existe() {
         tenus.len(),
         "{ARCHIVE} : {puces} piège(s) et {} ligne(s) « {MARQUEUR} ».\n\
          Chaque piège archivé doit nommer le dispositif qui le tient — sans \
-         quoi rien ne dit pourquoi il a quitté CLAUDE.md.",
+         quoi rien ne dit pourquoi il a quitté AGENTS.md.",
         tenus.len()
     );
 
@@ -101,13 +101,13 @@ fn chaque_piege_archive_nomme_un_dispositif_qui_existe() {
         "dispositif(s) nommé(s) par {ARCHIVE} mais absent(s) du dépôt :\n  {}\n\n\
          Un piège archivé l'a été parce qu'un code de sortie le rendait \
          inexprimable. Si ce dispositif n'existe plus, le piège n'est plus tenu \
-         par rien — le REMETTRE dans CLAUDE.md, ou corriger le chemin.",
+         par rien — le REMETTRE dans AGENTS.md, ou corriger le chemin.",
         manquants.join("\n  ")
     );
 }
 
 #[test]
-fn larchive_reste_atteignable_depuis_claude_md() {
+fn larchive_reste_atteignable_depuis_les_instructions() {
     // Un fichier que rien ne nomme est un fichier qu'aucune session ne lira.
     // Le renvoi des instructions est la seule porte d'entrée de cette
     // archive. Elles vivent dans `AGENTS.md`, que `CLAUDE.md` importe en une
@@ -116,7 +116,7 @@ fn larchive_reste_atteignable_depuis_claude_md() {
     let claude = std::fs::read_to_string(root.join("AGENTS.md")).unwrap();
     assert!(
         claude.contains(ARCHIVE),
-        "CLAUDE.md ne nomme plus {ARCHIVE} : l'archive devient injoignable, et \
+        "AGENTS.md ne nomme plus {ARCHIVE} : l'archive devient injoignable, et \
          les pièges qu'elle porte deviennent invisibles à une session neuve."
     );
 }
