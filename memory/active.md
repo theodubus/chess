@@ -5,14 +5,13 @@ Réécrit au fil du travail et borné. Ce qui en sort s'archive dans le journal.
 
 ## En cours
 
-**La mise à jour du socle** (B-0044), lancée le 26 nov. 2026 sur le
-signal de Théo : moteur, backlog en quatre formes, consignes dans
-`memory/directives.md`. Sa demande des fichiers protégés attend Théo, qui
-fusionne lui-même la pull request.
+**Le socle est à jour** depuis le 26 nov. 2026 (B-0044, J-2026-11-26-D).
+Le lot suivant est B-0075 ; le passage à AGENTS.md attend la confirmation
+de Théo pour le budget et les trois tests.
 
 ## Prochaines étapes
 
-1. Après la fusion : B-0075, priorité haute — la notice de
+1. B-0075, priorité haute — la notice de
    `.github/workflows/match.yml`, puis le découpage du balayage de
    mutation de `engine/src/search.rs`.
 2. Rappeler à Théo B-0077, la copie sur disque des données qui servent
