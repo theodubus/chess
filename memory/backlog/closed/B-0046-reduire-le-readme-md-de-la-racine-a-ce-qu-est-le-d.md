@@ -9,7 +9,7 @@ présent, qui renvoie aux faits ; ses autres mesures se rangent comme les
 récits. Restent la ligne du banc (`engine/tests/bench_reference.rs`) et
 la mention d'attribution de Leela (ADR-0030).
 
-## Fait quand
+## Satisfait quand
 
 - [x] le `README.md` ne porte plus de mesures ni d'histoire, hors la ligne du banc et les remerciements
 - [x] ce qui en sort est à sa place, chaque chiffre retrouvé

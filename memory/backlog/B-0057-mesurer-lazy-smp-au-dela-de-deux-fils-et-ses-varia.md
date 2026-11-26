@@ -23,7 +23,7 @@ CCRL. Un portable peut brider sa fréquence sous une charge longue :
 symétrique pour les deux moteurs, à surveiller contre une échelle
 extérieure.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : chaque variante mesurée seule, à plus de deux cœurs physiques

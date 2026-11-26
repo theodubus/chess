@@ -3,13 +3,13 @@
 
 > statut : fait · origine : D-0006 · après : B-0001 · priorité : haute · ref : commit:e582c99aefd4da346901c979fd5fc8c281e93b76 · lu : backlog@cbe441c1
 
-Premier lot du déplacement du carnet de bord (B-0003). Théo a décidé le
+Premier lot du déplacement du carnet de bord (JA-0001). Théo a décidé le
 12 nov. 2026 que le carnet devient **public, sans tri** (D-0006, qui
 revient sur le tri qu'il avait d'abord demandé). Ce lot ne déplace rien :
 il mesure ce que le déplacement va rencontrer.
 
 Le carnet est un artefact claude.ai de 1,15 Mo, lu par l'outil Artifact ;
-son adresse est dans le sujet B-0003.
+son adresse est dans le sujet JA-0001.
 
 ## Ce qu'il faut faire
 
@@ -24,7 +24,7 @@ son adresse est dans le sujet B-0003.
 - dire, d'après ces comptes, comment les lots suivants traitent les
   références mortes et les copies.
 
-## Fait quand
+## Satisfait quand
 
 - [x] le rapport chiffré de la conversion est écrit au journal
 - [x] les deux essais sur branche jetable sont faits, leur résultat écrit

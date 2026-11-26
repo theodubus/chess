@@ -13,7 +13,7 @@ Déprioritisé : quatre formes sans gain, l'arbre retiré ne s'achète pas.
 Aucun réglage n'est résolu (ADR-0032) : une forme neuve, ou une base qui
 change, le rouvre.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : une forme neuve mesurée à `8+0,08`

@@ -8,7 +8,7 @@ Le budget de l'étiqueteur est passé de 5 000 à 2 500 nœuds le 6 nov. 2026
 réglages ouverts du réseau (F-0009) : 1 250 nœuds contre 2 500, à temps de
 runner égal, sur des données étiquetées par le réseau embarqué.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] le protocole, l'attendu et le critère sont écrits avant de générer
 - [ ] les deux jeux de données sont générés (`.github/workflows/nnue-datagen.yml`) et les deux réseaux entraînés

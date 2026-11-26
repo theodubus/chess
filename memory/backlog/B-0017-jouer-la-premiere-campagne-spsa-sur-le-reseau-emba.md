@@ -45,7 +45,7 @@ avec la campagne.
   `rendre-un-verdict`). SPSA prédit bien sur son propre bruit, et rien
   d'autre.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] la liste des paramètres et leurs plages sont écrites avant de lancer
 - [ ] la campagne est jouée, son coût en parties et en heures de runner relevé

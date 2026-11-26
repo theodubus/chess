@@ -10,7 +10,7 @@ Prolonger la réflexion quand le score s'effondre d'une itération à
 l'autre. Écran passé, jamais écrit : majoré par 2,7 à 3,0 % des coups,
 signe inconnu.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : écrite et mesurée à `8+0,08`

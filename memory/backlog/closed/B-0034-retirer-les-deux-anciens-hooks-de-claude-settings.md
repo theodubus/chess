@@ -49,6 +49,6 @@ le bloc dont la commande finit par .claude/hooks/verify-on-stop.sh, et
 dans la liste `SessionStart`, celui dont la commande finit par
 `tools/etat.sh`, avec leur virgule.
 
-## Fait quand
+## Satisfait quand
 
 - [x] le commit de Théo est sur la branche, et la CI du socle passe

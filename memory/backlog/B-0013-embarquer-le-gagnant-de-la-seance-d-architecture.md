@@ -14,7 +14,7 @@ le crible puis le balayage de mutation.
 
 La sonde se mène par le skill `sonder-les-marges`, écrit avec B-0049.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] son match direct contre N9w50s800 est relevé, sa borne basse au-dessus de zéro
 - [ ] le réseau est sur `main`, sa confrontation à l'entraîneur dans le test

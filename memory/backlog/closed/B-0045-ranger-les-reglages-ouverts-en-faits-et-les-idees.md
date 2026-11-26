@@ -15,7 +15,7 @@ que le sujet B-0065 retient jusqu'à leur décision, après la mise à jour
 du socle : l'agent ne s'y met pas avant.
 `CLAUDE.md` renvoie aux faits au lieu de la section.
 
-## Fait quand
+## Satisfait quand
 
 - [x] les réglages ouverts sont deux faits, et leur section a quitté `tools/README.md`, son texte au journal
 - [x] chaque idée de la longue traîne est un sujet, sa décision en première case

@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
-# B-0025 — L'architecture et les données suivantes
+# JA-0004 — L'architecture et les données suivantes
 
-> statut : ouvert · origine : D-0004 · forme : jalon · après : B-0019, B-0020, B-0021, B-0023 · lu : backlog@8019de4b
+> statut : ouvert · origine : D-0004 · après : JA-0003, B-0020, B-0021, B-0023 · lu : backlog@8019de4b · ancien : B-0025
 
 Troisième jalon : les deux axes d'architecture sans priorité basse sont
 jugés, chacun embarqué ou arrêté, et le budget de l'étiqueteur est fixé

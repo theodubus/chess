@@ -24,7 +24,7 @@ présenter.
 D-0013 ne couvre que le journal. Étendre l'exclusion assouplit encore le
 test : c'est à Théo de le décider.
 
-## Fait quand
+## Satisfait quand
 
 - [x] Théo a dit si les demandes et les décisions sont écartées à leur tour
 - [x] le test et ses cas suivent sa réponse, ou le sujet est abandonné sur elle

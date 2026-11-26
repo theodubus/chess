@@ -23,7 +23,7 @@ Théo, ce fichier étant protégé.
 Théo a validé le 12 nov. les hypothèses de cadrage (D-0004) et tranché ce
 qu'elles laissaient ouvert (D-0005). La feuille de route est depuis au
 backlog, qui seul fait foi : quatre jalons du moteur, dans l'ordre
-(B-0016, B-0019, B-0025, B-0030), leurs tâches, et trois sujets hors
+(JA-0002, JA-0003, JA-0004, JA-0005), leurs tâches, et trois sujets hors
 jalon (B-0015, B-0026, B-0027). Les points 1 à 4 et 8 de l'ancienne
 feuille, faits, n'y sont pas.
 
@@ -41,7 +41,7 @@ Reste l'ancien texte, que `tools/etat.sh` imprime encore à chaque
 démarrage : le retirer change ce script et son test, et ce que le
 démarrage lance est un réglage que Théo détient.
 
-## Fait quand
+## Satisfait quand
 
 - [x] Théo a revu la feuille de route et son ordre
 - [x] chaque chantier retenu est un sujet du backlog, dans cet ordre

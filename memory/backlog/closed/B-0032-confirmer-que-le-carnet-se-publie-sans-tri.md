@@ -15,6 +15,6 @@ la mémoire avant cette confirmation (B-0006).
 Répondre d'une ligne dans la conversation : « sans tri », ou dire ce que
 le tri retire.
 
-## Fait quand
+## Satisfait quand
 
 - [x] Théo a confirmé que le carnet se publie sans tri, ou dit ce que le tri retire

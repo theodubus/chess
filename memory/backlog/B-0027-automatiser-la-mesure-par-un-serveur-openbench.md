@@ -10,7 +10,7 @@ devient « après la première campagne SPSA » : hypothèse de l'agent validée
 son adresse publique et sa sauvegarde reviennent à Théo ; l'agent
 prépare le reste.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] ce qui revient à Théo est posé en sujets à son nom, avec leur mode d'emploi
 - [ ] le moteur se construit comme OpenBench l'attend

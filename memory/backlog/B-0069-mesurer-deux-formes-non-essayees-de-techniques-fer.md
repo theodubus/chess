@@ -18,7 +18,7 @@ nomme l'autre sans la mesurer :
 Chacune passe d'abord à l'écran (le skill `passer-a-l-ecran`), et se
 mesure seule.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de les tester ou de les abandonner, marge contre coût (D-0021)
 - [ ] si testées : chacune écrantée, puis son verdict à `8+0,08`

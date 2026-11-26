@@ -5,7 +5,7 @@
 
 La relecture de B-0008 (J-2026-11-17-O) l'a relevé : les lots prévus pour
 `CLAUDE.md` (B-0008 à B-0010) ne couvrent ni « Invariants du moteur » ni
-« Style ». Sans eux, la condition de B-0003, « `CLAUDE.md` ne porte plus
+« Style ». Sans eux, la condition de JA-0001, « `CLAUDE.md` ne porte plus
 que des règles de travail », ne sera pas remplie.
 
 Ce qu'ils portent encore, qui n'est pas une règle :
@@ -23,7 +23,7 @@ vérifie qu'aucun fait chiffré retiré ne se perd. La marge du budget de
 `CLAUDE.md` étant mince (112 000 octets depuis B-0009), ce lot passe
 avant tout ajout qui la ferait déborder.
 
-## Fait quand
+## Satisfait quand
 
 - [x] « Invariants du moteur » et « Style » ne portent plus ni décision sans renvoi, ni histoire (J-2026-11-17-X)
 - [x] chaque fait chiffré retiré se retrouve dans la mémoire ou dans `tools/README.md`, vérifié par un script

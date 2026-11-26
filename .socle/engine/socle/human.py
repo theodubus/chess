@@ -8,7 +8,8 @@ Trois sources, toutes dérivées, rien de recopié :
   l'agent) ;
 - ce qui se calcule : les branches distantes que la branche par défaut,
   ou la branche de travail poussée, contient en entier, donc supprimables
-  sans rien perdre — une action distante que le hook refuse à l'agent.
+  sans rien perdre — une action distante que le hook refuse à l'agent ;
+  celles de l'agent, il les supprime lui-même (`socle prune-branches`).
 
 La liste sert deux fois : dans l'état dérivé au démarrage, et dans le récap
 que le hook de fin de tour exige quand l'agent a agi.
@@ -17,7 +18,9 @@ que le hook de fin de tour exige quand l'agent a agi.
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -36,6 +39,11 @@ MARQUEURS_RECAP_EN = {
     "For you:": r"(?im)^[\W_]*for you[\s*_]*:",
     "Next:": r"(?im)^[\W_]*next[\s*_]*:",
 }
+# La clôture ouvrante d'un bloc de code délimité : trois accents graves ou
+# trois tildes au moins, en début de ligne ; une clôture d'accents graves
+# n'en porte pas d'autre sur sa ligne, sinon c'est du code en ligne. Les
+# lignes du récap ne se cherchent pas dans un tel bloc (ADR-0089).
+CLOTURE_OUVRANTE = re.compile(r"^[ \t]*(?P<cloture>`{3,}(?=[^`]*$)|~{3,})")
 
 
 # Le genre d'un élément, dit dans la langue du projet à l'affichage.
@@ -101,6 +109,43 @@ def branches_contenues_dans_le_travail(projet: config.Projet) -> list[tuple[str,
         if hors_defaut not in ("", "0") and hors_travail == "0" and travail_en_plus not in ("", "0"):
             res.append((nom, poussee))
     return sorted(res)
+
+
+# Le délai, en secondes, de la question à l'origine sur ses branches (B-0193).
+DELAI_ORIGINE = 5
+
+
+def branches_de_l_origine(projet: config.Projet) -> set[str] | None:
+    """Les branches que l'origine a vraiment, par `git ls-remote --heads
+    origin` : les références du dernier fetch gardent une branche supprimée
+    sur l'origine tant qu'un fetch ne les élague pas, et l'état la donnait à
+    supprimer à l'humain, qui l'avait déjà supprimée (B-0193). `None` quand
+    l'origine ne répond pas dans le délai, ou en erreur : les listes restent
+    alors celles du dernier fetch, et le disent. Aucune invite d'identifiants
+    HTTPS ; une origine SSH qui demande une phrase de passe peut l'afficher
+    sur le terminal, jusqu'au délai."""
+    tetes = tetes_de_l_origine(projet, DELAI_ORIGINE)
+    return None if tetes is None else set(tetes)
+
+
+def tetes_de_l_origine(projet: config.Projet, delai: float) -> dict[str, str] | None:
+    """Les branches que l'origine a vraiment, chacune avec sa tête, par `git
+    ls-remote --heads origin` ; `None` quand elle ne répond pas dans le
+    délai, ou en erreur. Aucune invite d'identifiants HTTPS."""
+    try:
+        r = subprocess.run(["git", "ls-remote", "--heads", "origin"], cwd=projet.racine, capture_output=True,
+                           text=True, encoding="utf-8", errors="replace", stdin=subprocess.DEVNULL,
+                           timeout=delai, env=dict(os.environ, GIT_TERMINAL_PROMPT="0"))
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+    if r.returncode != 0:
+        return None
+    res = {}
+    for ligne in r.stdout.splitlines():
+        sha, _, ref = ligne.partition("\t")
+        if ref.startswith("refs/heads/"):
+            res[ref.removeprefix("refs/heads/")] = sha.strip()
+    return res
 
 
 # Au-delà, une branche non fusionnée qui ne bouge plus se signale (B-0112).
@@ -193,7 +238,12 @@ def specifications_non_soumises(projet: config.Projet, toutes: list | None = Non
             if not any(c in t for t in textes)]
 
 
-def a_faire(projet: config.Projet) -> list[Element]:
+def a_faire(projet: config.Projet, pour_l_agent: list[str] | None = None) -> list[Element]:
+    """Ce qui revient à l'humain. Les branches de l'agent déjà contenues
+    ailleurs ne lui reviennent pas : l'agent les supprime (`socle
+    prune-branches`, ADR-0114) ; `pour_l_agent`, s'il est donné, les reçoit."""
+    from socle import branches
+
     res = []
     toutes = demandes.toutes(projet.racine)
     for d in toutes:
@@ -205,28 +255,74 @@ def a_faire(projet: config.Projet) -> list[Element]:
         res.append(Element("action", trad("approuver la spécification `{chemin}` : aucune demande ne vous l'a "
                                           "soumise ; l'agent la soumet", chemin=c), url or ""))
     mem = memoire.Memoire.charger(projet.racine)
-    for e in mem.entrees("B"):
+    for e in mem.entrees(memoire.BACKLOG):
         if e.archivee or e.statut in memoire.BACKLOG_CLOS:
             continue
-        if langue.valeur(memoire.nettoyer(e.meta.get("pour", ""))) == "humain":
-            # Le lien du sujet, où vit son mode d'emploi : commandes,
+        if memoire.pour_l_humain(e):
+            # Le lien de l'entrée, où vit son mode d'emploi : commandes,
             # résultats attendus.
             url, _ = liens.lien(projet, e.id)
             res.append(Element("action", f"{e.id} — {e.titre}", url or trad("(pas encore poussé : pas de lien)")))
     depot = liens.url_depot(projet)
     page = f"{depot}/branches" if depot else ""
-    for b in branches_a_supprimer(projet):
-        res.append(Element("action", trad("supprimer la branche distante `{branche}`, déjà contenue dans la branche "
-                                          "par défaut", branche=b), page))
+    a_supprimer = branches_a_supprimer(projet)
     contenues = branches_contenues_dans_le_travail(projet)
+    inactives = branches_inactives(projet)
+    # Calculées sur le dernier fetch : l'origine dit celles qu'elle a encore,
+    # interrogée seulement s'il y en a une à dire (B-0193).
+    vivantes = (branches_de_l_origine(projet)
+                if a_supprimer or contenues or inactives else set())
+    note = ""
+    disparues: list[tuple[str, int, int]] = []
+    if vivantes is None:
+        note = trad(" (liste du dernier fetch, que l'origine n'a pas confirmée : `git fetch --prune origin` la "
+                    "rafraîchit)")
+    else:
+        a_supprimer = [b for b in a_supprimer if b in vivantes]
+        # Une branche de travail que l'origine n'a plus ne garde rien :
+        # supprimée sans fusion, la branche qu'elle contenait perdrait ses
+        # commits (B-0292).
+        contenues = [(b, p) for b, p in contenues if b in vivantes and p.removeprefix("origin/") in vivantes]
+    # Une branche dite gardée ne se dit pas inactive en plus ; une que la
+    # branche de travail disparue ne garde plus peut l'être.
+    dites = {b for b, _ in contenues}
+    inactives = [i for i in inactives if i[0] not in dites]
+    # Celles de l'agent, il les supprime lui-même ; un refus de l'origine
+    # les redonne à l'humain.
+    agent = set(branches.pour_l_agent(projet, a_supprimer + [b for b, _ in contenues]))
+    a_supprimer = [b for b in a_supprimer if b not in agent]
+    contenues = [(b, p) for b, p in contenues if b not in agent]
+    if pour_l_agent is not None:
+        pour_l_agent.extend(sorted(agent))
+
+    def refusee(b: str) -> str:
+        r = branches.refus_actuel(projet, b)
+        return trad(" ; l'origine a refusé à l'agent de la supprimer ({raison})", raison=r.get("raison", "")) \
+            if r else ""
+    if vivantes is not None:
+        disparues = [i for i in inactives if i[0] not in vivantes]
+        inactives = [i for i in inactives if i[0] in vivantes]
+    for b in a_supprimer:
+        res.append(Element("action", trad("supprimer la branche distante `{branche}`, déjà contenue dans la branche "
+                                          "par défaut", branche=b) + refusee(b) + note, page))
     for b, poussee in contenues:
         res.append(Element("action", trad("supprimer la branche distante `{branche}`, déjà contenue dans `{travail}`, "
                                           "la branche de travail poussée : son contenu ne se perd pas ; une pull "
                                           "request ouverte qui en part se fermerait avec elle", branche=b,
-                                          travail=poussee), page))
-    dites = {b for b, _ in contenues}
-    inactives = [i for i in branches_inactives(projet) if i[0] not in dites]
-    cites = commits_cites(projet) if inactives else set()
+                                          travail=poussee) + refusee(b) + note, page))
+    cites = commits_cites(projet) if inactives or disparues else set()
+    # Une branche que l'origine n'a plus ne se propose plus ; mais si sa
+    # référence, dans ce clone, garde seule un commit que la mémoire cite, un
+    # `git fetch --prune` le perdrait : l'étiqueter d'abord (B-0116, la revue
+    # de L-0017).
+    for b, _, _ in disparues:
+        seuls = commits_cites_seuls(projet, b, cites)
+        if seuls:
+            res.append(Element("action", trad(
+                "étiqueter {cites}, que la mémoire cite et que seule garde, dans ce clone, la référence de la branche "
+                "distante `{branche}`, que l'origine n'a plus : `{commande}` ; sans quoi un `git fetch --prune` les "
+                "perd, et la CI ne les retrouve plus",
+                cites=", ".join(seuls), branche=b, commande=outils.etiqueter(seuls)), page))
     for b, absents, age in inactives:
         seuls = commits_cites_seuls(projet, b, cites)
         if seuls:
@@ -235,12 +331,13 @@ def a_faire(projet: config.Projet) -> list[Element]:
                 "activité depuis {jours} jours, dont {cites}, que la mémoire cite et qu'elle seule garde ; la livrer "
                 "par une pull request si son travail sert, sinon étiqueter d'abord ces commits (`{commande}`), puis "
                 "la supprimer : sans quoi la CI ne les retrouve plus",
-                branche=b, n=absents, jours=age, cites=", ".join(seuls), commande=outils.etiqueter(seuls)), page))
+                branche=b, n=absents, jours=age, cites=", ".join(seuls), commande=outils.etiqueter(seuls)) + note,
+                page))
             continue
         res.append(Element("action", trad("examiner la branche distante `{branche}` : {n} commit(s) absents de la "
                                           "branche par défaut, sans activité depuis {jours} jours ; la livrer par "
                                           "une pull request si son travail sert, sinon la supprimer",
-                                          branche=b, n=absents, jours=age), page))
+                                          branche=b, n=absents, jours=age) + note, page))
     return res
 
 
@@ -283,15 +380,18 @@ def genre(e: Element) -> str:
     return trad(GENRES[e.genre]) if e.genre in GENRES else e.genre
 
 
+def lignes(e: Element) -> list[str]:
+    """Un élément de ce qui revient à l'humain : son genre et ce qu'il est,
+    puis son lien."""
+    return [f"  {genre(e)} : {e.quoi}"] + ([f"    {e.lien}"] if e.lien else [])
+
+
 def texte(elements: list[Element]) -> list[str]:
+    """Ce qui revient à l'humain, chaque élément avec son lien (l'état du
+    démarrage les plafonne lui-même)."""
     if not elements:
         return [trad("ce qui revient à l'humain : rien")]
-    lignes = [trad("ce qui revient à l'humain : {n}", n=len(elements))]
-    for e in elements:
-        lignes.append(f"  {genre(e)} : {e.quoi}")
-        if e.lien:
-            lignes.append(f"    {e.lien}")
-    return lignes
+    return [trad("ce qui revient à l'humain : {n}", n=len(elements))] + [l for e in elements for l in lignes(e)]
 
 
 def dernier_message(transcript: Path) -> str | None:
@@ -319,11 +419,47 @@ def dernier_message(transcript: Path) -> str | None:
     return None
 
 
+def _hors_des_blocs_de_code(message: str) -> str:
+    """Le message sans ses blocs de code délimités, clôtures comprises : de
+    la clôture ouvrante à la fermante, du même caractère, au moins aussi
+    longue et seule sur sa ligne ; un bloc jamais fermé court jusqu'à la fin
+    du message."""
+    gardees: list[str] = []
+    ouvert: str | None = None
+    for ligne in message.splitlines():
+        if ouvert is None:
+            m = CLOTURE_OUVRANTE.match(ligne)
+            if m:
+                ouvert = m.group("cloture")
+            else:
+                gardees.append(ligne)
+        elif re.fullmatch(rf"[ \t]*{re.escape(ouvert[0])}{{{len(ouvert)},}}[ \t]*", ligne):
+            ouvert = None
+    return "\n".join(gardees)
+
+
+def pour_toi(projet: config.Projet, message: str) -> str:
+    """La partie « Pour toi » du message, hors de ses blocs de code : de sa
+    ligne à celle de « Ensuite », ou à la fin du message ; vide sans elle."""
+    defaut = MARQUEURS_RECAP_EN if langue.du_projet(projet) == "en" else MARQUEURS_RECAP
+    motifs = list(projet.pol("human", "recap_markers", defaut=defaut).values())
+    texte = _hors_des_blocs_de_code(message)
+    debut = re.search(motifs[0], texte) if motifs else None
+    if not debut:
+        return ""
+    reste = texte[debut.start():]
+    fin = re.search(motifs[1], reste) if len(motifs) > 1 else None
+    return reste[:fin.start()] if fin and fin.start() > 0 else reste
+
+
 def recap_manquant(projet: config.Projet, message: str) -> list[str]:
-    """Les lignes du récap absentes du message ; vide, le récap est complet."""
+    """Les lignes du récap absentes du message ; vide, le récap est complet.
+    Elles se cherchent hors des blocs de code délimités : une sortie collée
+    dans un bloc ne tient pas lieu de récap (ADR-0089)."""
     defaut = MARQUEURS_RECAP_EN if langue.du_projet(projet) == "en" else MARQUEURS_RECAP
     marqueurs = projet.pol("human", "recap_markers", defaut=defaut)
-    return [nom for nom, motif in marqueurs.items() if not re.search(motif, message)]
+    texte = _hors_des_blocs_de_code(message)
+    return [nom for nom, motif in marqueurs.items() if not re.search(motif, texte)]
 
 
 def prochaines_etapes(projet: config.Projet) -> str:

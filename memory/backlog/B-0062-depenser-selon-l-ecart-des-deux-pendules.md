@@ -12,7 +12,7 @@ famille que l'allocation inégale, autre signal, et un signal que
 l'auto-jeu annule (l'écart signé y est nul) : il se mesure contre le
 parent de `ebe93ad`, jamais contre soi-même.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : le match conditionnel, jamais contre soi-même

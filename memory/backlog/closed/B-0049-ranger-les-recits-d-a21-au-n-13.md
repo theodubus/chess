@@ -14,7 +14,7 @@ facteur, le rejeu d'un réseau non embarqué) : elles s'écrivent en skill,
 celui de B-0015 ou un skill à elles, avant que leurs récits partent
 (relecture de B-0048).
 
-## Fait quand
+## Satisfait quand
 
 - [x] faits, procédures et idées de ces sections à leur place, vérifiés par la relecture sans contexte
 - [x] ces sections hors de `tools/README.md`, le reste au journal, chaque chiffre retrouvé

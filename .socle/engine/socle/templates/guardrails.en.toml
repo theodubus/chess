@@ -16,7 +16,8 @@ code = []
 [budgets]
 "AGENTS.md" = { max_bytes = 16000 }
 "memory/canonical.md" = { max_bytes = 16000 }
-"memory/active.md" = { max_bytes = 6000 }
+"memory/active.md" = { max_bytes = 1600 }
+"memory/directives.md" = { max_bytes = 16000 }
 "memory/backlog/*.md" = { max_bytes = 8000 }
 "memory/journal/*.md" = { max_bytes = 80000 }
 "memory/decisions/*.md" = { max_bytes = 10000 }
@@ -26,6 +27,38 @@ code = []
 [staleness]
 # An active work unchanged for longer is reported (warning).
 active_days = 7
+
+[startup]
+# What the start-up hook prints (the state, the active work, the human's
+# directives by their summary line, the facts by their title, the last ten
+# decisions), in UTF-8 bytes at most. Claude Code hands a hook's output whole
+# to the agent up to 10,000 characters, and beyond that only a
+# 2,000-character preview: 500 bytes of margin. Each part has its share: a
+# quarter for the state, 18% for the active work (its budget above, public
+# and private together, fits in it), a quarter for the directives, 20% for
+# the facts, 12% for the decisions. A part beyond what is due to it loses
+# whole lines (the state first what can be read elsewhere, never what calls
+# for action before it; the others from their end), and a last line says what
+# is missing and where to read it.
+max_bytes = 9500
+
+[verify]
+# The threshold, in elapsed seconds, of the total of the adapter's fast steps
+# (`verify --fast`, the end of turn, the push): beyond it, a warning, never a
+# failure, names the longest one at the end of the run that runs them all
+# (the push says it on its output and goes through; the end of turn, without
+# blocking, tells the human), then in the state, as long as the last
+# complete run exceeds it. Beyond five minutes of waiting, a sub-agent loses
+# the cache of its conversation. The duration depends on the machine: the CI
+# prints it, without a threshold.
+fast_max_seconds = 300
+
+[batches]
+# The number of tasks an open batch may still wait for: beyond it, the state
+# and the end-of-turn reminder warn, without refusing anything, that it does
+# not fit in one session; cut it into batches, or make it a milestone with
+# its batches under it. Lowering the threshold is free.
+max_tasks = 9
 
 [references]
 # Files where each cited identifier, link and path must exist.

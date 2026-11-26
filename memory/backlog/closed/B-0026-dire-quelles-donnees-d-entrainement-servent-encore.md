@@ -34,7 +34,7 @@ derrière la transition de la documentation et la mise à jour du socle
 (D-0024) : ce sujet passe devant, en commençant par les générations qui
 expirent les 24 et 28 déc. (J-2026-11-23-O).
 
-## Fait quand
+## Satisfait quand
 
 - [x] chaque génération est dite « sert encore » ou « ne sert plus », avec sa raison et sa date d'expiration (J-2026-11-23-Q)
 - [x] pour celles qui servent : la demande d'une seconde copie est posée à Théo, avec le volume, les lieux possibles et leur coût, et il y a répondu (D-0025, `disque` ; la copie : B-0077)

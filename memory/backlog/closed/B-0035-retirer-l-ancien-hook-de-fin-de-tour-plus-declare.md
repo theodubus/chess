@@ -15,7 +15,7 @@ que les deux blocs de `.claude/settings.json` et les cas qui en dépendent.
 Retiré le 16 nov. 2026, sur la décision de Théo (D-0012), avec ses cas
 de test (J-2026-11-16-B).
 
-## Fait quand
+## Satisfait quand
 
 - [x] Théo a dit s'il retire le script
 - [x] le script et ses cas sont retirés, ou le sujet est abandonné sur sa réponse

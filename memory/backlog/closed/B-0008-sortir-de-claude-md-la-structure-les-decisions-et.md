@@ -3,14 +3,14 @@
 
 > statut : fait · origine : D-0002 · ref : J-2026-11-17-O · après : B-0007 · lu : backlog@d5b3b261
 
-Quatrième lot (B-0003), le premier qui touche `CLAUDE.md` : ses sections
+Quatrième lot (JA-0001), le premier qui touche `CLAUDE.md` : ses sections
 « Structure », « Par où commencer », « Décisions structurantes » et
 « Contraintes d'architecture », environ 20 Ko sur 140. Une décision va
 dans une décision de la mémoire, l'histoire des réseaux embarqués au
 journal, le réseau qui joue et son facteur des marges dans un fait ;
 `CLAUDE.md` garde la règle, en une ou deux lignes, et le renvoi.
 
-## Fait quand
+## Satisfait quand
 
 - [x] ces quatre sections ne portent plus ni verdict, ni histoire, ni état (J-2026-11-17-O)
 - [x] chaque fait chiffré retiré se retrouve dans la mémoire ou dans `tools/README.md`, vérifié par un script (J-2026-11-17-O)

@@ -3,7 +3,7 @@
 
 > statut : fait · origine : D-0002 · ref : J-2026-11-17-R · après : B-0008 · lu : backlog@8a50aca5
 
-Cinquième lot (B-0003) : les sections « Ce qui compte comme preuve » et
+Cinquième lot (JA-0001) : les sections « Ce qui compte comme preuve » et
 « Ce qui tourne tout seul » de `CLAUDE.md`, environ 38 Ko. La règle de
 preuve reste ; les mesures qui l'illustrent deviennent des faits ou vont
 au journal ; l'histoire des séries de force quitte le tableau des
@@ -15,7 +15,7 @@ Des tests lisent ces sections : le chiffre du banc doit rester dans
 rester nommé dans une documentation (`engine/tests/outillage_documente.rs`).
 Changer la valeur attendue de l'un d'eux demande une validation de Théo.
 
-## Fait quand
+## Satisfait quand
 
 - [x] ces deux sections ne portent plus que des règles et la liste des dispositifs (J-2026-11-17-R)
 - [x] chaque fait chiffré retiré se retrouve dans la mémoire ou dans `tools/README.md`, vérifié par un script

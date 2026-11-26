@@ -24,7 +24,7 @@ après la sonde. L'outil des candidats est dans `tools/README.md`,
 « Entraîner un réseau », et le rejeu dans « Vérifier, et mesurer un
 temps ».
 
-## Fait quand
+## Satisfait quand
 
 - [x] le skill existe et passe le contrôle des skills (`.claude/skills/embarquer-un-reseau/SKILL.md`, J-2026-11-24-D)
 - [ ] un embarquement l'a suivi de bout en bout, et le journal le dit

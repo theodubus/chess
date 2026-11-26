@@ -14,7 +14,7 @@ d'abord : rejouer la sonde d'allocation
 (`tools/attic/c24-sonde-allocation.patch`) sur le moteur d'aujourd'hui,
 et chiffrer le plafond.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : le plafond chiffré par la sonde, et la suite décidée sur ce chiffre

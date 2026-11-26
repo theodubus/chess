@@ -9,7 +9,7 @@ ont rendu +14,77 ± 3,27 au volume de la séance, seize sont le pas suivant
 puis couches cachées puis largeur, et la règle d'arrêt : hypothèse de l'agent validée par Théo le 12 nov. 2026 (D-0004), notée « supposée ».
 Sur la carte de Théo, un réseau à la fois, lancé quand il le dit.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'attendu et le critère sont écrits avant l'entraînement
 - [ ] le réseau est entraîné, conforme à son entraîneur, et mesuré contre le réseau embarqué sur quatre travaux

@@ -22,7 +22,7 @@ de `.github/workflows/mutation.yml` : à corriger avec elle.
 Le coût se mesure d'abord : `cargo mutants --list` sur `tools/` donne le
 nombre de mutants, et la durée d'un job s'en estime par F-0019.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] le nombre de mutants de `tools/` est compté, et le choix — l'y faire entrer, en tout ou en partie, ou l'en garder — est écrit avec sa raison
 - [ ] `tools/README.md` et le commentaire de `mutation.yml` disent ce choix

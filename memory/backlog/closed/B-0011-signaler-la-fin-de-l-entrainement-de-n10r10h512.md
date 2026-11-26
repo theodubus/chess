@@ -9,6 +9,6 @@ environ seize heures. Lui seul voit sa fin : il le dit dans la
 conversation, le réseau poussé sur la branche des réseaux de la séance par
 `tools/seance-c3.sh`.
 
-## Fait quand
+## Satisfait quand
 
 - [x] Théo a dit que le réseau est entraîné et poussé

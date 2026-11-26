@@ -225,15 +225,23 @@ def langages_en_sous_dossier(cible: Path) -> dict[str, list[str]]:
 def langages_en_place(cible: Path, ch: config.Chemins) -> set[str]:
     """Les langages des adaptateurs que le projet a déjà, le principal
     compris : sa clé `language`, le nom du fichier à défaut."""
-    res = set()
-    for c in [ch.adaptateur, *config.fichiers_adaptateurs(cible, ch.adaptateurs)]:
+    return set(_langages_des(cible, [ch.adaptateur, *config.fichiers_adaptateurs(cible, ch.adaptateurs)]))
+
+
+def _langages_des(cible: Path, chemins: list[str]) -> dict[str, str]:
+    """Le langage de chacun de ces adaptateurs que le projet a, et le chemin
+    du premier qui le couvre : sa clé `language`, le nom du fichier à
+    défaut."""
+    res: dict[str, str] = {}
+    for c in chemins:
         p = cible / c
         if not p.is_file():
             continue
         try:
-            res.add(str(config.lire_toml(p.read_text(encoding="utf-8")).get("language") or Path(c).stem))
+            langage = str(config.lire_toml(p.read_text(encoding="utf-8")).get("language") or Path(c).stem)
         except (tomllib.TOMLDecodeError, OSError):
-            res.add(Path(c).stem)
+            langage = Path(c).stem
+        res.setdefault(langage, c)
     return res
 
 
@@ -281,6 +289,69 @@ def sous_dossiers_sans_adaptateur(cible: Path, couverts: set[str], sans_langage:
                         "ne lui est posé, ses commandes se lanceraient à la racine. {issues}",
                         langage=langage, manifestes=", ".join(chemins), issues=issues))
     return res
+
+
+# Un module que les commandes JVM de l'adaptateur `kotlin` ne servent pas
+# (B-0147, D-0191) : multiplateforme, sans tâche `test`, dont les tests
+# seraient sautés sans erreur à côté d'un module JVM tant que la commande
+# des tests ne nomme ni `allTests` ni `jvmTest` ; ou Android, où la
+# compilation par `testClasses` échoue. Son greffon s'écrit en clair dans
+# un build, ou par son identifiant dans le catalogue des versions.
+GREFFON_MULTIPLATEFORME = re.compile(r'kotlin\(\s*"multiplatform"\s*\)|org\.jetbrains\.kotlin\.multiplatform\b'
+                                     r'|com\.android\.kotlin\.multiplatform\.library\b')
+GREFFON_ANDROID = re.compile(r'com\.android\.(?:application|library|test|dynamic-feature'
+                             r'|kotlin\.multiplatform\.library)\b')
+FICHIERS_GRADLE = re.compile(r'(?:^|/)(?:build\.gradle(?:\.kts)?|libs\.versions\.toml)$')
+TACHES_DES_TESTS_MULTIPLATEFORMES = {"allTests", "jvmTest"}
+
+
+def modules_hors_jvm(cible: Path, ch: config.Chemins) -> list[str]:
+    """Ce que l'installeur dit, à l'installation comme à chaque mise à
+    jour, quand le build déclare un module multiplateforme ou Android que
+    les commandes d'une copie de l'adaptateur `kotlin` ne servent pas : des
+    tests qui ne nomment ni `allTests` ni `jvmTest` pour un module
+    multiplateforme, une compilation par `testClasses` sous Android. Il dit
+    les fichiers qui déclarent ces modules, et renvoie aux commandes que la
+    spécification des adaptateurs donne (D-0191). Il avertit sans
+    bloquer ; une copie adaptée selon elle ne déclenche rien."""
+    copies, multiplateforme, android = [], False, False
+    for c in [ch.adaptateur, *config.fichiers_adaptateurs(cible, ch.adaptateurs)]:
+        try:
+            d = config.lire_toml((cible / c).read_text(encoding="utf-8"))
+        except (tomllib.TOMLDecodeError, OSError):
+            continue
+        if d.get("language") != "kotlin":
+            continue
+        capacites = d.get("capabilities", {})
+        tests = str(capacites.get("tests", {}).get("command", "")).split()
+        build = str(capacites.get("build", {}).get("command", "")).split()
+        m, a = not TACHES_DES_TESTS_MULTIPLATEFORMES & set(tests), "testClasses" in build
+        if m or a:
+            copies.append(c)
+            multiplateforme, android = multiplateforme or m, android or a
+    if not copies:
+        return []
+    declarants = []
+    for f in _fichiers_du_projet(cible):
+        if not FICHIERS_GRADLE.search(f):
+            continue
+        try:
+            texte = (cible / f).read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if (multiplateforme and GREFFON_MULTIPLATEFORME.search(texte)) or (android and GREFFON_ANDROID.search(texte)):
+            declarants.append(f)
+    if not declarants:
+        return []
+    return [trad("!! kotlin : {fichiers} déclare un module multiplateforme ou Android, que les commandes JVM de "
+                 "{copies} ne servent pas : `./gradlew -q test` ne lance pas les tests d'un module multiplateforme, "
+                 "sautés sans erreur à côté d'un module JVM, et `testClasses` n'existe pas sous Android. Mettre dans "
+                 "la copie, par une demande à l'humain, les commandes que la section « Kotlin » de {specification} "
+                 "donne pour ces modules : les tests d'un module multiplateforme par `allTests`, `test` gardé tant "
+                 "qu'un module JVM ou Android reste ; la compilation par `jvmTestClasses`, ou par celle d'une "
+                 "variante sous Android ; la mutation déclarée absente hors JVM",
+                 fichiers=", ".join(declarants), copies=", ".join(copies),
+                 specification=f"{ch.moteur}/socle/adapters/README.md")]
 
 
 def _langage_de(nom: str) -> str:
@@ -522,10 +593,12 @@ def politique_langue(texte: str, lg: str) -> str:
     return texte.replace('# [memory]\n# language = "fr"\n', f'[memory]\nlanguage = "{lg}"\n', 1)
 
 
-def diff_politique(cible: Path) -> list[str]:
+def diff_politique(cible: Path, modele: str | None = None) -> list[str]:
     """Ce qui sépare la politique du projet de celle du gabarit de cette
     version : affiché à la mise à jour, jamais appliqué. La politique est à
-    l'humain."""
+    l'humain. `modele` : le texte d'un autre gabarit de la politique, dans la
+    langue du projet, au lieu de celui de cette version (celui de la copie du
+    moteur remplacée, `politique_d_avant`)."""
     import difflib
 
     p = cible / config.FORMAT_ACTUEL.politique
@@ -533,14 +606,56 @@ def diff_politique(cible: Path) -> list[str]:
         return []
     # Le gabarit tel que l'installeur le poserait pour ce projet : dans sa
     # langue, qu'il écrit dans la politique.
-    lg = langue.du_projet(config.Projet.charger(cible))
-    gab = gabarit("policy.toml", lg)
+    projet = config.Projet.charger(cible)
+    lg = langue.du_projet(projet)
+    gab = gabarit("policy.toml", lg) if modele is None else modele
     gab = politique_langue(gab, lg) if lg != "fr" else gab
     # Le nom de l'humain, que l'installeur y a écrit, n'est pas un écart.
-    gab = politique_nom(gab, str(config.Projet.charger(cible).pol("human", "name", defaut="") or ""))
-    projet, gab = p.read_text(encoding="utf-8").splitlines(), gab.splitlines()
-    return list(difflib.unified_diff(projet, gab, trad("politique du projet"), trad("gabarit de cette version"),
+    gab = politique_nom(gab, str(projet.pol("human", "name", defaut="") or ""))
+    lignes, gab = p.read_text(encoding="utf-8").splitlines(), gab.splitlines()
+    return list(difflib.unified_diff(lignes, gab, trad("politique du projet"), trad("gabarit de cette version"),
                                      lineterm=""))
+
+
+def _gabarit_de_politique(cible: Path, dossier_moteur: str, lg: str) -> str:
+    """Le chemin, sous le dossier du moteur, du gabarit de la politique dans
+    la langue `lg`, comme `gabarit` le choisit : sa version traduite si le
+    moteur en a une, sinon le français."""
+    traduit = f"{dossier_moteur}/socle/templates/policy.{lg}.toml"
+    return traduit if lg != "fr" and (cible / traduit).is_file() else f"{dossier_moteur}/socle/templates/policy.toml"
+
+
+def politique_d_avant(cible: Path, dossier_moteur: str) -> str | None:
+    """Le gabarit de la politique de la copie du moteur du dernier commit,
+    dans la langue du projet s'il en a une version, lu par git comme ses
+    notes de version (`notes_deja_lues`) : quand l'installeur compare la
+    politique, la copie nouvelle est déjà dans l'arbre. None sans commit, ou
+    sans gabarit commité sous `dossier_moteur`."""
+    commit = outils.git(cible, "rev-parse", "--verify", "-q", "HEAD", check=False).strip()
+    if not commit:
+        return None
+    lg = langue.du_projet(config.Projet.charger(cible))
+    noms = dict.fromkeys([f"policy.{lg}.toml"] * (lg != "fr") + ["policy.toml"])
+    for nom in noms:
+        chemin = f"{dossier_moteur}/socle/templates/{nom}"
+        if outils.git(cible, "ls-tree", "--name-only", commit, "--", chemin, check=False).strip():
+            return outils.git(cible, "show", f"{commit}:{chemin}", check=False)
+    return None
+
+
+def lignes_changees(ecart: list[str]) -> list[str]:
+    """Les lignes changées d'un diff unifié, avec leur signe : sans ses deux
+    lignes d'en-tête, ses repères de bloc ni son contexte."""
+    return [l for l in ecart[2:] if l.startswith(("+", "-"))]
+
+
+def ecart_deja_montre(ecart: list[str], avant: list[str] | None) -> bool:
+    """Chaque ligne changée de l'écart `ecart` de la politique au gabarit de
+    cette version figurait déjà dans son écart `avant` au gabarit de la
+    copie du moteur remplacée : la mise à jour précédente l'a montré, ce
+    sont les lignes que l'humain a écrites exprès. Faux sans écart d'avant
+    lisible (`None`)."""
+    return bool(ecart) and avant is not None and set(lignes_changees(ecart)) <= set(lignes_changees(avant))
 
 
 _ENTETE = re.compile(r"^#?\s*\[\[?([\w.]+)\]\]?\s*$")
@@ -600,6 +715,17 @@ def reglages_nouveaux(projet: str, modele: str) -> list[tuple[str, str]]:
     return nouveaux
 
 
+def alerte_chantier_actif(cible: Path) -> list[str]:
+    """Un budget du chantier actif que les garde-fous gardés d'un projet
+    installé avant mettent au-dessus de sa part de la sortie du démarrage
+    (ADR-0071) : à son budget, le chantier actif y serait coupé à chaque
+    session. La mise à jour ne réécrit pas les garde-fous du projet ; elle le
+    dit, avec la valeur qui tient, comme l'état à chaque démarrage."""
+    from socle import state as etat
+
+    return etat.alerte_budget_actif(config.Projet.charger(cible))
+
+
 def _refus_cible(cible: Path) -> str | None:
     """Pourquoi le socle ne s'installe pas là, ou `None`."""
     if not outils.est_depot(cible):
@@ -613,9 +739,127 @@ def _refus_cible(cible: Path) -> str | None:
     return None
 
 
-def _poser_moteur(cible: Path, mode: str, source: Path, ch: config.Chemins) -> tuple[str, list[str]]:
-    """Le moteur, remplacé en bloc, et son verrou ; rend le dossier du moteur."""
+# Les notes de version du moteur, dans son dossier `socle`, comme le guide :
+# une entrée par changement qui touche un projet installé, sous un titre qui
+# porte son identifiant, la date du changement et une lettre (ADR-0078).
+NOTES = "CHANGES.md"
+TITRE_DE_NOTE = re.compile(r"^## (?P<id>\d{4}-\d{2}-\d{2}-[a-z]) — (?P<titre>\S.*?)\s*$")
+# Le paragraphe d'une entrée qui dit ce que l'agent du projet doit faire, et
+# les deux seules formes qui ne demandent rien : « rien. », le paragraphe
+# entier, ou « rien ; » suivi d'une précision (« nothing » en anglais).
+# « rien. » suivi d'une consigne, « rien, sauf si … », « rien dans un
+# projet dont … » ou une action demandent quelque chose : dans le doute,
+# l'entrée s'imprime en entier (B-0324).
+A_FAIRE = re.compile(r"^(?:À faire[   ]?:|To do:)[   ]*(?P<suite>.*)$", re.MULTILINE)
+RIEN_A_FAIRE = re.compile(r"(?:rien|nothing)(?:\.$|[   ]?;)")
+
+
+def fichier_des_notes(paquet: Path, lg: str = "fr") -> Path:
+    """Les notes de version du moteur `paquet` (son dossier `socle`) dans la
+    langue `lg` quand il en a une version (`CHANGES.en.md`), sinon en
+    français."""
+    traduit = paquet / f"CHANGES.{lg}.md"
+    return traduit if traduit.is_file() else paquet / NOTES
+
+
+def entrees_des_notes(texte: str) -> list[tuple[str, str]]:
+    """Les entrées des notes de version, dans l'ordre du texte : leur
+    identifiant, et leur texte entier, titre compris. Un titre de niveau 2
+    qui n'a pas la forme d'une entrée clôt la précédente sans en être une."""
+    entrees: list[tuple[str, list[str]]] = []
+    courante = None
+    for ligne in texte.splitlines():
+        if ligne.startswith("## "):
+            m = TITRE_DE_NOTE.match(ligne)
+            courante = (m.group("id"), [ligne]) if m else None
+            if courante:
+                entrees.append(courante)
+        elif courante:
+            courante[1].append(ligne)
+    return [(ident, "\n".join(lignes).strip()) for ident, lignes in entrees]
+
+
+def identifiants_des_notes(paquet: Path) -> set[str]:
+    """Les identifiants des notes de version du moteur `paquet`, dans l'une
+    et l'autre langue ; vide s'il n'en a pas."""
+    return {ident for f in paquet.glob("CHANGES*.md") if f.is_file()
+            for ident, _ in entrees_des_notes(f.read_text(encoding="utf-8", errors="replace"))}
+
+
+def notes_deja_lues(cible: Path, dossier_moteur: str) -> set[str]:
+    """Les identifiants des notes de version de la copie du moteur que le
+    projet a, lus dans le dernier commit, comme l'historique des adaptateurs
+    (ADR-0052) : relancé avant le commit d'une mise à jour, l'installeur
+    trouve déjà dans l'arbre la copie nouvelle, et ses notes s'y perdaient
+    (B-0225). Dans l'arbre quand le dépôt n'a pas de commit, ou que le
+    dernier n'a pas de copie du moteur."""
+    paquet = f"{dossier_moteur}/socle"
+    commit = outils.git(cible, "rev-parse", "--verify", "-q", "HEAD", check=False).strip()
+    chemins = [c for c in outils.git(cible, "ls-tree", "-z", "--name-only", commit, "--", f"{paquet}/",
+                                     check=False).split("\0") if c] if commit else []
+    if not chemins:
+        return identifiants_des_notes(cible / paquet)
+    # Une copie commitée sans notes, d'avant ADR-0078, n'en a lu aucune.
+    return {ident for c in chemins if fnmatch.fnmatch(Path(c).name, "CHANGES*.md")
+            for ident, _ in entrees_des_notes(outils.git(cible, "show", f"{commit}:{c}", check=False))}
+
+
+def notes_nouvelles(deja: set[str], paquet: Path, lg: str = "fr") -> list[tuple[str, str]]:
+    """Les entrées des notes de version du moteur `paquet`, dans la langue
+    `lg`, que `deja` ne nomme pas : ce que la copie nouvelle du moteur a en
+    plus de celle qu'elle remplace."""
+    f = fichier_des_notes(paquet, lg)
+    if not f.is_file():
+        return []
+    return [(ident, texte) for ident, texte in entrees_des_notes(f.read_text(encoding="utf-8"))
+            if ident not in deja]
+
+
+def ne_demande_rien(entree: str) -> bool:
+    """L'entrée des notes de version `entree` ne demande rien à l'agent du
+    projet : son paragraphe « À faire » (« To do ») est « rien. » en entier,
+    ou commence par « rien ; » (« nothing. », « nothing; »). Sans ce
+    paragraphe, ou sous toute autre forme, « rien. » suivi d'une consigne
+    compris, elle demande quelque chose."""
+    m = A_FAIRE.search(entree)
+    if not m:
+        return False
+    paragraphe = " ".join(entree[m.start("suite"):].split("\n\n", 1)[0].split())
+    return bool(RIEN_A_FAIRE.match(paragraphe))
+
+
+def texte_des_notes(notes: list[tuple[str, str]], fichier: str, toutes: bool) -> str:
+    """Les notes de version qu'une mise à jour apporte, telles que
+    l'installeur les imprime : une ligne qui dit quoi en faire, puis entière
+    chaque entrée qui demande quelque chose ; de celles qui ne demandent rien
+    (`ne_demande_rien`), le titre seul, sous une ligne qui dit combien elles
+    sont et le fichier où les lire. `toutes` : la copie remplacée n'avait pas
+    de notes."""
+    if toutes:
+        tete = trad("Notes de version : la copie du moteur remplacée n'en avait pas ; voici toutes leurs entrées "
+                    "({n}), dans `{fichier}`, dont certaines décrivent ce que le projet a déjà : leur date le dit, à "
+                    "comparer à celle de sa mise à jour précédente. Les lire, et faire ce que chacune demande :",
+                    n=len(notes), fichier=fichier)
+    else:
+        tete = trad("Notes de version : ce que cette mise à jour change pour le projet, {n} entrée(s) que la copie "
+                    "du moteur remplacée n'avait pas, dans `{fichier}`. Les lire, et faire ce que chacune demande :",
+                    n=len(notes), fichier=fichier)
+    blocs = [tete, *(texte for _, texte in notes if not ne_demande_rien(texte))]
+    titres = [texte.splitlines()[0] for _, texte in notes if ne_demande_rien(texte)]
+    if titres:
+        blocs.append("\n".join([trad("{n} entrée(s) ne demandent rien (« À faire : rien ») : leur titre seul, et "
+                                     "leur texte dans `{fichier}`, à lire au besoin :", n=len(titres),
+                                     fichier=fichier), *titres]))
+    return "\n\n".join(blocs)
+
+
+def _poser_moteur(cible: Path, mode: str, source: Path, ch: config.Chemins,
+                  ancien: dict | None = None) -> tuple[str, list[str], bool]:
+    """Le moteur, remplacé en bloc, et son verrou ; rend le dossier du moteur,
+    ce qu'il dit, et s'il a recopié le moteur. `ancien` : le verrou d'avant
+    ce passage."""
     journal = []
+    copie = False
     # 1. Le moteur, remplacé en bloc.
     if mode == config.MODE_AMONT:
         dossier_moteur = str(source.relative_to(cible)) if source.is_relative_to(cible) else "engine"
@@ -632,6 +876,7 @@ def _poser_moteur(cible: Path, mode: str, source: Path, ch: config.Chemins) -> t
             if dest.exists():
                 shutil.rmtree(dest)
             shutil.copytree(source / "socle", dest, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".*"))
+            copie = True
             journal.append(trad("moteur {version} copié dans {dossier_moteur}/socle", version=VERSION,
                                 dossier_moteur=dossier_moteur))
     # Le message du lanceur sous un Python trop ancien s'écrit avant que le
@@ -654,6 +899,13 @@ def _poser_moteur(cible: Path, mode: str, source: Path, ch: config.Chemins) -> t
                             dossier_moteur=dossier_moteur))
     else:
         calculee, n = empreinte.calculer(cible, dossier_moteur)
+        # L'empreinte du moteur que ce passage a copié, ou qu'un passage
+        # précédent a copié, s'il n'a pas changé depuis : un passage lancé
+        # depuis le projet garde le moteur tel quel et en recalcule
+        # l'empreinte, ce qui n'en fait pas celui d'une mise à jour
+        # (ADR-0077).
+        copiee = calculee if copie else (ancien or {}).get("copied")
+        ligne_copie = f'copied = "{calculee}"\n' if copiee == calculee else ""
         outils.ecrire(cible / ch.lock, (
             trad("# Verrou du moteur — écrit par l'installeur, jamais à la main.\n"
                  "# La CI recalcule l'empreinte ; un moteur altéré dans le projet fait échouer "
@@ -662,12 +914,57 @@ def _poser_moteur(cible: Path, mode: str, source: Path, ch: config.Chemins) -> t
             f'mode = "{mode}"\n'
             f'engine_dir = "{dossier_moteur}"\n'
             f'fingerprint = "{calculee}"\n'
-            f"files = {n}\n"
+            + ligne_copie
+            + f"files = {n}\n"
             f"format = {config.FORMAT}\n"
         ))
         journal.append(trad("verrou : {empreinte} sur {n} fichiers", empreinte=empreinte.courte(calculee), n=n))
 
-    return dossier_moteur, journal
+    return dossier_moteur, journal, copie
+
+
+def _empreintes_protegees(cible: Path) -> dict[str, str]:
+    """Les fichiers protégés de l'arbre et l'empreinte de chacun, hors du
+    verrou, des réponses humaines et de ce que l'empreinte du moteur couvre
+    (le moteur et son lanceur)."""
+    from socle import memory as memoire
+
+    projet = config.Projet.charger(cible)
+    paquet = projet.dossier_moteur + "/socle/"
+    hors = {projet.chemins.lock, config.LANCEUR}
+    return {c: empreinte.fichier(cible / c)
+            for c in outils.filtrer(outils.fichiers_courants(cible), projet.chemins_proteges())
+            if not c.startswith(paquet) and c not in hors and not memoire.est_reponse(c)}
+
+
+def _etat_des_proteges(cible: Path) -> tuple[dict[str, str], set[str]]:
+    """Avant le passage de l'installeur : l'empreinte de chaque fichier
+    protégé, et ceux qui ont déjà changé depuis la base (sans commit, tous)."""
+    empreintes = _empreintes_protegees(cible)
+    base = outils.base_de_travail(cible) or ("HEAD" if outils.a_des_commits(cible) else None)
+    return empreintes, set(outils.fichiers_changes(cible, base)) if base else set(empreintes)
+
+
+def _consigner_installes(cible: Path, avant: tuple[dict[str, str], set[str]], ancien: dict) -> None:
+    """Consigne au verrou, sous `[installed]`, les fichiers protégés que ce
+    passage a posés hors du moteur, avec leur empreinte : la fin de tour les
+    reconnaît comme ceux de la mise à jour tant qu'ils l'ont (ADR-0077). Un
+    fichier n'y entre que si ce passage l'a changé et qu'il était, avant
+    lui, tel que la base ou un passage précédent l'avait laissé : changé par
+    l'agent avant, il n'y entre pas, même fusionné ensuite. L'entrée d'un
+    passage précédent reste tant qu'elle vaut."""
+    empreintes, changes_avant = avant
+    anciens = ancien.get("installed") if isinstance(ancien.get("installed"), dict) else {}
+    installes = {c: h for c, h in sorted(_empreintes_protegees(cible).items())
+                 if anciens.get(c) == h or (empreintes.get(c) != h and (
+                     c not in changes_avant or empreintes.get(c) == anciens.get(c)))}
+    if not installes:
+        return
+    p = cible / config.FORMAT_ACTUEL.lock
+    lignes = [trad("# Les fichiers protégés que l'installeur a posés hors du moteur, et l'empreinte de chacun : "
+                   "tant qu'ils l'ont, la fin de tour les compte à la mise à jour."), "[installed]"]
+    lignes += [f"{json.dumps(c, ensure_ascii=False)} = {json.dumps(h)}" for c, h in installes.items()]
+    outils.ecrire(p, p.read_text(encoding="utf-8").rstrip("\n") + "\n\n" + "\n".join(lignes) + "\n")
 
 
 def _poser_configuration(cible: Path, texte_adaptateur: str, ancien: dict, prive: str | None,
@@ -712,7 +1009,18 @@ def _poser_configuration(cible: Path, texte_adaptateur: str, ancien: dict, prive
                                 "approuver", prive=prive))
     if ancien and (cible / ch.politique).is_file():
         ecart = diff_politique(cible)
-        if ecart:
+        # Un écart que la mise à jour précédente a déjà montré, les lignes
+        # que l'humain a écrites exprès, ne se redit qu'en une ligne (B-0195).
+        dossier = str(ancien.get("engine_dir") or ch.moteur)
+        modele = politique_d_avant(cible, dossier) if ecart else None
+        if ecart_deja_montre(ecart, None if modele is None else diff_politique(cible, modele)):
+            journal.append(trad("la politique du projet diffère du gabarit de cette version de {n} ligne(s), toutes "
+                                "déjà dans son écart au gabarit de la copie du moteur remplacée, montré à la mise à "
+                                "jour précédente : rien de nouveau, rien n'est écrit. Pour le revoir en entier : `git "
+                                "diff --no-index {politique} {gabarit}` (le nom de l'humain et la langue, que "
+                                "l'installeur y a écrits, s'y ajoutent)", n=len(lignes_changees(ecart)),
+                                politique=ch.politique, gabarit=_gabarit_de_politique(cible, dossier, lg)))
+        elif ecart:
             journal.append(trad("la politique du projet diffère du gabarit de cette version ; rien n'est écrit, "
                                 "elle est à l'humain — à relire :\n      {ecart}", ecart="\n      ".join(ecart)))
     for nom, contenu in (
@@ -743,6 +1051,7 @@ def _poser_configuration(cible: Path, texte_adaptateur: str, ancien: dict, prive
                         nom=nom, n=len(nouveaux),
                         liste="\n      ".join(f"`{cle}` — {quoi}" if quoi else f"`{cle}`"
                                               for cle, quoi in nouveaux)))
+                journal += alerte_chantier_actif(cible)
         else:
             outils.ecrire(p, contenu)
             journal.append(trad("{nom} posé", nom=nom))
@@ -824,10 +1133,12 @@ def _poser_autres_adaptateurs(cible: Path, autres: list[tuple[str, str]], ch: co
 
 
 def _poser_memoire(cible: Path, lg: str, nom_adaptateur: str, adoption: bool, ch: config.Chemins) -> list[str]:
-    """La mémoire initiale : chaque couche absente, et le journal ouvert."""
+    """La mémoire initiale : chaque couche absente, et le journal ouvert. À la
+    mise à jour aussi : une couche que le moteur nouveau apporte (les
+    consignes de l'humain) se pose vide sous son en-tête."""
     journal = []
     jour = date.today().isoformat()
-    for nom, lieu in (("canonical.md", ch.canonique), ("active.md", ch.actif)):
+    for nom, lieu in (("canonical.md", ch.canonique), ("active.md", ch.actif), ("directives.md", ch.consignes)):
         p = cible / lieu
         if not p.is_file():
             outils.ecrire(p, gabarit(f"memory/{nom}", lg))
@@ -857,15 +1168,22 @@ def _poser_memoire(cible: Path, lg: str, nom_adaptateur: str, adoption: bool, ch
 SKILLS = ".claude/skills"
 
 
+def skills_du_socle(lg: str = "fr") -> dict[str, str]:
+    """Les skills du socle tels que l'installeur les pose, par leur chemin
+    dans le projet, dans la langue de la mémoire."""
+    return {f"{SKILLS}/{d.name}/SKILL.md": gabarit(f"skills/{d.name}/SKILL.md", lg)
+            for d in sorted(p for p in (MODELES / "skills").iterdir() if p.is_dir())}
+
+
 def poser_skills(cible: Path, lg: str = "fr") -> list[str]:
     """Les skills du socle, dans la langue de la mémoire : ses procédures
     rares, que l'agent charge sur leur description au lieu de les relire à
     chaque session (ADR-0034). Posés par l'installeur comme les hooks, et
     remplacés à chaque mise à jour."""
     noms = []
-    for dossier in sorted(p for p in (MODELES / "skills").iterdir() if p.is_dir()):
-        outils.ecrire(cible / SKILLS / dossier.name / "SKILL.md", gabarit(f"skills/{dossier.name}/SKILL.md", lg))
-        noms.append(dossier.name)
+    for chemin, texte in skills_du_socle(lg).items():
+        outils.ecrire(cible / chemin, texte)
+        noms.append(chemin.rsplit("/", 2)[-2])
     return [trad("skills du socle posés dans {dossier} : {noms}", dossier=SKILLS, noms=", ".join(noms))]
 
 
@@ -894,6 +1212,63 @@ def etapes_de_ci(textes: list[str]) -> str:
     return "".join(res)
 
 
+CI_DU_SOCLE = ".github/workflows/socle.yml"
+
+
+def etapes_traduites(textes: list[str]) -> str:
+    """Les étapes de CI des adaptateurs `textes`, prêtes à remplacer leur
+    marque dans un gabarit de workflow : leurs noms dans la langue des
+    messages."""
+    setup = noms_d_etapes_traduits(etapes_de_ci(textes))
+    return setup.strip("\n") + "\n" if setup.strip() else ""
+
+
+def ci_du_socle(cible: Path, textes: list[str], lg: str = "fr") -> tuple[str, str | None]:
+    """Le workflow de CI du socle tel que l'installeur le pose dans `cible` :
+    les étapes des adaptateurs `textes`, les branches jetables écartées des
+    envois, dans la langue de la mémoire ; et le nom du travail en place,
+    quand il le garde au lieu du sien (`None` sinon)."""
+    workflow = gabarit("socle.yml", lg).replace("@@ETAPES_ADAPTATEUR@@\n", etapes_traduites(textes))
+    workflow = workflow.replace("@@BRANCHES_JETABLES@@", ignorer_aux_envois(config.Projet.charger(cible)))
+    # Le nom du travail est celui qu'une protection de branche exige : une
+    # mise à jour garde celui qui est en place, quelle que soit la langue.
+    existant = cible / CI_DU_SOCLE
+    avant = outils.nom_du_travail(existant.read_text(encoding="utf-8")) if existant.is_file() else None
+    nouveau = outils.nom_du_travail(workflow)
+    if avant and nouveau and avant != nouveau:
+        return workflow.replace(f"    name: {nouveau}\n", f"    name: {avant}\n", 1), avant
+    return workflow, None
+
+
+def copies_du_socle(cible: Path) -> dict[str, str]:
+    """Les copies protégées que l'installeur poserait dans `cible` telle
+    qu'elle est, par leur chemin : les skills du socle, ses hooks git et sa
+    CI, rendus comme une mise à jour les rendrait (la langue de la mémoire,
+    les adaptateurs en place, le nom du travail de CI gardé)."""
+    projet = config.Projet.charger(cible)
+    lg = langue.du_projet(projet)
+    ch = projet.chemins
+    textes = [t for c in (ch.adaptateur, *config.fichiers_adaptateurs(cible, ch.adaptateurs))
+              if (t := outils.lire_a(cible, None, c)) is not None]
+    res = skills_du_socle(lg)
+    res.update({f"{config.GIT_HOOKS}/{h.name}": h.read_text(encoding="utf-8")
+                for h in sorted((MODELES / "git-hooks").iterdir())})
+    with messages.dans(lg):
+        res[CI_DU_SOCLE] = ci_du_socle(cible, textes, lg)[0]
+    return res
+
+
+def copies_en_retard(projet: config.Projet) -> list[str]:
+    """En mode amont, les copies protégées du projet qui diffèrent de ce que
+    l'installeur y poserait, ou qui manquent : le moteur y change sans que
+    l'installeur ne repasse, et rien d'autre ne le dirait (B-0218). Rien en
+    mode projet, où chaque mise à jour les pose."""
+    if projet.mode != config.MODE_AMONT:
+        return []
+    return [c for c, attendu in copies_du_socle(projet.racine).items()
+            if (outils.lire_a(projet.racine, None, c) or "").replace("\r\n", "\n") != attendu]
+
+
 def _poser_etages(cible: Path, texte_adaptateur: str, dossier_moteur: str, proprietaire: str,
                   balayage: bool, motif: str, ch: config.Chemins, lg: str = "fr",
                   autres: list[tuple[str, str]] = ()) -> list[str]:
@@ -910,20 +1285,13 @@ def _poser_etages(cible: Path, texte_adaptateur: str, dossier_moteur: str, propr
         journal.append(trad("hooks git branchés (core.hooksPath)"))
     else:
         journal.append(trad("!! core.hooksPath pointe ailleurs : hooks git NON branchés"))
-    setup = noms_d_etapes_traduits(etapes_de_ci([texte_adaptateur, *(x for _, x in autres)]))
-    etapes = setup.strip("\n") + "\n" if setup.strip() else ""
-    workflow = gabarit("socle.yml", lg).replace("@@ETAPES_ADAPTATEUR@@\n", etapes)
-    workflow = workflow.replace("@@BRANCHES_JETABLES@@", ignorer_aux_envois(config.Projet.charger(cible)))
-    # Le nom du travail est celui qu'une protection de branche exige : une
-    # mise à jour garde celui qui est en place, quelle que soit la langue.
-    existant = cible / ".github/workflows/socle.yml"
-    avant = outils.nom_du_travail(existant.read_text(encoding="utf-8")) if existant.is_file() else None
-    nouveau = outils.nom_du_travail(workflow)
-    if avant and nouveau and avant != nouveau:
-        workflow = workflow.replace(f"    name: {nouveau}\n", f"    name: {avant}\n", 1)
+    textes = [texte_adaptateur, *(x for _, x in autres)]
+    etapes = etapes_traduites(textes)
+    workflow, garde = ci_du_socle(cible, textes, lg)
+    if garde:
         journal.append(trad("nom du travail de CI gardé : « {nom} », celui qu'une protection de branche exige "
-                            "peut-être", nom=avant))
-    outils.ecrire(cible / ".github/workflows/socle.yml", workflow)
+                            "peut-être", nom=garde))
+    outils.ecrire(cible / CI_DU_SOCLE, workflow)
     if balayage:
         installations = [i for x in (texte_adaptateur, *(y for _, y in autres))
                          if (i := tomllib.loads(x).get("capabilities", {}).get("mutation", {}).get("install", ""))]
@@ -1027,6 +1395,18 @@ def _installer(cible: Path, adaptateur: str | list[str], proprietaire: str, adop
                          else charges[0][2])
     texte_adaptateur, nom_adaptateur = charges[0][1], charges[0][0]
     langages, autres, sans_langage = {langage_principal}, [], []
+    # Les copies déjà posées pour les autres langages : un adaptateur de leur
+    # langage, détecté ou nommé, est la copie, que la mise à jour rafraîchit
+    # ou garde ; posé à côté, il en ferait deux du même langage, dont les
+    # motifs se recouvrent (B-0144).
+    copies = _langages_des(cible, config.fichiers_adaptateurs(cible, ch.adaptateurs))
+    # Un adaptateur nommé par `--adapter` que la copie de son langage
+    # remplace : l'installeur le dit, comme pour la copie principale ;
+    # détecté, personne ne l'a demandé (B-0327). Un fichier donné du même nom
+    # que la copie l'est aussi, s'il en diffère : la mise à jour garde la
+    # copie, et le perdrait sans le dire (revue de L-0021) ; un adaptateur
+    # maintenu de ce nom, lui, est la copie, qui s'en rafraîchit.
+    remplaces = []
     for nom, texte, langage, nomme in charges[1:] if not principal.is_file() else charges:
         if langage in langages:
             continue
@@ -1036,6 +1416,11 @@ def _installer(cible: Path, adaptateur: str | list[str], proprietaire: str, adop
             sans_langage.append(nom)
             continue
         langages.add(langage)
+        if langage in copies and (Path(copies[langage]).stem != nom or nom in de_fichier):
+            copie = (cible / copies[langage]).read_text(encoding="utf-8")
+            if nomme and texte != copie:
+                remplaces.append((nom, copies[langage], langage))
+            nom, texte = Path(copies[langage]).stem, copie
         autres.append((nom, texte))
     if principal.is_file() and autres and charges[0][2] != langage_principal:
         # Le premier nommé n'est pas le principal du projet : la CI part du
@@ -1061,6 +1446,12 @@ def _installer(cible: Path, adaptateur: str | list[str], proprietaire: str, adop
                             "par `git switch` et relancer l'installeur sur une branche neuve ; sur un projet "
                             "équipé, proposer le changement à l'humain par une demande, l'adaptateur étant protégé",
                             nom=nom, adaptateur=ch.adaptateur, langage=langage_principal))
+    for nom, copie, langage in remplaces:
+        journal.append(trad("!! {nom} non posé : {copie} existe déjà pour {langage}, et se garde. Pour le "
+                            "remplacer : sur un essai, le commiter sur sa branche, revenir à la branche de départ "
+                            "par `git switch` et relancer l'installeur sur une branche neuve ; sur un projet "
+                            "équipé, proposer à l'humain, par une demande, de retirer {copie}, protégé, puis "
+                            "relancer l'installeur avec le même `--adapter`", nom=nom, copie=copie, langage=langage))
     # Les langages couverts : ceux de cet appel, et ceux des copies déjà
     # posées (revue de B-0168), détectés ou nommés par `--adapter` (B-0178).
     poses_sans_cle = [sans_cle[n] for n in [nom_adaptateur, *(n for n, _ in autres)] if n in sans_cle]
@@ -1070,13 +1461,29 @@ def _installer(cible: Path, adaptateur: str | list[str], proprietaire: str, adop
     if ancien:
         journal.append(trad("mise à jour : moteur {avant} → {version}", avant=ancien.get("version", "amont"),
                             version=VERSION))
-        # Les sujets clos quittent les ouverts : une fois, à la
-        # mise à jour, puis par `socle archive`.
-        from socle import archive as archivage, memory as memoire
+        # Le backlog en quatre formes (ADR-0083), puis les entrées closes
+        # hors des ouvertes : à la mise à jour, puis par `socle archive`.
+        from socle import archive as archivage, memory as memoire, migration
 
+        bilan = migration.migrer_backlog(cible)
+        if bilan.renumerotees:
+            journal.append(trad("backlog : {n} lot(s) et jalon(s) renumérotés ({liste}) ; l'ancien numéro se "
+                                "résout", n=len(bilan.renumerotees),
+                                liste=", ".join(f"{a} → {n}" for a, n in bilan.renumerotees)))
+        if bilan.priorites:
+            journal.append(trad("backlog : priorité retirée de {n} lot(s) et jalon(s) ({liste}) : ils n'étaient "
+                                "déjà jamais prêts, elle ne changeait aucun ordre ; elle se donne à un besoin ou à "
+                                "une tâche", n=len(bilan.priorites), liste=", ".join(bilan.priorites)))
+        if bilan.taches:
+            journal.append(trad("backlog : {n} tâche(s) posée(s) pour les besoins des lots ouverts ({premiere} à "
+                                "{derniere}), leurs critères à récrire en livrables", n=len(bilan.taches),
+                                premiere=bilan.taches[0], derniere=bilan.taches[-1]))
+        if bilan.sections:
+            journal.append(trad("backlog : « Fait quand » devient « Satisfait quand » dans {n} besoin(s)",
+                                n=bilan.sections))
         ranges = archivage.ranger_backlog(cible)
         if ranges:
-            journal.append(trad("backlog : {n} sujet(s) clos rangé(s) dans `{dossier}/`", n=len(ranges),
+            journal.append(trad("backlog : {n} entrée(s) close(s) rangée(s) dans `{dossier}/`", n=len(ranges),
                                 dossier=memoire.DOSSIER_CLOS))
 
     # Ce que le projet a porté des adaptateurs maintenus se lit avant que le
@@ -1087,14 +1494,29 @@ def _installer(cible: Path, adaptateur: str | list[str], proprietaire: str, adop
                             "que le projet n'a pas adaptée peut y être prise pour adaptée, et gardée ; "
                             "`git fetch --unshallow`, puis relancer l'installeur"))
 
+    # Les fichiers protégés tels qu'ils sont avant ce passage : le verrou ne
+    # consignera que ceux qu'il change (ADR-0077).
+    avant = _etat_des_proteges(cible) if ancien and mode != config.MODE_AMONT else None
+
+    # Les notes de version de la copie du moteur que le projet a, lues dans
+    # le dernier commit avant qu'elle ne soit remplacée : la mise à jour
+    # donne celles que la copie nouvelle a en plus (ADR-0078), relancée
+    # avant son commit comme au premier passage (B-0225).
+    lues = (notes_deja_lues(cible, str(ancien.get("engine_dir") or ch.moteur))
+            if ancien and mode != config.MODE_AMONT else None)
+
     # 1. Le moteur, remplacé en bloc, et son verrou.
-    dossier_moteur, poses = _poser_moteur(cible, mode, source, ch)
+    dossier_moteur, poses, copie = _poser_moteur(cible, mode, source, ch, ancien)
     journal += poses
 
     # 2. Les fichiers du projet : posés s'ils manquent, jamais écrasés.
     lg, poses = _poser_configuration(cible, texte_adaptateur, ancien, prive, relecture, demandes_privees,
                                      langue_memoire, ch, plafonds, source_plafonds, humain, autres, connus)
     journal += poses
+    # Rien quand le moteur n'est pas recopié : en mode amont, ou lancé depuis
+    # le projet, la copie en place est celle que les notes décriraient.
+    paquet = cible / dossier_moteur / "socle"
+    notes = notes_nouvelles(lues, paquet, lg) if lues is not None and copie else []
 
     # 3. La mémoire initiale.
     journal += _poser_memoire(cible, lg, ", ".join([nom_adaptateur, *(n for n, _ in autres)]), adoption, ch)
@@ -1122,6 +1544,8 @@ def _installer(cible: Path, adaptateur: str | list[str], proprietaire: str, adop
                              tous_autres)
     if prive:
         journal += _prive(cible, prive, filtre)
+    if avant is not None:
+        _consigner_installes(cible, avant, ancien)
 
     # 6. La trace : l'installation se voit dans `Socle-Hooks` d'une session
     # en cours (SessionStart a tiré avant que le hook n'existe).
@@ -1135,15 +1559,19 @@ def _installer(cible: Path, adaptateur: str | list[str], proprietaire: str, adop
     if adoption or ancien:
         journal += consigner_tolerances(cible, mise_a_jour=not adoption)
     journal += _alerte_budget(cible, section_avant)
+    # Les copies posées : un module que la copie `kotlin` ne sert pas (D-0191).
+    journal += modules_hors_jvm(cible, ch)
 
     print(trad("socle {version} installé dans {cible}", version=VERSION, cible=cible))
     for l in journal:
         print(f"  - {l}")
+    if notes:
+        print("\n" + texte_des_notes(notes, fichier_des_notes(paquet, lg).relative_to(cible).as_posix(), not lues))
     print(trad("\nAudit :"))
     code, echecs = _audit(cible)
     print(note_d_audit())
     print(trad("\nEt maintenant :"))
-    for i, etape in enumerate(et_maintenant(cible, bool(ancien), echecs), 1):
+    for i, etape in enumerate(et_maintenant(cible, bool(ancien), echecs, [i for i, _ in notes]), 1):
         print(f"  {i}. {etape}")
     return code_de_sortie(code, echecs, attentes_de_l_humain(cible))
 
@@ -1311,9 +1739,10 @@ def _settings(cible: Path) -> list[str]:
     hooks = conf.setdefault("hooks", {})
     for evt, blocs in modele["hooks"].items():
         existants = hooks.setdefault(evt, [])
-        # Les blocs du socle sont remplacés, ceux du projet gardés.
-        existants[:] = [b for b in existants
-                        if not any(".socle/socle hook" in h.get("command", "") for h in b.get("hooks", []))]
+        # Les commandes du socle sont remplacées, celles du projet gardées,
+        # même dans un bloc qu'elles partagent avec une du socle : le bloc
+        # ne tombe que s'il ne lui reste rien (B-0328).
+        existants[:] = [b for b in map(_sans_le_socle, existants) if b is not None]
         existants.extend(blocs)
     outils.ecrire(p, json.dumps(conf, ensure_ascii=False, indent=2) + "\n")
     res = [trad("hooks de Claude Code déclarés dans .claude/settings.json")]
@@ -1324,14 +1753,46 @@ def _settings(cible: Path) -> list[str]:
                         "aussi celui du socle, et les deux se recoupent (branche, commits, ce qui revient à "
                         "l'humain). Pour n'en garder qu'un, l'humain retire le sien de .claude/settings.json, ou "
                         "n'y laisse que ce qui est propre au projet", commandes=", ".join(propres)))
+    fins = fins_de_tour_du_projet(conf)
+    if fins:
+        # Chacun tire à chaque fin de tour à côté de celui du socle : s'il
+        # lance les mêmes vérifications, chaque fin de tour les paie deux
+        # fois (B-0183).
+        res.append(trad("!! le projet a déjà son propre hook de fin de tour ({commandes}) : il tire à chaque fin "
+                        "de tour à côté de celui du socle, et peut le doubler, les mêmes vérifications lancées "
+                        "deux fois. Pour n'en garder qu'un, l'humain retire le sien de .claude/settings.json, ou "
+                        "n'y laisse que ce qui est propre au projet", commandes=", ".join(fins)))
     return res
+
+
+def _sans_le_socle(bloc: dict) -> dict | None:
+    """Le bloc de hooks `bloc` sans les commandes du socle : tel quel s'il
+    n'en a pas, None s'il n'avait qu'elles."""
+    commandes = bloc.get("hooks", [])
+    gardees = [h for h in commandes if ".socle/socle hook" not in h.get("command", "")]
+    if len(gardees) == len(commandes):
+        return bloc
+    return {**bloc, "hooks": gardees} if gardees else None
+
+
+def _commandes_du_projet(conf: dict, evenement: str) -> list[str]:
+    """Les commandes de l'événement `evenement` que le projet déclare
+    lui-même dans ses réglages de Claude Code, à côté de celle du socle."""
+    return [h.get("command", "") for b in (conf.get("hooks") or {}).get(evenement, [])
+            for h in b.get("hooks", []) if h.get("command") and ".socle/socle hook" not in h["command"]]
 
 
 def etats_du_projet(conf: dict) -> list[str]:
     """Les commandes `SessionStart` que le projet déclare lui-même, à côté de
     celle du socle."""
-    return [h.get("command", "") for b in (conf.get("hooks") or {}).get("SessionStart", [])
-            for h in b.get("hooks", []) if h.get("command") and ".socle/socle hook" not in h["command"]]
+    return _commandes_du_projet(conf, "SessionStart")
+
+
+def fins_de_tour_du_projet(conf: dict) -> list[str]:
+    """Les commandes `Stop` que le projet déclare lui-même, à côté de celle
+    du socle : chacune tire à chaque fin de tour, et peut doubler celle du
+    socle (B-0183)."""
+    return _commandes_du_projet(conf, "Stop")
 
 
 def _codeowners(cible: Path, proprietaire: str) -> list[str]:
@@ -1357,7 +1818,28 @@ def _gitignore(cible: Path) -> list[str]:
     # Le commentaire d'une installation dans une autre langue compte aussi.
     deja = any(l.startswith(("# Trace locale des hooks du socle", commentaire)) for l in existant.splitlines())
     outils.ajouter_lignes(p, ["/.socle/trace/", "__pycache__/"], "" if deja else trad("{commentaire} (voir {source})", commentaire=commentaire, source=source))
+    # Le skill socle-batch lance ses sous-agents dans des worktrees, sous ce
+    # dossier : non ignorés, ils paraissent à commiter (B-0217).
+    if not ignore_deja(p.read_text(encoding="utf-8"), WORKTREES):
+        outils.ajouter_lignes(p, [f"/{WORKTREES}/"], trad("# Les worktrees des sous-agents de Claude Code"))
     return []
+
+
+# Le dossier où Claude Code pose les worktrees de ses sous-agents.
+WORKTREES = ".claude/worktrees"
+
+
+def ignore_deja(texte: str, dossier: str) -> bool:
+    """Le `.gitignore` `texte` a déjà une ligne qui ignore `dossier`, ou un
+    dossier qui le contient : écrite avec ou sans `/` de tête ou de fin, ou
+    `/*`, `/**` au bout. Une telle ligne ne se double pas."""
+    parties = dossier.strip("/").split("/")
+    parents = {"/".join(parties[:i]) for i in range(1, len(parties) + 1)}
+    for ligne in texte.splitlines():
+        l = ligne.strip()
+        if l and not l.startswith(("#", "!")) and re.sub(r"/\*{1,2}$", "", l).strip("/") in parents:
+            return True
+    return False
 
 
 def _non_ignores(cible: Path, chemins: list[str]) -> list[str]:
@@ -1548,6 +2030,11 @@ def consigner_tolerances(cible: Path, mise_a_jour: bool = False) -> list[str]:
                                 "constat(s) présent(s) sont consignés comme tolérés (`[adoption.tolerated]`), et "
                                 "tout constat nouveau échouera désormais (B-0180)", controle=c, n=len(presents[c])))
         projet = config.Projet.charger(cible)
+    if not contexte.tolerances(projet) and (not mise_a_jour or projet.gf("adoption") is not None):
+        # Une adoption vide le dit : sans cette ligne, l'agent ne savait
+        # qu'à l'essai à blanc qu'il n'y avait rien à inscrire (B-0195).
+        res.append(trad("adoption : aucun contrôle en `[adoption] warn_only`, aucun constat à tolérer : rien à "
+                        "inscrire"))
     return res + contexte.bilan_adoption(projet)
 
 
@@ -1569,16 +2056,20 @@ def note_d_audit() -> str:
                 "tests du projet n'ont pas été lancés ; `python3 .socle/socle verify --fast` les lance)")
 
 
-def et_maintenant(cible: Path, mise_a_jour: bool, echecs: list[str]) -> list[str]:
+def et_maintenant(cible: Path, mise_a_jour: bool, echecs: list[str], notes: list[str] | tuple = ()) -> list[str]:
     """Ce qui reste à l'humain après l'installation, dans l'ordre où le
-    faire : chaque étape avec sa commande."""
+    faire : chaque étape avec sa commande. `notes` : les identifiants des
+    notes de version que la mise à jour apporte, que le message de commit
+    nomme pour la session suivante (ADR-0078)."""
     from socle import hooks, private as prive
 
     projet = config.Projet.charger(cible)
     etapes = []
     if "protege.fichiers" in echecs and os.environ.get(hooks.SESSION_CLOUD) == "true":
         # En session cloud, l'humain n'a pas de terminal, et la session qui a
-        # ajouté le dépôt du socle ne se reprend pas (B-0107).
+        # ajouté le dépôt du socle ne se reprend pas (B-0107). Aucune session
+        # ne commite les fichiers protégés avant la demande : le hook avant
+        # commit les refuse (B-0152).
         etapes.append(trad("approuver les fichiers protégés que la mise à jour a changés : en session cloud, "
                            "l'humain n'a pas de terminal pour `socle approve` ; poser une demande qui cite chaque "
                            "fichier protégé changé et son empreinte (`python3 .socle/socle check` les donne), que "
@@ -1591,10 +2082,14 @@ def et_maintenant(cible: Path, mise_a_jour: bool, echecs: list[str]) -> list[str
                            "Poussée, elle laisse commiter et pousser ces "
                            "fichiers si la branche par défaut exige la CI du socle, qui les refuse jusqu'à la réponse "
                            "et où l'humain les lit dans la pull request (D-0071) ; sinon, ils restent dans l'arbre "
-                           "jusqu'à sa réponse, puis se commitent avec elle. Une session qui a dû ajouter le dépôt du socle "
-                           "ne se reprend pas : y commiter, pousser la branche et ouvrir la pull request, d'une "
-                           "traite et sans rien attendre, et poser la demande dans une session neuve sur le seul "
-                           "dépôt du projet, sur cette branche"))
+                           "jusqu'à sa réponse, puis se commitent avec elle. Une session qui a dû ajouter le dépôt du "
+                           "socle ne se reprend pas, et n'y commite les fichiers protégés qu'après la demande, que le "
+                           "hook avant commit exige : si la branche par défaut exige la CI du socle, y poser la "
+                           "demande, puis commiter en deux temps comme à l'étape du commit, pousser la branche et "
+                           "ouvrir la pull request, d'une traite et sans rien attendre, l'humain répondant dans une "
+                           "session neuve sur le seul dépôt du projet, sur cette branche ; sinon, n'y rien commiter, "
+                           "et refaire la mise à jour dans une session neuve sur le seul dépôt du projet, le dépôt du "
+                           "socle cloné sans y être ajouté"))
     elif "protege.fichiers" in echecs:
         etapes.append(trad("approuver les fichiers protégés que la mise à jour a changés (la liste s'affiche, "
                            'à confirmer) : `python3 .socle/socle approve --text "Mise à jour du socle '
@@ -1653,21 +2148,37 @@ def et_maintenant(cible: Path, mise_a_jour: bool, echecs: list[str]) -> list[str
                          "<fichier.toml>`")
     message = (trad("Mettre à jour le socle {version}", version=VERSION) if mise_a_jour
                else trad("Installer le socle {version}", version=VERSION))
+    commande = f'git add -A && git commit -m "{message}"'
+    fichier_notes = ""
+    if mise_a_jour and notes:
+        # Le message de commit garde les notes de la mise à jour pour une
+        # session qui ne l'a pas vue passer : leurs identifiants, et le
+        # fichier où les lire (sans accents graves, que les guillemets du
+        # shell exécuteraient).
+        fichier_notes = fichier_des_notes(cible / projet.dossier_moteur / "socle", messages.langue())
+        fichier_notes = fichier_notes.relative_to(cible).as_posix()
+        commande += ' -m "' + trad("Notes de version du socle : {liste}, dans {fichier}", liste=", ".join(notes),
+                                   fichier=fichier_notes) + '"'
+    commande += " && git push"
     if mise_a_jour and "protege.fichiers" in echecs and os.environ.get(hooks.SESSION_CLOUD) == "true":
         # Le hook avant commit juge ce que le commit contient : la note qui
         # cite un fichier protégé part avec lui, la demande avant eux (B-0148).
         etapes.append(trad('dans la session qui pose la demande, commiter en deux temps : d\'abord la demande '
                            'seule, qui ne cite que ce qui est déjà commité, hors les fichiers protégés qu\'elle '
                            'approuve, et la pousser ; puis, quand elle le permet, les fichiers protégés avec ce qui '
-                           'les cite (journal, chantier actif) : `git add -A && git commit -m "{message}" && git '
-                           'push`. Le hook avant commit refuse une référence, chemin ou identifiant, que le commit '
-                           'ne contient pas', message=message) + verifier)
+                           'les cite (journal, chantier actif) : `{commande}`. Le hook avant commit refuse une '
+                           'référence, chemin ou identifiant, que le commit ne contient pas', commande=commande)
+                       + verifier)
     else:
-        etapes.append(trad('commiter puis pousser : `git add -A && git commit -m "{message}" && git push`',
-                           message=message) + verifier)
-    etapes.append(trad("ouvrir l'agent dans le projet : il lit l'état au démarrage") if mise_a_jour
-                  else trad("ouvrir l'agent dans le projet : il lit l'état au démarrage, et te donne le lien des questions "
-                          "de départ, une demande à laquelle tu réponds dans la conversation"))
+        etapes.append(trad("commiter puis pousser : `{commande}`", commande=commande) + verifier)
+    if mise_a_jour and notes:
+        etapes.append(trad("ouvrir l'agent dans le projet : il lit l'état au démarrage ; s'il n'a pas lancé lui-même "
+                           "cette mise à jour, lui dire de lire ses notes de version ({liste}, dans `{fichier}`) et de "
+                           "faire ce que chacune demande", liste=", ".join(notes), fichier=fichier_notes))
+    else:
+        etapes.append(trad("ouvrir l'agent dans le projet : il lit l'état au démarrage") if mise_a_jour
+                      else trad("ouvrir l'agent dans le projet : il lit l'état au démarrage, et te donne le lien des "
+                                "questions de départ, une demande à laquelle tu réponds dans la conversation"))
     if not mise_a_jour and not str(projet.pol("human", "name", defaut="") or "").strip():
         # Sans lui, chaque réponse relayée doit nommer l'humain (`--by`).
         etapes.append(trad("écrire ton nom dans `{politique}` (`[human] name`) avant de fusionner l'installation : "

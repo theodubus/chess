@@ -14,7 +14,7 @@ une entrée par section, texte tel quel. Un script relève chaque chiffre
 du texte d'avant et le retrouve après. Les renvois vers ces sections se
 réécrivent, ou passent par la table des anciens renvois (B-0052).
 
-## Fait quand
+## Satisfait quand
 
 - [x] chaque fait, procédure et idée de ces sections est à sa place, et la relecture sans contexte l'a vérifié
 - [x] le reste est au journal, chaque chiffre retrouvé, et les sections ont quitté `tools/README.md`

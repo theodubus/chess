@@ -19,7 +19,7 @@ même sous-section, ne part pas avec elles : sa place se décide avec le
 découpage (B-0043). `CLAUDE.md` renvoie encore à « La file » comme à ce
 sur quoi travailler : ce renvoi passe au backlog dans le même lot.
 
-## Fait quand
+## Satisfait quand
 
 - [x] les phases de « La file » et le tableau de « L'histoire de l'ordre » sont retirés de `tools/README.md`, archivés au journal, et le pointeur vers l'ancienne feuille de route réduit à un renvoi
 - [x] chaque ligne a sa place : un sujet au backlog, la longue traîne, ou sa clôture citée

@@ -32,6 +32,19 @@ TRACE = ".socle/trace/hooks.log"  # hors dépôt git seulement
 # CI le reçoit en motif : il n'a que des caractères que les motifs de GitHub
 # prennent pour eux-mêmes, sinon il est ignoré des deux côtés.
 BRANCHES_JETABLES = ("proto/",)
+# La borne, en octets UTF-8, de la sortie du démarrage quand les garde-fous
+# n'en disent rien (`[startup] max_bytes`) : la valeur du gabarit (ADR-0071).
+BORNE_DEMARRAGE = 9500
+# Le seuil, en secondes, du total des étapes rapides quand les garde-fous
+# n'en disent rien (`[verify] fast_max_seconds`) : la valeur du gabarit. Au-
+# delà de cinq minutes d'attente, un sous-agent perd le cache de sa
+# conversation (B-0258).
+SEUIL_RAPIDE = 300
+# Le nombre de tâches qu'un lot ouvert peut encore attendre sans que l'état
+# et le rappel de fin de tour ne disent qu'il ne se mène pas en une session,
+# quand les garde-fous n'en disent rien (`[batches] max_tasks`) : la valeur
+# du gabarit, mesurée sur les lots faits (B-0233).
+TACHES_PAR_SESSION = 9
 PREFIXE_DE_BRANCHE = re.compile(r"[A-Za-z0-9._/-]+")
 COMPTEUR_STOP = ".socle/trace/stop-echecs"
 INSTRUCTIONS = "AGENTS.md"
@@ -62,6 +75,8 @@ class Chemins:
     prive_lock: str
     moteur: str  # le dossier du moteur installé
     adaptateurs: str = ".socle/adapters"  # les adaptateurs des autres langages
+    passation: str = "memory/handoff.md"  # la passation à une session neuve, publique seule
+    consignes: str = "memory/directives.md"  # les consignes durables de l'humain, une par entrée
 
     def dans_prive(self, chemin: str) -> str:
         """Le miroir d'un chemin de la mémoire dans la zone privée."""
@@ -73,7 +88,7 @@ FORMAT_ACTUEL = Chemins("memory", "memory/canonical.md", "memory/active.md", "me
                         "memory/private/terms.txt", ".answer.toml", ".socle/engine.lock", ".socle/policy.toml",
                         ".socle/guardrails.toml", ".socle/adapter.toml", ".socle/private.lock", ".socle/engine")
 # Le format de la mémoire, que le verrou note.
-FORMAT = 3
+FORMAT = 4
 
 MODE_AMONT = "amont"   # le dépôt qui fabrique le moteur : il le modifie
 MODE_PROJET = "projet"  # un projet qui l'utilise : le moteur y est immuable
@@ -283,6 +298,46 @@ class Projet:
         return [self.chemins.archives + "/**", self.dossier_moteur.rstrip("/") + "/**"] + list(
             self.gf("references", "exclude", defaut=[])
         )
+
+    def borne_demarrage(self) -> int:
+        """La borne de la sortie du démarrage, `[startup] max_bytes` des
+        garde-fous, celle du gabarit à défaut ou si elle n'est pas un entier
+        positif : au-delà, l'état coupe ce qu'il injecte, et le dit."""
+        valeur = self.gf("startup", "max_bytes", defaut=None)
+        if isinstance(valeur, bool) or not isinstance(valeur, int) or valeur <= 0:
+            return BORNE_DEMARRAGE
+        return valeur
+
+    def seuil_rapide(self) -> int | float:
+        """Le seuil, en secondes, du total des étapes rapides, `[verify]
+        fast_max_seconds` des garde-fous : au-delà, le passage qui les lance
+        toutes avertit, sans échouer, et l'état le redit (B-0258). Celui du
+        gabarit à défaut, ou si la valeur n'est pas un nombre, ce que le
+        cliquet refuse sans demande ; un nombre se prend tel quel, même nul
+        ou négatif : plus bas avertit plus tôt, comme le cliquet le juge.
+        `nan`, que le cliquet refuse aussi sans demande, écrit comme quitté,
+        vaut zéro, le plus strict : aucune valeur qu'il laisse écrire
+        librement ne relâche le seuil."""
+        valeur = self.gf("verify", "fast_max_seconds", defaut=None)
+        if not isinstance(valeur, (int, float)):
+            return SEUIL_RAPIDE
+        if isinstance(valeur, bool):
+            return int(valeur)
+        return valeur if valeur == valeur else 0
+
+    def taches_par_session(self) -> int | float:
+        """Le nombre de tâches qu'un lot ouvert peut encore attendre, `[batches]
+        max_tasks` des garde-fous : au-delà, l'état et le rappel de fin de
+        tour avertissent qu'il ne se mène pas en une session, sans rien
+        refuser (B-0233). Celui du gabarit à défaut, ou si la valeur n'est
+        pas un nombre ; un nombre se prend tel quel : plus bas avertit plus
+        tôt, comme le cliquet le juge, et `nan` vaut zéro, le plus strict."""
+        valeur = self.gf("batches", "max_tasks", defaut=None)
+        if not isinstance(valeur, (int, float)):
+            return TACHES_PAR_SESSION
+        if isinstance(valeur, bool):
+            return int(valeur)
+        return valeur if valeur == valeur else 0
 
     def branches_jetables(self) -> list[str]:
         """Les préfixes des branches jetables, `[branches] disposable` des

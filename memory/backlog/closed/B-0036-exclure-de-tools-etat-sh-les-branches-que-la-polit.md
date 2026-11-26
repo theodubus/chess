@@ -17,6 +17,6 @@ Le correctif : lire les motifs dans la politique plutôt que de les
 recopier dans le script, et ajouter à `tools/etat-test.sh` un cas par
 motif, chacun avec son témoin.
 
-## Fait quand
+## Satisfait quand
 
 - [x] `tools/etat.sh` n'exclut que ce que la politique garde, ni plus ni moins, et `tools/etat-test.sh` le prouve

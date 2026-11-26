@@ -12,7 +12,7 @@ B-0046, J-2026-11-18-D).
 La méthode est celle de B-0047 : faits, procédures et idées extraits et
 posés à leur place d'abord, le reste au journal, chaque chiffre retrouvé.
 
-## Fait quand
+## Satisfait quand
 
 - [x] faits, procédures et idées de ces sections à leur place, vérifiés par la relecture sans contexte
 - [x] ces sections hors de `tools/README.md`, le reste au journal, chaque chiffre retrouvé

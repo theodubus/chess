@@ -38,3 +38,6 @@ dist/
 # Trace locale des hooks du socle (voir CLAUDE.md)
 /.socle/trace/
 __pycache__/
+
+# Les worktrees des sous-agents de Claude Code
+/.claude/worktrees/

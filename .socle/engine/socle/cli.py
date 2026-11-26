@@ -44,6 +44,32 @@ def cmd_state(args) -> int:
     return 0
 
 
+def cmd_roadmap(args) -> int:
+    from socle import roadmap as suite
+
+    print(suite.rendre(_projet(args), format_=args.format, par=args.by, tout=args.all).rstrip("\n"))
+    return 0
+
+
+def cmd_consumption(args) -> int:
+    """Ce qu'une session de Claude Code a coûté, lu dans ses transcriptions :
+    celles du dossier donné, ou de celui que Claude Code tient pour le
+    projet."""
+    from socle import consumption as consommation
+
+    dossier = args.folder or consommation.dossier_de_claude_code(_projet(args).racine)
+    poids = consommation.Poids(args.weight_input, args.weight_write_5m, args.weight_write_1h, args.weight_read,
+                               args.weight_output)
+    texte = consommation.mesurer(dossier, args.session, set(args.day) if args.day else None, args.until,
+                                 args.point, args.control, poids, args.bytes_per_token)
+    if texte is None:
+        print(trad("aucune transcription de Claude Code dans {dossier} : donner le dossier des transcriptions en "
+                   "argument", dossier=dossier), file=sys.stderr)
+        return 1
+    print(texte)
+    return 0
+
+
 def cmd_check(args) -> int:
     from socle import context as contexte
 
@@ -134,7 +160,10 @@ def cmd_next_id(args) -> int:
     return 0
 
 
-TYPES_CLI = {"fact": "F", "backlog": "B", "adr": "ADR", "journal": "J", "request": "D"}
+# Les quatre formes du backlog ont chacune leur commande (ADR-0083) ;
+# `backlog` n'en est plus une.
+TYPES_CLI = {"fact": "F", "need": "B", "task": "T", "batch": "L", "milestone": "JA", "adr": "ADR", "journal": "J",
+             "request": "D", "directive": "C"}
 
 
 def cmd_new(args) -> int:
@@ -149,6 +178,20 @@ def cmd_new(args) -> int:
     if questions and type_ != "D":
         print(trad("`--questions` ne vaut que pour une demande (`request`)"), file=sys.stderr)
         return 2
+    besoin, tache = getattr(args, "need", None), getattr(args, "task", None)
+    if (besoin is not None) != (type_ == "T"):
+        print(trad("une tâche nomme son besoin : `socle new task \"…\" --need B-NNNN`, et `--need` ne vaut "
+                   "que pour elle"), file=sys.stderr)
+        return 2
+    if tache is not None and type_ != "B":
+        print(trad("`--task` ne vaut que pour un besoin (`need`) : il crée le besoin et sa tâche"), file=sys.stderr)
+        return 2
+    if besoin is not None:
+        cible = mem.entree(besoin)
+        if cible is None or not memoire.est_besoin(cible) or cible.statut in memoire.BACKLOG_CLOS:
+            print(trad("`--need {besoin}` : aucun besoin ouvert de ce nom ; une tâche nomme le besoin ouvert "
+                       "qu'elle sert", besoin=besoin), file=sys.stderr)
+            return 2
     # Avec une mémoire privée, le contenu nouveau est privé par défaut
     # (cadrage, règles de classement, point 3), couche par couche selon la
     # politique (`[private] layers`). Une demande ne devient privée que
@@ -182,17 +225,29 @@ def cmd_new(args) -> int:
     squelette = langue.SQUELETTES[lg].get(type_, "")
     # Ce qui s'affiche avant l'identifiant, imprimé une fois l'entrée
     # écrite : une sortie coupée (`| head -1`) ne l'empêche plus.
-    index = ""
+    index, ensuite = "", ""
     if type_ == "F":
         chemin = lieu(ch.canonique)
         _ajouter(chemin, f"\n## {ident} — {titre}\n\n{squelette}\n", langue.entete_fichier("canonique", zone, lg))
-    elif type_ == "B":
-        # Le backlog s'affiche avec le sujet ajouté : un doublon se voit ici.
+    elif type_ == "C":
+        # Une consigne de l'humain : sa ligne de résumé en titre, sa source et
+        # son texte exact, mot pour mot, à remplir.
+        chemin = lieu(ch.consignes)
+        _ajouter(chemin, f"\n## {ident} — {titre}\n\n{squelette.format(date=jour)}\n",
+                 langue.entete_fichier("consignes", zone, lg))
+    elif type_ in memoire.BACKLOG:
+        # Le backlog s'affiche avec l'entrée ajoutée : un doublon se voit ici.
         index = _texte_index(mem, "backlog")
-        bloc = squelette.format(lu=memoire.empreinte_index(mem, "backlog"))
-        # Un fichier par sujet, comme une décision.
-        chemin = lieu(ch.backlog) / f"{ident}-{memoire.nom_de_fichier(titre)}.md"
-        outils.ecrire(chemin, f"{langue.entete_fichier('backlog', zone, lg)}\n# {ident} — {titre}\n\n{bloc}\n")
+        chemin = _poser_backlog(lieu(ch.backlog), zone, lg, ident, titre, squelette,
+                                memoire.empreinte_index(mem, "backlog"), besoin)
+        if tache is not None:
+            # Le besoin et sa tâche quand la correction est évidente : la
+            # tâche a lu l'index où son besoin figure déjà.
+            apres = memoire.Memoire.charger(racine)
+            ident_t = apres.prochain_id("T", prive=prive, pris_ailleurs=identifiants.pris_ailleurs(racine, "T"))
+            chemin_t = _poser_backlog(lieu(ch.backlog), zone, lg, ident_t, tache, langue.SQUELETTES[lg]["T"],
+                                      memoire.empreinte_index(apres, "backlog"), ident)
+            ensuite = f"{ident_t}\t{chemin_t.relative_to(racine)}"
     elif type_ == "J":
         bloc = f"\n## {ident} — {titre}\n\n{squelette}\n"
         dossier = lieu(ch.journal)
@@ -226,6 +281,8 @@ def cmd_new(args) -> int:
     if index:
         print(index)
     print(f"{ident}\t{chemin.relative_to(racine)}")
+    if ensuite:
+        print(ensuite)
     if type_ == "D":
         # Le contrat, avant qu'elle soit écrite et non au refus du lint ;
         # après l'identifiant, que la première ligne garde (ADR-0058).
@@ -233,6 +290,17 @@ def cmd_new(args) -> int:
 
         print(demandes.contrat(projet, str(Path(ch.demandes) / chemin.name), questions=questions))
     return 0
+
+
+def _poser_backlog(dossier: Path, zone: str, lg: str, ident: str, titre: str, squelette: str, lu: str,
+                   besoin: str | None) -> Path:
+    """Une entrée du backlog dans son propre fichier, comme une décision."""
+    from socle import memory as memoire
+
+    chemin = dossier / f"{ident}-{memoire.nom_de_fichier(titre)}.md"
+    bloc = squelette.format(lu=lu, besoin=besoin or "")
+    outils.ecrire(chemin, f"{langue.entete_fichier('backlog', zone, lg)}\n# {ident} — {titre}\n\n{bloc}\n")
+    return chemin
 
 
 def _ajouter(chemin: Path, bloc: str, entete: str | None = None):
@@ -258,6 +326,11 @@ def cmd_show(args) -> int:
         _afficher_index(mem, args.index)
     for ident in args.ids:
         e = mem.entree(ident)
+        if e is None and mem.resoudre(ident) is not None:
+            # Un ancien numéro (ADR-0083) : l'entrée qui le porte désormais.
+            e = mem.resoudre(ident)
+            print(trad("{ancien} est l'ancien numéro de {ident}", ancien=ident, ident=e.id))
+            ident = e.id
         if e is None:
             print(trad("{ident} : aucune entrée de ce nom dans la mémoire", ident=ident), file=sys.stderr)
             code = 1
@@ -406,7 +479,19 @@ def cmd_review(args) -> int:
             return 2
         print(texte, end="")
         return 0
-    print(revue.dossier(_projet(args), args.base, args.max_bytes), end="")
+    try:
+        texte, note = revue.relire(_projet(args), args.base, args.max_bytes, getattr(args, "since", None),
+                                   getattr(args, "batch", None), court=getattr(args, "short", False))
+    except (revue.ReferenceRefusee, revue.PasseRefusee, revue.CourtRefuse) as refus:
+        # Une référence qui ne mesure pas le lot (ADR-0081) : un dossier vide
+        # ou étranger, qu'un relecteur jugerait sans constat, ne part pas. Une
+        # passe que l'historique du lot refuse (ADR-0084) non plus, ni le
+        # dossier court d'un lot qui touche un garde-fou (B-0288).
+        print(refus, file=sys.stderr, end="" if str(refus).endswith("\n") else "\n")
+        return 2
+    print(texte, end="")
+    if note:
+        print(note, file=sys.stderr)
     return 0
 
 
@@ -470,7 +555,9 @@ def cmd_decision(args) -> int:
     """Une décision prise en séance : l'humain a lu la question
     dans la conversation et y a répondu ; l'agent la consigne avec sa réponse
     mot pour mot (`--relayed`), ou l'humain le fait lui-même. `--about` nomme
-    ce qu'elle approuve."""
+    ce qu'elle approuve. Avec `--unprompted`, une décision que l'humain a
+    donnée de lui-même : son texte exact, sans question ni réponse à
+    choisir (B-0185)."""
     from socle import requests as demandes
 
     projet = _projet(args)
@@ -491,11 +578,29 @@ def cmd_decision(args) -> int:
             print(trad("refus : « {chemin} » n'existe pas dans le dépôt", chemin=chemin), file=sys.stderr)
             return 2
         sujet = chemin
+    canal = "conversation" if args.relayed else "terminal"
+    if getattr(args, "unprompted", False):
+        if args.answer or args.question_file:
+            print(trad("refus : une décision donnée sans question n'a ni réponse à choisir ni question posée ; "
+                       "son texte exact va dans --quote ou --quote-file"), file=sys.stderr)
+            return 2
+        try:
+            chemin, reponse = demandes.ecrire_decision_donnee(projet, args.question, citation, par,
+                                                              date.today().isoformat(), canal, sujet)
+        except ValueError as e:
+            print(trad("refus : {erreur}", erreur=e), file=sys.stderr)
+            return 2
+        print(trad("décision donnée par l'humain consignée : {chemin}, validée, sa réponse dans {reponse} — à "
+                   "commiter avec la suite.", chemin=chemin, reponse=reponse))
+        return 0
+    if not args.answer:
+        print(trad("refus : la réponse de l'humain manque ; une décision qu'il a donnée sans question se consigne "
+                   "avec --unprompted"), file=sys.stderr)
+        return 2
     question = Path(args.question_file).read_text(encoding="utf-8") if args.question_file else ""
     try:
         chemin, reponse = demandes.ecrire_seance(projet, args.question, question, args.answer,
-                                                 par, date.today().isoformat(),
-                                                 "conversation" if args.relayed else "terminal", citation, sujet)
+                                                 par, date.today().isoformat(), canal, citation, sujet)
     except ValueError as e:
         print(trad("refus : {erreur}", erreur=e), file=sys.stderr)
         return 2
@@ -716,6 +821,93 @@ def cmd_archive(args) -> int:
     return archivage.archiver_backlog(_projet(args))
 
 
+def cmd_handoff(args) -> int:
+    """La passation à une session neuve (skill `socle-handoff`) : `write`
+    l'écrit dans la mémoire ; `check`, sans argument, la trouve sur les
+    branches distantes et juge sa garde, dans la session neuve comme dans
+    celle qui part, après son push ; avec `--ref` et `--head`, il juge la
+    garde seule. Le moteur ne programme rien : la plateforme de l'agent le
+    fait, ou l'humain demande la reprise."""
+    from socle import handoff as passation
+
+    projet = _projet(args)
+    if args.action == "write":
+        if args.ref or args.head or args.since:
+            print(trad("`socle handoff write` : --ref, --head et --since vont avec `check`"), file=sys.stderr)
+            return 2
+        try:
+            p = passation.ecrire(projet, args.chain, args.waiting, args.scheduled)
+        except passation.PassationRefusee as refus:
+            print(trad("pas de passation : {raison}", raison=refus), file=sys.stderr)
+            return 1
+        print(trad("passation écrite : {chemin} — écrite à {heure}, branche {branche}, chaîne {n}",
+                   chemin=projet.chemins.passation, heure=p.heure, branche=p.branche, n=p.chaine))
+        print(trad("Ensuite : la commiter en dernier, pousser, puis `python3 .socle/socle handoff check` doit la "
+                   "trouver en attente ; plus rien ne se pousse après"))
+        return 0
+    if args.chain or args.waiting or args.scheduled:
+        print(trad("`socle handoff check` : --chain, --waiting et --scheduled vont avec `write`"), file=sys.stderr)
+        return 2
+    if args.ref or args.head or args.since:
+        if not args.ref or not args.head:
+            print(trad("`socle handoff check` : --ref et --head vont ensemble, --since avec eux ; sans argument, la "
+                       "commande trouve la passation"), file=sys.stderr)
+            return 2
+        try:
+            depuis = passation.heure(args.since) if args.since else None
+        except ValueError:
+            print(trad("--since {valeur} : une heure ISO 8601, en UTC (2026-11-24T10:05:00Z)", valeur=args.since),
+                  file=sys.stderr)
+            return 2
+        return _verdict_de_passation(passation.juger(projet, args.ref, args.head, depuis))
+    trouvee = passation.trouver(projet)
+    p = trouvee.passation
+    if p:
+        print(trad("passation : écrite à {heure} sur {ref}, chaîne {n}", heure=p.heure,
+                   ref=f"{passation.DISTANT}/{p.branche}", n=p.chaine))
+    elif not trouvee.verdict.refus:
+        print(trad("aucune passation n'attend : faire ce que fait une session neuve, et le dire dans le premier "
+                   "message"))
+        return 0
+    code = _verdict_de_passation(trouvee.verdict)
+    if code:
+        return code
+    if p.attente:
+        print(p.attente)
+    print(trad("Premier commit : retirer {chemin}, puis le pousser aussitôt. Chaîne : {suite} si la session est "
+               "réveillée par la tâche programmée, 0 si l'humain a demandé la reprise.",
+               chemin=projet.chemins.passation, suite=p.chaine + 1))
+    return 0
+
+
+def cmd_prune_branches(args) -> int:
+    """Supprime sur l'origine les branches de l'agent déjà contenues dans la
+    branche par défaut ou dans la branche de travail poussée, vérifiées sur
+    l'origine au moment même (ADR-0114) ; `--dry-run` dit ce qu'elle
+    supprimerait."""
+    from socle import branches
+
+    projet = _projet(args)
+    try:
+        bilan = branches.elaguer(projet, essai=args.dry_run)
+    except branches.SuppressionRefusee as refus:
+        print(trad("rien n'est supprimé : {raison}", raison=refus), file=sys.stderr)
+        return 1
+    for ligne in branches.lignes(bilan, essai=args.dry_run):
+        print(ligne)
+    return 1 if bilan.refusees else 0
+
+
+def _verdict_de_passation(verdict) -> int:
+    """Le verdict de la garde : ses refus, ou où se placer."""
+    for raison in verdict.refus:
+        print(trad("passation refusée — {raison}", raison=raison), file=sys.stderr)
+    if verdict.refus:
+        return 1
+    print(trad("passation acceptée : se placer sur {ref} ({sha})", ref=verdict.place, sha=verdict.sha[:10]))
+    return 0
+
+
 def cmd_checks(args) -> int:
     from socle import context as contexte
 
@@ -728,10 +920,11 @@ def cmd_checks(args) -> int:
 # Les commandes par public : l'humain en a peu, l'agent
 # davantage, le reste sert aux hooks, à la CI et au moteur lui-même.
 GROUPES = {
-    a_traduire("pour l'humain"): ["help", "install", "init", "state", "answer", "decision", "approve", "reviewed",
-                                  "private install"],
+    a_traduire("pour l'humain"): ["help", "install", "init", "state", "roadmap", "consumption", "answer", "decision",
+                                  "approve", "reviewed", "private install"],
     a_traduire("pour l'agent"): ["new", "show", "url", "review", "verify", "check", "next-id", "private",
-                                 "mutation-verdict", "mutation-run", "renumber", "archive", "checks"],
+                                 "mutation-verdict", "mutation-run", "renumber", "archive", "handoff",
+                                 "prune-branches", "checks"],
     a_traduire("internes (hooks, CI, moteur)"): ["hook", "ci", "selftest", "fingerprint"],
 }
 
@@ -787,8 +980,54 @@ def analyseur() -> tuple[argparse.ArgumentParser, dict[str, str]]:
 
     s = sp.add_parser("state", help=trad("où en est le projet, calculé à chaque fois (injecté au démarrage de "
                                          "l'agent)"))
-    s.add_argument("--short", action="store_true", help=trad("sans le contenu de l'actif et du canonique"))
+    s.add_argument("--short", action="store_true", help=trad("l'état dérivé seul, entier : sans le chantier actif, les "
+                                                             "faits ni les décisions, sans borne ni plafond"))
     s.set_defaults(f=cmd_state)
+
+    from socle import roadmap as suite
+
+    s = sp.add_parser("roadmap", help=trad("la suite du projet d'un coup d'œil : jalons, lots, tâches et besoins, "
+                                           "calculés depuis le backlog"))
+    s.add_argument("--format", choices=suite.FORMATS, default="text",
+                   help=trad("text : une ligne par jalon et par lot (défaut) ; markdown : le lot en cours et les deux "
+                             "suivants tâche par tâche"))
+    s.add_argument("--by", choices=suite.LECTURES, default="batch",
+                   help=trad("batch : lire par lot (défaut) ; need : par besoin, chacun avec ses tâches et le lot "
+                             "de chacune"))
+    s.add_argument("--all", action="store_true", help=trad("en markdown, détailler tous les lots, ou tous les besoins ; "
+                                                           "en text, montrer chaque lot en sa ligne"))
+    s.set_defaults(f=cmd_roadmap)
+
+    from socle import consumption as consommation
+
+    s = sp.add_parser("consumption", help=trad("ce qu'une session de Claude Code a coûté, et ce qui l'a fait coûter, "
+                                               "lu dans ses transcriptions"))
+    s.add_argument("folder", nargs="?", type=Path,
+                   help=trad("le dossier des transcriptions, les <id>.jsonl et leurs sous-agents (défaut : celui que "
+                             "Claude Code tient pour ce projet)"))
+    s.add_argument("--session", help=trad("le début de l'identifiant d'une session : le nom de son fichier .jsonl"))
+    s.add_argument("--day", action="append", help=trad("un jour UTC à garder (AAAA-MM-JJ), répétable"))
+    s.add_argument("--until", type=consommation.instant,
+                   help=trad("ignorer ce qui suit cet instant (AAAA-MM-JJTHH:MM:SSZ ; UTC sans fuseau)"))
+    s.add_argument("--point", action="append", default=[], type=consommation.releve,
+                   help=trad("un relevé de la fenêtre de cinq heures : INSTANT,PART[/SEMAINE], point décimal "
+                             "(répétable)"))
+    s.add_argument("--control", action="append", default=[], type=consommation.releve,
+                   help=trad("un relevé hors échantillon, prédit depuis le dernier --point (même forme, répétable)"))
+    s.add_argument("--weight-input", type=float, default=consommation.Poids.entree,
+                   help=trad("le poids d'un jeton d'entrée non cachée (défaut : %(default)s)"))
+    s.add_argument("--weight-write-5m", type=float, default=consommation.Poids.ecriture_5m,
+                   help=trad("le poids d'un jeton écrit au cache pour cinq minutes (défaut : %(default)s)"))
+    s.add_argument("--weight-write-1h", type=float, default=consommation.Poids.ecriture_1h,
+                   help=trad("le poids d'un jeton écrit au cache pour une heure (défaut : %(default)s)"))
+    s.add_argument("--weight-read", type=float, default=consommation.Poids.lecture,
+                   help=trad("le poids d'un jeton lu dans le cache (défaut : %(default)s)"))
+    s.add_argument("--weight-output", type=float, default=consommation.Poids.sortie,
+                   help=trad("le poids d'un jeton de sortie (défaut : %(default)s)"))
+    s.add_argument("--bytes-per-token", type=float, default=3.5,
+                   help=trad("les octets d'un jeton, pour estimer en jetons ce que le socle injecte (défaut : "
+                             "%(default)s, une hypothèse)"))
+    s.set_defaults(f=cmd_consumption)
 
     s = sp.add_parser("check", help=trad("contrôles du socle, un code de sortie"))
     s.add_argument("--stage", choices=("agent", "git", "ci"), default="ci")
@@ -826,8 +1065,11 @@ def analyseur() -> tuple[argparse.ArgumentParser, dict[str, str]]:
     s.add_argument("type", choices=sorted(TYPES_CLI))
     s.add_argument("title")
     s.add_argument("--questions", action="store_true",
-                   help=trad("avec `request` : des questions de cadrage d'un sujet, ouvertes, auxquelles l'humain "
-                             "répond librement"))
+                   help=trad("avec `request` : des questions de cadrage d'un besoin, ouvertes, auxquelles "
+                             "l'humain répond librement"))
+    s.add_argument("--need", metavar="B-NNNN", help=trad("avec `task` : le besoin ouvert que la tâche sert"))
+    s.add_argument("--task", metavar=trad("TITRE"), help=trad("avec `need` : crée aussi sa tâche, quand la "
+                                                             "correction est évidente"))
     zone = s.add_mutually_exclusive_group()
     zone.add_argument("--private", action="store_true", help=trad("dans la mémoire privée (défaut quand elle "
                                                                   "existe)"))
@@ -866,11 +1108,21 @@ def analyseur() -> tuple[argparse.ArgumentParser, dict[str, str]]:
 
     s = sp.add_parser("review", help=trad("le dossier de la revue adversariale d'un lot, pour un relecteur sans "
                                           "contexte"))
-    s.add_argument("--base", help=trad("la base du lot (par défaut : la branche distante, sinon la branche par "
-                                       "défaut)"))
+    s.add_argument("--base", help=trad("la base du lot, qui se mesure depuis son ancêtre commun avec HEAD (par "
+                                       "défaut : la branche distante, sinon la branche par défaut ; l'ancêtre commun "
+                                       "avec celle-ci quand la branche distante contient déjà le lot)"))
     s.add_argument("--max-bytes", type=int, default=60_000, help=trad("le plafond du diff montré"))
+    s.add_argument("--since", metavar="REF", help=trad("une seconde revue : le diff depuis ce commit, celui de la "
+                                                       "première revue, et les tâches du lot entier"))
     s.add_argument("--request", metavar="D-NNNN", help=trad("le dossier de la relecture à froid de cette demande, "
                                                             "pour un lecteur qui n'a que son texte"))
+    s.add_argument("--batch", metavar="L-NNNN", help=trad("le lot dont c'est la passe de revue, qui s'écrit dans sa "
+                                                          "section « Revues » (par défaut : le lot en cours du "
+                                                          "backlog)"))
+    s.add_argument("--short", action="store_true", help=trad("le dossier court d'un petit lot : le diff et les "
+                                                             "critères de ses tâches, à juger sans explorer "
+                                                             "au-delà des fichiers touchés ; refusé pour un lot "
+                                                             "qui touche un garde-fou"))
     s.set_defaults(f=cmd_review)
 
     s = sp.add_parser("answer", help=trad("répondre à une demande ; l'agent y relaie (--relayed) ta réponse "
@@ -888,8 +1140,11 @@ def analyseur() -> tuple[argparse.ArgumentParser, dict[str, str]]:
     s = sp.add_parser("decision", help=trad("consigner une décision prise en séance, avec la réponse de l'humain ; "
                                             "l'agent y relaie (--relayed) ta réponse mot pour mot"))
     s.add_argument("question")
-    s.add_argument("answer")
+    s.add_argument("answer", nargs="?")
     s.add_argument("--question-file", help=trad("fichier qui contient la question telle que l'humain l'a lue"))
+    s.add_argument("--unprompted", action="store_true",
+                   help=trad("une décision que l'humain a donnée de lui-même, sans question : son texte exact "
+                             "(--quote ou --quote-file), sans réponse à choisir"))
     s.add_argument("--about", help=trad("ce que la décision approuve (le chemin du document)"))
     s.add_argument("--by")
     s.add_argument("--relayed", action="store_true", help=trad("réponse donnée par l'humain dans la "
@@ -965,9 +1220,33 @@ def analyseur() -> tuple[argparse.ArgumentParser, dict[str, str]]:
     s.add_argument("id")
     s.set_defaults(f=cmd_renumber)
 
-    s = sp.add_parser("archive", help=trad("range les sujets clos du backlog à l'écart des ouverts"))
+    s = sp.add_parser("archive", help=trad("range les entrées closes du backlog à l'écart des ouvertes, et les "
+                                           "consignes levées dans le journal"))
     s.set_defaults(f=cmd_archive)
 
+    s = sp.add_parser("handoff", help=trad("la passation à une session neuve : `write` l'écrit dans la mémoire ; "
+                                           "`check`, sans argument, la trouve sur les branches distantes et juge "
+                                           "sa garde"))
+    s.add_argument("action", choices=("write", "check"))
+    s.add_argument("--chain", type=int, default=0, help=trad("avec `write` : les lots menés sans message de "
+                                                             "l'humain, le lot en cours compris (0 par défaut)"))
+    s.add_argument("--waiting", metavar="TEXTE", help=trad("avec `write` : ce qui attend (un compte rendu, une "
+                                                           "CI, une demande) ; « rien » par défaut"))
+    s.add_argument("--scheduled", action="store_true", help=trad("avec `write` : pour une session programmée, "
+                                                                 "refusé à la borne de la chaîne ou sans tâche "
+                                                                 "prête au prochain lot"))
+    s.add_argument("--ref", help=trad("avec `check`, pour la garde seule : la branche distante de la passation"))
+    s.add_argument("--head", metavar="SHA", help=trad("avec `check`, pour la garde seule : sa tête à la passation"))
+    s.add_argument("--since", metavar="HEURE", help=trad("avec `check`, pour la garde seule : l'heure de la "
+                                                         "passation, en UTC (par défaut : la date de --head)"))
+    s.set_defaults(f=cmd_handoff)
+
+    s = sp.add_parser("prune-branches", help=trad("supprime sur l'origine les branches de l'agent déjà contenues "
+                                                  "dans la branche par défaut ou la branche de travail poussée, "
+                                                  "vérifiées au moment même"))
+    s.add_argument("--dry-run", action="store_true", dest="dry_run",
+                   help=trad("dire ce qu'elle supprimerait, sans rien supprimer"))
+    s.set_defaults(f=cmd_prune_branches)
 
     s = sp.add_parser("checks", help=trad("liste des contrôles"))
     s.set_defaults(f=cmd_checks)

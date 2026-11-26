@@ -17,6 +17,6 @@ machine, une dépense, ou ce qui rouvrirait une décision structurante.
 Une idée retenue perd ce sujet de ses `après` et prend son rang ; une idée
 écartée est abandonnée, avec sa raison.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] chaque idée est retenue ou abandonnée, avec sa raison

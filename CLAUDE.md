@@ -24,51 +24,40 @@ Ce fichier dit **comment** travailler : invariants, ce qui compte comme preuve,
 pièges déjà payés. Il ne dit pas **où on en est**.
 
 - **L'état du travail en cours s'imprime au démarrage et après chaque
-  compactage** (`python3 .socle/socle state`, section du socle en fin de
-  fichier) : branche, commits non fusionnés, CI, backlog, ce qui revient à
-  Théo, et l'index des décisions. Il est calculé, jamais recopié.
-  `tools/etat.sh` reste un outil à lancer à la main (D-0009).
+  compactage** (section du socle, en fin de fichier) : calculé, jamais
+  recopié. `tools/etat.sh` se lance à la main (D-0009).
 - **Les décisions du projet** vivent dans `memory/decisions/`, chacune avec
   ses raisons ; les sections déjà réduites de ce fichier n'en gardent que la
   règle et le renvoi.
 - L'état du moteur : `README.md`, en tête. Le réseau qui joue, son
   facteur des marges et la force absolue : `memory/canonical.md` (F-0007,
   F-0008, F-0011).
-- Les verdicts, avec leurs effectifs, leurs bornes **et leur cadence** :
-  au journal, chacun dans son entrée ; le tableau qui les réunissait
-  jusqu'au 23 nov. 2026, figé, est J-2026-11-23-H.
+- Les verdicts, effectifs, bornes **et cadence** : au journal, chacun dans
+  son entrée (le tableau figé au 23 nov. 2026 : J-2026-11-23-H).
 - Ce qui s'exécute sans qu'on l'appelle : section *Les dispositifs de
   chess*, plus bas, et celle du socle, en fin de fichier.
-- **La feuille de route est le backlog de la mémoire** (D-0009) : l'état
-  en calcule le prochain jalon et les sujets prêts.
-  Rien ne s'y fait en pilote automatique.
-- Ce qui vieillit sans que rien ne le signale n'a plus de liste à part
-  depuis le 23 nov. 2026 : chaque point est là où il sert — l'expiration
-  des données (F-0005, B-0077), l'étalonnage d'un runner (F-0017), la durée du
-  balayage de mutation (F-0019) ; l'ancienne liste est J-2026-11-23-J.
-- Ce sur quoi travailler : **les sujets prêts du backlog**, que l'état
+- **La feuille de route est le backlog de la mémoire** (D-0009) :
+  `socle roadmap` en calcule la suite. Rien n'y va en pilote automatique.
+- Ce qui vieillit sans bruit vit là où il sert : F-0005, F-0017, F-0019
+  (l'ancienne liste : J-2026-11-23-J).
+- Ce sur quoi travailler : **les tâches prêtes du backlog**, que l'état
   calcule. **Un test qui vaut le coup n'attend pas de validation** : il
   entre au backlog à son rang, marge estimée contre coût, et se signale au
-  récap suivant. Ce qui se demande encore : ce qui engage Théo hors du test
-  lui-même, et ce qui rouvrirait une décision structurante. **Aucun réglage
-  n'est « résolu » parce qu'une valeur a été validée** : c'est une borne
-  basse, et chaque réglage vit dans les faits des réglages ouverts,
-  F-0009 et F-0010 (ADR-0032).
-- **Ce qui revient à Théo se dit à chaque point de récap**, en particulier
-  les branches distantes à supprimer, que le jeton de session ne peut pas
-  supprimer (ADR-0033) et que l'état du socle calcule, hors celles que la
-  politique garde ; ce jeton ne peut pas non plus pousser une étiquette
-  (403, J-2026-09-22-E).
-- **Le socle est installé** (J-2026-11-11-B). Là où
-  sa section, en fin de fichier, contredit le reste de ce fichier, ce que
-  Théo a tranché ce jour-là vaut (D-0002) : **l'agent fusionne lui-même ses
-  pull requests à CI verte** ; **`ui/` est déclaré tiers**, aucun contrôle
-  du socle ne le juge ; **le balayage de mutation reste celui de chess** ;
-  **les branches de réseaux et celles des autres agents se gardent** ; et
-  **ce fichier ne garde que les règles de travail**. L'adaptateur du socle
-  est propre à chess (`.socle/adapter.toml`) : avec `--fast`, `socle
-  verify` lance les étapes de `tools/verify.sh --rapide` ; sans, celles du
-  job « Moteur » de la CI.
+  récap suivant. Se demande encore ce qui engage Théo hors du test, ou
+  rouvrirait une décision structurante. **Aucun réglage n'est « résolu »
+  parce qu'une valeur a été validée** : c'est une borne basse, et chaque
+  réglage vit dans F-0009 et F-0010 (ADR-0032).
+- **Ce qui revient à Théo se dit à chaque récap**, dont les branches
+  distantes que le jeton de session ne peut supprimer (ADR-0033) et que
+  l'état calcule ; ce jeton ne pousse pas non plus d'étiquette (403,
+  J-2026-09-22-E).
+- **Le socle est installé** (J-2026-11-11-B). Là où sa section contredit
+  ce fichier, D-0002 vaut : **l'agent fusionne ses pull requests à CI
+  verte** ; **`ui/` est tiers** ; **le balayage de mutation reste celui de
+  chess** ; **les branches de réseaux et des autres agents se gardent** ;
+  **ce fichier ne garde que les règles de travail**. L'adaptateur
+  (`.socle/adapter.toml`) est propre à chess : `socle verify --fast` lance
+  `tools/verify.sh --rapide`, sans `--fast` le job « Moteur » de la CI.
 
 ## Décisions structurantes
 
@@ -339,9 +328,8 @@ avec les mesures qui fondaient ces règles, est archivé au journal
 
 ## Avant d'affirmer
 
-Repris du protocole du carnet de bord le 17 nov. 2026 (B-0007) : les
-règles qui ne figuraient pas encore ici. Les autres, et l'histoire de
-celles-ci, sont au journal (J-2026-11-17-F).
+Les règles du protocole du carnet de bord (B-0007) ; leur histoire est au
+journal (J-2026-11-17-F).
 
 - **Une expérience dit ce qu'elle mesure avant de tourner**, et l'on
   vérifie que ce qu'elle mesure contient bien le phénomène visé. Son
@@ -593,7 +581,7 @@ au journal (J-2026-11-17-Q).
 | `tools/balayage-vivant.sh` | étape du job `Moteur`, à chaque push : échoue si le workflow `Mutation` est endormi ou n'a pas tourné depuis quinze jours. **Le cliquet ne peut pas signaler sa propre absence**, et GitHub endort les workflows planifiés d'un dépôt public après soixante jours sans activité. Éprouvé par `tools/balayage-vivant-test.sh`, dans `verify.sh` et la CI |
 | `.github/workflows/nnue-train.yml` | à chaque push qui touche `engine/src/nnue.rs`, la crate `tools/nnue-train` ou la toolchain : compile le programme d'entraînement NNUE, `--locked`, sans GPU, contre le runtime factice de bullet. Ce programme a son propre espace de travail : sans ce contrôle, un changement de l'API du moteur le casserait en silence, et on ne l'apprendrait que le jour de l'entraînement |
 | `.github/workflows/pages.yml` | à chaque push sur `main` qui touche le moteur, `reseaux/` ou `ui/` : publie la version web de l'interface sur GitHub Pages (ADR-0028), **le binaire du moteur lui-même compilé pour `wasm32-wasip1-threads`**, et en repli la crate à part `ui/wasm`, qui recopie la couche UCI. **Ne publie que si chaque module rend la transcription du binaire au nœud près** (`ui/dev/wasm-check.mjs`). **Un changement d'`engine/src/main.rs` ou de la couche UCI qui casserait cette compilation casse aussi ce workflow.** Sur une PR qui touche `engine/src/uci.rs`, il vérifie sans publier : **un changement de la couche UCI se fait suivre dans `ui/wasm/src/lib.rs`**, jamais l'inverse. Voir `ui/README.md`, « Version web » |
-| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`) : un match entre deux commits sur un runner GitHub, le seul moyen de mesurer **à cadence longue**, qu'un conteneur de session ne tiendrait pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé : à cadence horloge, une machine plus rapide atteint une profondeur plus grande. Un verdict reste valide en interne, les deux moteurs partageant la machine, mais **deux runs ne se comparent pas sans regarder leurs étalonnages** : la vitesse varie de plus de moitié d'un runner à l'autre. Voir `tools/README.md`, « Mesurer à cadence longue » |
+| `.github/workflows/match.yml` | **à la demande** (`workflow_dispatch`) : un match entre deux commits sur un runner GitHub, le seul moyen de mesurer **à cadence longue**, qu'un conteneur de session ne tiendrait pas. Le job **étalonne sa propre vitesse** et l'inscrit en tête du résumé : à cadence horloge, une machine plus rapide atteint une profondeur plus grande. Un verdict reste valide en interne, les deux moteurs partageant la machine, mais **deux runs ne se comparent pas sans regarder leurs étalonnages** (F-0017). Voir `tools/README.md`, « Mesurer à cadence longue » |
 | `.github/workflows/force.yml` | **à la demande** : le moteur d'un commit contre **Stockfish bridé** (`UCI_LimitStrength`, `UCI_Elo`), la seule mesure de force ABSOLUE du dépôt. **Son échelle se lit au source de Stockfish 16**, ancrée à l'Elo CCRL et étalonnée à 60+0,6, d'où la cadence par défaut ; Stockfish 16 et `ubuntu-24.04` sont épinglés, et le workflow refuse plutôt que de mesurer sur une autre échelle. Une estimation, jamais un classement ; au-delà de 90 % ou en deçà de 10 % de score, changer de niveau. **Il écrase les écarts**, ses fautes au hasard décidant plus que notre profondeur : **un changement se mesure contre notre jumeau, jamais contre lui.** Son échelle s'arrête à 3 190, d'où `classes.yml`. La force relevée : F-0011 ; une série suit le skill `situer-le-moteur` |
 | `.github/workflows/classes.yml` | **à la demande**, depuis le 9 nov. 2026 : le moteur d'un commit contre un moteur **classé par la CCRL**, non bridé — la suite de `force.yml`. Chaque adversaire est construit au tag que la CCRL a noté, le SHA du tag vérifié ; la cadence est l'**équivalent 40/15 du runner**, fixé comme le fait la CCRL au banc de Stockfish 10, la machine chargée comme pendant le match, et 3 939 338 nœuds exigés. Une partie par cœur physique, table de 256 Mo, un fil. Le résumé rend la note de l'adversaire plus l'écart, la marge composant celle du match et celle de la note. Voir `tools/README.md`, « Situer le moteur » |
 
@@ -656,26 +644,26 @@ Ce fichier dit **comment** travailler ;
 ### Au démarrage, et après chaque compactage
 
 `python3 .socle/socle state` imprime l'état dérivé — commit, base, CI,
-backlog, demandes humaines en attente —, puis le chantier actif et la mémoire
-canonique. Sous Claude Code, le hook `SessionStart` le fait seul ; sous un
+backlog, demandes humaines en attente —, puis l'essentiel de la
+mémoire. Sous Claude Code, le hook `SessionStart` le fait seul ; sous un
 autre agent, le lancer d'abord. Rien de ce qui n'y figure pas n'est acquis.
-Ce que l'humain a écrit lui-même depuis le dernier commit de l'agent (une
-approbation, une réponse dans son terminal), l'état le liste : le lui citer
-dans la réponse suivante, par son identifiant et son lien, puisque la
-commande lui a donné un numéro qu'il ne retrouve pas dans la conversation.
+Ce que l'humain a écrit lui-même depuis le dernier commit de l'agent, l'état
+le liste : le lui citer dans la réponse suivante, par son identifiant et son
+lien. Un premier message qui demande de
+reprendre ou de continuer, quelle qu'en soit la forme (« reprends »),
+cherche d'abord la passation : le skill `socle-handoff`.
 
-Si l'état n'a pas été injecté au démarrage d'une session de Claude Code, les
-hooks de l'agent ne sont pas chargés : la session a démarré hors de la racine
-du projet. Le dire à l'humain avant tout travail, et ne rien pousser ;
-`socle state` l'affiche aussi en tête, et le hook avant commit refuse alors
-le commit. Ne jamais écrire soi-même un réglage de Claude Code pour rétablir
-les hooks.
+Si l'état n'a pas été injecté au démarrage d'une session de Claude Code, ses
+hooks ne sont pas chargés (la session a démarré hors de la racine du
+projet ; `socle state` le dit en tête, et le hook avant commit refuse alors
+le commit) : le dire à l'humain avant tout travail, ne rien pousser, et ne
+jamais écrire soi-même un réglage de Claude Code pour les rétablir.
 
 Une consigne de l'humain donnée dans la conversation, qui vaut au-delà du tour
 (une règle, une préférence, une interdiction), s'écrit dans la mémoire avant de
-continuer : au chantier actif si elle touche le travail en cours, sinon au
-journal, avec son texte exact. Le résumé d'un compactage ne la garde pas
-toujours, et une session neuve n'a que la mémoire.
+continuer, dans les consignes (`socle new directive`), avec son texte exact, et
+au journal : un compactage peut la perdre. Avant de s'appuyer sur une
+consigne, son texte exact se lit.
 
 ### La mémoire, dans `memory/`
 
@@ -683,27 +671,28 @@ toujours, et une session neuve n'a que la mémoire.
 | --- | --- | --- |
 | Canonique | `memory/canonical.md` | faits avec statut et preuve ; ne change qu'avec une preuve nouvelle |
 | Actif | `memory/active.md` | chantier en cours, prochaines étapes ; réécrit, borné |
+| Consignes | `memory/directives.md` | consignes de l'humain, texte exact inchangé ; levées par une demande validée |
 | Décisions | `memory/decisions/` | une ADR par fichier, le seul registre des décisions du projet ; seul son statut change ensuite |
-| Journal | `memory/journal/` | une entrée datée par événement ; ajout seul |
-| Backlog | `memory/backlog/` | sujets avec statut et origine, ordonnés par `après` (sujets ou demandes), leurs jalons et leur priorité (l'état en calcule les prêts) ; faits quand leur « Fait quand » est coché, clos avec une référence, puis rangés par `socle archive` |
+| Journal | `memory/journal/` | une entrée datée par événement ; ajout seul ; aucun geste futur de l'humain |
+| Backlog | `memory/backlog/` | quatre formes, chacune son préfixe : besoin `B-` (« Satisfait quand »), tâche `T-` qui nomme son besoin (« Fait quand »), lot `L-` de tâches, jalon `JA-` de besoins ; ordonnées par `après`, avec leur priorité (l'état en calcule les tâches prêtes) ; closes avec une référence, puis rangées par `socle archive` |
 | Demandes | `memory/requests/` | décisions humaines en file, au contrat du skill `socle-request` |
 
 Une entrée : `## F-NNNN — titre`, puis une ligne `> statut : mesuré · preuve : commit:<sha>`.
-Statuts d'un fait : `mesuré` (avec `preuve`), `supposé`, `réfuté` (titre barré,
-avec `refutation`), `validé` (avec `validation : D-NNNN`, écrit après la
-réponse de l'humain). Format complet : `.socle/engine/socle/FORMAT.md`.
+Statuts d'un fait : `mesuré` (avec `preuve`), `supposé`, `réfuté` (barré,
+avec `refutation`), `validé` (avec `validation : D-NNNN`, après la réponse
+de l'humain). Format complet : `.socle/engine/socle/FORMAT.md`.
 Un identifiant se calcule (`python3 .socle/socle new <type> "titre"`), il ne
 se devine pas. En cas de conflit, l'ordre d'autorité est : le code et les
 tests, puis la mémoire canonique, puis le journal.
 
-**Mémoire privée**, si la politique en choisit une (`[private] mode`) : rien de privé ne se recopie en public, ni un identifiant `P…`, ni son contenu, ni dans un message de commit, une pull request ou un commentaire ; indisponible (l'état le dit), on ne conclut pas sur ce qui en dépend. Où écrire, basculer une entrée, commiter en mode compagnon, faire relire avant publication : le skill `socle-private-memory`.
+**Mémoire privée**, si la politique en choisit une (`[private] mode`) : rien de privé ne se recopie en public, ni un identifiant `P…`, ni son contenu, ni dans un message de commit, une pull request ou un commentaire ; indisponible (l'état le dit), on ne conclut pas sur ce qui en dépend. Comment y travailler : le skill `socle-private-memory`.
 
 ### Politique d'autonomie (`.socle/policy.toml`, modifiée par l'humain seul)
 
 1. **Assouplir un garde-fou** (`.socle/guardrails.toml`) exige une demande validée ; durcir est libre. Déclarer des fichiers tiers, qu'aucun contrôle ne juge (`[thirdparty] paths`), assouplit.
 2. **Supprimer un test ou changer une valeur attendue**, dans un test ou un fichier de cas déclaré, exige une demande validée, ou une spécification que l'humain a lui-même changée et qui nomme le test ; une ADR écrite par l'agent ne suffit pas.
 3. **Décision de conception** : réversible et mesurable, l'agent décide et écrit une ADR ; coûteuse à défaire, demande.
-4. **Action irréversible ou externe** (force-push, push sur la branche par défaut, publication, suppression distante, dépense) : toujours une demande. Le hook la refuse.
+4. **Action irréversible ou externe** (force-push, push sur la branche par défaut, publication, suppression distante hors `socle prune-branches`, dépense) : toujours une demande. Le hook la refuse.
 5. **Mémoire** : ajout seul ; « réfuté » exige une référence de mesure ; « validé » ne s'écrit qu'après la réponse de l'humain.
 6. **Débordement de périmètre** : un bug voisin va au backlog, il ne se corrige pas, sauf s'il bloque.
 7. **Échec répété** : contrôles rouges après trois tentatives, arrêt et escalade par une demande qui résume.
@@ -720,43 +709,47 @@ demande ; jamais dans le widget de questions de l'agent, où l'humain lit un
 texte brut sans liens à suivre (le hook le refuse). Ce que l'humain tranche
 dans la conversation, de lui-même ou sur une question courte posée dans le
 texte de la réponse, se consigne aussitôt de même, en séance. Comment : le
-skill `socle-request`. Un sujet dont la spécification dépend d'une intention
-que la mémoire ne dit pas se cadre d'abord par des questions ouvertes
-(`socle new request --questions`) ; une spécification se soumet avant son
-code.
+skill `socle-request`. Un besoin dont la conception n'est pas tranchée pose
+d'abord sa question d'intention, en quelques lignes, dans la
+conversation ; sa spécification et son code se font ensuite dans le même
+lot.
 
 ### Lire la mémoire à la demande
 
-Le démarrage n'injecte que l'état, le chantier actif et les faits. Le reste
-se lit quand il sert, sans attendre qu'on le demande :
+Le démarrage n'injecte que l'état, le chantier actif, les consignes en
+vigueur, les titres des faits et les dix dernières décisions, sous une borne ; ce qu'une ligne `!! coupé`
+dit manquer se lit aussitôt. Le reste se lit quand il sert, sans attendre
+qu'on le demande :
 
-- un identifiant cité (`F-`, `B-`, `ADR-`, `D-`, `J-`) se lit avant de
+- un identifiant cité (`F-`, `C-`, `B-`, `T-`, `L-`, `JA-`, `ADR-`, `D-`, `J-`) se lit avant de
   s'appuyer dessus : `python3 .socle/socle show <ID>`, qui donne aussi son
   empreinte ;
-- avant une décision de conception, l'index des décisions de l'état dit si
+- avant une décision de conception, `socle show --index decisions` dit si
   elle est déjà prise : on ne la rouvre pas sans fait nouveau ;
-- avant d'ouvrir un sujet, le backlog (`socle show --index backlog`) dit
-  s'il existe déjà ;
+- avant d'ouvrir une entrée du backlog, son index (`socle show --index
+  backlog`) dit si elle existe déjà ;
 - pour savoir pourquoi une chose est ainsi, chercher dans le journal
-  (`grep -rn "<mot>" memory/journal/`).
+  (`grep -rn "<mot>" memory/journal/`) ;
+- la suite, quand l'humain la demande : coller dans la réponse la sortie
+  de `python3 .socle/socle roadmap --format markdown`.
 
-La lecture se prouve : une décision, une demande ou un sujet de backlog
-nouveaux citent ce qu'ils ont lu avec son empreinte (`ADR-NNNN@xxxxxxxx`,
-`lu : decisions@…`, `lu : backlog@…`). Une empreinte périmée ou inventée est
+La lecture se prouve : une décision, une demande ou une entrée du backlog
+nouvelles citent ce qu'elles ont lu avec son empreinte (`ADR-NNNN@xxxxxxxx`,
+`lu : decisions@…`, `lu : backlog@…`) ; une consigne, partout. Une empreinte périmée ou inventée est
 refusée ; il faut relire l'entrée. `socle new` pose l'empreinte de l'index.
 
 ### Les skills
 
 Une procédure rare se lit dans son skill, que l'agent charge sur sa
-description : `socle-request` (poser une demande, relayer une réponse,
-consigner une décision en séance), `socle-private-memory` (la mémoire
-privée), `socle-review` (la revue adversariale d'un lot, avant sa
-livraison) et `socle-resume` (en session cloud, à chaque tour qui agit :
-reprendre seul après une limite d'usage), dans `.claude/skills/`, posés par l'installeur et
-protégés ; un autre agent lit leur `SKILL.md` à ce chemin.
+description : `socle-request` (les demandes, une décision en séance),
+`socle-private-memory` (la mémoire privée), `socle-batch` (mener un lot),
+`socle-handoff` (passer la main à une session neuve, programmée ou
+demandée par l'humain), `socle-review` (la revue d'un lot, avant sa livraison) et `socle-resume`
+(en session cloud, à chaque tour qui agit : reprendre après une limite
+d'usage), dans `.claude/skills/`, posés par l'installeur et protégés ; un
+autre agent lit leur `SKILL.md` à ce chemin.
 
-Une procédure du projet qui se refait (le journal montre la première fois)
-s'écrit en skill à la deuxième, dans `.claude/skills/<nom>/SKILL.md` : un
+Une procédure du projet qui se refait s'écrit en skill à la deuxième fois, dans `.claude/skills/<nom>/SKILL.md` : un
 nom sans le préfixe `socle-`, un en-tête `name` (le nom du
 dossier) et `description` (ce qu'il fait, et quand s'en servir), et une
 entrée au journal qui le dit. Un skill dit comment faire, la mémoire ce qui
@@ -766,22 +759,39 @@ se cite dans le texte.
 
 ### Livrer le travail
 
-Tant que rien ne revient à l'humain, l'agent enchaîne les sujets prêts
+Tant que rien ne revient à l'humain, l'agent enchaîne les tâches prêtes
 sans attendre de message. Il annonce d'abord le lot, pas forcément tout ce
-qui est prêt (les sujets, leur taille, le jalon qu'ils servent ; un sujet de
-priorité basse s'il est commode), puis s'y met ; il s'arrête à la fin du
-lot, ou dès qu'une décision revient à l'humain. Il ne change pas une
-priorité que l'humain a donnée. Avant le push d'un lot qui change du code,
-une spécification ou un test, il le fait relire par un relecteur sans
-contexte (le skill `socle-review`), et son récap dit les constats.
+qui est prêt (les tâches, leur taille, le jalon qu'elles servent ; une
+tâche de priorité basse si elle est commode), puis s'y met ; à la fin du
+lot, il enchaîne le suivant si la session le permet, et s'arrête dès
+qu'une décision revient à l'humain. Il ne change pas
+une priorité que l'humain a donnée. Un besoin sans tâche ouverte se
+découpe d'abord en tâches. Le lot se forme en balayant tout le backlog
+ouvert ; une tâche ouverte ensuite rejoint le prochain lot dont la règle
+s'applique à elle, jamais celui en cours. Il se garde au backlog
+(`socle new batch`) et se mène selon le skill `socle-batch`. Avant le push d'un lot qui pose ou
+change un garde-fou, un format que d'autres parties lisent, ou plus de
+150 lignes de code et de tests, il le fait relire par un relecteur sans
+contexte, contre le « Fait quand » de ses tâches ; un autre lot, il le
+relit lui-même (le skill `socle-review`). Un besoin dont la conception n'est pas tranchée écrit sa
+spécification avant son code ; un besoin qui pose ou change un garde-fou,
+son modèle de menace (sa section `## Modèle de menace`, ou la décision
+qu'il cite). Seuls les constats bloquants se corrigent dans le lot ; un
+autre va au backlog s'il est important et vu en usage réel, ou d'effet
+irréversible ; sinon il s'écarte, et revient s'il est vu. Au backlog, il devient une tâche si sa
+correction est claire, un besoin sinon. Le récap dit les constats, et
+pourquoi chaque écarté l'est.
 
 Par défaut, tout se fait sur une branche de développement, avec une seule
 pull request ouverte à la fois : chaque lot fini s'y ajoute, l'humain la
 fusionne quand il veut, et la branche repart alors de la branche par
-défaut. Une pull request par sujet, seulement si l'humain l'a choisi (un
+défaut. Si la politique le permet (le guide, « La fusion par l'agent »),
+l'agent fusionne lui-même la sienne, aux conditions du skill
+`socle-batch`. Une pull request par tâche, seulement si l'humain l'a choisi (un
 fait de la mémoire le dit). Une session neuve qui trouve ouverte la pull
 request d'une autre demande à l'humain de la fusionner d'abord, ou de
-l'autoriser à y continuer. Un prototype qu'on ne compte pas fusionner se
+l'autoriser à y continuer ; partie d'une passation que sa garde
+accepte, elle y continue, et cette pull request devient la sienne. Un prototype qu'on ne compte pas fusionner se
 fait sur une branche jetable, nommée d'un préfixe de `[branches] disposable`
 des garde-fous (`proto/` par défaut) : la CI ne la juge pas aux envois.
 
@@ -790,11 +800,11 @@ des garde-fous (`proto/` par défaut) : la CI ne la juge pas aux envois.
 - `python3 .socle/socle verify --fast` passe (le hook `Stop` le vérifie) ; `verify` exécute tout.
 - Si du code a changé, la mémoire aussi : chantier actif, journal, backlog.
 - Si du code associé à une doc a changé (`[[docmap]]` des garde-fous), la doc change dans le même travail, ou le commit qui change ce code porte le trailer `Dispense-doc: <raison>`, qui ne vaut que pour lui.
-- Un correctif (sujet `fix:` ou trailer `Corrige: B-NNNN`) livre un test qui échoue sur le commit parent.
-- Une fonction publique ajoutée ou modifiée est nommée par au moins un test, ou un commit la dispense nommément avec sa raison (`Dispense-test: f, g — <raison>`). Du code existant découvert sans test : le test s'écrit tout de suite s'il est dans le périmètre du travail, sinon un sujet va au backlog.
+- Un correctif (titre `fix:` ou trailer `Corrige: T-NNNN`) livre un test qui échoue sur le commit parent.
+- Une fonction publique ajoutée ou modifiée est nommée par au moins un test, ou un commit la dispense nommément avec sa raison (`Dispense-test: f, g — <raison>`). Du code existant découvert sans test : le test s'écrit tout de suite s'il est dans le périmètre du travail, sinon un besoin va au backlog.
 - Une action que seul l'humain peut faire (refusée par le hook, réglage d'un service, fichier qu'il détient) va au backlog avec `pour : humain`.
 - **Toute intervention qui a agi se termine par un récap, puis deux lignes** : `Pour toi :` — ce qui revient à l'humain, décisions en attente et actions à faire, ou « rien » —, chaque point compréhensible sans le raisonnement de l'agent (ce que c'est, pourquoi, ce que change sa réponse), et `Ensuite :` — la suite proposée (prochain jalon, ce qu'il reste à faire avant), et ce que l'agent attend s'il attend quelque chose (une CI, un match : quoi, et jusqu'à quand). L'état calcule ce qui revient à l'humain ; le hook `Stop` refuse de conclure sans les deux lignes.
-- **Un fichier à lire, ou une pull request, se donne par son lien** : l'humain lit dans la conversation ou sur GitHub, pas dans le conteneur de l'agent. `python3 .socle/socle url <chemin|ID>` donne le permalien, une fois le fichier poussé ; une demande en attente citée sans son lien, un lien relatif, ou un chemin entre accents graves qui n'existe pas dans le dépôt font refuser la fin du tour. Un chemin d'un autre dépôt s'écrit `depot:chemin`, le dépôt lié quelque part dans le projet par son adresse (à défaut, déclaré dans `[references] repos` des garde-fous) ; un dépôt inconnu est signalé.
+- **Un fichier à lire, ou une pull request, se donne par son lien** : l'humain lit dans la conversation ou sur GitHub, pas dans le conteneur de l'agent. `python3 .socle/socle url <chemin|ID>` donne le permalien, une fois le fichier poussé ; une demande en attente citée sans son lien, un lien relatif, ou un chemin entre accents graves qui n'existe pas dans le dépôt font refuser la fin du tour. Un chemin d'un autre dépôt s'écrit `depot:chemin`, le dépôt lié dans le projet par son adresse, ou déclaré dans `[references] repos` des garde-fous.
 
 ### Ne jamais
 
@@ -809,9 +819,9 @@ des garde-fous (`proto/` par défaut) : la CI ne la juge pas aux envois.
 | Où | Quoi |
 | --- | --- |
 | `.claude/settings.json` | hooks de Claude Code : `SessionStart` (état dérivé ; en session cloud, les outils de l'adaptateur), `PreToolUse` (refus), `Stop` (contrôles de fin de tour) |
-| `.socle/git-hooks/` | hooks git : `pre-commit` (contrôles rapides), `prepare-commit-msg` (trailers `Socle-Hooks`, `Socle-Hooks-Since-Commit`), `commit-msg` (fuites de la mémoire privée ; une fonction sans test ni dispense, un correctif sans test, un commit d'agent sans hook de l'agent, en avertissement), `pre-push` (`verify --fast` sur le dernier commit, la plage qui part jugée comme la CI la jugera, relecture avant publication) |
-| `.github/workflows/socle.yml` | CI : capacités de l'adaptateur, tous les contrôles contre la base, auto-test du socle |
-| `.git/socle/hooks.log` | trace locale de chaque hook qui tire, non versionnée, commune à tous les worktrees du dépôt |
+| `.socle/git-hooks/` | hooks git : `pre-commit` (contrôles rapides), `prepare-commit-msg` (trailers `Socle-Hooks`, `Socle-Hooks-Since-Commit`), `commit-msg` (fuites de la mémoire privée ; en avertissement, une fonction sans test ni dispense, un correctif sans test, un commit d'agent sans ses hooks), `pre-push` (`verify --fast` sur le dernier commit, la plage qui part jugée comme en CI, relecture avant publication) |
+| `.github/workflows/socle.yml` | CI : capacités de l'adaptateur, tous les contrôles contre la base, auto-test du socle, la suite du projet en résumé |
+| `.git/socle/hooks.log` | trace locale de chaque hook qui tire, non versionnée, commune aux worktrees |
 
 Liste des contrôles : `python3 .socle/socle checks`.
 

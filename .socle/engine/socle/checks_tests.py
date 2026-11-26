@@ -179,30 +179,88 @@ def _nomme(texte: str, nom: str) -> bool:
 def _justifie(ctx, nom: str) -> str | None:
     """Une validation humaine, ou une spécification que l'humain a changée et
     qui nomme le test (politique, point 2) : une spécification que l'agent écrit dans le même travail ne
-    l'autorise pas à changer le test."""
+    l'autorise pas à changer le test. La validation est de la plage, ou
+    d'avant elle sous la règle de `Contexte.hors_plage` (D-0189)."""
     for d in ctx.validations:
         if _nomme(d.texte, nom):
             return trad("validé par {id}", id=d.id)
+    d = _hors_plage(ctx, nom)[0]
+    if d:
+        return trad("validé par {id}", id=d.id)
     for c in _specs_nommant(ctx, nom):
         if _ecrite_par_l_humain(ctx, c, nom):
             return trad("spécification changée par l'humain : {chemin}", chemin=c)
     return None
 
 
-def _en_attente(ctx, nom: str) -> str | None:
-    """À la fin du tour seulement (étage agent), une demande en attente,
-    poussée telle quelle, qui nomme le test : le travail qui attend
-    la réponse de l'humain peut rester dans l'arbre, au lieu d'être remisé
-    hors de la mémoire. Le commit et la CI le refusent toujours."""
-    from socle import requests as demandes
+def _hors_plage(ctx, nom: str):
+    """La validation d'avant la plage qui couvre le test ou le fichier de
+    cas `nom`, et sinon ce qu'un refus en dit (`Contexte.hors_plage`)."""
+    return ctx.hors_plage(lambda texte: _nomme(texte, nom), lambda parent: _intact(ctx, parent, nom))
 
-    if ctx.etage != "agent":
+
+def _intact(ctx, parent: str, nom: str) -> bool:
+    """Le test ou le fichier de cas `nom` est, au point de départ, tel
+    qu'au commit `parent` : un fichier de cas en entier ; un test par son
+    corps, son en-tête et ses attributs, dans les mêmes fichiers. Un test
+    déplacé dans un autre fichier a bougé. Seuls les fichiers de tests
+    changés entre les deux se relisent : les autres portent les mêmes
+    tests."""
+    motifs = ctx.projet.gf("tests", "case_paths", defaut=[]) or []
+    if motifs and outils.filtrer([nom], motifs):
+        return outils.lire_a(ctx.racine, parent, nom) == outils.lire_a(ctx.racine, ctx.depart, nom)
+    cfg = cfg_tests(ctx.projet)
+    if cfg is None:
+        return False
+
+    def formes(rev: str, chemins: list[str]) -> list[tuple[str, str]]:
+        res = []
+        for c in chemins:
+            for f in tests_lecture.extraire(outils.lire_a(ctx.racine, rev, c) or "", c, cfg):
+                if f.est_test and f.nom == nom:
+                    res.append((c, re.sub(r"\s+", " ", "\n".join([*f.attributs, f.entete, f.corps]))))
+        return sorted(res)
+
+    changes = fichiers_tests(ctx, ctx.projet.hors_tiers(outils.fichiers_changes(ctx.racine, parent, ctx.depart)))
+    return formes(parent, changes) == formes(ctx.depart, changes)
+
+
+def _en_attente(ctx, nom: str) -> str | None:
+    """Une demande en attente, poussée telle quelle, qui nomme le test (ou
+    cite le fichier de cas) : à la fin du tour (étage agent), le travail qui
+    attend la réponse de l'humain peut rester dans l'arbre ; si la branche
+    par défaut exige la CI du socle, il se commite (étage git) et se pousse
+    aussi (le hook avant push, qui juge la plage comme la CI), la CI le
+    refusant jusqu'à la réponse : la tolérance des fichiers protégés de
+    D-0071, sous la même condition (D-0147). La CI le refuse toujours."""
+    from socle import requests as demandes
+    from socle.checks_ratchet import fusion_gardee
+
+    if ctx.etage != "agent" and not (ctx.etage == "git" or ctx.avant_push):
         return None
     for d in ctx.demandes:
         if (d.id and d.reponse is None and d.entree is not None and "retiree" not in d.entree.meta
                 and _nomme(d.texte, nom) and demandes.illisible(ctx.projet, d) is None):
+            if ctx.etage != "agent" and not fusion_gardee(ctx.projet):
+                return None
             return d.id
     return None
+
+
+def _dire_en_attente(ctx, r, quoi: str, attente: str, fichier: str, ligne: int | None = None):
+    """Le changement qu'une demande en attente couvre : un avertissement,
+    qui dit s'il se commite et se pousse (la branche par défaut exige la CI
+    du socle) ou s'il attend la réponse dans l'arbre."""
+    from socle.checks_ratchet import fusion_gardee
+
+    if fusion_gardee(ctx.projet):
+        r.avertir("tests.attendus", trad("{quoi}, en attente de {attente} : il se commite et se pousse, la CI le "
+                                         "refuse jusqu'à la réponse de l'humain, qui le lit dans la pull request",
+                                         quoi=quoi, attente=attente), fichier, ligne)
+    else:
+        r.avertir("tests.attendus", trad("{quoi}, en attente de {attente} : le tour peut finir, le commit "
+                                         "et la CI attendent la réponse de l'humain",
+                                         quoi=quoi, attente=attente), fichier, ligne)
 
 
 def _specs_nommant(ctx, nom: str) -> list[str]:
@@ -267,13 +325,12 @@ def _fichiers_de_cas(ctx, r):
         if pourquoi:
             r.avertir("tests.attendus", f"{quoi} ({pourquoi})", c)
         elif attente:
-            r.avertir("tests.attendus", trad("{quoi}, en attente de {attente} : le tour peut finir, le commit "
-                                             "et la CI attendent la réponse de l'humain",
-                                             quoi=quoi, attente=attente), c)
+            _dire_en_attente(ctx, r, quoi, attente, c)
         else:
-            r.erreur("tests.attendus", trad("{quoi} — {n} ligne(s) d'un fichier de cas changée(s) ou retirée(s) : "
-                                            "un cas existant ne change qu'avec une demande validée qui cite ce "
-                                            "fichier (politique, point 2)", quoi=quoi, n=len(retires)), c)
+            r.erreur("tests.attendus", trad("{faute}{note}", faute=trad(
+                "{quoi} — {n} ligne(s) d'un fichier de cas changée(s) ou retirée(s) : un cas existant ne change "
+                "qu'avec une demande validée qui cite ce fichier (politique, point 2)", quoi=quoi, n=len(retires)),
+                note=_hors_plage(ctx, c)[1]), c)
 
 
 @controle("tests.attendus", base=True, par_adaptateur=True)
@@ -316,17 +373,42 @@ def attendus(ctx, r):
         else:
             paires += [(a, min(nouveaux, key=lambda b: sum((valeurs(a) - valeurs(b)).values()), default=None))
                        for a in anciens]
-    def signaler(nom, fichier, ligne, quoi, faute):
+    juge = juge_des_skills(ctx)
+
+    def suit(f, enonces_perdus, reste=None) -> str | None:
+        """Le gabarit de skill que suit ce que le test `f`, lu à la base,
+        perd (ADR-0110, ADR-0111) : il lit un skill, chaque assertion perdue
+        a ses phrases, que le juge accepte une à une, et le reste du test
+        supprimé les siennes, ensemble ; `None` sinon."""
+        if ctx.projet.mode != config.MODE_AMONT:
+            return None
+        if not lit_un_skill(ctx.lire_base(f.fichier) or "", f.fichier, f, cfg):
+            return None
+        gabarit = None
+        for e in enonces_perdus:
+            g = juge(phrases([e], cfg))
+            if g is None:
+                return None
+            gabarit = gabarit or g
+        if reste is not None:
+            g = juge(phrases(reste, cfg))
+            if g is None:
+                return None
+            gabarit = gabarit or g
+        return gabarit
+
+    def signaler(nom, fichier, ligne, quoi, faute, suivi=None):
         pourquoi = _justifie(ctx, nom)
+        if not pourquoi and suivi:
+            pourquoi = trad("il suit le gabarit `{gabarit}`, en mode amont", gabarit=suivi)
         attente = None if pourquoi else _en_attente(ctx, nom)
         if pourquoi:
             r.avertir("tests.attendus", f"{quoi} ({pourquoi})", fichier, ligne)
         elif attente:
-            r.avertir("tests.attendus", trad("{quoi}, en attente de {attente} : le tour peut finir, le commit "
-                                             "et la CI attendent la réponse de l'humain",
-                                             quoi=quoi, attente=attente), fichier, ligne)
+            _dire_en_attente(ctx, r, quoi, attente, fichier, ligne)
         else:
-            r.erreur("tests.attendus", trad("{faute}{note}", faute=faute, note=_note_agent(ctx, nom)), fichier, ligne)
+            r.erreur("tests.attendus", trad("{faute}{note}", faute=faute,
+                                            note=_note_agent(ctx, nom) + _hors_plage(ctx, nom)[1]), fichier, ligne)
 
     hors: dict[str, list[tuple[str, str]]] = {}
 
@@ -339,22 +421,26 @@ def attendus(ctx, r):
                 continue  # déplacé tel quel
             signaler(a.nom, a.fichier, a.ligne, trad("test `{nom}` supprimé", nom=a.nom),
                      trad("test `{nom}` supprimé sans validation humaine ni changement de spécification qui le "
-                          "nomme", nom=a.nom))
+                          "nomme", nom=a.nom),
+                     suit(a, list(tests_lecture.enonces(sans_documentation(a.corps).splitlines(), assertion, cfg)),
+                          [*a.attributs, sans_documentation(a.corps)]))
             continue
         disparues = valeurs(a) - valeurs(b)
         if disparues:
             exemple = tests_lecture.enonces(a.lignes_corps, assertion, cfg)[next(iter(disparues))][0]
             signaler(a.nom, b.fichier, b.ligne, trad("assertion changée dans `{nom}`", nom=a.nom),
                      trad("assertion changée ou retirée dans `{nom}` : « {exemple} » — valeur attendue "
-                          "modifiée sans spécification ni validation humaine", nom=a.nom, exemple=exemple))
+                          "modifiée sans spécification ni validation humaine", nom=a.nom, exemple=exemple),
+                     suit(a, list(disparues)))
             continue
         # Une valeur attendue vit aussi hors de la ligne d'assertion : une
         # variable, une table, un paramètre. Rien ne la distingue d'une
         # donnée de test : elle est dite, pas refusée.
         valeurs_parties = lits(a) - lits(b)
-        if valeurs_parties and not _justifie(ctx, a.nom):
+        if valeurs_parties and not _justifie(ctx, a.nom) and not (
+                valeurs_de_phrase(valeurs_parties) and suit(a, [], list(valeurs_parties))):
             hors.setdefault(b.fichier, []).append((b.nom, next(iter(valeurs_parties))))
-    _attendus_hors_tests(ctx, cfg, avant_fichiers, [b for _, b in paires if b is not None], hors)
+    _attendus_hors_tests(ctx, cfg, avant_fichiers, [b for _, b in paires if b is not None], hors, suit)
     for fichier, liste in sorted(hors.items()):
         noms = sorted({n for n, _ in liste})
         r.avertir("tests.attendus", trad(
@@ -365,12 +451,13 @@ def attendus(ctx, r):
             fichier)
 
 
-def _attendus_hors_tests(ctx, cfg, chemins, apres, hors):
+def _attendus_hors_tests(ctx, cfg, chemins, apres, hors, suit=None):
     """Une valeur des fichiers de test hors de tout test (une constante, une
     aide qui affirme) : retirée ou changée, elle compte pour chaque test qui
     nomme sa constante ou son aide. Dans un fichier de code, seules ses
     lignes de test comptent : le module de tests de Rust, jamais le code de
-    production."""
+    production. Une phrase qui suit le gabarit d'un skill, en mode amont,
+    ne compte pas (`juge_des_skills`)."""
     chemins_code, exclus_code, _ = config_code(ctx.projet)
 
     def reste(texte, chemin) -> list[str]:
@@ -403,8 +490,135 @@ def _attendus_hors_tests(ctx, cfg, chemins, apres, hors):
             if not touches:
                 continue  # une valeur qu'aucun test ne nomme n'en est pas une valeur attendue
             for b in touches:
+                if suit is not None and valeurs_de_phrase([valeur]) and suit(b, [], [valeur]):
+                    continue
                 if not _justifie(ctx, b.nom):
                     hors.setdefault(b.fichier, []).append((b.nom, valeur))
+
+
+# Une phrase d'un test : une chaîne littérale d'au moins ce nombre de
+# caractères, préfixe et guillemets ôtés, blancs réduits (ADR-0110).
+PHRASE_MIN = 12
+_GUILLEMETS = re.compile(r'[A-Za-z]*("""|\'\'\'|"|\'|`)([\s\S]*)\1')
+_DOCUMENTATION = re.compile(r'\A\s*[A-Za-z]*("""|\'\'\'|"|\'|`)(?:\\.|(?!\1)[\s\S])*?\1[ \t]*(?:\n|\Z)')
+
+
+def phrases(textes, cfg: dict) -> list[str]:
+    """Les phrases de textes de test : leurs chaînes littérales d'au moins
+    douze caractères, sans préfixe ni guillemets, blancs réduits. Un nombre,
+    une clé courte n'en sont pas."""
+    res = []
+    for texte in textes:
+        for lit in tests_lecture.litteraux(texte, cfg):
+            m = _GUILLEMETS.fullmatch(lit)
+            p = " ".join(m.group(2).split()) if m else ""
+            if len(p) >= PHRASE_MIN and p not in res:
+                res.append(p)
+    return res
+
+
+def sans_documentation(corps: str) -> str:
+    """Le corps d'un test sans la chaîne qui l'ouvre, seule sur sa ligne (la
+    docstring de Python) : elle documente le test, elle n'affirme rien."""
+    return _DOCUMENTATION.sub("", corps, count=1)
+
+
+def juge_des_skills(ctx):
+    """En mode amont, le juge des phrases qu'un test perd (ADR-0110) : il
+    rend le gabarit de skill du produit qu'elles suivent, sinon `None`. Les
+    phrases le suivent quand chacune était, à la base, dans le texte d'un
+    gabarit de skill que la plage change, qu'aucune n'était dans un module
+    Python du moteur (une phrase qu'il imprime est un comportement), et que
+    l'une au moins n'est plus dans aucun gabarit de skill. Hors du mode
+    amont, ou sans gabarit de skill changé, il rend toujours `None`."""
+    def rien(perdues):
+        return None
+
+    if ctx.projet.mode != config.MODE_AMONT:
+        return rien
+    paquet = ctx.projet.dossier_moteur.rstrip("/") + "/socle/"
+    motif = [paquet + "templates/skills/*/SKILL*.md"]
+    changes = sorted(outils.filtrer(ctx.changes, motif))
+    if not changes:
+        return rien
+
+    def reduit(texte: str | None) -> str:
+        return " ".join((texte or "").split())
+
+    avant = {c: reduit(ctx.lire_base(c)) for c in changes}
+    maintenant = [reduit(ctx.lire(c)) for c in outils.filtrer(ctx.fichiers, motif)]
+    modules: list[str] = []
+
+    def juge(perdues: list[str]) -> str | None:
+        if not perdues:
+            return None
+        sources = {}
+        for p in perdues:
+            source = next((c for c, texte in avant.items() if p in texte), None)
+            if source is None:
+                return None
+            sources[p] = source
+        quittee = next((p for p in perdues if not any(p in texte for texte in maintenant)), None)
+        if quittee is None:
+            return None
+        if not modules:
+            for c in outils.filtrer(ctx.fichiers_base, [paquet + "**/*.py"]):
+                modules.extend(chaines_du_moteur(ctx.lire_base(c) or ""))
+        if any(p in m or m in p for p in perdues for m in modules):
+            return None
+        return sources[quittee]
+
+    return juge
+
+
+def chaines_du_moteur(texte: str) -> list[str]:
+    """Ce qu'un module Python du moteur peut imprimer : ses chaînes, les
+    concaténations assemblées, coupées à leurs paramètres (`{x}`), blancs
+    réduits, d'au moins douze caractères ; le texte entier si le module ne
+    se lit pas. Le moteur est écrit en Python : le lire ainsi ne fait
+    connaître au moteur aucun langage d'un projet."""
+    import ast
+
+    try:
+        arbre = ast.parse(texte)
+    except (SyntaxError, ValueError):
+        return [" ".join(texte.split())]
+    res = []
+    for n in ast.walk(arbre):
+        if isinstance(n, ast.Constant) and isinstance(n.value, str):
+            for morceau in re.split(r"\{[^{}]*\}", n.value):
+                m = " ".join(morceau.split())
+                if len(m) >= PHRASE_MIN:
+                    res.append(m)
+    return res
+
+
+# Un test lit le texte d'un skill quand son corps, ou une aide de son
+# fichier qu'il nomme, nomme un skill.
+_LIT_UN_SKILL = re.compile(r"SKILL|skills")
+
+
+def lit_un_skill(texte: str, chemin: str, test, cfg: dict) -> bool:
+    """Le test `test` du fichier `chemin` (son texte : `texte`) lit le texte
+    d'un skill : son corps, ou le corps d'une aide de son fichier qu'il
+    nomme, nomme un skill (`SKILL`, `skills`). Un test de comportement qui
+    ne lit aucun skill n'est jamais jugé sur leur texte (ADR-0111)."""
+    corps = "\n".join([*test.attributs, test.corps])
+    if _LIT_UN_SKILL.search(corps):
+        return True
+    return any(_nomme(corps, a.nom) and _LIT_UN_SKILL.search(a.corps)
+               for a in tests_lecture.extraire(texte, chemin, cfg) if not a.est_test)
+
+
+def valeurs_de_phrase(valeurs) -> bool:
+    """Toutes les valeurs données (des littéraux) sont des phrases, hors des
+    chaînes vides : un nombre, une clé courte n'en sont pas."""
+    for v in valeurs:
+        m = _GUILLEMETS.fullmatch(v)
+        p = " ".join(m.group(2).split()) if m else v
+        if p and len(p) < PHRASE_MIN or not m:
+            return False
+    return True
 
 
 def _note_agent(ctx, nom: str) -> str:
@@ -491,6 +705,11 @@ def code_teste(ctx, r):
             nommes.append(tests_lecture.sans_commentaires(texte, cfg))
     nommes = "\n".join(nommes)
     dispenses = dispenses_tests(ctx, r)
+    # Les dispenses écrites hors du dernier paragraphe du message, qui ne
+    # valent pas : le refus nomme leur commit, pour dire où les écrire ; au
+    # hook commit-msg, c'est le commit en cours.
+    egarees = [(trad("en cours") if c["sha"] == "en-cours" else c["sha"][:7], v) for c in ctx.commits_du_projet
+               for v in langue.trailers_hors_bloc(c["message"]).get("dispense-test", [])]
     # Un fichier renommé se compare à son ancien nom : ses fonctions n'y sont
     # pas nouvelles.
     ancien_nom = {neuf: ancien for ancien, neuf in ctx.renommes.items()}
@@ -512,14 +731,26 @@ def code_teste(ctx, r):
                       if f.nom in avant else
                       trad("fonction `{nom}` ajoutée, qu'aucun test ne nomme : écrire le test qui l'appelle, ou la "
                            "dispenser par un trailer de commit `Dispense-test: {nom} — <raison>`", nom=f.nom))
+            shas = list(dict.fromkeys(sha for sha, v in egarees
+                                      if re.search(rf"(?<![\w]){re.escape(f.nom)}(?![\w])", v)))
+            if shas:
+                texte_ += trad(" ; le commit {sha} porte une ligne `Dispense-test:` qui la nomme, hors du dernier "
+                               "paragraphe de son message, où les trailers ne se lisent pas : la mettre dans ce "
+                               "dernier paragraphe, avec les autres trailers (les lignes d'attribution comprises)",
+                               sha=", ".join(shas))
             r.erreur("tests.code-teste", texte_, chemin, f.ligne)
 
 
 def est_correctif(projet, message: str) -> bool:
+    """Un correctif : son sujet suit `[regression] fix_subject`, ou il porte
+    `Corrige:` ou `Fixes:` dans le dernier paragraphe de son message, comme
+    git lit les trailers, ou hors de lui (ADR-0109) : une telle ligne, que
+    git ne lit pas, dit encore ce que l'auteur voulait dire, et son test de
+    régression se vérifie au lieu d'être sauté en silence."""
     sujet = message.strip().splitlines()[0] if message.strip() else ""
     motif = projet.gf("regression", "fix_subject", defaut=FIX_DEFAUT)
-    tr = outils.trailers(message)
-    return bool(re.search(motif, sujet)) or "corrige" in tr or "fixes" in tr
+    return (bool(re.search(motif, sujet)) or "corrige" in langue.trailers(message)
+            or "corrige" in langue.trailers_hors_bloc(message))
 
 
 @controle("tests.regression", etages=("ci",), base=True, lent=True, par_adaptateur=True)

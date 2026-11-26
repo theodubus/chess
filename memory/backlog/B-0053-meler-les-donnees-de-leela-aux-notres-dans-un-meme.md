@@ -15,7 +15,7 @@ la composition suivante, une variante d'architecture nourrie du mélange,
 d'autres fichiers de Leela que T60 et T74. Un réseau qui en apprend porte
 la mention d'attribution du `README.md`.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : le mélange mesuré contre le réseau qui joue, et ses suites décidées sur ce verdict

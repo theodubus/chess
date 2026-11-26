@@ -1,13 +1,15 @@
-"""Lecture de la mémoire : six couches de markdown qu'un script sait lire.
+"""Lecture de la mémoire : huit couches de markdown qu'un script sait lire.
 
 Le format est décrit dans `engine/socle/FORMAT.md`. En bref :
 
 - chaque fichier de mémoire commence par `<!-- socle: couche=… zone=… -->` ;
 - une entrée est un titre `## <ID> — <titre>`, suivi d'une ligne de
   métadonnées `> clé : valeur · clé : valeur` ;
-- un identifiant est stable : `F-0001` (fait), `B-0001` (backlog),
-  `ADR-0001` (décision), `D-0001` (demande), `J-2026-10-10-A` (journal) ;
-  préfixé de `P` dans la zone privée (`PF-0001`, `PJ-…`).
+- un identifiant est stable : `F-0001` (fait), `B-0001` (besoin),
+  `T-0001` (tâche), `L-0001` (lot), `JA-0001` (jalon), `ADR-0001`
+  (décision), `D-0001` (demande), `J-2026-10-10-A` (journal), `C-0001`
+  (consigne de l'humain) ; préfixé de `P` dans la zone privée (`PF-0001`,
+  `PJ-…`).
 
 Ce module ne juge rien : il lit. Les contrôles vivent dans `controles_memoire`.
 """
@@ -16,36 +18,47 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 
 from socle import config, language as langue, utils as outils
-from socle.messages import trad
+from socle.messages import a_traduire, trad
 
 TYPES = {
     "F": "canonique",
     "B": "backlog",
+    "T": "backlog",
+    "L": "backlog",
+    "JA": "backlog",
     "ADR": "decisions",
     "J": "journal",
     "D": "demandes",
+    "C": "consignes",
 }
-COUCHES = ("canonique", "actif", "decisions", "journal", "backlog", "demandes")
+# Les quatre formes d'une entrée du backlog, chacune son préfixe (ADR-0083) :
+# un besoin, une tâche, un lot, un jalon. La forme se lit sur l'identifiant.
+BACKLOG = ("B", "T", "L", "JA")
+FORMES = {"B": "besoin", "T": "tache", "L": "lot", "JA": "jalon"}
+COUCHES = ("canonique", "actif", "consignes", "decisions", "journal", "backlog", "demandes", "passation")
 ZONES = ("publique", "privee")
 
 # Un identifiant, où qu'il soit. La forme du numéro est vérifiée après coup :
 # `J-` exige une date et une lettre, les autres quatre chiffres.
 ID_RE = re.compile(
-    r"(?<![\w-])(?P<prive>P?)(?P<type>ADR|F|B|D|J)-"
+    r"(?<![\w-])(?P<prive>P?)(?P<type>ADR|JA|F|B|T|L|D|J|C)-"
     r"(?P<num>\d{4}(?:-\d{2}-\d{2}-[A-Z]{1,2})?)(?![\w-])"
 )
 NUM_JOURNAL = re.compile(r"^\d{4}-\d{2}-\d{2}-[A-Z]{1,2}$")
 NUM_SIMPLE = re.compile(r"^\d{4}$")
 
-TITRE_RE = re.compile(r"^(?P<niveau>#{1,6})\s+(?P<reste>.*?)\s*#*\s*$")
+# La fermeture d'un titre, des dièses, ne se retire que précédée d'une espace,
+# comme en CommonMark : « C# » garde le sien (B-0203).
+TITRE_RE = re.compile(r"^(?P<niveau>#{1,6})\s+(?P<reste>.*?)(?:\s+#+)?\s*$")
 ENTETE_ENTREE = re.compile(
-    r"^(?P<id>P?(?:ADR|F|B|D|J)-[\d-]+[A-Z]{0,2})\s*[—–-]\s*(?P<titre>.+)$"
+    r"^(?P<id>P?(?:ADR|JA|F|B|T|L|D|J|C)-[\d-]+[A-Z]{0,2})\s*[—–-]\s*(?P<titre>.+)$"
 )
 # Un titre qui commence comme une entrée, lisible ou non.
-TITRE_D_ENTREE = re.compile(r"^P?(?:ADR|F|B|D|J)-\d")
+TITRE_D_ENTREE = re.compile(r"^P?(?:ADR|JA|F|B|T|L|D|J|C)-\d")
 ENTETE_FICHIER = re.compile(r"<!--\s*socle\s*:(?P<corps>.*?)-->")
 # La liste des termes privés n'est pas un fichier de mémoire : son en-tête est
 # celui d'un texte brut, et la dit lisible comme l'autre.
@@ -55,10 +68,14 @@ CLOTURE_CODE = re.compile(r"^\s*(```|~~~)")
 # Statuts lisibles par machine, sous leur forme canonique (sans accents).
 STATUTS = {
     "F": {"mesure", "suppose", "refute", "valide"},
-    "B": {"ouvert", "en-cours", "bloque", "fait", "abandonne"},
+    **{t: {"ouvert", "en-cours", "bloque", "fait", "abandonne"} for t in BACKLOG},
     "ADR": {"proposee", "acceptee", "remplacee", "rejetee", "abandonnee"},
+    "C": {"en-vigueur", "levee"},
 }
 BACKLOG_CLOS = {"fait", "abandonne"}
+# La ligne de résumé d'une consigne de l'humain, son titre, que le démarrage
+# injecte : en octets UTF-8 au plus.
+RESUME_DE_CONSIGNE = 120
 # Le sous-dossier du backlog en dossier où `socle archive` range les sujets
 # clos, à l'écart des ouverts.
 DOSSIER_CLOS = "closed"
@@ -225,6 +242,77 @@ def nettoyer(valeur: str) -> str:
     return valeur.strip().strip("`").strip()
 
 
+# La passation à une session neuve (`memory/handoff.md`) : ni entrée ni
+# identifiant, un en-tête, un titre, son estampille sur une ligne `>`, puis
+# ce qui attend. `socle handoff write` l'écrit, `socle handoff check` la lit
+# sur les branches distantes.
+FORMAT_HEURE = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def heure_utc(texte: str) -> datetime:
+    """Une heure ISO 8601 (`2026-11-24T10:05:00Z`), en UTC ; sans fuseau,
+    elle est en UTC. `ValueError` sinon."""
+    h = datetime.fromisoformat(texte.strip().replace("Z", "+00:00"))
+    return h.replace(tzinfo=timezone.utc) if h.tzinfo is None else h.astimezone(timezone.utc)
+
+
+@dataclass(frozen=True)
+class Passation:
+    """Une passation : son estampille, l'heure `écrite` et la `branche`, qui
+    l'identifie, quel que soit le commit qui la porte ; la chaîne des lots
+    menés sans message de l'humain ; ce qui attend, tel qu'écrit."""
+
+    ecrite: datetime
+    branche: str
+    chaine: int
+    attente: str = ""
+
+    @property
+    def estampille(self) -> tuple[datetime, str]:
+        return self.ecrite, self.branche
+
+    @property
+    def heure(self) -> str:
+        return self.ecrite.strftime(FORMAT_HEURE)
+
+
+def lire_passation(texte: str) -> tuple[Passation | None, list[str], int]:
+    """La passation d'un `handoff.md`, ses fautes de forme, et la ligne de
+    son estampille (sa première ligne `>`, 1 sans elle) : `None` quand
+    l'heure, la branche ou la chaîne ne se lit pas."""
+    lignes = texte.splitlines()
+    debut = next((k for k, l in enumerate(lignes) if l.lstrip().startswith(">")), len(lignes))
+    fin = debut
+    while fin < len(lignes) and lignes[fin].lstrip().startswith(">"):
+        fin += 1
+    meta = parser_meta(lignes[debut:fin])
+    fautes, ecrite = [], None
+    try:
+        ecrite = heure_utc(nettoyer(meta.get("ecrite", "")))
+    except ValueError:
+        fautes.append(trad("la passation n'a pas d'heure `écrite` lisible : une heure ISO 8601 en UTC "
+                           "(2026-11-25T03:10:00Z)"))
+    branche = nettoyer(meta.get("branche", ""))
+    if not branche or any(c.isspace() for c in branche):
+        fautes.append(trad("la passation ne nomme pas sa `branche` : un nom de branche, sans espace"))
+    chaine = nettoyer(meta.get("chaine", ""))
+    if not (chaine.isascii() and chaine.isdigit()):
+        fautes.append(trad("la passation n'a pas de `chaîne` lisible : un entier, 0 ou plus"))
+    ligne = debut + 1 if debut < len(lignes) else 1
+    if fautes or ecrite is None:
+        return None, fautes, ligne
+    return Passation(ecrite, branche, int(chaine), "\n".join(lignes[fin:]).strip()), [], ligne
+
+
+def texte_passation(p: Passation, lg: str) -> str:
+    """Le fichier `handoff.md` d'une passation, dans la langue de la mémoire ;
+    `p.attente` est le texte qui suit l'estampille."""
+    champs = " · ".join(f"{langue.mot(langue.CHAMPS, k, lg)} : {v}"
+                        for k, v in (("ecrite", p.heure), ("branche", p.branche), ("chaine", p.chaine)))
+    return (f"{langue.entete_fichier('passation', 'publique', lg)}\n"
+            f"# {langue.mot(langue.TEXTES, 'titre-passation', lg)}\n\n> {champs}\n\n{p.attente.strip()}\n")
+
+
 # Une référence dans une valeur de métadonnée : `commit:abc1234`,
 # `fichier:chemin[#ancre|:ligne]`, `cmd:outil` ou ``cmd:`commande, avec virgule` ``,
 # `url:…` (jamais suivie : aucun service externe). Les identifiants de mémoire
@@ -304,6 +392,19 @@ class Entree:
         """Les entrées publiques que cette copie privée reprend."""
         return [c for t, c in self.refs("depuis") if t == "id"]
 
+    @property
+    def anciens(self) -> list[str]:
+        """Les numéros qu'une entrée renumérotée a portés (`ancien : B-0235`,
+        ADR-0083) : ils se résolvent vers elle, et ne se réattribuent
+        jamais."""
+        return [c for t, c in self.refs("ancien") if t == "id"]
+
+    @property
+    def forme(self) -> str | None:
+        """La forme d'une entrée du backlog, lue sur son identifiant :
+        `besoin`, `tache`, `lot` ou `jalon` ; `None` hors du backlog."""
+        return FORMES.get(self.type)
+
 
 @dataclass
 class FichierMemoire:
@@ -324,11 +425,16 @@ def couche_attendue(chemin: str) -> str | None:
     if not est_memoire(chemin) or not chemin.endswith(".md"):
         return None
     f = config.FORMAT_ACTUEL
-    if est_prive(chemin):  # la zone privée reprend la même arborescence
+    prive = est_prive(chemin)
+    if prive:  # la zone privée reprend la même arborescence
         chemin = f.memoire + "/" + hors_zone_privee(chemin)
     if chemin.startswith(f.archives + "/") or chemin == f.memoire + "/README.md":
         return None
-    for couche, lieu in (("canonique", f.canonique), ("actif", f.actif)):
+    # La passation se lit sur toutes les branches distantes, de tout clone :
+    # publique seule, jamais dans la zone privée.
+    if chemin == f.passation:
+        return "inconnue" if prive else "passation"
+    for couche, lieu in (("canonique", f.canonique), ("actif", f.actif), ("consignes", f.consignes)):
         if chemin == lieu:
             return couche
     for couche, lieu in (("backlog", f.backlog), ("decisions", f.decisions),
@@ -463,10 +569,13 @@ class Memoire:
             mem.fichiers[c] = analyser(c, texte)
         return mem
 
-    def entrees(self, type_: str | None = None):
+    def entrees(self, type_: str | tuple[str, ...] | None = None):
+        """Les entrées d'un type, ou de plusieurs (`BACKLOG`, les quatre
+        formes du backlog)."""
+        types = (type_,) if isinstance(type_, str) else type_
         for f in self.fichiers.values():
             for e in f.entrees:
-                if type_ is None or e.type == type_:
+                if types is None or e.type in types:
                     yield e
 
     def definitions(self) -> dict[str, list[Entree]]:
@@ -479,12 +588,22 @@ class Memoire:
         defs = self.definitions().get(ident)
         return defs[0] if defs else None
 
+    def anciens(self) -> dict[str, Entree]:
+        """{ancien numéro : l'entrée qui le porte désormais} (ADR-0083)."""
+        return {a: e for e in self.entrees(BACKLOG) for a in e.anciens}
+
+    def resoudre(self, ident: str) -> Entree | None:
+        """L'entrée d'un identifiant, ou celle qu'un ancien numéro désigne
+        désormais."""
+        return self.entree(ident) or self.anciens().get(ident)
+
     def prochain_id(self, type_: str, prive: bool = False, date: str | None = None,
                     pris_ailleurs: set[str] = frozenset()) -> str:
         """Le prochain identifiant libre d'un type. Calculé, jamais deviné :
         deux sessions qui devinent tombent sur le même. `pris_ailleurs` : ceux
-        que d'autres branches ont déjà pris."""
-        return prochain_libre(type_, set(self.definitions()) | set(pris_ailleurs), prive, date)
+        que d'autres branches ont déjà pris. Un ancien numéro reste pris."""
+        return prochain_libre(type_, set(self.definitions()) | set(self.anciens()) | set(pris_ailleurs), prive,
+                              date)
 
 
 def prochain_libre(type_: str, pris: set[str], prive: bool = False, date: str | None = None) -> str:
@@ -526,10 +645,10 @@ def _lettres():
 # Ça ne prouve pas qu'on a compris ; ça prouve qu'on a lu, et quelle version.
 
 CITATION_RE = re.compile(
-    r"(?<![\w-])(?P<id>P?(?:ADR|F|B|D|J)-\d{4}(?:-\d{2}-\d{2}-[A-Z]{1,2})?)@(?P<empreinte>[0-9a-f]{8})(?![\w-])"
+    r"(?<![\w-])(?P<id>P?(?:ADR|JA|F|B|T|L|D|J|C)-\d{4}(?:-\d{2}-\d{2}-[A-Z]{1,2})?)@(?P<empreinte>[0-9a-f]{8})(?![\w-])"
 )
 INDEX_RE = re.compile(r"(?<![\w-])(?P<index>decisions|backlog)@(?P<empreinte>[0-9a-f]{8})(?![\w-])")
-INDEX_TYPES = {"decisions": "ADR", "backlog": "B"}
+INDEX_TYPES = {"decisions": ("ADR",), "backlog": BACKLOG}
 
 
 def empreinte_entree(e: Entree) -> str:
@@ -565,9 +684,8 @@ def empreintes_entree(e: Entree) -> set[str]:
 
 def lignes_index(mem: "Memoire", index: str, sauf: set[str] = frozenset()) -> list[str]:
     """Une ligne par entrée : décisions en vigueur ou non, backlog non clos."""
-    type_ = INDEX_TYPES[index]
     res = []
-    for e in mem.entrees(type_):
+    for e in mem.entrees(INDEX_TYPES[index]):
         if e.archivee or e.basculee or e.id in sauf:
             continue
         if index == "backlog" and e.statut in BACKLOG_CLOS:
@@ -577,29 +695,82 @@ def lignes_index(mem: "Memoire", index: str, sauf: set[str] = frozenset()) -> li
 
 
 # --------------------------------------------------------------------------
-# L'ordre du backlog : un sujet attend d'autres sujets (`après`), un jalon
-# est un sujet qui attend ses tâches ; ce qui vient ensuite se calcule.
+# L'ordre du backlog (ADR-0083) : un besoin, une tâche, un lot ou un jalon
+# attend d'autres entrées (`après`) ; une tâche nomme son besoin, un lot
+# attend ses tâches, un jalon ses besoins ; ce qui vient ensuite se calcule.
 # --------------------------------------------------------------------------
 
 
 def dependances(e: Entree) -> list[str]:
-    """Ce qu'un sujet du backlog attend (`après : B-0012, D-0014`) : des
-    sujets, et des demandes, attendues jusqu'à leur réponse (D-0064)."""
+    """Ce qu'une entrée du backlog attend (`après : B-0012, D-0014`) : des
+    entrées du backlog, et des demandes, attendues jusqu'à leur réponse
+    (D-0064)."""
     return [c for t, c in e.refs("apres") if t == "id"]
 
 
-def est_jalon(e: Entree) -> bool:
-    return langue.valeur(nettoyer(e.meta.get("forme", ""))) == "jalon"
+def est_besoin(e: Entree) -> bool:
+    return e.type == "B"
 
+
+def est_tache(e: Entree) -> bool:
+    return e.type == "T"
+
+
+def est_lot(e: Entree) -> bool:
+    """Un lot (`L-`) : les tâches qu'on mène et relit ensemble, qu'il attend
+    par `après`, avec le lot d'avant (ADR-0079, ADR-0083). Il n'est jamais à
+    prendre ; il se clôt quand ses tâches le sont."""
+    return e.type == "L"
+
+
+def est_jalon(e: Entree) -> bool:
+    """Un jalon (`JA-`) : les besoins qui servent un même but, qu'il attend,
+    avec le jalon d'avant."""
+    return e.type == "JA"
+
+
+def besoin_de(e: Entree) -> str | None:
+    """Le besoin qu'une tâche sert (`besoin : B-NNNN`)."""
+    ids = [c for t, c in e.refs("besoin") if t == "id"]
+    return ids[0] if ids else None
+
+
+def pour_l_humain(e: Entree) -> bool:
+    """Une entrée que seul l'humain peut faire (`pour : humain`), quelle que
+    soit la langue où elle est écrite."""
+    return langue.valeur(nettoyer(e.meta.get("pour", ""))) == "humain"
+
+
+def type_d_id(ident: str) -> str | None:
+    """Le type d'un identifiant (`T`, `JA`…), `None` s'il n'en est pas un."""
+    morceaux = decouper_id(ident)
+    return morceaux[1] if morceaux else None
+
+
+# Ce que chaque forme attend par `après` (D-0123, point 2) : un besoin, des
+# besoins et des demandes ; une tâche, des tâches, des besoins et des
+# demandes ; un lot, ses tâches, des demandes et le lot d'avant ; un jalon,
+# ses besoins, des demandes et le jalon d'avant.
+ATTENDUS = {"B": ("B", "D"), "T": ("T", "B", "D"), "L": ("T", "D", "L"), "JA": ("B", "D", "JA")}
 
 PRIORITES = ("haute", "basse")
 
 
 def priorite(e: Entree) -> str | None:
-    """La priorité d'un sujet (`priorité : haute` ou `basse`, D-0062), sous
-    sa clé interne ; `None` pour la priorité normale, qui ne s'écrit pas."""
+    """La priorité écrite d'une entrée (`priorité : haute` ou `basse`,
+    D-0062), sous sa clé interne ; `None` pour la priorité normale, qui ne
+    s'écrit pas."""
     v = nettoyer(e.meta.get("priorite", ""))
     return langue.valeur(v) if v else None
+
+
+def priorite_effective(e: Entree, entrees: dict[str, Entree]) -> str | None:
+    """Celle d'une entrée, et celle de son besoin pour une tâche qui n'en a
+    pas (ADR-0083)."""
+    p = priorite(e)
+    if p is None and est_tache(e) and besoin_de(e) in entrees:
+        p = priorite(entrees[besoin_de(e)])
+    return p
 
 
 def demande_close(mem: "Memoire", e: Entree) -> bool:
@@ -607,15 +778,25 @@ def demande_close(mem: "Memoire", e: Entree) -> bool:
     return e.fichier in mem.repondues or "retiree" in e.meta
 
 
-SECTION_FAIT_QUAND = re.compile(r"^#{2,4}\s+(?:%s)\s*$" % "|".join(re.escape(x) for x in langue.FAIT_QUAND.values()),
-                                re.M | re.I)
+def _section(mots: dict) -> re.Pattern:
+    return re.compile(r"^#{2,4}\s+(?:%s)\s*$" % "|".join(re.escape(x) for x in mots.values()), re.M | re.I)
+
+
+SECTION_FAIT_QUAND = _section(langue.FAIT_QUAND)
+SECTION_SATISFAIT_QUAND = _section(langue.SATISFAIT_QUAND)
 CASE = re.compile(r"^\s*[-*]\s+\[([ xX])\]\s+(.+?)\s*$")
 
 
-def criteres(e: Entree) -> list[tuple[bool, str]]:
-    """Les critères de la section « Fait quand » d'un sujet (D-0064) :
-    (coché, texte), dans l'ordre ; vide sans section."""
-    m = SECTION_FAIT_QUAND.search(e.corps)
+def section_de(e: Entree) -> re.Pattern:
+    """La section des critères d'une entrée : « Satisfait quand » pour un
+    besoin, un résultat ; « Fait quand » pour les autres formes."""
+    return SECTION_SATISFAIT_QUAND if est_besoin(e) else SECTION_FAIT_QUAND
+
+
+def criteres(e: Entree, section: re.Pattern | None = None) -> list[tuple[bool, str]]:
+    """Les critères de la section d'une entrée (D-0064, ADR-0083), ou de
+    `section` : (coché, texte), dans l'ordre ; vide sans section."""
+    m = (section or section_de(e)).search(e.corps)
     if not m:
         return []
     res = []
@@ -628,85 +809,370 @@ def criteres(e: Entree) -> list[tuple[bool, str]]:
     return res
 
 
+# --------------------------------------------------------------------------
+# Les revues d'un lot (ADR-0084, ADR-0100) : sa section « Revues », une
+# passe par dossier de `socle review`, chacune ses bloquants.
+# --------------------------------------------------------------------------
+
+
+def _mots(cle: str) -> str:
+    return "|".join(re.escape(m) for m in langue.REVUES[cle].values())
+
+
+SECTION_REVUES = _section(langue.REVUES["revues"])
+TITRE_DE_PASSE = re.compile(r"^#{3,6}\s+(?:%s)\s+(?P<n>\d+)\b\s*(?:[—–-]\s*(?P<date>.*?))?\s*$" % _mots("passe"),
+                            re.I)
+# `Commits : <début>..<tête>`, suivi, quand la passe a relu des fichiers
+# suivis que l'arbre de travail changeait hors de la mémoire, de
+# `+ arbre de travail <empreinte>` : l'empreinte de ces changements.
+LIGNE_COMMITS = re.compile(r"^\s*(?:%s)\s*:\s*(?P<debut>[0-9a-f]{4,40})\.\.(?P<tete>[0-9a-f]{4,40})"
+                           r"(?:\s*\+\s*(?:%s)\s+(?P<arbre>[0-9a-f]{4,64}))?\s*$"
+                           % (_mots("commits"), _mots("arbre")), re.I)
+LIGNE_BLOQUANT = re.compile(r"^\s*[-*]\s+(?:%s)\s*:\s*(?P<texte>.+?)\s*$" % _mots("bloquant"), re.I)
+# Une ligne de liste qui se donne pour un bloquant sans la forme que lit
+# `passes` (`- **Bloquant** : …`, `- Bloquant 1 : …`, `1. Bloquant : …`,
+# `- Bloquants : …`) : l'historique du lot ne la compterait pas parmi les
+# bloquants de sa passe ; le contrôle du backlog la refuse.
+BLOQUANT_PRESUME = re.compile(
+    # Une puce suivie du mot, comme avant ; ou, puce, citation et case
+    # facultatives, le mot suivi d'un séparateur, après un numéro au besoin
+    # (`Bloquant : …`, `**Bloquant** : …`, `Bloquant 2 — …`, `-Bloquant : …`).
+    r"^\s*(?:>\s*)*(?:(?:[-*+•]|\d+[.)])\s+(?:\[[ xX]\]\s*)?[*_]*(?:{m})s?(?![\w-])"
+    r"|(?:(?:[-*+•]|\d+[.)])\s*)?(?:\[[ xX]\]\s*)?[*_]*(?:{m})s?[*_]*(?:\s*\d+)?[*_]*\s*[:—–])"
+    .format(m=_mots("bloquant")), re.I)
+
+
+@dataclass
+class Passe:
+    """Une passe de revue d'un lot, telle que sa section « Revues » la
+    garde : son numéro et sa date, les commits relus (`debut..tete`, tels
+    que `socle review` les a écrits, et l'empreinte de l'arbre de travail
+    s'il était sale), et ses bloquants, la cause de chacun, telle que
+    l'agent l'a consignée."""
+
+    numero: int
+    date: str
+    debut: str | None = None
+    tete: str | None = None
+    bloquants: list[str] = field(default_factory=list)
+    # L'empreinte des changements de l'arbre de travail hors de la mémoire
+    # que la passe a relus en plus de `tete`, `None` s'il n'en avait pas.
+    arbre: str | None = None
+
+
+def _bornes_des_revues(e: Entree, texte: str | None = None) -> tuple[int, int] | None:
+    """Où commence et finit la section « Revues » dans le corps d'une
+    entrée, ou dans `texte` : jusqu'au titre suivant de même niveau ou plus
+    haut."""
+    texte = e.corps if texte is None else texte
+    m = SECTION_REVUES.search(texte)
+    if not m:
+        return None
+    niveau = len(m.group(0)) - len(m.group(0).lstrip("#"))
+    fin = re.compile(r"^#{1,%d}\s" % niveau, re.M).search(texte, m.end())
+    return m.start(), fin.start() if fin else len(texte)
+
+
+def section_des_revues(e: Entree) -> str | None:
+    """Le texte de la section « Revues » d'une entrée, titre compris."""
+    bornes = _bornes_des_revues(e)
+    return e.corps[bornes[0]:bornes[1]].strip() if bornes else None
+
+
+def bloquants_mal_ecrits(e: Entree) -> list[tuple[int, str]]:
+    """Les lignes de la section « Revues » de `e` qui se donnent pour un
+    bloquant sans que `passes` les lise comme tel (`BLOQUANT_PRESUME` sans
+    `LIGNE_BLOQUANT`) : leur numéro de ligne dans le fichier, et leur
+    texte."""
+    bornes = _bornes_des_revues(e, e.texte)
+    if bornes is None:
+        return []
+    premiere = e.ligne + e.texte.count("\n", 0, bornes[0])
+    return [(premiere + k, ligne.strip()) for k, ligne in enumerate(e.texte[bornes[0]:bornes[1]].split("\n"))
+            if BLOQUANT_PRESUME.match(ligne) and not LIGNE_BLOQUANT.match(ligne)]
+
+
+def passes(e: Entree) -> list[Passe]:
+    """Les passes de revue qu'un lot garde, dans l'ordre de sa section."""
+    texte = section_des_revues(e)
+    if texte is None:
+        return []
+    res: list[Passe] = []
+    for ligne in texte.splitlines()[1:]:
+        t = TITRE_DE_PASSE.match(ligne)
+        if t:
+            res.append(Passe(int(t["n"]), (t["date"] or "").strip()))
+            continue
+        if not res:
+            continue
+        p = res[-1]
+        c = LIGNE_COMMITS.match(ligne)
+        if c and p.debut is None:
+            p.debut, p.tete, p.arbre = c["debut"], c["tete"], c["arbre"]
+            continue
+        b = LIGNE_BLOQUANT.match(ligne)
+        if b:
+            p.bloquants.append(b["texte"])
+    return res
+
+
 @dataclass
 class Ordre:
-    """Ce qui vient ensuite : les sujets prêts (ouverts, pas encore en cours,
-    dont tout ce qu'ils attendent est clos), le prochain jalon et ce qui lui
-    reste, et le nombre de sujets qui attendent un sujet non clos."""
+    """Ce qui vient ensuite : les tâches prêtes (ouvertes, pas encore en
+    cours, dont tout ce qu'elles attendent, et ce qu'attend leur besoin, est
+    clos), le prochain jalon et ses besoins ouverts, le prochain lot et
+    l'avancement de ses tâches, les besoins à découper et à fermer, et le
+    nombre d'entrées qui attendent encore, selon ce qu'elles attendent."""
 
     prets: list[Entree]
     jalon: Entree | None
     restants: list[str]
     en_attente: int
-    # Les sujets prêts de priorité basse, à part : l'agent les prend quand
+    # Les tâches prêtes de priorité basse, à part : l'agent les prend quand
     # c'est commode, et le dit (D-0062).
     basses: list[Entree] = field(default_factory=list)
+    # Le prochain lot, et où en est ce qu'il attend hors des lots :
+    # (identifiant, mot interne), dans l'ordre de son `après` (ADR-0079).
+    lot: Entree | None = None
+    avancement: list[tuple[str, str]] = field(default_factory=list)
+    # Parmi celles qui attendent, celles qui attendent une entrée du backlog
+    # non close, et celles qui attendent une demande sans réponse (D-0064,
+    # B-0153).
+    attendent_une_entree: int = 0
+    attendent_une_demande: int = 0
+    # Les besoins sans tâche ouverte ni rien d'ouvert qu'ils attendent, et
+    # ceux dont les tâches sont closes, l'une au moins faite (ADR-0083).
+    a_decouper: list[Entree] = field(default_factory=list)
+    a_fermer: list[Entree] = field(default_factory=list)
+
+
+class Graphe:
+    """Ce que les entrées du backlog attendent, lu une fois sur leurs
+    `après` : l'ordre que l'état dit (`ordre`) et la suite du projet
+    (`socle roadmap`) le calculent de même. Une entrée archivée ou basculée
+    en privé n'y est pas ; sa copie privée, si elle se lit, y est."""
+
+    def __init__(self, mem: "Memoire"):
+        self.mem = mem
+        self.entrees = {e.id: e for e in mem.entrees(BACKLOG) if not e.archivee and not e.basculee}
+        self.demandes = {e.id: e for e in mem.entrees("D") if not e.basculee}
+        self.ouverts = sorted(i for i in self.entrees if self.ouvert(i))
+
+    def ouvert(self, i: str) -> bool:
+        """Encore attendu : une entrée non close, ou une demande sans réponse."""
+        if i in self.demandes:
+            return not demande_close(self.mem, self.demandes[i])
+        return i in self.entrees and self.entrees[i].statut not in BACKLOG_CLOS
+
+    def deps(self, i: str) -> list[str]:
+        """Ce qu'une entrée attend ; pour une tâche, aussi ce qu'attend son
+        besoin (ADR-0083)."""
+        e = self.entrees[i]
+        res = dependances(e)
+        b = self.entrees.get(besoin_de(e) or "") if est_tache(e) else None
+        return res + [d for d in dependances(b) if d not in res] if b else res
+
+    def attend(self, i: str) -> list[str]:
+        """Ce qu'une entrée attend encore : ses attendus pas clos."""
+        return [d for d in self.deps(i) if self.ouvert(d)]
+
+    def attendus(self, i: str) -> set[str]:
+        """Les entrées et les demandes encore attendues qu'une entrée attend,
+        de proche en proche ; un cycle s'arrête (le contrôle de l'ordre le
+        refuse)."""
+        vus, pile = set(), list(self.deps(i))
+        while pile:
+            d = pile.pop()
+            if d in vus or d == i or (d not in self.entrees and d not in self.demandes):
+                continue
+            vus.add(d)
+            if d in self.entrees:
+                pile += self.deps(d)
+        return {d for d in vus if self.ouvert(d)}
+
+    def _rang(self, i: str):
+        return self.entrees[i].statut != "en-cours", i
+
+    def premier(self, est) -> list[str]:
+        """Ceux de cette forme, ouverts, qu'aucun autre de la forme ne précède,
+        l'en cours d'abord, puis par identifiant."""
+        return sorted((i for i in self.ouverts
+                       if est(self.entrees[i])
+                       and not any(d in self.entrees and est(self.entrees[d]) for d in self.attendus(i))),
+                      key=self._rang)
+
+    def dans_l_ordre(self, est) -> list[str]:
+        """Ceux de cette forme, ouverts, dans leur ordre d'exécution : chacun
+        après ceux de la forme qu'il attend, de proche en proche ; à choix
+        égal, l'en cours d'abord, puis par identifiant. Ce qu'un cycle retient
+        (le contrôle de l'ordre le refuse) vient à la fin, par identifiant."""
+        reste = [i for i in self.ouverts if est(self.entrees[i])]
+        avant = {i: {d for d in self.attendus(i) if d in reste} for i in reste}
+        res: list[str] = []
+        while reste:
+            libres = sorted((i for i in reste if avant[i] <= set(res)), key=self._rang)
+            if not libres:
+                return res + sorted(reste)
+            res.append(libres[0])
+            reste.remove(libres[0])
+        return res
+
+    def ou_en_est(self, i: str) -> str:
+        """Où en est une entrée qu'on attend, en mot interne : le statut d'une
+        tâche qui n'est plus ouverte, sinon `pret` ou `attend` ; pour une
+        demande, `repondue` ou `sans-reponse` ; `inconnu` pour le reste."""
+        if i in self.demandes:
+            return "repondue" if demande_close(self.mem, self.demandes[i]) else "sans-reponse"
+        if i not in self.entrees:
+            return "inconnu"
+        if self.entrees[i].statut != "ouvert":
+            return self.entrees[i].statut
+        return "attend" if self.attend(i) else "pret"
 
 
 def ordre(mem: "Memoire") -> Ordre | None:
-    """L'ordre du backlog, s'il en a un : sans `après`, jalon ni priorité, rien."""
-    sujets = {e.id: e for e in mem.entrees("B") if not e.archivee and not e.basculee}
-    demandes = {e.id: e for e in mem.entrees("D") if not e.basculee}
-    if not any(dependances(e) or est_jalon(e) or priorite(e) for e in sujets.values()):
+    """L'ordre du backlog, s'il en a un : sans `après`, tâche, lot, jalon ni
+    priorité, rien."""
+    g = Graphe(mem)
+    if not any(dependances(e) or not est_besoin(e) or priorite(e) for e in g.entrees.values()):
         return None
+    return ordre_de(g)
 
-    def ouvert(i: str) -> bool:
-        """Encore attendu : un sujet non clos, ou une demande sans réponse."""
-        if i in demandes:
-            return not demande_close(mem, demandes[i])
-        return i in sujets and sujets[i].statut not in BACKLOG_CLOS
 
-    def attendus(i: str) -> set[str]:
-        """Les sujets et les demandes encore attendus qu'un sujet attend, de
-        proche en proche ; un cycle s'arrête (le contrôle de l'ordre le
-        refuse)."""
-        vus, pile = set(), list(dependances(sujets[i]))
-        while pile:
-            d = pile.pop()
-            if d in vus or d == i or (d not in sujets and d not in demandes):
-                continue
-            vus.add(d)
-            if d in sujets:
-                pile += dependances(sujets[d])
-        return {d for d in vus if ouvert(d)}
-
-    ouverts = sorted(i for i in sujets if ouvert(i))
-    # Un attendu peut être une demande, qui n'est jamais un jalon (B-0146).
-    jalons = [i for i in ouverts
-              if est_jalon(sujets[i]) and not any(d in sujets and est_jalon(sujets[d]) for d in attendus(i))]
+def ordre_de(g: Graphe) -> Ordre:
+    """L'ordre que calcule `ordre`, sur un graphe déjà lu, même sans
+    structure."""
+    entrees, demandes, ouverts = g.entrees, g.demandes, g.ouverts
+    jalons = g.premier(est_jalon)
     jalon = jalons[0] if jalons else None
-    restants = sorted(attendus(jalon)) if jalon else []
-    # Un sujet en cours ou bloqué n'est plus à prendre : l'état le dit à part.
-    a_prendre = [i for i in ouverts if sujets[i].statut == "ouvert" and not est_jalon(sujets[i])]
-    # Ceux du prochain jalon d'abord, puis par priorité ; les basses à part.
+    restants = sorted(d for d in dependances(entrees[jalon])
+                      if g.ouvert(d) and (d in demandes or (d in entrees and est_besoin(entrees[d])))) if jalon else []
+    du_jalon = set(restants)
+    lots = g.premier(est_lot)
+    lot = entrees[lots[0]] if lots else None
     rang = {"haute": 0, None: 1}
-    prets = sorted((i for i in a_prendre if not any(ouvert(d) for d in dependances(sujets[i]))),
-                   key=lambda i: (i not in restants, rang.get(priorite(sujets[i]), 2), i))
-    basses = [i for i in prets if priorite(sujets[i]) == "basse"]
+
+    def cle(i: str):
+        """Celles du prochain jalon d'abord, puis par priorité."""
+        e = entrees[i]
+        return ((besoin_de(e) if est_tache(e) else i) not in du_jalon,
+                rang.get(priorite_effective(e, entrees), 2), i)
+
+    # Une tâche en cours ou bloquée n'est plus à prendre : l'état le dit à
+    # part. Un besoin, un lot ni un jalon ne se prennent.
+    a_prendre = [i for i in ouverts if est_tache(entrees[i]) and entrees[i].statut == "ouvert"]
+    prets = sorted((i for i in a_prendre if not g.attend(i)), key=cle)
+    basses = [i for i in prets if priorite_effective(entrees[i], entrees) == "basse"]
     prets = [i for i in prets if i not in basses]
-    attente = len(a_prendre) - len(prets) - len(basses)
-    return Ordre([sujets[i] for i in prets], sujets[jalon] if jalon else None, restants, attente,
-                 [sujets[i] for i in basses])
+    # Les besoins : ceux qui n'ont plus de tâche ouverte sont à fermer, si
+    # l'une est faite, ou à découper, s'ils n'attendent plus rien.
+    taches: dict[str, list[Entree]] = {}
+    for e in entrees.values():
+        if est_tache(e) and besoin_de(e):
+            taches.setdefault(besoin_de(e), []).append(e)
+    a_fermer, a_decouper, attendent = [], [], []
+    for i in ouverts:
+        if not est_besoin(entrees[i]):
+            continue
+        siennes = taches.get(i, [])
+        if any(t.statut not in BACKLOG_CLOS for t in siennes):
+            continue
+        if any(t.statut == "fait" for t in siennes):
+            a_fermer.append(i)
+        elif g.attend(i):
+            attendent.append(i)
+        elif entrees[i].statut == "ouvert":
+            a_decouper.append(i)
+    # Ce qu'attendent celles qui ne sont pas prêtes : une entrée du backlog,
+    # une demande, ou les deux (B-0153).
+    attendus_ouverts = {i: g.attend(i)
+                        for i in [*(i for i in a_prendre if i not in prets and i not in basses), *attendent]}
+    attente_entree = sum(1 for ds in attendus_ouverts.values() if any(d in entrees for d in ds))
+    attente_demande = sum(1 for ds in attendus_ouverts.values() if any(d in demandes for d in ds))
+    avancement = [(d, g.ou_en_est(d)) for d in dict.fromkeys(dependances(lot))
+                  if not (d in entrees and est_lot(entrees[d]))] if lot else []
+    return Ordre([entrees[i] for i in prets], entrees[jalon] if jalon else None, restants, len(attendus_ouverts),
+                 [entrees[i] for i in basses], lot, avancement, attente_entree, attente_demande,
+                 [entrees[i] for i in sorted(a_decouper, key=cle)], [entrees[i] for i in a_fermer])
 
 
-def lignes_ordre(mem: "Memoire", plafond: int = 8) -> list[str]:
-    """L'ordre du backlog en lignes, pour l'état et le rappel de fin de tour."""
+# Où en est ce qu'un lot attend, tel que l'état le dit ; une tâche close ou
+# une demande répondue ne se détaille pas.
+AVANCEMENT = {"en-cours": a_traduire("en cours"), "bloque": a_traduire("bloqué"), "pret": a_traduire("prête"),
+              "attend": a_traduire("attend"), "sans-reponse": a_traduire("sans réponse"),
+              "inconnu": a_traduire("inconnu")}
+CLOS_DANS_UN_LOT = ("fait", "abandonne", "repondue")
+
+
+def _ids(entrees: list[Entree], plafond: int | None) -> str:
+    ids = ", ".join(e.id for e in entrees[:plafond])
+    if plafond is not None and len(entrees) > plafond:
+        ids = trad("{ids} … et {n} autre(s)", ids=ids, n=len(entrees) - plafond)
+    return ids
+
+
+def lignes_ordre(mem: "Memoire", plafond: int | None = 8, titre: int | None = None,
+                 basses: int | None = None) -> list[str]:
+    """L'ordre du backlog en lignes, pour l'état et le rappel de fin de tour :
+    `plafond` tâches prêtes au plus, `basses` tâches de priorité basse et
+    besoins par liste, chaque titre en `titre` octets au plus (sans limite :
+    `None`)."""
     o = ordre(mem)
     if o is None:
         return []
+
+    def t(e) -> str:
+        return outils.raccourcir(e.titre, titre) if titre else e.titre
+
     res = []
     if o.jalon:
-        res.append(trad("prochain jalon : {id} — {titre} ; reste : {restants}", id=o.jalon.id, titre=o.jalon.titre,
-                        restants=", ".join(o.restants) if o.restants else trad("rien, il se clôt")))
-    res += [trad("prêt : {id} — {titre} (priorité haute)", id=e.id, titre=e.titre) if priorite(e) == "haute"
-            else trad("prêt : {id} — {titre}", id=e.id, titre=e.titre) for e in o.prets[:plafond]]
-    if len(o.prets) > plafond:
-        res.append(trad("… et {n} autre(s) prêt(s)", n=len(o.prets) - plafond))
+        res.append(trad("prochain jalon : {id} — {titre} ; besoins ouverts : {restants}", id=o.jalon.id,
+                        titre=t(o.jalon), restants=", ".join(o.restants) if o.restants else trad("aucun, il se clôt")))
+    if o.lot:
+        reste = [(i, a) for i, a in o.avancement if a not in CLOS_DANS_UN_LOT]
+        res.append(trad("prochain lot : {id} — {titre} ; {clos} close(s) sur {total} ; reste : {restants}",
+                        id=o.lot.id, titre=t(o.lot), clos=len(o.avancement) - len(reste), total=len(o.avancement),
+                        restants=", ".join(f"{i} ({trad(AVANCEMENT.get(a, a))})" for i, a in reste)
+                        if reste else trad("rien, il se clôt")))
+    besoins = {b.id: b for b in mem.entrees("B")}
+    res += [trad("tâche prête : {id} — {titre} (priorité haute)", id=e.id, titre=t(e))
+            if priorite_effective(e, besoins) == "haute"
+            else trad("tâche prête : {id} — {titre}", id=e.id, titre=t(e)) for e in o.prets[:plafond]]
+    if plafond is not None and len(o.prets) > plafond:
+        res.append(trad("… et {n} autre(s) tâche(s) prête(s)", n=len(o.prets) - plafond))
     if o.basses:
-        res.append(trad("prêts aussi, de priorité basse : {ids}", ids=", ".join(e.id for e in o.basses)))
-    if o.en_attente:
-        res.append(trad("{n} sujet(s) attendent un sujet ouvert", n=o.en_attente))
+        res.append(trad("prêtes aussi, de priorité basse : {ids}", ids=_ids(o.basses, basses)))
+    if o.a_fermer:
+        res.append(trad("besoins à fermer, leurs tâches closes : {ids}", ids=_ids(o.a_fermer, basses)))
+    if o.a_decouper:
+        res.append(trad("besoins à découper en tâches : {ids}", ids=_ids(o.a_decouper, basses)))
+    if o.attendent_une_entree:
+        res.append(trad("{n} entrée(s) attendent une entrée ouverte du backlog", n=o.attendent_une_entree))
+    if o.attendent_une_demande:
+        res.append(trad("{n} entrée(s) attendent une demande sans réponse", n=o.attendent_une_demande))
     return res
+
+
+def lots_trop_longs(mem: "Memoire", seuil: int | float) -> list[str]:
+    """Pour l'état et le rappel de fin de tour, un avertissement, sur une
+    ligne, qui nomme chaque lot ouvert attendant encore plus de `seuil`
+    tâches ouvertes, en cours ou bloquées : il ne se mène pas en une
+    session (B-0233). Seul le nombre se juge : l'état ne sait pas quels
+    fichiers touchera une tâche pas encore faite. Rien n'en échoue."""
+    g = Graphe(mem)
+    longs = []
+    for i in g.ouverts:
+        if not est_lot(g.entrees[i]):
+            continue
+        n = sum(1 for d in dict.fromkeys(dependances(g.entrees[i]))
+                if d in g.entrees and est_tache(g.entrees[d]) and g.ouvert(d))
+        if n > seuil:
+            longs.append(trad("{id} ({n} tâches)", id=i, n=n))
+    if not longs:
+        return []
+    return [trad("!! {n} lot(s) attendent encore plus de tâches qu'une session n'en mène (seuil : {seuil}, "
+                 "`[batches] max_tasks` des garde-fous) : {lots} ; les couper en lots, ou en faire un jalon et former "
+                 "leurs lots dessous", n=len(longs), seuil=seuil, lots=", ".join(longs))]
 
 
 def empreinte_index(mem: "Memoire", index: str, sauf: set[str] = frozenset()) -> str:
@@ -727,4 +1193,19 @@ def citations_index(texte: str) -> list[tuple[str, str, int]]:
     for i, ligne, code in lignes_hors_code(texte):
         if not code:
             res += [(m["index"], m["empreinte"], i) for m in INDEX_RE.finditer(ligne)]
+    return res
+
+
+def mentions_nues(texte: str, types: tuple[str, ...]) -> list[tuple[str, int]]:
+    """Les identifiants de ces types mentionnés hors des blocs de code
+    clôturés sans leur empreinte (`C-0003`, pas `C-0003@1a2b3c4d`), avec
+    leur ligne."""
+    res = []
+    for i, ligne, code in lignes_hors_code(texte):
+        if code:
+            continue
+        cites = {m.start() for m in CITATION_RE.finditer(ligne)}
+        for m in ID_RE.finditer(ligne):
+            if m["type"] in types and id_valide(m["type"], m["num"]) and m.start() not in cites:
+                res.append((m.group(0), i))
     return res

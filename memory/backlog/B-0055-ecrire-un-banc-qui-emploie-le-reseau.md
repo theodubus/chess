@@ -13,7 +13,7 @@ c'est le préalable à toute mesure de vitesse de l'inférence et à tout
 ses tests et le crible de `engine/src/eval.rs` : il se conçoit, il ne se
 bricole pas.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si décidé : un banc mesure la vitesse de l'évaluation qui joue, et `CLAUDE.md` le dit

@@ -7,7 +7,7 @@ Deuxième axe d'architecture. L'inférence multicouche est écrite dans le
 moteur depuis le 2 nov. 2026 et n'a jamais été confrontée à l'entraîneur :
 aucun réseau de cette forme n'existe. Marge inconnue.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] le programme d'entraînement produit un réseau à couches cachées
 - [ ] l'inférence du moteur est confrontée à l'entraîneur sur ce réseau, au critère des autres : écart médian de 15 centièmes au plus, maximal de 50

@@ -13,7 +13,7 @@ rattrapent, s'ils sont lancés. Dès que B-0013 aura embarqué un réseau
 d'une autre architecture que N9w50s800, les candidats suivants (B-0020,
 puis B-0021 et B-0022) sortent de son domaine.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] une option inconnue, ou une valeur qu'il ne prend pas en charge, le fait échouer avant d'écrire
 - [ ] `largeur` et `seaux` partent de l'architecture en place, quelle qu'elle soit

@@ -119,13 +119,18 @@ def recuperer_pull_requests(racine: Path) -> bool:
     processus. GitHub garde le commit d'une pull request même quand sa
     branche est supprimée ou fusionnée par écrasement, mais un clone ne
     récupère que les branches et les étiquettes : un commit que la mémoire
-    cite disparaissait ainsi de la CI (B-0117). Sans origine ou sans
-    réseau, rien n'est récupéré, et rien n'échoue."""
+    cite disparaissait ainsi de la CI (B-0117). L'origine qui est elle-même
+    un clone, hors de GitHub, n'a que les copies qu'elle en a récupérées :
+    elles se récupèrent de même, avant celles de GitHub, qui priment
+    (B-0175). Sans origine ou sans réseau, rien n'est récupéré, et rien
+    n'échoue."""
     cle = str(Path(racine).resolve())
     if cle in _PULL_REQUESTS_RECUPEREES:
         return False
     _PULL_REQUESTS_RECUPEREES.add(cle)
-    return git_reussit(racine, "fetch", "--quiet", "--no-tags", "origin", "+refs/pull/*/head:refs/socle/pull/*")
+    copies = git_reussit(racine, "fetch", "--quiet", "--no-tags", "origin", "+refs/socle/pull/*:refs/socle/pull/*")
+    return git_reussit(racine, "fetch", "--quiet", "--no-tags", "origin",
+                       "+refs/pull/*/head:refs/socle/pull/*") or copies
 
 
 def etiqueter(commits: list[str]) -> str:
@@ -442,6 +447,20 @@ def base_de_travail(racine: Path) -> str | None:
     return r.stdout.strip()
 
 
+def parent_de_l_ajout(racine: Path, rev: str, chemin: str) -> str | None:
+    """Le premier parent du dernier commit qui a ajouté `chemin` dans
+    l'historique de `rev`, ses renommages suivis : le dépôt tel qu'il était
+    juste avant. Une fusion par squash ou par rebase garde ce parent avant
+    le changement, comme un commit de fusion. `None` si cet historique
+    manque : un clone partiel, dont le commit de bord paraît tout ajouter
+    sans parent lisible, ou un commit racine."""
+    sortie = git(racine, "log", "--follow", "--diff-filter=A", "--format=%H", rev, "--", chemin, check=False)
+    shas = sortie.split()
+    if not shas:
+        return None
+    return git(racine, "rev-parse", "--verify", "-q", f"{shas[0]}^1", check=False).strip() or None
+
+
 def commits(racine: Path, base: str | None, tete: str = "HEAD") -> list[dict]:
     """Les commits de `base..tete`, du plus ancien au plus récent."""
     plage = tete if base in (None, ARBRE_VIDE) else f"{base}..{tete}"
@@ -470,6 +489,22 @@ def trailers(message: str) -> dict[str, list[str]]:
         m = TRAILER.match(ligne)
         if m:
             res.setdefault(m.group(1).lower(), []).append(m.group(2))
+    return res
+
+
+def trailers_hors_bloc(message: str) -> dict[str, list[str]]:
+    """Les lignes en forme de trailer écrites hors du dernier paragraphe d'un
+    message de commit, où ni git ni `trailers` ne les lisent (un paragraphe à
+    part, avant celui des lignes d'attribution), clés en minuscules. La ligne
+    de sujet n'en est jamais une ; un message d'un seul paragraphe n'a pas de
+    bloc final, toutes ses autres lignes sont hors bloc."""
+    paragraphes = [p for p in re.split(r"\n\s*\n", message.strip()) if p.strip()]
+    res: dict[str, list[str]] = {}
+    for i, p in enumerate(paragraphes[:-1] if len(paragraphes) >= 2 else paragraphes):
+        for ligne in p.splitlines()[1 if i == 0 else 0:]:
+            m = TRAILER.match(ligne)
+            if m:
+                res.setdefault(m.group(1).lower(), []).append(m.group(2))
     return res
 
 
@@ -530,6 +565,17 @@ def sha256(donnees: bytes | str) -> str:
     if isinstance(donnees, str):
         donnees = donnees.encode("utf-8")
     return hashlib.sha256(donnees).hexdigest()
+
+
+def raccourcir(texte: str, octets: int) -> str:
+    """Le texte en `octets` octets UTF-8 au plus : coupé entre deux
+    caractères, sa fin remplacée par « … » quand il dépasse."""
+    brut = texte.encode("utf-8")
+    if len(brut) <= octets:
+        return texte
+    if octets < 3:  # « … » seul ne tiendrait pas
+        return brut[:max(0, octets)].decode("utf-8", errors="ignore")
+    return brut[:octets - 3].decode("utf-8", errors="ignore").rstrip() + "…"
 
 
 def ecrire(chemin: Path, texte: str, executable: bool = False):

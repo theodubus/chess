@@ -32,7 +32,7 @@ Les dix seaux de roi paient-ils encore à 512 unités ? Écrit le 10 nov.
   prédit, écrits avant le match : le premier point de B-0071, quatre
   minutes de runner, qui ne décide rien.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] les quatre travaux sont relevés, leurs avertissements lus
 - [ ] le verdict est écrit au journal, avec son intervalle et son homogénéité
