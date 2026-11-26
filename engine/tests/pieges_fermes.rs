@@ -2,9 +2,9 @@
 //! nomme.
 //!
 //! **Pourquoi ce test existe.** `tools/pieges-fermes.md` porte les pièges
-//! retirés de `CLAUDE.md` au motif qu'un code de sortie les rend désormais
+//! retirés des instructions au motif qu'un code de sortie les rend désormais
 //! inexprimables. Le fichier annonce sa propre condition de sortie — *si un de
-//! ces dispositifs disparaît, son piège revient dans `CLAUDE.md`* — et rien ne
+//! ces dispositifs disparaît, son piège revient dans `AGENTS.md`* — et rien ne
 //! la vérifiait. **Un fichier qui affirme quelque chose sur le code est
 //! exactement ce que ce dépôt a appris à ne pas croire sur parole** : c'est la
 //! faute de `tools/attic/README.md`, dont trois lignes sur sept étaient
@@ -58,7 +58,7 @@ fn chaque_piege_archive_nomme_un_dispositif_qui_existe() {
         .unwrap_or_else(|e| panic!("{ARCHIVE} illisible : {e}"));
 
     // Une puce sans ligne « Tenu par » est un piège archivé sans raison de
-    // l'être : il aurait dû rester dans CLAUDE.md.
+    // l'être : il aurait dû rester dans AGENTS.md.
     let puces = texte.lines().filter(|l| l.starts_with("- **")).count();
     let tenus: Vec<&str> = texte.lines().filter(|l| l.contains(MARQUEUR)).collect();
     assert_eq!(
@@ -109,9 +109,11 @@ fn chaque_piege_archive_nomme_un_dispositif_qui_existe() {
 #[test]
 fn larchive_reste_atteignable_depuis_claude_md() {
     // Un fichier que rien ne nomme est un fichier qu'aucune session ne lira.
-    // Le renvoi de CLAUDE.md est la seule porte d'entrée de cette archive.
+    // Le renvoi des instructions est la seule porte d'entrée de cette
+    // archive. Elles vivent dans `AGENTS.md`, que `CLAUDE.md` importe en une
+    // ligne (D-0029) : c'est lui qui doit la nommer.
     let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/.."));
-    let claude = std::fs::read_to_string(root.join("CLAUDE.md")).unwrap();
+    let claude = std::fs::read_to_string(root.join("AGENTS.md")).unwrap();
     assert!(
         claude.contains(ARCHIVE),
         "CLAUDE.md ne nomme plus {ARCHIVE} : l'archive devient injoignable, et \

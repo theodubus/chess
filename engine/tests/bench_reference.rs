@@ -187,7 +187,9 @@ fn les_references_du_bench_dans_la_doc_sont_a_jour() {
     // Un parcours cassé ne doit pas se traduire par « aucune référence, donc
     // rien à vérifier » : ces deux fichiers existent, leur absence signale que
     // c'est le contrôle qui est en panne, pas la documentation qui est propre.
-    for attendu in ["CLAUDE.md", "README.md"] {
+    // Les instructions vivent dans `AGENTS.md`, que `CLAUDE.md` importe en
+    // une ligne (D-0029) : c'est lui qui porte la référence du banc.
+    for attendu in ["AGENTS.md", "README.md"] {
         assert!(
             docs.iter().any(|(nom, _)| nom == attendu),
             "le parcours n'a pas trouvé {attendu} : c'est le contrôle qui est cassé.\n\
@@ -301,6 +303,7 @@ fn le_parcours_trouve_la_documentation_du_depot() {
     let noms: Vec<&str> = docs.iter().map(|(nom, _)| nom.as_str()).collect();
 
     assert!(noms.contains(&"CLAUDE.md"), "vus : {noms:?}");
+    assert!(noms.contains(&"AGENTS.md"), "vus : {noms:?}");
     assert!(noms.contains(&"README.md"), "vus : {noms:?}");
     // Un fichier en sous-répertoire, pour prouver que le parcours descend.
     assert!(

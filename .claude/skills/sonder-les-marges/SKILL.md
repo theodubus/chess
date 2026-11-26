@@ -6,7 +6,7 @@ description: Mesurer le facteur des marges d'un réseau candidat avant son match
 # Sonder les marges d'un réseau candidat
 
 L'aspiration et l'élagage delta sont des marges en unités d'évaluation,
-multipliées par le facteur du réseau qui joue (F-0008, `CLAUDE.md`,
+multipliées par le facteur du réseau qui joue (F-0008, `AGENTS.md`,
 « Invariants du moteur »). **Le facteur appartient au réseau** : un
 candidat qui porterait des nombres plus grands jouerait son match à des
 marges trop serrées, et le match mêlerait la valeur du réseau à celle de

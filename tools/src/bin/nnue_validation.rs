@@ -17,7 +17,7 @@
 //!
 //! **Ce qu'elle ne dit pas : la force.** Une erreur de prédiction tenue à
 //! l'écart n'est pas un substitut à la force de jeu — l'ajustement Texel
-//! prédisait 7,8 % mieux et jouait 25 Elo plus mal (`CLAUDE.md`). Elle
+//! prédisait 7,8 % mieux et jouait 25 Elo plus mal (`AGENTS.md`). Elle
 //! diagnostique ; les matchs décident.
 //!
 //! # Ce qui est mesuré, et pourquoi c'est la perte de l'entraîneur

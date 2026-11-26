@@ -11,7 +11,7 @@ authors    = ["theodubus"]
 
 [workspace.lints.rust]
 # `deny` et non `forbid` : un seul module peut l'autoriser, le produit
-# scalaire AVX2 de `engine/src/nnue.rs` (Théo, 20 oct. 2026, `CLAUDE.md`,
+# scalaire AVX2 de `engine/src/nnue.rs` (Théo, 20 oct. 2026, `AGENTS.md`,
 # Style). Partout ailleurs, `unsafe` reste refusé.
 unsafe_code = "deny"
 missing_docs = "warn"

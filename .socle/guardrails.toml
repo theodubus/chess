@@ -15,8 +15,8 @@ code = []
 # et le fichier d'instructions en ont un. Au-delà, une couche s'archive dans
 # le journal ; le fichier d'instructions resserre sa partie propre au projet.
 [budgets]
-"CLAUDE.md" = { max_bytes = 65000 }
-"AGENTS.md" = { max_bytes = 16000 }
+"CLAUDE.md" = { max_bytes = 64 }
+"AGENTS.md" = { max_bytes = 65000 }
 "memory/canonical.md" = { max_bytes = 20000 }
 "memory/active.md" = { max_bytes = 1650 }
 "memory/directives.md" = { max_bytes = 16000 }

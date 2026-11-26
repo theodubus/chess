@@ -1,13 +1,13 @@
 # Pièges fermés par un code de sortie
 
 Ces pièges ont chacun coûté une mesure, une journée, ou les deux. Ils ne sont
-plus dans `CLAUDE.md` — non parce qu'ils seraient réglés, mais parce qu'**un
+plus dans `AGENTS.md` — non parce qu'ils seraient réglés, mais parce qu'**un
 dispositif les rend désormais inexprimables**. Une règle qu'un code de sortie
 impose n'a pas besoin d'être relue à chaque session ; elle a besoin d'être
 trouvable le jour où le dispositif se déclenche et qu'on se demande pourquoi.
 
 **Critère d'entrée ici : un code de sortie, pas une bonne résolution.** Un
-piège que seul le jugement protège reste dans `CLAUDE.md`, et c'est là que
+piège que seul le jugement protège reste dans `AGENTS.md`, et c'est là que
 vivent les plus chers — la cadence qui possède le verdict, le dénominateur, la
 ressource totale confondue avec l'allocation par unité.
 
@@ -16,7 +16,7 @@ et sa preuve de l'autre, ce sont deux copies qui dérivent, et ce dépôt a déj
 payé cette faute-là. La seule ligne ajoutée à chacun est celle qui nomme son
 dispositif.
 
-**Si l'un de ces dispositifs disparaît, son piège revient dans `CLAUDE.md`.**
+**Si l'un de ces dispositifs disparaît, son piège revient dans `AGENTS.md`.**
 C'est la seule condition de sortie de ce fichier.
 
 - **Un bench à profondeur 7 est trop court pour comparer des temps.** Le

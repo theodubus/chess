@@ -7,7 +7,7 @@ description: Préparer et lancer un match de mesure entre deux commits du moteur
 
 Un match coûte des heures de runner ; ce qui le rend lisible s'écrit
 avant qu'il parte, jamais après avoir vu un chiffre. Les règles qui le
-fondent sont dans `CLAUDE.md` (« Ce qui compte comme preuve », « Pièges de
+fondent sont dans `AGENTS.md` (« Ce qui compte comme preuve », « Pièges de
 mesure ») ; l'outil, ses entrées et ses refus, dans `tools/README.md`
 (« Mesurer à cadence longue », « Paralléliser les matchs », « La
 concurrence d'un match »). Ce skill en est la procédure.
@@ -20,7 +20,7 @@ concurrence d'un match »). Ce skill en est la procédure.
   --comparer <a> <b>` confronte le banc ET les six positions au réseau,
   nœuds et coup. Identiques au bit près : pas de match, une mesure de
   temps (ADR-0036), et `tools/timing.sh` ne vaut que pour la faite main
-  (`CLAUDE.md`, « c'est plus rapide »). Sinon, un match.
+  (`AGENTS.md`, « c'est plus rapide »). Sinon, un match.
 - **Un réseau candidat** passe d'abord par le skill `sonder-les-marges` ;
   son embarquement suit le skill `embarquer-un-reseau`.
 - **Un commit révoqué aussitôt**, fusionné en `merge` pour que son SHA
@@ -40,7 +40,7 @@ Au journal, une entrée datée, avant le premier job :
 - **le critère**, tel qu'il se lira : un gain fusionne si la borne basse
   commune est au-dessus de zéro et qu'aucun job ne le contredit ; un
   correctif de règle, sauf si la borne haute est sous zéro, sur chaque
-  match comme sur l'ensemble (`CLAUDE.md`) ; deux candidats contre la même
+  match comme sur l'ensemble (`AGENTS.md`) ; deux candidats contre la même
   base se départagent par leur match direct (`rendre-un-verdict`) ;
 - **la puissance** : à longueur fixe, l'intervalle décroît en 1/√n, et
   ± E demande environ 11 200 × (3,5 / E)² parties (F-0016) ; un SPRT se

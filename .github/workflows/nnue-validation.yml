@@ -7,7 +7,7 @@
 # stockage, vérifié le 14 oct. 2026.
 #
 # Ce que la perte dit : si un réseau apprend ou retient. Ce qu'elle ne dit
-# pas : sa force — les matchs décident (`CLAUDE.md`, « cette valeur
+# pas : sa force — les matchs décident (`AGENTS.md`, « cette valeur
 # d'évaluation est meilleure »).
 name: NNUE — perte tenue à l'écart
 

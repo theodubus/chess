@@ -39,7 +39,7 @@ pub const DEFAULT_DEPTH: u32 = 7;
 ///
 /// Le total est rendu et pas seulement imprimé parce qu'il est le seul chiffre
 /// déterministe du rapport : `engine/tests/bench_reference.rs` s'en sert pour
-/// vérifier que la référence inscrite dans `CLAUDE.md` n'a pas vieilli. Sans
+/// vérifier que la référence inscrite dans `AGENTS.md` n'a pas vieilli. Sans
 /// cela il faudrait relire la sortie standard, ce qui lierait un test au
 /// format d'affichage.
 ///
@@ -101,7 +101,7 @@ mod tests {
 
     #[test]
     fn le_total_rendu_est_celui_qui_est_imprime() {
-        // Le test de référence compare le chiffre de `CLAUDE.md` à la valeur
+        // Le test de référence compare le chiffre de `AGENTS.md` à la valeur
         // rendue par `run`. Si celle-ci divergeait du total imprimé, le test
         // garderait honnête un chiffre que personne ne lit.
         let total = run(3).unwrap();

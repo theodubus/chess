@@ -32,8 +32,15 @@ tests et chaque renvoi du dépôt qui désigne les instructions par
   objet : le baisser est libre, le retirer se juge d'abord par
   `python3 .socle/socle check`.
 
+**Fait le 26 nov. 2026** (J-2026-11-26-K) : le relevé ci-dessus se
+trompait sur l'attic, trois rustines (c72, c73, c74) touchant `CLAUDE.md`
+et s'appliquant sur `main` : leur chemin passe à `AGENTS.md`. Les messages
+d'échec des trois tests attendent D-0030 (T-0005). Le troisième critère
+se constate dans le contexte de la session neuve : un `claude -p` lancé
+d'ici ne charge aucun `CLAUDE.md`.
+
 ## Fait quand
 
 - [ ] `tools/verify.sh` passe, les trois tests lisant AGENTS.md
-- [ ] `python3 .socle/socle check` passe, le budget d'AGENTS.md à 65 000
+- [x] `python3 .socle/socle check` passe, le budget d'AGENTS.md à 65 000
 - [ ] une session neuve de Claude Code reçoit les instructions par l'import

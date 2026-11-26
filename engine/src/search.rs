@@ -2696,7 +2696,7 @@ fn see_prunable(board: &Board, mv: Move, in_check: bool) -> bool {
 /// la 12. La marge croît avec la profondeur : plus il reste à chercher, plus
 /// une perte apparente a de place pour se racheter. **En unités de l'échange,
 /// pas de l'évaluation** — `see` compte en valeurs de pièces fixes, que le
-/// réseau ne change pas (`CLAUDE.md`, « une marge … se mesure à l'échelle de
+/// réseau ne change pas (`AGENTS.md`, « une marge … se mesure à l'échelle de
 /// l'évaluation qui joue », ne s'applique pas ici).
 fn see_prunable_main(board: &Board, mv: Move, depth: i32) -> bool {
     let Some(victim) = captured_piece(board, mv) else {
@@ -4309,7 +4309,7 @@ mod tests {
     /// génération par étapes (A18) a changé l'arbre de cette position-là, et
     /// sa PV finale ne passait plus par la quiescence fautive. Le balayage de
     /// mutation qui a suivi la fusion l'a rendu survivant. Une propriété
-    /// générale assertée sur UNE position passe par chance (`CLAUDE.md`).
+    /// générale assertée sur UNE position passe par chance (`AGENTS.md`).
     ///
     /// Une seule recherche pour tout l'échantillon : la table reste chaude
     /// d'une position à l'autre, comme en partie, et le test coûte 0,4 s en
@@ -5366,7 +5366,7 @@ mod tests {
         // La confrontation du début de `negamax` ne vaut que si une vraie
         // recherche en pose la base : sans elle, elle se tait, et toute la
         // suite resterait verte — la faute d'un compteur que rien ne fait
-        // passer (`CLAUDE.md`, A21). La racine la pose ; ce test le vérifie.
+        // passer (`AGENTS.md`, A21). La racine la pose ; ce test le vérifie.
         let position = Position::startpos();
         let mut s = search();
         s.go(

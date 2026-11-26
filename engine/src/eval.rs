@@ -901,7 +901,7 @@ mod tests {
 
     /// Toutes les positions de ces tests sont validées par exécution avant
     /// d'être inscrites — une position dérivée de tête s'est révélée illégale
-    /// trois fois sur ce projet. Voir le piège correspondant dans CLAUDE.md.
+    /// trois fois sur ce projet. Voir le piège correspondant dans AGENTS.md.
     #[test]
     fn une_piece_qui_voit_plus_de_cases_vaut_plus() {
         // Même matériel, même camp, seule la case change. Sans terme de

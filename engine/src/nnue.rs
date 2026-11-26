@@ -538,7 +538,7 @@ fn dot_scalar(values: &[i16], weights: &[i16]) -> i64 {
 /// Le produit scalaire en instructions AVX2 écrites à la main — le seul
 /// `unsafe` du dépôt. Théo, 20 oct. 2026 : « *Si annuler cette décision
 /// augmente l'elo long terme, je le fais. Le but absolu est la perf* ». Les
-/// conditions écrites le même jour (`CLAUDE.md`, Style) : confiné à ce
+/// conditions écrites le même jour (`AGENTS.md`, Style) : confiné à ce
 /// module, derrière la détection du jeu d'instructions, confronté en test au
 /// calcul scalaire, entré seulement s'il rend du temps à arbre identique.
 ///

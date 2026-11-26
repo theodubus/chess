@@ -11,6 +11,26 @@ passe de 16 000 à 65 000 octets, et les trois tests qui lisent
 `engine/tests/pieges_fermes.rs`, `engine/tests/outillage_documente.rs`)
 s'adaptent.
 
+## Modèle de menace
+
+Écrit le 26 nov. 2026 avec T-0004, après le code mais avant sa revue.
+
+- **Le budget d'AGENTS.md (65 000 octets)** arrête la croissance des
+  instructions au-delà de ce que Théo a validé, chaque octet se relisant
+  à chaque session ; il laisse passer tout ce qui tient dessous, et ne dit
+  rien de la qualité. Avec 64 788 octets au passage, la marge est de
+  212 : une règle nouvelle en appelle une ancienne archivée au journal.
+- **Le budget de `CLAUDE.md` (64 octets, baissé de 65 000)** arrête qu'une
+  copie des instructions y revienne ; `instructions.source-unique` du
+  socle l'arrête déjà, plus strictement (la seule ligne `@AGENTS.md`).
+- **Les trois tests** arrêtent que le fichier d'instructions manque sans
+  bruit : la référence du banc, le renvoi vers l'archive des pièges et
+  le nom de chaque dispositif se cherchent dans `AGENTS.md`, et chacun
+  des trois fichiers a un test qui tombe sans lui. Ils laissent passer un
+  `CLAUDE.md` qui n'importerait plus `AGENTS.md` (le contrôle du socle le
+  garde) et l'agent qui n'en chargerait aucun (rien ne le garde dans le
+  dépôt : la session neuve le constate).
+
 ## Satisfait quand
 
 - [ ] un agent qui ne lit qu'AGENTS.md y trouve toutes les instructions du projet, et Claude Code les charge toujours par `CLAUDE.md`

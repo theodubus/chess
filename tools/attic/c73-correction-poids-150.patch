@@ -13,16 +13,16 @@ CORRECTION_WEIGHT de 100 à 150, sur main qui porte C71 : les tables apprennent 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_011QmyEJPgm9NaJ5124tmeJj
 ---
- CLAUDE.md                       | 2 +-
+ AGENTS.md                       | 2 +-
  README.md                       | 2 +-
  engine/src/search.rs            | 2 +-
  engine/tests/bench_reference.rs | 2 +-
  4 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/CLAUDE.md b/CLAUDE.md
+diff --git a/AGENTS.md b/AGENTS.md
 index 3140eac..be5b1e2 100644
---- a/CLAUDE.md
-+++ b/CLAUDE.md
+--- a/AGENTS.md
++++ b/AGENTS.md
 @@ -1246,7 +1246,7 @@
  aux règles du jeu et aux invariants de recherche ; noter le reste dans le
  plafond, avec sa raison, jamais dans une liste de tâches.

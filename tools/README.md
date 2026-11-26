@@ -109,7 +109,7 @@ mis en commun (« Paralléliser les matchs »). Préparer un match : le skill
 `lancer-un-match` ; le lire, et lire un match coupé par le plafond : le skill
 `rendre-un-verdict`.
 
-**La cadence appartient au verdict** (`CLAUDE.md`, « Ce qui compte comme
+**La cadence appartient au verdict** (`AGENTS.md`, « Ce qui compte comme
 preuve ») ; la profondeur atteinte à chaque cadence est dans F-0016. Le
 récit qui a fondé ces règles est au journal (J-2026-11-23-B à
 J-2026-11-23-E).
@@ -455,7 +455,7 @@ message suffit au diagnostic :
    binpack se relit bloc par bloc, et un fichier tronqué se refuse ;
 2. **entraîner** ;
 3. **confronter** le réseau quantifié, rechargé par le moteur, à
-   l'entraîneur (`CLAUDE.md`, « ce réseau est celui qu'a entraîné
+   l'entraîneur (`AGENTS.md`, « ce réseau est celui qu'a entraîné
    bullet ») ; la fin heureuse est `RÉSEAU PRÊT : <chemin>`.
 
 **Les données** : des `.vf` posés directement dans les dossiers donnés au
@@ -597,7 +597,7 @@ contrôle qui bloque une heure finit par être contourné. Il tourne donc
 chaque semaine : workflow `Mutation`, mardi 00:00 UTC, un job par fichier
 en parallèle — par morceau pour un fichier trop long, `search.rs 0/2` dans
 la matrice, le verdict sommant les morceaux ; sa durée par fichier,
-`CLAUDE.md`, « Sa durée ».
+`AGENTS.md`, « Sa durée ».
 
 ```sh
 cargo install cargo-mutants --locked
@@ -612,7 +612,7 @@ qui force l'échec pour éprouver l'issue, et `commit`, qui balaie un SHA au
 lieu de la tête de la branche — le crible d'un candidat révoqué — sans
 jamais ouvrir d'issue, le cliquet gardant `main`. Le reste de l'outillage automatique — le hook de chess,
 `.claude/hooks/no-fabricated-sha.sh`, et l'auto-test des hooks,
-`tools/verify-hooks.sh` — est décrit dans `CLAUDE.md`, section « Les
+`tools/verify-hooks.sh` — est décrit dans `AGENTS.md`, section « Les
 dispositifs de chess ».
 
 **Toujours passer par `tools/mutants.sh`, jamais par `cargo mutants` nu.** Il
@@ -674,7 +674,7 @@ test.
 L'archive des pièges qu'un dispositif rend inexprimables, chacun entier avec
 sa preuve ; son en-tête dit son critère d'entrée et sa condition de sortie.
 `engine/tests/pieges_fermes.rs` vérifie que chaque piège archivé nomme un
-dispositif qui existe, et que `CLAUDE.md` nomme toujours l'archive.
+dispositif qui existe, et que `AGENTS.md` nomme toujours l'archive.
 
 ## `tools/etat.sh` — l'état calculé, à lancer à la main
 

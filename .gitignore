@@ -35,7 +35,7 @@ dist/
 # parte pas dans un commit.
 /.claude/carnet.local
 
-# Trace locale des hooks du socle (voir CLAUDE.md)
+# Trace locale des hooks du socle (voir AGENTS.md)
 /.socle/trace/
 __pycache__/
 

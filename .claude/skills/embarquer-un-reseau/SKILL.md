@@ -7,7 +7,7 @@ description: Faire d'un réseau NNUE entraîné le réseau qui joue — le candi
 
 Un réseau mal branché ne fait rien planter : il joue mal. Chaque étape
 ci-dessous a rattrapé, au moins une fois, une faute qu'aucune autre ne
-voyait. Les règles sont dans `CLAUDE.md` (les invariants du réseau, « ce
+voyait. Les règles sont dans `AGENTS.md` (les invariants du réseau, « ce
 réseau est celui qu'a entraîné bullet ») ; les récits des embarquements,
 du n° 7 au n° 20, au journal. Ce skill appelle les skills `sonder-les-marges`,
 `lancer-un-match`, `rendre-un-verdict`, `mesurer-l-inference` et

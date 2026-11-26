@@ -132,7 +132,7 @@ jobs:
         run: tools/setup-arbiters.sh
 
       # Monofil sans ponder : un seul moteur réfléchit à la fois par partie,
-      # d'où trois parties sur les quatre processeurs (`CLAUDE.md`).
+      # d'où trois parties sur les quatre processeurs (`AGENTS.md`).
       - name: Jouer
         shell: bash
         run: |
