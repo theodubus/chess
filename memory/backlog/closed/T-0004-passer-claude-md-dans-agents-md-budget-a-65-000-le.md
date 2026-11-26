@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # T-0004 — Passer CLAUDE.md dans AGENTS.md, budget à 65 000, les trois tests adaptés
 
-> statut : ouvert · origine : J-2026-11-26-E · besoin : B-0082 · lu : backlog@b1503ac2
+> statut : fait · origine : J-2026-11-26-E · besoin : B-0082 · ref : J-2026-11-26-O · lu : backlog@b1503ac2
 
 Un commit : le contenu de `CLAUDE.md` déplacé dans `AGENTS.md` par
 `git mv`, pour garder son histoire ; `CLAUDE.md` réduit à l'import ; le
@@ -43,4 +43,4 @@ d'ici ne charge aucun `CLAUDE.md`.
 
 - [x] `tools/verify.sh` passe, les trois tests lisant AGENTS.md
 - [x] `python3 .socle/socle check` passe, le budget d'AGENTS.md à 65 000
-- [ ] une session neuve de Claude Code reçoit les instructions par l'import
+- [x] une session neuve de Claude Code reçoit les instructions par l'import (la sonde de J-2026-11-26-O)
