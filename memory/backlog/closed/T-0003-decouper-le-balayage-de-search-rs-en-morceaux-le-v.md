@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # T-0003 — Découper le balayage de search.rs en morceaux, le verdict sommant les morceaux
 
-> statut : en cours · origine : J-2026-11-23-J · besoin : B-0075 · lu : backlog@b1503ac2
+> statut : fait · origine : J-2026-11-23-J · besoin : B-0075 · ref : J-2026-11-26-G · lu : backlog@b1503ac2
 
 Le job de `engine/src/search.rs` du balayage hebdomadaire a pris 218,
 264 puis 208 minutes les 10, 17 et 24 nov. 2026, pour une limite de 350
@@ -52,6 +52,6 @@ seul morceau, ce que le décompte de garde de chaque morceau confirmerait
 
 ## Fait quand
 
-- [ ] l'auto-test du verdict passe, avec des cas qui somment des morceaux et refusent un morceau absent, coupé, d'un autre découpage, ou doublé d'un résumé entier
-- [ ] `engine/tests/couverture_mutation.rs` refuse une matrice aux morceaux incomplets, éprouvé sur une liste fabriquée
-- [ ] la matrice découpe `search.rs` en deux morceaux
+- [x] l'auto-test du verdict passe, avec des cas qui somment des morceaux et refusent un morceau absent, coupé, d'un autre découpage, ou doublé d'un résumé entier
+- [x] `engine/tests/couverture_mutation.rs` refuse une matrice aux morceaux incomplets, éprouvé sur une liste fabriquée
+- [x] la matrice découpe `search.rs` en deux morceaux

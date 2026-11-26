@@ -10,7 +10,7 @@ VERDICT="$ICI/mutation-verdict.sh"
 BAC=$(mktemp -d)
 trap 'rm -rf "$BAC"' EXIT
 
-ATTENDUS=11
+ATTENDUS=17
 vus=0
 echecs=0
 
@@ -28,6 +28,23 @@ resume() { # resume <dossier> <fichier> <manques> [survivant...]
         for s in "$@"; do echo "$s"; done
         echo "--- fin ---"
     } > "$d/resume-$f.txt"
+}
+
+morceau() { # morceau <dossier> <fichier> <k> <n> <manques> [survivant...]
+    local d=$1 f=$2 k=$3 n=$4 m=$5
+    shift 5
+    mkdir -p "$d"
+    {
+        echo "fichier=$f"
+        echo "morceau=$k/$n"
+        echo "manques=$m"
+        echo "attrapes=10"
+        echo "expires=1"
+        echo "inviables=0"
+        echo "--- survivants ---"
+        for s in "$@"; do echo "$s"; done
+        echo "--- fin ---"
+    } > "$d/resume-$f.morceau-$k-sur-$n.txt"
 }
 
 cas() { # cas <intitulé> <code attendu> <motif attendu dans la sortie> <dossier> <plafond>
@@ -98,6 +115,54 @@ resume "$BAC/incomplet" a.rs 5
     echo "--- fin ---"
 } > "$BAC/incomplet/resume-b.rs.txt"
 cas "un balayage interrompu casse" 1 "RÉSUMÉ ILLISIBLE" "$BAC/incomplet" "$BAC/plafond.txt"
+
+# Un fichier découpé par `cargo mutants --shard` laisse un résumé par
+# morceau, et ses comptes sont leur SOMME. Trois et trois survivants
+# passent chacun sous le plafond de 5 ; seule la somme le dépasse.
+morceau "$BAC/somme" a.rs 0 2 3
+morceau "$BAC/somme" a.rs 1 2 3
+resume "$BAC/somme" b.rs 0
+cas "les morceaux se somment, et leur somme casse" 1 "HAUSSE (+1)" "$BAC/somme" "$BAC/plafond.txt"
+
+# Au plafond, la somme passe, et les survivants de chaque morceau se lisent.
+morceau "$BAC/morceaux" a.rs 0 2 3 "a.rs:1:1 un"
+morceau "$BAC/morceaux" a.rs 1 2 2 "a.rs:9:9 deux"
+resume "$BAC/morceaux" b.rs 0
+cas "deux morceaux au plafond passent, survivants compris" 0 "a.rs:9:9 deux" "$BAC/morceaux" "$BAC/plafond.txt"
+
+# Un morceau manquant se lirait comme un fichier mieux couvert.
+morceau "$BAC/morceau-absent" a.rs 0 2 3
+resume "$BAC/morceau-absent" b.rs 0
+cas "un morceau absent casse" 1 "MORCEAU ABSENT (1/2)" "$BAC/morceau-absent" "$BAC/plafond.txt"
+
+# Un morceau coupé par la limite du job écrit « INCOMPLET », comme un
+# fichier entier.
+morceau "$BAC/morceau-coupe" a.rs 0 2 3
+{
+    echo "fichier=a.rs"
+    echo "morceau=1/2"
+    echo "INCOMPLET vus=40 annonces=400"
+    echo "attrapes=40"
+    echo "expires=0"
+    echo "inviables=0"
+    echo "--- survivants ---"
+    echo "--- fin ---"
+} > "$BAC/morceau-coupe/resume-a.rs.morceau-1-sur-2.txt"
+resume "$BAC/morceau-coupe" b.rs 0
+cas "un morceau coupé casse" 1 "RÉSUMÉ ILLISIBLE (morceau 1/2)" "$BAC/morceau-coupe" "$BAC/plafond.txt"
+
+# Deux découpages mêlés ne couvrent pas le fichier une fois et une seule.
+morceau "$BAC/deux-decoupages" a.rs 0 2 2
+morceau "$BAC/deux-decoupages" a.rs 1 3 2
+resume "$BAC/deux-decoupages" b.rs 0
+cas "des morceaux de deux découpages cassent" 1 "MORCEAUX DE DEUX DÉCOUPAGES" "$BAC/deux-decoupages" "$BAC/plafond.txt"
+
+# Un résumé entier à côté de morceaux : le verdict ne choisit pas.
+resume "$BAC/entier-et-morceaux" a.rs 5
+morceau "$BAC/entier-et-morceaux" a.rs 0 2 3
+morceau "$BAC/entier-et-morceaux" a.rs 1 2 2
+resume "$BAC/entier-et-morceaux" b.rs 0
+cas "un résumé entier et des morceaux cassent" 1 "ENTIER ET MORCEAUX" "$BAC/entier-et-morceaux" "$BAC/plafond.txt"
 
 # La liste des survivants se lit dans le journal, sans artefact à télécharger.
 resume "$BAC/liste" a.rs 5 "a.rs:42:9: replace foo -> bar"

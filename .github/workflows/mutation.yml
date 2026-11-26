@@ -46,8 +46,8 @@ jobs:
     # code et ses tests — 107 minutes le 6 oct., 145 à 164 le 7 — et le
     # crible du 12 y est mort à 781 mutants sur 817. 350 laisse ~1,9 fois la
     # durée de ce jour-là, sous le plafond de six heures d'un runner hébergé ;
-    # au-delà, le fichier se découpe (`cargo mutants --shard`), le plafond ne
-    # monte plus.
+    # au-delà, le fichier se découpe en morceaux (la matrice, plus bas), le
+    # plafond ne monte plus.
     timeout-minutes: 350
     strategy:
       # Un fichier qui échoue ne doit pas emporter les autres : le but est le
@@ -66,9 +66,19 @@ jobs:
         # n'énumère que les entrées du plafond et qu'un fichier absent des
         # DEUX listes n'apparaît nulle part. `engine/tests/couverture_mutation.rs`
         # confronte désormais les deux listes au contenu de `engine/src/`.
+        #
+        # UN FICHIER TROP LONG POUR UN JOB SE DÉCOUPE : une entrée par
+        # morceau, `<fichier> k/n`, k de 0 à n-1 — `cargo mutants --shard`,
+        # chaque mutant dans un seul morceau. `search.rs` a pris 218, 264 puis
+        # 208 minutes les 10, 17 et 24 nov. 2026 sous la limite de 350, et un
+        # runner deux fois plus lent l'aurait dépassée (F-0017, F-0019) ; un
+        # job coupé perd la mesure du fichier. Le verdict somme les morceaux
+        # et refuse un ensemble incomplet ; `engine/tests/couverture_mutation.rs`
+        # refuse une liste de morceaux qui ne couvre pas le fichier.
         fichier:
           - eval.rs
-          - search.rs
+          - search.rs 0/2
+          - search.rs 1/2
           - tt.rs
           - uci.rs
           - position.rs
@@ -78,6 +88,31 @@ jobs:
           - see.rs
           - nnue.rs
     steps:
+      # L'entrée de la matrice, lue une fois : le fichier, son morceau s'il
+      # est découpé, et l'étiquette qui nomme son résumé et son artefact —
+      # un nom d'artefact refuse la barre oblique de `k/n`.
+      - name: Cible
+        id: cible
+        run: |
+          set -eu
+          entree='${{ matrix.fichier }}'
+          fichier=${entree%% *}
+          morceau=''
+          etiquette=$fichier
+          if [ "$entree" != "$fichier" ]; then
+            morceau=${entree#* }
+            if ! [[ $morceau =~ ^([0-9]+)/([0-9]+)$ ]]; then
+              echo "::error::entrée de matrice illisible : « $entree »"
+              exit 1
+            fi
+            etiquette="$fichier.morceau-${BASH_REMATCH[1]}-sur-${BASH_REMATCH[2]}"
+          fi
+          {
+            echo "fichier=$fichier"
+            echo "morceau=$morceau"
+            echo "etiquette=$etiquette"
+          } >> "$GITHUB_OUTPUT"
+
       # Le crible d'un candidat vit sur un runner, pas dans le conteneur de
       # session : le 25 sept. 2026, celui de `search.rs` entier au candidat
       # A20 y est mort à 57 mutants sur 570, au redémarrage du conteneur. Le
@@ -109,8 +144,21 @@ jobs:
       # `--profile mutants` hérite de release sans LTO : le LTO recompile tout
       # le graphe à chaque mutant et multiplie le coût par un facteur trois.
       # Le code exécuté reste optimisé, donc les tests gardent leur vitesse.
+      #
+      # Un morceau se tire en `round-robin` — le mutant i au morceau i mod n
+      # — plutôt que par tranches, le défaut de la version épinglée : les
+      # mutants qui expirent, les plus chers, se répartissent alors entre
+      # les morceaux au lieu de charger celui où ils se suivent. Le gain de
+      # cache des tranches ne joue pas ici : chaque mutant de `search.rs`
+      # recompile la même crate.
       - name: Balayage
-        run: cargo mutants --file "engine/src/${{ matrix.fichier }}" --profile mutants -j 2
+        run: |
+          decoupe=()
+          if [ -n "${{ steps.cible.outputs.morceau }}" ]; then
+            decoupe=(--shard "${{ steps.cible.outputs.morceau }}" --sharding round-robin)
+          fi
+          cargo mutants --file "engine/src/${{ steps.cible.outputs.fichier }}" \
+            "${decoupe[@]}" --profile mutants -j 2
         # Chaque processus de test sous 4 Gio d'espace d'adresses : un mutant
         # qui fuit — `Network::row` rendu par `Box::leak` — monte à 13 Go
         # résidents en une minute, et le runner de 16 Go, deux tests à la
@@ -130,20 +178,32 @@ jobs:
       # comme une couverture parfaite. Le garde-fou est un décompte : la somme
       # des issues doit égaler le nombre de mutants annoncés par `--list`. Sans
       # cette ligne, une panne d'infrastructure passerait pour un progrès.
+      # D'un morceau, `--list` annonce les mutants du seul morceau : le
+      # découpage s'applique avant la liste (source de cargo-mutants 27.1.0,
+      # `main.rs`), et avec les mêmes options que le balayage.
       - name: Résumé du fichier
         if: always()
         run: |
           set -u
-          fichier='${{ matrix.fichier }}'
+          fichier='${{ steps.cible.outputs.fichier }}'
+          morceau='${{ steps.cible.outputs.morceau }}'
+          etiquette='${{ steps.cible.outputs.etiquette }}'
+          decoupe=()
+          if [ -n "$morceau" ]; then
+            decoupe=(--shard "$morceau" --sharding round-robin)
+          fi
           compte() { wc -l < "mutants.out/$1" 2>/dev/null || echo 0; }
           manques=$(compte missed.txt)
           attrapes=$(compte caught.txt)
           expires=$(compte timeout.txt)
           inviables=$(compte unviable.txt)
           vus=$((manques + attrapes + expires + inviables))
-          annonces=$(cargo mutants --list --file "engine/src/$fichier" 2>/dev/null | wc -l)
+          annonces=$(cargo mutants --list --file "engine/src/$fichier" "${decoupe[@]}" 2>/dev/null | wc -l)
           {
             echo "fichier=$fichier"
+            if [ -n "$morceau" ]; then
+              echo "morceau=$morceau"
+            fi
             if [ "$annonces" -gt 0 ] && [ "$vus" -eq "$annonces" ]; then
               echo "manques=$manques"
             else
@@ -157,15 +217,15 @@ jobs:
             echo "--- survivants ---"
             cat mutants.out/missed.txt 2>/dev/null || true
             echo "--- fin ---"
-          } > "resume-$fichier.txt"
-          cat "resume-$fichier.txt"
+          } > "resume-$etiquette.txt"
+          cat "resume-$etiquette.txt"
 
       - name: Déposer le résumé
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mutation-${{ matrix.fichier }}
-          path: resume-${{ matrix.fichier }}.txt
+          name: mutation-${{ steps.cible.outputs.etiquette }}
+          path: resume-${{ steps.cible.outputs.etiquette }}.txt
           retention-days: 30
 
   verdict:

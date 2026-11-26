@@ -611,10 +611,10 @@ dans la CI. **L'alerte ne dépend d'aucun lecteur extérieur** : le job
 celle qui est déjà ouverte. Ses entrées de `workflow_dispatch` :
 `tools/README.md`, « Tests de mutation ».
 
-**Sa durée** monte vers la limite du job (F-0019) ; au-delà de ~300
-minutes, il faudra découper `search.rs` par `cargo mutants --shard`, ce que
-ni `mutation.yml` ni le verdict, qui lit un résumé par fichier, ne savent
-encore faire (B-0075). C'est un débit de compilation, qui ne dit
+**Sa durée** monte avec le fichier vers la limite du job (F-0019) :
+`search.rs` se balaie en deux morceaux, `cargo mutants --shard`, que le
+verdict somme et refuse incomplets ; un autre fichier qui approche de la
+limite se découpe de même. C'est un débit de compilation, qui ne dit
 rien de la vitesse de recherche d'un runner. **Un nombre de nœuds par
 seconde appartient à son binaire autant qu'à sa machine** : une ligne
 d'étalonnage ne compare que des runs du même binaire, quand la profondeur
