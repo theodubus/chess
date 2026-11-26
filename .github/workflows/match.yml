@@ -613,7 +613,7 @@ jobs:
             plafond=$(( tient * 3 / 2 ))
             echo "::notice::Ce job atteint au moins ~$tient parties" \
                  "(estimation CONSERVATRICE de ~$s_partie s/partie, plafond de 350 min :" \
-                 "les deux matchs historiques ont fait 25 % de plus). Le SPRT s'arrêtera" \
+                 "les matchs mesurés depuis C21 en prennent 0,97 fois autant). Le SPRT s'arrêtera" \
                  "avant s'il tranche ; ce nombre n'est PAS une cible."
             tools/arbiters/fastchess "${commun[@]}" -rounds $(( (plafond + 1) / 2 )) \
               -sprt elo0="${{ inputs.elo0 }}" elo1="${{ inputs.elo1 }}" \
@@ -798,7 +798,8 @@ jobs:
             # partie, et les n/s des coups partis d'un `go` ordinaire. Même
             # binaire, même machine, mêmes parties : si le candidat pondère,
             # le rapport des n/s dit ce que son ponder vole à la référence,
-            # sans comparer deux runners — dont la vitesse varie de 22 à 58 %.
+            # sans comparer deux runners — dont la vitesse va du simple au
+            # double, selon le modèle de processeur échu au job (F-0017).
             # Sans ponder, ce rapport est le témoin et doit valoir ~1. Il porte
             # un confondant de quelques pour cent, écrit dans `plis.sh` : il
             # sépare un cœur partagé d'une absence de vol, pas 2 % de 0 %.
