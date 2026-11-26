@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # L-0001 — Lot B-0075 : les deux workflows
 
-> statut : en cours · origine : J-2026-11-26-E · après : T-0002, T-0003 · lu : backlog@b1503ac2
+> statut : fait · origine : J-2026-11-26-E · ref : J-2026-11-26-H · après : T-0002, T-0003 · lu : backlog@b1503ac2
 
 Les deux retouches de `.github/` que B-0075 réunit : un texte périmé de
 `.github/workflows/match.yml`, et le découpage du balayage de mutation,
@@ -15,3 +15,5 @@ push.
 ### Passe 1 — 2026-11-26
 
 Commits : 70b365d..71046d2
+
+- Ouvre : rien

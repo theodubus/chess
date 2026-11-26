@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0075 — Retoucher deux workflows : la notice de durée de match.yml, le découpage du balayage de mutation
 
-> statut : ouvert · origine : J-2026-11-23-J · priorité : haute · lu : backlog@32157239
+> statut : fait · origine : J-2026-11-23-J · priorité : haute · ref : J-2026-11-26-H · lu : backlog@32157239
 
 Deux points de l'ancienne liste « Ce qu'il faut surveiller »
 (J-2026-11-23-J) demandent de changer des fichiers de `.github/`. Ce
@@ -30,5 +30,5 @@ l'agent.
 
 ## Satisfait quand
 
-- [ ] la notice de durée de `match.yml` dit ce que le fichier mesure, et le commentaire de sa sonde renvoie à F-0017
-- [ ] le balayage sait découper un fichier en morceaux et sommer leurs survivants, éprouvé par l'auto-test du verdict
+- [x] la notice de durée de `match.yml` dit ce que le fichier mesure, et le commentaire de sa sonde renvoie à F-0017
+- [x] le balayage sait découper un fichier en morceaux et sommer leurs survivants, éprouvé par l'auto-test du verdict
