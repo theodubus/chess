@@ -13,7 +13,7 @@ sont rangés par leur perte tenue à l'écart, sur les données de leur
 avant le dernier verdict a tenu (J-2026-11-18-CN). Au hasard, six points
 se rangent ainsi une fois sur 720. La perte ne range pas ce qui change la
 cible elle-même, le poids du résultat ou l'exposant de la perte, et ne
-dit jamais l'échelle d'un écart (`CLAUDE.md`, « cette valeur d'évaluation
+dit jamais l'échelle d'un écart (`AGENTS.md`, « cette valeur d'évaluation
 est meilleure »). Inférence de l'agent, confiance faible : si elle range
 aussi des architectures à données fixées, une séance de plusieurs réseaux
 lancerait d'abord le match du premier de l'ordre, quatre minutes de

@@ -111,7 +111,7 @@ F-0020 ; les récits des séances, depuis septembre 2026, au journal.
 ## 4. La relever
 
 - Les données relues retombent **exactement** sur les résumés des jobs.
-- Chaque confrontation tient son critère (`CLAUDE.md`, « ce réseau est
+- Chaque confrontation tient son critère (`AGENTS.md`, « ce réseau est
   celui qu'a entraîné bullet ») ; sinon le réseau ne se mesure pas.
 - La durée et les pertes, confrontées à leurs attendus.
 - Les réseaux, leur courbe de perte et la sortie du programme sont sous

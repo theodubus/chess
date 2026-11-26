@@ -132,7 +132,7 @@ const FENS: &[&str] = &[
 /// n'était pas testée du tout — 0 sur 244 112 coups.
 /// Les trois sont VALIDÉES PAR EXÉCUTION (python-chess : `is_valid()`, puis
 /// comptage des coups de promotion). Une quatrième, écrite de tête, s'est
-/// révélée illégale — voir le piège correspondant dans `CLAUDE.md`.
+/// révélée illégale — voir le piège correspondant dans `AGENTS.md`.
 const VERIFY_EXTRA: &[&str] = &[
     // 12 promotions immédiates, dont des promotions AVEC capture.
     "n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1",

@@ -22,7 +22,7 @@
 # est une fonction pure de (graine, numéro, budget de nœuds) ; la graine par
 # défaut est le numéro du run, donc deux jobs ne produisent jamais les mêmes
 # parties — la faute de « même graine, deux copies » est écartée par
-# construction (`CLAUDE.md`, pièges de mesure).
+# construction (`AGENTS.md`, pièges de mesure).
 #
 # # Le jeu d'instructions
 #

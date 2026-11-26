@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0031-c-0005-vaut-aussi-pour-ui-et-donc-pour-les-branche.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-26"
+canal = "conversation"
+citation = "Et oui ça vaut aussi pour UI"
+empreinte = "sha256:27316d91ae1fe102dab5327f04a9f7edd8a530465fbebd2a546675a55fe8ef75"

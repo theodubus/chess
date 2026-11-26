@@ -14,17 +14,17 @@ C65 reporté sur main : le bit ttPv (le 50 de l'entrée), un pli de moins à tou
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_011QmyEJPgm9NaJ5124tmeJj
 ---
- CLAUDE.md                       |   2 +-
+ AGENTS.md                       |   2 +-
  README.md                       |   2 +-
  engine/src/search.rs            |  57 +++++++++++-
  engine/src/tt.rs                | 159 +++++++++++++++++++++++++-------
  engine/tests/bench_reference.rs |   2 +-
  5 files changed, 185 insertions(+), 37 deletions(-)
 
-diff --git a/CLAUDE.md b/CLAUDE.md
+diff --git a/AGENTS.md b/AGENTS.md
 index 3140eac..93862e4 100644
---- a/CLAUDE.md
-+++ b/CLAUDE.md
+--- a/AGENTS.md
++++ b/AGENTS.md
 @@ -1246,7 +1246,7 @@
  aux règles du jeu et aux invariants de recherche ; noter le reste dans le
  plafond, avec sa raison, jamais dans une liste de tâches.

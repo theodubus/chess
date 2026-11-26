@@ -122,8 +122,9 @@ fn chaque_dispositif_automatique_est_nomme_dans_la_documentation() {
 
     // Un parcours cassé ne doit pas se traduire par « rien à vérifier, donc
     // tout va bien ». Ces deux-là existent ; leur absence dit que c'est le
-    // contrôle qui est en panne.
-    for attendu in ["CLAUDE.md", "README.md"] {
+    // contrôle qui est en panne. Les instructions vivent dans `AGENTS.md`,
+    // que `CLAUDE.md` importe en une ligne (D-0029).
+    for attendu in ["AGENTS.md", "README.md"] {
         assert!(
             docs.iter().any(|(nom, _)| nom == attendu),
             "parcours de la documentation cassé : {attendu} introuvable"
@@ -162,7 +163,7 @@ fn chaque_dispositif_automatique_est_nomme_dans_la_documentation() {
         "dispositif(s) qu'aucun fichier de documentation ne nomme :\n  {}\n\n\
          Un dispositif que la documentation ne nomme pas est un dispositif que \
          la session suivante prendra pour une panne, ou refera. Ajouter son nom \
-         de fichier à CLAUDE.md, README.md ou tools/README.md, avec ce qu'il \
+         de fichier à AGENTS.md, README.md ou tools/README.md, avec ce qu'il \
          fait et pourquoi il existe.",
         orphelins.join("\n  ")
     );

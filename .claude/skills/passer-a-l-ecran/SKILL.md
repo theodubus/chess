@@ -7,7 +7,7 @@ description: Écranter des techniques de recherche avant de les acheter en match
 
 Un match coûte des heures de runner ; un écran, des minutes de conteneur.
 L'écran dit **le coût, exactement**, et combien le mécanisme sert ; jamais
-l'Elo (`CLAUDE.md`, « c'est plus fort »). Cette procédure est celle des
+l'Elo (`AGENTS.md`, « c'est plus fort »). Cette procédure est celle des
 écrans du n° 9, du n° 12 et du n° 23 (octobre et novembre 2026), dont le
 journal garde les récits.
 
@@ -95,7 +95,7 @@ journal garde les récits.
   deux fois plus souvent, ce qui reste un tirage : le dire avant.
 - **Un test de nœuds qui tombe** sous un candidat : la mesure qui le juge
   se fait SANS le changement, sur un échantillon de positions de parties,
-  avant toute reformulation (`CLAUDE.md`, « Pièges de mesure »), et son
+  avant toute reformulation (`AGENTS.md`, « Pièges de mesure »), et son
   traitement s'écrit avant le verdict — le précédent : le test des
   extensions singulières, à marge mince, tombé sous cinq changements sans
   rapport (J-2026-11-18-EF).
@@ -122,7 +122,7 @@ journal garde les récits.
 - **La variante du n° 9**, quand un gagnant est entré seul d'abord : le
   groupe des autres se mesure contre le `main` qui le porte, et seule la
   borne basse s'y lit — son point et les gains seuls n'ont plus la même
-  base (`CLAUDE.md`, « un verdict appartient à sa base »).
+  base (`AGENTS.md`, « un verdict appartient à sa base »).
 
 ## 6. Inscrire
 

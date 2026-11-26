@@ -8,7 +8,7 @@
 # Pourquoi ce script existe
 #
 # Construire une référence est un geste de quatre lignes, et le dépôt a payé
-# QUATRE pièges distincts dedans. Chacun est écrit dans `CLAUDE.md` ; aucun
+# QUATRE pièges distincts dedans. Chacun est écrit dans `AGENTS.md` ; aucun
 # n'était encadré par du code, alors que `match.yml` fait déjà tout cela
 # correctement sur un runner. Le chemin local n'avait pas de garde-fou — la
 # faute de famille B10 : un garde-fou qui ne couvre qu'une copie ne garde rien.

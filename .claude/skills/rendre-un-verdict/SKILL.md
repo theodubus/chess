@@ -7,7 +7,7 @@ description: Relever les jobs d'un match de mesure entre deux commits du moteur 
 
 Un verdict se rend sur un critère écrit **avant** de lancer, et dans cet
 ordre : chaque étape peut invalider la suivante. Les règles qui le
-fondent sont dans `CLAUDE.md` (« Ce qui compte comme preuve », « Pièges de
+fondent sont dans `AGENTS.md` (« Ce qui compte comme preuve », « Pièges de
 mesure ») ; ce skill en est la procédure, celle des relèves de septembre
 à novembre 2026, dont le journal garde les récits.
 

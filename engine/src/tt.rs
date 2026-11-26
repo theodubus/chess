@@ -103,7 +103,7 @@ impl Bound {
 /// **Le score n'a pas de décalage**, il occupe les bits de poids faible. Un
 /// décalage nul écrit pour la symétrie se mute en décalage nul dans l'autre
 /// sens : deux mutants équivalents, que le balayage du 23 sept. 2026 a
-/// trouvés, et du code qu'aucun test ne peut garder — `CLAUDE.md`, « un
+/// trouvés, et du code qu'aucun test ne peut garder — `AGENTS.md`, « un
 /// mutant équivalent est souvent du code mort ».
 ///
 /// **Le score tient sur seize bits** : `MATE` vaut 30 000, et l'élagage par
@@ -781,7 +781,7 @@ mod tests {
     #[test]
     fn a_valeur_egale_la_premiere_place_du_seau_cede() {
         // Le départage est arbitraire, mais il doit être fixe : à un fil, la
-        // recherche reste déterministe au nœud près (`CLAUDE.md`). Il se lit
+        // recherche reste déterministe au nœud près (`AGENTS.md`). Il se lit
         // sur les PLACES, pas sur ce que la table rend : `<=` au lieu de `<`
         // ferait céder la dernière, remplirait donc le seau à l'envers, et
         // cette image miroir rendrait les mêmes réponses. Le crible de C29
@@ -883,7 +883,7 @@ mod tests {
         // `score_to_tt` et `score_from_tt` ne corrigent que les scores de mat,
         // reconnus par `> MATE_THRESHOLD`. Leurs quatre comparaisons
         // survivaient à l'inversion de leur borne : aucun test ne testait la
-        // valeur frontière elle-même. `CLAUDE.md` désigne pourtant ces deux
+        // valeur frontière elle-même. `AGENTS.md` désigne pourtant ces deux
         // fonctions comme la source de bug la plus classique d'une table.
         const PLY: i32 = 6;
 

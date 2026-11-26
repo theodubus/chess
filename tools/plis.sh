@@ -24,7 +24,7 @@
 #
 # Une profondeur moyenne dépend de la phase de jeu : une finale se cherche
 # bien plus profond qu'un milieu de partie. Comparer deux matchs, c'est
-# comparer deux mélanges de phases — la faute de `CLAUDE.md`, « une
+# comparer deux mélanges de phases — la faute de `AGENTS.md`, « une
 # comparaison entre réglages qui changent le déroulement n'est pas
 # appariée ». Dans UNE partie, les deux camps cherchent des positions voisines
 # d'un demi-coup : l'écart des deux moyennes de la partie annule le mélange,

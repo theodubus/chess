@@ -6,7 +6,7 @@ description: Mesurer si un changement de l'inférence NNUE — le code du résea
 # Mesurer le temps de l'inférence
 
 Le banc (`bench`, `tools/timing.sh`) évalue à la main : un changement du
-réseau qui joue ne s'y voit pas (`CLAUDE.md`, « c'est plus rapide »), tant
+réseau qui joue ne s'y voit pas (`AGENTS.md`, « c'est plus rapide »), tant
 qu'un banc au réseau manque (B-0055). Ce skill est la procédure des n° 15,
 16 et du SIMD d'octobre 2026, dont le journal garde les récits ; l'outil
 est décrit dans `tools/README.md`, « Vérifier, et mesurer un temps ».
