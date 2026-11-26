@@ -1,11 +1,16 @@
 <!-- socle: couche=backlog zone=publique -->
-# B-0075 — Faire retoucher deux workflows protégés : la notice de durée de match.yml, le découpage du balayage de mutation
+# B-0075 — Retoucher deux workflows : la notice de durée de match.yml, le découpage du balayage de mutation
 
-> statut : ouvert · origine : J-2026-11-23-J · priorité : haute · pour : humain · lu : backlog@32157239
+> statut : ouvert · origine : J-2026-11-23-J · priorité : haute · lu : backlog@32157239
 
 Deux points de l'ancienne liste « Ce qu'il faut surveiller »
-(J-2026-11-23-J) demandent de changer des fichiers de `.github/`, que
-l'agent n'écrit pas : l'agent prépare chaque changement, Théo l'applique.
+(J-2026-11-23-J) demandent de changer des fichiers de `.github/`. Ce
+sujet les disait à faire par Théo, l'agent « n'écrivant pas » dans
+`.github/` : c'était faux. Seuls `.github/workflows/socle.yml` et
+`.github/CODEOWNERS` sont protégés (`.socle/policy.toml`, qui nomme aussi
+un socle-mutation.yml absent du dépôt), et l'agent a modifié `match.yml` et
+`mutation.yml` jusqu'au 2 nov. 2026 (J-2026-11-24-L). Le sujet revient à
+l'agent.
 
 - **La notice de `.github/workflows/match.yml`** dit encore que « les deux
   matchs historiques ont fait 25 % de plus » que l'estimation ; c'est faux
