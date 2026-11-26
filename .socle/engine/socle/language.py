@@ -31,6 +31,8 @@ CHAMPS = {
     "date": {"fr": "date", "en": "date"},
     "type": {"fr": "type", "en": "type"},
     "remplacee-par": {"fr": "remplacée-par", "en": "superseded-by"},
+    # La demande validée qui lève une consigne de l'humain.
+    "levee-par": {"fr": "levée-par", "en": "lifted-by"},
     "bloque": {"fr": "bloque", "en": "blocks"},
     "retiree": {"fr": "retirée", "en": "withdrawn"},
     "reformulee": {"fr": "reformulée", "en": "reworded"},
@@ -41,29 +43,54 @@ CHAMPS = {
     "sujet": {"fr": "sujet", "en": "about"},
     "apres": {"fr": "après", "en": "after"},
     "priorite": {"fr": "priorité", "en": "priority"},
+    "besoin": {"fr": "besoin", "en": "need"},
+    "ancien": {"fr": "ancien", "en": "former"},
+    # L'estampille de la passation (`memory/handoff.md`).
+    "ecrite": {"fr": "écrite", "en": "written"},
+    "branche": {"fr": "branche", "en": "branch"},
+    "chaine": {"fr": "chaîne", "en": "chain"},
 }
 
-# Statuts, par type d'entrée : « abandoned » est un sujet abandonné ou une
-# décision abandonnée selon le type.
+# Statuts, par type d'entrée : « abandoned » est une entrée du backlog
+# abandonnée ou une décision abandonnée selon le type. Les quatre formes du
+# backlog (ADR-0083) ont les mêmes.
+_STATUTS_BACKLOG = {"ouvert": {"fr": "ouvert", "en": "open"}, "en-cours": {"fr": "en cours", "en": "in progress"},
+                    "bloque": {"fr": "bloqué", "en": "blocked"}, "fait": {"fr": "fait", "en": "done"},
+                    "abandonne": {"fr": "abandonné", "en": "abandoned"}}
 STATUTS = {
     "F": {"mesure": {"fr": "mesuré", "en": "measured"}, "suppose": {"fr": "supposé", "en": "assumed"},
           "refute": {"fr": "réfuté", "en": "refuted"}, "valide": {"fr": "validé", "en": "validated"}},
-    "B": {"ouvert": {"fr": "ouvert", "en": "open"}, "en-cours": {"fr": "en cours", "en": "in progress"},
-          "bloque": {"fr": "bloqué", "en": "blocked"}, "fait": {"fr": "fait", "en": "done"},
-          "abandonne": {"fr": "abandonné", "en": "abandoned"}},
+    **{t: _STATUTS_BACKLOG for t in ("B", "T", "L", "JA")},
     "ADR": {"proposee": {"fr": "proposée", "en": "proposed"}, "acceptee": {"fr": "acceptée", "en": "accepted"},
             "remplacee": {"fr": "remplacée", "en": "superseded"}, "rejetee": {"fr": "rejetée", "en": "rejected"},
             "abandonnee": {"fr": "abandonnée", "en": "abandoned"}},
+    # Une consigne de l'humain : en vigueur, ou levée par sa parole.
+    "C": {"en-vigueur": {"fr": "en vigueur", "en": "in force"}, "levee": {"fr": "levée", "en": "lifted"}},
 }
 
 # Valeurs d'un champ qui se comparent : `pour : humain`.
 VALEURS = {"humain": {"fr": "humain", "en": "human"}, "seance": {"fr": "séance", "en": "session"},
-           "jalon": {"fr": "jalon", "en": "milestone"}, "haute": {"fr": "haute", "en": "high"},
-           "basse": {"fr": "basse", "en": "low"}}
+           "jalon": {"fr": "jalon", "en": "milestone"}, "lot": {"fr": "lot", "en": "batch"},
+           "haute": {"fr": "haute", "en": "high"}, "basse": {"fr": "basse", "en": "low"}}
 
-# La section d'un sujet du backlog qui dit ce qui le rend fait (D-0064) :
-# des cases à cocher, toutes cochées avant de le clore « fait ».
+# La section d'une tâche (et d'un lot ou d'un jalon qui en a une) qui dit ce
+# qui la rend faite (D-0064) : des cases à cocher, toutes cochées avant de la
+# clore « fait ». Celle d'un besoin dit le résultat qui le satisfait
+# (ADR-0083).
 FAIT_QUAND = {"fr": "Fait quand", "en": "Done when"}
+SATISFAIT_QUAND = {"fr": "Satisfait quand", "en": "Satisfied when"}
+
+# La section « Revues » d'un lot (ADR-0084, ADR-0100) : ses passes de revue
+# et leurs bloquants. `socle review` en écrit une part, l'agent le reste ; le
+# moteur relit les deux.
+REVUES = {
+    "revues": {"fr": "Revues", "en": "Reviews"},
+    "passe": {"fr": "Passe", "en": "Pass"},
+    "commits": {"fr": "Commits", "en": "Commits"},
+    "arbre": {"fr": "arbre de travail", "en": "working tree"},
+    "bloquant": {"fr": "Bloquant", "en": "Blocker"},
+    "ouvre": {"fr": "Ouvre", "en": "Opens"},
+}
 
 # L'en-tête d'un fichier : `<!-- socle: couche=canonique zone=publique -->`.
 ENTETE = {"couche": {"fr": "couche", "en": "layer"}, "zone": {"fr": "zone", "en": "zone"}}
@@ -71,6 +98,8 @@ COUCHES = {
     "canonique": {"fr": "canonique", "en": "canonical"}, "actif": {"fr": "actif", "en": "active"},
     "decisions": {"fr": "decisions", "en": "decisions"}, "journal": {"fr": "journal", "en": "journal"},
     "backlog": {"fr": "backlog", "en": "backlog"}, "demandes": {"fr": "demandes", "en": "requests"},
+    "passation": {"fr": "passation", "en": "handoff"},
+    "consignes": {"fr": "consignes", "en": "directives"},
 }
 ZONES = {"publique": {"fr": "publique", "en": "public"}, "privee": {"fr": "privee", "en": "private"}}
 
@@ -98,8 +127,10 @@ PARAGRAPHES_CONTEXTE = {
     "question": {"fr": "La question", "en": "The question"},
 }
 # La section d'une décision prise en séance : la question telle
-# que l'humain l'a lue dans la conversation.
-SECTIONS_SEANCE = {"question-posee": {"fr": "Question posée", "en": "Question asked"}}
+# que l'humain l'a lue dans la conversation ; ou, quand il l'a donnée de
+# lui-même, sans question, son texte exact (B-0185).
+SECTIONS_SEANCE = {"question-posee": {"fr": "Question posée", "en": "Question asked"},
+                   "decision-donnee": {"fr": "Décision donnée", "en": "Decision given"}}
 REPONSES = {
     "valider": {"fr": "valider", "en": "approve"},
     "refuser": {"fr": "refuser", "en": "reject"},
@@ -137,23 +168,56 @@ TEXTES = {
     "titre-basculee": {"fr": "Entrée basculée dans la mémoire privée", "en": "Entry moved to the private memory"},
     "texte-basculee": {"fr": "Son contenu est dans la mémoire privée.", "en": "Its content is in the private memory."},
     "titre-journal": {"fr": "Journal", "en": "Journal"},
+    # La passation (`socle handoff write`) : son titre, ce qui attend.
+    "titre-passation": {"fr": "Passation", "en": "Handoff"},
+    "attente-passation": {"fr": "Ce qui attend : {attente}.", "en": "What is waiting: {attente}."},
+    "rien": {"fr": "rien", "en": "nothing"},
+    # L'entrée du journal où `socle archive` range les consignes levées.
+    "titre-consignes-rangees": {"fr": "Consignes levées rangées dans le journal",
+                                "en": "Lifted directives moved to the journal"},
+    "texte-consignes-rangees": {"fr": "Rangées par `socle archive` : chacune levée par la parole de l'humain que "
+                                      "cite sa ligne de métadonnées. Leur identifiant reste résolu.",
+                                "en": "Moved by `socle archive`: each one lifted by the human's word that its "
+                                      "metadata line cites. Their identifiers still resolve."},
 }
 
 # Les entrées que `socle new` pose, par langue.
 SQUELETTES = {
     "fr": {
         "F": "> statut : supposé · source : <d'où vient ce fait>\n\n<le fait, et ce qui le prouverait>",
-        "B": "> statut : ouvert · origine : <J-… ou commit:… où le sujet est apparu> · lu : backlog@{lu}\n\n"
-             "<ce qu'il faut faire, et pourquoi>",
+        "B": "> statut : ouvert · origine : <J-… ou commit:… où le besoin est apparu> · lu : backlog@{lu}\n\n"
+             "<le défaut à corriger ou la fonction à ajouter : ses constats ou sa motivation, et sa spécification "
+             "s'il n'est pas tranché>\n\n## Satisfait quand\n\n- [ ] <un résultat, jamais une implémentation>",
+        "T": "> statut : ouvert · origine : <J-… ou commit:… où la tâche est apparue> · besoin : {besoin} · "
+             "lu : backlog@{lu}\n\n<le livrable, en principe un commit>\n\n## Fait quand\n\n"
+             "- [ ] <ce qu'un test vérifie>",
+        "L": "> statut : ouvert · origine : <J-… ou commit:… où le lot est formé> · lu : backlog@{lu}\n\n"
+             "<ce qui réunit ses tâches, les fichiers qu'elles touchent ; son `après` nomme le lot d'avant, puis "
+             "ses tâches>",
+        "JA": "> statut : ouvert · origine : <J-… ou commit:… où le jalon est posé> · lu : backlog@{lu}\n\n"
+              "<le but que servent ses besoins ; son `après` nomme le jalon d'avant, puis ses besoins>",
         "J": "<ce qui s'est passé, avec ses références>",
+        "C": "> statut : en vigueur · source : <J-… ou D-… où la parole de l'humain est consignée> · "
+             "date : {date}\n\n> « <le texte exact de l'humain, mot pour mot> »",
         "ADR": "> statut : proposée · date : {date} · lu : decisions@{lu}\n\n## Contexte\n\n<ce qui oblige à décider>\n\n"
                "## Décision\n\n<ce qui est décidé>\n\n## Conséquences\n\n<ce que ça change, et comment le défaire>",
     },
     "en": {
         "F": "> status : assumed · source : <where this fact comes from>\n\n<the fact, and what would prove it>",
-        "B": "> status : open · origin : <J-… or commit:… where the topic came up> · read : backlog@{lu}\n\n"
-             "<what to do, and why>",
+        "B": "> status : open · origin : <J-… or commit:… where the need came up> · read : backlog@{lu}\n\n"
+             "<the defect to fix or the feature to add: its findings or its motivation, and its specification "
+             "if it is not settled>\n\n## Satisfied when\n\n- [ ] <a result, never an implementation>",
+        "T": "> status : open · origin : <J-… or commit:… where the task came up> · need : {besoin} · "
+             "read : backlog@{lu}\n\n<the deliverable, as a rule one commit>\n\n## Done when\n\n"
+             "- [ ] <what a test checks>",
+        "L": "> status : open · origin : <J-… or commit:… where the batch is formed> · read : backlog@{lu}\n\n"
+             "<what brings its tasks together, the files they touch; its `after` names the previous batch, then "
+             "its tasks>",
+        "JA": "> status : open · origin : <J-… or commit:… where the milestone is set> · read : backlog@{lu}\n\n"
+              "<the goal its needs serve; its `after` names the previous milestone, then its needs>",
         "J": "<what happened, with its references>",
+        "C": "> status : in force · source : <J-… or D-… where the human's words are recorded> · "
+             "date : {date}\n\n> “<the human's exact text, word for word>”",
         "ADR": "> status : proposed · date : {date} · read : decisions@{lu}\n\n## Context\n\n<what forces a decision>\n\n"
                "## Decision\n\n<what is decided>\n\n## Consequences\n\n<what it changes, and how to undo it>",
     },
@@ -256,6 +320,16 @@ def trailers(message: str) -> dict[str, list[str]]:
     (`Waive-test` est `dispense-test`)."""
     res: dict[str, list[str]] = {}
     for k, v in outils.trailers(message).items():
+        res.setdefault(trailer(k), []).extend(v)
+    return res
+
+
+def trailers_hors_bloc(message: str) -> dict[str, list[str]]:
+    """Les lignes en forme de trailer écrites hors du dernier paragraphe d'un
+    message de commit, que `trailers` ne lit pas, sous leurs noms internes :
+    ce qu'un refus qui attend une dispense nomme, pour dire où l'écrire."""
+    res: dict[str, list[str]] = {}
+    for k, v in outils.trailers_hors_bloc(message).items():
         res.setdefault(trailer(k), []).extend(v)
     return res
 

@@ -24,7 +24,7 @@ reprend pas après coup : l'agent l'a mis dans B-0012 le 18 nov. 2026, sans
 attendre B-0065. Un seul couple de réseaux vaut un point, à une chance
 sur deux au hasard ; la décision de la règle en demande davantage.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : l'ordre prédit avant les matchs d'une séance, confronté à leurs verdicts, et la règle écrite au skill `preparer-une-seance` ou abandonnée

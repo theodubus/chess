@@ -16,6 +16,6 @@ d'abord à la sonde (le supplément qui ramène la pendule dépensée par coup
 estimée par l'étalonnage du 24 sept. : 16 à 28 Elo (ADR-0015), mais
 seulement là où le ponder est permis ; la CCRL le désactive en blitz.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] le supplément réglé à la sonde, puis un match en `les-deux`, son verdict rendu

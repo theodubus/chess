@@ -1,7 +1,7 @@
 # Format de la mémoire
 
-La mémoire est un ensemble de fichiers markdown en cinq couches, plus la file
-des demandes humaines. Un script sait la lire : sans cela, aucun contrôle
+La mémoire est un ensemble de fichiers markdown en six couches, plus la file
+des demandes humaines et la passation à une session neuve. Un script sait la lire : sans cela, aucun contrôle
 automatique ne serait possible. Ce document fait foi pour le format ; le code
 qui le lit est `socle/memory.py`, les contrôles sont listés par
 `python3 .socle/socle checks`.
@@ -12,11 +12,13 @@ qui le lit est `socle/memory.py`, les contrôles sont listés par
 memory/
   canonical.md            faits vérifiés, avec statut et preuve
   active.md               chantier en cours, prochaines étapes
-  backlog/B-0001-*.md     un sujet à traiter par fichier, avec statut et origine
+  directives.md           consignes durables de l'humain, avec leur texte exact
+  backlog/B-0001-*.md     une entrée par fichier : besoin, tâche (T-), lot (L-), jalon (JA-)
   decisions/ADR-0001-*.md une décision par fichier
   journal/2026-10.md      un fichier par mois, une entrée par événement
   requests/D-0001-*.md    une demande de décision humaine par fichier
   requests/D-0001-*.answer.toml   la réponse de l'humain, et elle seule
+  handoff.md              la passation à une session neuve, tant qu'elle attend
   archives/               documents archivés tels quels (cadrage…), non lus par les contrôles
   private/                zone privée, même arborescence (voir « La zone privée »)
 ```
@@ -44,6 +46,8 @@ L'emplacement impose la couche ; la zone est celle de l'emplacement
 Une entrée est un titre qui commence par son identifiant, suivi d'une ligne
 de métadonnées (une ou plusieurs lignes `>` consécutives), puis d'un corps
 libre qui court jusqu'au titre suivant de même niveau ou de niveau supérieur.
+Comme en Markdown, les dièses qui ferment un titre, précédés d'une espace,
+n'en font pas partie ; un dièse collé à un mot (« C# ») en fait partie.
 
 ```markdown
 ## F-0007 — La suite de tests complète tourne en moins de 40 secondes
@@ -62,16 +66,27 @@ Les métadonnées sont des paires `clé : valeur` séparées par un point média
 | Couche | Forme | Exemple |
 | --- | --- | --- |
 | Canonique | `F-` et quatre chiffres | `F-0007` |
-| Backlog | `B-` et quatre chiffres | `B-0012` |
+| Backlog, besoin | `B-` et quatre chiffres | `B-0012` |
+| Backlog, tâche | `T-` et quatre chiffres | `T-0031` |
+| Backlog, lot | `L-` et quatre chiffres | `L-0005` |
+| Backlog, jalon | `JA-` et quatre chiffres | `JA-0002` |
 | Décisions | `ADR-` et quatre chiffres | `ADR-0003` |
 | Demandes | `D-` et quatre chiffres | `D-0004` |
+| Consignes | `C-` et quatre chiffres | `C-0003` |
 | Journal | `J-` date et lettre | `J-2026-10-10-A` |
 
 Dans la zone privée, l'identifiant prend un `P` devant (`PF-0001`,
-`PJ-2026-10-10-A`) : un fichier public qui en cite un est une fuite, et le
+`PC-0001`, `PJ-2026-10-10-A`) : un fichier public qui en cite un est une fuite, et le
 contrôle la voit même sans accès à la zone privée. Un identifiant se calcule
-(`socle next-id`, `socle new`), il ne se devine pas. Il est défini une seule
-fois ; toute mention ailleurs doit mener à une définition.
+(`socle next-id`, `socle new`), il ne se devine pas ; `socle new` saute
+ceux que prennent les branches distantes et les correctifs suivis du dépôt
+(`*.patch`, `*.diff`), ceux d'une passation. Il est défini une seule
+fois ; toute mention ailleurs doit mener à une définition. Un identifiant
+que deux branches ont pris se répare par `socle renumber <ID>` : l'entrée
+qu'ajoute la branche prend le suivant libre, avec ses mentions et ses
+empreintes ; après un rebase ou un cherry-pick qui les réunit, c'est celle
+qui manque à la base ou au dernier commit poussé, et seules les lignes que
+la branche a ajoutées changent.
 
 ### Références
 
@@ -79,7 +94,7 @@ Une valeur de métadonnée, ou le texte, peut citer :
 
 | Forme | Vérifiée en CI |
 | --- | --- |
-| `commit:3f2a9c1` | l'objet existe dans le dépôt (historique complet), ou dans une de ses pull requests, que le contrôle récupère avant de le dire absent |
+| `commit:3f2a9c1` | l'objet existe dans le dépôt (historique complet), ou dans une de ses pull requests, que le contrôle récupère de l'origine avant de le dire absent : de GitHub, ou d'un clone qui les a récupérées |
 | `fichier:src/x.rs`, `fichier:src/x.rs:12`, `fichier:doc.md#ancre` | le chemin existe |
 | ``cmd:`cargo test, puis cargo bench` `` ou `cmd:scripts/verify.sh` | le script existe s'il est un chemin du dépôt |
 | `url:https://…` | jamais suivie : aucun service externe |
@@ -126,6 +141,68 @@ un identifiant est stable, l'actif ne l'est pas. Il renvoie aux entrées du
 backlog et du journal. L'ordre du travail ne s'y recopie pas : il se tient
 au backlog, d'où l'état le calcule.
 
+### Consignes — `C-`
+
+Un fichier, `directives.md`, où chaque consigne durable de l'humain (une
+règle, une préférence, une interdiction qui vaut au-delà du tour) a son
+entrée :
+
+```markdown
+## C-0003 — La roadmap demandée se donne au format court
+
+> statut : en vigueur · source : J-2026-11-25-T · date : 2026-11-25
+
+> « … le texte exact de l'humain, mot pour mot … »
+```
+
+- **La ligne de résumé** est le titre, que le démarrage injecte à chaque
+  session : 120 octets UTF-8 au plus, sinon le contrôle de format la refuse.
+- **Le texte exact** est le corps : au moins une citation, une ligne qui
+  commence par `>`, séparée de la ligne de métadonnées par une ligne vide,
+  mot pour mot. Une consigne qui en réunit plusieurs les cite toutes ; une
+  ligne de contexte peut suivre.
+- **`source`**, obligatoire : l'entrée du journal (`J-`) ou la demande
+  (`D-`) où la parole de l'humain est consignée.
+- **Le statut** : `en vigueur` ou `levée`. `levée` exige
+  `levée-par : D-NNNN`, une demande à laquelle l'humain a répondu
+  `valider`, en séance comme en file.
+
+`socle new directive "résumé"` pose le squelette. Ajout seul : une consigne
+publiée ne change que par sa ligne de métadonnées et par sa ligne de
+résumé, que l'agent peut récrire si elle trahit le texte ; le texte exact
+ne change jamais. Une consigne que l'humain modifie est une consigne
+nouvelle, et la parole qui la modifie lève l'ancienne. Une consigne ne
+disparaît pas : levée, `socle archive` la range dans le journal, sous une
+entrée du jour, comme un fait archivé, et son identifiant reste résolu.
+Le démarrage donne la ligne de résumé de chaque consigne en vigueur ; le
+texte exact se lit par `socle show C-NNNN`, et toute citation d'une
+consigne dans la mémoire prouve qu'il a été lu (voir « Lecture prouvée »).
+
+### Passation
+
+Un seul fichier, `handoff.md`, public : jamais dans la zone privée, où il
+serait hors des couches connues. La session qui passe la main l'écrit
+(`socle handoff write`), le commite en dernier et le pousse ; la session
+neuve le trouve sur les branches distantes (`socle handoff check`), et son
+premier commit le retire. Il ne définit aucun identifiant ; son estampille,
+sur une ligne `>`, se lit par script :
+
+```markdown
+<!-- socle: couche=passation zone=publique -->
+# Passation
+
+> écrite : 2026-11-25T03:10:00Z · branche : travail · chaîne : 0
+
+Ce qui attend : la CI du commit de tête.
+```
+
+L'heure `écrite`, en UTC, et la `branche` (un nom sans espace) identifient
+la passation, quel que soit le commit qui la porte ; la `chaîne` (un
+entier, 0 ou plus) compte les lots menés sans message de l'humain. Une
+estampille illisible est refusée. Ce qui suit l'estampille est libre, et
+se juge comme tout fichier public. Aucun budget des garde-fous ne lui est
+exigé : il ne s'injecte pas au démarrage, où l'état n'en dit qu'une ligne.
+
 ### Décisions — `ADR-`
 
 Un fichier par décision, nommé d'après son identifiant. Statuts : `proposée`,
@@ -143,77 +220,232 @@ nulle part. Ajout seul : une entrée publiée ne change plus, sauf pour
 recevoir à sa suite, sur une ligne nouvelle, une archive. Un mois dont le fichier atteindrait son
 budget continue dans `AAAA-MM-2.md`, puis `AAAA-MM-3.md`.
 
-### Backlog — `B-`
+Une entrée dit ce qui s'est passé ; elle ne note aucun geste futur pour
+l'humain (« la branche à supprimer après la fusion », « à approuver
+demain ») : ce qui lui revient, l'état seul le calcule, vérifié au moment
+où il le dit, alors qu'une entrée recopiée plus tard le redonnerait sans
+le vérifier.
+
+### Backlog — `B-`, `T-`, `L-`, `JA-`
+
+Une entrée du backlog a l'une de quatre formes, que son préfixe dit
+(ADR-0083) :
+
+- un **besoin**, `B-` : un défaut à corriger ou une fonction à ajouter ;
+  ses constats ou sa motivation, sa spécification s'il n'est pas tranché,
+  et sa section `## Satisfait quand`, un résultat, jamais une
+  implémentation ;
+- une **tâche**, `T-` : un livrable, en principe un commit, qui nomme le
+  besoin qu'elle sert (`besoin : B-0012`) ; sa section `## Fait quand` se
+  vérifie par des tests, ou, pour une action que seul l'humain peut faire,
+  par ce qu'elle produit ; une case dont le livrable est une demande
+  posée, un relevé écrit (le compte rendu d'une mesure ou d'un essai) ou
+  une entrée de la mémoire récrite se vérifie aussi par ce qu'elle
+  produit, que la case nomme : la demande, et la réponse de l'humain
+  consignée au journal ; le fichier du relevé ; ce qu'en montre `socle
+  show` ou `socle roadmap` ; tout autre livrable garde son test ; une
+  tâche qui dit ce qu'un comportement doit devenir nomme, dès son
+  écriture, le test qui affirme le contraire, et la demande qui
+  autorise à le changer se pose aussitôt, avant le lancement du lot ;
+  la tâche cite cette demande par son identifiant : la réponse `valider`,
+  consignée et poussée dès qu'elle est donnée, couvre ensuite le
+  changement, dans une autre pull request comprise, tant que la tâche est
+  ouverte et que ce que la demande nomme n'a pas bougé depuis qu'elle
+  a été posée ; le lot qui fait le changement clôt la tâche, et la
+  validation avec elle ;
+- un **lot**, `L-` : des tâches qui touchent les mêmes fichiers, le même
+  garde-fou ou les mêmes tests, menées et relues ensemble ; son corps dit
+  ce qui les réunit ; une tâche est dans un lot au plus ;
+- un **jalon**, `JA-` : des besoins qui servent un même but.
 
 Statuts : `ouvert`, `en-cours`, `bloqué`, `fait`, `abandonné`. Toute entrée
 a une `origine` (entrée de journal, commit, demande) ; une entrée close
 (`fait`, `abandonné`) a une `ref` vers ce qui l'a close. Une action que seul
 l'humain peut faire porte `pour : humain` : elle figure dans « ce qui revient
 à l'humain », dans l'état et dans le récap de fin d'intervention, avec le
-lien de son sujet, où vit son mode d'emploi (commandes, résultats attendus),
+lien de son entrée, où vit son mode d'emploi (commandes, résultats attendus),
 jusqu'à ce qu'elle soit close.
 
-Un sujet par fichier, nommé comme une décision
-(`B-0001-<titre court>.md`), sous un titre de niveau un :
+Une entrée par fichier, nommé comme une décision
+(`B-0001-<titre court>.md`), sous un titre de niveau un ; `socle new need`,
+`socle new task "…" --need B-NNNN`, `socle new batch` et `socle new
+milestone` la posent, et `socle new need "…" --task "…"` le besoin et sa
+tâche quand la correction est évidente :
 
 ```markdown
 <!-- socle: couche=backlog zone=publique -->
-# B-0001 — Un sujet détaillé
+# B-0001 — Un besoin détaillé
 
 > statut : ouvert · origine : J-2026-10-12-A
 
 Son corps, libre, avec ses sous-titres (`## Les commandes`…).
+
+## Satisfait quand
+
+- [ ] un résultat que l'utilisateur constate
 ```
 
-Chaque sujet a son plafond (`"memory/backlog/*.md"` dans `[budgets]`). Un
-sujet clos garde son fichier, rangé à l'écart des ouverts dans le
+Chaque entrée a son plafond (`"memory/backlog/*.md"` dans `[budgets]`).
+Une entrée close garde son fichier, rangé à l'écart des ouvertes dans le
 sous-dossier `closed` du backlog : `socle archive` y range
-chaque sujet clos, et remet parmi les ouverts un sujet rouvert ; le
-contrôle du backlog refuse un sujet mal rangé, et la mise à jour range un
-projet existant. Un sujet rangé garde son identifiant et le plafond d'un
-sujet. Une bascule en privé copie le fichier sous `private/backlog/` (ou son
-sous-dossier des clos), et un fichier public garde l'identifiant, comme
-pour une décision.
+chaque entrée close, et remet parmi les ouvertes une entrée rouverte ; le
+contrôle du backlog refuse une entrée mal rangée, et la mise à jour range un
+projet existant. Une entrée rangée garde son identifiant et le plafond
+d'une entrée. Une bascule en privé copie le fichier sous `private/backlog/`
+(ou son sous-dossier des clos), et un fichier public garde l'identifiant,
+comme pour une décision.
 
-L'ordre du travail se tient au backlog. Un sujet attend d'autres sujets
-par `après : B-0012, B-0014`, et une demande, `après : D-0007`, jusqu'à sa
-réponse (D-0064) ; une condition hors de la mémoire devient un sujet
-`pour : humain`, qu'il attend. Un jalon est un sujet marqué `forme : jalon`,
-qui attend ses tâches (et le jalon d'avant, s'il y en a un). Un sujet peut
-avoir une priorité, `priorité : haute` ou `priorité : basse` (D-0062) ; la
-normale ne s'écrit pas, et l'agent ne change pas celle que l'humain a
-donnée. L'état en calcule ce qui vient ensuite : le prochain jalon, ouvert,
-qu'aucun jalon ouvert ne précède, de proche en proche à travers les sujets
-et les demandes qu'il attend, avec ce qui lui reste ; les sujets
-prêts, ouverts et pas encore en cours, dont tout ce qu'ils attendent est
-clos ou répondu, ceux du prochain jalon d'abord, puis par priorité ; à
-part, les prêts de priorité basse, que l'agent prend quand c'est commode ;
-et le nombre de sujets qui attendent encore. Le rappel de fin de tour le
-redonne. Le contrôle de l'ordre refuse un `après` qui nomme autre chose
-qu'un sujet ou une demande, un sujet qui s'attend lui-même de proche en
-proche, un sujet `fait` avant ce qu'il attend (un jalon ne se clôt pas
-sur des tâches ouvertes, ni un sujet sur une demande sans réponse), et une
-priorité ni haute ni basse. Un sujet abandonné peut laisser ce qu'il
-attendait ; un sujet clos, fait ou abandonné, ne retient plus ceux qui
-l'attendent.
+L'ordre du travail se tient au backlog. Une entrée attend d'autres
+entrées par `après : B-0012, B-0014`, et une demande, `après : D-0007`,
+jusqu'à sa réponse (D-0064) ; une condition hors de la mémoire devient une
+tâche `pour : humain`, qu'elle attend. Chaque forme n'attend que ce qui
+lui revient : un besoin, des besoins et des demandes ; une tâche, des
+tâches, des besoins et des demandes ; un lot, ses tâches, des demandes et
+le lot d'avant ; un jalon, ses besoins, des demandes et le jalon d'avant.
+`après` et `besoin` nomment l'identifiant actuel. Un besoin, un lot ni un
+jalon ne sont jamais prêts : seule une tâche se prend. Une priorité,
+`priorité : haute` ou `priorité : basse` (D-0062), se donne à un besoin ou
+à une tâche ; la normale ne s'écrit pas, et l'agent ne change pas celle
+que l'humain a donnée. Une tâche sans priorité prend celle de son besoin,
+et attend aussi ce qu'il attend.
 
-Ce qui rend un sujet fait se dit, s'il le faut, dans une section
-`## Fait quand`, en cases à cocher (D-0064). Le contrôle du backlog refuse
-de le clore `fait` tant qu'une case reste vide ; abandonné, il les laisse.
+L'état en calcule ce qui vient ensuite : le prochain jalon, ouvert,
+qu'aucun jalon ouvert ne précède, avec ses besoins et ses demandes encore
+ouverts ; le prochain lot, ouvert, qu'aucun lot ouvert ne précède, celui
+qui est en cours d'abord, et où en est chacune de ses tâches et de ses
+demandes ; les tâches prêtes, ouvertes et pas encore en cours, dont tout
+ce qu'elles attendent est clos ou répondu, celles des besoins du prochain
+jalon d'abord, puis par priorité ; à part, les prêtes de priorité basse,
+que l'agent prend quand c'est commode ; les besoins à fermer, dont les
+tâches sont closes, l'une au moins faite ; les besoins à découper, sans
+tâche ouverte ni rien d'ouvert qu'ils attendent ; et le nombre d'entrées
+qui attendent encore, selon ce qu'elles attendent : une entrée du backlog,
+une demande sans réponse, ou les deux. Le rappel de fin de tour le redonne.
+Un lot ouvert qui attend encore plus de tâches ouvertes, en cours ou
+bloquées que `[batches] max_tasks` des garde-fous (9 par défaut), l'état
+et le rappel le signalent, sans rien refuser : il ne se mène pas en une
+session.
+
+`socle roadmap` en tire la suite entière, par les mêmes règles : chaque
+jalon et ses besoins clos sur le total ; les lots ouverts dans leur ordre
+d'exécution, chacun après les lots qu'il attend de proche en proche, l'en
+cours d'abord à choix égal, et où en est chacune de leurs tâches (faite,
+en cours, prête, ce qu'elle attend encore, bloquée) ; hors des lots, les
+tâches ouvertes qu'aucun lot n'attend, les besoins à découper et à
+fermer, les entrées bloquées, celles `pour : humain`, les demandes en
+attente, et les besoins ouverts qu'aucun jalon n'attend. Deux lots qui
+attendent un même lot sans que l'un attende l'autre y sont signalés : leur
+ordre n'est pas déduit, il est choisi par leur identifiant.
+
+Une tâche est faite quand sa section `## Fait quand` est cochée ; un
+besoin, quand ses tâches sont closes, l'une au moins faite, et sa section
+`## Satisfait quand` cochée ; un lot, quand ses tâches sont closes ; un
+jalon, quand ses besoins le sont. Abandonnée, une entrée laisse ses cases.
+Une tâche qui se révèle un besoin s'abandonne, en renvoyant au besoin
+ouvert. Un constat de revue devient une tâche si sa correction est claire,
+un besoin sinon.
+
+Les contrôles le tiennent. Celui de l'ordre refuse un `après` qui nomme
+autre chose qu'une entrée du backlog ou une demande, une entrée qui
+s'attend elle-même de proche en proche, une entrée `fait` avant ce qu'elle
+attend, et une priorité ni haute ni basse ; une entrée abandonnée peut
+laisser ce qu'elle attendait, et une entrée close ne retient plus celles
+qui l'attendent. Celui du backlog refuse une entrée `fait` dont une case
+reste vide. Celui des formes refuse, sur une entrée ouverte, un champ
+`forme`, `besoin` hors d'une tâche, une priorité sur un lot ou un jalon,
+une tâche sans besoin ou dans deux lots, un `après` que sa forme n'attend
+pas ou qui nomme un ancien numéro, « Fait quand » dans un besoin et
+« Satisfait quand » dans une tâche ; sur une entrée nouvelle, un besoin ou
+une tâche sans sa section ; sur une clôture nouvelle, un besoin clos avec
+une tâche ouverte, ou fait sans tâche faite. Ce qui est clos avant la
+migration reste tel quel.
+
+Une entrée renumérotée garde son ancien numéro (`ancien : B-0235`) :
+`socle show`, `socle url`, les contrôles des références et la lecture
+prouvée le résolvent vers elle (une citation par l'ancien numéro se juge
+contre sa version actuelle), le
+journal, les décisions et les demandes le gardent, et il ne se réattribue
+jamais. Un texte neuf cite l'identifiant actuel : le hook de l'agent
+refuse d'écrire l'ancien numéro dans une ligne qu'une écriture ajoute ou
+change, même dans un fichier qui le cite déjà, sauf sur une ligne qui
+nomme aussi l'identifiant actuel (`B-0235 → L-0002`), et nomme
+l'identifiant à citer ; une ligne d'avant gardée telle quelle passe.
+
+La mise à jour migre un backlog d'avant ADR-0083 : un lot
+(`forme : lot`) devient `L-` et un jalon (`forme : jalon`) `JA-`, clos
+compris, sans sa priorité, qui ne changeait aucun ordre (l'installeur
+nomme chacun) ; toute autre entrée reste un besoin, sa section « Fait quand »
+renommée ; chaque besoin qu'attend un lot ouvert reçoit une tâche qui
+reprend ses critères, chacun entier, vers laquelle sa section renvoie, et
+que le lot attend à sa place ; un jalon attend les besoins de ses lots ;
+une entrée close n'en vient à attendre rien d'ouvert ; les mentions se
+récrivent dans le backlog, le chantier actif et les tâches posées.
+
+Un besoin qui pose ou change un garde-fou écrit, avant son code, son
+modèle de menace : ce que le garde-fou arrête, ce qu'il laisse passer, dans
+une section `## Modèle de menace` (`## Threat model` en anglais) ou dans la
+décision qu'il cite. La revue d'un lot juge contre lui et contre le
+« Fait quand » de ses tâches.
+
+Un lot relu garde l'historique de ses passes de revue dans sa section
+`## Revues` (`## Reviews` en anglais), la dernière de son entrée
+(ADR-0084, ADR-0100). `socle review` y écrit chaque passe du lot en
+cours, ou de celui que `--batch` nomme : son titre (`### Passe 2 —
+2026-11-17`) et les commits relus (`Commits : <début>..<tête>`), suivis,
+quand l'arbre de travail changeait des fichiers suivis hors de la
+mémoire, que la passe a relus aussi, de l'empreinte de ces changements
+(`+ arbre de travail <empreinte>`). L'agent y consigne, au retour du
+relecteur, une ligne `- Bloquant : <sa cause, en quelques mots>` par
+bloquant : une ligne qui se donne pour un bloquant sous une autre forme
+(`- **Bloquant** : …`, `- Bloquant 1 : …`, `1. Bloquant : …`,
+`- Bloquants : …`, ou sans puce, `Bloquant : …`, `Bloquant 2 — …`) n'est
+pas lue, et le contrôle du backlog la refuse, à tout statut du lot ; puis
+une ligne `- Ouvre : <les entrées que la passe ouvre>`. Rien d'autre
+n'est exigé, ni avant une passe ni à la clôture du lot : le paragraphe de
+recul et les marques de cause qu'un lot a écrits avant ADR-0100 se lisent
+comme du texte.
+
+Tant que rien ne change hors de la mémoire, ni le commit de tête que la
+passe a relu ni les changements de l'arbre de travail dont elle garde
+l'empreinte, `socle review` redonne la même passe sans l'écrire de
+nouveau ; sinon, il écrit la suivante. Un lot qui ne change ni code, ni
+spécification, ni test n'a pas de passe.
 
 ```markdown
-# B-0020 — La recherche par ingrédient livrée
+## Revues
 
-> statut : ouvert · origine : D-0003 · forme : jalon · après : B-0021, B-0022, D-0004 · priorité : haute
+### Passe 1 — 2026-11-16
+
+Commits : 3ea6b92..8719a8f
+
+- Bloquant : la correction change la lecture des commandes
+- Ouvre : T-0052
+
+### Passe 2 — 2026-11-17
+
+Commits : 8719a8f..1a2b3c4
+
+- Bloquant : un test qui ne prouve pas la correction
+- Ouvre : rien
+```
+
+```markdown
+# JA-0002 — La recherche par ingrédient livrée
+
+> statut : ouvert · origine : D-0003 · après : JA-0001, B-0021, B-0022, D-0004
+
+# T-0031 — L'index des ingrédients et son test
+
+> statut : ouvert · origine : J-2026-10-14-B · besoin : B-0021 · priorité : haute
 
 ## Fait quand
 
-- [x] une recette se trouve par un de ses ingrédients
+- [x] une recette se trouve par un de ses ingrédients, un test le montre
 - [ ] le guide le dit
 ```
 
 Un fait archivé dans le journal reste défini, donc toute référence vers lui
-reste vivante.
+reste vivante ; une consigne levée que `socle archive` y range, de même.
 
 ### Demandes — `D-`
 
@@ -278,7 +510,7 @@ révélée impossible à trancher pour l'humain.
   réponse de base, ou sous une option que la question nomme entre accents
   graves. Les questions de départ que pose `socle init` suivent la règle
   (D-0054) : `valider` y applique tous les défauts. Les questions de cadrage
-  d'un sujet (`socle new request --questions`, D-0067) aussi : `valider` y
+  d'un besoin (`socle new request --questions`, D-0067) aussi : `valider` y
   applique les hypothèses de l'agent, `reponses` porte le texte libre de
   l'humain.
 
@@ -302,6 +534,10 @@ empreinte = "sha256:…"   # le texte exact de la demande au moment de la répon
 L'état de la demande se dérive de la réponse : en attente, répondue, renvoyée
 (`contexte-insuffisant` : l'agent la réécrit en une nouvelle demande),
 retirée (métadonnée `retirée : <raison>`). Une demande répondue est gelée.
+La demande qui en remplace une renvoyée la cite dans ses « Éléments cités »
+(`- D-NNNN@<empreinte> — la demande renvoyée que celle-ci remplace`) ;
+`socle state` liste « à réécrire » une demande renvoyée tant qu'aucune
+autre ne la cite là.
 
 Une décision prise en séance est la forme courte d'une demande :
 l'humain, présent, a tranché dans la conversation, de lui-même ou sur une
@@ -318,6 +554,16 @@ question, transcription de la conversation, n'a pas à prouver ses lectures
 par des empreintes, ni son titre ce que la question cite ; un identifiant
 que seul le titre cite se prouve, et `socle decision` refuse de l'écrire
 sans empreinte, la réponse écrite ne laissant plus corriger la décision.
+
+Une décision que l'humain donne de lui-même, sans qu'on la lui ait
+demandée, est une décision de séance sans question : `socle decision
+"<la décision en une phrase>" --unprompted --relayed --by <nom>
+--quote-file <fichier>` l'écrit avec la section `Décision donnée` à la
+place de `Question posée`, qui garde son texte exact, et sa réponse, la
+réponse de base `valider`, que le moteur pose sans qu'on la choisisse, son
+texte cité. Elle autorise ce qu'elle nomme comme une demande validée. Ce
+texte, comme une question posée, n'a pas à prouver ses lectures ; un
+identifiant que seul le titre cite se prouve.
 
 ## La zone privée
 
@@ -355,8 +601,9 @@ privée n'y montre ni son texte ni son chemin.
 **Le contenu nouveau est privé par défaut** quand une mémoire privée existe,
 couche par couche : `[private] layers` nomme les couches dont `socle new`
 écrit les entrées sous `memory/private/` (`canonique`, `backlog`,
-`decisions`, `journal`, `demandes`). Sans ce réglage, toutes le sont sauf
-les demandes, qui ne sont privées, réponses comprises, que si l'humain l'a
+`decisions`, `journal`, `consignes`, `demandes`). Sans ce réglage, toutes le
+sont sauf les consignes de l'humain, qui ne le sont que si la politique les
+nomme, et les demandes, qui ne sont privées, réponses comprises, que si l'humain l'a
 choisi (`[private] requests = true`), car il doit pouvoir les lire là où il
 lit ; en mode chiffré, GitHub n'en montre que le chiffré, et l'agent les
 donne en entier dans la conversation. Entrée par entrée, `--private` ou
@@ -364,8 +611,8 @@ donne en entier dans la conversation. Entrée par entrée, `--private` ou
 l'humain (« celle-ci en privé ») s'applique.
 
 **Une entrée publique se bascule** dans la mémoire privée
-(`socle private move <ID>`) : un fait, un sujet, une entrée de journal ou
-une décision. Une copie privée, sous un identifiant privé, en reprend le
+(`socle private move <ID>`) : un fait, une entrée du backlog, une entrée de
+journal ou une décision. Une copie privée, sous un identifiant privé, en reprend le
 titre et le texte et cite `depuis : <ID>`. L'entrée publique garde son
 identifiant, pour que les renvois restent valides, et rien d'autre :
 
@@ -456,6 +703,7 @@ interne, que `socle show` dit dans la langue du projet.
 | champ `date` | date | date |
 | champ `type` | type | type |
 | champ `remplacee-par` | remplacée-par | superseded-by |
+| champ `levee-par` | levée-par | lifted-by |
 | champ `bloque` | bloque | blocks |
 | champ `retiree` | retirée | withdrawn |
 | champ `reformulee` | reformulée | reworded |
@@ -466,34 +714,51 @@ interne, que `socle show` dit dans la langue du projet.
 | champ `sujet` | sujet | about |
 | champ `apres` | après | after |
 | champ `priorite` | priorité | priority |
+| champ `besoin` | besoin | need |
+| champ `ancien` | ancien | former |
+| champ `ecrite` | écrite | written |
+| champ `branche` | branche | branch |
+| champ `chaine` | chaîne | chain |
 | valeur `seance` | séance | session |
 | valeur `jalon` | jalon | milestone |
+| valeur `lot` | lot | batch |
 | valeur `haute` | haute | high |
 | valeur `basse` | basse | low |
-| section de sujet `fait-quand` | Fait quand | Done when |
+| section de tâche `fait-quand` | Fait quand | Done when |
+| section de besoin `satisfait-quand` | Satisfait quand | Satisfied when |
+| section de lot `revues` | Revues | Reviews |
+| titre de passe `passe` | Passe | Pass |
+| ligne de passe `commits` | Commits | Commits |
+| ligne de passe `arbre` | arbre de travail | working tree |
+| ligne de passe `bloquant` | Bloquant | Blocker |
+| ligne de passe `ouvre` | Ouvre | Opens |
 | statut F `mesure` | mesuré | measured |
 | statut F `suppose` | supposé | assumed |
 | statut F `refute` | réfuté | refuted |
 | statut F `valide` | validé | validated |
-| statut B `ouvert` | ouvert | open |
-| statut B `en-cours` | en cours | in progress |
-| statut B `bloque` | bloqué | blocked |
-| statut B `fait` | fait | done |
-| statut B `abandonne` | abandonné | abandoned |
+| statut B, T, L, JA `ouvert` | ouvert | open |
+| statut B, T, L, JA `en-cours` | en cours | in progress |
+| statut B, T, L, JA `bloque` | bloqué | blocked |
+| statut B, T, L, JA `fait` | fait | done |
+| statut B, T, L, JA `abandonne` | abandonné | abandoned |
 | statut ADR `proposee` | proposée | proposed |
 | statut ADR `acceptee` | acceptée | accepted |
 | statut ADR `remplacee` | remplacée | superseded |
 | statut ADR `rejetee` | rejetée | rejected |
 | statut ADR `abandonnee` | abandonnée | abandoned |
+| statut C `en-vigueur` | en vigueur | in force |
+| statut C `levee` | levée | lifted |
 | valeur `humain` | humain | human |
 | en-tête `couche` | couche | layer |
 | en-tête `zone` | zone | zone |
 | couche `canonique` | canonique | canonical |
 | couche `actif` | actif | active |
+| couche `consignes` | consignes | directives |
 | couche `decisions` | decisions | decisions |
 | couche `journal` | journal | journal |
 | couche `backlog` | backlog | backlog |
 | couche `demandes` | demandes | requests |
+| couche `passation` | passation | handoff |
 | zone `publique` | publique | public |
 | zone `privee` | privee | private |
 | référence `commit` | commit | commit |
@@ -538,10 +803,21 @@ comme une lecture neuve. Elle est obligatoire :
 - dans une décision nouvelle : `lu : decisions@…`, et chaque entrée citée
   avec son empreinte ;
 - dans une demande nouvelle : chaque entrée citée avec son empreinte ;
-- dans un sujet de backlog nouveau : `lu : backlog@…`.
+- dans une entrée nouvelle du backlog : `lu : backlog@…`, qui vaut aussi
+  pour l'index sans les entrées que le même travail ajoute dans d'autres
+  formes (un besoin, sa tâche et leur lot s'écrivent ensemble).
 
-`socle new adr` et `socle new backlog` affichent l'index concerné et posent
-son empreinte dans le squelette. Une citation ancienne n'est pas revérifiée
+Une consigne de l'humain se cite toujours avec son empreinte, celle que
+`socle show C-NNNN` imprime avec son texte exact : une mention de `C-NNNN`
+ajoutée dans n'importe quel fichier de la mémoire, le journal et le
+chantier actif compris, sans empreinte, est refusée, comme une empreinte
+périmée ou inventée. Ce qu'une entrée citait déjà à la base ne se rejuge
+pas, ni la question d'une décision prise en séance, recopiée de la
+conversation. Hors de la mémoire, et pour les autres entrées, la règle
+ne change pas.
+
+`socle new adr` et `socle new need|task|batch|milestone` affichent l'index
+concerné et posent son empreinte dans le squelette. Une citation ancienne n'est pas revérifiée
 quand l'entrée change ensuite : elle dit ce qui a été lu à l'époque.
 
 ## Ordre d'autorité

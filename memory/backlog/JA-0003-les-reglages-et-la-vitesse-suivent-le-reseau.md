@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
-# B-0019 — Les réglages et la vitesse suivent le réseau
+# JA-0003 — Les réglages et la vitesse suivent le réseau
 
-> statut : ouvert · origine : D-0004 · forme : jalon · après : B-0016, B-0017, B-0018 · lu : backlog@9b314e22
+> statut : ouvert · origine : D-0004 · après : JA-0002, B-0017, B-0018 · lu : backlog@9b314e22 · ancien : B-0019
 
 Deuxième jalon : le moteur est réglé pour le réseau qu'il porte. Les
 marges de la recherche ont été posées à la main, une par une, sur des

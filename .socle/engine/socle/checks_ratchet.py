@@ -31,6 +31,15 @@ ABSENT = object()
 REGLES = [
     (("budgets", "*", "max_bytes|max_lines"), "bas"),
     (("staleness", "active_days"), "bas"),
+    # Relevée au-delà de ce que Claude Code remet entier, la sortie du
+    # démarrage ne parviendrait plus à l'agent (ADR-0071).
+    (("startup", "max_bytes"), "bas"),
+    # Relevé, le seuil laisserait dériver en silence la durée des étapes
+    # rapides (B-0258) ; baissé, il avertit plus tôt.
+    (("verify", "fast_max_seconds"), "bas"),
+    # Relevé, le seuil tairait un lot qui ne se mène pas en une session
+    # (B-0233) ; baissé, il avertit plus tôt.
+    (("batches", "max_tasks"), "bas"),
     (("mutation", "caps", "*", "max"), "bas"),
     (("mutation", "caps", "*", "reason"), "libre"),
     (("mutation", "caps", "*", "pending"), "faux"),
@@ -54,7 +63,19 @@ REGLES = [
 
 # Une clé qui a une valeur par défaut : absente, elle la vaut, et l'écrire
 # telle quelle ne change rien (D-0087).
-DEFAUTS = {("branches", "disposable"): list(config.BRANCHES_JETABLES)}
+DEFAUTS = {("branches", "disposable"): list(config.BRANCHES_JETABLES),
+           ("startup", "max_bytes"): config.BORNE_DEMARRAGE,
+           ("verify", "fast_max_seconds"): config.SEUIL_RAPIDE,
+           ("batches", "max_tasks"): config.TACHES_PAR_SESSION}
+
+
+def _pas_un_nombre(valeur) -> bool:
+    """`nan` : toute comparaison avec lui est fausse, et le moteur le lit à
+    sa façon ; le cliquet ne peut le dire ni plus strict ni égal à une autre
+    valeur. Qu'il remplace une valeur ou qu'une valeur le remplace, c'est un
+    assouplissement qui exige une demande ; `inf` et `-inf`, eux,
+    s'ordonnent."""
+    return isinstance(valeur, float) and valeur != valeur
 
 
 def _cle(chemin: tuple[str, ...]) -> str:
@@ -121,11 +142,19 @@ def assouplissements(avant: dict, apres: dict, modules_existants: set[str] | Non
         b.setdefault(chemin, defaut)
     for chemin in sorted(set(a) | set(b)):
         va, vb = a.get(chemin, ABSENT), b.get(chemin, ABSENT)
-        if va == vb:
+        if va == vb or (_pas_un_nombre(va) and _pas_un_nombre(vb)):
             continue
         cle = _cle(chemin)
         sens = _regle(chemin)
         if sens == "libre":
+            continue
+        if _pas_un_nombre(vb) or (_pas_un_nombre(va) and vb is not ABSENT):
+            # Aucun ordre ne compare `nan` : écrit, ou relevé depuis lui, il
+            # passait pour un durcissement ou pour rien, et désarmait le
+            # seuil en deux temps (B-0258, relevé par la revue). Retiré
+            # d'une clé sans valeur par défaut, il suit la règle d'une clé
+            # retirée, plus bas.
+            res.append((cle, trad("clé ajoutée : {vb}", vb=repr(vb)) if va is ABSENT else f"{va} → {vb}"))
             continue
         if sens == "tolere":
             res += _toleres(cle, chemin[-1], va, vb, apres, renommes_toleres)
@@ -240,11 +269,52 @@ def _suivie(motif: str, docs: set[str], apres_docmap: list[tuple[set[str], set[s
                for f in couverts)
 
 
-def _valide_par(ctx, *citations: str):
+def _valide_par(ctx, *citations: str, intact=None):
+    """La validation de la plage qui cite tout ceci ; avec `intact`, à
+    défaut, une validation d'avant la plage sous la règle de
+    `Contexte.hors_plage` (D-0189), `intact(parent)` disant si ce qu'elle
+    nomme n'a pas bougé depuis sa demande."""
     for d in ctx.validations:
         if all(c in d.texte for c in citations):
             return d
-    return None
+    if intact is None:
+        return None
+    return ctx.hors_plage(lambda texte: all(c in texte for c in citations), intact)[0]
+
+
+def valeurs_citables(gf: dict) -> dict[str, object]:
+    """Chaque clé citable des garde-fous, telle qu'`assouplissements` la
+    nomme, et sa valeur : les clés aplaties, celles qui ont une valeur par
+    défaut comprises, chaque motif d'une correspondance code ↔ doc avec
+    les docs de ses lignes, chaque valeur liée avec sa déclaration."""
+    plats = aplatir(gf)
+    for c, defaut in DEFAUTS.items():
+        plats.setdefault(c, defaut)
+    res: dict[str, object] = {_cle(c): v for c, v in plats.items()}
+    for ligne in gf.get("docmap", []):
+        for g in ligne.get("code", []):
+            res.setdefault(f"docmap {json.dumps(g, ensure_ascii=False)}", []).append(sorted(ligne.get("docs", [])))
+    for v in gf.get("values", []):
+        res[f"values {json.dumps(v.get('name'), ensure_ascii=False)}"] = v
+    return res
+
+
+def cle_intacte(ctx, parent: str, cle: str) -> bool:
+    """La clé citable `cle` a, au point de départ, sa valeur du commit
+    `parent`. Un constat toléré ajouté (`<clé> "<constat>"`) se compare par
+    la liste de sa clé. Des garde-fous illisibles à l'un des deux ne
+    laissent rien d'intact."""
+    import tomllib
+
+    chemin = ctx.projet.chemins.garde_fous
+    try:
+        avant = valeurs_citables(config.charger_toml(ctx.racine, chemin, parent))
+        apres = valeurs_citables(config.charger_toml(ctx.racine, chemin, ctx.depart))
+    except tomllib.TOMLDecodeError:
+        return False
+    if cle not in avant and cle not in apres and " " in cle:
+        cle = max((k for k in set(avant) | set(apres) if cle.startswith(k + " ")), key=len, default=cle)
+    return avant.get(cle, ABSENT) == apres.get(cle, ABSENT)
 
 
 @controle("cliquet.garde-fous", base=True)
@@ -256,15 +326,20 @@ def cliquet(ctx, r):
         return  # installation : rien à comparer
     for cle, pourquoi in assouplissements(avant, ctx.projet.garde_fous, set(ctx.fichiers), ctx.renommes,
                                           ctx.fichiers_base, ctx.renommes_adoption):
-        d = _valide_par(ctx, cle)
+
+        def intacte(parent, cle=cle):
+            return cle_intacte(ctx, parent, cle)
+
+        d = _valide_par(ctx, cle, intact=intacte)
         if d:
             r.avertir("cliquet.garde-fous", trad("assouplissement validé par {id} : {cle} — {pourquoi}",
                                                  id=d.id, cle=cle, pourquoi=pourquoi),
                       ctx.projet.chemins.garde_fous)
         else:
-            r.erreur("cliquet.garde-fous", trad("assouplissement sans validation humaine : {cle} — {pourquoi}. "
-                                                "Émettre une demande qui cite `{cle}` ; elle couvrira ce "
-                                                "changement une fois validée", cle=cle, pourquoi=pourquoi),
+            faute = trad("assouplissement sans validation humaine : {cle} — {pourquoi}. Émettre une demande qui "
+                         "cite `{cle}` ; elle couvrira ce changement une fois validée", cle=cle, pourquoi=pourquoi)
+            note = ctx.hors_plage(lambda texte, cle=cle: cle in texte, intacte)[1]
+            r.erreur("cliquet.garde-fous", trad("{faute}{note}", faute=faute, note=note),
                      ctx.projet.chemins.garde_fous)
 
 
@@ -318,6 +393,72 @@ def installation_en_cours(racine) -> bool:
     return outils.lire_a(racine, ref, config.FORMAT_ACTUEL.lock) is None
 
 
+def poses_par_la_mise_a_jour(ctx) -> set[str]:
+    """Les fichiers protégés de l'arbre de travail qu'une mise à jour du
+    socle a posés tels qu'ils sont ; vide hors d'une mise à jour (ADR-0077).
+    Le signe : le verrou du moteur a changé depuis la base, et l'empreinte
+    qu'il porte est celle du moteur de l'arbre et celle du moteur qu'un
+    passage de l'installeur a copié (`copied`), ce que seul l'installeur
+    écrit. Un passage lancé depuis le projet recalcule l'empreinte du moteur
+    sans le copier : il n'écrit `copied` que si le moteur n'a pas changé
+    depuis la copie. Posés par elle : le verrou, le moteur et son lanceur,
+    que cette empreinte couvre, et les fichiers que le verrou nomme sous
+    `[installed]` avec l'empreinte qu'ils ont encore."""
+    projet = ctx.projet
+    verrou = projet.lock
+    chemin_verrou = projet.chemins.lock
+    if (ctx.tete is not None or projet.mode == config.MODE_AMONT or not verrou.get("fingerprint")
+            or verrou.get("copied") != verrou["fingerprint"]
+            or ctx.lire(chemin_verrou) == ctx.lire_base(chemin_verrou)):
+        return set()
+    if empreinte.calculer(ctx.racine, projet.dossier_moteur)[0] != verrou["fingerprint"]:
+        return set()
+    res = {chemin_verrou}
+    res |= {str(p.relative_to(ctx.racine)).replace("\\", "/")
+            for p in empreinte.fichiers_moteur(ctx.racine, projet.dossier_moteur)}
+    # L'installeur remplace le dossier du moteur en bloc : ce qui en
+    # disparaît, l'empreinte retrouvée, vient de lui.
+    paquet = projet.dossier_moteur + "/socle/"
+    res |= {c for c in ctx.changes if c.startswith(paquet) and not (ctx.racine / c).exists()}
+    installes = verrou.get("installed")
+    for c, attendue in (installes.items() if isinstance(installes, dict) else ()):
+        p = ctx.racine / c
+        if isinstance(attendue, str) and p.is_file() and empreinte.fichier(p) == attendue:
+            res.add(c)
+    return res
+
+
+def gabarit_de_la_copie(ctx, chemin: str) -> str | None:
+    """En mode amont, le gabarit qu'une copie d'un skill du socle
+    (`.claude/skills/socle-<nom>/SKILL.md`) reproduit, tel que l'installeur
+    le pose : dans la langue de la mémoire s'il y en a une version à la
+    révision jugée, en français sinon (ADR-0110) ; `None` hors du mode
+    amont et pour tout autre fichier."""
+    from socle import installer as installeur
+
+    if ctx.projet.mode != config.MODE_AMONT:
+        return None
+    m = re.fullmatch(re.escape(installeur.SKILLS) + r"/(socle-[^/]+)/SKILL\.md", chemin)
+    if not m:
+        return None
+    dossier = f"{ctx.projet.dossier_moteur.rstrip('/')}/socle/templates/skills/{m.group(1)}/"
+    lg = langue.du_projet(ctx.projet)
+    if lg != "fr" and ctx.lire(dossier + f"SKILL.{lg}.md") is not None:
+        return dossier + f"SKILL.{lg}.md"
+    return dossier + "SKILL.md"
+
+
+def suit_son_gabarit(ctx, chemin: str) -> str | None:
+    """Le gabarit que la copie d'un skill du socle reproduit à l'octet près
+    à la révision jugée, ou dont elle suit le retrait ; `None` sinon. En
+    mode amont, l'agent écrit les gabarits : la copie qui les suit n'attend
+    pas de demande (ADR-0110)."""
+    gabarit = gabarit_de_la_copie(ctx, chemin)
+    if gabarit is None or ctx.lire(chemin) != ctx.lire(gabarit):
+        return None
+    return gabarit
+
+
 @controle("protege.fichiers", base=True)
 def proteges(ctx, r):
     """Un fichier protégé ne change qu'avec une demande validée qui cite son
@@ -340,10 +481,17 @@ def proteges(ctx, r):
     def existe(chemin: str) -> bool:
         return (ctx.racine / chemin).is_file() if ctx.tete is None else ctx.lire(chemin) is not None
 
-    for c in outils.filtrer(ctx.changes, motifs):
+    changes = outils.filtrer(ctx.changes, motifs)
+    poses = poses_par_la_mise_a_jour(ctx) if changes else set()
+    de_la_mise_a_jour = []
+    for c in changes:
         if memoire.est_reponse(c):
             continue  # les réponses sont le mécanisme de validation lui-même
         if ctx.projet.mode == config.MODE_AMONT and c.startswith(ctx.projet.dossier_moteur + "/socle/"):
+            continue
+        if (gabarit := suit_son_gabarit(ctx, c)) is not None:
+            r.avertir("protege.fichiers", trad("copie identique à son gabarit `{gabarit}`, en mode amont : elle le "
+                                               "suit sans demande", gabarit=gabarit), c)
             continue
         present = existe(c)
         if present and ctx.tete is None:
@@ -356,7 +504,11 @@ def proteges(ctx, r):
             premier = empreinte.supprime(langue.du_projet(ctx.projet))
             cites = [premier, *(m for m in empreinte.SUPPRIME.values() if m != premier)]
         cite = cites[0]
-        d = next((v for v in (_valide_par(ctx, c, x) for x in cites) if v), None)
+
+        def intact(parent, c=c):
+            return outils.lire_a(ctx.racine, parent, c) == outils.lire_a(ctx.racine, ctx.depart, c)
+
+        d = next((v for v in (_valide_par(ctx, c, x, intact=intact) for x in cites) if v), None)
         attente = None if d else next((a for a in (_en_attente(ctx, c, x, au_commit=True) for x in cites) if a), None)
         if d:
             r.avertir("protege.fichiers", trad("modification validée par {id}", id=d.id), c)
@@ -367,17 +519,39 @@ def proteges(ctx, r):
         elif attente:
             r.avertir("protege.fichiers", trad("modification en attente de {id} : le tour peut finir, le commit "
                                                "et la CI attendent la réponse de l'humain", id=attente.id), c)
+        elif c in poses:
+            de_la_mise_a_jour.append((c, cite))
         elif re.search(r"(^|/)\.claude/settings(\.local)?\.json$", c):
             # Les réglages de Claude Code restent à l'humain, remise comprise.
-            r.erreur("protege.fichiers", trad("fichier protégé modifié sans validation humaine. Une demande "
-                                              "validée doit citer `{fichier}` et `{cite}`", fichier=c, cite=cite), c)
+            r.erreur("protege.fichiers", trad("{faute}{note}", faute=trad(
+                "fichier protégé modifié sans validation humaine. Une demande validée doit citer `{fichier}` et "
+                "`{cite}`", fichier=c, cite=cite), note=_note_hors_plage(ctx, c, cites, intact)), c)
         else:
-            r.erreur("protege.fichiers", trad("fichier protégé modifié sans validation humaine. Une demande "
-                                              "validée doit citer `{fichier}` et `{cite}`. Changé par erreur dans "
-                                              "l'arbre de travail, l'agent le remet à son état du dernier commit : "
-                                              "`git restore --source=HEAD --staged --worktree -- {fichier}`, ou "
-                                              "`rm {fichier}` s'il est apparu sans être suivi par git (D-0098)",
-                                              fichier=c, cite=cite), c)
+            r.erreur("protege.fichiers", trad("{faute}{note}", faute=trad(
+                "fichier protégé modifié sans validation humaine. Une demande validée doit citer `{fichier}` et "
+                "`{cite}`. Changé par erreur dans l'arbre de travail, l'agent le remet à son état du dernier "
+                "commit : `git restore --source=HEAD --staged --worktree -- {fichier}`, ou `rm {fichier}` s'il est "
+                "apparu sans être suivi par git (D-0098)", fichier=c, cite=cite),
+                note=_note_hors_plage(ctx, c, cites, intact)), c)
+    # Une cause pour tous : la demande de la mise à jour, pas encore posée.
+    # Chaque fichier garde son erreur, que `socle check` liste ; la fin de
+    # tour n'en imprime que la ligne commune (ADR-0077).
+    if not de_la_mise_a_jour:
+        return
+    commune = trad("une mise à jour du socle attend sa demande : la poser. {n} fichier(s) protégé(s) qu'elle a "
+                   "posé(s), sans validation ni demande en attente ; `python3 .socle/socle check --stage agent "
+                   "--only protege.fichiers` les liste avec leurs empreintes, et les étapes « Et maintenant » de "
+                   "l'installeur disent comment poser la demande", n=len(de_la_mise_a_jour))
+    for c, cite in de_la_mise_a_jour:
+        r.erreur("protege.fichiers", trad("fichier protégé posé par la mise à jour du socle, sans validation "
+                                          "humaine : une demande validée doit citer `{fichier}` et `{cite}`",
+                                          fichier=c, cite=cite), c, regroupe=commune)
+
+
+def _note_hors_plage(ctx, chemin: str, cites: list[str], intact) -> str:
+    """Ce que le refus d'un fichier protégé dit des validations d'avant la
+    plage qui le citent sans le couvrir."""
+    return ctx.hors_plage(lambda texte: chemin in texte and any(x in texte for x in cites), intact)[1]
 
 
 @controle("moteur.empreinte")

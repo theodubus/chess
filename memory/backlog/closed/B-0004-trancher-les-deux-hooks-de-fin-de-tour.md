@@ -38,7 +38,7 @@ les fichiers de tests que l'adaptateur déclare, dont ceux d'`engine/tests/`
 (J-2026-11-13-C). L'adaptateur n'a donc pas à changer ; reste le geste de
 Théo sur `.claude/settings.json` (B-0034).
 
-## Fait quand
+## Satisfait quand
 
 - [x] Théo a choisi : garder les deux hooks, ou n'en garder qu'un et fermer le trou des tests d'intégration
 - [x] `.claude/settings.json` et l'adaptateur disent ce choix

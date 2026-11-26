@@ -14,7 +14,7 @@ sous pendule, les aléas de la machine l'atténuent. En liste CCRL, sans
 effet : son livre impose les ouvertures. Notée « à décider par Théo »,
 jamais posée.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si décidée : le moyen de varier choisi, et l'arbre à un fil inchangé quand il est éteint

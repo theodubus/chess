@@ -26,6 +26,6 @@ déjà se recopie, les comptes du registre (parties, positions) servant à
 vérifier la copie. Le n° 20 et (e) ne servent que jusqu'à l'embarquement
 du réseau suivant (B-0013) : embarqué avant la copie, ils n'y vont pas.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] chaque génération qui sert encore est sur le disque dur de Théo, ses comptes vérifiés contre son registre

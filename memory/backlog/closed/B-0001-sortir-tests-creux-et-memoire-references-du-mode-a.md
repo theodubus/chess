@@ -27,7 +27,7 @@ sortir durcit un garde-fou, ce qui est libre : l'agent le fait seul.
 Les deux derniers points touchent des fichiers `.rs`, dans leurs tests
 seulement : le banc et l'arbre ne changent pas.
 
-## Fait quand
+## Satisfait quand
 
 - [x] les deux chemins de `tools/README.md` ne sont plus signalés
 - [x] les deux assertions de déterminisme sont marquées voulues, avec leur raison

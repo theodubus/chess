@@ -10,7 +10,7 @@ que le test lirait.
 
 - Les archives, sous memory/archives : « documents archivés tels quels (cadrage…), non
   lus par les contrôles » (`.socle/engine/socle/FORMAT.md`). Une archive
-  du carnet, si B-0003 en pose une, citerait la forme de la ligne de
+  du carnet, si JA-0001 en pose une, citerait la forme de la ligne de
   référence comme son journal la cite, et ferait tomber le test.
 - La mémoire privée, sous memory/private : en mode compagnon un clone
   ignoré par git, avec son propre journal, ses demandes et ses décisions.
@@ -31,7 +31,7 @@ que D-0020 ne couvrait pas : un clone ignoré par git, en mode compagnon,
 que le test lirait en local et pas en CI (`engine/tests/bench_reference.rs`
 parcourt les dossiers). La question est posée à Théo en séance.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] Théo a dit si la mémoire privée est écartée du test, le jour où elle existe, et le test le fait, ou le sujet est abandonné
 

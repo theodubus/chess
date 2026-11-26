@@ -12,7 +12,7 @@ moyenne. Sa rustine est à l'attic (`tools/attic/f2-cache-des-recalculs.patch`).
 Une optimisation pure : même arbre, mesurée par le temps au rejeu, sans
 match.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] la rustine s'applique et se construit sur le `main` qui porte le nouveau réseau
 - [ ] le temps à arbre identique est mesuré sur 120 tours, la puissance écrite avant

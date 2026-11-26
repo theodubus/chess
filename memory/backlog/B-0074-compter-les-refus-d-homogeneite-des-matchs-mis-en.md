@@ -17,7 +17,7 @@ de régime pendant le match, une dispersion par job mal estimée — fausserait
 les ± de chaque verdict mis en commun. Le compte se fait sur le journal,
 sans runner.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] chaque groupe de jobs mis en commun depuis septembre 2026 est compté, refusé ou non, avec son p
 - [ ] la fréquence des refus et la distribution des p sont confrontées à ce qu'un seul effet donnerait, leur écart écrit au journal

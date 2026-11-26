@@ -54,6 +54,20 @@ class TestCalc(unittest.TestCase):
     def test_double(self):
         self.assertEqual(double(2), 4)
 '''
+# Un test d'un peu plus d'une seconde : les étapes rapides du projet d'essai
+# passent alors le seuil d'une seconde, et restent loin de celui du gabarit
+# (B-0258).
+TEST_LENT = '''import time
+import unittest
+
+from calc import double
+
+
+class TestLent(unittest.TestCase):
+    def test_double_lent(self):
+        time.sleep(1.2)
+        self.assertEqual(double(3), 6)
+'''
 DOC_CALC = """# Calcul
 
 `double` multiplie par <!-- valeur:facteur -->2<!-- /valeur -->, la
@@ -112,6 +126,31 @@ BACKLOG_ESSAI = """
 
 Demandé pour l'essai.
 """
+# La section d'un besoin nouveau (ADR-0083).
+SATISFAIT_ESSAI = "\n## Satisfait quand\n\n- [ ] le module le fait\n"
+# Une consigne de l'humain (B-0161) : sa ligne de résumé, sa source, son
+# texte exact.
+CONSIGNE_ESSAI = """
+## {ident} — Le module de calcul reste sans dépendance
+
+> statut : {statut} · source : {journal} · date : 2026-10-10
+
+> « Pas de dépendance externe dans le module de calcul. »
+"""
+
+
+def tache_essai(a, c: Path, statut: str = "ouvert", criteres: str = "- [x] le test passe") -> str:
+    """La tâche T-0001 du besoin B-0001, dans sa forme : son besoin, sa
+    lecture de l'index, son « Fait quand »."""
+    return (f"\n## T-0001 — Écrire triple et son test\n\n> statut : {statut} · origine : {a.journal} · "
+            f"besoin : B-0001 · lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n\n"
+            f"## Fait quand\n\n{criteres}\n")
+
+
+def lot_essai(a, c: Path, ident: str, apres: str, champs: str = "") -> str:
+    """Un lot qui attend `apres`."""
+    return (f"\n## {ident} — Le lot de la multiplication\n\n> statut : ouvert · origine : {a.journal} · "
+            f"après : {apres}{champs} · lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
 
 
 @dataclass
@@ -135,11 +174,10 @@ class Atelier:
             "GIT_AUTHOR_NAME": "autotest", "GIT_AUTHOR_EMAIL": "autotest@socle",
             "GIT_COMMITTER_NAME": "autotest", "GIT_COMMITTER_EMAIL": "autotest@socle",
             "GIT_CONFIG_NOSYSTEM": "1", "HOME": str(self.dossier),
-            # Les cas clonent l'origine en parallèle, en local : une
-            # maintenance automatique de git, lancée en arrière-plan par un
-            # commit ou une réception, y range les objets pendant qu'un clone
-            # les copie (« failed to copy file », « hardlink different from
-            # source »). Elle n'a rien à faire dans des dépôts jetables.
+            # La maintenance automatique de git, lancée en arrière-plan par
+            # un commit ou une réception, n'a rien à faire dans des dépôts
+            # jetables. Ce qui faisait échouer les clones parallèles de
+            # l'origine était la quarantaine d'un push : voir `clone`.
             "GIT_CONFIG_COUNT": "3",
             "GIT_CONFIG_KEY_0": "gc.auto", "GIT_CONFIG_VALUE_0": "0",
             "GIT_CONFIG_KEY_1": "maintenance.auto", "GIT_CONFIG_VALUE_1": "false",
@@ -210,11 +248,16 @@ class Atelier:
         p.write_text(p.read_text().rstrip("\n") + "\n" + bloc)
 
     def clone(self, origine: Path | None = None, config: tuple[str, ...] = ()) -> Path:
+        """Un clone jetable de l'origine, par le protocole (`--no-local`) :
+        d'autres cas y poussent en même temps, et un clone local, qui lit
+        le dossier des objets, y rencontre la quarantaine d'un push en
+        cours (« hardlink different from source », « failed to copy
+        file » ; B-0341)."""
         with self._verrou:
             self.n += 1
             c = self.dossier / f"cas-{self.n:02d}"
         options = [x for cle in config for x in ("-c", cle)]
-        self.git(self.dossier, "clone", "-q", *options, str(origine or self.origine), str(c))
+        self.git(self.dossier, "clone", "-q", "--no-local", *options, str(origine or self.origine), str(c))
         self.git(c, "config", "core.hooksPath", ".socle/git-hooks")
         self.git(c, "checkout", "-q", "-b", "travail")
         return c
@@ -229,7 +272,8 @@ class Atelier:
         o = self.dossier / f"origine-{mode}"
         if o.is_dir():
             return o
-        self.git(self.dossier, "clone", "-q", *(x for cle in self.filtre() for x in ("-c", cle)), str(self.origine), str(o))
+        self.git(self.dossier, "clone", "-q", "--no-local", *(x for cle in self.filtre() for x in ("-c", cle)),
+                 str(self.origine), str(o))
         pol = o / ".socle/policy.toml"
         relecture = 'review = "lots"\n' if mode == "compagnon" else ""
         pol.write_text(pol.read_text() + f'\n[private]\nmode = "{mode}"\n' + relecture)
@@ -269,7 +313,7 @@ class Atelier:
         o = self.origine_privee(mode)
         c = self.clone(o, self.filtre() if mode == "chiffre" and cle else ())
         if mode == "compagnon" and compagnon:
-            self.git(c, "clone", "-q", str(self.dossier / "prive-origine"), "memory/private")
+            self.git(c, "clone", "-q", "--no-local", str(self.dossier / "prive-origine"), "memory/private")
         return c
 
     def commit(self, c: Path, message: str, verifier: bool = False, env=None):
@@ -340,6 +384,26 @@ def protege_en_attente(a: Atelier, c: Path) -> None:
         "## Où regarder", f"- `.github/CODEOWNERS` et `{cite}` — le fichier protégé changé.\n\n## Où regarder", 1))
     pousser(a, c, "La demande")
     (c / ".github/CODEOWNERS").write_text(nouveau)
+
+
+def _valeur_en_attente(a: Atelier, c: Path) -> None:
+    """La valeur attendue de `test_double` changée dans l'arbre, sous la
+    demande poussée qui nomme le test (D-0147)."""
+    ajouter(c, "memory/requests/D-0001-refactor.md", _demande_nommant_le_test(a, c))
+    pousser(a, c, "La demande")
+    remplacer(c, "tests/test_calc.py", "self.assertEqual(double(2), 4)", "self.assertEqual(double(2), 4.0)")
+    maj_memoire(c, "Le test suit la demande, en attendant la réponse.")
+
+
+def _pousser_un_cas_de_plus(a: Atelier, c: Path) -> None:
+    """Un cas de plus pour `double`, que seule la branche a, poussé par le
+    hook avant push, qui garde le commit poussé (ADR-0104)."""
+    ajouter(c, "tests/test_calc.py", "    def test_double_de_trois(self):\n        self.assertEqual(double(3), 6)\n")
+    maj_memoire(c, "Un cas de plus pour double.")
+    a.commit(c, "Un cas de plus")
+    refus = etage_push(a, c)
+    if refus:
+        raise RuntimeError(refus)
 
 
 def _demande_d_une_mise_a_jour(a: Atelier, c: Path, fichiers: int, prose: str = "") -> None:
@@ -483,6 +547,13 @@ def _adr_test_double(a: "Atelier", c: Path) -> str:
 
 DEPOT_ESSAI = "https://github.com/essai/calc"
 RECAP = "\n\nPour toi : rien.\nEnsuite : rien."
+# Le compact de `socle roadmap`, qui finit par sa propre ligne « Ensuite : »,
+# collé dans un bloc de code au récap de la clôture d'un lot : il ne tient
+# pas lieu de récap (ADR-0089).
+COMPACT_COLLE = ("JA-0001  Le premier jalon      0/1 besoins clos\n"
+                 " ▶ L-0001  Le premier lot  0/1  en cours\n"
+                 "Hors lot : rien\n"
+                 "Ensuite : JA-0002 Le second jalon (B-0002)")
 
 
 def _demande_nommant_le_test(a: "Atelier", c: Path) -> str:
@@ -490,6 +561,118 @@ def _demande_nommant_le_test(a: "Atelier", c: Path) -> str:
     valeur attendue."""
     return demande_bonne(a, c).replace(
         "## Où regarder", "- `test_double` — le test du module, qui attend le double de deux.\n\n## Où regarder", 1)
+
+
+def _demande_nommant_la_cle(a: "Atelier", c: Path) -> str:
+    """Une demande au contrat qui nomme la clé des garde-fous
+    `staleness.active_days`, pour la relâcher."""
+    return demande_bonne(a, c).replace(
+        "## Où regarder", "- `staleness.active_days` — la péremption du chantier actif, de 7 à 14 jours.\n\n"
+                          "## Où regarder", 1)
+
+
+def _pousser_la_reponse(a: "Atelier", c: Path, avec_le_test: bool, cle: bool = False) -> tuple[int, str]:
+    """La demande qui nomme `test_double` (ou, avec `cle`, la clé des
+    garde-fous `staleness.active_days`), poussée ; la réponse `valider` de
+    l'humain, consignée et commitée, avec le changement qu'elle autorise ou
+    sans lui ; puis le push, par le hook avant push : son code et sa
+    sortie."""
+    demande = _demande_nommant_la_cle(a, c) if cle else _demande_nommant_le_test(a, c)
+    (c / "memory/requests/D-0001-refactor.md").write_text(demande)
+    pousser(a, c)
+    (c / "citation.txt").write_text("oui, compare à un flottant")
+    r = a.socle(c, "answer", "D-0001", "valider", "--relayed", "--by", "Théo", "--quote-file", "citation.txt")
+    (c / "citation.txt").unlink()
+    if r.returncode != 0:
+        return r.returncode, r.stdout + r.stderr
+    if avec_le_test and cle:
+        remplacer(c, ".socle/guardrails.toml", "active_days = 7", "active_days = 14")
+    elif avec_le_test:
+        remplacer(c, "tests/test_calc.py", "self.assertEqual(double(2), 4)", "self.assertEqual(double(2), 4.0)")
+    a.commit(c, "La réponse de Théo")
+    r = a.run(c, "git", "push", "-q", "origin", f"travail:{c.name}")
+    return r.returncode, r.stdout + r.stderr
+
+
+def _changer_sous_une_validation_fusionnee(a: "Atelier", c: Path, tache: str | None, avec_le_test: bool = False,
+                                           bouge: bool = False) -> str:
+    """La demande qui nomme `test_double`, poussée, sa réponse `valider`,
+    et, si `tache` est un statut, la tâche T-0001 qui la cite ; avec
+    `avec_le_test`, la valeur attendue changée dans le même commit. Le
+    tout fusionné dans la branche par défaut de ce clone seul (l'origine
+    est partagée). Avec `bouge`, le test change ensuite dans la branche par
+    défaut, d'un commentaire. Puis une nouvelle valeur attendue sur la
+    branche : ce qu'en dit la CI (D-0189, piste B)."""
+    (c / "memory/requests/D-0001-refactor.md").write_text(_demande_nommant_le_test(a, c))
+    pousser(a, c, "La demande")
+    (c / "citation.txt").write_text("oui, compare à un flottant")
+    r = a.socle(c, "answer", "D-0001", "valider", "--relayed", "--by", "Théo", "--quote-file", "citation.txt")
+    (c / "citation.txt").unlink()
+    if r.returncode != 0:
+        return r.stdout + r.stderr
+    if tache:
+        statut = "fait · ref : D-0001" if tache == "fait" else tache
+        ajouter_sujet(c, tache_essai(a, c, statut=statut).replace("Pour l'essai.", "Change `test_double` sous "
+                                                                                     "D-0001."))
+    attendu = "4"
+    if avec_le_test:
+        attendu = "4.0"
+        remplacer(c, "tests/test_calc.py", "self.assertEqual(double(2), 4)", "self.assertEqual(double(2), 4.0)")
+    a.commit(c, "La réponse de Théo")
+    a.git(c, "update-ref", "refs/remotes/origin/main", "HEAD")
+    if bouge:
+        remplacer(c, "tests/test_calc.py", f"self.assertEqual(double(2), {attendu})",
+                  f"self.assertEqual(double(2), {attendu})  # deux fois deux")
+        a.commit(c, "Le test commenté")
+        a.git(c, "update-ref", "refs/remotes/origin/main", "HEAD")
+    remplacer(c, "tests/test_calc.py", f"self.assertEqual(double(2), {attendu})",
+              "self.assertEqual(double(2), 4.00)")
+    maj_memoire(c, "La valeur attendue suit la réponse.")
+    return etage_ci(a, c)
+
+
+def _test_change_sous_une_decision_donnee(a: "Atelier", c: Path, texte: str) -> str:
+    """Une décision que l'humain donne de lui-même, `texte`, consignée par
+    `socle decision --unprompted` (B-0185), puis la valeur attendue de
+    `test_double` changée : ce qu'en dit la CI."""
+    (c / "citation.txt").write_text(texte)
+    r = a.socle(c, "decision", "Comparer le test du module à un flottant", "--unprompted", "--relayed", "--by",
+                "Théo", "--quote-file", "citation.txt")
+    (c / "citation.txt").unlink()
+    if r.returncode != 0:
+        return r.stdout + r.stderr
+    remplacer(c, "tests/test_calc.py", "self.assertEqual(double(2), 4)", "self.assertEqual(double(2), 4.0)")
+    maj_memoire(c)
+    return etage_ci(a, c)
+
+
+def _pousser_des_etapes_lentes(a: "Atelier", c: Path) -> tuple[int, str]:
+    """Un test d'un peu plus d'une seconde, commité, puis poussé par le hook
+    avant envoi, qui lance les étapes rapides : son code et sa sortie."""
+    ajouter(c, "tests/test_lent.py", TEST_LENT)
+    maj_memoire(c, "Un test plus lent.")
+    a.commit(c, "Un test plus lent")
+    r = a.run(c, "git", "push", "-q", "origin", f"travail:{c.name}")
+    return r.returncode, r.stdout + r.stderr
+
+
+def _seuil_rapide_nan_en_base(a: "Atelier", c: Path) -> None:
+    """Le seuil des étapes rapides à `nan`, à la base de la CI de ce clone
+    seulement : l'origine est partagée."""
+    remplacer(c, ".socle/guardrails.toml", "fast_max_seconds = 300", "fast_max_seconds = nan")
+    a.commit(c, "le seuil à nan")
+    a.git(c, "update-ref", "refs/remotes/origin/main", "HEAD")
+
+
+def _lot_de_deux_taches(a: "Atelier", c: Path, seuil: int) -> tuple[str, str]:
+    """Un lot ouvert qui attend deux tâches, sous `[batches] max_tasks =
+    seuil` : ce qu'en disent l'état du démarrage, puis le rappel de fin de
+    tour d'un dernier message sans récap (B-0233)."""
+    remplacer(c, ".socle/guardrails.toml", "max_tasks = 9", f"max_tasks = {seuil}")
+    ajouter_sujet(c, tache_essai(a, c))
+    ajouter_sujet(c, tache_essai(a, c).replace("T-0001 — Écrire triple", "T-0002 — Écrire quadruple"))
+    ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001, T-0002"))
+    return etage_demarrage(a, c), etage_stop(a, c, "J'ai formé le lot.")
 
 
 def pousser(a: Atelier, c: Path, message: str = "essai"):
@@ -502,13 +685,13 @@ def pousser(a: Atelier, c: Path, message: str = "essai"):
     a.git(c, "push", "-q", "--no-verify", "-u", "origin", f"travail:{c.name}")
 
 
-def tous_refuses(a: Atelier, c: Path, essais: list[tuple[str, dict]]) -> str:
+def tous_refuses(a: Atelier, c: Path, essais: list[tuple[str, dict]], cwd: Path | None = None) -> str:
     """Chaque appel doit être refusé par le hook de l'agent : leurs raisons,
     ou le premier qui passe, sans raison, pour que le défaut se dise non
-    attrapé."""
+    attrapé. `cwd`, le dossier courant de l'agent."""
     raisons = []
     for outil, args in essais:
-        refus = etage_outil(a, c, outil, args)
+        refus = etage_outil(a, c, outil, args, cwd)
         if not refus:
             return f"passé sans refus : {outil} {json.dumps(args, ensure_ascii=False)[:200]}"
         raisons.append(refus)
@@ -602,7 +785,7 @@ def _collision(a: "Atelier", c: Path) -> str:
 
     def prendre(titre: str):
         ajouter_sujet(c, f"\n## B-0002 — {titre}\n\n> statut : ouvert · origine : {a.journal} · "
-                f"lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
+                f"lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n{SATISFAIT_ESSAI}")
 
     a.git(c, "switch", "-q", "-c", "autre")
     prendre("Documenter le module")
@@ -615,12 +798,13 @@ def _collision(a: "Atelier", c: Path) -> str:
 
 
 def ajouter_sujet(c: Path, bloc: str):
-    """Un sujet de plus au backlog, écrit `## B-… — titre`, ses métadonnées,
-    son corps : dans son propre fichier, son titre remonté d'un niveau."""
+    """Une entrée de plus au backlog, écrite `## B-… — titre` (ou `T-`,
+    `L-`, `JA-`), ses métadonnées, son corps : dans son propre fichier, son
+    titre remonté d'un niveau."""
     from socle import config, memory as memoire, utils as outils
 
     ch = config.FORMAT_ACTUEL
-    m = re.match(r"\s*## (B-\d{4}) — (.+)", bloc)
+    m = re.match(r"\s*## ((?:B|T|L|JA)-\d{4}) — (.+)", bloc)
     texte = "<!-- socle: couche=backlog zone=publique -->\n" + bloc.strip("\n").replace("## ", "# ", 1) + "\n"
     rel = f"{ch.backlog}/{m[1]}-{memoire.nom_de_fichier(m[2])}.md"
     # Un sujet clos va d'emblée avec les clos.
@@ -643,6 +827,99 @@ def _clore(c: Path, ident: str):
                         lambda m: "> statut : fait" + (m[1] or "") + " · ref : fichier:calc.py", p.read_text(), count=1))
 
 
+def _consigne(a: Atelier, ident: str = "C-0001", statut: str = "en vigueur") -> str:
+    return CONSIGNE_ESSAI.format(ident=ident, statut=statut, journal=a.journal)
+
+
+def _consigne_en_base(a: Atelier, c: Path):
+    """La consigne C-0001, en vigueur, dans la base : commitée, et la branche
+    par défaut avancée jusqu'à elle, dans ce clone seulement."""
+    ajouter(c, "memory/directives.md", _consigne(a))
+    a.commit(c, "une consigne de l'humain")
+    a.git(c, "update-ref", "refs/remotes/origin/main", "HEAD")
+
+
+def _renumeroter_en_lot(c: Path, ident: str) -> str:
+    """Le besoin `ident`, écrit lot comme avant ADR-0083 (`forme : lot`),
+    renuméroté par la migration de la mise à jour : il prend le préfixe `L-`
+    et garde son ancien numéro (`ancien : ident`). Rend son numéro nouveau,
+    que les branches d'autres cas, poussées sur l'origine, peuvent décaler."""
+    from socle import migration
+
+    remplacer(c, _sujet(c, ident), "> statut : ouvert", "> statut : ouvert · forme : lot")
+    return dict(migration.migrer_backlog(c).renumerotees)[ident]
+
+
+def _citer_par_l_ancien_numero(a: Atelier, c: Path, ancien: str, h: str):
+    """Une entrée de journal qui cite une entrée renumérotée par son ancien
+    numéro, sous l'empreinte `h`."""
+    ajouter(c, "memory/journal/" + a.journal[2:9] + ".md",
+            f"\n## {a.journal[:-1]}B — Constat\n\nVoir {ancien}@{h}.\n")
+    maj_memoire(c, "Le backlog migré en quatre formes.")
+
+
+# L'historique des revues d'un lot (ADR-0084, ADR-0100) : les corrections
+# successives du code, une par passe, et ce que l'agent consigne au retour du
+# relecteur.
+CORRECTIONS = ("return x * FACTEUR", "return (x * FACTEUR)", "return (FACTEUR * x)", "return ((x * FACTEUR))",
+               "return FACTEUR * (x)")
+
+
+def _bloquant_essai() -> str:
+    return "\n- Bloquant : la correction change la lecture du facteur\n- Ouvre : rien\n"
+
+
+# Un paragraphe de l'agent sous les bloquants d'une passe, replié sur une
+# ligne qui commence par « bloquants » : ce n'est pas une ligne de bloquant.
+NOTE_REPLIEE = ("\nLa passe relit la correction de la multiplication ; ses\nbloquants sont consignés au-dessus, "
+                "un par ligne.\n")
+
+
+def _passes(a: Atelier, c: Path, consignes: list[str]) -> str:
+    """Le lot L-0001 en cours, qui attend la tâche T-0001 ; puis, pour
+    chaque consigne, une correction du code commitée, une passe de `socle
+    review` et la consigne ajoutée au lot ; enfin une passe de plus : la
+    sortie de `socle review` s'il la refuse, rien s'il la produit."""
+    ajouter_sujet(c, tache_essai(a, c))
+    ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001").replace("> statut : ouvert", "> statut : en cours"))
+    precedent = "return FACTEUR * x"
+    for i, consigne in enumerate([*consignes, None]):
+        remplacer(c, "calc.py", precedent, CORRECTIONS[i])
+        precedent = CORRECTIONS[i]
+        a.commit(c, f"la passe {i + 1}")
+        r = a.socle(c, "review")
+        if consigne is None:
+            return "" if r.returncode == 0 else r.stdout + r.stderr
+        if r.returncode != 0:
+            raise RuntimeError(r.stdout + r.stderr)
+        ajouter(c, _sujet(c, "L-0001"), consigne)
+    return ""
+
+
+def _lot_relu_clos(a: Atelier, c: Path, *suivantes: str):
+    """La tâche T-0001 faite, et le lot L-0001 qui l'attendait clos « fait »,
+    sa passe 1 et son bloquant, puis une passe par consigne de `suivantes`,
+    à partir de la deuxième."""
+    revues = "\n## Revues\n\n### Passe 1 — 2026-11-16\n\nCommits : 1a2b3c4..5d6e7f8\n" + _bloquant_essai()
+    for i, consigne in enumerate(suivantes, start=2):
+        revues += f"\n### Passe {i} — 2026-11-{15 + i}\n\nCommits : 5d6e7f8..9a8b7c6\n" + consigne
+    ajouter_sujet(c, tache_essai(a, c, statut="fait · ref : fichier:calc.py"))
+    ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001", " · ref : fichier:calc.py").replace(
+        "> statut : ouvert", "> statut : fait") + revues)
+    maj_memoire(c, "Le lot de la multiplication relu et clos.")
+
+
+def _lot_en_cours_relu(a: Atelier, c: Path, bloquant: str):
+    """Le lot L-0001 en cours, qui attend la tâche T-0001, et sa passe 1, où
+    l'agent consigne la ligne `bloquant`, puis un paragraphe dont une ligne
+    repliée commence par « bloquants »."""
+    revues = ("\n## Revues\n\n### Passe 1 — 2026-11-16\n\nCommits : 1a2b3c4..5d6e7f8\n\n" + bloquant +
+              "\n- Ouvre : rien\n" + NOTE_REPLIEE)
+    ajouter_sujet(c, tache_essai(a, c))
+    ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001").replace("> statut : ouvert", "> statut : en cours") + revues)
+    maj_memoire(c, "Le lot de la multiplication en revue.")
+
+
 def _declarer_ui_tierce(a: Atelier, c: Path):
     """L'interface, travaillée par d'autres sessions d'agents, déclarée tierce
     par l'humain qui l'approuve, dans un commit à lui (B-0169)."""
@@ -657,6 +934,128 @@ def _declarer_ui_tierce(a: Atelier, c: Path):
 
 def maj_memoire(c: Path, texte: str = "Travail en cours sur l'essai."):
     remplacer(c, "memory/active.md", "## En cours\n\nRien pour l'instant.", f"## En cours\n\n{texte}")
+
+
+def _clone_d_un_clone(a: Atelier, c: Path, ref: str | None) -> Path:
+    """Un commit de `c` que seul `ref` garde (aucun ref, s'il est `None`),
+    cité par la mémoire du clone ; puis un clone de `c` tel qu'un agent le
+    fait hors de GitHub, qui ne reçoit pas les objets qu'aucun ref
+    n'atteint (`--no-local`, B-0175)."""
+    a.git(c, "checkout", "-q", "-b", "piste")
+    (c / "piste.txt").write_text("piste\n")
+    a.commit(c, "piste")
+    sha = a.git(c, "rev-parse", "HEAD").strip()
+    if ref:
+        a.git(c, "update-ref", ref, sha)
+    a.git(c, "checkout", "-q", "travail")
+    a.git(c, "branch", "-q", "-D", "piste")
+    maj_memoire(c, f"Repris de la piste (commit:{sha[:7]}).")
+    a.commit(c, "essai")
+    d = c.parent / f"{c.name}-clone"
+    a.git(a.dossier, "clone", "-q", "--no-local", str(c), str(d))
+    a.git(d, "config", "core.hooksPath", ".socle/git-hooks")
+    return d
+
+
+def _ranger(a: Atelier, c: Path, pousser: bool = True) -> Path:
+    """Le rangement de la session qui part, `c`, dans une origine nue à soi :
+    l'origine partagée reçoit les branches des autres cas, que la garde
+    lirait. Commité, et poussé si `pousser`. Rend le chemin de l'origine."""
+    nu = c.parent / f"{c.name}-nu"
+    a.git(a.dossier, "clone", "-q", "--bare", "--no-local", "--single-branch", "--branch", "main", str(a.origine),
+          str(nu))
+    a.git(c, "remote", "set-url", "origin", str(nu))
+    a.git(c, "fetch", "-q", "origin")
+    maj_memoire(c, "La passation de l'essai.")
+    a.commit(c, "le rangement")
+    if pousser:
+        a.git(c, "push", "-q", "--no-verify", "-u", "origin", "travail")
+    return nu
+
+
+def _ecrire_la_passation(a: Atelier, c: Path, commiter: bool = True, pousser: bool = True):
+    """La session qui part, `c`, range (`_ranger`, sans pousser), écrit sa
+    passation (`socle handoff write`), la commite en dernier et pousse."""
+    _ranger(a, c, pousser=False)
+    r = a.socle(c, "handoff", "write")
+    if r.returncode != 0:
+        raise RuntimeError(r.stdout + r.stderr)
+    if commiter:
+        a.commit(c, "la passation")
+    if commiter and pousser:
+        a.git(c, "push", "-q", "--no-verify", "-u", "origin", "travail")
+
+
+def _passation(a: Atelier, c: Path) -> tuple[Path, datetime]:
+    """Une passation écrite, commitée et poussée (`_ecrire_la_passation`).
+    Rend le clone de la session neuve, et l'heure `écrite` de la
+    passation."""
+    _ecrire_la_passation(a, c)
+    texte = (c / "memory/handoff.md").read_text(encoding="utf-8")
+    ecrite = re.search(r"écrite : (\S+)", texte)
+    if not ecrite:
+        raise RuntimeError(texte)
+    neuve = c.parent / f"{c.name}-neuve"
+    a.git(a.dossier, "clone", "-q", "--no-local", str(c.parent / f"{c.name}-nu"), str(neuve))
+    return neuve, datetime.strptime(ecrite.group(1), "%Y-%m-%dT%H:%M:%SZ")
+
+
+def _fusion_par_squash(a: Atelier, c: Path):
+    """La pull request de la branche passée, fusionnée par squash dans la
+    branche par défaut de l'origine de `_ranger`, sa branche supprimée."""
+    github = c.parent / f"{c.name}-github"
+    a.git(a.dossier, "clone", "-q", "--no-local", str(c.parent / f"{c.name}-nu"), str(github))
+    a.git(github, "merge", "-q", "--squash", "origin/travail")
+    a.commit(github, "Le lot (#1)")
+    a.git(github, "push", "-q", "--no-verify", "origin", "main", ":travail")
+
+
+def _apres_la_passation(ecrite: datetime) -> dict:
+    """L'environnement d'un commit écrit et daté d'une minute après la
+    passation."""
+    date = (ecrite + timedelta(minutes=1)).strftime("%Y-%m-%dT%H:%M:%S+0000")
+    return {"GIT_COMMITTER_DATE": date, "GIT_AUTHOR_DATE": date}
+
+
+# La marque d'un commit d'agent, telle que la politique d'essai la reconnaît.
+MARQUE_AGENT = "\n\nCo-Authored-By: Claude <noreply@anthropic.com>"
+BRANCHE_ELAGUEE = "travail-fini"
+
+
+def _branche_a_elaguer(a: Atelier, c: Path, agent: bool, fusionner: bool = True) -> Path:
+    """Un clone d'une origine à soi, nue : la commande y supprime sans
+    toucher aux branches que les autres cas poussent sur l'origine commune.
+    La branche `travail-fini` y est poussée, d'un commit de l'agent ou de
+    l'humain, et fusionnée dans `main` si `fusionner`."""
+    # `main` seule : les branches que les autres cas poussent en même temps
+    # sur l'origine commune n'y entrent pas.
+    origine = a.dossier / f"origine-elagage-{c.name}"
+    a.git(a.dossier, "clone", "-q", "--bare", "--no-local", "--single-branch", "--branch", "main", str(a.origine),
+          str(origine))
+    clone = a.clone(origine)
+    a.git(clone, "switch", "-q", "-c", BRANCHE_ELAGUEE, "origin/main")
+    ajouter(clone, "calc.py", "\n# fini\n")
+    a.commit(clone, "Le travail fini" + (MARQUE_AGENT if agent else ""))
+    a.git(clone, "push", "-q", "--no-verify", "origin", BRANCHE_ELAGUEE)
+    a.git(clone, "switch", "-q", "travail")
+    if fusionner:
+        a.git(clone, "push", "-q", "--no-verify", "origin", f"{BRANCHE_ELAGUEE}:main")
+    a.git(clone, "fetch", "-q", "origin")
+    return clone
+
+
+def _elagage_vu(a: Atelier, clone: Path, r: subprocess.CompletedProcess) -> str:
+    """La sortie de la commande si la branche est restée sur l'origine ;
+    rien si elle l'a supprimée : le défaut passe alors inaperçu."""
+    restee = a.git(clone, "ls-remote", "--heads", "origin", f"refs/heads/{BRANCHE_ELAGUEE}").strip()
+    return r.stdout + r.stderr if restee else ""
+
+
+def _session_neuve(a: Atelier, neuve: Path) -> subprocess.CompletedProcess:
+    """La session neuve, sur une demande de reprendre : `git fetch`, puis
+    `socle handoff check` sans argument."""
+    a.git(neuve, "fetch", "-q", "origin")
+    return a.socle(neuve, "handoff", "check")
 
 
 # --------------------------------------------------------------------------
@@ -771,6 +1170,11 @@ def _cas() -> list[Cas]:
         ajouter(c, "docs/calc.md", "Voir F-0099 et [le guide](guide.md).\n")
         return etage_git(a, c)
 
+    @defaut("commit-sans-ref", "commit cité que l'origine ne garde par aucun ref, absent d'un clone neuf", "ci",
+            "memoire.references")
+    def _(a, c):
+        return etage_ci(a, _clone_d_un_clone(a, c, None))
+
     @defaut("code-sans-doc", "code modifié sans doc associée", "agent", "docs.correspondance")
     def _(a, c):
         remplacer(c, "calc.py", "return FACTEUR * x", "return x * FACTEUR")
@@ -851,8 +1255,36 @@ def _cas() -> list[Cas]:
 
     @defaut("budget-releve", "budget de mémoire relevé", "ci", "cliquet.garde-fous")
     def _(a, c):
-        remplacer(c, ".socle/guardrails.toml", '"memory/active.md" = { max_bytes = 6000 }', '"memory/active.md" = { max_bytes = 60000 }')
+        remplacer(c, ".socle/guardrails.toml", '"memory/active.md" = { max_bytes = 1600 }', '"memory/active.md" = { max_bytes = 60000 }')
         return etage_ci(a, c)
+
+    @defaut("seuil-rapide-releve", "seuil de durée des étapes rapides relevé", "ci", "cliquet.garde-fous")
+    def _(a, c):
+        remplacer(c, ".socle/guardrails.toml", "fast_max_seconds = 300", "fast_max_seconds = 900")
+        return etage_ci(a, c)
+
+    @defaut("seuil-rapide-nan-releve", "seuil de durée des étapes rapides à `nan` en base, puis relevé",
+            "ci", "cliquet.garde-fous")
+    def _(a, c):
+        # Aucun ordre ne compare `nan` : le relever depuis lui passait sans
+        # demande (B-0258).
+        _seuil_rapide_nan_en_base(a, c)
+        remplacer(c, ".socle/guardrails.toml", "fast_max_seconds = nan", "fast_max_seconds = 900")
+        return etage_ci(a, c)
+
+    @defaut("etapes-lentes", "étapes rapides plus longues que leur seuil d'une seconde", "verify", "verify.duree")
+    def _(a, c):
+        remplacer(c, ".socle/guardrails.toml", "fast_max_seconds = 300", "fast_max_seconds = 1")
+        ajouter(c, "tests/test_lent.py", TEST_LENT)
+        r = a.socle(c, "verify", "--fast")
+        return r.stdout + r.stderr
+
+    @defaut("etapes-lentes-poussees", "étapes rapides plus longues que leur seuil d'une seconde, lancées par le "
+            "hook avant envoi", "git", "verify.duree")
+    def _(a, c):
+        # B-0258 : le hook laisse passer, et le dit sur la sortie du push.
+        remplacer(c, ".socle/guardrails.toml", "fast_max_seconds = 300", "fast_max_seconds = 1")
+        return _pousser_des_etapes_lentes(a, c)[1]
 
     @defaut("correctif-sans-test", "correctif sans test de régression", "ci", "tests.regression")
     def _(a, c):
@@ -860,6 +1292,17 @@ def _cas() -> list[Cas]:
         remplacer(c, "docs/calc.md", "la\nconstante", "la constante\nentière")
         maj_memoire(c, "Correctif de `double` sur les chaînes.")
         return etage_ci(a, c, "fix: double accepte une chaîne")
+
+    @defaut("correctif-egare-sans-test", "correctif dont le `Corrige:` est hors du dernier paragraphe du message, "
+            "sans test de régression", "ci", "tests.regression")
+    def _(a, c):
+        # Une ligne que git ne lit pas comme un trailer, dans un paragraphe à
+        # part, avant les lignes d'attribution : le commit reste un correctif
+        # (B-0348, ADR-0109).
+        remplacer(c, "calc.py", "return FACTEUR * x", "return FACTEUR * int(x)")
+        remplacer(c, "docs/calc.md", "la\nconstante", "la constante\nentière")
+        maj_memoire(c, "Correctif de `double` sur les chaînes.")
+        return etage_ci(a, c, MESSAGE_CORRIGE_EGARE)
 
     @defaut("regression-qui-ne-se-charge-pas", "test de régression qui échoue sur le parent faute de s'y charger",
             "ci", "tests.regression")
@@ -954,6 +1397,24 @@ def _cas() -> list[Cas]:
         a.commit(c, "La mise à jour")
         r = a.socle(c, "check", "--stage", "ci", "--base", "origin/main", env=ci_exigee(a, c))
         return "" if r.returncode == 0 else r.stdout + r.stderr
+
+    @defaut("valeur-attendue-en-attente-a-la-ci", "valeur attendue commitée sous une demande en attente, la CI "
+            "du socle exigée", "ci", "tests.attendus")
+    def _(a, c):
+        # D-0147 : elle se commite et se pousse, mais la CI la refuse jusqu'à
+        # la réponse de l'humain.
+        _valeur_en_attente(a, c)
+        a.commit(c, "Le test suit")
+        r = a.socle(c, "check", "--stage", "ci", "--base", "origin/main", env=ci_exigee(a, c))
+        return "" if r.returncode == 0 else r.stdout + r.stderr
+
+    @defaut("valeur-attendue-sans-demande-ci-exigee", "valeur attendue commitée sans demande, la CI du socle "
+            "exigée", "git", "tests.attendus")
+    def _(a, c):
+        # La tolérance de D-0147 ne vaut que sous une demande poussée.
+        remplacer(c, "tests/test_calc.py", "self.assertEqual(double(2), 4)", "self.assertEqual(double(2), 4.0)")
+        maj_memoire(c)
+        return etage_git(a, c, env=ci_exigee(a, c))
 
     @defaut("demande-identifiant-nu", "demande humaine avec identifiant nu", "agent", "demandes.contrat")
     def _(a, c):
@@ -1067,6 +1528,15 @@ def _cas() -> list[Cas]:
         corps.write_text("Avance sur Mistral.\n")
         return etage_outil(a, c, "Bash", {"command": f"gh pr create --title Essai --body-file {corps}"})
 
+    @defaut("fuite-fichier-du-dossier-courant", "message de commit passé par un fichier relatif au dossier courant "
+            "de l'agent, qui cite un terme privé", "agent", "fuite")
+    def _(a, c):
+        # B-0205 : le hook lisait le fichier de la racine, qui ne cite rien.
+        c = a.clone_prive("compagnon")
+        ajouter(c, "docs/message.txt", "Avance sur Mistral.\n")
+        ajouter(c, "message.txt", "Avance.\n")
+        return etage_outil(a, c, "Bash", {"command": "git commit -F message.txt"}, cwd=c / "docs")
+
     @defaut("prive-dans-un-bloc-de-code", "identifiant privé dans un bloc de code d'un fichier public", "ci",
             "memoire.prive")
     def _(a, c):
@@ -1132,7 +1602,7 @@ def _cas() -> list[Cas]:
         maj_memoire(c, "Liste privée raccourcie.")
         return etage_git(a, c)
 
-    @defaut("clos-sans-ref-en-anglais", "sujet « done » sans référence, écrit en anglais", "git", "memoire.backlog")
+    @defaut("clos-sans-ref-en-anglais", "besoin « done » sans référence, écrit en anglais", "git", "memoire.backlog")
     def _(a, c):
         remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> status : done")
         maj_memoire(c)
@@ -1167,22 +1637,22 @@ def _cas() -> list[Cas]:
         remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : fait")
         return etage_git(a, c)
 
-    @defaut("clos-parmi-les-ouverts", "sujet clos, avec sa référence, laissé parmi les ouverts", "git",
+    @defaut("clos-parmi-les-ouverts", "besoin clos, avec sa référence, laissé parmi les ouverts", "git",
             "memoire.backlog")
     def _(a, c):
         _clore(c, "B-0001")
         return etage_git(a, c)
 
-    @defaut("sujet-qui-s-attend", "sujet du backlog qui s'attend lui-même (`après`)", "git", "memoire.ordre")
+    @defaut("sujet-qui-s-attend", "besoin qui s'attend lui-même (`après`)", "git", "memoire.ordre")
     def _(a, c):
         remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : ouvert · après : B-0001")
         return etage_git(a, c)
 
-    @defaut("fait-avant-ce-qu-il-attend", "jalon fait alors que la tâche qu'il attend est ouverte", "git",
+    @defaut("fait-avant-ce-qu-il-attend", "jalon fait alors que le besoin qu'il attend est ouvert", "git",
             "memoire.ordre")
     def _(a, c):
-        ajouter_sujet(c, "\n## B-0002 — Livrer la multiplication\n\n"
-                         f"> statut : fait · origine : {a.journal} · ref : fichier:calc.py · forme : jalon · "
+        ajouter_sujet(c, "\n## JA-0001 — Livrer la multiplication\n\n"
+                         f"> statut : fait · origine : {a.journal} · ref : fichier:calc.py · "
                          f"après : B-0001 · lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
         return etage_git(a, c)
 
@@ -1191,12 +1661,12 @@ def _cas() -> list[Cas]:
         remplacer(c, "docs/double.cas.json", '"attendu": 6', '"attendu": 7')
         return etage_git(a, c)
 
-    @defaut("priorite-inconnue", "sujet du backlog d'une priorité ni haute ni basse", "git", "memoire.ordre")
+    @defaut("priorite-inconnue", "besoin d'une priorité ni haute ni basse", "git", "memoire.ordre")
     def _(a, c):
         remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : ouvert · priorité : urgente")
         return etage_git(a, c)
 
-    @defaut("fait-avant-sa-demande", "sujet fait alors que la demande qu'il attend est sans réponse", "git",
+    @defaut("fait-avant-sa-demande", "besoin fait alors que la demande qu'il attend est sans réponse", "git",
             "memoire.ordre")
     def _(a, c):
         ajouter(c, "memory/requests/D-0001-refactor.md", demande_bonne(a, c))
@@ -1205,13 +1675,289 @@ def _cas() -> list[Cas]:
                          f"lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
         return etage_git(a, c)
 
-    @defaut("fait-avec-critere-ouvert", "sujet fait avec un critère de « Fait quand » non coché", "git",
+    @defaut("fait-avec-critere-ouvert", "tâche faite avec un critère de « Fait quand » non coché", "git",
             "memoire.backlog")
     def _(a, c):
-        ajouter_sujet(c, "\n## B-0002 — Livrer la multiplication\n\n"
-                         f"> statut : fait · origine : {a.journal} · ref : fichier:calc.py · "
-                         f"lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n\n"
-                         "## Fait quand\n\n- [x] le test passe\n- [ ] le guide le dit\n")
+        ajouter_sujet(c, tache_essai(a, c, statut="fait · ref : fichier:calc.py",
+                                     criteres="- [x] le test passe\n- [ ] le guide le dit"))
+        return etage_git(a, c)
+
+    @defaut("besoin-fait-case-vide", "besoin fait, sa tâche faite, avec un critère de « Satisfait quand » non "
+            "coché", "git", "memoire.backlog")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c, statut="fait · ref : fichier:calc.py"))
+        remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : fait · ref : fichier:calc.py")
+        ajouter(c, _sujet(c, "B-0001"), "\n## Satisfait quand\n\n- [x] triple existe\n- [ ] le guide le dit\n")
+        return etage_git(a, c)
+
+    # La structure du backlog (ADR-0083) : un refus, un défaut.
+
+    @defaut("forme-ecrite", "entrée ouverte du backlog qui écrit encore `forme`", "git", "memoire.formes")
+    def _(a, c):
+        remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : ouvert · forme : lot")
+        return etage_git(a, c)
+
+    @defaut("besoin-hors-d-une-tache", "besoin qui écrit `besoin`, le champ d'une tâche", "git", "memoire.formes")
+    def _(a, c):
+        remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : ouvert · besoin : B-0001")
+        return etage_git(a, c)
+
+    @defaut("priorite-d-un-lot", "lot qui écrit une priorité, lui qui n'est jamais prêt", "git", "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c))
+        ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001", " · priorité : haute"))
+        return etage_git(a, c)
+
+    @defaut("tache-sans-besoin", "tâche qui ne nomme pas son besoin", "git", "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c).replace(" · besoin : B-0001", ""))
+        return etage_git(a, c)
+
+    @defaut("besoin-qui-n-est-pas-un-besoin", "tâche dont le champ `besoin` nomme un lot, et non un besoin", "git",
+            "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c).replace(" · besoin : B-0001", " · besoin : L-0001"))
+        ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001"))
+        return etage_git(a, c)
+
+    @defaut("tache-nouvelle-sans-section", "tâche nouvelle sans sa section « Fait quand »", "git", "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c).split("\n## Fait quand")[0] + "\n")
+        return etage_git(a, c)
+
+    @defaut("tache-dans-deux-lots", "tâche que deux lots attendent", "git", "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c))
+        ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001"))
+        ajouter_sujet(c, lot_essai(a, c, "L-0002", "T-0001"))
+        return etage_git(a, c)
+
+    @defaut("lot-qui-attend-un-besoin", "lot qui attend un besoin, et non sa tâche", "git", "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, lot_essai(a, c, "L-0001", "B-0001"))
+        return etage_git(a, c)
+
+    @defaut("apres-par-un-ancien-numero", "`après` qui nomme l'ancien numéro d'une entrée renumérotée", "git",
+            "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c))
+        ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001", " · ancien : B-0002"))
+        remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : ouvert · après : B-0002")
+        return etage_git(a, c)
+
+    @defaut("ancien-numero-reattribue", "entrée nouvelle sous l'ancien numéro d'une entrée renumérotée", "git",
+            "memoire.format")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c))
+        ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001", " · ancien : B-0001"))
+        return etage_git(a, c)
+
+    @defaut("besoin-clos-tache-ouverte", "besoin abandonné avec sa tâche encore ouverte", "git", "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c))
+        remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : abandonné · ref : fichier:calc.py")
+        return etage_git(a, c)
+
+    @defaut("besoin-fait-sans-tache-faite", "besoin fait sans aucune tâche faite", "git", "memoire.formes")
+    def _(a, c):
+        remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : fait · ref : fichier:calc.py")
+        return etage_git(a, c)
+
+    @defaut("fait-quand-d-un-besoin", "besoin ouvert dont la section est « Fait quand », celle d'une tâche", "git",
+            "memoire.formes")
+    def _(a, c):
+        ajouter(c, _sujet(c, "B-0001"), "\n## Fait quand\n\n- [ ] triple existe\n")
+        return etage_git(a, c)
+
+    @defaut("satisfait-quand-d-une-tache", "tâche ouverte qui porte « Satisfait quand », la section d'un besoin",
+            "git", "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c) + SATISFAIT_ESSAI)
+        return etage_git(a, c)
+
+    @defaut("besoin-nouveau-sans-section", "besoin nouveau sans sa section « Satisfait quand »", "git",
+            "memoire.formes")
+    def _(a, c):
+        ajouter_sujet(c, "\n## B-0002 — Ajouter une fonction quadruple\n\n"
+                         f"> statut : ouvert · origine : {a.journal} · lu : backlog@{empreinte(a, c, 'backlog')}"
+                         "\n\nPour l'essai.\n")
+        return etage_git(a, c)
+
+    # Le dossier court d'un petit lot (B-0288) : refusé pour un lot qui touche
+    # un garde-fou, que son relecteur doit pouvoir lire au-delà du diff.
+    @defaut("revue-courte-sur-un-garde-fou", "dossier court de revue pour un lot qui touche un garde-fou", "revue",
+            "revue courte refusée")
+    def _(a, c):
+        remplacer(c, "calc.py", "return FACTEUR * x", "return x * FACTEUR")
+        ajouter(c, ".socle/guardrails.toml", "\n# Un garde-fou que le lot touche.\n")
+        a.commit(c, "un lot qui touche un garde-fou")
+        r = a.socle(c, "review", "--short")
+        return r.stdout + r.stderr
+
+    # La garde de la passation (`socle handoff check`, sans argument) : la
+    # session neuve, sur une demande de reprendre, ne travaille pas
+    # par-dessus une autre.
+    @defaut("passation-poussee-depuis", "session neuve d'une passation alors que la session qui part a poussé après "
+            "elle", "passation", "passation poussée depuis")
+    def _(a, c):
+        neuve, _ = _passation(a, c)
+        remplacer(c, "memory/active.md", "La passation de l'essai.", "Un commit poussé après la passation.")
+        a.commit(c, "après la passation")
+        a.git(c, "push", "-q", "--no-verify", "origin", "travail")
+        r = _session_neuve(a, neuve)
+        return r.stdout + r.stderr
+
+    @defaut("passation-autre-session", "session neuve d'une passation alors qu'une autre session a écrit la mémoire "
+            "sur une autre branche depuis", "passation", "passation d'une autre session")
+    def _(a, c):
+        neuve, ecrite = _passation(a, c)
+        autre = c.parent / f"{c.name}-autre"
+        a.git(a.dossier, "clone", "-q", "--no-local", str(c.parent / f"{c.name}-nu"), str(autre))
+        a.git(autre, "checkout", "-q", "-b", "autre", "origin/main")
+        maj_memoire(autre, "Le travail d'une autre session.")
+        r = a.commit(autre, "une autre session", env=_apres_la_passation(ecrite))
+        if r.returncode != 0:
+            raise RuntimeError(r.stderr)
+        a.git(autre, "push", "-q", "--no-verify", "origin", "autre")
+        r = _session_neuve(a, neuve)
+        return r.stdout + r.stderr
+
+    # Reprise par une session dont le retrait n'est pas encore dans la
+    # branche par défaut : une seconde demande de reprendre est refusée.
+    @defaut("passation-deja-reprise", "session neuve d'une passation qu'une autre session a déjà reprise, son retrait "
+            "poussé sur la branche de la passation", "passation", "passation déjà reprise")
+    def _(a, c):
+        neuve, ecrite = _passation(a, c)
+        reprise = c.parent / f"{c.name}-reprise"
+        a.git(a.dossier, "clone", "-q", "--no-local", str(c.parent / f"{c.name}-nu"), str(reprise))
+        a.git(reprise, "checkout", "-q", "-B", "travail", "origin/travail")
+        a.git(reprise, "rm", "-q", "memory/handoff.md")
+        r = a.commit(reprise, "la passation reprise et retirée", env=_apres_la_passation(ecrite))
+        if r.returncode != 0:
+            raise RuntimeError(r.stderr)
+        a.git(reprise, "push", "-q", "--no-verify", "origin", "travail")
+        r = _session_neuve(a, neuve)
+        return r.stdout + r.stderr
+
+    # Fusionnée par squash, sa branche supprimée, la pull request du lot
+    # porte la passation dans la branche par défaut, d'où la session repart ;
+    # la mémoire d'une autre session, fusionnée avant le squash, ancêtre de la
+    # tête, fait toujours refuser.
+    @defaut("passation-squash-autre-session", "session neuve d'une passation dont la pull request a été fusionnée par "
+            "squash, sa branche supprimée, après la mémoire d'une autre session écrite depuis l'heure de la passation",
+            "passation", "passation squash d'une autre session")
+    def _(a, c):
+        neuve, ecrite = _passation(a, c)
+        nu = c.parent / f"{c.name}-nu"
+        autre = c.parent / f"{c.name}-autre"
+        a.git(a.dossier, "clone", "-q", "--no-local", str(nu), str(autre))
+        a.git(autre, "checkout", "-q", "-b", "autre", "origin/main")
+        ajouter(autre, "memory/canonical.md", "<!-- le travail d'une autre session -->\n")
+        r = a.commit(autre, "une autre session", env=_apres_la_passation(ecrite))
+        if r.returncode != 0:
+            raise RuntimeError(r.stderr)
+        a.git(autre, "push", "-q", "--no-verify", "origin", "autre")
+        github = c.parent / f"{c.name}-github"
+        a.git(a.dossier, "clone", "-q", "--no-local", str(nu), str(github))
+        a.git(github, "merge", "-q", "--no-ff", "-m", "Fusion de la pull request d'une autre session", "origin/autre")
+        a.git(github, "merge", "-q", "--squash", "origin/travail")
+        a.commit(github, "Le lot (#1)")
+        a.git(github, "push", "-q", "--no-verify", "origin", "main", ":travail", ":autre")
+        a.git(neuve, "config", "fetch.prune", "true")
+        r = _session_neuve(a, neuve)
+        return r.stdout + r.stderr
+
+    # La passation (`socle handoff write`) : programmée, aux bornes d'une
+    # chaîne sans l'humain (D-0174) ; puis la vérification de la session qui
+    # part, après son push, qui doit la retrouver en attente.
+    @defaut("passation-non-poussee", "passation commitée mais pas poussée, que la session qui part vérifie",
+            "passation", "passation non poussée")
+    def _(a, c):
+        _ecrire_la_passation(a, c, pousser=False)
+        r = a.socle(c, "handoff", "check")
+        return r.stdout + r.stderr
+
+    @defaut("passation-non-commitee", "passation écrite mais pas commitée, que la session qui part vérifie",
+            "passation", "passation non commitée")
+    def _(a, c):
+        _ecrire_la_passation(a, c, commiter=False)
+        r = a.socle(c, "handoff", "check")
+        return r.stdout + r.stderr
+
+    @defaut("passation-borne-de-la-chaine", "session programmée après deux lots menés sans message de l'humain",
+            "passation", "borne de la chaîne")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c))
+        _ranger(a, c)
+        r = a.socle(c, "handoff", "write", "--scheduled", "--chain", "2")
+        return r.stdout + r.stderr
+
+    @defaut("passation-sans-tache-prete", "session programmée alors qu'aucune tâche n'est prête", "passation",
+            "passation sans tâche prête")
+    def _(a, c):
+        _ranger(a, c)
+        r = a.socle(c, "handoff", "write", "--scheduled")
+        return r.stdout + r.stderr
+
+    # La suppression des branches de l'agent (`socle prune-branches`,
+    # ADR-0114) : une branche de l'humain, une branche qui n'est contenue
+    # nulle part, ou la suppression que la politique coupe, restent ; la
+    # commande le dit.
+    @defaut("elagage-branche-de-l-humain", "branche de l'humain contenue dans la branche par défaut, que la commande "
+            "de l'agent supprimerait", "elagage", "branche de l'humain")
+    def _(a, c):
+        clone = _branche_a_elaguer(a, c, agent=False)
+        r = a.socle(clone, "prune-branches")
+        return _elagage_vu(a, clone, r)
+
+    @defaut("elagage-branche-non-contenue", "branche de l'agent qu'aucune branche poussée ne contient, que la "
+            "commande supprimerait", "elagage", "branche non contenue")
+    def _(a, c):
+        clone = _branche_a_elaguer(a, c, agent=True, fusionner=False)
+        r = a.socle(clone, "prune-branches")
+        return _elagage_vu(a, clone, r)
+
+    @defaut("elagage-coupe", "branche de l'agent supprimée alors que la politique coupe la suppression", "elagage",
+            "suppression coupée")
+    def _(a, c):
+        clone = _branche_a_elaguer(a, c, agent=True)
+        pol = clone / ".socle/policy.toml"
+        pol.write_text(pol.read_text().replace("[irreversible]\n", "[irreversible]\nprune_branches = false\n", 1))
+        r = a.socle(clone, "prune-branches")
+        return _elagage_vu(a, clone, r)
+
+    # La couche `passation` du format : son estampille, et aucun
+    # identifiant.
+    @defaut("passation-sans-estampille", "passation sans son estampille : ni heure `écrite`, ni branche, ni chaîne",
+            "git", "memoire.format")
+    def _(a, c):
+        (c / "memory/handoff.md").write_text("<!-- socle: couche=passation zone=publique -->\n# Passation\n\n"
+                                             "Ce qui attend : rien.\n")
+        return etage_git(a, c)
+
+    @defaut("passation-avec-une-entree", "identifiant défini dans la passation, que la session neuve retire", "git",
+            "memoire.format")
+    def _(a, c):
+        r = a.socle(c, "handoff", "write")
+        if r.returncode != 0:
+            raise RuntimeError(r.stdout + r.stderr)
+        ajouter(c, "memory/handoff.md", "\n## F-0099 — Un fait dans la passation\n\n> statut : supposé · source : "
+                                        "l'essai\n")
+        return etage_git(a, c)
+
+    # L'historique des revues d'un lot (ADR-0084, ADR-0100) : une ligne de
+    # bloquant qu'il ne lit pas.
+
+    @defaut("bloquant-mal-ecrit", "ligne de bloquant d'une passe de revue écrite autrement que « - Bloquant : … », "
+            "que rien ne lit", "git", "memoire.backlog")
+    def _(a, c):
+        _lot_en_cours_relu(a, c, "- **Bloquant** : la correction change la lecture du facteur")
+        return etage_git(a, c)
+
+    @defaut("bloquant-sans-puce", "ligne de bloquant d'une passe de revue écrite sans puce, que rien ne lit",
+            "git", "memoire.backlog")
+    def _(a, c):
+        _lot_en_cours_relu(a, c, "Bloquant 2 — la correction change la lecture du facteur")
         return etage_git(a, c)
 
     # Au-delà du tableau du cadrage.
@@ -1253,6 +1999,28 @@ def _cas() -> list[Cas]:
         maj_memoire(c)
         return etage_stop(a, c, "J'ai changé le test en attendant la réponse." + RECAP)
 
+    # D-0189, piste B : une validation d'avant la plage ne couvre que tant
+    # qu'une tâche ouverte la cite et que ce qu'elle nomme n'a pas bougé.
+    @defaut("validation-epuisee", "valeur attendue changée une seconde fois sous une validation fusionnée avec "
+            "son test, sa tâche close", "ci", "tests.attendus")
+    def _(a, c):
+        return _changer_sous_une_validation_fusionnee(a, c, tache="fait", avec_le_test=True)
+
+    @defaut("validation-sans-tache", "valeur attendue changée sous une validation fusionnée qu'aucune tâche "
+            "ouverte ne cite", "ci", "tests.attendus")
+    def _(a, c):
+        return _changer_sous_une_validation_fusionnee(a, c, tache=None)
+
+    @defaut("validation-test-bouge", "valeur attendue changée sous une validation fusionnée dont le test a bougé "
+            "depuis dans la branche par défaut", "ci", "tests.attendus")
+    def _(a, c):
+        return _changer_sous_une_validation_fusionnee(a, c, tache="ouvert", bouge=True)
+
+    @defaut("valeur-attendue-decision-donnee-sans-le-test", "valeur attendue changée sous une décision que "
+            "l'humain a donnée de lui-même sans nommer le test", "ci", "tests.attendus")
+    def _(a, c):
+        return _test_change_sous_une_decision_donnee(a, c, "Compare le test du module à un flottant.")
+
     @defaut("test-supprime", "test supprimé sans validation", "ci", "tests.attendus")
     def _(a, c):
         remplacer(c, "tests/test_calc.py", "    def test_double(self):\n        self.assertEqual(double(2), 4)\n",
@@ -1279,6 +2047,33 @@ def _cas() -> list[Cas]:
     def _(a, c):
         return etage_outil(a, c, "Bash", {"command": "git -C . push -fu origin travail"})
 
+    @defaut("push-par-une-variable", "push forcé ou vers la branche par défaut dont l'option ou la branche vient "
+            "d'une variable, des arguments d'une fonction ou d'une substitution", "agent", "politique point 4")
+    def _(a, c):
+        # B-0254 : `irreversible` lisait l'argv d'un push tel qu'écrit. Il se
+        # développe ; un argument qui ne se développe pas est refusé.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "F=--force; git push $F origin travail", "B=main; git push origin \"$B\"",
+            "f() { git push \"$@\"; }; f --force origin travail", "git push \"$SOCLE_ESSAI_CIBLE\" origin travail",
+            "git push origin \"$(echo main)\"")])
+
+    @defaut("push-de-la-branche-substituee", "push vers la branche par défaut par une substitution qui rend la "
+            "branche courante, lancé depuis elle, ou après un changement de branche ou de dossier dans la même "
+            "commande", "agent", "politique point 4")
+    def _(a, c):
+        # B-0254, T-0106 : `$(git branch --show-current)` se développe en la
+        # branche courante, que le push vise alors ; elle ne se lit plus quand
+        # la commande change de branche ou de dossier avant lui.
+        refus = tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "git checkout main && git push origin \"$(git branch --show-current)\"",
+            "cd .. && git push -u origin `git rev-parse --abbrev-ref HEAD`",
+            "B=$(git symbolic-ref --short HEAD); git switch -q main; git push origin \"$B\"")])
+        if refus.startswith("passé sans refus"):
+            return refus
+        a.git(c, "switch", "-q", "main")
+        depuis_main = tous_refuses(a, c, [("Bash", {"command": "git push -u origin \"$(git branch --show-current)\""})])
+        return depuis_main if depuis_main.startswith("passé sans refus") else refus + "\n" + depuis_main
+
     @defaut("push-refspec-defaut", "push vers la branche par défaut par une référence complète", "agent",
             "politique point 4")
     def _(a, c):
@@ -1296,6 +2091,296 @@ def _cas() -> list[Cas]:
             "écriture protégée")
     def _(a, c):
         return etage_outil(a, c, "Bash", {"command": "mv .github /tmp/github-de-cote"})
+
+    @defaut("protege-developpe", "fichier protégé écrit par le shell à travers une variable affectée, un motif, une "
+            "accolade ou un `pushd`", "agent", "écriture protégée")
+    def _(a, c):
+        # B-0171 : le hook jugeait les chemins tels qu'ils sont tapés.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "F=.socle/policy.toml; echo 'max_attempts = 99' >> \"$F\"", "rm .socle/pol*",
+            "echo 'max_attempts = 99' >> .socle/{policy,adapter}.toml",
+            "pushd .socle && echo 'max_attempts = 99' >> policy.toml")])
+
+    @defaut("ecriture-illisible", "chemin écrit par le shell à travers une variable ou une substitution que le hook "
+            "ne sait pas développer, dans le projet", "agent", "écriture illisible")
+    def _(a, c):
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "echo 'max_attempts = 99' >> $SOCLE_ESSAI_CIBLE", "echo x > .socle/$(ls .socle | head -1)",
+            "cd $SOCLE_ESSAI_DOSSIER && echo 'max_attempts = 99' >> policy.toml")])
+
+    @defaut("protege-etat-du-shell", "fichier protégé écrit par le shell après un sous-shell, une substitution, un "
+            "pipeline ou une commande en arrière-plan, dont le dossier et les variables ne passent pas à la suite", "agent",
+            "écriture protégée")
+    def _(a, c):
+        # La revue de B-0171, constat 1 : leur état passait à la suite.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "(cd /tmp && ls) && echo 'max_attempts = 99' >> .socle/policy.toml",
+            "X=$(pushd /tmp); echo 'max_attempts = 99' >> .socle/policy.toml",
+            "cd /tmp | true; echo 'max_attempts = 99' >> .socle/policy.toml",
+            "F=.socle/policy.toml; (F=/tmp/x); echo 'max_attempts = 99' >> $F",
+            "cd /tmp && ls & echo 'max_attempts = 99' >> .socle/policy.toml")])
+
+    @defaut("protege-forme-du-shell", "fichier protégé écrit par le shell à travers `cd \"$OLDPWD\"`, une option de "
+            "`cd`, les mots d'une variable, `$'…'`, `+=`, `shopt`, une classe POSIX ou un script collé à `sed -e`",
+            "agent", "écriture protégée")
+    def _(a, c):
+        # La revue de B-0171, constats 2, 3, 6, 7, 8, 10 et 11.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "cd /tmp && cd \"$OLDPWD\" && echo 'max_attempts = 99' >> .socle/policy.toml",
+            "cd -P .socle && echo 'max_attempts = 99' >> policy.toml",
+            "F=\"calc.py .socle/policy.toml\"; sed -i s/3/9/ $F",
+            "echo 'max_attempts = 99' >> $'.socle/policy.toml'",
+            "F=.socle/pol; F+=icy.toml; echo 'max_attempts = 99' >> $F",
+            "shopt -s dotglob; rm -f */policy.toml",
+            "echo 'max_attempts = 99' >> .socle/[[:alpha:]]olicy.toml",
+            "sed -i -e\"s/3/9/\" .socle/policy.toml")])
+
+    @defaut("ecriture-illisible-remontee", "chemin écrit par le shell que le hook ne sait pas développer : un `..` "
+            "après une part inconnue, un `cd` vers une cible inconnue, `$_`, une référence (`declare -n`), des "
+            "accolades au-delà du plafond", "agent", "écriture illisible")
+    def _(a, c):
+        # La revue de B-0171, constats 2, 4, 5, 7 et 9 : chacun passait.
+        ailleurs = a.dossier.parent / (a.dossier.name + "-ailleurs")
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            f"echo 'max_attempts = 99' >> {ailleurs}/$SOCLE_ESSAI_CIBLE/../..{c}/.socle/policy.toml",
+            "cd /tmp && cd \"$(git rev-parse --show-toplevel)\" && echo 'max_attempts = 99' >> .socle/policy.toml",
+            "ls .socle/policy.toml && echo 'max_attempts = 99' >> \"$_\"",
+            "declare -n R=F; F=.socle/policy.toml; echo 'max_attempts = 99' >> $R",
+            "rm -f .socle/{,a}{,b}{,c}{,d}{,e}{,f}{,g}{,h}{,i}policy.toml")])
+
+    @defaut("commande-injugeable", "fichier protégé écrit par le shell dans une commande trop imbriquée ou trop "
+            "longue pour être jugée, ou dont le découpage plante", "agent", "commande injugeable")
+    def _(a, c):
+        # La seconde revue de B-0171, constat 4 : le hook plantait, ou
+        # dépassait son délai, et laissait passer.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "X=" + "$(" * 500 + "echo" + ")" * 500 + "; echo 'max_attempts = 99' >> .socle/policy.toml",
+            "eval " * 500 + "echo 'max_attempts = 99' >> .socle/policy.toml",
+            "cd /tmp; " * 1500 + f"cd {c}; echo 'max_attempts = 99' >> .socle/policy.toml")])
+
+    @defaut("protege-dossier-courant", "fichier protégé écrit par le shell par un chemin relatif au dossier courant "
+            "de l'agent, un motif ou `$PWD`", "agent", "écriture protégée")
+    def _(a, c):
+        # B-0205, et la revue de B-0171, constat 12 : le hook jugeait un
+        # chemin relatif depuis la racine.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "echo 'max_attempts = 99' >> policy.toml", "echo 'max_attempts = 99' >> $PWD/policy.toml",
+            "rm pol*")], c / ".socle")
+
+    @defaut("suppression-du-projet", "dossier qui contient le projet supprimé par le shell : `rm -rf ..`, un "
+            "`cd` puis `../..`, les sources d'un `mv`, `git clean` sous `-C ..`, un `find` qui supprime depuis un "
+            "dossier qui le contient, ou depuis la racine sans filtre de nom ou de chemin qui garde sa suppression",
+            "agent", "suppression du projet")
+    def _(a, c):
+        # B-0208 : rien ne rattrape ensuite la suppression du projet.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "rm -rf ..", "cd .socle && rm -rf ../..", "mv .. /tmp/ailleurs", "git -C .. clean -ffdx",
+            "find .. -name '*.pyc' -delete", "find . -delete", "find . -delete -name '*.pyc'",
+            "find . \\( -type f \\) -delete")])
+
+    @defaut("suppression-par-un-autre-programme", "dossier qui contient le projet, ou le projet lui-même, supprimé par "
+            "un autre programme que `rm`, `mv`, `git clean` ou `find` : la destination d'un `rsync --delete`, les "
+            "sources d'un `rsync --remove-source-files`, le worktree de l'agent retiré par `git worktree remove`, un "
+            "`python3 -c` qui passe son chemin en toutes lettres à `shutil.rmtree`, un `find -exec` de l'un d'eux",
+            "agent", "suppression du projet")
+    def _(a, c):
+        # B-0228 : la lecture de ces programmes se prouve à part de celle de
+        # `rm` et des siens (`suppression-du-projet`) ; leur refus est le même.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "rsync -a --delete vide/ ..", "rsync -a vide/ .. --delete-after --exclude .git",
+            "rsync -a --remove-source-files . /tmp/sauve", "git worktree remove --force .",
+            f"git worktree remove -f -f {c}", f"cd .. && git worktree remove {c.name}",
+            "python3 -c \"import shutil; shutil.rmtree('..')\"",
+            f"python3 -I -c \"import shutil; shutil.rmtree('{c}')\"",
+            "find .. -maxdepth 0 -exec git worktree remove {} \\;")])
+
+    @defaut("suppression-par-un-lanceur", "dossier qui contient le projet supprimé par une commande que lancent "
+            "`uv run` ou `poetry run`, leurs options avant `run` comme après", "agent", "suppression du projet")
+    def _(a, c):
+        # B-0248 : ni `uv run` ni `poetry run` n'étaient des préfixes ; la
+        # commande lancée se lisait comme le programme `uv` ou `poetry`.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "uv run rm -rf ..", "poetry run rm -rf ..", "uv run --with requests -p 3.12 -- rm -rf ..",
+            "uv --directory . run --frozen rm -rf ..", "poetry -C . run -n rm -rf ..",
+            "uv run python -c \"import shutil; shutil.rmtree('..')\"")])
+
+    @defaut("find-conjonction-protegee", "fichier protégé supprimé par un `find` dont chaque filtre d'une même "
+            "conjonction le vise, ou par un `-path` à étoile de tête depuis la racine", "agent", "écriture protégée")
+    def _(a, c):
+        # B-0231 : la conjonction de ses filtres se juge entière ; ce qu'elle
+        # atteint reste refusé.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "find . -name '*.toml' -path './.socle/*' -delete", "find . -path '*.toml' -delete",
+            "find .socle -path '*e/policy.toml' -delete")])
+
+    @defaut("suppression-par-xargs","dossier qui contient le projet, ou le projet lui-même, supprimé par `xargs rm` "
+            "derrière un `find` qui lui donne sa liste", "agent", "suppression du projet")
+    def _(a, c):
+        # B-0246 : `xargs rm` ne se jugeait que par les chemins protégés que
+        # la commande cite ; derrière un `find`, il se juge comme un `find`
+        # qui supprime depuis ses départs.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "find .. -maxdepth 0 | xargs rm -rf", "find . -type f | xargs rm -f",
+            "find .. -maxdepth 0 -print0 | xargs -0 -I{} rm -rf {}")])
+
+    @defaut("heredoc-donne-a-python","fichier protégé écrit, ou dossier qui contient le projet supprimé, par le "
+            "script qu'un heredoc donne à python (`python3 - <<'EOF'`)", "agent", "écriture protégée")
+    def _(a, c):
+        # B-0229 : le corps d'un heredoc n'était que du texte pour le
+        # découpage ; le script que python lit sur son entrée se juge comme
+        # celui d'un `python -c`.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "python3 - <<'EOF'\nopen('.socle/policy.toml', 'a').write('max_attempts = 99')\nEOF",
+            "python3 <<EOF\nimport shutil\nshutil.rmtree('..')\nEOF")])
+
+    @defaut("arguments-de-python-c", "fichier protégé passé en argument au script d'un `python -c`, ou d'un script "
+            "qu'un heredoc donne à python", "agent", "écriture protégée")
+    def _(a, c):
+        # B-0230 : seul le script se jugeait ; le chemin que le script lit
+        # dans `sys.argv` s'écrivait sans refus.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "python3 -c \"import sys; open(sys.argv[1], 'a').write('max_attempts = 99')\" .socle/policy.toml",
+            "F=.socle/policy.toml; python3 -c \"import sys; open(sys.argv[1], 'a')\" \"$F\"",
+            "python3 - .socle/policy.toml <<'EOF'\nimport sys\nopen(sys.argv[1], 'a')\nEOF")])
+
+    @defaut("argument-illisible-de-python-c", "argument que le hook ne sait pas développer, passé au script d'un "
+            "`python -c` ou d'un heredoc donné à python qui lit ses arguments, dans le projet", "agent",
+            "écriture illisible")
+    def _(a, c):
+        # La revue de L-0019, passe 1 : l'argument inconnu ne se jugeait pas,
+        # et le script l'écrivait.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "python3 -c \"import sys; open(sys.argv[1], 'a').write('max_attempts = 99')\" \"$SOCLE_ESSAI_CIBLE\"",
+            "cd .socle && python3 -c \"import sys; open(sys.argv[1], 'a')\" \"$(ls | head -1)\"",
+            "python3 - \"$SOCLE_ESSAI_CIBLE\" <<'EOF'\nimport sys\nopen(sys.argv[1], 'a')\nEOF")])
+
+    @defaut("substitution-entre-guillemets","dossier qui contient le projet supprimé par la commande que lance une "
+            "substitution entre guillemets, `\"$(…)\"` ou des accents graves, après un `cd` ou l'appel d'une fonction "
+            "qui change de dossier", "agent", "suppression du projet")
+    def _(a, c):
+        # B-0260 : ce que lance une substitution entre guillemets ne se
+        # jugeait jamais, quand `x="$(…)"` est une forme qu'un agent écrit.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "echo \"$(rm -rf ..)\"", "x=\"`rm -rf ..`\"", "x=\"$(cd memory && rm -rf ../..)\"",
+            f"f() {{ cd memory; }}; x=\"$(f; rm -rf ../../{c.name})\"")])
+
+    @defaut("push-par-un-lanceur", "push forcé ou vers la branche par défaut lancé par `uv run` ou `poetry run`",
+            "agent", "politique point 4")
+    def _(a, c):
+        # B-0248 : le push se lisait comme le programme `uv` ou `poetry`.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "poetry run git push --force origin main", "uv run git push --force origin travail",
+            "uv run --python=3.12 -- git push origin main")])
+
+    @defaut("worktree-par-son-suffixe", "worktree de l'agent retiré ou déplacé depuis lui par `git worktree remove` "
+            "ou `move` qui le nomme par la fin de son chemin (`agent-x`, `.claude/worktrees/agent-x`), que git "
+            "cherche parmi ses worktrees avant de le lire comme un chemin relatif", "agent", "suppression du projet")
+    def _(a, c):
+        # La revue du lot B-0234 (J-2026-11-15-O) : le hook ne lisait le
+        # worktree que comme un chemin relatif au dossier de la commande.
+        arbre = c / ".claude/worktrees/sous-agent"
+        a.git(c, "worktree", "add", "-q", "-b", "sous-agent", str(arbre))
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "git worktree remove .claude/worktrees/sous-agent", "git worktree remove -f -f sous-agent",
+            "git worktree move sous-agent /tmp/ailleurs")], cwd=arbre)
+
+    @defaut("fonction-sans-parentheses", "dossier qui contient le projet supprimé, ou push forcé, dans le corps d'une "
+            "fonction `function nom { …; }` écrite sans parenthèses, son corps sur la même ligne ou la suivante",
+            "agent", "suppression du projet")
+    def _(a, c):
+        # B-0232 : la commande lue avait pour programme `function`, et rien de
+        # son corps ne se jugeait. Un défaut à part, et non une forme de plus
+        # de `suppression-du-projet` : c'est la lecture de la définition qui
+        # se prouve, pour ce que rien ne rattrape, la suppression comme le push.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "function f { rm -rf ..; }; f", "function f\n{\n  rm -rf ..\n}\nf",
+            "function f { git push --force origin travail; }; f",
+            "function f if git push --force origin travail; then :; fi")])
+
+    @defaut("appel-de-fonction", "suppression du projet depuis le dossier qu'une fonction appelée laisse derrière "
+            "elle, son corps `{ … }` ayant changé de dossier ou de variable, ou appelé une fonction définie après "
+            "lui, et l'appel derrière `time`, dans un `eval` ou dans une substitution (la seconde revue du lot "
+            "B-0234, ses deux passes)", "agent", "écriture illisible")
+    def _(a, c):
+        # B-0232 : à l'appel d'une fonction dont le corps change le dossier,
+        # le hook ne suivait rien, et `../../<racine>`, sans danger depuis la
+        # racine, visait le projet depuis le dossier laissé derrière. L'appel
+        # rend inconnu ce que le corps change (ADR-0072, point 6). Aussi la
+        # forme `f() { … }` (troisième constat), un appel par une fonction qui
+        # en appelle une autre, et une redéfinition. La seconde passe de la
+        # revue (J-2026-11-16-B) : une fonction appelée définie après celle
+        # qui l'appelle, ou dans elle, `time f`, et l'appel dans un `eval` ou
+        # une substitution (B-0250).
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            f"function f {{ cd memory; }}; f; rm -rf ../../{c.name}",
+            f"f() {{ cd memory; }}; f; rm -rf ../../{c.name}",
+            f"f() {{ cd memory; }}; g() {{ f; }}; g; rm -rf ../../{c.name}",
+            f"f() {{ ls; }}; f() {{ cd memory; }}; f; rm -rf ../../{c.name}",
+            f"g() {{ f; }}; f() {{ cd memory; }}; g; rm -rf ../../{c.name}",
+            f"f() {{ g() {{ cd memory; }}; g; }}; f; rm -rf ../../{c.name}",
+            f"f() {{ cd memory; }}; time -p f; rm -rf ../../{c.name}",
+            f"f() {{ cd memory; }}; eval f; rm -rf ../../{c.name}",
+            f"f() {{ cd memory; }}; x=$(f; rm -rf ../../{c.name})")])
+
+    @defaut("mot-reserve-cite", "mot réservé cité ou échappé lu comme réservé : le groupe qui suit `\"function\"` "
+            "s'exécute sur place, ou un `}` cité ferme trop tôt le corps d'une fonction, et une suppression du "
+            "projet passe (la seconde revue du lot B-0234, bloquant 3)", "agent", "écriture protégée")
+    def _(a, c):
+        # B-0232 : `"function"`, `\function`, `$'function'` et `'function'` se
+        # lisaient comme réservés ; bash les lance comme une commande, puis
+        # exécute sur place le groupe qui suit, dont le `cd`. Un `}` cité ne
+        # ferme plus trop tôt le corps d'une fonction (quatrième constat).
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            f'"function" f\n{{ cd memory; }}\nrm -rf ../../{c.name}',
+            f"\\function f\n{{ cd memory; }}\nrm -rf ../../{c.name}",
+            f"$'function' f\n{{ cd memory; }}\nrm -rf ../../{c.name}",
+            f'f() {{ cd memory; "}}"; rm -rf ../../{c.name}; }}; f')])
+
+    @defaut("protege-mot-reserve", "fichier protégé écrit par le shell derrière un mot réservé (`then`, `else`, "
+            "`do`, `!`, `{`), par la variable d'un `for`, après un groupe dans un pipeline ou après la définition "
+            "d'une fonction", "agent", "écriture protégée")
+    def _(a, c):
+        # B-0204 : `then rm …` se lisait comme le programme `then`.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "if true; then echo 'max_attempts = 99' >> .socle/policy.toml; fi",
+            "if false; then :; else sed -i s/3/9/ .socle/policy.toml; fi",
+            "! sed -i s/3/9/ .socle/policy.toml",
+            "for f in .socle/*.toml; do sed -i s/3/9/ \"$f\"; done",
+            "for d in .socle memory; do cd $d; echo 'max_attempts = 99' >> policy.toml; done",
+            "for f in a policy.toml; do echo 'max_attempts = 99' >> .socle/$f; done",
+            "{ cd /tmp; } | cat; echo 'max_attempts = 99' >> .socle/policy.toml",
+            "build() { cd /tmp; }; echo 'max_attempts = 99' >> .socle/policy.toml")])
+
+    @defaut("protege-diese-guillemets", "fichier protégé écrit par le shell après un commentaire en fin de ligne, un "
+            "`#` au milieu d'un mot ou une substitution aux guillemets imbriqués", "agent", "écriture protégée")
+    def _(a, c):
+        # B-0207 : la commande qui suivait se perdait.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "echo ok # une note\necho 'max_attempts = 99' >> .socle/policy.toml",
+            "[ $# -eq 0 ]; echo 'max_attempts = 99' >> .socle/policy.toml",
+            "X=\"$(echo \"l'apostrophe\")\"; sed -i s/3/9/ .socle/policy.toml",
+            "X=\"$(echo \"; cd /tmp; \")\"; echo 'max_attempts = 99' >> .socle/policy.toml")])
+
+    @defaut("protege-ecrivain-par-option", "fichier protégé écrit par `cp -t`, `find -delete`, `xargs`, `bash -ec`, "
+            "`sort -o` ou `python -c`", "agent", "écriture protégée")
+    def _(a, c):
+        # B-0206 : chacune de ces écritures passait le hook.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "cp -t .socle/git-hooks calc.py", "find .socle -name policy.toml -delete",
+            "find . -path '*/.socle/*' -delete",
+            "echo .socle/policy.toml | xargs sed -i s/3/9/", "bash -ec 'sed -i s/3/9/ .socle/policy.toml'",
+            "sort -o .socle/policy.toml calc.py",
+            "python3 -c \"open('.socle/policy.toml', 'a').write('max_attempts = 99')\"")])
+
+    @defaut("ecriture-illisible-composee", "chemin écrit par le shell après une condition ou une boucle qui change "
+            "le dossier ou une variable, ou dans la branche qui suit", "agent", "écriture illisible")
+    def _(a, c):
+        # B-0204 : le hook ne sait pas quelle branche le shell prendra.
+        return tous_refuses(a, c, [("Bash", {"command": x}) for x in (
+            "if [ -n \"$SOCLE_ESSAI_CIBLE\" ]; then cd /tmp; fi; echo 'max_attempts = 99' >> .socle/policy.toml",
+            "if [ -n \"$SOCLE_ESSAI_CIBLE\" ]; then cd /tmp; else echo 'max_attempts = 99' >> .socle/policy.toml; fi",
+            "if [ -n \"$SOCLE_ESSAI_CIBLE\" ]; then F=.socle/policy.toml; else F=/tmp/x; fi; echo x >> \"$F\"",
+            "for d in .socle memory; do cd $d; break; cd ..; done; echo 'max_attempts = 99' >> policy.toml")])
 
     @defaut("protege-depuis-un-worktree", "fichier protégé de la copie principale écrit depuis un worktree du dépôt",
             "agent", "écriture protégée")
@@ -1373,6 +2458,23 @@ def _cas() -> list[Cas]:
     def _(a, c):
         p = c / "docs/calc.md"
         return etage_outil(a, c, "Write", {"file_path": str(p), "content": p.read_text() + "\nVoir F-0099.\n"})
+
+    @defaut("ancien-numero-dans-un-texte-neuf", "entrée renumérotée mentionnée par son ancien numéro dans un texte "
+            "neuf", "agent", "ancien numéro")
+    def _(a, c):
+        _renumeroter_en_lot(c, "B-0001")
+        p = c / "docs/calc.md"
+        return etage_outil(a, c, "Write", {"file_path": str(p), "content": p.read_text() + "\nVoir B-0001.\n"})
+
+    @defaut("ancien-numero-repris", "entrée renumérotée mentionnée par son ancien numéro dans une ligne neuve d'un "
+            "fichier qui le cite déjà", "agent", "ancien numéro")
+    def _(a, c):
+        # T-0083 : le hook sautait toute mention que le fichier portait déjà ;
+        # le journal du mois d'une migration les cite presque tous.
+        _renumeroter_en_lot(c, "B-0001")
+        p = c / "docs/calc.md"
+        p.write_text(p.read_text() + "\nLe lot B-0001 avance.\n")
+        return etage_outil(a, c, "Write", {"file_path": str(p), "content": p.read_text() + "\nVoir B-0001.\n"})
 
     @defaut("echecs-repetes", "contrôles rouges trois tours de suite, sans escalade", "agent", "escalade")
     def _(a, c):
@@ -1591,10 +2693,25 @@ def _cas() -> list[Cas]:
         maj_memoire(c, "Travail du tour.")
         return etage_stop(a, c, "J'ai mis à jour le chantier actif. Tout passe.")
 
+    @defaut("lot-trop-long", "lot ouvert qui attend plus de tâches qu'une session n'en mène, au-delà de "
+            "`[batches] max_tasks`", "agent", "lot trop long")
+    def _(a, c):
+        # Un avertissement, dit par l'état et par le rappel de fin de tour :
+        # attrapé s'il est dans les deux (B-0233).
+        etat, rappel = _lot_de_deux_taches(a, c, 1)
+        phrase = RAISONS_AGENT["lot trop long"]
+        return etat + rappel if phrase in etat and phrase in rappel else ""
+
     @defaut("fin-sans-suite", "fin d'intervention qui ne dit pas la suite", "agent", "suite")
     def _(a, c):
         maj_memoire(c, "Travail du tour.")
         return etage_stop(a, c, "J'ai mis à jour le chantier actif.\n\nPour toi : rien.")
+
+    @defaut("suite-dans-un-bloc-de-code", "fin d'intervention dont la seule ligne « Ensuite : » est celle d'une "
+            "sortie collée dans un bloc de code", "agent", "suite")
+    def _(a, c):
+        maj_memoire(c, "Travail du tour.")
+        return etage_stop(a, c, "Lot clos.\n\n```text\n" + COMPACT_COLLE + "\n```\n\nPour toi : rien.")
 
     @defaut("chemin-inexistant", "chemin donné à l'humain qui n'existe pas dans le dépôt", "agent", "liens")
     def _(a, c):
@@ -1622,6 +2739,14 @@ def _cas() -> list[Cas]:
         pousser(a, c)
         return etage_stop(a, c, "J'ai posé la demande D-0001.\n\nPour toi : répondre à D-0001.\nEnsuite : rien.")
 
+    @defaut("branche-a-supprimer-absente", "branche donnée à supprimer à l'humain que l'origine n'a plus", "agent",
+            "branche absente")
+    def _(a, c):
+        # B-0311 (D-0178) : reprise d'une entrée du journal sans la vérifier.
+        maj_memoire(c, "Travail du tour.")
+        return etage_stop(a, c, f"Lot clos.\n\nPour toi : supprimer la branche distante `fantome-{c.name}`, déjà "
+                          "fusionnée.\nEnsuite : rien.")
+
     @defaut("fonction-sans-test", "fonction publique ajoutée sans test qui la nomme", "ci", "tests.code-teste")
     def _(a, c):
         ajouter(c, "calc.py", "\n\ndef triple(x):\n    return 3 * x\n")
@@ -1645,6 +2770,22 @@ def _cas() -> list[Cas]:
         a.commit(c, "Triple réécrite")
         return etage_push(a, c)
 
+    @defaut("plage-branche-disparue", "valeur attendue d'un test de la branche, poussée, puis affaiblie et repoussée "
+            "après la suppression de la branche distante", "git", "tests.attendus")
+    def _(a, c):
+        # Contre la branche par défaut, où le test n'existe pas, la valeur
+        # affaiblie passerait : la plage se juge depuis le dernier commit que
+        # ce clone a poussé sur la branche disparue (ADR-0104).
+        _pousser_un_cas_de_plus(a, c)
+        pousse = a.git(c, "rev-parse", "HEAD").strip()
+        a.git(c, "push", "-q", "--no-verify", "origin", "--delete", f"essai-{c.name}")
+        remplacer(c, "tests/test_calc.py", "self.assertEqual(double(3), 6)", "self.assertEqual(double(3), 6.0)")
+        remplacer(c, "memory/active.md", "Un cas de plus pour double.", "Le cas de plus, réécrit.")
+        a.commit(c, "Le cas de plus, réécrit")
+        sortie = etage_push(a, c)
+        # Le refus dit d'où la plage se juge : sans cela, il n'est pas celui-ci.
+        return sortie if not sortie or pousse[:10] in sortie else "le refus ne dit pas le dernier commit poussé"
+
     @defaut("decision-sans-lecture", "décision ajoutée sans avoir consulté l'index des décisions", "git", "memoire.lectures")
     def _(a, c):
         f1 = f"F-0001@{empreinte(a, c, 'F-0001')}"
@@ -1659,12 +2800,92 @@ def _cas() -> list[Cas]:
                 f"\n## {a.journal[:-1]}B — Constat\n\nVoir F-0001@{perimee}.\n")
         return etage_git(a, c)
 
+    @defaut("citation-par-un-ancien-numero", "entrée renumérotée citée par son ancien numéro, sous une empreinte "
+            "inventée", "git", "memoire.lectures")
+    def _(a, c):
+        _renumeroter_en_lot(c, "B-0001")
+        _citer_par_l_ancien_numero(a, c, "B-0001", "deadbeef")
+        return etage_git(a, c)
+
     @defaut("identifiant-pris-deux-fois", "identifiant que la branche par défaut a pris aussi", "ci", "memoire.collisions")
     def _(a, c):
         r = a.socle(c, "check", "--stage", "ci", "--base", _collision(a, c))
         return "" if r.returncode == 0 else r.stdout + r.stderr
 
-    @defaut("backlog-sans-lecture", "sujet ajouté au backlog sans l'avoir consulté", "git", "memoire.lectures")
+    @defaut("consigne-citee-sans-empreinte", "consigne de l'humain citée dans le journal sans son empreinte", "git",
+            "memoire.lectures")
+    def _(a, c):
+        _consigne_en_base(a, c)
+        ajouter(c, "memory/journal/" + a.journal[2:9] + ".md",
+                f"\n## {a.journal[:-1]}B — Constat\n\nSelon C-0001, rien à ajouter au module.\n")
+        return etage_git(a, c)
+
+    @defaut("consigne-citee-perimee", "consigne de l'humain citée dans le journal sous une empreinte périmée", "git",
+            "memoire.lectures")
+    def _(a, c):
+        _consigne_en_base(a, c)
+        perimee = empreinte(a, c, "C-0001")
+        remplacer(c, "memory/directives.md", "reste sans dépendance", "reste sans aucune dépendance")
+        ajouter(c, "memory/journal/" + a.journal[2:9] + ".md",
+                f"\n## {a.journal[:-1]}B — Constat\n\nSelon C-0001@{perimee}, rien à ajouter au module.\n")
+        return etage_git(a, c)
+
+    @defaut("consigne-resume-trop-long", "consigne dont la ligne de résumé dépasse 120 octets", "git", "memoire.format")
+    def _(a, c):
+        ajouter(c, "memory/directives.md", _consigne(a).replace(
+            "reste sans dépendance", "reste sans dépendance, ni bibliothèque externe, ni module tiers, ni outil "
+                                     "de construction, ni rien que la bibliothèque standard"))
+        return etage_git(a, c)
+
+    @defaut("consigne-sans-source", "consigne sans la source où la parole de l'humain est consignée", "git",
+            "memoire.format")
+    def _(a, c):
+        ajouter(c, "memory/directives.md", _consigne(a).replace(f" · source : {a.journal}", ""))
+        return etage_git(a, c)
+
+    @defaut("consigne-sans-texte-exact", "consigne sans le texte exact de l'humain cité dans son corps", "git",
+            "memoire.format")
+    def _(a, c):
+        ajouter(c, "memory/directives.md", _consigne(a).replace(
+            "> « Pas de dépendance externe dans le module de calcul. »", "Pas de dépendance externe."))
+        return etage_git(a, c)
+
+    @defaut("consigne-levee-sans-demande", "consigne levée sans la demande validée qui la lève", "git",
+            "memoire.preuves")
+    def _(a, c):
+        ajouter(c, "memory/directives.md", _consigne(a, statut="levée"))
+        return etage_git(a, c)
+
+    @defaut("consigne-levee-demande-sans-reponse", "consigne levée par une demande à laquelle l'humain n'a pas "
+            "répondu", "git", "memoire.preuves")
+    def _(a, c):
+        ajouter(c, "memory/requests/D-0001-refondre-le-module.md", DEMANDE_BONNE)
+        ajouter(c, "memory/directives.md", _consigne(a, statut="levée · levée-par : D-0001"))
+        return etage_git(a, c)
+
+    @defaut("consigne-texte-change", "texte exact d'une consigne de l'humain réécrit", "git", "memoire.ajout-seul")
+    def _(a, c):
+        _consigne_en_base(a, c)
+        remplacer(c, "memory/directives.md", "Pas de dépendance externe", "Peu de dépendances externes")
+        return etage_git(a, c)
+
+    @defaut("consigne-effacee", "consigne de l'humain effacée", "git", "memoire.ajout-seul")
+    def _(a, c):
+        _consigne_en_base(a, c)
+        remplacer(c, "memory/directives.md", _consigne(a).strip(), "")
+        return etage_git(a, c)
+
+    @defaut("consigne-rangee-en-vigueur", "consigne en vigueur rangée dans le journal, sans la parole de l'humain "
+            "qui la lève", "git", "memoire.ajout-seul")
+    def _(a, c):
+        _consigne_en_base(a, c)
+        remplacer(c, "memory/directives.md", _consigne(a).strip(), "")
+        ajouter(c, "memory/journal/" + a.journal[2:9] + ".md",
+                f"\n## {a.journal[:-1]}B — Consigne rangée\n\nRangée.\n"
+                + _consigne(a).replace("## C-0001", "### C-0001"))
+        return etage_git(a, c)
+
+    @defaut("backlog-sans-lecture", "besoin ajouté au backlog sans l'avoir consulté", "git", "memoire.lectures")
     def _(a, c):
         ajouter_sujet(c, "\n## B-0002 — Ajouter une fonction quadruple\n\n"
                 f"> statut : ouvert · origine : {a.journal}\n\nPour l'essai.\n")
@@ -1720,6 +2941,11 @@ class TestChaine(unittest.TestCase):
         self.assertEqual(double("3"), 6)
 '''
 
+# Un correctif dont le `Corrige:` est dans un paragraphe à part, avant les
+# lignes d'attribution, où git ne lit pas de trailer (B-0348).
+MESSAGE_CORRIGE_EGARE = ("Double accepte une chaîne\n\nLe calcul convertit son entrée.\n\nCorrige: B-0001\n\n"
+                         "Signed-off-by: Essai <essai@example.org>")
+
 
 def _temoins() -> list[tuple[str, Callable]]:
     t = []
@@ -1745,6 +2971,15 @@ def _temoins() -> list[tuple[str, Callable]]:
         maj_memoire(c, "Correctif de `double` sur les chaînes, avec son test.")
         return etage_ci(a, c, "fix: double accepte une chaîne")
 
+    @temoin("un correctif dont le `Corrige:` est hors du dernier paragraphe du message, avec son test de "
+            "régression, passe la CI")
+    def _(a, c):
+        remplacer(c, "calc.py", "return FACTEUR * x", "return FACTEUR * int(x)")
+        remplacer(c, "docs/calc.md", "la\nconstante", "la constante\nentière")
+        (c / "tests/test_regression.py").write_text(TEST_REGRESSION)
+        maj_memoire(c, "Correctif de `double` sur les chaînes, avec son test.")
+        return etage_ci(a, c, MESSAGE_CORRIGE_EGARE)
+
     @temoin("sous l'adoption, une référence morte d'avant l'installation, déplacée d'une ligne, reste en "
             "avertissement au commit (B-0180)")
     def _(a, c):
@@ -1762,6 +2997,232 @@ def _temoins() -> list[tuple[str, Callable]]:
         return (etage_outil(a, c, "Bash", {"command": f"python3 {lanceur} " + "install --target . --owner @moi"})
                 or etage_outil(a, c, "Bash", {"command": f"python3 {lanceur} " + "install --target /tmp/jetable-socle "
                                                          "--mode amont"}))
+
+    @temoin("un chemin écrit par le shell à travers une variable sous un dossier hors du projet, une variable "
+            "affectée vers un fichier libre ou un motif qui ne nomme aucun fichier protégé passent le hook de "
+            "l'agent (B-0171)")
+    def _(a, c):
+        # Un dossier voisin de l'atelier, qui ne contient pas le projet
+        # (le dossier temporaire, lui, le contient).
+        ailleurs = a.dossier.parent / (a.dossier.name + "-ailleurs")
+        return (etage_outil(a, c, "Bash", {"command": f"echo x > {ailleurs}/$SOCLE_ESSAI_CIBLE"})
+                or etage_outil(a, c, "Bash", {"command": "F=notes.txt; echo x > \"$F\" && rm -f build/*.o"})
+                or etage_outil(a, c, "Bash", {"command": f"pushd {ailleurs} && echo x > rapport-$SOCLE_ESSAI_CIBLE"
+                                                         "; popd"}))
+
+    @temoin("après un sous-shell, un fichier libre, une valeur par défaut hors du projet, un `sed` sans `-i` qui lit "
+            "un fichier protégé et, depuis un dossier hors du projet, un motif relatif passent le hook de l'agent "
+            "(B-0171, B-0205)")
+    def _(a, c):
+        # La revue de B-0171, constats 12 et 13 : ces faux refus ne sont
+        # pas venus avec les corrections.
+        ailleurs = a.dossier.parent / (a.dossier.name + "-ailleurs")
+        return (etage_outil(a, c, "Bash", {"command": "(cd /tmp && ls) && echo x > notes.txt"})
+                or etage_outil(a, c, "Bash", {"command": f"D={ailleurs}; echo x > \"${{D:-/tmp}}/rapport.txt\""})
+                or etage_outil(a, c, "Bash", {"command": "sed -n -e's/i/j/p' .socle/policy.toml"})
+                or etage_outil(a, c, "Bash", {"command": "rm -rf ./*"}, cwd=ailleurs))
+
+    @temoin("une boucle sur des fichiers libres, une condition et un groupe qui écrivent un fichier libre, et une "
+            "boucle qui revient à son dossier, passent le hook de l'agent (B-0204)")
+    def _(a, c):
+        return (etage_outil(a, c, "Bash", {"command": "for f in *.py; do sed -i s/3/9/ \"$f\"; done"})
+                or etage_outil(a, c, "Bash", {"command": "if [ -f calc.py ]; then echo ok > notes.txt; else rm -f "
+                                                         "notes.txt; fi"})
+                or etage_outil(a, c, "Bash", {"command": "{ echo a; echo b; } > notes.txt"})
+                or etage_outil(a, c, "Bash", {"command": "for d in */; do cd \"$d\"; ls; cd ..; done; "
+                                                         "echo ok > notes.txt"})
+                or etage_outil(a, c, "Bash", {"command": "for d in memory tests; do cd \"$d\" || continue; ls; cd ..; "
+                                                         "done; echo ok > notes.txt"})
+                or etage_outil(a, c, "Bash", {"command": "for d in */; do cd \"$d\" || { echo \"$d\" >&2; continue; }; "
+                                                         "for f in *.log; do grep -q E \"$f\" && break; done; cd ..; "
+                                                         "done; echo ok > notes.txt"}))
+
+    @temoin("un `#` dans un mot, une redirection dans un commentaire et une substitution aux guillemets imbriqués "
+            "qui lit un fichier protégé passent le hook de l'agent (B-0207)")
+    def _(a, c):
+        return (etage_outil(a, c, "Bash", {"command": "echo \"a#b\" > notes.txt"})
+                or etage_outil(a, c, "Bash", {"command": "echo ok # > .socle/policy.toml"})
+                or etage_outil(a, c, "Bash", {"command": "echo \"$(grep -c \"=\" .socle/policy.toml)\" > notes.txt"}))
+
+    @temoin("`find -delete` d'un motif libre, `xargs` et `python -c` qui ne citent aucun fichier protégé et `cp -t` "
+            "vers un dossier hors du projet passent le hook de l'agent (B-0206)")
+    def _(a, c):
+        ailleurs = a.dossier.parent / (a.dossier.name + "-ailleurs")
+        return (etage_outil(a, c, "Bash", {"command": "find . -name '*.pyc' -delete"})
+                or etage_outil(a, c, "Bash", {"command": "find . -name '*.py' | xargs sed -i s/3/9/"})
+                or etage_outil(a, c, "Bash", {"command": "python3 -c \"print(open('calc.py').read())\""})
+                or etage_outil(a, c, "Bash", {"command": f"cp -t {ailleurs} calc.py"}))
+
+    @temoin("une commande trop imbriquée qui n'écrit rien, un long heredoc et 500 `cd` vers un dossier hors du "
+            "projet passent le hook de l'agent (B-0171)")
+    def _(a, c):
+        # La seconde revue de B-0171, constat 4 : seuls les seuils et le
+        # délai refusent, et seulement ce qui peut écrire.
+        ailleurs = a.dossier.parent / (a.dossier.name + "-ailleurs")
+        return (etage_outil(a, c, "Bash", {"command": "echo " + "$(" * 40 + "true" + ")" * 40})
+                or etage_outil(a, c, "Bash", {"command": f"cat > {ailleurs}/long.txt <<'FIN'\n"
+                                                         + "une ligne de texte\n" * 1000 + "FIN"})
+                or etage_outil(a, c, "Bash", {"command": f"cd {ailleurs}; " + "cd a; " * 500 + "echo x > notes.txt"}))
+
+    @temoin("la suppression d'un dossier voisin du projet, d'un dossier du projet, un `find` sans filtre sous un "
+            "dossier du projet et un `find` qui filtre ce qu'il supprime sous la racine passent le hook de l'agent "
+            "(B-0208)")
+    def _(a, c):
+        # Le pendant sain de `suppression-du-projet` : seul ce qui contient
+        # le projet est refusé.
+        ailleurs = a.dossier.parent / (a.dossier.name + "-ailleurs")
+        return (etage_outil(a, c, "Bash", {"command": f"rm -rf {ailleurs} && rm -rf build"})
+                or etage_outil(a, c, "Bash", {"command": "find . -name '*.pyc' -delete && mv calc.py .."})
+                or etage_outil(a, c, "Bash", {"command": "find build -delete"})
+                or etage_outil(a, c, "Bash", {"command": f"cd {ailleurs} && rm -rf ./*"}))
+
+    @temoin("l'orchestrateur, à la racine du projet, retire le worktree d'un sous-agent, et `rsync --delete`, `git "
+            "worktree remove` ou `python3 -c` qui suppriment un dossier du projet ou voisin de lui passent le hook de "
+            "l'agent (B-0228)")
+    def _(a, c):
+        # Le pendant sain de `suppression-par-un-autre-programme` : seul ce
+        # qui contient le projet, ou le projet lui-même, est refusé.
+        ailleurs = a.dossier.parent / (a.dossier.name + "-ailleurs")
+        return (etage_outil(a, c, "Bash", {"command": "git worktree remove .claude/worktrees/agent-x"})
+                or etage_outil(a, c, "Bash", {"command": "git worktree remove -f -f .claude/worktrees/agent-x"})
+                or etage_outil(a, c, "Bash", {"command": f"rsync -a --delete build/ {ailleurs}/sauve"})
+                or etage_outil(a, c, "Bash", {"command": f"rsync -a --delete ./ {ailleurs}/sauve"})
+                or etage_outil(a, c, "Bash", {"command": "python3 -c \"import shutil; shutil.rmtree('build')\""}))
+
+    @temoin("un push de la branche de travail, sa branche écrite en toutes lettres ou dans une variable affectée "
+            "plus tôt, et un `git` dont une option globale ne se développe pas, passent le hook de l'agent (B-0254)")
+    def _(a, c):
+        # Le pendant sain de `push-par-une-variable` : seul l'argument du
+        # push qui ne se développe pas est refusé.
+        return (etage_outil(a, c, "Bash", {"command": "git push -u origin travail"})
+                or etage_outil(a, c, "Bash", {"command": "B=travail; git push origin \"$B\""})
+                or etage_outil(a, c, "Bash", {"command": "D=.; git -C \"$D\" push origin travail"})
+                or etage_outil(a, c, "Bash", {"command": "git -C \"$SOCLE_ESSAI_CIBLE\" status"}))
+
+    @temoin("un push de la branche de travail par une substitution qui rend la branche courante, nue, entre "
+            "guillemets, entre accents graves ou par une variable, passe le hook de l'agent (B-0254)")
+    def _(a, c):
+        # Le pendant sain de `push-de-la-branche-substituee` : depuis une
+        # branche de travail, la substitution vaut elle.
+        return (etage_outil(a, c, "Bash", {"command": "git push -u origin \"$(git branch --show-current)\""})
+                or etage_outil(a, c, "Bash", {"command": "git push -u origin `git rev-parse --abbrev-ref HEAD`"})
+                or etage_outil(a, c, "Bash", {"command": "B=$(git symbolic-ref --short HEAD); git push -u origin "
+                                                         "\"$B\""})
+                or etage_outil(a, c, "Bash", {"command": "git add -A && git commit -qm x && git push origin "
+                                                         "$(git branch --show-current)"}))
+
+    @temoin("une substitution entre guillemets qui lance une commande ordinaire, un calcul entre guillemets et un "
+            "message de commit par `\"$(cat <<'EOF' … EOF)\"` qui cite une suppression passent le hook de l'agent "
+            "(B-0260)")
+    def _(a, c):
+        # Le pendant sain de `substitution-entre-guillemets` : la commande
+        # lancée se juge comme celle d'une substitution nue.
+        return (etage_outil(a, c, "Bash", {"command": "x=\"$(git rev-parse HEAD)\"; echo \"$x\" > notes.txt"})
+                or etage_outil(a, c, "Bash", {"command": "echo \"$((1 + 2)) `date`\" > notes.txt"})
+                or etage_outil(a, c, "Bash", {"command": "f() { ls; }; x=\"$(f; rm -rf build)\""})
+                or etage_outil(a, c, "Bash", {"command": "git commit -q -m \"$(cat <<'EOF'\nfix: x\n\nrm -rf ..\n"
+                                                         "EOF\n)\""}))
+
+    @temoin("les commandes ordinaires que lancent `uv run` et `poetry run`, et `uv sync`, passent le hook de "
+            "l'agent (B-0248)")
+    def _(a, c):
+        # Le pendant sain de `suppression-par-un-lanceur` et de
+        # `push-par-un-lanceur` : la commande lancée se juge comme sans eux.
+        return (etage_outil(a, c, "Bash", {"command": "uv run pytest -q && uv run -m pytest && uv sync --frozen"})
+                or etage_outil(a, c, "Bash", {"command": "poetry run pytest -x && poetry -C . run python -m unittest"})
+                or etage_outil(a, c, "Bash", {"command": "uv run --with requests python -c \"print(open('calc.py')"
+                                                         ".read())\""})
+                or etage_outil(a, c, "Bash", {"command": "uv run git push -u origin travail"}))
+
+    @temoin("un nettoyage ciblé par un `find` dont la conjonction des filtres, ou le `-path` sous son départ, "
+            "n'atteint aucun fichier protégé passe le hook de l'agent (B-0231)")
+    def _(a, c):
+        # Le pendant sain de `find-conjonction-protegee` : un filtre seul ne
+        # fait plus refuser ce que la conjonction écarte.
+        return (etage_outil(a, c, "Bash", {"command": "find . -name '*.json' -path './build/*' -delete"})
+                or etage_outil(a, c, "Bash", {"command": "find build -path '*.toml' -delete"}))
+
+    @temoin("un nettoyage par `xargs rm` sous le projet, derrière un `find` dont un filtre garde ce qu'il liste ou "
+            "qui part d'un dossier du projet, passe le hook de l'agent (B-0246)")
+    def _(a, c):
+        # Le pendant sain de `suppression-par-xargs` : seul ce qui contient
+        # le projet, ou le projet lui-même, est refusé.
+        return (etage_outil(a, c, "Bash", {"command": "find . -name '*.pyc' | xargs rm -f"})
+                or etage_outil(a, c, "Bash", {"command": "find build -type f -print0 | xargs -0 rm -f"}))
+
+    @temoin("le script qu'un heredoc donne à python sans citer de fichier protégé ni supprimer le projet, et un "
+            "heredoc donné à un autre programme qui cite un fichier protégé, passent le hook de l'agent (B-0229)")
+    def _(a, c):
+        # Le pendant sain de `heredoc-donne-a-python` : seul le script que
+        # python lit se juge, comme celui d'un `python -c`.
+        return (etage_outil(a, c, "Bash", {"command": "python3 - <<'EOF'\nprint(open('calc.py').read())\nEOF"})
+                or etage_outil(a, c, "Bash", {"command": "python3 - <<'EOF'\nimport shutil\n"
+                                                         "shutil.rmtree('build', ignore_errors=True)\nEOF"})
+                or etage_outil(a, c, "Bash", {"command": "cat > notes.txt <<'EOF'\n"
+                                                         "open('.socle/policy.toml', 'w')\nEOF"}))
+
+    @temoin("un `python -c` dont les arguments ne nomment aucun fichier protégé passe le hook de l'agent (B-0230)")
+    def _(a, c):
+        # Le pendant sain de `arguments-de-python-c` : seul l'argument qui
+        # nomme un fichier protégé est refusé.
+        return (etage_outil(a, c, "Bash", {"command": "python3 -c \"import sys; print(open(sys.argv[1]).read())\" "
+                                                     "calc.py"})
+                or etage_outil(a, c, "Bash", {"command": "python3 -c \"import sys; open(sys.argv[1], 'w')\" "
+                                                         "notes.txt /tmp/x"}))
+
+    @temoin("un `python -c` dont l'argument que le hook ne sait pas développer tombe hors du projet, ou dont le "
+            "script ne lit pas ses arguments, et une boucle sur des fichiers connus passent le hook de l'agent")
+    def _(a, c):
+        # Le pendant sain de `argument-illisible-de-python-c` : seul l'argument
+        # inconnu qui peut tomber dans le projet est refusé.
+        ailleurs = a.dossier.parent / (a.dossier.name + "-ailleurs")
+        ouvre = "python3 -c \"import sys; open(sys.argv[1], 'w').write('x')\""
+        return (etage_outil(a, c, "Bash", {"command": f"{ouvre} {ailleurs}/$SOCLE_ESSAI_CIBLE"})
+                or etage_outil(a, c, "Bash", {"command": "python3 -c 'print(1)' \"$SOCLE_ESSAI_CIBLE\""})
+                or etage_outil(a, c, "Bash", {"command": f"for f in docs/*.md; do {ouvre} \"$f\"; done"}))
+
+    @temoin("l'orchestrateur, à la racine, retire le worktree d'un sous-agent par la fin de son chemin, et un "
+            "sous-agent retire ou déplace un worktree voisin du sien, sans refus du hook de l'agent (B-0228)")
+    def _(a, c):
+        # Le pendant sain de `worktree-par-son-suffixe` : seul est refusé ce
+        # qui finit le chemin de l'arbre jugé, ou d'un dossier qui le contient.
+        arbre = c / ".claude/worktrees/sous-agent"
+        a.git(c, "worktree", "add", "-q", "-b", "sous-agent", str(arbre))
+        return (etage_outil(a, c, "Bash", {"command": "git worktree remove -f -f sous-agent"})
+                or etage_outil(a, c, "Bash", {"command": "git worktree remove -f -f voisin"}, cwd=arbre)
+                or etage_outil(a, c, "Bash", {"command": "git worktree remove .claude/worktrees/voisin"}, cwd=arbre)
+                or etage_outil(a, c, "Bash", {"command": "git worktree move voisin /tmp/ailleurs"}, cwd=arbre))
+
+    @temoin("une fonction `function nom { …; }` sans parenthèses dont le corps ne fait rien d'irréversible passe le "
+            "hook de l'agent, et son corps ne s'exécute pas là où il s'écrit (B-0232)")
+    def _(a, c):
+        # Le pendant sain de `fonction-sans-parentheses` : le corps se juge
+        # comme toute commande, et rend en se fermant l'état d'avant lui.
+        return (etage_outil(a, c, "Bash", {"command": "function f { ls; }; f"})
+                or etage_outil(a, c, "Bash", {"command": "function nettoyer\n{\n  rm -rf build\n}\nnettoyer"})
+                or etage_outil(a, c, "Bash", {"command": "function f { cd .socle; }; echo ok > policy.toml"}))
+
+    @temoin("l'appel d'une fonction qui ne change ni dossier ni variable ne rend rien inconnu, seul, derrière "
+            "`time`, dans un `eval` ou une substitution, ni celui d'une fonction qui en appelle une autre définie "
+            "après elle, et un préfixe programme (`command f`) ou une substitution ne laissent rien fuir (B-0232)")
+    def _(a, c):
+        # Le pendant sain d'`appel-de-fonction` : seul l'appel d'une fonction
+        # dont le corps change le dossier ou une variable rend la suite
+        # inconnue ; l'usage normal reste libre.
+        return (etage_outil(a, c, "Bash", {"command": "f() { ls; }; f; rm -rf build"})
+                or etage_outil(a, c, "Bash", {"command": "f() { echo x > /tmp/y; }; f; echo ok > notes.txt"})
+                or etage_outil(a, c, "Bash", {"command": "f() { cd memory; }; command f; echo ok > notes.txt"})
+                or etage_outil(a, c, "Bash", {"command": "g() { f; }; f() { ls; }; g; rm -rf build"})
+                or etage_outil(a, c, "Bash", {"command": "f() { ls; }; time -p f; x=$(f); eval f; rm -rf build"})
+                or etage_outil(a, c, "Bash", {"command": "f() { cd memory; }; x=$(f); rm -rf build"}))
+
+    @temoin("un mot réservé cité, lu comme un mot et non comme une structure, passe le hook de l'agent quand il ne "
+            "vise rien de protégé (B-0232)")
+    def _(a, c):
+        # Le pendant sain de `mot-reserve-cite` : un mot réservé entre
+        # guillemets est un argument comme un autre.
+        return (etage_outil(a, c, "Bash", {"command": 'echo "}" ; echo done'})
+                or etage_outil(a, c, "Bash", {"command": 'echo "function" "{" "then"'}))
 
     @temoin("un fichier protégé changé par erreur, remis à son état du dernier commit, et un fichier apparu sous un "
             "chemin protégé, supprimé, passent le hook de l'agent (D-0098)")
@@ -1823,21 +3284,158 @@ def _temoins() -> list[tuple[str, Callable]]:
         maj_memoire(c, f"Repris de l'essai (commit:{sha}).")
         return etage_ci(a, c)
 
+    @temoin("un commit cité que l'origine ne garde que par une tête de pull request récupérée passe la CI d'un "
+            "clone neuf hors de GitHub (B-0175)")
+    def _(a, c):
+        return etage_ci(a, _clone_d_un_clone(a, c, "refs/socle/pull/7"))
+
     @temoin("un skill du projet bien formé, qui cite dans son texte une commande à ne pas lancer, passe le "
             "commit et la CI")
     def _(a, c):
         _poser_skill(c, SKILL_ESSAI)
         return etage_git(a, c) or etage_ci(a, c)
 
-    @temoin("un jalon qui attend une tâche ouverte, dans l'ordre, passe le commit et la CI")
+    @temoin("un jalon qui attend un besoin ouvert, dans l'ordre, passe le commit et la CI")
     def _(a, c):
-        ajouter_sujet(c, "\n## B-0002 — Livrer la multiplication\n\n"
-                         f"> statut : ouvert · origine : {a.journal} · forme : jalon · après : B-0001 · "
+        ajouter_sujet(c, "\n## JA-0001 — Livrer la multiplication\n\n"
+                         f"> statut : ouvert · origine : {a.journal} · après : B-0001 · "
                          f"lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
         maj_memoire(c, "Le jalon de la multiplication posé.")
         return etage_git(a, c) or etage_ci(a, c)
 
-    @temoin("un sujet de priorité haute fait après la réponse qu'il attendait, ses critères cochés, passe le "
+    @temoin("une entrée renumérotée par la migration, qui porte `ancien`, et sa citation par l'ancien numéro sous "
+            "l'empreinte de sa version actuelle passent le commit et la CI")
+    def _(a, c):
+        nouvel = _renumeroter_en_lot(c, "B-0001")
+        if "ancien : B-0001" not in (c / _sujet(c, nouvel)).read_text():
+            return trad("la migration n'a pas posé `ancien : B-0001` sur {id}", id=nouvel)
+        _citer_par_l_ancien_numero(a, c, "B-0001", empreinte(a, c, nouvel))
+        return etage_git(a, c) or etage_ci(a, c)
+
+    @temoin("une entrée renumérotée mentionnée dans un texte neuf par son identifiant actuel, seul ou sur la ligne "
+            "de l'ancien, passe le hook de l'agent")
+    def _(a, c):
+        nouvel = _renumeroter_en_lot(c, "B-0001")
+        p = c / "docs/calc.md"
+        return etage_outil(a, c, "Write", {"file_path": str(p), "content": p.read_text() + f"\nVoir {nouvel}.\n"
+                                                                                       f"B-0001 → {nouvel}.\n"})
+
+    @temoin("une écriture qui garde telle quelle la ligne d'avant qui cite une entrée renumérotée par son ancien "
+            "numéro, et change ce qui l'entoure, passe le hook de l'agent (T-0083)")
+    def _(a, c):
+        # Le pendant sain d'`ancien-numero-repris` : seules les lignes que
+        # l'écriture ajoute ou change se jugent.
+        _renumeroter_en_lot(c, "B-0001")
+        p = c / "docs/calc.md"
+        p.write_text("# Calcul\n\nLe lot B-0001 avance.\n\n" + p.read_text())
+        return etage_outil(a, c, "Write", {"file_path": str(p), "content": "# Le calcul, revu\n" + p.read_text()
+                                           .removeprefix("# Calcul\n") + "\nUne note.\n"})
+
+    @temoin("un besoin et sa tâche posés par `socle new need --task`, un lot qui attend la tâche et un jalon qui "
+            "attend le besoin, chacun dans sa forme, passent le commit et la CI")
+    def _(a, c):
+        r = a.socle(c, "new", "need", "Ajouter une fonction quadruple", "--task", "Écrire quadruple et son test")
+        if r.returncode != 0 or "T-0001" not in r.stdout:
+            return r.stdout + r.stderr
+        for ident in ("B-0002", "T-0001"):
+            p = c / _sujet(c, ident)
+            p.write_text(re.sub(r"<J-…[^>]*>", a.journal, re.sub(r"- \[ \] <[^>]*>", "- [ ] quadruple existe",
+                                                                     p.read_text())))
+        ajouter_sujet(c, lot_essai(a, c, "L-0001", "T-0001"))
+        ajouter_sujet(c, "\n## JA-0001 — Le module complet\n\n"
+                         f"> statut : ouvert · origine : {a.journal} · après : B-0001, B-0002 · "
+                         f"lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
+        maj_memoire(c, "Le lot de la quadruple formé.")
+        return etage_git(a, c) or etage_ci(a, c)
+
+    # L'historique des revues d'un lot (ADR-0084, ADR-0100) : des passes au-delà
+    # de la première, et la clôture, sans recul.
+
+    @temoin("une deuxième et une troisième passe de revue, sans recul, `socle review` les produit et les écrit dans "
+            "le lot")
+    def _(a, c):
+        sortie = _passes(a, c, [_bloquant_essai(), _bloquant_essai()])
+        if sortie:
+            return sortie
+        return "" if "### Passe 3 — " in (c / _sujet(c, "L-0001")).read_text() else "### Passe 3 ?"
+
+    @temoin("un petit lot qui ne touche aucun garde-fou, `socle review --short` en donne le dossier court")
+    def _(a, c):
+        remplacer(c, "calc.py", "return FACTEUR * x", "return x * FACTEUR")
+        a.commit(c, "un petit lot")
+        r = a.socle(c, "review", "--short")
+        return "" if r.returncode == 0 and "n'explore pas au-delà" in r.stdout else r.stdout + r.stderr
+
+    @temoin("une passation dont la pull request est fusionnée par un commit de fusion pendant l'attente, un robot "
+            "ayant poussé sans toucher la mémoire, passe sa garde, qui place la session neuve sur la branche par "
+            "défaut")
+    def _(a, c):
+        neuve, ecrite = _passation(a, c)
+        github = c.parent / f"{c.name}-github"
+        a.git(a.dossier, "clone", "-q", "--no-local", str(c.parent / f"{c.name}-nu"), str(github))
+        a.git(github, "checkout", "-q", "-b", "dependances", "origin/main")
+        remplacer(github, "calc.py", '"""Calculs du projet d\'essai."""', '"""Calculs du projet d\'essai, à jour."""')
+        r = a.commit(github, "une dépendance à jour", env=_apres_la_passation(ecrite))
+        if r.returncode != 0:
+            return r.stdout + r.stderr
+        a.git(github, "push", "-q", "--no-verify", "origin", "dependances")
+        a.git(github, "checkout", "-q", "main")
+        a.git(github, "merge", "-q", "--no-ff", "-m", "Fusion de la pull request du lot", "origin/travail")
+        a.git(github, "push", "-q", "--no-verify", "origin", "main")
+        r = _session_neuve(a, neuve)
+        return "" if r.returncode == 0 and "se placer sur origin/main" in r.stdout else r.stdout + r.stderr
+
+    @temoin("une passation dont la pull request est fusionnée par squash pendant l'attente, sa branche supprimée et "
+            "le `git fetch` de la session neuve élaguant, passe sa garde, qui place la session neuve sur la branche "
+            "par défaut")
+    def _(a, c):
+        neuve, _ = _passation(a, c)
+        _fusion_par_squash(a, c)
+        a.git(neuve, "config", "fetch.prune", "true")
+        r = _session_neuve(a, neuve)
+        return "" if r.returncode == 0 and "se placer sur origin/main" in r.stdout else r.stdout + r.stderr
+
+    @temoin("une branche de l'agent contenue dans la branche par défaut se supprime par sa commande, le hook avant "
+            "push laissant passer la suppression")
+    def _(a, c):
+        clone = _branche_a_elaguer(a, c, agent=True)
+        r = a.socle(clone, "prune-branches")
+        restee = a.git(clone, "ls-remote", "--heads", "origin", f"refs/heads/{BRANCHE_ELAGUEE}").strip()
+        return r.stdout + r.stderr if r.returncode or restee or "supprimée : " not in r.stdout else ""
+
+    @temoin("la session qui part, sa passation commitée et poussée, la retrouve en attente après son push")
+    def _(a, c):
+        _ecrire_la_passation(a, c)
+        r = a.socle(c, "handoff", "check")
+        return "" if r.returncode == 0 and "se placer sur origin/travail" in r.stdout else r.stdout + r.stderr
+
+    @temoin("une session programmée, une tâche prête et un lot mené sans message de l'humain, écrit sa passation")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c))
+        _ranger(a, c)
+        r = a.socle(c, "handoff", "write", "--scheduled", "--chain", "1")
+        ecrite = (c / "memory/handoff.md").read_text() if (c / "memory/handoff.md").is_file() else ""
+        return "" if r.returncode == 0 and "· chaîne : 1\n" in ecrite else r.stdout + r.stderr + ecrite
+
+    @temoin("une passation écrite par `socle handoff write` passe le commit et la CI")
+    def _(a, c):
+        r = a.socle(c, "handoff", "write", "--waiting", "la CI du commit de tête")
+        if r.returncode != 0:
+            return r.stdout + r.stderr
+        return etage_git(a, c) or etage_ci(a, c)
+
+    @temoin("un lot relu clos « fait », ses deux passes sans recul, passe le commit et la CI")
+    def _(a, c):
+        _lot_relu_clos(a, c, _bloquant_essai())
+        return etage_git(a, c) or etage_ci(a, c)
+
+    @temoin("un lot en cours dont la passe consigne son bloquant « - Bloquant : … », et un paragraphe replié sur une "
+            "ligne qui commence par « bloquants », passe le commit et la CI")
+    def _(a, c):
+        _lot_en_cours_relu(a, c, "- Bloquant : la correction change la lecture du facteur")
+        return etage_git(a, c) or etage_ci(a, c)
+
+    @temoin("une tâche de priorité haute faite après la réponse qu'elle attendait, ses critères cochés, passe le "
             "commit et la CI")
     def _(a, c):
         (c / "memory/requests/D-0001-refactor.md").write_text(demande_bonne(a, c))
@@ -1847,10 +3445,7 @@ def _temoins() -> list[tuple[str, Callable]]:
         if r.returncode != 0:
             return r.stdout + r.stderr
         (c / "citation.txt").unlink()
-        ajouter_sujet(c, "\n## B-0002 — Livrer la multiplication\n\n"
-                         f"> statut : fait · origine : {a.journal} · ref : fichier:calc.py · après : D-0001 · "
-                         f"priorité : haute · lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n\n"
-                         "## Fait quand\n\n- [x] le test passe\n")
+        ajouter_sujet(c, tache_essai(a, c, statut="fait · ref : fichier:calc.py · après : D-0001 · priorité : haute"))
         maj_memoire(c, "La multiplication livrée.")
         return etage_git(a, c) or etage_ci(a, c)
 
@@ -1863,8 +3458,45 @@ def _temoins() -> list[tuple[str, Callable]]:
 
     @temoin("durcir un garde-fou est libre")
     def _(a, c):
-        remplacer(c, ".socle/guardrails.toml", '"memory/active.md" = { max_bytes = 6000 }', '"memory/active.md" = { max_bytes = 5000 }')
+        remplacer(c, ".socle/guardrails.toml", '"memory/active.md" = { max_bytes = 1600 }', '"memory/active.md" = { max_bytes = 1500 }')
         return etage_ci(a, c)
+
+    @temoin("un lot ouvert qui attend autant de tâches que `[batches] max_tasks` : ni l'état ni le rappel de fin "
+            "de tour n'avertissent")
+    def _(a, c):
+        etat, rappel = _lot_de_deux_taches(a, c, 2)
+        if "prochain lot : L-0001" not in etat or "prochain lot : L-0001" not in rappel:
+            return trad("l'état ou le rappel de fin de tour ne disent pas le lot :\n{etat}\n{rappel}",
+                        etat=etat[-1500:], rappel=rappel[-1500:])
+        phrase = RAISONS_AGENT["lot trop long"]
+        return etat + rappel if phrase in etat or phrase in rappel else ""
+
+    @temoin("baisser le seuil de durée des étapes rapides est libre : la CI passe")
+    def _(a, c):
+        remplacer(c, ".socle/guardrails.toml", "fast_max_seconds = 300", "fast_max_seconds = 120")
+        return etage_ci(a, c)
+
+    @temoin("un seuil de durée des étapes rapides à `nan` en base, gardé tel quel, passe la CI")
+    def _(a, c):
+        _seuil_rapide_nan_en_base(a, c)
+        maj_memoire(c, "Le seuil gardé tel quel.")
+        return etage_ci(a, c)
+
+    @temoin("des étapes rapides d'un peu plus d'une seconde, sous le seuil du gabarit, poussées : le hook avant "
+            "envoi laisse passer sans avertir")
+    def _(a, c):
+        code, sortie = _pousser_des_etapes_lentes(a, c)
+        return (sortie or "push refusé") if code or RAISONS_AGENT["verify.duree"] in sortie else ""
+
+    @temoin("des étapes rapides d'un peu plus d'une seconde, sous le seuil du gabarit : `verify --fast` dit leurs "
+            "durées, sans avertir")
+    def _(a, c):
+        ajouter(c, "tests/test_lent.py", TEST_LENT)
+        r = a.socle(c, "verify", "--fast")
+        sortie = r.stdout + r.stderr
+        if RAISONS_AGENT["verify.duree"] in sortie or "… total des étapes lancées : " not in r.stderr:
+            return sortie
+        return ""
 
     @temoin("un module nouveau entre au cliquet de mutation « à mesurer » : la CI passe")
     def _(a, c):
@@ -1938,7 +3570,7 @@ def _temoins() -> list[tuple[str, Callable]]:
 
     @temoin("un garde-fou assoupli par l'humain, qui l'approuve, passe la CI")
     def _(a, c):
-        remplacer(c, ".socle/guardrails.toml", '"memory/active.md" = { max_bytes = 6000 }',
+        remplacer(c, ".socle/guardrails.toml", '"memory/active.md" = { max_bytes = 1600 }',
                   '"memory/active.md" = { max_bytes = 9000 }')
         r = a.socle(c, "approve", "--keys", 'budgets."memory/active.md".max_bytes', "--text", "Plus de place")
         return (r.stdout + r.stderr) if r.returncode != 0 else etage_ci(a, c)
@@ -2005,6 +3637,39 @@ def _temoins() -> list[tuple[str, Callable]]:
         remplacer(c, "tests/test_calc.py", "self.assertEqual(double(2), 4)", "self.assertEqual(double(2), 4.0)")
         maj_memoire(c)
         return etage_ci(a, c)
+
+    @temoin("une valeur attendue changée sous une décision que l'humain a donnée de lui-même et qui nomme le test, "
+            "consignée par `socle decision --unprompted`, passe la CI")
+    def _(a, c):
+        return _test_change_sous_une_decision_donnee(a, c, "Change test_double : il compare à un flottant.")
+
+    @temoin("une réponse « valider » poussée avec le test qu'elle autorise à changer part sans avertissement")
+    def _(a, c):
+        code, sortie = _pousser_la_reponse(a, c, avec_le_test=True)
+        return (sortie or "push refusé") if code else ""
+
+    @temoin("une réponse « valider » poussée avec la clé des garde-fous qu'elle autorise à relâcher part sans "
+            "avertissement")
+    def _(a, c):
+        code, sortie = _pousser_la_reponse(a, c, avec_le_test=True, cle=True)
+        return (sortie or "push refusé") if code else ""
+
+    @temoin("une réponse « valider » poussée seule couvre le test qu'elle autorise à changer, poussé au push "
+            "suivant")
+    def _(a, c):
+        code, sortie = _pousser_la_reponse(a, c, avec_le_test=False)
+        if code:
+            return sortie or "push refusé"
+        remplacer(c, "tests/test_calc.py", "self.assertEqual(double(2), 4)", "self.assertEqual(double(2), 4.0)")
+        maj_memoire(c)
+        a.commit(c, "Le test que la réponse autorise")
+        r = a.run(c, "git", "push", "-q", "origin", f"travail:{c.name}")
+        return (r.stdout + r.stderr or "push refusé") if r.returncode else ""
+
+    @temoin("une valeur attendue changée sous une validation fusionnée qu'une tâche ouverte cite, son test "
+            "inchangé depuis, passe la CI")
+    def _(a, c):
+        return _changer_sous_une_validation_fusionnee(a, c, tache="ouvert")
 
     @temoin("un correctif dont le test passe sur le parent, admis par une demande validée qui nomme son commit, "
             "passe la CI")
@@ -2077,6 +3742,13 @@ def _temoins() -> list[tuple[str, Callable]]:
         return etage_stop(a, c, "J'ai mis à jour le chantier actif. Tout passe.\n\nPour toi : rien.\n"
                           "Ensuite : le sujet suivant du backlog.")
 
+    @temoin("une fin d'intervention avec ses deux lignes en texte et un compact collé dans un bloc de code passe "
+            "le hook de fin de tour")
+    def _(a, c):
+        maj_memoire(c, "Travail du tour.")
+        return etage_stop(a, c, "Lot clos.\n\n```text\n" + COMPACT_COLLE + "\n```\n\nPour toi : rien.\n"
+                          "Ensuite : le lot suivant.")
+
     @temoin("des liens que l'humain peut suivre passent le hook de fin de tour")
     def _(a, c):
         (c / "memory/requests/D-0001-refactor.md").write_text(demande_bonne(a, c))
@@ -2087,6 +3759,13 @@ def _temoins() -> list[tuple[str, Callable]]:
             return r.stdout + r.stderr
         return etage_stop(a, c, "J'ai posé la demande D-0001, sur le module `calc.py` et sa doc `docs/calc.md`.\n\n"
                           + r.stdout + "\nPour toi : répondre à D-0001.\nEnsuite : rien.")
+
+    @temoin("une branche donnée à supprimer que l'origine a encore passe le hook de fin de tour")
+    def _(a, c):
+        a.git(c, "push", "-q", "--no-verify", "origin", f"HEAD:refs/heads/morceau-{c.name}")
+        maj_memoire(c, "Travail du tour.")
+        return etage_stop(a, c, f"Lot clos.\n\nPour toi : supprimer la branche distante `morceau-{c.name}`, déjà "
+                          "fusionnée.\nEnsuite : rien.")
 
     @temoin("une fonction ajoutée avec le test qui la nomme passe la CI")
     def _(a, c):
@@ -2110,6 +3789,26 @@ def _temoins() -> list[tuple[str, Callable]]:
             return refus
         remplacer(c, "docs/calc.md", "`triple` multiplie par trois.", "`triple` multiplie par trois, toujours.")
         a.commit(c, "La doc de triple")
+        return etage_push(a, c)
+
+    @temoin("une branche fusionnée, que l'humain a changée sur la branche par défaut, puis repartie d'elle sous le "
+            "même nom après la suppression de la branche distante, passe le hook avant push")
+    def _(a, c):
+        # Le dernier commit poussé est dans la branche par défaut : la branche
+        # se juge comme une branche neuve, contre elle, et non depuis lui,
+        # d'où la valeur que l'humain a changée serait refusée (ADR-0104).
+        _pousser_un_cas_de_plus(a, c)
+        a.git(c, "checkout", "-q", "main")
+        a.git(c, "merge", "-q", "--no-ff", "--no-verify", "-m", "Fusion de la branche", "travail")
+        remplacer(c, "tests/test_calc.py", "self.assertEqual(double(3), 6)", "self.assertEqual(double(3), 6.0)")
+        a.commit(c, "L'humain change la valeur")
+        # La fusion, connue de ce clone comme après un fetch, sans toucher la
+        # branche par défaut de l'origine, que les cas partagent.
+        a.git(c, "update-ref", "refs/remotes/origin/main", "HEAD")
+        a.git(c, "push", "-q", "--no-verify", "origin", "--delete", f"essai-{c.name}")
+        a.git(c, "checkout", "-q", "-B", "travail", "origin/main")
+        remplacer(c, "memory/active.md", "Un cas de plus pour double.", "La suite, après la fusion.")
+        a.commit(c, "La suite")
         return etage_push(a, c)
 
     @temoin("une fonction privée, ou publique et dispensée avec sa raison, passe la CI")
@@ -2140,6 +3839,16 @@ def _temoins() -> list[tuple[str, Callable]]:
             sortie = "le fichier privé est commité en clair"
         return sortie
 
+    @temoin("mode compagnon : un message de commit passé par un fichier du dossier courant de l'agent, qui ne cite "
+            "aucun terme privé, passe le hook de l'agent, quand la racine a un fichier du même nom qui en cite un "
+            "(B-0205)")
+    def _(a, c):
+        # Le pendant sain de `fuite-fichier-du-dossier-courant`.
+        c = a.clone_prive("compagnon")
+        ajouter(c, "docs/message.txt", "Avance.\n")
+        ajouter(c, "message.txt", "Avance sur Mistral.\n")
+        return etage_outil(a, c, "Bash", {"command": "git commit -F message.txt"}, cwd=c / "docs")
+
     @temoin("ajouter un terme à la liste privée est libre : le commit et la CI passent")
     def _(a, c):
         c = a.clone_prive("compagnon")
@@ -2149,7 +3858,8 @@ def _temoins() -> list[tuple[str, Callable]]:
         maj_memoire(c, "Un terme privé de plus.")
         return (r.stderr if r.returncode else "") or etage_git(a, c) or etage_ci(a, c)
 
-    @temoin("mode compagnon : un sujet public basculé dans la mémoire privée passe la fin de tour, le commit et la CI")
+    @temoin("mode compagnon : un besoin public basculé dans la mémoire privée passe la fin de tour, le commit et la "
+            "CI")
     def _(a, c):
         c = a.clone_prive("compagnon")
         r = a.socle(c, "private", "move", "B-0001")
@@ -2221,6 +3931,14 @@ def _temoins() -> list[tuple[str, Callable]]:
         return (etage_push(a, c, hooks=False, env=env) or etage_git(a, c, env=env)
                 or etage_push(a, c, env=env))
 
+    @temoin("une valeur attendue changée sous une demande en attente, poussée, la CI du socle exigée : elle se "
+            "commite et se pousse")
+    def _(a, c):
+        _valeur_en_attente(a, c)
+        env = ci_exigee(a, c)
+        return (etage_push(a, c, hooks=False, env=env) or etage_git(a, c, env=env)
+                or etage_push(a, c, env=env))
+
     @temoin("un push relu par l'humain, son accord relayé avec son texte exact, passe le hook de l'agent")
     def _(a, c):
         c = a.clone_prive("compagnon")
@@ -2282,8 +4000,9 @@ def _temoins() -> list[tuple[str, Callable]]:
         r = a.socle(c, "check", "--stage", "ci", "--base", point)
         return "" if r.returncode == 0 else r.stdout + r.stderr
 
-    @temoin("un sujet clos, rangé avec les clos par `socle archive`, passe la CI")
+    @temoin("un besoin clos après sa tâche faite, rangés avec les clos par `socle archive`, passent la CI")
     def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c, statut="fait · ref : fichier:calc.py"))
         _clore(c, "B-0001")
         r = a.socle(c, "archive")
         if r.returncode != 0 or not list((c / "memory/backlog/closed").glob("B-0001-*.md")):
@@ -2296,7 +4015,55 @@ def _temoins() -> list[tuple[str, Callable]]:
         f1 = f"F-0001@{empreinte(a, c, 'F-0001')}"
         ajouter(c, "memory/decisions/ADR-0001-une-seule-multiplication.md", ADR_ESSAI.format(lu=lu, fait=f1))
         ajouter_sujet(c, "\n## B-0002 — Ajouter une fonction quadruple\n\n"
-                f"> statut : ouvert · origine : {a.journal} · lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
+                f"> statut : ouvert · origine : {a.journal} · lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n"
+                f"{SATISFAIT_ESSAI}")
+        return etage_git(a, c)
+
+    @temoin("une consigne citée dans le journal sous l'empreinte de sa version actuelle, sa ligne de résumé "
+            "récrite, passe le commit")
+    def _(a, c):
+        _consigne_en_base(a, c)
+        remplacer(c, "memory/directives.md", "reste sans dépendance", "reste sans aucune dépendance")
+        ajouter(c, "memory/journal/" + a.journal[2:9] + ".md",
+                f"\n## {a.journal[:-1]}B — Constat\n\nSelon C-0001@{empreinte(a, c, 'C-0001')}, rien à ajouter "
+                "au module.\n")
+        return etage_git(a, c)
+
+    @temoin("une consigne levée par la parole de l'humain, consignée en séance, puis rangée par `socle archive`, "
+            "passe la CI")
+    def _(a, c):
+        _consigne_en_base(a, c)
+        (c / "citation.txt").write_text("La consigne C-0001 ne vaut plus : le module peut avoir des dépendances.")
+        r = a.socle(c, "decision", "Lever la consigne C-0001 sur les dépendances", "--unprompted", "--relayed",
+                    "--by", "Théo", "--quote-file", "citation.txt")
+        (c / "citation.txt").unlink()
+        # Son identifiant, que les branches poussées par d'autres cas peuvent
+        # avoir fait avancer.
+        demande = re.search(r"\bD-\d{4}\b", r.stdout)
+        if r.returncode != 0 or not demande:
+            return r.stdout + r.stderr
+        remplacer(c, "memory/directives.md", "> statut : en vigueur", f"> statut : levée · levée-par : {demande.group(0)}")
+        r = a.socle(c, "archive")
+        if r.returncode != 0 or "C-0001" in (c / "memory/directives.md").read_text():
+            return r.stdout + r.stderr or "C-0001 n'est pas rangée"
+        sortie = a.socle(c, "show", "C-0001").stdout
+        if "archivée dans" not in sortie:
+            return f"C-0001 rangée ne se résout pas : {sortie}"
+        return etage_ci(a, c)
+
+    @temoin("une consigne nouvelle posée par `socle new directive`, sa source et le texte exact écrits, passe le "
+            "commit, et l'état donne sa ligne de résumé")
+    def _(a, c):
+        r = a.socle(c, "new", "directive", "Le module de calcul reste sans dépendance")
+        ident = re.match(r"C-\d{4}\tmemory/directives\.md$", r.stdout.strip())
+        if r.returncode != 0 or not ident:
+            return r.stdout + r.stderr
+        remplacer(c, "memory/directives.md", "<J-… ou D-… où la parole de l'humain est consignée>", a.journal)
+        remplacer(c, "memory/directives.md", "<le texte exact de l'humain, mot pour mot>",
+                  "Pas de dépendance externe dans le module de calcul.")
+        etat = a.socle(c, "state").stdout
+        if f"{ident.group(0)[:6]} — Le module de calcul reste sans dépendance" not in etat:
+            return f"l'état ne donne pas la consigne : {etat[-2000:]}"
         return etage_git(a, c)
 
     @temoin("un commit d'agent fait dans un autre worktree porte la trace des hooks et passe la CI")
@@ -2372,6 +4139,17 @@ def _temoins() -> list[tuple[str, Callable]]:
 # --------------------------------------------------------------------------
 
 
+def jouer(a: Atelier, tache) -> tuple:
+    """Un cas ou un témoin dans son clone : (sa sortie, None), ou (None,
+    l'exception). Le clone est dans le `try` : un clone qui échoue n'échoue
+    que son cas, pas l'auto-test entier (B-0341)."""
+    nom, f, cas = tache
+    try:
+        return (f or cas.fonction)(a, a.clone()), None
+    except Exception as e:
+        return None, e
+
+
 def executer(projet=None, bavard: bool = False) -> Rapport:
     import socle
 
@@ -2389,17 +4167,8 @@ def executer(projet=None, bavard: bool = False) -> Rapport:
         # 76 à moins de 40 secondes sur quatre cœurs (L6). Le rapport garde
         # l'ordre des cas.
         taches = [(nom, f, None) for nom, f in _temoins()] + [(None, None, cas) for cas in _cas()]
-
-        def jouer(tache):
-            nom, f, cas = tache
-            c = a.clone()
-            try:
-                return (f or cas.fonction)(a, c), None
-            except Exception as e:
-                return None, e
-
         with ThreadPoolExecutor(max_workers=FILS) as fils:
-            resultats = list(fils.map(jouer, taches))
+            resultats = list(fils.map(lambda tache: jouer(a, tache), taches))
         for (nom, f, cas), (sortie, panne) in zip(taches, resultats):
             if cas is None:
                 ident = "autotest.temoins"
@@ -2451,13 +4220,22 @@ RAISONS_AGENT = {
     "installeur hors mode": "dans un autre mode que celui de son verrou",
     "installeur cible illisible": "une cible que le hook ne sait pas résoudre",
     "écriture protégée": "par le shell : seul l'humain",
+    "écriture illisible": "un chemin que le hook ne sait pas développer",
+    "commande injugeable": "une commande que le hook ne sait pas juger",
+    "suppression du projet": "d'un dossier qui contient le projet",
     "remise hors forme": "Seule passe la remise",
     "remise sous demande": "en attente, ou validée sans que ce qu'elle approuve",
     "écriture à l'aveugle": "à l'aveugle",
     "référence inventée": "référence inventée",
+    "ancien numéro": "est l'ancien numéro de",
     "escalade": "ARRÊT ET ESCALADE",
     "échec inchangé": "sans changement depuis la tentative précédente",
     "memoire.peremption": "chantier actif inchangé depuis",
+    # L'avertissement des étapes rapides au-delà de leur seuil (B-0258).
+    "verify.duree": "durée des étapes rapides au dernier passage complet",
+    # L'avertissement d'un lot ouvert qui ne se mène pas en une session
+    # (B-0233), dans l'état et le rappel de fin de tour.
+    "lot trop long": "plus de tâches qu'une session n'en mène",
     "réglage de l'agent": "les réglages de Claude Code commandent ses hooks",
     "où regarder": "« Où regarder » doit donner un lien",
     "contexte du projet": "« Contexte » : il commence par trois paragraphes",
@@ -2465,6 +4243,7 @@ RAISONS_AGENT = {
     "suite": "pas Ensuite :",
     "liens": "liens que l'humain ne pourra pas suivre",
     "lien de demande": "sans son lien",
+    "branche absente": "que l'origine n'a plus",
     "signal indisponible": "mémoire privée : INDISPONIBLE",
     "fuite": "fuite de la mémoire privée",
     "relecture": "relecture avant publication",
@@ -2473,6 +4252,26 @@ RAISONS_AGENT = {
     "commit sans filtre": "commit d'agent sans aucun passage du filtre",
     "geste sans valider": "que seule une réponse `valider` autorise à changer",
     "question en widget": "widget de questions de l'agent",
+    # `socle review` ne nomme pas de contrôle non plus : il refuse le dossier
+    # court d'un lot qui touche un garde-fou (B-0288).
+    "revue courte refusée": "le lot touche un garde-fou",
+    # `socle handoff check` non plus : il refuse la passation, en disant
+    # pourquoi, dans la session neuve comme dans celle qui part, après son
+    # push.
+    "passation poussée depuis": "quelqu'un a poussé sur origin/travail depuis la passation",
+    "passation d'une autre session": "une autre session travaille sur le projet",
+    "passation déjà reprise": "est déjà reprise : origin/travail porte son retrait",
+    "passation squash d'une autre session": "porte parmi ses ancêtres 1 commit(s) écrit(s) après",
+    "passation non poussée": "n'est pas poussée : aucune branche de origin ne la porte",
+    "passation non commitée": "des changements ne sont pas commités (memory/handoff.md)",
+    # `socle handoff write` non plus : il refuse la passation programmée, en
+    # disant pourquoi.
+    "borne de la chaîne": "lots menés sans message de l'humain, sa borne est",
+    "passation sans tâche prête": "le prochain lot n'a aucune tâche prête",
+    # `socle prune-branches` laisse la branche, en disant pourquoi.
+    "branche de l'humain": "son dernier commit ne porte pas la marque d'un agent",
+    "branche non contenue": "aucune branche de l'agent à supprimer",
+    "suppression coupée": "`prune_branches = false`",
 }
 
 

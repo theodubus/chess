@@ -3,6 +3,16 @@
 version = "0.2.0"
 mode = "projet"
 engine_dir = ".socle/engine"
-fingerprint = "sha256:1f074ed0672d47204c6c90f8e263c1ee18d02d2654bdf693648a7ce4743633d2"
-files = 93
-format = 3
+fingerprint = "sha256:0837947f7fdccda9e4876e25c20f0b7637428b786ba6f7ea068a951653d0a632"
+copied = "sha256:0837947f7fdccda9e4876e25c20f0b7637428b786ba6f7ea068a951653d0a632"
+files = 106
+format = 4
+
+# Les fichiers protégés que l'installeur a posés hors du moteur, et l'empreinte de chacun : tant qu'ils l'ont, la fin de tour les compte à la mise à jour.
+[installed]
+".claude/skills/socle-batch/SKILL.md" = "sha256:d5929411959edbe7835d61c1da1ceff5d5e1b6f778b992b161db6ceefbae904b"
+".claude/skills/socle-handoff/SKILL.md" = "sha256:3cbc7e0ca6bba76cf351aa8a99192b8c79d003d960686564fe6c8392714d7b83"
+".claude/skills/socle-request/SKILL.md" = "sha256:a2d699dc59677047c80642d86669f5a4dc6729d919834714d9cb2ce1aea05178"
+".claude/skills/socle-resume/SKILL.md" = "sha256:37e7dae998d0260650c5dad105194c5e91aae39ea824072c4a0bb05ef02b4f77"
+".claude/skills/socle-review/SKILL.md" = "sha256:2b367282daa81747f4954ffe0c8c50f77490a7bfb3fd0135f26e97862ebd7dde"
+".github/workflows/socle.yml" = "sha256:1ac946d1b6ab966ff486e3509ba0b054fffbe5d3730cb8015b8ceca69a91e3de"

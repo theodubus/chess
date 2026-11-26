@@ -11,7 +11,7 @@ classés par la CCRL, à l'équivalent 40/15 du runner
 à 60+0,6 contre le `main` d'avant ce réseau : le contrôle à cadence longue
 de chaque réseau embarqué, hypothèse de l'agent validée par Théo le 12 nov. 2026 (D-0004), notée « supposée ».
 
-## Fait quand
+## Satisfait quand
 
 - [ ] la série à 3190 est relevée et écrite dans F-0011, pas dans le `README.md`
 - [ ] la série contre les moteurs classés est relevée : une note sur la liste 40/15, avec sa marge

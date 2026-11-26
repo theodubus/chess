@@ -14,7 +14,7 @@ sur deux.
 
 Un changement de test du moteur : il attend la fin de l'adoption du socle.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] la mesure du relecteur est reproduite, le hasard injecté puis retiré
 - [ ] le test compare aussi le compte de nœuds, sur plusieurs positions

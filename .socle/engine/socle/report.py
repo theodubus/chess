@@ -33,6 +33,18 @@ class Constat:
     # nom d'un test) : la clé sous laquelle l'adoption le tolère, sans
     # dépendre de la langue ni de la tournure du message (B-0180).
     objet: str | None = None
+    # La ligne commune que l'affichage regroupé imprime une fois à la place
+    # des constats d'une même cause qui la portent (B-0196, ADR-0077).
+    regroupe: str | None = None
+    # Les lignes que l'essentiel d'un rapport imprime à la place du message
+    # (B-0290) : pour une étape de l'adaptateur, sa commande et la ligne de
+    # chaque test en échec. Vide, l'essentiel est la première ligne utile du
+    # message.
+    essentiel: tuple[str, ...] = ()
+    # Ce que le rapport imprime sous le constat, en retrait, hors de son
+    # essentiel : ce qu'il faut avoir sous les yeux pour y répondre, comme
+    # l'historique d'un lot dont la clôture est refusée (T-0055).
+    detail: str | None = None
 
     def lieu(self) -> str:
         if self.chemin and self.ligne:
@@ -43,14 +55,38 @@ class Constat:
         lieu = self.lieu()
         return f"{lieu} — {self.message}" if lieu else self.message
 
+    def lignes_essentielles(self) -> list[str]:
+        """Ce que l'essentiel d'un rapport dit du constat (B-0290) : ses
+        lignes `essentiel`, ou la première ligne utile de son message, avec
+        son lieu."""
+        lignes = list(self.essentiel) or [premiere_ligne_utile(self.message)]
+        lieu = self.lieu()
+        if lieu:
+            lignes[0] = f"{lieu} — {lignes[0]}"
+        return lignes
+
+
+def ligne_utile(ligne: str) -> bool:
+    """Une ligne qui dit quelque chose : ni vide, ni un décor (`=====`,
+    `-----`, `***`), c'est-à-dire avec au moins une lettre ou un chiffre."""
+    return any(c.isalnum() for c in ligne)
+
+
+def premiere_ligne_utile(texte: str) -> str:
+    """La première ligne utile d'un texte, sans ses blancs ; le texte entier
+    s'il n'en a aucune."""
+    return next((l.strip() for l in texte.splitlines() if ligne_utile(l)), texte.strip())
+
 
 @dataclass
 class Rapport:
     constats: list[Constat] = field(default_factory=list)
     executes: list[str] = field(default_factory=list)
 
-    def erreur(self, controle, message, chemin=None, ligne=None, objet=None):
-        self.constats.append(Constat(controle, message, chemin, ligne, ERREUR, objet))
+    def erreur(self, controle, message, chemin=None, ligne=None, objet=None, regroupe=None, essentiel=(),
+               detail=None):
+        self.constats.append(Constat(controle, message, chemin, ligne, ERREUR, objet, regroupe, tuple(essentiel),
+                                     detail))
 
     def avertir(self, controle, message, chemin=None, ligne=None, objet=None):
         self.constats.append(Constat(controle, message, chemin, ligne, AVERTISSEMENT, objet))
@@ -86,11 +122,20 @@ class Rapport:
                 vus.append(c.controle)
         return vus
 
-    def texte(self, titre: str | None = None, court: bool = False) -> str:
+    def texte(self, titre: str | None = None, court: bool = False, regrouper: bool = False,
+              essentiel: bool = False) -> str:
         """Le rapport, contrôle par contrôle ; `court` n'en montre que ce qui
-        échoue, avertit ou n'a pas pu s'exécuter, et compte le reste."""
+        échoue, avertit ou n'a pas pu s'exécuter, et compte le reste ;
+        `regrouper` imprime une fois, à leur place, la ligne commune des
+        constats qui en portent une (ADR-0077) ; `essentiel`, court aussi, ne
+        donne de chaque constat que ses lignes essentielles, sans la sortie
+        des outils, et ne fait que nommer les contrôles indisponibles
+        (B-0290)."""
+        court = court or essentiel
         lignes = []
+        dites = set()
         tus = 0
+        indisponibles = []
         if titre:
             lignes.append(titre)
             lignes.append("")
@@ -114,12 +159,30 @@ class Rapport:
             if court and not (erreurs or avert or indispo):
                 tus += 1
                 continue
+            if essentiel and indispo:
+                indisponibles.append(nom)
+                indispo = []
+                if not (erreurs or avert):
+                    continue
             lignes.append(f"  {nom:<34} {etat}")
             for c in erreurs + avert + indispo:
                 marque = {ERREUR: "|", AVERTISSEMENT: "!", INDISPONIBLE: "?"}[c.gravite]
+                if regrouper and c.regroupe:
+                    if (nom, c.regroupe) not in dites:
+                        dites.add((nom, c.regroupe))
+                        lignes.append(f"      {marque} {c.regroupe}")
+                    continue
+                if essentiel:
+                    lignes.extend(f"      {marque} {l}" for l in c.lignes_essentielles())
+                    continue
                 lignes.append(f"      {marque} {c.en_ligne()}")
+                if c.detail:
+                    lignes.extend(f"        {l}".rstrip() for l in c.detail.splitlines())
         if court and tus:
             lignes.append(trad("  … et {n} autre(s) contrôle(s) sans rien à signaler", n=tus))
+        if indisponibles:
+            lignes.append(trad("  … et {n} contrôle(s) indisponible(s), que le détail explique : {controles}",
+                               n=len(indisponibles), controles=", ".join(indisponibles)))
         lignes.append("")
         if self.reussi:
             lignes.append(trad("TOUT PASSE"))

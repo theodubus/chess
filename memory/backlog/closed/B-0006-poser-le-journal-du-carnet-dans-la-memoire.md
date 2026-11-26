@@ -3,7 +3,7 @@
 
 > statut : fait · origine : D-0005 · ref : J-2026-11-16-C · après : B-0005, B-0032 · lu : backlog@0b9dd3b4
 
-Deuxième lot du déplacement du carnet (B-0003) : son journal, 207 entrées
+Deuxième lot du déplacement du carnet (JA-0001) : son journal, 207 entrées
 datées du 12 sept. au 10 nov. 2026, passe dans le journal de la mémoire,
 un fichier par mois, entier : Théo a confirmé le 12 nov. 2026 que le
 carnet se publie sans tri (D-0007). Les entrées gardent leurs identifiants : aucun ne tombe sur un
@@ -11,7 +11,7 @@ identifiant d'ici, le journal du socle commençant le 11 nov. Deux entrées
 du carnet n'ont pas d'identifiant et vont avec son contexte historique.
 Rien ne change dans `CLAUDE.md`.
 
-## Fait quand
+## Satisfait quand
 
 - [x] le compte d'entrées posées égale celui du carnet
 - [x] aucune référence morte ni copie nouvelle : `python3 .socle/socle verify --fast` passe sans avertissement nouveau

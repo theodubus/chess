@@ -12,6 +12,7 @@ Les URL ont la forme de GitHub : `<dépôt>/blob/<commit>/<chemin>`.
 
 from __future__ import annotations
 
+import os
 import re
 import unicodedata
 from urllib.parse import quote, unquote, urlsplit
@@ -77,6 +78,18 @@ def ancre(titre: str) -> str:
     return t.replace(" ", "-")
 
 
+def _ci_d_une_pull_request(racine) -> bool:
+    """`racine` est le dépôt que la CI d'une pull request a extrait :
+    `GITHUB_HEAD_REF` est là, et `GITHUB_WORKSPACE` le désigne."""
+    espace = os.environ.get("GITHUB_WORKSPACE")
+    if not os.environ.get("GITHUB_HEAD_REF") or not espace:
+        return False
+    try:
+        return os.path.realpath(espace) == os.path.realpath(racine)
+    except (OSError, ValueError):
+        return False
+
+
 def commit_pousse(racine) -> str | None:
     """Le dernier commit poussé de la branche courante : parmi sa branche
     distante du même nom, celle qu'elle suit et la branche par défaut
@@ -85,9 +98,16 @@ def commit_pousse(racine) -> str | None:
     `origin/main` suit celle-ci tant qu'on ne l'a pas changé, alors qu'elle
     se pousse sous son propre nom (B-0134) ; et repartie après une fusion,
     sa branche distante du même nom garde l'ancien travail jusqu'au push
-    suivant."""
+    suivant. La CI d'une pull request (`GITHUB_HEAD_REF`) tourne sur une
+    HEAD détachée, le commit de fusion que GitHub prépare : son second
+    parent est la tête de la pull request, poussée, où vit ce que la
+    branche a posé (T-0085) ; pour le seul dépôt que la CI a extrait
+    (`GITHUB_WORKSPACE`), pas un autre dépôt qu'elle ouvre."""
     defaut = outils.branche_par_defaut(racine)
     branche = outils.git(racine, "rev-parse", "--abbrev-ref", "HEAD", check=False).strip()
+    if branche == "HEAD" and _ci_d_une_pull_request(racine) and outils.rev_existe(racine, "HEAD"):
+        tete = "HEAD^2" if outils.rev_existe(racine, "HEAD^2") else "HEAD"
+        return outils.resoudre(racine, tete)
     distant = outils.git(racine, "config", "--get", f"branch.{branche}.remote", check=False).strip()
     meme_nom = f"{distant if distant not in ('', '.') else 'origin'}/{branche}" \
         if branche and branche != "HEAD" else None
@@ -106,22 +126,26 @@ def commit_pousse(racine) -> str | None:
 def lien(projet: config.Projet, cible: str) -> tuple[str | None, str]:
     """Le permalien d'un chemin du dépôt ou d'une entrée de mémoire, et un
     avertissement : ce qui manque, ou que la version poussée n'est pas la
-    version locale."""
+    version locale. L'ancien numéro d'une entrée renumérotée (ADR-0083) mène
+    à l'entrée qui le porte, et l'avertissement nomme celle-ci."""
     racine = projet.racine
     depot = url_depot(projet)
     if not depot:
         return None, trad("adresse du dépôt inconnue : l'humain la règle dans la politique (`[human] repo_url`)")
-    chemin, suffixe = cible.strip().rstrip("/"), ""
+    chemin, suffixe, renumerotee = cible.strip().rstrip("/"), "", ""
     if memoire.decouper_id(chemin):
-        e = memoire.Memoire.charger(racine).entree(chemin)
+        e = memoire.Memoire.charger(racine).resoudre(chemin)
         if e is None:
             return None, trad("{cible} : aucune entrée de ce nom dans la mémoire", cible=cible)
+        if e.id != chemin:
+            renumerotee = trad("{ancien} est l'ancien numéro de {ident}", ancien=chemin, ident=e.id)
         chemin = e.fichier
         if e.niveau > 1:  # une entrée parmi d'autres : son ancre
             m = memoire.TITRE_RE.match(e.texte.splitlines()[0])
             suffixe = "#" + quote(ancre(m["reste"] if m else e.titre), safe="-_")
     if memoire.est_prive(chemin):
-        return _lien_prive(projet, chemin, suffixe)
+        url, avertissement = _lien_prive(projet, chemin, suffixe)
+        return url, " ; ".join(filter(None, (renumerotee, avertissement)))
     sha = commit_pousse(racine)
     if not sha:
         return None, trad("rien n'est poussé : pousser d'abord")
@@ -130,13 +154,14 @@ def lien(projet: config.Projet, cible: str) -> tuple[str | None, str]:
         return None, trad("{chemin} n'est pas dans la version poussée ({sha}) : pousser d'abord",
                           chemin=chemin, sha=sha[:7])
     url = f"{depot}/{sorte}/{sha}/{quote(chemin)}{suffixe}"
-    avertissement = ""
+    avertissement = renumerotee
     local = racine / chemin
     if sorte == "blob" and local.is_file():
         pousse = outils.git(racine, "rev-parse", f"{sha}:{chemin}", check=False).strip()
         if outils.git(racine, "hash-object", "--", chemin, check=False).strip() != pousse:
-            avertissement = trad("{chemin} : la version locale n'est pas poussée, le lien montre la version "
-                                 "poussée", chemin=chemin)
+            avertissement = " ; ".join(filter(None, (renumerotee, trad(
+                "{chemin} : la version locale n'est pas poussée, le lien montre la version poussée",
+                chemin=chemin))))
     return url, avertissement
 
 
@@ -225,6 +250,51 @@ def url_morte(racine, depot: str, url: str) -> str | None:
                 return None
             return trad("{chemin} n'existe pas dans la version poussée « {ref} »", chemin=chemin, ref=ref[:12])
     return trad("version « {version} » inconnue ou pas poussée", version=parties[1][:12])
+
+
+# Une ligne de « Pour toi » qui donne une branche à supprimer : elle dit le
+# geste et le mot, en français ou en anglais ; une branche locale n'est pas
+# sur l'origine (B-0311, D-0178).
+SUPPRIMER = re.compile(r"(?i)supprim|\bdelet")
+BRANCHE = re.compile(r"(?i)\bbranch")
+LOCALE = re.compile(r"(?i)\blocal(?:e|es)?\b")
+
+
+def branches_a_supprimer_citees(projet: config.Projet, message: str) -> list[str]:
+    """Les branches que la partie « Pour toi » du message donne à supprimer :
+    sur chaque ligne qui dit supprimer et branche, hors d'une branche
+    locale, les noms entre accents graves que git accepte pour une branche,
+    `origin/` retiré."""
+    from socle import human as humain
+
+    res: list[str] = []
+    for ligne in humain.pour_toi(projet, message).splitlines():
+        if not (SUPPRIMER.search(ligne) and BRANCHE.search(ligne)) or LOCALE.search(ligne):
+            continue
+        for m in CODE.finditer(ligne):
+            nom = m["code"].strip().removeprefix("origin/")
+            if nom and nom not in res and outils.git(projet.racine, "check-ref-format", "--branch", nom,
+                                                     check=False).strip() == nom:
+                res.append(nom)
+    return res
+
+
+def branches_absentes(projet: config.Projet, message: str) -> tuple[list[str], list[str]]:
+    """(celles que l'origine n'a plus, celles qu'elle n'a pas pu confirmer)
+    parmi les branches que « Pour toi » donne à supprimer : l'agent les
+    reprend parfois d'une entrée du journal ou d'un récap d'avant, sans les
+    vérifier, et l'humain n'a rien à supprimer (B-0311, D-0178). L'origine
+    n'est interrogée (`git ls-remote`, comme l'état, ADR-0090) que si le
+    message en donne une ; sans sa réponse, aucune n'est dite absente."""
+    from socle import human as humain
+
+    citees = branches_a_supprimer_citees(projet, message)
+    if not citees:
+        return [], []
+    vivantes = humain.branches_de_l_origine(projet)
+    if vivantes is None:
+        return [], citees
+    return [b for b in citees if b not in vivantes], []
 
 
 def problemes(projet: config.Projet, message: str) -> tuple[list[str], list[str]]:

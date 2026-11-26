@@ -13,7 +13,7 @@ et c'est un match plutôt que `tools/timing.sh`. Sa vitesse se mesure sur
 l'évaluation qui joue, le réseau, que le banc ne mesure pas encore
 (B-0055).
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : le gain mesuré au réseau, à arbre identique, ou un match si l'entrée change de taille

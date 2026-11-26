@@ -15,7 +15,7 @@ et le réseau à 512 attend son embarquement (B-0013). Un troisième binaire
 ne démarre pas sur les runners EPYC 7763, sans AVX-512 ; et un SIMD écrit
 à la main passe par ADR-0039.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : la vitesse à arbre identique, par la sonde `tools/attic/vitesse-avx2-sonde.patch`, au réseau qui joue

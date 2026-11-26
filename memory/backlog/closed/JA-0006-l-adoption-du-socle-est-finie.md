@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
-# B-0031 — L'adoption du socle est finie
+# JA-0006 — L'adoption du socle est finie
 
-> statut : fait · origine : D-0006 · ref : J-2026-11-17-Z · forme : jalon · après : B-0001, B-0002, B-0003, B-0004 · priorité : haute · lu : backlog@6dc51502
+> statut : fait · origine : D-0006 · ref : J-2026-11-17-Z · après : B-0001, B-0002, JA-0001, B-0004 · lu : backlog@6dc51502 · ancien : B-0031
 
 Théo, le 12 nov. 2026 : on finit l'adoption du socle et de la mémoire
 avant de reprendre les travaux sur le moteur (D-0006). Ce jalon dit ce
@@ -16,6 +16,6 @@ Théo en est prévenu.
 ## Fait quand
 
 - [x] aucun contrôle du socle n'est plus en mode d'avertissement (B-0001)
-- [x] le carnet de bord est dans la mémoire, et `CLAUDE.md` ne porte que des règles (B-0003)
+- [x] le carnet de bord est dans la mémoire, et `CLAUDE.md` ne porte que des règles (JA-0001)
 - [x] l'ancienne feuille de route est retirée de `tools/README.md`, et ce que le démarrage imprime est décidé (B-0002)
 - [x] les deux hooks de fin de tour sont tranchés (B-0004)

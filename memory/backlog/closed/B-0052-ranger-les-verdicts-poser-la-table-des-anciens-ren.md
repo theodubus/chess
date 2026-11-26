@@ -12,7 +12,7 @@ parti à son entrée du journal, pour les renvois qu'on ne réécrit pas
 (commits, journal gelé, workflows). `CLAUDE.md` pointe les places
 nouvelles.
 
-## Fait quand
+## Satisfait quand
 
 - [x] `tools/README.md` ne porte plus que la documentation des outils et la table des anciens renvois
 - [x] chaque renvoi de `CLAUDE.md` et des fichiers vivants pointe une place qui existe

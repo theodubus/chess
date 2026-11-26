@@ -13,7 +13,7 @@ ouverts en dépendent (F-0009) : les ouvertures, leur seuil
 `OPENING_MAX_SCORE`, jamais changé en cours de tranche, et le filtre des
 positions.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : la diversité comparée, puis un réseau mesuré sur les données neuves

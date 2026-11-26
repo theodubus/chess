@@ -28,7 +28,7 @@ l'agent.
   illisible, pas une alerte. À écrire avant, éprouvé par
   `.github/mutation-verdict-test.sh`.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] la notice de durée de `match.yml` dit ce que le fichier mesure, et le commentaire de sa sonde renvoie à F-0017
 - [ ] le balayage sait découper un fichier en morceaux et sommer leurs survivants, éprouvé par l'auto-test du verdict

@@ -15,7 +15,7 @@ nulle en ramassait une part. La bande de 400 à 600, jamais jouée,
 déplacerait ce compromis. Marge estimée faible, confiance faible : un
 levier du débit de mesure parmi d'autres, derrière eux.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : son rendement mesuré par heure de runner sur les mêmes effets connus, contre notre livre, son critère écrit avant

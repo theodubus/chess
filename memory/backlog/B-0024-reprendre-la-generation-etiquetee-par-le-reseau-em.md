@@ -19,7 +19,7 @@ l'étiqueteur du jour : elle n'a été mesurée qu'au réseau N0 (F-0009), par
 la rustine `tools/attic/n7-sonde-adjudication.patch` (relecture de
 B-0049).
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'adjudication du générateur est resondée à l'échelle de l'étiqueteur
 - [ ] la taille de la tranche et sa raison sont écrites avant de lancer

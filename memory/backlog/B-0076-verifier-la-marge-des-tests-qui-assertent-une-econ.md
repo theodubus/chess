@@ -16,7 +16,7 @@ position passe par chance »). La sonde de chacun, à l'attic
 (`tools/attic/c36-sonde-compte.patch` pour l'élagage par compte), se
 relance après un changement d'arbre qui touche ce qu'elle garde.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] la marge de chaque test d'économie de nœuds est mesurée sur `main`, sur un échantillon de positions de parties
 - [ ] celui qui s'asserte sur une seule position, ou dont la marge est mince, est reformulé sur l'échantillon, par une mesure indépendante du changement (ADR-0038), ou laissé avec sa marge écrite

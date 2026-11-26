@@ -5,11 +5,11 @@
 
 Le script tools/carnet-vers-md.py, retiré le 24 nov. 2026, a converti le carnet de bord, un artefact
 claude.ai, au format de la mémoire ; il devait « s'en aller » une fois le
-déplacement fait, et ce déplacement est clos (B-0003, B-0031). Aucun sujet
+déplacement fait, et ce déplacement est clos (JA-0001, JA-0006). Aucun sujet
 ne portait son retrait : la relecture du troisième critère de B-0078 l'a
 relevé (J-2026-11-23-X). Le retirer, c'est retirer le script, sa section de
 `tools/README.md` et ce qui le cite ; ou dire pourquoi il reste.
 
-## Fait quand
+## Satisfait quand
 
 - [x] le script et sa documentation sont retirés, `engine/tests/outillage_documente.rs` vert, ou une entrée du journal dit pourquoi il reste (retirés, J-2026-11-24-J)

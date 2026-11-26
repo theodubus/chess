@@ -19,7 +19,7 @@ vérifier les graines quand le journal les porte. Un correctif livre son
 test dans `tools/mettre-en-commun-test.sh`, qui échoue sur le script
 d'aujourd'hui.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] deux jobs de dix paires au même vecteur, graines distinctes, se mettent en commun
 - [ ] deux grands matchs identiques restent refusés, et le test le garde

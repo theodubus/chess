@@ -14,7 +14,7 @@ Théo le 12 nov. 2026 (D-0007) : réel si le gain mesuré au pas précédent,
 au point, atteint +10 Elo ; marginal en dessous. De 384 à 512 unités, il
 était d'environ +8 : sous le seuil.
 
-## Fait quand
+## Satisfait quand
 
 - [x] Théo a dit le seuil qui sépare un gain réel d'un gain marginal
 - [ ] un réseau à 768 unités est entraîné et mesuré contre le réseau embarqué, ou l'axe est fermé par le seuil, et le journal le dit

@@ -13,7 +13,7 @@ secondaires : le wiki de Stockfish, cité par chessprogramming.org).
 Inférence, confiance moyenne : un réseau évalue déjà bien les finales
 simples. Reporté.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : le sondage mesuré, tables et coût d'accès compris

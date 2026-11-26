@@ -105,6 +105,13 @@ class Demande:
         return bool(self.entree) and langue.valeur(self.entree.meta.get("forme", "")) == "seance"
 
     @property
+    def donnee(self) -> bool:
+        """Une décision que l'humain a donnée de lui-même, en séance, sans
+        qu'on la lui ait demandée : son texte exact tient lieu de question,
+        et le moteur l'a consignée validée (B-0185)."""
+        return self.seance and "decision-donnee" in self.sections
+
+    @property
     def sujet(self) -> tuple[str, str] | None:
         """Ce que la décision approuve : un chemin, et l'empreinte de la
         version approuvée (`chemin@empreinte`) quand il y en a une."""
@@ -480,6 +487,18 @@ def descriptions(bloc: str, motifs: list[re.Pattern]) -> set[str]:
     return res
 
 
+def citees_par_une_autre(liste: list[Demande]) -> set[str]:
+    """Les identifiants qu'une demande de `liste` décrit dans ses « Éléments
+    cités » (« Cited elements » en anglais), sauf le sien : la demande qui
+    en remplace une renvoyée la cite là, et une demande répondue est gelée,
+    si bien qu'aucun champ ajouté après coup ne dirait le remplacement
+    (B-0344)."""
+    res = set()
+    for d in liste:
+        res |= descriptions(d.sections.get("elements-cites", ""), [memoire.ID_RE]) - {d.id}
+    return res
+
+
 def verifier_reponse(d: Demande) -> list[str]:
     if d.reponse is None:
         return []
@@ -573,9 +592,6 @@ def ecrire_seance(projet: config.Projet, question: str, texte: str, reponse: str
     lue dans la conversation, avec sa réponse, d'un seul geste, dans le
     registre des demandes. Rend les chemins de la demande et de sa
     réponse."""
-    from socle import identifiers as identifiants
-
-    racine = projet.racine
     if len(question.strip()) < 10:
         raise ValueError(trad("la question doit énoncer la décision en une phrase"))
     if not reponse_de_seance(reponse, texte or question):
@@ -591,16 +607,50 @@ def ecrire_seance(projet: config.Projet, question: str, texte: str, reponse: str
         raise ValueError(trad("le titre cite {ids}, que la question posée ne cite pas : le citer avec son "
                               "empreinte (`ID@…`, que donne `socle show`), ou le nommer dans la question",
                               ids=", ".join(seuls)))
+    return _consigner(projet, question, "question-posee", texte or question, reponse, par, jour, canal, citation,
+                      sujet)
+
+
+def ecrire_decision_donnee(projet: config.Projet, titre: str, texte: str, par: str, jour: str, canal: str,
+                           sujet: str = "") -> tuple[str, str]:
+    """Une décision que l'humain donne de lui-même, en séance, sans qu'on la
+    lui ait demandée (B-0185) : son texte exact sous « Décision donnée »,
+    sans question posée ni réponse à choisir ; le moteur la consigne sous la
+    réponse de base qui valide, son texte cité, et elle autorise ce qu'elle
+    nomme comme une demande validée. Rend les chemins de la demande et de sa
+    réponse."""
+    if len(titre.strip()) < 10:
+        raise ValueError(trad("le titre doit énoncer la décision en une phrase"))
+    if len(texte.strip()) < 2:
+        raise ValueError(trad("une décision donnée se consigne avec le texte exact de l'humain (--quote ou "
+                              "--quote-file)"))
+    seuls = titre_sans_preuve(titre, texte)
+    if seuls:
+        raise ValueError(trad("le titre cite {ids}, que le texte de l'humain ne cite pas : le citer avec son "
+                              "empreinte (`ID@…`, que donne `socle show`), ou s'en tenir à ce qu'il nomme",
+                              ids=", ".join(seuls)))
+    lg = langue.du_projet(projet)
+    return _consigner(projet, titre, "decision-donnee", texte, langue.mot(langue.REPONSES, REPONSE_POSITIVE, lg),
+                      par, jour, canal, texte if canal == "conversation" else "", sujet)
+
+
+def _consigner(projet: config.Projet, titre: str, section: str, corps: str, reponse: str, par: str, jour: str,
+               canal: str, citation: str, sujet: str) -> tuple[str, str]:
+    """Une décision de séance et sa réponse, d'un seul geste : la demande,
+    puis la réponse ; la réponse refusée, la demande se retire."""
+    from socle import identifiers as identifiants
+
+    racine = projet.racine
     mem = memoire.Memoire.charger(racine)
     ident = mem.prochain_id("D", date=jour, pris_ailleurs=identifiants.pris_ailleurs(racine, "D"))
     lg = langue.du_projet(projet)
     champs = {"date": jour, "forme": langue.mot(langue.VALEURS, "seance", lg)}
     if sujet:
         champs["sujet"] = sujet
-    chemin = f"{projet.chemins.demandes}/{ident}-{memoire.nom_de_fichier(question)}.md"
-    contenu = (f"{langue.entete_fichier('demandes', 'publique', lg)}\n# {ident} — {question.strip()}\n\n"
+    chemin = f"{projet.chemins.demandes}/{ident}-{memoire.nom_de_fichier(titre)}.md"
+    contenu = (f"{langue.entete_fichier('demandes', 'publique', lg)}\n# {ident} — {titre.strip()}\n\n"
                f"{langue.meta(lg, **champs)}\n\n"
-               f"## {langue.mot(langue.SECTIONS_SEANCE, 'question-posee', lg)}\n\n{(texte or question).strip()}\n")
+               f"## {langue.mot(langue.SECTIONS_SEANCE, section, lg)}\n\n{corps.strip()}\n")
     outils.ecrire(racine / chemin, contenu)
     d = charger(racine, None, chemin, contenu)
     try:
@@ -615,20 +665,27 @@ def _toml_str(s: str) -> str:
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n") + '"'
 
 
+def identite(d: Demande) -> str:
+    """Ce qui reconnaît une demande d'une révision à l'autre : son
+    identifiant, qui ne change pas quand un déplacement renomme son fichier
+    et celui de sa réponse (relevé de la passe de recul, D)."""
+    return d.id or d.chemin_reponse or d.chemin
+
+
 def validations_ajoutees(racine: Path, base: str | None, tete: str | None) -> list[Demande]:
     """Les demandes validées par une réponse AJOUTÉE dans la plage : une vieille
-    validation ne couvre pas un assouplissement nouveau. Une demande se
-    reconnaît à son identifiant, qui ne change pas quand un déplacement
-    renomme son fichier et celui de sa réponse (relevé de la passe de
-    recul, D)."""
-    def cle(d: Demande) -> str:
-        return d.id or d.chemin_reponse or d.chemin
-
-    deja = {cle(d) for d in toutes(racine, base) if d.reponse is not None} if base else set()
+    validation ne couvre pas un assouplissement nouveau, sauf sous la règle
+    des validations d'avant la plage (`Contexte.hors_plage`, D-0189)."""
+    deja = {identite(d) for d in toutes(racine, base) if d.reponse is not None} if base else set()
     return [
         d for d in toutes(racine, tete)
-        if d.validee and cle(d) not in deja and not verifier_reponse(d)
+        if d.validee and identite(d) not in deja and not verifier_reponse(d)
     ]
+
+
+def validations(racine: Path, rev: str | None) -> list[Demande]:
+    """Toutes les demandes validées à une révision, leur réponse en règle."""
+    return [d for d in toutes(racine, rev) if d.validee and not verifier_reponse(d)]
 
 
 def illisible(projet: config.Projet, d: Demande) -> str | None:

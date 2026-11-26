@@ -13,7 +13,7 @@ B-0049, `sonder-les-marges` et `preparer-une-seance` : ce que ces récits
 en disent de plus, les scripts `tools/seance-*.sh` compris, s'y ajoute
 avant qu'ils partent.
 
-## Fait quand
+## Satisfait quand
 
 - [x] faits, procédures et idées de ces sections à leur place, vérifiés par la relecture sans contexte
 - [x] ces sections hors de `tools/README.md`, le reste au journal, chaque chiffre retrouvé

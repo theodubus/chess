@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
-# B-0030 — Le moteur est mesuré à cadence longue
+# JA-0005 — Le moteur est mesuré à cadence longue
 
-> statut : ouvert · origine : D-0004 · forme : jalon · après : B-0025, B-0028, B-0029 · lu : backlog@5513f31e
+> statut : ouvert · origine : D-0004 · après : JA-0004, B-0028, B-0029 · lu : backlog@5513f31e · ancien : B-0030
 
 Dernier jalon posé : ce qui ne se voit qu'à cadence longue est jugé là où
 Théo veut que le moteur soit fort. Le contrôle à 60+0,6 de chaque réseau

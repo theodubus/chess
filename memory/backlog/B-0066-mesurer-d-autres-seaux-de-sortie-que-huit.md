@@ -12,7 +12,7 @@ L'ancien registre la renvoyait à la longue traîne, dont l'inventaire du
 17 nov. l'avait omise (J-2026-11-17-AF) : la relecture de B-0045 l'a
 relevé.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] l'agent a décidé de la tester ou de l'abandonner, marge contre coût (D-0021)
 - [ ] si testée : un réseau à d'autres seaux mesuré contre le réseau qui joue

@@ -18,6 +18,6 @@ ne se réécrit pas.
 Rien n'en dépend : priorité basse, à poser en demande quand une décision
 de Théo est attendue de toute façon.
 
-## Fait quand
+## Satisfait quand
 
 - [x] Théo a tranché le transport, et ADR-0010 est close en conséquence

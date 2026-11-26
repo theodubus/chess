@@ -42,19 +42,24 @@ never choosing it.
      recommendation), `reject` and `insufficient-context`; a choice request
      adds its options, and no synonym (`accept`, `yes`…). Only `approve`
      authorises changing a test or a threshold key the request names.
-3. The lint refuses an incomplete request; the agent's hook refuses it as
-   soon as it is written.
-4. Have it read cold before pushing it: a subagent (the `Agent` tool), of
-   the session's model, whose only message is the brief of
-   `python3 .socle/socle review --request D-NNNN`, as is. It reads the
+3. A request beyond half its budget (`new request` gives it) is read
+   cold before being pushed; a shorter request, or one that only approves
+   protected files by their fingerprints, leaves without it. The reader:
+   a subagent (the `Agent` tool), whose only message is the brief of `python3 .socle/socle review
+   --request D-NNNN`, as is. It receives explicitly at launch (`model`)
+   the most capable model available up to Opus, whatever the session's,
+   on the latest version of its family (an alias that designates an older
+   one: without `model`, it inherits the session's); Fable, if available,
+   only if the human asks for it. It reads the
    request as the human who has not opened the project for three weeks,
-   with no link and no file, and returns what it understood and what it
-   lacks to decide. Rewrite what the human would not understand either;
+   and returns in a single message, launching no tool, what it understood
+   and what it lacks to decide. A report that counts a tool
+   launched means a reading that was not cold: the recap says so. Rewrite what the human would not understand either;
    set aside, with a reason, what does not help to decide or what a linked
-   document already gives. The recap says so: `Cold reading: <n> points,
-   <k> fixed; set aside: …`. An agent without subagents skips this step,
+   document already gives. The recap says so: `Cold reading (<model>): <n>
+   points, <k> fixed; set aside: …`. An agent without subagents skips this step,
    and its recap says so.
-5. Commit and push the request as is, then give its link
+4. Commit and push the request as is, then give its link
    (`python3 .socle/socle url D-NNNN`) in the conversation. Work on
    something else while waiting for the answer (policy, point 8).
 
@@ -69,20 +74,36 @@ python3 .socle/socle answer D-NNNN <answer> --relayed --by <name> --quote-file <
 
 3. Copy the answer into the journal, with its exact text.
 
+The answer is recorded as soon as it is given, committed and pushed at
+once: the human no longer sees it pending. It covers the change it
+authorizes (an expected value, a guardrail key, a protected file) in its
+pull request, or later, merged, as long as an open task cites it and
+what it names has not moved since the request: the task that makes the
+change cites it, and is closed with it.
+
 An answer is only relayed to a request pushed as is: the human must have
 been able to read it. An answered request is frozen. The answer
 `insufficient-context` sends the request back: rewrite it as a new request
-that replaces it.
+that replaces it and cites it in its cited elements; the state then no
+longer says to rewrite it.
 
 A test whose expected value changes while waiting for a request that names
 it may stay changed in the tree at the end of the turn; it is only
 committed after the answer.
 
+## A design to settle
+
+A need whose design is not settled first asks its question of intent, in
+the conversation, in a few lines: the need as the agent understands it,
+the choice that remains, its recommendation; the answer is recorded in
+session (below). Then its specification and its code are done in the
+same batch, the specification first. What remains costly to undo then
+goes into a request, a short one; the rest, the agent decides and writes
+as a decision.
+
 ## Recording a decision taken in session
 
-A decision that needs context, approving a document included, is put as a
-request (above), never in the agent's question widget: the human reads raw
-text there, with no links to follow. What the human settles in the
+What the human settles in the
 conversation, of their own accord or on a short question asked in the text
 of the answer, is recorded at once, with their answer word for word;
 `--about <path>` designates what it approves:
@@ -90,6 +111,34 @@ of the answer, is recorded at once, with their answer word for word;
 ```sh
 python3 .socle/socle decision "<question>" <answer> --relayed --by <name> --quote-file <file>
 ```
+
+A decision the human gives of their own accord, without being asked (a
+rule, a prohibition, "delete this test"), is recorded with no invented
+question and no answer to choose: their exact text, under a title that
+states it in one sentence and names nothing they do not name. It is
+approved, and authorizes what it names as an approved request does:
+
+```sh
+python3 .socle/socle decision "<the decision in one sentence>" --unprompted --relayed --by <name> --quote-file <file>
+```
+
+A directive of the human is only lifted by their word: it is recorded
+this way, in session, then the directive becomes `lifted`, with
+`lifted-by : D-NNNN`, that decision.
+
+Content shown in the conversation that the human approves (a format, an
+example, a text) is first written as is in the repository, then the
+decision designates it (`--about <path>`), and the tasks that follow from
+it cite that path: without it, the decision keeps only the question and
+the answer, and the content is lost.
+
+**The light variant**, for expected values changed mechanically, tests
+that read a format the human has just approved: a question in the
+conversation that names each test, with its value before and after; its
+answer is recorded word for word as a decision taken in session, whose
+text (`--question-file`) names the tests, and is committed with them. Any
+other change of an expected value, or deletion of a test, keeps the
+written request.
 
 ## What the agent never does
 

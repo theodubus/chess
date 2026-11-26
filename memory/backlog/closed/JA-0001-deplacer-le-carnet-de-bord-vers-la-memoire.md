@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
-# B-0003 — Déplacer le carnet de bord vers la mémoire
+# JA-0001 — Déplacer le carnet de bord vers la mémoire
 
-> statut : fait · origine : D-0002 · ref : J-2026-11-17-Z · forme : jalon · après : D-0004, B-0005, B-0006, B-0007, B-0008, B-0009, B-0010, B-0040 · priorité : haute · lu : backlog@2b2f5dc4
+> statut : fait · origine : D-0002 · ref : J-2026-11-17-Z · après : D-0004, B-0005, B-0006, B-0007, B-0008, B-0009, B-0010, B-0040 · lu : backlog@2b2f5dc4 · ancien : B-0003
 
 La décision 4 de Théo (D-0002) : `CLAUDE.md` garde sa marge de budget à
 l'installation, et **le premier sujet de chess** est de déplacer le carnet

@@ -24,6 +24,6 @@ garde-fou, sans changer de valeur attendue. Vérifier d'abord quels `.py`
 le parcours ramasserait : les scripts d'une rustine de l'attic, extraits
 dans l'arbre, ne doivent pas y entrer.
 
-## Fait quand
+## Satisfait quand
 
 - [ ] `dispositifs()` voit les `.py` de `tools/`, et un test qui retire la doc de `tools/candidat-reseau.py` échoue, puis repasse avec elle

@@ -28,8 +28,8 @@ Ce que la demande doit trancher, au moins :
 La demande se prépare sur un inventaire mesuré de `tools/README.md`,
 section par section, et non de tête.
 
-## Fait quand
+## Satisfait quand
 
 - [x] l'inventaire de `tools/README.md` et du `README.md` est fait, section par section
 - [x] la demande du découpage est posée, et Théo y a répondu
-- [x] les lots de la transition sont au backlog, comme tâches du jalon B-0041
+- [x] les lots de la transition sont au backlog, comme tâches du jalon JA-0007
