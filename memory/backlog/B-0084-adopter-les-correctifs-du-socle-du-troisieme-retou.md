@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0084 — Adopter les correctifs du socle du troisième retour, quand Théo le dira prêt
 
-> statut : bloqué · origine : J-2026-11-26-Q · lu : backlog@f82f5a77
+> statut : ouvert · origine : J-2026-11-26-Q · lu : backlog@f82f5a77
 
 Théo, le 26 nov. 2026 à 19 h 33, heure de Paris (J-2026-11-26-Q) :
 « Après L-0002, L-0003 et la fusion de la 324, ne reprends pas les
@@ -21,3 +21,6 @@ point 7 (D-0032@157f0d8e).
 
 - [ ] la version du socle qui porte les correctifs du troisième retour est installée, ses fichiers protégés approuvés par Théo
 - [ ] B-0083 est revérifié sur elle
+
+Théo dit le socle prêt le 28 nov. 2026 (J-2026-11-27-A) : la mise à
+jour se fait sur son prompt de mise à jour, dans la session neuve.
