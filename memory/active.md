@@ -5,18 +5,23 @@ Réécrit au fil du travail et borné. Ce qui en sort s'archive dans le journal.
 
 ## En cours
 
-**Le lot L-0004** (J-2026-11-28-E), la première moitié de B-0012
-(N10r10h512 contre N10h512, JA-0002) : T-0008, les deux candidats au code
-du jour, révoqués aussitôt ; T-0009, la perte tenue à l'écart puis les
-quatre jobs de `match.yml` ; T-0006, le relevé du coût du socle, avant la
-passation. Le match durant ~5 h, la séance passe la main à sa fin, et
-T-0010, le relevé du match, ouvre le lot suivant. L'agent fusionne ses
-pull requests à CI verte (D-0036).
+**Le match de N10r10h512 contre N10h512** (B-0012, JA-0002), lancé le
+28 nov. 2026 à 12 h 12 : quatre jobs de 2 800 parties à `8+0,08`, runs
+46138800639, 46138802963, 46138805047 et 46138807549 (J-2026-11-28-H),
+fin attendue vers 17 h 05 à 17 h 15. L'attendu, le critère, la puissance
+(J-2026-11-28-F) et l'ordre que prédit la perte tenue à l'écart,
+N10r10h512 devant (J-2026-11-28-G), sont écrits avant. Le lot L-0004 est
+clos ; la séance suivante, programmée à la fin de l'attente, relève le
+match (T-0010) par le skill `rendre-un-verdict`. L'agent fusionne ses
+pull requests à CI verte (D-0036), en `merge` : les candidats `f95bfed`
+et `059c419` doivent rester atteignables.
 
 ## Prochaines étapes
 
-1. T-0008 : les candidats, les tests `nnue` en release, `tools/verify.sh`.
-2. T-0009 : la perte tenue à l'écart, puis le match, tout écrit avant.
-3. T-0006, puis à la clôture du lot, les besoins « à placer » rangés ;
-   la passation programmée à la fin attendue du match.
+1. T-0010 : les quatre jobs relevés, mis en commun, le verdict au
+   journal, le gagnant nommé ; l'ordre prédit confronté dans B-0071.
+2. Le tri de la réserve, reporté de la clôture de L-0004 : chacun des
+   besoins « à placer » dans un jalon, ou `réserve : <raison> · trié`.
+3. La pull request de la branche fusionnée à CI verte ; puis B-0013,
+   l'embarquement du gagnant.
 4. Rappeler à Théo B-0077, avant le 18 janv. 2027.

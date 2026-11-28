@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # T-0006 — Relever le coût du socle sur la première séance qui mène un lot ordinaire, avant sa passation
 
-> statut : ouvert · origine : J-2026-11-28-A · besoin : B-0085 · lu : backlog@a029f8a7
+> statut : fait · origine : J-2026-11-28-A · besoin : B-0085 · lu : backlog@a029f8a7 · ref : J-2026-11-28-I
 
 **Elle accompagne un lot ordinaire, elle n'en est pas un** : la séance qui
 la prend mène d'abord son lot, puis, avant sa passation, fait le relevé
@@ -31,7 +31,7 @@ n'est pas celle du relevé : elle ne menait aucun lot ordinaire.
 
 ## Fait quand
 
-- [ ] les appels d'outil de la séance, de son début ou de son dernier compactage à sa passation, sont comptés par nature : le total, le compte et la part de chacune, les gestes uniques de la mise à jour à part, et ce qu'a fait la séance
-- [ ] les refus de `.git/socle/hooks.log` sur la même période sont classés par contrôle, chacun dit fondé ou à tort, avec le nombre de déclenchements, la part des refus et les postes du §3 en regard, ou la lacune du journal dite
-- [ ] l'alerte de retard de l'état est relevée : sa ligne mot pour mot et la suite donnée, ou aucune session démarrée en retard
-- [ ] le relevé est rendu dans le récap de la séance et gardé au journal, et T-0006 et B-0085 sont clos avec la passation
+- [x] les appels d'outil de la séance, de son début ou de son dernier compactage à sa passation, sont comptés par nature : le total, le compte et la part de chacune, les gestes uniques de la mise à jour à part, et ce qu'a fait la séance
+- [x] les refus de `.git/socle/hooks.log` sur la même période sont classés par contrôle, chacun dit fondé ou à tort, avec le nombre de déclenchements, la part des refus et les postes du §3 en regard, ou la lacune du journal dite
+- [x] l'alerte de retard de l'état est relevée : sa ligne mot pour mot et la suite donnée, ou aucune session démarrée en retard
+- [x] le relevé est rendu dans le récap de la séance et gardé au journal, et T-0006 et B-0085 sont clos avec la passation
