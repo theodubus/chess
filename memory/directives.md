@@ -21,7 +21,7 @@ l'humain, une demande qu'il a validée, lève une consigne.
 
 ## C-0003 — Livraison : une branche de développement, une seule pull request ouverte, fusionnée par l'agent à CI verte
 
-> statut : en vigueur · source : D-0005 · date : 2026-11-12
+> statut : levée · source : D-0005 · date : 2026-11-12 · levée-par : D-0036
 
 > 3. Oui
 
@@ -31,7 +31,7 @@ fusionne moi-même à CI verte (ta décision du 11 nov.). C'est bien ça ? »
 
 ## C-0004 — La feuille de route demandée se donne au format court
 
-> statut : en vigueur · source : J-2026-11-26-I · date : 2026-11-26
+> statut : levée · source : J-2026-11-26-I · date : 2026-11-26 · levée-par : D-0036
 
 > « Non format court roadmap »
 

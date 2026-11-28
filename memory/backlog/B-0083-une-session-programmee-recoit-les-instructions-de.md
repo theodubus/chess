@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0083 — Une session programmée reçoit les instructions de la tête de sa branche, pas celles d'une copie périmée
 
-> statut : ouvert · origine : J-2026-11-26-O · lu : backlog@5d0dc4c9
+> statut : bloqué · origine : J-2026-11-26-O · lu : backlog@5d0dc4c9
 
 Le 26 nov. 2026, la session réveillée par la passation de J-2026-11-26-N
 a démarré sur 4f309d7 au lieu de c2c9ab9, la tête de sa passation : son
@@ -34,3 +34,9 @@ Le second critère est tenu par la mise à jour du socle du 28 nov. 2026 :
 sur une tête en retard, l'état ouvre sur la ligne qui le dit et nomme les
 instructions et les skills qui changent (J-2026-11-28-A). Le premier
 attend une passation programmée réelle, que T-0006 relève aussi.
+
+**Bloqué sur la parole de Théo, le 28 nov. 2026** (J-2026-11-28-C) :
+c'est une attente, sans tâche à faire. Il attend la première session
+réveillée par une passation programmée : son reflog dit si elle a
+démarré sur la tête que nomme sa passation. Il se ferme alors, sur le
+premier critère ou sur le second déjà tenu.
