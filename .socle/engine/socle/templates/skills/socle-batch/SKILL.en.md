@@ -47,8 +47,9 @@ project's instructions apply. Start with: git merge --ff-only <work branch>
 Task: python3 .socle/socle show <ID>, then <the choice already made, where to look, the known traps>.
 Deliver, in one commit, without pushing: the threat model of a guardrail
 or the specification of an undecided design, first; the code and its
-tests; the documentation touched; a journal entry; the task checked and
-closed if its criteria are met; python3 .socle/socle verify --fast.
+tests; the documentation touched; a journal entry; the task checked,
+then closed by python3 .socle/socle close <ID> if its criteria are met;
+python3 .socle/socle verify --fast.
 Forbidden: pushing, touching a wake-up, writing a protected file, changing
 an expected value or deleting a test (report it), fixing a neighbouring
 defect (a need in the backlog).
@@ -63,8 +64,7 @@ Skill `socle-review`, on the committed batch, and its sorting of the
 findings. A blocking finding goes back to whoever implemented, if it
 still answers. A stopped subagent (a background check whose thread it
 did not pick up) is resumed from its isolated copy, by the orchestrating
-agent. A batch leaves only once its blocking findings are fixed: once pushed, a
-decision and a journal entry are no longer rewritten.
+agent. A batch leaves only once its blocking findings are fixed.
 
 ## Integrating, pushing, delivering
 
@@ -75,10 +75,9 @@ decision and a journal entry are no longer rewritten.
 2. Remove the isolated copy and its branch;
    `python3 .socle/socle verify --fast`.
 3. Push; open the pull request if there is none, only one open. Wait for
-   the CI of the pushed commit (`gh run list --commit <sha>`): the "CI"
-   line of the state follows the head. An announced wait has its wake-up
-   in a cloud session (`send_later`); elsewhere, `Next:` says so, and the
-   human restarts the agent.
+   the CI of the pushed commit (`gh run list --commit <sha>`). An
+   announced wait has its wake-up in a cloud session (`send_later`);
+   elsewhere, `Next:` says so, and the human restarts the agent.
 4. Who merges: by default the human, and the next batch is added to the
    same pull request; the agent, its own, if the policy allows it: green
    CI on the head commit, which it gives, review done, no pending request
@@ -86,10 +85,12 @@ decision and a journal entry are no longer rewritten.
    starts on the default branch; the recap says whether they succeeded.
 5. The active work and the journal are written before the merge, in the
    last commit of the pull request, with the batch's closure: its tasks
-   closed, it becomes `done`, then `python3 .socle/socle archive`; a task
-   its review opens joins the next batch whose rule applies, otherwise a
-   new batch in its need's milestone; the closing recap pastes the output of `python3
-   .socle/socle roadmap` in a code block. After the merge,
+   closed, then it, each by `python3 .socle/socle close <ID>`, then
+   `python3 .socle/socle archive` files the lifted directives; the reserve
+   is sorted when the state says so; a task its review opens joins the
+   next batch whose rule applies, otherwise a new batch in its need's
+   milestone; the closing recap pastes the output of
+   `python3 .socle/socle roadmap` in a code block. After the merge,
    `python3 .socle/socle prune-branches` deletes the agent's contained
    branches; the local branch restarts from the default branch and is
    pushed only with the first commit of the next batch.

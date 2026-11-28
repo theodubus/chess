@@ -14,6 +14,343 @@ asks nothing: of such an entry, the installer prints only the title,
 under a line that names this file. Any other form (“nothing, unless …”,
 “nothing in the project …”, an action) is printed in full, before them.
 
+## 2026-11-27-l — The skills the installer lays down are back under 8,000 bytes, the cap that a project installed before 27 November keeps
+
+An update keeps the project's guardrails, hence the cap of its skills,
+8,000 bytes before the note `2026-11-27-a`. `socle-batch` and
+`socle-request` had exceeded it (8,035 and 8,340 bytes): the commit of
+an update's files was refused by `memoire.budgets`. Their sentences are
+tightened, no rule lost, and each skill the installer lays down fits
+under 8,000 bytes again.
+
+To do: nothing.
+
+## 2026-11-27-k — The reserve is sorted at three moments: a need is born placed, the state flags the need to place, and a milestone closes only over a sorted reserve
+
+The needs in no milestone waited without a deadline: nothing placed them
+in a step, nor sorted them. A need now carries, on its metadata line,
+`reserve : <reason>` (`réserve` in French) and `sorted : L-NNNN`
+(`trié`), the highest batch of the backlog at its last sorting; the
+reserve is the open needs that no open milestone names in its `after`.
+A `for : human` need is not sorted.
+
+- At its birth: `socle new need "…" --milestone JA-NNNN` adds it at the
+  end of the `after` of an open milestone, and `--reserve "<reason>"`
+  writes its reason and its sorting; with neither, when a milestone is
+  open, one line says how to place it. When a milestone is open, the new
+  check `memoire.reserve` refuses a new need, or one taken out of an open
+  milestone, that no open milestone waits on and that has no reason; a
+  need from before is not refused.
+- The signal: when a milestone is open, `socle state` names “to place”
+  the needs of the reserve without a reason, or that fifteen closed
+  batches have followed since their sorting, with the `sorted` to write,
+  and the “In reserve” line of `socle roadmap` says how many. The closing
+  of the next batch sorts them; rewriting `sorted` restarts the count.
+- The closing of a milestone: `socle close JA-NNNN`, and the check,
+  refuse a milestone open at the base and closed at the head as long as
+  a need of the reserve lacks its reason and a `sorted` at least equal to
+  the highest batch of the base. As soon as all the needs of an open
+  milestone are closed, `socle state`, and `socle close` closing the last one, announce it: before closing it,
+  each need of the reserve joins a milestone to come, stays in reserve,
+  its reason and its sorting rewritten, or is proposed to the human for
+  abandonment, by a request.
+
+The `socle-batch` skill refers to the state for the two sortings;
+`FORMAT.md` gives the fields.
+
+To do: if the project has an open milestone, `socle state` calls to place
+the needs of the reserve that have no reason; at the closing of the next
+batch, put each in a milestone (its `after`) or write on its line
+`reserve : <reason> · sorted : L-NNNN`, the `sorted` the state gives.
+From now on, create a need with `socle new need "…" --milestone JA-NNNN`
+or `--reserve "<reason>"`.
+
+## 2026-11-27-j — The request contract says to name the key or the test a request covers
+
+An approved request authorizes only the guardrail key or the test function
+it names in its text: a request that relaxed a cap by citing only the
+guardrails file covered nothing, and the human answered twice. The
+contract that `socle new request` prints when a request is written now
+says so, in one line, with the form of a key
+(`budgets."<file>".max_bytes`).
+
+To do: nothing.
+
+## 2026-11-27-i — The human's word is filed by its nature: a rule as a directive, a decision as a decision, an expectation as a blocked need
+
+The installed section of `AGENTS.md` sent every word of the human that
+holds beyond the turn to the directives, which every start injects and
+only their word lifts: a project decision and an expectation ended up
+there too. It now says that a decision is written as a decision and an
+expectation as a `blocked` need, and the `socle-request` skill details it
+in a new section, "Filing the human's word by its nature"; the decision
+the human gives of their own accord no longer has a rule as its example.
+The guide says why.
+
+To do: nothing; a directive already written that is a decision or an
+expectation stays in force until the human lifts it.
+
+## 2026-11-27-h — The resume wake-ups remain from one turn to the next
+
+The `socle-resume` skill had the two resume wake-ups armed at the start
+of every turn that acts and removed at its end: about one tool call in
+ten of a sitting, for a safety net that only serves a usage limit. The
+wake-ups now remain from one turn to the next: a turn that finds them at
+the right time calls no wake-up tool, and they are removed only when a
+session that hands over tidies up, or when the human says to stop. A
+wake-up that fires with nothing to resume, after a turn that ended for
+another reason than a limit, is checked and told in one line, without
+resuming the work or re-arming. Without the `list_events` tool, the time
+of the window that `rateLimitType` names is read in `get_session`, when
+it gives it; a wake-up at the bound is no longer pushed back to it at
+every turn. The guide says why.
+
+To do: nothing; the installer lays down the changed skill.
+
+## 2026-11-27-g — A command closes a backlog entry in one step: `socle close`, and its reference `this commit`
+
+Closing a task took about eight memory steps: a journal entry written to
+serve as the reference, the commit that does the work not existing yet,
+the status, then `socle archive` after a refusal. `socle close <ID>` now
+closes an open backlog entry of any form as “done” in one step: it sets
+the status, adds to the `ref` field the value `this commit` (`ce commit`
+in French), or the reference `--ref` gives, and files the entry among the
+closed ones, the move in the index. It checks nothing off, and refuses
+the entry that the backlog checks would refuse closed (an unchecked
+criterion, a need with a task still open, what it waits on still open),
+with their messages, changing nothing. `this commit` designates the
+commit that wrote it on the metadata line, the one that closes the
+entry: the backlog check accepts it as a reference, and `socle show`
+resolves it through the file's history. The journal entry is no longer
+required to serve as a reference; the `socle-batch` skill and the
+installed section of `AGENTS.md` say so.
+
+To do: nothing; a checked task is now closed with `socle close`.
+
+## 2026-11-27-f — The state says at its top that a new session is behind the handoff waiting for it
+
+A new session that starts on a commit older than the waiting handoff's
+(the default branch when the handoff is on a work branch, a stale copy)
+read its earlier instructions, skills, hooks and memory, with nothing to
+say so before the guard. When the local head is a strict ancestor of the
+branch that carries the handoff, `socle state` now says so at its top,
+before everything else, with the instructions, skills and hooks files
+(`AGENTS.md`, `CLAUDE.md`, `.claude/`) that change between the two and
+the `git diff` command that shows them. The `socle-handoff` skill has the
+session read what changes, once placed, before any other work.
+
+To do: nothing.
+
+## 2026-11-27-e — A fix that touches only the documentation and the memory is no longer judged by `tests.regression`
+
+A commit whose subject follows the fix pattern ("Correction: …",
+`[regression] fix_subject`) and that changes only documentation files
+(Markdown texts outside the socle folder), with or without the memory,
+was refused as a fix outside every adapter: only a validated request
+admitted it. No test can prove the correction of a text:
+`tests.regression` now warns, "fix that touches only the documentation
+and the memory: not judged", as for a fix that touches only the memory.
+A fix that also touches another file is judged as before. The
+`commit-msg` hook no longer announces a refusal for these fixes, nor for
+those of the memory alone.
+
+
+To do: nothing.
+
+## 2026-11-27-d — A directive created in the range is cited there without a fingerprint, and three refusals give their fix
+
+A human's directive cited without its fingerprint was refused by
+`memoire.lectures`, even in the commit that creates it, and the refusal
+pointed to `socle show` without giving the fingerprint it knows. A
+directive created in the judged range (absent from its base) is now
+cited there without a fingerprint; a directive from before the range is
+still required with its own, and its refusal gives the fingerprint of
+its current version to cite. The agent's hook judges as before, and two
+of its refusals say more: a shell write to a protected file says that
+`rm <path>` only holds for a file git does not track; a writer it cannot
+read (a python script in a heredoc) that cites a protected path says
+that such a text is written with the file-writing tool.
+
+To do: nothing.
+
+## 2026-11-27-c — The links refusal gives the full path of a bare name, and the message that only fixes the links of a refused recap no longer has to repeat it
+
+A name between backticks that is not a path of the repository made the
+end of turn refused on “no path of that name in the repository”. The
+refusal now looks for the tracked files that this name designates by the
+end of their path (a bare name, or its last folders): if there is only one,
+it gives its full path to write; otherwise, it says to write the name
+without backticks. The message that fixes them also had to repeat the
+whole recap, judged on the last message alone: when the message refused
+in the same turn was refused for its links alone, and carried the recap,
+the message that follows it no longer has to repeat it, and the refusal
+says so. The end of turn knows it from what it already read, its trace
+and Claude Code's transcript, where the refusal is recorded. The socle
+section of `AGENTS.md` states the links rule in one positive sentence.
+
+To do: nothing.
+
+## 2026-11-27-b — The roadmap in a single form: what is being done now, the steps that follow, what is up to the human
+
+`socle roadmap` now has a single form, made for the human to steer the
+project, read on a phone: “Now”, each batch in progress, the needs it
+carries and their first open tasks, or the first ready task; “Next”, the open milestones,
+numbered, each as `[K/N]`, its needs closed out of their total, only the
+first unfolded into its needs; “For you”, what is up to the human; “In
+reserve”, the needs in no milestone, counted. It is an aligned text, each
+title followed by its identifier, a request named by its title alone;
+`--format markdown` puts it in a code block, for the conversation and the
+CI summary, where it keeps its alignment. The compact and detailed formats, their tables and
+their key are gone; the `--by` option no longer exists, and is refused
+as an unknown option; `--all` unfolds every step. The needs to split and
+to close stay in `socle state`, whose roadmap line no longer says
+“(detailed: `--format markdown`)”. The socle section of `AGENTS.md` still
+says to paste the output of `python3 .socle/socle roadmap --format markdown` when the human asks for the roadmap:
+it is now the only form.
+
+To do: remove `--by` from any call of `socle roadmap` written in the
+project, outside what the installer lays down; a directive of the project
+that chooses the short or the detailed format of the roadmap no longer
+has an object: tell the human, who keeps it or lifts it.
+
+## 2026-11-27-a — The skills cap goes from 8,000 to 10,000 bytes in the guardrails template
+
+A skill is loaded whole at every use. With what justified their rules
+moved to the guide (2026-11-26-l), `socle-batch`, `socle-request` and
+`socle-resume` remained less than 600 bytes under their cap of 8,000: the
+next rule of one of them would have had the file refused. The guardrails
+template now sets `".claude/skills/*/SKILL.md" = { max_bytes = 10000 }`.
+An update keeps the project's guardrails, hence its value; the skills
+the installer lays down still hold under 8,000 bytes.
+
+To do: nothing while the project's skills stay under its cap; if one gets
+close, ask the human, in a request, to take up 10,000 bytes in
+`.socle/guardrails.toml`, which loosens a guardrail, naming the key
+`budgets.".claude/skills/*/SKILL.md".max_bytes`.
+
+## 2026-11-26-l — What justified a rule of the skills and of the socle section of AGENTS.md without stating it moves to the guide, "Why these rules"
+
+The socle's skills and the socle section of `AGENTS.md` are loaded whole
+at every use, under their cap (8,000 bytes for a skill), and several were
+touching it. What justified a rule there without stating it (the why, a
+detail that orders nothing, such as what a hook refuses) leaves them, word
+for word, for a new subsection of the guide, "Why these rules"
+(« Pourquoi ces règles »), at the end of its "Reference"; each rule stays
+in its text, intact. Touched are the socle section of `AGENTS.md` and the
+`socle-batch`, `socle-resume`, `socle-request` and `socle-handoff` skills,
+in both languages. The guide now also tells the human how to stop the
+wake-ups of the resumption after a usage limit. The socle section of
+`AGENTS.md` loses about 550 bytes; `socle-handoff` goes under 7,400 bytes,
+and so do `socle-resume` and `socle-request` in English.
+
+To do: nothing; the installer lays the changed skills and section.
+
+## 2026-11-26-k — The directives cap goes from 16,000 to 24,000 bytes in the guardrails template
+
+A directive is lifted only on the human's word: `memory/directives.md`
+only grows, and the cap of the canonical memory, which it had taken up,
+had it refused around the twenty-fifth directive. The guardrails template now
+sets `"memory/directives.md" = { max_bytes = 24000 }`. Startup is not
+affected: it loads the directives only by their summary line, within its
+own share. An update keeps the project's guardrails, hence its value.
+
+To do: nothing while `memory/directives.md` stays under the project's
+cap; if it gets close, ask the human, in a request, to take up 24,000
+bytes in `.socle/guardrails.toml`, which loosens a guardrail.
+
+## 2026-11-26-j — A need for the human is no longer listed among the needs to split into tasks
+
+`socle state` ("needs to split into tasks") and `socle roadmap` ("Needs
+to split into tasks") listed a `for : human` need without a task, which
+also shows under "For the human": they invited the agent to create a
+task for a step it cannot take. Such a need is no longer split: it shows
+only among what falls to the human, who carries it out; the agent closes
+it on their word, and a part it can carry out is another need.
+`FORMAT.md` says so at the need's form.
+
+To do: nothing.
+
+## 2026-11-26-i — socle new and socle show --index have the index fingerprint of the last commit cited
+
+`socle new` wrote into a backlog entry or a decision the fingerprint of
+the working tree's index, the turn's entries included; as soon as a line
+of the index changed before the commit, a status moved to "in progress",
+a "proposed" decision become "accepted", `memoire.lectures` refused the
+entries written before that change. Forming a batch triggered it every
+time. The cited fingerprint, the one `socle new` writes and the one
+`socle show --index` prints at the head of the index, is now that of the
+last commit, which the check always accepts; the printed lines remain
+those of the working tree, where a duplicate from the turn shows, and the
+header says so when the two differ. The need and the task of
+`socle new need … --task …` cite the same one. The check does not
+change.
+
+To do: nothing.
+
+## 2026-11-26-h — During an update not yet committed, the git hooks refuse only what the commit or the push brings, and the migration no longer touches the index
+
+After an update that migrates the backlog, the commit of the request
+alone was refused: the pre-commit hook judges the index with the new
+engine of the working tree, which refused the old backlog, still
+committed, and the old active worksite; the pre-push hook likewise.
+During an update not yet committed (the engine copy changed in the
+tree), both hooks also judge the tree the commit starts from, or the
+push's base, with the same engine, and refuse only the findings that the
+commit or the push brings; a line says how many they leave to CI. The
+backlog migration and the tidying of closed entries that the update
+performs now write the working tree only: the request's commit no longer
+carries their renames, and `git add -A`, when the update's files are
+committed, takes them. `socle archive` indexes its moves as before.
+
+To do: nothing; the request alone of an update is committed with
+`git add` on its file, `git commit` and `git push`, without stash or
+`--only`.
+
+## 2026-11-26-g — Updating a copy without release notes prints in full only those after that copy's last commit
+
+When the replaced engine copy had no release notes, from before they
+existed, the installer printed them all in full: 122 entries, about
+100 KB, for a project last updated on November 13. It now reads the day
+of the last commit that changed that copy: a note dated before that day
+describes what the project already has, and appears by its title only,
+under a line that counts them and names the file to read them in; the
+others print as before. Without that day (a copy never committed, or a shallow clone that does
+not hold its commit), all print as before. The proposed commit message still names them all.
+
+To do: nothing.
+
+## 2026-11-26-f — The end of turn no longer takes the name of a socle command, cited in "For you", for a branch to delete
+
+On a "For you" line that says to delete a branch, the end of turn read
+every name between backticks as a branch, and looked up
+`prune-branches` at the origin when the line said who deletes it. The
+name of a socle command is no longer read there as a branch.
+
+To do: nothing.
+
+## 2026-11-26-e — A fix that touches only the memory is no longer judged by `tests.regression`, and says so with a warning
+
+A commit whose subject follows the fix pattern ("Correction: …",
+`[regression] fix_subject`) and that changes only memory files was
+refused as a fix outside every adapter: only a validated request
+admitted it. No test can prove the correction of a memory entry:
+`tests.regression` now warns, "fix that touches only the memory: not
+judged", as for a fix that touches only third-party files. A fix that
+also touches code is judged as before.
+
+To do: nothing.
+
+## 2026-11-26-d — Without `--owner`, the update keeps the owner of the CODEOWNERS in place
+
+Rerun without `--owner`, the installer said "!! no owner (--owner):
+CODEOWNERS not installed" even when the project's CODEOWNERS file already
+existed. It now reads the owner on the line that protects the policy
+(`/.socle/`), the one its template sets, completes the file with the
+lines the template has in addition, and says so ("CODEOWNERS: <owner>
+…"). The "!!" line remains only without the file, or without that line.
+
+To do: nothing.
+
 ## 2026-11-26-c — The handoff is written before any merge: when the agent merges its pull request itself, the handoff is its last commit, and no session branch is left to delete
 
 A session that hands over writes its handoff before any merge of its pull

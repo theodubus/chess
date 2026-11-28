@@ -28,4 +28,9 @@ la correction viendra par une mise à jour du socle.
 ## Satisfait quand
 
 - [ ] une session réveillée par une passation programmée démarre sur la tête que nomme sa passation, constaté au reflog d'une passation réelle
-- [ ] à défaut, l'écart se voit avant tout travail : l'état ou la garde dit que la tête locale n'est pas la référence de la passation, et que les instructions reçues sont celles de l'ancienne tête
+- [x] à défaut, l'écart se voit avant tout travail : l'état ou la garde dit que la tête locale n'est pas la référence de la passation, et que les instructions reçues sont celles de l'ancienne tête
+
+Le second critère est tenu par la mise à jour du socle du 28 nov. 2026 :
+sur une tête en retard, l'état ouvre sur la ligne qui le dit et nomme les
+instructions et les skills qui changent (J-2026-11-28-A). Le premier
+attend une passation programmée réelle, que T-0006 relève aussi.

@@ -148,7 +148,7 @@ règle, une préférence, une interdiction qui vaut au-delà du tour) a son
 entrée :
 
 ```markdown
-## C-0003 — La roadmap demandée se donne au format court
+## C-0003 — Les messages de commit s'écrivent en anglais
 
 > statut : en vigueur · source : J-2026-11-25-T · date : 2026-11-25
 
@@ -234,7 +234,9 @@ Une entrée du backlog a l'une de quatre formes, que son préfixe dit
 - un **besoin**, `B-` : un défaut à corriger ou une fonction à ajouter ;
   ses constats ou sa motivation, sa spécification s'il n'est pas tranché,
   et sa section `## Satisfait quand`, un résultat, jamais une
-  implémentation ;
+  implémentation ; un besoin `pour : humain` ne se découpe pas en
+  tâches : l'humain le mène, l'agent le ferme sur sa parole, et une part
+  que l'agent peut mener est un autre besoin ;
 - une **tâche**, `T-` : un livrable, en principe un commit, qui nomme le
   besoin qu'elle sert (`besoin : B-0012`) ; sa section `## Fait quand` se
   vérifie par des tests, ou, pour une action que seul l'humain peut faire,
@@ -260,7 +262,17 @@ Une entrée du backlog a l'une de quatre formes, que son préfixe dit
 
 Statuts : `ouvert`, `en-cours`, `bloqué`, `fait`, `abandonné`. Toute entrée
 a une `origine` (entrée de journal, commit, demande) ; une entrée close
-(`fait`, `abandonné`) a une `ref` vers ce qui l'a close. Une action que seul
+(`fait`, `abandonné`) a une `ref` vers ce qui l'a close. La valeur `ce
+commit` (`this commit`), seule ou parmi d'autres références, désigne le
+commit qui l'a écrite sur la ligne de métadonnées : celui qui clôt
+l'entrée, que l'historique de son fichier retrouve et que `socle show`
+donne, ou le commit à venir tant qu'il n'est pas fait. `socle close
+<ID>` clôt « fait » une entrée ouverte : il pose le statut, ajoute la
+référence (`ce commit`, ou celle de `--ref`) et range l'entrée ; il ne
+coche rien, et refuse, sans rien changer, l'entrée que les contrôles du
+backlog refuseraient close, avec leurs messages, comme celle dont un
+fichier occupe déjà la place où elle se range (ADR-0117) ; `socle
+archive` range toujours les consignes levées. Une action que seul
 l'humain peut faire porte `pour : humain` : elle figure dans « ce qui revient
 à l'humain », dans l'état et dans le récap de fin d'intervention, avec le
 lien de son entrée, où vit son mode d'emploi (commandes, résultats attendus),
@@ -285,12 +297,40 @@ Son corps, libre, avec ses sous-titres (`## Les commandes`…).
 - [ ] un résultat que l'utilisateur constate
 ```
 
+Un besoin naît rangé (ADR-0118) : dans un jalon ouvert, que `socle new
+need "…" --milestone JA-NNNN` lui fait attendre, à la fin de son
+`après` ; ou en réserve, avec sa raison et son tri, que `--reserve
+"<raison>"` écrit sur sa ligne de métadonnées : `réserve : <raison> ·
+trié : L-NNNN`, le plus haut identifiant de lot du backlog, ouvert ou
+clos, de sa zone. Les deux s'excluent ; sans l'un ni l'autre, quand un
+jalon est ouvert, la commande dit en une ligne comment le ranger. La
+réserve, ce sont les besoins ouverts qu'aucun jalon ouvert ne nomme dans
+son `après`. Quand un jalon est ouvert, le contrôle de la réserve refuse
+un besoin nouveau, ou sorti d'un jalon ouvert, qu'aucun jalon ouvert
+n'attend et qui n'a pas de raison ; un besoin d'avant sans raison ne se
+refuse pas, ni un besoin `pour : humain`, que l'humain mène.
+
+La réserve se trie à deux moments, et récrire `trié`, c'est trier : le
+compte repart. Quand un jalon est ouvert, l'état et la feuille de route
+disent « à placer » un besoin de la réserve sans raison, ou que quinze
+lots clos ou plus, d'un numéro supérieur à son `trié`, ont suivi (sans
+`trié`, tous les lots clos de sa zone comptent) : la clôture du lot
+suivant le trie. Un jalon ouvert à la base et clos à la tête, et `socle
+close` qui le clôt, sont refusés tant qu'un besoin de la réserve n'a pas
+sa raison et un `trié` au moins égal au plus haut lot de la base : avant
+de clore un jalon, chaque besoin de la réserve rejoint un jalon à venir,
+reste en réserve, sa raison et son tri récrits, ou se propose à l'humain
+pour abandon par une demande que sa raison nomme, et reste en réserve
+jusqu'à sa réponse.
+
 Chaque entrée a son plafond (`"memory/backlog/*.md"` dans `[budgets]`).
 Une entrée close garde son fichier, rangé à l'écart des ouvertes dans le
 sous-dossier `closed` du backlog : `socle archive` y range
-chaque entrée close, et remet parmi les ouvertes une entrée rouverte ; le
-contrôle du backlog refuse une entrée mal rangée, et la mise à jour range un
-projet existant. Une entrée rangée garde son identifiant et le plafond
+chaque entrée close, et remet parmi les ouvertes une entrée rouverte, et
+met ses déplacements dans l'index ; le contrôle du backlog refuse une
+entrée mal rangée, et la mise à jour range un projet existant, dans
+l'arbre de travail seul, pour que sa demande se commite sans eux. Une
+entrée rangée garde son identifiant et le plafond
 d'une entrée. Une bascule en privé copie le fichier sous `private/backlog/`
 (ou son sous-dossier des clos), et un fichier public garde l'identifiant,
 comme pour une décision.
@@ -318,24 +358,27 @@ ce qu'elles attendent est clos ou répondu, celles des besoins du prochain
 jalon d'abord, puis par priorité ; à part, les prêtes de priorité basse,
 que l'agent prend quand c'est commode ; les besoins à fermer, dont les
 tâches sont closes, l'une au moins faite ; les besoins à découper, sans
-tâche ouverte ni rien d'ouvert qu'ils attendent ; et le nombre d'entrées
+tâche ouverte ni rien d'ouvert qu'ils attendent, hors ceux `pour : humain` ; et le nombre d'entrées
 qui attendent encore, selon ce qu'elles attendent : une entrée du backlog,
 une demande sans réponse, ou les deux. Le rappel de fin de tour le redonne.
-Un lot ouvert qui attend encore plus de tâches ouvertes, en cours ou
+L'état seul dit encore les besoins de la réserve à placer, et le `trié` à
+écrire. Un lot ouvert qui attend encore plus de tâches ouvertes, en cours ou
 bloquées que `[batches] max_tasks` des garde-fous (9 par défaut), l'état
 et le rappel le signalent, sans rien refuser : il ne se mène pas en une
 session.
 
-`socle roadmap` en tire la suite entière, par les mêmes règles : chaque
-jalon et ses besoins clos sur le total ; les lots ouverts dans leur ordre
+`socle roadmap` en tire la suite entière, par les mêmes règles, en une
+seule forme pour l'humain : les lots en cours, dans leur ordre
 d'exécution, chacun après les lots qu'il attend de proche en proche, l'en
-cours d'abord à choix égal, et où en est chacune de leurs tâches (faite,
-en cours, prête, ce qu'elle attend encore, bloquée) ; hors des lots, les
-tâches ouvertes qu'aucun lot n'attend, les besoins à découper et à
-fermer, les entrées bloquées, celles `pour : humain`, les demandes en
-attente, et les besoins ouverts qu'aucun jalon n'attend. Deux lots qui
-attendent un même lot sans que l'un attende l'autre y sont signalés : leur
-ordre n'est pas déduit, il est choisi par leur identifiant.
+cours d'abord à choix égal, avec les besoins que mène chacun et leurs
+premières tâches ouvertes, ou à défaut la première tâche prête ; les jalons ouverts dans leur ordre,
+chacun avec ses besoins clos sur le total, seul le premier déplié en ses
+besoins (clos, servi par un lot en cours, autre) ; les entrées `pour :
+humain` et les demandes en attente ; les besoins ouverts qu'aucun jalon
+n'attend, comptés, et combien sont à placer. Une entrée bloquée y est signalée, et deux lots qui
+attendent un même lot sans que l'un attende l'autre : leur ordre n'est
+pas déduit, il est choisi par leur identifiant. Les besoins à découper et
+à fermer restent à l'état.
 
 Une tâche est faite quand sa section `## Fait quand` est cochée ; un
 besoin, quand ses tâches sont closes, l'une au moins faite, et sa section
@@ -494,7 +537,10 @@ révélée impossible à trancher pour l'humain.
 - `socle new request` imprime ce contrat sous l'identifiant, avec les
   seuils du lint et le budget du projet : il se lit avant d'écrire la
   demande, pas au refus du lint. Avec `--questions`, il dit aussi la
-  section « Questions » de ce gabarit et sa réponse libre.
+  section « Questions » de ce gabarit et sa réponse libre. Il rappelle
+  qu'une demande qui assouplit un garde-fou ou change une valeur attendue
+  nomme la clé des garde-fous ou la fonction de test qu'elle couvre : sa
+  validation n'autorise que ce qu'elle nomme.
 - « Options » dit l'effort, le risque et la réversibilité ; « Conséquences »
   ce qui se passe si l'humain valide, refuse, ne répond pas ;
   « Recommandation » sépare le vérifié du supposé.
@@ -716,6 +762,8 @@ interne, que `socle show` dit dans la langue du projet.
 | champ `priorite` | priorité | priority |
 | champ `besoin` | besoin | need |
 | champ `ancien` | ancien | former |
+| champ `reserve` | réserve | reserve |
+| champ `trie` | trié | sorted |
 | champ `ecrite` | écrite | written |
 | champ `branche` | branche | branch |
 | champ `chaine` | chaîne | chain |
@@ -724,6 +772,7 @@ interne, que `socle show` dit dans la langue du projet.
 | valeur `lot` | lot | batch |
 | valeur `haute` | haute | high |
 | valeur `basse` | basse | low |
+| valeur `ce-commit` | ce commit | this commit |
 | section de tâche `fait-quand` | Fait quand | Done when |
 | section de besoin `satisfait-quand` | Satisfait quand | Satisfied when |
 | section de lot `revues` | Revues | Reviews |
@@ -792,6 +841,9 @@ qu'elle correspond. Chaque index a aussi une empreinte (`decisions@…`
 pour toutes les décisions, `backlog@…` pour le backlog ouvert).
 `socle show <ID>` et
 `socle show --index decisions|backlog` les impriment avec le texte.
+L'empreinte d'index que `socle new` et `socle show --index` font citer
+est celle du dernier commit, sous les lignes de l'arbre : un changement
+pas encore commité, un statut passé à « en cours », ne la périme pas.
 
 Citer `ADR-NNNN@xxxxxxxx`, c'est montrer qu'on a lu cette version-là. Une
 citation ajoutée doit désigner la version actuelle de l'entrée, ou celle du
@@ -811,10 +863,12 @@ Une consigne de l'humain se cite toujours avec son empreinte, celle que
 `socle show C-NNNN` imprime avec son texte exact : une mention de `C-NNNN`
 ajoutée dans n'importe quel fichier de la mémoire, le journal et le
 chantier actif compris, sans empreinte, est refusée, comme une empreinte
-périmée ou inventée. Ce qu'une entrée citait déjà à la base ne se rejuge
-pas, ni la question d'une décision prise en séance, recopiée de la
-conversation. Hors de la mémoire, et pour les autres entrées, la règle
-ne change pas.
+périmée ou inventée ; le refus donne l'empreinte de sa version actuelle.
+Ce qu'une entrée citait déjà à la base ne se rejuge pas, ni la question
+d'une décision prise en séance, recopiée de la conversation, ni une
+consigne née dans la plage jugée, que l'agent vient d'écrire : elle s'y
+cite sans empreinte. Hors de la mémoire, et pour les autres entrées, la
+règle ne change pas.
 
 `socle new adr` et `socle new need|task|batch|milestone` affichent l'index
 concerné et posent son empreinte dans le squelette. Une citation ancienne n'est pas revérifiée

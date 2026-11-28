@@ -17,7 +17,7 @@ les mêmes fichiers, garde-fous ou tests.
    comportement nomme le test qui affirme le contraire, sa demande posée
    aussitôt, avant le lot ; le reste va au prochain lot pas en cours dont la
    règle s'applique, et le récap dit chaque placement. Il se garde au
-   backlog : `python3 .socle/socle new batch "Lot …"`, puis `après :` le lot
+   backlog (`python3 .socle/socle new batch "Lot …"`), son `après :` le lot
    d'avant et ses tâches ; son corps dit ce qui les réunit. Un ensemble
    qu'une session ne mène pas se forme en jalon, ses lots dessous.
 2. Lire chaque tâche (`python3 .socle/socle show <ID>`) et estimer le
@@ -41,13 +41,13 @@ Sous Claude Code : outil `Agent`, dans une copie isolée
 Sa consigne se lit sans la conversation.
 
 ```text
-Tu implémentes une tâche de ce dépôt dans ta copie isolée. Les instructions
+Tu implémentes une tâche de ce dépôt dans ta copie isolée ; les instructions
 du projet s'appliquent. Commence par : git merge --ff-only <branche de travail>
-Tâche : python3 .socle/socle show <ID>, puis <le choix déjà fait, où regarder, les pièges connus>.
-À livrer, en un commit, sans push : le modèle de menace d'un garde-fou ou
-la spécification d'une conception pas tranchée, d'abord ; le code et ses
+Tâche : python3 .socle/socle show <ID>, puis <le choix fait, où regarder, les pièges>.
+À livrer, en un commit, sans push : d'abord le modèle de menace d'un
+garde-fou ou la spécification d'une conception pas tranchée ; le code et ses
 tests ; la documentation touchée ; une entrée de journal ; la tâche cochée
-et close si ses critères sont tenus ; python3 .socle/socle verify --fast.
+et close (python3 .socle/socle close <ID>) ; python3 .socle/socle verify --fast.
 Interdits : pousser, toucher un réveil, écrire un fichier protégé, changer
 une valeur attendue ou supprimer un test (le signaler), corriger un défaut
 voisin (un besoin au backlog).
@@ -62,37 +62,36 @@ Skill `socle-review`, sur le lot commité, et son tri des constats. Un
 bloquant retourne à qui a implémenté, s'il répond encore. Un sous-agent
 arrêté (une vérification en arrière-plan dont il n'a pas repris le fil)
 se reprend depuis sa copie isolée, par l'agent qui orchestre. Un lot ne
-part qu'après la correction de ses bloquants : une fois poussées, une décision et une
-entrée de journal ne se réécrivent plus.
+part qu'après la correction de ses bloquants.
 
 ## Intégrer, pousser, livrer
 
 1. Sur la branche de travail : `git merge --ff-only` de la branche du
-   sous-agent si son commit suit la tête, sinon `git merge --squash`, puis
-   un commit avec son message. Un identifiant pris deux fois :
+   sous-agent si son commit suit la tête, sinon `git merge --squash` et un
+   commit de son message. Un identifiant pris deux fois :
    `python3 .socle/socle renumber <ID>` sur le second.
 2. Retirer la copie isolée et sa branche ;
    `python3 .socle/socle verify --fast`.
 3. Pousser ; ouvrir la pull request s'il n'y en a pas, une seule ouverte.
-   Attendre la CI du commit poussé (`gh run list --commit <sha>`) : la
-   ligne « CI » de l'état suit la tête. Une attente annoncée a son
-   réveil en session cloud (`send_later`) ; ailleurs, `Ensuite :` le dit,
-   et l'humain relance l'agent.
+   Attendre la CI du commit poussé (`gh run list --commit <sha>`). Une
+   attente annoncée a son réveil en session cloud (`send_later`) ;
+   ailleurs, `Ensuite :` le dit, et l'humain relance l'agent.
 4. Qui fusionne : par défaut l'humain, et le lot suivant s'ajoute à la
    même pull request ; l'agent, la sienne, si la politique le permet : CI
-   verte sur le commit de tête, qu'il donne, revue faite, aucune demande
+   verte sur le commit de tête, qu'il donne, revue faite, sans demande
    en attente sur son contenu. Il attend de même les workflows que la
    fusion lance sur la branche par défaut ; le récap dit s'ils ont réussi.
 5. Le chantier actif et le journal s'écrivent avant la fusion, dans le
    dernier commit de la pull request, avec la clôture du lot : ses tâches
-   closes, il passe `fait`, puis `python3 .socle/socle archive` ; une tâche
-   que sa revue ouvre rejoint le prochain lot dont la règle s'applique,
-   sinon un lot neuf dans le jalon de son besoin ; le récap
-   de la clôture colle la sortie de `python3 .socle/socle roadmap` dans un
-   bloc de code. Après la fusion, `python3 .socle/socle prune-branches`
-   supprime les branches de l'agent contenues ; la branche locale repart
-   de la branche par défaut et ne se pousse qu'avec le premier commit du
-   lot suivant.
+   closes puis lui, chacun par `python3 .socle/socle close <ID>`, puis
+   `python3 .socle/socle archive` range les consignes levées ; la réserve
+   se trie quand l'état le dit ; une tâche que sa revue ouvre rejoint le
+   prochain lot dont la règle s'applique, sinon un lot neuf dans le jalon
+   de son besoin ; le récap de la clôture colle la sortie de
+   `python3 .socle/socle roadmap` dans un bloc de code. Après la fusion,
+   `python3 .socle/socle prune-branches` supprime les branches de l'agent
+   contenues ; la branche locale repart de la branche par défaut et ne se
+   pousse qu'avec le premier commit du lot suivant.
 
 ## La consommation
 

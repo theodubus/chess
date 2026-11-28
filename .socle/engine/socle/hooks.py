@@ -1424,7 +1424,8 @@ def _cites(projet: config.Projet, c: commandes.Commande, texte: str, qui: str, c
         if cible:
             res.append(("protege", trad("{chemin}, cité par `{qui}`, un écrivain que le hook ne sait pas lire : il "
                                         "peut l'écrire ; un fichier protégé se lit par `cat` ou par l'outil de "
-                                        "lecture", chemin=cible, qui=qui)))
+                                        "lecture, et un texte qui cite un chemin protégé s'écrit par l'outil "
+                                        "d'écriture", chemin=cible, qui=qui)))
         if REGLAGES_AGENT.search(plein):
             res.append(("reglage", rel))
     return res
@@ -2439,7 +2440,7 @@ def refus_bash(projet: config.Projet, cmd: str, cwd: str | None = None) -> str |
         return trad("écriture d'un fichier protégé ({cible}) par le shell : seul l'humain modifie la "
                     "politique, les hooks, la CI et le moteur (relance de l'installeur). Un fichier protégé "
                     "changé par erreur, hors des réglages de Claude Code, se remet à son état du dernier "
-                    "commit : {formes} (D-0098).", cible=cible,
+                    "commit : {formes}, ce dernier pour un fichier que git ne suit pas (D-0098).", cible=cible,
                     formes=", ".join(REMISE_FORMES))
     return None
 
@@ -2782,6 +2783,44 @@ def _appels_externes(racine: Path, session: str) -> bool:
     return any(l[1] == "PreToolUse" and l[3].startswith("mcp__") for l in siennes[debut:])
 
 
+# Ce que trace un refus de la fin de tour pour les seuls liens du message
+# (`exiger_recap`) : un lien mort, une demande citée sans son lien.
+REFUS_DES_LIENS = frozenset({"liens", "lien-de-demande"})
+
+
+def _refus_des_seuls_liens(racine: Path, session: str) -> bool:
+    """La fin de tour précédente de cette session a-t-elle refusé le message
+    pour ses seuls liens ? Ce qu'elle a tracé entre elle et celle-ci
+    (`tracer_refus`) : ni un récap qui manque, ni une branche absente, ni un
+    contrôle en échec."""
+    if not session:
+        return False
+    siennes = [l for l in (x.split("\t") for x in config.lire_trace(racine)) if len(l) >= 4 and l[2] == session]
+    stops = [i for i, l in enumerate(siennes) if l[1] == "Stop"]
+    if len(stops) < 2:
+        return False
+    refus = [l[3] for l in siennes[stops[-2] + 1:stops[-1]] if l[1] == "Refus" and l[3].startswith("Stop:")]
+    quoi = set(refus[-1][len("Stop:"):].split(",")) if refus else set()
+    return bool(quoi) and quoi <= REFUS_DES_LIENS
+
+
+def recap_deja_lu(projet: config.Projet, entree: dict) -> bool:
+    """B-0371 : dans ce tour, la fin de tour a refusé un message pour ses
+    seuls liens, et ce message portait le récap. L'humain l'a lu une fois :
+    le message qui corrige ces liens n'a pas à le redire. Ce que la fin de
+    tour lit déjà, sans rien écrire de neuf : la relance du hook
+    (`stop_hook_active`), sa trace, qui dit pourquoi il a refusé, et le
+    transcript, qui garde le message refusé avant le refus."""
+    from socle import human as humain
+
+    chemin = entree.get("transcript_path")
+    if not (entree.get("stop_hook_active") and chemin
+            and _refus_des_seuls_liens(projet.racine, entree.get("session_id", ""))):
+        return False
+    refuse = humain.message_refuse(Path(chemin))
+    return refuse is not None and not humain.recap_manquant(projet, refuse)
+
+
 def exiger_recap(projet: config.Projet, entree: dict, avertissement: str | None = None) -> int:
     """Un tour où l'agent a agi se termine par un récap et deux lignes,
     `Pour toi :` et `Ensuite :`. Tout dernier message,
@@ -2819,6 +2858,8 @@ def exiger_recap(projet: config.Projet, entree: dict, avertissement: str | None 
             return dire({"systemMessage": trad("récap de fin d'intervention non vérifiable : transcript illisible")})
         return dire(None)
     manque = humain.recap_manquant(projet, message) if a_agi else []
+    if manque and recap_deja_lu(projet, entree):
+        manque = []
     morts, sans_lien = liens.problemes(projet, message)
     # Une branche que « Pour toi » donne à supprimer et que l'origine n'a
     # plus : l'humain n'a rien à supprimer (B-0311, D-0178).
@@ -2871,6 +2912,9 @@ def exiger_recap(projet: config.Projet, entree: dict, avertissement: str | None 
             "Ton dernier message cite {demandes}, en attente de l'humain, sans son lien : il doit pouvoir l'ouvrir "
             "d'un clic. Ajoute la sortie de `socle url {ids}`.",
             demandes=", ".join(sans_lien), ids=" ".join(sans_lien)))
+    if (morts or sans_lien) and a_agi and not (manque or absentes):
+        raisons.append(trad("Ton récap, l'humain l'a lu : le message qui ne corrige que ces liens n'a pas à le "
+                            "redire."))
     if absentes:
         raisons.append(trad(
             "Ton dernier message donne à l'humain, dans « Pour toi », à supprimer {branches}, que l'origine n'a plus "
@@ -2914,6 +2958,15 @@ def git_pre_commit(projet: config.Projet) -> int:
     index = outils.arbre_de_l_index(projet.racine)
     ctx = contexte.Contexte(projet, etage="git", base=base, tete=index, rapide=True)
     rapport = contexte.executer(ctx)
+    if not rapport.reussi and mise_a_jour_en_cours(projet):
+        # Une mise à jour pas encore commitée : le moteur neuf de l'arbre
+        # juge aussi le dernier commit, et ce qu'il y trouve déjà est laissé
+        # à la CI (ADR-0115).
+        depart = outils.git(projet.racine, "rev-parse", "--verify", "-q", "HEAD", check=False).strip()
+        if depart:
+            reference = contexte.executer(contexte.Contexte(projet, etage="git", base=base, tete=depart,
+                                                            rapide=True))
+            _dire_mise_a_jour(ecarter_deja_commites(rapport, reference))
     if not rapport.reussi:
         tracer_refus(projet.racine, "git-pre-commit", ",".join(rapport.controles_en_echec()))
         rapport.afficher(trad("socle — contrôles avant commit"), flux=sys.stderr, court=True)
@@ -2925,6 +2978,49 @@ def git_pre_commit(projet: config.Projet) -> int:
         return 1
     _dire_avertissements(rapport)
     return 0
+
+
+def mise_a_jour_en_cours(projet: config.Projet) -> bool:
+    """Une mise à jour du socle pas encore commitée (ADR-0115) : dans un
+    projet installé, hors du mode amont, la copie du moteur diffère, dans
+    l'arbre de travail, de celle du dernier commit, fichiers non suivis
+    compris."""
+    if projet.mode == config.MODE_AMONT or not projet.installe or not outils.a_des_commits(projet.racine):
+        return False
+    return bool(outils.git(projet.racine, "status", "--porcelain", "--untracked-files=all", "--",
+                           projet.dossier_moteur, check=False).strip())
+
+
+def ecarter_deja_commites(rapport, reference) -> int:
+    """Retire du `rapport` chaque erreur que `reference`, le même moteur sur
+    l'arbre d'où part le commit ou le push, trouve aussi : même contrôle,
+    même chemin, même message, autant de fois (ADR-0115). Rend le nombre
+    d'erreurs écartées."""
+    from collections import Counter
+    from socle.report import ERREUR
+
+    def cle(c) -> tuple:
+        return c.controle, c.chemin, c.message
+
+    deja = Counter(cle(c) for c in reference.erreurs())
+    gardes, ecartes = [], 0
+    for c in rapport.constats:
+        if c.gravite == ERREUR and deja[cle(c)] > 0:
+            deja[cle(c)] -= 1
+            ecartes += 1
+        else:
+            gardes.append(c)
+    rapport.constats[:] = gardes
+    return ecartes
+
+
+def _dire_mise_a_jour(ecartes: int) -> None:
+    """La ligne d'un hook git qui, pendant une mise à jour, a écarté des
+    constats déjà commités (ADR-0115)."""
+    if ecartes:
+        print(trad("socle — mise à jour du moteur en cours, pas encore commitée : {n} constat(s) déjà présent(s) "
+                   "dans l'arbre d'où part ce commit ou ce push, écarté(s) ici et laissé(s) à la CI ; seuls ceux "
+                   "qu'il apporte sont refusés", n=ecartes), file=sys.stderr)
 
 
 def compter_session(racine: Path, session: str | None = None) -> str:
@@ -3144,6 +3240,11 @@ def correctif_sans_test(projet: config.Projet, message: str, amendement: bool | 
     principal = projet.pour(projet.adaptateurs[0]) if projet.plusieurs_adaptateurs else projet
     rejoue = "command" in principal.adaptateur.get("capabilities", {}).get("regression", {})
     hors = controles_tests.hors_de_tout_adaptateur(projet, projet.hors_tiers(touches)) if rejoue else []
+    memoire = projet.chemins.memoire.rstrip("/") + "/"
+    if hors and all(f.startswith(memoire) or controles_tests.est_documentation(f) for f in hors):
+        # La mémoire et la documentation seules : la CI ne le juge pas, elle
+        # l'avertit (B-0359, B-0373) ; rien à annoncer ici.
+        return None
     if hors:
         # Aucun adaptateur ne juge ses fichiers : un test n'y peut rien
         # (D-0088).
@@ -3384,6 +3485,13 @@ def git_pre_push(projet: config.Projet) -> int:
     ctx = contexte.Contexte(projet, etage="git", base=base, tete=tete, rapide=True,
                             branches=branches_envoyees(lignes))
     rapport = contexte.executer(ctx)
+    if not rapport.reussi and base and tete and mise_a_jour_en_cours(projet):
+        # Une mise à jour pas encore commitée : le moteur neuf de l'arbre
+        # juge aussi la base, et ce qu'il y trouve déjà est laissé à la CI
+        # (ADR-0115).
+        reference = contexte.executer(contexte.Contexte(projet, etage="git", base=base, tete=base, rapide=True,
+                                                        branches=branches_envoyees(lignes)))
+        _dire_mise_a_jour(ecarter_deja_commites(rapport, reference))
     for constat in plage_poussee(projet, lignes).constats:
         if constat not in rapport.constats:
             rapport.constats.append(constat)

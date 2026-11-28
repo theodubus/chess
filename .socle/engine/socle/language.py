@@ -45,6 +45,10 @@ CHAMPS = {
     "priorite": {"fr": "priorité", "en": "priority"},
     "besoin": {"fr": "besoin", "en": "need"},
     "ancien": {"fr": "ancien", "en": "former"},
+    # Un besoin en réserve, d'aucun jalon ouvert (ADR-0118) : pourquoi il
+    # attend, et le plus haut lot du backlog à son dernier tri.
+    "reserve": {"fr": "réserve", "en": "reserve"},
+    "trie": {"fr": "trié", "en": "sorted"},
     # L'estampille de la passation (`memory/handoff.md`).
     "ecrite": {"fr": "écrite", "en": "written"},
     "branche": {"fr": "branche", "en": "branch"},
@@ -71,7 +75,9 @@ STATUTS = {
 # Valeurs d'un champ qui se comparent : `pour : humain`.
 VALEURS = {"humain": {"fr": "humain", "en": "human"}, "seance": {"fr": "séance", "en": "session"},
            "jalon": {"fr": "jalon", "en": "milestone"}, "lot": {"fr": "lot", "en": "batch"},
-           "haute": {"fr": "haute", "en": "high"}, "basse": {"fr": "basse", "en": "low"}}
+           "haute": {"fr": "haute", "en": "high"}, "basse": {"fr": "basse", "en": "low"},
+           # Dans `ref` : le commit qui clôt l'entrée (ADR-0117).
+           "ce-commit": {"fr": "ce commit", "en": "this commit"}}
 
 # La section d'une tâche (et d'un lot ou d'un jalon qui en a une) qui dit ce
 # qui la rend faite (D-0064) : des cases à cocher, toutes cochées avant de la
