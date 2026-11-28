@@ -1,0 +1,10 @@
+# Réponse humaine donnée dans la conversation, consignée par l'agent avec
+# le texte exact de l'humain (`citation`). Relue avec le diff.
+# Elle porte sur le texte exact de D-0036-lever-c-0003-et-c-0004-la-fusion-par-l-agent-a-ci.md, dont l'empreinte suit.
+reponse = "valider"
+texte = ""
+par = "Théo"
+date = "2026-11-28"
+canal = "conversation"
+citation = "Fusion agent CI verte : oui l'agent peut fusionner \nC0004 oui lever"
+empreinte = "sha256:dba9e78c07adfa7b989158f5b0da1d7b77ec834acb4ace2855219a401ef5dcbc"
