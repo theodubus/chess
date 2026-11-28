@@ -5,10 +5,11 @@ Réécrit au fil du travail et borné. Ce qui en sort s'archive dans le journal.
 
 ## En cours
 
-**Rien** : la mise à jour du socle du 28 nov. 2026 (B-0084, clos) se
-fusionne par l'agent à CI verte, Théo l'ayant dit (D-0036) ; le socle
-n'en publie pas d'autre pour l'instant (J-2026-11-28-C). B-0083 attend,
-bloqué, une passation programmée réelle.
+**Rien** : la mise à jour du socle du 28 nov. 2026 (B-0084, clos) est
+dans `main`, la pull request 326 fusionnée par Théo ; le socle n'en
+publie pas d'autre pour l'instant (J-2026-11-28-C). L'agent fusionne
+ses pull requests à CI verte (D-0036). B-0083 attend, bloqué, une
+passation programmée réelle.
 
 ## Prochaines étapes
 
