@@ -19,22 +19,8 @@ l'humain, une demande qu'il a validée, lève une consigne.
 
 > D0020 avant de repondre ou de valider, est ce que ta proposition permet a l'agent de ne pas perdre de vue les infos importantes contenues dans ces fichiers (ex le journal est moins lu par ex que le chantier actif ou backlog) est ce que le découpage proposé separe correctement les choses en fonction de la nature de l'info et de comment on va en avoir besoin plus tard
 
-## C-0003 — Livraison : une branche de développement, une seule pull request ouverte, fusionnée par l'agent à CI verte
+## C-0007 — Les constats sur le socle se rendent à Théo en prompt à lui transmettre, plutôt qu'en liste dans le récap
 
-> statut : levée · source : D-0005 · date : 2026-11-12 · levée-par : D-0036
+> statut : en vigueur · source : J-2026-11-28-M · date : 2026-11-28
 
-> 3. Oui
-
-En réponse au point 3 de D-0005 : « Je lis le défaut de la demande : une
-branche de développement, une seule pull request ouverte à la fois, que je
-fusionne moi-même à CI verte (ta décision du 11 nov.). C'est bien ça ? »
-
-## C-0004 — La feuille de route demandée se donne au format court
-
-> statut : levée · source : J-2026-11-26-I · date : 2026-11-26 · levée-par : D-0036
-
-> « Non format court roadmap »
-
-En réponse à la feuille de route donnée au format Markdown
-(`python3 .socle/socle roadmap --format markdown`) : quand Théo demande la suite, la
-réponse colle la sortie de `python3 .socle/socle roadmap`, sans `--format markdown`.
+> Question courte : oui sous forme de prompt
