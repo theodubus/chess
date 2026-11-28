@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # T-0009 — Relever la perte tenue à l'écart des deux réseaux, puis lancer leur match, l'attendu, le critère et la puissance écrits avant
 
-> statut : ouvert · origine : J-2026-11-28-D · besoin : B-0012 · après : T-0008 · lu : backlog@e8dc7a96
+> statut : en cours · origine : J-2026-11-28-D · besoin : B-0012 · après : T-0008 · lu : backlog@e8dc7a96
 
 Le premier point de B-0071, que B-0012 porte : la perte des deux réseaux
 sur les jobs tenus à l'écart de leurs données (`nnue-validation.yml`),
