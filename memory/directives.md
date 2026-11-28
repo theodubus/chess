@@ -18,3 +18,9 @@ l'humain, une demande qu'il a validée, lève une consigne.
 > statut : en vigueur · source : J-2026-11-17-AJ · date : 2026-11-17
 
 > D0020 avant de repondre ou de valider, est ce que ta proposition permet a l'agent de ne pas perdre de vue les infos importantes contenues dans ces fichiers (ex le journal est moins lu par ex que le chantier actif ou backlog) est ce que le découpage proposé separe correctement les choses en fonction de la nature de l'info et de comment on va en avoir besoin plus tard
+
+## C-0007 — Les constats sur le socle se rendent à Théo en prompt à lui transmettre, plutôt qu'en liste dans le récap
+
+> statut : en vigueur · source : J-2026-11-28-M · date : 2026-11-28
+
+> Question courte : oui sous forme de prompt
