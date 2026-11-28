@@ -15,6 +15,356 @@ titre, sous une ligne qui nomme ce fichier. Toute autre forme (« rien,
 sauf si … », « rien dans le projet … », une action) s'imprime en entier,
 avant elles.
 
+## 2026-11-27-l — Les skills que pose l'installeur repassent sous 8 000 octets, le plafond que garde un projet installé avant le 27 novembre
+
+Une mise à jour garde les garde-fous du projet, donc le plafond de ses
+skills, de 8 000 octets avant la note `2026-11-27-a`. `socle-batch` et
+`socle-request` l'avaient dépassé (8 035 et 8 340 octets) : le commit des
+fichiers d'une mise à jour était refusé par `memoire.budgets`. Leurs
+phrases se resserrent, sans règle perdue, et chaque skill que pose
+l'installeur tient de nouveau sous 8 000 octets.
+
+À faire : rien.
+
+## 2026-11-27-k — La réserve se trie à trois moments : un besoin naît rangé, l'état signale le besoin à placer, et un jalon ne se clôt que sur une réserve triée
+
+Les besoins d'aucun jalon attendaient sans échéance : rien ne les plaçait
+dans une étape, ni ne les triait. Un besoin porte désormais, sur sa ligne
+de métadonnées, `réserve : <raison>` (`reserve` en anglais) et
+`trié : L-NNNN` (`sorted`), le plus haut lot du backlog à son dernier
+tri ; la réserve, ce sont les besoins ouverts qu'aucun jalon ouvert ne
+nomme dans son `après`. Un besoin `pour : humain` ne se trie pas.
+
+- À sa naissance : `socle new need "…" --milestone JA-NNNN` l'ajoute à
+  la fin de l'`après` d'un jalon ouvert, et `--reserve "<raison>"` écrit
+  sa raison et son tri ; sans l'un ni l'autre, quand un jalon est ouvert,
+  une ligne dit comment le ranger. Quand un jalon est ouvert, le contrôle
+  nouveau `memoire.reserve` refuse un besoin nouveau, ou sorti d'un jalon
+  ouvert, qu'aucun jalon ouvert n'attend et qui n'a pas de raison ; un
+  besoin d'avant ne se refuse pas.
+- Le signal : quand un jalon est ouvert, `socle state` nomme « à placer »
+  les besoins de la réserve sans raison, ou que quinze lots clos ont
+  suivis depuis leur tri, avec le `trié` à écrire, et la ligne « En
+  réserve » de `socle roadmap` dit combien. La clôture du lot suivant les
+  trie ; récrire `trié` fait repartir le compte.
+- La clôture d'un jalon : `socle close JA-NNNN`, et le contrôle, refusent
+  un jalon ouvert à la base et clos à la tête tant qu'un besoin de la
+  réserve n'a pas sa raison et un `trié` au moins égal au plus haut lot
+  de la base. Dès que tous les besoins d'un jalon ouvert sont clos,
+  `socle state`, et `socle close` qui clôt le dernier, l'annoncent : avant de le clore, chaque besoin de la
+  réserve rejoint un jalon à venir, reste en réserve, sa raison et son
+  tri récrits, ou se propose à l'humain pour abandon, par une demande.
+
+Le skill `socle-batch` renvoie à l'état pour les deux tris ; `FORMAT.md`
+dit les champs.
+
+À faire : si le projet a un jalon ouvert, `socle state` dit à placer les
+besoins de la réserve qui n'ont pas de raison ; à la clôture du prochain
+lot, range chacun dans un jalon (son `après`) ou écris sur sa ligne
+`réserve : <raison> · trié : L-NNNN`, le `trié` que l'état donne. Crée
+désormais un besoin par `socle new need "…" --milestone JA-NNNN` ou
+`--reserve "<raison>"`.
+
+## 2026-11-27-j — Le contrat des demandes dit de nommer la clé ou le test qu'une demande couvre
+
+Une demande validée n'autorise que la clé des garde-fous ou la fonction de
+test qu'elle nomme dans son texte : une demande qui assouplissait un
+plafond en ne citant que le fichier des garde-fous ne couvrait rien, et
+l'humain répondait deux fois. Le contrat que `socle new request` imprime à
+l'écriture d'une demande le dit désormais, en une ligne, avec la forme
+d'une clé (`budgets."<fichier>".max_bytes`).
+
+À faire : rien.
+
+## 2026-11-27-i — La parole de l'humain se range selon sa nature : une règle en consigne, une décision en décision, une attente en besoin bloqué
+
+La section installée d'`AGENTS.md` envoyait toute parole de l'humain qui
+vaut au-delà du tour dans les consignes, que chaque démarrage injecte et
+que seule sa parole lève : une décision de projet et une attente y
+finissaient aussi. Elle dit désormais qu'une décision s'écrit en décision
+et une attente en besoin `bloqué`, et le skill `socle-request` le
+détaille dans une section nouvelle, « Ranger la parole de l'humain selon
+sa nature » ; la décision que l'humain donne de lui-même n'y a plus pour
+exemple une règle. Le guide dit pourquoi.
+
+À faire : rien ; une consigne déjà écrite qui est une décision ou une
+attente reste en vigueur jusqu'à ce que l'humain la lève.
+
+## 2026-11-27-h — Les réveils de reprise restent d'un tour à l'autre
+
+Le skill `socle-resume` faisait armer les deux réveils de reprise au début
+de chaque tour qui agit et les retirer à sa fin : environ un appel d'outil
+sur dix d'une séance, pour un filet qui ne sert qu'à une limite d'usage.
+Les réveils restent désormais d'un tour à l'autre : un tour qui les trouve
+à la bonne heure n'appelle aucun outil de réveil, et ils ne se retirent
+qu'au rangement d'une session qui passe la main, ou quand l'humain dit
+d'arrêter. Un réveil qui tire sans objet, après un tour fini autrement
+que sur une limite, se vérifie et se dit en une ligne, sans reprendre le
+travail ni réarmer. Sans l'outil `list_events`, l'heure de la fenêtre que
+nomme `rateLimitType` se lit dans `get_session`, quand il la donne ; un
+réveil à la borne ne s'y repousse plus à chaque tour. Le guide dit
+pourquoi.
+
+À faire : rien ; l'installeur pose le skill changé.
+
+## 2026-11-27-g — Une commande clôt une entrée du backlog en un geste : `socle close`, et sa référence `ce commit`
+
+Clore une tâche demandait environ huit gestes de mémoire : une entrée de
+journal écrite pour servir de référence, le commit qui fait le travail
+n'existant pas encore, le statut, puis `socle archive` après un refus.
+`socle close <ID>` clôt désormais « fait » une entrée ouverte du backlog,
+de toute forme, en un geste : il pose le statut, ajoute au champ `ref` la
+valeur `ce commit` (`this commit` en anglais), ou la référence que donne
+`--ref`, et range l'entrée parmi les closes, le déplacement dans l'index.
+Il ne coche rien, et refuse l'entrée que les contrôles du backlog
+refuseraient close (un critère non coché, un besoin dont une tâche reste
+ouverte, ce qu'elle attend encore ouvert), avec leurs messages, sans rien
+changer. `ce commit` désigne le commit qui l'a écrite sur la ligne de
+métadonnées, celui qui clôt l'entrée : le contrôle du backlog l'accepte
+comme référence, et `socle show` le résout par l'historique du fichier.
+L'entrée de journal n'est plus exigée pour servir de référence ; le skill
+`socle-batch` et la section installée d'`AGENTS.md` le disent.
+
+À faire : rien ; une tâche cochée se clôt désormais par `socle close`.
+
+## 2026-11-27-f — L'état dit en tête qu'une session neuve est en retard sur la passation qui l'attend
+
+Une session neuve qui démarre sur un commit plus ancien que celui de la
+passation en attente (la branche par défaut quand la passation est sur
+une branche de travail, une copie périmée) lisait ses instructions, ses
+skills, ses hooks et sa mémoire d'avant, sans rien qui le dise avant la
+garde. Quand la tête locale est un ancêtre strict de la branche qui porte
+la passation, `socle state` le dit désormais en tête, avant tout le
+reste, avec les fichiers d'instructions, de skills et de hooks
+(`AGENTS.md`, `CLAUDE.md`, `.claude/`) qui changent entre les deux et la
+commande `git diff` qui les montre. Le skill `socle-handoff` fait lire ce
+qui change, une fois la session placée, avant tout autre travail.
+
+À faire : rien.
+
+## 2026-11-27-e — Un correctif qui ne touche que la documentation et la mémoire n'est plus jugé par `tests.regression`
+
+Un commit dont le sujet suit le motif d'un correctif (« Correction : … »,
+`[regression] fix_subject`) et qui ne change que des fichiers de
+documentation (des textes Markdown hors du dossier du socle), avec ou sans
+la mémoire, était refusé comme un correctif hors de tout adaptateur :
+seule une demande validée l'admettait. Aucun test ne peut prouver la
+correction d'un texte : `tests.regression` l'avertit désormais,
+« correctif qui ne touche que la documentation et la mémoire : non
+jugé », comme un correctif qui ne touche que la mémoire. Un correctif qui
+touche aussi un autre fichier reste jugé comme avant. Le hook `commit-msg`
+n'annonce plus de refus pour ces correctifs, ni pour ceux de la seule
+mémoire.
+
+
+À faire : rien.
+
+## 2026-11-27-d — Une consigne née dans la plage s'y cite sans empreinte, et trois refus disent leur correction
+
+Une consigne de l'humain citée sans son empreinte était refusée par
+`memoire.lectures`, même dans le commit qui la crée, et le refus
+renvoyait à `socle show` sans donner l'empreinte qu'il connaît. Une
+consigne née dans la plage jugée (absente de sa base) s'y cite désormais
+sans empreinte ; une consigne d'avant la plage reste exigée avec la
+sienne, et son refus donne l'empreinte de sa version actuelle à citer.
+Le hook de l'agent juge comme avant, et deux de ses refus en disent
+plus : l'écriture d'un fichier protégé par le shell dit que `rm <chemin>`
+ne vaut que pour un fichier que git ne suit pas ; un écrivain qu'il ne
+sait pas lire (un script de python dans un heredoc) qui cite un chemin
+protégé dit qu'un tel texte s'écrit par l'outil d'écriture.
+
+À faire : rien.
+
+## 2026-11-27-c — Le refus des liens donne le chemin complet d'un nom nu, et le message qui ne corrige que les liens d'un récap refusé n'a plus à le redire
+
+Un nom entre accents graves qui n'est pas un chemin du dépôt faisait
+refuser la fin du tour sur « aucun chemin de ce nom dans le dépôt ». Le
+refus cherche désormais les fichiers suivis que ce nom désigne par la fin
+de leur chemin (un nom seul, ou ses derniers dossiers) : s'il n'y en a qu'un, il
+donne son chemin complet à écrire ; sinon, il dit d'écrire le nom sans
+accents graves. Le message qui corrige devait aussi redire tout le récap,
+jugé sur le seul dernier message : quand le message refusé dans le même
+tour l'était pour ses seuls liens, et portait le récap, le message qui
+le suit n'a plus à le redire, et le refus le dit. La fin de tour le sait
+par ce qu'elle lisait déjà, sa trace et le transcript de Claude Code, où
+le refus se lit. La section du socle d'`AGENTS.md` dit la règle des liens
+en une phrase positive.
+
+À faire : rien.
+
+## 2026-11-27-b — La feuille de route en une seule forme : ce qui se fait maintenant, les étapes qui suivent, ce qui revient à l'humain
+
+`socle roadmap` n'a plus qu'une forme, faite pour que l'humain pilote le
+projet, lue sur un téléphone : « Maintenant », chaque lot en cours, les
+besoins qu'il mène et leurs premières tâches ouvertes, ou la première
+tâche prête ; « Ensuite », les
+jalons ouverts numérotés, chacun en `[K/N]`, ses besoins clos sur leur
+total, seul le premier déplié en ses besoins ; « Pour toi », ce qui
+revient à l'humain ; « En réserve », les besoins d'aucun jalon, comptés.
+C'est un texte aligné, chaque titre suivi de son identifiant, une
+demande dite par son titre seul ; `--format markdown` le met dans un bloc
+de code, pour la conversation et le résumé de la CI, où il garde son
+alignement. Les formats compact
+et détaillé, leurs tableaux et leur légende disparaissent ; l'option
+`--by` n'existe plus, et se refuse comme une option inconnue ; `--all`
+déplie chaque étape. Les besoins à découper et à fermer restent à
+`socle state`, dont la ligne de la suite ne dit plus « (détaillée :
+`--format markdown`) ». La section du socle d'`AGENTS.md` dit toujours
+de coller la sortie de `python3 .socle/socle roadmap --format markdown` quand l'humain demande la suite : c'est
+désormais la seule forme.
+
+À faire : retirer `--by` de tout appel de `socle roadmap` écrit dans le
+projet, hors de ce que pose l'installeur ; une consigne du projet qui
+choisit le format court ou le format détaillé de la feuille de route n'a
+plus d'objet : le dire à l'humain, qui la garde ou la lève.
+
+## 2026-11-27-a — Le plafond des skills passe de 8 000 à 10 000 octets dans le gabarit des garde-fous
+
+Un skill se charge en entier à chaque usage. Ce qui justifiait leurs
+règles sorti vers le guide (2026-11-26-l), `socle-batch`, `socle-request`
+et `socle-resume` restaient à moins de 600 octets de leur plafond de
+8 000 : la règle suivante de l'un d'eux aurait fait refuser le fichier.
+Le gabarit des garde-fous pose désormais
+`".claude/skills/*/SKILL.md" = { max_bytes = 10000 }`. Une mise à jour
+garde les garde-fous du projet, donc sa valeur ; les skills que pose
+l'installeur tiennent encore sous 8 000 octets.
+
+À faire : rien tant que les skills du projet tiennent sous son plafond ;
+si l'un l'approche, poser à l'humain la demande de reprendre 10 000
+octets dans `.socle/guardrails.toml`, qui assouplit un garde-fou, en
+nommant la clé `budgets.".claude/skills/*/SKILL.md".max_bytes`.
+
+## 2026-11-26-l — Ce qui justifiait une règle des skills et de la section du socle d'AGENTS.md sans la dire passe au guide, « Pourquoi ces règles »
+
+Les skills du socle et la section du socle d'`AGENTS.md` se chargent en
+entier à chaque usage, sous leur plafond (8 000 octets pour un skill), et
+plusieurs y touchaient. Ce qui y justifiait une règle sans la dire (le
+pourquoi, une précision qui n'ordonne rien, comme ce qu'un hook refuse)
+en sort, mot pour mot, vers une sous-section nouvelle du guide,
+« Pourquoi ces règles » (« Why these rules »), à la fin de sa
+« Référence » ; chaque règle reste dans son texte, intacte. Sont touchés
+la section du socle d'`AGENTS.md` et les skills `socle-batch`,
+`socle-resume`, `socle-request` et `socle-handoff`, dans les deux
+langues. Le guide dit désormais aussi à l'humain comment arrêter les
+réveils de la reprise après une limite d'usage. La section du socle
+d'`AGENTS.md` maigrit d'environ 550 octets ; `socle-handoff` passe sous
+7 400 octets, `socle-resume` et `socle-request` en anglais aussi.
+
+À faire : rien ; l'installeur pose les skills et la section changés.
+
+## 2026-11-26-k — Le plafond des consignes passe de 16 000 à 24 000 octets dans le gabarit des garde-fous
+
+Une consigne ne se lève que sur la parole de l'humain : `memory/directives.md`
+ne fait que croître, et le plafond de la mémoire canonique, qu'il avait
+repris, le faisait refuser vers la vingt-cinquième consigne. Le gabarit des
+garde-fous pose désormais `"memory/directives.md" = { max_bytes = 24000 }`.
+Le démarrage n'est pas touché : il ne charge les consignes que par leur
+ligne de résumé, sous sa propre part. Une mise à jour garde les garde-fous
+du projet, donc sa valeur.
+
+À faire : rien tant que `memory/directives.md` tient sous le plafond du
+projet ; s'il l'approche, poser à l'humain la demande de reprendre 24 000
+octets dans `.socle/guardrails.toml`, qui assouplit un garde-fou.
+
+## 2026-11-26-j — Un besoin pour l'humain n'est plus listé parmi les besoins à découper en tâches
+
+`socle state` (« besoins à découper en tâches ») et `socle roadmap`
+(« Besoins à découper en tâches ») listaient un besoin `pour : humain`
+sans tâche, qui paraît aussi sous « Pour l'humain » : ils invitaient
+l'agent à créer une tâche pour un geste qu'il ne peut pas faire. Un tel
+besoin ne se découpe plus : il ne paraît que parmi ce qui revient à
+l'humain, qui le mène ; l'agent le ferme sur sa parole, et une part qu'il
+peut mener est un autre besoin. `FORMAT.md` le dit à la forme du besoin.
+
+À faire : rien.
+
+## 2026-11-26-i — socle new et socle show --index font citer l'empreinte de l'index du dernier commit
+
+`socle new` écrivait dans une entrée du backlog ou une décision
+l'empreinte de l'index de l'arbre, les entrées du tour comprises ; dès
+qu'une ligne de l'index changeait avant le commit, un statut passé à
+« en cours », une décision « proposée » devenue « acceptée »,
+`memoire.lectures` refusait les entrées écrites avant ce changement.
+Former un lot le déclenchait à chaque fois. L'empreinte citée, celle
+qu'écrit `socle new` et celle qu'imprime `socle show --index` en tête de
+l'index, est désormais celle du dernier commit, que le contrôle accepte
+toujours ; les lignes imprimées restent celles de l'arbre, où un doublon
+du tour se voit, et l'en-tête le dit quand les deux diffèrent. Le besoin
+et la tâche de `socle new need … --task …` citent la même. Le contrôle ne
+change pas.
+
+À faire : rien.
+
+## 2026-11-26-h — Pendant une mise à jour pas encore commitée, les hooks git ne refusent que ce que le commit ou le push apporte, et la migration ne touche plus l'index
+
+Après une mise à jour qui migre le backlog, le commit de la demande seule
+était refusé : le hook avant commit juge l'index avec le moteur neuf de
+l'arbre de travail, qui refusait le backlog d'avant, encore commité, et
+l'ancien chantier actif ; le hook avant push de même. Pendant une mise à
+jour pas encore commitée (la copie du moteur changée dans l'arbre), les
+deux hooks jugent aussi l'arbre d'où part le commit, ou la base du push,
+avec le même moteur, et n'en refusent que les constats que le commit ou
+le push apporte ; une ligne dit combien ils en laissent à la CI. La
+migration du backlog et le rangement des entrées closes que fait la mise
+à jour n'écrivent plus que l'arbre de travail : le commit de la demande
+n'emporte plus leurs renommages, et `git add -A`, au commit des fichiers
+de la mise à jour, les prend. `socle archive` indexe ses déplacements
+comme avant.
+
+À faire : rien ; la demande seule d'une mise à jour se commite par
+`git add` sur son fichier, `git commit` et `git push`, sans stash ni
+`--only`.
+
+## 2026-11-26-g — Une mise à jour d'une copie sans notes de version n'imprime en entier que celles d'après le dernier commit de cette copie
+
+Quand la copie du moteur remplacée n'avait pas de notes de version, d'avant
+leur arrivée, l'installeur les imprimait toutes en entier : 122 entrées,
+environ 100 Ko, chez un projet mis à jour pour la dernière fois le
+13 novembre. Il lit désormais le jour du dernier commit qui a changé cette
+copie : une note datée d'avant ce jour décrit ce que le projet a déjà, et
+ne paraît que par son titre, sous une ligne qui les compte et nomme le
+fichier où les lire ; les autres s'impriment comme avant. Sans ce jour
+(une copie jamais commitée, ou un clone superficiel qui ne porte pas son
+commit), toutes s'impriment comme avant. Le message de
+commit proposé les nomme encore toutes.
+
+À faire : rien.
+
+## 2026-11-26-f — La fin de tour ne prend plus le nom d'une commande du socle, cité dans « Pour toi », pour une branche à supprimer
+
+Sur une ligne de « Pour toi » qui dit supprimer une branche, la fin de tour
+lisait chaque nom entre accents graves comme une branche, et cherchait à
+l'origine celle de `prune-branches` quand la ligne disait qui la
+supprime. Le nom d'une commande du socle n'y est plus lu comme une
+branche.
+
+À faire : rien.
+
+## 2026-11-26-e — Un correctif qui ne touche que la mémoire n'est plus jugé par `tests.regression`, et le dit d'un avertissement
+
+Un commit dont le sujet suit le motif d'un correctif (« Correction : … »,
+`[regression] fix_subject`) et qui ne change que des fichiers de la
+mémoire était refusé comme un correctif hors de tout adaptateur : seule
+une demande validée l'admettait. Aucun test ne peut prouver la
+correction d'une entrée de la mémoire : `tests.regression` l'avertit
+désormais, « correctif qui ne touche que la mémoire : non jugé », comme
+un correctif qui ne touche que des fichiers tiers. Un correctif qui
+touche aussi du code reste jugé comme avant.
+
+À faire : rien.
+
+## 2026-11-26-d — Sans `--owner`, la mise à jour garde le propriétaire du CODEOWNERS en place
+
+Relancé sans `--owner`, l'installeur disait « !! aucun propriétaire
+(--owner) : CODEOWNERS non posé » même quand le fichier CODEOWNERS du
+projet existait déjà. Il lit désormais le propriétaire sur la ligne qui
+protège la politique (`/.socle/`), celle que son gabarit pose, complète
+le fichier avec les lignes que le gabarit a en plus, et le dit
+(« CODEOWNERS : <propriétaire> … »). La ligne « !! » ne reste que sans
+fichier, ou sans cette ligne.
+
+À faire : rien.
+
 ## 2026-11-26-c — La passation s'écrit avant toute fusion : quand l'agent fusionne lui-même sa pull request, elle en est le dernier commit, et aucune branche de session ne reste à supprimer
 
 Une session qui passe la main écrit sa passation avant toute fusion de sa

@@ -20,7 +20,10 @@ point 7 (D-0032@157f0d8e).
 ## Satisfait quand
 
 - [ ] la version du socle qui porte les correctifs du troisième retour est installée, ses fichiers protégés approuvés par Théo
-- [ ] B-0083 est revérifié sur elle
+- [x] B-0083 est revérifié sur elle
 
 Théo dit le socle prêt le 28 nov. 2026 (J-2026-11-27-A) : la mise à
 jour se fait sur son prompt de mise à jour, dans la session neuve.
+Installée le 28 nov., ses 39 fichiers protégés soumis à Théo par
+D-0034 ; B-0083 revérifié sur elle, son second critère tenu
+(J-2026-11-28-A).

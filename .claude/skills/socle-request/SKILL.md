@@ -1,12 +1,11 @@
 ---
 name: socle-request
-description: Poser une demande de décision humaine, relayer la réponse de l'humain, ou consigner une décision prise en séance. À utiliser quand une décision revient à l'humain (politique d'autonomie, points 1 à 4, 7 et 8), quand il répond à une demande, ou quand il tranche une question dans la conversation.
+description: Poser une demande de décision humaine, relayer la réponse de l'humain, ou consigner une décision prise en séance. À utiliser quand une décision revient à l'humain (politique d'autonomie, points 1 à 4, 7 et 8), quand il répond à une demande, quand il tranche une question dans la conversation, ou quand une de ses paroles vaut au-delà du tour.
 ---
 
 # Les demandes de décision humaine
 
-Une demande est lue quand le contexte est perdu : elle se suffit à
-elle-même. L'humain répond dans la conversation ; l'agent consigne sa
+Une demande se suffit à elle-même. L'humain répond dans la conversation ; l'agent consigne sa
 réponse mot pour mot, sans jamais la choisir.
 
 ## Poser une demande
@@ -15,32 +14,27 @@ réponse mot pour mot, sans jamais la choisir.
    donne l'identifiant, et imprime le contrat que le lint jugera.
 2. Remplir les huit champs :
    - **Décision demandée** : en une phrase.
-   - **Contexte** : pour l'humain qui revient sur le projet après des
-     semaines, trois paragraphes d'abord, chacun ouvert par son nom en
-     gras : **Le projet.** (ce qu'il fait, et pour qui, même si l'humain
-     le sait), **Le chantier.** (le but du travail en cours, ce qui est
-     fait et ce qui reste ; ses décisions passées dites par leur contenu et
-     leur date, pas par leur numéro) et **La question.** (ce qui la pose
-     maintenant). Puis le détail, sur place, pas un renvoi : soixante mots
-     au moins en tout, et chaque terme propre au projet expliqué à sa
-     première apparition.
+   - **Contexte** : pour l'humain absent depuis des semaines, trois
+     paragraphes ouverts par leur nom en gras : **Le projet.** (ce qu'il
+     fait, pour qui, même s'il le sait), **Le chantier.** (son but, le fait
+     et le reste ; les décisions passées par leur contenu et leur date, pas
+     leur numéro) et **La question.** (ce qui la pose maintenant). Puis le
+     détail sur place, sans renvoi : soixante mots au moins, chaque terme
+     du projet expliqué à sa première apparition.
    - **Éléments cités** : chaque identifiant décrit en clair, avec
      l'empreinte de la version lue (`- B-NNNN@xxxxxxxx — ce que c'est, en
-     une phrase`) ; jamais un identifiant seul. Un fichier protégé à
-     faire approuver, ceux d'une mise à jour, s'y écrit sur sa ligne, son
-     chemin et son empreinte nouvelle, rien d'autre (`python3 .socle/socle
-     check` les donne) : ces lignes n'ont pas à être décrites et ne
-     comptent pas dans le budget de la demande.
+     une phrase`), jamais seul. Un fichier protégé à approuver (ceux d'une
+     mise à jour) s'y écrit seul sur sa ligne, chemin et empreinte nouvelle
+     (`python3 .socle/socle check` les donne), sans description.
    - **Où regarder** : un lien vers chaque document à lire
      (`python3 .socle/socle url <chemin>`), et ce qu'il faut y vérifier.
    - **Options** : pour chacune, l'effort, le risque, la réversibilité.
    - **Conséquences** : si l'humain valide, s'il refuse, sans réponse.
    - **Recommandation** : le vérifié séparé du supposé.
-   - **Réponses possibles** : une liste `` - `valeur` — sens `` qui
-     propose les réponses de base, les mêmes dans toute demande :
-     `valider` (la recommandation), `refuser` et `contexte-insuffisant` ;
-     une demande de choix y ajoute ses options, et aucun synonyme
-     (`approuver`, `oui`…). Seule `valider` autorise à changer un test ou
+   - **Réponses possibles** : une liste `` - `valeur` — sens `` des
+     réponses de base, les mêmes partout : `valider` (la recommandation),
+     `refuser` et `contexte-insuffisant` ; une demande de choix y ajoute ses
+     options, sans synonyme (`approuver`, `oui`…). Seule `valider` autorise à changer un test ou
      une clé des seuils que la demande nomme.
 3. Une demande qui passe la moitié de son budget (`new request` le donne)
    se fait relire à froid avant d'être poussée ; une demande plus courte,
@@ -52,13 +46,13 @@ réponse mot pour mot, sans jamais la choisir.
    quel que soit celui de la session, sur la dernière version de sa
    famille (un alias qui en désigne une plus ancienne : sans `model`, il
    hérite de la session) ; Fable, s'il est disponible, seulement si
-   l'humain le demande. Il lit la demande dans le rôle de l'humain qui n'a pas ouvert le projet depuis
-   trois semaines, et rend en un seul message, sans lancer d'outil, ce
+   l'humain le demande. Il lit la demande en humain absent depuis trois
+   semaines, et rend en un seul message, sans lancer d'outil, ce
    qu'il en a compris et ce qui lui manque pour décider. Un
    compte rendu qui compte un outil lancé dit une lecture qui n'était pas
-   à froid : le récap le dit. Réécrire ce que l'humain ne
-   comprendrait pas davantage ; écarter, d'une raison, ce qui n'aide pas à
-   décider ou qu'un document lié donne déjà. Le récap le dit : `Relecture
+   à froid : le récap le dit. Réécrire ce qu'il ne comprendrait pas ;
+   écarter, d'une raison, ce qui n'aide pas à décider ou qu'un lien donne
+   déjà. Le récap le dit : `Relecture
    à froid (<modèle>) : <n> points, <k> corrigés ; écartés : …`. Un agent sans
    sous-agents saute cette étape, et son récap le dit.
 4. Commiter et pousser la demande telle quelle, puis donner son lien
@@ -76,22 +70,19 @@ python3 .socle/socle answer D-NNNN <réponse> --relayed --by <nom> --quote-file 
 
 3. Recopier la réponse au journal, avec son texte exact.
 
-La réponse se consigne dès qu'elle est donnée, se commite et se pousse
-aussitôt : l'humain ne la voit plus en attente. Elle couvre le changement
-qu'elle autorise (une valeur attendue, une clé des garde-fous, un fichier
-protégé) dans sa pull request, ou plus tard, fusionnée, tant qu'une tâche
-ouverte la cite et que ce qu'elle nomme n'a pas bougé depuis la demande :
-la tâche qui fait le changement la cite, et se clôt avec lui.
+La réponse se consigne, se commite et se pousse dès qu'elle est donnée.
+Elle couvre le changement qu'elle autorise (une valeur attendue, une clé
+des garde-fous, un fichier protégé) dans sa pull request, ou après sa
+fusion tant qu'une tâche ouverte la cite et que ce qu'elle nomme n'a pas
+bougé depuis la demande ; cette tâche fait le changement, et se clôt avec
+lui.
 
-Une réponse ne se relaie qu'à une demande poussée telle quelle : l'humain
-doit avoir pu la lire. Une demande répondue est gelée. La réponse
-`contexte-insuffisant` renvoie la demande : la réécrire en une demande
-nouvelle, qui la remplace et la cite dans ses éléments cités ; l'état ne
-la dit plus alors à réécrire.
+Une réponse ne se relaie qu'à une demande poussée telle quelle. Une
+demande répondue est gelée. La réponse `contexte-insuffisant` renvoie la
+demande : la réécrire en une demande nouvelle, qui la remplace et la cite.
 
-Un test dont la valeur attendue change en attendant une demande qui le
-nomme peut rester changé dans l'arbre à la fin du tour ; il ne se commite
-qu'après la réponse.
+Un test changé en attendant la demande qui le nomme peut rester dans
+l'arbre à la fin du tour ; il ne se commite qu'après la réponse.
 
 ## Une conception à trancher
 
@@ -100,24 +91,36 @@ d'intention, dans la conversation, en quelques lignes : le besoin tel que
 l'agent le comprend, le choix qui reste, sa recommandation ; la réponse
 se consigne en séance (plus bas). Puis sa spécification et son code se
 font dans le même lot, la spécification d'abord. Ce qui reste coûteux à
-défaire va ensuite en demande, courte ; le reste, l'agent le décide et
-l'écrit en décision.
+défaire va ensuite en demande, courte ; le reste, l'agent le décide en
+décision.
+
+## Ranger la parole de l'humain selon sa nature
+
+Une parole de l'humain qui vaut au-delà du tour s'écrit avant de
+continuer, mot pour mot, et au journal, selon sa nature :
+
+- une règle de travail de l'agent (une préférence, une interdiction, une
+  façon de faire) : une consigne (`socle new directive`), que chaque
+  démarrage injecte ;
+- une décision sur le projet (un choix, une priorité, une autorisation) :
+  une décision, consignée en séance comme ci-dessous ;
+- une attente (« pas avant que X soit fait ») : un besoin au statut
+  `bloqué`, qui dit ce qu'il attend ; il se lève en se fermant.
 
 ## Consigner une décision prise en séance
 
 Ce que l'humain tranche dans la conversation, de lui-même ou sur une question
-courte posée dans le texte de la réponse, se consigne aussitôt, avec sa
-réponse mot pour mot ; `--about <chemin>` désigne ce qu'elle approuve :
+courte de la réponse, se consigne aussitôt, sa réponse mot pour mot ; `--about <chemin>` désigne ce qu'elle approuve :
 
 ```sh
 python3 .socle/socle decision "<question>" <réponse> --relayed --by <nom> --quote-file <fichier>
 ```
 
-Une décision que l'humain donne de lui-même, sans qu'on la lui ait
-demandée (une règle, une interdiction, « supprime ce test »), se consigne
-sans question inventée ni réponse à choisir : son texte exact, sous un
-titre qui la dit en une phrase sans rien nommer qu'il ne nomme. Elle est
-validée, et autorise ce qu'elle nomme comme une demande validée :
+Une décision que l'humain donne sans qu'on la lui demande (un choix, une
+autorisation, « supprime ce test ») se consigne sans question inventée ni
+réponse à choisir : son texte exact, sous un titre qui la dit en une
+phrase sans rien nommer qu'il ne nomme. Validée, elle autorise ce qu'elle
+nomme comme une demande validée :
 
 ```sh
 python3 .socle/socle decision "<la décision en une phrase>" --unprompted --relayed --by <nom> --quote-file <fichier>
@@ -130,8 +133,7 @@ ainsi, en séance, puis la consigne passe `levée`, avec
 Un contenu montré dans la conversation que l'humain valide (un format, un
 exemple, un texte) s'écrit d'abord tel quel dans le dépôt, puis la
 décision le désigne (`--about <chemin>`), et les tâches qui en découlent
-citent ce chemin : sans lui, la décision ne garde que la question et la
-réponse, et le contenu se perd.
+citent ce chemin.
 
 **La variante légère**, pour des valeurs attendues changées
 mécaniquement, des tests qui lisent un format que l'humain vient de

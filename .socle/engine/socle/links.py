@@ -12,6 +12,7 @@ Les URL ont la forme de GitHub : `<dépôt>/blob/<commit>/<chemin>`.
 
 from __future__ import annotations
 
+import functools
 import os
 import re
 import unicodedata
@@ -260,11 +261,21 @@ BRANCHE = re.compile(r"(?i)\bbranch")
 LOCALE = re.compile(r"(?i)\blocal(?:e|es)?\b")
 
 
+@functools.cache
+def commandes_du_socle() -> frozenset[str]:
+    """Les noms des commandes du socle, lus sur son analyseur de ligne de
+    commande."""
+    from socle import cli
+
+    return frozenset(cli.analyseur()[1])
+
+
 def branches_a_supprimer_citees(projet: config.Projet, message: str) -> list[str]:
     """Les branches que la partie « Pour toi » du message donne à supprimer :
     sur chaque ligne qui dit supprimer et branche, hors d'une branche
     locale, les noms entre accents graves que git accepte pour une branche,
-    `origin/` retiré."""
+    `origin/` retiré, hors des noms des commandes du socle, qu'une telle
+    ligne cite pour dire qui supprime (B-0360)."""
     from socle import human as humain
 
     res: list[str] = []
@@ -273,8 +284,8 @@ def branches_a_supprimer_citees(projet: config.Projet, message: str) -> list[str
             continue
         for m in CODE.finditer(ligne):
             nom = m["code"].strip().removeprefix("origin/")
-            if nom and nom not in res and outils.git(projet.racine, "check-ref-format", "--branch", nom,
-                                                     check=False).strip() == nom:
+            if nom and nom not in res and nom not in commandes_du_socle() and outils.git(
+                    projet.racine, "check-ref-format", "--branch", nom, check=False).strip() == nom:
                 res.append(nom)
     return res
 
@@ -297,11 +308,30 @@ def branches_absentes(projet: config.Projet, message: str) -> tuple[list[str], l
     return [b for b in citees if b not in vivantes], []
 
 
+def _sans_chemin(racine, code: str, chemin: str, suivis: list[str]) -> str:
+    """Le refus d'un passage entre accents graves qui n'est pas un chemin du
+    dépôt, avec sa correction (B-0371) : le chemin complet du seul fichier
+    suivi qu'il désigne par la fin de son chemin (`FORMAT.md`,
+    `socle/FORMAT.md`), son numéro de ligne gardé ; faute d'un seul, l'écrire
+    sans accents graves."""
+    fin = "/" + chemin
+    candidats = [] if chemin.endswith("/") else [
+        f for f in suivis if (f == chemin or f.endswith(fin)) and (racine / f).is_file()]
+    if len(candidats) == 1:
+        ligne = LIGNE.search(code.strip())
+        return trad("`{code}` : aucun chemin de ce nom dans le dépôt, le lien qu'en fait le client mène à un 404 ; "
+                    "le seul fichier suivi de ce nom est `{complet}` : écrire ce chemin complet", code=code,
+                    complet=candidats[0] + (ligne.group(0) if ligne else ""))
+    return trad("`{code}` : aucun chemin de ce nom dans le dépôt, le lien qu'en fait le client mène à un 404 ; il "
+                "ne désigne pas un seul fichier suivi : l'écrire sans accents graves", code=code)
+
+
 def problemes(projet: config.Projet, message: str) -> tuple[list[str], list[str]]:
     """(liens morts, demandes sans lien) du message de l'agent."""
     racine = projet.racine
     texte = memoire.sans_barre(_hors_code(message))
     morts = []
+    suivis: list[str] | None = None  # lus une fois, au premier passage qui n'est pas un chemin du dépôt
     for m in LIEN_MD.finditer(texte):
         cible = m["cible"]
         if not SCHEMA.match(cible) and not cible.startswith("#"):
@@ -323,8 +353,9 @@ def problemes(projet: config.Projet, message: str) -> tuple[list[str], list[str]
                 morts.append(trad("`{code}` : présent sur le disque du conteneur mais ignoré par git, le lien "
                                   "qu'en fait le client mène à un 404 : ne pas le citer", code=m['code']))
             else:
-                morts.append(trad("`{code}` : aucun chemin de ce nom dans le dépôt, le lien qu'en fait le client "
-                                  "mène à un 404", code=m['code']))
+                if suivis is None:
+                    suivis = outils.fichiers_suivis(racine) or []
+                morts.append(_sans_chemin(racine, m["code"], chemin, suivis))
     depot = url_depot(projet)
     urls = URL.findall(texte)
     tirees = {m["numero"] for m in PULL_REQUEST.finditer(texte)}

@@ -1,11 +1,11 @@
 ---
 name: socle-request
-description: Write a request for a human decision, relay the human's answer, or record a decision taken in session. Use when a decision belongs to the human (autonomy policy, points 1 to 4, 7 and 8), when they answer a request, or when they settle a question in the conversation.
+description: Write a request for a human decision, relay the human's answer, or record a decision taken in session. Use when a decision belongs to the human (autonomy policy, points 1 to 4, 7 and 8), when they answer a request, when they settle a question in the conversation, or when a word of theirs holds beyond the turn.
 ---
 
 # Requests for a human decision
 
-A request is read once the context is lost: it stands on its own. The human
+A request stands on its own. The human
 answers in the conversation; the agent records their answer word for word,
 never choosing it.
 
@@ -29,8 +29,7 @@ never choosing it.
      in one sentence`); never an identifier alone. A protected file to
      have approved, those of an update, is written there on its own line,
      its path and its new fingerprint, nothing else (`python3 .socle/socle
-     check` gives them): these lines need no description and do not count
-     in the request's budget.
+     check` gives them): these lines need no description.
    - **Where to look**: a link to each document to read
      (`python3 .socle/socle url <path>`), and what to check there.
    - **Options**: for each, the effort, the risk, the reversibility.
@@ -75,17 +74,16 @@ python3 .socle/socle answer D-NNNN <answer> --relayed --by <name> --quote-file <
 3. Copy the answer into the journal, with its exact text.
 
 The answer is recorded as soon as it is given, committed and pushed at
-once: the human no longer sees it pending. It covers the change it
+once. It covers the change it
 authorizes (an expected value, a guardrail key, a protected file) in its
 pull request, or later, merged, as long as an open task cites it and
 what it names has not moved since the request: the task that makes the
 change cites it, and is closed with it.
 
-An answer is only relayed to a request pushed as is: the human must have
-been able to read it. An answered request is frozen. The answer
-`insufficient-context` sends the request back: rewrite it as a new request
-that replaces it and cites it in its cited elements; the state then no
-longer says to rewrite it.
+An answer is only relayed to a request pushed as is. An answered request
+is frozen. The answer `insufficient-context` sends the request back:
+rewrite it as a new request that replaces it and cites it in its cited
+elements.
 
 A test whose expected value changes while waiting for a request that names
 it may stay changed in the tree at the end of the turn; it is only
@@ -101,6 +99,18 @@ same batch, the specification first. What remains costly to undo then
 goes into a request, a short one; the rest, the agent decides and writes
 as a decision.
 
+## Filing the human's word by its nature
+
+A word of the human that holds beyond the turn is written before going
+on, its exact text kept, and in the journal, by its nature:
+
+- a working rule for the agent (a preference, a prohibition, a way of
+  doing): a directive (`socle new directive`), which every start injects;
+- a decision about the project (a choice, a priority, an authorization):
+  a decision, recorded in session as below;
+- an expectation ("not before X is done"): a need with the status
+  `blocked`, which says what it waits for; it is lifted by closing it.
+
 ## Recording a decision taken in session
 
 What the human settles in the
@@ -113,7 +123,7 @@ python3 .socle/socle decision "<question>" <answer> --relayed --by <name> --quot
 ```
 
 A decision the human gives of their own accord, without being asked (a
-rule, a prohibition, "delete this test"), is recorded with no invented
+choice, an authorization, "delete this test"), is recorded with no invented
 question and no answer to choose: their exact text, under a title that
 states it in one sentence and names nothing they do not name. It is
 approved, and authorizes what it names as an approved request does:
@@ -129,8 +139,7 @@ this way, in session, then the directive becomes `lifted`, with
 Content shown in the conversation that the human approves (a format, an
 example, a text) is first written as is in the repository, then the
 decision designates it (`--about <path>`), and the tasks that follow from
-it cite that path: without it, the decision keeps only the question and
-the answer, and the content is lost.
+it cite that path.
 
 **The light variant**, for expected values changed mechanically, tests
 that read a format the human has just approved: a question in the

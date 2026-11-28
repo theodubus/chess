@@ -432,6 +432,37 @@ def etage_stop(a: Atelier, c: Path, dernier_message: str | None = None) -> str:
     return sortie.get("reason", "") if sortie.get("decision") == "block" else ""
 
 
+def _etage_stop_apres_refus(a: Atelier, c: Path, refuse: str, corrige: str) -> str:
+    """Deux fins de tour du même tour, au format de Claude Code : `refuse`,
+    que le hook doit refuser, puis, après la pièce jointe de ce refus,
+    `corrige`, jugé à la relance du hook (`stop_hook_active`). Rend ce que la
+    relance dit à l'humain, ou pourquoi le premier message n'est pas
+    refusé (B-0371)."""
+    transcript = c.parent / f"{c.name}-transcript.jsonl"
+
+    def agent(texte: str) -> dict:
+        return {"type": "assistant", "message": {"role": "assistant", "content": [{"type": "text", "text": texte}]}}
+
+    def fin(relance: bool) -> dict:
+        r = a.socle(c, "hook", "stop", entree=json.dumps({"session_id": "autotest", "stop_hook_active": relance,
+                                                          "transcript_path": str(transcript)}))
+        return json.loads(r.stdout) if r.stdout.strip() else {}
+
+    transcript.write_text("\n".join(json.dumps(x, ensure_ascii=False) for x in (
+        {"type": "user", "message": {"role": "user", "content": "fais le travail"}}, agent(refuse))) + "\n")
+    premier = fin(False)
+    if premier.get("decision") != "block":
+        return f"le premier message n'est pas refusé : {premier}"
+    with transcript.open("a", encoding="utf-8") as f:
+        for x in ({"type": "attachment", "attachment": {"type": "hook_blocking_error", "hookName": "Stop",
+                                                         "hookEvent": "Stop",
+                                                         "blockingError": {"blockingError": premier["reason"]}}},
+                  agent(corrige)):
+            f.write(json.dumps(x, ensure_ascii=False) + "\n")
+    second = fin(True)
+    return second.get("reason", "") if second.get("decision") == "block" else second.get("systemMessage", "")
+
+
 def etage_demarrage(a: Atelier, c: Path) -> str:
     """Le hook de démarrage de session : il imprime l'état dérivé."""
     return a.socle(c, "hook", "session-start", entree=json.dumps({"session_id": "autotest", "source": "startup"})).stdout
@@ -547,13 +578,20 @@ def _adr_test_double(a: "Atelier", c: Path) -> str:
 
 DEPOT_ESSAI = "https://github.com/essai/calc"
 RECAP = "\n\nPour toi : rien.\nEnsuite : rien."
-# Le compact de `socle roadmap`, qui finit par sa propre ligne « Ensuite : »,
-# collé dans un bloc de code au récap de la clôture d'un lot : il ne tient
-# pas lieu de récap (ADR-0089).
+# Une sortie collée dans un bloc de code au récap, qui finit par sa propre
+# ligne « Ensuite : », comme le format compact que `socle roadmap` rendait
+# avant sa forme unique : elle ne tient pas lieu de récap (ADR-0089).
 COMPACT_COLLE = ("JA-0001  Le premier jalon      0/1 besoins clos\n"
                  " ▶ L-0001  Le premier lot  0/1  en cours\n"
                  "Hors lot : rien\n"
                  "Ensuite : JA-0002 Le second jalon (B-0002)")
+# La forme unique de `socle roadmap`, dans son rendu du terminal, collée de
+# même au récap de la clôture d'un lot : sa ligne « Pour toi : » ne tient pas
+# lieu de celle du récap.
+FORME_COLLEE = ("La suite de calc — 27 novembre\n\n"
+                "Maintenant\n ▶ Le premier lot (L-0001)\n   reste : Écrire triple (T-0001)\n\n"
+                "Ensuite\n1. [0/1] Le premier jalon (JA-0001)\n\n"
+                "Pour toi : copier les données (B-0002)")
 
 
 def _demande_nommant_le_test(a: "Atelier", c: Path) -> str:
@@ -837,6 +875,28 @@ def _consigne_en_base(a: Atelier, c: Path):
     ajouter(c, "memory/directives.md", _consigne(a))
     a.commit(c, "une consigne de l'humain")
     a.git(c, "update-ref", "refs/remotes/origin/main", "HEAD")
+
+
+def _jalon_en_base(a: Atelier, c: Path, apres: str | None = "B-0001"):
+    """Le jalon ouvert JA-0001, qui attend `apres` (rien : `None`), dans la
+    base : commité, et la branche par défaut avancée jusqu'à lui, dans ce
+    clone seulement."""
+    ajouter_sujet(c, "\n## JA-0001 — Le module complet\n\n"
+                     f"> statut : ouvert · origine : {a.journal} · " + (f"après : {apres} · " if apres else "")
+                     + f"lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
+    a.commit(c, "un jalon ouvert")
+    a.git(c, "update-ref", "refs/remotes/origin/main", "HEAD")
+
+
+def _clore_le_jalon(c: Path):
+    """Clôt JA-0001 à la main, avec sa référence, rangé parmi les clos."""
+    from socle import memory as memoire
+
+    p = c / _sujet(c, "JA-0001")
+    clos = p.parent / memoire.DOSSIER_CLOS / p.name
+    clos.parent.mkdir(parents=True, exist_ok=True)
+    clos.write_text(p.read_text().replace("> statut : ouvert", "> statut : fait · ref : fichier:calc.py", 1))
+    p.unlink()
 
 
 def _renumeroter_en_lot(c: Path, ident: str) -> str:
@@ -1315,6 +1375,16 @@ def _cas() -> list[Cas]:
         maj_memoire(c, "Correctif de `double` sur les chaînes.")
         return etage_ci(a, c, "fix: double accepte une chaîne")
 
+    @defaut("correctif-de-la-doc-et-d-un-autre-fichier", "correctif de la documentation qui touche aussi un "
+            "fichier qu'aucun adaptateur ne juge, sans test", "ci", "tests.regression")
+    def _(a, c):
+        # B-0373 : la documentation seule n'est pas jugée ; avec un autre
+        # fichier, le correctif l'est encore.
+        remplacer(c, "docs/calc.md", "la\nconstante", "la constante\nentière")
+        ajouter(c, "outils/lancer.sh", "#!/bin/sh\npython3 calc.py\n")
+        maj_memoire(c, "Correction de la doc de `double` et du lanceur.")
+        return etage_ci(a, c, "Correction : la doc de double et le lanceur")
+
     @defaut("dispense-d-un-autre-commit", "code sans sa doc, couvert par la dispense d'un autre commit", "ci",
             "docs.correspondance")
     def _(a, c):
@@ -1637,6 +1707,12 @@ def _cas() -> list[Cas]:
         remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : fait")
         return etage_git(a, c)
 
+    @defaut("clos-ref-en-prose", "tâche faite dont la `ref` n'est que de la prose, ni une référence ni « ce "
+            "commit »", "git", "memoire.backlog")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c, statut="fait · ref : le prochain commit"))
+        return etage_git(a, c)
+
     @defaut("clos-parmi-les-ouverts", "besoin clos, avec sa référence, laissé parmi les ouverts", "git",
             "memoire.backlog")
     def _(a, c):
@@ -1654,6 +1730,22 @@ def _cas() -> list[Cas]:
         ajouter_sujet(c, "\n## JA-0001 — Livrer la multiplication\n\n"
                          f"> statut : fait · origine : {a.journal} · ref : fichier:calc.py · "
                          f"après : B-0001 · lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
+        return etage_git(a, c)
+
+    @defaut("besoin-sans-place", "besoin nouveau qu'aucun jalon ouvert n'attend, sans raison de réserve, quand un "
+            "jalon est ouvert (ADR-0118)", "git", "memoire.reserve")
+    def _(a, c):
+        _jalon_en_base(a, c)
+        ajouter_sujet(c, "\n## B-0002 — Ajouter une fonction quadruple\n\n"
+                         f"> statut : ouvert · origine : {a.journal} · lu : backlog@{empreinte(a, c, 'backlog')}\n\n"
+                         f"Pour l'essai.\n{SATISFAIT_ESSAI}")
+        return etage_git(a, c)
+
+    @defaut("jalon-clos-sur-reserve-non-triee", "jalon clos alors qu'un besoin de la réserve n'a pas sa raison "
+            "(ADR-0118)", "git", "memoire.reserve")
+    def _(a, c):
+        _jalon_en_base(a, c, None)
+        _clore_le_jalon(c)
         return etage_git(a, c)
 
     @defaut("cas-change", "cas existant d'un fichier de cas changé sans validation humaine", "git", "tests.attendus")
@@ -2713,10 +2805,31 @@ def _cas() -> list[Cas]:
         maj_memoire(c, "Travail du tour.")
         return etage_stop(a, c, "Lot clos.\n\n```text\n" + COMPACT_COLLE + "\n```\n\nPour toi : rien.")
 
+    @defaut("recap-dans-un-bloc-de-code", "fin d'intervention dont la seule ligne « Pour toi : » est celle de la "
+            "suite du projet collée dans un bloc de code", "agent", "récap")
+    def _(a, c):
+        maj_memoire(c, "Travail du tour.")
+        return etage_stop(a, c, "Lot clos.\n\n```text\n" + FORME_COLLEE + "\n```\n\nEnsuite : le lot suivant.")
+
     @defaut("chemin-inexistant", "chemin donné à l'humain qui n'existe pas dans le dépôt", "agent", "liens")
     def _(a, c):
         maj_memoire(c, "Travail du tour.")
         return etage_stop(a, c, "La doc est dans `docs/calcul.md`." + RECAP)
+
+    @defaut("chemin-nom-nu", "nom nu d'un fichier suivi donné à l'humain entre accents graves, sans son chemin",
+            "agent", "chemin complet")
+    def _(a, c):
+        # B-0371 : le refus donne le chemin complet du seul fichier suivi.
+        maj_memoire(c, "Travail du tour.")
+        return etage_stop(a, c, "La doc est dans `calc.md`." + RECAP)
+
+    @defaut("recap-absent-apres-refus-du-recap", "message sans récap qui suit, dans le même tour, un message refusé "
+            "pour son récap et ses liens", "agent", "récap malgré un rappel")
+    def _(a, c):
+        # B-0371 : seul un message refusé pour ses seuls liens, qui portait
+        # le récap, dispense le message qui les corrige de le redire.
+        maj_memoire(c, "Travail du tour.")
+        return _etage_stop_apres_refus(a, c, "La doc est dans `docs/calcul.md`.", "La doc est dans `docs/calc.md`.")
 
     @defaut("lien-relatif", "lien relatif, que l'humain ne peut pas suivre hors du conteneur", "agent", "liens")
     def _(a, c):
@@ -2828,6 +2941,18 @@ def _cas() -> list[Cas]:
         remplacer(c, "memory/directives.md", "reste sans dépendance", "reste sans aucune dépendance")
         ajouter(c, "memory/journal/" + a.journal[2:9] + ".md",
                 f"\n## {a.journal[:-1]}B — Constat\n\nSelon C-0001@{perimee}, rien à ajouter au module.\n")
+        return etage_git(a, c)
+
+    @defaut("consigne-d-avant-la-plage-citee-sans-empreinte", "consigne d'avant la plage citée sans son empreinte "
+            "dans le commit qui en pose une autre", "git", "memoire.lectures")
+    def _(a, c):
+        # B-0372 : seule la consigne née dans la plage s'y cite sans
+        # empreinte ; celle de la base reste exigée avec la sienne.
+        _consigne_en_base(a, c)
+        ajouter(c, "memory/directives.md", _consigne(a, "C-0002").replace("reste sans dépendance",
+                                                                          "reste en un seul fichier"))
+        ajouter(c, "memory/journal/" + a.journal[2:9] + ".md",
+                f"\n## {a.journal[:-1]}B — Constat\n\nThéo pose C-0002, qui s'ajoute à C-0001.\n")
         return etage_git(a, c)
 
     @defaut("consigne-resume-trop-long", "consigne dont la ligne de résumé dépasse 120 octets", "git", "memoire.format")
@@ -2970,6 +3095,12 @@ def _temoins() -> list[tuple[str, Callable]]:
         (c / "tests/test_regression.py").write_text(TEST_REGRESSION)
         maj_memoire(c, "Correctif de `double` sur les chaînes, avec son test.")
         return etage_ci(a, c, "fix: double accepte une chaîne")
+
+    @temoin("un correctif de la seule documentation, avec la mémoire, passe la CI sans test")
+    def _(a, c):
+        remplacer(c, "docs/calc.md", "la\nconstante", "la constante\nentière")
+        maj_memoire(c, "Correction de la doc de `double`.")
+        return etage_ci(a, c, "Correction : la doc de double")
 
     @temoin("un correctif dont le `Corrige:` est hors du dernier paragraphe du message, avec son test de "
             "régression, passe la CI")
@@ -3346,6 +3477,33 @@ def _temoins() -> list[tuple[str, Callable]]:
                          f"> statut : ouvert · origine : {a.journal} · après : B-0001, B-0002 · "
                          f"lu : backlog@{empreinte(a, c, 'backlog')}\n\nPour l'essai.\n")
         maj_memoire(c, "Le lot de la quadruple formé.")
+        return etage_git(a, c) or etage_ci(a, c)
+
+    @temoin("un besoin nouveau rangé dans le jalon ouvert par `socle new need --milestone`, et un autre gardé en "
+            "réserve par `--reserve`, passent le commit et la CI (ADR-0118)")
+    def _(a, c):
+        _jalon_en_base(a, c)
+        for titre, place in (("Ajouter une fonction quadruple", ("--milestone", "JA-0001")),
+                             ("Ajouter une fonction quintuple", ("--reserve", "attend la quadruple"))):
+            r = a.socle(c, "new", "need", titre, *place)
+            if r.returncode != 0:
+                return r.stdout + r.stderr
+        for ident in ("B-0002", "B-0003"):
+            p = c / _sujet(c, ident)
+            p.write_text(re.sub(r"<J-…[^>]*>", a.journal, re.sub(r"- \[ \] <[^>]*>", "- [ ] elle existe",
+                                                                     p.read_text())))
+        maj_memoire(c, "Deux besoins rangés.")
+        return etage_git(a, c) or etage_ci(a, c)
+
+    @temoin("un jalon clos par `socle close` sur une réserve triée, chaque besoin avec sa raison, passe le commit et "
+            "la CI (ADR-0118)")
+    def _(a, c):
+        _jalon_en_base(a, c, None)
+        remplacer(c, _sujet(c, "B-0001"), "> statut : ouvert", "> statut : ouvert · réserve : après la multiplication")
+        r = a.socle(c, "close", "JA-0001")
+        if r.returncode != 0:
+            return r.stdout + r.stderr
+        maj_memoire(c, "Le jalon clos, la réserve triée.")
         return etage_git(a, c) or etage_ci(a, c)
 
     # L'historique des revues d'un lot (ADR-0084, ADR-0100) : des passes au-delà
@@ -3742,11 +3900,11 @@ def _temoins() -> list[tuple[str, Callable]]:
         return etage_stop(a, c, "J'ai mis à jour le chantier actif. Tout passe.\n\nPour toi : rien.\n"
                           "Ensuite : le sujet suivant du backlog.")
 
-    @temoin("une fin d'intervention avec ses deux lignes en texte et un compact collé dans un bloc de code passe "
-            "le hook de fin de tour")
+    @temoin("une fin d'intervention avec ses deux lignes en texte et la suite du projet collée dans un bloc de code "
+            "passe le hook de fin de tour")
     def _(a, c):
         maj_memoire(c, "Travail du tour.")
-        return etage_stop(a, c, "Lot clos.\n\n```text\n" + COMPACT_COLLE + "\n```\n\nPour toi : rien.\n"
+        return etage_stop(a, c, "Lot clos.\n\n```text\n" + FORME_COLLEE + "\n```\n\nPour toi : rien.\n"
                           "Ensuite : le lot suivant.")
 
     @temoin("des liens que l'humain peut suivre passent le hook de fin de tour")
@@ -3759,6 +3917,12 @@ def _temoins() -> list[tuple[str, Callable]]:
             return r.stdout + r.stderr
         return etage_stop(a, c, "J'ai posé la demande D-0001, sur le module `calc.py` et sa doc `docs/calc.md`.\n\n"
                           + r.stdout + "\nPour toi : répondre à D-0001.\nEnsuite : rien.")
+
+    @temoin("un message qui ne corrige que les liens d'un message refusé pour eux seuls, qui portait le récap, passe "
+            "le hook de fin de tour sans redire le récap (B-0371)")
+    def _(a, c):
+        maj_memoire(c, "Travail du tour.")
+        return _etage_stop_apres_refus(a, c, "La doc est dans `calc.md`." + RECAP, "La doc est dans `docs/calc.md`.")
 
     @temoin("une branche donnée à supprimer que l'origine a encore passe le hook de fin de tour")
     def _(a, c):
@@ -4009,6 +4173,15 @@ def _temoins() -> list[tuple[str, Callable]]:
             return r.stdout + r.stderr or "B-0001 n'est pas rangé"
         return etage_ci(a, c, "B-0001 clos et rangé")
 
+    @temoin("une tâche cochée close par `socle close`, sa référence « ce commit », passe le commit et la CI "
+            "(ADR-0117)")
+    def _(a, c):
+        ajouter_sujet(c, tache_essai(a, c))
+        r = a.socle(c, "close", "T-0001")
+        if r.returncode != 0 or not list((c / "memory/backlog/closed").glob("T-0001-*.md")):
+            return r.stdout + r.stderr or "T-0001 n'est pas rangée"
+        return etage_git(a, c) or etage_ci(a, c)
+
     @temoin("une décision qui prouve ses lectures passe le commit")
     def _(a, c):
         lu = f" · lu : decisions@{empreinte(a, c, 'decisions')}"
@@ -4028,6 +4201,14 @@ def _temoins() -> list[tuple[str, Callable]]:
                 f"\n## {a.journal[:-1]}B — Constat\n\nSelon C-0001@{empreinte(a, c, 'C-0001')}, rien à ajouter "
                 "au module.\n")
         return etage_git(a, c)
+
+    @temoin("une consigne posée dans la plage, citée sans son empreinte dans le journal du même commit, passe le "
+            "commit et la CI (B-0372)")
+    def _(a, c):
+        ajouter(c, "memory/directives.md", _consigne(a))
+        ajouter(c, "memory/journal/" + a.journal[2:9] + ".md",
+                f"\n## {a.journal[:-1]}B — Constat\n\nThéo pose C-0001 : rien à ajouter au module.\n")
+        return etage_git(a, c) or etage_ci(a, c)
 
     @temoin("une consigne levée par la parole de l'humain, consignée en séance, puis rangée par `socle archive`, "
             "passe la CI")
@@ -4242,6 +4423,10 @@ RAISONS_AGENT = {
     "récap": "pas Pour toi :",
     "suite": "pas Ensuite :",
     "liens": "liens que l'humain ne pourra pas suivre",
+    # B-0371 : le nom nu d'un seul fichier suivi, refusé avec son chemin
+    # complet ; le récap qui manque encore à la relance, dit à l'humain.
+    "chemin complet": "le seul fichier suivi de ce nom est `docs/calc.md` : écrire ce chemin complet",
+    "récap malgré un rappel": "fin d'intervention sans Pour toi :",
     "lien de demande": "sans son lien",
     "branche absente": "que l'origine n'a plus",
     "signal indisponible": "mémoire privée : INDISPONIBLE",

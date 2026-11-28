@@ -336,6 +336,22 @@ def calculer(projet: config.Projet, contenus: bool = True, supplement: list[str]
                                "de la racine du projet garde ses traces d'avant). Ni le filtre des commandes, ni les "
                                "contrôles de fin de tour, ni l'état au démarrage ne tournent. Le dire à l'humain avant "
                                "tout travail. {remede}", remede=trad(REMEDE_HOOKS)), ""]])
+    # Les passations que le clone connaît, lues une fois : l'alerte d'une
+    # tête en retard sur la passation, en tête (B-0374), puis sa ligne.
+    from socle import handoff as passation
+
+    try:
+        passations, erreur_passation = passation.connues(projet), None
+    except Exception as e:
+        passations, erreur_passation = None, e
+    if passations is not None:
+        try:
+            alerte = passation.alerte_retard(projet, passations)
+            if alerte:
+                ajouter(ACTION, [[alerte, ""]])
+        except Exception as e:
+            ajouter(ACTION, [[trad("!! passation : retard de la tête locale incalculable ({erreur})",
+                                   erreur=erreur_(e)), ""]])
     ajouter(ACTION, [[trad("== {nom} — état dérivé par `socle state`, rien de recopié ==", nom=racine.name)]])
     # Ce qui revient à l'humain : chaque calcul a son repli, et les demandes
     # en attente se disent quoi qu'il arrive aux autres.
@@ -412,9 +428,9 @@ def calculer(projet: config.Projet, contenus: bool = True, supplement: list[str]
     # La passation qui attend une session neuve, d'après le clone tel qu'il
     # est : l'état ne lance pas `git fetch`.
     try:
-        from socle import handoff as passation
-
-        ligne = passation.ligne_etat(projet)
+        if erreur_passation is not None:
+            raise erreur_passation
+        ligne = passation.ligne_etat(projet, passations)
         if ligne:
             ajouter(ACTION, [[ligne]])
     except Exception as e:
@@ -863,8 +879,8 @@ def _backlog(mem: memoire.Memoire, borne: bool = False) -> list[tuple[int, list[
     res = [(INFO, [trad("backlog  : {ouverts} ouvert(s), {en_cours} en cours, {bloques} bloqué(s), {clos} clos",
                         ouverts=par.get("ouvert", 0), en_cours=par.get("en-cours", 0),
                         bloques=par.get("bloque", 0), clos=par.get("fait", 0) + par.get("abandonne", 0)),
-                   # La suite entière, jalons, lots et tâches, se lit à part.
-                   trad("  la suite : `python3 .socle/socle roadmap` (détaillée : `--format markdown`)")])]
+                   # La suite, pour l'humain, se lit à part.
+                   trad("  la suite : `python3 .socle/socle roadmap`")])]
     titre = TITRE_DE_SUJET if borne else None
     for statut, libelle in (("en-cours", a_traduire("en cours")), ("bloque", a_traduire("bloqué"))):
         res += [(RELU, b) for b in _elements([], [[f"  {trad(libelle)} : {e.id} — "
@@ -873,7 +889,40 @@ def _backlog(mem: memoire.Memoire, borne: bool = False) -> list[tuple[int, list[
                                              PRETS_MONTRES if borne else None)]
     res += [(RELU, [f"  {l}"]) for l in memoire.lignes_ordre(mem, plafond=PRETS_MONTRES if borne else None,
                                                              titre=titre, basses=BASSES_MONTREES if borne else None)]
+    # Les besoins de la réserve à trier (ADR-0118), zone par zone : chacune
+    # son `trié` à écrire. Au rang de ce qui informe : nulle part ailleurs
+    # le signal ne se lit, et la borne du démarrage coupe d'abord ce qui se
+    # relit.
+    places = memoire.a_placer(memoire.Graphe(mem))
+    for prive in (False, True):
+        siens = [e for e in places if e.prive == prive]
+        if siens:
+            res.append((INFO, ["  " + trad("besoins à placer (en réserve, sans raison ou sans tri depuis {n} lots "
+                                           "clos) : {ids} ; à la clôture du lot, chacun dans un jalon, ou {champs}",
+                                           n=memoire.LOTS_SANS_TRI,
+                                           ids=memoire._ids(siens, BASSES_MONTREES if borne else None),
+                                           champs=memoire.champs_de_reserve(mem, prive))]))
+    ligne = jalons_a_clore(mem)
+    if ligne:
+        res.append((INFO, ["  " + ligne]))
     return res
+
+
+def jalons_a_clore(mem: memoire.Memoire) -> str | None:
+    """Les jalons ouverts dont tous les besoins sont clos, quand la réserve
+    n'est pas vide : leur clôture exige la réserve retriée (ADR-0118), que
+    l'état, et `socle close` qui clôt leur dernier besoin, disent avant le
+    refus. Un jalon qui ne nomme encore aucun besoin attend les siens."""
+    g = memoire.Graphe(mem)
+    en_reserve = [e for e in memoire.reserve(g) if not memoire.pour_l_humain(e)]
+    besoins = {j: [d for d in memoire.dependances(g.entrees[j]) if memoire.type_d_id(d) == "B"]
+               for j in memoire.jalons_ouverts(g)}
+    a_clore = [j for j, siens in besoins.items() if siens and not any(g.ouvert(d) for d in siens)]
+    if not (a_clore and en_reserve):
+        return None
+    return trad("jalons à clore, leurs besoins clos : {jalons} ; avant, la réserve se retrie ({n} besoin(s)) : "
+                "chacun dans un jalon à venir, ou {champs}, ou son abandon proposé à l'humain par une demande",
+                jalons=", ".join(a_clore), n=len(en_reserve), champs=memoire.champs_de_reserve(mem, False))
 
 
 def _demandes(projet: config.Projet, plafond: int | None = None, dites: bool = True) -> list[list[str]]:

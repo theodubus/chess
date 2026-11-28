@@ -47,7 +47,7 @@ def cmd_state(args) -> int:
 def cmd_roadmap(args) -> int:
     from socle import roadmap as suite
 
-    print(suite.rendre(_projet(args), format_=args.format, par=args.by, tout=args.all).rstrip("\n"))
+    print(suite.rendre(_projet(args), format_=args.format, tout=args.all).rstrip("\n"))
     return 0
 
 
@@ -192,6 +192,27 @@ def cmd_new(args) -> int:
             print(trad("`--need {besoin}` : aucun besoin ouvert de ce nom ; une tâche nomme le besoin ouvert "
                        "qu'elle sert", besoin=besoin), file=sys.stderr)
             return 2
+    # Un besoin naît rangé (ADR-0118) : dans un jalon ouvert, ou en réserve
+    # avec sa raison. Tout refus vient avant la moindre écriture.
+    jalon, raison = getattr(args, "milestone", None), getattr(args, "reserve", None)
+    if (jalon is not None or raison is not None) and type_ != "B":
+        print(trad("`--milestone` et `--reserve` ne valent que pour un besoin (`need`) : ils le rangent"),
+              file=sys.stderr)
+        return 2
+    cible_jalon = mem.entree(jalon) if jalon is not None else None
+    if jalon is not None and (cible_jalon is None or not memoire.est_jalon(cible_jalon) or cible_jalon.archivee
+                              or cible_jalon.basculee or not cible_jalon.meta
+                              or memoire.couche_attendue(cible_jalon.fichier) != "backlog"
+                              or cible_jalon.statut in memoire.BACKLOG_CLOS):
+        print(trad("`--milestone {jalon}` : aucun jalon ouvert de ce nom ; un besoin rejoint un jalon ouvert",
+                   jalon=jalon), file=sys.stderr)
+        return 2
+    if raison is not None:
+        raison = " ".join(raison.split())
+        if not raison or "·" in raison:
+            print(trad("`--reserve` : une raison, non vide et sans « · », qui dit pourquoi le besoin attend hors "
+                       "des jalons"), file=sys.stderr)
+            return 2
     # Avec une mémoire privée, le contenu nouveau est privé par défaut
     # (cadrage, règles de classement, point 3), couche par couche selon la
     # politique (`[private] layers`). Une demande ne devient privée que
@@ -211,6 +232,10 @@ def cmd_new(args) -> int:
                    "l'aveugle. `--public` si elle peut être publique, sinon attendre l'accès.",
                    raison=acces.raison), file=sys.stderr)
         return 2
+    if cible_jalon is not None and prive and not cible_jalon.prive:
+        print(trad("`--milestone {jalon}` : un jalon public ne nomme pas un besoin privé ; `--public` si le besoin "
+                   "peut l'être", jalon=jalon), file=sys.stderr)
+        return 2
     from socle import identifiers as identifiants
 
     # Ceux que les branches distantes ont déjà pris aussi.
@@ -225,7 +250,7 @@ def cmd_new(args) -> int:
     squelette = langue.SQUELETTES[lg].get(type_, "")
     # Ce qui s'affiche avant l'identifiant, imprimé une fois l'entrée
     # écrite : une sortie coupée (`| head -1`) ne l'empêche plus.
-    index, ensuite = "", ""
+    index, ensuite, rangement = "", "", ""
     if type_ == "F":
         chemin = lieu(ch.canonique)
         _ajouter(chemin, f"\n## {ident} — {titre}\n\n{squelette}\n", langue.entete_fichier("canonique", zone, lg))
@@ -237,16 +262,21 @@ def cmd_new(args) -> int:
                  langue.entete_fichier("consignes", zone, lg))
     elif type_ in memoire.BACKLOG:
         # Le backlog s'affiche avec l'entrée ajoutée : un doublon se voit ici.
-        index = _texte_index(mem, "backlog")
-        chemin = _poser_backlog(lieu(ch.backlog), zone, lg, ident, titre, squelette,
-                                memoire.empreinte_index(mem, "backlog"), besoin)
+        # L'empreinte citée est celle du dernier commit (ADR-0116), qu'un
+        # statut changé avant le commit ne périme pas.
+        citable = memoire_citable(mem)
+        index = _texte_index(mem, "backlog", citable)
+        lu = memoire.empreinte_index(citable, "backlog")
+        chemin = _poser_backlog(lieu(ch.backlog), zone, lg, ident, titre, squelette, lu, besoin)
+        if type_ == "B":
+            rangement = _ranger_besoin(mem, lg, ident, chemin, cible_jalon, raison, prive)
         if tache is not None:
-            # Le besoin et sa tâche quand la correction est évidente : la
-            # tâche a lu l'index où son besoin figure déjà.
+            # Le besoin et sa tâche quand la correction est évidente : tous
+            # deux citent le même index.
             apres = memoire.Memoire.charger(racine)
             ident_t = apres.prochain_id("T", prive=prive, pris_ailleurs=identifiants.pris_ailleurs(racine, "T"))
             chemin_t = _poser_backlog(lieu(ch.backlog), zone, lg, ident_t, tache, langue.SQUELETTES[lg]["T"],
-                                      memoire.empreinte_index(apres, "backlog"), ident)
+                                      lu, ident)
             ensuite = f"{ident_t}\t{chemin_t.relative_to(racine)}"
     elif type_ == "J":
         bloc = f"\n## {ident} — {titre}\n\n{squelette}\n"
@@ -262,10 +292,11 @@ def cmd_new(args) -> int:
     elif type_ == "ADR":
         # Les décisions s'affichent avec celle qu'on ajoute : on ne rouvre pas
         # une décision prise sans fait nouveau.
-        index = _texte_index(mem, "decisions")
+        citable = memoire_citable(mem)
+        index = _texte_index(mem, "decisions", citable)
         chemin = lieu(ch.decisions) / f"{ident}-{memoire.nom_de_fichier(titre)}.md"
         chemin.parent.mkdir(parents=True, exist_ok=True)
-        bloc = squelette.format(date=jour, lu=memoire.empreinte_index(mem, "decisions"))
+        bloc = squelette.format(date=jour, lu=memoire.empreinte_index(citable, "decisions"))
         chemin.write_text(f"{langue.entete_fichier('decisions', zone, lg)}\n# {ident} — {titre}\n\n{bloc}\n",
                           encoding="utf-8")
     else:
@@ -283,6 +314,8 @@ def cmd_new(args) -> int:
     print(f"{ident}\t{chemin.relative_to(racine)}")
     if ensuite:
         print(ensuite)
+    if rangement:
+        print(rangement)
     if type_ == "D":
         # Le contrat, avant qu'elle soit écrite et non au refus du lint ;
         # après l'identifiant, que la première ligne garde (ADR-0058).
@@ -301,6 +334,38 @@ def _poser_backlog(dossier: Path, zone: str, lg: str, ident: str, titre: str, sq
     bloc = squelette.format(lu=lu, besoin=besoin or "")
     outils.ecrire(chemin, f"{langue.entete_fichier('backlog', zone, lg)}\n# {ident} — {titre}\n\n{bloc}\n")
     return chemin
+
+
+def _ranger_besoin(mem, lg: str, ident: str, chemin: Path, jalon, raison: str | None, prive: bool) -> str:
+    """Range le besoin neuf `ident` (ADR-0118) : à la fin de l'`après` du
+    jalon ouvert `jalon`, ou en réserve, sa raison et son tri (le plus haut
+    lot de sa zone) sur sa ligne de métadonnées. Rend la ligne à imprimer :
+    ce qui est fait ; sans l'un ni l'autre, quand un jalon est ouvert,
+    comment le ranger ; sinon, rien."""
+    from socle import memory as memoire, migration
+
+    if jalon is not None:
+        source = mem.racine / jalon.fichier
+        texte = source.read_text(encoding="utf-8")
+        deja = jalon.meta.get("apres", "").strip()
+        if "apres" in jalon.meta:
+            texte = migration._remeta(texte, remplacer={"apres": f"{deja}, {ident}" if deja else ident})
+        else:
+            texte = migration._remeta(texte, ajouter=[f"{langue.mot(langue.CHAMPS, 'apres', lg)} : {ident}"])
+        source.write_text(texte, encoding="utf-8")
+        return trad("`{id}` rangé dans le jalon `{jalon}`, à la fin de son `après`", id=ident, jalon=jalon.id)
+    if raison is not None:
+        tri = memoire.tri_a_ecrire(mem, prive)
+        champs = [f"{langue.mot(langue.CHAMPS, 'reserve', lg)} : {raison}"]
+        if tri:
+            champs.append(f"{langue.mot(langue.CHAMPS, 'trie', lg)} : {tri}")
+        chemin.write_text(migration._remeta(chemin.read_text(encoding="utf-8"), ajouter=champs), encoding="utf-8")
+        return trad("`{id}` en réserve : {champs}", id=ident, champs=" · ".join(champs))
+    g = memoire.Graphe(mem)
+    if not memoire.jalons_ouverts(g):
+        return ""
+    return trad("`{id}` n'a pas de place, que le commit exige : {ranger} ; à la création, `--milestone JA-NNNN` ou "
+                "`--reserve \"<raison>\"` le font", id=ident, ranger=memoire.comment_ranger(g, prive))
 
 
 def _ajouter(chemin: Path, bloc: str, entete: str | None = None):
@@ -340,6 +405,12 @@ def cmd_show(args) -> int:
         # montre qu'on a lu cette version-là.
         print(f"--- {ident}@{memoire.empreinte_entree(e)} ({lieu}) ---")
         print(e.texte)
+        if memoire.ref_ce_commit(e):
+            from socle import archive as archivage
+
+            commit = archivage.commit_qui_clot(projet.racine, e)
+            print(trad("\n--- ref « {mot} » : {commit} ---", mot=memoire.ref_ce_commit(e),
+                       commit=commit or trad("pas encore commité, le commit à venir")))
         if e.type == "D":
             d = next((d for d in demandes.toutes(projet.racine) if d.id == ident), None)
             if d and d.chemin_reponse:
@@ -495,13 +566,32 @@ def cmd_review(args) -> int:
     return 0
 
 
-def _texte_index(mem, index: str) -> str:
+def memoire_citable(mem):
+    """La mémoire dont l'index se cite (ADR-0116) : celle du dernier commit,
+    la base du travail ou un commit de sa plage, que `memoire.lectures`
+    accepte quoi que l'arbre change avant le commit suivant ; sans base de
+    travail (sans commit, ou sans branche par défaut), l'arbre, la seule
+    version que le hook de l'agent juge alors."""
+    from socle import memory as memoire
+
+    if mem.rev is not None or outils.base_de_travail(mem.racine) is None:
+        return mem
+    return memoire.Memoire.charger(mem.racine, "HEAD")
+
+
+def _texte_index(mem, index: str, citable=None) -> str:
+    """L'index de l'arbre, où un doublon du tour se voit, sous l'empreinte à
+    citer, celle du dernier commit (ADR-0116)."""
     from socle import memory as memoire
 
     lignes = memoire.lignes_index(mem, index)
-    return "\n".join([trad("--- index {index}@{empreinte} — à citer `lu : {index}@…` ---", index=index,
-                            empreinte=memoire.empreinte_index(mem, index)),
-                      "\n".join(lignes) if lignes else trad("(vide)")])
+    h = memoire.empreinte_index(citable if citable is not None else memoire_citable(mem), index)
+    if h == memoire.empreinte_index(mem, index):
+        entete = trad("--- index {index}@{empreinte} — à citer `lu : {index}@…` ---", index=index, empreinte=h)
+    else:
+        entete = trad("--- index {index}@{empreinte}, celui du dernier commit — à citer `lu : {index}@…` ; "
+                      "les lignes sont celles de l'arbre ---", index=index, empreinte=h)
+    return "\n".join([entete, "\n".join(lignes) if lignes else trad("(vide)")])
 
 
 def _afficher_index(mem, index: str):
@@ -821,6 +911,22 @@ def cmd_archive(args) -> int:
     return archivage.archiver_backlog(_projet(args))
 
 
+def cmd_close(args) -> int:
+    """Clôt « fait » une entrée ouverte du backlog en un geste : statut,
+    référence et rangement (ADR-0117)."""
+    from socle import archive as archivage, memory as memoire, state as etat
+
+    projet = _projet(args)
+    code = archivage.cloturer(projet, args.id, args.ref)
+    if code == 0 and args.id.lstrip("P").startswith("B-"):
+        # Le dernier besoin d'un jalon clos, sa clôture exige la réserve
+        # retriée : le dire maintenant, avant le refus (revue de L-0056).
+        ligne = etat.jalons_a_clore(memoire.Memoire.charger(projet.racine))
+        if ligne:
+            print(ligne)
+    return code
+
+
 def cmd_handoff(args) -> int:
     """La passation à une session neuve (skill `socle-handoff`) : `write`
     l'écrit dans la mémoire ; `check`, sans argument, la trouve sur les
@@ -923,7 +1029,7 @@ GROUPES = {
     a_traduire("pour l'humain"): ["help", "install", "init", "state", "roadmap", "consumption", "answer", "decision",
                                   "approve", "reviewed", "private install"],
     a_traduire("pour l'agent"): ["new", "show", "url", "review", "verify", "check", "next-id", "private",
-                                 "mutation-verdict", "mutation-run", "renumber", "archive", "handoff",
+                                 "mutation-verdict", "mutation-run", "renumber", "archive", "close", "handoff",
                                  "prune-branches", "checks"],
     a_traduire("internes (hooks, CI, moteur)"): ["hook", "ci", "selftest", "fingerprint"],
 }
@@ -986,16 +1092,14 @@ def analyseur() -> tuple[argparse.ArgumentParser, dict[str, str]]:
 
     from socle import roadmap as suite
 
-    s = sp.add_parser("roadmap", help=trad("la suite du projet d'un coup d'œil : jalons, lots, tâches et besoins, "
-                                           "calculés depuis le backlog"))
+    s = sp.add_parser("roadmap", help=trad("la suite du projet, pour la piloter : ce qui se fait maintenant, les "
+                                           "étapes qui suivent, ce qui revient à l'humain, calculés depuis le "
+                                           "backlog"))
     s.add_argument("--format", choices=suite.FORMATS, default="text",
-                   help=trad("text : une ligne par jalon et par lot (défaut) ; markdown : le lot en cours et les deux "
-                             "suivants tâche par tâche"))
-    s.add_argument("--by", choices=suite.LECTURES, default="batch",
-                   help=trad("batch : lire par lot (défaut) ; need : par besoin, chacun avec ses tâches et le lot "
-                             "de chacune"))
-    s.add_argument("--all", action="store_true", help=trad("en markdown, détailler tous les lots, ou tous les besoins ; "
-                                                           "en text, montrer chaque lot en sa ligne"))
+                   help=trad("text : pour le terminal (défaut) ; markdown : le même texte dans un bloc de code, pour "
+                             "la conversation et la CI"))
+    s.add_argument("--all", action="store_true", help=trad("déplier chaque étape en ses besoins, pas seulement la "
+                                                           "prochaine"))
     s.set_defaults(f=cmd_roadmap)
 
     from socle import consumption as consommation
@@ -1070,6 +1174,11 @@ def analyseur() -> tuple[argparse.ArgumentParser, dict[str, str]]:
     s.add_argument("--need", metavar="B-NNNN", help=trad("avec `task` : le besoin ouvert que la tâche sert"))
     s.add_argument("--task", metavar=trad("TITRE"), help=trad("avec `need` : crée aussi sa tâche, quand la "
                                                              "correction est évidente"))
+    place = s.add_mutually_exclusive_group()
+    place.add_argument("--milestone", metavar="JA-NNNN", help=trad("avec `need` : le range dans ce jalon ouvert, à "
+                                                                    "la fin de son `après`"))
+    place.add_argument("--reserve", metavar=trad("RAISON"), help=trad("avec `need` : le garde en réserve, hors des "
+                                                                      "jalons, avec sa raison et son tri"))
     zone = s.add_mutually_exclusive_group()
     zone.add_argument("--private", action="store_true", help=trad("dans la mémoire privée (défaut quand elle "
                                                                   "existe)"))
@@ -1223,6 +1332,14 @@ def analyseur() -> tuple[argparse.ArgumentParser, dict[str, str]]:
     s = sp.add_parser("archive", help=trad("range les entrées closes du backlog à l'écart des ouvertes, et les "
                                            "consignes levées dans le journal"))
     s.set_defaults(f=cmd_archive)
+
+    s = sp.add_parser("close", help=trad("clôt « fait » une entrée du backlog dont les critères sont cochés : son "
+                                         "statut, sa référence et son rangement, en un geste"))
+    s.add_argument("id")
+    s.add_argument("--ref", metavar="REF", help=trad("ce qui la clôt : une entrée du journal, une demande, "
+                                                     "`commit:<sha>` ; « ce commit » par défaut, le commit qui "
+                                                     "la clôt"))
+    s.set_defaults(f=cmd_close)
 
     s = sp.add_parser("handoff", help=trad("la passation à une session neuve : `write` l'écrit dans la mémoire ; "
                                            "`check`, sans argument, la trouve sur les branches distantes et juge "

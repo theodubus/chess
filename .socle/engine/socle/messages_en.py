@@ -181,9 +181,11 @@ MESSAGES: dict[str, str] = {
     "{chemin}, que git trouve par la fin de son chemin, `{mot}`":
         "{chemin}, which git finds by the end of its path, `{mot}`",
     "{chemin}, cité par `{qui}`, un écrivain que le hook ne sait pas lire : il peut l'écrire ; un fichier protégé "
-    "se lit par `cat` ou par l'outil de lecture":
+    "se lit par `cat` ou par l'outil de lecture, et un texte qui cite un chemin protégé s'écrit par l'outil "
+    "d'écriture":
         "{chemin}, cited by `{qui}`, a writer the hook cannot read: it may write it; a protected file is read with "
-        "`cat` or the file-reading tool",
+        "`cat` or the file-reading tool, and a text that cites a protected path is written with the file-writing "
+        "tool",
     "`{mot}`, dont {parts}":
         "`{mot}`, including {parts}",
     "`{mot}`, dans le dossier `{dossier}`":
@@ -225,10 +227,11 @@ MESSAGES: dict[str, str] = {
         "{n} parentheses or braces open at once, beyond {max}",
     "écriture d'un fichier protégé ({cible}) par le shell : seul l'humain modifie la politique, les hooks, la CI et "
     "le moteur (relance de l'installeur). Un fichier protégé changé par erreur, hors des réglages de Claude Code, se "
-    "remet à son état du dernier commit : {formes} (D-0098).":
+    "remet à son état du dernier commit : {formes}, ce dernier pour un fichier que git ne suit pas (D-0098).":
         "write to a protected file ({cible}) through the shell: only the human changes the policy, the hooks, the CI "
         "and the engine (by running the installer again). A protected file changed by mistake, except Claude Code's "
-        "settings, is put back as it was at the last commit: {formes} (D-0098).",
+        "settings, is put back as it was at the last commit: {formes}, the last one for a file git does not track "
+        "(D-0098).",
     "remise en état d'un fichier protégé refusée ({pourquoi}). Seule passe la remise d'un fichier protégé changé par "
     "erreur, hors des réglages de Claude Code, à son état du dernier commit, chaque chemin écrit en toutes lettres : "
     "{formes}, ce dernier pour un fichier que git ne suit pas (D-0098). Le reste revient à l'humain.":
@@ -331,6 +334,8 @@ MESSAGES: dict[str, str] = {
         "GitHub, not in your container.\n{liens}\nGive a file by its permalink (`socle url <path|ID>`, after the "
         "push); only put between backticks paths that exist in this repository, and those of another repository as "
         "`repo:path`.",
+    "Ton récap, l'humain l'a lu : le message qui ne corrige que ces liens n'a pas à le redire.":
+        "The human has read your recap: the message that only fixes these links need not repeat it.",
     "Ton dernier message cite {demandes}, en attente de l'humain, sans son lien : il doit pouvoir l'ouvrir d'un "
     "clic. Ajoute la sortie de `socle url {ids}`.":
         "Your last message cites {demandes}, waiting for the human, without its link: they must be able to open it "
@@ -895,6 +900,10 @@ MESSAGES: dict[str, str] = {
     "au besoin :":
         "{n} entry(ies) ask nothing (“To do: nothing”): their title only, and their text in `{fichier}`, to read "
         "when needed:",
+    "{n} entrée(s) datées d'avant le {jour}, jour du dernier commit de la copie remplacée, décrivent ce que le projet "
+    "a déjà : leur titre seul, et leur texte dans `{fichier}`, à lire au besoin :":
+        "{n} entry(ies) dated before {jour}, the day of the last commit of the replaced copy, describe what the "
+        "project already has: their title only, and their text in `{fichier}`, to read when needed:",
     "ouvrir l'agent dans le projet : il lit l'état au démarrage, et te donne le lien des questions de départ, une "
     "demande à laquelle tu réponds dans la conversation":
         "open the agent in the project: it reads the state at startup, and gives you the link of the starting "
@@ -1135,6 +1144,11 @@ MESSAGES: dict[str, str] = {
         "- “Where to look” gives a link; “Options” states the effort, the risk and the reversibility of each; "
         "“Consequences”, what happens if the human approves, if they reject, without an answer; “Recommendation” "
         "separates what is verified from what is assumed;",
+    "- une demande qui assouplit un garde-fou ou change une valeur attendue nomme, dans son texte, chaque clé des "
+    "garde-fous (`budgets.\"<fichier>\".max_bytes`) ou fonction de test qu'elle couvre : sa validation n'autorise "
+    "que ce qu'elle nomme ;":
+        "- a request that relaxes a guardrail or changes an expected value names, in its text, each guardrail key "
+        "(`budgets.\"<file>\".max_bytes`) or test function it covers: its approval authorizes only what it names;",
     "- « Réponses possibles » propose les réponses de base : {reponses}.":
         "- “Possible answers” offers the base answers: {reponses}.",
     "Son budget : {budget} octets, les lignes d'empreinte mises à part.":
@@ -1939,6 +1953,10 @@ MESSAGES: dict[str, str] = {
         "reviewed: {sha} can leave for the public repository",
     "--- index {index}@{empreinte} — à citer `lu : {index}@…` ---":
         "--- index {index}@{empreinte} — to cite `read : {index}@…` ---",
+    "--- index {index}@{empreinte}, celui du dernier commit — à citer `lu : {index}@…` ; "
+    "les lignes sont celles de l'arbre ---":
+        "--- index {index}@{empreinte}, that of the last commit — to cite `read : {index}@…`; "
+        "the lines are those of the working tree ---",
     "(vide)":
         "(empty)",
     "demande introuvable : {demande}":
@@ -2276,8 +2294,14 @@ MESSAGES: dict[str, str] = {
         "version “{version}” unknown or not pushed",
     "lien relatif « {cible} » : hors du conteneur, il ne mène nulle part":
         "relative link “{cible}”: outside the container, it leads nowhere",
-    "`{code}` : aucun chemin de ce nom dans le dépôt, le lien qu'en fait le client mène à un 404":
-        "`{code}`: no path of that name in the repository, the link the client makes of it leads to a 404",
+    "`{code}` : aucun chemin de ce nom dans le dépôt, le lien qu'en fait le client mène à un 404 ; le seul fichier "
+    "suivi de ce nom est `{complet}` : écrire ce chemin complet":
+        "`{code}`: no path of that name in the repository, the link the client makes of it leads to a 404; the only "
+        "tracked file of that name is `{complet}`: write this full path",
+    "`{code}` : aucun chemin de ce nom dans le dépôt, le lien qu'en fait le client mène à un 404 ; il ne désigne pas "
+    "un seul fichier suivi : l'écrire sans accents graves":
+        "`{code}`: no path of that name in the repository, the link the client makes of it leads to a 404; it does "
+        "not name a single tracked file: write it without backticks",
     "`{code}` : présent sur le disque du conteneur mais ignoré par git, le lien qu'en fait le client mène à un 404 : ne pas le citer":
         "`{code}`: present on the container's disk but ignored by git, the link the client makes of it leads to a 404: do not cite it",
     "capacité absente : {absent}":
@@ -2811,6 +2835,8 @@ MESSAGES: dict[str, str] = {
         "fast steps longer than their one-second threshold, run by the pre-push hook",
     "correctif sans test de régression":
         "fix without a regression test",
+    "correctif de la documentation qui touche aussi un fichier qu'aucun adaptateur ne juge, sans test":
+        "fix of the documentation that also touches a file no adapter judges, without a test",
     "correctif dont le `Corrige:` est hors du dernier paragraphe du message, sans test de régression":
         "fix whose `Corrige:` is outside the last paragraph of the message, without a regression test",
     "test de régression qui échoue sur le parent faute de s'y charger":
@@ -3128,12 +3154,19 @@ MESSAGES: dict[str, str] = {
         "end of intervention that does not say what comes next",
     "fin d'intervention dont la seule ligne « Ensuite : » est celle d'une sortie collée dans un bloc de code":
         "end of intervention whose only “Next:” line is that of an output pasted in a code block",
+    "fin d'intervention dont la seule ligne « Pour toi : » est celle de la suite du projet collée dans un bloc de "
+    "code":
+        "end of intervention whose only “For you:” line is that of the project's roadmap pasted in a code block",
     "chemin cité présent sur le disque seulement, qu'une règle locale de git ignore":
         "cited path present on disk only, ignored by a local git rule",
     "un fichier neuf cité par la mémoire, ajouté par le même commit, passe la fin de tour, le commit et la CI":
         "a new file cited by the memory, added by the same commit, passes the end of turn, the commit and the CI",
     "chemin donné à l'humain qui n'existe pas dans le dépôt":
         "path given to the human that does not exist in the repository",
+    "nom nu d'un fichier suivi donné à l'humain entre accents graves, sans son chemin":
+        "bare name of a tracked file given to the human between backticks, without its path",
+    "message sans récap qui suit, dans le même tour, un message refusé pour son récap et ses liens":
+        "message without a recap that follows, in the same turn, a message refused for its recap and its links",
     "lien relatif, que l'humain ne peut pas suivre hors du conteneur":
         "relative link, which the human cannot follow outside the container",
     "permalien vers un fichier absent de la version poussée":
@@ -3166,6 +3199,8 @@ MESSAGES: dict[str, str] = {
         "a complete change passes the end of turn, the commit and the CI",
     "un correctif avec son test de régression passe la CI":
         "a fix with its regression test passes the CI",
+    "un correctif de la seule documentation, avec la mémoire, passe la CI sans test":
+        "a fix of the documentation alone, with the memory, passes the CI without a test",
     "un correctif dont le `Corrige:` est hors du dernier paragraphe du message, avec son test de régression, passe la CI":
         "a fix whose `Corrige:` is outside the last paragraph of the message, with its regression test, passes the CI",
     "un commit sans hooks dans un dépôt jetable, hors du projet, passe le hook de l'agent":
@@ -3333,12 +3368,16 @@ MESSAGES: dict[str, str] = {
         "an answer given in the conversation, relayed with its quote, passes the hook and the CI",
     "une fin d'intervention avec « Pour toi : » et « Ensuite : » passe le hook de fin de tour":
         "an end of intervention with “For you:” and “Next:” passes the end-of-turn hook",
-    "une fin d'intervention avec ses deux lignes en texte et un compact collé dans un bloc de code passe le hook "
-    "de fin de tour":
-        "an end of intervention with its two lines as text and a compact output pasted in a code block passes the "
-        "end-of-turn hook",
+    "une fin d'intervention avec ses deux lignes en texte et la suite du projet collée dans un bloc de code passe le "
+    "hook de fin de tour":
+        "an end of intervention with its two lines as text and the project's roadmap pasted in a code block passes "
+        "the end-of-turn hook",
     "des liens que l'humain peut suivre passent le hook de fin de tour":
         "links the human can follow pass the end-of-turn hook",
+    "un message qui ne corrige que les liens d'un message refusé pour eux seuls, qui portait le récap, passe le hook "
+    "de fin de tour sans redire le récap (B-0371)":
+        "a message that only fixes the links of a message refused for them alone, which carried the recap, passes "
+        "the end-of-turn hook without repeating the recap (B-0371)",
     "une branche donnée à supprimer que l'origine a encore passe le hook de fin de tour":
         "a branch given to delete that the origin still has passes the end-of-turn hook",
     "une fonction ajoutée avec le test qui la nomme passe la CI":
@@ -3643,6 +3682,10 @@ MESSAGES: dict[str, str] = {
         "{faute} — disposable branch, a file it adds: warned, its pull request will judge it",
     "{sha} « {sujet} » : correctif qui ne touche que des fichiers tiers : non jugé":
         "{sha} “{sujet}”: fix that touches only third-party files: not judged",
+    "{sha} « {sujet} » : correctif qui ne touche que la mémoire : non jugé":
+        "{sha} “{sujet}”: fix that touches only the memory: not judged",
+    "{sha} « {sujet} » : correctif qui ne touche que la documentation et la mémoire : non jugé":
+        "{sha} “{sujet}”: fix that touches only the documentation and the memory: not judged",
     "{sha} « {sujet} » : correctif hors de tout adaptateur, admis sans test par {id}, une demande validée qui nomme "
     "ce commit":
         "{sha} “{sujet}”: fix outside every adapter, admitted without a test by {id}, an approved request that "
@@ -3707,6 +3750,65 @@ MESSAGES: dict[str, str] = {
         '`--need {besoin}`: no open need of that name; a task names the open need it serves',
     '`--task` ne vaut que pour un besoin (`need`) : il crée le besoin et sa tâche':
         '`--task` only applies to a need (`need`): it creates the need and its task',
+    # Un besoin naît rangé (ADR-0118).
+    '`--milestone` et `--reserve` ne valent que pour un besoin (`need`) : ils le rangent':
+        '`--milestone` and `--reserve` only apply to a need (`need`): they place it',
+    '`--milestone {jalon}` : aucun jalon ouvert de ce nom ; un besoin rejoint un jalon ouvert':
+        '`--milestone {jalon}`: no open milestone of that name; a need joins an open milestone',
+    '`--reserve` : une raison, non vide et sans « · », qui dit pourquoi le besoin attend hors des jalons':
+        '`--reserve`: a reason, not empty and without “·”, which says why the need waits outside the milestones',
+    "`--milestone {jalon}` : un jalon public ne nomme pas un besoin privé ; `--public` si le besoin peut l'être":
+        '`--milestone {jalon}`: a public milestone does not name a private need; `--public` if the need can be',
+    '`{id}` rangé dans le jalon `{jalon}`, à la fin de son `après`':
+        '`{id}` placed in the milestone `{jalon}`, at the end of its `after`',
+    '`{id}` en réserve : {champs}':
+        '`{id}` in reserve: {champs}',
+    "`{id}` n'a pas de place, que le commit exige : {ranger} ; à la création, `--milestone JA-NNNN` ou "
+    "`--reserve \"<raison>\"` le font":
+        '`{id}` has no place, which the commit requires: {ranger}; at creation, `--milestone JA-NNNN` or '
+        '`--reserve "<reason>"` do it',
+    'avec `need` : le range dans ce jalon ouvert, à la fin de son `après`':
+        'with `need`: places it in this open milestone, at the end of its `after`',
+    'avec `need` : le garde en réserve, hors des jalons, avec sa raison et son tri':
+        'with `need`: keeps it in reserve, outside the milestones, with its reason and its sorting',
+    'RAISON':
+        'REASON',
+    '`réserve : <raison> · trié : {tri}`':
+        '`reserve : <reason> · sorted : {tri}`',
+    '`réserve : <raison>`':
+        '`reserve : <reason>`',
+    "l'ajouter à l'`après` d'un jalon ouvert{jalons}, ou écrire sur sa ligne de métadonnées {champs}":
+        'add it to the `after` of an open milestone{jalons}, or write on its metadata line {champs}',
+    'Un besoin de la réserve a sa raison quand il y entre, et la réserve est triée quand un jalon se clôt.':
+        'A need of the reserve has its reason when it enters it, and the reserve is sorted when a milestone closes.',
+    "`{jalon}` se clôt sur une réserve non triée : {ids} ; avant de clore un jalon, chaque besoin de la réserve "
+    "rejoint un jalon à venir, reste en réserve, sa raison et son tri récrits ({champs}), ou se propose à l'humain "
+    "pour abandon, par une demande que sa raison nomme":
+        '`{jalon}` closes over an unsorted reserve: {ids}; before closing a milestone, each need of the reserve joins '
+        'a milestone to come, stays in reserve, its reason and its sorting rewritten ({champs}), or is proposed to '
+        'the human for abandonment, by a request that its reason names',
+    ' et {n} de la mémoire privée':
+        ' and {n} of the private memory',
+    '{n} de la mémoire privée':
+        '{n} of the private memory',
+    "besoins à placer (en réserve, sans raison ou sans tri depuis {n} lots clos) : {ids} ; à la clôture du lot, "
+    "chacun dans un jalon, ou {champs}":
+        'needs to place (in reserve, without a reason or unsorted for {n} closed batches): {ids}; at the closing of '
+        'the batch, each in a milestone, or {champs}',
+    "jalons à clore, leurs besoins clos : {jalons} ; avant, la réserve se retrie ({n} besoin(s)) : chacun dans un "
+    "jalon à venir, ou {champs}, ou son abandon proposé à l'humain par une demande":
+        'milestones to close, their needs closed: {jalons}; before that, the reserve is sorted again ({n} need(s)): '
+        'each in a milestone to come, or {champs}, or its abandonment proposed to the human by a request',
+    '{n} à placer':
+        '{n} to place',
+    'un besoin nouveau':
+        'a new need',
+    "un besoin sorti d'un jalon ouvert":
+        'a need taken out of an open milestone',
+    "`{id}`, {quoi}, n'a pas de place : {ranger} ; à sa création, `socle new need \"…\" --milestone JA-NNNN` ou "
+    "`--reserve \"<raison>\"`":
+        '`{id}`, {quoi}, has no place: {ranger}; at its creation, `socle new need "…" --milestone JA-NNNN` or '
+        '`--reserve "<reason>"`',
     "`après` qui nomme l'ancien numéro d'une entrée renumérotée":
         '`after` naming the former number of a renumbered entry',
     "`{ancien}` est l'ancien numéro de `{id}` : il ne se réattribue jamais, `socle renumber {ancien}` donne à l'entrée qui le prend le prochain libre":
@@ -3797,6 +3899,18 @@ MESSAGES: dict[str, str] = {
         'milestone',
     "jalon fait alors que le besoin qu'il attend est ouvert":
         'milestone done while the need it waits on is open',
+    "besoin nouveau qu'aucun jalon ouvert n'attend, sans raison de réserve, quand un jalon est ouvert (ADR-0118)":
+        'new need that no open milestone waits on, without a reserve reason, when a milestone is open (ADR-0118)',
+    "un besoin nouveau rangé dans le jalon ouvert par `socle new need --milestone`, et un autre gardé en réserve "
+    "par `--reserve`, passent le commit et la CI (ADR-0118)":
+        'a new need placed in the open milestone by `socle new need --milestone`, and another kept in reserve by '
+        '`--reserve`, pass the commit and the CI (ADR-0118)',
+    "jalon clos alors qu'un besoin de la réserve n'a pas sa raison (ADR-0118)":
+        'milestone closed while a need of the reserve has no reason (ADR-0118)',
+    "un jalon clos par `socle close` sur une réserve triée, chaque besoin avec sa raison, passe le commit et la CI "
+    "(ADR-0118)":
+        'a milestone closed by `socle close` over a sorted reserve, each need with its reason, passes the commit and '
+        'the CI (ADR-0118)',
     'lot':
         'batch',
     'lot qui attend un besoin, et non sa tâche':
@@ -3923,116 +4037,87 @@ MESSAGES: dict[str, str] = {
     "un petit lot qui ne touche aucun garde-fou, `socle review --short` en donne le dossier court":
         "a small batch that touches no guardrail, `socle review --short` gives its short dossier",
     # La suite du projet, `socle roadmap`.
-    '{n} tâche dans aucun lot':
-        '{n} task in no batch',
-    '{n} tâches dans aucun lot':
-        '{n} tasks in no batch',
-    '{n} besoin sans tâche':
-        '{n} need with no task',
-    '{n} besoins sans tâche':
-        '{n} needs with no task',
-    '{n} besoin à fermer':
-        '{n} need to close',
-    '{n} besoins à fermer':
-        '{n} needs to close',
-    '{n} bloqué ({ids})':
-        '{n} blocked ({ids})',
-    '{n} bloqués ({ids})':
-        '{n} blocked ({ids})',
-    "{n} pour l'humain":
-        '{n} for the human',
-    '{n} demande en attente':
-        '{n} pending request',
-    '{n} demandes en attente':
-        '{n} pending requests',
-    'attend {n} demande':
-        'waits on {n} request',
-    'attend {n} demandes':
-        'waits on {n} requests',
-    '{ids} et {n} autre':
-        '{ids} and {n} more',
-    '{ids} et {n} autres':
-        '{ids} and {n} more',
-    '{clos}/{total} besoins clos':
-        '{clos}/{total} needs closed',
-    'Hors lot : {comptes}':
-        'Outside the batches: {comptes}',
-    'rien':
-        'nothing',
-    'puis {ids}':
-        'then {ids}',
-    'Ensuite : {suite}':
-        'Next: {suite}',
-    "ordre ambigu : {a} et {b} attendent tous deux {p}, sans ordre entre eux — que l'un attende l'autre":
-        "ambiguous order: {a} and {b} both wait on {p}, with no order between them — make one wait on the other",
-    'Hors des jalons':
-        'Outside the milestones',
-    '…  {premier} à {dernier}':
-        '…  {premier} to {dernier}',
-    'Tâche':
-        'Task',
-    'Lot':
-        'Batch',
-    'Besoin':
-        'Need',
-    'Entrée':
-        'Entry',
-    'Demande':
-        'Request',
-    "Calculée depuis le backlog par `{commande} --format markdown` : rien n'y est écrit à la main.":
-        'Computed from the backlog by `{commande} --format markdown`: nothing in it is written by hand.',
-    'Légende : ✓ faite · ▶ en cours · ○ prête · ⏳ attend · ✗ bloquée · ⊘ abandonnée · ↑ priorité haute · ↓ '
-    'priorité basse':
-        'Key: ✓ done · ▶ in progress · ○ ready · ⏳ waiting · ✗ blocked · ⊘ abandoned · ↑ high priority · ↓ '
-        'low priority',
-    '(`--all` pour tout le détail)':
-        '(`--all` for the full detail)',
+    'La suite de {nom} — {date}':
+        'The roadmap of {nom} — {date}',
+    "La suite d'{nom} — {date}":
+        'The roadmap of {nom} — {date}',
+    'La suite — {date}':
+        'The roadmap — {date}',
+    'janvier':
+        'January',
+    'février':
+        'February',
+    'mars':
+        'March',
+    'avril':
+        'April',
+    'mai':
+        'May',
+    'juin':
+        'June',
+    'juillet':
+        'July',
+    'août':
+        'August',
+    'septembre':
+        'September',
+    'octobre':
+        'October',
+    'novembre':
+        'November',
+    'décembre':
+        'December',
+    'Maintenant':
+        'Now',
+    '{maintenant} : rien en cours':
+        '{maintenant}: nothing in progress',
+    'reste :':
+        'left:',
+    'besoin :':
+        'need:',
+    'prête :':
+        'ready:',
+    'et {n} autre':
+        'and {n} more',
+    'et {n} autres':
+        'and {n} more',
+    '{n} besoin clos':
+        '{n} need closed',
+    '{n} besoins clos':
+        '{n} needs closed',
     'Ensuite':
         'Next',
-    'ni jalon ni lot au backlog':
-        'no milestone and no batch in the backlog',
-    'La suite du projet':
-        "The project's roadmap",
-    'Ni jalon ni lot au backlog.':
-        'No milestone and no batch in the backlog.',
-    'Demandes en attente':
-        'Pending requests',
-    ' … et {n} autre(s) : `--all`':
-        ' … and {n} more: `--all`',
-    '- **Après les jalons**, dans aucun jalon : {ids}{suite}':
-        '- **After the milestones**, in no milestone: {ids}{suite}',
-    'attend {ids}':
-        'waits on {ids}',
-    'dans aucun lot':
-        'in no batch',
-    "Pour l'humain":
-        'For the human',
-    'Hors des lots':
-        'Outside the batches',
-    "Besoins, dans l'ordre des lots":
-        'Needs, in the order of the batches',
-    "Lots, dans leur ordre d'exécution":
-        'Batches, in their order of execution',
-    'Bloqués':
-        'Blocked',
-    'Besoins à fermer, leurs tâches closes':
-        'Needs to close, their tasks closed',
-    'Tâches dans aucun lot':
-        'Tasks in no batch',
-    'Besoins à découper en tâches':
-        'Needs to split into tasks',
-    "la suite du projet d'un coup d'œil : jalons, lots, tâches et besoins, calculés depuis le backlog":
-        "the project's roadmap at a glance: milestones, batches, tasks and needs, computed from the backlog",
-    'text : une ligne par jalon et par lot (défaut) ; markdown : le lot en cours et les deux suivants tâche par '
-    'tâche':
-        'text: one line per milestone and per batch (default); markdown: the batch in progress and the next two '
-        'task by task',
-    'batch : lire par lot (défaut) ; need : par besoin, chacun avec ses tâches et le lot de chacune':
-        'batch: read by batch (default); need: by need, each with its tasks and the batch of each',
-    'en markdown, détailler tous les lots, ou tous les besoins ; en text, montrer chaque lot en sa ligne':
-        'in markdown, detail every batch, or every need; in text, show every batch on its own line',
-    "  la suite : `python3 .socle/socle roadmap` (détaillée : `--format markdown`)":
-        "  the roadmap: `python3 .socle/socle roadmap` (detailed: `--format markdown`)",
+    'Pour toi :':
+        'For you:',
+    'En réserve : {compte}':
+        'In reserve: {compte}',
+    '{n} besoin':
+        '{n} need',
+    '{n} besoins':
+        '{n} needs',
+    'dont {n} prioritaire':
+        '{n} of them high priority',
+    'dont {n} prioritaires':
+        '{n} of them high priority',
+    '{attention} : {alerte}':
+        '{attention}: {alerte}',
+    'Attention':
+        'Warning',
+    'bloqué : {entree}':
+        'blocked: {entree}',
+    "ordre ambigu : {a} et {b} attendent tous deux {p}, sans ordre entre eux — que l'un attende l'autre":
+        "ambiguous order: {a} and {b} both wait on {p}, with no order between them — make one wait on the other",
+    "la suite du projet, pour la piloter : ce qui se fait maintenant, les étapes qui suivent, ce qui revient à "
+    "l'humain, calculés depuis le backlog":
+        "the project's roadmap, to steer it: what is being done now, the steps that follow, what falls to the "
+        "human, computed from the backlog",
+    'text : pour le terminal (défaut) ; markdown : le même texte dans un bloc de code, pour la conversation et la '
+    'CI':
+        'text: for the terminal (default); markdown: the same text in a code block, for the conversation and the CI',
+    'déplier chaque étape en ses besoins, pas seulement la prochaine':
+        'unfold every step into its needs, not only the next one',
+    "  la suite : `python3 .socle/socle roadmap`":
+        "  the roadmap: `python3 .socle/socle roadmap`",
     # La consommation d'une session de Claude Code (`socle consumption`).
     "ce qu'une session de Claude Code a coûté, et ce qui l'a fait coûter, lu dans ses transcriptions":
         "what a Claude Code session cost, and what made it cost, read in its transcripts",
@@ -4207,8 +4292,6 @@ MESSAGES: dict[str, str] = {
         "no commit: nothing to hand off",
     "`--chain` compte des lots : 0 ou plus":
         "`--chain` counts batches: 0 or more",
-    "rien":
-        "nothing",
     "la tête est détachée, sur aucune branche : se placer d'abord sur la branche de travail, que la passation nomme":
         "the head is detached, on no branch: first move to the working branch, which the handoff names",
     "la passation que l'humain fait reprendre porte la chaîne 0, que sa demande remet à zéro : `--chain` va avec "
@@ -4247,6 +4330,20 @@ MESSAGES: dict[str, str] = {
         "{distant}` first",
     "passation : en attente sur {ref}, écrite à {heure} — une demande de reprendre (« reprends ») la reprend":
         "handoff: waiting on {ref}, written at {heure} — a request to resume (\"resume\") resumes it",
+    "!! passation : retard de la tête locale incalculable ({erreur})":
+        "!! handoff: lag of the local head cannot be computed ({erreur})",
+    "les instructions, les skills et les hooks chargés au démarrage sont ceux d'avant, et changent dans {liste} : "
+    "avant tout travail, lire ce qui change (`git diff {tete} {ref} -- {chemins}`)":
+        "the instructions, skills and hooks loaded at startup are the earlier ones, and change in {liste}: before "
+        "any work, read what changes (`git diff {tete} {ref} -- {chemins}`)",
+    "aucun fichier d'instructions, de skills ni de hooks ne change entre les deux":
+        "no instructions, skills or hooks file changes between the two",
+    "!! LA TÊTE LOCALE ({tete}) EST EN RETARD SUR {ref}, qui porte la passation en attente : la mémoire lue ici est "
+    "celle d'avant ; {lus}. La reprise se place sur la référence que la garde nomme (`socle handoff check`, après "
+    "`git fetch`).":
+        "!! THE LOCAL HEAD ({tete}) IS BEHIND {ref}, which carries the waiting handoff: the memory read here is the "
+        "earlier one; {lus}. The resumption moves onto the reference the guard names (`socle handoff check`, after "
+        "`git fetch`).",
     "passation : illisible ({erreur})":
         "handoff: unreadable ({erreur})",
     "--head {tete} est introuvable dans ce clone : `git fetch {distant}` d'abord ; sinon, la branche a été réécrite "
@@ -4391,9 +4488,10 @@ MESSAGES: dict[str, str] = {
         "`{id}` without the human's exact text: the body quotes it word for word, on a `>` line separated from the "
         "metadata line by a blank line",
     "`{ident}`, une consigne de l'humain, cité sans son empreinte : son texte exact se lit avant de s'appuyer sur "
-    "elle, `python3 .socle/socle show {ident}`, et se cite `{ident}@<empreinte>`, l'empreinte affichée":
+    "elle, `python3 .socle/socle show {ident}`, et se cite `{ident}@{h}`, l'empreinte de sa version actuelle":
         "`{ident}`, a directive of the human, cited without its fingerprint: its exact text is read before relying "
-        "on it, `python3 .socle/socle show {ident}`, and it is cited `{ident}@<fingerprint>`, the fingerprint shown",
+        "on it, `python3 .socle/socle show {ident}`, and it is cited `{ident}@{h}`, the fingerprint of its current "
+        "version",
     "`{id}` levée sans `levée-par : D-NNNN` — une consigne ne se lève que par la parole de l'humain : une demande "
     "qu'il a validée, en séance comme en file":
         "`{id}` lifted without `lifted-by : D-NNNN` — a directive is only lifted by the human's word: a request they "
@@ -4424,6 +4522,8 @@ MESSAGES: dict[str, str] = {
     # L'auto-test de la couche des consignes (B-0161).
     "consigne de l'humain citée dans le journal sans son empreinte":
         "human's directive cited in the journal without its fingerprint",
+    "consigne d'avant la plage citée sans son empreinte dans le commit qui en pose une autre":
+        "directive from before the range cited without its fingerprint in the commit that adds another one",
     "consigne de l'humain citée dans le journal sous une empreinte périmée":
         "human's directive cited in the journal under a stale fingerprint",
     "consigne dont la ligne de résumé dépasse 120 octets": "directive whose summary line exceeds 120 bytes",
@@ -4442,10 +4542,52 @@ MESSAGES: dict[str, str] = {
     "le commit":
         "a directive cited in the journal under the fingerprint of its current version, its summary line rewritten, "
         "passes the commit",
+    "une consigne posée dans la plage, citée sans son empreinte dans le journal du même commit, passe le commit et la "
+    "CI (B-0372)":
+        "a directive added in the range, cited without its fingerprint in the journal of the same commit, passes the "
+        "commit and the CI (B-0372)",
     "une consigne levée par la parole de l'humain, consignée en séance, puis rangée par `socle archive`, passe la CI":
         "a directive lifted by the human's word, recorded in session, then moved by `socle archive`, passes the CI",
     "une consigne nouvelle posée par `socle new directive`, sa source et le texte exact écrits, passe le commit, et "
     "l'état donne sa ligne de résumé":
         "a new directive set by `socle new directive`, its source and exact text written, passes the commit, and the "
         "state gives its summary line",
+    "socle — mise à jour du moteur en cours, pas encore commitée : {n} constat(s) déjà présent(s) dans l'arbre "
+    "d'où part ce commit ou ce push, écarté(s) ici et laissé(s) à la CI ; seuls ceux qu'il apporte sont refusés":
+        "socle — engine update in progress, not yet committed: {n} finding(s) already present in the tree this "
+        "commit or push starts from, set aside here and left to CI; only those it brings are refused",
+    "refus : {raison}":
+        "refused: {raison}",
+    "`{id}` clos « fait », ref : {ref}":
+        "`{id}` closed “done”, ref: {ref}",
+    "Ensuite : le commiter avec le travail qui le fait":
+        "Next: commit it with the work that does it",
+    "`{id}` n'est pas une entrée du backlog : `socle close` ne clôt que le backlog":
+        "`{id}` is not a backlog entry: `socle close` only closes the backlog",
+    "`{id}` est basculée dans la mémoire privée : sa copie privée se clôt":
+        "`{id}` was made private: its private copy is the one to close",
+    "`{id}` est déjà clos (« {statut} »)":
+        "`{id}` is already closed (“{statut}”)",
+    "`{id}` n'a pas de ligne de métadonnées lisible":
+        "`{id}` has no readable metadata line",
+    "`{id}` ne se clôt pas, rien n'est changé ; les contrôles du backlog le refuseraient clos :":
+        "`{id}` does not close, nothing is changed; the backlog checks would refuse it closed:",
+    "clôt « fait » une entrée du backlog dont les critères sont cochés : son statut, sa référence et son "
+    "rangement, en un geste":
+        "closes a backlog entry whose criteria are checked as “done”: its status, its reference and its filing, in "
+        "one step",
+    "ce qui la clôt : une entrée du journal, une demande, `commit:<sha>` ; « ce commit » par défaut, le commit qui "
+    "la clôt":
+        "what closes it: a journal entry, a request, `commit:<sha>`; “this commit” by default, the commit that "
+        "closes it",
+    "\n--- ref « {mot} » : {commit} ---":
+        "\n--- ref “{mot}”: {commit} ---",
+    "pas encore commité, le commit à venir":
+        "not committed yet, the commit to come",
+    "tâche faite dont la `ref` n'est que de la prose, ni une référence ni « ce commit »":
+        "task done whose `ref` is only prose, neither a reference nor “this commit”",
+    "une tâche cochée close par `socle close`, sa référence « ce commit », passe le commit et la CI (ADR-0117)":
+        "a checked task closed by `socle close`, its reference “this commit”, passes the commit and CI (ADR-0117)",
+    "`{id}` ne se clôt pas : `{chemin}` existe déjà, à la place où elle se range":
+        "`{id}` does not close: `{chemin}` already exists, where it would be filed",
 }

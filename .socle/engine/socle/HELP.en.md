@@ -139,73 +139,65 @@ the box names: the request and your answer, the report's file, what
 same files, carried out and reviewed together; a **milestone** (`JA-`),
 the needs that serve one goal. Each says what it waits on (`after`:
 another entry, or a request until it is answered), and its boxes are all
-checked before closing it. It submits each document as a request. Just
+checked before closing it; the agent then closes it in one step, `socle
+close`, which sets its status, its reference (by default, the commit that
+closes it) and its filing. A need is born placed, in a milestone (`socle
+new need "…" --milestone JA-NNNN`) or in the reserve, outside the
+milestones, with its reason and the batch of its sorting (`--reserve
+"<reason>"`): at the closing of a batch, the agent sorts those the state
+calls to place, without a reason or unsorted for fifteen closed batches,
+and sorts the whole reserve again before closing a milestone, each need
+joining a milestone to come, kept with its reason, or proposed for
+abandonment in a request. It submits each document as a request. Just
 ask it to; the state then gives the next milestone, the next batch and
 the progress of its tasks, the ready tasks, and the needs to split into
 tasks or to close. The whole roadmap, at a glance, reads in a terminal with
-`python3 .socle/socle roadmap` (one line per milestone and per batch;
-`--format markdown` details the batch in progress and the next two,
-`--by need` reads by need, `--by batch`, the default, by batch), on the page of each CI run, and in the
+`python3 .socle/socle roadmap`, on the page of each CI run, and in the
 conversation: ask the agent for “the roadmap”.
 
-The compact format aligns in columns the batches, strictly in their
-order of execution, each with its tasks closed out of the total, the
-batch in progress marked ▶. A milestone's heading, with its needs closed
-out of the total, is written each time the milestone changes from one
-batch to the next: a milestone whose batches alternate with another's
-comes back, and the batches that serve no milestone have the heading
-"Outside the milestones" in their place. The batch in progress and the
-next two, whatever their milestone, have a line each; outside this
-window, a run of batches of the same milestone fits on one line, and a
-single batch keeps its own (`--all` shows them all). It ends with what is
-outside the batches, counted, and with what comes next: the milestones
-with no batch, with their first open needs, then the needs in no
-milestone. It names no request. For example, the identifiers written here
-`X-NNNN`:
+It has a single form, in four parts. **Now**: each batch in progress,
+marked ▶, then each need it carries, with its first open tasks; with no
+batch in progress, the first ready task. **Next**: the open milestones, in their order of execution,
+numbered, each with its needs closed out of their total, between
+brackets of equal width that align the titles; only the first, the next
+step, is unfolded into its needs: the closed ones counted on one ✓
+line, then ▶ served by a batch in progress, · other (`--all` unfolds them all). **For you**: what is up to
+you, the actions to take and the pending requests. **In
+reserve**: the needs in no milestone, counted, and how many are to place. A “Warning:” line tells of
+a blocked entry, or of two batches whose order is not deduced. A title
+reads up to its first colon. In the terminal, each title is followed by
+its identifier, a line wraps under its own column, at the width of a
+phone, and no request is named by its own. For example, the identifiers
+written here `X-NNNN`:
 
 ```text
-JA-NNNN  Done before the new features           1/11 needs closed
- ▶ L-NNNN  Backlog structure, going in circles  2/3   in progress
-   L-NNNN  Duration of the verification         0/2
-   L-NNNN  Rest of the backlog structure        1/5
-   …  L-NNNN to L-NNNN                          0/10
-Outside the batches: 4 needs with no task · 1 blocked (B-NNNN)
-Next: JA-NNNN The pilot equipped (B-NNNN) · then B-NNNN, B-NNNN
+The roadmap of Fou — 27 November
+
+Now
+ ▶ Finish adopting the socle (L-NNNN)
+   need: Adopting the socle (B-NNNN)
+     left: Move CLAUDE.md into
+           AGENTS.md (T-NNNN)
+
+Next
+1. [1/4] Ship the N10 network (JA-NNNN)
+         ✓ 1 need closed
+         · Measure N10 against N8 (B-NNNN)
+         · Ship N10 in the binary (B-NNNN)
+         · Place the engine on the CCRL
+           list (B-NNNN)
+2. [0/3] Tune the search with SPSA (JA-NNNN)
+3. [0/2] Speed up the search (JA-NNNN)
+4. [0/3] New network architecture (JA-NNNN)
+
+For you: Copy the training data to a hard
+         drive (B-NNNN)
+In reserve: 12 needs, 2 of them high priority
 ```
 
-The detailed format, in Markdown, follows the same order under the same
-headings, and gives the batch in progress and the next two, each with the
-table of its tasks: their state as a symbol, which its key explains,
-their identifier, their need followed by their priority, their title up
-to its first colon, and what a waiting task waits on; the other batches,
-one line each, numbered in the order of execution. Read by need, each
-need, in the order of its batches, has the table of its tasks, with the
-batch of each. What is outside the batches follows, in
-tables of the same shape, each pending request with its link. The start
-of the same backlog:
-
-```markdown
-Key: ✓ done · ▶ in progress · ○ ready · ⏳ waiting · ✗ blocked · ⊘ abandoned · ↑ high priority · ↓ low priority
-
-### JA-NNNN — Done before the new features · 1/11 needs closed
-
-**1. L-NNNN — Backlog structure, going in circles** · in progress · 2/3
-
-| | Task | Need | |
-| --- | --- | --- | --- |
-| ✓ | T-NNNN | B-NNNN | The structure in four forms |
-| ✓ | T-NNNN | B-NNNN | The memory format |
-| ○ | T-NNNN | B-NNNN | The exotic form in the guide's list |
-
-**2. L-NNNN — Duration of the verification** · 0/2
-
-| | Task | Need | |
-| --- | --- | --- | --- |
-| ○ | T-NNNN | B-NNNN ↑ | Measure the duration of each step |
-| ⏳ | T-NNNN | B-NNNN ↑ | The suite on several cores · waits on T-NNNN |
-
-…
-```
+With `--format markdown`, the same text comes in a code block: this is
+how the conversation and the summary of each CI run give it, aligned, on
+a phone as elsewhere.
 
 **Specifications and test cases.** The project declares where its
 specifications live (`[specs] paths` in the guardrails): the state tells
@@ -342,8 +334,8 @@ Each intervention of the agent that acted ends with two lines:
 Each item of "For you" can be understood on its own: what it is, why,
 and what your answer changes. The agent writes its two lines as text: a
 line in a code block does not count, and an output it pastes there, like
-the compact roadmap and its own "Next:" line, does not stand for a
-recap.
+the project's roadmap and its own "For you:" line, does not stand for
+a recap.
 
 At any time, `python3 .socle/socle state` gives the project's state: the
 commit, the CI, the backlog and what comes next (the next milestone, the
@@ -403,7 +395,10 @@ the memory proves it by its fingerprint. To lift one, say so: the agent
 records your word in session, then marks the directive "lifted", with the
 decision that lifts it (`lifted-by`); only your word lifts it, and
 `socle archive` then moves it to the journal. A directive you change
-becomes a new one, and your word lifts the old one.
+becomes a new one, and your word lifts the old one. A decision about the
+project is written as a decision, an expectation as a `blocked` need
+(`socle-request` skill): filed as a directive, it would weigh on every
+start, and would only be lifted by one more word.
 
 **The question of intent.** When a need's design is not settled, the
 agent first asks you, in the conversation, in a few lines, the need as it
@@ -633,7 +628,7 @@ agent, which fixes them alone. Those that concern the human:
 | `install` | install or update the socle |
 | `init` | describe the project |
 | `state` | the project's state |
-| `roadmap` | the project's roadmap: milestones, batches, tasks and needs |
+| `roadmap` | the project's roadmap: now, the steps that follow, what is up to you |
 | `consumption` | what a Claude Code session cost, and what made it cost |
 | `answer`, `decision`, `reviewed` | answer a request, record a decision in session, a review |
 | `approve` | approve one's own protected changes |
@@ -738,3 +733,76 @@ judges them this way. Two limits, each with its setting:
 - the adapter's capabilities (build, tests) run as it declares them: if
   they cover the subfolder, it must build and its tests pass, or the human
   excludes it from the adapter's sources, a protected file.
+
+### Why these rules
+
+The socle section of `AGENTS.md` and the socle's skills are loaded whole
+at every use: they state the rule, and what justifies it is read here.
+
+**The socle section of `AGENTS.md`.** If the state was not injected when a
+Claude Code session started, its hooks are not loaded (the session started
+outside the project root; `socle state` says so at the top, and the
+pre-commit hook then refuses the commit). An instruction from the human is
+also written in the journal: a compaction may lose it. A decision that
+needs context is never put in the agent's question widget, where the human
+reads raw text with no links to follow (the hook refuses it). A prototype
+not meant to be merged is done on a disposable branch: the CI does not
+judge it on push. Before concluding, `python3 .socle/socle verify --fast`
+passes (the `Stop` hook checks it). The state computes what is up to the
+human; the `Stop` hook refuses to conclude without the two lines. A file
+to read, or a pull request, is given by its link: the human reads in the
+conversation or on GitHub, not in the agent's container. What the agent
+never does, hooks refuse: complete a head SHA, invent an identifier or a
+reference: the hook refuses them; bypass a hook (`--no-verify`): the
+agent's hook refuses it on the project's repository, and the CI runs
+everything; ask the human a question in the agent's question widget: the
+hook refuses it.
+
+**The `socle-batch` skill.** A batch leaves only once its blocking
+findings are fixed: once pushed, a decision and a journal entry are no
+longer rewritten. The agent waits for the CI of the pushed commit
+(`gh run list --commit <sha>`): the "CI" line of the state follows the
+head.
+
+**The `socle-resume` skill.** A usage limit of the account, over five
+hours or seven days, cuts the session off; the agent then resumes only at
+the human's next message: two wake-ups make it resume when the limit
+lifts. A wake-up is never armed in the past: it would fire at once. A
+reset read that is not more than a minute ahead belongs to a closed
+window: the wake-up is then armed at the bound. During a wait with a
+bounded time, the wake-ups remain, each pushed back after that time if it
+fell before: refused, that turn resumes when the limit lifts. A turn cut
+off or refused removes nothing: that is what makes it resume. The
+wake-ups remain from one turn to the next: arming them at the start of
+every turn and removing them at its end cost about one tool call in ten
+of a sitting; a wake-up that fires with nothing to resume costs less, one
+check and one line, and the check on waking makes it harmless. On waking
+from work the human had interrupted, the agent says in one line that the
+end-of-turn check refuses on failing checks, without touching it or
+re-arming: relaunched on the same tree, it lets the turn conclude. The
+human stops everything by writing "stop" in the session, or deletes the
+wake-ups from the list of scheduled tasks of their account
+(claude.ai/code/routines).
+
+**The `socle-request` skill.** A request is read once the context is
+lost: it stands on its own. The lines of its cited elements that carry
+only a protected file to have approved, its path and its new fingerprint,
+need no description and do not count in the request's budget. The human's
+answer is recorded, committed and pushed at once: the human no longer sees
+it pending. An answer is only relayed to a request pushed as is: the human
+must have been able to read it. A request that the answer
+`insufficient-context` sends back is rewritten as a new request that cites
+it; the state then no longer says to rewrite it. Content the human
+approves in session is first written in the repository, and the decision
+designates it: without it, the decision keeps only the question and the
+answer, and the content is lost.
+
+**The `socle-handoff` skill.** The handoff is committed and pushed; the
+next session, from one account or another, finds it and judges its guard.
+The prompt to copy is the mode of whoever has several accounts or wants to
+keep control. The scheduled session gets the work branch for
+`outcome_branch`, without which the new session has nowhere to push. The
+created session appears at once in the human's list of sessions, under its
+title, ready for review while it waits for its wake-up. The wake-ups of
+`socle-resume` remain, in both modes: a session cut off before tidying up
+resumes when the limit lifts.
