@@ -1,7 +1,7 @@
 <!-- socle: couche=backlog zone=publique -->
 # B-0083 — Une session programmée reçoit les instructions de la tête de sa branche, pas celles d'une copie périmée
 
-> statut : bloqué · origine : J-2026-11-26-O · lu : backlog@5d0dc4c9
+> statut : fait · origine : J-2026-11-26-O · lu : backlog@5d0dc4c9 · ref : J-2026-11-28-E
 
 Le 26 nov. 2026, la session réveillée par la passation de J-2026-11-26-N
 a démarré sur 4f309d7 au lieu de c2c9ab9, la tête de sa passation : son
@@ -27,7 +27,7 @@ la correction viendra par une mise à jour du socle.
 
 ## Satisfait quand
 
-- [ ] une session réveillée par une passation programmée démarre sur la tête que nomme sa passation, constaté au reflog d'une passation réelle
+- [x] une session réveillée par une passation programmée démarre sur la tête que nomme sa passation, constaté au reflog d'une passation réelle
 - [x] à défaut, l'écart se voit avant tout travail : l'état ou la garde dit que la tête locale n'est pas la référence de la passation, et que les instructions reçues sont celles de l'ancienne tête
 
 Le second critère est tenu par la mise à jour du socle du 28 nov. 2026 :
